@@ -37,7 +37,7 @@
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_code*                        io_generated_code,
                                                             const libxsmm_convolution_winograd_descriptor* i_conv_desc,
-                                                            const char*                                    i_arch ); 
+                                                            const char*                                    i_arch );
 
 #endif /* GENERATOR_CONVOLUTION_WINOGRAD_FORWARD_AVX512_H */
 

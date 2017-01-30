@@ -26,16 +26,16 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee (Intel Corp.) 
+/* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
 #ifdef __INTEL_COMPILER
-  float (* __restrict output)[handle->blocksifm][3][3][TDVLEN][TDVLEN] = (float (*)[*][3][3][TDVLEN][TDVLEN])wp; 
+  float (* __restrict output)[handle->blocksifm][3][3][TDVLEN][TDVLEN] = (float (*)[*][3][3][TDVLEN][TDVLEN])wp;
   float (* __restrict input )[ALPHA][(handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO)][FDVLEN][FDVLEN] = (float (*)[ALPHA][*][FDVLEN][FDVLEN])twp;
-#else  
+#else
   LIBXSMM_VLA_DECL(6, float, output, wp, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
   LIBXSMM_VLA_DECL(5, float, input, twp, ALPHA, (handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO), FDVLEN, FDVLEN);
-#endif  
+#endif
   float Fw[ALPHA][ALPHA][FDVLEN][FDVLEN];
   float F[3][3][FDVLEN][FDVLEN];
   int i;
@@ -58,7 +58,7 @@
             input[j][i][0][v][k];
 #else
             LIBXSMM_VLA_ACCESS(5, input, j, i, 0, v, k, ALPHA, (handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO), FDVLEN, FDVLEN);
-#endif	    
+#endif	
 	}
       }
     }
@@ -76,7 +76,7 @@
         T[2][i][k] = t0[k] + Fw[3][i][j][k];
       }
     }
-    
+
     for (i = 0; i < 3; i++) {
 #pragma simd
       for (k = 0; k < FDVLEN; k++) {
@@ -84,7 +84,7 @@
         M_[0][k] = t0[k] + T[i][0][k];
         M_[1][k] = T[i][1][k] - T[i][2][k];
         M_[2][k] = t0[k] + T[i][3][k];
-      
+
         for (l = 0; l < 3; l++) {
           F[i][l][j][k] = M_[l][k];
 	}
@@ -104,7 +104,7 @@
               output[v][r][j][i][k][l] +=
 #else
 	      LIBXSMM_VLA_ACCESS(6, output, v, r, j, i, k, l, handle->blocksifm, 3, 3, TDVLEN, TDVLEN) +=
-#endif	      
+#endif	
                 F[j][i][r*TDVLEN + k][v*TDVLEN + l];
             }
 	  }

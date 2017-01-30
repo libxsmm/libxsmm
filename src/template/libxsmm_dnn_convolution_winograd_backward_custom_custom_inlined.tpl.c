@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
-  
+
   int ltid;
   int work;
   int chunksize;
@@ -72,20 +72,20 @@
   float (* __restrict U)[ALPHA][handle->blocksifm/VRATIO][handle->blocksofm/VRATIO][FDVLEN][FDVLEN] = (float (*)[*][*][*][FDVLEN][FDVLEN])up;
   float (* __restrict V)[ALPHA][ALPHA][handle->blocksifm/VRATIO][handle->cwino_bwd.bimg][handle->cwino_bwd.jtiles][handle->cwino_bwd.itiles][FDVLEN] = (float (*)[*][*][*][*][*][*][FDVLEN])vp;
   float (* __restrict M)[ALPHA][ALPHA][handle->blocksofm/VRATIO][handle->cwino_bwd.bimg][handle->cwino_bwd.jtiles][handle->cwino_bwd.itiles][FDVLEN] = (float (*)[*][*][*][*][*][*][FDVLEN])mp;
-#else    
+#else
   LIBXSMM_VLA_DECL(6, float, U, up, ALPHA, handle->blocksifm/VRATIO, handle->blocksofm/VRATIO, FDVLEN, FDVLEN);
   LIBXSMM_VLA_DECL(8, float, V, vp, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN);
   LIBXSMM_VLA_DECL(8, float, M, mp, ALPHA, ALPHA, handle->blocksofm/VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN);
 #endif
 
-  typedef libxsmm_sconvfunction libxsmm_convfunction; 
+  typedef libxsmm_sconvfunction libxsmm_convfunction;
   libxsmm_convfunction jitted_conv_bp;
   jitted_conv_bp = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
 
   /* computing first logical thread */
   ltid = tid - start_thread;
   libxsmm_barrier_init((libxsmm_barrier*)handle->barrier, ltid);
-  
+
 /* #define BTIME */
 #ifdef BTIME
   unsigned long long t_input  = 0;
@@ -108,19 +108,19 @@
 #endif
   for (job = thr_begin; job < thr_end; job++) {
     img  = job / (handle->blocksofm / VRATIO);
-    ofm1 = (job % (handle->blocksofm / VRATIO)) * VRATIO; 
+    ofm1 = (job % (handle->blocksofm / VRATIO)) * VRATIO;
 #ifdef __INTEL_COMPILER
     input_transform_custom_custom(&(output[img][ofm1][0][0][0]), &(M[img/handle->cwino_bwd.bimg][0][0][ofm1/VRATIO][img%handle->cwino_bwd.bimg][0][0][0]), handle);
 #else
-    input_transform_custom_custom(&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN), 
+    input_transform_custom_custom(&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN),
       &LIBXSMM_VLA_ACCESS(8, M, img/handle->cwino_bwd.bimg, 0, 0, ofm1/VRATIO, img%handle->cwino_bwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksofm/VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN), handle);
-#endif      
+#endif
   }
 #ifdef BTIME
   libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
   t_input = __rdtsc() - t_start;
 #endif
-    
+
   /* number of tasks that could be run in parallel */
   work = (handle->blocksofm/VRATIO)*(handle->blocksifm/VRATIO);
   /* compute chunck size */
@@ -128,8 +128,8 @@
   /* compute thr_begin and thr_end */
   thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
   thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-   
-#ifdef BTIME    
+
+#ifdef BTIME
   t_start = __rdtsc();
 #endif
   for (job = thr_begin; job < thr_end; job++) {
@@ -138,14 +138,14 @@
 #ifdef __INTEL_COMPILER
     weight_transform(&(weight[ofm1][ifm1][0][0][0][0]), &(U[0][0][ifm1/VRATIO][ofm1/VRATIO][0][0]), handle);
 #else
-    weight_transform(&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, TDVLEN, TDVLEN), 
+    weight_transform(&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, TDVLEN, TDVLEN),
       &LIBXSMM_VLA_ACCESS(6, U, 0, 0, ifm1/VRATIO, ofm1/VRATIO, 0, 0, ALPHA, handle->blocksifm/VRATIO, handle->blocksofm/VRATIO, FDVLEN, FDVLEN), handle);
-#endif      
+#endif
   }
   libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
-#ifdef BTIME    
+#ifdef BTIME
   t_wt = __rdtsc() - t_start;
-#endif    
+#endif
 
   /* number of tasks that could be run in parallel */
   work = (handle->desc.N/handle->cwino_bwd.bimg) * ALPHA * ALPHA;
@@ -157,7 +157,7 @@
 
 #ifdef BTIME
   t_start = __rdtsc();
-#endif    
+#endif
   for (job = thr_begin; job < thr_end; job++) {
     img = job / (ALPHA * ALPHA);
     oj = (job % (ALPHA * ALPHA)) / ALPHA;
@@ -166,7 +166,7 @@
       for (i = 0; i < handle->cwino_bwd.bimg; i++) {
         for (j = 0; j < handle->cwino_bwd.jtiles; j++) {
           for (k = 0; k < handle->cwino_bwd.itiles; k++) {
-#pragma simd	    
+#pragma simd	
             for (l = 0; l < FDVLEN; l++) {
               V[img][oj][oi][ifm1][i][j][k][l] = 0.0f;
             }
@@ -193,10 +193,10 @@
     }
   }
   libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
-#ifdef BTIME    
+#ifdef BTIME
   t_gemm = __rdtsc() - t_start;
-#endif    
-    
+#endif
+
   /* number of tasks that could be run in parallel */
   work = handle->desc.N*(handle->blocksifm/VRATIO);
   /* compute chunck size */
@@ -207,19 +207,19 @@
 
 #ifdef BTIME
   t_start = __rdtsc();
-#endif    
-  for (job = thr_begin; job < thr_end; job++) { 
+#endif
+  for (job = thr_begin; job < thr_end; job++) {
     img  = job / (handle->blocksifm / VRATIO);
     ifm1 = (job % (handle->blocksifm / VRATIO)) * VRATIO;
 #ifdef __INTEL_COMPILER
     output_transform_custom_custom(&(V[img/handle->cwino_bwd.bimg][0][0][ifm1/VRATIO][img%handle->cwino_bwd.bimg][0][0][0]), &(input[img][ifm1][0][0][0]), handle);
 #else
-    output_transform_custom_custom(&LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_bwd.bimg, 0, 0, ifm1/VRATIO, img%handle->cwino_bwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN), 
+    output_transform_custom_custom(&LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_bwd.bimg, 0, 0, ifm1/VRATIO, img%handle->cwino_bwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN),
       &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN), handle);
-#endif      
+#endif
   }
   libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
-#ifdef BTIME    
+#ifdef BTIME
   t_output = __rdtsc() - t_start;
 #endif
 
@@ -227,9 +227,9 @@
   if (tid == 0) {
     int nOfm = handle->blocksofm*TDVLEN;
     int nIfm = handle->blocksifm*TDVLEN;
-    double b_input = 1.0*handle->desc.N*nIfm*(handle->ifhp*handle->ifwp + handle->cwino_bwd.jtiles*handle->cwino_bwd.itiles*ALPHA*ALPHA) * sizeof(float); 
-    double b_wt    = 1.0*nOfm*nIfm*(handle->desc.R*handle->desc.S + ALPHA*ALPHA) * sizeof(float); 
-    double b_output= 1.0*handle->desc.N*nOfm*(handle->ofhp*handle->ofwp + handle->cwino_bwd.jtiles*handle->cwino_bwd.itiles*ALPHA*ALPHA) * sizeof(float); 
+    double b_input = 1.0*handle->desc.N*nIfm*(handle->ifhp*handle->ifwp + handle->cwino_bwd.jtiles*handle->cwino_bwd.itiles*ALPHA*ALPHA) * sizeof(float);
+    double b_wt    = 1.0*nOfm*nIfm*(handle->desc.R*handle->desc.S + ALPHA*ALPHA) * sizeof(float);
+    double b_output= 1.0*handle->desc.N*nOfm*(handle->ofhp*handle->ofwp + handle->cwino_bwd.jtiles*handle->cwino_bwd.itiles*ALPHA*ALPHA) * sizeof(float);
     double f_gemm = 2.0*handle->desc.N*nOfm*nIfm*handle->cwino_bwd.jtiles*handle->cwino_bwd.itiles*ALPHA*ALPHA;
     printf("Time: i=%8.3f  w=%8.3f  o=%8.3f         g=%8.3f\n", t_input/1000.0, t_wt/1000.0, t_output/1000.0, t_gemm/1000.0);
     printf("BW:   i=%8.3f  w=%8.3f  o=%8.3f (b/c)   g=%8.3f (f/c)\n\n", b_output/t_input, b_wt/t_wt, b_input/t_output, f_gemm/t_gemm);

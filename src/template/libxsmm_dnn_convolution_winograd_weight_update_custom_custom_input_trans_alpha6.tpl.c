@@ -26,17 +26,17 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee (Intel Corp.) 
+/* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
   int total_tiles = handle->cwino_upd.itiles*handle->cwino_upd.jtiles;
-#ifdef __INTEL_COMPILER  
-  float (* __restrict input )[handle->ifhp][handle->ifwp][TDVLEN] = (float (*)[*][*][TDVLEN])inp; 
-  float (* __restrict output)[ALPHA][(handle->blocksifm/VRATIO)*handle->cwino_upd.bimg][total_tiles][FDVLEN] = (float (*)[ALPHA][*][*][FDVLEN])tinp; 
-#else  
+#ifdef __INTEL_COMPILER
+  float (* __restrict input )[handle->ifhp][handle->ifwp][TDVLEN] = (float (*)[*][*][TDVLEN])inp;
+  float (* __restrict output)[ALPHA][(handle->blocksifm/VRATIO)*handle->cwino_upd.bimg][total_tiles][FDVLEN] = (float (*)[ALPHA][*][*][FDVLEN])tinp;
+#else
   LIBXSMM_VLA_DECL(4, float, input, inp, handle->ifhp, handle->ifwp, TDVLEN);
   LIBXSMM_VLA_DECL(5, float, output, tinp, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_upd.bimg, total_tiles, FDVLEN);
-#endif  
+#endif
   float Iw[total_tiles][ALPHA][ALPHA][FDVLEN];
   float I[ALPHA][ALPHA][FDVLEN];
   int i;
@@ -51,10 +51,10 @@
   float t0[FDVLEN];
   float t1[FDVLEN];
   float t2[FDVLEN];
-  float t3[FDVLEN]; 
+  float t3[FDVLEN];
   float t4[FDVLEN];
   float t5[FDVLEN];
-  
+
   for (tj = 0; tj < handle->cwino_upd.jtiles; tj++) {
     for (ti = 0; ti < handle->cwino_upd.itiles; ti++) {
       for (j = 0; j < ALPHA; j++) {
@@ -87,7 +87,7 @@
                     input[r][ydim + handle->desc.pad_h][xdim + handle->desc.pad_w][k];
 #else
                     LIBXSMM_VLA_ACCESS(4, input, r, ydim + handle->desc.pad_h, xdim + handle->desc.pad_w, k, handle->ifhp, handle->ifwp, TDVLEN);
-#endif		    
+#endif		
 		}
               }
 	    }
@@ -147,8 +147,8 @@
 #ifdef __INTEL_COMPILER
             output[j][i][0][tj*handle->cwino_upd.itiles + ti][k] =
 #else
-            LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_upd.itiles + ti, k, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_upd.bimg, total_tiles, FDVLEN) = 
-#endif	    
+            LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_upd.itiles + ti, k, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_upd.bimg, total_tiles, FDVLEN) =
+#endif	
               Iw[tj*handle->cwino_upd.itiles + ti][j][i][k];
 	  }
         }

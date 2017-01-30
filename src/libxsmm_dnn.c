@@ -234,7 +234,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
           ((conv_desc.filter_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) &&
           (3 == conv_desc.R) && (3 == conv_desc.S) &&
           (1 == conv_desc.u) && (1 == conv_desc.v) &&
-          (0 == (conv_desc.C % 16)) && (0 == (conv_desc.K % 16)) && 
+          (0 == (conv_desc.C % 16)) && (0 == (conv_desc.K % 16)) &&
           (conv_desc.datatype  == LIBXSMM_DNN_DATATYPE_F32) ) {
         handle->algo = LIBXSMM_DNN_CONV_ALGO_WINOGRAD;
       } else {
@@ -1361,7 +1361,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
         handle->scratch4 = (void*)(address+offset);
       }
       address += handle->scratch4_size + 64;
-    } else { 
+    } else {
       switch (kind) {
         case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
           /* low precision intermediate buffer */

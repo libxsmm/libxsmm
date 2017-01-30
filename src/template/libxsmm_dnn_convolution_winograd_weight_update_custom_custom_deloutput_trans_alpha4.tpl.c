@@ -26,17 +26,17 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee (Intel Corp.) 
+/* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
   int total_tiles = handle->cwino_upd.itiles*handle->cwino_upd.jtiles;
-#ifdef __INTEL_COMPILER  
-  float (* __restrict input )[handle->ofhp][handle->ofwp][TDVLEN] = (float (*)[*][*][TDVLEN])inp; 
+#ifdef __INTEL_COMPILER
+  float (* __restrict input )[handle->ofhp][handle->ofwp][TDVLEN] = (float (*)[*][*][TDVLEN])inp;
   float (* __restrict output)[ALPHA][(handle->blocksofm/VRATIO)*handle->cwino_upd.bimg][total_tiles][FDVLEN] = (float (*)[ALPHA][*][*][FDVLEN])tinp;
-#else  
+#else
   LIBXSMM_VLA_DECL(4, float, input, inp, handle->ofhp, handle->ofwp, TDVLEN);
   LIBXSMM_VLA_DECL(5, float, output, tinp, ALPHA, (handle->blocksofm/VRATIO)*handle->cwino_upd.bimg, total_tiles, FDVLEN);
-#endif  
+#endif
   float Iw[total_tiles][ALPHA][ALPHA][FDVLEN];
   float I[ALPHA][ALPHA][FDVLEN];
   int i;
@@ -60,12 +60,12 @@
               for (r = 0; r < VRATIO; r++) {
 #pragma simd
                 for (k = 0; k < TDVLEN; k++) {
-                  I[j][i][r*TDVLEN + k] = 
+                  I[j][i][r*TDVLEN + k] =
 #ifdef __INTEL_COMPILER
                     input[r][ydim][xdim][k];
 #else
 		    LIBXSMM_VLA_ACCESS(4, input, r, ydim, xdim, k, handle->ofhp, handle->ofwp, TDVLEN);
-#endif		    
+#endif		
                 }
               }
             } else {
@@ -124,7 +124,7 @@
             output[j][i][0][tj*handle->cwino_upd.itiles + ti][k] =
 #else
 	    LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_upd.itiles + ti, k, ALPHA, (handle->blocksofm/VRATIO)*handle->cwino_upd.bimg, total_tiles, FDVLEN) =
-#endif	    
+#endif	
               Iw[tj*handle->cwino_upd.itiles + ti][j][i][k];
 	  }
         }

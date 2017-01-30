@@ -56,7 +56,7 @@ LIBXSMM_INLINE void print_help(void) {
 
 
 /* This function finds the prime factors of a number */
-void factors( unsigned int num, 
+void factors( unsigned int num,
               unsigned int num_factors[] )
 {
   unsigned int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29};
@@ -78,12 +78,12 @@ void factors( unsigned int num,
 /* such that ur_i*ur_j*ur_m <= max_acc                                                  */
 /* The following loop may not give an optimal solution (knapsack problem)               */
 /* Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2                            */
-void factors_ijm( unsigned int  itiles, 
-                  unsigned int  jtiles, 
-		  unsigned int  bimg, 
-		  unsigned int* ur_i, 
-		  unsigned int* ur_j, 
-		  unsigned int* ur_m, 
+void factors_ijm( unsigned int  itiles,
+                  unsigned int  jtiles,
+		  unsigned int  bimg,
+		  unsigned int* ur_i,
+		  unsigned int* ur_j,
+		  unsigned int* ur_m,
 		  unsigned int  max_acc)
 {
   unsigned int i;
@@ -98,7 +98,7 @@ void factors_ijm( unsigned int  itiles,
   unsigned int fact_j[10];
   unsigned int fact_m[10];
 
-  for ( i = 0; i < 10; i++ ) {  
+  for ( i = 0; i < 10; i++ ) {
     fact[i] = 1;
     cur_fact[i] = 1;
   }
@@ -114,7 +114,7 @@ void factors_ijm( unsigned int  itiles,
     }
   }
 
-  for ( i = 0; i < 10; i++ ) {  
+  for ( i = 0; i < 10; i++ ) {
     fact_i[i] = 1;
     fact_j[i] = 1;
     fact_m[i] = 1;
@@ -122,7 +122,7 @@ void factors_ijm( unsigned int  itiles,
   factors(itiles, fact_i);
   factors(jtiles, fact_j);
   factors(bimg,   fact_m);
-  
+
   *ur_i = 1;
   *ur_j = 1;
   *ur_m = 1;
@@ -140,7 +140,7 @@ void factors_ijm( unsigned int  itiles,
         break;
       }
     }
-    if ( found == 1 ) 
+    if ( found == 1 )
       continue;
 
     for ( j = 0; fact_j[j] != 1; j++ ) {
@@ -154,9 +154,9 @@ void factors_ijm( unsigned int  itiles,
         break;
       }
     }
-    if ( found == 1 ) 
+    if ( found == 1 )
       continue;
-    
+
     for ( j = 0; fact_m[j] != 1; j++ ) {
       if ( cur_fact[i] == fact_m[j] ) {
         *ur_m = (*ur_m)*fact_m[j];
@@ -168,7 +168,7 @@ void factors_ijm( unsigned int  itiles,
         break;
       }
     }
-    if ( found == 1 ) 
+    if ( found == 1 )
       continue;
 
     printf("Control should not reach here FACT=%d\n", cur_fact[i]);
@@ -225,7 +225,7 @@ int main(int argc, char* argv []) {
     print_help();
     return -1;
   }
-  
+
   /* set value of prefetch flag */
   if (strcmp("nopf", argv[12]) == 0) {
     /* l_prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE; */
@@ -283,7 +283,7 @@ int main(int argc, char* argv []) {
   if ( (strcmp(l_type, "dense")     == 0) ||
        (strcmp(l_type, "dense_asm") == 0)    ) {
     if ( flag_ur ) {
-      factors_ijm( l_conv_desc.itiles, l_conv_desc.jtiles, l_conv_desc.bimg, 
+      factors_ijm( l_conv_desc.itiles, l_conv_desc.jtiles, l_conv_desc.bimg,
                    &(l_conv_desc.ur_i), &(l_conv_desc.ur_j), &(l_conv_desc.ur_m), 26 );
     }
 

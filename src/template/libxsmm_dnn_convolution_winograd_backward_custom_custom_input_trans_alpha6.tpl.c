@@ -30,8 +30,8 @@
 ******************************************************************************/
 
   int total_tiles = handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles;
-#ifdef __INTEL_COMPILER  
-  float (* __restrict input )[handle->ofhp][handle->ofwp][TDVLEN] = (float (*)[*][*][TDVLEN])inp; 
+#ifdef __INTEL_COMPILER
+  float (* __restrict input )[handle->ofhp][handle->ofwp][TDVLEN] = (float (*)[*][*][TDVLEN])inp;
   float (* __restrict output)[ALPHA][(handle->blocksofm/VRATIO)*handle->cwino_bwd.bimg][total_tiles][FDVLEN] = (float (*)[ALPHA][*][*][FDVLEN])tinp;
 #else
   LIBXSMM_VLA_DECL(4, float, input, inp, handle->ofhp, handle->ofwp, TDVLEN);
@@ -57,7 +57,7 @@
   float t4[FDVLEN];
   float t5[FDVLEN];
   float t6[FDVLEN];
-  
+
   for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
     for (ti = 0; ti < handle->cwino_bwd.itiles; ti++) {
       for (j = 0; j < ALPHA; j++) {
@@ -90,7 +90,7 @@
                     input[r][ydim][xdim][k];
 #else
 		    LIBXSMM_VLA_ACCESS(4, input, r, ydim, xdim, k, handle->ofhp, handle->ofwp, TDVLEN);
-#endif		    
+#endif		
 		}
               }
             }
@@ -117,7 +117,7 @@
           T[5][i][j] = t5[j] + 4.0f*I[1][i][j];
         }
       }
-    
+
       for (i = 0; i < 6; i++) {
 #pragma simd
         for (j = 0; j < FDVLEN; j++) {
@@ -148,8 +148,8 @@
 #ifdef __INTEL_COMPILER
             output[j][i][0][tj*handle->cwino_bwd.itiles + ti][k] =
 #else
-            LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_bwd.itiles + ti, k, ALPHA, (handle->blocksofm/VRATIO)*handle->cwino_bwd.bimg, total_tiles, FDVLEN) = 
-#endif	    
+            LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_bwd.itiles + ti, k, ALPHA, (handle->blocksofm/VRATIO)*handle->cwino_bwd.bimg, total_tiles, FDVLEN) =
+#endif	
               Iw[tj*handle->cwino_bwd.itiles + ti][j][i][k];
           }
         }

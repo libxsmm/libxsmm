@@ -768,7 +768,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 }
 
 /* This function finds the prime factors of a number */
-void factors( unsigned int num, 
+void factors( unsigned int num,
               unsigned int num_factors[] )
 {
   unsigned int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29};
@@ -789,12 +789,12 @@ void factors( unsigned int num,
 /* such that ur_i*ur_j*ur_m <= max_acc                                                  */
 /* The following loop may not give an optimal solution (knapsack problem)               */
 /* Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2                            */
-void factors_ijm( unsigned int  itiles, 
-                  unsigned int  jtiles, 
-		  unsigned int  bimg, 
-		  unsigned int* ur_i, 
-		  unsigned int* ur_j, 
-		  unsigned int* ur_m, 
+void factors_ijm( unsigned int  itiles,
+                  unsigned int  jtiles,
+		  unsigned int  bimg,
+		  unsigned int* ur_i,
+		  unsigned int* ur_j,
+		  unsigned int* ur_m,
 		  unsigned int  max_acc)
 {
   unsigned int i;
@@ -809,7 +809,7 @@ void factors_ijm( unsigned int  itiles,
   unsigned int fact_j[10];
   unsigned int fact_m[10];
 
-  for ( i = 0; i < 10; i++ ) {  
+  for ( i = 0; i < 10; i++ ) {
     fact[i] = 1;
     cur_fact[i] = 1;
   }
@@ -825,7 +825,7 @@ void factors_ijm( unsigned int  itiles,
     }
   }
 
-  for ( i = 0; i < 10; i++ ) {  
+  for ( i = 0; i < 10; i++ ) {
     fact_i[i] = 1;
     fact_j[i] = 1;
     fact_m[i] = 1;
@@ -833,7 +833,7 @@ void factors_ijm( unsigned int  itiles,
   factors(itiles, fact_i);
   factors(jtiles, fact_j);
   factors(bimg,   fact_m);
-  
+
   *ur_i = 1;
   *ur_j = 1;
   *ur_m = 1;
@@ -851,7 +851,7 @@ void factors_ijm( unsigned int  itiles,
         break;
       }
     }
-    if ( found == 1 ) 
+    if ( found == 1 )
       continue;
 
     for ( j = 0; fact_j[j] != 1; j++ ) {
@@ -865,9 +865,9 @@ void factors_ijm( unsigned int  itiles,
         break;
       }
     }
-    if ( found == 1 ) 
+    if ( found == 1 )
       continue;
-    
+
     for ( j = 0; fact_m[j] != 1; j++ ) {
       if ( (cur_fact[i] == fact_m[j]) /* && ((((*ur_m)*fact_m[j]-1)*itiles*jtiles + (*ur_j-1)*itiles + *ur_i-1) <= max_acc)*/ ) {
         *ur_m = (*ur_m)*fact_m[j];
@@ -879,9 +879,9 @@ void factors_ijm( unsigned int  itiles,
         break;
       }
     }
-    if ( found == 1 ) 
+    if ( found == 1 )
       continue;
-    
+
     printf("Control should not reach here FACT=%d\n", cur_fact[i]);
   }
 }
@@ -922,7 +922,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     const int tileSize = alpha - 2;
     int allowed_unroll = 0;
     int flagBenchmark = 0;
-    
+
     /* Forward path */
     { wino_desc_fp.alpha = alpha;
       wino_desc_fp.jtiles = (handle->ofh + tileSize - 1) / tileSize;
@@ -1058,8 +1058,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 	wino_desc_fp.ur_j = 2;
 	wino_desc_fp.ur_m = 2;
 	flagBenchmark = 1;
-      } 
-      
+      }
+
       /* LUT for AlexNet */
       else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
@@ -1235,7 +1235,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         } else {
           wino_desc_fp.bimg = 1;
         }
-        factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg, 
+        factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
                      &(wino_desc_fp.ur_i), &(wino_desc_fp.ur_j), &(wino_desc_fp.ur_m), 26 );
         if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0)
           wino_desc_fp.vratio = 2;
@@ -1247,7 +1247,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         } else {
           wino_desc_fp.bimg = 1;
         }
-        factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg, 
+        factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
                      &(wino_desc_fp.ur_i), &(wino_desc_fp.ur_j), &(wino_desc_fp.ur_m), 26 );
         if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0)
           wino_desc_fp.vratio = 2;
@@ -1280,7 +1280,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     { wino_desc_bp.alpha = alpha;
       wino_desc_bp.jtiles = (handle->desc.H + tileSize - 1) / tileSize;
       wino_desc_bp.itiles = (handle->desc.W + tileSize - 1) / tileSize;
-      
+
       /* LUT for DeepBench */
       if ((240 == handle->desc.W) && (24 == handle->desc.H) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
@@ -1401,8 +1401,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 	wino_desc_bp.ur_j = 2;
 	wino_desc_bp.ur_m = 2;
 	flagBenchmark = 1;
-      } 
-      
+      }
+
       /* LUT for AlexNet */
       else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
@@ -1572,7 +1572,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       /* General scenario */
       else {
         wino_desc_bp.bimg = wino_desc_fp.bimg;
-        factors_ijm( wino_desc_bp.itiles, wino_desc_bp.jtiles, wino_desc_bp.bimg, 
+        factors_ijm( wino_desc_bp.itiles, wino_desc_bp.jtiles, wino_desc_bp.bimg,
                      &(wino_desc_bp.ur_i), &(wino_desc_bp.ur_j), &(wino_desc_bp.ur_m), 26 );
         if(wino_desc_bp.ur_i * wino_desc_bp.ur_j * wino_desc_bp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0)
       	  wino_desc_bp.vratio = 2;
@@ -1600,7 +1600,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     { wino_desc_wu.alpha = alpha;
       wino_desc_wu.jtiles = wino_desc_fp.jtiles;
       wino_desc_wu.itiles = wino_desc_fp.itiles;
-      
+
       /* LUT for DeepBench */
       if ((240 == handle->desc.W) && (24 == handle->desc.H) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
@@ -1721,8 +1721,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 	wino_desc_wu.ur_j = 2;
 	wino_desc_wu.ur_m = 2;
 	flagBenchmark = 1;
-      } 
-    
+      }
+
       /* LUT for AlexNet */
       else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
@@ -1746,7 +1746,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 	wino_desc_wu.ur_m = 1;
 	flagBenchmark = 1;
       }
-       
+
       /* LUT for GoogLenetV1 */
       else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
@@ -1902,7 +1902,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
         allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
         allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
-        factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg, 
+        factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
                      &(wino_desc_wu.ur_i), &(wino_desc_wu.ur_j), &(wino_desc_wu.ur_m), allowed_unroll );
         if(wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0)
       	  wino_desc_wu.vratio = 2;
@@ -1916,14 +1916,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
       allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
       allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
-      factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg, 
+      factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
                    &(wino_desc_wu.ur_i), &(wino_desc_wu.ur_j), &(wino_desc_wu.ur_m), allowed_unroll );
       if(wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0)
       	wino_desc_wu.vratio = 2;
       else
       	wino_desc_wu.vratio = 1;
       }
-      
+
       handle->cwino_upd = wino_desc_wu;
       /* TODO check JIT errors */
       if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
@@ -1947,7 +1947,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       } else {
         ijtiles = wino_desc_fp.itiles * wino_desc_fp.jtiles;
       }
-      
+
       handle->scratch1 = 0;
       handle->scratch1_size = alpha*alpha*handle->desc.C*handle->desc.K*libxsmm_dnn_typesize(handle->datatype);
       handle->scratch3 = 0;

@@ -49,7 +49,7 @@ void init_buf(float *buf, long size, int initOne)
   LIBXSMM_ASSUME_ALIGNED(buf, 64);
   zero_buf(buf, size);
   srand(0);
-  for (i = 0; i < size; i++) 
+  for (i = 0; i < size; i++)
     buf[i] = initOne ? 1.0 : (0.5 - drand48());
 }
 
@@ -94,7 +94,7 @@ void compare_buf_4d(int d1, int d2, int d3, int d4, float *naive, float*blocked)
       }
     }
   }
-  if ( match == 1 ) 
+  if ( match == 1 )
     printf("A and B are same\n");
   else
     printf("A and B are NOT same\n");
@@ -144,7 +144,7 @@ void cvt_5d_4d(int d1, int d2, int d3, int d4, int d5, float *in, float*out)
       for (i3 = 0; i3 < d3; i3++) {
         for (i4 = 0; i4 < d4; i4++) {
           for (v = 0; v < d5; v++) {
-            dst[i1][i2*d5+v][i3][i4] = src[i1][i2][i3][i4][v]; 
+            dst[i1][i2*d5+v][i3][i4] = src[i1][i2][i3][i4][v];
 	  }
         }
       }
@@ -233,7 +233,7 @@ void naive_conv_fp(libxsmm_dnn_layer *handle, float *inp, float *outp, float *wp
     for (ofm = 0; ofm < handle->desc.K; ofm++) {
       for (oj = 0; oj < handle->ofhp; oj++) {
         for (oi = 0; oi < handle->ofwp; oi++) {
-          LIBXSMM_VLA_ACCESS(4, output, img, ofm, oj, oi, handle->desc.K, handle->ofhp, handle->ofwp) = 
+          LIBXSMM_VLA_ACCESS(4, output, img, ofm, oj, oi, handle->desc.K, handle->ofhp, handle->ofwp) =
 	    LIBXSMM_VLA_ACCESS(1, bias, ofm);
         }
       }
@@ -242,9 +242,9 @@ void naive_conv_fp(libxsmm_dnn_layer *handle, float *inp, float *outp, float *wp
           ij = oj * handle->desc.u;
           for (oi = 0; oi < handle->ofwp; oi++) {
             ii = oi * handle->desc.v;
-            for (kj = 0; kj < handle->desc.R; kj++) { 
+            for (kj = 0; kj < handle->desc.R; kj++) {
               for (ki = 0; ki < handle->desc.S; ki++) {
-                LIBXSMM_VLA_ACCESS(4, output, img, ofm, oj, oi, handle->desc.K, handle->ofhp, handle->ofwp) += 
+                LIBXSMM_VLA_ACCESS(4, output, img, ofm, oj, oi, handle->desc.K, handle->ofhp, handle->ofwp) +=
 		  (LIBXSMM_VLA_ACCESS(4, input, img, ifm, ij+kj, ii+ki, handle->desc.C, handle->ifhp, handle->ifwp) *
 		  LIBXSMM_VLA_ACCESS(4, wt, ofm, ifm, kj, ki, handle->desc.C, handle->desc.R, handle->desc.S));
               }
@@ -253,7 +253,7 @@ void naive_conv_fp(libxsmm_dnn_layer *handle, float *inp, float *outp, float *wp
         }
       }
     }
-  }   
+  }
 }
 
 LIBXSMM_INLINE void print_help(void) {
@@ -366,7 +366,7 @@ int main(int argc, char* argv []) {
   } else {
     print_help();
     return -1;
-  } 
+  }
 
   /* check and evaluate precison flag */
   if ( strcmp(l_precision, "SP") == 0 ) {
@@ -386,7 +386,7 @@ int main(int argc, char* argv []) {
     printf("For winograd convolution, stride_h and stride_w must be 1\n");
     print_help();
     return -1;
-  }  
+  }
 
   if ( (l_pad_h_in != 0)  || (l_pad_w_in != 0) ||
        (l_pad_h_out != 0) || (l_pad_w_out != 0) ) {
@@ -472,7 +472,7 @@ int main(int argc, char* argv []) {
   n_inp  = (float*)libxsmm_aligned_malloc(l_img*l_ifm*l_handle.ifhp*l_handle.ifwp*sizeof(float), 64);
   n_outp = (float*)libxsmm_aligned_malloc(l_img*l_ofm*l_handle.ofhp*l_handle.ofwp*sizeof(float), 64);
   n_wp   = (float*)libxsmm_aligned_malloc(l_ofm*l_ifm*l_kh*l_kw*sizeof(float), 64);
- 
+
   test_outp = (float*)libxsmm_aligned_malloc(l_img*l_ofm*l_handle.ofhp*l_handle.ofwp*sizeof(float), 64);
 
   init_buf(n_inp, l_img*l_ifm*l_handle.ifhp*l_handle.ifwp, 0);
@@ -486,7 +486,7 @@ int main(int argc, char* argv []) {
   zero_buf(l_handle.filter->data, l_ofm*l_ifm*l_kh*l_kw);
 
   cvt_4d_5d(l_img, l_ifm, l_handle.ifhp, l_handle.ifwp, l_handle.ifmblock, n_inp, l_handle.input->data);
-  cvt_4d_6d(l_ofm, l_ifm, l_kh, l_kw, l_handle.ifmblock, l_handle.ofmblock, n_wp, l_handle.filter->data);  
+  cvt_4d_6d(l_ofm, l_ifm, l_kh, l_kw, l_handle.ifmblock, l_handle.ofmblock, n_wp, l_handle.filter->data);
 
   checksum_buf(n_inp, l_img*l_ifm*l_handle.ifhp*l_handle.ifwp);
   checksum_buf(l_handle.input->data, l_img*l_ifm*l_handle.ifhp*l_handle.ifwp);

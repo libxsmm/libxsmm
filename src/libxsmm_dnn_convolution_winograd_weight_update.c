@@ -26,16 +26,16 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee (Intel Corp.), Rajkishore Barik (Intel Corp.), 
+/* Kunal Banerjee (Intel Corp.), Rajkishore Barik (Intel Corp.),
  * Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_winograd_weight_update.h"
 
-static void input_transform_custom_custom( float *inp, 
+static void input_transform_custom_custom( float *inp,
                                            float *tinp,
 	                                   const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 6) {
-#define ALPHA 6  
+#define ALPHA 6
 #define TDVLEN 16
 #define FDVLEN 16
 #define VRATIO 1
@@ -44,10 +44,10 @@ static void input_transform_custom_custom( float *inp,
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 6) { 
-#define ALPHA 6  
+  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 6) {
+#define ALPHA 6
 #define TDVLEN 16
-#define FDVLEN 32 
+#define FDVLEN 32
 #define VRATIO 2
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_input_trans_alpha6.tpl.c"
 #undef VRATIO
@@ -55,7 +55,7 @@ static void input_transform_custom_custom( float *inp,
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 4) {
-#define ALPHA 4  
+#define ALPHA 4
 #define TDVLEN 16
 #define FDVLEN 16
 #define VRATIO 1
@@ -64,10 +64,10 @@ static void input_transform_custom_custom( float *inp,
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 4) { 
-#define ALPHA 4  
+  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 4) {
+#define ALPHA 4
 #define TDVLEN 16
-#define FDVLEN 32 
+#define FDVLEN 32
 #define VRATIO 2
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_input_trans_alpha4.tpl.c"
 #undef VRATIO
@@ -80,11 +80,11 @@ static void input_transform_custom_custom( float *inp,
   }
 }
 
-static void input_transform_nhwc_custom( float *inp, 
+static void input_transform_nhwc_custom( float *inp,
                                          float *tinp,
 	                                 const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 6) {
-#define ALPHA 6  
+#define ALPHA 6
 #define TDVLEN 16
 #define FDVLEN 16
 #define VRATIO 1
@@ -93,10 +93,10 @@ static void input_transform_nhwc_custom( float *inp,
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 6) { 
-#define ALPHA 6  
+  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 6) {
+#define ALPHA 6
 #define TDVLEN 16
-#define FDVLEN 32 
+#define FDVLEN 32
 #define VRATIO 2
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_input_trans_alpha6.tpl.c"
 #undef VRATIO
@@ -104,7 +104,7 @@ static void input_transform_nhwc_custom( float *inp,
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 4) {
-#define ALPHA 4  
+#define ALPHA 4
 #define TDVLEN 16
 #define FDVLEN 16
 #define VRATIO 1
@@ -113,10 +113,10 @@ static void input_transform_nhwc_custom( float *inp,
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 4) { 
-#define ALPHA 4  
+  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 4) {
+#define ALPHA 4
 #define TDVLEN 16
-#define FDVLEN 32 
+#define FDVLEN 32
 #define VRATIO 2
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_input_trans_alpha4.tpl.c"
 #undef VRATIO
@@ -133,7 +133,7 @@ static void deloutput_transform_custom_custom( float *inp,
                                                float *tinp,
                                                const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 6) {
-#define ALPHA 6  
+#define ALPHA 6
 #define TDVLEN 16
 #define FDVLEN 16
 #define VRATIO 1
@@ -142,10 +142,10 @@ static void deloutput_transform_custom_custom( float *inp,
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 6) { 
-#define ALPHA 6  
+  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 6) {
+#define ALPHA 6
 #define TDVLEN 16
-#define FDVLEN 32 
+#define FDVLEN 32
 #define VRATIO 2
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_deloutput_trans_alpha6.tpl.c"
 #undef VRATIO
@@ -153,7 +153,7 @@ static void deloutput_transform_custom_custom( float *inp,
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 4) {
-#define ALPHA 4  
+#define ALPHA 4
 #define TDVLEN 16
 #define FDVLEN 16
 #define VRATIO 1
@@ -162,10 +162,10 @@ static void deloutput_transform_custom_custom( float *inp,
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 4) { 
-#define ALPHA 4  
+  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 4) {
+#define ALPHA 4
 #define TDVLEN 16
-#define FDVLEN 32 
+#define FDVLEN 32
 #define VRATIO 2
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_deloutput_trans_alpha4.tpl.c"
 #undef VRATIO
@@ -182,7 +182,7 @@ static void deloutput_transform_nhwc_custom( float *inp,
                                              float *tinp,
                                              const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 6) {
-#define ALPHA 6  
+#define ALPHA 6
 #define TDVLEN 16
 #define FDVLEN 16
 #define VRATIO 1
@@ -191,10 +191,10 @@ static void deloutput_transform_nhwc_custom( float *inp,
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 6) { 
-#define ALPHA 6  
+  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 6) {
+#define ALPHA 6
 #define TDVLEN 16
-#define FDVLEN 32 
+#define FDVLEN 32
 #define VRATIO 2
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_deloutput_trans_alpha6.tpl.c"
 #undef VRATIO
@@ -202,7 +202,7 @@ static void deloutput_transform_nhwc_custom( float *inp,
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 4) {
-#define ALPHA 4  
+#define ALPHA 4
 #define TDVLEN 16
 #define FDVLEN 16
 #define VRATIO 1
@@ -211,10 +211,10 @@ static void deloutput_transform_nhwc_custom( float *inp,
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 4) { 
-#define ALPHA 4  
+  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 4) {
+#define ALPHA 4
 #define TDVLEN 16
-#define FDVLEN 32 
+#define FDVLEN 32
 #define VRATIO 2
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_deloutput_trans_alpha4.tpl.c"
 #undef VRATIO
@@ -227,11 +227,11 @@ static void deloutput_transform_nhwc_custom( float *inp,
   }
 }
 
-static void delweight_transform( float *wp, 
+static void delweight_transform( float *wp,
                                  float *twp,
                                  const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 6) {
-#define ALPHA 6  
+#define ALPHA 6
 #define TDVLEN 16
 #define FDVLEN 16
 #define VRATIO 1
@@ -240,10 +240,10 @@ static void delweight_transform( float *wp,
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 6) { 
-#define ALPHA 6  
+  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 6) {
+#define ALPHA 6
 #define TDVLEN 16
-#define FDVLEN 32 
+#define FDVLEN 32
 #define VRATIO 2
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_delweight_trans_alpha6.tpl.c"
 #undef VRATIO
@@ -251,7 +251,7 @@ static void delweight_transform( float *wp,
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 4) {
-#define ALPHA 4  
+#define ALPHA 4
 #define TDVLEN 16
 #define FDVLEN 16
 #define VRATIO 1
@@ -260,10 +260,10 @@ static void delweight_transform( float *wp,
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 4) { 
-#define ALPHA 4  
+  } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 4) {
+#define ALPHA 4
 #define TDVLEN 16
-#define FDVLEN 32 
+#define FDVLEN 32
 #define VRATIO 2
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_delweight_trans_alpha4.tpl.c"
 #undef VRATIO
@@ -276,7 +276,7 @@ static void delweight_transform( float *wp,
   }
 }
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid) 
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -329,7 +329,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_cu
 #undef TDVLEN
 #undef ALPHA
       } else if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 4) {
-#define ALPHA 4 
+#define ALPHA 4
 #define TDVLEN 16
 #define FDVLEN 16
 #define VRATIO 1
@@ -339,7 +339,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_cu
 #undef TDVLEN
 #undef ALPHA
       } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 4) {
-#define ALPHA 4 
+#define ALPHA 4
 #define TDVLEN 16
 #define FDVLEN 32
 #define VRATIO 2
@@ -361,7 +361,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_cu
   return status;
 }
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_nhwc_custom(libxsmm_dnn_layer* handle, int start_thread, int tid) 
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_nhwc_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -414,7 +414,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_nh
 #undef TDVLEN
 #undef ALPHA
       } else if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 4) {
-#define ALPHA 4 
+#define ALPHA 4
 #define TDVLEN 16
 #define FDVLEN 16
 #define VRATIO 1
@@ -424,7 +424,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_nh
 #undef TDVLEN
 #undef ALPHA
       } else if (handle->cwino_upd.vratio == 2 && handle->cwino_upd.alpha == 4) {
-#define ALPHA 4 
+#define ALPHA 4
 #define TDVLEN 16
 #define FDVLEN 32
 #define VRATIO 2

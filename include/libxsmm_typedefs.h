@@ -270,7 +270,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
 } libxsmm_convolution_weight_update_descriptor;
 
 /**
- * Structure storing the convolution winograd argument description. 
+ * Structure storing the convolution winograd argument description.
  */
 typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
   /** alpha determines the tile size */

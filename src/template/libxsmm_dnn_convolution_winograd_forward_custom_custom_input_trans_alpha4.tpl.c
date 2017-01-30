@@ -31,9 +31,9 @@
 
   const int total_tiles = handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles;
 #ifdef __INTEL_COMPILER
-  float (* __restrict input)[handle->ifhp][handle->ifwp][TDVLEN] = (float (*)[*][*][TDVLEN])inp; 
+  float (* __restrict input)[handle->ifhp][handle->ifwp][TDVLEN] = (float (*)[*][*][TDVLEN])inp;
   float (* __restrict output)[ALPHA][(handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg][total_tiles][FDVLEN] = (float (*)[ALPHA][*][*][FDVLEN])tinp;
-#else  
+#else
   LIBXSMM_VLA_DECL(4, float, input, inp, handle->ifhp, handle->ifwp, TDVLEN);
   LIBXSMM_VLA_DECL(5, float, output, tinp, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN);
 #endif
@@ -63,7 +63,7 @@
   float D1[FDVLEN];
   float D2[FDVLEN];
   float D3[FDVLEN];
-  
+
   for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
     for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
       for (j = 0; j < ALPHA; j++) {
@@ -93,12 +93,12 @@
               for (r = 0; r < VRATIO; r++) {
 #pragma simd
                 for (k = 0; k < TDVLEN; k++) {
-                  I[j][i][r*TDVLEN + k] = 
+                  I[j][i][r*TDVLEN + k] =
 #ifdef __INTEL_COMPILER
                     input[r][ydim/* + handle->desc.pad_h*/][xdim/* + handle->desc.pad_w*/][k];
 #else
                     LIBXSMM_VLA_ACCESS(4, input, r, ydim/* + handle->desc.pad_h*/, xdim/* + handle->desc.pad_w*/, k, handle->ifhp, handle->ifwp, TDVLEN);
-#endif		    
+#endif		
                 }
 	      }
 	    }
@@ -108,7 +108,7 @@
       /*trans_I_2x2_3x3(ALPHA, FDVLEN, Iw[tj*handle->cwino_fwd.itiles + ti], I);*/
 
       /* inline code start */
-      for (i = 0; i < FDVLEN; i++) { 
+      for (i = 0; i < FDVLEN; i++) {
         A0[i] = I[0][0][i] - I[2][0][i];
         A1[i] = I[0][1][i] - I[2][1][i];
         A2[i] = I[0][2][i] - I[2][2][i];
@@ -156,7 +156,7 @@
             output[j][i][0][tj*handle->cwino_fwd.itiles + ti][k] =
 #else
             LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_fwd.itiles + ti, k, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN) =
-#endif	    
+#endif	
               Iw[tj*handle->cwino_fwd.itiles + ti][j][i][k];
           }
         }

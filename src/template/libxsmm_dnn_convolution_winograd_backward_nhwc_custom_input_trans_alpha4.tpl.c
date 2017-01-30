@@ -30,8 +30,8 @@
 ******************************************************************************/
 
   int total_tiles = handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles;
-#ifdef __INTEL_COMPILER  
-  float (* __restrict input )[handle->ofwp][handle->blocksofm][TDVLEN] = (float (*)[*][*][TDVLEN])inp; 
+#ifdef __INTEL_COMPILER
+  float (* __restrict input )[handle->ofwp][handle->blocksofm][TDVLEN] = (float (*)[*][*][TDVLEN])inp;
   float (* __restrict output)[ALPHA][(handle->blocksofm/VRATIO)*handle->cwino_bwd.bimg][total_tiles][FDVLEN] = (float (*)[ALPHA][*][*][FDVLEN])tinp;
 #else
   LIBXSMM_VLA_DECL(4, float, input, inp, handle->ofwp, handle->blocksofm, TDVLEN);
@@ -65,7 +65,7 @@
   float D1[FDVLEN];
   float D2[FDVLEN];
   float D3[FDVLEN];
-  
+
   for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
     for (ti = 0; ti < handle->cwino_bwd.itiles; ti++) {
       for (j = 0; j < ALPHA; j++) {
@@ -98,7 +98,7 @@
                     input[ydim][xdim][r][k];
 #else
 		    LIBXSMM_VLA_ACCESS(4, input, ydim, xdim, r, k, handle->ofwp, handle->blocksofm, TDVLEN);
-#endif		    
+#endif		
 		}
               }
             }
@@ -108,7 +108,7 @@
       /*trans_I_2x2_3x3(ALPHA, FDVLEN, Iw[tj*handle->cwino_bwd.itiles + ti], I);*/
 
       /* inline code start */
-      for (i = 0; i < FDVLEN; i++) { 
+      for (i = 0; i < FDVLEN; i++) {
         A0[i] = I[0][0][i] - I[2][0][i];
         A1[i] = I[0][1][i] - I[2][1][i];
         A2[i] = I[0][2][i] - I[2][2][i];
@@ -156,7 +156,7 @@
             output[j][i][0][tj*handle->cwino_bwd.itiles + ti][k] =
 #else
             LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_bwd.itiles + ti, k, ALPHA, (handle->blocksofm/VRATIO)*handle->cwino_bwd.bimg, total_tiles, FDVLEN) =
-#endif	    
+#endif	
               Iw[tj*handle->cwino_bwd.itiles + ti][j][i][k];
           }
         }

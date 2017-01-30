@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 #ifdef __INTEL_COMPILER
-  float (* __restrict input )[handle->blocksifm][3][3][TDVLEN][TDVLEN] = (float (*)[*][3][3][TDVLEN][TDVLEN])wp; 
+  float (* __restrict input )[handle->blocksifm][3][3][TDVLEN][TDVLEN] = (float (*)[*][3][3][TDVLEN][TDVLEN])wp;
   float (* __restrict output)[ALPHA][(handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO)][FDVLEN][FDVLEN] = (float (*)[ALPHA][*][FDVLEN][FDVLEN])twp;
 #else
   LIBXSMM_VLA_DECL(6, float, input, wp, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
@@ -72,7 +72,7 @@
           for (v1 = 0; v1 < TDVLEN; v1++) {
 #pragma simd
             for (k = 0; k < TDVLEN; k++) {
-              F[j][i][v*TDVLEN + k][r*TDVLEN + v1] = 
+              F[j][i][v*TDVLEN + k][r*TDVLEN + v1] =
 #ifdef __INTEL_COMPILER
                 input[v][r][2-j][2-i][v1][k];
 #else
@@ -85,7 +85,7 @@
     }
   }
   /*trans_F_2x2_3x3(FDVLEN, Fw, F);*/
- 
+
   /* inline code start */
   for (i = 0; i < FDVLEN; i++) {
 #pragma simd
@@ -142,7 +142,7 @@
           output[j][i][0][v][k] =
 #else
           LIBXSMM_VLA_ACCESS(5, output, j, i, 0, v, k, ALPHA, (handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO), FDVLEN, FDVLEN) =
-#endif	  
+#endif	
 	    Fw[j][i][v][k];
 	}
       }
