@@ -161,7 +161,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
   } else {
     /* deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! */
-    libxsmm_free(handle->kernel);
+    libxsmm_free((void*)handle->kernel);
   }
 
   free(handle);
