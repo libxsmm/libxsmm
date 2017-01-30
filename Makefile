@@ -1323,8 +1323,36 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 		-o $@
 	@rm $(TMPFILE).tex
 
+$(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
+	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
+	@mv $(TMPFILE) $(TMPFILE).tex
+	@pandoc -D latex \
+	| sed \
+		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
+		> $(TMPFILE).tex
+	@iconv -t utf-8 $(SPLDIR)/*/README.md \
+	| sed \
+		-e 's/\[\[..*\](..*)\]//g' \
+		-e 's/\[!\[..*\](..*)\](..*)//g' \
+		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+		-e 's/----*//g' \
+	| pandoc \
+		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
+		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-V documentclass=scrartcl \
+		-V title-meta="LIBXSMM Sample Code Summary" \
+		-V classoption=DIV=45 \
+		-V linkcolor=black \
+		-V citecolor=black \
+		-V urlcolor=black \
+		-o $@
+	@rm $(TMPFILE).tex
+
 .PHONY: documentation
-documentation: $(DOCDIR)/libxsmm.pdf $(DOCDIR)/cp2k.pdf
+documentation: $(DOCDIR)/libxsmm.pdf $(DOCDIR)/cp2k.pdf $(DOCDIR)/samples.pdf
 
 .PHONY: clean
 clean:
