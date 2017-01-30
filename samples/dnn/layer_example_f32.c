@@ -418,13 +418,13 @@ int main(int argc, char* argv[])
      default is some inner layer of overfeat */
   int iters = 10;         /* repetitions of benchmark */
   int ifw = 14;           /* input width, "W" */
-  int ifh = 18;           /* input height, "H" */
+  int ifh = 20;           /* input height, "H" */
   int nImg = 32;          /* mini-batch size, "N" */
   int nIfm = 256;         /* number of input feature maps, "C" */
   int nOfm = 512;         /* number of output feature maps, "K" */
   int kh = 3;             /* filter height, "R" */
   int kw = 3;             /* filter width, "S" */
-  int pad = 2;            /* padding in output */
+  int pad = 0;            /* padding in output */
   int stride = 1;         /* stride when accessing inputs */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'A';      /* 'A': ALL, 'L': LIBXSMM, 'T': Tensorflow, 'M', Mixed */
@@ -645,7 +645,6 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_buffer( libxsmm_handle, libxsmm_output, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_filter( libxsmm_handle, libxsmm_filter, LIBXSMM_DNN_REGULAR_FILTER ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_filter( libxsmm_handle, libxsmm_filter, LIBXSMM_DNN_GRADIENT_FILTER ) );
-
     /* let's allocate and bind scratch */
     scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status ), 2097152);
     CHKERR_LIBXSMM_DNN( status );
@@ -1419,4 +1418,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
-

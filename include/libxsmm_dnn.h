@@ -84,6 +84,8 @@ typedef unsigned int libxsmm_dnn_err_t;
 #define LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED        100026
 #define LIBXSMM_DNN_ERR_UNKNOWN_BUFFER_TYPE        100027
 #define LIBXSMM_DNN_ERR_UNKNOWN_FILTER_TYPE        100028
+#define LIBXSMM_DNN_ERR_INVALID_ALGO               100029
+#define LIBXSMM_DNN_ERR_INVALID_PADDING            100030
 
 /** Kinds of supported compute flavor operations. */
 typedef enum libxsmm_dnn_compute_kind {
@@ -164,9 +166,11 @@ typedef enum libxsmm_dnn_conv_fuse_op {
 /** Type of algorithm used for convolutions. */
 typedef enum libxsmm_dnn_conv_algo {
   /** let the library decide */
-  LIBXSMM_DNN_CONV_ALGO_AUTO,   /* ignored for now */
+  LIBXSMM_DNN_CONV_ALGO_AUTO,
   /** direct convolution. */
-  LIBXSMM_DNN_CONV_ALGO_DIRECT
+  LIBXSMM_DNN_CONV_ALGO_DIRECT,
+  /** winograd convolution. */
+  LIBXSMM_DNN_CONV_ALGO_WINOGRAD
 } libxsmm_dnn_conv_algo;
 
 /** Structure which describes the input and output of data (DNN). */
@@ -306,6 +310,15 @@ LIBXSMM_API void* libxsmm_create_xconv_backward(const libxsmm_convolution_backwa
 
 /** Code generation routine for a convolution kernel as specified by descriptor. */
 LIBXSMM_API void* libxsmm_create_xconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
+
+/** Code generation routine for a forward-convolution winograd kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
+LIBXSMM_API void* libxsmm_create_xconv_wino_forward(const libxsmm_convolution_winograd_descriptor* descriptor);
+
+/** Code generation routine for a backward-convolution winograd kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
+LIBXSMM_API void* libxsmm_create_xconv_wino_backward(const libxsmm_convolution_winograd_descriptor* descriptor);
+
+/** Code generation routine for a weight-update-convolution winograd kernel as specified by descriptor. */
+LIBXSMM_API void* libxsmm_create_xconv_wino_update_weights(const libxsmm_convolution_winograd_descriptor* descriptor);
 
 #endif
 #endif /*LIBXSMM_DNN_H*/

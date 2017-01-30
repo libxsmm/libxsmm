@@ -140,6 +140,9 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_tensor_format filter_format;
   libxsmm_dnn_conv_fuse_op fuse_ops;
   libxsmm_dnn_conv_option options;
+  libxsmm_convolution_winograd_descriptor cwino_fwd; /* KB */
+  libxsmm_convolution_winograd_descriptor cwino_bwd; /* KB */
+  libxsmm_convolution_winograd_descriptor cwino_upd; /* KB */
 
   /* additional size for iternal data types */
   int ifhp;
@@ -204,7 +207,10 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_SREG,
   LIBXSMM_BUILD_KIND_CFWD,
   LIBXSMM_BUILD_KIND_CBWD,
-  LIBXSMM_BUILD_KIND_CUPD
+  LIBXSMM_BUILD_KIND_CUPD,
+  LIBXSMM_BUILD_KIND_CWFWD,
+  LIBXSMM_BUILD_KIND_CWBWD,
+  LIBXSMM_BUILD_KIND_CWUPD
 } libxsmm_build_kind;
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
@@ -214,6 +220,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_convolution_forward_descriptor* cfwd;
   const libxsmm_convolution_backward_descriptor* cbwd;
   const libxsmm_convolution_weight_update_descriptor* cupd;
+  const libxsmm_convolution_winograd_descriptor* cwino;
 } libxsmm_build_descriptor;
 
 typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {

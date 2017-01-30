@@ -80,7 +80,7 @@ void libxsmm_generator_convolution_forward_avx512_calc_sib_input_strides_two_row
                                                                                          unsigned int*                               o_input_reg,
                                                                                          unsigned int*                               o_input_idx,
                                                                                          unsigned int*                               o_scale );
-
+ 
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_convolution_forward_avx512_ifmloop( libxsmm_generated_code*                           io_generated_code,
                                                            const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,

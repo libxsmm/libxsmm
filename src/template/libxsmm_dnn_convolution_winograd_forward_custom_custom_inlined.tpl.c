@@ -1,0 +1,236 @@
+/******************************************************************************
+** Copyright (c) 2016, Intel Corporation                                     **
+** All rights reserved.                                                      **
+**                                                                           **
+** Redistribution and use in source and binary forms, with or without        **
+** modification, are permitted provided that the following conditions        **
+** are met:                                                                  **
+** 1. Redistributions of source code must retain the above copyright         **
+**    notice, this list of conditions and the following disclaimer.          **
+** 2. Redistributions in binary form must reproduce the above copyright      **
+**    notice, this list of conditions and the following disclaimer in the    **
+**    documentation and/or other materials provided with the distribution.   **
+** 3. Neither the name of the copyright holder nor the names of its          **
+**    contributors may be used to endorse or promote products derived        **
+**    from this software without specific prior written permission.          **
+**                                                                           **
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
+** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
+** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
+** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
+** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
+** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
+** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
+** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
+** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
+** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
+** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
+******************************************************************************/
+/* Kunal Banerjee (Intel Corp.), Alexander Heinecke (Intel Corp.),
+******************************************************************************/
+  
+  int ltid;
+  int work;
+  int chunksize;
+  int thr_begin;
+  int thr_end;
+  int job;
+  int img;
+  int img1;
+  int ifm1;
+  int ifm2;
+  int ofm1;
+  int ofm2;
+  int oj;
+  int oi;
+  int tj;
+  int ti;
+  int i;
+  int j;
+  int k;
+  int l;
+  LIBXSMM_ASSUME_ALIGNED(handle->reg_input->data,  64);
+  LIBXSMM_ASSUME_ALIGNED(handle->reg_output->data, 64);
+  LIBXSMM_ASSUME_ALIGNED(handle->reg_filter->data, 64);
+#ifdef __INTEL_COMPILER
+  float (* __restrict input )[handle->blocksifm][handle->ifhp][handle->ifwp][TDVLEN] = (float (*)[*][*][*][TDVLEN])handle->reg_input->data;
+  float (* __restrict output)[handle->blocksofm][handle->ofhp][handle->ofwp][TDVLEN] = (float (*)[*][*][*][TDVLEN])handle->reg_output->data;
+  float (* __restrict weight)[handle->blocksifm][handle->desc.R][handle->desc.S][TDVLEN][TDVLEN] = (float (*)[*][*][*][TDVLEN][TDVLEN])handle->reg_filter->data;
+  /*float (* __restrict bias  )[TDVLEN] = (float (*)[TDVLEN])handle->bias->data;*/
+#else
+  LIBXSMM_VLA_DECL(5, float, input, handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN);
+  LIBXSMM_VLA_DECL(5, float, output, handle->reg_output->data, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN);
+  LIBXSMM_VLA_DECL(6, float, weight, handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, TDVLEN, TDVLEN);
+  /*LIBXSMM_VLA_DECL(2, float, bias, handle->bias->data, TDVLEN);*/
+#endif  
+
+  float *up = handle->scratch1; /*(float*)libxsmm_aligned_malloc(ALPHA*ALPHA*handle->desc.C*handle->desc.K*sizeof(float), 64);*/
+  float *vp = handle->scratch3; /*(float*)libxsmm_aligned_malloc(ALPHA*ALPHA*handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles*handle->desc.C*handle->desc.N*sizeof(float), 64);*/
+  float *mp = handle->scratch4; /*(float*)libxsmm_aligned_malloc(ALPHA*ALPHA*handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles*handle->desc.K*handle->desc.N*sizeof(float), 64);*/
+
+#ifdef __INTEL_COMPILER
+  float (* __restrict U)[ALPHA][handle->blocksofm/VRATIO][handle->blocksifm/VRATIO][FDVLEN][FDVLEN] = (float (*)[*][*][*][FDVLEN][FDVLEN])up;
+  float (* __restrict V)[ALPHA][ALPHA][handle->blocksifm/VRATIO][handle->cwino_fwd.bimg][handle->cwino_fwd.jtiles][handle->cwino_fwd.itiles][FDVLEN] = (float (*)[*][*][*][*][*][*][FDVLEN])vp;
+  float (* __restrict M)[ALPHA][ALPHA][handle->blocksofm/VRATIO][handle->cwino_fwd.bimg][handle->cwino_fwd.jtiles][handle->cwino_fwd.itiles][FDVLEN] = (float (*)[*][*][*][*][*][*][FDVLEN])mp;
+#else    
+  LIBXSMM_VLA_DECL(6, float, U, up, ALPHA, handle->blocksofm/VRATIO, handle->blocksifm/VRATIO, FDVLEN, FDVLEN);
+  LIBXSMM_VLA_DECL(8, float, V, vp, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, FDVLEN);
+  LIBXSMM_VLA_DECL(8, float, M, mp, ALPHA, ALPHA, handle->blocksofm/VRATIO, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, FDVLEN);
+#endif  
+  typedef libxsmm_sconvfunction libxsmm_convfunction; 
+  libxsmm_convfunction jitted_conv_fp;
+  jitted_conv_fp = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
+    
+  /* computing first logical thread */
+  ltid = tid - start_thread;
+  libxsmm_barrier_init((libxsmm_barrier*)handle->barrier, ltid);
+
+/* #define TIME */
+#ifdef TIME
+  unsigned long long t_input  = 0;
+  unsigned long long t_wt     = 0;
+  unsigned long long t_output = 0;
+  unsigned long long t_gemm   = 0;
+  unsigned long long t_start  = 0;
+#endif
+
+  /* number of tasks that could be run in parallel */
+  work = handle->desc.N*(handle->blocksifm/VRATIO);
+  /* compute chunck size */
+  chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
+  /* compute thr_begin and thr_end */
+  thr_begin = (ltid * work) / handle->desc.threads;
+  thr_end = ((ltid+1) * work) / handle->desc.threads;
+
+#ifdef TIME
+  t_start = __rdtsc();
+#endif
+  for (job = thr_begin; job < thr_end; job++) {
+    img  = job / (handle->blocksifm / VRATIO);
+    ifm1 = (job % (handle->blocksifm / VRATIO)) * VRATIO;
+#ifdef __INTEL_COMPILER
+    input_transform_custom_custom(&(input[img][ifm1][0][0][0]), &(V[img/handle->cwino_fwd.bimg][0][0][ifm1/VRATIO][img%handle->cwino_fwd.bimg][0][0][0]), handle); 
+#else
+    input_transform_custom_custom(&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN), 
+      &LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_fwd.bimg, 0, 0, ifm1/VRATIO, img%handle->cwino_fwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, FDVLEN), handle);
+#endif      
+  }
+#ifdef TIME
+  libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
+  t_input = __rdtsc() - t_start;
+#endif
+
+  /* number of tasks that could be run in parallel */
+  work = (handle->blocksofm/VRATIO)*(handle->blocksifm/VRATIO);
+  /* compute chunck size */
+  chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
+  /* compute thr_begin and thr_end */
+  thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+  thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+
+#ifdef TIME
+  t_start = __rdtsc();
+#endif
+  for (job = thr_begin; job < thr_end; job++) {
+    ofm1 = (job / (handle->blocksifm / VRATIO)) * VRATIO;
+    ifm1 = (job % (handle->blocksifm / VRATIO)) * VRATIO;
+#ifdef __INTEL_COMPILER
+    weight_transform(&(weight[ofm1][ifm1][0][0][0][0]), &(U[0][0][ofm1/VRATIO][ifm1/VRATIO][0][0]), handle); 
+#else
+    weight_transform(&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, TDVLEN, TDVLEN), 
+      &LIBXSMM_VLA_ACCESS(6, U, 0, 0, ofm1/VRATIO, ifm1/VRATIO, 0, 0, ALPHA, handle->blocksofm/VRATIO, handle->blocksifm/VRATIO, FDVLEN, FDVLEN), handle);
+#endif      
+  }
+  libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
+#ifdef TIME
+  t_wt = __rdtsc() - t_start;
+#endif
+  
+  /* number of tasks that could be run in parallel */
+  work = (handle->desc.N/handle->cwino_fwd.bimg) * ALPHA * ALPHA;
+  /* compute chunck size */
+  chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
+  /* compute thr_begin and thr_end */
+  thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+  thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+
+#ifdef TIME
+  t_start = __rdtsc();
+#endif    
+  for (job = thr_begin; job < thr_end; job++) {
+    img = job / (ALPHA * ALPHA);
+    oj = (job % (ALPHA * ALPHA)) / ALPHA;
+    oi = (job % (ALPHA * ALPHA)) % ALPHA;
+    for (ofm1 = 0; ofm1 < handle->blocksofm/VRATIO; ofm1++) {
+      for (i = 0; i < handle->cwino_fwd.bimg; i++) {
+        for (j = 0; j < handle->cwino_fwd.jtiles; j++) {
+          for (k = 0; k < handle->cwino_fwd.itiles; k++) {
+#pragma simd	    
+            for (l = 0; l < FDVLEN; l++) {
+              M[img][oj][oi][ofm1][i][j][k][l] = 0.0f;
+            }
+          }
+        }
+      }
+      for (ifm1 = 0; ifm1 < handle->blocksifm/VRATIO; ifm1++) {
+#if 1
+        jitted_conv_fp((const float*)&(U[oj][oi][ofm1][ifm1][0][0]), (const float*)&(V[img][oj][oi][ifm1][0][0][0][0]), (float*)&(M[img][oj][oi][ofm1][0][0][0][0]), 0, 0, 0);
+#else
+        for (img1 = 0; img1 < handle->cwino_fwd.bimg; img1++) {
+          for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
+            for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
+              for (ifm2 = 0; ifm2 < FDVLEN; ifm2++) {
+                for (ofm2 = 0; ofm2 < FDVLEN; ofm2++) {
+                  M[img][oj][oi][ofm1][img1][tj][ti][ofm2] += V[img][oj][oi][ifm1][img1][tj][ti][ifm2] * U[oj][oi][ofm1][ifm1][ifm2][ofm2];
+                }
+              }
+            }
+          }
+        }
+#endif
+      }
+    }
+  }
+  libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
+#ifdef TIME
+  t_gemm = __rdtsc() - t_start;
+#endif
+
+  /* number of tasks that could be run in parallel */
+  work = handle->desc.N*(handle->blocksofm/VRATIO);
+  /* compute chunck size */
+  chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
+  /* compute thr_begin and thr_end */
+  thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+  thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+
+#ifdef TIME
+  t_start = __rdtsc();
+#endif
+  for (job = thr_begin; job < thr_end; job++) { 
+    img  = job / (handle->blocksofm / VRATIO);
+    ofm1 = (job % (handle->blocksofm / VRATIO)) * VRATIO; 
+#ifdef __INTEL_COMPILER
+    output_transform_custom_custom(&(M[img/handle->cwino_fwd.bimg][0][0][ofm1/VRATIO][img%handle->cwino_fwd.bimg][0][0][0]), &(output[img][ofm1][0][0][0]), /*TDVLEN,*/ VRATIO, 0 /*&bias[ofm1]*/, handle);
+#else
+    output_transform_custom_custom(&LIBXSMM_VLA_ACCESS(8, M, img/handle->cwino_fwd.bimg, 0, 0, ofm1/VRATIO, img%handle->cwino_fwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksofm/VRATIO, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, FDVLEN), 
+      &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN), /*TDVLEN,*/ VRATIO, 0 /*&bias[ofm1]*/, handle);
+#endif      
+  }
+  libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
+#ifdef TIME
+  t_output = __rdtsc() - t_start;
+#endif
+
+#ifdef TIME
+  if (tid == 0) {
+    int nOfm = handle->blocksofm*TDVLEN;
+    int nIfm = handle->blocksifm*TDVLEN;
+    double b_input = 1.0*handle->desc.N*nIfm*(handle->ifhp*handle->ifwp + handle->cwino_fwd.jtiles*handle->cwino_fwd.itiles*ALPHA*ALPHA) * sizeof(float); 
+    double b_wt    = 1.0*nOfm*nIfm*(handle->desc.R*handle->desc.S + ALPHA*ALPHA) * sizeof(float); 
+    double b_output= 1.0*handle->desc.N*nOfm*(handle->ofhp*handle->ofwp + handle->cwino_fwd.jtiles*handle->cwino_fwd.itiles*ALPHA*ALPHA) * sizeof(float); 
+    double f_gemm = 2.0*handle->desc.N*nOfm*nIfm*handle->cwino_fwd.jtiles*handle->cwino_fwd.itiles*ALPHA*ALPHA;
+    printf("Time: i=%8.3f  w=%8.3f  o=%8.3f         g=%8.3f\n", t_input/1000.0, t_wt/1000.0, t_output/1000.0, t_gemm/1000.0);
+    printf("BW:   i=%8.3f  w=%8.3f  o=%8.3f (b/c)   g=%8.3f (f/c)\n\n", b_input/t_input, b_wt/t_wt, b_output/t_output, f_gemm/t_gemm);
+  }
+#endif

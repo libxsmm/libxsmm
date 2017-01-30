@@ -269,6 +269,30 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_weight_update_descriptor;
 
+/**
+ * Structure storing the convolution winograd argument description. 
+ */
+typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
+  /** alpha determines the tile size */
+  unsigned int alpha;
+  /** number of itiles */
+  unsigned int itiles;
+  /** number of jtiles */
+  unsigned int jtiles;
+  /** number of images in a block */
+  unsigned int bimg;
+  /** unroll factor for itiles */
+  unsigned int ur_i;
+  /** unroll factor for jtiles */
+  unsigned int ur_j;
+  /** unroll factor for bimg */
+  unsigned int ur_m;
+  /** ratio between vector lengths in frequency domain and time domain */
+  unsigned int vratio;
+  /** prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
+  libxsmm_convolution_prefetch_type prefetch;
+} libxsmm_convolution_winograd_descriptor;
+
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */

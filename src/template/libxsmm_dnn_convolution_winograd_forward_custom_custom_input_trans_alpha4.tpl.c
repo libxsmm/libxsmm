@@ -1,0 +1,165 @@
+/******************************************************************************
+** Copyright (c) 2016, Intel Corporation                                     **
+** All rights reserved.                                                      **
+**                                                                           **
+** Redistribution and use in source and binary forms, with or without        **
+** modification, are permitted provided that the following conditions        **
+** are met:                                                                  **
+** 1. Redistributions of source code must retain the above copyright         **
+**    notice, this list of conditions and the following disclaimer.          **
+** 2. Redistributions in binary form must reproduce the above copyright      **
+**    notice, this list of conditions and the following disclaimer in the    **
+**    documentation and/or other materials provided with the distribution.   **
+** 3. Neither the name of the copyright holder nor the names of its          **
+**    contributors may be used to endorse or promote products derived        **
+**    from this software without specific prior written permission.          **
+**                                                                           **
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
+** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
+** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
+** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
+** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
+** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
+** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
+** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
+** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
+** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
+** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
+******************************************************************************/
+/* Kunal Banerjee (Intel Corp.)
+******************************************************************************/
+
+  const int total_tiles = handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles;
+#ifdef __INTEL_COMPILER
+  float (* __restrict input)[handle->ifhp][handle->ifwp][TDVLEN] = (float (*)[*][*][TDVLEN])inp; 
+  float (* __restrict output)[ALPHA][(handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg][total_tiles][FDVLEN] = (float (*)[ALPHA][*][*][FDVLEN])tinp;
+#else  
+  LIBXSMM_VLA_DECL(4, float, input, inp, handle->ifhp, handle->ifwp, TDVLEN);
+  LIBXSMM_VLA_DECL(5, float, output, tinp, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN);
+#endif
+  float Iw[total_tiles][ALPHA][ALPHA][FDVLEN];
+  float I[ALPHA][ALPHA][FDVLEN];
+  int i;
+  int j;
+  int ti;
+  int tj;
+  int r;
+  int k;
+  int xdim;
+  int ydim;
+  float A0[FDVLEN];
+  float A1[FDVLEN];
+  float A2[FDVLEN];
+  float A3[FDVLEN];
+  float B0[FDVLEN];
+  float B1[FDVLEN];
+  float B2[FDVLEN];
+  float B3[FDVLEN];
+  float C0[FDVLEN];
+  float C1[FDVLEN];
+  float C2[FDVLEN];
+  float C3[FDVLEN];
+  float D0[FDVLEN];
+  float D1[FDVLEN];
+  float D2[FDVLEN];
+  float D3[FDVLEN];
+  
+  for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
+    for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
+      for (j = 0; j < ALPHA; j++) {
+        ydim = tj*(ALPHA - 2) + j; /*- handle->desc.pad_h;*/
+	/*if ((ydim < 0) || (ydim >= handle->desc.H)) {*/
+	if (ydim >= handle->ifhp) {
+          for (i = 0; i < ALPHA; i++) {
+            for (r = 0; r < VRATIO; r++) {
+#pragma simd
+              for (k = 0; k < TDVLEN; k++) {
+                I[j][i][r*TDVLEN + k] = 0.0f;
+              }
+	    }
+	  }
+	} else {
+          for (i = 0; i < ALPHA; i++) {
+            xdim = ti*(ALPHA - 2) + i; /*- handle->desc.pad_w;*/
+	    /*if ((xdim < 0) || (xdim >= handle->desc.W)) {*/
+	    if (xdim >= handle->ifwp) {
+              for (r = 0; r < VRATIO; r++) {
+#pragma simd
+                for (k = 0; k < TDVLEN; k++) {
+                  I[j][i][r*TDVLEN + k] = 0.0f;
+                }
+	      }
+	    } else {
+              for (r = 0; r < VRATIO; r++) {
+#pragma simd
+                for (k = 0; k < TDVLEN; k++) {
+                  I[j][i][r*TDVLEN + k] = 
+#ifdef __INTEL_COMPILER
+                    input[r][ydim/* + handle->desc.pad_h*/][xdim/* + handle->desc.pad_w*/][k];
+#else
+                    LIBXSMM_VLA_ACCESS(4, input, r, ydim/* + handle->desc.pad_h*/, xdim/* + handle->desc.pad_w*/, k, handle->ifhp, handle->ifwp, TDVLEN);
+#endif		    
+                }
+	      }
+	    }
+          }
+        }
+      }
+      /*trans_I_2x2_3x3(ALPHA, FDVLEN, Iw[tj*handle->cwino_fwd.itiles + ti], I);*/
+
+      /* inline code start */
+      for (i = 0; i < FDVLEN; i++) { 
+        A0[i] = I[0][0][i] - I[2][0][i];
+        A1[i] = I[0][1][i] - I[2][1][i];
+        A2[i] = I[0][2][i] - I[2][2][i];
+        A3[i] = I[0][3][i] - I[2][3][i];
+        B0[i] = I[1][0][i] + I[2][0][i];
+        B1[i] = I[1][1][i] + I[2][1][i];
+        B2[i] = I[1][2][i] + I[2][2][i];
+        B3[i] = I[1][3][i] + I[2][3][i];
+        C0[i] = I[2][0][i] - I[1][0][i];
+        C1[i] = I[2][1][i] - I[1][1][i];
+        C2[i] = I[2][2][i] - I[1][2][i];
+        C3[i] = I[2][3][i] - I[1][3][i];
+        D0[i] = I[1][0][i] - I[3][0][i];
+        D1[i] = I[1][1][i] - I[3][1][i];
+        D2[i] = I[1][2][i] - I[3][2][i];
+        D3[i] = I[1][3][i] - I[3][3][i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][0][0][i] = A0[i] - A2[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][0][1][i] = A1[i] + A2[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][0][2][i] = A2[i] - A1[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][0][3][i] = A1[i] - A3[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][1][0][i] = B0[i] - B2[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][1][1][i] = B1[i] + B2[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][1][2][i] = B2[i] - B1[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][1][3][i] = B1[i] - B3[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][2][0][i] = C0[i] - C2[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][2][1][i] = C1[i] + C2[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][2][2][i] = C2[i] - C1[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][2][3][i] = C1[i] - C3[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][3][0][i] = D0[i] - D2[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][3][1][i] = D1[i] + D2[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][3][2][i] = D2[i] - D1[i];
+        Iw[tj*handle->cwino_fwd.itiles + ti][3][3][i] = D1[i] - D3[i];
+      }
+      /* inline code end */
+
+    }
+  }
+  for (j = 0; j < ALPHA; j++) {
+    for (i = 0; i < ALPHA; i++) {
+      for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
+        for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
+#pragma simd
+          for (k = 0; k < FDVLEN; k++) {
+#ifdef __INTEL_COMPILER
+            output[j][i][0][tj*handle->cwino_fwd.itiles + ti][k] =
+#else
+            LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_fwd.itiles + ti, k, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN) =
+#endif	    
+              Iw[tj*handle->cwino_fwd.itiles + ti][j][i][k];
+          }
+        }
+      }
+    }
+  }

@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,16 +26,15 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.), Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_DNN_HANDLE_H
-#define LIBXSMM_DNN_HANDLE_H
+#ifndef LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_H
+#define LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_H
 
-#include <libxsmm_dnn.h>
 #include "libxsmm_main.h"
+#include "libxsmm_sync.h"
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( libxsmm_dnn_layer* handle );
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_custom_custom( libxsmm_dnn_layer* handle, int start_thread, int tid );
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_nhwc_custom  ( libxsmm_dnn_layer* handle, int start_thread, int tid );
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_winograd_check( libxsmm_dnn_layer* handle );
-
-#endif /* LIBXSMM_DNN_HANDLE_H */
+#endif /* LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_H */
