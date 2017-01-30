@@ -54,6 +54,7 @@
 #include "libxsmm_timer.h"
 #include "libxsmm_sync.h"
 #include "libxsmm_dnn.h"
+#include "libxsmm_fsspmdm.h"
 
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
 typedef LIBXSMM_BLASINT libxsmm_blasint;
