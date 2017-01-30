@@ -44,6 +44,7 @@
 # include <dlfcn.h>
 # define LIBXSMM_GEMM_WRAP_DYNAMIC
 #endif
+#include <limits.h>
 #include <stdio.h>
 #include <math.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -271,7 +272,9 @@ SINGLE_OUTER { /* use NN, etc. rather than N due to below char. constant */ \
     else { /* fall-back */ \
       assert(0 == LIBXSMM_NO_BLAS); \
       LIBXSMM_FALLBACK0(TYPE, libxsmm_blasint, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
-      if ((unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, MM, NN, KK, 1, 0)) { \
+      if ((INT_MAX - 1) != libxsmm_verbosity \
+        && (unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, MM, NN, KK, 1/*try*/, 0)) \
+      { \
         const char libxsmm_tiled_xgemm_transa_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'); \
         const char libxsmm_tiled_xgemm_transb_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T'); \
         const TYPE libxsmm_tiled_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_tiled_xgemm_beta_ = (TYPE)(BETA); \
@@ -285,7 +288,9 @@ SINGLE_OUTER { /* use NN, etc. rather than N due to below char. constant */ \
   else { /* fall-back */ \
     assert(0 == LIBXSMM_NO_BLAS); \
     LIBXSMM_FALLBACK1(TYPE, libxsmm_blasint, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
-    if ((unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, MM, NN, KK, 1, 0)) { \
+    if ((INT_MAX - 1) != libxsmm_verbosity \
+      && (unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, MM, NN, KK, 1/*try*/, 0)) \
+    { \
       const char libxsmm_tiled_xgemm_transa_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'); \
       const char libxsmm_tiled_xgemm_transb_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T'); \
       const TYPE libxsmm_tiled_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_tiled_xgemm_beta_ = (TYPE)(BETA); \
@@ -359,6 +364,13 @@ LIBXSMM_API void libxsmm_gemm_init(int archid, int prefetch/*default prefetch st
 
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API void libxsmm_gemm_finalize(void);
+
+/** Structure to hold basic statistical information. */
+typedef struct LIBXSMM_RETARGETABLE libxsmm_stat_info { double sum; } libxsmm_stat_info;
+
+/** Utility function to calculate basic statistical information. */
+LIBXSMM_API int libxsmm_gemm_stat(libxsmm_gemm_precision precision, const void* matrix,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_stat_info* stat);
 
 #if defined(LIBXSMM_GEMM_WRAP_STATIC)
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(__real_sgemm)(

@@ -164,6 +164,21 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
       c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 #endif
   }
+#if !defined(LIBXSMM_GEMM_TILED) && !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
+  { const char *const check = getenv("LIBXSMM_CHECK");
+    if (0 != check && 0 != *check && 0 != check[0]) {
+      libxsmm_stat_info s1, s2;
+      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F32PREC, c, *m, *n, *(ldc ? ldc : m), &s1)) {
+        libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+        if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F32PREC, c, *m, *n, *(ldc ? ldc : m), &s2)) {
+          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_FLAG_F32PREC, transa, transb,
+            m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+          fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
+        }
+      }
+    }
+  }
+#endif
 }
 
 
@@ -253,6 +268,21 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
       c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
 #endif
   }
+#if !defined(LIBXSMM_GEMM_TILED) && !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
+  { const char *const check = getenv("LIBXSMM_CHECK");
+    if (0 != check && 0 != *check && 0 != check[0]) {
+      libxsmm_stat_info s1, s2;
+      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F64PREC, c, *m, *n, *(ldc ? ldc : m), &s1)) {
+        libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+        if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F64PREC, c, *m, *n, *(ldc ? ldc : m), &s2)) {
+          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_FLAG_F64PREC, transa, transb,
+            m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+          fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
+        }
+      }
+    }
+  }
+#endif
 }
 
 

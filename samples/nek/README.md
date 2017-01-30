@@ -15,7 +15,7 @@ Usage:
 The elements are m-by-n-by-k, mode picks the libxsmm interace used, and size scales the number of spectral elements.
 
 ## rstr
-Restriction operator transforms elements from one size to another. This occurs in multi-grid, the convection operator, and, when the sizes are the same, the local schwarz solves. Usage:
+Restriction operator transforms elements from one size to another. This occurs in multi-grid, the convection operator, and, when the sizes are the same, the local Schwarz solves. Usage:
 
 ```
 ./rstr m n k mm nn kk size1 size

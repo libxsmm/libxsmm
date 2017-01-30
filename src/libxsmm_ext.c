@@ -34,6 +34,7 @@
 
 #if defined(LIBXSMM_BUILD)
 #if (defined(LIBXSMM_BUILD_EXT) && !defined(__STATIC))
+
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(sgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -101,6 +102,7 @@ void LIBXSMM_FSYMBOL(dgemm)(
   LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
   LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
 }
+
 #endif
 #endif /*defined(LIBXSMM_BUILD)*/
 
