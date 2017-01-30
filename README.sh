@@ -103,5 +103,31 @@ iconv -t utf-8 ${HERE}/documentation/cp2k.md \
   -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -o ${DOCDIR}/cp2k.docx
 
+# cleanup markup and pipe into pandoc using the template
+# LIBXSMM Sample Code Summary
+iconv -t utf-8 samples/*/README.md \
+| sed \
+  -e 's/\[\[..*\](..*)\]//g' \
+  -e 's/\[!\[..*\](..*)\](..*)//g' \
+  -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+  -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+  -e 's/----*//g' \
+| tee >( pandoc \
+  --latex-engine=xelatex --template=${TMPFILE}.tex --listings \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -V documentclass=scrartcl \
+  -V title-meta="LIBXSMM Sample Code Summary" \
+  -V classoption=DIV=45 \
+  -V linkcolor=black \
+  -V citecolor=black \
+  -V urlcolor=black \
+  -o ${DOCDIR}/samples.pdf) \
+| tee >( pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/samples.html) \
+| pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/samples.docx
+
 # remove temporary file
 rm ${TMPFILE}.tex
