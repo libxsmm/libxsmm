@@ -198,6 +198,17 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_code_pointer code_upd[6];
 };
 
+typedef struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
+  int M;
+  int N;
+  int K;
+  int ldb;
+  int ldc;
+  int N_chunksize;
+  double* a_dense;
+  libxsmm_code_pointer kernel;
+} libxsmm_dfsspmdm;
+
 typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_GEMM,
   LIBXSMM_BUILD_KIND_SSOA,
