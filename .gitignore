@@ -23,6 +23,7 @@ err*.txt
 out*.txt
 log.txt
 _*.txt
+*.lastcodeanalysissucceeded
 *.stackdump
 *.opensdf
 *.opendb
