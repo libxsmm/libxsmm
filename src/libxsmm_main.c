@@ -628,7 +628,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
   for (i = 0; i < INTERNAL_REGLOCK_COUNT; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
   LIBXSMM_LOCK_RELEASE(&libxsmm_lock_global);
 #endif
-  assert(result);
 }
 
 

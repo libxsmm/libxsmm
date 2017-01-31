@@ -257,6 +257,19 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
+#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
+  const char *const check = getenv("LIBXSMM_CHECK");
+  float *const d = (float*)((0 == check || 0 == *check || 0 == check[0]) ? 0 : malloc((*m) * (*n) * sizeof(float)));
+  if (0 != d) {
+    const libxsmm_blasint ldx = *(0 == ldc ? n : ldc);
+    libxsmm_blasint i, j;
+    for (i = 0; i < (*m); ++i) {
+      for (j = 0; j < (*n); ++j) {
+        d[i*(*n)+j] = c[i*ldx+j];
+      }
+    }
+  }
+#endif
 #if defined(LIBXSMM_GEMM_TILED)
   if (0 == LIBXSMM_MOD2(libxsmm_mt, 2))
 #endif
@@ -286,18 +299,17 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
   }
 #endif
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-  { const char *const check = getenv("LIBXSMM_CHECK");
-    if (0 != check && 0 != *check && 0 != check[0]) {
-      libxsmm_stat_info s1, s2;
-      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F32PREC, c, *m, *n, *(ldc ? ldc : m), &s1)) {
-        libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-        if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F32PREC, c, *m, *n, *(ldc ? ldc : m), &s2)) {
-          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_FLAG_F32PREC, transa, transb,
-            m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-          fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
-        }
+  if (0 != d) {
+    libxsmm_stat_info s1, s2;
+    if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F32PREC, c, *m, *n, *(ldc ? ldc : m), &s1)) {
+      libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
+      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F32PREC, d, *m, *n, *m, &s2)) {
+        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_FLAG_F32PREC, transa, transb,
+          m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+        fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
       }
     }
+    free(d);
   }
 #endif
 }
@@ -310,6 +322,19 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
+#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
+  const char *const check = getenv("LIBXSMM_CHECK");
+  double *const d = (double*)((0 == check || 0 == *check || 0 == check[0]) ? 0 : malloc((*m) * (*n) * sizeof(double)));
+  if (0 != d) {
+    const libxsmm_blasint ldx = *(0 == ldc ? n : ldc);
+    libxsmm_blasint i, j;
+    for (i = 0; i < (*m); ++i) {
+      for (j = 0; j < (*n); ++j) {
+        d[i*(*n)+j] = c[i*ldx+j];
+      }
+    }
+  }
+#endif
 #if defined(LIBXSMM_GEMM_TILED)
   if (0 == LIBXSMM_MOD2(libxsmm_mt, 2))
 #endif
@@ -338,18 +363,17 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
   }
 #endif
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-  { const char *const check = getenv("LIBXSMM_CHECK");
-    if (0 != check && 0 != *check && 0 != check[0]) {
-      libxsmm_stat_info s1, s2;
-      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F64PREC, c, *m, *n, *(ldc ? ldc : m), &s1)) {
-        libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-        if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F64PREC, c, *m, *n, *(ldc ? ldc : m), &s2)) {
-          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_FLAG_F64PREC, transa, transb,
-            m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-          fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
-        }
+  if (0 != d) {
+    libxsmm_stat_info s1, s2;
+    if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F64PREC, c, *m, *n, *(ldc ? ldc : m), &s1)) {
+      libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
+      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F64PREC, d, *m, *n, *m, &s2)) {
+        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_FLAG_F64PREC, transa, transb,
+          m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+        fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
       }
     }
+    free(d);
   }
 #endif
 }
