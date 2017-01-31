@@ -181,8 +181,8 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_stat(libxsmm_gemm_precision precision, c
       case LIBXSMM_GEMM_FLAG_F64PREC: {
         const double *const values = (const double*)matrix;
         stat->sum = 0;
-        for (i = 0; i < m; ++i) {
-          for (j = 0; j < n; ++j) {
+        for (i = 0; i < n; ++i) {
+          for (j = 0; j < m; ++j) {
             const double value = values[i*ldx+j];
             const double v0 = value - sum_error;
             const double v1 = stat->sum + v0;
@@ -194,8 +194,8 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_stat(libxsmm_gemm_precision precision, c
       case LIBXSMM_GEMM_FLAG_F32PREC: {
         const float *const values = (const float*)matrix;
         stat->sum = 0;
-        for (i = 0; i < m; ++i) {
-          for (j = 0; j < n; ++j) {
+        for (i = 0; i < n; ++i) {
+          for (j = 0; j < m; ++j) {
             const double value = values[i*ldx+j];
             const double v0 = value - sum_error;
             const double v1 = stat->sum + v0;
@@ -263,8 +263,8 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
   if (0 != d) {
     const libxsmm_blasint ldx = *(0 == ldc ? n : ldc);
     libxsmm_blasint i, j;
-    for (i = 0; i < (*m); ++i) {
-      for (j = 0; j < (*n); ++j) {
+    for (i = 0; i < (*n); ++i) {
+      for (j = 0; j < (*m); ++j) {
         d[i*(*n)+j] = c[i*ldx+j];
       }
     }
@@ -328,8 +328,8 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
   if (0 != d) {
     const libxsmm_blasint ldx = *(0 == ldc ? n : ldc);
     libxsmm_blasint i, j;
-    for (i = 0; i < (*m); ++i) {
-      for (j = 0; j < (*n); ++j) {
+    for (i = 0; i < (*n); ++i) {
+      for (j = 0; j < (*m); ++j) {
         d[i*(*n)+j] = c[i*ldx+j];
       }
     }
