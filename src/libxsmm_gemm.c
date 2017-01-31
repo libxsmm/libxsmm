@@ -256,10 +256,17 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
+  const float ralpha = (0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA));
+  const float rbeta = (0 != beta ? *beta : ((float)LIBXSMM_BETA));
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   const char *const check = getenv("LIBXSMM_CHECK");
-  float *const d = (float*)((0 == check || 0 == *check || 0 == check[0]) ? 0 : malloc((*m) * (*n) * sizeof(float)));
+  float* d;
+#endif
+  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
+#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
+  d = (float*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
+      || 0 == check || 0 == *check || 0 == check[0]) ? 0
+    : malloc((*m) * (*n) * sizeof(float)));
   if (0 != d) {
     const libxsmm_blasint ldx = *(0 == ldc ? n : ldc);
     libxsmm_blasint i, j;
@@ -275,10 +282,8 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
 #endif
   { /* below-threshold GEMM */
     LIBXSMM_SGEMM(flags, *m, *n, *k,
-      0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-      0 != beta ? *beta : ((float)LIBXSMM_BETA),
-      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+      ralpha, a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+       rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
   }
 #if defined(LIBXSMM_GEMM_TILED)
   else { /* tiled GEMM */
@@ -292,10 +297,8 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
       LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
       float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
-      0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-      0 != beta ? *beta : ((float)LIBXSMM_BETA),
-      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+      ralpha, a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+       rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
   }
 #endif
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
@@ -321,10 +324,17 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
+  const double ralpha = (0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA));
+  const double rbeta = (0 != beta ? *beta : ((double)LIBXSMM_BETA));
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   const char *const check = getenv("LIBXSMM_CHECK");
-  double *const d = (double*)((0 == check || 0 == *check || 0 == check[0]) ? 0 : malloc((*m) * (*n) * sizeof(double)));
+  double* d;
+#endif
+  LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
+#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
+  d = (double*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
+      || 0 == check || 0 == *check || 0 == check[0]) ? 0
+    : malloc((*m) * (*n) * sizeof(double)));
   if (0 != d) {
     const libxsmm_blasint ldx = *(0 == ldc ? n : ldc);
     libxsmm_blasint i, j;
@@ -340,10 +350,8 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 #endif
   { /* below-threshold GEMM */
     LIBXSMM_DGEMM(flags, *m, *n, *k,
-      0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-      0 != beta ? *beta : ((double)LIBXSMM_BETA),
-      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+      ralpha, a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+       rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
   }
 #if defined(LIBXSMM_GEMM_TILED)
   else { /* tiled GEMM */
@@ -356,10 +364,8 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
       LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
       double, flags, tm, tn, tk, *m, *n, *k,
-      0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-      a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-      0 != beta ? *beta : ((double)LIBXSMM_BETA),
-      c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+      ralpha, a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+       rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
   }
 #endif
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
