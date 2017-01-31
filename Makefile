@@ -397,9 +397,10 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
-	@cp $(ROOTDIR)/include/libxsmm_dnn.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_dnn.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_fsspmdm.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_intrinsics_x86.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
