@@ -121,9 +121,9 @@
       Fw_[1][3][l] = half*x12[l] + x4[l];
       Fw_[2][0][l] = half*x6[l] - x3[l];
       Fw_[2][3][l] = half*x12[l] - x4[l];
-#pragma unroll
+      LIBXSMM_PRAGMA_UNROLL
       for (k = 0; k < 4; k++) {
-#pragma unroll
+        LIBXSMM_PRAGMA_UNROLL
         for (j = 0; j < 4; j++) {
           Fw[k][j][i][l] = Fw_[k][j][l];
         }
