@@ -37,6 +37,7 @@
 #include <libxsmm_intrinsics_x86.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <stdio.h>
 
 LIBXSMM_INTERNAL_API_DEFINITION
