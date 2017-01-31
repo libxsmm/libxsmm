@@ -88,7 +88,7 @@ void compare_buf_4d(int d1, int d2, int d3, int d4, float *naive, float*blocked)
               max_err = err;
             }
             match = 0;
-            //break;
+            /*break;*/
           }
         }
       }

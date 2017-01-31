@@ -58,7 +58,6 @@ int main(int argc, char *argv[])
 
   if (argc != 5) {
     fprintf(stderr, "Invalid ./a,out M N K reps\n");
-    //fprintf(stderr, "Invalid ./a,out M N K\n");
     exit(-1);
   }
 
@@ -66,8 +65,7 @@ int main(int argc, char *argv[])
   n = atoi(argv[2]);
   k = atoi(argv[3]);
   reps = atoi(argv[4]);
-  // this is col-major what you want to use
-  // for the sizes in question
+  /* this is col-major what you want to use for the sizes in question */
   lda = k;
   ldb = n;
   ldc = n;
@@ -98,14 +96,14 @@ int main(int argc, char *argv[])
     c2[i] = 0;
   }
 
-  // JIT Kernel
+  /* JIT Kernel */
   kernel = libxsmm_dmmdispatch(nblock, m, k, &ldb, &lda, &ldc, NULL, NULL, NULL, &l_prefetch_op );
   if (kernel == 0) {
     printf("JIT failed, exiting\n");
     exit(-1);
   }
 
-  // init MKL
+  /* init MKL */
   dgemm(&transb, &transa, &n, &m, &k, &alpha, b, &ldb, a, &lda, &beta, c1, &ldc);
 
   #pragma omp parallel for
@@ -139,7 +137,7 @@ int main(int argc, char *argv[])
   fprintf(stdout, "GFLOPS  libxsmm (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, (2.0 * (double)m * (double)n * (double)k * (double)reps * 1.0e-9) / l_total );
   fprintf(stdout, "GB/s    libxsmm (RM, M=%i, N=%i, K=%i): %f\n", m, n, k, ((double)sizeof(double) * (((double)m * (double)n) + ((double)k * (double)n)) * (double)reps * 1.0e-9) / l_total );
 
-  // test result
+  /* test result */
   double max_error = 0.0;
   for ( i = 0; i < ldc*m; i++) {
     if (max_error < fabs(c1[i] - c2[i])) {

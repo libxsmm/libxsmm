@@ -120,7 +120,7 @@
 #else
                   LIBXSMM_VLA_ACCESS(4, output, ydim, xdim, r, k, handle->ofwp, handle->blocksofm, TDVLEN) +=
 #endif
-                    O[j][i][r*TDVLEN + k]; // + bias[r][k];
+                    O[j][i][r*TDVLEN + k]; /* + bias[r][k]; */
                 }
               }
             }
