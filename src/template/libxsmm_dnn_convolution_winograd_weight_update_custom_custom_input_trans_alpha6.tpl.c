@@ -58,20 +58,20 @@
   for (tj = 0; tj < handle->cwino_upd.jtiles; tj++) {
     for (ti = 0; ti < handle->cwino_upd.itiles; ti++) {
       for (j = 0; j < ALPHA; j++) {
-	ydim = tj*(ALPHA - 2) + j - handle->desc.pad_h;
-	if ((ydim < 0) || (ydim >= handle->desc.H)) {
+        ydim = tj*(ALPHA - 2) + j - handle->desc.pad_h;
+        if ((ydim < 0) || (ydim >= handle->desc.H)) {
           for (i = 0; i < ALPHA; i++) {
             for (r = 0; r < VRATIO; r++) {
 #pragma simd
               for (k = 0; k < TDVLEN; k++) {
                 I[j][i][r*TDVLEN + k] = 0.0f;
               }
-	    }
-	  }
-	} else {
+            }
+          }
+        } else {
           for (i = 0; i < ALPHA; i++) {
             xdim = ti*(ALPHA - 2) + i - handle->desc.pad_w;
-	    if ((xdim < 0) || (xdim >= handle->desc.W)) {
+            if ((xdim < 0) || (xdim >= handle->desc.W)) {
               for (r = 0; r < VRATIO; r++) {
 #pragma simd
                 for (k = 0; k < TDVLEN; k++) {
@@ -87,11 +87,11 @@
                     input[r][ydim + handle->desc.pad_h][xdim + handle->desc.pad_w][k];
 #else
                     LIBXSMM_VLA_ACCESS(4, input, r, ydim + handle->desc.pad_h, xdim + handle->desc.pad_w, k, handle->ifhp, handle->ifwp, TDVLEN);
-#endif		
-		}
+#endif
+                }
               }
-	    }
-	  }
+            }
+          }
         }
       }
       /*trans_I_3x3_4x4(ALPHA, FDVLEN, Iw[tj*handle->cwino_upd.itiles + ti], I);*/
@@ -143,14 +143,14 @@
       for (tj = 0; tj < handle->cwino_upd.jtiles; tj++) {
         for (ti = 0; ti < handle->cwino_upd.itiles; ti++) {
 #pragma simd
-	  for (k = 0; k < FDVLEN; k++) {
+          for (k = 0; k < FDVLEN; k++) {
 #ifdef __INTEL_COMPILER
             output[j][i][0][tj*handle->cwino_upd.itiles + ti][k] =
 #else
             LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_upd.itiles + ti, k, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_upd.bimg, total_tiles, FDVLEN) =
-#endif	
+#endif
               Iw[tj*handle->cwino_upd.itiles + ti][j][i][k];
-	  }
+          }
         }
       }
     }

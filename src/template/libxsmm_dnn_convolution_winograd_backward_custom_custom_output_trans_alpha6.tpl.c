@@ -63,9 +63,9 @@
 #ifdef __INTEL_COMPILER
               input[j][i][0][tj*handle->cwino_bwd.itiles + ti][k];
 #else
-	      LIBXSMM_VLA_ACCESS(5, input, j, i, 0, tj*handle->cwino_bwd.itiles + ti, k, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_bwd.bimg, total_tiles, FDVLEN);
-#endif	
-	  }
+              LIBXSMM_VLA_ACCESS(5, input, j, i, 0, tj*handle->cwino_bwd.itiles + ti, k, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_bwd.bimg, total_tiles, FDVLEN);
+#endif
+          }
         }
       }
     }
@@ -108,10 +108,10 @@
 
       for (j = 0; j < ALPHA-2; j++) {
         ydim = tj*(ALPHA - 2) + j;
-	if (ydim >= handle->desc.H) continue;
+        if (ydim >= handle->desc.H) continue;
         for (i = 0; i < ALPHA-2; i++) {
           xdim = ti*(ALPHA - 2) + i;
-	  if (xdim >= handle->desc.W) continue;
+          if (xdim >= handle->desc.W) continue;
           for (r = 0; r < VRATIO; r++) {
 #pragma simd
             for (k = 0; k < TDVLEN; k++) {
@@ -119,8 +119,8 @@
               output[r][ydim + handle->desc.pad_h][xdim + handle->desc.pad_w][k] +=
 #else
               LIBXSMM_VLA_ACCESS(4, output, r, ydim + handle->desc.pad_h, xdim + handle->desc.pad_w, k, handle->ifhp, handle->ifwp, TDVLEN) +=
-#endif	
-	        O[j][i][r*TDVLEN + k];
+#endif
+              O[j][i][r*TDVLEN + k];
             }
           }
         }

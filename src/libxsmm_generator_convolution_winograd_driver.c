@@ -80,11 +80,11 @@ void factors( unsigned int num,
 /* Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2                            */
 void factors_ijm( unsigned int  itiles,
                   unsigned int  jtiles,
-		  unsigned int  bimg,
-		  unsigned int* ur_i,
-		  unsigned int* ur_j,
-		  unsigned int* ur_m,
-		  unsigned int  max_acc)
+                  unsigned int  bimg,
+                  unsigned int* ur_i,
+                  unsigned int* ur_j,
+                  unsigned int* ur_m,
+                  unsigned int  max_acc)
 {
   unsigned int i;
   unsigned int j;
@@ -133,10 +133,10 @@ void factors_ijm( unsigned int  itiles,
       if ( cur_fact[i] == fact_i[j] ) {
         *ur_i = (*ur_i)*fact_i[j];
         found = 1;
-	/* Remove this element from fact_i */
-	for ( k = j; k < 9; k++ ) {
-	  fact_i[k] = fact_i[k+1];
-	}
+        /* Remove this element from fact_i */
+        for ( k = j; k < 9; k++ ) {
+          fact_i[k] = fact_i[k+1];
+        }
         break;
       }
     }
@@ -147,10 +147,10 @@ void factors_ijm( unsigned int  itiles,
       if ( cur_fact[i] == fact_j[j] ) {
         *ur_j = (*ur_j)*fact_j[j];
         found = 1;
-	/* Remove this element from fact_j */
-	for ( k = j; k < 9; k++ ) {
-	  fact_j[k] = fact_j[k+1];
-	}
+        /* Remove this element from fact_j */
+        for ( k = j; k < 9; k++ ) {
+          fact_j[k] = fact_j[k+1];
+        }
         break;
       }
     }
@@ -161,10 +161,10 @@ void factors_ijm( unsigned int  itiles,
       if ( cur_fact[i] == fact_m[j] ) {
         *ur_m = (*ur_m)*fact_m[j];
         found = 1;
-	/* Remove this element from fact_m */
-	for ( k = j; k < 9; k++ ) {
-	  fact_m[k] = fact_m[k+1];
-	}
+        /* Remove this element from fact_m */
+        for ( k = j; k < 9; k++ ) {
+          fact_m[k] = fact_m[k+1];
+        }
         break;
       }
     }

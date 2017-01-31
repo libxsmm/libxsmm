@@ -33,7 +33,7 @@
 
 static void input_transform_custom_custom( float *inp,
                                            float *tinp,
-	                                   const libxsmm_dnn_layer* handle ) {
+                                           const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
@@ -82,7 +82,7 @@ static void input_transform_custom_custom( float *inp,
 
 static void input_transform_nhwc_custom( float *inp,
                                          float *tinp,
-	                                 const libxsmm_dnn_layer* handle ) {
+                                         const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_upd.vratio == 1 && handle->cwino_upd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16

@@ -145,7 +145,7 @@ void cvt_5d_4d(int d1, int d2, int d3, int d4, int d5, float *in, float*out)
         for (i4 = 0; i4 < d4; i4++) {
           for (v = 0; v < d5; v++) {
             dst[i1][i2*d5+v][i3][i4] = src[i1][i2][i3][i4][v];
-	  }
+          }
         }
       }
     }
@@ -234,7 +234,7 @@ void naive_conv_fp(libxsmm_dnn_layer *handle, float *inp, float *outp, float *wp
       for (oj = 0; oj < handle->ofhp; oj++) {
         for (oi = 0; oi < handle->ofwp; oi++) {
           LIBXSMM_VLA_ACCESS(4, output, img, ofm, oj, oi, handle->desc.K, handle->ofhp, handle->ofwp) =
-	    LIBXSMM_VLA_ACCESS(1, bias, ofm);
+          LIBXSMM_VLA_ACCESS(1, bias, ofm);
         }
       }
       for (ifm = 0; ifm < handle->desc.C; ifm++) {
@@ -245,8 +245,8 @@ void naive_conv_fp(libxsmm_dnn_layer *handle, float *inp, float *outp, float *wp
             for (kj = 0; kj < handle->desc.R; kj++) {
               for (ki = 0; ki < handle->desc.S; ki++) {
                 LIBXSMM_VLA_ACCESS(4, output, img, ofm, oj, oi, handle->desc.K, handle->ofhp, handle->ofwp) +=
-		  (LIBXSMM_VLA_ACCESS(4, input, img, ifm, ij+kj, ii+ki, handle->desc.C, handle->ifhp, handle->ifwp) *
-		  LIBXSMM_VLA_ACCESS(4, wt, ofm, ifm, kj, ki, handle->desc.C, handle->desc.R, handle->desc.S));
+                  (LIBXSMM_VLA_ACCESS(4, input, img, ifm, ij+kj, ii+ki, handle->desc.C, handle->ifhp, handle->ifwp) *
+                   LIBXSMM_VLA_ACCESS(4, wt, ofm, ifm, kj, ki, handle->desc.C, handle->desc.R, handle->desc.S));
               }
             }
           }
@@ -499,7 +499,7 @@ int main(int argc, char* argv []) {
   checksum_buf(l_handle.output->data, l_img*l_ofm*l_handle.ofhp*l_handle.ofwp);
 
   naive_conv_fp(&l_handle, n_inp, n_outp, n_wp, l_handle.bias->data);
-	
+
   cvt_5d_4d(l_img, l_ofm, l_handle.ofhp, l_handle.ofwp, l_handle.ofmblock, l_handle.output->data, test_outp);
   checksum_buf(test_outp, l_img*l_ofm*l_handle.ofhp*l_handle.ofwp);
   checksum_buf(n_outp, l_img*l_ofm*l_handle.ofhp*l_handle.ofwp);

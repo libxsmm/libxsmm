@@ -297,10 +297,10 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
             /* shouldn't happen.... */
           }
 
-	  for ( ofm = 0; ofm < i_conv_desc->vratio; ofm++ ) {
+          for ( ofm = 0; ofm < i_conv_desc->vratio; ofm++ ) {
             for ( urf = 0; urf < step; urf++ ) {
-	      if ( index < 27 ) {
-	        offset2 = (ifm*step + urf)*l_micro_kernel_config.datatype_size;
+              if ( index < 27 ) {
+                offset2 = (ifm*step + urf)*l_micro_kernel_config.datatype_size;
                 libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                          l_micro_kernel_config.instruction_set,
                                                          l_micro_kernel_config.vmul_instruction, /* vmul == vfma in KNL */
@@ -312,8 +312,8 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
                                                          l_micro_kernel_config.vector_name,
                                                          l_micro_kernel_config.vector_length + ofm + i_conv_desc->vratio*toggle,
                                                          ofm*step + urf );
-	      } else {
-	        /* The following statements are for direct offset computation */
+              } else {
+                /* The following statements are for direct offset computation */
                 offset2 = m_dist*index + (ifm*step + urf)*l_micro_kernel_config.datatype_size;
                 libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                          l_micro_kernel_config.instruction_set,
@@ -327,22 +327,22 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
                                                          l_micro_kernel_config.vector_length + ofm + i_conv_desc->vratio*toggle,
                                                          ofm*step + urf );
               }
-	    }
-	  }
+            }
+          }
 
-	  toggle = !toggle;
-	  if ( ti < (i_conv_desc->ur_i-1) ) {
-	    next_index = index + 1;
-	  } else if ( tj < (i_conv_desc->ur_j-1) ) {
-	    next_index = tm*i_conv_desc->jtiles*i_conv_desc->itiles + (tj+1)*i_conv_desc->itiles;
-	  } else if ( tm < (i_conv_desc->ur_m-1) ) {
-	    next_index = (tm+1)*i_conv_desc->jtiles*i_conv_desc->itiles;
-	  } else {
-	    next_index = 0;
-	  }
+          toggle = !toggle;
+          if ( ti < (i_conv_desc->ur_i-1) ) {
+            next_index = index + 1;
+          } else if ( tj < (i_conv_desc->ur_j-1) ) {
+            next_index = tm*i_conv_desc->jtiles*i_conv_desc->itiles + (tj+1)*i_conv_desc->itiles;
+          } else if ( tm < (i_conv_desc->ur_m-1) ) {
+            next_index = (tm+1)*i_conv_desc->jtiles*i_conv_desc->itiles;
+          } else {
+            next_index = 0;
+          }
 
           for ( ofm = 0; next_index && ofm < i_conv_desc->vratio; ofm++ ) {
-	    offset = m_dist*next_index + ofm*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size;
+            offset = m_dist*next_index + ofm*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size;
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                               l_micro_kernel_config.instruction_set,
                                               l_micro_kernel_config.a_vmove_instruction,
@@ -370,8 +370,8 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
                                                 0,
                                                 m_dist*next_index + ifm*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size + i_conv_desc->bimg*i_conv_desc->itiles*i_conv_desc->jtiles*lookahead );
             }
-	  }
-	}/* end for ti */
+          }
+        }/* end for ti */
       }/* end for tj */
     }/* end for tm */
 

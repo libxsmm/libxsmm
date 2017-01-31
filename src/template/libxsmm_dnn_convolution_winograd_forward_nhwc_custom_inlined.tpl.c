@@ -159,7 +159,7 @@
       for (i = 0; i < handle->cwino_fwd.bimg; i++) {
         for (j = 0; j < handle->cwino_fwd.jtiles; j++) {
           for (k = 0; k < handle->cwino_fwd.itiles; k++) {
-#pragma simd	
+#pragma simd
             for (l = 0; l < FDVLEN; l++) {
               M[img][oj][oi][ofm1][i][j][k][l] = 0.0f;
             }

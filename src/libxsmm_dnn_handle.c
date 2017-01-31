@@ -791,11 +791,11 @@ void factors( unsigned int num,
 /* Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2                            */
 void factors_ijm( unsigned int  itiles,
                   unsigned int  jtiles,
-		  unsigned int  bimg,
-		  unsigned int* ur_i,
-		  unsigned int* ur_j,
-		  unsigned int* ur_m,
-		  unsigned int  max_acc)
+                  unsigned int  bimg,
+                  unsigned int* ur_i,
+                  unsigned int* ur_j,
+                  unsigned int* ur_m,
+                  unsigned int  max_acc)
 {
   unsigned int i;
   unsigned int j;
@@ -844,10 +844,10 @@ void factors_ijm( unsigned int  itiles,
       if ( cur_fact[i] == fact_i[j] ) {
         *ur_i = (*ur_i)*fact_i[j];
         found = 1;
-	/* Remove this element from fact_i */
-	for ( k = j; k < 9; k++ ) {
-	  fact_i[k] = fact_i[k+1];
-	}
+        /* Remove this element from fact_i */
+        for ( k = j; k < 9; k++ ) {
+          fact_i[k] = fact_i[k+1];
+        }
         break;
       }
     }
@@ -858,10 +858,10 @@ void factors_ijm( unsigned int  itiles,
       if ( (cur_fact[i] == fact_j[j]) /* && ((((*ur_j)*fact_j[j]*itiles-1)*itiles + *ur_i-1) <= max_acc)*/ ) {
         *ur_j = (*ur_j)*fact_j[j];
         found = 1;
-	/* Remove this element from fact_j */
-	for ( k = j; k < 9; k++ ) {
-	  fact_j[k] = fact_j[k+1];
-	}
+        /* Remove this element from fact_j */
+        for ( k = j; k < 9; k++ ) {
+          fact_j[k] = fact_j[k+1];
+        }
         break;
       }
     }
@@ -872,10 +872,10 @@ void factors_ijm( unsigned int  itiles,
       if ( (cur_fact[i] == fact_m[j]) /* && ((((*ur_m)*fact_m[j]-1)*itiles*jtiles + (*ur_j-1)*itiles + *ur_i-1) <= max_acc)*/ ) {
         *ur_m = (*ur_m)*fact_m[j];
         found = 1;
-	/* Remove this element from fact_m */
-	for ( k = j; k < 9; k++ ) {
-	  fact_m[k] = fact_m[k+1];
-	}
+        /* Remove this element from fact_m */
+        for ( k = j; k < 9; k++ ) {
+          fact_m[k] = fact_m[k+1];
+        }
         break;
       }
     }
@@ -931,304 +931,304 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       /* LUT for DeepBench */
       if ((240 == handle->desc.W) && (24 == handle->desc.H) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 15;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	status = LIBXSMM_DNN_WARN_FALLBACK;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 15;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
+        flagBenchmark = 1;
       } else if ((120 == handle->desc.W) && (12 == handle->desc.H) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 15;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
-	status = LIBXSMM_DNN_WARN_FALLBACK;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 15;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((60 == handle->desc.W) && (6 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 15;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
-	status = LIBXSMM_DNN_WARN_FALLBACK;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 15;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((54 == handle->desc.W) && (54 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 14;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
-	status = LIBXSMM_DNN_WARN_FALLBACK;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 14;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((27 == handle->desc.W) && (27 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 7;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
-	status = LIBXSMM_DNN_WARN_FALLBACK;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 7;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 4;
-	wino_desc_fp.ur_j = 4;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
-	status = LIBXSMM_DNN_WARN_FALLBACK;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 4;
+        wino_desc_fp.ur_j = 4;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 8;
-	wino_desc_fp.ur_i = 2;
-	wino_desc_fp.ur_j = 2;
-	wino_desc_fp.ur_m = 2;
-	flagBenchmark = 1;
-	status = LIBXSMM_DNN_WARN_FALLBACK;
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur_i = 2;
+        wino_desc_fp.ur_j = 2;
+        wino_desc_fp.ur_m = 2;
+        flagBenchmark = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 14;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
-	status = LIBXSMM_DNN_WARN_FALLBACK;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 14;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 7;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 7;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 7;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 7;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 8;
-	wino_desc_fp.ur_i = 4;
-	wino_desc_fp.ur_j = 2;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur_i = 4;
+        wino_desc_fp.ur_j = 2;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 8;
-	wino_desc_fp.ur_i = 2;
-	wino_desc_fp.ur_j = 2;
-	wino_desc_fp.ur_m = 2;
-	flagBenchmark = 1;
-	status = LIBXSMM_DNN_WARN_FALLBACK;
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur_i = 2;
+        wino_desc_fp.ur_j = 2;
+        wino_desc_fp.ur_m = 2;
+        flagBenchmark = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 14;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
-	status = LIBXSMM_DNN_WARN_FALLBACK;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 14;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 7;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 7;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 7;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 7;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 4;
-	wino_desc_fp.ur_i = 4;
-	wino_desc_fp.ur_j = 2;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 4;
+        wino_desc_fp.ur_i = 4;
+        wino_desc_fp.ur_j = 2;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 16;
-	wino_desc_fp.ur_i = 2;
-	wino_desc_fp.ur_j = 2;
-	wino_desc_fp.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 16;
+        wino_desc_fp.ur_i = 2;
+        wino_desc_fp.ur_j = 2;
+        wino_desc_fp.ur_m = 2;
+        flagBenchmark = 1;
       }
 
       /* LUT for AlexNet */
       else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 8;
-	wino_desc_fp.ur_i = 4;
-	wino_desc_fp.ur_j = 4;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur_i = 4;
+        wino_desc_fp.ur_j = 4;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 8;
-	wino_desc_fp.ur_i = 4;
-	wino_desc_fp.ur_j = 4;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur_i = 4;
+        wino_desc_fp.ur_j = 4;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 8;
-	wino_desc_fp.ur_i = 4;
-	wino_desc_fp.ur_j = 4;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur_i = 4;
+        wino_desc_fp.ur_j = 4;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       }
 
       /* LUT for GoogLenetV1 */
       else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 14;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 14;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 4;
-	wino_desc_fp.ur_i = 7;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 4;
+        wino_desc_fp.ur_i = 7;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 4;
-	wino_desc_fp.ur_i = 7;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 4;
+        wino_desc_fp.ur_i = 7;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 4;
-	wino_desc_fp.ur_j = 4;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 4;
+        wino_desc_fp.ur_j = 4;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 4;
-	wino_desc_fp.ur_i = 4;
-	wino_desc_fp.ur_j = 4;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 4;
+        wino_desc_fp.ur_i = 4;
+        wino_desc_fp.ur_j = 4;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 4;
-	wino_desc_fp.ur_j = 4;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 4;
+        wino_desc_fp.ur_j = 4;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 4;
-	wino_desc_fp.ur_i = 4;
-	wino_desc_fp.ur_j = 4;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 4;
+        wino_desc_fp.ur_i = 4;
+        wino_desc_fp.ur_j = 4;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 4;
-	wino_desc_fp.ur_i = 4;
-	wino_desc_fp.ur_j = 4;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 4;
+        wino_desc_fp.ur_i = 4;
+        wino_desc_fp.ur_j = 4;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 8;
-	wino_desc_fp.ur_i = 2;
-	wino_desc_fp.ur_j = 2;
-	wino_desc_fp.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur_i = 2;
+        wino_desc_fp.ur_j = 2;
+        wino_desc_fp.ur_m = 2;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 16;
-	wino_desc_fp.ur_i = 2;
-	wino_desc_fp.ur_j = 2;
-	wino_desc_fp.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 16;
+        wino_desc_fp.ur_i = 2;
+        wino_desc_fp.ur_j = 2;
+        wino_desc_fp.ur_m = 2;
+        flagBenchmark = 1;
       }
 
       /* LUT for Overfeat */
       else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 8;
-	wino_desc_fp.ur_i = 3;
-	wino_desc_fp.ur_j = 3;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur_i = 3;
+        wino_desc_fp.ur_j = 3;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 8;
-	wino_desc_fp.ur_i = 3;
-	wino_desc_fp.ur_j = 3;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur_i = 3;
+        wino_desc_fp.ur_j = 3;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 8;
-	wino_desc_fp.ur_i = 3;
-	wino_desc_fp.ur_j = 3;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur_i = 3;
+        wino_desc_fp.ur_j = 3;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       }
 
       /* LUT for VGGA */
       else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 7;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 7;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 7;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 7;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 7;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 7;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 7;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 7;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_fp.vratio = 2;
-	wino_desc_fp.bimg = 2;
-	wino_desc_fp.ur_i = 7;
-	wino_desc_fp.ur_j = 1;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur_i = 7;
+        wino_desc_fp.ur_j = 1;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_fp.vratio = 1;
-	wino_desc_fp.bimg = 8;
-	wino_desc_fp.ur_i = 4;
-	wino_desc_fp.ur_j = 4;
-	wino_desc_fp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur_i = 4;
+        wino_desc_fp.ur_j = 4;
+        wino_desc_fp.ur_m = 1;
+        flagBenchmark = 1;
       }
 
       /* General scenario */
       else if ((handle->desc.C >= 128) && (handle->desc.K >= 128)) {
-	if (((handle->desc.N % 8) == 0) && (handle->desc.C >= 256) && (handle->desc.K >= 256)) {
+        if (((handle->desc.N % 8) == 0) && (handle->desc.C >= 256) && (handle->desc.K >= 256)) {
           wino_desc_fp.bimg = 8;
         } else if ((handle->desc.N % 2) == 0) {
           wino_desc_fp.bimg = 2;
@@ -1240,7 +1240,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0)
           wino_desc_fp.vratio = 2;
         else
-      	  wino_desc_fp.vratio = 1;
+          wino_desc_fp.vratio = 1;
       } else {
         if ((handle->desc.N % 2) == 0) {
           wino_desc_fp.bimg = 2;
@@ -1249,10 +1249,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
         factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
                      &(wino_desc_fp.ur_i), &(wino_desc_fp.ur_j), &(wino_desc_fp.ur_m), 26 );
-        if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0)
+        if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
           wino_desc_fp.vratio = 2;
-        else
-      	  wino_desc_fp.vratio = 1;
+        }
+        else {
+          wino_desc_fp.vratio = 1;
+        }
       }
 
       /* The following condition checks whether we have encountered an input which is listed in our benchmark LUT */
@@ -1284,289 +1286,289 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       /* LUT for DeepBench */
       if ((240 == handle->desc.W) && (24 == handle->desc.H) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 15;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 15;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((120 == handle->desc.W) && (12 == handle->desc.H) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 15;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 15;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((60 == handle->desc.W) && (6 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 15;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 15;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((54 == handle->desc.W) && (54 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 14;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 14;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((27 == handle->desc.W) && (27 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 7;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 7;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 4;
-	wino_desc_bp.ur_j = 4;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 4;
+        wino_desc_bp.ur_j = 4;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 8;
-	wino_desc_bp.ur_i = 2;
-	wino_desc_bp.ur_j = 2;
-	wino_desc_bp.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur_i = 2;
+        wino_desc_bp.ur_j = 2;
+        wino_desc_bp.ur_m = 2;
+        flagBenchmark = 1;
       } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 14;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 14;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 7;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 7;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 7;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 7;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 8;
-	wino_desc_bp.ur_i = 4;
-	wino_desc_bp.ur_j = 2;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur_i = 4;
+        wino_desc_bp.ur_j = 2;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 8;
-	wino_desc_bp.ur_i = 2;
-	wino_desc_bp.ur_j = 2;
-	wino_desc_bp.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur_i = 2;
+        wino_desc_bp.ur_j = 2;
+        wino_desc_bp.ur_m = 2;
+        flagBenchmark = 1;
       } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 14;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 14;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 7;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 7;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 7;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 7;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 4;
-	wino_desc_bp.ur_i = 4;
-	wino_desc_bp.ur_j = 2;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 4;
+        wino_desc_bp.ur_i = 4;
+        wino_desc_bp.ur_j = 2;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 16;
-	wino_desc_bp.ur_i = 2;
-	wino_desc_bp.ur_j = 2;
-	wino_desc_bp.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 16;
+        wino_desc_bp.ur_i = 2;
+        wino_desc_bp.ur_j = 2;
+        wino_desc_bp.ur_m = 2;
+        flagBenchmark = 1;
       }
 
       /* LUT for AlexNet */
       else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 8;
-	wino_desc_bp.ur_i = 4;
-	wino_desc_bp.ur_j = 4;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur_i = 4;
+        wino_desc_bp.ur_j = 4;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 8;
-	wino_desc_bp.ur_i = 4;
-	wino_desc_bp.ur_j = 4;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur_i = 4;
+        wino_desc_bp.ur_j = 4;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 8;
-	wino_desc_bp.ur_i = 4;
-	wino_desc_bp.ur_j = 4;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur_i = 4;
+        wino_desc_bp.ur_j = 4;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       }
 
       /* LUT for GoogLenetV1 */
       else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 14;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 14;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 4;
-	wino_desc_bp.ur_i = 7;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 4;
+        wino_desc_bp.ur_i = 7;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 4;
-	wino_desc_bp.ur_i = 7;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 4;
+        wino_desc_bp.ur_i = 7;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 4;
-	wino_desc_bp.ur_j = 4;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 4;
+        wino_desc_bp.ur_j = 4;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 4;
-	wino_desc_bp.ur_i = 4;
-	wino_desc_bp.ur_j = 4;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 4;
+        wino_desc_bp.ur_i = 4;
+        wino_desc_bp.ur_j = 4;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 4;
-	wino_desc_bp.ur_j = 4;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 4;
+        wino_desc_bp.ur_j = 4;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 4;
-	wino_desc_bp.ur_i = 4;
-	wino_desc_bp.ur_j = 4;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 4;
+        wino_desc_bp.ur_i = 4;
+        wino_desc_bp.ur_j = 4;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 4;
-	wino_desc_bp.ur_i = 4;
-	wino_desc_bp.ur_j = 4;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 4;
+        wino_desc_bp.ur_i = 4;
+        wino_desc_bp.ur_j = 4;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 8;
-	wino_desc_bp.ur_i = 2;
-	wino_desc_bp.ur_j = 2;
-	wino_desc_bp.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur_i = 2;
+        wino_desc_bp.ur_j = 2;
+        wino_desc_bp.ur_m = 2;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 16;
-	wino_desc_bp.ur_i = 2;
-	wino_desc_bp.ur_j = 2;
-	wino_desc_bp.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 16;
+        wino_desc_bp.ur_i = 2;
+        wino_desc_bp.ur_j = 2;
+        wino_desc_bp.ur_m = 2;
+        flagBenchmark = 1;
       }
 
       /* LUT for Overfeat */
       else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 8;
-	wino_desc_bp.ur_i = 3;
-	wino_desc_bp.ur_j = 3;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur_i = 3;
+        wino_desc_bp.ur_j = 3;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 8;
-	wino_desc_bp.ur_i = 3;
-	wino_desc_bp.ur_j = 3;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur_i = 3;
+        wino_desc_bp.ur_j = 3;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 8;
-	wino_desc_bp.ur_i = 3;
-	wino_desc_bp.ur_j = 3;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur_i = 3;
+        wino_desc_bp.ur_j = 3;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       }
 
       /* LUT for VGGA */
       else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 7;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 7;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 7;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 7;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 7;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 7;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 7;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 7;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_bp.vratio = 2;
-	wino_desc_bp.bimg = 2;
-	wino_desc_bp.ur_i = 7;
-	wino_desc_bp.ur_j = 1;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur_i = 7;
+        wino_desc_bp.ur_j = 1;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_bp.vratio = 1;
-	wino_desc_bp.bimg = 8;
-	wino_desc_bp.ur_i = 4;
-	wino_desc_bp.ur_j = 4;
-	wino_desc_bp.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur_i = 4;
+        wino_desc_bp.ur_j = 4;
+        wino_desc_bp.ur_m = 1;
+        flagBenchmark = 1;
       }
 
       /* General scenario */
@@ -1574,10 +1576,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_bp.bimg = wino_desc_fp.bimg;
         factors_ijm( wino_desc_bp.itiles, wino_desc_bp.jtiles, wino_desc_bp.bimg,
                      &(wino_desc_bp.ur_i), &(wino_desc_bp.ur_j), &(wino_desc_bp.ur_m), 26 );
-        if(wino_desc_bp.ur_i * wino_desc_bp.ur_j * wino_desc_bp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0)
-      	  wino_desc_bp.vratio = 2;
-        else
-      	  wino_desc_bp.vratio = 1;
+        if(wino_desc_bp.ur_i * wino_desc_bp.ur_j * wino_desc_bp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
+          wino_desc_bp.vratio = 2;
+        }
+        else {
+          wino_desc_bp.vratio = 1;
+        }
       }
 
       handle->cwino_bwd = wino_desc_bp;
@@ -1604,289 +1608,289 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       /* LUT for DeepBench */
       if ((240 == handle->desc.W) && (24 == handle->desc.H) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 15;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 15;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((120 == handle->desc.W) && (12 == handle->desc.H) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 3;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 3;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((60 == handle->desc.W) && (6 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 15;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 15;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((54 == handle->desc.W) && (54 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 7;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 7;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((27 == handle->desc.W) && (27 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 7;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 7;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 4;
-	wino_desc_wu.ur_j = 2;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 4;
+        wino_desc_wu.ur_j = 2;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 8;
-	wino_desc_wu.ur_i = 2;
-	wino_desc_wu.ur_j = 2;
-	wino_desc_wu.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 8;
+        wino_desc_wu.ur_i = 2;
+        wino_desc_wu.ur_j = 2;
+        wino_desc_wu.ur_m = 2;
+        flagBenchmark = 1;
       } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 7;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 7;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 7;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 7;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 7;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 7;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 8;
-	wino_desc_wu.ur_i = 4;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 8;
+        wino_desc_wu.ur_i = 4;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 2;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 8;
-	wino_desc_wu.ur_i = 2;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 4;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 8;
+        wino_desc_wu.ur_i = 2;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 4;
+        flagBenchmark = 1;
       } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 7;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 7;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 7;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 7;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 7;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 7;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 16;
-	wino_desc_wu.ur_i = 4;
-	wino_desc_wu.ur_j = 2;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur_i = 4;
+        wino_desc_wu.ur_j = 2;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 16;
-	wino_desc_wu.ur_i = 2;
-	wino_desc_wu.ur_j = 2;
-	wino_desc_wu.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur_i = 2;
+        wino_desc_wu.ur_j = 2;
+        wino_desc_wu.ur_m = 2;
+        flagBenchmark = 1;
       }
 
       /* LUT for AlexNet */
       else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 4;
-	wino_desc_wu.ur_i = 4;
-	wino_desc_wu.ur_j = 2;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 4;
+        wino_desc_wu.ur_i = 4;
+        wino_desc_wu.ur_j = 2;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 4;
-	wino_desc_wu.ur_i = 4;
-	wino_desc_wu.ur_j = 2;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 4;
+        wino_desc_wu.ur_i = 4;
+        wino_desc_wu.ur_j = 2;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 4;
-	wino_desc_wu.ur_i = 4;
-	wino_desc_wu.ur_j = 2;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 4;
+        wino_desc_wu.ur_i = 4;
+        wino_desc_wu.ur_j = 2;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       }
 
       /* LUT for GoogLenetV1 */
       else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 4;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 4;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 2;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 8;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 8;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 16;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 16;
-	wino_desc_wu.ur_i = 4;
-	wino_desc_wu.ur_j = 4;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur_i = 4;
+        wino_desc_wu.ur_j = 4;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 16;
-	wino_desc_wu.ur_i = 4;
-	wino_desc_wu.ur_j = 4;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur_i = 4;
+        wino_desc_wu.ur_j = 4;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 8;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 8;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 16;
-	wino_desc_wu.ur_i = 4;
-	wino_desc_wu.ur_j = 4;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur_i = 4;
+        wino_desc_wu.ur_j = 4;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 4;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 4;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 16;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 8;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 8;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 2;
+        flagBenchmark = 1;
       }
 
       /* LUT for Overfeat */
       else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 16;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 16;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 16;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       }
 
       /* LUT for VGGA */
       else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 2;
+        flagBenchmark = 1;
       } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 4;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 4;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 2;
+        flagBenchmark = 1;
       } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K)) {
         wino_desc_wu.vratio = 1;
-	wino_desc_wu.bimg = 4;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 4;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 2;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 2;
+        flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 2;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 2;
+        flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K)) {
         wino_desc_wu.vratio = 2;
-	wino_desc_wu.bimg = 2;
-	wino_desc_wu.ur_i = 1;
-	wino_desc_wu.ur_j = 1;
-	wino_desc_wu.ur_m = 1;
-	flagBenchmark = 1;
+        wino_desc_wu.bimg = 2;
+        wino_desc_wu.ur_i = 1;
+        wino_desc_wu.ur_j = 1;
+        wino_desc_wu.ur_m = 1;
+        flagBenchmark = 1;
       }
 
       /* General scenario */
@@ -1904,10 +1908,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
         factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
                      &(wino_desc_wu.ur_i), &(wino_desc_wu.ur_j), &(wino_desc_wu.ur_m), allowed_unroll );
-        if(wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0)
-      	  wino_desc_wu.vratio = 2;
-        else
-      	  wino_desc_wu.vratio = 1;
+        if(wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
+          wino_desc_wu.vratio = 2;
+        }
+        else {
+          wino_desc_wu.vratio = 1;
+        }
       } else {
         if ((handle->desc.N % 2) == 0) {
           wino_desc_wu.bimg = 2;
@@ -1918,10 +1924,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
       factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
                    &(wino_desc_wu.ur_i), &(wino_desc_wu.ur_j), &(wino_desc_wu.ur_m), allowed_unroll );
-      if(wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0)
-      	wino_desc_wu.vratio = 2;
-      else
-      	wino_desc_wu.vratio = 1;
+      if(wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
+        wino_desc_wu.vratio = 2;
+      }
+      else {
+        wino_desc_wu.vratio = 1;
       }
 
       handle->cwino_upd = wino_desc_wu;

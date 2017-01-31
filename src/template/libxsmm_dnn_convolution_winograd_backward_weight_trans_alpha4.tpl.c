@@ -76,9 +76,9 @@
 #ifdef __INTEL_COMPILER
                 input[v][r][2-j][2-i][v1][k];
 #else
-	        LIBXSMM_VLA_ACCESS(6, input, v, r, 2-j, 2-i, v1, k, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
-#endif		
-	    }
+                LIBXSMM_VLA_ACCESS(6, input, v, r, 2-j, 2-i, v1, k, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
+#endif
+            }
           }
         }
       }
@@ -142,9 +142,9 @@
           output[j][i][0][v][k] =
 #else
           LIBXSMM_VLA_ACCESS(5, output, j, i, 0, v, k, ALPHA, (handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO), FDVLEN, FDVLEN) =
-#endif	
-	    Fw[j][i][v][k];
-	}
+#endif
+            Fw[j][i][v][k];
+        }
       }
     }
   }

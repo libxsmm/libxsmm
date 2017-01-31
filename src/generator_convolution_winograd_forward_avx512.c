@@ -180,9 +180,9 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
     for ( tj = 0; tj < i_conv_desc->ur_j; tj++ ) {
       for ( ti = 0; ti < i_conv_desc->ur_i; ti++ ) {
         for ( tv = 0; tv < i_conv_desc->vratio; tv++ ) {
-	  index = tm*i_conv_desc->itiles*i_conv_desc->jtiles + tj*i_conv_desc->itiles + ti;
+          index = tm*i_conv_desc->itiles*i_conv_desc->jtiles + tj*i_conv_desc->itiles + ti;
           offset = m_dist*index + tv*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size;
-	  reg = (num_regs - (i_conv_desc->vratio*i_conv_desc->ur_m*i_conv_desc->ur_i*i_conv_desc->ur_j)) + (tv + i_conv_desc->vratio*(ti + i_conv_desc->ur_i*(tj + i_conv_desc->ur_j*tm)));
+          reg = (num_regs - (i_conv_desc->vratio*i_conv_desc->ur_m*i_conv_desc->ur_i*i_conv_desc->ur_j)) + (tv + i_conv_desc->vratio*(ti + i_conv_desc->ur_i*(tj + i_conv_desc->ur_j*tm)));
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             l_micro_kernel_config.instruction_set,
                                             l_micro_kernel_config.c_vmove_instruction,
@@ -208,7 +208,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                                               LIBXSMM_X86_GP_REG_UNDEF,
                                               0,
                                               offset + i_conv_desc->ur_i*fdvlen*l_micro_kernel_config.datatype_size );
-          } 					
+          }
         }
       }
     }
@@ -286,8 +286,8 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
       for ( tj = 0; tj < i_conv_desc->ur_j; tj++ ) {
         for ( ti = 0; ti < i_conv_desc->ur_i; ti++ ) {
           for ( tv = 0; tv < i_conv_desc->vratio; tv++ ) {
-	    reg = (num_regs - (i_conv_desc->vratio*i_conv_desc->ur_m*i_conv_desc->ur_i*i_conv_desc->ur_j)) + (tv + i_conv_desc->vratio*(ti + i_conv_desc->ur_i*(tj + i_conv_desc->ur_j*tm)));
-	    index = tm*i_conv_desc->itiles*i_conv_desc->jtiles + tj*i_conv_desc->itiles + ti;
+            reg = (num_regs - (i_conv_desc->vratio*i_conv_desc->ur_m*i_conv_desc->ur_i*i_conv_desc->ur_j)) + (tv + i_conv_desc->vratio*(ti + i_conv_desc->ur_i*(tj + i_conv_desc->ur_j*tm)));
+            index = tm*i_conv_desc->itiles*i_conv_desc->jtiles + tj*i_conv_desc->itiles + ti;
 
             if ( index > 27 ) {
               if ( ifm == 0 ) {
@@ -346,7 +346,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                 /* shouldn't happen.... */
               }
 
-	      libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                        l_micro_kernel_config.instruction_set,
                                                        l_micro_kernel_config.vmul_instruction,
                                                        1,
@@ -368,9 +368,9 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
     for ( tj = 0; tj < i_conv_desc->ur_j; tj++ ) {
       for ( ti = 0; ti < i_conv_desc->ur_i; ti++ ) {
         for ( tv = 0; tv < i_conv_desc->vratio; tv++ ) {
-	  index = tm*i_conv_desc->itiles*i_conv_desc->jtiles + tj*i_conv_desc->itiles + ti;
+          index = tm*i_conv_desc->itiles*i_conv_desc->jtiles + tj*i_conv_desc->itiles + ti;
           offset = m_dist*index + tv*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size;
-	  reg = (num_regs - (i_conv_desc->vratio*i_conv_desc->ur_m*i_conv_desc->ur_i*i_conv_desc->ur_j)) + (tv + i_conv_desc->vratio*(ti + i_conv_desc->ur_i*(tj + i_conv_desc->ur_j*tm)));
+          reg = (num_regs - (i_conv_desc->vratio*i_conv_desc->ur_m*i_conv_desc->ur_i*i_conv_desc->ur_j)) + (tv + i_conv_desc->vratio*(ti + i_conv_desc->ur_i*(tj + i_conv_desc->ur_j*tm)));
           if ( reg < l_micro_kernel_config.vector_reg_count ) { /* l_micro_kernel_config.vector_reg_count = (14 + 18) */
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                               l_micro_kernel_config.instruction_set,
