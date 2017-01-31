@@ -70,7 +70,7 @@
       for (r = 0; r < VRATIO; r++) {
         for (v = 0; v < VRATIO; v++) {
           for (v1 = 0; v1 < TDVLEN; v1++) {
-#pragma simd
+            LIBXSMM_PRAGMA_SIMD
             for (k = 0; k < TDVLEN; k++) {
               F[j][i][v*TDVLEN + k][r*TDVLEN + v1] =
 #ifdef __INTEL_COMPILER
@@ -88,7 +88,7 @@
 
   /* inline code start */
   for (i = 0; i < FDVLEN; i++) {
-#pragma simd
+    LIBXSMM_PRAGMA_SIMD
     for (l = 0; l < FDVLEN; l++) {
       x0[l]  = half*F[0][1][i][l];
       x1[l]  = F[0][0][i][l] + F[0][2][i][l];
@@ -136,7 +136,7 @@
   for (j = 0; j < ALPHA; j++) {
     for (i = 0; i < ALPHA; i++) {
       for (v = 0; v < FDVLEN; v++) {
-#pragma simd
+        LIBXSMM_PRAGMA_SIMD
         for (k = 0; k < FDVLEN; k++) {
 #ifdef __INTEL_COMPILER
           output[j][i][0][v][k] =

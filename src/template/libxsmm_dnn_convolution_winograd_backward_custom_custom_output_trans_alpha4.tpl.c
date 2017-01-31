@@ -60,7 +60,7 @@
     for (i = 0; i < ALPHA; i++) {
       for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
         for (ti = 0; ti < handle->cwino_bwd.itiles; ti++) {
-#pragma simd
+          LIBXSMM_PRAGMA_SIMD
           for (k = 0; k < FDVLEN; k++) {
             Ow[tj*handle->cwino_bwd.itiles + ti][j][i][k] =
 #ifdef __INTEL_COMPILER
@@ -78,7 +78,7 @@
       /*trans_O_2x2_3x3(ALPHA-2, FDVLEN, Ow[tj*handle->cwino_bwd.itiles + ti], O);*/
 
       /* inline code start */
-#pragma simd
+      LIBXSMM_PRAGMA_SIMD
       for (i = 0; i < FDVLEN; i++) {
         t00[i] = Ow[tj*handle->cwino_bwd.itiles + ti][0][0][i] + Ow[tj*handle->cwino_bwd.itiles + ti][0][1][i] + Ow[tj*handle->cwino_bwd.itiles + ti][0][2][i];
         t01[i] = Ow[tj*handle->cwino_bwd.itiles + ti][0][1][i] - Ow[tj*handle->cwino_bwd.itiles + ti][0][2][i] - Ow[tj*handle->cwino_bwd.itiles + ti][0][3][i];
@@ -102,7 +102,7 @@
           xdim = ti*(ALPHA - 2) + i;
           if (xdim >= handle->desc.W) continue;
           for (r = 0; r < VRATIO; r++) {
-#pragma simd
+            LIBXSMM_PRAGMA_SIMD
             for (k = 0; k < TDVLEN; k++) {
 #ifdef __INTEL_COMPILER
               output[r][ydim + handle->desc.pad_h][xdim + handle->desc.pad_w][k] +=

@@ -56,7 +56,7 @@
         if ((ydim < 0) || (ydim >= handle->desc.H)) {
           for (i = 0; i < ALPHA; i++) {
             for (r = 0; r < VRATIO; r++) {
-#pragma simd
+              LIBXSMM_PRAGMA_SIMD
               for (k = 0; k < TDVLEN; k++) {
                 I[j][i][r*TDVLEN + k] = 0.0f;
               }
@@ -67,14 +67,14 @@
             xdim = ti*(ALPHA - 2) + i - handle->desc.pad_w;
             if ((xdim < 0) || (xdim >= handle->desc.W)) {
               for (r = 0; r < VRATIO; r++) {
-#pragma simd
+                LIBXSMM_PRAGMA_SIMD
                 for (k = 0; k < TDVLEN; k++) {
                   I[j][i][r*TDVLEN + k] = 0.0f;
                 }
               }
             } else {
               for (r = 0; r < VRATIO; r++) {
-#pragma simd
+                LIBXSMM_PRAGMA_SIMD
                 for (k = 0; k < TDVLEN; k++) {
                   I[j][i][r*TDVLEN + k] =
 #ifdef __INTEL_COMPILER
@@ -92,7 +92,7 @@
 
       /* inline code start */
       for (i = 0; i < 4; i++) {
-#pragma simd
+        LIBXSMM_PRAGMA_SIMD
         for (j = 0; j < FDVLEN; j++) {
           T[0][i][j] = I[0][i][j] - I[2][i][j];
           T[1][i][j] = I[1][i][j] + I[2][i][j];
@@ -102,7 +102,7 @@
       }
 
       for (i = 0; i < 4; i++) {
-#pragma simd
+        LIBXSMM_PRAGMA_SIMD
         for (j = 0; j < FDVLEN; j++) {
           Iw[tj*handle->cwino_upd.itiles + ti][i][0][j] = T[i][0][j] - T[i][2][j];
           Iw[tj*handle->cwino_upd.itiles + ti][i][1][j] = T[i][1][j] + T[i][2][j];
@@ -118,7 +118,7 @@
     for (i = 0; i < ALPHA; i++) {
       for (tj = 0; tj < handle->cwino_upd.jtiles; tj++) {
         for (ti = 0; ti < handle->cwino_upd.itiles; ti++) {
-#pragma simd
+          LIBXSMM_PRAGMA_SIMD
           for (k = 0; k < FDVLEN; k++) {
 #ifdef __INTEL_COMPILER
             output[j][i][0][tj*handle->cwino_upd.itiles + ti][k] =

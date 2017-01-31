@@ -51,7 +51,7 @@
   for (j = 0; j < ALPHA; j++) {
     for (i = 0; i < ALPHA; i++) {
       for (v = 0; v < FDVLEN; v++) {
-#pragma simd
+        LIBXSMM_PRAGMA_SIMD
         for (k = 0; k < FDVLEN; k++) {
           Fw[j][i][v][k] =
 #ifdef __INTEL_COMPILER
@@ -68,7 +68,7 @@
   /* inline code start */
   for (j = 0; j < FDVLEN; j++) {
     for (i = 0; i < 4; i++) {
-#pragma simd
+      LIBXSMM_PRAGMA_SIMD
       for (k = 0; k < FDVLEN; k++) {
         t0[k] = Fw[1][i][j][k] + Fw[2][i][j][k];
         T[0][i][k] = t0[k] + Fw[0][i][j][k];
@@ -78,7 +78,7 @@
     }
 
     for (i = 0; i < 3; i++) {
-#pragma simd
+      LIBXSMM_PRAGMA_SIMD
       for (k = 0; k < FDVLEN; k++) {
         t0[k] = T[i][1][k] + T[i][2][k];
         M_[0][k] = t0[k] + T[i][0][k];
@@ -98,7 +98,7 @@
       for (r = 0; r < VRATIO; r++) {
         for (v = 0; v < VRATIO; v++) {
           for (k = 0; k < TDVLEN; k++) {
-#pragma simd
+            LIBXSMM_PRAGMA_SIMD
             for (l = 0; l < TDVLEN; l++) {
 #ifdef __INTEL_COMPILER
               output[v][r][j][i][k][l] +=

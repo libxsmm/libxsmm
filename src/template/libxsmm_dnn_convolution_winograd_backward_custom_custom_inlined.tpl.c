@@ -166,7 +166,7 @@
       for (i = 0; i < handle->cwino_bwd.bimg; i++) {
         for (j = 0; j < handle->cwino_bwd.jtiles; j++) {
           for (k = 0; k < handle->cwino_bwd.itiles; k++) {
-#pragma simd
+            LIBXSMM_PRAGMA_SIMD
             for (l = 0; l < FDVLEN; l++) {
               V[img][oj][oi][ifm1][i][j][k][l] = 0.0f;
             }

@@ -63,7 +63,7 @@
             xdim = ti*(ALPHA - 2) + i;
             if (xdim < handle->ofw) {
               for (r = 0; r < VRATIO; r++) {
-#pragma simd
+                LIBXSMM_PRAGMA_SIMD
                 for (k = 0; k < TDVLEN; k++) {
                   I[j][i][r*TDVLEN + k] =
 #ifdef __INTEL_COMPILER
@@ -75,7 +75,7 @@
               }
             } else {
               for (r = 0; r < VRATIO; r++) {
-#pragma simd
+                LIBXSMM_PRAGMA_SIMD
                 for (k = 0; k < TDVLEN; k++) {
                   I[j][i][r*TDVLEN + k] = 0.0f;
                 }
@@ -85,7 +85,7 @@
         } else {
           for (i = 0; i < ALPHA; i++) {
             for (r = 0; r < VRATIO; r++) {
-#pragma simd
+              LIBXSMM_PRAGMA_SIMD
               for (k = 0; k < TDVLEN; k++) {
                 I[j][i][r*TDVLEN + k] = 0.0f;
               }
@@ -97,7 +97,7 @@
 
       /* inline code start */
       for (i = 0; i < 4; i++) {
-#pragma simd
+        LIBXSMM_PRAGMA_SIMD
         for (j = 0; j < FDVLEN; j++) {
           t0[j] = I[2][i][j] * 0.26890756302521f;
           t1[j] = I[0][i][j] * -0.688403361344538f - t0[j];
@@ -115,7 +115,7 @@
       }
 
       for (i = 0; i < 6; i++) {
-#pragma simd
+        LIBXSMM_PRAGMA_SIMD
         for (j = 0; j < FDVLEN; j++) {
           t0[j] = T[i][2][j] * 0.26890756302521f;
           t1[j] = T[i][0][j] * -0.688403361344538f - t0[j];
@@ -139,7 +139,7 @@
     for (i = 0; i < ALPHA; i++) {
       for (tj = 0; tj < handle->cwino_upd.jtiles; tj++) {
         for (ti = 0; ti < handle->cwino_upd.itiles; ti++) {
-#pragma simd
+          LIBXSMM_PRAGMA_SIMD
           for (k = 0; k < FDVLEN; k++) {
 #ifdef __INTEL_COMPILER
             output[j][i][0][tj*handle->cwino_upd.itiles + ti][k] =
