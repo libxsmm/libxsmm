@@ -50,6 +50,8 @@
     <ClInclude Include="..\src\generator_convolution_forward_avx512.h" />
     <ClInclude Include="..\src\generator_convolution_weight_update_avx2.h" />
     <ClInclude Include="..\src\generator_convolution_weight_update_avx512.h" />
+    <ClInclude Include="..\src\generator_convolution_winograd_forward_avx512.h" />
+    <ClInclude Include="..\src\generator_convolution_winograd_weight_update_avx512.h" />
     <ClInclude Include="..\src\generator_gemm_avx2_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_avx512_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_avx512_microkernel_nofsdbcst.h" />
@@ -72,6 +74,9 @@
     <ClInclude Include="..\src\libxsmm_dnn_convolution_backward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_forward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_weight_update.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_backward.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_forward.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.h" />
     <ClInclude Include="..\src\libxsmm_dnn_handle.h" />
     <ClInclude Include="..\src\libxsmm_dump.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
@@ -95,6 +100,9 @@
     <ClCompile Include="..\src\generator_convolution_forward_avx512.c" />
     <ClCompile Include="..\src\generator_convolution_weight_update_avx2.c" />
     <ClCompile Include="..\src\generator_convolution_weight_update_avx512.c" />
+    <ClCompile Include="..\src\generator_convolution_winograd.c" />
+    <ClCompile Include="..\src\generator_convolution_winograd_forward_avx512.c" />
+    <ClCompile Include="..\src\generator_convolution_winograd_weight_update_avx512.c" />
     <ClCompile Include="..\src\generator_gemm.c" />
     <ClCompile Include="..\src\generator_gemm_avx2_microkernel.c" />
     <ClCompile Include="..\src\generator_gemm_avx512_microkernel.c" />
@@ -121,8 +129,12 @@
     <ClCompile Include="..\src\libxsmm_dnn_convolution_forward.c" />
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_weight_update.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_backward.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_forward.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.c" />
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
     <ClCompile Include="..\src\libxsmm_dump.c" />
+    <ClCompile Include="..\src\libxsmm_fsspmdm.c" />
     <ClCompile Include="..\src\libxsmm_hash.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
