@@ -30,13 +30,8 @@
 ******************************************************************************/
 
   const int total_tiles = handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles;
-#ifdef __INTEL_COMPILER
-  float (* __restrict input)[handle->ifwp][handle->blocksifm][TDVLEN] = (float (*)[*][*][TDVLEN])inp;
-  float (* __restrict output)[ALPHA][(handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg][total_tiles][FDVLEN] = (float (*)[ALPHA][*][*][FDVLEN])tinp;
-#else
   LIBXSMM_VLA_DECL(4, float, input, inp, handle->ifwp, handle->blocksifm, TDVLEN);
   LIBXSMM_VLA_DECL(5, float, output, tinp, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN);
-#endif
   float Iw[total_tiles][ALPHA][ALPHA][FDVLEN];
   float I[ALPHA][ALPHA][FDVLEN];
   int i;
@@ -86,11 +81,7 @@
                 LIBXSMM_PRAGMA_SIMD
                 for (k = 0; k < TDVLEN; k++) {
                   I[j][i][r*TDVLEN + k] =
-#ifdef __INTEL_COMPILER
-                    input[ydim/* + handle->desc.pad_h*/][xdim/* + handle->desc.pad_w*/][r][k];
-#else
                     LIBXSMM_VLA_ACCESS(4, input, ydim/* + handle->desc.pad_h*/, xdim/* + handle->desc.pad_w*/, r, k, handle->ifwp, handle->blocksifm, TDVLEN);
-#endif
                 }
               }
             }
@@ -145,11 +136,7 @@
         for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
           LIBXSMM_PRAGMA_SIMD
           for (k = 0; k < FDVLEN; k++) {
-#ifdef __INTEL_COMPILER
-            output[j][i][0][tj*handle->cwino_fwd.itiles + ti][k] =
-#else
             LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_fwd.itiles + ti, k, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN) =
-#endif
               Iw[tj*handle->cwino_fwd.itiles + ti][j][i][k];
           }
         }

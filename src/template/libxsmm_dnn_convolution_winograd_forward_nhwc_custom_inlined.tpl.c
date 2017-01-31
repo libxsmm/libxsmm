@@ -62,15 +62,10 @@
   float *vp = handle->scratch3; /*(float*)libxsmm_aligned_malloc(ALPHA*ALPHA*handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles*handle->desc.C*handle->desc.N*sizeof(float), 64);*/
   float *mp = handle->scratch4; /*(float*)libxsmm_aligned_malloc(ALPHA*ALPHA*handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles*handle->desc.K*handle->desc.N*sizeof(float), 64);*/
 
-#ifdef __INTEL_COMPILER
-  float (* __restrict U)[ALPHA][handle->blocksofm/VRATIO][handle->blocksifm/VRATIO][FDVLEN][FDVLEN] = (float (*)[*][*][*][FDVLEN][FDVLEN])up;
-  float (* __restrict V)[ALPHA][ALPHA][handle->blocksifm/VRATIO][handle->cwino_fwd.bimg][handle->cwino_fwd.jtiles][handle->cwino_fwd.itiles][FDVLEN] = (float (*)[*][*][*][*][*][*][FDVLEN])vp;
-  float (* __restrict M)[ALPHA][ALPHA][handle->blocksofm/VRATIO][handle->cwino_fwd.bimg][handle->cwino_fwd.jtiles][handle->cwino_fwd.itiles][FDVLEN] = (float (*)[*][*][*][*][*][*][FDVLEN])mp;
-#else
   LIBXSMM_VLA_DECL(6, float, U, up, ALPHA, handle->blocksofm/VRATIO, handle->blocksifm/VRATIO, FDVLEN, FDVLEN);
   LIBXSMM_VLA_DECL(8, float, V, vp, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, FDVLEN);
   LIBXSMM_VLA_DECL(8, float, M, mp, ALPHA, ALPHA, handle->blocksofm/VRATIO, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, FDVLEN);
-#endif
+
   typedef libxsmm_sconvfunction libxsmm_convfunction;
   libxsmm_convfunction jitted_conv_fp;
   jitted_conv_fp = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
@@ -102,12 +97,8 @@
   for (job = thr_begin; job < thr_end; job++) {
     img  = job / (handle->blocksifm / VRATIO);
     ifm1 = (job % (handle->blocksifm / VRATIO)) * VRATIO;
-#ifdef __INTEL_COMPILER
-    input_transform_nhwc_custom(&(input[img][0][0][ifm1][0]), &(V[img/handle->cwino_fwd.bimg][0][0][ifm1/VRATIO][img%handle->cwino_fwd.bimg][0][0][0]), handle);
-#else
     input_transform_nhwc_custom(&LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, TDVLEN),
       &LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_fwd.bimg, 0, 0, ifm1/VRATIO, img%handle->cwino_fwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, FDVLEN), handle);
-#endif
   }
 #ifdef TIME
   libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
@@ -128,12 +119,8 @@
   for (job = thr_begin; job < thr_end; job++) {
     ofm1 = (job / (handle->blocksifm / VRATIO)) * VRATIO;
     ifm1 = (job % (handle->blocksifm / VRATIO)) * VRATIO;
-#ifdef __INTEL_COMPILER
-    weight_transform(&(weight[ofm1][ifm1][0][0][0][0]), &(U[0][0][ofm1/VRATIO][ifm1/VRATIO][0][0]), handle);
-#else
     weight_transform(&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, TDVLEN, TDVLEN),
       &LIBXSMM_VLA_ACCESS(6, U, 0, 0, ofm1/VRATIO, ifm1/VRATIO, 0, 0, ALPHA, handle->blocksofm/VRATIO, handle->blocksifm/VRATIO, FDVLEN, FDVLEN), handle);
-#endif
   }
   libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
 #ifdef TIME
@@ -204,12 +191,8 @@
   for (job = thr_begin; job < thr_end; job++) {
     img  = job / (handle->blocksofm / VRATIO);
     ofm1 = (job % (handle->blocksofm / VRATIO)) * VRATIO;
-#ifdef __INTEL_COMPILER
-    output_transform_nhwc_custom(&(M[img/handle->cwino_fwd.bimg][0][0][ofm1/VRATIO][img%handle->cwino_fwd.bimg][0][0][0]), &(output[img][0][0][ofm1][0]), /*TDVLEN,*/ VRATIO, 0 /*&bias[ofm1]*/, handle);
-#else
     output_transform_nhwc_custom(&LIBXSMM_VLA_ACCESS(8, M, img/handle->cwino_fwd.bimg, 0, 0, ofm1/VRATIO, img%handle->cwino_fwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksofm/VRATIO, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, FDVLEN),
       &LIBXSMM_VLA_ACCESS(5, output, img, 0, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, TDVLEN), /*TDVLEN,*/ VRATIO, 0 /*&bias[ofm1]*/, handle);
-#endif
   }
   libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
 #ifdef TIME

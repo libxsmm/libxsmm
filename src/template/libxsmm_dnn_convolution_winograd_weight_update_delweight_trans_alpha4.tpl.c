@@ -29,13 +29,8 @@
 /* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
-#ifdef __INTEL_COMPILER
-  float (* __restrict output)[handle->blocksifm][3][3][TDVLEN][TDVLEN] = (float (*)[*][3][3][TDVLEN][TDVLEN])wp;
-  float (* __restrict input )[ALPHA][(handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO)][FDVLEN][FDVLEN] = (float (*)[ALPHA][*][FDVLEN][FDVLEN])twp;
-#else
   LIBXSMM_VLA_DECL(6, float, output, wp, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
   LIBXSMM_VLA_DECL(5, float, input, twp, ALPHA, (handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO), FDVLEN, FDVLEN);
-#endif
   float Fw[ALPHA][ALPHA][FDVLEN][FDVLEN];
   float F[3][3][FDVLEN][FDVLEN];
   int i;
@@ -54,11 +49,7 @@
         LIBXSMM_PRAGMA_SIMD
         for (k = 0; k < FDVLEN; k++) {
           Fw[j][i][v][k] =
-#ifdef __INTEL_COMPILER
-            input[j][i][0][v][k];
-#else
             LIBXSMM_VLA_ACCESS(5, input, j, i, 0, v, k, ALPHA, (handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO), FDVLEN, FDVLEN);
-#endif
         }
       }
     }
@@ -100,11 +91,7 @@
           for (k = 0; k < TDVLEN; k++) {
             LIBXSMM_PRAGMA_SIMD
             for (l = 0; l < TDVLEN; l++) {
-#ifdef __INTEL_COMPILER
-              output[v][r][j][i][k][l] +=
-#else
-                LIBXSMM_VLA_ACCESS(6, output, v, r, j, i, k, l, handle->blocksifm, 3, 3, TDVLEN, TDVLEN) +=
-#endif
+              LIBXSMM_VLA_ACCESS(6, output, v, r, j, i, k, l, handle->blocksifm, 3, 3, TDVLEN, TDVLEN) +=
                 F[j][i][r*TDVLEN + k][v*TDVLEN + l];
             }
           }
