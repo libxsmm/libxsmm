@@ -101,7 +101,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
     libxsmm_blasint i, j;
     for (i = 0; i < (*n); ++i) {
       for (j = 0; j < (*m); ++j) {
-        d[i*(*n)+j] = c[i*ldx+j];
+        d[i*(*m)+j] = c[i*ldx+j];
       }
     }
   }
@@ -214,7 +214,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
     libxsmm_blasint i, j;
     for (i = 0; i < (*n); ++i) {
       for (j = 0; j < (*m); ++j) {
-        d[i*(*n)+j] = c[i*ldx+j];
+        d[i*(*m)+j] = c[i*ldx+j];
       }
     }
   }

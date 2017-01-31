@@ -174,7 +174,7 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_stat(libxsmm_gemm_precision precision, c
 {
   int result = EXIT_SUCCESS;
   if (0 != matrix && 0 != stat) {
-    const libxsmm_blasint ldx = (0 != ld ? *ld : n);
+    const libxsmm_blasint ldx = (0 != ld ? *ld : m);
     double sum_error = 0; /* Kahan's compensation */
     libxsmm_blasint i, j;
     switch(precision) {
@@ -272,7 +272,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
     libxsmm_blasint i, j;
     for (i = 0; i < (*n); ++i) {
       for (j = 0; j < (*m); ++j) {
-        d[i*(*n)+j] = c[i*ldx+j];
+        d[i*(*m)+j] = c[i*ldx+j];
       }
     }
   }
@@ -340,7 +340,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
     libxsmm_blasint i, j;
     for (i = 0; i < (*n); ++i) {
       for (j = 0; j < (*m); ++j) {
-        d[i*(*n)+j] = c[i*ldx+j];
+        d[i*(*m)+j] = c[i*ldx+j];
       }
     }
   }
