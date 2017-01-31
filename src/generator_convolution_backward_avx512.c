@@ -633,7 +633,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
         l_output_idx = i_gp_reg_mapping->gp_reg_help_0;
         l_scale = 8;
       } else {
-        /* shouldn't happen.... */
+        assert(0/*should not happen*/);
       }
 
       libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
@@ -923,7 +923,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_peeled( libxsmm_
         l_output_idx = i_gp_reg_mapping->gp_reg_help_0;
         l_scale = 8;
       } else {
-        /* shouldn't happen.... */
+        assert(0/*should not happen*/);
       }
 
       libxsmm_x86_instruction_vec_compute_mem( io_generated_code,

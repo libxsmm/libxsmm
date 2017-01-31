@@ -264,7 +264,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
       }
       *status = libxsmm_dnn_internal_create_conv_handle_direct( handle );
     } else {
-      /* shouldn't happen */
+      assert(0/*should not happen*/);
     }
   }
   else {

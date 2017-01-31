@@ -66,7 +66,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
   unsigned int fdvlen;
   unsigned int m_dist;
   unsigned int num_regs;
-  int reg;
+  unsigned int reg;
   int wreg;
 
   /* define gp register mapping */
@@ -129,7 +129,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
 
   max_index = (i_conv_desc->ur_m-1)*i_conv_desc->itiles*i_conv_desc->jtiles + (i_conv_desc->ur_j-1)*i_conv_desc->itiles + (i_conv_desc->ur_i-1);
 
-  /* Intialize helper registers for SIB addressing */
+  /* Initialize helper registers for SIB addressing */
   if ( max_index >= 1 ) {
     /* helper 0: Index register holding ldb*datatype_size */
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
@@ -343,7 +343,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                 l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
                 l_scale = 8;
               } else {
-                /* shouldn't happen.... */
+                assert(0/*should not happen*/);
               }
 
               libxsmm_x86_instruction_vec_compute_mem( io_generated_code,

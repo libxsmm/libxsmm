@@ -1275,7 +1275,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         /* wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT; */
         /* handle->code_fwd[3].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp); */
       } else {
-        /* shouldn't happen */
+        assert(0/*should not happen*/);
       }
     }
     /* Backward path */
@@ -1597,7 +1597,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
         handle->code_bwd[1].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
       } else {
-        /* shouldn't happen */
+        assert(0/*should not happen*/);
       }
     } /* End of backward */
     /* Weight update path */
@@ -1943,7 +1943,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_wu.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
         handle->code_upd[1].pmm = libxsmm_create_xconv_wino_update_weights(&wino_desc_wu);
       } else {
-        /* shouldn't happen */
+        assert(0/*should not happen*/);
       }
     } /* end of weight-update handle */
     {

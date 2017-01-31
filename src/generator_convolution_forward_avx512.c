@@ -562,7 +562,7 @@ void libxsmm_generator_convolution_forward_avx512_calc_sib_input_strides( const 
     *o_input_idx = i_gp_reg_mapping->gp_reg_help_0;
     *o_scale = 8;
   } else {
-    /* shouldn't happen.... */
+    assert(0/*should not happen*/);
   }
 }
 
@@ -622,7 +622,7 @@ void libxsmm_generator_convolution_forward_avx512_calc_sib_input_strides_two_row
     *o_input_idx = i_gp_reg_mapping->gp_reg_help_0;
     *o_scale = 8;
   } else {
-    /* shouldn't happen.... */
+    assert(0/*should not happen*/);
   }
 }
 
@@ -816,7 +816,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( libxsmm_generate
                                                  i_conv_kernel_config->vector_reg_count - l_reg_block + l_n,
                                                  i_conv_kernel_config->vector_reg_count - l_reg_block + l_n  );
       } else {
-        /* shouldn't happen as error was thrown above */
+        assert(0/*should not happen as error was thrown above*/);
       }
 
       /* handle prefetches for input and weights */
@@ -1045,7 +1045,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( libxsmm
                                                    i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb),
                                                    i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb)  );
         } else {
-          /* shouldn't happen as error was thrown above */
+          assert(0/*should not happen as error was thrown above*/);
         }
 
         /* handle prefetches for input and weights */

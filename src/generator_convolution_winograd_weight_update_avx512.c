@@ -294,7 +294,7 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
             l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
             l_scale = 8;
           } else {
-            /* shouldn't happen.... */
+            assert(0/*should not happen*/);
           }
 
           for ( ofm = 0; ofm < i_conv_desc->vratio; ofm++ ) {
