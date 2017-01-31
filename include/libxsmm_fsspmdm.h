@@ -45,16 +45,8 @@
 # pragma offload_attribute(pop)
 #endif
 
-typedef struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
-  int M;
-  int N;
-  int K;
-  int ldb;
-  int ldc;
-  int N_chunksize;
-  double* a_dense;
-  libxsmm_dmmfunction kernel;
-} libxsmm_dfsspmdm;
+/** Opaque types for fsspmdm */
+typedef struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm libxsmm_dfsspmdm;
 
 LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,   const int N,   const int K, 
                                                        const int lda, const int ldb, const int ldc,
