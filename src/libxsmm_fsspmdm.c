@@ -58,11 +58,10 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,  
   int i = 0;
   int j = 0;
   int n = 0;
-  int vlen = 0;
 
   /* some checks... */
-  assert( N%8 == 0 );
-  assert( N >= 8 );
+  assert( N%16 == 0 );
+  assert( N >= 16 );
   assert( alpha == 1.0 );
   assert( beta == 1.0 );
 
@@ -105,17 +104,18 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,  
   a_csr_rowptr[M] = a_nnz; 
 
   /* attempt to JIT a sparse_reg */
-  vlen = 8;
-  xgemm_desc = libxsmm_create_dgemm_descriptor('n', 'n', M, vlen, K, 0, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH_NONE);
+  new_handle->N_chunksize = 8;
+  /* @TODO change to macro */
+  xgemm_desc = libxsmm_create_dgemm_descriptor('n', 'n', M, new_handle->N_chunksize, K, 0, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH_NONE);
   new_handle->kernel = libxsmm_create_dcsr_reg( xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values ).dmm;
 
   /* continue with sparse A */
   if (new_handle->kernel != 0) {
-    new_handle->N_chunksize = vlen;
+  /* nothing to do */
   /* attempt to JIT dense kernel as sparse_reg failed */  
   } else {
-    new_handle->kernel = libxsmm_dmmdispatch(N, M, K, &ldb, &K, &ldc, &alpha, &beta, 0, (const int*)LIBXSMM_PREFETCH_NONE);
-    new_handle->N_chunksize = N;
+    new_handle->N_chunksize = 16;
+    new_handle->kernel = libxsmm_dmmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, 0, (const int*)LIBXSMM_PREFETCH_NONE);
     /* copy A over */
     new_handle->a_dense = (double*)libxsmm_aligned_malloc(M*K*sizeof(double), 64);
     for ( i = 0; i < M; i++ ) {
