@@ -923,8 +923,6 @@ void factors_ijm( unsigned int  itiles,
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_winograd_check( libxsmm_dnn_layer* handle ) {
   /* flag to test if we found an architecture which is supported */
   int noarch = 1;
-  /* general counting helper */
-  int i = 0;
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* now architecture specific */
@@ -1954,6 +1952,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         } else {
           wino_desc_wu.bimg = 1;
         }
+      }
       allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
       allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
       factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
