@@ -96,7 +96,7 @@
   for (job = thr_begin; job < thr_end; job++) {
     img  = job / (handle->blocksofm / VRATIO);
     ofm1 = (job % (handle->blocksofm / VRATIO)) * VRATIO;
-    input_transform_custom_custom(&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN),
+    internal_bwd_input_transform_custom_custom(&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN),
       &LIBXSMM_VLA_ACCESS(8, M, img/handle->cwino_bwd.bimg, 0, 0, ofm1/VRATIO, img%handle->cwino_bwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksofm/VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN), handle);
   }
 #ifdef BTIME
@@ -118,7 +118,7 @@
   for (job = thr_begin; job < thr_end; job++) {
     ofm1 = (job / (handle->blocksifm / VRATIO)) * VRATIO;
     ifm1 = (job % (handle->blocksifm / VRATIO)) * VRATIO;
-    weight_transform(&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, TDVLEN, TDVLEN),
+    internal_bwd_weight_transform(&LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, TDVLEN, TDVLEN),
       &LIBXSMM_VLA_ACCESS(6, U, 0, 0, ifm1/VRATIO, ofm1/VRATIO, 0, 0, ALPHA, handle->blocksifm/VRATIO, handle->blocksofm/VRATIO, FDVLEN, FDVLEN), handle);
   }
   libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
@@ -190,7 +190,7 @@
   for (job = thr_begin; job < thr_end; job++) {
     img  = job / (handle->blocksifm / VRATIO);
     ifm1 = (job % (handle->blocksifm / VRATIO)) * VRATIO;
-    output_transform_custom_custom(&LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_bwd.bimg, 0, 0, ifm1/VRATIO, img%handle->cwino_bwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN),
+    internal_bwd_output_transform_custom_custom(&LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_bwd.bimg, 0, 0, ifm1/VRATIO, img%handle->cwino_bwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN),
       &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN), handle);
   }
   libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);

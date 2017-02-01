@@ -30,7 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_winograd_backward.h"
 
-static void input_transform_custom_custom( float *inp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_input_transform_custom_custom( float *inp,
                                            float *tinp,
                                            const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_bwd.vratio == 1 && handle->cwino_bwd.alpha == 6) {
@@ -79,7 +79,7 @@ static void input_transform_custom_custom( float *inp,
   }
 }
 
-static void input_transform_nhwc_custom( float *inp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_input_transform_nhwc_custom( float *inp,
                                          float *tinp,
                                          const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_bwd.vratio == 1 && handle->cwino_bwd.alpha == 6) {
@@ -127,7 +127,8 @@ static void input_transform_nhwc_custom( float *inp,
     exit(1);
   }
 }
-static void weight_transform( float *wp,
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_weight_transform( float *wp,
                               float *twp,
                               const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_bwd.vratio == 1 && handle->cwino_bwd.alpha == 6) {
@@ -176,7 +177,7 @@ static void weight_transform( float *wp,
   }
 }
 
-static void output_transform_custom_custom( float *toutp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_output_transform_custom_custom( float *toutp,
                                             float *outp,
                                             const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_bwd.vratio == 1 && handle->cwino_bwd.alpha == 6) {
@@ -225,7 +226,7 @@ static void output_transform_custom_custom( float *toutp,
   }
 }
 
-static void output_transform_nhwc_custom( float *toutp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_output_transform_nhwc_custom( float *toutp,
                                           float *outp,
                                           const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_bwd.vratio == 1 && handle->cwino_bwd.alpha == 6) {

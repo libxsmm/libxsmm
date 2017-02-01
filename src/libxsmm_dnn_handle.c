@@ -801,8 +801,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   return status;
 }
 
+
 /* This function finds the prime factors of a number */
-void factors( unsigned int num,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors(
+              unsigned int num,
               unsigned int num_factors[] )
 {
   unsigned int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29};
@@ -819,11 +821,15 @@ void factors( unsigned int num,
   }
 }
 
-/* This function finds the loop increments (ur_i, ur_j, ur_m) of (itiles, jtiles, bimg) */
-/* such that ur_i*ur_j*ur_m <= max_acc                                                  */
-/* The following loop may not give an optimal solution (knapsack problem)               */
-/* Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2                            */
-void factors_ijm( unsigned int  itiles,
+
+/**
+ * This function finds the loop increments (ur_i, ur_j, ur_m) of (itiles, jtiles, bimg)
+ * such that ur_i*ur_j*ur_m <= max_acc
+ * The following loop may not give an optimal solution (knapsack problem)
+ * Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2
+ */
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors_ijm(
+                  unsigned int itiles,
                   unsigned int  jtiles,
                   unsigned int  bimg,
                   unsigned int* ur_i,
@@ -847,7 +853,7 @@ void factors_ijm( unsigned int  itiles,
     fact[i] = 1;
     cur_fact[i] = 1;
   }
-  factors(itiles*jtiles*bimg, fact);
+  internal_dnn_handle_factors(itiles*jtiles*bimg, fact);
 
   cur_acc = 1;
   index = 0;
@@ -864,9 +870,9 @@ void factors_ijm( unsigned int  itiles,
     fact_j[i] = 1;
     fact_m[i] = 1;
   }
-  factors(itiles, fact_i);
-  factors(jtiles, fact_j);
-  factors(bimg,   fact_m);
+  internal_dnn_handle_factors(itiles, fact_i);
+  internal_dnn_handle_factors(jtiles, fact_j);
+  internal_dnn_handle_factors(bimg,   fact_m);
 
   *ur_i = 1;
   *ur_j = 1;
@@ -919,6 +925,7 @@ void factors_ijm( unsigned int  itiles,
     printf("Control should not reach here FACT=%d\n", cur_fact[i]);
   }
 }
+
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_winograd_check( libxsmm_dnn_layer* handle ) {
   /* flag to test if we found an architecture which is supported */
@@ -1267,7 +1274,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         } else {
           wino_desc_fp.bimg = 1;
         }
-        factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
+        internal_dnn_handle_factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
                      &(wino_desc_fp.ur_i), &(wino_desc_fp.ur_j), &(wino_desc_fp.ur_m), 26 );
         if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0)
           wino_desc_fp.vratio = 2;
@@ -1279,7 +1286,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         } else {
           wino_desc_fp.bimg = 1;
         }
-        factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
+        internal_dnn_handle_factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
                      &(wino_desc_fp.ur_i), &(wino_desc_fp.ur_j), &(wino_desc_fp.ur_m), 26 );
         if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
           wino_desc_fp.vratio = 2;
@@ -1606,7 +1613,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       /* General scenario */
       else {
         wino_desc_bp.bimg = wino_desc_fp.bimg;
-        factors_ijm( wino_desc_bp.itiles, wino_desc_bp.jtiles, wino_desc_bp.bimg,
+        internal_dnn_handle_factors_ijm( wino_desc_bp.itiles, wino_desc_bp.jtiles, wino_desc_bp.bimg,
                      &(wino_desc_bp.ur_i), &(wino_desc_bp.ur_j), &(wino_desc_bp.ur_m), 26 );
         if(wino_desc_bp.ur_i * wino_desc_bp.ur_j * wino_desc_bp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
           wino_desc_bp.vratio = 2;
@@ -1938,7 +1945,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
         allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
         allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
-        factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
+        internal_dnn_handle_factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
                      &(wino_desc_wu.ur_i), &(wino_desc_wu.ur_j), &(wino_desc_wu.ur_m), allowed_unroll );
         if(wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
           wino_desc_wu.vratio = 2;
@@ -1955,7 +1962,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       }
       allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
       allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
-      factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
+      internal_dnn_handle_factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
                    &(wino_desc_wu.ur_i), &(wino_desc_wu.ur_j), &(wino_desc_wu.ur_m), allowed_unroll );
       if(wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
         wino_desc_wu.vratio = 2;
@@ -2028,3 +2035,4 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
   return status;
 }
+

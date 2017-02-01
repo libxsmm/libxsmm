@@ -30,7 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_winograd_forward.h"
 
-static void input_transform_custom_custom( float *inp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_custom( float *inp,
                                            float *tinp,
                                            const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 6) {
@@ -79,7 +79,7 @@ static void input_transform_custom_custom( float *inp,
   }
 }
 
-static void input_transform_nhwc_custom( float *inp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_nhwc_custom( float *inp,
                                          float *tinp,
                                          const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 6) {
@@ -128,7 +128,7 @@ static void input_transform_nhwc_custom( float *inp,
   }
 }
 
-static void weight_transform( float *wp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_weight_transform( float *wp,
                               float *twp,
                               const libxsmm_dnn_layer* handle ) {
   if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 6) {
@@ -177,7 +177,7 @@ static void weight_transform( float *wp,
   }
 }
 
-static void output_transform_custom_custom( float *toutp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_custom_custom( float *toutp,
                                             float *outp,
                                             const int vratio,
                                             float bias[/*vratio*/][16/*tdvlen*/],
@@ -228,7 +228,7 @@ static void output_transform_custom_custom( float *toutp,
   }
 }
 
-static void output_transform_nhwc_custom( float *toutp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_nhwc_custom( float *toutp,
                                           float *outp,
                                           const int vratio,
                                           float bias[/*vratio*/][16/*tdvlen*/],

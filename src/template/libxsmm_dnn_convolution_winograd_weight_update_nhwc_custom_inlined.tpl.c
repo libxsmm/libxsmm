@@ -94,7 +94,7 @@
   for (job = thr_begin; job < thr_end; job++) {
     img  = job / (handle->blocksifm / VRATIO);
     ifm1 = (job % (handle->blocksifm / VRATIO)) * VRATIO;
-    input_transform_nhwc_custom(&LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, TDVLEN),
+    internal_upd_input_transform_nhwc_custom(&LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, TDVLEN),
       &LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_upd.bimg, 0, 0, ifm1/VRATIO, img%handle->cwino_upd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, FDVLEN), handle);
   }
 #ifdef WTIME
