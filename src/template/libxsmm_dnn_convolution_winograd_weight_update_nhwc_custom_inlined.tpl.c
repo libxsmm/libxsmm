@@ -36,14 +36,10 @@
   int thr_end;
   int job;
   unsigned int img;
-  int img1;
   int ifm1;
-  int ifm2;
   int ofm1;
-  int ofm2;
   int oj;
   int oi;
-  unsigned int ti, tj;
   int k, l;
   LIBXSMM_ASSUME_ALIGNED(handle->reg_input->data,  64);
   LIBXSMM_ASSUME_ALIGNED(handle->reg_output->data, 64);
@@ -149,6 +145,9 @@
 #if 1
         jitted_conv_wu((const float*)&(M[img][oj][oi][ofm1][0][0][0][0]), (const float*)&(V[img][oj][oi][ifm1][0][0][0][0]), (float*)&(U[oj][oi][ofm1][ifm1][0][0]), 0, 0, 0);
 #else
+        unsigned int ti, tj;
+        unsigned int img1;
+        int ifm2, ofm2;
         for (img1 = 0; img1 < handle->cwino_upd.bimg; img1++) {
           for (tj = 0; tj < handle->cwino_upd.jtiles; tj++) {
             for (ti = 0; ti < handle->cwino_upd.itiles; ti++) {

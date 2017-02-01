@@ -46,7 +46,6 @@
   float t3[FDVLEN];
   float t4[FDVLEN];
   float t5[FDVLEN];
-  float t6[FDVLEN];
 
   for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
     for (ti = 0; ti < handle->cwino_bwd.itiles; ti++) {

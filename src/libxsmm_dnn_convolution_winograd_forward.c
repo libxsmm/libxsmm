@@ -32,7 +32,8 @@
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_custom( float *inp,
                                            float *tinp,
-                                           const libxsmm_dnn_layer* handle ) {
+                                           const libxsmm_dnn_layer* handle )
+{
   if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
@@ -81,7 +82,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_cus
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_nhwc_custom( float *inp,
                                          float *tinp,
-                                         const libxsmm_dnn_layer* handle ) {
+                                         const libxsmm_dnn_layer* handle )
+{
   if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
@@ -130,7 +132,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_nhwc_custo
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_weight_transform( float *wp,
                               float *twp,
-                              const libxsmm_dnn_layer* handle ) {
+                              const libxsmm_dnn_layer* handle )
+{
   if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
@@ -181,7 +184,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_custom_cu
                                             float *outp,
                                             const int vratio,
                                             float bias[/*vratio*/][16/*tdvlen*/],
-                                            const libxsmm_dnn_layer* handle ) {
+                                            const libxsmm_dnn_layer* handle )
+{
+  LIBXSMM_UNUSED(bias); /* TODO: remove */
   if (vratio == 1 && handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
@@ -232,7 +237,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_nhwc_cust
                                           float *outp,
                                           const int vratio,
                                           float bias[/*vratio*/][16/*tdvlen*/],
-                                          const libxsmm_dnn_layer* handle ) {
+                                          const libxsmm_dnn_layer* handle )
+{
+  LIBXSMM_UNUSED(bias); /* TODO: remove */
   if (vratio == 1 && handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
