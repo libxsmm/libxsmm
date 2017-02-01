@@ -806,7 +806,7 @@ LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code ) {
   io_generated_code->last_error = i_error_code;
-#ifndef NDEBUG
+#if !defined(NDEBUG)
   fprintf( stderr, "%s\n", libxsmm_strerror( i_error_code ) );
 #endif
 }
