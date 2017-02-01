@@ -343,8 +343,9 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
               } else if ( index % 9 == 8 ) {
                 l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
                 l_scale = 8;
+              }
 #if !defined(NDEBUG)
-              } else {
+              else {
                 assert(0/*should not happen*/);
                 l_b_idx = 0;
                 l_scale = 0;
