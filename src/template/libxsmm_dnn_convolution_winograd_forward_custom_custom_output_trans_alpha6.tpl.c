@@ -70,9 +70,9 @@
           t3[j] = Ow[tj*handle->cwino_fwd.itiles + ti][3][i][j] - Ow[tj*handle->cwino_fwd.itiles + ti][4][i][j];
 
           T[0][i][j] = t0[j] + t1[j]     + Ow[tj*handle->cwino_fwd.itiles + ti][0][i][j];
-          T[1][i][j] = t2[j] + t3[j]*2.0;
-          T[2][i][j] = t0[j] + t1[j]*4.0;
-          T[3][i][j] = t2[j] + t3[j]*8.0 + Ow[tj*handle->cwino_fwd.itiles + ti][5][i][j];
+          T[1][i][j] = t2[j] + t3[j]*2.f;
+          T[2][i][j] = t0[j] + t1[j]*4.f;
+          T[3][i][j] = t2[j] + t3[j]*8.f + Ow[tj*handle->cwino_fwd.itiles + ti][5][i][j];
         }
       }
 
@@ -85,9 +85,9 @@
           t3[j] = T[i][3][j] - T[i][4][j];
 
           O[i][0][j] = t0[j] + t1[j]     + T[i][0][j];
-          O[i][1][j] = t2[j] + t3[j]*2.0;
-          O[i][2][j] = t0[j] + t1[j]*4.0;
-          O[i][3][j] = t2[j] + t3[j]*8.0 + T[i][5][j];
+          O[i][1][j] = t2[j] + t3[j]*2.f;
+          O[i][2][j] = t0[j] + t1[j]*4.f;
+          O[i][3][j] = t2[j] + t3[j]*8.f + T[i][5][j];
         }
       }
       /* inline code end */
