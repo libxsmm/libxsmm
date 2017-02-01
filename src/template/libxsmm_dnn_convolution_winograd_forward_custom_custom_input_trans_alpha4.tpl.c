@@ -34,14 +34,9 @@
   LIBXSMM_VLA_DECL(5, float, output, tinp, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN);
   float Iw[total_tiles][ALPHA][ALPHA][FDVLEN];
   float I[ALPHA][ALPHA][FDVLEN];
-  int i;
-  int j;
-  int ti;
-  int tj;
-  int r;
-  int k;
-  int xdim;
-  int ydim;
+  unsigned int ti, tj;
+  int i, j, k, r;
+  int xdim, ydim;
   float A0[FDVLEN];
   float A1[FDVLEN];
   float A2[FDVLEN];

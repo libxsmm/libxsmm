@@ -33,12 +33,9 @@
   LIBXSMM_VLA_DECL(5, float, output, twp, ALPHA, (handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO), FDVLEN, FDVLEN);
   float Fw[ALPHA][ALPHA][FDVLEN][FDVLEN];
   float F[3][3][FDVLEN][FDVLEN];
-  int i;
-  int j;
   int r;
   int v;
-  int k;
-  int l;
+  unsigned int i, j, k, l;
   const float rcp4  = 1.0f/4.0f;
   const float rcp6  = 1.0f/6.0f;
   const float rcp12 = 1.0f/12.0f;

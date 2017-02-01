@@ -45,10 +45,7 @@
   int oi;
   int tj;
   int ti;
-  int i;
-  int j;
-  int k;
-  int l;
+  unsigned int i, j, k, l;
   LIBXSMM_ASSUME_ALIGNED(handle->reg_input->data,  64);
   LIBXSMM_ASSUME_ALIGNED(handle->reg_output->data, 64);
   LIBXSMM_ASSUME_ALIGNED(handle->reg_filter->data, 64);

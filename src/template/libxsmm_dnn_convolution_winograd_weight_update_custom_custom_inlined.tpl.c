@@ -35,7 +35,7 @@
   int thr_begin;
   int thr_end;
   int job;
-  int img;
+  unsigned int img;
   int img1;
   int ifm1;
   int ifm2;
@@ -43,10 +43,8 @@
   int ofm2;
   int oj;
   int oi;
-  int tj;
-  int ti;
-  int k;
-  int l;
+  unsigned int ti, tj;
+  int k, l;
   LIBXSMM_ASSUME_ALIGNED(handle->reg_input->data,  64);
   LIBXSMM_ASSUME_ALIGNED(handle->reg_output->data, 64);
   LIBXSMM_ASSUME_ALIGNED(handle->reg_filter->data, 64);
