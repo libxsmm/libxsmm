@@ -256,12 +256,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
     }
 
     if ( handle->algo == LIBXSMM_DNN_CONV_ALGO_DIRECT ) {
-      if(conv_desc.pad_h_in != conv_desc.pad_h || conv_desc.pad_w_in != conv_desc.pad_w) {
-        *status = LIBXSMM_DNN_ERR_INVALID_PADDING;
-        free(handle);
-        handle = 0;
-        return 0;
-      }
       *status = libxsmm_dnn_internal_create_conv_handle_direct( handle );
     } else {
       assert(0/*should not happen*/);
@@ -1637,7 +1631,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_execute_st(libxsm
           case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
             switch (handle->buffer_format) {
               case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
-                 switch (handle->filter_format) {
+                switch (handle->filter_format) {
                   case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
                     status = libxsmm_dnn_convolve_st_upd_custom_custom(handle, start_thread, tid);
                   } break;
