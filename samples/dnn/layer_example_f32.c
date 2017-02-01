@@ -426,6 +426,7 @@ int main(int argc, char* argv[])
   int kw = 3;             /* filter width, "S" */
   int pad = 0;            /* padding in output */
   int stride = 1;         /* stride when accessing inputs */
+  int padding_mode = 0;   /* padding mode */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'A';      /* 'A': ALL, 'L': LIBXSMM, 'T': Tensorflow, 'M', Mixed */
 #if defined(_OPENMP)
@@ -451,7 +452,7 @@ int main(int argc, char* argv[])
   memset(&norms_upd, 0, sizeof(norms_upd));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type format\n", argv[0]);
+    printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type format padding_mode\n", argv[0]);
     return 0;
   }
   srand48(1);
@@ -470,6 +471,7 @@ int main(int argc, char* argv[])
   if (argc > i) stride     = atoi(argv[i++]);
   if (argc > i) type       = *(argv[i++]);
   if (argc > i) format     = *(argv[i++]);
+  if (argc > i) padding_mode = atoi(argv[i++]);
 
   if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (WU only)\n");
@@ -481,8 +483,13 @@ int main(int argc, char* argv[])
   pad_h = pad;
   pad_w = pad;
 
-  pad_h_in = pad_h;
-  pad_w_in = pad_w;
+  if (padding_mode == 1) {
+    pad_h_in = pad_h;
+    pad_w_in = pad_w;
+  } else {
+    pad_h_in = 0;
+    pad_w_in = 0;
+  }
 
   pad_h_out = 0;
   pad_w_out = 0;

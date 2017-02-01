@@ -186,6 +186,11 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t scratch3_size;
   void* scratch4;
   size_t scratch4_size;
+  void* scratch5;             /* This scratch is used as a copy buffer when padding needs to be applied */
+  size_t minibatch_scratch_size;
+  size_t fwdbwd_scratch_size;
+  size_t max_scratch5_size;
+  int padding_flag;           /* Flag that dictates if we should apply padding in the input */
   void* scratch6;
   size_t scratch6_size;
 

@@ -1,3 +1,4 @@
+
 /******************************************************************************
 ** Copyright (c) 2016-2017, Intel Corporation                                **
 ** All rights reserved.                                                      **
@@ -59,6 +60,13 @@ if (handle->datatype != handle->datatype_itm) {
   LIBXSMM_VLA_DECL(5, element_input_type, output_lp, out_lp, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
   LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
   LIBXSMM_VLA_DECL(6, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+#if defined(INPUT_PADDING)
+  /* Variables and initializations related to padding */
+  const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
+  const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
+  LIBXSMM_VLA_DECL(3, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * padded_h * padded_w * handle->ifmblock, padded_w, handle->ifmblock);
+#endif
+
 
   /* perform convolution */
   for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
@@ -76,6 +84,16 @@ if (handle->datatype != handle->datatype_itm) {
       }
     }
     for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+#if defined(INPUT_PADDING)
+      for (oj = 0; oj < handle->ifhp; ++oj) {
+        for (oi = 0; oi < handle->ifwp; ++oi) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            LIBXSMM_VLA_ACCESS(3, input_buffer, oj + handle->desc.pad_h, oi + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
+            (element_input_type) LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+          }
+        }
+      }
+#endif
       for (oj = 0; oj < handle->ofh; ++oj) {
         ij = oj * handle->desc.u;
         for (oi = 0; oi < handle->ofw; ++oi) {

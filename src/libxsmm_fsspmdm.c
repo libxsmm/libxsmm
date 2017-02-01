@@ -44,7 +44,7 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,   const int N,   const int K, 
+LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,   const int N,   const int K,
                                                                   const int lda, const int ldb, const int ldc,
                                                                   const double alpha, const double beta,
                                                                   const double* a_dense )
@@ -75,7 +75,7 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,  
   new_handle->K = K;
   new_handle->ldb = ldb;
   new_handle->ldc = ldc;
-  
+
   /* get number of non-zeros */
   a_nnz = 0;
   for ( i = 0; i < M*K; ++i) {
@@ -88,7 +88,7 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,  
   a_csr_values = (double*)malloc(a_nnz*sizeof(double));
   a_csr_rowptr = (unsigned int*)malloc((M+1)*sizeof(unsigned int));
   a_csr_colidx = (unsigned int*)malloc(a_nnz*sizeof(unsigned int));
-    
+
   /* populate CSR structure */
   n = 0;
   for ( i = 0; i < M; i++ ) {
@@ -101,7 +101,7 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,  
       }
     }
   }
-  a_csr_rowptr[M] = a_nnz; 
+  a_csr_rowptr[M] = a_nnz;
 
   /* attempt to JIT a sparse_reg */
   new_handle->N_chunksize = 8;
@@ -112,7 +112,7 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,  
   /* continue with sparse A */
   if (new_handle->kernel != 0) {
   /* nothing to do */
-  /* attempt to JIT dense kernel as sparse_reg failed */  
+  /* attempt to JIT dense kernel as sparse_reg failed */
   } else {
     new_handle->N_chunksize = 16;
     new_handle->kernel = libxsmm_dmmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, 0, (const int*)LIBXSMM_PREFETCH_NONE);
@@ -129,7 +129,7 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,  
   free( a_csr_values );
   free( a_csr_rowptr );
   free( a_csr_colidx );
-  
+
   return new_handle;
 }
 

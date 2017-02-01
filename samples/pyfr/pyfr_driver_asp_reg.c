@@ -240,7 +240,7 @@ int main(int argc, char* argv[]) {
 
   /* setting up fsspmdm */
   l_n_block = 48;
-  gemm_op = libxsmm_dfsspmdm_create( l_m, l_n_block, l_k, l_k, l_n, l_n, 1.0, 1.0, l_a_dense ); 
+  gemm_op = libxsmm_dfsspmdm_create( l_m, l_n_block, l_k, l_k, l_n, l_n, 1.0, 1.0, l_a_dense );
 
   /* compute golden results */
   printf("computing golden solution...\n");
