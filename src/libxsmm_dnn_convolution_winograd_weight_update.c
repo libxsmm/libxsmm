@@ -30,7 +30,8 @@
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_winograd_weight_update.h"
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_input_transform_custom_custom( float *inp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_input_transform_custom_custom(
+                                           float *inp,
                                            float *tinp,
                                            const libxsmm_dnn_layer* handle )
 {
@@ -80,7 +81,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_input_transform_custom_cus
   }
 }
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_input_transform_nhwc_custom( float *inp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_input_transform_nhwc_custom(
+                                         float *inp,
                                          float *tinp,
                                          const libxsmm_dnn_layer* handle )
 {
@@ -130,7 +132,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_input_transform_nhwc_custo
   }
 }
 
-static void deloutput_transform_custom_custom( float *inp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_deloutput_transform_custom_custom(
+                                               float *inp,
                                                float *tinp,
                                                const libxsmm_dnn_layer* handle )
 {
@@ -180,7 +183,8 @@ static void deloutput_transform_custom_custom( float *inp,
   }
 }
 
-static void deloutput_transform_nhwc_custom( float *inp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_deloutput_transform_nhwc_custom(
+                                             float *inp,
                                              float *tinp,
                                              const libxsmm_dnn_layer* handle )
 {
@@ -230,7 +234,8 @@ static void deloutput_transform_nhwc_custom( float *inp,
   }
 }
 
-static void delweight_transform( float *wp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_delweight_transform(
+                                 float *wp,
                                  float *twp,
                                  const libxsmm_dnn_layer* handle )
 {
