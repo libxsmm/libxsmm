@@ -29,15 +29,16 @@
 /* Alexander Heinecke, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <libxsmm_generator.h>
 #include <libxsmm_macros.h>
 #include "generator_common.h"
 #include "generator_convolution_winograd_forward_avx512.h"
 #include "generator_convolution_winograd_weight_update_avx512.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
 
 /* @TODO change int based architecture value */
 void libxsmm_generator_convolution_winograd_weight_update_kernel( libxsmm_generated_code*                        io_generated_code,
@@ -90,6 +91,7 @@ void libxsmm_generator_convolution_winograd_weight_update_inlineasm(const char* 
   {
     FILE *const l_file_handle = fopen( i_file_out, "a" );
     if ( l_file_handle != NULL ) {
+      assert(0 != l_generated_code.generated_code);
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
@@ -137,6 +139,7 @@ void libxsmm_generator_convolution_winograd_weight_update_directasm(const char* 
   {
     FILE *const l_file_handle = fopen( i_file_out, "w" );
     if ( l_file_handle != NULL ) {
+      assert(0 != l_generated_code.generated_code);
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
@@ -200,6 +203,7 @@ void libxsmm_generator_convolution_winograd_forward_inlineasm( const char*      
   {
     FILE *const l_file_handle = fopen( i_file_out, "a" );
     if ( l_file_handle != NULL ) {
+      assert(0 != l_generated_code.generated_code);
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
@@ -247,6 +251,7 @@ void libxsmm_generator_convolution_winograd_forward_directasm( const char*      
   {
     FILE *const l_file_handle = fopen( i_file_out, "w" );
     if ( l_file_handle != NULL ) {
+      assert(0 != l_generated_code.generated_code);
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {

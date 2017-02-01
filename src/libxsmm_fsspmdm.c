@@ -44,10 +44,10 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,   const int N,   const int K,
-                                                                  const int lda, const int ldb, const int ldc,
-                                                                  const double alpha, const double beta,
-                                                                  const double* a_dense )
+LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(const int M, const int N, const int K,
+  const int lda, const int ldb, const int ldc,
+  const double alpha, const double beta,
+  const double* a_dense)
 {
   double* a_csr_values = 0;
   unsigned int* a_csr_rowptr = 0;
@@ -57,13 +57,12 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,  
   int a_nnz;
   int i = 0;
   int j = 0;
-  int n = 0;
 
   /* some checks... */
-  assert( N%16 == 0 );
-  assert( N >= 16 );
-  assert( alpha == 1.0 );
-  assert( beta == 1.0 );
+  assert(N % 16 == 0);
+  assert(N >= 16);
+  assert(alpha == 1.0);
+  assert(beta == 1.0);
 
   /* allocate handle */
   new_handle = (libxsmm_dfsspmdm*)malloc(sizeof(libxsmm_dfsspmdm));
@@ -78,36 +77,38 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,  
 
   /* get number of non-zeros */
   a_nnz = 0;
-  for ( i = 0; i < M*K; ++i) {
+  for (i = 0; i < M*K; ++i) {
     if (a_dense[i] != 0.0) {
       a_nnz++;
     }
   }
 
   /* allocate CSR structure */
-  a_csr_values = (double*)malloc(a_nnz*sizeof(double));
-  a_csr_rowptr = (unsigned int*)malloc((M+1)*sizeof(unsigned int));
-  a_csr_colidx = (unsigned int*)malloc(a_nnz*sizeof(unsigned int));
+  a_csr_values = (double*)malloc(a_nnz * sizeof(double));
+  a_csr_rowptr = (unsigned int*)malloc((M + 1) * sizeof(unsigned int));
+  a_csr_colidx = (unsigned int*)malloc(a_nnz * sizeof(unsigned int));
 
-  /* populate CSR structure */
-  n = 0;
-  for ( i = 0; i < M; i++ ) {
-    a_csr_rowptr[i] = n;
-    for ( j = 0; j < K; j++) {
-      if ( a_dense[(i*lda)+j] != 0.0 ) {
-        a_csr_values[n] = a_dense[(i*lda)+j];
-        a_csr_colidx[n] = j;
-        n++;
+  if (0 != a_csr_values && 0 != a_csr_rowptr && 0 != a_csr_colidx) {
+    int n = 0;
+    /* populate CSR structure */
+    for (i = 0; i < M; i++) {
+      a_csr_rowptr[i] = n;
+      for (j = 0; j < K; j++) {
+        if (a_dense[(i*lda) + j] != 0.0) {
+          a_csr_values[n] = a_dense[(i*lda) + j];
+          a_csr_colidx[n] = j;
+          n++;
+        }
       }
     }
-  }
-  a_csr_rowptr[M] = a_nnz;
+    a_csr_rowptr[M] = a_nnz;
 
-  /* attempt to JIT a sparse_reg */
-  new_handle->N_chunksize = 8;
-  /* @TODO change to macro */
-  xgemm_desc = libxsmm_create_dgemm_descriptor('n', 'n', M, new_handle->N_chunksize, K, 0, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH_NONE);
-  new_handle->kernel = libxsmm_create_dcsr_reg( xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values ).dmm;
+    /* attempt to JIT a sparse_reg */
+    new_handle->N_chunksize = 8;
+    /* @TODO change to macro */
+    xgemm_desc = libxsmm_create_dgemm_descriptor('n', 'n', M, new_handle->N_chunksize, K, 0, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH_NONE);
+    new_handle->kernel = libxsmm_create_dcsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values).dmm;
+  }
 
   /* continue with sparse A */
   if (new_handle->kernel != 0) {
@@ -160,7 +161,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
   } else {
     /* deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! We also need to work
-       around pointer-to-function to pointer-to-obeject conversion */
+       around pointer-to-function to pointer-to-object conversion */
     void* fp;
     memcpy(&fp, &(handle->kernel), sizeof(libxsmm_dmmfunction));
     libxsmm_free(fp);
