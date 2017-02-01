@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.) œ (Intel Corp.)
+/* Alexander Heinecke, Rajkishore Barik (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_handle.h"
 #include "libxsmm_main.h"
@@ -179,7 +179,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     if (handle->desc.C < 16) {
       handle->ifmblock = 1;
     }
-
     /* Check if padded needs to be applied in the input and allocate appropriate buffers */
     if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && (handle->desc.pad_h > 0) && (handle->desc.pad_w > 0)) {
       handle->padding_flag = 1;
@@ -190,7 +189,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     } else {
       handle->padding_flag = 0;
     }
-
   } else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ) {
     noarch = 0;
 
@@ -304,7 +302,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     handle->blocksifm = handle->desc.C / handle->ifmblock;
     handle->blocksofm = handle->desc.K / handle->ofmblock;
   }
-
   /* Check if padded needs to be applied in the input and allocate appropriate buffers */
   if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && (handle->desc.pad_h > 0) && (handle->desc.pad_w > 0)) {
     handle->padding_flag = 1;
@@ -317,7 +314,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   }
 
   /* TODO: we need to add much more checks here .... */
-
 
   if (noarch == 0) {
     /* Forward path */
@@ -338,7 +334,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.unroll_kh = 0;
         descriptor.unroll_kw = 0;
       }
-
       if (handle->padding_flag == 1) {
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
         descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;
