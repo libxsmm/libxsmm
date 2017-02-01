@@ -180,7 +180,7 @@ static void weight_transform( float *wp,
 static void output_transform_custom_custom( float *toutp,
                                             float *outp,
                                             const int vratio,
-                                            float bias[vratio][16/*tdvlen*/],
+                                            float bias[/*vratio*/][16/*tdvlen*/],
                                             const libxsmm_dnn_layer* handle ) {
   if (vratio == 1 && handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
@@ -231,7 +231,7 @@ static void output_transform_custom_custom( float *toutp,
 static void output_transform_nhwc_custom( float *toutp,
                                           float *outp,
                                           const int vratio,
-                                          float bias[vratio][16/*tdvlen*/],
+                                          float bias[/*vratio*/][16/*tdvlen*/],
                                           const libxsmm_dnn_layer* handle ) {
   if (vratio == 1 && handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
