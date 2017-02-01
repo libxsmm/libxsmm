@@ -62,7 +62,7 @@ const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
 const int block_size = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
 const int big_block_size = padded_w * handle->ifmblock * handle->fm_lp_block;
-const int small_block_size = handle->ifwp * handle->ifmblock * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype) * 8;
+const size_t small_block_size = handle->ifwp * handle->ifmblock * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype) * 8;
 /* Based on the input datatype select the right intrinsics */
 #ifdef INPUT_F32
 

@@ -84,7 +84,7 @@ const int block_size = handle->ifwp * handle->ifmblock;
 #endif
 LIBXSMM_VLA_DECL(3, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * padded_h * padded_w * handle->ifmblock, padded_w, handle->ifmblock);
 LIBXSMM_VLA_DECL(3, element_input_type, input_to_use, input_buffer, padded_w, handle->ifmblock);
-const int small_block_size = handle->ifwp * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype) * 8;
+const size_t small_block_size = handle->ifwp * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype) * 8;
 #if defined(__AVX512F__) || defined(__AVX__)
 copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(3, input_buffer, handle->desc.pad_h, handle->desc.pad_w, 0, padded_w, handle->ifmblock);
 #endif

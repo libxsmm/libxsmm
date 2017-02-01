@@ -121,7 +121,7 @@ element_input_type *prefetch_ptr;
 #endif
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
-const int small_block_size = handle->ifwp * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype) * 8;
+const size_t small_block_size = handle->ifwp * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype) * 8;
 const int block_size = handle->ifwp * handle->ifmblock;
 const int big_block_size = padded_w * handle->ifmblock;
 

@@ -93,7 +93,7 @@ element_input_type (* __restrict input_ptr);
 element_input_type (*__restrict copy_ptr);
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
-const int small_block_size = handle->ifwp * handle->blocksifm * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype) * 8;
+const size_t small_block_size = handle->ifwp * handle->blocksifm * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype) * 8;
 const int block_size = handle->ifwp * handle->blocksifm * handle->ifmblock;
 LIBXSMM_VLA_DECL(5, const element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
 LIBXSMM_VLA_DECL(5, element_input_type, input_padded, (element_input_type*)handle->scratch5, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
