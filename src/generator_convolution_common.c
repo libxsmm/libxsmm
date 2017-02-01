@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.), Rajkishore Barik (Intel Corp.)
+/* Alexander Heinecke, Rajkishore Barik (Intel Corp.)
 ******************************************************************************/
 
 #include "generator_x86_instructions.h"

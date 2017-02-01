@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Rajkishore Barik (Intel Corp.), Alexander Heinecke (Intel Corp.)
+/* Rajkishore Barik, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
 #include "generator_convolution_weight_update_avx2.h"

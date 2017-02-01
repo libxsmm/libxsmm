@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.), Naveen Mellempudi (Intel Corp.)
+/* Alexander Heinecke, Naveen Mellempudi (Intel Corp.)
 ******************************************************************************/
 
 #include "generator_convolution_forward_avx512.h"

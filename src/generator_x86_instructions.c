@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.), Greg Henry (Intel Corp.)
+/* Alexander Heinecke, Greg Henry (Intel Corp.)
 ******************************************************************************/
 #include "generator_x86_instructions.h"
 #include "generator_common.h"

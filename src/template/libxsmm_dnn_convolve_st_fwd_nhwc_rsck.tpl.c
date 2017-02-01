@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
+/* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
 int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii, bufi, bufj;

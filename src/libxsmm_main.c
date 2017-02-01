@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Hans Pabst (Intel Corp.), Alexander Heinecke (Intel Corp.)
+/* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_gemm_diff.h"
 #include "libxsmm_trans.h"
