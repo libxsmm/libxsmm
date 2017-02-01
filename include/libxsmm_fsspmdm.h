@@ -48,14 +48,14 @@
 /** Opaque types for fsspmdm */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm libxsmm_dfsspmdm;
 
-LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,   const int N,   const int K, 
+LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,   const int N,   const int K,
                                                        const int lda, const int ldb, const int ldc,
                                                        const double alpha, const double beta,
                                                        const double* a_dense );
 
 LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const double* B, double* C );
 
-LIBXSMM_API void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle ); 
+LIBXSMM_API void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle );
 
 #endif /*LIBXSMM_FSSPMDM_H*/
 

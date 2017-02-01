@@ -282,7 +282,7 @@ int main(int argc, char* argv[])
   int pad = 2;            /* padding in output */
   int stride = 1;         /* stride when accessing inputs */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
-  
+
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads();       /* number of threads */
 #else
@@ -335,7 +335,7 @@ int main(int argc, char* argv[])
   stride_h = stride;
   pad_h = pad;
   pad_w = pad;
-  
+
   if (padding_mode == 1) {
     pad_h_in = pad_h;
     pad_w_in = pad_w;

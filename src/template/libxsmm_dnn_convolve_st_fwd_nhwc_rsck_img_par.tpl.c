@@ -147,11 +147,11 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
   jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
-  
+
 #if defined(INPUT_PADDING)
   input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
   copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, handle->desc.pad_h, handle->desc.pad_w, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
-  
+
   if (small_block_size % 512 == 0) {
     for (oj = handle->ifhp-1; oj >= 0; oj--) {
 #ifdef __AVX512F__
@@ -182,13 +182,13 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     }
   }
 #endif
-  
+
   for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
     for (oj = start_ofh; oj < end_ofh; oj += handle->fwd_ofh_rb) {
       ij = oj * handle->desc.u;
       for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
         ii = oi * handle->desc.v;
-        
+
 #if defined(INPUT_PADDING)
         l_input  = &LIBXSMM_VLA_ACCESS(5, input_buffer, ij, ii, ifm1, 0, 0,
                                        padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
@@ -257,7 +257,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 #if defined(INPUT_PADDING)
   input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
   copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, handle->desc.pad_h, handle->desc.pad_w, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
-  
+
   if (small_block_size % 256 == 0) {
     for (oj = handle->ifhp-1; oj >= 0; oj--) {
 #ifdef __AVX__
@@ -285,7 +285,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     }
   }
 #endif
-  
+
   for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
     for (oj = start_ofh; oj < end_ofh; oj += handle->fwd_ofh_rb) {
       ij = oj * handle->desc.u;

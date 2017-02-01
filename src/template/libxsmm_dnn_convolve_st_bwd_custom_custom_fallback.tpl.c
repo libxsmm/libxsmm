@@ -56,7 +56,7 @@ LIBXSMM_VLA_DECL(3, element_input_type, input_buffer, ((element_input_type*)hand
 for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
   img = imgifm1 / handle->blocksifm;
   ifm1 = imgifm1 % handle->blocksifm;
-  
+
 #if defined(INPUT_PADDING)
   memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock), 0, padded_w * padded_h * sizeof(element_input_type));
   for (oj = 0; oj < handle->ifhp; oj++) {
@@ -68,7 +68,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
     }
   }
 #endif
-  
+
   for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
     for( oj = 0; oj < handle->ofh; ++oj) {
       ij = oj * handle->desc.u;
@@ -93,7 +93,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
       }
     }
   }
-  
+
 #if defined(INPUT_PADDING)
   for (oj = 0; oj < handle->ifhp; oj++) {
     for (ij = 0; ij < handle->ifwp; ij++) {

@@ -1343,7 +1343,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
             handle->scratch6 = (void*)(address+offset);
           }
         }
-        
+
       } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
         /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */

@@ -163,9 +163,9 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
   for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
     img = imgifm1/handle->blocksifm;
     ifm1 = imgifm1%handle->blocksifm;
-    
+
 #if defined(INPUT_PADDING)
-    
+
 #if defined(__AVX512F__) || defined(__AVX__)
     input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
     copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(4, input_buffer, handle->desc.pad_h, handle->desc.pad_w, ifm1, 0, padded_w, handle->blocksifm, handle->ifmblock);
@@ -178,7 +178,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
       prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
     }
 #endif
-    
+
     if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC || libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE ) {
       if (small_block_size == 512) {
         for (oj = 0; oj < handle->ifhp; oj++) {
@@ -247,7 +247,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
       }
     }
 #endif
-    
+
     for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
       for(ij= 0 ; ij < ifh; ++ij) {
         for(kj=0; kj < handle->desc.R; ++kj) {

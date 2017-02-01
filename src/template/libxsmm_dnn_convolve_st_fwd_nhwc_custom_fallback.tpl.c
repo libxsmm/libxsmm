@@ -56,7 +56,7 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
   img = imgofm1 / handle->blocksofm;
   ofm1 = imgofm1 % handle->blocksofm;
   for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-    
+
 #if defined(INPUT_PADDING)
     for (oj = 0; oj < handle->ifhp; ++oj) {
       for (oi = 0; oi < handle->ifwp; ++oi) {
@@ -67,7 +67,7 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
       }
     }
 #endif
-    
+
     for (oj = 0; oj < handle->ofh; ++oj) {
       ij = oj * handle->desc.u;
       for (oi = 0; oi < handle->ofw; ++oi) {

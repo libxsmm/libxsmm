@@ -528,7 +528,7 @@ kw = handle->desc.S;
 
 if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
      libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE   ) {
-  
+
 #if defined(INPUT_PADDING)
   libxsmm_barrier_init(handle->barrier, ltid);
   /* Initialize in parallel scratch5 to zero */
@@ -760,7 +760,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 #ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
         /* lazy barrier init */
         libxsmm_barrier_init(handle->barrier, ltid);
-        
+
 #if defined(INPUT_PADDING)
         /* Transpose IFW and IFM into the padded buffer!*/
         for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
@@ -775,7 +775,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
             }
           }
         }
-#else 
+#else
         /* First transpose IFW and IFM */
         for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
           img = imgifm1/handle->blocksifm;
@@ -790,7 +790,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
           }
         }
 #endif
-        
+
         libxsmm_barrier_wait(handle->barrier, ltid);
 
         for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
@@ -1154,7 +1154,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 #endif
   }
 } else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ){
-  
+
 #if defined(INPUT_PADDING)
   /* Initialize in parallel scratch5 to zero */
   libxsmm_barrier_init(handle->barrier, ltid);
@@ -1188,14 +1188,14 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     }
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
-  
+
   if ( small_block_size % 256 == 0 ) {
     for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
       img = imgifm1/handle->blocksifm;
       ifm1 = imgifm1%handle->blocksifm;
       input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-      
+
       for (oj = 0; oj < handle->ifhp; oj++) {
 #ifdef __AVX__
         for (oi = 0; oi < block_size; oi += CHUNK_SIZE/2) {
@@ -1224,8 +1224,8 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
-  
-  
+
+
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
   for(i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
     per_thread_weight_ptr[i] = (element_filter_type)0;
@@ -1286,31 +1286,31 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 } else {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 }
-        
+
 #ifdef LIBXSMM_JITTED_CONV_WU_NO_PF
 #undef LIBXSMM_JITTED_CONV_WU_NO_PF
 #endif
-        
+
 #ifdef LIBXSMM_JITTED_CONV_WU_PF
 #undef LIBXSMM_JITTED_CONV_WU_PF
 #endif
-        
+
 #ifdef LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF
 #undef LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF
 #endif
-        
+
 #ifdef LIBXSMM_JITTED_CONV_WU_TRANSPOSE_NO_PF
 #undef LIBXSMM_JITTED_CONV_WU_TRANSPOSE_NO_PF
 #endif
-        
+
 #ifdef LIBXSMM_JITTED_CONV_WU_TRANSPOSE_PF
 #undef LIBXSMM_JITTED_CONV_WU_TRANSPOSE_PF
 #endif
-        
+
 #ifdef LIBXSMM_JITTED_CONV_WU_TRANSPOSE_NOOUTPUT_PF
 #undef LIBXSMM_JITTED_CONV_WU_TRANSPOSE_NOOUTPUT_PF
 #endif
-        
+
 #if defined(INPUT_PADDING)
 #undef LOAD
 #undef LOAD_256

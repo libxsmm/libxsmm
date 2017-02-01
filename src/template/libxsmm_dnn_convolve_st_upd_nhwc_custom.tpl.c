@@ -193,7 +193,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
      libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE || /*  ) {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 } else if (*/ libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ){
-  
+
 #if defined(INPUT_PADDING)
   libxsmm_barrier_init(handle->barrier, ltid);
 
@@ -233,9 +233,9 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 #endif
        }
      }
-    
+
     libxsmm_barrier_wait(handle->barrier, ltid);
-    
+
     if ( small_block_size % 512 == 0 ) {
       for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
         img = imgifm1/handle->ifhp;
@@ -287,7 +287,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
       }
     }
   } else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) {
-    
+
     /* Initialize in parallel scratch5 to zero */
     if (img_size % (CHUNK_SIZE/2) == 0) {
       for (imgifm1 = zero_thr_begin; imgifm1 < zero_thr_end; ++imgifm1) {
@@ -318,7 +318,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
         }
       }
     }
-    
+
     libxsmm_barrier_wait(handle->barrier, ltid);
 
     /* Copy the minibatch to a padded verison only if no transpose is required -- otherwise we combine the transpose with the copying into the padded buffer */
@@ -361,7 +361,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
-  
+
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
   for(i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
     per_thread_weight_ptr[i] = (element_filter_type)0;

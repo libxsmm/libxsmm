@@ -167,7 +167,7 @@ if (handle->datatype != handle->datatype_itm) {
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
     jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
-    
+
 #if defined(INPUT_PADDING)
     for (ifm1 = handle->blocksifm-1; ifm1 >= 0; ifm1--) {
       input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
@@ -178,7 +178,7 @@ if (handle->datatype != handle->datatype_itm) {
         prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
       }
 #endif
-      
+
       if (small_block_size % 512 == 0) {
         for (oj = 0; oj < handle->ifhp; oj++) {
 #ifdef __AVX512F__
@@ -240,7 +240,7 @@ if (handle->datatype != handle->datatype_itm) {
           l_input  = &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, ij, ii, 0, 0,
                       handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
 #endif
-          
+
 #else
 #if defined(INPUT_PADDING)
           l_input  = &LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, oj, oi, 0, 0,
@@ -267,7 +267,7 @@ if (handle->datatype != handle->datatype_itm) {
                 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block),
 #endif
 #else
-                               
+
 #if defined(INPUT_PADDING)
              &LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, oj, oi + handle->fwd_ofw_rb,
                                                    0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block),
@@ -339,12 +339,12 @@ if (handle->datatype != handle->datatype_itm) {
   } else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ){
     jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
     jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
-    
+
 #if defined(INPUT_PADDING)
     for (ifm1 = handle->blocksifm-1; ifm1 >= 0; ifm1--) {
       input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
       copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
-      
+
       if (small_block_size % 256 == 0) {
         for (oj = 0; oj < handle->ifhp; oj++) {
 #ifdef __AVX__

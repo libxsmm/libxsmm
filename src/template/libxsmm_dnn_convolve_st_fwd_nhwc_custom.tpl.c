@@ -142,7 +142,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
   for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
     img = imgofm1/handle->blocksofm;
     ofm1 = imgofm1%handle->blocksofm;
-    
+
 #if defined(INPUT_PADDING)
     if (prev_image != img) {
       /* The img has changed so we should copy all the ifms */
@@ -151,7 +151,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 #ifdef __AVX512F__
       prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img+1, 0, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
 #endif
-      
+
       if (small_block_size % 512 == 0) {
         for (oj = handle->ifhp-1; oj >= 0; oj--) {
 #ifdef __AVX512F__
@@ -187,7 +187,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
       prev_image = img;
     }
 #endif
-    
+
     for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
       for (oj = 0; oj < handle->ofh; oj += handle->fwd_ofh_rb) {
         ij = oj * handle->desc.u;
@@ -284,7 +284,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
       /* The img has changed so we should copy all the ifms */
       input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
       copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, handle->desc.pad_h, handle->desc.pad_w, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
-        
+
       if (small_block_size % 256 == 0) {
         for (oj = handle->ifhp-1; oj >= 0; oj--) {
 #ifdef __AVX__

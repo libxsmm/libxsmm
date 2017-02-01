@@ -66,7 +66,7 @@ if (handle->datatype != handle->datatype_itm) {
   const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
   LIBXSMM_VLA_DECL(3, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * padded_h * padded_w * handle->ifmblock, padded_w, handle->ifmblock);
 #endif
-  
+
 
   /* perform convolution */
   for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {

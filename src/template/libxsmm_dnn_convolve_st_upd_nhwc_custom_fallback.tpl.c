@@ -68,7 +68,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       }
     }
 #endif
-    
+
     for(oj = 0; oj < handle->ofh; ++oj) {
       ij = oj * handle->desc.u;
       for(oi = 0; oi < handle->ofw; ++oi) {

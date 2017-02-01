@@ -335,7 +335,7 @@ int main(int argc, char* argv[])
   stride_h = stride;
   pad_h = pad;
   pad_w = pad;
-  
+
   if (padding_mode == 1) {
     pad_h_in = pad_h;
     pad_w_in = pad_w;
