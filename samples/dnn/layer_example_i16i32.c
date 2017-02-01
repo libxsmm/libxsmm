@@ -267,6 +267,7 @@ int main(int argc, char* argv[])
 #else
   int nThreads = 1;       /* number of threads */
 #endif
+  int padding_mode = 0;   /* padding mode */
 
   unsigned long long l_start, l_end;
   double l_total = 0.0;
@@ -283,7 +284,7 @@ int main(int argc, char* argv[])
   memset(&norms_fwd, 0, sizeof(norms_fwd));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride\n", argv[0]);
+    printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type padding_mode\n", argv[0]);
     return 0;
   }
   srand(1);
@@ -301,6 +302,7 @@ int main(int argc, char* argv[])
   if (argc > i) pad        = atoi(argv[i++]);
   if (argc > i) stride     = atoi(argv[i++]);
   if (argc > i) type       = *(argv[i++]);
+  if (argc > i) padding_mode = atoi(argv[i++]);
 
   if (type != 'A' && type != 'F' /* && type != 'B' && type != 'U'*/) {
     /*printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (WU only)\n");*/
@@ -313,8 +315,13 @@ int main(int argc, char* argv[])
   pad_h = pad;
   pad_w = pad;
 
-  pad_h_in = pad_h;
-  pad_w_in = pad_w;
+  if (padding_mode == 1) {
+    pad_h_in = pad_h;
+    pad_w_in = pad_w;
+  } else {
+    pad_h_in = 0;
+    pad_w_in = 0;
+  }
 
   pad_h_out = 0;
   pad_w_out = 0;
