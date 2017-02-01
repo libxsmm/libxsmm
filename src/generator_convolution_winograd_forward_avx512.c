@@ -343,10 +343,13 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
               } else if ( index % 9 == 8 ) {
                 l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
                 l_scale = 8;
+#if !defined(NDEBUG)
               } else {
                 assert(0/*should not happen*/);
+                l_b_idx = 0;
+                l_scale = 0;
               }
-
+#endif
               libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                        l_micro_kernel_config.instruction_set,
                                                        l_micro_kernel_config.vmul_instruction,
