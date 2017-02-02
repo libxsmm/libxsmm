@@ -136,12 +136,12 @@ const int64_t remainder_mask = (block_size % CHUNK_SIZE != 0) ? (1 << (block_siz
 /* JIT kernel function pointers */
 libxsmm_convfunction jitted_conv_fp_one, jitted_conv_fp_two, jitted_conv_fp_zero;
 
-/* avoid ouf of bounds (dirty) */
+/* avoid out of bounds (unclean) */
 start_ofh = (img < handle->desc.N && ofm1 < handle->blocksofm) ? start_ofh : handle->ofh;
 
 /* select kernels based on architecture */
-if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
-     libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE   ) {
+if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
   jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
   jitted_conv_fp_two = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
@@ -250,7 +250,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
       }
     }
   }
-} else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ){
+} else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2 ){
   jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
   jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 

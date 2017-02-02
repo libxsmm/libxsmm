@@ -188,16 +188,16 @@ LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->reg_
 #endif
 
 
-if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
-     libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE  || /* ) {
+if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  || /* ) {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
-} else if (*/ libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ){
+} else if (*/ libxsmm_target_archid == LIBXSMM_X86_AVX2 ){
 
 #if defined(INPUT_PADDING)
   libxsmm_barrier_init(handle->barrier, ltid);
 
-  if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
-      libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE) {
+  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) {
 
     /* Initialize in parallel scratch5 to zero */
     if (img_size % CHUNK_SIZE == 0) {
@@ -285,7 +285,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 #endif
       }
     }
-  } else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) {
+  } else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2) {
 
     /* Initialize in parallel scratch5 to zero */
     if (img_size % (CHUNK_SIZE/2) == 0) {

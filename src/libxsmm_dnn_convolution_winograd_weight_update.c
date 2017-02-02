@@ -29,6 +29,7 @@
 /* Kunal Banerjee, Rajkishore Barik, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_winograd_weight_update.h"
+#include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))

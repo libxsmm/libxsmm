@@ -526,8 +526,8 @@ jitted_conv_wu_transpose_nooutput_pf(  \
 kh = handle->desc.R;
 kw = handle->desc.S;
 
-if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
-     libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE   ) {
+if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
 
 #if defined(INPUT_PADDING)
   libxsmm_barrier_init(handle->barrier, ltid);
@@ -1153,7 +1153,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
      } /* ofm1 loop */
 #endif
   }
-} else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ){
+} else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2 ){
 
 #if defined(INPUT_PADDING)
   /* Initialize in parallel scratch5 to zero */

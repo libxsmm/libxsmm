@@ -156,10 +156,10 @@ if (handle->filter_transposed == 0) {
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
-if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
-     libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE || /*  ) {
+if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || /*  ) {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
-} else if (*/ libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ){
+} else if (*/ libxsmm_target_archid == LIBXSMM_X86_AVX2 ){
   for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
     img = imgifm1/handle->blocksifm;
     ifm1 = imgifm1%handle->blocksifm;
@@ -179,7 +179,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     }
 #endif
 
-    if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC || libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE ) {
+    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
       if (small_block_size == 512) {
         for (oj = 0; oj < handle->ifhp; oj++) {
 #ifdef __AVX512F__
@@ -212,7 +212,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
 #endif
         }
       }
-    } else if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) {
+    } else if (libxsmm_target_archid == LIBXSMM_X86_AVX2) {
       if (small_block_size == 256) {
         for (oj = 0; oj < handle->ifhp; oj++) {
 #ifdef __AVX__
@@ -267,7 +267,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     }
 #if defined(INPUT_PADDING)
     /* Write back input buffer */
-    if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC || libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE ) {
+    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
       if (small_block_size == 512) {
         for (oj = 0; oj < handle->ifhp; oj++) {
 #ifdef __AVX512F__
@@ -293,7 +293,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
           }
         }
       }
-    } else if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) {
+    } else if (libxsmm_target_archid == LIBXSMM_X86_AVX2) {
       if (small_block_size == 256) {
         for (oj = 0; oj < handle->ifhp; oj++) {
 #ifdef __AVX__

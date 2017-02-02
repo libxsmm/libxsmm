@@ -31,8 +31,7 @@
 #ifndef LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_H
 #define LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_H
 
-#include "libxsmm_main.h"
-#include "libxsmm_sync.h"
+#include "libxsmm_dnn.h"
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_custom_custom( libxsmm_dnn_layer* handle, int start_thread, int tid );
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_nhwc_custom  ( libxsmm_dnn_layer* handle, int start_thread, int tid );

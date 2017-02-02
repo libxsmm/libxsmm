@@ -146,13 +146,13 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype
 LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_simd_width(libxsmm_dnn_datatype datatype)
 {
   size_t l_cl_width_bytes;
-  if ( libxsmm_get_target_archid() == LIBXSMM_X86_GENERIC ) {
+  if ( libxsmm_target_archid == LIBXSMM_X86_GENERIC ) {
     l_cl_width_bytes = libxsmm_dnn_typesize(datatype);
-  } else if ( libxsmm_get_target_archid() == LIBXSMM_X86_SSE3 ||
-              libxsmm_get_target_archid() == LIBXSMM_X86_SSE4 ) {
+  } else if ( libxsmm_target_archid == LIBXSMM_X86_SSE3 ||
+              libxsmm_target_archid == LIBXSMM_X86_SSE4 ) {
     l_cl_width_bytes = 16;
-  } else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ||
-              libxsmm_get_target_archid() == LIBXSMM_X86_AVX ) {
+  } else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2 ||
+              libxsmm_target_archid == LIBXSMM_X86_AVX ) {
     l_cl_width_bytes = 32;
   } else {
     l_cl_width_bytes = 64;
@@ -276,8 +276,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const li
        deallocate code known to be not registered; no index attached
        do not use libxsmm_release_kernel here! */
 
-    if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
-          libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE    ) && (handle->avx512avx2fallback == 0) ) {
+    if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE    ) && (handle->avx512avx2fallback == 0) ) {
       libxsmm_free(handle->code_fwd[0].pmm);
       libxsmm_free(handle->code_fwd[1].pmm);
       libxsmm_free(handle->code_fwd[2].pmm);
@@ -296,7 +296,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const li
         libxsmm_free(handle->code_upd[4].pmm);
         libxsmm_free(handle->code_upd[5].pmm);
       }
-    } else if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) || (handle->avx512avx2fallback != 0) ) {
+    } else if ( (libxsmm_target_archid == LIBXSMM_X86_AVX2) || (handle->avx512avx2fallback != 0) ) {
       libxsmm_free(handle->code_fwd[0].pmm);
       if (handle->fwd_ofw_rb_2 != 0) {
         libxsmm_free(handle->code_fwd[1].pmm);
