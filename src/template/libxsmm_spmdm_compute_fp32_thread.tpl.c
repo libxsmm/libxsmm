@@ -227,6 +227,7 @@ for (kb = 0; kb < k_blocks; kb++) {
 
   k_overall_start = kb*k_block_size;
   k_overall_end   = (kb+1)*k_block_size;
+  if (k_overall_end > handle->k) k_overall_end = handle->k;
   num_k = (k_overall_end - k_overall_start);
 
   /* Copy in B matrix*/
