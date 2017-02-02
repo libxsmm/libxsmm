@@ -423,6 +423,15 @@ else
     GXX_VERSION_PATCH = $(shell echo "$(GXX_VERSION_STRING)" | cut -d"." -f3)
   endif
 endif
+ifeq (3,$(words $(GXX_VERSION_MAJOR) $(GXX_VERSION_MINOR) $(GXX_VERSION_PATCH)))
+  GXX_VERSION = $(shell echo "$$(($(GXX_VERSION_MAJOR) * 10000 + $(GXX_VERSION_MINOR) * 100 + $(GXX_VERSION_PATCH)))")
+else ifeq (2,$(words $(GXX_VERSION_MAJOR) $(GXX_VERSION_MINOR)))
+  GXX_VERSION = $(shell echo "$$(($(GXX_VERSION_MAJOR) * 10000 + $(GXX_VERSION_MINOR) * 100))")
+  GXX_VERSION_PATCH = 0
+else
+  GXX_VERSION_STRING = $(NULL)
+  GXX_VERSION = 0
+endif
 
 # Too many ICEs with Clang hence we want to know if we are on Clang
 ifeq (0,$(GCC)) # not GCC
@@ -726,6 +735,12 @@ else # GCC assumed
         CXXFLAGS += -ffast-math
         CFLAGS += -ffast-math
         FCFLAGS += -ffast-math
+        ifneq (0,$(shell echo "$$((40900 <= $(GXX_VERSION)))"))
+          DFLAGS += -DLIBXSMM_OPENMP_SIMD
+          CXXFLAGS += -fopenmp-simd
+          CFLAGS += -fopenmp-simd
+          FCFLAGS += -fopenmp-simd
+        endif
       else ifneq (3,$(AVX))
         CXXFLAGS += -ffast-math
         CFLAGS += -ffast-math
