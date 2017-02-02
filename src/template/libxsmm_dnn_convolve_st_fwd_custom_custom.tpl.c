@@ -126,7 +126,7 @@ const size_t small_block_size = handle->ifwp * handle->ifmblock * handle->fm_lp_
 
 #if defined(__AVX512F__)
 element_input_type *prefetch_ptr;
-#if !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512)
+#if !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
 const int64_t remainder_mask = (block_size % CHUNK_SIZE != 0) ? (1 << (block_size % CHUNK_SIZE)) - 1 : -1;
 #endif
 #endif
@@ -194,7 +194,7 @@ if (handle->datatype != handle->datatype_itm) {
           }
         } else {
           for (oj = 0; oj < handle->ifhp; oj++) {
-#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512)
+#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
             for (oi = 0; oi < block_size-CHUNK_SIZE; oi += CHUNK_SIZE) {
               STOREU(&copy_ptr[oi+oj*big_block_size], LOADU(&input_ptr[oi+oj*block_size]));
               _mm_prefetch((const char*)&prefetch_ptr[oi+oj*block_size], _MM_HINT_T1);

@@ -204,7 +204,7 @@ const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) *
 #endif
 
 const int img_size = padded_h * padded_w * handle->ifmblock;
-#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512)
+#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
 const int64_t remainder_mask = (block_size % CHUNK_SIZE != 0) ? (1 << (block_size % CHUNK_SIZE)) - 1 : -1;
 const int64_t zero_remainder_mask = (img_size % CHUNK_SIZE != 0) ? (1 << (img_size % CHUNK_SIZE)) - 1 : -1;
 #endif
@@ -552,7 +552,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
       img = imgifm1/handle->blocksifm;
       ifm1 = imgifm1%handle->blocksifm;
       copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, 0, 0, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512)
+#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
       for (oj = 0; oj < img_size-CHUNK_SIZE; oj+=CHUNK_SIZE) {
         STOREU(&copy_ptr[oj], ZERO_REG);
       }
@@ -610,7 +610,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
       }
 #endif
       for (oj = 0; oj < handle->ifhp; oj++) {
-#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512)
+#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
         for (oi = 0; oi < block_size-CHUNK_SIZE; oi += CHUNK_SIZE) {
           STOREU(&copy_ptr[oi+oj*big_block_size], LOADU(&input_ptr[oi+oj*block_size]));
           _mm_prefetch((const char*)&prefetch_ptr[oi+oj*block_size], _MM_HINT_T1);

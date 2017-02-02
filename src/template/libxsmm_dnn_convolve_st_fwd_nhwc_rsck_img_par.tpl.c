@@ -128,7 +128,7 @@ const size_t small_block_size = handle->ifwp * handle->blocksifm * handle->ifmbl
 #endif
 
 #if defined(__AVX512F__)
-#if !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512)
+#if !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
 const int64_t remainder_mask = (block_size % CHUNK_SIZE != 0) ? (1 << (block_size % CHUNK_SIZE)) - 1 : -1;
 #endif
 #endif
@@ -168,7 +168,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     }
   } else {
     for (oj = handle->ifhp-1; oj >= 0; oj--) {
-#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512)
+#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
       for (oi = 0; oi < block_size-CHUNK_SIZE; oi += CHUNK_SIZE) {
         STOREU(&copy_ptr[oi+oj*big_block_size], LOADU(&input_ptr[oi+oj*block_size]));
       }
