@@ -68,12 +68,12 @@ element_output_type* l_output;
 /* Based on the input datatype select the right intrinsics */
 #ifdef INPUT_F32
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 #define LOAD(x)             _mm512_load_ps(x)
 #define STORE(x,y)          _mm512_store_ps(x,y)
 #endif
 
-#ifdef __AVX__
+#if defined(__AVX__)
 #define STORE_256(x,y)      _mm256_store_ps(x,y)
 #define LOAD_256(x)         _mm256_load_ps(x)
 #endif
@@ -83,12 +83,12 @@ element_output_type* l_output;
 
 #ifdef INPUT_I16
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 #define LOAD(x)             _mm512_load_si512 (x)
 #define STORE(x,y)          _mm512_store_si512(x,y)
 #endif
 
-#ifdef __AVX__
+#if defined(__AVX__)
 #define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
 #define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
 #endif
@@ -98,12 +98,12 @@ element_output_type* l_output;
 
 #ifdef INPUT_I8
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 #define LOAD(x)             _mm512_load_si512 (x)
 #define STORE(x,y)          _mm512_store_si512(x,y)
 #endif
 
-#ifdef __AVX__
+#if defined(__AVX__)
 #define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
 #define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
 #endif
@@ -182,7 +182,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC || libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE ) {
       if (small_block_size == 512) {
         for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
           for (ij = 0; ij < handle->ifwp; ij++) {
             STORE(&copy_ptr[ij * handle->blocksifm * handle->ifmblock+oj*big_block_size], LOAD(&input_ptr[ij * handle->blocksifm * handle->ifmblock +oj*block_size]));
             _mm_prefetch((const char*)&prefetch_ptr[ij+oj*block_size], _MM_HINT_T1);
@@ -194,7 +194,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
               = LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, iij, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
             }
           }
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
           _mm_prefetch((const char*)&prefetch_ptr[ij*handle->ifmblock*handle->blocksifm+oj*block_size], _MM_HINT_T1);
 #endif
 #endif
@@ -207,7 +207,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
               = LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, iij, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
             }
           }
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
           _mm_prefetch((const char*)&prefetch_ptr[ij*handle->ifmblock*handle->blocksifm+oj*block_size], _MM_HINT_T1);
 #endif
         }
@@ -215,7 +215,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     } else if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) {
       if (small_block_size == 256) {
         for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX__
+#if defined(__AVX__)
           for (ij = 0; ij < handle->ifwp; ij++) {
             STORE_256(&copy_ptr[ij * handle->blocksifm * handle->ifmblock+oj*big_block_size], LOAD_256(&input_ptr[ij * handle->blocksifm * handle->ifmblock +oj*block_size]));
             _mm_prefetch((const char*)&prefetch_ptr[ij+oj*block_size], _MM_HINT_T1);
@@ -227,7 +227,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
               = LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, iij, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
             }
           }
-#ifdef __AVX__
+#if defined(__AVX__)
           _mm_prefetch((const char*)&prefetch_ptr[ij*handle->ifmblock*handle->blocksifm+oj*block_size], _MM_HINT_T1);
 #endif
 #endif
@@ -240,7 +240,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
               = LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, iij, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
             }
           }
-#ifdef __AVX__
+#if defined(__AVX__)
           _mm_prefetch((const char*)&prefetch_ptr[ij*handle->ifmblock*handle->blocksifm+oj*block_size], _MM_HINT_T1);
 #endif
         }
@@ -270,7 +270,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC || libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE ) {
       if (small_block_size == 512) {
         for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
           for (ij = 0; ij < handle->ifwp; ij++) {
             STORE(&input_ptr[ij * handle->blocksifm * handle->ifmblock+oj*block_size], LOAD(&copy_ptr[ij * handle->blocksifm * handle->ifmblock+oj*big_block_size]));
           }
@@ -296,7 +296,7 @@ if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
     } else if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX2) {
       if (small_block_size == 256) {
         for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX__
+#if defined(__AVX__)
           for (ij = 0; ij < handle->ifwp; ij++) {
             STORE_256(&input_ptr[ij * handle->blocksifm * handle->ifmblock+oj*block_size], LOAD_256(&copy_ptr[ij * handle->blocksifm * handle->ifmblock+oj*big_block_size]));
           }

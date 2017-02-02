@@ -66,7 +66,7 @@ const size_t small_block_size = handle->ifwp * handle->ifmblock * handle->fm_lp_
 /* Based on the input datatype select the right intrinsics */
 #ifdef INPUT_F32
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 #define LOAD(x)             _mm512_load_ps(x)
 #define LOADU(x)            _mm512_loadu_ps(x)
 #define MASK_LOADU(x,y)     _mm512_maskz_loadu_ps(x,y)
@@ -76,7 +76,7 @@ const size_t small_block_size = handle->ifwp * handle->ifmblock * handle->fm_lp_
 #define INT_TO_MASK(x)      ( (__mmask16) x)
 #endif
 
-#ifdef __AVX__
+#if defined(__AVX__)
 #define LOAD_256(x)         _mm256_load_ps(x)
 #define STORE_256(x,y)      _mm256_store_ps(x,y)
 #endif
@@ -86,7 +86,7 @@ const size_t small_block_size = handle->ifwp * handle->ifmblock * handle->fm_lp_
 
 #ifdef INPUT_I16
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 #define LOAD(x)             _mm512_load_si512 (x)
 #define LOADU(x)            _mm512_loadu_si512(x)
 #define MASK_LOADU(x,y)     _mm512_maskz_loadu_epi16(x,y)
@@ -96,7 +96,7 @@ const size_t small_block_size = handle->ifwp * handle->ifmblock * handle->fm_lp_
 #define INT_TO_MASK(x)      ( (__mmask32) x)
 #endif
 
-#ifdef __AVX__
+#if defined(__AVX__)
 #define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
 #define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
 #endif
@@ -106,7 +106,7 @@ const size_t small_block_size = handle->ifwp * handle->ifmblock * handle->fm_lp_
 
 #ifdef INPUT_I8
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 #define LOAD(x)             _mm512_load_si512 (x)
 #define LOADU(x)            _mm512_loadu_si512(x)
 #define MASK_LOADU(x,y)     _mm512_maskz_loadu_epi8(x,y)
@@ -116,7 +116,7 @@ const size_t small_block_size = handle->ifwp * handle->ifmblock * handle->fm_lp_
 #define INT_TO_MASK(x)      ( (__mmask64) x)
 #endif
 
-#ifdef __AVX__
+#if defined(__AVX__)
 #define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
 #define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
 #endif
@@ -124,9 +124,11 @@ const size_t small_block_size = handle->ifwp * handle->ifmblock * handle->fm_lp_
 #define CHUNK_SIZE          64
 #endif
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 element_input_type *prefetch_ptr;
+#if !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512)
 const int64_t remainder_mask = (block_size % CHUNK_SIZE != 0) ? (1 << (block_size % CHUNK_SIZE)) - 1 : -1;
+#endif
 #endif
 
 #endif
@@ -169,7 +171,7 @@ if (handle->datatype != handle->datatype_itm) {
         input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
         copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
         if ( ifm1-1 == -1) {
           prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img+1, handle->blocksifm-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
         } else {
@@ -179,7 +181,7 @@ if (handle->datatype != handle->datatype_itm) {
 
         if (small_block_size % 512 == 0) {
           for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
             for (oi = 0; oi < block_size; oi += CHUNK_SIZE) {
               STORE(&copy_ptr[oi+oj*big_block_size], LOAD(&input_ptr[oi+oj*block_size]));
               _mm_prefetch((const char*)&prefetch_ptr[oi+oj*block_size], _MM_HINT_T1);
@@ -192,7 +194,7 @@ if (handle->datatype != handle->datatype_itm) {
           }
         } else {
           for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX512F__
+#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_INCOMPLETE_AVX512)
             for (oi = 0; oi < block_size-CHUNK_SIZE; oi += CHUNK_SIZE) {
               STOREU(&copy_ptr[oi+oj*big_block_size], LOADU(&input_ptr[oi+oj*block_size]));
               _mm_prefetch((const char*)&prefetch_ptr[oi+oj*block_size], _MM_HINT_T1);
@@ -366,7 +368,7 @@ if (handle->datatype != handle->datatype_itm) {
 
           if (small_block_size % 256 == 0) {
             for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX__
+#if defined(__AVX__)
               for (oi = 0; oi < block_size; oi += CHUNK_SIZE/2) {
                 STORE_256(&copy_ptr[oi+oj*big_block_size], LOAD_256(&input_ptr[oi+oj*block_size]));
               }
