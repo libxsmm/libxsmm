@@ -102,10 +102,6 @@
 #     if !defined(LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS)
 #       define LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS
 #     endif
-      /* AVX-512 mask register support is missing */
-#     if !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
-#       define LIBXSMM_INTRINSICS_AVX512_NOMASK
-#     endif
 #     if !defined(__CYGWIN__)
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
 #     else /* Error: invalid register for .seh_savexmm */
