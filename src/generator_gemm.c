@@ -41,7 +41,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated_code,

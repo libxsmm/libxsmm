@@ -70,6 +70,7 @@
 #include "generator_spgemm_csc_bsparse.h"
 #include "generator_common.h"
 #include <libxsmm_macros.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

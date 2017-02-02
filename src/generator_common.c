@@ -30,10 +30,11 @@
 ******************************************************************************/
 #include "generator_common.h"
 #include <libxsmm_sync.h>
-#include <stdio.h>
+
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdio.h>
 
 #if !defined(GENERATOR_COMMON_MAX_ERROR_LENGTH)
 # define GENERATOR_COMMON_MAX_ERROR_LENGTH 511

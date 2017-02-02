@@ -40,7 +40,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_code*                        io_generated_code,
                                                             const libxsmm_convolution_winograd_descriptor* i_conv_desc,

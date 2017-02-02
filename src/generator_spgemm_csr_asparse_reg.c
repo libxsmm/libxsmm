@@ -33,9 +33,10 @@
 #include "generator_x86_instructions.h"
 #include "generator_gemm_common.h"
 #include <libxsmm_macros.h>
-#include <stdio.h>
+
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*         io_generated_code,

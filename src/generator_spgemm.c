@@ -44,7 +44,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*        io_generated_code,
                                           const libxsmm_gemm_descriptor* i_xgemm_desc,

@@ -29,12 +29,12 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "generator_gemm_avx2_microkernel.h"
 #include "generator_x86_instructions.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*             io_generated_code,

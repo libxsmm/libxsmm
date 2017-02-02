@@ -30,12 +30,11 @@
 ******************************************************************************/
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-
 #include <libxsmm_intrinsics_x86.h>
-#include <stdio.h>
+
 #include <stdlib.h>
 #include <string.h>
-
+#include <stdio.h>
 
 /* This routine is for the jit code. All offsets/displacements have similar
    byte patterns, so this is used for all of them */
