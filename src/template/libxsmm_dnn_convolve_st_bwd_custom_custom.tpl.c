@@ -71,7 +71,7 @@ libxsmm_convfunction jitted_conv_bp_peeled_noweight_pf = (libxsmm_convfunction)h
 #if defined(INPUT_PADDING)
 /* Variables and initializations related to padding */
 int iii;
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 element_input_type *prefetch_ptr;
 #endif
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
@@ -94,12 +94,12 @@ memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock)
 /* Based on the input datatype select the right intrinsics */
 #ifdef INPUT_F32
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 #define LOAD(x)             _mm512_load_ps(x)
 #define STORE(x,y)          _mm512_store_ps(x,y)
 #endif
 
-#ifdef __AVX__
+#if defined(__AVX__)
 #define LOAD_256(x)         _mm256_load_ps(x)
 #define STORE_256(x,y)      _mm256_store_ps(x,y)
 #endif
@@ -109,12 +109,12 @@ memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock)
 
 #ifdef INPUT_I16
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 #define LOAD(x)             _mm512_load_si512 (x)
 #define STORE(x,y)          _mm512_store_si512(x,y)
 #endif
 
-#ifdef __AVX__
+#if defined(__AVX__)
 #define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
 #define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
 #endif
@@ -124,12 +124,12 @@ memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock)
 
 #ifdef INPUT_I8
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
 #define LOAD(x)             _mm512_load_si512 (x)
 #define STORE(x,y)          _mm512_store_si512(x,y)
 #endif
 
-#ifdef __AVX__
+#if defined(__AVX__)
 #define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
 #define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
 #endif
@@ -289,7 +289,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
 #if defined(INPUT_PADDING)
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
       input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0,handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
 
       if (ifm1+1 != handle->blocksifm) {
@@ -303,7 +303,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
       if (small_block_size % 512 == 0) {
         for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
           for (ij = 0; ij < block_size; ij += CHUNK_SIZE) {
             STORE(&copy_ptr[ij+oj*big_block_size], LOAD(&input_ptr[ij+oj*block_size]));
             _mm_prefetch((const char*)&prefetch_ptr[ij+oj*block_size], _MM_HINT_T1);
@@ -324,7 +324,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
                LIBXSMM_VLA_ACCESS(3, input_buffer, oj + handle->desc.pad_h, ij + handle->desc.pad_w, iii, padded_w, handle->ifmblock)
                = LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, oj, ij, iii,handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
             }
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
             _mm_prefetch((const char*)&prefetch_ptr[ij*handle->ifmblock +oj*block_size], _MM_HINT_T1);
 #endif
           }
@@ -349,7 +349,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #if defined(INPUT_PADDING)
       if (small_block_size % 512 == 0) {
         for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
           for (ij = 0; ij < block_size; ij += CHUNK_SIZE) {
             STORE(&input_ptr[ij+oj*block_size], LOAD(&copy_ptr[ij+oj*big_block_size]));
           }
@@ -385,7 +385,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
 #if defined(INPUT_PADDING)
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
       input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0,handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
       if (ifm1+1 != handle->blocksifm) {
         /* Prefetch next ifm, same image */
@@ -398,7 +398,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
       if (small_block_size % 512 == 0) {
         for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
           for (ij = 0; ij < block_size; ij += CHUNK_SIZE) {
             _mm512_store_ps(&copy_ptr[ij+oj*big_block_size], _mm512_load_ps(&input_ptr[ij+oj*block_size]));
             _mm_prefetch((const char*)&prefetch_ptr[ij+oj*block_size], _MM_HINT_T1);
@@ -419,7 +419,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
               LIBXSMM_VLA_ACCESS(3, input_buffer, oj + handle->desc.pad_h, ij + handle->desc.pad_w, iii, padded_w, handle->ifmblock)
               = LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, oj, ij, iii,handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
             }
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
             _mm_prefetch((const char*)&prefetch_ptr[ij*handle->ifmblock +oj*block_size], _MM_HINT_T1);
 #endif
           }
@@ -1100,7 +1100,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       /* Write back input buffer */
       if (small_block_size % 512 == 0) {
         for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX512F__
+#if defined(__AVX512F__)
           for (ij = 0; ij < block_size; ij += CHUNK_SIZE) {
             STORE(&input_ptr[ij+oj*block_size], LOAD(&copy_ptr[ij+oj*big_block_size]));
           }
@@ -1137,13 +1137,13 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
 #if defined(INPUT_PADDING)
 
-#ifdef __AVX__
+#if defined(__AVX__)
     input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0,handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
 #endif
 
     if (small_block_size % 256 == 0) {
       for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX__
+#if defined(__AVX__)
         for (ij = 0; ij < block_size; ij += CHUNK_SIZE/2) {
           STORE_256(&copy_ptr[ij+oj*big_block_size], LOAD_256(&input_ptr[ij+oj*block_size]));
         }
@@ -1186,7 +1186,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     /* Write back input buffer */
     if (small_block_size % 256 == 0) {
       for (oj = 0; oj < handle->ifhp; oj++) {
-#ifdef __AVX__
+#if defined(__AVX__)
         for (ij = 0; ij < block_size; ij += CHUNK_SIZE/2) {
           STORE_256(&input_ptr[ij+oj*block_size], LOAD_256(&copy_ptr[ij+oj*big_block_size]));
         }
