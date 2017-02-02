@@ -47,8 +47,8 @@
 # if !defined(LIBXSMM_EXT_TASKS) && (200805 <= _OPENMP) /*OpenMP 3.0*/
 #   define LIBXSMM_EXT_TASKS
 # endif
-# define LIBXSMM_EXT_MIN_NTASKS(NT) LIBXSMM_MAX(2/*factor*/ * (omp_get_max_threads() / (NT) - 1), 1)
-# define LIBXSMM_EXT_OVERHEAD(NT) (2/*factor*/ * (NT))
+# define LIBXSMM_EXT_MIN_NTASKS(NT) 2
+# define LIBXSMM_EXT_OVERHEAD(NT) (NT)
 # define LIBXSMM_EXT_SINGLE LIBXSMM_PRAGMA(omp single nowait)
 # define LIBXSMM_EXT_FOR_PARALLEL LIBXSMM_PRAGMA(omp parallel)
 # define LIBXSMM_EXT_FOR_LOOP(COLLAPSE, ...) LIBXSMM_PRAGMA(omp for private(__VA_ARGS__) schedule(dynamic) LIBXSMM_OPENMP_COLLAPSE(COLLAPSE))
