@@ -919,10 +919,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors_ijm(
         break;
       }
     }
-    if ( found == 1 )
+    if ( found == 1 ) {
       continue;
+    }
 
+#if !defined(NDEBUG)
     printf("Control should not reach here FACT=%d\n", cur_fact[i]);
+    assert(0);
+#endif
   }
 }
 
@@ -961,6 +965,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     const int tileSize = alpha - 2;
     int allowed_unroll = 0;
     int flagBenchmark = 0;
+    LIBXSMM_UNUSED(flagBenchmark/*TODO*/);
 
     /* Forward path */
     { wino_desc_fp.alpha = alpha;

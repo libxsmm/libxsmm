@@ -246,6 +246,7 @@ int main(int argc, char* argv []) {
   /* check and evaluate precison flag */
   if ( strcmp(l_precision, "SP") == 0 ) {
     l_single_precision = 1;
+    LIBXSMM_UNUSED(l_single_precision/*TODO*/);
   } else {
     print_help();
     return -1;

@@ -30,6 +30,18 @@
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_winograd_forward.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#if !defined(NDEBUG)
+# include <assert.h>
+# include <stdio.h>
+#endif
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_custom( float *inp,
                                            float *tinp,
                                            const libxsmm_dnn_layer* handle )
@@ -74,10 +86,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_cus
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else {
-    printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
-    exit(1);
   }
+#if !defined(NDEBUG)
+  else {
+    printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+    assert(0);
+  }
+#endif
 }
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_nhwc_custom( float *inp,
@@ -124,10 +139,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_nhwc_custo
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else {
-    printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
-    exit(1);
   }
+#if !defined(NDEBUG)
+  else {
+    printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+    assert(0);
+  }
+#endif
 }
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_weight_transform( float *wp,
@@ -174,10 +192,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_weight_transform( float *w
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else {
-    printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
-    exit(1);
   }
+#if !defined(NDEBUG)
+  else {
+    printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+    assert(0);
+  }
+#endif
 }
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_custom_custom( float *toutp,
@@ -227,10 +248,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_custom_cu
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else {
-    printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
-    exit(1);
   }
+#if !defined(NDEBUG)
+  else {
+    printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+    assert(0);
+  }
+#endif
 }
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_nhwc_custom( float *toutp,
@@ -280,10 +304,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_nhwc_cust
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else {
-    printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
-    exit(1);
   }
+#if !defined(NDEBUG)
+  else {
+    printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+    assert(0);
+  }
+#endif
 }
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_custom_custom( libxsmm_dnn_layer* handle, int start_thread, int tid )
@@ -358,10 +385,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_cu
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-      } else {
-        printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
-        exit(1);
       }
+#if !defined(NDEBUG)
+      else {
+        printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+        assert(0);
+      }
+#endif
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
@@ -443,10 +473,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_nh
 #undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-      } else {
-        printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
-        exit(1);
       }
+#if !defined(NDEBUG)
+      else {
+        printf("Unsupported fdvlen %d or unsupported alpha %d\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+        assert(0);
+      }
+#endif
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
