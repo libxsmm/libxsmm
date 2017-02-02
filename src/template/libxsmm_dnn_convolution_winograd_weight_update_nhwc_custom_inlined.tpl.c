@@ -56,11 +56,10 @@
   LIBXSMM_VLA_DECL(6, float, U, up, ALPHA, handle->blocksofm/VRATIO, handle->blocksifm/VRATIO, FDVLEN, FDVLEN);
   LIBXSMM_VLA_DECL(8, float, V, vp, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, FDVLEN);
   LIBXSMM_VLA_DECL(8, float, M, mp, ALPHA, ALPHA, handle->blocksofm/VRATIO, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, FDVLEN);
-
+#if 0
   typedef libxsmm_sconvfunction libxsmm_convfunction;
-  libxsmm_convfunction jitted_conv_wu;
-  jitted_conv_wu = (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
-
+  libxsmm_convfunction jitted_conv_wu = (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
+#endif
   /* computing first logical thread */
   ltid = tid - start_thread;
   libxsmm_barrier_init((libxsmm_barrier*)handle->barrier, ltid);
