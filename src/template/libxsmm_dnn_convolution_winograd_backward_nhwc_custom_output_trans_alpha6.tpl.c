@@ -70,9 +70,9 @@
           t3[j] = LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 3, i, j, ALPHA, ALPHA, FDVLEN) - LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 4, i, j, ALPHA, ALPHA, FDVLEN);
 
           T[0][i][j] = t0[j] + t1[j]     + LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 0, i, j, ALPHA, ALPHA, FDVLEN);
-          T[1][i][j] = t2[j] + t3[j]*2.0;
-          T[2][i][j] = t0[j] + t1[j]*4.0;
-          T[3][i][j] = t2[j] + t3[j]*8.0 + LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 5, i, j, ALPHA, ALPHA, FDVLEN);
+          T[1][i][j] = t2[j] + t3[j]*2.f;
+          T[2][i][j] = t0[j] + t1[j]*4.f;
+          T[3][i][j] = t2[j] + t3[j]*8.f + LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 5, i, j, ALPHA, ALPHA, FDVLEN);
         }
       }
 

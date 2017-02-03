@@ -147,12 +147,16 @@
         if (img == 0) {
           for (k = 0; k < FDVLEN; k++) {
             for (l = 0; l < FDVLEN; l++) {
-              U[oj][oi][ofm1][ifm1][k][l] = 0.0f;
+              LIBXSMM_VLA_ACCESS(6, U, oj, oi, ofm1, ifm1, k, l, ALPHA, handle->blocksofm / VRATIO, handle->blocksifm / VRATIO, FDVLEN, FDVLEN) = 0.0f;
             }
           }
         }
 #if 1
-        jitted_conv_wu((const float*)&(M[img][oj][oi][ofm1][0][0][0][0]), (const float*)&(V[img][oj][oi][ifm1][0][0][0][0]), (float*)&(U[oj][oi][ofm1][ifm1][0][0]), 0, 0, 0);
+        jitted_conv_wu(
+          &LIBXSMM_VLA_ACCESS(8, M, img, oj, oi, ofm1, 0, 0, 0, 0, ALPHA, ALPHA, handle->blocksofm / VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN),
+          &LIBXSMM_VLA_ACCESS(8, V, img, oj, oi, ifm1, 0, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm / VRATIO, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, FDVLEN),
+          &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ofm1, ifm1, 0, 0, ALPHA, handle->blocksofm / VRATIO, handle->blocksifm / VRATIO, FDVLEN, FDVLEN),
+          0, 0, 0);
 #else
         unsigned int ti, tj;
         unsigned int img1;
