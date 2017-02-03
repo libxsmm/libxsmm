@@ -201,6 +201,9 @@
     <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\libxsmm_fsspmdm.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
