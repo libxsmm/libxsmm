@@ -41,18 +41,10 @@
   int oj;
   int oi;
   int k, l;
-  LIBXSMM_ASSUME_ALIGNED(handle->reg_input->data,  64);
-  LIBXSMM_ASSUME_ALIGNED(handle->reg_output->data, 64);
-  LIBXSMM_ASSUME_ALIGNED(handle->reg_filter->data, 64);
   LIBXSMM_VLA_DECL(5, float, input, handle->reg_input->data, handle->ifhp, handle->ifwp, handle->blocksifm, TDVLEN);
   LIBXSMM_VLA_DECL(5, float, output, handle->reg_output->data, handle->ofhp, handle->ofwp, handle->blocksofm, TDVLEN);
   LIBXSMM_VLA_DECL(6, float, weight, handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, TDVLEN, TDVLEN);
 
-  LIBXSMM_ASSUME_ALIGNED(handle->scratch1, 64);
-  LIBXSMM_ASSUME_ALIGNED(handle->scratch3, 64);
-  LIBXSMM_ASSUME_ALIGNED(handle->scratch4, 64);
-  LIBXSMM_ASSUME_ALIGNED(handle->scratchIw, 64);
-  LIBXSMM_ASSUME_ALIGNED(handle->scratchOw, 64);
   float *up = handle->scratch1; /*(float*)libxsmm_aligned_malloc(ALPHA*ALPHA*handle->desc.C*handle->desc.K*sizeof(float), 64);*/
   float *vp = handle->scratch3; /*(float*)libxsmm_aligned_malloc(ALPHA*ALPHA*handle->cwino_upd.itiles*handle->cwino_upd.jtiles*handle->desc.C*handle->desc.N*sizeof(float), 64);*/
   float *mp = handle->scratch4; /*(float*)libxsmm_aligned_malloc(ALPHA*ALPHA*handle->cwino_upd.itiles*handle->cwino_upd.jtiles*handle->desc.K*handle->desc.N*sizeof(float), 64);*/
@@ -68,6 +60,15 @@
   typedef libxsmm_sconvfunction libxsmm_convfunction;
   libxsmm_convfunction jitted_conv_wu = (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
 #endif
+  LIBXSMM_ASSUME_ALIGNED(handle->reg_input->data,  64);
+  LIBXSMM_ASSUME_ALIGNED(handle->reg_output->data, 64);
+  LIBXSMM_ASSUME_ALIGNED(handle->reg_filter->data, 64);
+  LIBXSMM_ASSUME_ALIGNED(handle->scratch1, 64);
+  LIBXSMM_ASSUME_ALIGNED(handle->scratch3, 64);
+  LIBXSMM_ASSUME_ALIGNED(handle->scratch4, 64);
+  LIBXSMM_ASSUME_ALIGNED(handle->scratchIw, 64);
+  LIBXSMM_ASSUME_ALIGNED(handle->scratchOw, 64);
+
   /* computing first logical thread */
   ltid = tid - start_thread;
   libxsmm_barrier_init((libxsmm_barrier*)handle->barrier, ltid);
