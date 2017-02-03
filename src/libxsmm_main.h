@@ -193,6 +193,10 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int padding_flag;           /* Flag that dictates if we should apply padding in the input */
   void* scratch6;
   size_t scratch6_size;
+  void* scratchIw;
+  size_t scratchIw_size;
+  void* scratchOw;
+  size_t scratchOw_size;
 
   /* JIT-generated convolution code */
   /*
