@@ -34,7 +34,7 @@
   LIBXSMM_VLA_DECL(5, float, output, tinp, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN);
   float Iw[total_tiles][ALPHA][ALPHA][FDVLEN];
   float I[ALPHA][ALPHA][FDVLEN];
-  unsigned int ti, tj;
+  int ti, tj;
   int i, j, k, r;
   int xdim, ydim;
   float T[6][6][FDVLEN];
@@ -48,9 +48,8 @@
   for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
     for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
       for (j = 0; j < ALPHA; j++) {
-        ydim = tj*(ALPHA - 2) + j; /*- handle->desc.pad_h;*/
-        /*if ((ydim < 0) || (ydim >= handle->desc.H)) {*/
-        if (ydim >= handle->ifhp) {
+        ydim = tj*(ALPHA - 2) + j - handle->desc.pad_h;
+        if ((ydim < 0) || (ydim >= handle->desc.H)) {
           for (i = 0; i < ALPHA; i++) {
             for (r = 0; r < VRATIO; r++) {
               LIBXSMM_PRAGMA_SIMD
@@ -61,9 +60,8 @@
           }
         } else {
           for (i = 0; i < ALPHA; i++) {
-            xdim = ti*(ALPHA - 2) + i; /*- handle->desc.pad_w;*/
-            /*if ((xdim < 0) || (xdim >= handle->desc.W)) {*/
-            if (xdim >= handle->ifwp) {
+            xdim = ti*(ALPHA - 2) + i - handle->desc.pad_w;
+            if ((xdim < 0) || (xdim >= handle->desc.W)) {
               for (r = 0; r < VRATIO; r++) {
                 LIBXSMM_PRAGMA_SIMD
                 for (k = 0; k < TDVLEN; k++) {
@@ -75,7 +73,7 @@
                 LIBXSMM_PRAGMA_SIMD
                 for (k = 0; k < TDVLEN; k++) {
                   I[j][i][r*TDVLEN + k] =
-                    LIBXSMM_VLA_ACCESS(4, input, r, ydim/* + handle->desc.pad_h*/, xdim/* + handle->desc.pad_w*/, k, handle->ifhp, handle->ifwp, TDVLEN);
+                    LIBXSMM_VLA_ACCESS(4, input, r, ydim + handle->desc.pad_h_in, xdim + handle->desc.pad_w_in, k, handle->ifhp, handle->ifwp, TDVLEN);
                 }
               }
             }

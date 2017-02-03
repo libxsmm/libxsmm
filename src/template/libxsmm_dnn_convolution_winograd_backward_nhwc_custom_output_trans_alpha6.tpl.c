@@ -101,7 +101,7 @@
           for (r = 0; r < VRATIO; r++) {
             LIBXSMM_PRAGMA_SIMD
             for (k = 0; k < TDVLEN; k++) {
-              LIBXSMM_VLA_ACCESS(4, output, ydim + handle->desc.pad_h, xdim + handle->desc.pad_w, r, k, handle->ifwp, handle->blocksifm, TDVLEN) +=
+              LIBXSMM_VLA_ACCESS(4, output, ydim + handle->desc.pad_h_in, xdim + handle->desc.pad_w_in, r, k, handle->ifwp, handle->blocksifm, TDVLEN) +=
                 O[j][i][r*TDVLEN + k];
             }
           }
