@@ -66,7 +66,7 @@
         for (j = 0; j < FDVLEN; j++) {
           t0[j] = LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 1, i, j, ALPHA, ALPHA, FDVLEN) + LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 2, i, j, ALPHA, ALPHA, FDVLEN);
           t1[j] = LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 3, i, j, ALPHA, ALPHA, FDVLEN) + LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 4, i, j, ALPHA, ALPHA, FDVLEN);
-          t2[j] = LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 1, i, j, ALPHA, ALPHA, FDVLEN) - LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 2, i, j, ALPHA, ALPHA. FDVLEN);
+          t2[j] = LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 1, i, j, ALPHA, ALPHA, FDVLEN) - LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 2, i, j, ALPHA, ALPHA, FDVLEN);
           t3[j] = LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 3, i, j, ALPHA, ALPHA, FDVLEN) - LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 4, i, j, ALPHA, ALPHA, FDVLEN);
 
           T[0][i][j] = t0[j] + t1[j]     + LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_bwd.itiles + ti, 0, i, j, ALPHA, ALPHA, FDVLEN);
