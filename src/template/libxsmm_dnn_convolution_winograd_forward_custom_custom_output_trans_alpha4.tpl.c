@@ -74,7 +74,7 @@
         t21[i] = LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 2, 1, i, ALPHA, ALPHA, FDVLEN) - LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 2, 2, i, ALPHA, ALPHA, FDVLEN) - LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 2, 3, i, ALPHA, ALPHA, FDVLEN);
         t30[i] = LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 3, 0, i, ALPHA, ALPHA, FDVLEN) + LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 3, 1, i, ALPHA, ALPHA, FDVLEN) + LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 3, 2, i, ALPHA, ALPHA, FDVLEN);
         t31[i] = LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 3, 1, i, ALPHA, ALPHA, FDVLEN) - LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 3, 2, i, ALPHA, ALPHA, FDVLEN) - LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 3, 3, i, ALPHA, ALPHA, FDVLEN);
-        
+
         O[0][0][i] = t00[i] + t10[i] + t20[i];
         O[0][1][i] = t01[i] + t11[i] + t21[i];
         O[1][0][i] = t10[i] - t20[i] - t30[i];
