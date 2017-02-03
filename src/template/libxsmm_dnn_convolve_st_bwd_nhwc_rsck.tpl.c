@@ -139,8 +139,8 @@ if (handle->filter_transposed == 0) {
   for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
     ofm1 = ifm1ofm1/handle->blocksifm;
     ifm1 = ifm1ofm1%handle->blocksifm;
-    for(kj=0; kj < handle->desc.R; ++kj) {
-      for(ki=0; ki < handle->desc.S; ++ki) {
+    for (kj=0; kj < handle->desc.R; ++kj) {
+      for (ki=0; ki < handle->desc.S; ++ki) {
         /* TODO: enable this later */
         /*transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);*/
         for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
@@ -158,7 +158,7 @@ if (handle->filter_transposed == 0) {
 if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || /*  ) {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
-} else if (*/ libxsmm_target_archid == LIBXSMM_X86_AVX2 ){
+} else if (*/ libxsmm_target_archid == LIBXSMM_X86_AVX2 ) {
   for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
     img = imgifm1/handle->blocksifm;
     ifm1 = imgifm1%handle->blocksifm;
@@ -248,10 +248,10 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
 #endif
 
     for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
-      for(ij= 0 ; ij < ifh; ++ij) {
-        for(kj=0; kj < handle->desc.R; ++kj) {
+      for (ij= 0 ; ij < ifh; ++ij) {
+        for (kj=0; kj < handle->desc.R; ++kj) {
           oj = ij - handle->desc.R + kj + 1;
-          if(oj >= 0 && oj < handle->ofh) {
+          if (oj >= 0 && oj < handle->ofh) {
 #if defined(INPUT_PADDING)
             l_input =  &LIBXSMM_VLA_ACCESS(4, input_buffer, ij, 0, ifm1, 0, padded_w, handle->blocksifm, handle->ifmblock);
 #else

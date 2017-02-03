@@ -46,7 +46,7 @@ void libxsmm_generator_convolution_weight_update_avx2_kernel( libxsmm_generated_
 /***** Code to generate
 Example for ofm_block = 32, ifm_block%2 == 0
 
-  for(ifm2 = 0; ifm2 < handle->ifmblock; ifm2+=2) {
+  for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2+=2) {
     __m256 acc00 = _mm256_load_ps(&weight[ofm1][ifm1][kj][ki][ifm2][0]);
     __m256 acc01 = _mm256_load_ps(&weight[ofm1][ifm1][kj][ki][ifm2][8]);
     __m256 acc02 = _mm256_load_ps(&weight[ofm1][ifm1][kj][ki][ifm2][16]);
@@ -55,8 +55,8 @@ Example for ofm_block = 32, ifm_block%2 == 0
     __m256 acc11 = _mm256_load_ps(&weight[ofm1][ifm1][kj][ki][ifm2+1][8]);
     __m256 acc12 = _mm256_load_ps(&weight[ofm1][ifm1][kj][ki][ifm2+1][16]);
     __m256 acc13 = _mm256_load_ps(&weight[ofm1][ifm1][kj][ki][ifm2+1][24]);
-    for(ij=0, oj=0; oj < handle->ofh; ij+=stride_h, oj++) {
-      for(ii=0, oi=0; oi < handle->ofw; ii+=stride_w, oi++) {
+    for (ij=0, oj=0; oj < handle->ofh; ij+=stride_h, oj++) {
+      for (ii=0, oi=0; oi < handle->ofw; ii+=stride_w, oi++) {
         __m256 out0 = _mm256_load_ps(&output[img][ofm1][oj][oi][0]);
         __m256 out1 = _mm256_load_ps(&output[img][ofm1][oj][oi][8]);
         __m256 out2 = _mm256_load_ps(&output[img][ofm1][oj][oi][16]);

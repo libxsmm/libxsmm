@@ -119,7 +119,7 @@ LIBXSMM_INLINE void set_zeropad_nchw_uint8(unsigned char* nchw, int N, int C, in
     for ( c = 0; c < C; c++ ) {
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
-          if(h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w)
+          if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w)
             LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W) = 0;
         }
       }
@@ -220,9 +220,9 @@ LIBXSMM_INLINE void naive_conv_int8(naive_conv_t* param, const unsigned char* in
           for (oi = 0; oi < ofw; ++oi) {
             ii = oi * stride_w - pad_w;
             for (kj = 0; kj < kh; ++kj) {
-              if(ij+kj < 0 || ij+kj >= ifh) continue;
+              if (ij+kj < 0 || ij+kj >= ifh) continue;
               for (ki = 0; ki < kw; ++ki) {
-                if(ii+ki < 0 || ii+ki >= ifw) continue;
+                if (ii+ki < 0 || ii+ki >= ifw) continue;
                 LIBXSMM_VLA_ACCESS(  4, output_itm_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) += (int)
                   LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
                 * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);

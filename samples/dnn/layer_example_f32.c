@@ -110,7 +110,7 @@ LIBXSMM_INLINE void set_zeropad_nchw(float* nchw, int N, int C, int H, int W, in
     for ( c = 0; c < C; c++ ) {
       for ( h = 0; h < H; h++ ) {
         for ( w = 0; w < W; w++ ) {
-          if(h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w)
+          if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w)
             LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W) = 0.0;
         }
       }
@@ -275,9 +275,9 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
           for (oi = 0; oi < ofw; ++oi) {
             ii = oi * stride_w - pad_w;
             for (kj = 0; kj < kh; ++kj) {
-              if(ij+kj < 0 || ij+kj >= ifh) continue;
+              if (ij+kj < 0 || ij+kj >= ifh) continue;
               for (ki = 0; ki < kw; ++ki) {
-                if(ii+ki < 0 || ii+ki >= ifw) continue;
+                if (ii+ki < 0 || ii+ki >= ifw) continue;
                 LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) +=
                   LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
                 * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
@@ -323,17 +323,17 @@ LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float
 #if defined(_OPENMP)
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
 #endif
-  for(img = 0; img < nImg; ++img) {
-    for(ifm = 0; ifm < nIfm; ++ifm) {
-      for(ofm = 0; ofm < nOfm; ++ofm) {
-        for(oj = 0; oj < ofh; ++oj) {
+  for (img = 0; img < nImg; ++img) {
+    for (ifm = 0; ifm < nIfm; ++ifm) {
+      for (ofm = 0; ofm < nOfm; ++ofm) {
+        for (oj = 0; oj < ofh; ++oj) {
           ij = oj * stride_h - pad_h;
-          for(oi = 0; oi < ofw; ++oi) {
+          for (oi = 0; oi < ofw; ++oi) {
             ii = oi * stride_w - pad_w;
-            for(kj = 0; kj < kh; ++kj) {
-              if(ij+kj < 0 || ij+kj >= ifh) continue;
-              for(ki = 0; ki < kw; ++ki) {
-                if(ii+ki < 0 || ii+ki >= ifw) continue;
+            for (kj = 0; kj < kh; ++kj) {
+              if (ij+kj < 0 || ij+kj >= ifh) continue;
+              for (ki = 0; ki < kw; ++ki) {
+                if (ii+ki < 0 || ii+ki >= ifw) continue;
                 LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp) +=
                   LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp)
                 * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
@@ -379,17 +379,17 @@ LIBXSMM_INLINE void naive_conv_wu(naive_conv_t* param, const float* input, const
 #if defined(_OPENMP)
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
 #endif
-  for(ofm = 0; ofm < nOfm; ++ofm) {
-    for(ifm = 0; ifm < nIfm; ++ifm) {
-      for(img = 0; img < nImg; ++img) {
-        for(oj = 0; oj < ofh; ++oj) {
+  for (ofm = 0; ofm < nOfm; ++ofm) {
+    for (ifm = 0; ifm < nIfm; ++ifm) {
+      for (img = 0; img < nImg; ++img) {
+        for (oj = 0; oj < ofh; ++oj) {
           ij = oj * stride_h - pad_h;
-          for(oi = 0; oi < ofw; ++oi) {
+          for (oi = 0; oi < ofw; ++oi) {
             ii = oi * stride_w - pad_w;
-            for(kj = 0; kj < kh; ++kj) {
-              if(ij+kj < 0 || ij+kj >= ifh) continue;
+            for (kj = 0; kj < kh; ++kj) {
+              if (ij+kj < 0 || ij+kj >= ifh) continue;
               for (ki = 0; ki < kw; ++ki) {
-                if(ii+ki < 0 || ii+ki >= ifw) continue;
+                if (ii+ki < 0 || ii+ki >= ifw) continue;
                 LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw) +=
                   LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
                 * LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);

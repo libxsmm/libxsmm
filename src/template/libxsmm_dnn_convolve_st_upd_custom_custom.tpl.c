@@ -635,10 +635,10 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
   num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
   num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
 
-  if(handle->ifmblock == 1) { /* special case for ifmblock = 1 */
+  if (handle->ifmblock == 1) { /* special case for ifmblock = 1 */
 
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
-    for(i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
+    for (i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
       per_thread_weight_ptr[i] = (element_filter_type)0;
     }
     /* lazy barrier init */
@@ -651,7 +651,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
     for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       ofm1 = ofm1ifm1 / handle->blocksifm;
       ifm1 = ofm1ifm1 % handle->blocksifm;
-      for(img = 0; img < handle->desc.N; img++) {
+      for (img = 0; img < handle->desc.N; img++) {
 #else
         for (ofm1ifm1img = img_parallel_thr_begin; ofm1ifm1img < img_parallel_thr_end; ++ofm1ifm1img) {
           ofm1 = ofm1ifm1img / (handle->blocksifm * handle->desc.N);
@@ -666,7 +666,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                 oj_=oj__*handle->upd_ofh_rb;
                 ii_ = oi_*stride_w;
                 ij_ = oj_*stride_h;
-                for(kj=0; kj < kh-1; ++kj) {
+                for (kj=0; kj < kh-1; ++kj) {
                   /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ifm1][ij_+kj+1][ii_][0]), &(weight[ofm1][ifm1][kj+1][0][0][0]), NULL);*/
                   LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF(
                                                      input, img, ifm1, ij_+kj, ii_, 0,
@@ -678,7 +678,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
 
                 }
                 kj = kh-1;
-                if((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
+                if ((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
                   if ((ofm1+1 == handle->blocksofm) && (ifm1+1 == handle->blocksifm)) {  /* prefetch next ofm1 */
                     /* 1 -- prefetch kj = 0; */
                     /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[img+1][0][0][0][0]), &(per_thread_weight[0][0][0][0][0][0]), &(output[img+1][0][0][0][0]));*/
@@ -766,9 +766,9 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
         for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
           img = imgifm1/handle->blocksifm;
           ifm1 = imgifm1%handle->blocksifm;
-          for(ij=0; ij < handle->ifhp; ++ij) {
-            for(ii=0; ii < handle->ifwp; ++ii) {
-              for(ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+          for (ij=0; ij < handle->ifhp; ++ij) {
+            for (ii=0; ii < handle->ifwp; ++ii) {
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
                 LIBXSMM_VLA_ACCESS(5, tr_input, img, ifm1, ij + handle->desc.pad_h, ifm2, ii + handle->desc.pad_w, handle->blocksifm, padded_h, handle->ifmblock, padded_w)
                   =  LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
               }
@@ -780,9 +780,9 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
         for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
           img = imgifm1/handle->blocksifm;
           ifm1 = imgifm1%handle->blocksifm;
-          for(ij=0; ij < handle->ifhp; ++ij) {
-            for(ii=0; ii < handle->ifwp; ++ii) {
-              for(ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+          for (ij=0; ij < handle->ifhp; ++ij) {
+            for (ii=0; ii < handle->ifwp; ++ii) {
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
                 LIBXSMM_VLA_ACCESS(5, tr_input, img, ifm1, ij, ifm2, ii, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp)
                 =  LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
               }
@@ -796,7 +796,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
         for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
           ofm1 = ofm1ifm1/handle->blocksifm;
           ifm1 = ofm1ifm1%handle->blocksifm;
-          for(img = 0; img < handle->desc.N; ++img) {
+          for (img = 0; img < handle->desc.N; ++img) {
             num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
             num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
             for (oi__=0; oi__<num_ofw_strips; ++oi__) {
@@ -805,8 +805,8 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                 oj_=oj__*handle->upd_ofh_rb;
                 ii_ = oi_*stride_w;
                 ij_ = oj_*stride_h;
-                for(kj=0; kj < kh-1; ++kj) {
-                  for(ki=0; ki < kw-1; ++ki) {
+                for (kj=0; kj < kh-1; ++kj) {
+                  for (ki=0; ki < kw-1; ++ki) {
                     /*jitted_sconv_wu_transpose_nooutput_pf(l_input, l_wt, l_output, &(tr_input[img][ifm1][ij_+kj][0][ii_+ki+1]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
                     LIBXSMM_JITTED_CONV_WU_TRANSPOSE_NOOUTPUT_PF(
                                                                  tr_input, img, ifm1, ij_+kj, 0, ii_+ki,
@@ -828,7 +828,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                                                               );
                 }
                 kj = kh-1;
-                for(ki=0; ki < kw-1; ++ki) {
+                for (ki=0; ki < kw-1; ++ki) {
                   /*jitted_sconv_wu_transpose_nooutput_pf(l_input, l_wt, l_output, &(tr_input[img][ifm1][ij_+kj][0][ii_+ki+1]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
                   LIBXSMM_JITTED_CONV_WU_TRANSPOSE_NOOUTPUT_PF(
                                                                tr_input, img, ifm1, ij_+kj, 0, ii_+ki,
@@ -839,7 +839,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                                                               );
                 }
                 ki=kw-1;
-                if((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
+                if ((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
                   if ((img+1 == handle->desc.N) && (ifm1+1 == handle->blocksifm)) {  /* prefetch next ofm1 */
                     /* 1 - prefetch for kj=0, ki=0; */
                     /*jitted_sconv_wu_transpose_pf(l_input, l_wt, l_output, &(tr_input[0][0][0][0][0]), &(weight[ofm1+1][0][0][0][0][0]), &(output[0][ofm1+1][0][0][0]));*/
@@ -876,7 +876,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                                                          );
                     }
                   }
-                } else if(oj__+1 == num_ofh_strips) {  /* end of oj_*/
+                } else if (oj__+1 == num_ofh_strips) {  /* end of oj_*/
                   /* 1 - prefetch for kj=0, ki=0; */
                   /*jitted_sconv_wu_transpose_pf(l_input, l_wt, l_output, &(tr_input[img][ifm1][0][0][((oi__+1)*handle->upd_ofw_rb)*stride_w]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img][ofm1][0][(oi__+1)*handle->upd_ofw_rb][0]));*/
                   LIBXSMM_JITTED_CONV_WU_TRANSPOSE_PF(
@@ -922,7 +922,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
               for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
                 ofm1 = ofm1ifm1 / handle->blocksifm;
                 ifm1 = ofm1ifm1 % handle->blocksifm;
-                for(img = 0; img < handle->desc.N; img++) {
+                for (img = 0; img < handle->desc.N; img++) {
 #endif
                   for (oi__=0; oi__<num_ofw_strips; ++oi__) {
                     for (oj__=0; oj__<num_ofh_strips; ++oj__) {
@@ -930,8 +930,8 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                       oj_=oj__*handle->upd_ofh_rb;
                       ii_ = oi_*stride_w;
                       ij_ = oj_*stride_h;
-                      for(kj=0; kj < kh-1; ++kj) {
-                        for(ki=0; ki < kw-1; ++ki) {
+                      for (kj=0; kj < kh-1; ++kj) {
+                        for (ki=0; ki < kw-1; ++ki) {
                           /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ifm1][ij_+kj][ii_+ki+1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
                           LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF(
                                                              input, img, ifm1, ij_+kj, ii_+ki, 0,
@@ -953,7 +953,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                                                           );
                       }
                       kj = kh-1;
-                      for(ki=0; ki < kw-1; ++ki) {
+                      for (ki=0; ki < kw-1; ++ki) {
                         /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ifm1][ij_+kj][ii_+ki+1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
                         LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF(
                                                            input, img, ifm1, ij_+kj, ii_+ki, 0,
@@ -964,7 +964,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                                                           );
                       }
                       ki=kw-1;
-                      if((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
+                      if ((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
                         if ((img+1 == handle->desc.N) && (ifm1+1 == handle->blocksifm)) {  /* prefetch next ofm1 */
                           /* 1 - prefetch for kj=0, ki=0; */
                           /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[0][0][0][0][0]), &(weight[ofm1+1][0][0][0][0][0]), &(output[0][ofm1+1][0][0][0]));*/
@@ -1001,7 +1001,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                                                      );
                           }
                         }
-                      } else if(oj__+1 == num_ofh_strips) {  /* end of oj_*/
+                      } else if (oj__+1 == num_ofh_strips) {  /* end of oj_*/
                         /* 1 - prefetch for kj=0, ki=0; */
                         /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[img][ifm1][0][((oi__+1)*handle->upd_ofw_rb)*stride_w][0]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img][ofm1][0][(oi__+1)*handle->upd_ofw_rb][0]));*/
                         LIBXSMM_JITTED_CONV_WU_PF(
@@ -1045,15 +1045,15 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
        for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
          ofm1 = ofm1ifm1 / handle->blocksifm;
          ifm1 = ofm1ifm1 % handle->blocksifm;
-         for(img = 0; img < handle->desc.N; ++img) {
+         for (img = 0; img < handle->desc.N; ++img) {
            for (oi__=0; oi__<num_ofw_strips; ++oi__) {
              for (oj__=0; oj__<num_ofh_strips; ++oj__) {
                oi_=oi__*handle->upd_ofw_rb;
                oj_=oj__*handle->upd_ofh_rb;
                ii_ = oi_*stride_w;
                ij_ = oj_*stride_h;
-               for(kj=0; kj < kh-1; ++kj) {
-                 for(ki=0; ki < kw-1; ++ki) {
+               for (kj=0; kj < kh-1; ++kj) {
+                 for (ki=0; ki < kw-1; ++ki) {
                    /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ifm1][ij_+kj][ii_+ki+1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
                    LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF(
                                                       input, img, ifm1, ij_+kj, ii_+ki, 0,
@@ -1075,7 +1075,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                                                    );
                }
                kj = kh-1;
-               for(ki=0; ki < kw-1; ++ki) {
+               for (ki=0; ki < kw-1; ++ki) {
                  /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ifm1][ij_+kj][ii_+ki+1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
                  LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF(
                                                     input, img, ifm1, ij_+kj, ii_+ki, 0,
@@ -1086,7 +1086,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                                                    );
                }
                ki=kw-1;
-               if((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
+               if ((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
                  if ((img+1 == handle->desc.N) && (ifm1+1 == handle->blocksifm)) {  /* prefetch next ofm1 */
                    /* 1 - prefetch for kj=0, ki=0; */
                    /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[0][0][0][0][0]), &(weight[ofm1+1][0][0][0][0][0]), &(output[0][ofm1+1][0][0][0]));*/
@@ -1123,7 +1123,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                                               );
                    }
                  }
-               } else if(oj__+1 == num_ofh_strips) {  /* end of oj_*/
+               } else if (oj__+1 == num_ofh_strips) {  /* end of oj_*/
                  /* 1 - prefetch for kj=0, ki=0; */
                  /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[img][ifm1][0][((oi__+1)*handle->upd_ofw_rb)*stride_w][0]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img][ofm1][0][(oi__+1)*handle->upd_ofw_rb][0]));*/
                  LIBXSMM_JITTED_CONV_WU_PF(
@@ -1153,7 +1153,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
      } /* ofm1 loop */
 #endif
   }
-} else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2 ){
+} else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2 ) {
 
 #if defined(INPUT_PADDING)
   /* Initialize in parallel scratch5 to zero */
@@ -1227,7 +1227,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
 
 
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
-  for(i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
+  for (i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
     per_thread_weight_ptr[i] = (element_filter_type)0;
   }
   /* lazy barrier init */
@@ -1239,8 +1239,8 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
     ofm1ifm1 = ofm1ifm1img % (handle->blocksifm * handle->blocksofm);
     ofm1 = ofm1ifm1 / handle->blocksifm;
     ifm1 = ofm1ifm1 % handle->blocksifm;
-    for(kj=0; kj < handle->desc.R; ++kj) {
-      for(ki=0; ki < handle->desc.S; ++ki) {
+    for (kj=0; kj < handle->desc.R; ++kj) {
+      for (ki=0; ki < handle->desc.S; ++ki) {
 #if defined(INPUT_PADDING)
         l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, kj, ki, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
 #else
@@ -1266,9 +1266,9 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
   for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
     ofm1 = ofm1ifm1 / handle->blocksifm;
     ifm1 = ofm1ifm1 % handle->blocksifm;
-    for(img = 0; img < handle->desc.N; ++img) {
-      for(kj=0; kj < kh; ++kj) {
-        for(ki=0; ki < kw; ++ki) {
+    for (img = 0; img < handle->desc.N; ++img) {
+      for (kj=0; kj < kh; ++kj) {
+        for (ki=0; ki < kw; ++ki) {
 #if defined(INPUT_PADDING)
           l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, kj, ki, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
 #else

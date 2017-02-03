@@ -107,20 +107,20 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 #define LIBXSMM_BWD_OFW_BLOCKING
 #if defined(LIBXSMM_BWD_OFW_BLOCKING)
     handle->bwd_ofh_rb = 1;
-    for(i = LIBXSMM_MIN(24, handle->ofw); i > 1; i--) {
-      if(handle->ofw % i == 0) break;
+    for (i = LIBXSMM_MIN(24, handle->ofw); i > 1; i--) {
+      if (handle->ofw % i == 0) break;
     }
     handle->bwd_ofw_rb = i;
 #endif
 
 #define LIBXSMM_UPD_OFH_BLOCKING
 #if defined(LIBXSMM_UPD_OFH_BLOCKING)
-    for(i = LIBXSMM_MIN(28, handle->ofh); i > 1; i--) {
-      if(handle->ofh % i == 0) break;
+    for (i = LIBXSMM_MIN(28, handle->ofh); i > 1; i--) {
+      if (handle->ofh % i == 0) break;
     }
     handle->upd_ofh_rb = i;
-    for(i = LIBXSMM_MIN(28, handle->ofw); i > 1; i--) {
-      if(handle->ofw % i == 0) break;
+    for (i = LIBXSMM_MIN(28, handle->ofw); i > 1; i--) {
+      if (handle->ofw % i == 0) break;
     }
     handle->upd_ofw_rb = i;
 #endif
@@ -208,12 +208,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
 #define LIBXSMM_UPD_OFH_BLOCKING
 #if defined(LIBXSMM_UPD_OFH_BLOCKING)
-    for(i = LIBXSMM_MIN(3, handle->ofh); i > 1; i--) {
-      if(handle->ofh % i == 0) break;
+    for (i = LIBXSMM_MIN(3, handle->ofh); i > 1; i--) {
+      if (handle->ofh % i == 0) break;
     }
     handle->upd_ofh_rb = i;
-    for(i = LIBXSMM_MIN(3, handle->ofw); i > 1; i--) {
-      if(handle->ofw % i == 0) break;
+    for (i = LIBXSMM_MIN(3, handle->ofw); i > 1; i--) {
+      if (handle->ofw % i == 0) break;
     }
     handle->upd_ofw_rb = i;
 #endif
@@ -433,15 +433,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           descriptor.unroll_kw = 1;
         } else if (descriptor.kw * descriptor.ofm_block * bp_each_iter_code_size <= max_code_size) {
           unsigned int upper_bound_ofw_rb = (max_code_size) / (descriptor.kw * descriptor.ofm_block * bp_each_iter_code_size);
-          for(i = LIBXSMM_MIN(upper_bound_ofw_rb+1, 24); i >= 10; i--) {
-            if(handle->ofw % i == 0) break;
+          for (i = LIBXSMM_MIN(upper_bound_ofw_rb+1, 24); i >= 10; i--) {
+            if (handle->ofw % i == 0) break;
           }
-          if(i>=10) {
+          if (i>=10) {
             descriptor.ofw_rb =  i;
             descriptor.ofw_unroll = 0;
             descriptor.unroll_kw = 1;
           } else {
-            if(descriptor.ofw_rb*descriptor.kw * descriptor.ofm_block * bp_each_iter_code_size <= max_code_size) {
+            if (descriptor.ofw_rb*descriptor.kw * descriptor.ofm_block * bp_each_iter_code_size <= max_code_size) {
               descriptor.ofw_unroll = 0;
               descriptor.unroll_kw = 1;
             } else {
@@ -449,7 +449,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               descriptor.unroll_kw = 0;
             }
           }
-        } else if(descriptor.ofw_rb*descriptor.kw * descriptor.ofm_block * bp_each_iter_code_size <= max_code_size) {
+        } else if (descriptor.ofw_rb*descriptor.kw * descriptor.ofm_block * bp_each_iter_code_size <= max_code_size) {
           descriptor.ofw_unroll = 0;
           descriptor.unroll_kw = 1;
         } else {
@@ -493,8 +493,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->code_bwd[1].pmm = libxsmm_create_xconv_backward(&descriptor);
 
         /* PEELED VERSION */
-        for(i = LIBXSMM_MIN(24, handle->ofw); i > 1; i--) {
-          if(handle->ofw % i == 0) break;
+        for (i = LIBXSMM_MIN(24, handle->ofw); i > 1; i--) {
+          if (handle->ofw % i == 0) break;
         }
         descriptor.ofw_rb = i;
         descriptor.peeled = 1;
@@ -506,16 +506,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           descriptor.unroll_kh = 1;
         } else if (descriptor.kw * descriptor.kh * descriptor.ofm_block * bp_each_iter_code_size <= max_code_size) {
           unsigned int upper_bound_ofw_rb = (max_code_size) / (descriptor.kw * descriptor.kh * descriptor.ofm_block * bp_each_iter_code_size);
-          for(i = LIBXSMM_MIN(upper_bound_ofw_rb+1, 24); i >= 10; i--) {
-            if(handle->ofw % i == 0) break;
+          for (i = LIBXSMM_MIN(upper_bound_ofw_rb+1, 24); i >= 10; i--) {
+            if (handle->ofw % i == 0) break;
           }
-          if(i>=10) {
+          if (i>=10) {
             descriptor.ofw_rb =  i;
             descriptor.ofw_unroll = 0;
             descriptor.unroll_kw = 1;
             descriptor.unroll_kh = 1;
           } else {
-            if(descriptor.ofw_rb*descriptor.kw * descriptor.kh * descriptor.ofm_block * bp_each_iter_code_size <= max_code_size) {
+            if (descriptor.ofw_rb*descriptor.kw * descriptor.kh * descriptor.ofm_block * bp_each_iter_code_size <= max_code_size) {
               descriptor.ofw_unroll = 0;
               descriptor.unroll_kw = 1;
               descriptor.unroll_kh = 1;
@@ -525,7 +525,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               descriptor.unroll_kh = 1;
             }
           }
-        } else if(descriptor.ofw_rb* descriptor.kh * descriptor.kw * descriptor.ofm_block * bp_each_iter_code_size <= max_code_size) {
+        } else if (descriptor.ofw_rb* descriptor.kh * descriptor.kw * descriptor.ofm_block * bp_each_iter_code_size <= max_code_size) {
           descriptor.ofw_unroll = 0;
           descriptor.unroll_kw = 1;
           descriptor.unroll_kh = 1;
@@ -627,13 +627,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         int upper_limit_ofw_rb = wu_max_code_size / wu_each_iter_code_size, upper_limit_ofh_rb = 0;
         descriptor.ifm_unroll = 1;
 
-        for(i = LIBXSMM_MIN(upper_limit_ofw_rb, LIBXSMM_MIN(56,handle->ofw)); i >= 1; i--) {
-          if(handle->ofw % i == 0) break;
+        for (i = LIBXSMM_MIN(upper_limit_ofw_rb, LIBXSMM_MIN(56,handle->ofw)); i >= 1; i--) {
+          if (handle->ofw % i == 0) break;
         }
         descriptor.ofw_rb =  i;
         upper_limit_ofh_rb = wu_max_code_size / (descriptor.ofw_rb * wu_each_iter_code_size);
-        for(i = LIBXSMM_MIN(upper_limit_ofh_rb, handle->ofh); i >= 1; i--) {
-          if(handle->ofh % i == 0) break;
+        for (i = LIBXSMM_MIN(upper_limit_ofh_rb, handle->ofh); i >= 1; i--) {
+          if (handle->ofh % i == 0) break;
         }
         descriptor.ofh_rb =  i;
 
@@ -1302,7 +1302,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       }
 
       /* The following condition checks whether we have encountered an input which is listed in our benchmark LUT */
-      /* if(flagBenchmark) printf("In benchmark\n"); */
+      /* if (flagBenchmark) printf("In benchmark\n"); */
 
       handle->cwino_fwd = wino_desc_fp;
 
@@ -1620,7 +1620,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_bp.bimg = wino_desc_fp.bimg;
         internal_dnn_handle_factors_ijm( wino_desc_bp.itiles, wino_desc_bp.jtiles, wino_desc_bp.bimg,
                      &(wino_desc_bp.ur_i), &(wino_desc_bp.ur_j), &(wino_desc_bp.ur_m), 26 );
-        if(wino_desc_bp.ur_i * wino_desc_bp.ur_j * wino_desc_bp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
+        if (wino_desc_bp.ur_i * wino_desc_bp.ur_j * wino_desc_bp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
           wino_desc_bp.vratio = 2;
         }
         else {
@@ -1952,7 +1952,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
         internal_dnn_handle_factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
                      &(wino_desc_wu.ur_i), &(wino_desc_wu.ur_j), &(wino_desc_wu.ur_m), allowed_unroll );
-        if(wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
+        if (wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
       	  wino_desc_wu.vratio = 2;
         } else {
       	  wino_desc_wu.vratio = 1;
@@ -1967,7 +1967,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
         internal_dnn_handle_factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
                      &(wino_desc_wu.ur_i), &(wino_desc_wu.ur_j), &(wino_desc_wu.ur_m), allowed_unroll );
-        if(wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
+        if (wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
       	  wino_desc_wu.vratio = 2;
         } else {
       	  wino_desc_wu.vratio = 1;

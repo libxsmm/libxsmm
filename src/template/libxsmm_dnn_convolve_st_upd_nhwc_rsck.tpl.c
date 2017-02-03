@@ -191,7 +191,7 @@ LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->reg_
 if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  || /* ) {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
-} else if (*/ libxsmm_target_archid == LIBXSMM_X86_AVX2 ){
+} else if (*/ libxsmm_target_archid == LIBXSMM_X86_AVX2 ) {
 
 #if defined(INPUT_PADDING)
   libxsmm_barrier_init(handle->barrier, ltid);
@@ -361,7 +361,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
 #endif
 
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
-  for(i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
+  for (i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
     per_thread_weight_ptr[i] = (element_filter_type)0;
   }
   /* lazy barrier init */
@@ -373,8 +373,8 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
     ofm1ifm1 = ofm1ifm1img % (handle->blocksifm * handle->blocksofm);
     ofm1 = ofm1ifm1 / handle->blocksifm;
     ifm1 = ofm1ifm1 % handle->blocksifm;
-    for(kj=0; kj < handle->desc.R; ++kj) {
-      for(ki=0; ki < handle->desc.S; ++ki) {
+    for (kj=0; kj < handle->desc.R; ++kj) {
+      for (ki=0; ki < handle->desc.S; ++ki) {
 #if defined(INPUT_PADDING)
         l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, kj, ki, ifm1, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
 #else
@@ -400,9 +400,9 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
   for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
     ofm1 = ofm1ifm1 / handle->blocksifm;
     ifm1 = ofm1ifm1 % handle->blocksifm;
-    for(img = 0; img < handle->desc.N; ++img) {
-      for(kj=0; kj < handle->desc.R; ++kj) {
-        for(ki=0; ki < handle->desc.S; ++ki) {
+    for (img = 0; img < handle->desc.N; ++img) {
+      for (kj=0; kj < handle->desc.R; ++kj) {
+        for (ki=0; ki < handle->desc.S; ++ki) {
 #if defined(INPUT_PADDING)
           l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, kj, ki, ifm1, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
 #else

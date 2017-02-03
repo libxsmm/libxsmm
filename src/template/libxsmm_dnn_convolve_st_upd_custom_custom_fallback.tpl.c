@@ -58,7 +58,7 @@ memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock)
 for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
   ofm1 = ofm1ifm1 / handle->blocksifm;
   ifm1 = ofm1ifm1 % handle->blocksifm;
-  for(img = 0; img < handle->desc.N; ++img) {
+  for (img = 0; img < handle->desc.N; ++img) {
 #if defined(INPUT_PADDING)
     for (oj = 0; oj < handle->ifhp; ++oj) {
       for (oi = 0; oi < handle->ifwp; ++oi) {
@@ -69,12 +69,12 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       }
     }
 #endif
-    for(oj = 0; oj < handle->ofh; ++oj) {
+    for (oj = 0; oj < handle->ofh; ++oj) {
       ij = oj * handle->desc.u;
-      for(oi = 0; oi < handle->ofw; ++oi) {
+      for (oi = 0; oi < handle->ofw; ++oi) {
         ii = oi * handle->desc.v;
-        for(kj = 0; kj < handle->desc.R; ++kj) {
-          for(ki = 0; ki < handle->desc.S; ++ki) {
+        for (kj = 0; kj < handle->desc.R; ++kj) {
+          for (ki = 0; ki < handle->desc.S; ++ki) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
               for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
                 LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) += (element_filter_type)(

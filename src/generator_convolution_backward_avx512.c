@@ -126,15 +126,15 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
 
   /**** Code sequence:
 # define BP_UNROLL_FACTOR 2
-  for(int oi=0; oi < ofw; oi+=BP_UNROLL_FACTOR) {
+  for (int oi=0; oi < ofw; oi+=BP_UNROLL_FACTOR) {
     int ii = oi;
     float (* __restrict tmpin1)[VLEN] = &del_input[img][ifm1][ij][ii];
 #   pragma unroll
-    for(int ki=0; ki < KW; ki++) {
+    for (int ki=0; ki < KW; ki++) {
       __m512 acc00 = _mm512_load_ps(&tmpin1[ki + 0]);
       __m512 acc01 = _mm512_load_ps(&tmpin1[ki + 1]);
 #       pragma unroll
-        for(int ofm2 = 0; ofm2 < VLEN; ofm2++) {
+        for (int ofm2 = 0; ofm2 < VLEN; ofm2++) {
           __m512 weight00 = _mm512_load_ps(&tr_wt[kh-kj-1][ki][ofm2]);
           acc00 = _mm512_fmadd_ps(_mm512_set1_ps(del_output[img][ofm1][oj][oi+0][ofm2]), weight00, acc00);
           acc01 = _mm512_fmadd_ps(_mm512_set1_ps(del_output[img][ofm1][oj][oi+1][ofm2]), weight00, acc01);
@@ -193,7 +193,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
                                      l_gp_reg_mapping.gp_reg_weight,
                                      i_conv_desc->ofm_block* l_conv_kernel_config.vector_length_wt * l_conv_kernel_config.datatype_size_wt  );
 #ifdef ENABLE_INPUT_PREFETCH
-      if((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) {
+      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_input_pf,
@@ -201,7 +201,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
       }
 #endif
 #ifdef ENABLE_WEIGHT_PREFETCH
-      if((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) {
+      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_weight_pf,
@@ -223,7 +223,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
                                      l_gp_reg_mapping.gp_reg_weight,
                                      i_conv_desc->kw * i_conv_desc->ofm_block* l_conv_kernel_config.vector_length_wt * l_conv_kernel_config.datatype_size_wt  );
 #ifdef ENABLE_INPUT_PREFETCH
-      if((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) {
+      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_sub_instruction,
                                      l_gp_reg_mapping.gp_reg_input_pf,
@@ -231,7 +231,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
       }
 #endif
 #ifdef ENABLE_WEIGHT_PREFETCH
-      if((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) {
+      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_sub_instruction,
                                      l_gp_reg_mapping.gp_reg_weight_pf,
@@ -240,7 +240,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
 #endif
     }
 
-    if(((i_conv_desc->ofw_unroll == 0) && ((i_conv_desc->ofw/i_conv_desc->ofw_rb) > 1)) || (l_ofw_trips > 1)) {
+    if (((i_conv_desc->ofw_unroll == 0) && ((i_conv_desc->ofw/i_conv_desc->ofw_rb) > 1)) || (l_ofw_trips > 1)) {
       /* Add 40 to input, output */
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_add_instruction,
@@ -252,7 +252,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
                                      i_conv_desc->ofw_rb *  i_conv_desc->ofm_block * l_conv_kernel_config.datatype_size_out  );
 
 #ifdef ENABLE_INPUT_PREFETCH
-      if((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) {
+      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_input_pf,
@@ -260,7 +260,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
       }
 #endif
 #ifdef ENABLE_OUTPUT_PREFETCH
-      if((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) {
+      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_output_pf,
@@ -320,7 +320,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
                                      l_gp_reg_mapping.gp_reg_weight,
                                      i_conv_desc->ofm_block* l_conv_kernel_config.vector_length_wt * l_conv_kernel_config.datatype_size_wt  );
 #ifdef ENABLE_INPUT_PREFETCH
-      if((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) {
+      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_input_pf,
@@ -328,7 +328,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
       }
 #endif
 #ifdef ENABLE_WEIGHT_PREFETCH
-      if((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) {
+      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_weight_pf,
@@ -350,7 +350,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
                                      l_gp_reg_mapping.gp_reg_weight,
                                      i_conv_desc->kw * i_conv_desc->ofm_block* l_conv_kernel_config.vector_length_wt * l_conv_kernel_config.datatype_size_wt  );
 #ifdef ENABLE_INPUT_PREFETCH
-      if((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) {
+      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_sub_instruction,
                                      l_gp_reg_mapping.gp_reg_input_pf,
@@ -358,7 +358,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
       }
 #endif
 #ifdef ENABLE_WEIGHT_PREFETCH
-      if((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) {
+      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_sub_instruction,
                                      l_gp_reg_mapping.gp_reg_weight_pf,
@@ -367,7 +367,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
 #endif
     }
 
-    if(((i_conv_desc->ofw_unroll == 0) && ((i_conv_desc->ofw/i_conv_desc->ofw_rb) > 1)) || (l_ofw_trips > 1)) {
+    if (((i_conv_desc->ofw_unroll == 0) && ((i_conv_desc->ofw/i_conv_desc->ofw_rb) > 1)) || (l_ofw_trips > 1)) {
       /* Add 40 to input, output */
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_add_instruction,
@@ -378,7 +378,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
                                      l_gp_reg_mapping.gp_reg_output,
                                      i_conv_desc->ofw_rb *  i_conv_desc->ofm_block * l_conv_kernel_config.datatype_size_out  );
 #ifdef ENABLE_INPUT_PREFETCH
-      if((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) {
+      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_input_pf,
@@ -386,7 +386,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
       }
 #endif
 #ifdef ENABLE_OUTPUT_PREFETCH
-      if((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) {
+      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_output_pf,
@@ -497,7 +497,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
   libxsmm_generator_convolution_backward_avx512_init_output_strides( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc );
 
   for ( l_k_1 = 0; l_k_1 < i_kw_unroll ; l_k_1++ ) {
-    if(l_k_1 == 0) {
+    if (l_k_1 == 0) {
       /* load all inputs */
     reg_count = 0;
     for ( j = 0; j < i_conv_desc->ofw_rb; j++ ) {
@@ -514,7 +514,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
   /* This is prefetching for next ij loop assuming that oi loop is completely unrolled*/
   /* Ideally, if oi is loop is not completely unrolled, you need to prefetch for next chunk of oi loop see below */
 #ifdef ENABLE_INPUT_PREFETCH
-  if(((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
+  if (((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
       libxsmm_x86_instruction_prefetch( io_generated_code,
                                      LIBXSMM_X86_INSTR_PREFETCHT0,
                                      i_gp_reg_mapping->gp_reg_input_pf,
@@ -537,7 +537,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
                                     i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb* l_reg_per_block) + ((l_k_1-1)%(i_conv_desc->ofw_rb * l_reg_per_block)),
                                       0, 0 );
 #ifdef ENABLE_INPUT_PREFETCH
-  if(((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
+  if (((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
       libxsmm_x86_instruction_prefetch( io_generated_code,
                                      LIBXSMM_X86_INSTR_PREFETCHT0,
                                      i_gp_reg_mapping->gp_reg_input_pf,
@@ -680,7 +680,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
   }
 
     reg_count = 0;
-    if(l_k_1 == i_kw_unroll-1) {
+    if (l_k_1 == i_kw_unroll-1) {
     reg_count = 0;
         /* store inputs */
        for (j = 0; j < i_conv_desc->ofw_rb; j++ ) {
@@ -747,7 +747,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_peeled( libxsmm_
     libxsmm_generator_convolution_backward_avx512_init_output_strides( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc );
 
 #ifdef OPT_LOAD_STORE
-    if(l_k_1 == 0) {
+    if (l_k_1 == 0) {
       /* load all inputs */
     reg_count = 0;
     for ( j = 0; j < i_conv_desc->ofw_rb; j++ ) {
@@ -763,7 +763,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_peeled( libxsmm_
 #ifdef ENABLE_INPUT_PREFETCH
   /* This is prefetching for next ij loop assuming that oi loop is completely unrolled*/
   /* Ideally, if oi is loop is not completely unrolled, you need to prefetch for next chunk of oi loop see below */
-  if(((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
+  if (((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
       libxsmm_x86_instruction_prefetch( io_generated_code,
                                      LIBXSMM_X86_INSTR_PREFETCHT0,
                                      i_gp_reg_mapping->gp_reg_input_pf,
@@ -788,7 +788,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_peeled( libxsmm_
 #ifdef ENABLE_INPUT_PREFETCH
   /* This is prefetching for next ij loop assuming that oi loop is completely unrolled*/
   /* Ideally, if oi is loop is not completely unrolled, you need to prefetch for next chunk of oi loop see below */
-  if(((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
+  if (((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
       libxsmm_x86_instruction_prefetch( io_generated_code,
                                      LIBXSMM_X86_INSTR_PREFETCHT0,
                                      i_gp_reg_mapping->gp_reg_input_pf,
@@ -873,7 +873,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_peeled( libxsmm_
 
     }
 
-    if(weight_counter >= (i_conv_desc->ofm_block-1)){
+    if (weight_counter >= (i_conv_desc->ofm_block-1)) {
       weight_counter = 0;
     } else weight_counter++;
 
@@ -971,7 +971,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_peeled( libxsmm_
     l_displacement_k++;
   } /* end of l_k_2 */
 
-  if(i_kh_unroll > 1) {
+  if (i_kh_unroll > 1) {
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_output,
@@ -994,7 +994,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_peeled( libxsmm_
   }
   } /* Finish l_k_3 */
 
-  if(i_kh_unroll > 1) {
+  if (i_kh_unroll > 1) {
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_sub_instruction,
                                      i_gp_reg_mapping->gp_reg_output,
@@ -1003,7 +1003,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_peeled( libxsmm_
 
 #ifdef OPT_LOAD_STORE
     reg_count = 0;
-    if(l_k_1 == i_kw_unroll-1) {
+    if (l_k_1 == i_kw_unroll-1) {
     reg_count = 0;
         /* store inputs */
        for (j = 0; j < i_conv_desc->ofw_rb; j++ ) {
@@ -1046,14 +1046,14 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_peeled( libxsmm_
     }
   }
 #endif
-    if(i_kw_unroll > 1) {
+    if (i_kw_unroll > 1) {
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_weight,
                                      i_conv_desc->ofm_block * i_conv_kernel_config->vector_length_wt*i_conv_kernel_config->datatype_size_wt  );
     }
   } /* end of l_k_1 */
-  if(i_kw_unroll > 1) {
+  if (i_kw_unroll > 1) {
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_sub_instruction,
                                      i_gp_reg_mapping->gp_reg_weight, i_kw_unroll * i_conv_desc->ofm_block * i_conv_kernel_config->vector_length_wt*i_conv_kernel_config->datatype_size_wt  );

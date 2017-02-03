@@ -70,7 +70,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
 #endif
 
   for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
-    for( oj = 0; oj < handle->ofh; ++oj) {
+    for ( oj = 0; oj < handle->ofh; ++oj) {
       ij = oj * handle->desc.u;
       for (oi = 0; oi < handle->ofw; ++oi) {
         ii = oi * handle->desc.v;

@@ -156,8 +156,8 @@ libxsmm_barrier_init(handle->barrier, ltid);
 for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
   ofm1 = ifm1ofm1/handle->blocksifm;
   ifm1 = ifm1ofm1%handle->blocksifm;
-  for(kj=0; kj < kh; ++kj) {
-    for(ki=0; ki < kw; ++ki) {
+  for (kj=0; kj < kh; ++kj) {
+    for (ki=0; ki < kw; ++ki) {
       /* TODO: enable this later */
       /*transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);*/
       for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
@@ -281,7 +281,7 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
   /* special casing for ifh < 2*kh scenario where the loop peeling does not work */
-  if(ifh <= 2*kh) {
+  if (ifh <= 2*kh) {
     for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
       img = imgifm1/handle->blocksifm;
       ifm1 = imgifm1%handle->blocksifm;
@@ -332,10 +332,10 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #endif
 
       for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
-        for(ij= 0 ; ij < ifh; ++ij) {
-          for(kj=0; kj < kh; ++kj) {
+        for (ij= 0 ; ij < ifh; ++ij) {
+          for (kj=0; kj < kh; ++kj) {
             oj = ij - kh + kj + 1;
-            if(oj >= 0 && oj < ofh) {
+            if (oj >= 0 && oj < ofh) {
               LIBXSMM_JITTED_CONV_BP_NO_PF(
                 input_to_use, img, ifm1, ij, 0, 0,
                 tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
@@ -429,7 +429,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
 #if !defined(LIBXSMM_CONV_NO_PREFETCH)
         /* NON PEELED PROLOGUE VERSION */
-        if((kh == 3) && (kw == 3)) { /* 3x3 convolution */
+        if ((kh == 3) && (kw == 3)) { /* 3x3 convolution */
 
           /* Unroll 1 */
           /* prefetch ij=2; kj=0 */
@@ -588,10 +588,10 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
                                 del_out, img, ofm1, ij+1-kh+4+1, 0, 0
                         );
         } else {
-          for(ij=0; ij < kh-1; ij++) {
-            for(kj=0; kj < kh; kj++) {
+          for (ij=0; ij < kh-1; ij++) {
+            for (kj=0; kj < kh; kj++) {
               oj = ij - kh + kj + 1;
-              if(oj >=0) {
+              if (oj >=0) {
                 LIBXSMM_JITTED_CONV_BP_NO_PF(
                                          input_to_use, img, ifm1, ij, 0, 0,
                                          tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
@@ -602,7 +602,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
         }
 
         /* PEELED INNERMOST VERSION */
-        for(ij=kh-1; ij < ifh-kh+1; ij++) {
+        for (ij=kh-1; ij < ifh-kh+1; ij++) {
           /*jitted_conv_bp_peeled_noweight_pf(l_input, l_wt, l_output, &(del_input[img][ifm1][ij+1][0][0]), NULL, &(del_out[img][ofm1][ij+1-kh+1][0][0]));*/
           LIBXSMM_JITTED_CONV_BP_PEELED_NOWEIGHT_PF(
                     input_to_use, img, ifm1, ij, 0, 0,
@@ -1054,10 +1054,10 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
             }
           }
         } else {
-          for(ij=ifh-kh +1; ij < ifh; ij++) {
-            for(kj=0; kj < kh; kj++) {
+          for (ij=ifh-kh +1; ij < ifh; ij++) {
+            for (kj=0; kj < kh; kj++) {
               oj = ij - kh + kj + 1;
-              if(oj < ofh) {
+              if (oj < ofh) {
                 LIBXSMM_JITTED_CONV_BP_NO_PF(
                   input_to_use, img, ifm1, ij, 0, 0,
                   tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
@@ -1067,26 +1067,26 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
           }
         }
 #else /* NO_PREFETCH */
-        for(ij=0; ij < kh-1; ++ij) {
-          for(kj=0; kj < kh; ++kj) {
+        for (ij=0; ij < kh-1; ++ij) {
+          for (kj=0; kj < kh; ++kj) {
             oj = ij - kh + kj + 1;
-            if(oj >=0) {
+            if (oj >=0) {
               LIBXSMM_JITTED_CONV_BP_NO_PF(input_to_use, img, ifm1, ij, 0, 0,
                                     tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
                                     del_out, img, ofm1, oj, 0, 0);
             }
           }
         }
-        for(ij=kh-1; ij < ifh-kh +1 ; ++ij) {
+        for (ij=kh-1; ij < ifh-kh +1 ; ++ij) {
           oj = ij - kh + 1;
           LIBXSMM_JITTED_CONV_BP_PEELED_NO_PF(input_to_use, img, ifm1, ij, 0, 0,
                                        tr_wt,ofm1, ifm1, kh-1, 0, 0, 0,
                                        del_out, img, ofm1, oj, 0, 0);
         }
-        for(ij=ifh-kh +1 ; ij < ifh; ++ij) {
-          for(kj=0; kj < kh; ++kj) {
+        for (ij=ifh-kh +1 ; ij < ifh; ++ij) {
+          for (kj=0; kj < kh; ++kj) {
             oj = ij - kh + kj + 1;
-            if(oj < ofh) {
+            if (oj < ofh) {
               LIBXSMM_JITTED_CONV_BP_NO_PF(input_to_use, img, ifm1, ij, 0, 0,
                                     tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
                                     del_out, img, ofm1, oj, 0, 0);
@@ -1129,7 +1129,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #endif
     }
   }
-} else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2 ){
+} else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2 ) {
   for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
     img = imgifm1/handle->blocksifm;
     ifm1 = imgifm1%handle->blocksifm;
@@ -1168,10 +1168,10 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #endif
 
     for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
-      for(ij= 0 ; ij < ifh; ++ij) {
-        for(kj=0; kj < kh; ++kj) {
+      for (ij= 0 ; ij < ifh; ++ij) {
+        for (kj=0; kj < kh; ++kj) {
           oj = ij - kh + kj + 1;
-          if(oj >= 0 && oj < ofh) {
+          if (oj >= 0 && oj < ofh) {
             LIBXSMM_JITTED_CONV_BP_NO_PF(
               input_to_use, img, ifm1, ij, 0, 0,
               tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,

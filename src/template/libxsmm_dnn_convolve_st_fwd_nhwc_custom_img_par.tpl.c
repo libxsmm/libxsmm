@@ -251,7 +251,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
       }
     }
   }
-} else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2 ){
+} else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2 ) {
   jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
   jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 

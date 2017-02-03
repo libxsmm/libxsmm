@@ -102,23 +102,23 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
   JITDUMP_CODE_CLOSE = 3;
 
   path_base = getenv("JITDUMPDIR");
-  if(path_base == NULL) {
+  if (path_base == NULL) {
     path_base = getenv("HOME");
   }
-  if(path_base == NULL) {
+  if (path_base == NULL) {
     path_base = getenv(".");
   }
 
   LIBXSMM_SNPRINTF(file_path, sizeof(file_path), "%s/.debug/", path_base);
   res = mkdir(file_path, S_IRWXU);
-  if(res < 0 && errno != EEXIST) {
+  if (res < 0 && errno != EEXIST) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to create .debug dir\n");
     goto error;
   }
 
   LIBXSMM_SNPRINTF(file_path, sizeof(file_path), "%s/.debug/jit", path_base);
   res = mkdir(file_path, S_IRWXU);
-  if(res < 0 && errno != EEXIST) {
+  if (res < 0 && errno != EEXIST) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to create .debug/jit dir\n");
     goto error;
   }
@@ -128,7 +128,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
   LIBXSMM_SNPRINTF(file_path, sizeof(file_path),
            "%s/.debug/jit/libxsmm-jit-%s.XXXXXX", path_base, date);
   path_base = mkdtemp(file_path);
-  if(path_base == NULL) {
+  if (path_base == NULL) {
     LIBXSMM_PERF_ERROR("LIBXSMM: failed to create temporary dir\n");
     goto error;
   }
