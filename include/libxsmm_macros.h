@@ -465,5 +465,8 @@
 # pragma offload_attribute(pop)
 #endif
 
+/** Similar to LIBXSMM_UNUSED, this helper "sinks" multiple arguments. */
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_sink(LIBXSMM_VARIADIC) {/*nothing*/}
+
 #endif /*LIBXSMM_MACROS_H*/
 
