@@ -196,7 +196,7 @@
     ifm1 = (job % (handle->blocksifm / VRATIO)) * VRATIO;
     internal_bwd_output_transform_custom_custom(&LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_bwd.bimg, 0, 0, ifm1/VRATIO, img%handle->cwino_bwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN),
       &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN),
-      &LIBXSMM_VLA_ACCESS(5, Owp, tid, 0, 0, 0, 0, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, FDVLEN), handle);
+      &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, FDVLEN), handle);
   }
   libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
 #ifdef BTIME

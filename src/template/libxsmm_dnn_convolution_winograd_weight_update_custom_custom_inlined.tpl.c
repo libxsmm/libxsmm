@@ -96,7 +96,7 @@
     img  = job / (handle->blocksifm / VRATIO);
     ifm1 = (job % (handle->blocksifm / VRATIO)) * VRATIO;
     internal_upd_input_transform_custom_custom(&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN),
-      &LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_upd.bimg, 0, 0, ifm1/VRATIO, img%handle->cwino_upd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, FDVLEN),
+      &LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_upd.bimg, 0, 0, ifm1/VRATIO, img%handle->cwino_upd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, FDVLEN), 
       &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_upd.itiles*handle->cwino_upd.jtiles, ALPHA, ALPHA, FDVLEN), handle);
   }
 #ifdef WTIME
@@ -119,7 +119,7 @@
     img  = job / (handle->blocksofm / VRATIO);
     ofm1 = (job % (handle->blocksofm / VRATIO)) * VRATIO;
     internal_upd_deloutput_transform_custom_custom(&LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN),
-      &LIBXSMM_VLA_ACCESS(8, M, img/handle->cwino_upd.bimg, 0, 0, ofm1/VRATIO, img%handle->cwino_upd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksofm/VRATIO, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, FDVLEN),
+      &LIBXSMM_VLA_ACCESS(8, M, img/handle->cwino_upd.bimg, 0, 0, ofm1/VRATIO, img%handle->cwino_upd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksofm/VRATIO, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, FDVLEN), 
       &LIBXSMM_VLA_ACCESS(5, Owp, tid, 0, 0, 0, 0, handle->cwino_upd.itiles*handle->cwino_upd.jtiles, ALPHA, ALPHA, FDVLEN), handle);
   }
   libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);

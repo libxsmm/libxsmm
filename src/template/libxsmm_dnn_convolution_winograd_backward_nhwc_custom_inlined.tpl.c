@@ -44,6 +44,7 @@
   LIBXSMM_ASSUME_ALIGNED(handle->reg_input->data,  64);
   LIBXSMM_ASSUME_ALIGNED(handle->reg_output->data, 64);
   LIBXSMM_ASSUME_ALIGNED(handle->reg_filter->data, 64);
+
   LIBXSMM_VLA_DECL(5, float, input, handle->reg_input->data, handle->ifhp, handle->ifwp, handle->blocksifm, TDVLEN);
   LIBXSMM_VLA_DECL(5, float, output, handle->reg_output->data, handle->ofhp, handle->ofwp, handle->blocksofm, TDVLEN);
   LIBXSMM_VLA_DECL(6, float, weight, handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, TDVLEN, TDVLEN);
@@ -196,7 +197,7 @@
     ifm1 = (job % (handle->blocksifm / VRATIO)) * VRATIO;
     internal_bwd_output_transform_nhwc_custom(&LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_bwd.bimg, 0, 0, ifm1/VRATIO, img%handle->cwino_bwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm/VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN),
       &LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, TDVLEN),
-      &LIBXSMM_VLA_ACCESS(5, Owp, tid, 0, 0, 0, 0, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, FDVLEN), handle);
+      &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, FDVLEN), handle);
   }
   libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
 #ifdef BTIME

@@ -32,7 +32,7 @@
   const int total_tiles = handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles;
   LIBXSMM_VLA_DECL(4, float, input, inp, handle->ifhp, handle->ifwp, TDVLEN);
   LIBXSMM_VLA_DECL(5, float, output, tinp, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN);
-  float Iw[total_tiles][ALPHA][ALPHA][FDVLEN];
+  LIBXSMM_VLA_DECL(4, float, Iw, Iwp, ALPHA, ALPHA, FDVLEN);
   float I[ALPHA][ALPHA][FDVLEN];
   unsigned int ti, tj;
   int i, j, k, r;
@@ -109,22 +109,22 @@
         D1[i] = I[1][1][i] - I[3][1][i];
         D2[i] = I[1][2][i] - I[3][2][i];
         D3[i] = I[1][3][i] - I[3][3][i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][0][0][i] = A0[i] - A2[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][0][1][i] = A1[i] + A2[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][0][2][i] = A2[i] - A1[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][0][3][i] = A1[i] - A3[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][1][0][i] = B0[i] - B2[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][1][1][i] = B1[i] + B2[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][1][2][i] = B2[i] - B1[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][1][3][i] = B1[i] - B3[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][2][0][i] = C0[i] - C2[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][2][1][i] = C1[i] + C2[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][2][2][i] = C2[i] - C1[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][2][3][i] = C1[i] - C3[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][3][0][i] = D0[i] - D2[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][3][1][i] = D1[i] + D2[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][3][2][i] = D2[i] - D1[i];
-        Iw[tj*handle->cwino_fwd.itiles + ti][3][3][i] = D1[i] - D3[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 0, 0, i, ALPHA, ALPHA, FDVLEN) = A0[i] - A2[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 0, 1, i, ALPHA, ALPHA, FDVLEN) = A1[i] + A2[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 0, 2, i, ALPHA, ALPHA, FDVLEN) = A2[i] - A1[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 0, 3, i, ALPHA, ALPHA, FDVLEN) = A1[i] - A3[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 1, 0, i, ALPHA, ALPHA, FDVLEN) = B0[i] - B2[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 1, 1, i, ALPHA, ALPHA, FDVLEN) = B1[i] + B2[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 1, 2, i, ALPHA, ALPHA, FDVLEN) = B2[i] - B1[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 1, 3, i, ALPHA, ALPHA, FDVLEN) = B1[i] - B3[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 2, 0, i, ALPHA, ALPHA, FDVLEN) = C0[i] - C2[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 2, 1, i, ALPHA, ALPHA, FDVLEN) = C1[i] + C2[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 2, 2, i, ALPHA, ALPHA, FDVLEN) = C2[i] - C1[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 2, 3, i, ALPHA, ALPHA, FDVLEN) = C1[i] - C3[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 3, 0, i, ALPHA, ALPHA, FDVLEN) = D0[i] - D2[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 3, 1, i, ALPHA, ALPHA, FDVLEN) = D1[i] + D2[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 3, 2, i, ALPHA, ALPHA, FDVLEN) = D2[i] - D1[i];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, 3, 3, i, ALPHA, ALPHA, FDVLEN) = D1[i] - D3[i];
       }
       /* inline code end */
 
@@ -137,7 +137,7 @@
           LIBXSMM_PRAGMA_SIMD
           for (k = 0; k < FDVLEN; k++) {
             LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_fwd.itiles + ti, k, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN) =
-              Iw[tj*handle->cwino_fwd.itiles + ti][j][i][k];
+              LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, i, k, ALPHA, ALPHA, FDVLEN);
           }
         }
       }

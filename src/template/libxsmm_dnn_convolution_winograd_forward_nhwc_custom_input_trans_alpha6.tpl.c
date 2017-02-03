@@ -32,7 +32,7 @@
   const int total_tiles = handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles;
   LIBXSMM_VLA_DECL(4, float, input, inp, handle->ifwp, handle->blocksifm, TDVLEN);
   LIBXSMM_VLA_DECL(5, float, output, tinp, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN);
-  float Iw[total_tiles][ALPHA][ALPHA][FDVLEN];
+  LIBXSMM_VLA_DECL(4, float, Iw, Iwp, ALPHA, ALPHA, FDVLEN);
   float I[ALPHA][ALPHA][FDVLEN];
   int ti, tj;
   int i, j, k, r;
@@ -110,12 +110,12 @@
           t3[j] = T[i][3][j] - T[i][1][j];
           t4[j] = T[i][4][j] - 5.0f*T[i][2][j];
           t5[j] = T[i][5][j] - 5.0f*T[i][3][j];
-          Iw[tj*handle->cwino_fwd.itiles + ti][i][0][j] = t4[j] + 4.0f*T[i][0][j];
-          Iw[tj*handle->cwino_fwd.itiles + ti][i][1][j] = t0[j] + t1[j];
-          Iw[tj*handle->cwino_fwd.itiles + ti][i][2][j] = t0[j] - t1[j];
-          Iw[tj*handle->cwino_fwd.itiles + ti][i][3][j] = t2[j] + 2.0f*t3[j];
-          Iw[tj*handle->cwino_fwd.itiles + ti][i][4][j] = t2[j] - 2.0f*t3[j];
-          Iw[tj*handle->cwino_fwd.itiles + ti][i][5][j] = t5[j] + 4.0f*T[i][1][j];
+          LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, i, 0, j, ALPHA, ALPHA, FDVLEN) = t4[j] + 4.0f*T[i][0][j];
+          LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, i, 1, j, ALPHA, ALPHA, FDVLEN) = t0[j] + t1[j];
+          LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, i, 2, j, ALPHA, ALPHA, FDVLEN) = t0[j] - t1[j];
+          LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, i, 3, j, ALPHA, ALPHA, FDVLEN) = t2[j] + 2.0f*t3[j];
+          LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, i, 4, j, ALPHA, ALPHA, FDVLEN) = t2[j] - 2.0f*t3[j];
+          LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, i, 5, j, ALPHA, ALPHA, FDVLEN) = t5[j] + 4.0f*T[i][1][j];
         }
       }
       /* inline code end */
@@ -129,7 +129,7 @@
           LIBXSMM_PRAGMA_SIMD
           for (k = 0; k < FDVLEN; k++) {
             LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_fwd.itiles + ti, k, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN) =
-              Iw[tj*handle->cwino_fwd.itiles + ti][j][i][k];
+              LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, i, k, ALPHA, ALPHA, FDVLEN);
           }
         }
       }
