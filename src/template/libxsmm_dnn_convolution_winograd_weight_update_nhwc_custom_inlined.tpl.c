@@ -166,7 +166,9 @@
             for (ti = 0; ti < handle->cwino_upd.itiles; ti++) {
               for (ifm2 = 0; ifm2 < FDVLEN; ifm2++) {
                 for (ofm2 = 0; ofm2 < FDVLEN; ofm2++) {
-                  U[oj][oi][ofm1][ifm1][ifm2][ofm2] += M[img][oj][oi][ofm1][img1][tj][ti][ofm2] * V[img][oj][oi][ifm1][img1][tj][ti][ifm2];
+                  LIBXSMM_VLA_ACCESS  (6, U, oj, oi, ofm1, ifm1, ifm2, ofm2, ALPHA, handle->blocksofm / VRATIO, handle->blocksifm / VRATIO, FDVLEN, FDVLEN) +=
+                    LIBXSMM_VLA_ACCESS(8, M, img, oj, oi, ofm1, img1, tj, ti, ofm2, ALPHA, ALPHA, handle->blocksofm / VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN)
+                  * LIBXSMM_VLA_ACCESS(8, V, img, oj, oi, ifm1, img1, tj, ti, ifm2, ALPHA, ALPHA, handle->blocksifm / VRATIO, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, FDVLEN);
                 }
               }
             }
