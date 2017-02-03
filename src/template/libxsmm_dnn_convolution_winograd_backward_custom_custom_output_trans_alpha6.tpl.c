@@ -30,8 +30,8 @@
 ******************************************************************************/
 
   int total_tiles = handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles;
+  LIBXSMM_VLA_DECL(5, const float, input, toutp, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_bwd.bimg, total_tiles, FDVLEN);
   LIBXSMM_VLA_DECL(4, float, output, outp, handle->ifhp, handle->ifwp, TDVLEN);
-  LIBXSMM_VLA_DECL(5, float, input, toutp, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_bwd.bimg, total_tiles, FDVLEN);
   LIBXSMM_VLA_DECL(4, float, Ow, Owp, ALPHA, ALPHA, FDVLEN);
   float O[ALPHA - 2][ALPHA - 2][FDVLEN];
   unsigned int ti, tj;

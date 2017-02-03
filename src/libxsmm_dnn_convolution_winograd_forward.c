@@ -43,7 +43,8 @@
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_custom( float *inp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_custom(
+                                           const float *inp,
                                            float *tinp,
                                            float *Iwp,
                                            const libxsmm_dnn_layer* handle )
@@ -97,7 +98,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_cus
 #endif
 }
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_nhwc_custom( float *inp,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_nhwc_custom(
+                                         const float *inp,
                                          float *tinp,
                                          float *Iwp,
                                          const libxsmm_dnn_layer* handle )

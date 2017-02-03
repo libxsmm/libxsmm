@@ -29,7 +29,7 @@
 /* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
-  LIBXSMM_VLA_DECL(6, float, input, wp, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
+  LIBXSMM_VLA_DECL(6, const float, input, wp, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
   LIBXSMM_VLA_DECL(5, float, output, twp, ALPHA, (handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO), FDVLEN, FDVLEN);
   float Fw[ALPHA][ALPHA][FDVLEN][FDVLEN];
   float F[3][3][FDVLEN][FDVLEN];

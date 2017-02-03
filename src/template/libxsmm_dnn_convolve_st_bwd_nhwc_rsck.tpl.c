@@ -124,8 +124,7 @@ element_input_type *prefetch_ptr;
 #endif
 LIBXSMM_VLA_DECL(4, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * padded_h * padded_w * handle->blocksifm * handle->ifmblock, padded_w, handle->blocksifm, handle->ifmblock);
 const size_t small_block_size = handle->ifmblock * libxsmm_dnn_typesize(handle->datatype) * 8;
-memset(&LIBXSMM_VLA_ACCESS(4, input_buffer, 0, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock),
-       0,
+memset(&LIBXSMM_VLA_ACCESS(4, input_buffer, 0, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock), 0,
        padded_w * padded_h * handle->blocksifm * handle->ifmblock * sizeof(element_input_type));
 ifh = handle->ifhp + 2 * handle->desc.pad_h;
 #else

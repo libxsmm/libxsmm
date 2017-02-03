@@ -30,7 +30,7 @@
 ******************************************************************************/
 
   const int total_tiles = handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles;
-  LIBXSMM_VLA_DECL(4, float, input, inp, handle->ifhp, handle->ifwp, TDVLEN);
+  LIBXSMM_VLA_DECL(4, const float, input, inp, handle->ifhp, handle->ifwp, TDVLEN);
   LIBXSMM_VLA_DECL(5, float, output, tinp, ALPHA, (handle->blocksifm/VRATIO)*handle->cwino_fwd.bimg, total_tiles, FDVLEN);
   LIBXSMM_VLA_DECL(4, float, Iw, Iwp, ALPHA, ALPHA, FDVLEN);
   float I[ALPHA][ALPHA][FDVLEN];

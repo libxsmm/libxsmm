@@ -88,8 +88,7 @@ const size_t small_block_size = handle->ifwp * handle->ifmblock * libxsmm_dnn_ty
 #if defined(__AVX512F__) || defined(__AVX__)
 copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(3, input_buffer, handle->desc.pad_h, handle->desc.pad_w, 0, padded_w, handle->ifmblock);
 #endif
-memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock),
-       0,
+memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock), 0,
        padded_w * padded_h * handle->ifmblock * sizeof(element_input_type));
 /* Based on the input datatype select the right intrinsics */
 #ifdef INPUT_F32
