@@ -52,7 +52,7 @@
 # define LIBXSMM_EXT_SINGLE LIBXSMM_PRAGMA(omp single nowait)
 # define LIBXSMM_EXT_FOR_PARALLEL LIBXSMM_PRAGMA(omp parallel)
 # define LIBXSMM_EXT_FOR_LOOP_AUX(COLLAPSE, ...) LIBXSMM_PRAGMA(omp for private(__VA_ARGS__) schedule(dynamic) LIBXSMM_OPENMP_COLLAPSE(COLLAPSE))
-# if defined(_MSC_VER)
+# if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
 #   define LIBXSMM_EXT_FOR_LOOP(COLLAPSE, ...) libxsmm_sink(__VA_ARGS__); LIBXSMM_EXT_FOR_LOOP_AUX(COLLAPSE, __VA_ARGS__)
 # else
 #   define LIBXSMM_EXT_FOR_LOOP(COLLAPSE, ...) LIBXSMM_EXT_FOR_LOOP_AUX(COLLAPSE, __VA_ARGS__)
