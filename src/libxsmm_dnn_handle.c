@@ -924,7 +924,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors_ijm(
     }
 
 #if !defined(NDEBUG)
-    printf("Control should not reach here FACT=%d\n", cur_fact[i]);
+    fprintf(stderr, "LIBXSMM error: Control should not reach here FACT=%u\n", cur_fact[i]);
     assert(0);
 #endif
   }

@@ -117,7 +117,7 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_gene
       return;
     }
     /* something bad happened... */
-    fprintf( stderr, "LIBXSMM ERROR, B sparse for CSR datastructure is not yet available, FATAL ERROR, EXTI!\n");
+    fprintf(stderr, "LIBXSMM fatal error: B sparse for CSR datastructure is not yet available!\n");
     exit(-1);
   } else {
     /* something bad happened... */
@@ -159,7 +159,7 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
       return;
     }
     /* something bad happened... */
-    fprintf( stderr, "LIBXSMM ERROR, B sparse for CSR datastructure is not yet available, FATAL ERROR, EXTI!\n");
+    fprintf(stderr, "LIBXSMM fatal error:B sparse for CSR datastructure is not yet available!\n");
     exit(-1);
   } else {
     /* something bad happened... */
@@ -253,7 +253,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
 
       if (l_tmp == NULL) {
-        fprintf( stderr, "LIBXSMM ERROR, Could allocate dense value array to test CSC datastructure!\n");
+        fprintf(stderr, "LIBXSMM fatal error:Could allocate dense value array to test CSC datastructure!\n");
         exit(-1);
       }
 
@@ -309,7 +309,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
 
       if (l_tmp == NULL) {
-        fprintf( stderr, "LIBXSMM ERROR, Could allocate dense value array to test CSR datastructure!\n");
+        fprintf(stderr, "LIBXSMM fatal error:Could allocate dense value array to test CSR datastructure!\n");
         exit(-1);
       }
 

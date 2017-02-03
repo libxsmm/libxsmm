@@ -168,10 +168,11 @@ void factors_ijm( unsigned int  itiles,
         break;
       }
     }
-    if ( found == 1 )
+    if ( found == 1 ) {
       continue;
+    }
 
-    printf("Control should not reach here FACT=%d\n", cur_fact[i]);
+    fprintf(stderr, "Error: Control should not reach here FACT=%u\n", cur_fact[i]);
   }
 }
 

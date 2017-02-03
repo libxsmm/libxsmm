@@ -47,7 +47,7 @@ void libxsmm_strncpy( char*                  o_dest,
                       unsigned int           i_dest_length,
                       unsigned int           i_src_length ) {
   if ( i_dest_length < i_src_length ) {
-    fprintf( stderr, "LIBXSMM FATAL ERROR: libxsmm_strncpy destination buffer is too small!\n" );
+    fprintf( stderr, "LIBXSMM fatal error: libxsmm_strncpy destination buffer is too small!\n" );
     exit(-1);
   }
 

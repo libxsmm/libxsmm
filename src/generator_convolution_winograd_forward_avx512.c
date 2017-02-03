@@ -290,9 +290,11 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
             index = tm*i_conv_desc->itiles*i_conv_desc->jtiles + tj*i_conv_desc->itiles + ti;
 
             if ( index > 27 ) {
+#if !defined(NDEBUG)
               if ( ifm == 0 ) {
-                printf("Not using optimal blocking.. >8 byte fma generated...index = %d\n", index);
+                fprintf(stderr, "LIBXSMM warning: Not using optimal blocking.. >8 byte fma generated...index = %u\n", index);
               }
+#endif
               constoffset = boffset + m_dist*index;
               libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                        l_micro_kernel_config.instruction_set,
