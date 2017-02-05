@@ -1,13 +1,77 @@
 #!/bin/sh
 
-ROOTDIR=$(cd ${GIT_DIR}/..; pwd -P)
+ROOTDIR=$(cd ${GIT_DIR}/..; pwd -P 2> /dev/null)
 LOCKFILE=${GIT_DIR}/.commit
 TOUCH=$(which touch)
+ECHO=$(which echo)
 GREP=$(which grep)
 GIT=$(which git)
+SED=$(which sed)
+RM=$(which rm)
 
-${GIT} diff --cached --name-status | ${GREP} -q version.txt
-if [ "0" != "$?" ]; then
-  # trigger updating the version file
-  ${TOUCH} ${LOCKFILE}
+CODEFILE=${ROOTDIR}/.codefile
+BANNED_CHARS="\t"
+
+if [ "" != "${GIT}" ]; then
+  if [ "" != "${ECHO}" ] && [ "" != "${SED}" ] && \
+     [ "" != "$(${GIT} rev-parse --verify HEAD 2> /dev/null)" ]; \
+  then
+    if [ -e ${CODEFILE} ]; then
+      PATTERNS="$(cat ${CODEFILE})"
+    fi
+    IFS_BACKUP=${IFS}
+    IFS=""
+    while read -r LINE; do
+      IFS=${IFS_BACKUP}
+      # determine the filename of the patch snippet
+      MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^diff --git a\/\(..*\) b..*$/\1/p" 2> /dev/null)
+      if [ "" != "${MATCH}" ]; then
+        FILENAME=${MATCH}
+      fi
+      # determine the line number of the addition
+      MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^@@ -..* \+\([0-9][0-9]*\),..*$/\1/p" 2> /dev/null)
+      if [ "" != "${MATCH}" ]; then
+        LINENO=${MATCH}
+      fi
+      if [ "" != "${FILENAME}" ] && [ "" != "${LINENO}" ]; then
+        # check against rejected characters
+        BANNEDCHAR=$(${ECHO} "${LINE}" | ${SED} -n "/^\+..*[${BANNED_CHARS}]..*$/p" 2> /dev/null)
+        TRAILINGWS=$(${ECHO} "${LINE}" | ${SED} -n "/^\+.*\s\s*$/p" 2> /dev/null)
+        if [ "" != "${BANNEDCHAR}" ] || [ "" != "${TRAILINGWS}" ]; then
+          for PATTERN in ${PATTERNS}; do
+            PATTERN=$(${ECHO} "${PATTERN}" | ${SED} -e "s/\./\\\\./g" -e "s/\*/.*/g" -e "s/?/\./g" 2> /dev/null)
+            MATCH=$(${ECHO} "${FILENAME}" | ${SED} -n "/${PATTERN}/p" 2> /dev/null)
+            if [ "" != "${MATCH}" ]; then break; fi
+          done
+          # check if problem is with a permitted file type
+          if [ "" != "${MATCH}" ]; then
+            # print an error message
+            if [ "" != "${BANNEDCHAR}" ]; then
+              >&2 ${ECHO} "Error: ${FILENAME}:${LINENO} contains banned character(s)!"
+            fi
+            if [ "" != "${TRAILINGWS}" ]; then
+              >&2 ${ECHO} "Error: ${FILENAME}:${LINENO} has trailing whitespace(s)!"
+            fi
+            exit 1
+          fi
+        fi
+      fi
+      IFS=""
+    done \
+<< EOD
+$(${GIT} diff-index -p -M --cached HEAD)
+EOD
+    IFS=${IFS_BACKUP}
+  fi
+
+  if [ "" != "${TOUCH}" ] && [ "" != "${GREP}" ] && [ "" != "${RM}" ]; then
+    ${GIT} diff --cached --name-status | ${GREP} -q version.txt
+    if [ "0" != "$?" ]; then
+      # trigger updating the version file
+      ${TOUCH} ${LOCKFILE}
+    else # cleanup
+      ${RM} ${LOCKFILE}
+    fi
+  fi
 fi
+
