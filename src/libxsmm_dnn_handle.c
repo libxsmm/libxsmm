@@ -57,12 +57,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
   /* now architecture specific */
   if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)
+      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+      libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
   {
     noarch = 0;
 #define LIBXSMM_FWD_OFH_BLOCKING
 #if defined(LIBXSMM_FWD_OFH_BLOCKING)
-    if ((handle->ofw < 15) && (handle->ofh % 2 == 0) && (handle->desc.S == 1)) {
+    if ( ((handle->ofw < 15) && (handle->ofh % 2 == 0) && (handle->desc.S == 1)) ||
+         ((handle->ofw < 15) && (handle->ofh % 2 == 0) && (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM)) ) {
       handle->fwd_ofw_rb = handle->ofw;
       handle->fwd_ofh_rb = 2;
       /* on AVX512_CORE and int this only works for smaller 13 */
@@ -89,7 +91,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       /* for 32 accumuation we need even one register more */
       } else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) &&
            (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) &&
-           ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0)  ) {
+           ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
         for (i = 25; i > 1; --i) {
           if (handle->ofw % i == 0) break;
         }
@@ -148,7 +150,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->ifmblock = (handle->desc.C >=32) ? 32 : handle->desc.C/2;
       handle->ofmblock = (handle->desc.K >=32) ? 32 : handle->desc.K/2;
       handle->fm_lp_block = 2;
-      if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ) {
+      if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+           libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
         status = LIBXSMM_DNN_WARN_FALLBACK;
         handle->ifmblock = 1;
         handle->ofmblock = 1;
@@ -161,7 +164,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->ifmblock = (handle->desc.C >=16) ? 16 : handle->desc.C/4;
       handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K/4;
       handle->fm_lp_block = 4;
-      if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ) {
+      if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+           libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
         status = LIBXSMM_DNN_WARN_FALLBACK;
         handle->ifmblock = 1;
         handle->ofmblock = 1;
@@ -338,8 +342,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
         descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;
       } else {
-        descriptor.ifh_padded = handle->ifhp;
-        descriptor.ifw_padded = handle->ifwp;
+      descriptor.ifh_padded = handle->ifhp;
+      descriptor.ifw_padded = handle->ifwp;
       }
       descriptor.kh = handle->desc.R;
       descriptor.kw = handle->desc.S;
@@ -359,8 +363,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.option = handle->desc.options;
       descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
       /* TODO check JIT errors */
-      if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)
+      if (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
+          libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE ||
+          libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM )
       {
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
@@ -394,8 +399,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
         descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;
       } else {
-        descriptor.ifh_padded = handle->ifhp;
-        descriptor.ifw_padded = handle->ifwp;
+      descriptor.ifh_padded = handle->ifhp;
+      descriptor.ifw_padded = handle->ifwp;
       }
       descriptor.kh = handle->desc.R;
       descriptor.kw = handle->desc.S;
@@ -421,8 +426,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.option = handle->desc.options;
       descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
       /* TODO check JIT errors */
-      if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-            libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) &&
+      if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
+            libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE ||
+            libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM) &&
            ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)) )
       {
         /* control code size */
@@ -592,8 +598,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
         descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;
       } else {
-        descriptor.ifh_padded = handle->ifhp;
-        descriptor.ifw_padded = handle->ifwp;
+      descriptor.ifh_padded = handle->ifhp;
+      descriptor.ifw_padded = handle->ifwp;
       }
       descriptor.ofm_block = handle->ofmblock;
       descriptor.ifm_block = handle->ifmblock;
@@ -618,8 +624,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
 
       /* TODO check JIT errors */
-      if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-            libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) &&
+      if ( (libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC  ||
+            libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE ||
+            libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) &&
            ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)) )
       {
         const unsigned int wu_each_iter_code_size = 10 * (descriptor.ifm_block == 1 ? descriptor.kw : descriptor.ifm_block);
@@ -1281,10 +1288,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
         internal_dnn_handle_factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
                      &(wino_desc_fp.ur_i), &(wino_desc_fp.ur_j), &(wino_desc_fp.ur_m), 26 );
-        if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0)
+        if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
           wino_desc_fp.vratio = 2;
-        else
+        } else {
           wino_desc_fp.vratio = 1;
+        }
       } else {
         if ((handle->desc.N % 2) == 0) {
           wino_desc_fp.bimg = 2;
@@ -1953,9 +1961,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         internal_dnn_handle_factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
                      &(wino_desc_wu.ur_i), &(wino_desc_wu.ur_j), &(wino_desc_wu.ur_m), allowed_unroll );
         if (wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
-      	  wino_desc_wu.vratio = 2;
+          wino_desc_wu.vratio = 2;
         } else {
-      	  wino_desc_wu.vratio = 1;
+          wino_desc_wu.vratio = 1;
         }
       } else {
         if ((handle->desc.N % 2) == 0) {
@@ -1968,9 +1976,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         internal_dnn_handle_factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
                      &(wino_desc_wu.ur_i), &(wino_desc_wu.ur_j), &(wino_desc_wu.ur_m), allowed_unroll );
         if (wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
-      	  wino_desc_wu.vratio = 2;
+          wino_desc_wu.vratio = 2;
         } else {
-      	  wino_desc_wu.vratio = 1;
+          wino_desc_wu.vratio = 1;
         }
       }
 

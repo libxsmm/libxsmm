@@ -86,7 +86,7 @@ void edge_sparse_csr_reader( const char*           i_csr_file_in,
           if ( ( *o_row_idx == NULL )      ||
                ( *o_column_idx == NULL )   ||
                ( *o_values == NULL )       ||
-               ( l_row_idx_id == NULL )    ) {
+               ( l_row_idx_id == NULL ) ) {
             fprintf( stderr, "could not allocate sp data!\n" );
             return;
           }

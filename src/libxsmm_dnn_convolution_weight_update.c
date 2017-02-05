@@ -67,7 +67,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_fallback.tpl.c"
 #undef INPUT_PADDING
-      } else {
+    } else {
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_fallback.tpl.c"
       }
     } else {
@@ -95,6 +95,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
 #undef LIBXSMM_WU_PER_THREAD_ALLOCATION
         }
       }
+#if 1
       else {
         typedef float element_input_type;
         typedef float element_output_type;
@@ -102,12 +103,29 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
         typedef libxsmm_sconvfunction libxsmm_convfunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
+          if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM)
+            && (handle->desc.v == 1) && (handle->upd_ofw_rb%4 == 0) )
+          {
+#define LIBXSMM_WU_TRANSPOSE_OFW_IFM
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+#undef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+          } else {
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+          }
 #undef INPUT_PADDING
         } else {
+          if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM)
+            && (handle->desc.v == 1) && (handle->upd_ofw_rb%4 == 0) )
+          {
+#define LIBXSMM_WU_TRANSPOSE_OFW_IFM
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+#undef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+          } else {
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+          }
         }
       }
+#endif
 #undef INPUT_F32
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -117,6 +135,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
 
   return status;
 }
+
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
@@ -195,6 +214,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(l
   return status;
 }
 
+
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -271,3 +291,4 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom
 
   return status;
 }
+

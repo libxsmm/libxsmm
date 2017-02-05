@@ -222,7 +222,7 @@ int main(int argc, char* argv []) {
   /* some intial parameters checks */
   /* check for sparse / dense only */
   if ( (strcmp(l_type, "dense")          != 0) &&
-       (strcmp(l_type, "dense_asm")      != 0)    ) {
+       (strcmp(l_type, "dense_asm")      != 0) ) {
     print_help();
     return -1;
   }
@@ -239,7 +239,7 @@ int main(int argc, char* argv []) {
 
   /* check value of arch flag */
   if ( (strcmp(l_arch, "knl") != 0)    &&
-       (strcmp(l_arch, "skx") != 0)        ) {
+       (strcmp(l_arch, "skx") != 0) ) {
     print_help();
     return -1;
   }
@@ -258,17 +258,17 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  if ( !flag_ur && (0 != (l_bimg % l_ur_m))  ) {
+  if ( !flag_ur && (0 != (l_bimg % l_ur_m)) ) {
     printf("\nbimg %d must be perfectly divisible by ur_m %d\n", l_bimg, l_ur_m);
     return -1;
   }
 
-  if ( !flag_ur && (0 != (l_jtiles % l_ur_j))  ) {
+  if ( !flag_ur && (0 != (l_jtiles % l_ur_j)) ) {
     printf("\njtiles %d must be perfectly divisible by ur_j %d\n", l_jtiles, l_ur_j);
     return -1;
   }
 
-  if ( !flag_ur && (0 != (l_itiles % l_ur_i))  ) {
+  if ( !flag_ur && (0 != (l_itiles % l_ur_i)) ) {
     printf("\nitiles %d must be perfectly divisible by ur_i %d\n", l_itiles, l_ur_i);
     return -1;
   }
@@ -283,7 +283,7 @@ int main(int argc, char* argv []) {
   l_conv_desc.prefetch = l_prefetch;
 
   if ( (strcmp(l_type, "dense")     == 0) ||
-       (strcmp(l_type, "dense_asm") == 0)    ) {
+       (strcmp(l_type, "dense_asm") == 0) ) {
     if ( flag_ur ) {
       factors_ijm( l_conv_desc.itiles, l_conv_desc.jtiles, l_conv_desc.bimg,
                    &(l_conv_desc.ur_i), &(l_conv_desc.ur_j), &(l_conv_desc.ur_m), 26 );

@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee, Alexander Heinecke (Intel Corp.),
+/* Kunal Banerjee, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_winograd_forward.h"
 #include "libxsmm_main.h"

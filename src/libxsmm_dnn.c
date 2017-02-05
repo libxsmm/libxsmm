@@ -277,7 +277,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const li
        do not use libxsmm_release_kernel here! */
 
     if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE    ) && (handle->avx512avx2fallback == 0) ) {
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM  ||
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) && (handle->avx512avx2fallback == 0) ) {
       libxsmm_free(handle->code_fwd[0].pmm);
       libxsmm_free(handle->code_fwd[1].pmm);
       libxsmm_free(handle->code_fwd[2].pmm);
@@ -677,7 +678,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_filter_dat
             layout->dim_size[5] = handle->blocksofm;
           }
         } else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) ||
-                    (handle->datatype == LIBXSMM_DNN_DATATYPE_I8)     ) {
+                    (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) ) {
           layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(7*sizeof(libxsmm_dnn_tensor_dimtype));
           layout->dim_size = (unsigned int*) malloc(7*sizeof(unsigned int));
           if (0 != layout->dim_type && 0 != layout->dim_size) { /* TODO: handle the error */
@@ -1110,7 +1111,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_buffer(libxsmm_dnn_lay
 
   /* check for buffer type */
   if ( (type != LIBXSMM_DNN_REGULAR_INPUT) && (type != LIBXSMM_DNN_GRADIENT_INPUT) &&
-       (type != LIBXSMM_DNN_REGULAR_OUTPUT) && (type != LIBXSMM_DNN_GRADIENT_OUTPUT)    ) {
+       (type != LIBXSMM_DNN_REGULAR_OUTPUT) && (type != LIBXSMM_DNN_GRADIENT_OUTPUT) ) {
     status = LIBXSMM_DNN_ERR_UNKNOWN_BUFFER_TYPE;
     return status;
   }
@@ -1172,7 +1173,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_buffer(libxsmm_dnn_layer* hand
 
   /* check for buffer type */
   if ( (type != LIBXSMM_DNN_REGULAR_INPUT) && (type != LIBXSMM_DNN_GRADIENT_INPUT) &&
-       (type != LIBXSMM_DNN_REGULAR_OUTPUT) && (type != LIBXSMM_DNN_GRADIENT_OUTPUT)    ) {
+       (type != LIBXSMM_DNN_REGULAR_OUTPUT) && (type != LIBXSMM_DNN_GRADIENT_OUTPUT) ) {
     status = LIBXSMM_DNN_ERR_UNKNOWN_BUFFER_TYPE;
     return status;
   }
@@ -1442,7 +1443,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
           /* we need a minibatch copy for transpose of input, scratch3 */
           if (handle->padding_flag == 1) {
             scratch5_size = handle->minibatch_scratch_size;
-            if (address % 64 == 0) {
+          if (address % 64 == 0) {
               handle->scratch5 = (void*)address;
             } else {
               offset = (64 - address % 64);
@@ -1473,7 +1474,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
           /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
           if (handle->padding_flag == 1) {
             scratch5_size = handle->max_scratch5_size;
-            if (address % 64 == 0) {
+          if (address % 64 == 0) {
               handle->scratch5 = (void*)address;
             } else {
               offset = (64 - address % 64);
@@ -1648,7 +1649,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_execute_st(libxsm
           case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
             switch (handle->buffer_format) {
               case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
-                switch (handle->filter_format) {
+                 switch (handle->filter_format) {
                   case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
                     status = libxsmm_dnn_convolve_st_upd_custom_custom(handle, start_thread, tid);
                   } break;

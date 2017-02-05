@@ -94,7 +94,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
 
   /* check that we build for AVX512 */
   if ( (strcmp(i_arch, "knl") != 0) &&
-       (strcmp(i_arch, "skx") != 0)    ) {
+       (strcmp(i_arch, "skx") != 0) ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }

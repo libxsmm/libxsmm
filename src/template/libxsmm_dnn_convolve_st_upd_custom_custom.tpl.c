@@ -1,37 +1,37 @@
 /******************************************************************************
- ** Copyright (c) 2016-2017, Intel Corporation                                **
- ** All rights reserved.                                                      **
- **                                                                           **
- ** Redistribution and use in source and binary forms, with or without        **
- ** modification, are permitted provided that the following conditions        **
- ** are met:                                                                  **
- ** 1. Redistributions of source code must retain the above copyright         **
- **    notice, this list of conditions and the following disclaimer.          **
- ** 2. Redistributions in binary form must reproduce the above copyright      **
- **    notice, this list of conditions and the following disclaimer in the    **
- **    documentation and/or other materials provided with the distribution.   **
- ** 3. Neither the name of the copyright holder nor the names of its          **
- **    contributors may be used to endorse or promote products derived        **
- **    from this software without specific prior written permission.          **
- **                                                                           **
- ** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
- ** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
- ** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
- ** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
- ** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
- ** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
- ** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
- ** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
- ** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
- ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
- ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
- ******************************************************************************/
+** Copyright (c) 2016-2017, Intel Corporation                                **
+** All rights reserved.                                                      **
+**                                                                           **
+** Redistribution and use in source and binary forms, with or without        **
+** modification, are permitted provided that the following conditions        **
+** are met:                                                                  **
+** 1. Redistributions of source code must retain the above copyright         **
+**    notice, this list of conditions and the following disclaimer.          **
+** 2. Redistributions in binary form must reproduce the above copyright      **
+**    notice, this list of conditions and the following disclaimer in the    **
+**    documentation and/or other materials provided with the distribution.   **
+** 3. Neither the name of the copyright holder nor the names of its          **
+**    contributors may be used to endorse or promote products derived        **
+**    from this software without specific prior written permission.          **
+**                                                                           **
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
+** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
+** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
+** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
+** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
+** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
+** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
+** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
+** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
+** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
+** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
+******************************************************************************/
 /* Rajkishore Barik (Intel Corp.)
- ******************************************************************************/
+******************************************************************************/
 
 int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__,ii_, ij_, kh, kw, ofm1ifm1, ki, kj;
 
-#if defined(LIBXSMM_WU_PER_THREAD_ALLOCATION) || defined(INPUT_PADDING)
+#if defined(LIBXSMM_WU_PER_THREAD_ALLOCATION) || defined(LIBXSMM_WU_TRANSPOSE_OFW_IFM) || defined(INPUT_PADDING)
 int imgifm1;
 #endif
 
@@ -75,7 +75,9 @@ libxsmm_convfunction jitted_conv_wu_no_pf = (libxsmm_convfunction)handle->code_u
 libxsmm_convfunction jitted_conv_wu_pf = (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
 libxsmm_convfunction jitted_conv_wu_nooutput_pf = (libxsmm_convfunction)handle->code_upd[2].xconv.sconv;
 #ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+#ifdef LIBXSMM_CONV_NO_PREFETCH
 libxsmm_convfunction jitted_conv_wu_transpose_no_pf = (libxsmm_convfunction)handle->code_upd[3].xconv.sconv;
+#endif
 libxsmm_convfunction jitted_conv_wu_transpose_pf = (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
 libxsmm_convfunction jitted_conv_wu_transpose_nooutput_pf = (libxsmm_convfunction)handle->code_upd[5].xconv.sconv;
 #endif
@@ -221,8 +223,8 @@ LIBXSMM_VLA_DECL(5, element_input_type, tr_input, (element_input_type*)handle->s
 #if defined(INPUT_PADDING)
 
 #define LIBXSMM_JITTED_CONV_WU_NO_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
-output, o_img, o_ofm1, o_oj, o_oi, o_ofm2) \
+                                     weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
+                                     output, o_img, o_ofm1, o_oj, o_oi, o_ofm2) \
 jitted_conv_wu_no_pf(  \
 &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ifm1), (i_ij), (i_ii), (i_ifm2), handle->blocksifm, padded_h, padded_w, handle->ifmblock), \
 &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
@@ -371,8 +373,6 @@ NULL  \
 
 #else
 
-
-
 #define LIBXSMM_JITTED_CONV_WU_NO_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
                                      weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
                                      output, o_img, o_ofm1, o_oj, o_oi, o_ofm2) \
@@ -445,6 +445,7 @@ jitted_conv_wu_nooutput_pf(  \
                              NULL  \
                           )
 #endif
+
 #ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
 #define LIBXSMM_JITTED_CONV_WU_TRANSPOSE_NO_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
                                                weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
@@ -526,8 +527,9 @@ jitted_conv_wu_transpose_nooutput_pf(  \
 kh = handle->desc.R;
 kw = handle->desc.S;
 
-if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
+if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+    libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+    libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
 
 #if defined(INPUT_PADDING)
   libxsmm_barrier_init(handle->barrier, ltid);
@@ -758,6 +760,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
       } else { /* handle->ifmblock != 1 */
 
 #ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+        int ii, ij;
         /* lazy barrier init */
         libxsmm_barrier_init(handle->barrier, ltid);
 
@@ -784,7 +787,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
             for (ii=0; ii < handle->ifwp; ++ii) {
               for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
                 LIBXSMM_VLA_ACCESS(5, tr_input, img, ifm1, ij, ifm2, ii, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp)
-                =  LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                  =  LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
               }
             }
           }
@@ -1325,3 +1328,4 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
 #undef ZERO_REG
 #undef ZERO_REG_256
 #endif
+

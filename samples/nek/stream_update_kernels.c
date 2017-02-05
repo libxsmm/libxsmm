@@ -41,7 +41,7 @@ LIBXSMM_INLINE_ALWAYS LIBXSMM_RETARGETABLE
 void stream_init( int    i_length,
                   size_t i_start_address,
                   int*   o_trip_prolog,
-                  int*   o_trip_stream    ) {
+                  int*   o_trip_stream ) {
   /* let's calculate the prolog until C is cachline aligned */
   /* @TODO we need to add shifts */
   if ( (i_start_address % 64) != 0 ) {

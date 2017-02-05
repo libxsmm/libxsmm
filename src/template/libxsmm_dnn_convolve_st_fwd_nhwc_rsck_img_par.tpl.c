@@ -142,8 +142,9 @@ libxsmm_convfunction jitted_conv_fp_one, jitted_conv_fp_two, jitted_conv_fp_zero
 start_ofh = (img < handle->desc.N && ofm1 < handle->blocksofm) ? start_ofh : handle->ofh;
 
 /* select kernels based on architecture */
-if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
+if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
   jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
   jitted_conv_fp_two = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
@@ -340,3 +341,4 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
 #undef INT_TO_MASK
 #undef CHUNK_SIZE
 #endif
+

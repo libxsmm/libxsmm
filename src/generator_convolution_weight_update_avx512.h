@@ -88,5 +88,14 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_sfma( 
             const unsigned int ofh_trip_counter,
                                                                 const int                                               no_unroll_no_block);
 
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_qfma( libxsmm_generated_code*                           io_generated_code,
+                                                                const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
+                                                                const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
+                                                                const libxsmm_convolution_weight_update_descriptor*                       i_conv_desc,
+                                                                const unsigned int                                      i_ofh_unroll,
+            const unsigned int ofh_trip_counter,
+                                                                const int                                               no_unroll_no_block);
+
 #endif /* GENERATOR_CONVOLUTION_WEIGHT_UPDATE_AVX512_H */
 

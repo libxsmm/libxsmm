@@ -119,7 +119,8 @@ Example for ofm_block = 32, ifm_block%2 == 0
   libxsmm_generator_init_convolution_kernel_config( &l_conv_kernel_config );
   if ( strcmp( i_arch, "knl" ) == 0 ||
        strcmp( i_arch, "skx" ) == 0 ||
-       strcmp( i_arch, "hsw" ) == 0  ) {
+       strcmp( i_arch, "knm" ) == 0 ||
+       strcmp( i_arch, "hsw" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX2;
   } else {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );

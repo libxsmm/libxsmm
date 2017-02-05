@@ -214,7 +214,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
                                const libxsmm_gemm_descriptor* i_xgemm_desc,
                                const char*                    i_arch,
                                const char*                    i_file_in,
-                               const int                      i_is_csr        ) {
+                               const int                      i_is_csr ) {
   /* CSC/CSR structure */
   unsigned int* l_row_idx = NULL;
   unsigned int* l_column_idx = NULL;

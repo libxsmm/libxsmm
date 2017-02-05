@@ -96,10 +96,24 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( libxsmm_generate
                                                                 const unsigned int                                i_kw_unroll );
 
 LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generated_code*                           io_generated_code,
+                                                                const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+                                                                const libxsmm_convolution_forward_descriptor*     i_conv_desc,
+                                                                const unsigned int                                i_kw_unroll );
+
+LIBXSMM_INTERNAL_API
 void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( libxsmm_generated_code*                           io_generated_code,
                                                                          const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
                                                                          const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
                                                                          const libxsmm_convolution_forward_descriptor*                 i_conv_desc,
+                                                                         const unsigned int                                i_kw_unroll );
+
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_two_rows( libxsmm_generated_code*                           io_generated_code,
+                                                                         const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+                                                                         const libxsmm_convolution_forward_descriptor*     i_conv_desc,
                                                                          const unsigned int                                i_kw_unroll );
 
 #endif /* GENERATOR_CONVOLUTION_FORWARD_AVX512_H */

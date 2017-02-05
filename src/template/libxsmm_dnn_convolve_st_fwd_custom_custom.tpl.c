@@ -152,17 +152,22 @@ if (handle->datatype != handle->datatype_itm) {
   libxsmm_convfunction jitted_conv_fp_one, jitted_conv_fp_two, jitted_conv_fp_zero;
 
   /* select kernels based on architecture */
-  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-       libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
+  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+       libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+       libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
     jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
+    /* on KNM prefetches are less costly, so let's avoid some branch mispredicts by running redundant weight prefeteches */
+    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
+      jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
+    }
     jitted_conv_fp_two = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
     jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
 
-  for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
-    img = imgofm1/(handle->blocksofm*handle->fm_lp_block);
-    ofm1 = imgofm1%(handle->blocksofm*handle->fm_lp_block);
+    for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
+      img = imgofm1/(handle->blocksofm*handle->fm_lp_block);
+      ofm1 = imgofm1%(handle->blocksofm*handle->fm_lp_block);
 #if defined(INPUT_PADDING)
     if (prev_image != img) {
       /* The img has changed so we should copy all the ifms */
@@ -215,19 +220,19 @@ if (handle->datatype != handle->datatype_itm) {
       prev_image = img;
     }
 #endif
-    /* up-convert */
-    if (handle->datatype != handle->datatype_itm) {
-      for (oj = 0; oj < handle->ofh; ++oj) {
-        for (oi = 0; oi < handle->ofw; ++oi) {
-          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-            LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock) = (element_output_type)
-            (LIBXSMM_VLA_ACCESS(  6, output_lp, img, ofm1/handle->fm_lp_block, oj, oi, ((handle->ofmblock/handle->fm_lp_block)*(ofm1%handle->fm_lp_block))+ofm2/handle->fm_lp_block, ofm2%handle->fm_lp_block, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block));
+      /* up-convert */
+      if (handle->datatype != handle->datatype_itm) {
+        for (oj = 0; oj < handle->ofh; ++oj) {
+          for (oi = 0; oi < handle->ofw; ++oi) {
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+              LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock) = (element_output_type)
+                (LIBXSMM_VLA_ACCESS(  6, output_lp, img, ofm1/handle->fm_lp_block, oj, oi, ((handle->ofmblock/handle->fm_lp_block)*(ofm1%handle->fm_lp_block))+ofm2/handle->fm_lp_block, ofm2%handle->fm_lp_block, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block));
+            }
           }
         }
       }
-    }
-    for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-      for (oj = 0; oj < handle->ofh; oj += handle->fwd_ofh_rb) {
+      for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+        for (oj = 0; oj < handle->ofh; oj += handle->fwd_ofh_rb) {
 #if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
           ij = oj * handle->desc.u;
 #endif
@@ -240,7 +245,7 @@ if (handle->datatype != handle->datatype_itm) {
                                            padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
 #else
             l_input  = &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, ij, ii, 0, 0,
-                                           handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+                        handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
 #endif
 
 #else
@@ -250,7 +255,7 @@ if (handle->datatype != handle->datatype_itm) {
                                            padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
 #else
             l_input  = &LIBXSMM_VLA_ACCESS(6, input, img, ifm1, oj, oi, 0, 0,
-                                           handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+                        handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
 #endif
 
 #endif
@@ -478,3 +483,4 @@ if (handle->datatype != handle->datatype_itm) {
 #undef INT_TO_MASK
 #undef CHUNK_SIZE
 #endif
+

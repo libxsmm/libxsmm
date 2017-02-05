@@ -123,9 +123,9 @@ void run_gold_double( const double*                   i_a,
 
   const unsigned long long l_start = libxsmm_timer_tick();
 
-  for ( l_t = 0; l_t < g_jit_code_reps; l_t++  ) {
-    for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++  ) {
-      for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++  ) {
+  for ( l_t = 0; l_t < g_jit_code_reps; l_t++ ) {
+    for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++ ) {
+      for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) {
         for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
           o_c[(l_n * i_xgemm_desc->ldc) + l_m] += i_a[(l_k * i_xgemm_desc->lda) + l_m] * i_b[(l_n * i_xgemm_desc->ldb) + l_k];
         }
@@ -149,9 +149,9 @@ void run_gold_float( const float*                   i_a,
 
   const unsigned long long l_start = libxsmm_timer_tick();
 
-  for ( l_t = 0; l_t < g_jit_code_reps; l_t++  ) {
-    for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++  ) {
-      for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++  ) {
+  for ( l_t = 0; l_t < g_jit_code_reps; l_t++ ) {
+    for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++ ) {
+      for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) {
         for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
           o_c[(l_n * i_xgemm_desc->ldc) + l_m] += i_a[(l_k * i_xgemm_desc->lda) + l_m] * i_b[(l_n * i_xgemm_desc->ldb) + l_k];
         }

@@ -119,7 +119,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
           if ( ( *o_row_idx == NULL )      ||
                ( *o_column_idx == NULL )   ||
                ( *o_values == NULL )       ||
-               ( l_column_idx_id == NULL )    ) {
+               ( l_column_idx_id == NULL ) ) {
             libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_ALLOC_DATA );
             return;
           }

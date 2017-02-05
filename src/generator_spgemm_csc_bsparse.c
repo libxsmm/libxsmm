@@ -124,7 +124,7 @@ void libxsmm_generator_spgemm_csc_bsparse( libxsmm_generated_code*         io_ge
   if ( ( strcmp( i_arch, "noarch" ) == 0 ) ||
        ( strcmp( i_arch, "wsm" ) == 0 )    ||
        ( strcmp( i_arch, "snb" ) == 0 )    ||
-       ( strcmp( i_arch, "hsw" ) == 0 )       ) {
+       ( strcmp( i_arch, "hsw" ) == 0 ) ) {
     if ( i_xgemm_desc->m > 7 ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma simd vectorlength(8)\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -138,16 +138,16 @@ void libxsmm_generator_spgemm_csc_bsparse( libxsmm_generated_code*         io_ge
 
     if ( (i_xgemm_desc->m > 1)          &&
          ((LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0) &&
-         ((LIBXSMM_GEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0)    ) {
+         ((LIBXSMM_GEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0) ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma vector aligned\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
   } else if ( ( strcmp( i_arch, "knc" ) == 0 ) ||
               ( strcmp( i_arch, "knl" ) == 0 ) ||
-              ( strcmp( i_arch, "skx" ) == 0 )    ) {
+              ( strcmp( i_arch, "skx" ) == 0 ) ) {
     if ( (i_xgemm_desc->m > 1)          &&
          ((LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0) &&
-         ((LIBXSMM_GEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0)    ) {
+         ((LIBXSMM_GEMM_FLAG_ALIGN_C & i_xgemm_desc->flags) != 0) ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma simd vectorlength(32)\n  #pragma vector aligned\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }

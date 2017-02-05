@@ -133,8 +133,9 @@ const int64_t remainder_mask = (block_size % CHUNK_SIZE != 0) ? (1 << (block_siz
 libxsmm_convfunction jitted_conv_fp_one, jitted_conv_fp_two, jitted_conv_fp_zero;
 
 /* select kernels based on architecture */
-if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
+if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
   jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
   jitted_conv_fp_two = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
@@ -199,7 +200,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                                          padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
 #else
           l_input  = &LIBXSMM_VLA_ACCESS(6, input, img, ij, ii, ifm1, 0, 0,
-                                         handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
+                      handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
 #endif
           l_wt     = &LIBXSMM_VLA_ACCESS(7, weight, 0, 0, ifm1, 0, ofm1, 0, 0,
                       handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock, handle->fm_lp_block);
@@ -213,8 +214,8 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
             &LIBXSMM_VLA_ACCESS(5, input_buffer, (oj + handle->fwd_ofh_rb) * handle->desc.u, ii, ifm1, 0, 0,
                   padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
 #else
-            &LIBXSMM_VLA_ACCESS(6, input, img, (oj + handle->fwd_ofh_rb) * handle->desc.u, ii, ifm1, 0, 0,
-                      handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
+              &LIBXSMM_VLA_ACCESS(6, input, img, (oj + handle->fwd_ofh_rb) * handle->desc.u, ii, ifm1, 0, 0,
+                                     handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
 #endif
               NULL,
               &LIBXSMM_VLA_ACCESS(5, output, img, oj + handle->fwd_ofh_rb, oi, ofm1, 0,
@@ -227,8 +228,8 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
               &LIBXSMM_VLA_ACCESS(5, input_buffer, 0, 0, 0, 0, 0,
                               padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
 #else
-              &LIBXSMM_VLA_ACCESS(6, input, img + 1, 0, 0, 0, 0, 0,
-                    handle->ifhp, handle->ifwp, handle->ifmblock, handle->blocksifm, handle->fm_lp_block),
+                &LIBXSMM_VLA_ACCESS(6, input, img + 1, 0, 0, 0, 0, 0,
+                  handle->ifhp, handle->ifwp, handle->ifmblock, handle->blocksifm, handle->fm_lp_block),
 #endif
                 &LIBXSMM_VLA_ACCESS(7, weight, 0, 0, 0, 0, 0, 0, 0,
                   handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock, handle->fm_lp_block),
@@ -243,7 +244,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                         padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
 #else
                   &LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, 0, 0, 0,
-                      handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
+                    handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
 #endif
                   &LIBXSMM_VLA_ACCESS(7, weight, 0, 0, 0, 0, ofm1 + 1, 0, 0,
                     handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock, handle->fm_lp_block),
@@ -256,8 +257,8 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
                 &LIBXSMM_VLA_ACCESS(5, input_buffer, 0, 0, ifm1 + 1, 0, 0,
                             padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
 #else
-                &LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, ifm1 + 1, 0, 0,
-                            handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
+                  &LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, ifm1 + 1, 0, 0,
+                  handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block),
 #endif
                   &LIBXSMM_VLA_ACCESS(7, weight, 0, 0, ifm1 + 1, 0, ofm1, 0, 0,
                     handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock, handle->fm_lp_block),
@@ -368,3 +369,4 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
 #undef INT_TO_MASK
 #undef CHUNK_SIZE
 #endif
+

@@ -239,11 +239,11 @@ libxsmm_barrier_wait(handle->barrier, ltid);
                         &LIBXSMM_VLA_ACCESS(5, pf_del_input, (pi_img), (pi_ifm1), (pi_ij), (pi_ii), (pi_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
                         &LIBXSMM_VLA_ACCESS(6, pf_tr_wt, (pw_ofm1), (pw_ifm1), (pw_kj), (pw_ki), (pw_ofm2), (pw_ifm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), \
                         &LIBXSMM_VLA_ACCESS(5, pf_del_out, po_img, po_ofm1, po_oj, po_oi, po_ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) \
-                      )
+                       )
 
 #define LIBXSMM_JITTED_CONV_BP_NO_PF(del_input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                    tr_wt, w_ofm1, w_ifm1, w_kj, w_ki, w_ofm2, w_ifm2, \
-                                    del_out, o_img, o_ofm1, o_oj, o_oi, o_ofm2) \
+                                  tr_wt, w_ofm1, w_ifm1, w_kj, w_ki, w_ofm2, w_ifm2, \
+                                  del_out, o_img, o_ofm1, o_oj, o_oi, o_ofm2) \
                     jitted_conv_bp_no_pf(  \
                         &LIBXSMM_VLA_ACCESS(5, del_input, (i_img), (i_ifm1), (i_ij), (i_ii), (i_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
                         &LIBXSMM_VLA_ACCESS(6, tr_wt, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ofm2), (w_ifm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), \
@@ -251,35 +251,36 @@ libxsmm_barrier_wait(handle->barrier, ltid);
                         NULL, \
                         NULL, \
                         NULL \
-                      )
+                       )
 #define LIBXSMM_JITTED_CONV_BP_PEELED_NOWEIGHT_PF(del_input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                                  tr_wt, w_ofm1, w_ifm1, w_kj, w_ki, w_ofm2, w_ifm2, \
-                                                  del_out, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
-                                                  pf_del_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
-                                                  pf_del_out, po_img, po_ofm1, po_oj, po_oi, po_ofm2) \
-                  jitted_conv_bp_peeled_noweight_pf(  \
-                      &LIBXSMM_VLA_ACCESS(5, del_input, (i_img), (i_ifm1), (i_ij), (i_ii), (i_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
-                      &LIBXSMM_VLA_ACCESS(6, tr_wt, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ofm2), (w_ifm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), \
-                      &LIBXSMM_VLA_ACCESS(5, del_out, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
-                      &LIBXSMM_VLA_ACCESS(5, pf_del_input, (pi_img), (pi_ifm1), (pi_ij), (pi_ii), (pi_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
-                      NULL,   \
-                      &LIBXSMM_VLA_ACCESS(5, pf_del_out, (po_img), (po_ofm1), (po_oj), (po_oi), (po_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) \
-                    )
+                                  tr_wt, w_ofm1, w_ifm1, w_kj, w_ki, w_ofm2, w_ifm2, \
+                                  del_out, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
+                                  pf_del_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
+                                  pf_del_out, po_img, po_ofm1, po_oj, po_oi, po_ofm2) \
+                    jitted_conv_bp_peeled_noweight_pf(  \
+                        &LIBXSMM_VLA_ACCESS(5, del_input, (i_img), (i_ifm1), (i_ij), (i_ii), (i_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
+                        &LIBXSMM_VLA_ACCESS(6, tr_wt, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ofm2), (w_ifm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), \
+                        &LIBXSMM_VLA_ACCESS(5, del_out, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
+                        &LIBXSMM_VLA_ACCESS(5, pf_del_input, (pi_img), (pi_ifm1), (pi_ij), (pi_ii), (pi_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
+                        NULL,   \
+                        &LIBXSMM_VLA_ACCESS(5, pf_del_out, (po_img), (po_ofm1), (po_oj), (po_oi), (po_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) \
+                       )
 #define LIBXSMM_JITTED_CONV_BP_PEELED_NO_PF(del_input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                            tr_wt, w_ofm1, w_ifm1, w_kj, w_ki, w_ofm2, w_ifm2, \
-                                            del_out, o_img, o_ofm1, o_oj, o_oi, o_ofm2) \
-                  jitted_conv_bp_peeled_no_pf(  \
-                      &LIBXSMM_VLA_ACCESS(5, del_input, (i_img), (i_ifm1), (i_ij), (i_ii), (i_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
-                      &LIBXSMM_VLA_ACCESS(6, tr_wt, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ofm2), (w_ifm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), \
-                      &LIBXSMM_VLA_ACCESS(5, del_out, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
-                      NULL, \
-                      NULL, \
-                      NULL \
-                    )
+                                  tr_wt, w_ofm1, w_ifm1, w_kj, w_ki, w_ofm2, w_ifm2, \
+                                  del_out, o_img, o_ofm1, o_oj, o_oi, o_ofm2) \
+                    jitted_conv_bp_peeled_no_pf(  \
+                        &LIBXSMM_VLA_ACCESS(5, del_input, (i_img), (i_ifm1), (i_ij), (i_ii), (i_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
+                        &LIBXSMM_VLA_ACCESS(6, tr_wt, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ofm2), (w_ifm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock), \
+                        &LIBXSMM_VLA_ACCESS(5, del_out, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
+                        NULL, \
+                        NULL, \
+                        NULL \
+                       )
 #endif
 
 if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
   /* special casing for ifh < 2*kh scenario where the loop peeling does not work */
   if (ifh <= 2*kh) {
     for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
@@ -809,12 +810,12 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
 #if defined(INPUT_PADDING)
             LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
-                                      tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
-                                      del_out, img, ofm1, oj, 0, 0,
+                                tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
+                                del_out, img, ofm1, oj, 0, 0,
                                       input_to_use, img+1, 0, 0, 0, 0,
-                                      tr_wt, 0, 0,  kh-3-1, 0, 0, 0,
-                                      del_out,  img+1, 0, 1-kh+3+1, 0, 0
-                                      );
+                                tr_wt, 0, 0,  kh-3-1, 0, 0, 0,
+                                del_out,  img+1, 0, 1-kh+3+1, 0, 0
+                        );
 #else
             LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
                                 tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
@@ -831,12 +832,12 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
             /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][1][0][0]), &(tr_wt[0][0][kh-4-1][0][0][0]), &(del_out[img+1][0][1-kh+4+1][0][0]));*/
 #if defined(INPUT_PADDING)
             LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
-                                      tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
-                                      del_out, img, ofm1, oj, 0, 0,
+                                tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
+                                del_out, img, ofm1, oj, 0, 0,
                                       input_to_use, img+1, 0, 0, 0, 0,
-                                      tr_wt, 0, 0,  kh-4-1, 0, 0, 0,
-                                      del_out,  img+1, 0, 1-kh+4+1, 0, 0
-                                      );
+                                tr_wt, 0, 0,  kh-4-1, 0, 0, 0,
+                                del_out,  img+1, 0, 1-kh+4+1, 0, 0
+                        );
 #else
             LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
                                 tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
@@ -853,12 +854,12 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
             /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][2][0][0]), &(tr_wt[0][0][kh-2-1][0][0][0]), &(del_out[img+1][0][2-kh+2+1][0][0]));*/
 #if defined(INPUT_PADDING)
             LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
-                                      tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
-                                      del_out, img, ofm1, oj, 0, 0,
+                                tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
+                                del_out, img, ofm1, oj, 0, 0,
                                       input_to_use, img+1, 0, 0, 0, 0,
-                                      tr_wt, 0, 0,  kh-2-1, 0, 0, 0,
-                                      del_out,  img+1, 0, 2-kh+2+1, 0, 0
-                                      );
+                                tr_wt, 0, 0,  kh-2-1, 0, 0, 0,
+                                del_out,  img+1, 0, 2-kh+2+1, 0, 0
+                        );
 #else
             LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
                                 tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
@@ -875,12 +876,12 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
             /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img+1][0][2][0][0]), &(tr_wt[0][0][kh-3-1][0][0][0]), &(del_out[img+1][0][2-kh+3+1][0][0]));*/
 #if defined(INPUT_PADDING)
             LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
-                                      tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
-                                      del_out, img, ofm1, oj, 0, 0,
+                                tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
+                                del_out, img, ofm1, oj, 0, 0,
                                       input_to_use, img+1, 0, 0, 0, 0,
-                                      tr_wt, 0, 0,  kh-3-1, 0, 0, 0,
-                                      del_out,  img+1, 0, 2-kh+3+1, 0, 0
-                                      );
+                                tr_wt, 0, 0,  kh-3-1, 0, 0, 0,
+                                del_out,  img+1, 0, 2-kh+3+1, 0, 0
+                        );
 #else
             LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
                                 tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
@@ -910,12 +911,12 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
               /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][1][0][0]), &(tr_wt[0][ifm1+1][kh-3-1][0][0][0]), &(del_out[img][0][1-kh+3+1][0][0]));*/
 #if defined(INPUT_PADDING)
               LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
-                                        tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
-                                        del_out, img, ofm1, oj, 0, 0,
+                                tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
+                                del_out, img, ofm1, oj, 0, 0,
                                         input_to_use, img, ifm1+1, 0, 0, 0,
-                                        tr_wt, 0, ifm1+1,  kh-3-1, 0, 0, 0,
-                                        del_out, img, 0, 1-kh+3+1, 0, 0
-                                        );
+                                tr_wt, 0, ifm1+1,  kh-3-1, 0, 0, 0,
+                                del_out, img, 0, 1-kh+3+1, 0, 0
+                        );
 #else
               LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
                                 tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
@@ -932,12 +933,12 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
               /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][1][0][0]), &(tr_wt[0][ifm1+1][kh-4-1][0][0][0]), &(del_out[img][0][1-kh+4+1][0][0]));*/
 #if defined(INPUT_PADDING)
               LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
-                                        tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
-                                        del_out, img, ofm1, oj, 0, 0,
+                                tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
+                                del_out, img, ofm1, oj, 0, 0,
                                         input_to_use, img, ifm1+1, 0, 0, 0,
-                                        tr_wt, 0, ifm1+1,  kh-4-1, 0, 0, 0,
-                                        del_out, img, 0, 1-kh+4+1, 0, 0
-                                        );
+                                tr_wt, 0, ifm1+1,  kh-4-1, 0, 0, 0,
+                                del_out, img, 0, 1-kh+4+1, 0, 0
+                        );
 #else
               LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
                                 tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
@@ -954,12 +955,12 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
               /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][2][0][0]), &(tr_wt[0][ifm1+1][kh-2-1][0][0][0]), &(del_out[img][0][2-kh+2+1][0][0]));*/
 #if defined(INPUT_PADDING)
               LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
-                                        tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
-                                        del_out, img, ofm1, oj, 0, 0,
+                                tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
+                                del_out, img, ofm1, oj, 0, 0,
                                         input_to_use, img, ifm1+1, 0, 0, 0,
-                                        tr_wt, 0, ifm1+1,  kh-2-1, 0, 0, 0,
-                                        del_out, img, 0, 2-kh+2+1, 0, 0
-                                        );
+                                tr_wt, 0, ifm1+1,  kh-2-1, 0, 0, 0,
+                                del_out, img, 0, 2-kh+2+1, 0, 0
+                        );
 #else
               LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
                                 tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
@@ -976,12 +977,12 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
               /*jitted_conv_bp_pf(l_input, l_wt, l_output, &(del_input[img][ifm1+1][2][0][0]), &(tr_wt[0][ifm1+1][kh-3-1][0][0][0]), &(del_out[img][0][2-kh+3+1][0][0]));*/
 #if defined(INPUT_PADDING)
               LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
-                                        tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
-                                        del_out, img, ofm1, oj, 0, 0,
+                                tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
+                                del_out, img, ofm1, oj, 0, 0,
                                         input_to_use, img, ifm1+1, 0, 0, 0,
-                                        tr_wt, 0, ifm1+1,  kh-3-1, 0, 0, 0,
-                                        del_out, img, 0, 2-kh+3+1, 0, 0
-                                        );
+                                tr_wt, 0, ifm1+1,  kh-3-1, 0, 0, 0,
+                                del_out, img, 0, 2-kh+3+1, 0, 0
+                        );
 #else
               LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1, ij, 0, 0,
                                 tr_wt, ofm1, ifm1, kh-kj-1, 0, 0, 0,
@@ -1229,3 +1230,4 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #undef STORE_256
 #undef CHUNK_SIZE
 #endif
+

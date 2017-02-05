@@ -189,8 +189,9 @@ LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->reg_
 #endif
 
 
-if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || /*  ) {
+if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM  || /* ) {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 } else if (*/ libxsmm_target_archid == LIBXSMM_X86_AVX2 ) {
 
@@ -437,3 +438,4 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
 #undef ZERO_REG
 #undef ZERO_REG_256
 #endif
+

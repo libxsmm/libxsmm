@@ -34,7 +34,7 @@ if (handle->desc.pad_h_in > 0 || handle->desc.pad_w_in > 0) {
   for ( ij = 0; ij < handle->ifhp; ij++ ) {
     for ( ii = 0; ii < handle->ifwp; ii++ ) {
       if ( (ij < handle->desc.pad_h_in) || (ij >= (handle->desc.H+handle->desc.pad_h_in)) ||
-           (ii < handle->desc.pad_w_in) || (ii >= (handle->desc.W+handle->desc.pad_w_in))    ) {
+           (ii < handle->desc.pad_w_in) || (ii >= (handle->desc.W+handle->desc.pad_w_in)) ) {
         for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
           LIBXSMM_VLA_ACCESS(5, del_input, img, ij, ii, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock) = (element_input_type)0;
         }

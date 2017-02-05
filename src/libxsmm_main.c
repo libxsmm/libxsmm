@@ -239,6 +239,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int id)
     case LIBXSMM_X86_AVX512_CORE: {
       target_arch = "skx";
     } break;
+    case LIBXSMM_X86_AVX512_KNM: {
+      target_arch = "knm";
+    } break;
     case LIBXSMM_X86_AVX512_MIC: {
       target_arch = "knl";
     } break;
@@ -756,6 +759,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
+    case LIBXSMM_X86_AVX512_KNM:
     case LIBXSMM_X86_AVX512_CORE:
     case LIBXSMM_X86_AVX512_MIC:
     case LIBXSMM_X86_AVX512:
@@ -818,6 +822,9 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     else if (0 == strcmp("skx", arch) || 0 == strcmp("skl", arch)) {
       target_archid = LIBXSMM_X86_AVX512_CORE;
     }
+    else if (0 == strcmp("knm", arch) || 0 == strcmp("mic2", arch)) {
+      target_archid = LIBXSMM_X86_AVX512_KNM;
+    }
     else if (0 == strcmp("knl", arch) || 0 == strcmp("mic", arch)) {
       target_archid = LIBXSMM_X86_AVX512_MIC;
     }
@@ -844,7 +851,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     }
   }
 
-  if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid || LIBXSMM_X86_AVX512_CORE < target_archid) {
+  if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid || LIBXSMM_X86_AVX512_KNM < target_archid) {
     target_archid = libxsmm_cpuid();
   }
   else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */

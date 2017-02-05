@@ -83,6 +83,7 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
   libxsmm_generator_init_convolution_kernel_config( &l_conv_kernel_config );
   if ( strcmp( i_arch, "knl" ) == 0 ||
        strcmp( i_arch, "skx" ) == 0 ||
+       strcmp( i_arch, "knm" ) == 0 ||
        strcmp( i_arch, "hsw" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX2;
   } else {

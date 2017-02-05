@@ -162,8 +162,9 @@ if (handle->datatype != handle->datatype_itm) {
   start_ofh = (img < handle->desc.N && ofm1 < (handle->blocksofm*handle->fm_lp_block)) ? start_ofh : handle->ofh;
 
   /* select kernels based on architecture */
-  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-       libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
+  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+       libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+       libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
     jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
     jitted_conv_fp_two = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
@@ -451,3 +452,4 @@ if (handle->datatype != handle->datatype_itm) {
 #undef INT_TO_MASK
 #undef CHUNK_SIZE
 #endif
+

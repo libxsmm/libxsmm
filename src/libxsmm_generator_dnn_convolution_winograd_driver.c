@@ -353,7 +353,7 @@ int main(int argc, char* argv []) {
   /* some intial parameters checks */
   /* check for sparse / dense only */
   if ( (strcmp(l_type, "inlineasm") != 0) &&
-       (strcmp(l_type, "plainasm")  != 0)    ) {
+       (strcmp(l_type, "plainasm")  != 0) ) {
     print_help();
     return -1;
   }
@@ -402,7 +402,7 @@ int main(int argc, char* argv []) {
   }
 
   if ( ((l_ifh - 2)%(l_alpha - 2) != 0) ||
-       ((l_ifw - 2)%(l_alpha - 2) != 0)    ) {
+       ((l_ifw - 2)%(l_alpha - 2) != 0) ) {
     printf("Output feature map height and width must be perfectly divisible by (alpha - 2)\n");
     print_help();
     return -1;

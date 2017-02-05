@@ -199,7 +199,7 @@ void run_test(void) {
   gettimeofday(&l_start, NULL);
 #ifndef __USE_MKL
   #pragma nounroll_and_jam
-  for ( l_t = 0; l_t < REPS; l_t++  ) {
+  for ( l_t = 0; l_t < REPS; l_t++ ) {
 #ifdef STREAM_A_B
     REALTYPE* l_p_a = l_a - (MY_K * MY_LDA);
     REALTYPE* l_p_b = l_b - (MY_N * MY_LDB);
@@ -210,8 +210,8 @@ void run_test(void) {
       REALTYPE* l_p_a = l_a;
       REALTYPE* l_p_b = l_b;
 #endif
-      for ( l_n = 0; l_n < MY_N; l_n++  ) {
-        for ( l_k = 0; l_k < MY_K; l_k++  ) {
+      for ( l_n = 0; l_n < MY_N; l_n++ ) {
+        for ( l_k = 0; l_k < MY_K; l_k++ ) {
           #pragma vector always
           for ( l_m = 0; l_m < MY_M; l_m++ ) {
             l_c_gold[(l_n * MY_LDC) + l_m] += l_p_a[(l_k * MY_LDA) + l_m] * l_p_b[(l_n * MY_LDB) + l_k];
@@ -232,7 +232,7 @@ void run_test(void) {
   int l_ldc = MY_LDC;
   if (sizeof(REALTYPE) == sizeof(double)) {
     double l_one = 1.0;
-    for ( l_t = 0; l_t < REPS; l_t++  ) {
+    for ( l_t = 0; l_t < REPS; l_t++ ) {
 #ifdef STREAM_A_B
       REALTYPE* l_p_a = l_a - (MY_K * MY_LDA);
       REALTYPE* l_p_b = l_b - (MY_N * MY_LDB);
@@ -250,7 +250,7 @@ void run_test(void) {
     }
   } else {
     float l_one = 1.0f;
-    for ( l_t = 0; l_t < REPS; l_t++  ) {
+    for ( l_t = 0; l_t < REPS; l_t++ ) {
 #ifdef STREAM_A_B
       REALTYPE* l_p_a = l_a - (MY_K * MY_LDA);
       REALTYPE* l_p_b = l_b - (MY_N * MY_LDB);

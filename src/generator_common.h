@@ -178,6 +178,14 @@
 #define LIBXSMM_X86_INSTR_VPADDSW        20051
 #define LIBXSMM_X86_INSTR_VPADDSB        20052
 
+/* AVX512, QUAD MADD, supported with Knight Mill */
+#define LIBXSMM_X86_INSTR_V4FMADDPS      26000
+#define LIBXSMM_X86_INSTR_V4FNMADDPS     26001
+#define LIBXSMM_X86_INSTR_V4FMADDSS      26002
+#define LIBXSMM_X86_INSTR_V4FNMADDSS     26003
+#define LIBXSMM_X86_INSTR_VP4DPWSSD      26004
+#define LIBXSMM_X86_INSTR_VP4DPWSSDS     26005
+
 /* GP instructions */
 #define LIBXSMM_X86_INSTR_ADDQ           30000
 #define LIBXSMM_X86_INSTR_SUBQ           30001
@@ -250,6 +258,9 @@
 #define LIBXSMM_ERR_K_BLOCK              90048
 #define LIBXSMM_ERR_INVALID_GEMM_CONFIG  90049
 #define LIBXSMM_ERR_UNIQUE_VAL           90050
+
+/* @TODO fix this vale for final integration */
+#define LIBXSMM_ERR_NO_AVX512_QFMA       92000
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {
