@@ -12,5 +12,6 @@ if [ -e ${LOCKFILE} ]; then
   # update the version file
   ${ROOTDIR}/.hooks/version.sh > ${ROOTDIR}/version.txt
   ${GIT} add version.txt
-  ${GIT} commit --amend -C HEAD --no-verify
+  # quietly amend the previous commit
+  ${GIT} commit --amend -C HEAD --no-verify > /dev/null
 fi
