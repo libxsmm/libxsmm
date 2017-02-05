@@ -292,14 +292,19 @@
 #         define LIBXSMM_ATTRIBUTE_TARGET_1007 LIBXSMM_ATTRIBUTE_TARGET_1006
 #       endif
 #       if (LIBXSMM_X86_AVX512_MIC <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-#         define LIBXSMM_ATTRIBUTE_TARGET_1008 target("avx2,fma,avx512f,avx512cd,avx512pf,avx512er")
+#         define LIBXSMM_ATTRIBUTE_TARGET_1010 target("avx2,fma,avx512f,avx512cd,avx512pf,avx512er")
 #       else /* LIBXSMM_X86_AVX512 */
-#         define LIBXSMM_ATTRIBUTE_TARGET_1008 LIBXSMM_ATTRIBUTE_TARGET_1007
+#         define LIBXSMM_ATTRIBUTE_TARGET_1010 LIBXSMM_ATTRIBUTE_TARGET_1007
+#       endif
+#       if (LIBXSMM_X86_AVX512_KNM <= LIBXSMM_MAX_STATIC_TARGET_ARCH) /* TODO: add compiler flags */
+#         define LIBXSMM_ATTRIBUTE_TARGET_1011 target("avx2,fma,avx512f,avx512cd,avx512pf,avx512er")
+#       else /* LIBXSMM_X86_AVX512_MIC */
+#         define LIBXSMM_ATTRIBUTE_TARGET_1011 LIBXSMM_ATTRIBUTE_TARGET_1010
 #       endif
 #       if (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
-#         define LIBXSMM_ATTRIBUTE_TARGET_1009 target("avx2,fma,avx512f,avx512cd,avx512dq,avx512bw,avx512vl")
+#         define LIBXSMM_ATTRIBUTE_TARGET_1020 target("avx2,fma,avx512f,avx512cd,avx512dq,avx512bw,avx512vl")
 #       else /* LIBXSMM_X86_AVX512 */
-#         define LIBXSMM_ATTRIBUTE_TARGET_1009 LIBXSMM_ATTRIBUTE_TARGET_1007
+#         define LIBXSMM_ATTRIBUTE_TARGET_1020 LIBXSMM_ATTRIBUTE_TARGET_1007
 #       endif
 #     else
 #       define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
@@ -414,6 +419,13 @@
      (!defined(LIBXSMM_INTRINSICS_LEGACY) && (LIBXSMM_X86_AVX512_MIC <= LIBXSMM_MAX_STATIC_TARGET_ARCH)) \
   || (defined(__clang__) && LIBXSMM_X86_AVX512_MIC <= LIBXSMM_STATIC_TARGET_ARCH))
 # define LIBXSMM_INTRINSICS_AVX512_MIC
+#endif
+
+/** LIBXSMM_INTRINSICS_AVX512_KNM is defined only if the compiler is able to generate this code without special flags. */
+#if !defined(LIBXSMM_INTRINSICS_AVX512_KNM) && !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_INTRINSICS_AVX512_MIC) && ( \
+     (!defined(LIBXSMM_INTRINSICS_LEGACY) && (LIBXSMM_X86_AVX512_KNM <= LIBXSMM_MAX_STATIC_TARGET_ARCH)) \
+  || (defined(__clang__) && LIBXSMM_X86_AVX512_KNM <= LIBXSMM_STATIC_TARGET_ARCH))
+# define LIBXSMM_INTRINSICS_AVX512_KNM
 #endif
 
 /** LIBXSMM_INTRINSICS_AVX512_CORE is defined only if the compiler is able to generate this code without special flags. */
