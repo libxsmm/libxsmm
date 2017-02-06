@@ -221,6 +221,17 @@ struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
   libxsmm_dmmfunction kernel;
 };
 
+struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
+  int M;
+  int N;
+  int K;
+  int ldb;
+  int ldc;
+  int N_chunksize;
+  float* a_dense;
+  libxsmm_smmfunction kernel;
+};
+
 typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_GEMM,
   LIBXSMM_BUILD_KIND_SSOA,
