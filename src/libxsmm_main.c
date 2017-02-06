@@ -1559,7 +1559,7 @@ LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm
   libxsmm_csr_reg_descriptor sreg;
   libxsmm_build_request request;
   double* d_values;
-  int i;
+  unsigned int i;
   LIBXSMM_INIT
   /* we need to copy the values into a double precision buffer */
   d_values = (double*)malloc(row_ptr[descriptor->m]*sizeof(double));
