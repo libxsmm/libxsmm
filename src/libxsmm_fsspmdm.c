@@ -140,7 +140,7 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
   const float alpha, const float beta,
   const float* a_dense)
 {
-  double* a_csr_values = 0;
+  float* a_csr_values = 0;
   unsigned int* a_csr_rowptr = 0;
   unsigned int* a_csr_colidx = 0;
   libxsmm_gemm_descriptor* xgemm_desc = 0;
@@ -175,7 +175,7 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
   }
 
   /* allocate CSR structure */
-  a_csr_values = (double*)malloc(a_nnz * sizeof(double));
+  a_csr_values = (float*)malloc(a_nnz * sizeof(float));
   a_csr_rowptr = (unsigned int*)malloc((M + 1) * sizeof(unsigned int));
   a_csr_colidx = (unsigned int*)malloc(a_nnz * sizeof(unsigned int));
 
@@ -186,7 +186,7 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
       a_csr_rowptr[i] = n;
       for (j = 0; j < K; j++) {
         if (a_dense[(i*lda) + j] != 0.0) {
-          a_csr_values[n] = (double)a_dense[(i*lda) + j];
+          a_csr_values[n] = a_dense[(i*lda) + j];
           a_csr_colidx[n] = j;
           n++;
         }
@@ -213,7 +213,7 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
     new_handle->a_dense = (float*)libxsmm_aligned_malloc(M*K*sizeof(float), 64);
     for ( i = 0; i < M; i++ ) {
       for ( j = 0; j < K; j++) {
-        new_handle->a_dense[(i*K)+j] = (float)a_dense[(i*lda)+j];
+        new_handle->a_dense[(i*K)+j] = a_dense[(i*lda)+j];
       }
     }
   }

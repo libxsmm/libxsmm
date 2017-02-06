@@ -150,7 +150,7 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descr
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
 LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor* descriptor,
-   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values);
+   const unsigned int* row_ptr, const unsigned int* column_idx, const float* values);
 
 /** Deallocates the JIT'ted code as returned by libxsmm_create_* function. TODO: this is a no-op at the moment. */
 LIBXSMM_API void libxsmm_release_kernel(const void* jit_code);
