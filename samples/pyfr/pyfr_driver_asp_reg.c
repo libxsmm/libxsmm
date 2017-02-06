@@ -164,9 +164,12 @@ int main(int argc, char* argv[]) {
 
   REALTYPE* l_a_dense;
   REALTYPE* l_b;
-  REALTYPE* l_c;
-  REALTYPE* l_c_gold;
-  REALTYPE* l_c_dense;
+  REALTYPE* l_c_betaone;
+  REALTYPE* l_c_betazero;
+  REALTYPE* l_c_gold_betaone;
+  REALTYPE* l_c_gold_betazero;
+  REALTYPE* l_c_dense_betaone;
+  REALTYPE* l_c_dense_betazero;
   REALTYPE l_max_error = 0.0;
   unsigned int l_m;
   unsigned int l_n;
@@ -182,7 +185,12 @@ int main(int argc, char* argv[]) {
   struct timeval l_start, l_end;
   double l_total;
 
-  libxsmm_dfsspmdm* gemm_op = NULL;
+  double alpha = 1.0;
+  double beta = 1.0;
+  char trans = 'N';
+
+  libxsmm_dfsspmdm* gemm_op_betazero = NULL;
+  libxsmm_dfsspmdm* gemm_op_betaone = NULL;
 
   if (argc != 4 ) {
     fprintf( stderr, "need csr-filename N reps!\n" );
@@ -210,9 +218,12 @@ int main(int argc, char* argv[]) {
   /* allocate dense matrices */
   l_a_dense = (REALTYPE*)_mm_malloc(l_k * l_m * sizeof(REALTYPE), 64);
   l_b = (REALTYPE*)_mm_malloc(l_k * l_n * sizeof(REALTYPE), 64);
-  l_c = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
-  l_c_gold = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
-  l_c_dense = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
+  l_c_betazero = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
+  l_c_betaone = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
+  l_c_gold_betazero = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
+  l_c_gold_betaone = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
+  l_c_dense_betazero = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
+  l_c_dense_betaone = (REALTYPE*)_mm_malloc(l_m * l_n * sizeof(REALTYPE), 64);
 
   /* touch B */
   for ( l_i = 0; l_i < l_k*l_n; l_i++) {
@@ -233,22 +244,47 @@ int main(int argc, char* argv[]) {
 
   /* touch C */
   for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    l_c[l_i] = (REALTYPE)0.0;
-    l_c_gold[l_i] = (REALTYPE)0.0;
-    l_c_dense[l_i] = (REALTYPE)0.0;
+    l_c_gold_betaone[l_i] = (REALTYPE)drand48();
+  }
+  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
+    l_c_betaone[l_i] = l_c_gold_betaone[l_i];
+  }
+  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
+    l_c_dense_betaone[l_i] = l_c_gold_betaone[l_i];
+  }
+  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
+    l_c_betazero[l_i] = l_c_betaone[l_i];
+  }
+  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
+    l_c_gold_betazero[l_i] = l_c_gold_betaone[l_i];
+  }
+  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
+    l_c_dense_betazero[l_i] = l_c_dense_betaone[l_i];
   }
 
   /* setting up fsspmdm */
   l_n_block = 48;
-  gemm_op = libxsmm_dfsspmdm_create( l_m, l_n_block, l_k, l_k, l_n, l_n, 1.0, 1.0, l_a_dense );
+  beta = 0.0;
+  gemm_op_betazero = libxsmm_dfsspmdm_create( l_m, l_n_block, l_k, l_k, l_n, l_n, 1.0, beta, l_a_dense );
+  beta = 1.0;
+  gemm_op_betaone = libxsmm_dfsspmdm_create( l_m, l_n_block, l_k, l_k, l_n, l_n, 1.0, beta, l_a_dense );
 
   /* compute golden results */
   printf("computing golden solution...\n");
   for ( l_j = 0; l_j < l_n; l_j++ ) {
     for (l_i = 0; l_i < l_m; l_i++ ) {
       l_elems = l_rowptr[l_i+1] - l_rowptr[l_i];
+      l_c_gold_betazero[(l_n*l_i) + l_j] = 0.0;
       for (l_z = 0; l_z < l_elems; l_z++) {
-        l_c_gold[(l_n*l_i) + l_j] +=  l_a_sp[l_rowptr[l_i]+l_z] * l_b[(l_n*l_colidx[l_rowptr[l_i]+l_z])+l_j];
+        l_c_gold_betazero[(l_n*l_i) + l_j] +=  l_a_sp[l_rowptr[l_i]+l_z] * l_b[(l_n*l_colidx[l_rowptr[l_i]+l_z])+l_j];
+      }
+    }
+  }
+  for ( l_j = 0; l_j < l_n; l_j++ ) {
+    for (l_i = 0; l_i < l_m; l_i++ ) {
+      l_elems = l_rowptr[l_i+1] - l_rowptr[l_i];
+      for (l_z = 0; l_z < l_elems; l_z++) {
+        l_c_gold_betaone[(l_n*l_i) + l_j] +=  l_a_sp[l_rowptr[l_i]+l_z] * l_b[(l_n*l_colidx[l_rowptr[l_i]+l_z])+l_j];
       }
     }
   }
@@ -260,33 +296,53 @@ int main(int argc, char* argv[]) {
   #pragma omp parallel for private(l_z)
 #endif
   for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
-    libxsmm_dfsspmdm_execute( gemm_op, l_b+l_z, l_c+l_z );
+    libxsmm_dfsspmdm_execute( gemm_op_betazero, l_b+l_z, l_c_betazero+l_z );
+  }
+#ifdef _OPENMP
+  #pragma omp parallel for private(l_z)
+#endif
+  for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
+    libxsmm_dfsspmdm_execute( gemm_op_betaone, l_b+l_z, l_c_betaone+l_z );
   }
   printf("...done!\n");
 
   /* BLAS code */
   printf("computing BLAS (A dense) solution...\n");
-  double alpha = 1.0;
-  double beta = 1.0;
-  char trans = 'N';
-  dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense, &l_n );
+  beta = 0.0;
+  dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+  beta = 1.0;
+  dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
   printf("...done!\n");
 
   /* check for errors */
   l_max_error = (REALTYPE)0.0;
   for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    if (fabs(l_c[l_i]-l_c_gold[l_i]) > l_max_error ) {
-      l_max_error = fabs(l_c[l_i]-l_c_gold[l_i]);
+    if (fabs(l_c_betazero[l_i]-l_c_gold_betazero[l_i]) > l_max_error ) {
+      l_max_error = fabs(l_c_betazero[l_i]-l_c_gold_betazero[l_i]);
     }
   }
-  printf("max error (libxmm vs. gold): %f\n", l_max_error);
+  printf("max error beta=0 (libxmm vs. gold): %f\n", l_max_error);
   l_max_error = (REALTYPE)0.0;
   for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    if (fabs(l_c_dense[l_i]-l_c_gold[l_i]) > l_max_error ) {
-      l_max_error = fabs(l_c_dense[l_i]-l_c_gold[l_i]);
+    if (fabs(l_c_betaone[l_i]-l_c_gold_betaone[l_i]) > l_max_error ) {
+      l_max_error = fabs(l_c_betaone[l_i]-l_c_gold_betaone[l_i]);
     }
   }
-  printf("max error (dense vs. gold): %f\n", l_max_error);
+  printf("max error beta=1 (libxmm vs. gold): %f\n", l_max_error);
+  l_max_error = (REALTYPE)0.0;
+  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
+    if (fabs(l_c_dense_betazero[l_i]-l_c_gold_betazero[l_i]) > l_max_error ) {
+      l_max_error = fabs(l_c_dense_betazero[l_i]-l_c_gold_betazero[l_i]);
+    }
+  }
+  printf("max error beta=0 (dense vs. gold): %f\n", l_max_error);
+  l_max_error = (REALTYPE)0.0;
+  for ( l_i = 0; l_i < l_m*l_n; l_i++) {
+    if (fabs(l_c_dense_betaone[l_i]-l_c_gold_betaone[l_i]) > l_max_error ) {
+      l_max_error = fabs(l_c_dense_betaone[l_i]-l_c_gold_betaone[l_i]);
+    }
+  }
+  printf("max error beta=1 (dense vs. gold): %f\n", l_max_error);
 
   /* Let's measure performance */
   gettimeofday(&l_start, NULL);
@@ -295,26 +351,55 @@ int main(int argc, char* argv[]) {
     #pragma omp parallel for private(l_z)
 #endif
     for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
-      libxsmm_dfsspmdm_execute( gemm_op, l_b+l_z, l_c+l_z );
+      libxsmm_dfsspmdm_execute( gemm_op_betazero, l_b+l_z, l_c_betazero+l_z );
     }
   }
   gettimeofday(&l_end, NULL);
   l_total = sec(l_start, l_end);
-  fprintf(stdout, "time[s] LIBXSMM (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
-  fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i): %f (sparse)\n", l_m, l_n, l_k, (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total );
-  fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i): %f (dense)\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
-  fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
+  fprintf(stdout, "time[s] LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
+  fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f (sparse)\n", l_m, l_n, l_k, (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total );
+  fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f (dense)\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
+  fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
   gettimeofday(&l_start, NULL);
   for ( l_j = 0; l_j < l_reps; l_j++ ) {
-    dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense, &l_n );
+#ifdef _OPENMP
+    #pragma omp parallel for private(l_z)
+#endif
+    for (l_z = 0; l_z < l_n; l_z+=l_n_block) {
+      libxsmm_dfsspmdm_execute( gemm_op_betaone, l_b+l_z, l_c_betaone+l_z );
+    }
   }
   gettimeofday(&l_end, NULL);
   l_total = sec(l_start, l_end);
-  fprintf(stdout, "time[s] MKL     (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
-  fprintf(stdout, "GFLOPS  MKL     (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
-  fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
+  fprintf(stdout, "time[s] LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
+  fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f (sparse)\n", l_m, l_n, l_k, (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total );
+  fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f (dense)\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
+  fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
+
+  gettimeofday(&l_start, NULL);
+  beta = 0.0;
+  for ( l_j = 0; l_j < l_reps; l_j++ ) {
+    dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betazero, &l_n );
+  }
+  gettimeofday(&l_end, NULL);
+  l_total = sec(l_start, l_end);
+  fprintf(stdout, "time[s] MKL     (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
+  fprintf(stdout, "GFLOPS  MKL     (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
+  fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
+
+  gettimeofday(&l_start, NULL);
+  beta = 1.0;
+  for ( l_j = 0; l_j < l_reps; l_j++ ) {
+    dgemm(&trans, &trans, &l_n, &l_m, &l_k, &alpha, l_b, &l_n, l_a_dense, &l_k, &beta, l_c_dense_betaone, &l_n );
+  }
+  gettimeofday(&l_end, NULL);
+  l_total = sec(l_start, l_end);
+  fprintf(stdout, "time[s] MKL     (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
+  fprintf(stdout, "GFLOPS  MKL     (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
+  fprintf(stdout, "GB/s    MKL     (RM, M=%i, N=%i, K=%i, beta=1): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
   /* free */
-  libxsmm_dfsspmdm_destroy( gemm_op );
+  libxsmm_dfsspmdm_destroy( gemm_op_betazero );
+  libxsmm_dfsspmdm_destroy( gemm_op_betaone );
 }

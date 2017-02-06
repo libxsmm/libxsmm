@@ -140,10 +140,17 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descr
  * Code generation routine for the CSR format which multiplies a dense matrix B into a dense matrix C.
  * The sparse matrix a is kept in registers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
- * @TODO: This is not great, probably need to declare values as void pointer
  */
-LIBXSMM_API libxsmm_xmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor* descriptor,
+LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor* descriptor,
    const unsigned int* row_ptr, const unsigned int* column_idx, const double* values);
+
+/**
+ * Code generation routine for the CSR format which multiplies a dense matrix B into a dense matrix C.
+ * The sparse matrix a is kept in registers.
+ * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
+ */
+LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor* descriptor,
+   const unsigned int* row_ptr, const unsigned int* column_idx, const float* values);
 
 /** Deallocates the JIT'ted code as returned by libxsmm_create_* function. TODO: this is a no-op at the moment. */
 LIBXSMM_API void libxsmm_release_kernel(const void* jit_code);

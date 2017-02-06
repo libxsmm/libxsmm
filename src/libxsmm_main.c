@@ -1541,7 +1541,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor* descriptor,
+LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values)
 {
   libxsmm_code_pointer code = { 0 };
@@ -1555,28 +1555,34 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_reg(const libxsmm
   request.descriptor.sreg = &sreg;
   request.kind = LIBXSMM_BUILD_KIND_SREG;
   libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-  return code.xmm;
+  return code.xmm.dmm;
 }
 
 
-#if 0
-LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_fcsr_reg(const libxsmm_gemm_descriptor* descriptor,
+LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const float* values)
 {
   libxsmm_code_pointer code = { 0 };
   libxsmm_csr_reg_descriptor sreg;
   libxsmm_build_request request;
+  double* d_values;
+  unsigned int i;
   LIBXSMM_INIT
+  /* we need to copy the values into a double precision buffer */
+  d_values = (double*)malloc(row_ptr[descriptor->m]*sizeof(double));
+  for ( i = 0; i < row_ptr[descriptor->m]; i++) {
+    d_values[i] = (double)values[i];
+  }
   sreg.gemm = descriptor;
   sreg.row_ptr = row_ptr;
   sreg.column_idx = column_idx;
-  sreg.values = values;
+  sreg.values = d_values;
   request.descriptor.sreg = &sreg;
   request.kind = LIBXSMM_BUILD_KIND_SREG;
   libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-  return code.xmm;
+  free(d_values);
+  return code.xmm.smm;
 }
-#endif
 
 
 LIBXSMM_API_DEFINITION void libxsmm_release_kernel(const void* jit_code)
