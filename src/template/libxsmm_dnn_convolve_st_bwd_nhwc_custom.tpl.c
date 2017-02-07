@@ -176,7 +176,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
     }
 #endif
 
-    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
+    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
       if (small_block_size == 512) {
         for (oj = 0; oj < handle->ifhp; oj++) {
 #if defined(__AVX512F__)
@@ -259,7 +259,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
 
 #if defined(INPUT_PADDING)
     /* Write back input buffer */
-    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
+    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
       if (small_block_size == 512) {
         for (oj = 0; oj < handle->ifhp; oj++) {
 #if defined(__AVX512F__)

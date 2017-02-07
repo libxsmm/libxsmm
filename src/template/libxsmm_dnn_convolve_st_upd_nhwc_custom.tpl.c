@@ -198,8 +198,9 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #if defined(INPUT_PADDING)
   libxsmm_barrier_init(handle->barrier, ltid);
 
-  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) {
+  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+       libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+       libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM     ) {
 
     /* Initialize in parallel scratch5 to zero */
     if (img_size % CHUNK_SIZE == 0) {
