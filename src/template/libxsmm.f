@@ -478,7 +478,6 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch
         FUNCTION libxsmm_xmmdispatch(precision,                         &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-          IMPORT :: C_INT, C_PTR, C_INTPTR_T
           INTEGER(C_INT), INTENT(IN) :: precision, m, n, k  ! INTEGER(4)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda       ! INTEGER(4)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldb       ! INTEGER(4)
@@ -496,12 +495,29 @@
               INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
               TYPE(C_PTR), INTENT(IN) :: alpha, beta
               INTEGER(C_INT), INTENT(IN) :: flags, prefetch
-              INTEGER(C_INTPTR_T) :: libxsmm_xmmdispatch
+              INTEGER(C_INTPTR_T) :: internal_xmmdispatch
             END FUNCTION
           END INTERFACE
-          libxsmm_xmmdispatch = internal_mmdispatch(precision,          &
-            m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
+          libxsmm_xmmdispatch = internal_xmmdispatch(precision,         &
+     &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
         END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall
+        SUBROUTINE libxsmm_xmmcall(fn, a, b, c, pa, pb, pc)
+          INTEGER(C_INTPTR_T), INTENT(IN) :: fn
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: pa, pb, pc
+          INTERFACE
+            SUBROUTINE internal_xmmcall(fn, a, b, c, pa, pb, pc)        &
+     &      BIND(C, NAME="libxsmmf_xmmcall")
+              IMPORT :: C_PTR, C_INTPTR_T
+              INTEGER(C_INTPTR_T), INTENT(IN) :: fn
+              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+              TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_xmmcall(fn, a, b, c, pa, pb, pc)
+        END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_smmfunction
         TYPE(LIBXSMM_SMMFUNCTION) FUNCTION construct_smmfunction(       &
