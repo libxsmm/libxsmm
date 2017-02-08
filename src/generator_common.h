@@ -394,6 +394,29 @@ typedef struct libxsmm_convolution_weight_update_gp_reg_mapping_struct {
   unsigned int gp_reg_help_6;
 } libxsmm_convolution_weight_update_gp_reg_mapping;
 
+/* struct for storing the current gp reg mapping for transpose */
+typedef struct libxsmm_matcopy_gp_reg_mapping_struct {
+  unsigned int gp_reg_a;
+  unsigned int gp_reg_lda;
+  unsigned int gp_reg_b;
+  unsigned int gp_reg_ldb;
+  unsigned int gp_reg_a_pf;
+  unsigned int gp_reg_b_pf;
+  unsigned int gp_reg_m_loop;
+  unsigned int gp_reg_n_loop;
+  unsigned int gp_reg_help_0;
+  unsigned int gp_reg_help_1;
+  unsigned int gp_reg_help_2;
+  unsigned int gp_reg_help_3;
+} libxsmm_matcopy_gp_reg_mapping;
+
+/* transpose kernel config */
+typedef struct libxsmm_matcopy_kernel_config_struct {
+  unsigned int instruction_set;
+  unsigned int vector_reg_count;
+  char vector_name;
+} libxsmm_matcopy_kernel_config;
+
 /* struct for tracking local labels in assembly
    we don't allow overlapping loops */
 typedef struct libxsmm_loop_label_tracker_struct {

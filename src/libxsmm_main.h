@@ -76,6 +76,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_xconvfunction xconv;
 #endif
   libxsmm_xmmfunction xmm;
+  libxsmm_xmatcopyfunction xmatcopy;
 } libxsmm_code_pointer;
 
 typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
@@ -241,7 +242,8 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_CUPD,
   LIBXSMM_BUILD_KIND_CWFWD,
   LIBXSMM_BUILD_KIND_CWBWD,
-  LIBXSMM_BUILD_KIND_CWUPD
+  LIBXSMM_BUILD_KIND_CWUPD,
+  LIBXSMM_BUILD_KIND_MATCOPY
 } libxsmm_build_kind;
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
@@ -252,6 +254,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_convolution_backward_descriptor* cbwd;
   const libxsmm_convolution_weight_update_descriptor* cupd;
   const libxsmm_convolution_winograd_descriptor* cwino;
+  const libxsmm_matcopy_descriptor* matcopy;
 } libxsmm_build_descriptor;
 
 typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
