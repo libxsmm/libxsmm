@@ -32,7 +32,7 @@
       MODULE LIBXSMM
         USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
      &    C_FLOAT, C_DOUBLE, C_CHAR,  C_INT, C_LONG_LONG,               &
-     &    C_F_POINTER, C_F_PROCPOINTER, C_LOC,                          &
+     &    C_INTPTR_T, C_F_POINTER, C_F_PROCPOINTER, C_LOC,              &
      &    C_PTR, C_NULL_PTR, C_FUNPTR
         IMPLICIT NONE
 
@@ -86,6 +86,12 @@
      &    LIBXSMM_GEMM_FLAG_TRANS_B = 2,                                &
      &    LIBXSMM_GEMM_FLAG_ALIGN_A = 4,                                &
      &    LIBXSMM_GEMM_FLAG_ALIGN_C = 8
+
+        ! Flag which denotes the value type (for weak-typed interface
+        ! functions such as libxsmm_xmmdispatch).
+        INTEGER(C_INT), PARAMETER ::                                    &
+     &    LIBXSMM_GEMM_FLAG_F64PREC = 0,                                &
+     &    LIBXSMM_GEMM_FLAG_F32PREC = 16
 
         ! Enumeration of the available prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
@@ -337,6 +343,21 @@
             INTEGER(C_INT), INTENT(IN), VALUE :: trylock
           END SUBROUTINE
 
+          ! Type-generic (unsafe) variant of libxsmm_*mmdispatch,
+          ! which is also suited for FORTRAN 77 when relying on
+          ! an own function prototype (use an INTEGER kind which
+          ! can hold the size of a PROCEDURE-pointer i.e., 64-bit).
+          FUNCTION libxsmm_xmmdispatch(precision,                       &
+     &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
+     &    BIND(C, NAME="libxsmmf_xmmdispatch")
+            IMPORT :: C_INT, C_PTR, C_INTPTR_T
+            INTEGER(C_INT), INTENT(IN) :: precision, m, n, k
+            INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc   ! OPTIONAL
+            TYPE(C_PTR), INTENT(IN) :: alpha, beta        ! OPTIONAL
+            INTEGER(C_INT), INTENT(IN) :: flags, prefetch ! OPTIONAL
+            INTEGER(C_INTPTR_T) :: libxsmm_xmmdispatch    ! INTEGER(8)
+          END FUNCTION
+
           ! Transpose a matrix (out-of-place form).
           PURE SUBROUTINE libxsmm_otrans(output,                        &
      &    input, typesize, m, n, ldi, ldo)                              &
@@ -475,7 +496,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: sdispatch
           INTEGER(C_INT) :: oprefetch
           INTERFACE
-            PURE FUNCTION sdispatch(                                    &
+            FUNCTION sdispatch(                                         &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
      &      BIND(C, NAME="libxsmm_smmdispatch")
               IMPORT :: C_FUNPTR, C_INT, C_FLOAT
@@ -512,7 +533,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: ddispatch
           INTEGER(C_INT) :: oprefetch
           INTERFACE
-            PURE FUNCTION ddispatch(                                    &
+            FUNCTION ddispatch(                                         &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
      &      BIND(C, NAME="libxsmm_dmmdispatch")
               IMPORT :: C_FUNPTR, C_INT, C_DOUBLE

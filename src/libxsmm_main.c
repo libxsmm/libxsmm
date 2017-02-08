@@ -1496,6 +1496,46 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
   return result;
 }
 
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API intptr_t libxsmmf_xmmdispatch(const libxsmm_gemm_precision* /*precision*/,
+  const int* /*m*/, const int* /*n*/, const int* /*k*/, const int* /*lda*/, const int* /*ldb*/, const int* /*ldc*/,
+  const void* /*alpha*/, const void* /*beta*/, const int* /*flags*/, const int* /*prefetch*/);
+LIBXSMM_API_DEFINITION intptr_t libxsmmf_xmmdispatch(const libxsmm_gemm_precision* precision,
+  const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
+  const void* alpha, const void* beta, const int* flags, const int* prefetch)
+{
+  const libxsmm_gemm_precision gemm_precision = (0 != precision ? *precision : LIBXSMM_GEMM_FLAG_F64PREC);
+  static int error_once = 0;
+  intptr_t result = 0;
+#if !defined(NDEBUG) /* this should not happen */
+  if ((0 == m || 0 == n || 0 != k)
+   && 0 != libxsmm_verbosity /* library code is expected to be mute */
+   && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM: invalid M, N, or K argument specified!\n");
+  }
+#endif
+  switch (gemm_precision) {
+    case LIBXSMM_GEMM_FLAG_F64PREC: {
+      result = (intptr_t)libxsmm_dmmdispatch(*m, *n, *k, lda, ldb, ldc,
+        (const double*)alpha, (const double*)beta,
+        flags, prefetch);
+    } break;
+    case LIBXSMM_GEMM_FLAG_F32PREC: {
+      result = (intptr_t)libxsmm_smmdispatch(*m, *n, *k, lda, ldb, ldc,
+        (const float*)alpha, (const float*)beta,
+        flags, prefetch);
+    } break;
+    default: if (0 != libxsmm_verbosity /* library code is expected to be mute */
+              && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: invalid GEMM precision specified!\n");
+    }
+  }
+  return result;
+}
+
 #if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__)
 LIBXSMM_PRAGMA_OPTIMIZE_OFF
 #endif
