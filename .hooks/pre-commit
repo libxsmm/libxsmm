@@ -27,13 +27,16 @@ if [ "" != "${GIT}" ]; then
       MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^diff --git a\/\(..*\) b..*$/\1/p" 2> /dev/null)
       if [ "" != "${MATCH}" ]; then
         FILENAME=${MATCH}
+        continue
       fi
-      # determine the line number of the addition
-      MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^@@ -..* \+\([0-9][0-9]*\),..*$/\1/p" 2> /dev/null)
-      if [ "" != "${MATCH}" ]; then
-        LINENO=${MATCH}
-      fi
-      if [ "" != "${FILENAME}" ] && [ "" != "${LINENO}" ]; then
+      if [ "" != "${FILENAME}" ]; then
+        # determine the line number of the addition
+        MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^@@ -..* \+\([0-9][0-9]*\),..*$/\1/p" 2> /dev/null)
+        if [ "" != "${MATCH}" ]; then
+          LOCATION=${FILENAME}:${MATCH}
+        else # no line number in patch (likely a newly added file)
+          LOCATION=${FILENAME}
+        fi
         # check against rejected characters
         BANNEDCHAR=$(${ECHO} "${LINE}" | ${SED} -n "/^\+..*[${BANNED_CHARS}]..*$/p" 2> /dev/null)
         TRAILINGWS=$(${ECHO} "${LINE}" | ${SED} -n "/^\+.*\s\s*$/p" 2> /dev/null)
@@ -47,10 +50,10 @@ if [ "" != "${GIT}" ]; then
           if [ "" != "${MATCH}" ]; then
             # print an error message
             if [ "" != "${BANNEDCHAR}" ]; then
-              >&2 ${ECHO} "Error: ${FILENAME}:${LINENO} contains banned character(s)!"
+              >&2 ${ECHO} "Error: ${LOCATION} contains banned character(s)!"
             fi
             if [ "" != "${TRAILINGWS}" ]; then
-              >&2 ${ECHO} "Error: ${FILENAME}:${LINENO} has trailing whitespace(s)!"
+              >&2 ${ECHO} "Error: ${LOCATION} has trailing whitespace(s)!"
             fi
             exit 1
           fi
