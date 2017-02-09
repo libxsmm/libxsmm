@@ -1521,36 +1521,45 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn, c
   const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
   const void* alpha, const void* beta, const int* flags, const int* prefetch)
 {
-  const libxsmm_gemm_precision gemm_precision = (0 != precision ? *precision : LIBXSMM_GEMM_FLAG_F64PREC);
-  static int error_once = 0;
 #if !defined(NDEBUG) /* this should not happen */
-  if ((0 == fn || 0 == m || 0 == n || 0 == k)
-   && 0 != libxsmm_verbosity /* library code is expected to be mute */
-   && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM: invalid M, N, or K passed into libxsmm_xmmdispatch!\n");
-  }
+  static int error_once = 0;
+  if (0 != fn && 0 != m && 0 != n && 0 != k)
 #endif
-  switch (gemm_precision) {
-    case LIBXSMM_GEMM_FLAG_F64PREC: {
-      *fn = (intptr_t)libxsmm_dmmdispatch(*m, *n, *k, lda, ldb, ldc,
-        (const double*)alpha, (const double*)beta,
-        flags, prefetch);
-    } break;
-    case LIBXSMM_GEMM_FLAG_F32PREC: {
-      *fn = (intptr_t)libxsmm_smmdispatch(*m, *n, *k, lda, ldb, ldc,
-        (const float*)alpha, (const float*)beta,
-        flags, prefetch);
-    } break;
-    default: {
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
-       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM: invalid precision requested for libxsmm_xmmdispatch!\n");
+  {
+    const libxsmm_gemm_precision gemm_precision = (0 != precision ? *precision : LIBXSMM_GEMM_FLAG_F64PREC);
+    switch (gemm_precision) {
+      case LIBXSMM_GEMM_FLAG_F64PREC: {
+        *fn = (intptr_t)libxsmm_dmmdispatch(*m, *n, *k, lda, ldb, ldc,
+          (const double*)alpha, (const double*)beta,
+          flags, prefetch);
+      } break;
+      case LIBXSMM_GEMM_FLAG_F32PREC: {
+        *fn = (intptr_t)libxsmm_smmdispatch(*m, *n, *k, lda, ldb, ldc,
+          (const float*)alpha, (const float*)beta,
+          flags, prefetch);
+      } break;
+#if !defined(NDEBUG) /* this should not happen */
+      default: {
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM: invalid precision requested for libxsmm_xmmdispatch!\n");
+        }
+        *fn = 0;
       }
-      *fn = 0;
+#endif
     }
   }
+#if !defined(NDEBUG)
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: invalid M, N, or K passed into libxsmm_xmmdispatch!\n");
+    }
+    *fn = 0;
+  }
+#endif
 }
 
 
@@ -1562,25 +1571,34 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
   const intptr_t* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc)
 {
-  libxsmm_code_pointer code_pointer = { 0 };
-  static int error_once = 0;
 #if !defined(NDEBUG) /* this should not happen */
-  if ((0 == fn || 0 == a || 0 == b || 0 == c)
-   && 0 != libxsmm_verbosity /* library code is expected to be mute */
-   && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  static int error_once = 0;
+  if (0 != fn && 0 != a && 0 != b && 0 != c)
+#endif
+  {
+#if !defined(NDEBUG) /* this should not happen */
+    if (0 != *fn)
+#endif
+    {
+      libxsmm_code_pointer code_pointer = { 0 };
+      code_pointer.imm = *fn;
+      code_pointer.vmm(a, b, c, pa, pb, pc);
+    }
+#if !defined(NDEBUG)
+    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: NULL-function passed into libxsmm_xmmcall!\n");
+    }
+#endif
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM: invalid arguments for libxsmm_xmmcall specified!\n");
   }
 #endif
-  if (0 != *fn) {
-    code_pointer.imm = *fn;
-    code_pointer.vmm(a, b, c, pa, pb, pc);
-  }
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM: NULL-function passed into libxsmm_xmmcall!\n");
-  }
 }
 
 #if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__)
