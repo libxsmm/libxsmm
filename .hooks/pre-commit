@@ -6,7 +6,7 @@ TOUCH=$(which touch)
 ECHO=$(which echo)
 GREP=$(which grep)
 GIT=$(which git)
-SED=$(which sed)
+#SED=$(which sed)
 RM=$(which rm)
 
 CODEFILE=${ROOTDIR}/.codefile
