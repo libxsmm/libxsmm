@@ -8,6 +8,7 @@
 .travis.yml export-ignore
 .travis.sh export-ignore
 .hooks export-ignore
+.env export-ignore
 README.sh export-ignore
 documentation/*.pptx export-ignore
 samples/seissol/*.bound export-ignore
