@@ -472,35 +472,36 @@
         END FUNCTION
 
         ! Type-generic (unsafe) variant of libxsmm_*mmdispatch,
-        ! which is also suited for FORTRAN 77 when relying on
-        ! an own function prototype (use an INTEGER kind which
-        ! can hold the size of a PROCEDURE-pointer i.e., 64-bit).
+        ! which is also suited for FORTRAN 77 when relying on an
+        ! own function prototype (use an INTEGER kind which can
+        ! hold the size of a (PROCEDURE-)pointer i.e., 64-bit).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch
-        FUNCTION libxsmm_xmmdispatch(precision,                         &
+        SUBROUTINE libxsmm_xmmdispatch(fn, precision,                   &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
+          INTEGER(C_INTPTR_T), INTENT(OUT) :: fn            ! INTEGER(8)
           INTEGER(C_INT), INTENT(IN) :: precision, m, n, k  ! INTEGER(4)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda       ! INTEGER(4)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldb       ! INTEGER(4)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldc       ! INTEGER(4)
-          TYPE(C_PTR), INTENT(IN), OPTIONAL :: alpha, beta  ! REAL(4|8)
+          TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: alpha ! REAL(4|8)
+          TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: beta  ! REAL(4|8)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags     ! INTEGER(4)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: prefetch  ! INTEGER(4)
-          INTEGER(C_INTPTR_T) :: libxsmm_xmmdispatch        ! INTEGER(8)
           INTERFACE
-            FUNCTION internal_xmmdispatch(precision,                    &
+            SUBROUTINE internal_xmmdispatch(fn, precision,              &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
-     &      BIND(C, NAME="libxsmmf_xmmdispatch")
-              IMPORT :: C_INT, C_PTR, C_INTPTR_T
+     &      BIND(C, NAME="libxsmm_xmmdispatch_")
+              IMPORT :: C_INTPTR_T, C_INT, C_PTR
+              INTEGER(C_INTPTR_T), INTENT(OUT) :: fn
               INTEGER(C_INT), INTENT(IN) :: precision, m, n, k
               INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
-              TYPE(C_PTR), INTENT(IN) :: alpha, beta
+              TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
               INTEGER(C_INT), INTENT(IN) :: flags, prefetch
-              INTEGER(C_INTPTR_T) :: internal_xmmdispatch
-            END FUNCTION
+            END SUBROUTINE
           END INTERFACE
-          libxsmm_xmmdispatch = internal_xmmdispatch(precision,         &
-     &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-        END FUNCTION
+          CALL internal_xmmdispatch(fn, precision, m, n, k,             &
+     &      lda, ldb, ldc, alpha, beta, flags, prefetch)
+        END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall
         SUBROUTINE libxsmm_xmmcall(fn, a, b, c, pa, pb, pc)
@@ -509,7 +510,7 @@
           TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: pa, pb, pc
           INTERFACE
             SUBROUTINE internal_xmmcall(fn, a, b, c, pa, pb, pc)        &
-     &      BIND(C, NAME="libxsmmf_xmmcall")
+     &      BIND(C, NAME="libxsmm_xmmcall_")
               IMPORT :: C_PTR, C_INTPTR_T
               INTEGER(C_INTPTR_T), INTENT(IN) :: fn
               TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
