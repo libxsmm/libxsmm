@@ -310,7 +310,7 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmatcopyfunction)(const short* a, co
 /** Specialized function for matcopy, and optional prefetch locations (int8). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmatcopyfunction)(const char* a, const int* lda, char* b, const int* ldb, ...);
 /** Function type which is either s/d/w/b, weak-typed. */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xmatcopyfunction { libxsmm_smatcopyfunction smatcopy; libxsmm_dmatcopyfunction dmatcopy; libxsmm_wmatcopyfunction wmatcopy; libxsmm_wmatcopyfunction bmatcopy; } libxsmm_xmatcopyfunction;
+typedef union LIBXSMM_RETARGETABLE libxsmm_xmatcopyfunction { libxsmm_smatcopyfunction smatcopy; libxsmm_dmatcopyfunction dmatcopy; libxsmm_wmatcopyfunction wmatcopy; libxsmm_bmatcopyfunction bmatcopy; } libxsmm_xmatcopyfunction;
 
 /** Structure to receive information about the code registry status (libxsmm_get_registry_info). */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info { size_t capacity, size, nbytes, nstatic, ncache; } libxsmm_registry_info;
