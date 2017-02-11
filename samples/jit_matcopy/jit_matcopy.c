@@ -64,25 +64,26 @@ int main(int argc, char* argv[])
   b = (float *) malloc(desc.ldb * desc.ldb * sizeof(float));
   
   for (i = 0; i < desc.m * desc.lda; i++) {
-    a[i] = (float) i;
+    a[i] = 1.0 * i;
   }
+  
   for (i = 0; i < desc.ldb * desc.ldb; i++) {
-    b[i] = (float) 0;
+    b[i] = 0.0;
   }
-
+  
   /* test dispatch call */
   fpointer = libxsmm_xmatcopydispatch( &desc );
   printf("address of F32 kernel: %lld\n", (size_t)fpointer);
   skernel = (libxsmm_smatcopyfunction)fpointer;
-
+  
   /* let's call */
-  skernel(a, &lda, &b[38], &ldb);
+  skernel(a, &lda, &b[36+36+2], &ldb);
   
   printf("Matrix A is: \n");
   
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
-      printf("%.1f ", a[i*lda+j]);
+      printf("%.1f ", a[i*desc.lda+j]);
     }
     printf("\n");
   }
@@ -91,11 +92,11 @@ int main(int argc, char* argv[])
   
   for (i=0; i < desc.ldb; i++ ) {
     for (j=0; j < desc.ldb; j++) {
-      printf("%.1f ", b[i*lda+j]);
+      printf("%.1f ", b[i*desc.ldb+j]);
     }
     printf("\n");
   }
-
+  
   return 0;
 }
 
