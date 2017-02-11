@@ -39,6 +39,46 @@
 #include <string.h>
 
 LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_header_m_loop( libxsmm_generated_code*                   io_generated_code,
+                                                  libxsmm_loop_label_tracker*               io_loop_label_tracker,
+                                                  const libxsmm_matcopy_kernel_config*      i_kernel_config,
+                                                  const unsigned int                        i_gp_reg_m_loop ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_mov_instruction, i_gp_reg_m_loop, 0);
+  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_add_instruction, i_gp_reg_m_loop, 1);
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_footer_m_loop( libxsmm_generated_code*                       io_generated_code,
+                                                  libxsmm_loop_label_tracker*                   io_loop_label_tracker,
+                                                  const libxsmm_matcopy_kernel_config*          i_kernel_config,
+                                                  const unsigned int                            i_gp_reg_m_loop,
+                                                  const unsigned int                            i_m ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_cmp_instruction, i_gp_reg_m_loop, i_m );
+  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_header_n_loop( libxsmm_generated_code*                  io_generated_code,
+                                                 libxsmm_loop_label_tracker*               io_loop_label_tracker,
+                                                 const libxsmm_matcopy_kernel_config*      i_kernel_config,
+                                                 const unsigned int                        i_gp_reg_n_loop ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_mov_instruction, i_gp_reg_n_loop, 0);
+  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_add_instruction, i_gp_reg_n_loop, 1);
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_footer_n_loop( libxsmm_generated_code*                       io_generated_code,
+                                                 libxsmm_loop_label_tracker*                   io_loop_label_tracker,
+                                                 const libxsmm_matcopy_kernel_config*          i_kernel_config,
+                                                 const unsigned int                            i_gp_reg_n_loop,
+                                                 const unsigned int                            i_n ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_cmp_instruction, i_gp_reg_n_loop, i_n );
+  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_convolution_header_oi_loop( libxsmm_generated_code*                   io_generated_code,
                                                    libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,

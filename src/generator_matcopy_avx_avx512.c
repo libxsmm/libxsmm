@@ -45,6 +45,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   libxsmm_matcopy_kernel_config l_kernel_config = { 0/*avoid warning "maybe used uninitialized" */ };
   libxsmm_matcopy_gp_reg_mapping l_gp_reg_mapping = { 0/*avoid warning "maybe used uninitialized" */ };
   libxsmm_loop_label_tracker l_loop_label_tracker = { 0/*avoid warning "maybe used uninitialized" */ };
+  unsigned int n_trips = 1;
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
@@ -56,14 +57,10 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   l_gp_reg_mapping.gp_reg_ldb = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_a_pf = LIBXSMM_X86_GP_REG_R8;
   l_gp_reg_mapping.gp_reg_b_pf = LIBXSMM_X86_GP_REG_R9;
-  l_gp_reg_mapping.gp_reg_m_loop = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_n_loop = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_X86_GP_REG_UNDEF;
+  l_gp_reg_mapping.gp_reg_m_loop = LIBXSMM_X86_GP_REG_R15;
+  l_gp_reg_mapping.gp_reg_n_loop = LIBXSMM_X86_GP_REG_R12;
 
-  /* define convolution kernel config */
+  /* define matcopy kernel config */
   if ( strcmp( i_arch, "snb" ) == 0 ) {
     l_kernel_config.instruction_set = LIBXSMM_X86_AVX;
     l_kernel_config.vector_reg_count = 16;
@@ -77,6 +74,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     l_kernel_config.vector_reg_count = 32;
     l_kernel_config.vector_name = 'z';
   } else if ( strcmp( i_arch, "knl" ) == 0 ) {
+    /* For now make the code work for KNL */
     l_kernel_config.instruction_set = LIBXSMM_X86_AVX512_MIC;
     l_kernel_config.vector_reg_count = 32;
     l_kernel_config.vector_name = 'z';
@@ -88,15 +86,118 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;
   }
-  /* @Evangelos add more fields here */
+  
+  /* More setup in the kernel config based on architecure and data type */
+  if ( l_kernel_config.vector_name == 'y' ) {
+    if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_F32  ) {
+      l_kernel_config.vector_length = 8;
+      l_kernel_config.datatype_size = 32;
+    } else if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_I16  ) {
+      l_kernel_config.vector_length = 16;
+      l_kernel_config.datatype_size = 16;
+    } else if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  ) {
+      l_kernel_config.vector_length = 32;
+      l_kernel_config.datatype_size = 8;
+    } else {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
+    }
+  } else if ( l_kernel_config.vector_name == 'z' ) {
+    if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_F32  ) {
+      l_kernel_config.vector_length = 16;
+      l_kernel_config.datatype_size = 32;
+    } else if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_I16  ) {
+      l_kernel_config.vector_length = 32;
+      l_kernel_config.datatype_size = 16;
+    } else if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  ) {
+      l_kernel_config.vector_length = 64;
+      l_kernel_config.datatype_size = 8;
+    } else {
+      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      return;
+    }
+  } else {
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    return;
+  }
+  
+  /* FIXME: Select variandts of vmove instruction based on architecture and datatype */
+  l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
+  l_kernel_config.alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
+  l_kernel_config.alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;
+  l_kernel_config.alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
+  l_kernel_config.alu_jmp_instruction = LIBXSMM_X86_INSTR_JL;
+
+  /* For now do not unroll the n loop */
+  n_trips = i_matcopy_desc->n / l_kernel_config.vector_length;
 
   /* open asm */
   libxsmm_x86_instruction_open_stream_matcopy( io_generated_code, l_gp_reg_mapping.gp_reg_a,
                                                l_gp_reg_mapping.gp_reg_lda, l_gp_reg_mapping.gp_reg_b,
                                                l_gp_reg_mapping.gp_reg_ldb, l_gp_reg_mapping.gp_reg_a_pf,
                                                l_gp_reg_mapping.gp_reg_b_pf, i_arch );
-
-  /* @Evangelos add generator code here, please functions defined in generator_x86_instructions.h */
+  
+  /* open m loop */
+  libxsmm_generator_convolution_header_m_loop(  io_generated_code, &l_loop_label_tracker,
+                                                &l_kernel_config, l_gp_reg_mapping.gp_reg_m_loop );
+  
+  
+  /* open n loop */
+  libxsmm_generator_convolution_header_n_loop(  io_generated_code, &l_loop_label_tracker,
+                                                &l_kernel_config, l_gp_reg_mapping.gp_reg_n_loop );
+  
+  /* load input line to register 0 */
+  libxsmm_x86_instruction_vec_move( io_generated_code,
+                                   l_kernel_config.instruction_set,
+                                   l_kernel_config.vmove_instruction,
+                                   l_gp_reg_mapping.gp_reg_a,
+                                   LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                   0,
+                                   l_kernel_config.vector_name, 0,
+                                   0, 0 );
+  
+  /* store register 0 to destination line */
+  libxsmm_x86_instruction_vec_move( io_generated_code,
+                                   l_kernel_config.instruction_set,
+                                   l_kernel_config.vmove_instruction,
+                                   l_gp_reg_mapping.gp_reg_b,
+                                   LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                   0,
+                                   l_kernel_config.vector_name, 0,
+                                   0, 1 );
+  
+  /* adjust input pointer by VLEN elements */
+  libxsmm_x86_instruction_alu_imm(  io_generated_code,
+                                  l_kernel_config.alu_add_instruction,
+                                  l_gp_reg_mapping.gp_reg_a,
+                                  l_kernel_config.vector_length * l_kernel_config.datatype_size);
+  
+  /* adjust destination pointer by VLEN elements */
+  libxsmm_x86_instruction_alu_imm(  io_generated_code,
+                                  l_kernel_config.alu_add_instruction,
+                                  l_gp_reg_mapping.gp_reg_b,
+                                  l_kernel_config.vector_length * l_kernel_config.datatype_size);
+  
+  /* close n loop */
+  libxsmm_generator_convolution_footer_n_loop(  io_generated_code, &l_loop_label_tracker,
+                                                &l_kernel_config, l_gp_reg_mapping.gp_reg_n_loop, n_trips );
+  
+  
+  /* adjust input pointer by (lda-n) elements (already has been increased by n in the above loop ) */
+  libxsmm_x86_instruction_alu_imm(  io_generated_code,
+                                    l_kernel_config.alu_add_instruction,
+                                    l_gp_reg_mapping.gp_reg_a,
+                                    (i_matcopy_desc->lda - i_matcopy_desc->n) * l_kernel_config.datatype_size);
+  
+  /* adjust destination pointer by (ldb-n) elements (already has been increased by n in the above loop ) */
+  libxsmm_x86_instruction_alu_imm(  io_generated_code,
+                                  l_kernel_config.alu_add_instruction,
+                                  l_gp_reg_mapping.gp_reg_b,
+                                  (i_matcopy_desc->ldb - i_matcopy_desc->n) * l_kernel_config.datatype_size);
+  
+  /* close m loop */
+  libxsmm_generator_convolution_footer_m_loop(  io_generated_code, &l_loop_label_tracker,
+                                                &l_kernel_config, l_gp_reg_mapping.gp_reg_m_loop, i_matcopy_desc->m );
 
   /* close asm */
   libxsmm_x86_instruction_close_stream_matcopy( io_generated_code, i_arch );

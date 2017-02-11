@@ -404,16 +404,20 @@ typedef struct libxsmm_matcopy_gp_reg_mapping_struct {
   unsigned int gp_reg_b_pf;
   unsigned int gp_reg_m_loop;
   unsigned int gp_reg_n_loop;
-  unsigned int gp_reg_help_0;
-  unsigned int gp_reg_help_1;
-  unsigned int gp_reg_help_2;
-  unsigned int gp_reg_help_3;
 } libxsmm_matcopy_gp_reg_mapping;
 
 /* transpose kernel config */
 typedef struct libxsmm_matcopy_kernel_config_struct {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
+  unsigned int vector_length;
+  unsigned int datatype_size;
+  unsigned int prefetch_instruction;
+  unsigned int vmove_instruction;
+  unsigned int alu_add_instruction;
+  unsigned int alu_cmp_instruction;
+  unsigned int alu_jmp_instruction;
+  unsigned int alu_mov_instruction;
   char vector_name;
 } libxsmm_matcopy_kernel_config;
 
