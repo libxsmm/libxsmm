@@ -51,24 +51,24 @@ int main(int argc, char* argv[])
   float *a, *b;
   int lda, ldb;
   int i, j;
+  int error = 0;
 
   printf("This is a tester for JIT matcopy kernels!\n");
-  desc.m = 32;
-  desc.n = 32;
-  desc.lda = 32;
-  desc.ldb = 36;
+  desc.m = atoi(argv[1]);
+  desc.n = atoi(argv[2]);
+  desc.lda = atoi(argv[3]);
+  desc.ldb = atoi(argv[4]);
   desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
   desc.prefetch = 0;
   
   a = (float *) malloc(desc.m * desc.lda * sizeof(float));
-  b = (float *) malloc(desc.ldb * desc.ldb * sizeof(float));
+  b = (float *) malloc(desc.m * desc.ldb * sizeof(float));
   
-  for (i = 0; i < desc.m * desc.lda; i++) {
-    a[i] = 1.0 * i;
-  }
   
-  for (i = 0; i < desc.ldb * desc.ldb; i++) {
-    b[i] = 0.0;
+  for (i=0; i < desc.m; i++ ) {
+    for (j=0; j < desc.n; j++) {
+      a[j+desc.lda*i] = 1.0 * rand();
+    }
   }
   
   /* test dispatch call */
@@ -77,24 +77,19 @@ int main(int argc, char* argv[])
   skernel = (libxsmm_smatcopyfunction)fpointer;
   
   /* let's call */
-  skernel(a, &lda, &b[36+36+2], &ldb);
-  
-  printf("Matrix A is: \n");
+  skernel(a, &lda, b, &ldb);
   
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
-      printf("%.1f ", a[i*desc.lda+j]);
+      if ( (a[j+desc.lda*i] - b[j+desc.ldb*i]) > 0.000000001 ) {
+        printf("ERROR!!!\n");
+        error = 1;
+      }
     }
-    printf("\n");
   }
   
-  printf("\nMatrix B is: \n");
-  
-  for (i=0; i < desc.ldb; i++ ) {
-    for (j=0; j < desc.ldb; j++) {
-      printf("%.1f ", b[i*desc.ldb+j]);
-    }
-    printf("\n");
+  if (error == 0) {
+    printf("CORRECT copy!!!!\n");
   }
   
   return 0;
