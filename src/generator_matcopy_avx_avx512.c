@@ -91,13 +91,13 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   if ( l_kernel_config.vector_name == 'y' ) {
     if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_F32  ) {
       l_kernel_config.vector_length = 8;
-      l_kernel_config.datatype_size = 32;
+      l_kernel_config.datatype_size = 4;
     } else if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_I16  ) {
       l_kernel_config.vector_length = 16;
-      l_kernel_config.datatype_size = 16;
+      l_kernel_config.datatype_size = 2;
     } else if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  ) {
       l_kernel_config.vector_length = 32;
-      l_kernel_config.datatype_size = 8;
+      l_kernel_config.datatype_size = 1;
     } else {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
@@ -105,13 +105,13 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   } else if ( l_kernel_config.vector_name == 'z' ) {
     if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_F32  ) {
       l_kernel_config.vector_length = 16;
-      l_kernel_config.datatype_size = 32;
+      l_kernel_config.datatype_size = 4;
     } else if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_I16  ) {
       l_kernel_config.vector_length = 32;
-      l_kernel_config.datatype_size = 16;
+      l_kernel_config.datatype_size = 2;
     } else if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  ) {
       l_kernel_config.vector_length = 64;
-      l_kernel_config.datatype_size = 8;
+      l_kernel_config.datatype_size = 1;
     } else {
       libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
