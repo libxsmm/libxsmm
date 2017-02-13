@@ -47,7 +47,8 @@ void libxsmm_generator_convolution_winograd_weight_update_kernel( libxsmm_genera
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
-  if ( (strcmp(i_arch, "knl") == 0) ||
+  if ( (strcmp(i_arch, "knm") == 0) ||
+       (strcmp(i_arch, "knl") == 0) ||
        (strcmp(i_arch, "skx") == 0) ) {
     libxsmm_generator_convolution_winograd_weight_update_avx512( io_generated_code, i_conv_desc, i_arch );
   } else {
@@ -159,7 +160,8 @@ void libxsmm_generator_convolution_winograd_forward_kernel( libxsmm_generated_co
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
-  if ( (strcmp(i_arch, "knl") == 0) ||
+  if ( (strcmp(i_arch, "knm") == 0) ||
+       (strcmp(i_arch, "knl") == 0) ||
        (strcmp(i_arch, "skx") == 0) ) {
     libxsmm_generator_convolution_winograd_forward_avx512( io_generated_code, i_conv_desc, i_arch );
   } else {

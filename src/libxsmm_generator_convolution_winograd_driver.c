@@ -48,8 +48,8 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    ur_j\n");
   printf("    ur_m\n");
   printf("    vratio\n");
-  printf("    ARCH: knl, skx\n");
-  printf("    PREFETCH: nopf (none)\n");
+  printf("    ARCH: knm, knl, skx\n");
+  printf("    PREFETCH: nopf, all\n");
   printf("    PRECISION: SP\n");
   printf("\n\n\n\n");
 }
@@ -229,16 +229,17 @@ int main(int argc, char* argv []) {
 
   /* set value of prefetch flag */
   if (strcmp("nopf", argv[12]) == 0) {
-    /* l_prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE; */
+    l_prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
+  } else if (strcmp("all", argv[12]) == 0) {
     l_prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-  }
-  else {
+  } else {
     print_help();
     return -1;
   }
 
   /* check value of arch flag */
-  if ( (strcmp(l_arch, "knl") != 0)    &&
+  if ( (strcmp(l_arch, "knm") != 0) &&
+       (strcmp(l_arch, "knl") != 0) &&
        (strcmp(l_arch, "skx") != 0) ) {
     print_help();
     return -1;
