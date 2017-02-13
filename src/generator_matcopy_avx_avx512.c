@@ -170,7 +170,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   /* In case we should do masked load/store, precompute the mask */
   if (remaining) {
     libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask(io_generated_code,
-                                                                &i_gp_reg_mapping,
+                                                                &l_gp_reg_mapping,
                                                                 &l_kernel_config,
                                                                 i_matcopy_desc,
                                                                 remaining);
@@ -274,7 +274,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     }
   }
   
-  /* Add unrolled load/store for remaining with mask */
+  /* Add load/store with mask if there is remaining */
   if (remaining) {
     libxsmm_x86_instruction_vec_move( io_generated_code,
                                      l_kernel_config.instruction_set,
@@ -289,7 +289,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                      l_kernel_config.vmove_instruction,
                                      l_gp_reg_mapping.gp_reg_b,
                                      LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                     remaining_unrolled * l_kernel_config.vector_length*l_kernel_config.datatype_size,
+                                     remaining_unrolled * l_kernel_config.vector_length * l_kernel_config.datatype_size,
                                      l_kernel_config.vector_name, 0,
                                      1, 1 );
     if (i_matcopy_desc->prefetch) {
@@ -298,7 +298,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                        l_gp_reg_mapping.gp_reg_a_pf,
                                        LIBXSMM_X86_GP_REG_UNDEF,
                                        0,
-                                       remaining_unrolled * l_kernel_config.vector_length*l_kernel_config.datatype_size );
+                                       remaining_unrolled * l_kernel_config.vector_length * l_kernel_config.datatype_size );
     }
   }
   
