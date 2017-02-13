@@ -71,7 +71,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   libxsmm_matcopy_kernel_config l_kernel_config = { 0/*avoid warning "maybe used uninitialized" */ };
   libxsmm_matcopy_gp_reg_mapping l_gp_reg_mapping = { 0/*avoid warning "maybe used uninitialized" */ };
   libxsmm_loop_label_tracker l_loop_label_tracker = { 0/*avoid warning "maybe used uninitialized" */ };
-  unsigned int n_trips = 1, unroll_level = i_matcopy_desc->unroll_level, remaining_unrolled, remaining, i;
+  unsigned int n_trips, unroll_level = i_matcopy_desc->unroll_level, remaining_unrolled, remaining, i;
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
@@ -187,57 +187,59 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                                   &l_kernel_config, l_gp_reg_mapping.gp_reg_n_loop );
   }
   
-  /* Unroll the innermost loop as requested */
-  for (i = 0; i < i_matcopy_desc->unroll_level; i++) {
-    /* load input line to register 0 */
-    libxsmm_x86_instruction_vec_move( io_generated_code,
-                                     l_kernel_config.instruction_set,
-                                     l_kernel_config.vmove_instruction,
-                                     l_gp_reg_mapping.gp_reg_a,
-                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                     i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
-                                     l_kernel_config.vector_name, 0,
-                                     0, 0 );
+  if (n_trips >= 1) {
+    /* Unroll the innermost loop as requested */
+    for (i = 0; i < i_matcopy_desc->unroll_level; i++) {
+      /* load input line to register 0 */
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+                                       l_kernel_config.instruction_set,
+                                       l_kernel_config.vmove_instruction,
+                                       l_gp_reg_mapping.gp_reg_a,
+                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                       i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
+                                       l_kernel_config.vector_name, 0,
+                                       0, 0 );
   
-    /* store register 0 to destination line */
-    libxsmm_x86_instruction_vec_move( io_generated_code,
-                                     l_kernel_config.instruction_set,
-                                     l_kernel_config.vmove_instruction,
-                                     l_gp_reg_mapping.gp_reg_b,
-                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                     i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
-                                     l_kernel_config.vector_name, 0,
-                                     0, 1 );
+      /* store register 0 to destination line */
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+                                       l_kernel_config.instruction_set,
+                                       l_kernel_config.vmove_instruction,
+                                       l_gp_reg_mapping.gp_reg_b,
+                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                       i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
+                                       l_kernel_config.vector_name, 0,
+                                       0, 1 );
   
-    /* Prefetch if requested */
-    if (i_matcopy_desc->prefetch) {
-      libxsmm_x86_instruction_prefetch( io_generated_code,
-                                       l_kernel_config.prefetch_instruction,
-                                       l_gp_reg_mapping.gp_reg_a_pf,
-                                       LIBXSMM_X86_GP_REG_UNDEF,
-                                       0,
-                                       i*l_kernel_config.vector_length*l_kernel_config.datatype_size );
+      /* Prefetch if requested */
+      if (i_matcopy_desc->prefetch) {
+        libxsmm_x86_instruction_prefetch( io_generated_code,
+                                         l_kernel_config.prefetch_instruction,
+                                         l_gp_reg_mapping.gp_reg_a_pf,
+                                         LIBXSMM_X86_GP_REG_UNDEF,
+                                         0,
+                                         i*l_kernel_config.vector_length*l_kernel_config.datatype_size );
+      }
     }
-  }
   
-  /* adjust input pointer by VLEN * unroll-level elements */
-  libxsmm_x86_instruction_alu_imm(  io_generated_code,
-                                  l_kernel_config.alu_add_instruction,
-                                  l_gp_reg_mapping.gp_reg_a,
-                                  i_matcopy_desc->unroll_level * l_kernel_config.vector_length * l_kernel_config.datatype_size);
-  
-  /* adjust destination pointer by VLEN * unroll-level elements */
-  libxsmm_x86_instruction_alu_imm(  io_generated_code,
-                                  l_kernel_config.alu_add_instruction,
-                                  l_gp_reg_mapping.gp_reg_b,
-                                  i_matcopy_desc->unroll_level * l_kernel_config.vector_length * l_kernel_config.datatype_size);
-  
-  /* Adjust prefecth pointer by VLEN * unroll-level elements */
-  if (i_matcopy_desc->prefetch) {
+    /* adjust input pointer by VLEN * unroll-level elements */
     libxsmm_x86_instruction_alu_imm(  io_generated_code,
                                     l_kernel_config.alu_add_instruction,
-                                    l_gp_reg_mapping.gp_reg_a_pf,
+                                    l_gp_reg_mapping.gp_reg_a,
                                     i_matcopy_desc->unroll_level * l_kernel_config.vector_length * l_kernel_config.datatype_size);
+  
+    /* adjust destination pointer by VLEN * unroll-level elements */
+    libxsmm_x86_instruction_alu_imm(  io_generated_code,
+                                    l_kernel_config.alu_add_instruction,
+                                    l_gp_reg_mapping.gp_reg_b,
+                                    i_matcopy_desc->unroll_level * l_kernel_config.vector_length * l_kernel_config.datatype_size);
+  
+    /* Adjust prefecth pointer by VLEN * unroll-level elements */
+    if (i_matcopy_desc->prefetch) {
+      libxsmm_x86_instruction_alu_imm(  io_generated_code,
+                                      l_kernel_config.alu_add_instruction,
+                                      l_gp_reg_mapping.gp_reg_a_pf,
+                                      i_matcopy_desc->unroll_level * l_kernel_config.vector_length * l_kernel_config.datatype_size);
+    }
   }
   
   if (n_trips > 1) {
