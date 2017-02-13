@@ -31,6 +31,7 @@
 
 #include "generator_matcopy_avx_avx512.h"
 #include "generator_x86_instructions.h"
+#include "generator_convolution_common.h"
 #include "generator_common.h"
 
 #include <libxsmm_intrinsics_x86.h>
