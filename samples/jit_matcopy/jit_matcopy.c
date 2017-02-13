@@ -58,6 +58,7 @@ int main(int argc, char* argv[])
   desc.n = atoi(argv[2]);
   desc.lda = atoi(argv[3]);
   desc.ldb = atoi(argv[4]);
+  desc.unroll_level = atoi(argv[5]);
   desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
   desc.prefetch = 1;
   
