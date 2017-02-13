@@ -902,7 +902,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors_ijm(
       continue;
 
     for ( j = 0; fact_j[j] != 1; j++ ) {
-      if ( cur_fact[i] == fact_j[j] /* && ((((*ur_j)*fact_j[j]*itiles-1)*itiles + *ur_i-1) <= max_acc)*/ ) {
+      if ( cur_fact[i] == fact_j[j] ) {
         *ur_j = (*ur_j)*fact_j[j];
         found = 1;
         /* Remove this element from fact_j */
@@ -916,7 +916,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors_ijm(
       continue;
 
     for ( j = 0; fact_m[j] != 1; j++ ) {
-      if ( cur_fact[i] == fact_m[j] /* && ((((*ur_m)*fact_m[j]-1)*itiles*jtiles + (*ur_j-1)*itiles + *ur_i-1) <= max_acc)*/ ) {
+      if ( cur_fact[i] == fact_m[j] ) {
         *ur_m = (*ur_m)*fact_m[j];
         found = 1;
         /* Remove this element from fact_m */
@@ -945,7 +945,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
   /* now architecture specific */
   if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) &&
+      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  ||
+      libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) &&
       (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) &&
       (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) &&
       (0 == (handle->desc.C % 16) && 0 == (handle->desc.K % 16)) &&
@@ -971,6 +972,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     const int alpha = 6; /* The value of alpha can be either 4 or 6 */
     const int tileSize = alpha - 2;
     int allowed_unroll = 0;
+    int max_acc = 0;
     int flagBenchmark = 0;
     LIBXSMM_UNUSED(flagBenchmark/*TODO*/);
 
@@ -1286,9 +1288,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         } else {
           wino_desc_fp.bimg = 1;
         }
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+          max_acc = 24;
+        } else {
+          max_acc = 26;
+        }
         internal_dnn_handle_factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
-                     &(wino_desc_fp.ur_i), &(wino_desc_fp.ur_j), &(wino_desc_fp.ur_m), 26 );
-        if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
+                     &(wino_desc_fp.ur_i), &(wino_desc_fp.ur_j), &(wino_desc_fp.ur_m), max_acc );
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+          wino_desc_fp.vratio = 1;
+        } else if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
           wino_desc_fp.vratio = 2;
         } else {
           wino_desc_fp.vratio = 1;
@@ -1299,12 +1308,18 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         } else {
           wino_desc_fp.bimg = 1;
         }
-        internal_dnn_handle_factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
-                     &(wino_desc_fp.ur_i), &(wino_desc_fp.ur_j), &(wino_desc_fp.ur_m), 26 );
-        if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
-          wino_desc_fp.vratio = 2;
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+          max_acc = 24;
+        } else {
+          max_acc = 26;
         }
-        else {
+        internal_dnn_handle_factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
+                     &(wino_desc_fp.ur_i), &(wino_desc_fp.ur_j), &(wino_desc_fp.ur_m), max_acc );
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+      	  wino_desc_fp.vratio = 1;
+        } else if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
+          wino_desc_fp.vratio = 2;
+        } else {
           wino_desc_fp.vratio = 1;
         }
       }
@@ -1316,7 +1331,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
       /* TODO check JIT errors */
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || 
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
       {
         wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         handle->code_fwd[0].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
@@ -1626,12 +1642,18 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       /* General scenario */
       else {
         wino_desc_bp.bimg = wino_desc_fp.bimg;
-        internal_dnn_handle_factors_ijm( wino_desc_bp.itiles, wino_desc_bp.jtiles, wino_desc_bp.bimg,
-                     &(wino_desc_bp.ur_i), &(wino_desc_bp.ur_j), &(wino_desc_bp.ur_m), 26 );
-        if (wino_desc_bp.ur_i * wino_desc_bp.ur_j * wino_desc_bp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
-          wino_desc_bp.vratio = 2;
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+          max_acc = 24;
+        } else {
+          max_acc = 26;
         }
-        else {
+        internal_dnn_handle_factors_ijm( wino_desc_bp.itiles, wino_desc_bp.jtiles, wino_desc_bp.bimg,
+                     &(wino_desc_bp.ur_i), &(wino_desc_bp.ur_j), &(wino_desc_bp.ur_m), max_acc );
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+      	  wino_desc_bp.vratio = 1;
+        } else if (wino_desc_bp.ur_i * wino_desc_bp.ur_j * wino_desc_bp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
+          wino_desc_bp.vratio = 2;
+        } else {
           wino_desc_bp.vratio = 1;
         }
       }
@@ -1640,7 +1662,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
       /* TODO check JIT errors */
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
       {
         /* NONE */
         wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
@@ -1985,7 +2008,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->cwino_upd = wino_desc_wu;
       /* TODO check JIT errors */
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
       {
         /* NONE */
         wino_desc_wu.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
