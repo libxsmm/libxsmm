@@ -419,7 +419,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
           index = tm*i_conv_desc->itiles*i_conv_desc->jtiles + tj*i_conv_desc->itiles + ti;
           offset = m_dist*index + tv*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size;
           reg = (num_regs - (i_conv_desc->vratio*i_conv_desc->ur_m*i_conv_desc->ur_i*i_conv_desc->ur_j)) + (tv + i_conv_desc->vratio*(ti + i_conv_desc->ur_i*(tj + i_conv_desc->ur_j*tm)));
-          if ( reg < l_micro_kernel_config.vector_reg_count ) { /* l_micro_kernel_config.vector_reg_count = (14 + 18) */
+          if ( (unsigned int)reg < l_micro_kernel_config.vector_reg_count ) { /* l_micro_kernel_config.vector_reg_count = (14 + 18) */
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                               l_micro_kernel_config.instruction_set,
                                               l_micro_kernel_config.c_vmove_instruction,
