@@ -418,6 +418,7 @@ typedef struct libxsmm_matcopy_kernel_config_struct {
   unsigned int alu_cmp_instruction;
   unsigned int alu_jmp_instruction;
   unsigned int alu_mov_instruction;
+  unsigned int prefetch_instruction;
   char vector_name;
 } libxsmm_matcopy_kernel_config;
 

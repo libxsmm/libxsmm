@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
   desc.lda = atoi(argv[3]);
   desc.ldb = atoi(argv[4]);
   desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
-  desc.prefetch = 0;
+  desc.prefetch = 1;
   
   a = (float *) malloc(desc.m * desc.lda * sizeof(float));
   b = (float *) malloc(desc.m * desc.ldb * sizeof(float));
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
   skernel = (libxsmm_smatcopyfunction)fpointer;
   
   /* let's call */
-  skernel(a, &lda, b, &ldb);
+  skernel(a, &lda, b, &ldb, &a[128]);
   
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {

@@ -121,12 +121,13 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     return;
   }
   
-  /* FIXME: Select variandts of vmove instruction based on architecture and datatype */
+  /* FIXME: Select variands of vmove instruction based on architecture and datatype */
   l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
   l_kernel_config.alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
   l_kernel_config.alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;
   l_kernel_config.alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
   l_kernel_config.alu_jmp_instruction = LIBXSMM_X86_INSTR_JL;
+  l_kernel_config.prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT2;
 
   /* For now do not unroll the n loop */
   n_trips = i_matcopy_desc->n / l_kernel_config.vector_length;
@@ -166,6 +167,16 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                    l_kernel_config.vector_name, 0,
                                    0, 1 );
   
+  /* Prefetch if requested */
+  if (i_matcopy_desc->prefetch) {
+    libxsmm_x86_instruction_prefetch( io_generated_code,
+                                     l_kernel_config.prefetch_instruction,
+                                     l_gp_reg_mapping.gp_reg_a_pf,
+                                     LIBXSMM_X86_GP_REG_UNDEF,
+                                     0,
+                                     0 );
+  }
+  
   /* adjust input pointer by VLEN elements */
   libxsmm_x86_instruction_alu_imm(  io_generated_code,
                                   l_kernel_config.alu_add_instruction,
@@ -177,6 +188,14 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                   l_kernel_config.alu_add_instruction,
                                   l_gp_reg_mapping.gp_reg_b,
                                   l_kernel_config.vector_length * l_kernel_config.datatype_size);
+  
+  /* Adjust prefecth pointer by VLEN elements */
+  if (i_matcopy_desc->prefetch) {
+    libxsmm_x86_instruction_alu_imm(  io_generated_code,
+                                    l_kernel_config.alu_add_instruction,
+                                    l_gp_reg_mapping.gp_reg_a_pf,
+                                    l_kernel_config.vector_length * l_kernel_config.datatype_size);
+  }
   
   /* close n loop */
   libxsmm_generator_convolution_footer_n_loop(  io_generated_code, &l_loop_label_tracker,
@@ -194,6 +213,14 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                   l_kernel_config.alu_add_instruction,
                                   l_gp_reg_mapping.gp_reg_b,
                                   (i_matcopy_desc->ldb - i_matcopy_desc->n) * l_kernel_config.datatype_size);
+  
+  /* Adjust prefecth pointer by (lda-n) elements if requested */
+  if (i_matcopy_desc->prefetch) {
+    libxsmm_x86_instruction_alu_imm(  io_generated_code,
+                                    l_kernel_config.alu_add_instruction,
+                                    l_gp_reg_mapping.gp_reg_a_pf,
+                                    (i_matcopy_desc->lda - i_matcopy_desc->n) * l_kernel_config.datatype_size);
+  }
   
   /* close m loop */
   libxsmm_generator_convolution_footer_m_loop(  io_generated_code, &l_loop_label_tracker,
