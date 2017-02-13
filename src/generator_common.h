@@ -404,6 +404,7 @@ typedef struct libxsmm_matcopy_gp_reg_mapping_struct {
   unsigned int gp_reg_b_pf;
   unsigned int gp_reg_m_loop;
   unsigned int gp_reg_n_loop;
+  unsigned int gp_reg_help_0;
 } libxsmm_matcopy_gp_reg_mapping;
 
 /* transpose kernel config */
