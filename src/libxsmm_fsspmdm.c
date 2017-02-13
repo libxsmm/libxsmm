@@ -63,6 +63,9 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(const int M, co
   assert(N >= 16);
   assert(alpha == 1.0);
   assert((beta == 1.0) || (beta == 0.0));
+  assert(K <= lda);
+  assert(N <= ldc);
+  assert(N <= ldb);
 
   /* allocate handle */
   new_handle = (libxsmm_dfsspmdm*)malloc(sizeof(libxsmm_dfsspmdm));
@@ -77,9 +80,11 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(const int M, co
 
   /* get number of non-zeros */
   a_nnz = 0;
-  for (i = 0; i < M*K; ++i) {
-    if (a_dense[i] != 0.0) {
-      a_nnz++;
+  for (i = 0; i < M; ++i) {
+    for (j = 0; j < K; j++) {
+      if (a_dense[(i*lda) + j] != 0.0) {
+        a_nnz++;
+      }
     }
   }
 
@@ -152,8 +157,11 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
   /* some checks... */
   assert(N % 16 == 0);
   assert(N >= 16);
-  assert(alpha == 1.0);
-  assert((beta == 1.0) || (beta == 0.0));
+  assert(alpha == 1.0f);
+  assert((beta == 1.0f) || (beta == 0.0f));
+  assert(K <= lda);
+  assert(N <= ldc);
+  assert(N <= ldb);
 
   /* allocate handle */
   new_handle = (libxsmm_sfsspmdm*)malloc(sizeof(libxsmm_sfsspmdm));
@@ -168,9 +176,11 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
 
   /* get number of non-zeros */
   a_nnz = 0;
-  for (i = 0; i < M*K; ++i) {
-    if (a_dense[i] != 0.0) {
-      a_nnz++;
+  for (i = 0; i < M; ++i) {
+    for (j = 0; j < K; j++) {
+      if (a_dense[(i*lda) + j] != 0.0f) {
+        a_nnz++;
+      }
     }
   }
 
@@ -185,7 +195,7 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
     for (i = 0; i < M; i++) {
       a_csr_rowptr[i] = n;
       for (j = 0; j < K; j++) {
-        if (a_dense[(i*lda) + j] != 0.0) {
+        if (a_dense[(i*lda) + j] != 0.0f) {
           a_csr_values[n] = a_dense[(i*lda) + j];
           a_csr_colidx[n] = j;
           n++;
