@@ -579,16 +579,20 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
   const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - ( i_conv_desc->ifm_block * l_reg_per_block);
   /* register blocking counter */
   unsigned int reg_count = 0;
-  
+
+  unsigned int l_j, l_k;
+  /* adding to C, so let's load C */
   /* choosing offset according to format */
   /* for filter in custom format it's vector length */
   unsigned int offset = i_conv_kernel_config->vector_length_wt;
   /* for filter in RSCK format it's active ofm leading dimension */
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0 ) {
     offset = i_conv_kernel_config->l_ld_ofm_act;
+    if (i_conv_desc->ifm_block == 1) {
+      offset *= i_conv_kernel_config->l_ld_ifm_act;
+    }
   }
 
-  unsigned int l_j, l_k;
   /* adding to C, so let's load C */
     for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block ; l_k++, reg_count++ ) {
@@ -656,15 +660,18 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
   /* register blocking counter  */
   unsigned int reg_count = 0;
   
+  unsigned int l_j, l_k;
   /* choosing offset according to format */
   /* for filter in custom format it's vector length */
   unsigned int offset = i_conv_kernel_config->vector_length_wt;
   /* for filter in RSCK format it's active ofm leading dimension */
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0 ) {
     offset = i_conv_kernel_config->l_ld_ofm_act;
+    if (i_conv_desc->ifm_block == 1) {
+      offset *= i_conv_kernel_config->l_ld_ifm_act;
+    }
   }
 
-  unsigned int l_j, l_k;
   /* adding to C, so let's load C */
     for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block ; l_k++, reg_count++ ) {

@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Rajkishore Barik (Intel Corp.)
+/* Rajkishore Barik (Intel Corp.), Ankush Mandal (Intel Corp.)
 ******************************************************************************/
 
 int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__, ii_, ij_, kh, kw, ofm1ifm1, ki, kj, imgifm1;
@@ -69,8 +69,6 @@ element_output_type* l_output;
 
 unsigned int stride_w = handle->desc.v;
 unsigned int stride_h = handle->desc.u;
-kh = handle->desc.R;
-kw = handle->desc.S;
 
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
 element_filter_type* remote_weight_ptr = 0;
@@ -202,6 +200,9 @@ input_h = padded_h;
 input_w = handle->ifwp;
 input_h = handle->ifhp;
 #endif
+
+kh = handle->desc.R;
+kw = handle->desc.S;
 
 #define LIBXSMM_JITTED_CONV_WU_NO_PF_NHWC_RSCK(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
                                      weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
