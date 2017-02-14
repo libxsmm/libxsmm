@@ -6,57 +6,55 @@ TOUCH=$(which touch)
 ECHO=$(which echo)
 GREP=$(which grep)
 GIT=$(which git)
-#SED=$(which sed)
+SED=$(which sed)
 RM=$(which rm)
 
 CODEFILE=${ROOTDIR}/.codefile
 BANNED_CHARS="\t"
 
 if [ "" != "${GIT}" ]; then
-  if [ "" != "${ECHO}" ] && [ "" != "${SED}" ] && \
+  if [ "" != "${ECHO}" ] && [ "" != "${SED}" ] && [ "" != "${GREP}" ] && \
      [ "" != "$(${GIT} rev-parse --verify HEAD 2> /dev/null)" ]; \
   then
     if [ -e ${CODEFILE} ]; then
-      PATTERNS="$(cat ${CODEFILE})"
+      # transform wildcard-style patterns to regular expressions
+      PATTERNS="$(${SED} -e 's/\./\\./g' -e 's/\*/..*/g' -e 's/?/./g' -e 's/$/\$/g' ${CODEFILE} 2> /dev/null)"
     fi
-    IFS_BACKUP=${IFS}
+    IFS_BACKUP="${IFS}"
     IFS=""
     while read -r LINE; do
-      IFS=${IFS_BACKUP}
+      IFS="${IFS_BACKUP}"
       # determine the filename of the patch snippet
       MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^diff --git a\/\(..*\) b..*$/\1/p" 2> /dev/null)
       if [ "" != "${MATCH}" ]; then
         FILENAME=${MATCH}
-        continue
-      fi
-      if [ "" != "${FILENAME}" ]; then
-        # determine the line number of the addition
-        MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^@@ -..* \+\([0-9][0-9]*\),..*$/\1/p" 2> /dev/null)
-        if [ "" != "${MATCH}" ]; then
-          LOCATION=${FILENAME}:${MATCH}
-        else # no line number in patch (likely a newly added file)
-          LOCATION=${FILENAME}
-        fi
-        # check against rejected characters
-        BANNEDCHAR=$(${ECHO} "${LINE}" | ${SED} -n "/^\+..*[${BANNED_CHARS}]..*$/p" 2> /dev/null)
-        TRAILINGWS=$(${ECHO} "${LINE}" | ${SED} -n "/^\+.*\s\s*$/p" 2> /dev/null)
-        if [ "" != "${BANNEDCHAR}" ] || [ "" != "${TRAILINGWS}" ]; then
-          for PATTERN in ${PATTERNS}; do
-            PATTERN=$(${ECHO} "${PATTERN}" | ${SED} -e "s/\./\\\\./g" -e "s/\*/.*/g" -e "s/?/\./g" 2> /dev/null)
-            MATCH=$(${ECHO} "${FILENAME}" | ${SED} -n "/${PATTERN}/p" 2> /dev/null)
-            if [ "" != "${MATCH}" ]; then break; fi
-          done
+        LOCATION=""
+      elif [ "" != "${FILENAME}" ]; then
+        # determine the line number of the change
+        MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^@@ -..* +\([0-9][0-9]*\),..*$/\1/p" 2> /dev/null)
+        if [ "" != "${MATCH}" ]; then LOCATION=":${MATCH}"; fi
+        # check against trailing whitespace(s)
+        if [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*\s\s*$/p" 2> /dev/null)" ]; then
           # check if problem is with a permitted file type
-          if [ "" != "${MATCH}" ]; then
-            # print an error message
-            if [ "" != "${BANNEDCHAR}" ]; then
-              >&2 ${ECHO} "Error: ${LOCATION} contains banned character(s)!"
+          for PATTERN in ${PATTERNS}; do
+            MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2> /dev/null)
+            if [ "" != "${MATCH}" ]; then # print an error message and exit
+              >&2 ${ECHO} "Error: ${FILENAME}${LOCATION} has trailing whitespace(s)!"
+              #exit 1
+              break
             fi
-            if [ "" != "${TRAILINGWS}" ]; then
-              >&2 ${ECHO} "Error: ${LOCATION} has trailing whitespace(s)!"
+          done
+        # check against banned characters
+        elif [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+..*[${BANNED_CHARS}]..*$/p" 2> /dev/null)" ]; then
+          # check if problem is with a permitted file type
+          for PATTERN in ${PATTERNS}; do
+            MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2> /dev/null)
+            if [ "" != "${MATCH}" ]; then # print an error message and exit
+              >&2 ${ECHO} "Error: ${LOCATION}${LOCATION} contains banned character(s)!"
+              #exit 1
+              break
             fi
-            exit 1
-          fi
+          done
         fi
       fi
       IFS=""
@@ -64,7 +62,7 @@ if [ "" != "${GIT}" ]; then
 << EOD
 $(${GIT} diff-index -p -M --cached HEAD)
 EOD
-    IFS=${IFS_BACKUP}
+    IFS="${IFS_BACKUP}"
   fi
 
   if [ "" != "${TOUCH}" ] && [ "" != "${GREP}" ] && [ "" != "${RM}" ]; then
