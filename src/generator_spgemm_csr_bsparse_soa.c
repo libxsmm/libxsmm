@@ -129,7 +129,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
 
   /* calculate the chunk size of current columns to work on */
   l_n_chunks = ( (l_max_cols % 28) == 0 ) ? (l_max_cols / 28) : (l_max_cols / 28) + 1;
-  l_n_chunksize = ( (l_max_cols % 28) == 0 ) ? (l_max_cols / l_n_chunks) : (l_max_cols / l_n_chunks) + 1;
+  l_n_chunksize = ( (l_max_cols % l_n_chunks) == 0 ) ? (l_max_cols / l_n_chunks) : (l_max_cols / l_n_chunks) + 1;
 
   /* open asm */
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
