@@ -51,8 +51,7 @@ if [ "" != "${GIT}" ]; then
             MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2> /dev/null)
             if [ "" != "${MATCH}" ]; then # print an error message and exit
               >&2 ${ECHO} "Error: ${LOCATION}${LOCATION} contains banned character(s)!"
-              #exit 1
-              break
+              exit 1
             fi
           done
         fi
