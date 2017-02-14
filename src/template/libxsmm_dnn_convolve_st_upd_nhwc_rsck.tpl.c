@@ -29,7 +29,10 @@
 /* Rajkishore Barik (Intel Corp.), Ankush Mandal (Intel Corp.)
 ******************************************************************************/
 
-int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__, ii_, ij_, kh, kw, ofm1ifm1, ki, kj, imgifm1;
+int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__, ii_, ij_, kh, kw, ofm1ifm1, ki, kj;
+#if defined(LIBXSMM_WU_PER_THREAD_ALLOCATION) || defined(INPUT_PADDING)
+int imgifm1;
+#endif
 #if defined(LIBXSMM_WU_PER_THREAD_ALLOCATION)
 int i, j, ofm1ifm1img;
 #endif
@@ -451,8 +454,8 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
 
-if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_MIC ||
-     libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE)
+if (  libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)
 {
   num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
   num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
@@ -709,7 +712,8 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
            } /* img loop */
          } /* ifm1, ofm1 loop */
     } /*if enough parallelism end*/
-} else if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX2 ){
+} else if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM || 
+            libxsmm_target_archid == LIBXSMM_X86_AVX2 ){
 
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
   for (i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
@@ -770,7 +774,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
   if ( ltid == (handle->desc.threads-1) ) {
     handle->filter_transposed = 0;
   }
-} /* end of LIBXSMM_X86_AVX2 */
+} /* end of LIBXSMM_X86_AVX512_KNM || LIBXSMM_X86_AVX2 */
 /* should never happen, this is just an additional check */
 } else {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
