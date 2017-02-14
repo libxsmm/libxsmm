@@ -127,7 +127,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
   /* calculate the chunk size of current columns to work on */
   l_n_chunks = ( (i_xgemm_desc->n % l_n_max_block) == 0 ) ? (i_xgemm_desc->n / l_n_max_block) : (i_xgemm_desc->n / l_n_max_block) + 1;
   l_n_chunksize = ( (i_xgemm_desc->n % l_n_chunks) == 0 ) ? (i_xgemm_desc->n / l_n_chunks) : (i_xgemm_desc->n / l_n_chunks) + 1;
-  l_n_remain = ( ((i_xgemm_desc->n % l_n_chunks) == 0) || (i_xgemm_desc->n <= l_n_max_block) ) ? 0 : 1;
+  l_n_remain = ( ((i_xgemm_desc->n % l_n_chunks) == 0) || ((unsigned int)i_xgemm_desc->n <= l_n_max_block) ) ? 0 : 1;
 
   /* loop over blocks of n */
   libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
