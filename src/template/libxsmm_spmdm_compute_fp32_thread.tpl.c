@@ -54,7 +54,6 @@ int k_overall_start, k_overall_end, num_k;
 
 float *const scratch_C = (float *)(handle->base_ptr_scratch_B_scratch_C + tid*handle->memory_for_scratch_per_thread);
 float *const scratch_B = (float *)(handle->base_ptr_scratch_B_scratch_C + tid*handle->memory_for_scratch_per_thread + m_block_size*n_block_size*sizeof(float));
-SIMDTYPE_FP32 sum[2*num_regs];
 float* LIBXSMM_RESTRICT ptr_result;
 
 LIBXSMM_UNUSED(nthreads);
@@ -315,6 +314,7 @@ for (kb = 0; kb < k_blocks; kb++) {
     if (!last_block_n)
     {
       int64_t j = 0, j2 = 0;
+      SIMDTYPE_FP32 sum[2*num_regs];
       sum[0] = _MM_LOAD_FP32(result_m_index + 0*SIMD_WIDTH_FP32);
       sum[0+num_regs] = _MM_LOAD_FP32(result_m_index_2 + 0*SIMD_WIDTH_FP32);
       sum[1] = _MM_LOAD_FP32(result_m_index + 1*SIMD_WIDTH_FP32);
@@ -380,6 +380,7 @@ for (kb = 0; kb < k_blocks; kb++) {
     }
     else {
       int64_t j = 0, j2 = 0;
+      SIMDTYPE_FP32 sum[2*num_regs];
       for (n = 0; n < num_full_regs; n += 2) {
         sum[n] = _MM_SETZERO_FP32();
         sum[n+num_regs] = _MM_SETZERO_FP32();
@@ -459,6 +460,7 @@ for (kb = 0; kb < k_blocks; kb++) {
 
     if (!last_block_n) {
       int64_t j = 0;
+      SIMDTYPE_FP32 sum[2*num_regs];
       sum[0] = _MM_LOAD_FP32(result_m_index + 0*SIMD_WIDTH_FP32);
       sum[1] = _MM_LOAD_FP32(result_m_index + 1*SIMD_WIDTH_FP32);
       sum[2] = _MM_LOAD_FP32(result_m_index + 2*SIMD_WIDTH_FP32);
@@ -483,6 +485,7 @@ for (kb = 0; kb < k_blocks; kb++) {
       _MM_STORE_FP32(result_m_index + 5*SIMD_WIDTH_FP32, sum[5]);
     }
     else {
+      SIMDTYPE_FP32 sum[2*num_regs];
       int64_t j = 0;
       for (n = 0; n < num_full_regs; n += 2) {
         sum[n] = _MM_SETZERO_FP32();
