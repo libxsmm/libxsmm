@@ -36,6 +36,23 @@
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
+#ifdef GETTIMEOFDAY
+#include <sys/time.h>
+#else
+#include <time.h>
+#endif
+
+double wall_time () {
+#ifdef GETTIMEOFDAY
+  struct timeval t;
+  gettimeofday (&t, NULL);
+  return 1.*t.tv_sec + 1.e-6*t.tv_usec;
+#else
+  struct timespec t;
+  clock_gettime (CLOCK_MONOTONIC, &t);
+  return 1.*t.tv_sec + 1.e-9*t.tv_nsec;
+#endif
+}
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* note: later on, this leads to (correct but) different than expected norm-values */
@@ -50,8 +67,9 @@ int main(int argc, char* argv[])
   libxsmm_matcopy_descriptor desc;
   float *a, *b;
   int lda, ldb;
-  int i, j;
+  int i, j, iters;
   int error = 0;
+  double copy_time;
 
   printf("This is a tester for JIT matcopy kernels!\n");
   desc.m = atoi(argv[1]);
@@ -59,6 +77,7 @@ int main(int argc, char* argv[])
   desc.lda = atoi(argv[3]);
   desc.ldb = atoi(argv[4]);
   desc.unroll_level = atoi(argv[5]);
+  iters = atoi(argv[6]);
   desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
   desc.prefetch = 1;
   
@@ -79,6 +98,14 @@ int main(int argc, char* argv[])
   
   /* let's call */
   skernel(a, &lda, b, &ldb, &a[128]);
+
+  copy_time = -wall_time();
+
+  for (i=0; i<iters; i++) {
+    skernel(a, &lda, b, &ldb, &a[128]);
+  }
+  
+  copy_time += wall_time();
   
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
@@ -91,6 +118,7 @@ int main(int argc, char* argv[])
   
   if (error == 0) {
     printf("CORRECT copy!!!!\n");
+    printf("Time taken is\t%.5f seconds\n",copy_time);
   }
   
   return 0;
