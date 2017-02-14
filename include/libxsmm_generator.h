@@ -135,7 +135,8 @@ typedef struct libxsmm_matcopy_descriptor {
   unsigned int ldb;                     /* LDB */
   libxsmm_dnn_datatype datatype;        /* @TODO fix this */
   unsigned int prefetch;                /* @TODO fix this, non zero for prefetch */
-  unsigned int unroll_level;                /* @TODO fix this, non zero for prefetch */
+  unsigned int unroll_level;            /* Defines the level of unrolling in the copy */
+  unsigned int zero_source;             /* If set, then use zero matrix as source */
 } libxsmm_matcopy_descriptor;
 
 /** Structure referring to the generated code with some attached information. */

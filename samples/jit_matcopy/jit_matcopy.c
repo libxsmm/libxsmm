@@ -77,9 +77,11 @@ int main(int argc, char* argv[])
   desc.lda = atoi(argv[3]);
   desc.ldb = atoi(argv[4]);
   desc.unroll_level = atoi(argv[5]);
-  iters = atoi(argv[6]);
   desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
   desc.prefetch = 1;
+  desc.zero_source = atoi(argv[6]);
+  iters = atoi(argv[7]);
+
   
   a = (float *) malloc(desc.m * desc.lda * sizeof(float));
   b = (float *) malloc(desc.m * desc.ldb * sizeof(float));
