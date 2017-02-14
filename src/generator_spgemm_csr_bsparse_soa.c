@@ -168,8 +168,8 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
       l_found_mul = 0;
       /* check if we actually need to multiply */
       for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
-        if ( (i_column_idx[i_row_idx[l_k] + l_z] < (unsigned int)i_xgemm_desc->n) && 
-             (i_column_idx[i_row_idx[l_k] + l_z] >= l_n_processed)                && 
+        if ( (i_column_idx[i_row_idx[l_k] + l_z] < (unsigned int)i_xgemm_desc->n) &&
+             (i_column_idx[i_row_idx[l_k] + l_z] >= l_n_processed)                &&
              (i_column_idx[i_row_idx[l_k] + l_z] < l_n_limit) )                        {
           l_found_mul = 1;
         }
@@ -188,8 +188,8 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
       /* loop over element in the row of B and multiply*/
       for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
         /* check k such that we just use columns which actually need to be multiplied */
-        if ( (i_column_idx[i_row_idx[l_k] + l_z] < (unsigned int)i_xgemm_desc->n) && 
-             (i_column_idx[i_row_idx[l_k] + l_z] >= l_n_processed)                && 
+        if ( (i_column_idx[i_row_idx[l_k] + l_z] < (unsigned int)i_xgemm_desc->n) &&
+             (i_column_idx[i_row_idx[l_k] + l_z] >= l_n_processed)                &&
              (i_column_idx[i_row_idx[l_k] + l_z] < l_n_limit) )                        {
         libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                  l_micro_kernel_config.instruction_set,
