@@ -376,7 +376,7 @@ LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_des
 #if !defined(NDEBUG)
   libxsmm_code_pointer code; code.xmm = src;
   assert(0 != desc && 0 != code.const_pmm && 0 != dst_key && 0 != registry);
-  assert(0 == (LIBXSMM_CODE_STATIC & code.imm));
+  assert(0 == (LIBXSMM_CODE_STATIC & code.uimm));
 #endif
 
   if (0 != dst_entry->const_pmm) { /* collision? */
@@ -385,7 +385,7 @@ LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_des
     unsigned int i0, i, next;
 #if defined(LIBXSMM_HASH_COLLISION)
     /* mark current entry as a collision (this might be already the case) */
-    dst_entry->imm |= LIBXSMM_HASH_COLLISION;
+    dst_entry->uimm |= LIBXSMM_HASH_COLLISION;
 #endif
     /* start linearly searching for an available slot */
     for (i = (start != index) ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_CAPACITY_REGISTRY), i0 = i, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
@@ -402,7 +402,7 @@ LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_des
     dst_key->descriptor = *desc;
     dst_entry->xmm = src;
     /* mark current entry as static code (non-JIT) */
-    dst_entry->imm |= LIBXSMM_CODE_STATIC;
+    dst_entry->uimm |= LIBXSMM_CODE_STATIC;
   }
 
   internal_update_mmstatistic(desc, 1/*try*/, 0);
@@ -658,6 +658,14 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 }
 
 
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_init)(void);
+LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_init)(void)
+{
+  libxsmm_init();
+}
+
+
 LIBXSMM_API
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
@@ -715,11 +723,11 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
           else if (LIBXSMM_MNK_SIZE(internal_statistic_mnk, internal_statistic_mnk, internal_statistic_mnk) >= kernel_size) {
             bucket = 2;
           }
-          if (0 == (LIBXSMM_CODE_STATIC & code.imm)) { /* check for allocated/generated JIT-code */
+          if (0 == (LIBXSMM_CODE_STATIC & code.uimm)) { /* check for allocated/generated JIT-code */
             void* buffer = 0;
             size_t size = 0;
 #if defined(LIBXSMM_HASH_COLLISION)
-            code.imm &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
+            code.uimm &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
             if (EXIT_SUCCESS == libxsmm_malloc_info(code.const_pmm, &size, 0/*flags*/, &buffer)) {
               libxsmm_xfree(code.const_pmm);
@@ -741,6 +749,14 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
   }
   /* release scratch memory pool */
   libxsmm_release_scratch(0);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_finalize)(void);
+LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_finalize)(void)
+{
+  libxsmm_finalize();
 }
 
 
@@ -1224,7 +1240,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
       LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
     if (EXIT_SUCCESS == result) { /* check for success */
-      assert(0 != code->const_pmm && 0 == (LIBXSMM_CODE_STATIC & code->imm));
+      assert(0 != code->const_pmm && 0 == (LIBXSMM_CODE_STATIC & code->uimm));
       assert(0 != generated_code.generated_code/*sanity check*/);
       /* copy temporary buffer into the prepared executable buffer */
       memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
@@ -1288,9 +1304,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
     flux_entry = cache.code[cache_index];
     cache.hit = cache_index;
 #if !defined(NDEBUG)
-    if (0 == (LIBXSMM_CODE_STATIC & flux_entry.imm)) { /* JIT only */
+    if (0 == (LIBXSMM_CODE_STATIC & flux_entry.uimm)) { /* JIT only */
 # if defined(LIBXSMM_HASH_COLLISION)
-      flux_entry.imm &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
+      flux_entry.uimm &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 # endif
       refdesc = internal_get_gemm_descriptor(flux_entry.const_pmm);
     }
@@ -1313,7 +1329,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
             i0 = i; /* keep current position on record */
 #if defined(LIBXSMM_HASH_COLLISION)
             /* enter code generation, and collision fix-up */
-            if (0 == (LIBXSMM_HASH_COLLISION & flux_entry.imm)) {
+            if (0 == (LIBXSMM_HASH_COLLISION & flux_entry.uimm)) {
               assert(0 != flux_entry.const_pmm); /* collision */
               mode = 3;
             }
@@ -1352,8 +1368,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
                 libxsmm_code_pointer fix_entry;
                 fix_entry.pmm = LIBXSMM_ATOMIC_LOAD(&internal_registry[i0].pmm, LIBXSMM_ATOMIC_RELAXED);
                 assert(0 != fix_entry.const_pmm);
-                if (0 == (LIBXSMM_HASH_COLLISION & fix_entry.imm)) {
-                  fix_entry.imm |= LIBXSMM_HASH_COLLISION; /* mark current entry as collision */
+                if (0 == (LIBXSMM_HASH_COLLISION & fix_entry.uimm)) {
+                  fix_entry.uimm |= LIBXSMM_HASH_COLLISION; /* mark current entry as collision */
                   LIBXSMM_ATOMIC_STORE(&internal_registry[i0].pmm, fix_entry.pmm, LIBXSMM_ATOMIC_RELAXED);
                 }
               }
@@ -1402,9 +1418,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
   }
   assert(0 == flux_entry.const_pmm || 0 == refdesc || 0 == memcmp(refdesc, descriptor, LIBXSMM_GEMM_DESCRIPTOR_SIZE));
 #if defined(LIBXSMM_HASH_COLLISION)
-  flux_entry.imm &= ~(LIBXSMM_CODE_STATIC | LIBXSMM_HASH_COLLISION); /* clear non-JIT and collision flag */
+  flux_entry.uimm &= ~(LIBXSMM_CODE_STATIC | LIBXSMM_HASH_COLLISION); /* clear non-JIT and collision flag */
 #else
-  flux_entry.imm &= ~LIBXSMM_CODE_STATIC; /* clear non-JIT flag */
+  flux_entry.uimm &= ~LIBXSMM_CODE_STATIC; /* clear non-JIT flag */
 #endif
   return flux_entry.xmm;
 }
@@ -1424,11 +1440,11 @@ LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(libxsmm_registry_info* info
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
         libxsmm_code_pointer code = internal_registry[i];
         if (0 != code.const_pmm && EXIT_SUCCESS == result) {
-          if (0 == (LIBXSMM_CODE_STATIC & code.imm)) { /* check for allocated/generated JIT-code */
+          if (0 == (LIBXSMM_CODE_STATIC & code.uimm)) { /* check for allocated/generated JIT-code */
             size_t buffer_size = 0;
             void* buffer = 0;
 #if defined(LIBXSMM_HASH_COLLISION)
-            code.imm &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
+            code.uimm &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
             result = libxsmm_malloc_info(code.const_pmm, &buffer_size, 0/*flags*/, &buffer);
             if (EXIT_SUCCESS == result) {
@@ -1494,6 +1510,95 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
     internal_update_mmstatistic(descriptor, 1/*try*/, 0);
   }
   return result;
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* /*fn*/, const libxsmm_gemm_precision* /*precision*/,
+  const int* /*m*/, const int* /*n*/, const int* /*k*/, const int* /*lda*/, const int* /*ldb*/, const int* /*ldc*/,
+  const void* /*alpha*/, const void* /*beta*/, const int* /*flags*/, const int* /*prefetch*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn, const libxsmm_gemm_precision* precision,
+  const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
+  const void* alpha, const void* beta, const int* flags, const int* prefetch)
+{
+#if !defined(NDEBUG) /* this should not happen */
+  static int error_once = 0;
+  if (0 != fn && 0 != m && 0 != n && 0 != k)
+#endif
+  {
+    const libxsmm_gemm_precision gemm_precision = (0 != precision ? *precision : LIBXSMM_GEMM_FLAG_F64PREC);
+    switch (gemm_precision) {
+      case LIBXSMM_GEMM_FLAG_F64PREC: {
+        *fn = (intptr_t)libxsmm_dmmdispatch(*m, *n, *k, lda, ldb, ldc,
+          (const double*)alpha, (const double*)beta,
+          flags, prefetch);
+      } break;
+      case LIBXSMM_GEMM_FLAG_F32PREC: {
+        *fn = (intptr_t)libxsmm_smmdispatch(*m, *n, *k, lda, ldb, ldc,
+          (const float*)alpha, (const float*)beta,
+          flags, prefetch);
+      } break;
+#if !defined(NDEBUG) /* this should not happen */
+      default: {
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM: invalid precision requested for libxsmm_xmmdispatch!\n");
+        }
+        *fn = 0;
+      }
+#endif
+    }
+  }
+#if !defined(NDEBUG)
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: invalid M, N, or K passed into libxsmm_xmmdispatch!\n");
+    }
+    *fn = 0;
+  }
+#endif
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
+  const intptr_t* /*fn*/, const void* /*a*/, const void* /*b*/, void* /*c*/,
+  const void* /*pa*/, const void* /*pb*/, const void* /*pc*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
+  const intptr_t* fn, const void* a, const void* b, void* c,
+  const void* pa, const void* pb, const void* pc)
+{
+#if !defined(NDEBUG) /* this should not happen */
+  static int error_once = 0;
+  if (0 != fn && 0 != a && 0 != b && 0 != c)
+#endif
+  {
+#if !defined(NDEBUG) /* this should not happen */
+    if (0 != *fn)
+#endif
+    {
+      libxsmm_code_pointer code_pointer = { 0 };
+      code_pointer.imm = *fn;
+      code_pointer.vmm(a, b, c, pa, pb, pc);
+    }
+#if !defined(NDEBUG)
+    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: NULL-function passed into libxsmm_xmmcall!\n");
+    }
+#endif
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM: invalid arguments for libxsmm_xmmcall specified!\n");
+  }
+#endif
 }
 
 #if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__)
