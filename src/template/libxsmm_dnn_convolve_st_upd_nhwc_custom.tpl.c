@@ -26,17 +26,19 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Rajkishore Barik (Intel Corp.)
+/* Rajkishore Barik (Intel Corp.), Ankush Mandal (Intel Corp.)
 ******************************************************************************/
 
-int img, ofm1, ifm1, ofm1ifm1, ki, kj;
+int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__, ii_, ij_, kh, kw, ofm1ifm1, ki, kj;
+#if defined(LIBXSMM_WU_PER_THREAD_ALLOCATION) || defined(INPUT_PADDING)
+int imgifm1;
+#endif
 #if defined(LIBXSMM_WU_PER_THREAD_ALLOCATION)
 int i, j, ofm1ifm1img;
 #endif
 /* computing first logical thread */
 const int ltid = tid-start_thread;
 
-#if !defined(LIBXSMM_WU_PER_THREAD_ALLOCATION)
 /* number of tasks that could be run in parallel */
 const int work = handle->blocksifm*handle->blocksofm;
 /* compute chunck size */
@@ -44,7 +46,8 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-#else
+
+#if defined(LIBXSMM_WU_PER_THREAD_ALLOCATION)
 /* number of tasks that could be run in parallel */
 const int img_parallel_work = handle->blocksifm*handle->blocksofm*handle->desc.N;
 /* compute chunck size */
@@ -56,20 +59,19 @@ const int img_parallel_thr_end = ((ltid + 1) * img_parallel_chunksize < img_para
 
 /* avoid warning by using the xconv.sconv sequence to get some fn. ptr. to act as source of the type-cast */
 libxsmm_convfunction jitted_conv_wu_no_pf = (libxsmm_convfunction)handle->code_upd[0].xconv.sconv;
-#if 0
 libxsmm_convfunction jitted_conv_wu_pf = (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
 libxsmm_convfunction jitted_conv_wu_nooutput_pf = (libxsmm_convfunction)handle->code_upd[2].xconv.sconv;
-#endif
 
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
-#if !defined(LIBXSMM_WU_PER_THREAD_ALLOCATION)
 LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->grad_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
-#endif
 
 element_input_type *l_input;
 element_filter_type *l_wt;
 element_output_type* l_output;
+
+unsigned int stride_w = handle->desc.v;
+unsigned int stride_h = handle->desc.u;
 
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
 element_filter_type* remote_weight_ptr = 0;
@@ -86,9 +88,15 @@ const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * r
 const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
 #endif
 
+#ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
+LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, per_thread_weight, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+#else
+LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, weight, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+#endif
+
 #if defined(INPUT_PADDING)
 /* Define variables if padding is required */
-int iii, ij, oi, oj, ii, imgifm1;
+int iii, ij, oi, oj, ii;
 element_input_type (* __restrict input_ptr);
 element_input_type (*__restrict copy_ptr);
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
@@ -188,6 +196,91 @@ const int64_t zero_remainder_mask = (img_size % CHUNK_SIZE != 0) ? (1 << (img_si
 LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->reg_input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
 #endif
 
+unsigned int input_w, input_h;
+#if defined(INPUT_PADDING)
+input_w = padded_w;
+input_h = padded_h;
+#else
+input_w = handle->ifwp;
+input_h = handle->ifhp;
+#endif
+
+kh = handle->desc.R;
+kw = handle->desc.S;
+
+#define LIBXSMM_JITTED_CONV_WU_NO_PF_NHWC(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
+                                     weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
+                                     output, o_img, o_ofm1, o_oj, o_oi, o_ofm2) \
+jitted_conv_wu_no_pf(  \
+                       &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ij), (i_ii), (i_ifm1), (i_ifm2), input_h, input_w, handle->blocksifm, handle->ifmblock), \
+                       &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
+                       &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_oj), (o_oi), (o_ofm1), (o_ofm2), handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock), \
+                       NULL, \
+                       NULL, \
+                       NULL  \
+                    )
+
+#ifdef LIBXSMM_CONV_NO_PREFETCH
+#define LIBXSMM_JITTED_CONV_WU_PF_NHWC(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
+                                  weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
+                                  output, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
+                                  pf_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
+                                  pf_weight, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ifm2, pw_ofm2, \
+                                  pf_output, po_img, po_ofm1, po_oj, po_oi, po_ofm2) \
+jitted_conv_wu_no_pf(  \
+                       &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ij), (i_ii), (i_ifm1), (i_ifm2), input_h, input_w, handle->blocksifm, handle->ifmblock), \
+                       &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
+                       &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_oj), (o_oi), (o_ofm1), (o_ofm2), handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock), \
+                       NULL, \
+                       NULL, \
+                       NULL  \
+                    )
+#else
+#define LIBXSMM_JITTED_CONV_WU_PF_NHWC(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
+                                  weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
+                                  output, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
+                                  pf_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
+                                  pf_weight, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ifm2, pw_ofm2, \
+                                  pf_output, po_img, po_ofm1, po_oj, po_oi, po_ofm2) \
+jitted_conv_wu_pf(  \
+                    &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ij), (i_ii), (i_ifm1), (i_ifm2), input_h, input_w, handle->blocksifm, handle->ifmblock), \
+                    &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
+                    &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_oj), (o_oi), (o_ofm1), (o_ofm2), handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock), \
+                    &LIBXSMM_VLA_ACCESS(5, pf_input, (pi_img), (pi_ij), (pi_ii), (pi_ifm1), (pi_ifm2), input_h, input_w, handle->blocksifm, handle->ifmblock), \
+                    &LIBXSMM_VLA_ACCESS(6, pf_weight, (pw_ofm1), (pw_ifm1), (pw_kj), (pw_ki), (pw_ifm2), (pw_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
+                    &LIBXSMM_VLA_ACCESS(5, pf_output, (po_img), (po_oj), (po_oi), (po_ofm1), (po_ofm2), handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock) \
+                 )
+#endif
+
+#ifdef LIBXSMM_CONV_NO_PREFETCH
+#define LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
+                                           weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
+                                           output, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
+                                           pf_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
+                                           pf_weight, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ifm2, pw_ofm2) \
+jitted_conv_wu_no_pf(  \
+                       &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ij), (i_ii), (i_ifm1), (i_ifm2), input_h, input_w, handle->blocksifm, handle->ifmblock), \
+                       &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
+                       &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_oj), (o_oi), (o_ofm1), (o_ofm2), handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock), \
+                       NULL, \
+                       NULL, \
+                       NULL  \
+                    )
+#else
+#define LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
+                                           weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
+                                           output, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
+                                           pf_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
+                                           pf_weight, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ifm2, pw_ofm2) \
+jitted_conv_wu_nooutput_pf(  \
+                             &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ij), (i_ii), (i_ifm1), (i_ifm2), input_h, input_w, handle->blocksifm, handle->ifmblock), \
+                             &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
+                             &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_oj), (o_oi), (o_ofm1), (o_ofm2), handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock), \
+                             &LIBXSMM_VLA_ACCESS(5, pf_input, (pi_img), (pi_ij), (pi_ii), (pi_ifm1), (pi_ifm2), input_h, input_w, handle->blocksifm, handle->ifmblock), \
+                             &LIBXSMM_VLA_ACCESS(6, pf_weight, (pw_ofm1), (pw_ifm1), (pw_kj), (pw_ki), (pw_ifm2), (pw_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
+                             NULL \
+                          )
+#endif
 
 if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
@@ -198,9 +291,8 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #if defined(INPUT_PADDING)
   libxsmm_barrier_init(handle->barrier, ltid);
 
-  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-       libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
-       libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM     ) {
+  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) {
 
     /* Initialize in parallel scratch5 to zero */
     if (img_size % CHUNK_SIZE == 0) {
@@ -364,6 +456,267 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
 
+if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+     libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)
+{
+  num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
+  num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
+
+if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* special case for not enough parallelism */
+#ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
+      /* lazy barrier init */
+      if (handle->upd_use_external_reduce == 0) {
+        libxsmm_barrier_init(handle->barrier, ltid);
+      }
+#endif
+#ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
+      for (ofm1ifm1img = img_parallel_thr_begin; ofm1ifm1img < img_parallel_thr_end; ++ofm1ifm1img) {
+        ofm1 = ofm1ifm1img / (handle->blocksifm * handle->desc.N);
+        imgifm1 = ofm1ifm1img % (handle->blocksifm * handle->desc.N);
+        ifm1 = imgifm1 / handle->desc.N;
+        img = imgifm1 % handle->desc.N;
+        {
+#else
+      for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
+        ofm1 = ofm1ifm1 / handle->blocksifm;
+        ifm1 = ofm1ifm1 % handle->blocksifm;
+        for(img = 0; img < handle->desc.N; img++) 
+        {
+#endif
+          for (oi__=0; oi__<num_ofw_strips; ++oi__) {
+            for (oj__=0; oj__<num_ofh_strips; ++oj__) {
+              oi_=oi__*handle->upd_ofw_rb;
+              oj_=oj__*handle->upd_ofh_rb;
+              ii_ = oi_*stride_w;
+              ij_ = oj_*stride_h;
+              for(kj=0; kj < kh-1; ++kj) {
+                for(ki=0; ki < kw-1; ++ki) {
+                  /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ij_+kj][ii_+ki+1][ifm1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
+                  LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(
+                                                     input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                                     opt_weight_ptr, ofm1, ifm1, kj, ki, 0, 0,
+                                                     output, img, ofm1, oj_, oi_, 0,
+                                                     input, img, ifm1, ij_+kj, ii_+ki+1, 0,
+                                                     opt_weight_ptr, ofm1, ifm1, kj, ki+1, 0, 0
+                                                    );
+                }
+                /* kw-1 */
+                ki=kw-1;
+                /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ij_+kj+1][ii_+0][ifm1][0]), &(weight[ofm1][ifm1][kj+1][ki][0][0]), NULL);*/
+                LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(
+                                                   input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                                   opt_weight_ptr, ofm1, ifm1, kj, ki, 0, 0,
+                                                   output, img, ofm1, oj_, oi_, 0,
+                                                   input, img, ifm1, ij_+kj+1, ii_+0, 0,
+                                                   opt_weight_ptr, ofm1, ifm1, kj+1, 0, 0, 0
+                                                  );
+              }
+              kj = kh-1; 
+              for(ki=0; ki < kw-1; ++ki) {
+                /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ij_+kj][ii_+ki+1][ifm1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
+                LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(
+                                                   input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                                   opt_weight_ptr, ofm1, ifm1, kj, ki, 0, 0,
+                                                   output, img, ofm1, oj_, oi_, 0,
+                                                   input, img, ifm1, ij_+kj, ii_+ki+1, 0,
+                                                   opt_weight_ptr, ofm1, ifm1, kj, ki+1, 0, 0
+                                                  );
+              }
+              ki=kw-1;
+              if((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
+                 if ((img+1 == handle->desc.N) && (ifm1+1 == handle->blocksifm)) {  /* prefetch next ofm1 */
+                   /* 1 - prefetch for kj=0, ki=0; */
+                   /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[0][0][0][0][0]), &(weight[ofm1+1][0][0][0][0][0]), &(output[0][0][0][ofm1+1][0]));*/
+                   LIBXSMM_JITTED_CONV_WU_PF_NHWC(
+                                            input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                            opt_weight_ptr, ofm1, ifm1, kj, ki, 0, 0,
+                                            output, img, ofm1, oj_, oi_, 0,
+                                            input, 0, 0, 0, 0, 0,
+                                            opt_weight_ptr, ofm1+1, 0, 0, 0, 0, 0,
+                                            output, 0, ofm1+1, 0, 0, 0
+                                           );
+                 } 
+                 else {
+                   if (img+1 == handle->desc.N) {
+                     /* 1 - prefetch for kj=0, ki=0; */
+                     /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[0][0][0][ifm1+1][0]), &(weight[ofm1][ifm1+1][0][0][0][0]), &(output[0][0][0][ofm1][0]));*/
+                      LIBXSMM_JITTED_CONV_WU_PF_NHWC(
+                                                input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                                opt_weight_ptr, ofm1, ifm1, kj, ki, 0, 0,
+                                                output, img, ofm1, oj_, oi_, 0,
+                                                input, 0, ifm1+1, 0, 0, 0,
+                                                opt_weight_ptr, ofm1, ifm1+1, 0, 0, 0, 0,
+                                                output, 0, ofm1, 0, 0, 0
+                                               );
+                   }
+                   else {
+                      /* 1 - prefetch for kj=0, ki=0; */
+                      /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[img+1][0][0][ifm1][0]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img+1][0][0][ofm1][0]));*/
+                              LIBXSMM_JITTED_CONV_WU_PF_NHWC(
+                                                        input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                                        opt_weight_ptr, ofm1, ifm1, kj, ki, 0, 0,
+                                                        output, img, ofm1, oj_, oi_, 0,
+                                                        input, img+1, ifm1, 0, 0, 0,
+                                                        opt_weight_ptr, ofm1, ifm1, 0, 0, 0, 0,
+                                                        output, img+1, ofm1, 0, 0, 0
+                                                       );
+                   }
+                 }
+              } 
+              else if(oj__+1 == num_ofh_strips) {  /* end of oj_*/
+                /* 1 - prefetch for kj=0, ki=0; */
+                /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[img][0][((oi__+1)*handle->upd_ofw_rb)*stride_w][ifm1][0]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img][0][(oi__+1)*handle->upd_ofw_rb][ofm1][0]));*/
+                LIBXSMM_JITTED_CONV_WU_PF_NHWC(
+                                          input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                          opt_weight_ptr, ofm1, ifm1, kj, ki, 0, 0,
+                                          output, img, ofm1, oj_, oi_, 0,
+                                          input, img, ifm1, 0, ((oi__+1)*handle->upd_ofw_rb)*stride_w, 0,
+                                          opt_weight_ptr, ofm1, ifm1, 0, 0, 0, 0,
+                                          output, img, ofm1, 0, (oi__+1)*handle->upd_ofw_rb, 0
+                                         );
+              }
+              else { /* end of oj */
+                /* 1 - prefetch for kj=0, ki=0; */
+                /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[img][((oj__+1)*handle->upd_ofh_rb)*stride_h][ii_][ifm1][0]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img][(oj__+1)*handle->upd_ofh_rb][ii_][ofm1][0]));*/
+                LIBXSMM_JITTED_CONV_WU_PF_NHWC(
+                                          input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                          opt_weight_ptr, ofm1, ifm1, kj, ki, 0, 0,
+                                          output, img, ofm1, oj_, oi_, 0,
+                                          input, img, ifm1, ((oj__+1)*handle->upd_ofh_rb)*stride_h, ii_, 0,
+                                          opt_weight_ptr, ofm1, ifm1, 0, 0, 0, 0,
+                                          output, img, ofm1, (oj__+1)*handle->upd_ofh_rb, oi_, 0
+                                         );
+              } /* else end */
+            } /* ofh_strip loop */
+          } /* ofw_strip loop */
+        } /* img loop */
+      } /* ifm1, ofm1 loops */
+#ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
+      /* perform reduction */
+      /* TODO COMPLETE THIS USING ATOMIC INCREMENTS PLEASE */
+      if (handle->upd_use_external_reduce == 0) {
+        libxsmm_barrier_wait(handle->barrier, ltid);
+        for ( i = 0; i < handle->desc.threads; i++ ) {
+          remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
+          for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
+            weight_ptr[j] += remote_weight_ptr[j];
+          }
+        }
+      }
+#endif
+    } else { /* enough parallelism available */
+         for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
+           ofm1 = ofm1ifm1 / handle->blocksifm;
+           ifm1 = ofm1ifm1 % handle->blocksifm;
+           for(img = 0; img < handle->desc.N; ++img) {
+             for (oi__=0; oi__<num_ofw_strips; ++oi__) {
+               for (oj__=0; oj__<num_ofh_strips; ++oj__) {
+                 oi_=oi__*handle->upd_ofw_rb;
+                 oj_=oj__*handle->upd_ofh_rb;
+                 ii_ = oi_*stride_w;
+                 ij_ = oj_*stride_h;
+                 for(kj=0; kj < kh-1; ++kj) {
+                   for(ki=0; ki < kw-1; ++ki) {
+                     /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ij_+kj][ii_+ki+1][ifm1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
+                     LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(
+                                                        input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                                        weight, ofm1, ifm1, kj, ki, 0, 0,
+                                                        output, img, ofm1, oj_, oi_, 0,
+                                                        input, img, ifm1, ij_+kj, ii_+ki+1, 0,
+                                                        weight, ofm1, ifm1, kj, ki+1, 0, 0
+                                                       );
+                   }
+                   /* kw-1 */
+                   ki=kw-1;
+                   /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ij_+kj+1][ii_+0][ifm1][0]), &(weight[ofm1][ifm1][kj+1][ki][0][0]), NULL);*/
+                   LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(
+                                                      input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                                      weight, ofm1, ifm1, kj, ki, 0, 0,
+                                                      output, img, ofm1, oj_, oi_, 0,
+                                                      input, img, ifm1, ij_+kj+1, ii_+0, 0,
+                                                      weight, ofm1, ifm1, kj+1, 0, 0, 0
+                                                     );
+                 }
+                 kj = kh-1;
+                 for(ki=0; ki < kw-1; ++ki) {
+                   /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ij_+kj][ii_+ki+1][ifm1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
+                   LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(
+                                                      input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                                      weight, ofm1, ifm1, kj, ki, 0, 0,
+                                                      output, img, ofm1, oj_, oi_, 0,
+                                                      input, img, ifm1, ij_+kj, ii_+ki+1, 0,
+                                                      weight, ofm1, ifm1, kj, ki+1, 0, 0
+                                                     );
+                 }
+                 ki=kw-1;
+                 if((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
+                   if ((img+1 == handle->desc.N) && (ifm1+1 == handle->blocksifm)) {  /* prefetch next ofm1 */
+                     /* 1 - prefetch for kj=0, ki=0; */
+                     /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[0][0][0][0][0]), &(weight[ofm1+1][0][0][0][0][0]), &(output[0][0][0][ofm1+1][0]));*/
+                     LIBXSMM_JITTED_CONV_WU_PF_NHWC(
+                                               input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                               weight, ofm1, ifm1, kj, ki, 0, 0,
+                                               output, img, ofm1, oj_, oi_, 0,
+                                               input, 0, 0, 0, 0, 0,
+                                               weight, ofm1+1, 0, 0, 0, 0, 0,
+                                               output, 0, ofm1+1, 0, 0, 0
+                                              );
+                   } else {
+                     if (img+1 == handle->desc.N) {
+                       /* 1 - prefetch for kj=0, ki=0; */
+                       /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[0][0][0][ifm1+1][0]), &(weight[ofm1][ifm1+1][0][0][0][0]), &(output[0][0][0][ofm1][0]));*/
+                       LIBXSMM_JITTED_CONV_WU_PF_NHWC(
+                                                 input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                                 weight, ofm1, ifm1, kj, ki, 0, 0,
+                                                 output, img, ofm1, oj_, oi_, 0,
+                                                 input, 0, ifm1+1, 0, 0, 0,
+                                                 weight, ofm1, ifm1+1, 0, 0, 0, 0,
+                                                 output, 0, ofm1, 0, 0, 0
+                                                );
+                     } else {
+                       /* 1 - prefetch for kj=0, ki=0; */
+                       /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[img+1][0][0][ifm1][0]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img+1][0][0][ofm1][0]));*/
+                       LIBXSMM_JITTED_CONV_WU_PF_NHWC(
+                                                 input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                                 weight, ofm1, ifm1, kj, ki, 0, 0,
+                                                 output, img, ofm1, oj_, oi_, 0,
+                                                 input, img+1, ifm1, 0, 0, 0,
+                                                 weight, ofm1, ifm1, 0, 0, 0, 0,
+                                                 output, img+1, ofm1, 0, 0, 0
+                                                );
+                     }
+                   }
+                 } else if(oj__+1 == num_ofh_strips) {  /* end of oj_*/
+                   /* 1 - prefetch for kj=0, ki=0; */
+                   /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[img][0][((oi__+1)*handle->upd_ofw_rb)*stride_w][ifm1][0]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img][0][(oi__+1)*handle->upd_ofw_rb][ofm1][0]));*/
+                   LIBXSMM_JITTED_CONV_WU_PF_NHWC(
+                                             input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                             weight, ofm1, ifm1, kj, ki, 0, 0,
+                                             output, img, ofm1, oj_, oi_, 0,
+                                             input, img, ifm1, 0, ((oi__+1)*handle->upd_ofw_rb)*stride_w, 0,
+                                             weight, ofm1, ifm1, 0, 0, 0, 0,
+                                             output, img, ofm1, 0, (oi__+1)*handle->upd_ofw_rb, 0
+                                            );
+                 } else { /* end of oi */
+                   /* 1 - prefetch for kj=0, ki=0; */
+                   /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[img][((oj__+1)*handle->upd_ofh_rb)*stride_h][ii_][ifm1][0]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img][(oj__+1)*handle->upd_ofh_rb][ii_][ofm1][0]));*/
+                   LIBXSMM_JITTED_CONV_WU_PF_NHWC(
+                                             input, img, ifm1, ij_+kj, ii_+ki, 0,
+                                             weight, ofm1, ifm1, kj, ki, 0, 0,
+                                             output, img, ofm1, oj_, oi_, 0,
+                                             input, img, ifm1, ((oj__+1)*handle->upd_ofh_rb)*stride_h, ii_, 0,
+                                             weight, ofm1, ifm1, 0, 0, 0, 0,
+                                             output, img, ofm1, (oj__+1)*handle->upd_ofh_rb, oi_, 0
+                                            );
+                 } /* else end */
+               } /* ofh_stip*/
+             } /* ofw_strip */
+           } /* img loop */
+         } /* ifm1, ofm1 loop */
+    } /*if enough parallelism end*/
+} else if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ||
+            libxsmm_target_archid == LIBXSMM_X86_AVX2 ){
+
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
   for (i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
     per_thread_weight_ptr[i] = (element_filter_type)0;
@@ -420,6 +773,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     }
   }
 #endif
+} /* end of LIBXSMM_X86_AVX512_KNM || LIBXSMM_X86_AVX2 */
 /* should never happen, this is just an additional check */
 } else {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
