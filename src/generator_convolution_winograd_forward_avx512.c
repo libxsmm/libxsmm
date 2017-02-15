@@ -323,7 +323,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                                                           l_micro_kernel_config.vector_name,
                                                           (i_conv_desc->vratio - wreg + tv)*4,
                                                           reg );
-              } else {
+              } else {					       
                 libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                          l_micro_kernel_config.instruction_set,
                                                          l_micro_kernel_config.vmul_instruction,
@@ -392,7 +392,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                                                           l_micro_kernel_config.vector_name,
                                                           (i_conv_desc->vratio - wreg + tv)*4,
                                                           reg );
-              } else {
+              } else {					       
                 libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                          l_micro_kernel_config.instruction_set,
                                                          l_micro_kernel_config.vmul_instruction,
