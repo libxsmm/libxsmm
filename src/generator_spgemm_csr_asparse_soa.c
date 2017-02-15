@@ -190,6 +190,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop_avx512( libxsmm_generated_c
   unsigned int l_b_total_offset;
 
   LIBXSMM_UNUSED(i_values);
+  LIBXSMM_UNUSED(i_arch);
 
   /* do sparse times dense soa multiplication */
   for ( l_m = 0; l_m < i_gen_m_trips; l_m++ ) {
