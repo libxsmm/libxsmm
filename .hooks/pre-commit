@@ -33,8 +33,18 @@ if [ "" != "${GIT}" ]; then
         # determine the line number of the change
         MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^@@ -..* +\([0-9][0-9]*\),..*$/\1/p" 2> /dev/null)
         if [ "" != "${MATCH}" ]; then LOCATION=":${MATCH}"; fi
+        # check against banned characters
+        if [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*[${BANNED_CHARS}]..*$/p" 2> /dev/null)" ]; then
+          # check if problem is with a permitted file type
+          for PATTERN in ${PATTERNS}; do
+            MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2> /dev/null)
+            if [ "" != "${MATCH}" ]; then # print an error message and exit
+              >&2 ${ECHO} "Error: ${FILENAME}${LOCATION} contains banned character(s)!"
+              exit 1
+            fi
+          done
         # check against trailing whitespace(s)
-        if [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*\s\s*$/p" 2> /dev/null)" ]; then
+        elif [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*\s\s*$/p" 2> /dev/null)" ]; then
           # check if problem is with a permitted file type
           for PATTERN in ${PATTERNS}; do
             MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2> /dev/null)
@@ -42,16 +52,6 @@ if [ "" != "${GIT}" ]; then
               >&2 ${ECHO} "Error: ${FILENAME}${LOCATION} has trailing whitespace(s)!"
               #exit 1
               break
-            fi
-          done
-        # check against banned characters
-        elif [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+..*[${BANNED_CHARS}]..*$/p" 2> /dev/null)" ]; then
-          # check if problem is with a permitted file type
-          for PATTERN in ${PATTERNS}; do
-            MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2> /dev/null)
-            if [ "" != "${MATCH}" ]; then # print an error message and exit
-              >&2 ${ECHO} "Error: ${LOCATION}${LOCATION} contains banned character(s)!"
-              exit 1
             fi
           done
         fi
