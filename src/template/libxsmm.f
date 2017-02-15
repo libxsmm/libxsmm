@@ -32,7 +32,7 @@
       MODULE LIBXSMM
         USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
      &    C_FLOAT, C_DOUBLE, C_CHAR,  C_INT, C_LONG_LONG,               &
-     &    C_INTPTR_T, C_F_POINTER, C_F_PROCPOINTER, C_LOC,              &
+     &    C_F_POINTER, C_F_PROCPOINTER, C_LOC,                          &
      &    C_PTR, C_NULL_PTR, C_FUNPTR
         IMPLICIT NONE
 
@@ -86,12 +86,6 @@
      &    LIBXSMM_GEMM_FLAG_TRANS_B = 2,                                &
      &    LIBXSMM_GEMM_FLAG_ALIGN_A = 4,                                &
      &    LIBXSMM_GEMM_FLAG_ALIGN_C = 8
-
-        ! Flag which denotes the value type (for weak-typed interface
-        ! functions such as libxsmm_xmmdispatch).
-        INTEGER(C_INT), PARAMETER ::                                    &
-     &    LIBXSMM_GEMM_FLAG_F64PREC = 0,                                &
-     &    LIBXSMM_GEMM_FLAG_F32PREC = 16
 
         ! Enumeration of the available prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
@@ -471,55 +465,6 @@
           fn => tmp
         END FUNCTION
 
-        ! Type-generic (unsafe) variant of libxsmm_*mmdispatch,
-        ! which is also suited for FORTRAN 77 when relying on an
-        ! own function prototype (use an INTEGER kind which can
-        ! hold the size of a (PROCEDURE-)pointer i.e., 64-bit).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch
-        SUBROUTINE libxsmm_xmmdispatch(fn, precision,                   &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-          INTEGER(C_INTPTR_T), INTENT(OUT) :: fn            ! INTEGER(8)
-          INTEGER(C_INT), INTENT(IN) :: precision, m, n, k  ! INTEGER(4)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda       ! INTEGER(4)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldb       ! INTEGER(4)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldc       ! INTEGER(4)
-          TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: alpha ! REAL(4|8)
-          TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: beta  ! REAL(4|8)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags     ! INTEGER(4)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: prefetch  ! INTEGER(4)
-          INTERFACE
-            SUBROUTINE internal_xmmdispatch(fn, precision,              &
-     &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
-     &      BIND(C, NAME="libxsmm_xmmdispatch_")
-              IMPORT :: C_INTPTR_T, C_INT, C_PTR
-              INTEGER(C_INTPTR_T), INTENT(OUT) :: fn
-              INTEGER(C_INT), INTENT(IN) :: precision, m, n, k
-              INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
-              TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
-              INTEGER(C_INT), INTENT(IN) :: flags, prefetch
-            END SUBROUTINE
-          END INTERFACE
-          CALL internal_xmmdispatch(fn, precision, m, n, k,             &
-     &      lda, ldb, ldc, alpha, beta, flags, prefetch)
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall
-        SUBROUTINE libxsmm_xmmcall(fn, a, b, c, pa, pb, pc)
-          INTEGER(C_INTPTR_T), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
-          TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: pa, pb, pc
-          INTERFACE
-            SUBROUTINE internal_xmmcall(fn, a, b, c, pa, pb, pc)        &
-     &      BIND(C, NAME="libxsmm_xmmcall_")
-              IMPORT :: C_PTR, C_INTPTR_T
-              INTEGER(C_INTPTR_T), INTENT(IN) :: fn
-              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
-              TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
-            END SUBROUTINE
-          END INTERFACE
-          CALL internal_xmmcall(fn, a, b, c, pa, pb, pc)
-        END SUBROUTINE
-
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_smmfunction
         TYPE(LIBXSMM_SMMFUNCTION) FUNCTION construct_smmfunction(       &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
@@ -527,10 +472,10 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_mmdispatch
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: sdispatch
           INTEGER(C_INT) :: oprefetch
           INTERFACE
-            FUNCTION internal_mmdispatch(                               &
+            PURE FUNCTION sdispatch(                                    &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
      &      BIND(C, NAME="libxsmm_smmdispatch")
               IMPORT :: C_FUNPTR, C_INT, C_FLOAT
@@ -538,7 +483,7 @@
               INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
               REAL(C_FLOAT), INTENT(IN) :: alpha, beta
               INTEGER(C_INT), INTENT(IN) :: flags, prefetch
-              TYPE(C_FUNPTR) :: internal_mmdispatch
+              TYPE(C_FUNPTR) :: sdispatch
             END FUNCTION
           END INTERFACE
           IF (.NOT.PRESENT(prefetch)) THEN
@@ -548,11 +493,11 @@
           END IF
           IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
             construct_smmfunction = LIBXSMM_SMMFUNCTION(                &
-     &        construct_fn3(internal_mmdispatch(m, n, k, lda, ldb, ldc, &
+     &        construct_fn3(sdispatch(m, n, k, lda, ldb, ldc,           &
      &          alpha, beta, flags, prefetch)), NULL())
           ELSE
-            construct_smmfunction = LIBXSMM_SMMFUNCTION(NULL(),         &
-     &        construct_fn6(internal_mmdispatch(m, n, k, lda, ldb, ldc, &
+            construct_smmfunction = LIBXSMM_SMMFUNCTION(                &
+     &        NULL(), construct_fn6(sdispatch(m, n, k, lda, ldb, ldc,   &
      &          alpha, beta, flags, prefetch)))
           END IF
         END FUNCTION
@@ -564,10 +509,10 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_mmdispatch
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: ddispatch
           INTEGER(C_INT) :: oprefetch
           INTERFACE
-            FUNCTION internal_mmdispatch(                               &
+            PURE FUNCTION ddispatch(                                    &
      &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
      &      BIND(C, NAME="libxsmm_dmmdispatch")
               IMPORT :: C_FUNPTR, C_INT, C_DOUBLE
@@ -575,7 +520,7 @@
               INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
               REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
               INTEGER(C_INT), INTENT(IN) :: flags, prefetch
-              TYPE(C_FUNPTR) :: internal_mmdispatch
+              TYPE(C_FUNPTR) :: ddispatch
             END FUNCTION
           END INTERFACE
           IF (.NOT.PRESENT(prefetch)) THEN
@@ -585,11 +530,11 @@
           END IF
           IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
             construct_dmmfunction = LIBXSMM_DMMFUNCTION(                &
-     &        construct_fn3(internal_mmdispatch(m, n, k, lda, ldb, ldc, &
+     &        construct_fn3(ddispatch(m, n, k, lda, ldb, ldc,           &
      &          alpha, beta, flags, prefetch)), NULL())
           ELSE
-            construct_dmmfunction = LIBXSMM_DMMFUNCTION(NULL(),         &
-     &        construct_fn6(internal_mmdispatch(m, n, k, lda, ldb, ldc, &
+            construct_dmmfunction = LIBXSMM_DMMFUNCTION(                &
+     &        NULL(), construct_fn6(ddispatch(m, n, k, lda, ldb, ldc,   &
      &          alpha, beta, flags, prefetch)))
           END IF
         END FUNCTION
@@ -841,9 +786,9 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_blas_gemm
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
-            SUBROUTINE internal_blas_gemm(transa, transb, m, n, k,      &
+            SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_sgemm")
               IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_FLOAT
@@ -855,7 +800,7 @@
               REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
             END SUBROUTINE
           END INTERFACE
-          CALL internal_blas_gemm(transa, transb, m, n, k,              &
+          CALL internal_gemm(transa, transb, m, n, k,                   &
      &      alpha, a, lda, b, ldb, beta, c, ldc)
         END SUBROUTINE
 
@@ -870,9 +815,9 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_blas_gemm
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
-            SUBROUTINE internal_blas_gemm(transa, transb, m, n, k,      &
+            SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_dgemm")
               IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_DOUBLE
@@ -884,7 +829,7 @@
               REAL(C_DOUBLE), INTENT(INOUT) :: c(ldc,*)
             END SUBROUTINE
           END INTERFACE
-          CALL internal_blas_gemm(transa, transb, m, n, k,              &
+          CALL internal_gemm(transa, transb, m, n, k,                   &
      &      alpha, a, lda, b, ldb, beta, c, ldc)
         END SUBROUTINE
 

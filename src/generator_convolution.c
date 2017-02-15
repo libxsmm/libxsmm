@@ -149,8 +149,8 @@ void libxsmm_generator_convolution_weight_update_kernel( libxsmm_generated_code*
     if ( (strcmp(i_arch, "knl") == 0) ||
          (strcmp(i_arch, "knm") == 0) ||
          (strcmp(i_arch, "skx") == 0) ) {
-      if ( ((i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0) ||
-           ((i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0) ) {
+      if ( 0/*((i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0) ||*/
+           /*((i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0)*/ ) {
         libxsmm_generator_convolution_weight_update_avx2_kernel( io_generated_code, i_conv_desc, i_arch );
       } else {
         libxsmm_generator_convolution_weight_update_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
