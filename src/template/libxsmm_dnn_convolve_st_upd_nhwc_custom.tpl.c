@@ -480,8 +480,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
       for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
         ofm1 = ofm1ifm1 / handle->blocksifm;
         ifm1 = ofm1ifm1 % handle->blocksifm;
-        for(img = 0; img < handle->desc.N; img++) 
-        {
+        for (img = 0; img < handle->desc.N; img++) {
 #endif
           for (oi__=0; oi__<num_ofw_strips; ++oi__) {
             for (oj__=0; oj__<num_ofh_strips; ++oj__) {
@@ -511,7 +510,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
                                                    opt_weight_ptr, ofm1, ifm1, kj+1, 0, 0, 0
                                                   );
               }
-              kj = kh-1; 
+              kj = kh-1;
               for(ki=0; ki < kw-1; ++ki) {
                 /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ij_+kj][ii_+ki+1][ifm1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
                 LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(
@@ -535,7 +534,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
                                             opt_weight_ptr, ofm1+1, 0, 0, 0, 0, 0,
                                             output, 0, ofm1+1, 0, 0, 0
                                            );
-                 } 
+                 }
                  else {
                    if (img+1 == handle->desc.N) {
                      /* 1 - prefetch for kj=0, ki=0; */
@@ -562,7 +561,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
                                                        );
                    }
                  }
-              } 
+              }
               else if(oj__+1 == num_ofh_strips) {  /* end of oj_*/
                 /* 1 - prefetch for kj=0, ki=0; */
                 /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[img][0][((oi__+1)*handle->upd_ofw_rb)*stride_w][ifm1][0]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img][0][(oi__+1)*handle->upd_ofw_rb][ofm1][0]));*/

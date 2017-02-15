@@ -181,13 +181,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
 
     /* RB: updated to reflect the scenario that ifm=3 */
-    
+
 #if 0
     if (handle->desc.C < 16) {
       handle->ifmblock = 1;
     }
 #endif
-   
+
     /* Check if padded needs to be applied in the input and allocate appropriate buffers */
     if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && (handle->desc.pad_h > 0) && (handle->desc.pad_w > 0)) {
       handle->padding_flag = 1;

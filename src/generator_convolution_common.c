@@ -659,7 +659,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
   const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - ( i_conv_desc->ifm_block * l_reg_per_block);
   /* register blocking counter  */
   unsigned int reg_count = 0;
-  
+
   unsigned int l_j, l_k;
   /* choosing offset according to format */
   /* for filter in custom format it's vector length */

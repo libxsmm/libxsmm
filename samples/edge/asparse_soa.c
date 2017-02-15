@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
   char* l_csr_file = argv[3];
 
   REALTYPE* l_a_de = (REALTYPE*)_mm_malloc(N_QUANTITIES * N_QUANTITIES * sizeof(REALTYPE), 64);
-  REALTYPE* l_a_sp; 
+  REALTYPE* l_a_sp;
   REALTYPE* l_b = (REALTYPE*)_mm_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS* sizeof(REALTYPE), 64);
   unsigned int* l_rowptr;
   unsigned int* l_colidx;
@@ -58,10 +58,10 @@ int main(int argc, char* argv[]) {
   unsigned int l_jj;
   unsigned int l_n;
 
-  REALTYPE (*l_p_b)     [N_ELEMENT_MODES][N_CRUNS] = (REALTYPE (*)[N_ELEMENT_MODES][N_CRUNS])l_b; 
-  REALTYPE (*l_p_c)     [N_ELEMENT_MODES][N_CRUNS] = (REALTYPE (*)[N_ELEMENT_MODES][N_CRUNS])l_c; 
-  REALTYPE (*l_p_c_asm) [N_ELEMENT_MODES][N_CRUNS] = (REALTYPE (*)[N_ELEMENT_MODES][N_CRUNS])l_c_asm; 
-  REALTYPE (*l_p_c_gold)[N_ELEMENT_MODES][N_CRUNS] = (REALTYPE (*)[N_ELEMENT_MODES][N_CRUNS])l_c_gold; 
+  REALTYPE (*l_p_b)     [N_ELEMENT_MODES][N_CRUNS] = (REALTYPE (*)[N_ELEMENT_MODES][N_CRUNS])l_b;
+  REALTYPE (*l_p_c)     [N_ELEMENT_MODES][N_CRUNS] = (REALTYPE (*)[N_ELEMENT_MODES][N_CRUNS])l_c;
+  REALTYPE (*l_p_c_asm) [N_ELEMENT_MODES][N_CRUNS] = (REALTYPE (*)[N_ELEMENT_MODES][N_CRUNS])l_c_asm;
+  REALTYPE (*l_p_c_gold)[N_ELEMENT_MODES][N_CRUNS] = (REALTYPE (*)[N_ELEMENT_MODES][N_CRUNS])l_c_gold;
 
   struct timeval l_start, l_end;
   double l_total;

@@ -102,7 +102,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
   l_conv_kernel_config.alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
   l_conv_kernel_config.vector_name = 'z';
 
-  
+
   /* calculate leading dimension depending on format */
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
     l_conv_kernel_config.l_ld_ifm_act = i_conv_desc->ifm_block;
@@ -112,7 +112,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
     l_conv_kernel_config.l_ld_ifm_act = i_conv_desc->ifm_block * i_conv_desc->blocks_ifm;
     l_conv_kernel_config.l_ld_ofm_act = i_conv_desc->ofm_block * i_conv_desc->blocks_ofm;
   }
-  
+
   /* check if we have full vectors */
   if ( i_conv_desc->ofm_block % l_conv_kernel_config.vector_length_out != 0 ) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
@@ -375,7 +375,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
   unsigned int unroll_factor = (i_conv_desc->ifm_block == 1) ? i_conv_desc->kw : i_conv_desc->ifm_block;
 
   LIBXSMM_UNUSED(ofh_trip_counter);
-  
+
 
   /* apply k blocking */
   for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb ; l_k_1++ ) {
