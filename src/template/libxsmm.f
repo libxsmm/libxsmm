@@ -483,8 +483,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda       ! INTEGER(4)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldb       ! INTEGER(4)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldc       ! INTEGER(4)
-          TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: alpha ! REAL(4|8)
-          TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: beta  ! REAL(4|8)
+          TYPE(C_PTR), INTENT(IN), OPTIONAL :: alpha, beta  ! REAL(4|8)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags     ! INTEGER(4)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: prefetch  ! INTEGER(4)
           INTERFACE
@@ -507,7 +506,7 @@
         SUBROUTINE libxsmm_xmmcall(fn, a, b, c, pa, pb, pc)
           INTEGER(C_INTPTR_T), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
-          TYPE(C_PTR), INTENT(IN), VALUE, OPTIONAL :: pa, pb, pc
+          TYPE(C_PTR), INTENT(IN), OPTIONAL :: pa, pb, pc
           INTERFACE
             SUBROUTINE internal_xmmcall(fn, a, b, c, pa, pb, pc)        &
      &      BIND(C, NAME="libxsmm_xmmcall_")
