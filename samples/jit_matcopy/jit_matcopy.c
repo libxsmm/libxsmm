@@ -90,6 +90,9 @@ int main(int argc, char* argv[])
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
       a[j+desc.lda*i] = 1.0 * rand();
+      if (desc.zero_source) {
+        b[j+desc.ldb*i] = 1.0 * rand();
+      }
     }
   }
   
@@ -111,7 +114,13 @@ int main(int argc, char* argv[])
   
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
-      if ( (a[j+desc.lda*i] - b[j+desc.ldb*i]) > 0.000000001 ) {
+      if (desc.zero_source) {
+        if (b[j+desc.ldb*i] > 0.00000000) {
+          printf("ERROR!!!\n");
+          error = 1;
+        }
+      }
+      else if ( (a[j+desc.lda*i] - b[j+desc.ldb*i]) > 0.000000001 ) {
         printf("ERROR!!!\n");
         error = 1;
       }
