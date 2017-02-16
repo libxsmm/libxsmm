@@ -150,7 +150,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   
   /* FIXME: Select variants of vmove instruction based on architecture and datatype */
   l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
-  l_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VXORPS;
+  l_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
   l_kernel_config.alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
   l_kernel_config.alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;
   l_kernel_config.alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
