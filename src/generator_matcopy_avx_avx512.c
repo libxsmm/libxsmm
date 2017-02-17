@@ -173,7 +173,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                                l_gp_reg_mapping.gp_reg_b_pf, i_arch );
   
   /* In case we should do masked load/store and we have AVX512 arch, precompute the mask */
-  if (remaining && (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC ||  i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM || i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE)) {
+  if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_MIC ||  l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM || l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE)) {
     libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask(io_generated_code,
                                                                 &l_gp_reg_mapping,
                                                                 &l_kernel_config,
@@ -190,6 +190,16 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                              0,
                                              0,
                                              0);
+    /* In case of AVX/AVX2 and if we have remaining, set also scalar register to zero */
+    if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX || l_kernel_config.instruction_set = LIBXSMM_X86_AVX2)) {
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                              l_kernel_config.instruction_set,
+                                              l_kernel_config.vxor_instruction,
+                                              'x',
+                                              0,
+                                              0,
+                                              0);
+    }
   }
   
   /* open m loop */
@@ -300,7 +310,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   }
   
   /* Add load/store with mask if there is remaining and we have AVX512 arch */
-  if (remaining && (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC ||  i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM || i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE)) {
+  if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_MIC ||  l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM || l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE)) {
     if (i_matcopy_desc->zero_source == 0) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                        l_kernel_config.instruction_set,
@@ -327,7 +337,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                      remaining_unrolled * l_kernel_config.vector_length * l_kernel_config.datatype_size,
                                      l_kernel_config.vector_name, 0,
                                      1, 1 );
-  } else if (remaining) {
+  } else if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX || l_kernel_config.instruction_set = LIBXSMM_X86_AVX2)) {
     /* Use scalar moves in case of remaining and AVX/AVX2 arch */
     for (i=0; i<remaining; i++) {
       if (i_matcopy_desc->zero_source == 0) {
