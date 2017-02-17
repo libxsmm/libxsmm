@@ -1557,7 +1557,6 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn, c
     {
       fprintf(stderr, "LIBXSMM: invalid M, N, or K passed into libxsmm_xmmdispatch!\n");
     }
-    *fn = 0;
   }
 #endif
 }
@@ -1667,25 +1666,24 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm
 LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const float* values)
 {
+  unsigned int n = row_ptr[descriptor->m], i;
+  double *const d_values = (double*)malloc(n * sizeof(double));
   libxsmm_code_pointer code = { 0 };
   libxsmm_csr_reg_descriptor sreg;
   libxsmm_build_request request;
-  double* d_values;
-  unsigned int i;
   LIBXSMM_INIT
-  /* we need to copy the values into a double precision buffer */
-  d_values = (double*)malloc(row_ptr[descriptor->m]*sizeof(double));
-  for ( i = 0; i < row_ptr[descriptor->m]; i++) {
-    d_values[i] = (double)values[i];
+  if (0 != d_values) {
+    /* we need to copy the values into a double precision buffer */
+    for (i = 0; i < n; ++i) d_values[i] = (double)values[i];
+    sreg.gemm = descriptor;
+    sreg.row_ptr = row_ptr;
+    sreg.column_idx = column_idx;
+    sreg.values = d_values;
+    request.descriptor.sreg = &sreg;
+    request.kind = LIBXSMM_BUILD_KIND_SREG;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+    free(d_values);
   }
-  sreg.gemm = descriptor;
-  sreg.row_ptr = row_ptr;
-  sreg.column_idx = column_idx;
-  sreg.values = d_values;
-  request.descriptor.sreg = &sreg;
-  request.kind = LIBXSMM_BUILD_KIND_SREG;
-  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-  free(d_values);
   return code.xmm.smm;
 }
 
