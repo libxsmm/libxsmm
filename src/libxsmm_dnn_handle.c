@@ -343,16 +343,22 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
         descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;
         matcopy_descriptor.m = handle->ifhp;
-        matcopy_descriptor.n = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
-        matcopy_descriptor.lda = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
-        matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock * handle->fm_lp_block;
+        if (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) {
+          matcopy_descriptor.n = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.lda = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock * handle->fm_lp_block;
+        } else {
+          matcopy_descriptor.n = handle->ifwp * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.lda = handle->ifwp * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
+        }
         matcopy_descriptor.unroll_level = 2;
         matcopy_descriptor.datatype = handle->datatype;
         matcopy_descriptor.prefetch = 1;
         matcopy_descriptor.zero_source = 0;
       } else {
-      descriptor.ifh_padded = handle->ifhp;
-      descriptor.ifw_padded = handle->ifwp;
+        descriptor.ifh_padded = handle->ifhp;
+        descriptor.ifw_padded = handle->ifwp;
       }
       descriptor.kh = handle->desc.R;
       descriptor.kw = handle->desc.S;
@@ -414,8 +420,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
         descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;
       } else {
-      descriptor.ifh_padded = handle->ifhp;
-      descriptor.ifw_padded = handle->ifwp;
+        descriptor.ifh_padded = handle->ifhp;
+        descriptor.ifw_padded = handle->ifwp;
       }
       descriptor.kh = handle->desc.R;
       descriptor.kw = handle->desc.S;

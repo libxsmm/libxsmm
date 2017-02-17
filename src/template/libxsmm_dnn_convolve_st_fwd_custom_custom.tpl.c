@@ -354,4 +354,3 @@ if (handle->datatype != handle->datatype_itm) {
     status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
   }
 }
-
