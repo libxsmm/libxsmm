@@ -92,23 +92,28 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     l_kernel_config.instruction_set = LIBXSMM_X86_AVX;
     l_kernel_config.vector_reg_count = 16;
     l_kernel_config.vector_name = 'y';
+    l_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VXORPS;
   } else if ( strcmp( i_arch, "hsw" ) == 0 ) {
     l_kernel_config.instruction_set = LIBXSMM_X86_AVX2;
     l_kernel_config.vector_reg_count = 16;
     l_kernel_config.vector_name = 'y';
+    l_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VXORPS;
   } else if ( strcmp( i_arch, "skx" ) == 0 ) {
     l_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE;
     l_kernel_config.vector_reg_count = 32;
     l_kernel_config.vector_name = 'z';
+    l_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
   } else if ( strcmp( i_arch, "knl" ) == 0 ) {
     /* For now make the code work for KNL */
     l_kernel_config.instruction_set = LIBXSMM_X86_AVX512_MIC;
     l_kernel_config.vector_reg_count = 32;
     l_kernel_config.vector_name = 'z';
+    l_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
   } else if ( strcmp( i_arch, "knm" ) == 0 ) {
     l_kernel_config.instruction_set = LIBXSMM_X86_AVX512_KNM;
     l_kernel_config.vector_reg_count = 32;
     l_kernel_config.vector_name = 'z';
+    l_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
   } else {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;
@@ -154,7 +159,6 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     return;
   }
   
-  l_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
   l_kernel_config.alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
   l_kernel_config.alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;
   l_kernel_config.alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
