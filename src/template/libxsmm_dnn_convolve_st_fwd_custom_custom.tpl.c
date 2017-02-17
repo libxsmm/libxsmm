@@ -259,6 +259,9 @@ if (handle->datatype != handle->datatype_itm) {
   } else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2 ) {
     jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
     jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
+#if defined(INPUT_PADDING)
+    jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].pmm;
+#endif
 
     for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
       img = imgofm1/handle->blocksofm;
