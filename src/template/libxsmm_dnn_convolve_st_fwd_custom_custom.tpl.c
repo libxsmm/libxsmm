@@ -55,7 +55,7 @@ element_input_type* out_lp = 0;
 #if defined(INPUT_PADDING)
 /* Variables and initializations related to padding */
 int prev_image = -1;
-element_input_type *input_ptr;
+const element_input_type *input_ptr;
 element_input_type *copy_ptr;
 element_input_type *prefetch_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
