@@ -345,7 +345,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         matcopy_descriptor.m = handle->ifhp;
         matcopy_descriptor.n = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
         matcopy_descriptor.lda = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
-        matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock * handle->fm_lp_block);
+        matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock * handle->fm_lp_block;
         matcopy_descriptor.unroll_level = 2;
         matcopy_descriptor.datatype = handle->datatype;
         matcopy_descriptor.prefetch = 1;
