@@ -191,7 +191,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                              0,
                                              0);
     /* In case of AVX/AVX2 and if we have remaining, set also scalar register to zero */
-    if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX || l_kernel_config.instruction_set = LIBXSMM_X86_AVX2)) {
+    if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX || l_kernel_config.instruction_set == LIBXSMM_X86_AVX2)) {
       libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                               l_kernel_config.instruction_set,
                                               l_kernel_config.vxor_instruction,
@@ -337,7 +337,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                      remaining_unrolled * l_kernel_config.vector_length * l_kernel_config.datatype_size,
                                      l_kernel_config.vector_name, 0,
                                      1, 1 );
-  } else if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX || l_kernel_config.instruction_set = LIBXSMM_X86_AVX2)) {
+  } else if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX || l_kernel_config.instruction_set == LIBXSMM_X86_AVX2)) {
     /* Use scalar moves in case of remaining and AVX/AVX2 arch */
     for (i=0; i<remaining; i++) {
       if (i_matcopy_desc->zero_source == 0) {
