@@ -194,7 +194,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX || l_kernel_config.instruction_set == LIBXSMM_X86_AVX2)) {
       libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                               l_kernel_config.instruction_set,
-                                              l_kernel_config.vxor_instruction,
+                                              LIBXSMM_X86_INSTR_XORPD,
                                               'x',
                                               0,
                                               0,
