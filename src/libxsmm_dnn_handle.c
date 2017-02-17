@@ -322,6 +322,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   if (noarch == 0) {
     /* Forward path */
     { libxsmm_convolution_forward_descriptor descriptor;
+      libxsmm_matcopy_descriptor matcopy_descriptor;
       if (handle->desc.R == 1 && handle->desc.S == 1) {
         descriptor.unroll_kh = 1;
         descriptor.unroll_kw = 1;
@@ -341,6 +342,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       if (handle->padding_flag == 1) {
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
         descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;
+        matcopy_descriptor.m = handle->ifhp;
+        matcopy_descriptor.n = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
+        matcopy_descriptor.lda = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
+        matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock * handle->fm_lp_block);
+        matcopy_descriptor.unroll_level = 2;
+        matcopy_descriptor.datatype = handle->datatype;
+        matcopy_descriptor.prefetch = 1;
+        matcopy_descriptor.zero_source = 0;
       } else {
       descriptor.ifh_padded = handle->ifhp;
       descriptor.ifw_padded = handle->ifwp;
@@ -375,6 +384,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->code_fwd[2].pmm = libxsmm_create_xconv_forward(&descriptor);
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT;
         handle->code_fwd[3].pmm = libxsmm_create_xconv_forward(&descriptor);
+        if (handle->padding_flag == 1) {
+          handle->matcopy_fwd[0].pmm = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+        }
       } else if (libxsmm_target_archid == LIBXSMM_X86_AVX2) {
         /* we don't do prefetching and kh/kw unrolling (ignored in kernel generator) for AVX2 */
         descriptor.unroll_kh = 0;
@@ -389,6 +401,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
         handle->code_fwd[2].pmm = handle->code_fwd[0].pmm;
         handle->code_fwd[3].pmm = handle->code_fwd[0].pmm;
+        if (handle->padding_flag == 1) {
+          handle->matcopy_fwd[0].pmm = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+        }
       } else {
         assert(0/*should not happen*/);
       }

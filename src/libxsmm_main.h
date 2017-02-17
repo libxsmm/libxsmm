@@ -209,6 +209,10 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_code_pointer code_fwd[4];
   libxsmm_code_pointer code_bwd[4];
   libxsmm_code_pointer code_upd[6];
+  
+  libxsmm_code_pointer matcopy_fwd[1];
+  libxsmm_code_pointer matcopy_bwd[2];
+  libxsmm_code_pointer matcopy_upd[2];
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
