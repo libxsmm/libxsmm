@@ -211,7 +211,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                          l_gp_reg_mapping.gp_reg_a,
                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
                                          i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
-                                         l_kernel_config.vector_name, 0,
+                                         l_kernel_config.vector_name, i%l_kernel_config.vector_reg_count,
                                          0, 0 );
       }
       
@@ -232,7 +232,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                        l_gp_reg_mapping.gp_reg_b,
                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
                                        i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
-                                       l_kernel_config.vector_name, 0,
+                                       l_kernel_config.vector_name, i%l_kernel_config.vector_reg_count,
                                        0, 1 );
     }
   
@@ -274,7 +274,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                        l_gp_reg_mapping.gp_reg_a,
                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
                                        i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
-                                       l_kernel_config.vector_name, 0,
+                                       l_kernel_config.vector_name, i%l_kernel_config.vector_reg_count,
                                        0, 0 );
     }
     if (i_matcopy_desc->prefetch) {
@@ -291,7 +291,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                      l_gp_reg_mapping.gp_reg_b,
                                      LIBXSMM_X86_GP_REG_UNDEF, 0,
                                      i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
-                                     l_kernel_config.vector_name, 0,
+                                     l_kernel_config.vector_name, i%l_kernel_config.vector_reg_count,
                                      0, 1 );
   }
   
