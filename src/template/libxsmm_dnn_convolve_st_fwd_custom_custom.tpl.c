@@ -270,7 +270,12 @@ if (handle->datatype != handle->datatype_itm) {
         for (ifm1 = handle->blocksifm-1; ifm1 >= 0; ifm1--) {
           input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
           copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
-          jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, NULL);
+          if ( ifm1-1 == -1) {
+            prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img+1, handle->blocksifm-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+          } else {
+            prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+          }
+          jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
         }
         prev_image = img;
       }
