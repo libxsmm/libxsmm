@@ -61,6 +61,7 @@ element_input_type *prefetch_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
+libxsmm_matcopyfunction jitted_matcopy;
 #endif
 
 /* select pointer based on precision */
@@ -80,7 +81,6 @@ if (handle->datatype != handle->datatype_itm) {
 
   /* JIT kernel function pointers */
   libxsmm_convfunction jitted_conv_fp_one, jitted_conv_fp_two, jitted_conv_fp_zero;
-  libxsmm_smatcopyfunction jitted_matcopy;
 
   /* select kernels based on architecture */
   if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
@@ -97,7 +97,7 @@ if (handle->datatype != handle->datatype_itm) {
 #endif
     
 #if defined(INPUT_PADDING)
-    jitted_matcopy = (libxsmm_smatcopyfunction)handle->matcopy_fwd[0].pmm;
+    jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].pmm;
 #endif
 
     for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
