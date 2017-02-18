@@ -347,14 +347,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matcopy_descriptor.n = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
           matcopy_descriptor.lda = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
           matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.prefetch = 1;
         } else {
           matcopy_descriptor.n = handle->ifwp * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
           matcopy_descriptor.lda = handle->ifwp * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
           matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
+          if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
+            matcopy_descriptor.prefetch = 1;
+          } else {
+            matcopy_descriptor.prefetch = 0;
+          }
         }
         matcopy_descriptor.unroll_level = 2;
         matcopy_descriptor.datatype = handle->datatype;
-        matcopy_descriptor.prefetch = 1;
         matcopy_descriptor.zero_source = 0;
       } else {
         descriptor.ifh_padded = handle->ifhp;
