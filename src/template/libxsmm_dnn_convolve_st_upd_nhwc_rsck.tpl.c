@@ -129,7 +129,7 @@ const int zero_thr_end = ((ltid + 1) * zerochunksize < zerowork) ? ((ltid + 1) *
 #define INT_TO_MASK(x)      ( (__mmask16) x)
 #endif
 
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
 #define LOAD_256(x)         _mm256_load_ps(x)
 #define STORE_256(x,y)      _mm256_store_ps(x,y)
 #define ZERO_REG_256        _mm256_setzero_ps()
@@ -151,7 +151,7 @@ const int zero_thr_end = ((ltid + 1) * zerochunksize < zerowork) ? ((ltid + 1) *
 #define INT_TO_MASK(x)      ( (__mmask32) x)
 #endif
 
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
 #define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
 #define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
 #define ZERO_REG_256        _mm256_setzero_si256()
@@ -173,7 +173,7 @@ const int zero_thr_end = ((ltid + 1) * zerochunksize < zerowork) ? ((ltid + 1) *
 #define INT_TO_MASK(x)      ( (__mmask64) x)
 #endif
 
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
 #define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
 #define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
 #define ZERO_REG_256        _mm256_setzero_si256()
@@ -183,7 +183,7 @@ const int zero_thr_end = ((ltid + 1) * zerochunksize < zerowork) ? ((ltid + 1) *
 #endif
 
 const int img_size = padded_w * handle->blocksifm * handle->ifmblock;
-#if defined(__AVX512F__) || defined(__AVX__)
+#if defined(__AVX512F__) || (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
 element_input_type *prefetch_ptr;
 #endif
 #if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
@@ -388,7 +388,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
         img = imgifm1/padded_h;
         ii = imgifm1%padded_h;
         copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii, 0, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
         for (oj = 0; oj < img_size; oj+=CHUNK_SIZE/2) {
           STORE_256(&copy_ptr[oj], ZERO_REG_256);
         }
@@ -421,7 +421,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
         ii = imgifm1%handle->ifhp;
         input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii, 0, 0, 0,  handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
         copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii+handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
         if (ii != 0) {
           prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii-1, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
         } else {

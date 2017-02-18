@@ -152,7 +152,7 @@ const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) *
 #define INT_TO_MASK(x)      ( (__mmask16) x)
 #endif
 
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
 #define LOAD_256(x)         _mm256_load_ps(x)
 #define STORE_256(x,y)      _mm256_store_ps(x,y)
 #define ZERO_REG_256        _mm256_setzero_ps()
@@ -174,7 +174,7 @@ const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) *
 #define INT_TO_MASK(x)      ( (__mmask32) x)
 #endif
 
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
 #define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
 #define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
 #define ZERO_REG_256        _mm256_setzero_si256()
@@ -196,7 +196,7 @@ const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) *
 #define INT_TO_MASK(x)      ( (__mmask64) x)
 #endif
 
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
 #define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
 #define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
 #define ZERO_REG_256        _mm256_setzero_si256()
@@ -1167,7 +1167,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       img = imgifm1/handle->blocksifm;
       ifm1 = imgifm1%handle->blocksifm;
       copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, 0, 0, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
       for (oj = 0; oj < img_size; oj+=CHUNK_SIZE/2) {
         STORE_256(&copy_ptr[oj], ZERO_REG_256);
       }
@@ -1200,7 +1200,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
 
       for (oj = 0; oj < handle->ifhp; oj++) {
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
         for (oi = 0; oi < block_size; oi += CHUNK_SIZE/2) {
           STORE_256(&copy_ptr[oi+oj*big_block_size], LOAD_256(&input_ptr[oi+oj*block_size]));
         }
