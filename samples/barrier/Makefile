@@ -70,7 +70,7 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME).$(LIBEXT) $(LIBNAME)ext.$(LIBEXT)
 	$(LD) -o $@ $(OBJECTS) \
 		$(call abslib,$(LIBNAME).$(LIBEXT)) \
 		$(call abslib,$(LIBNAME)noblas.$(LIBEXT)) \
