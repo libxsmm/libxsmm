@@ -132,7 +132,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
        rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
   }
   else {
-    LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_SINGLE, LIBXSMM_NOOP,
+    LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP,
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_VARS,
       if (0 == LIBXSMM_MOD2(libxsmm_tasks, 2)) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
       LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
@@ -216,7 +216,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
        rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
   }
   else {
-    LIBXSMM_TILED_XGEMM(LIBXSMM_EXT_SINGLE, LIBXSMM_NOOP,
+    LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP,
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_VARS,
       if (0 == LIBXSMM_MOD2(libxsmm_tasks, 2)) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
       LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
