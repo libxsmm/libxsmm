@@ -132,8 +132,8 @@ int main(int argc, char* argv[])
       unsigned long long start = libxsmm_timer_tick();
       for (i = 0; i < nrepeat; ++i) {
 #if defined(_OPENMP)
-#       pragam omp parallel
-#       pragam omp single
+#       pragma omp parallel
+#       pragma omp single
 #endif
         LIBXSMM_YGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
       }
