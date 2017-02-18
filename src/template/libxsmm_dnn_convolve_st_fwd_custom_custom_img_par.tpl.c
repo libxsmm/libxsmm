@@ -62,7 +62,6 @@ element_input_type* out_lp = 0;
 /* Variables and initializations related to padding */
 const element_input_type *input_ptr;
 element_input_type *copy_ptr;
-element_input_type *prefetch_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
@@ -242,10 +241,7 @@ if (handle->datatype != handle->datatype_itm) {
     for (ifm1 = handle->blocksifm-1; ifm1 >= 0; ifm1--) {
       input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
       copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
-      if ( ifm1-1 >= 0) {
-        prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-      }
-      jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
+      jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, NULL);
     }
 #endif
 
