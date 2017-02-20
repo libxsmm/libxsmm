@@ -33,14 +33,8 @@ SYM ?= 1
 include $(DEPDIR)/Makefile.inc
 
 OUTNAME := $(shell basename $(ROOTDIR))
-HEADERS := $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(INCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(INCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(INCDIR)/*.hh  2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.h   2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.hh  2> /dev/null | tr "\n" " ")
+HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
+           $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh)
 CPPSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cpp 2> /dev/null | tr "\n" " ")
 CPPSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cpp 2> /dev/null | tr "\n" " ")
 CXXSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cxx 2> /dev/null | tr "\n" " ")
