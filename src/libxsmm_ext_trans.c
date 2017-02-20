@@ -35,9 +35,7 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
-#if !defined(NDEBUG)
-# include <stdio.h>
-#endif
+#include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -59,9 +57,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   int result = EXIT_SUCCESS;
-#if !defined(NDEBUG) /* library code is expected to be mute */
   static int error_once = 0;
-#endif
   assert(0 < typesize);
   if (ldi >= m && ldo >= n && 0 != out && 0 != in) {
     LIBXSMM_INIT
@@ -92,17 +88,18 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
       result = libxsmm_itrans/*TODO: omp*/(out, typesize, m, n, ldi);
     }
     else {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      if (0 != libxsmm_verbosity /* library code is expected to be mute */
+       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
         fprintf(stderr, "LIBXSMM: output location of the transpose must be different from the input!\n");
       }
-#endif
       result = EXIT_FAILURE;
     }
   }
   else {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
       if (0 == out || 0 == in) {
         fprintf(stderr, "LIBXSMM: the transpose input and/or output is NULL!\n");
       }
@@ -117,7 +114,6 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
         fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
       }
     }
-#endif
     result = EXIT_FAILURE;
   }
 

@@ -36,9 +36,7 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
-#if !defined(NDEBUG)
-# include <stdio.h>
-#endif
+#include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -75,9 +73,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   int result = EXIT_SUCCESS;
-#if !defined(NDEBUG) /* library code is expected to be mute */
   static int error_once = 0;
-#endif
   assert(0 < typesize);
   if (ldi >= m && ldo >= n && 0 != out && 0 != in) {
     LIBXSMM_INIT
@@ -88,17 +84,18 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
       result = libxsmm_itrans(out, typesize, m, n, ldi);
     }
     else {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      if (0 != libxsmm_verbosity /* library code is expected to be mute */
+       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
         fprintf(stderr, "LIBXSMM: output location of the transpose must be different from the input!\n");
       }
-#endif
       result = EXIT_FAILURE;
     }
   }
   else {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
       if (0 == out || 0 == in) {
         fprintf(stderr, "LIBXSMM: the transpose input and/or output is NULL!\n");
       }
@@ -113,7 +110,6 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
         fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
       }
     }
-#endif
     result = EXIT_FAILURE;
   }
 
@@ -125,9 +121,7 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
 {
   int result = EXIT_SUCCESS;
-#if !defined(NDEBUG) /* library code is expected to be mute */
   static int error_once = 0;
-#endif
   if (0 != inout) {
     LIBXSMM_INIT
     if (m == n) { /* some fallback; still warned as "not implemented" */
@@ -146,26 +140,26 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
       }
     }
     else {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      if (0 != libxsmm_verbosity /* library code is expected to be mute */
+       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
         fprintf(stderr, "LIBXSMM: in-place transpose is not fully implemented!\n");
       }
-#endif
       assert(0/*TODO: proper implementation is pending*/);
       result = EXIT_FAILURE;
     }
-#if !defined(NDEBUG) /* library code is expected to be mute */
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
       fprintf(stderr, "LIBXSMM: performance warning - in-place transpose is not fully implemented!\n");
     }
-#endif
   }
   else {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
       fprintf(stderr, "LIBXSMM: the transpose input/output is NULL!\n");
     }
-#endif
     result = EXIT_FAILURE;
   }
 
