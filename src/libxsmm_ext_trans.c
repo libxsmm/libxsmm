@@ -70,7 +70,6 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
           /* implicit synchronization (barrier) */
         }
         else { /* assume external parallelization */
-          LIBXSMM_EXT_SINGLE
           internal_ext_otrans(out, in, typesize, 0, m, 0, n, ldi, ldo);
           /* allow to omit synchronization */
           if (0 == LIBXSMM_MOD2(libxsmm_tasks, 2)) {
