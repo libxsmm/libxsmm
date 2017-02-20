@@ -49,7 +49,7 @@
 # endif
 # define LIBXSMM_EXT_MIN_NTASKS(NT) 2
 # define LIBXSMM_EXT_OVERHEAD(NT) (NT)
-# define LIBXSMM_EXT_SINGLE LIBXSMM_PRAGMA(omp single nowait)
+# define LIBXSMM_EXT_SINGLE LIBXSMM_PRAGMA(omp single)
 # define LIBXSMM_EXT_SINGLE_NOWAIT LIBXSMM_PRAGMA(omp single nowait)
 # define LIBXSMM_EXT_PARALLEL LIBXSMM_PRAGMA(omp parallel)
 # define LIBXSMM_EXT_FOR_LOOP_AUX(COLLAPSE, ...) LIBXSMM_PRAGMA(omp for private(__VA_ARGS__) schedule(dynamic) LIBXSMM_OPENMP_COLLAPSE(COLLAPSE))
