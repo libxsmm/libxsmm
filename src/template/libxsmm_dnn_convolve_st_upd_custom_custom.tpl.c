@@ -115,18 +115,13 @@ LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, weight, handle->blocksi
 
 #if defined(INPUT_PADDING)
 /* Define variables if padding is required */
-int iii, oj, oi;
 element_input_type (* __restrict input_ptr);
 element_input_type (* __restrict copy_ptr);
-#if defined(__AVX512F__)
 element_input_type *prefetch_ptr;
-#endif
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
-const size_t small_block_size = handle->ifwp * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype) * 8;
-const int block_size = handle->ifwp * handle->ifmblock;
-const int big_block_size = padded_w * handle->ifmblock;
-
+libxsmm_matcopyfunction jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_upd[0].xmatcopy.smatcopy;
+libxsmm_matzerofunction jitted_matzero = (libxsmm_matzerofunction)handle->matcopy_upd[1].xmatcopy.smatcopy;
 LIBXSMM_VLA_DECL(5, const element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
 #ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
 LIBXSMM_VLA_DECL(5, element_input_type, tr_input, (element_input_type*)handle->scratch5, handle->blocksifm, padded_h, handle->ifmblock, padded_w);
@@ -137,90 +132,16 @@ const int copywork = handle->desc.N*handle->blocksifm;
 const int copychunksize = (copywork % handle->desc.threads == 0) ? (copywork / handle->desc.threads) : (copywork / handle->desc.threads) + 1;
 const int copy_thr_begin = (ltid * copychunksize < copywork) ? (ltid * copychunksize) : copywork;
 const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) * copychunksize) : copywork;
-
-/* Based on the input datatype select the right intrinsics */
-#ifdef INPUT_F32
-
-#if defined(__AVX512F__)
-#define LOAD(x)             _mm512_load_ps(x)
-#define LOADU(x)            _mm512_loadu_ps(x)
-#define MASK_LOADU(x,y)     _mm512_maskz_loadu_ps(x,y)
-#define STORE(x,y)          _mm512_store_ps(x,y)
-#define STOREU(x,y)         _mm512_storeu_ps(x,y)
-#define MASK_STOREU(x,y,z)  _mm512_mask_storeu_ps(x,y,z)
-#define ZERO_REG            _mm512_setzero_ps()
-#define INT_TO_MASK(x)      ( (__mmask16) x)
-#endif
-
-#if defined(__AVX__)
-#define LOAD_256(x)         _mm256_load_ps(x)
-#define STORE_256(x,y)      _mm256_store_ps(x,y)
-#define ZERO_REG_256        _mm256_setzero_ps()
-#endif
-#define CHUNK_SIZE          16
-
-#endif
-
-#ifdef INPUT_I16
-
-#if defined(__AVX512F__)
-#define LOAD(x)             _mm512_load_si512 (x)
-#define LOADU(x)            _mm512_loadu_si512(x)
-#define MASK_LOADU(x,y)     _mm512_maskz_loadu_epi16(x,y)
-#define STORE(x,y)          _mm512_store_si512(x,y)
-#define STOREU(x,y)         _mm512_storeu_si512(x,y)
-#define MASK_STOREU(x,y,z)  _mm512_mask_storeu_epi16(x,y,z)
-#define ZERO_REG            _mm512_setzero_epi32()
-#define INT_TO_MASK(x)      ( (__mmask32) x)
-#endif
-
-#if defined(__AVX__)
-#define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
-#define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
-#define ZERO_REG_256        _mm256_setzero_si256()
-#endif
-#define CHUNK_SIZE          32
-
-#endif
-
-#ifdef INPUT_I8
-
-#if defined(__AVX512F__)
-#define LOAD(x)             _mm512_load_si512 (x)
-#define LOADU(x)            _mm512_loadu_si512(x)
-#define MASK_LOADU(x,y)     _mm512_maskz_loadu_epi8(x,y)
-#define STORE(x,y)          _mm512_store_si512(x,y)
-#define STOREU(x,y)         _mm512_storeu_si512(x,y)
-#define MASK_STOREU(x,y,z)  _mm512_mask_storeu_epi8(x,y,z)
-#define ZERO_REG            _mm512_setzero_epi32()
-#define INT_TO_MASK(x)      ( (__mmask64) x)
-#endif
-
-#if defined(__AVX__)
-#define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
-#define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
-#define ZERO_REG_256        _mm256_setzero_si256()
-#endif
-#define CHUNK_SIZE          64
-
-#endif
-
-const int img_size = padded_h * padded_w * handle->ifmblock;
-#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
-const int64_t remainder_mask = (block_size % CHUNK_SIZE != 0) ? (1 << (block_size % CHUNK_SIZE)) - 1 : -1;
-const int64_t zero_remainder_mask = (img_size % CHUNK_SIZE != 0) ? (1 << (img_size % CHUNK_SIZE)) - 1 : -1;
-#endif
 #else
 /* Define variables if padding is not required */
+const int padded_h = handle->ifhp;
+const int padded_w = handle->ifwp;
 LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
 #ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
 LIBXSMM_VLA_DECL(5, element_input_type, tr_input, (element_input_type*)handle->scratch3, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp);
 #endif
 
 #endif
-
-
-#if defined(INPUT_PADDING)
 
 #define LIBXSMM_JITTED_CONV_WU_NO_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
                                      weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
@@ -370,160 +291,6 @@ NULL  \
 #endif
 #endif
 
-
-#else
-
-#define LIBXSMM_JITTED_CONV_WU_NO_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                     weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
-                                     output, o_img, o_ofm1, o_oj, o_oi, o_ofm2) \
-jitted_conv_wu_no_pf(  \
-                       &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ifm1), (i_ij), (i_ii), (i_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
-                       &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                       &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
-                       NULL, \
-                       NULL, \
-                       NULL \
-                    )
-#ifdef LIBXSMM_CONV_NO_PREFETCH
-#define LIBXSMM_JITTED_CONV_WU_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                  weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
-                                  output, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
-                                  pf_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
-                                  pf_weight, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ifm2, pw_ofm2, \
-                                  pf_output, po_img, po_ofm1, po_oj, po_oi, po_ofm2) \
-jitted_conv_wu_no_pf(  \
-                       &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ifm1), (i_ij), (i_ii), (i_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
-                       &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                       &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
-                       NULL, \
-                       NULL, \
-                       NULL \
-                    )
-#else
-#define LIBXSMM_JITTED_CONV_WU_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                  weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
-                                  output, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
-                                  pf_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
-                                  pf_weight, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ifm2, pw_ofm2, \
-                                  pf_output, po_img, po_ofm1, po_oj, po_oi, po_ofm2) \
-jitted_conv_wu_pf(  \
-                    &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ifm1), (i_ij), (i_ii), (i_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
-                    &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                    &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
-                    &LIBXSMM_VLA_ACCESS(5, pf_input, (pi_img), (pi_ifm1), (pi_ij), (pi_ii), (pi_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
-                    &LIBXSMM_VLA_ACCESS(6, pf_weight, (pw_ofm1), (pw_ifm1), (pw_kj), (pw_ki), (pw_ifm2), (pw_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                    &LIBXSMM_VLA_ACCESS(5, pf_output, (po_img), (po_ofm1), (po_oj), (po_oi), (po_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) \
-                 )
-#endif
-
-#ifdef LIBXSMM_CONV_NO_PREFETCH
-#define LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                           weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
-                                           output, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
-                                           pf_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
-                                           pf_weight, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ifm2, pw_ofm2) \
-jitted_conv_wu_no_pf(  \
-                       &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ifm1), (i_ij), (i_ii), (i_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
-                       &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                       &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
-                       NULL, \
-                       NULL, \
-                       NULL \
-                    )
-#else
-#define LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                           weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
-                                           output, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
-                                           pf_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
-                                           pf_weight, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ifm2, pw_ofm2) \
-jitted_conv_wu_nooutput_pf(  \
-                             &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ifm1), (i_ij), (i_ii), (i_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
-                             &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                             &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
-                             &LIBXSMM_VLA_ACCESS(5, pf_input, (pi_img), (pi_ifm1), (pi_ij), (pi_ii), (pi_ifm2), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock), \
-                             &LIBXSMM_VLA_ACCESS(6, pf_weight, (pw_ofm1), (pw_ifm1), (pw_kj), (pw_ki), (pw_ifm2), (pw_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                             NULL  \
-                          )
-#endif
-
-#ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
-#define LIBXSMM_JITTED_CONV_WU_TRANSPOSE_NO_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                               weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
-                                               output, o_img, o_ofm1, o_oj, o_oi, o_ofm2) \
-jitted_conv_wu_transpose_no_pf(  \
-                                 &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ifm1), (i_ij), (i_ifm2), (i_ii), handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp), \
-                                 &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                                 &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
-                                 NULL, \
-                                 NULL, \
-                                 NULL \
-                              )
-
-#ifdef LIBXSMM_CONV_NO_PREFETCH
-#define LIBXSMM_JITTED_CONV_WU_TRANSPOSE_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                            weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
-                                            output, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
-                                            pf_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
-                                            pf_weight, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ifm2, pw_ofm2, \
-                                            pf_output, po_img, po_ofm1, po_oj, po_oi, po_ofm2) \
-jitted_conv_wu_transpose_no_pf(  \
-                                 &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ifm1), (i_ij), (i_ifm2), (i_ii), handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp), \
-                                 &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                                 &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
-                                 NULL, \
-                                 NULL, \
-                                 NULL \
-                              )
-#else
-#define LIBXSMM_JITTED_CONV_WU_TRANSPOSE_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                            weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
-                                            output, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
-                                            pf_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
-                                            pf_weight, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ifm2, pw_ofm2, \
-                                            pf_output, po_img, po_ofm1, po_oj, po_oi, po_ofm2) \
-jitted_conv_wu_transpose_pf(  \
-                              &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ifm1), (i_ij), (i_ifm2), (i_ii), handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp), \
-                              &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                              &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
-                              &LIBXSMM_VLA_ACCESS(5, pf_input, (pi_img), (pi_ifm1), (pi_ij), (pi_ifm2), (pi_ii), handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp), \
-                              &LIBXSMM_VLA_ACCESS(6, pf_weight, (pw_ofm1), (pw_ifm1), (pw_kj), (pw_ki), (pw_ifm2), (pw_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                              &LIBXSMM_VLA_ACCESS(5, pf_output, (po_img), (po_ofm1), (po_oj), (po_oi), (po_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) \
-                           )
-#endif
-
-#ifdef LIBXSMM_CONV_NO_PREFETCH
-#define LIBXSMM_JITTED_CONV_WU_TRANSPOSE_NOOUTPUT_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                                     weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
-                                                     output, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
-                                                     pf_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
-                                                     pf_weight, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ifm2, pw_ofm2) \
-jitted_conv_wu_transpose_no_pf(  \
-                                 &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ifm1), (i_ij), (i_ifm2), (i_ii), handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp), \
-                                 &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                                 &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
-                                 NULL, \
-                                 NULL, \
-                                 NULL \
-                              )
-#else
-#define LIBXSMM_JITTED_CONV_WU_TRANSPOSE_NOOUTPUT_PF(input, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
-                                                     weight, w_ofm1, w_ifm1, w_kj, w_ki, w_ifm2, w_ofm2, \
-                                                     output, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \
-                                                     pf_input, pi_img, pi_ifm1, pi_ij, pi_ii, pi_ifm2, \
-                                                     pf_weight, pw_ofm1, pw_ifm1, pw_kj, pw_ki, pw_ifm2, pw_ofm2) \
-jitted_conv_wu_transpose_nooutput_pf(  \
-                                       &LIBXSMM_VLA_ACCESS(5, input, (i_img), (i_ifm1), (i_ij), (i_ifm2), (i_ii), handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp), \
-                                       &LIBXSMM_VLA_ACCESS(6, weight, (w_ofm1), (w_ifm1), (w_kj), (w_ki), (w_ifm2), (w_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                                       &LIBXSMM_VLA_ACCESS(5, output, (o_img), (o_ofm1), (o_oj), (o_oi), (o_ofm2), handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock), \
-                                       &LIBXSMM_VLA_ACCESS(5, pf_input, (pi_img), (pi_ifm1), (pi_ij), (pi_ifm2), (pi_ii), handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp), \
-                                       &LIBXSMM_VLA_ACCESS(6, pf_weight, (pw_ofm1), (pw_ifm1), (pw_kj), (pw_ki), (pw_ifm2), (pw_ofm2), handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), \
-                                       NULL  \
-                                    )
-#endif
-#endif
-
-#endif
-
 kh = handle->desc.R;
 kw = handle->desc.S;
 
@@ -534,104 +301,33 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #if defined(INPUT_PADDING)
   libxsmm_barrier_init(handle->barrier, ltid);
   /* Initialize in parallel scratch5 to zero */
-  if (img_size % CHUNK_SIZE == 0) {
-    for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
-      img = imgifm1/handle->blocksifm;
-      ifm1 = imgifm1%handle->blocksifm;
-      copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, 0, 0, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-#if defined(__AVX512F__)
-      for (oj = 0; oj < img_size; oj+=CHUNK_SIZE) {
-        STORE(&copy_ptr[oj], ZERO_REG);
-      }
-#else
-      for (oj = 0; oj < img_size; oj++) {
-        copy_ptr[oj] = (element_input_type)0;
-      }
-#endif
-    }
-  } else {
-    for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
-      img = imgifm1/handle->blocksifm;
-      ifm1 = imgifm1%handle->blocksifm;
-      copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, 0, 0, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
-      for (oj = 0; oj < img_size-CHUNK_SIZE; oj+=CHUNK_SIZE) {
-        STOREU(&copy_ptr[oj], ZERO_REG);
-      }
-      MASK_STOREU(&copy_ptr[oj], INT_TO_MASK(zero_remainder_mask), ZERO_REG);
-#else
-      for (oj = 0; oj < img_size; oj++) {
-        copy_ptr[oj] = (element_input_type)0;
-      }
-#endif
-    }
+  for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
+    img = imgifm1/handle->blocksifm;
+    ifm1 = imgifm1%handle->blocksifm;
+    copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, 0, 0, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
+    jitted_matzero(NULL, NULL, copy_ptr, NULL, NULL);
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
 
   /* Copy the minibatch to a padded version only if no transpose is required -- otherwise we combine the transpose with the copying into the padded buffer */
 #ifndef LIBXSMM_WU_TRANSPOSE_OFW_IFM
-  if ( small_block_size % 512 == 0 ) {
-    for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
-      img = imgifm1/handle->blocksifm;
-      ifm1 = imgifm1%handle->blocksifm;
-      input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-      copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-#if defined(__AVX512F__)
-      if (ifm1 != 0) {
-        /* Prefetch next ifm, same image */
-        prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1-1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-      } else {
+  for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
+    img = imgifm1/handle->blocksifm;
+    ifm1 = imgifm1%handle->blocksifm;
+    input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+    copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
+    if (ifm1 != 0) {
+      /* Prefetch next ifm, same image */
+      prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1-1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+    } else {
         /* Prefetch ifm 0 from next image */
-        prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img-1, handle->blocksifm-1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-      }
-#endif
-      for (oj = 0; oj < handle->ifhp; oj++) {
-#if defined(__AVX512F__)
-        for (oi = 0; oi < block_size; oi += CHUNK_SIZE) {
-          STORE(&copy_ptr[oi+oj*big_block_size], LOAD(&input_ptr[oi+oj*block_size]));
-          _mm_prefetch((const char*)&prefetch_ptr[oi+oj*block_size], _MM_HINT_T1);
-        }
-#else
-        for (oi = 0; oi < block_size; oi++) {
-          copy_ptr[oi+oj*big_block_size] = input_ptr[oi+oj*block_size];
-        }
-#endif
-      }
+      prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img-1, handle->blocksifm-1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
     }
-  } else {
-    for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
-      img = imgifm1/handle->blocksifm;
-      ifm1 = imgifm1%handle->blocksifm;
-      input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-      copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-#if defined(__AVX512F__)
-      if (ifm1 != 0) {
-        prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1-1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-      } else {
-        prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img-1, handle->blocksifm-1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-      }
-#endif
-      for (oj = 0; oj < handle->ifhp; oj++) {
-#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
-        for (oi = 0; oi < block_size-CHUNK_SIZE; oi += CHUNK_SIZE) {
-          STOREU(&copy_ptr[oi+oj*big_block_size], LOADU(&input_ptr[oi+oj*block_size]));
-          _mm_prefetch((const char*)&prefetch_ptr[oi+oj*block_size], _MM_HINT_T1);
-        }
-        MASK_STOREU(&copy_ptr[oi+oj*big_block_size],
-                    INT_TO_MASK(remainder_mask),
-                    MASK_LOADU(INT_TO_MASK(remainder_mask),
-                               &input_ptr[oi+oj*block_size]));
-        _mm_prefetch((const char*)&prefetch_ptr[oi+oj*block_size], _MM_HINT_T1);
-#else
-        for (oi = 0; oi < block_size; oi++) {
-          copy_ptr[oi+oj*big_block_size] = input_ptr[oi+oj*block_size];
-        }
-#endif
-      }
-    }
+    jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
+  
 #endif
 
   num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
@@ -1161,69 +857,27 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #if defined(INPUT_PADDING)
   /* Initialize in parallel scratch5 to zero */
   libxsmm_barrier_init(handle->barrier, ltid);
-
-  if (img_size % (CHUNK_SIZE/2) == 0) {
-    for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
-      img = imgifm1/handle->blocksifm;
-      ifm1 = imgifm1%handle->blocksifm;
-      copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, 0, 0, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-#if defined(__AVX__)
-      for (oj = 0; oj < img_size; oj+=CHUNK_SIZE/2) {
-        STORE_256(&copy_ptr[oj], ZERO_REG_256);
-      }
-#else
-      for (oj = 0; oj < img_size; oj++) {
-        copy_ptr[oj] = (element_input_type) 0;
-      }
-#endif
-    }
-  } else {
-    for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
-      img = imgifm1/handle->blocksifm;
-      ifm1 = imgifm1%handle->blocksifm;
-      for (oj = 0; oj < padded_h; oj++) {
-        for (oi = 0; oi < padded_w; oi++) {
-          for (iii = 0; iii < handle->ifmblock; iii++) {
-            LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, oj, oi, iii, handle->blocksifm, padded_h, padded_w, handle->ifmblock) = (element_input_type)0;
-          }
-        }
-      }
-    }
+  for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
+    img = imgifm1/handle->blocksifm;
+    ifm1 = imgifm1%handle->blocksifm;
+    copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, 0, 0, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
+    jitted_matzero(NULL, NULL, copy_ptr, NULL, NULL);
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
-
-  if ( small_block_size % 256 == 0 ) {
-    for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
-      img = imgifm1/handle->blocksifm;
-      ifm1 = imgifm1%handle->blocksifm;
-      input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-      copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-
-      for (oj = 0; oj < handle->ifhp; oj++) {
-#if defined(__AVX__)
-        for (oi = 0; oi < block_size; oi += CHUNK_SIZE/2) {
-          STORE_256(&copy_ptr[oi+oj*big_block_size], LOAD_256(&input_ptr[oi+oj*block_size]));
-        }
-#else
-        for (oi = 0; oi < block_size; oi++) {
-          copy_ptr[oi+oj*big_block_size]= input_ptr[oi+oj*block_size];
-        }
-#endif
-      }
+  
+  for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
+    img = imgifm1/handle->blocksifm;
+    ifm1 = imgifm1%handle->blocksifm;
+    input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+    copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
+    if (ifm1 != 0) {
+      /* Prefetch next ifm, same image */
+      prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1-1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+    } else {
+      /* Prefetch ifm 0 from next image */
+      prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img-1, handle->blocksifm-1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
     }
-  } else {
-    for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
-      img = imgifm1/handle->blocksifm;
-      ifm1 = imgifm1%handle->blocksifm;
-      for (oj = 0; oj < handle->ifhp; oj++) {
-        for (oi = 0; oi < handle->ifwp; oi++) {
-          for (iii = 0; iii < handle->ifmblock; iii++) {
-            LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, oj+handle->desc.pad_h, oi+handle->desc.pad_w, iii, handle->blocksifm, padded_h, padded_w, handle->ifmblock) =
-            LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, oj, oi, iii, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-          }
-        }
-      }
-    }
+    jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
@@ -1244,11 +898,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     ifm1 = ofm1ifm1 % handle->blocksifm;
     for (kj=0; kj < handle->desc.R; ++kj) {
       for (ki=0; ki < handle->desc.S; ++ki) {
-#if defined(INPUT_PADDING)
         l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, kj, ki, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-#else
-        l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, kj, ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-#endif
         l_wt = &LIBXSMM_VLA_ACCESS(6, per_thread_weight, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
         l_output = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
         jitted_conv_wu_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
@@ -1272,11 +922,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     for (img = 0; img < handle->desc.N; ++img) {
       for (kj=0; kj < kh; ++kj) {
         for (ki=0; ki < kw; ++ki) {
-#if defined(INPUT_PADDING)
           l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, kj, ki, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-#else
-          l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, kj, ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-#endif
           l_wt = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
           jitted_conv_wu_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
@@ -1313,19 +959,3 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #ifdef LIBXSMM_JITTED_CONV_WU_TRANSPOSE_NOOUTPUT_PF
 #undef LIBXSMM_JITTED_CONV_WU_TRANSPOSE_NOOUTPUT_PF
 #endif
-
-#if defined(INPUT_PADDING)
-#undef LOAD
-#undef LOAD_256
-#undef LOADU
-#undef MASK_LOADU
-#undef STORE
-#undef STORE_256
-#undef STOREU
-#undef MASK_STOREU
-#undef INT_TO_MASK
-#undef CHUNK_SIZE
-#undef ZERO_REG
-#undef ZERO_REG_256
-#endif
-
