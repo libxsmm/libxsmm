@@ -490,15 +490,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
     libxsmm_xset_default_allocator(0/*lock*/, 0/*context*/, null_malloc_fn, null_free_fn);
     libxsmm_xset_scratch_allocator(0/*lock*/, 0/*context*/, null_malloc_fn, null_free_fn);
     libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set libxsmm_target_archid */
-    { /* behavior of task-parallelized routines which are located in libxsmmext library
-       *   0: disabled task-parallelism (no parallelization),
-       *  >2: internal parallel region
-       * <=2: no internal parallel region
-       */
-      const char *const env = getenv("LIBXSMM_TASKS");
-      if (0 != env && 0 != *env) {
-        libxsmm_tasks = atoi(env);
-      }
+    { const char *const env = getenv("LIBXSMM_SYNC");
+      libxsmm_sync = (0 == env || 0 == *env) ? 1/*default*/ : atoi(env);
     }
     { const char *const env = getenv("LIBXSMM_TRYLOCK");
       if (0 != env && 0 != *env) {

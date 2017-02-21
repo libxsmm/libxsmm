@@ -121,8 +121,8 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    const char *const env_tasks = getenv("LIBXSMM_TASKS");
-    const int tasks = (0 != env_tasks && 0 != *env_tasks) ? atoi(env_tasks) : 0;
+    const char *const env_tasks = getenv("TASKS");
+    const int tasks = (0 == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
     REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc(ldi * (('o' == t || 'O' == t) ? n : ldo) * sizeof(REAL_TYPE));
     REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(REAL_TYPE));
 #if !defined(USE_SELF_VALIDATION) /* check against an alternative/external implementation */
@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
       size += km * kn * sizeof(REAL_TYPE);
 
       if (('o' == t || 'O' == t)) {
-        if (2 > tasks) { /* library-internal parallelization */
+        if (0 == tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
           result = OTRANS1(b, a, sizeof(REAL_TYPE), km, kn, kldi, kldo);
           duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
           start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #         pragma omp parallel
-#         pragma omp single
+#         pragma omp single nowait
 #endif
           result = OTRANS1(b, a, sizeof(REAL_TYPE), km, kn, kldi, kldo);
           duration += libxsmm_timer_duration(start, libxsmm_timer_tick());

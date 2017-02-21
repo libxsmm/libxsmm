@@ -344,8 +344,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_target_archid;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_dispatch_trylock;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_auto_prefetch;
-/** Determines if (OpenMP-)tasks are preferred over thread-style parallelization. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tasks;
+/** Determines whether a threaded implementation is synchronized or not. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_sync;
 /** Number of threads per core. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_nt;
 
