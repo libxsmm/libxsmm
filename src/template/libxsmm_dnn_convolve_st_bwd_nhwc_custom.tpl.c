@@ -70,8 +70,8 @@ element_input_type (* __restrict copy_ptr);
 element_input_type *prefetch_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
-libxsmm_matcopyfunction jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_bwd[0].pmm;
-libxsmm_matcopybackfunction jitted_matcopyback = (libxsmm_matcopybackfunction)handle->matcopy_bwd[1].pmm;
+libxsmm_matcopyfunction jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_bwd[0].xmatcopy.smatcopy;
+libxsmm_matcopybackfunction jitted_matcopyback = (libxsmm_matcopybackfunction)handle->matcopy_bwd[1].xmatcopy.smatcopy;
 LIBXSMM_VLA_DECL(4, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * padded_h * padded_w * handle->blocksifm * handle->ifmblock, padded_w, handle->blocksifm, handle->ifmblock);
 memset(&LIBXSMM_VLA_ACCESS(4, input_buffer, 0, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock), 0,
        padded_w * padded_h * handle->blocksifm * handle->ifmblock * sizeof(element_input_type));

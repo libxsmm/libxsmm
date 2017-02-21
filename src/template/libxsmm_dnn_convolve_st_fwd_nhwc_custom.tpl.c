@@ -73,7 +73,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
 #if defined(INPUT_PADDING)
-  jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].pmm;
+  jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
 #endif
 
   for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
@@ -179,7 +179,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
   jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 #if defined(INPUT_PADDING)
-  jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].pmm;
+  jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
 #endif
 
   for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {

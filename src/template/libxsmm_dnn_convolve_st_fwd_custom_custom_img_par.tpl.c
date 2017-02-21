@@ -100,7 +100,7 @@ if (handle->datatype != handle->datatype_itm) {
     jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
 #if defined(INPUT_PADDING)
-    jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].pmm;
+    jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
     for (ifm1 = handle->blocksifm-1; ifm1 >= 0; ifm1--) {
       input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
       copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
@@ -234,7 +234,7 @@ if (handle->datatype != handle->datatype_itm) {
     jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
     jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 #if defined(INPUT_PADDING)
-    jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].pmm;
+    jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
     for (ifm1 = handle->blocksifm-1; ifm1 >= 0; ifm1--) {
       input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
       copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
