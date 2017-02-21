@@ -429,7 +429,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         matcopyback_descriptor.m = handle->ifhp;
         if (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) {
           matcopy_descriptor.n = handle->ifwp * handle->ifmblock;
-          matcopyback_descriptor.n = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock;
+          matcopyback_descriptor.n = handle->ifwp * handle->ifmblock;
           matcopy_descriptor.lda = handle->ifwp * handle->ifmblock;
           matcopyback_descriptor.lda = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock;
           matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock;
@@ -438,7 +438,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matcopy_descriptor.n = handle->ifwp * handle->blocksifm * handle->ifmblock;
           matcopy_descriptor.lda = handle->ifwp * handle->blocksifm * handle->ifmblock;
           matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->blocksifm * handle->ifmblock;
-          matcopyback_descriptor.n = (handle->ifwp + 2*handle->desc.pad_w) * handle->blocksifm * handle->ifmblock;
+          matcopyback_descriptor.n = handle->ifwp * handle->blocksifm * handle->ifmblock;
           matcopyback_descriptor.lda = (handle->ifwp + 2*handle->desc.pad_w) * handle->blocksifm * handle->ifmblock;
           matcopyback_descriptor.ldb = handle->ifwp * handle->blocksifm * handle->ifmblock;
         }
