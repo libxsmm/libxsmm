@@ -113,16 +113,14 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     ifm1 = imgifm1%handle->blocksifm;
 
 #if defined(INPUT_PADDING)
-    input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-    copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(4, input_buffer, handle->desc.pad_h, handle->desc.pad_w, ifm1, 0, padded_w, handle->blocksifm, handle->ifmblock);
-    if (ifm1+1 != handle->blocksifm) {
-      /* Prefetch next ifm, same image */
-      prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, 0, 0, ifm1+1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-    } else {
-      /* Prefetch ifm 0 from next image */
-      prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+    for (oj = 0; oj < handle->ifhp; oj++) {
+      for (ij = 0; ij < handle->ifwp; ij++) {
+        input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+        copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(4, input_buffer, handle->desc.pad_h, handle->desc.pad_w, ifm1, 0, padded_w, handle->blocksifm, handle->ifmblock);
+        prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img+(ifm1+1)/handle->blocksifm, oj, ij, (ifm1+1)%handle->blocksifm, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+        jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
+      }
     }
-    jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
 #endif
 
     for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
@@ -144,7 +142,13 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     }
 #if defined(INPUT_PADDING)
     /* Write back input buffer */
-    jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
+    for (oj = 0; oj < handle->ifhp; oj++) {
+      for (ij = 0; ij < handle->ifwp; ij++) {
+        input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+        copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(4, input_buffer, handle->desc.pad_h, handle->desc.pad_w, ifm1, 0, padded_w, handle->blocksifm, handle->ifmblock);
+        jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
+      }
+    }
 #else
 #include "libxsmm_dnn_zero_rim_st_input_nhwc.tpl.c"
 #endif
