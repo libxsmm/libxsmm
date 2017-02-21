@@ -97,7 +97,7 @@ if (handle->datatype != handle->datatype_itm) {
 #endif
     
 #if defined(INPUT_PADDING)
-    jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].code_fwd.xmatcopy.smatcopy;
+    jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
 #endif
 
     for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
