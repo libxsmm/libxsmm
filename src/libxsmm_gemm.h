@@ -229,7 +229,7 @@ PARALLEL_OUTER { /* use NN, etc. rather than N due to below char. constant */ \
       PARALLEL_INNER LOOP_START(COLLAPSE, libxsmm_tiled_xgemm_i_, libxsmm_tiled_xgemm_j_) \
       for (libxsmm_tiled_xgemm_i_ = 0; libxsmm_tiled_xgemm_i_ < libxsmm_tiled_xgemm_m_; libxsmm_tiled_xgemm_i_ += libxsmm_tiled_xgemm_dm_) { \
         for (libxsmm_tiled_xgemm_j_ = 0; libxsmm_tiled_xgemm_j_ < libxsmm_tiled_xgemm_n_; libxsmm_tiled_xgemm_j_ += libxsmm_tiled_xgemm_dn_) { \
-          KERNEL_START(libxsmm_tiled_xgemm_i_, libxsmm_tiled_xgemm_j_) \
+          KERNEL_START(firstprivate(libxsmm_tiled_xgemm_i_, libxsmm_tiled_xgemm_j_)) \
           LIBXSMM_GEMM_TILED_KERNEL(libxsmm_tiled_xgemm_kernel_, TYPE, FLAGS, \
             0 == libxsmm_tiled_xgemm_swap_ ? libxsmm_tiled_xgemm_i_ : libxsmm_tiled_xgemm_j_, \
             0 == libxsmm_tiled_xgemm_swap_ ? libxsmm_tiled_xgemm_j_ : libxsmm_tiled_xgemm_i_, \
@@ -241,7 +241,7 @@ PARALLEL_OUTER { /* use NN, etc. rather than N due to below char. constant */ \
     else { \
       PARALLEL_INNER LOOP_START(1/*COLLAPSE*/, libxsmm_tiled_xgemm_i_, libxsmm_tiled_xgemm_j_) \
       for (libxsmm_tiled_xgemm_i_ = 0; libxsmm_tiled_xgemm_i_ < libxsmm_tiled_xgemm_m_; libxsmm_tiled_xgemm_i_ += libxsmm_tiled_xgemm_dm_) { \
-        KERNEL_START(libxsmm_tiled_xgemm_i_) \
+        KERNEL_START(firstprivate(libxsmm_tiled_xgemm_i_)) \
         for (libxsmm_tiled_xgemm_j_ = 0; libxsmm_tiled_xgemm_j_ < libxsmm_tiled_xgemm_n_; libxsmm_tiled_xgemm_j_ += libxsmm_tiled_xgemm_dn_) { \
           LIBXSMM_GEMM_TILED_KERNEL(libxsmm_tiled_xgemm_kernel_, TYPE, FLAGS, \
             0 == libxsmm_tiled_xgemm_swap_ ? libxsmm_tiled_xgemm_i_ : libxsmm_tiled_xgemm_j_, \
