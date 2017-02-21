@@ -425,9 +425,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       if (handle->padding_flag == 1) {
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
         descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;
-        matcopyback_descriptor.m = handle->ifhp;
         if (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) {
           matcopy_descriptor.m = handle->ifhp;
+          matcopyback_descriptor.m = handle->ifhp;
           matcopy_descriptor.n = handle->ifwp * handle->ifmblock;
           matcopyback_descriptor.n = handle->ifwp * handle->ifmblock;
           matcopy_descriptor.lda = handle->ifwp * handle->ifmblock;
@@ -439,6 +439,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matcopy_descriptor.n =  handle->ifmblock;
           matcopy_descriptor.lda = handle->ifmblock;
           matcopy_descriptor.ldb = handle->ifmblock;
+          matcopyback_descriptor.m = 1;
           matcopyback_descriptor.n = handle->ifmblock;
           matcopyback_descriptor.lda = handle->ifmblock;
           matcopyback_descriptor.ldb = handle->ifmblock;
