@@ -251,11 +251,25 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
         typedef libxsmm_busconvfunction libxsmm_convfunction;
         typedef libxsmm_bmatcopyfunction libxsmm_matcopyfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
+          if (handle->padding_flag == 1) {
+#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
+#define INPUT_PADDING
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
+#undef INPUT_PADDING
+#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
+          } else {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
+          }
         } else {
+          if (handle->padding_flag == 1) {
+#define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
+#undef INPUT_PADDING
+          } else {
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
+          }
         }
       }
     } else if (handle->datatype == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
