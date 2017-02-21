@@ -65,72 +65,20 @@ element_filter_type *l_wt;
 element_output_type* l_output;
 
 #if defined(INPUT_PADDING)
-/* Based on the input datatype select the right intrinsics */
-#ifdef INPUT_F32
-
-#if defined(__AVX512F__)
-#define LOAD(x)             _mm512_load_ps(x)
-#define STORE(x,y)          _mm512_store_ps(x,y)
-#endif
-
-#if defined(__AVX__)
-#define STORE_256(x,y)      _mm256_store_ps(x,y)
-#define LOAD_256(x)         _mm256_load_ps(x)
-#endif
-#define CHUNK_SIZE          16
-
-#endif
-
-#ifdef INPUT_I16
-
-#if defined(__AVX512F__)
-#define LOAD(x)             _mm512_load_si512 (x)
-#define STORE(x,y)          _mm512_store_si512(x,y)
-#endif
-
-#if defined(__AVX__)
-#define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
-#define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
-#endif
-#define CHUNK_SIZE          32
-
-#endif
-
-#ifdef INPUT_I8
-
-#if defined(__AVX512F__)
-#define LOAD(x)             _mm512_load_si512 (x)
-#define STORE(x,y)          _mm512_store_si512(x,y)
-#endif
-
-#if defined(__AVX__)
-#define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
-#define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
-#endif
-#define CHUNK_SIZE          64
-
-#endif
-
-/* Variables and initializations related to padding */
-int iij;
-const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
-const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
-#if defined(__AVX512F__) || defined(__AVX__)
 element_input_type (* __restrict input_ptr);
 element_input_type (* __restrict copy_ptr);
-const int big_block_size = padded_w * handle->blocksifm * handle->ifmblock;
-const int block_size = handle->ifwp * handle->blocksifm * handle->ifmblock;
 element_input_type *prefetch_ptr;
-#endif
+const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
+const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
+libxsmm_matcopyfunction jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_bwd[0].pmm;
+libxsmm_matcopybackfunction jitted_matcopyback = (libxsmm_matcopybackfunction)handle->matcopy_bwd[1].pmm;
 LIBXSMM_VLA_DECL(4, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * padded_h * padded_w * handle->blocksifm * handle->ifmblock, padded_w, handle->blocksifm, handle->ifmblock);
-const size_t small_block_size = handle->ifmblock * libxsmm_dnn_typesize(handle->datatype) * 8;
 memset(&LIBXSMM_VLA_ACCESS(4, input_buffer, 0, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock), 0,
        padded_w * padded_h * handle->blocksifm * handle->ifmblock * sizeof(element_input_type));
 ifh = handle->ifhp + 2 * handle->desc.pad_h;
 #else
 ifh = handle->ifhp;
 #endif
-
 
 /* lazy barrier init */
 if (handle->filter_transposed == 0) {
@@ -165,11 +113,8 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     ifm1 = imgifm1%handle->blocksifm;
 
 #if defined(INPUT_PADDING)
-
-#if defined(__AVX512F__) || defined(__AVX__)
     input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
     copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(4, input_buffer, handle->desc.pad_h, handle->desc.pad_w, ifm1, 0, padded_w, handle->blocksifm, handle->ifmblock);
-
     if (ifm1+1 != handle->blocksifm) {
       /* Prefetch next ifm, same image */
       prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, 0, 0, ifm1+1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
@@ -177,75 +122,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       /* Prefetch ifm 0 from next image */
       prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
     }
-#endif
-
-    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-      if (small_block_size == 512) {
-        for (oj = 0; oj < handle->ifhp; oj++) {
-#if defined(__AVX512F__)
-          for (ij = 0; ij < handle->ifwp; ij++) {
-            STORE(&copy_ptr[ij * handle->blocksifm * handle->ifmblock+oj*big_block_size], LOAD(&input_ptr[ij * handle->blocksifm * handle->ifmblock +oj*block_size]));
-            _mm_prefetch((const char*)&prefetch_ptr[ij+oj*block_size], _MM_HINT_T1);
-          }
-#else
-          for (ij = 0; ij < handle->ifwp; ij++) {
-            for (iij = 0; iij < handle->ifmblock; iij++) {
-              LIBXSMM_VLA_ACCESS(4, input_buffer, oj + handle->desc.pad_h, ij + handle->desc.pad_w, ifm1, iij, padded_w, handle->blocksifm, handle->ifmblock)
-              = LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, iij, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-            }
-          }
-#if defined(__AVX512F__)
-          _mm_prefetch((const char*)&prefetch_ptr[ij*handle->ifmblock*handle->blocksifm+oj*block_size], _MM_HINT_T1);
-#endif
-#endif
-        }
-      } else {
-        for (oj = 0; oj < handle->ifhp; oj++) {
-          for (ij = 0; ij < handle->ifwp; ij++) {
-            for (iij = 0; iij < handle->ifmblock; iij++) {
-              LIBXSMM_VLA_ACCESS(4, input_buffer, oj + handle->desc.pad_h, ij + handle->desc.pad_w, ifm1, iij, padded_w, handle->blocksifm, handle->ifmblock)
-              = LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, iij, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-            }
-          }
-#if defined(__AVX512F__)
-          _mm_prefetch((const char*)&prefetch_ptr[ij*handle->ifmblock*handle->blocksifm+oj*block_size], _MM_HINT_T1);
-#endif
-        }
-      }
-    } else if (libxsmm_target_archid == LIBXSMM_X86_AVX2) {
-      if (small_block_size == 256) {
-        for (oj = 0; oj < handle->ifhp; oj++) {
-#if defined(__AVX__)
-          for (ij = 0; ij < handle->ifwp; ij++) {
-            STORE_256(&copy_ptr[ij * handle->blocksifm * handle->ifmblock+oj*big_block_size], LOAD_256(&input_ptr[ij * handle->blocksifm * handle->ifmblock +oj*block_size]));
-            _mm_prefetch((const char*)&prefetch_ptr[ij+oj*block_size], _MM_HINT_T1);
-          }
-#else
-          for (ij = 0; ij < handle->ifwp; ij++) {
-            for (iij = 0; iij < handle->ifmblock; iij++) {
-              LIBXSMM_VLA_ACCESS(4, input_buffer, oj + handle->desc.pad_h, ij + handle->desc.pad_w, ifm1, iij, padded_w, handle->blocksifm, handle->ifmblock)
-              = LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, iij, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-            }
-          }
-#if defined(__AVX__)
-          _mm_prefetch((const char*)&prefetch_ptr[ij*handle->ifmblock*handle->blocksifm+oj*block_size], _MM_HINT_T1);
-#endif
-#endif
-        }
-      } else {
-        for (oj = 0; oj < handle->ifhp; oj++) {
-          for (ij = 0; ij < handle->ifwp; ij++) {
-            for (iij = 0; iij < handle->ifmblock; iij++) {
-              LIBXSMM_VLA_ACCESS(4, input_buffer, oj + handle->desc.pad_h, ij + handle->desc.pad_w, ifm1, iij, padded_w, handle->blocksifm, handle->ifmblock)
-              = LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, iij, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-            }
-          }
-#if defined(__AVX__)
-          _mm_prefetch((const char*)&prefetch_ptr[ij*handle->ifmblock*handle->blocksifm+oj*block_size], _MM_HINT_T1);
-#endif
-        }
-      }
-    }
+    jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
 #endif
 
     for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
@@ -267,59 +144,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     }
 #if defined(INPUT_PADDING)
     /* Write back input buffer */
-    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-      if (small_block_size == 512) {
-        for (oj = 0; oj < handle->ifhp; oj++) {
-#if defined(__AVX512F__)
-          for (ij = 0; ij < handle->ifwp; ij++) {
-            STORE(&input_ptr[ij * handle->blocksifm * handle->ifmblock+oj*block_size], LOAD(&copy_ptr[ij * handle->blocksifm * handle->ifmblock+oj*big_block_size]));
-          }
-#else
-          for (ij = 0; ij < handle->ifwp; ij++) {
-            for (iij = 0; iij < handle->ifmblock; iij++) {
-              LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, iij, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock) =
-              LIBXSMM_VLA_ACCESS(4, input_buffer, oj + handle->desc.pad_h, ij + handle->desc.pad_w, ifm1, iij, padded_w, handle->blocksifm, handle->ifmblock);
-            }
-          }
-#endif
-        }
-      } else {
-        for (oj = 0; oj < handle->ifhp; oj++) {
-          for (ij = 0; ij < handle->ifwp; ij++) {
-            for (iij = 0; iij < handle->ifmblock; iij++) {
-              LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, iij, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock) =
-              LIBXSMM_VLA_ACCESS(4, input_buffer, oj + handle->desc.pad_h, ij + handle->desc.pad_w, ifm1, iij, padded_w, handle->blocksifm, handle->ifmblock);
-            }
-          }
-        }
-      }
-    } else if (libxsmm_target_archid == LIBXSMM_X86_AVX2) {
-      if (small_block_size == 256) {
-        for (oj = 0; oj < handle->ifhp; oj++) {
-#if defined(__AVX__)
-          for (ij = 0; ij < handle->ifwp; ij++) {
-            STORE_256(&input_ptr[ij * handle->blocksifm * handle->ifmblock+oj*block_size], LOAD_256(&copy_ptr[ij * handle->blocksifm * handle->ifmblock+oj*big_block_size]));
-          }
-#else
-          for (ij = 0; ij < handle->ifwp; ij++) {
-            for (iij = 0; iij < handle->ifmblock; iij++) {
-              LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, iij, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock) =
-              LIBXSMM_VLA_ACCESS(4, input_buffer, oj + handle->desc.pad_h, ij + handle->desc.pad_w, ifm1, iij, padded_w, handle->blocksifm, handle->ifmblock);
-            }
-          }
-#endif
-        }
-      } else {
-        for (oj = 0; oj < handle->ifhp; oj++) {
-          for (ij = 0; ij < handle->ifwp; ij++) {
-            for (iij = 0; iij < handle->ifmblock; iij++) {
-              LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, iij, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock) =
-              LIBXSMM_VLA_ACCESS(4, input_buffer, oj + handle->desc.pad_h, ij + handle->desc.pad_w, ifm1, iij, padded_w, handle->blocksifm, handle->ifmblock);
-            }
-          }
-        }
-      }
-    }
+    jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
 #else
 #include "libxsmm_dnn_zero_rim_st_input_nhwc.tpl.c"
 #endif
@@ -328,10 +153,3 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 } else {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 }
-
-#if defined(INPUT_PADDING)
-#undef LOAD
-#undef STORE
-#undef CHUNK_SIZE
-#endif
-
