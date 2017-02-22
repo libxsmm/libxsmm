@@ -241,8 +241,9 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
 {
   num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
   num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
-
+printf("NEP: ifmblocks: %d, ")
 if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* special case for not enough parallelism */
+  printf("NEP: ifmblocks: %d, ofmblocks: %d\n", handle->blocksifm, handle->blocksofm);
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
       /* lazy barrier init */
       if (handle->upd_use_external_reduce == 0) {
@@ -384,6 +385,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
       }
 #endif
     } else { /* enough parallelism available */
+      printf("EnoughP: ifmblocks: %d, ofmblocks: %d\n", handle->blocksifm, handle->blocksofm);
          for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
            ofm1 = ofm1ifm1 / handle->blocksifm;
            ifm1 = ofm1ifm1 % handle->blocksifm;
