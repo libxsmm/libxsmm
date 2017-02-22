@@ -122,14 +122,7 @@ const int padded_h = handle->ifhp;
 const int padded_w = handle->ifwp;
 #endif
 
-unsigned int input_w, input_h;
-#if defined(INPUT_PADDING)
-input_w = padded_w;
-input_h = padded_h;
-#else
-input_w = handle->ifwp;
-input_h = handle->ifhp;
-#endif
+unsigned int input_w = padded_w, input_h = padded_h;
 
 kh = handle->desc.R;
 kw = handle->desc.S;
