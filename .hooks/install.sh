@@ -8,7 +8,9 @@ GIT=$(which git)
 CP=$(which cp)
 RM=$(which rm)
 
-if [ -e ${GIT_DIR}/hooks ]; then
+if [ -e ${GIT_DIR}/hooks ] && \
+   [ "" != "${GIT}" ] && [ "" != "${CP}" ] && [ "" != "${RM}" ]; \
+then
   # make sure the path to .gitconfig is a relative path
   ${GIT} config --local include.path ../.gitconfig 2> /dev/null
   ${CP} ${HERE}/post-commit ${GIT_DIR}/hooks

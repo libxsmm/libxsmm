@@ -33,22 +33,15 @@ SYM = 1
 include $(DEPDIR)/Makefile.inc
 
 OUTNAME := $(shell basename $(ROOTDIR))
-HEADERS := $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(INCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(INCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(INCDIR)/*.hh  2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.h   2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.hh  2> /dev/null | tr "\n" " ")
-CPPSRCS := $(shell ls -1 $(SRCDIR)/*.cpp 2> /dev/null | tr "\n" " ")
-CXXSRCS := $(shell ls -1 $(SRCDIR)/*.cxx 2> /dev/null | tr "\n" " ")
-CCXSRCS := $(shell ls -1 $(SRCDIR)/*.cc  2> /dev/null | tr "\n" " ")
-CSOURCS := $(shell ls -1 $(SRCDIR)/*.c   2> /dev/null | tr "\n" " ")
-FXXSRCS := $(shell ls -1 $(SRCDIR)/*.f   2> /dev/null | tr "\n" " ")
-F77SRCS := $(shell ls -1 $(SRCDIR)/*.F   2> /dev/null | tr "\n" " ")
-F90SRCS := $(shell ls -1 $(SRCDIR)/*.f90 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.F90 2> /dev/null | tr "\n" " ")
+HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
+           $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh)
+CPPSRCS := $(wildcard $(SRCDIR)/*.cpp)
+CXXSRCS := $(wildcard $(SRCDIR)/*.cxx)
+CCXSRCS := $(wildcard $(SRCDIR)/*.cx)
+CSOURCS := $(wildcard $(SRCDIR)/*.c)
+FXXSRCS := $(wildcard $(SRCDIR)/*.f)
+F77SRCS := $(wildcard $(SRCDIR)/*.F)
+F90SRCS := $(wildcard $(SRCDIR)/*.f90) $(wildcard $(SRCDIR)/*.F90)
 CPPOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CPPSRCS:.cpp=-cpp.o)))
 CXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CXXSRCS:.cxx=-cxx.o)))
 CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
@@ -63,6 +56,7 @@ FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/edge_vol_int
+#XFILES := $(OUTDIR)/edge_vol_int $(OUTDIR)/asparse_soa $(OUTDIR)/bsparse_soa
 
 .PHONY: all
 all: $(XFILES)
@@ -72,6 +66,12 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/edge_vol_int: $(OUTDIR)/.make $(BLDDIR)/edge_vol_int-c.o $(LIBNAME).$(LIBEXT)
 	$(LD) -o $@ $(BLDDIR)/edge_vol_int-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+#$(OUTDIR)/asparse_soa: $(OUTDIR)/.make $(BLDDIR)/asparse_soa-c.o $(LIBNAME).$(LIBEXT)
+#	$(LD) -o $@ $(BLDDIR)/asparse_soa-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+#
+#$(OUTDIR)/bsparse_soa: $(OUTDIR)/.make $(BLDDIR)/bsparse_soa-c.o $(LIBNAME).$(LIBEXT)
+#	$(LD) -o $@ $(BLDDIR)/bsparse_soa-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

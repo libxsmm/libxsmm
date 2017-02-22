@@ -33,22 +33,15 @@ SYM = 1
 include $(DEPDIR)/Makefile.inc
 
 OUTNAME := $(shell basename $(ROOTDIR))
-HEADERS := $(shell ls -1 $(INCDIR)/*.h   2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(INCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(INCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(INCDIR)/*.hh  2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.h   2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.hpp 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.hxx 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.hh  2> /dev/null | tr "\n" " ")
-CPPSRCS := $(shell ls -1 $(SRCDIR)/*.cpp 2> /dev/null | tr "\n" " ")
-CXXSRCS := $(shell ls -1 $(SRCDIR)/*.cxx 2> /dev/null | tr "\n" " ")
-CCXSRCS := $(shell ls -1 $(SRCDIR)/*.cc  2> /dev/null | tr "\n" " ")
-CSOURCS := $(shell ls -1 $(SRCDIR)/*.c   2> /dev/null | tr "\n" " ")
-FXXSRCS := $(shell ls -1 $(SRCDIR)/*.f   2> /dev/null | tr "\n" " ")
-F77SRCS := $(shell ls -1 $(SRCDIR)/*.F   2> /dev/null | tr "\n" " ")
-F90SRCS := $(shell ls -1 $(SRCDIR)/*.f90 2> /dev/null | tr "\n" " ") \
-           $(shell ls -1 $(SRCDIR)/*.F90 2> /dev/null | tr "\n" " ")
+HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
+           $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh)
+CPPSRCS := $(wildcard $(SRCDIR)/*.cpp)
+CXXSRCS := $(wildcard $(SRCDIR)/*.cxx)
+CCXSRCS := $(wildcard $(SRCDIR)/*.cx)
+CSOURCS := $(wildcard $(SRCDIR)/*.c)
+FXXSRCS := $(wildcard $(SRCDIR)/*.f)
+F77SRCS := $(wildcard $(SRCDIR)/*.F)
+F90SRCS := $(wildcard $(SRCDIR)/*.f90) $(wildcard $(SRCDIR)/*.F90)
 CPPOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CPPSRCS:.cpp=-cpp.o)))
 CXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CXXSRCS:.cxx=-cxx.o)))
 CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
@@ -70,7 +63,7 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME).$(LIBEXT) $(LIBNAME)ext.$(LIBEXT)
 	$(XLD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc

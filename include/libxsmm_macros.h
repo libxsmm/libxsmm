@@ -309,7 +309,7 @@
 #define LIBXSMM_INDEX1_7(I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, S6) (LIBXSMM_INDEX1_6(I0, I1, I2, I3, I4, I5, S1, S2, S3, S4, S5) * (S6) + (I6))
 #define LIBXSMM_INDEX1_8(I0, I1, I2, I3, I4, I5, I6, I7, S1, S2, S3, S4, S5, S6, S7) (LIBXSMM_INDEX1_7(I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, S6) * (S7) + (I7))
 
- /**
+/**
  * LIBXSMM_VLA_DECL declares an array according to the given set of (multiple) bounds.
  * Syntax: LIBXSMM_VLA_DECL(<ndims>, <elem-type>, <var-name>, <init>, <s1>, ..., <s(ndims-1)>).
  * The element type can be "const" or otherwise qualified; initial value must be (const)element-type*.
@@ -320,19 +320,22 @@
  * Please note that the syntax is similar to LIBXSMM_INDEX1, and the leading dimension (s0) is omitted!
  */
 #if defined(LIBXSMM_VLA)
-# define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) LIBXSMM_CONCATENATE(LIBXSMM_VLA_ACCESS_, NDIMS)(ARRAY, __VA_ARGS__)
-# define LIBXSMM_VLA_ACCESS_0(ARRAY, ...) (ARRAY)
-# define LIBXSMM_VLA_ACCESS_1(ARRAY, I0, ...) ((ARRAY)[I0])
-# define LIBXSMM_VLA_ACCESS_2(ARRAY, I0, I1, ...) ((ARRAY)[I0][I1])
-# define LIBXSMM_VLA_ACCESS_3(ARRAY, I0, I1, I2, ...) ((ARRAY)[I0][I1][I2])
-# define LIBXSMM_VLA_ACCESS_4(ARRAY, I0, I1, I2, I3, ...) ((ARRAY)[I0][I1][I2][I3])
-# define LIBXSMM_VLA_ACCESS_5(ARRAY, I0, I1, I2, I3, I4, ...) ((ARRAY)[I0][I1][I2][I3][I4])
-# define LIBXSMM_VLA_ACCESS_6(ARRAY, I0, I1, I2, I3, I4, I5, ...) ((ARRAY)[I0][I1][I2][I3][I4][I5])
-# define LIBXSMM_VLA_ACCESS_7(ARRAY, I0, I1, I2, I3, I4, I5, I6, ...) ((ARRAY)[I0][I1][I2][I3][I4][I5][I6])
-# define LIBXSMM_VLA_ACCESS_8(ARRAY, I0, I1, I2, I3, I4, I5, I6, I7, ...) ((ARRAY)[I0][I1][I2][I3][I4][I5][I6][I7])
+# define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) LIBXSMM_VLA_ACCESS_Z(NDIMS, ARRAY, LIBXSMM_VLA_ACCESS_X, __VA_ARGS__)
+# define LIBXSMM_VLA_ACCESS_X(S) + 0 * (S)
+# define LIBXSMM_VLA_ACCESS_Y(...)
+# define LIBXSMM_VLA_ACCESS_Z(NDIMS, ARRAY, XY, ...) LIBXSMM_CONCATENATE(LIBXSMM_VLA_ACCESS_, NDIMS)(ARRAY, XY, __VA_ARGS__)
+# define LIBXSMM_VLA_ACCESS_0(ARRAY, XY, ...) (ARRAY)/*scalar*/
+# define LIBXSMM_VLA_ACCESS_1(ARRAY, XY, I0, ...) ((ARRAY)[I0])
+# define LIBXSMM_VLA_ACCESS_2(ARRAY, XY, I0, I1, ...) (((ARRAY) XY(__VA_ARGS__))[I0][I1])
+# define LIBXSMM_VLA_ACCESS_3(ARRAY, XY, I0, I1, I2, S1, ...) (((ARRAY) XY(S1) XY(__VA_ARGS__))[I0][I1][I2])
+# define LIBXSMM_VLA_ACCESS_4(ARRAY, XY, I0, I1, I2, I3, S1, S2, ...) (((ARRAY) XY(S1) XY(S2) XY(__VA_ARGS__))[I0][I1][I2][I3])
+# define LIBXSMM_VLA_ACCESS_5(ARRAY, XY, I0, I1, I2, I3, I4, S1, S2, S3, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(__VA_ARGS__))[I0][I1][I2][I3][I4])
+# define LIBXSMM_VLA_ACCESS_6(ARRAY, XY, I0, I1, I2, I3, I4, I5, S1, S2, S3, S4, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(S4) XY(__VA_ARGS__))[I0][I1][I2][I3][I4][I5])
+# define LIBXSMM_VLA_ACCESS_7(ARRAY, XY, I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(S4) XY(S5) XY(__VA_ARGS__))[I0][I1][I2][I3][I4][I5][I6])
+# define LIBXSMM_VLA_ACCESS_8(ARRAY, XY, I0, I1, I2, I3, I4, I5, I6, I7, S1, S2, S3, S4, S5, S6, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(S4) XY(S5) XY(S6) XY(__VA_ARGS__))[I0][I1][I2][I3][I4][I5][I6][I7])
 # define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, VARIABLE_NAME, INIT_VALUE, .../*bounds*/) \
-    ELEMENT_TYPE LIBXSMM_VLA_ACCESS(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *LIBXSMM_RESTRICT VARIABLE_NAME, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/) = \
-   (ELEMENT_TYPE LIBXSMM_VLA_ACCESS(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/))(INIT_VALUE)
+    ELEMENT_TYPE LIBXSMM_VLA_ACCESS_Z(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *LIBXSMM_RESTRICT VARIABLE_NAME, LIBXSMM_VLA_ACCESS_Y, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/) = \
+   (ELEMENT_TYPE LIBXSMM_VLA_ACCESS_Z(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *, LIBXSMM_VLA_ACCESS_Y, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/))(INIT_VALUE)
 #else /* calculate linear index */
 # define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) ((ARRAY)[LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)])
 # define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, VARIABLE_NAME, INIT_VALUE, .../*bounds*/) \
@@ -466,7 +469,7 @@
 #endif
 
 /** Similar to LIBXSMM_UNUSED, this helper "sinks" multiple arguments. */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_sink(LIBXSMM_VARIADIC) {/*nothing*/}
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE int libxsmm_sink(int rvalue, ...) { return rvalue; }
 
 #endif /*LIBXSMM_MACROS_H*/
 

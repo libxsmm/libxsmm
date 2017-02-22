@@ -92,6 +92,8 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
+    const char *const env_tasks = getenv("TASKS");
+    const int tasks = (0 == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
     REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc(lda * k * sizeof(REAL_TYPE));
     REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldb * n * sizeof(REAL_TYPE));
     REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
@@ -114,10 +116,25 @@ int main(int argc, char* argv[])
       &transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
     fprintf(stdout, "\n\n");
 
-    { /* Tiled xGEMM */
+    if (0 == tasks) { /* Tiled xGEMM (with library-internal parallelization) */
       int i; double duration;
       unsigned long long start = libxsmm_timer_tick();
       for (i = 0; i < nrepeat; ++i) {
+        LIBXSMM_YGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+      }
+      duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      if (0 < duration) {
+        fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
+      }
+    }
+    else { /* Tiled xGEMM (with external parallelization) */
+      int i; double duration;
+      unsigned long long start = libxsmm_timer_tick();
+      for (i = 0; i < nrepeat; ++i) {
+#if defined(_OPENMP)
+#       pragma omp parallel
+#       pragma omp single nowait
+#endif
         LIBXSMM_YGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
       }
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());

@@ -48,12 +48,15 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    ur_j\n");
   printf("    ur_m\n");
   printf("    vratio\n");
-  printf("    ARCH: knl, skx\n");
-  printf("    PREFETCH: nopf (none)\n");
+  printf("    ARCH: knm, knl, skx\n");
+  printf("    PREFETCH: nopf, all\n");
   printf("    PRECISION: SP\n");
   printf("\n\n\n\n");
 }
 
+
+void factors( unsigned int num,
+              unsigned int num_factors[] );
 
 /* This function finds the prime factors of a number */
 void factors( unsigned int num,
@@ -73,6 +76,14 @@ void factors( unsigned int num,
   }
 }
 
+
+void factors_ijm( unsigned int  itiles,
+                  unsigned int  jtiles,
+                  unsigned int  bimg,
+                  unsigned int* ur_i,
+                  unsigned int* ur_j,
+                  unsigned int* ur_m,
+                  unsigned int  max_acc);
 
 /* This function finds the loop increments (ur_i, ur_j, ur_m) of (itiles, jtiles, bimg) */
 /* such that ur_i*ur_j*ur_m <= max_acc                                                  */
@@ -184,7 +195,6 @@ int main(int argc, char* argv []) {
   char* l_routine_name;
   char* l_arch;
   char* l_precision;
-  int l_prefetch;
   int l_itiles = 0;
   int l_jtiles = 0;
   int l_bimg = 0;
@@ -194,6 +204,7 @@ int main(int argc, char* argv []) {
   int l_vratio = 0;
   int l_single_precision = 0;
   int flag_ur = 0;
+  libxsmm_convolution_prefetch_type l_prefetch;
 
   /* check argument count for a valid range */
   if (argc != 14) {
@@ -229,16 +240,17 @@ int main(int argc, char* argv []) {
 
   /* set value of prefetch flag */
   if (strcmp("nopf", argv[12]) == 0) {
-    /* l_prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE; */
+    l_prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
+  } else if (strcmp("all", argv[12]) == 0) {
     l_prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-  }
-  else {
+  } else {
     print_help();
     return -1;
   }
 
   /* check value of arch flag */
-  if ( (strcmp(l_arch, "knl") != 0)    &&
+  if ( (strcmp(l_arch, "knm") != 0) &&
+       (strcmp(l_arch, "knl") != 0) &&
        (strcmp(l_arch, "skx") != 0) ) {
     print_help();
     return -1;

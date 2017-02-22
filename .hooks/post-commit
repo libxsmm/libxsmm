@@ -5,10 +5,11 @@ LOCKFILE=${GIT_DIR}/.commit
 GIT=$(which git)
 RM=$(which rm)
 
-if [ -e ${LOCKFILE} ]; then
+if [ -e ${LOCKFILE} ] && \
+   [ "" != "${RM}" ]; \
+then
   # lock file must be deleted *prior* to below commit
   ${RM} ${LOCKFILE}
-
   # update the version file
   ${ROOTDIR}/.hooks/version.sh > ${ROOTDIR}/version.txt
   ${GIT} add version.txt

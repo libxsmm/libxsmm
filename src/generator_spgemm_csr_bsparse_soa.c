@@ -73,21 +73,19 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
   unsigned int l_z;
   unsigned int l_row_elements;
   unsigned int l_flop_count = 0;
-
   unsigned int l_soa_width;
   unsigned int l_max_cols = 0;
+  unsigned int l_n_processed = 0;
+  unsigned int l_n_limit = 0;
+  unsigned int l_n_chunks = 0;
+  unsigned int l_n_chunksize = 0;
+  unsigned int l_found_mul = 0;
 
   libxsmm_micro_kernel_config l_micro_kernel_config = { 0 };
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   LIBXSMM_UNUSED(i_values);
-
-  /* check that we have enough registers (N=20) for now */
-  if (i_xgemm_desc->n > 20 ) {
-    fprintf( stderr, "CSR + SOA is limited to N<=20 for the time being!" );
-    exit(-1);
-  }
 
   /* select soa width */
   if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
@@ -129,6 +127,10 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
   }
   l_max_cols++;
 
+  /* calculate the chunk size of current columns to work on */
+  l_n_chunks = ( (l_max_cols % 28) == 0 ) ? (l_max_cols / 28) : (l_max_cols / 28) + 1;
+  l_n_chunksize = ( (l_max_cols % l_n_chunks) == 0 ) ? (l_max_cols / l_n_chunks) : (l_max_cols / l_n_chunks) + 1;
+
   /* open asm */
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 
@@ -136,73 +138,95 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
   libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_mloop, 1 );
 
-  /* load C accumulator */
-  for ( l_n = 0; l_n < l_max_cols; l_n++ ) {
-    if ( i_xgemm_desc->beta == 0 ) {
-      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                               l_micro_kernel_config.instruction_set,
-                                               l_micro_kernel_config.vxor_instruction,
-                                               l_micro_kernel_config.vector_name,
-                                               l_n, l_n, l_n );
-    } else {
+  /* loop over n-blocks of 20 */
+  l_n_processed = 0;
+  l_n_limit = l_n_chunksize;
+  while ( l_n_processed < l_max_cols ) {
+    /* load C accumulator */
+    for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
+      if ( i_xgemm_desc->beta == 0 ) {
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 l_micro_kernel_config.instruction_set,
+                                                 l_micro_kernel_config.vxor_instruction,
+                                                 l_micro_kernel_config.vector_name,
+                                                 l_n, l_n, l_n );
+      } else {
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+                                          l_micro_kernel_config.instruction_set,
+                                          l_micro_kernel_config.c_vmove_instruction,
+                                          l_gp_reg_mapping.gp_reg_c,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          (l_n_processed + l_n)*l_soa_width*l_micro_kernel_config.datatype_size,
+                                          l_micro_kernel_config.vector_name,
+                                          l_n, 0, 0 );
+      }
+    }
+
+    /* do dense soa times sparse multiplication */
+    for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) {
+      l_row_elements = i_row_idx[l_k+1] - i_row_idx[l_k];
+      l_found_mul = 0;
+      /* check if we actually need to multiply */
+      for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
+        if ( (i_column_idx[i_row_idx[l_k] + l_z] < (unsigned int)i_xgemm_desc->n) &&
+             (i_column_idx[i_row_idx[l_k] + l_z] >= l_n_processed)                &&
+             (i_column_idx[i_row_idx[l_k] + l_z] < l_n_limit) )                        {
+          l_found_mul = 1;
+        }
+      }
+      /* only load A if multiplcation loop is not empty */
+      if (l_found_mul != 0) {
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+                                          l_micro_kernel_config.instruction_set,
+                                          l_micro_kernel_config.a_vmove_instruction,
+                                          l_gp_reg_mapping.gp_reg_a,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          l_k*l_soa_width*l_micro_kernel_config.datatype_size,
+                                          l_micro_kernel_config.vector_name,
+                                          28+(l_k%4), 0, 0 );
+      }
+      /* loop over element in the row of B and multiply*/
+      for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
+        /* check k such that we just use columns which actually need to be multiplied */
+        if ( (i_column_idx[i_row_idx[l_k] + l_z] < (unsigned int)i_xgemm_desc->n) &&
+             (i_column_idx[i_row_idx[l_k] + l_z] >= l_n_processed)                &&
+             (i_column_idx[i_row_idx[l_k] + l_z] < l_n_limit) )                        {
+        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                 l_micro_kernel_config.instruction_set,
+                                                 l_micro_kernel_config.vmul_instruction,
+                                                 1,
+                                                 l_gp_reg_mapping.gp_reg_b,
+                                                 LIBXSMM_X86_GP_REG_UNDEF,
+                                                 0,
+                                                 (i_row_idx[l_k] + l_z) * l_micro_kernel_config.datatype_size,
+                                                 l_micro_kernel_config.vector_name,
+                                                 28+(l_k%4),
+                                                 i_column_idx[i_row_idx[l_k] + l_z] - l_n_processed );
+          l_flop_count += 16;
+        }
+      }
+    }
+
+    /* store C accumulator */
+    for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                         l_micro_kernel_config.instruction_set,
                                         l_micro_kernel_config.c_vmove_instruction,
                                         l_gp_reg_mapping.gp_reg_c,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        l_n*l_soa_width*l_micro_kernel_config.datatype_size,
+                                        (l_n_processed + l_n)*l_soa_width*l_micro_kernel_config.datatype_size,
                                         l_micro_kernel_config.vector_name,
-                                        l_n, 0, 0 );
+                                        l_n, 0, 1 );
     }
-  }
 
-  /* do dense soa times sparse multiplication */
-  for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) {
-    l_row_elements = i_row_idx[l_k+1] - i_row_idx[l_k];
-    if (l_row_elements > 0) {
-      libxsmm_x86_instruction_vec_move( io_generated_code,
-                                        l_micro_kernel_config.instruction_set,
-                                        l_micro_kernel_config.a_vmove_instruction,
-                                        l_gp_reg_mapping.gp_reg_a,
-                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        l_k*l_soa_width*l_micro_kernel_config.datatype_size,
-                                        l_micro_kernel_config.vector_name,
-                                        i_xgemm_desc->n+(l_k%12), 0, 0 );
-    }
-    for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
-      /* check k such that we just use columns which actually need to be multiplied */
-      if ( i_column_idx[i_row_idx[l_k] + l_z] < (unsigned int)i_xgemm_desc->n ) {
-      libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                               l_micro_kernel_config.instruction_set,
-                                               l_micro_kernel_config.vmul_instruction,
-                                               1,
-                                               l_gp_reg_mapping.gp_reg_b,
-                                               LIBXSMM_X86_GP_REG_UNDEF,
-                                               0,
-                                               (i_row_idx[l_k] + l_z) * l_micro_kernel_config.datatype_size,
-                                               l_micro_kernel_config.vector_name,
-                                               i_xgemm_desc->n+(l_k%12),
-                                               i_column_idx[i_row_idx[l_k] + l_z] );
-        l_flop_count += 16;
-      }
-    }
-  }
-
-  /* store C accumulator */
-  for ( l_n = 0; l_n < l_max_cols; l_n++ ) {
-    libxsmm_x86_instruction_vec_move( io_generated_code,
-                                      l_micro_kernel_config.instruction_set,
-                                      l_micro_kernel_config.c_vmove_instruction,
-                                      l_gp_reg_mapping.gp_reg_c,
-                                      LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                      l_n*l_soa_width*l_micro_kernel_config.datatype_size,
-                                      l_micro_kernel_config.vector_name,
-                                      l_n, 0, 1 );
+    /* adjust n progression */
+    l_n_processed += l_n_chunksize;
+    l_n_limit = LIBXSMM_MAX(l_n_processed + l_n_chunksize, l_max_cols);
   }
 
   /* advance C pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_c,
-                                   l_micro_kernel_config.datatype_size*l_soa_width*i_xgemm_desc->ldc);
+                                     l_micro_kernel_config.datatype_size*l_soa_width*i_xgemm_desc->ldc);
 
   /* advance A pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_a,
