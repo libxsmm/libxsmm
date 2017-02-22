@@ -96,7 +96,7 @@ LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, weight, handle->blocksi
 
 #if defined(INPUT_PADDING)
 /* Define variables if padding is required */
-int imgifm1, ii;
+int ii;
 element_input_type (* __restrict input_ptr);
 element_input_type (*__restrict copy_ptr);
 element_input_type *prefetch_ptr;
