@@ -301,12 +301,12 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #if defined(INPUT_PADDING)
   //libxsmm_barrier_init(handle->barrier, ltid);
   /* Initialize in parallel scratch5 to zero */
-  for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
+  /*for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
     img = imgifm1/handle->blocksifm;
     ifm1 = imgifm1%handle->blocksifm;
     copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, 0, 0, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
     jitted_matzero(NULL, NULL, copy_ptr, NULL, NULL);
-  }
+  }*/
   //libxsmm_barrier_wait(handle->barrier, ltid);
 
   /* Copy the minibatch to a padded version only if no transpose is required -- otherwise we combine the transpose with the copying into the padded buffer */
