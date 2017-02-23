@@ -685,7 +685,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matzero_descriptor.lda = descriptor.ifw_padded * handle->blocksifm * handle->ifmblock;
           matzero_descriptor.ldb = descriptor.ifw_padded * handle->blocksifm * handle->ifmblock;
         }
-        matcopy_descriptor.prefetch = 0;
+        matcopy_descriptor.prefetch = 1;
         matzero_descriptor.prefetch = 0;
         matcopy_descriptor.unroll_level = 2;
         matzero_descriptor.unroll_level = 2;
