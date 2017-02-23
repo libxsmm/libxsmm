@@ -241,10 +241,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
 {
   num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
   num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
-<<<<<<< HEAD
-=======
 
->>>>>>> parent of 358df72... dbg messg
 if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* special case for not enough parallelism */
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
       /* lazy barrier init */
