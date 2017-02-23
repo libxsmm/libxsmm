@@ -117,7 +117,7 @@ LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, weight, handle->blocksi
 /* Define variables if padding is required */
 element_input_type (* __restrict input_ptr);
 element_input_type (* __restrict copy_ptr);
-element_input_type *prefetch_ptr;
+element_input_type *prefetch_ptr, *prefetch_ptr2;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 libxsmm_matcopyfunction jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_upd[0].xmatcopy.smatcopy;
@@ -317,7 +317,8 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
     copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
     prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, (imgifm1-1)/handle->blocksifm, (imgifm1-1)%handle->blocksifm, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-    jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
+    prefetch_ptr2 = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, (imgifm1-1)/handle->blocksifm, (imgifm1-1)%handle->blocksifm, handle->desc.pad_h, handle->desc.pad_w, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
+    jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr, prefetch_ptr2);
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
