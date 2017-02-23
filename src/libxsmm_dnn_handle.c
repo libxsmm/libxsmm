@@ -687,7 +687,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
         matcopy_descriptor.prefetch = 1;
         matzero_descriptor.prefetch = 0;
-        matcopy_descriptor.unroll_level = 2;
+        matcopy_descriptor.unroll_level = handle->ifwp;
         matzero_descriptor.unroll_level = 2;
         matcopy_descriptor.datatype = handle->datatype;
         matzero_descriptor.datatype = handle->datatype;
