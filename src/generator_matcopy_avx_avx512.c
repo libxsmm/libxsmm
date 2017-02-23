@@ -43,7 +43,6 @@ LIBXSMM_INLINE
 void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_generated_code*               io_generated_code,
                                                                  const libxsmm_matcopy_gp_reg_mapping*  i_gp_reg_mapping,
                                                                  const libxsmm_matcopy_kernel_config*   i_micro_kernel_config,
-                                                                 const libxsmm_matcopy_descriptor*      i_matcopy_desc,
                                                                  unsigned int                           remainder ) {
   int64_t l_mask = (1 << remainder) - 1;
   
@@ -181,7 +180,6 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask(io_generated_code,
                                                                 &l_gp_reg_mapping,
                                                                 &l_kernel_config,
-                                                                i_matcopy_desc,
                                                                 remaining);
   }
   
