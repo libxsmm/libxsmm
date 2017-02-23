@@ -185,13 +185,17 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   
   /* Initialize register 0 with zeros if we want to zero the destination */
   if (i_matcopy_desc->zero_source) {
-    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                             l_kernel_config.instruction_set,
-                                             l_kernel_config.vxor_instruction,
-                                             l_kernel_config.vector_name,
-                                             0,
-                                             0,
-                                             0);
+    
+    for (i=0; i<i_matcopy_desc->unroll_level; i++) {
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                              l_kernel_config.instruction_set,
+                                              l_kernel_config.vxor_instruction,
+                                              l_kernel_config.vector_name,
+                                              i%l_kernel_config.vector_reg_count,
+                                              i%l_kernel_config.vector_reg_count,
+                                              i%l_kernel_config.vector_reg_count);
+    }
+    
     /* In case of AVX/AVX2 and if we have remaining, set also scalar register to zero */
     if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX || l_kernel_config.instruction_set == LIBXSMM_X86_AVX2)) {
       libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -228,7 +232,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                          l_gp_reg_mapping.gp_reg_a,
                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
                                          i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
-                                         l_kernel_config.vector_name, 0,
+                                         l_kernel_config.vector_name, i%l_kernel_config.vector_reg_count,
                                          0, 0 );
       }
       
@@ -249,7 +253,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                        l_gp_reg_mapping.gp_reg_b,
                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
                                        i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
-                                       l_kernel_config.vector_name, 0,
+                                       l_kernel_config.vector_name, i%l_kernel_config.vector_reg_count,
                                        0, 1 );
     }
   
@@ -291,7 +295,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                        l_gp_reg_mapping.gp_reg_a,
                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
                                        i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
-                                       l_kernel_config.vector_name, 0,
+                                       l_kernel_config.vector_name, i%l_kernel_config.vector_reg_count,
                                        0, 0 );
     }
     if (i_matcopy_desc->prefetch) {
@@ -308,7 +312,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                      l_gp_reg_mapping.gp_reg_b,
                                      LIBXSMM_X86_GP_REG_UNDEF, 0,
                                      i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
-                                     l_kernel_config.vector_name, 0,
+                                     l_kernel_config.vector_name, i%l_kernel_config.vector_reg_count,
                                      0, 1 );
   }
   
