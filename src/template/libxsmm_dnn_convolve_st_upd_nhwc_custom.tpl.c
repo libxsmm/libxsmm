@@ -467,11 +467,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
   for (i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
     per_thread_weight_ptr[i] = (element_filter_type)0;
-<<<<<<< HEAD
-  }      
-=======
   }
->>>>>>> af83fda9f4661e04b00aab9dbd655945a2555b30
   /* lazy barrier init */
   if (handle->upd_use_external_reduce == 0) {
     libxsmm_barrier_init(handle->barrier, ltid);
