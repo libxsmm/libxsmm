@@ -1112,7 +1112,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
       /* TODO check JIT errors */
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || 
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
       {
         wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;

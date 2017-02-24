@@ -1146,10 +1146,10 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_wfwd_%s_%s_t%ux%u_mb%u_u%u_p%i.convwino",
             target_arch/*code path name*/, precision_in, precision_out,
-            (unsigned int)request->descriptor.cwino->itiles/*itiles*/, 
+            (unsigned int)request->descriptor.cwino->itiles/*itiles*/,
             (unsigned int)request->descriptor.cwino->jtiles/*jtiles*/,
             (unsigned int)request->descriptor.cwino->bimg/*image block*/,
-            (unsigned int)request->descriptor.cwino->ur/*unrolliing*/, 
+            (unsigned int)request->descriptor.cwino->ur/*unrolliing*/,
             (int)request->descriptor.cwino->prefetch/*binary OR'd prefetch flags*/);
         }
       }
@@ -1170,7 +1170,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_wbwd_%s_%s_t%ux%u_mb%u_u%u_p%i.convwino",
             target_arch/*code path name*/, precision_in, precision_out,
-            (unsigned int)request->descriptor.cwino->itiles/*itiles*/, 
+            (unsigned int)request->descriptor.cwino->itiles/*itiles*/,
             (unsigned int)request->descriptor.cwino->jtiles/*jtiles*/,
             (unsigned int)request->descriptor.cwino->bimg/*image block*/,
             (unsigned int)request->descriptor.cwino->ur/*unrolling*/,
@@ -1194,7 +1194,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_wupd_%s_%s_t%ux%u_mb%u_u%u_p%i.convwino",
             target_arch/*code path name*/, precision_in, precision_out,
-            (unsigned int)request->descriptor.cwino->itiles/*itiles*/, 
+            (unsigned int)request->descriptor.cwino->itiles/*itiles*/,
             (unsigned int)request->descriptor.cwino->jtiles/*jtiles*/,
             (unsigned int)request->descriptor.cwino->bimg/*image block*/,
             (unsigned int)request->descriptor.cwino->ur/*unrolling*/,
