@@ -72,7 +72,7 @@ const size_t small_block_size = handle->ifwp * handle->blocksifm * handle->ifmbl
 #define INT_TO_MASK(x)      ( (__mmask16) x)
 #endif
 
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
 #define LOAD_256(x)         _mm256_load_ps(x)
 #define STORE_256(x,y)      _mm256_store_ps(x,y)
 #endif
@@ -92,7 +92,7 @@ const size_t small_block_size = handle->ifwp * handle->blocksifm * handle->ifmbl
 #define INT_TO_MASK(x)      ( (__mmask32) x)
 #endif
 
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
 #define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
 #define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
 #endif
@@ -112,7 +112,7 @@ const size_t small_block_size = handle->ifwp * handle->blocksifm * handle->ifmbl
 #define INT_TO_MASK(x)      ( (__mmask64) x)
 #endif
 
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
 #define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
 #define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
 #endif
@@ -290,7 +290,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
       if (small_block_size % 256 == 0) {
         for (oj = handle->ifhp-1; oj >= 0; oj--) {
-#if defined(__AVX__)
+#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
           for (oi = 0; oi < block_size; oi += CHUNK_SIZE/2) {
             STORE_256(&copy_ptr[oi+oj*big_block_size], LOAD_256(&input_ptr[oi+oj*block_size]));
           }

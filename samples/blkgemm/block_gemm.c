@@ -161,10 +161,13 @@ LIBXSMM_INLINE void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
   LIBXSMM_VLA_DECL(4, const real, a_t, a, handle->mb, handle->bk, handle->bm);
   LIBXSMM_VLA_DECL(4, const real, b_t, b, handle->kb, handle->bn, handle->bk);
   LIBXSMM_VLA_DECL(4,       real, c_t, c, handle->mb, handle->bn, handle->bm);
-  int mb, nb, kb, mb2, nb2, kb2;
+  int mb, nb, kb;
+#if 0
+  int mb2, nb2, kb2;
   int mr = 8;
   int nr = 8;
   int kr = 4;
+#endif
 
   /* TODO: take transpose into account */
   LIBXSMM_UNUSED(transA);

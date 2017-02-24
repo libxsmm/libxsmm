@@ -71,11 +71,13 @@
 typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   const void* const_pmm;
   void* pmm;
-  uintptr_t imm;
+  uintptr_t uimm;
+  intptr_t imm;
+  libxsmm_xmmfunction xmm;
+  void (*vmm)(const void* a, const void* b, void* c, ...);
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)
   libxsmm_xconvfunction xconv;
 #endif
-  libxsmm_xmmfunction xmm;
 } libxsmm_code_pointer;
 
 typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
@@ -342,10 +344,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_target_archid;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_dispatch_trylock;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_auto_prefetch;
-/** Determines if (OpenMP-)tasks are preferred over thread-style parallelization. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tasks;
-/** Kind of parallel support (0: none, 1: sequential, 2: parallelized). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_mt;
+/** Determines whether a threaded implementation is synchronized or not. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_sync;
 /** Number of threads per core. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_nt;
 

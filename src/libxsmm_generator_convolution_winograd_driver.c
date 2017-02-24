@@ -54,7 +54,7 @@ LIBXSMM_INLINE void print_help(void) {
 
 void factors( unsigned int num,
               unsigned int num_factors[] );
-              
+
 /* This function finds the prime factors of a number */
 void factors( unsigned int num,
               unsigned int num_factors[] )
