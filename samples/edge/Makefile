@@ -63,6 +63,7 @@ FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/edge_vol_int
+#XFILES := $(OUTDIR)/edge_vol_int $(OUTDIR)/asparse_soa $(OUTDIR)/bsparse_soa
 
 .PHONY: all
 all: $(XFILES)
@@ -72,6 +73,12 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/edge_vol_int: $(OUTDIR)/.make $(BLDDIR)/edge_vol_int-c.o $(LIBNAME).$(LIBEXT)
 	$(LD) -o $@ $(BLDDIR)/edge_vol_int-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+#$(OUTDIR)/asparse_soa: $(OUTDIR)/.make $(BLDDIR)/asparse_soa-c.o $(LIBNAME).$(LIBEXT)
+#	$(LD) -o $@ $(BLDDIR)/asparse_soa-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+#
+#$(OUTDIR)/bsparse_soa: $(OUTDIR)/.make $(BLDDIR)/bsparse_soa-c.o $(LIBNAME).$(LIBEXT)
+#	$(LD) -o $@ $(BLDDIR)/bsparse_soa-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
