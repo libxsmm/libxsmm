@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee, Alexander Heinecke (Intel Corp.)
+/* Kunal Banerjee (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
 #ifndef GENERATOR_CONVOLUTION_WINOGRAD_FORWARD_AVX512_H

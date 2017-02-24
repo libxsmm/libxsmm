@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Rajkishore Barik (Intel Corp.), Ankush Mandal (Intel Corp.)
+/* Rajkishore Barik, Ankush Mandal (Intel Corp.)
 ******************************************************************************/
 
 int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__, ii_, ij_, kh, kw, ofm1ifm1, ki, kj;
