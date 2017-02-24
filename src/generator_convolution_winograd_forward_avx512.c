@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee, Alexander Heinecke (Intel Corp.)
+/* Kunal Banerjee (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
 #include "generator_convolution_winograd_forward_avx512.h"
@@ -59,11 +59,6 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
   unsigned int offset  = 0;
   unsigned int boffset = 0;
   unsigned int constoffset = 0;
-  unsigned int tm = 0;
-  unsigned int tj = 0;
-  unsigned int ti = 0;
-  unsigned int tv = 0;
-  unsigned int fdvlen = 0;
   unsigned int m_dist = 0;
   unsigned int num_regs = 0;
   unsigned int l_qinstr = 0;
@@ -121,7 +116,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
   l_micro_kernel_config.alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
   l_qinstr = LIBXSMM_X86_INSTR_V4FMADDPS;
 
-  /*printf("\nGenerating assembly code with values:: itiles:%d jtiles:%d bimg:%d vratio:%d ur_i:%d ur_j:%d ur_m:%d\n", i_conv_desc->itiles, i_conv_desc->jtiles, i_conv_desc->bimg, i_conv_desc->vratio, i_conv_desc->ur_i, i_conv_desc->ur_j, i_conv_desc->ur_m);*/
+  printf("\nGenerating assembly code with values:: itiles:%d jtiles:%d bimg:%d ur:%d\n", i_conv_desc->itiles, i_conv_desc->jtiles, i_conv_desc->bimg, i_conv_desc->ur);
 
   /* open asm */
   libxsmm_x86_instruction_open_stream_convolution( io_generated_code, l_gp_reg_mapping.gp_reg_a,
@@ -129,8 +124,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                                                    l_gp_reg_mapping.gp_reg_a_prefetch, l_gp_reg_mapping.gp_reg_b_prefetch,
                                                    LIBXSMM_X86_GP_REG_R9, i_arch );
 
-  fdvlen = i_conv_desc->vratio*l_micro_kernel_config.vector_length;
-  m_dist = fdvlen*l_micro_kernel_config.datatype_size;
+  m_dist = l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size;
   num_regs = l_micro_kernel_config.vector_reg_count - 2;
 
   if ( l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM ) {
@@ -139,90 +133,69 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
     qfac = 1;
   }
 
-  max_index = (i_conv_desc->ur_m-1)*i_conv_desc->itiles*i_conv_desc->jtiles + (i_conv_desc->ur_j-1)*i_conv_desc->itiles + (i_conv_desc->ur_i-1);
+  max_index = i_conv_desc->ur - 1;
 
   /* Initialize helper registers for SIB addressing */
   if ( max_index >= 1 ) {
     /* helper 0: Index register holding ldb*datatype_size */
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                     l_gp_reg_mapping.gp_reg_help_0, l_micro_kernel_config.datatype_size * fdvlen );
+                                     l_gp_reg_mapping.gp_reg_help_0, l_micro_kernel_config.datatype_size * l_micro_kernel_config.vector_length );
   }
   if ( max_index >= 3 )
   {
     /* helper 1: Index register holding 3*ldb*datatype_size */
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                     l_gp_reg_mapping.gp_reg_help_1, l_micro_kernel_config.datatype_size * fdvlen * 3 );
+                                     l_gp_reg_mapping.gp_reg_help_1, l_micro_kernel_config.datatype_size * l_micro_kernel_config.vector_length * 3 );
   }
   if ( max_index >= 5 )
   {
     /* helper 2: Index register holding 5*ldb*datatype_size */
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                     l_gp_reg_mapping.gp_reg_help_2, l_micro_kernel_config.datatype_size * fdvlen* 5 );
+                                     l_gp_reg_mapping.gp_reg_help_2, l_micro_kernel_config.datatype_size * l_micro_kernel_config.vector_length* 5 );
   }
   if ( max_index >= 7 )
   {
     /* helper 3: Index register holding 7*ldb*datatype_size */
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                     l_gp_reg_mapping.gp_reg_help_3, l_micro_kernel_config.datatype_size * fdvlen * 7 );
+                                     l_gp_reg_mapping.gp_reg_help_3, l_micro_kernel_config.datatype_size * l_micro_kernel_config.vector_length * 7 );
   }
 
-  if ( i_conv_desc->bimg > i_conv_desc->ur_m ) {
+  if ( i_conv_desc->itiles*i_conv_desc->jtiles*i_conv_desc->bimg > i_conv_desc->ur ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                      l_gp_reg_mapping.gp_reg_mloop, 0 );
     libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
-                                     l_gp_reg_mapping.gp_reg_mloop, i_conv_desc->ur_m);
-  }
-  if ( i_conv_desc->jtiles > i_conv_desc->ur_j ) {
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                     l_gp_reg_mapping.gp_reg_nloop, 0 );
-    libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
-                                     l_gp_reg_mapping.gp_reg_nloop, i_conv_desc->ur_j);
-  }
-  if ( i_conv_desc->itiles > i_conv_desc->ur_i ) {
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
-                                     l_gp_reg_mapping.gp_reg_kloop, 0 );
-    libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
-                                     l_gp_reg_mapping.gp_reg_kloop, i_conv_desc->ur_i);
+                                     l_gp_reg_mapping.gp_reg_mloop, i_conv_desc->ur);
   }
 
-  for ( tm = 0; tm < i_conv_desc->ur_m; tm++ ) {
-    for ( tj = 0; tj < i_conv_desc->ur_j; tj++ ) {
-      for ( ti = 0; ti < i_conv_desc->ur_i; ti++ ) {
-        for ( tv = 0; tv < i_conv_desc->vratio; tv++ ) {
-          index = tm*i_conv_desc->itiles*i_conv_desc->jtiles + tj*i_conv_desc->itiles + ti;
-          offset = m_dist*index + tv*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size;
-          reg = (num_regs - (i_conv_desc->vratio*i_conv_desc->ur_m*i_conv_desc->ur_i*i_conv_desc->ur_j)) + (tv + i_conv_desc->vratio*(ti + i_conv_desc->ur_i*(tj + i_conv_desc->ur_j*tm)));
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-                                            l_micro_kernel_config.instruction_set,
-                                            l_micro_kernel_config.c_vmove_instruction,
-                                            l_gp_reg_mapping.gp_reg_c,
-                                            LIBXSMM_X86_GP_REG_UNDEF,
-                                            0,
-                                            offset,
-                                            l_micro_kernel_config.vector_name,
-                                            reg,
-                                            0,
-                                            0 );
+  for ( index = 0; index < i_conv_desc->ur; index++ ) {
+    offset = m_dist*index;
+    reg = num_regs - i_conv_desc->ur + index;
+    libxsmm_x86_instruction_vec_move( io_generated_code,
+                                      l_micro_kernel_config.instruction_set,
+                                      l_micro_kernel_config.c_vmove_instruction,
+                                      l_gp_reg_mapping.gp_reg_c,
+                                      LIBXSMM_X86_GP_REG_UNDEF,
+                                      0,
+                                      offset,
+                                      l_micro_kernel_config.vector_name,
+                                      reg,
+                                      0,
+                                      0 );
 
-          if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_ALL) == LIBXSMM_CONVOLUTION_PREFETCH_ALL) {
-            libxsmm_x86_instruction_prefetch( io_generated_code,
-                                              LIBXSMM_X86_INSTR_PREFETCHT1,
-                                              l_gp_reg_mapping.gp_reg_b,
-                                              LIBXSMM_X86_GP_REG_UNDEF,
-                                              0,
-                                              offset + fdvlen*i_conv_desc->itiles*i_conv_desc->jtiles*i_conv_desc->bimg*l_micro_kernel_config.datatype_size );
-            libxsmm_x86_instruction_prefetch( io_generated_code,
-                                              LIBXSMM_X86_INSTR_PREFETCHT0,
-                                              l_gp_reg_mapping.gp_reg_b,
-                                              LIBXSMM_X86_GP_REG_UNDEF,
-                                              0,
-                                              offset + i_conv_desc->ur_i*fdvlen*l_micro_kernel_config.datatype_size );
-          }
-        }
-      }
+    if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_ALL) == LIBXSMM_CONVOLUTION_PREFETCH_ALL) {
+      libxsmm_x86_instruction_prefetch( io_generated_code,
+                                        LIBXSMM_X86_INSTR_PREFETCHT1,
+                                        l_gp_reg_mapping.gp_reg_b,
+                                        LIBXSMM_X86_GP_REG_UNDEF,
+                                        0,
+                                        offset + l_micro_kernel_config.vector_length*i_conv_desc->itiles*i_conv_desc->jtiles*i_conv_desc->bimg*l_micro_kernel_config.datatype_size );
+      libxsmm_x86_instruction_prefetch( io_generated_code,
+                                        LIBXSMM_X86_INSTR_PREFETCHT0,
+                                        l_gp_reg_mapping.gp_reg_b,
+                                        LIBXSMM_X86_GP_REG_UNDEF,
+                                        0,
+                                        offset + i_conv_desc->ur*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size );
     }
   }
 
@@ -231,247 +204,201 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                      l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_4 );
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
-                                     l_gp_reg_mapping.gp_reg_help_4,  9 * l_micro_kernel_config.datatype_size * fdvlen );
+                                     l_gp_reg_mapping.gp_reg_help_4,  9 * l_micro_kernel_config.datatype_size * l_micro_kernel_config.vector_length );
   }
   if ( max_index >= 18 ) {
     /* helper 5: B + 18*ldb, additional base address */
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                      l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_5 );
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
-                                     l_gp_reg_mapping.gp_reg_help_5, 18 * l_micro_kernel_config.datatype_size * fdvlen );
+                                     l_gp_reg_mapping.gp_reg_help_5, 18 * l_micro_kernel_config.datatype_size * l_micro_kernel_config.vector_length );
   }
 
-  for ( tv = 0; tv < i_conv_desc->vratio; tv++ ) {
-    for ( qindex = 0; qindex < qfac; qindex++ ) {
-      offset = (tv*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size)*qfac + qindex*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size;
-      libxsmm_x86_instruction_vec_move( io_generated_code,
-                                        l_micro_kernel_config.instruction_set,
-                                        l_micro_kernel_config.a_vmove_instruction,
+  for ( qindex = 0; qindex < qfac; qindex++ ) {
+    offset = qindex*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size;
+    libxsmm_x86_instruction_vec_move( io_generated_code,
+                                      l_micro_kernel_config.instruction_set,
+                                      l_micro_kernel_config.a_vmove_instruction,
+                                      l_gp_reg_mapping.gp_reg_a,
+                                      LIBXSMM_X86_GP_REG_UNDEF,
+                                      0,
+                                      offset,
+                                      l_micro_kernel_config.vector_name,
+                                      qindex,
+                                      0,
+                                      0 );
+    if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_ALL) == LIBXSMM_CONVOLUTION_PREFETCH_ALL) {
+      libxsmm_x86_instruction_prefetch( io_generated_code,
+                                        LIBXSMM_X86_INSTR_PREFETCHT1,
                                         l_gp_reg_mapping.gp_reg_a,
                                         LIBXSMM_X86_GP_REG_UNDEF,
                                         0,
-                                        offset,
-                                        l_micro_kernel_config.vector_name,
-                                        tv*qfac + qindex,
-                                        0,
-                                        0 );
-      if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_ALL) == LIBXSMM_CONVOLUTION_PREFETCH_ALL) {
-        libxsmm_x86_instruction_prefetch( io_generated_code,
-                                          LIBXSMM_X86_INSTR_PREFETCHT1,
-                                          l_gp_reg_mapping.gp_reg_a,
-                                          LIBXSMM_X86_GP_REG_UNDEF,
-                                          0,
-                                          (fdvlen*fdvlen + tv*l_micro_kernel_config.vector_length)*l_micro_kernel_config.datatype_size + qindex*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size );
-      }
+                                        l_micro_kernel_config.vector_length*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size + qindex*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size );
     }
   }
 
   wreg = 0;
-  for ( ifm =0; ifm < fdvlen; ifm+=qfac ) {
+  for ( ifm =0; ifm < l_micro_kernel_config.vector_length; ifm+=qfac ) {
     boffset = ifm*l_micro_kernel_config.datatype_size;
-    wreg = i_conv_desc->vratio - wreg;
-    if ( (ifm + qfac) < fdvlen )
+    wreg = 1 - wreg;
+    if ( (ifm + qfac) < l_micro_kernel_config.vector_length )
     {
-      for ( tv = 0; tv < i_conv_desc->vratio; tv++ ) {
-        for ( qindex = 0; qindex < qfac; qindex++ ) {
-          offset = ((ifm + qfac)*fdvlen + tv*l_micro_kernel_config.vector_length)*l_micro_kernel_config.datatype_size + qindex*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size;
-          libxsmm_x86_instruction_vec_move( io_generated_code,
-                                            l_micro_kernel_config.instruction_set,
-                                            l_micro_kernel_config.a_vmove_instruction,
+      for ( qindex = 0; qindex < qfac; qindex++ ) {
+        offset = (ifm + qfac)*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size + qindex*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size;
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+                                          l_micro_kernel_config.instruction_set,
+                                          l_micro_kernel_config.a_vmove_instruction,
+                                          l_gp_reg_mapping.gp_reg_a,
+                                          LIBXSMM_X86_GP_REG_UNDEF,
+                                          0,
+                                          offset,
+                                          l_micro_kernel_config.vector_name,
+                                          wreg*qfac + qindex,
+                                          0,
+                                          0 );
+        if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_ALL) == LIBXSMM_CONVOLUTION_PREFETCH_ALL) {
+          libxsmm_x86_instruction_prefetch( io_generated_code,
+                                            LIBXSMM_X86_INSTR_PREFETCHT1,
                                             l_gp_reg_mapping.gp_reg_a,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
-                                            offset,
-                                            l_micro_kernel_config.vector_name,
-                                            (wreg + tv)*qfac + qindex,
-                                            0,
-                                            0 );
-          if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_ALL) == LIBXSMM_CONVOLUTION_PREFETCH_ALL) {
-            libxsmm_x86_instruction_prefetch( io_generated_code,
-                                              LIBXSMM_X86_INSTR_PREFETCHT1,
-                                              l_gp_reg_mapping.gp_reg_a,
-                                              LIBXSMM_X86_GP_REG_UNDEF,
-                                              0,
-                                              ((fdvlen + ifm + qfac)*fdvlen + tv*l_micro_kernel_config.vector_length)*l_micro_kernel_config.datatype_size + qindex*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size );
-          }
+                                            (l_micro_kernel_config.vector_length + ifm + qfac)*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size + qindex*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size );
         }
       }
     }
 
-    for ( tm = 0; tm < i_conv_desc->ur_m; tm++ ) {
-      for ( tj = 0; tj < i_conv_desc->ur_j; tj++ ) {
-        for ( ti = 0; ti < i_conv_desc->ur_i; ti++ ) {
-          for ( tv = 0; tv < i_conv_desc->vratio; tv++ ) {
-            reg = (num_regs - (i_conv_desc->vratio*i_conv_desc->ur_m*i_conv_desc->ur_i*i_conv_desc->ur_j)) + (tv + i_conv_desc->vratio*(ti + i_conv_desc->ur_i*(tj + i_conv_desc->ur_j*tm)));
-            index = tm*i_conv_desc->itiles*i_conv_desc->jtiles + tj*i_conv_desc->itiles + ti;
+    for ( index = 0; index < i_conv_desc->ur; index++ ) {
+      reg = num_regs - i_conv_desc->ur + index;
 
-            if ( index > 27 ) {
+      if ( index > 27 ) {
 #if !defined(NDEBUG)
-              if ( ifm == 0 ) {
-                fprintf(stderr, "LIBXSMM warning: Not using optimal blocking.. >8 byte fma generated...index = %u\n", index);
-              }
+        if ( ifm == 0 ) {
+          fprintf(stderr, "LIBXSMM warning: Not using optimal blocking.. >8 byte fma generated...index = %u\n", index);
+        }
 #endif
-              constoffset = boffset + m_dist*index;
-              if ( l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM ) {
-                libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
-                                                          l_micro_kernel_config.instruction_set,
-                                                          l_qinstr,
-                                                          l_gp_reg_mapping.gp_reg_b,
-                                                          LIBXSMM_X86_GP_REG_UNDEF,
-                                                          0,
-                                                          constoffset,
-                                                          l_micro_kernel_config.vector_name,
-                                                          (i_conv_desc->vratio - wreg + tv)*4,
-                                                          reg );
-              } else {					       
-                libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                         l_micro_kernel_config.instruction_set,
-                                                         l_micro_kernel_config.vmul_instruction,
-                                                         1, /* use broadcast*/
-                                                         l_gp_reg_mapping.gp_reg_b,
-                                                         LIBXSMM_X86_GP_REG_UNDEF,
-                                                         0,
-                                                         constoffset,
-                                                         l_micro_kernel_config.vector_name,
-                                                         i_conv_desc->vratio - wreg + tv,
-                                                         reg );
-              }
-            } else {
-              /* select the base register */
-              if ( index > 17 ) {
-                l_b_reg = l_gp_reg_mapping.gp_reg_help_5;
-              } else if ( index > 8 ) {
-                l_b_reg = l_gp_reg_mapping.gp_reg_help_4;
-              } else {
-                l_b_reg = l_gp_reg_mapping.gp_reg_b;
-              }
-              /* Select SIB */
-              if ( index % 9 == 0 ) {
-                l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
-                l_scale = 0;
-              } else if ( index % 9 == 1 ) {
-                l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
-                l_scale = 1;
-              } else if ( index % 9 == 2 ) {
-                l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
-                l_scale = 2;
-              } else if ( index % 9 == 3 ) {
-                l_b_idx = l_gp_reg_mapping.gp_reg_help_1;
-                l_scale = 1;
-              } else if ( index % 9 == 4 ) {
-                l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
-                l_scale = 4;
-              } else if ( index % 9 == 5 ) {
-                l_b_idx = l_gp_reg_mapping.gp_reg_help_2;
-                l_scale = 1;
-              } else if ( index % 9 == 6 ) {
-                l_b_idx = l_gp_reg_mapping.gp_reg_help_1;
-                l_scale = 2;
-              } else if ( index % 9 == 7 ) {
-                l_b_idx = l_gp_reg_mapping.gp_reg_help_3;
-                l_scale = 1;
-              } else if ( index % 9 == 8 ) {
-                l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
-                l_scale = 8;
-              }
+        constoffset = boffset + m_dist*index;
+        if ( l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM ) {
+          libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
+                                                    l_micro_kernel_config.instruction_set,
+                                                    l_qinstr,
+                                                    l_gp_reg_mapping.gp_reg_b,
+                                                    LIBXSMM_X86_GP_REG_UNDEF,
+                                                    0,
+                                                    constoffset,
+                                                    l_micro_kernel_config.vector_name,
+                                                    (1 - wreg)*4,
+                                                    reg );
+        } else {					       
+          libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                   l_micro_kernel_config.instruction_set,
+                                                   l_micro_kernel_config.vmul_instruction,
+                                                   1, /* use broadcast*/
+                                                   l_gp_reg_mapping.gp_reg_b,
+                                                   LIBXSMM_X86_GP_REG_UNDEF,
+                                                   0,
+                                                   constoffset,
+                                                   l_micro_kernel_config.vector_name,
+                                                   1 - wreg,
+                                                   reg );
+        }
+      } else {
+        /* select the base register */
+        if ( index > 17 ) {
+          l_b_reg = l_gp_reg_mapping.gp_reg_help_5;
+        } else if ( index > 8 ) {
+          l_b_reg = l_gp_reg_mapping.gp_reg_help_4;
+        } else {
+          l_b_reg = l_gp_reg_mapping.gp_reg_b;
+        }
+        /* Select SIB */
+        if ( index % 9 == 0 ) {
+          l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
+          l_scale = 0;
+        } else if ( index % 9 == 1 ) {
+          l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
+          l_scale = 1;
+        } else if ( index % 9 == 2 ) {
+          l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
+          l_scale = 2;
+        } else if ( index % 9 == 3 ) {
+          l_b_idx = l_gp_reg_mapping.gp_reg_help_1;
+          l_scale = 1;
+        } else if ( index % 9 == 4 ) {
+          l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
+          l_scale = 4;
+        } else if ( index % 9 == 5 ) {
+          l_b_idx = l_gp_reg_mapping.gp_reg_help_2;
+          l_scale = 1;
+        } else if ( index % 9 == 6 ) {
+          l_b_idx = l_gp_reg_mapping.gp_reg_help_1;
+          l_scale = 2;
+        } else if ( index % 9 == 7 ) {
+          l_b_idx = l_gp_reg_mapping.gp_reg_help_3;
+          l_scale = 1;
+        } else if ( index % 9 == 8 ) {
+          l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
+          l_scale = 8;
+        }
 #if !defined(NDEBUG)
-              else {
-                assert(0/*should not happen*/);
-                l_b_idx = 0;
-                l_scale = 0;
-              }
+        else {
+          assert(0/*should not happen*/);
+          l_b_idx = 0;
+          l_scale = 0;
+        }
 #endif
-              if ( l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM ) {
-                libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
-                                                          l_micro_kernel_config.instruction_set,
-                                                          l_qinstr,
-                                                          l_b_reg,
-                                                          l_b_idx,
-                                                          l_scale,
-                                                          boffset,
-                                                          l_micro_kernel_config.vector_name,
-                                                          (i_conv_desc->vratio - wreg + tv)*4,
-                                                          reg );
-              } else {					       
-                libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                         l_micro_kernel_config.instruction_set,
-                                                         l_micro_kernel_config.vmul_instruction,
-                                                         1,
-                                                         l_b_reg,
-                                                         l_b_idx,
-                                                         l_scale,
-                                                         boffset,
-                                                         l_micro_kernel_config.vector_name,
-                                                         i_conv_desc->vratio - wreg + tv,
-                                                         reg );
-              }
-            }
-          }
+        if ( l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM ) {
+          libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
+                                                    l_micro_kernel_config.instruction_set,
+                                                    l_qinstr,
+                                                    l_b_reg,
+                                                    l_b_idx,
+                                                    l_scale,
+                                                    boffset,
+                                                    l_micro_kernel_config.vector_name,
+                                                    (1 - wreg)*4,
+                                                    reg );
+         } else {					       
+           libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                    l_micro_kernel_config.instruction_set,
+                                                    l_micro_kernel_config.vmul_instruction,
+                                                    1,
+                                                    l_b_reg,
+                                                    l_b_idx,
+                                                    l_scale,
+                                                    boffset,
+                                                    l_micro_kernel_config.vector_name,
+                                                    1 - wreg,
+                                                    reg );
         }
       }
     }
   }
 
-  for ( tm = 0; tm < i_conv_desc->ur_m; tm++ ) {
-    for ( tj = 0; tj < i_conv_desc->ur_j; tj++ ) {
-      for ( ti = 0; ti < i_conv_desc->ur_i; ti++ ) {
-        for ( tv = 0; tv < i_conv_desc->vratio; tv++ ) {
-          index = tm*i_conv_desc->itiles*i_conv_desc->jtiles + tj*i_conv_desc->itiles + ti;
-          offset = m_dist*index + tv*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size;
-          reg = (num_regs - (i_conv_desc->vratio*i_conv_desc->ur_m*i_conv_desc->ur_i*i_conv_desc->ur_j)) + (tv + i_conv_desc->vratio*(ti + i_conv_desc->ur_i*(tj + i_conv_desc->ur_j*tm)));
-          if ( (unsigned int)reg < l_micro_kernel_config.vector_reg_count ) { /* l_micro_kernel_config.vector_reg_count = (14 + 18) */
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                                              l_micro_kernel_config.instruction_set,
-                                              l_micro_kernel_config.c_vmove_instruction,
-                                              l_gp_reg_mapping.gp_reg_c,
-                                              LIBXSMM_X86_GP_REG_UNDEF,
-                                              0,
-                                              offset,
-                                              l_micro_kernel_config.vector_name,
-                                              reg,
-                                              0,
-                                              1 ); /* store */
-          }
-        }
-      }
+  for ( index = 0; index < i_conv_desc->ur; index++ ) {
+    offset = m_dist*index;
+    reg = num_regs - i_conv_desc->ur + index;
+    if ( (unsigned int)reg < l_micro_kernel_config.vector_reg_count ) {
+      libxsmm_x86_instruction_vec_move( io_generated_code,
+                                        l_micro_kernel_config.instruction_set,
+                                        l_micro_kernel_config.c_vmove_instruction,
+                                        l_gp_reg_mapping.gp_reg_c,
+                                        LIBXSMM_X86_GP_REG_UNDEF,
+                                        0,
+                                        offset,
+                                        l_micro_kernel_config.vector_name,
+                                        reg,
+                                        0,
+                                        1 ); /* store */
     }
   }
 
-
-  if ( i_conv_desc->itiles > i_conv_desc->ur_i ) {
+  if ( i_conv_desc->itiles*i_conv_desc->jtiles*i_conv_desc->bimg > i_conv_desc->ur ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
-                                     l_gp_reg_mapping.gp_reg_c, i_conv_desc->ur_i*fdvlen*l_micro_kernel_config.datatype_size );
-
+                                     l_gp_reg_mapping.gp_reg_c, i_conv_desc->ur*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size );
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
-                                     l_gp_reg_mapping.gp_reg_b, i_conv_desc->ur_i*fdvlen*l_micro_kernel_config.datatype_size );
+                                     l_gp_reg_mapping.gp_reg_b, i_conv_desc->ur*l_micro_kernel_config.vector_length*l_micro_kernel_config.datatype_size );
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction,
-                                     l_gp_reg_mapping.gp_reg_kloop, i_conv_desc->itiles );
-    libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_sub_instruction,
-                                     l_gp_reg_mapping.gp_reg_c, i_conv_desc->itiles*fdvlen*l_micro_kernel_config.datatype_size );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_sub_instruction,
-                                     l_gp_reg_mapping.gp_reg_b, i_conv_desc->itiles*fdvlen*l_micro_kernel_config.datatype_size );
-  }
-  if ( i_conv_desc->jtiles > i_conv_desc->ur_j ) {
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
-                                     l_gp_reg_mapping.gp_reg_c, i_conv_desc->ur_j*i_conv_desc->itiles*fdvlen*l_micro_kernel_config.datatype_size );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
-                                     l_gp_reg_mapping.gp_reg_b, i_conv_desc->ur_j*i_conv_desc->itiles*fdvlen*l_micro_kernel_config.datatype_size );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction,
-                                     l_gp_reg_mapping.gp_reg_nloop, i_conv_desc->jtiles );
-    libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_sub_instruction,
-                                     l_gp_reg_mapping.gp_reg_c, i_conv_desc->itiles*i_conv_desc->jtiles*fdvlen*l_micro_kernel_config.datatype_size );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_sub_instruction,
-                                     l_gp_reg_mapping.gp_reg_b, i_conv_desc->itiles*i_conv_desc->jtiles*fdvlen*l_micro_kernel_config.datatype_size );
-  }
-  if ( i_conv_desc->bimg > i_conv_desc->ur_m ) {
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
-                                     l_gp_reg_mapping.gp_reg_c, i_conv_desc->ur_m*i_conv_desc->itiles*i_conv_desc->jtiles*fdvlen*l_micro_kernel_config.datatype_size );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
-                                     l_gp_reg_mapping.gp_reg_b, i_conv_desc->ur_m*i_conv_desc->itiles*i_conv_desc->jtiles*fdvlen*l_micro_kernel_config.datatype_size );
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction,
-                                     l_gp_reg_mapping.gp_reg_mloop, i_conv_desc->bimg );
+                                     l_gp_reg_mapping.gp_reg_mloop, i_conv_desc->itiles*i_conv_desc->jtiles*i_conv_desc->bimg );
     libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
   }
 

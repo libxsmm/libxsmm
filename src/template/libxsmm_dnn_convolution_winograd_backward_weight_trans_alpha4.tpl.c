@@ -30,54 +30,48 @@
 ******************************************************************************/
 
 LIBXSMM_VLA_DECL(6, const float, input, wp, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
-LIBXSMM_VLA_DECL(5, float, output, twp, ALPHA, (handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO), FDVLEN, FDVLEN);
-float Fw[ALPHA][ALPHA][FDVLEN][FDVLEN];
-float F[3][3][FDVLEN][FDVLEN];
+LIBXSMM_VLA_DECL(5, float, output, twp, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN);
+float Fw[ALPHA][ALPHA][TDVLEN][TDVLEN];
+float F[3][3][TDVLEN][TDVLEN];
 unsigned int i, j, k, l;
-int r;
 int v;
-int v1;
-float Fw_[4][4][FDVLEN];
-float x0[FDVLEN];
-float x1[FDVLEN];
-float x2[FDVLEN];
-float x3[FDVLEN];
-float x4[FDVLEN];
-float x5[FDVLEN];
-float x6[FDVLEN];
-float x7[FDVLEN];
-float x8[FDVLEN];
-float x9[FDVLEN];
-float x10[FDVLEN];
-float x11[FDVLEN];
-float x12[FDVLEN];
-float x13[FDVLEN];
-float x14[FDVLEN];
-float x15[FDVLEN];
+float Fw_[4][4][TDVLEN];
+float x0[TDVLEN];
+float x1[TDVLEN];
+float x2[TDVLEN];
+float x3[TDVLEN];
+float x4[TDVLEN];
+float x5[TDVLEN];
+float x6[TDVLEN];
+float x7[TDVLEN];
+float x8[TDVLEN];
+float x9[TDVLEN];
+float x10[TDVLEN];
+float x11[TDVLEN];
+float x12[TDVLEN];
+float x13[TDVLEN];
+float x14[TDVLEN];
+float x15[TDVLEN];
 const float half    = 0.5f;
 const float quarter = 0.25f;
 
 for (j = 0; j < 3; j++) {
   for (i = 0; i < 3; i++) {
-    for (r = 0; r < VRATIO; r++) {
-      for (v = 0; v < VRATIO; v++) {
-        for (v1 = 0; v1 < TDVLEN; v1++) {
-          LIBXSMM_PRAGMA_SIMD
-          for (k = 0; k < TDVLEN; k++) {
-            F[j][i][v*TDVLEN + k][r*TDVLEN + v1] =
-              LIBXSMM_VLA_ACCESS(6, input, v, r, 2-j, 2-i, v1, k, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
-          }
-        }
+    for (v = 0; v < TDVLEN; v++) {
+      LIBXSMM_PRAGMA_SIMD
+      for (k = 0; k < TDVLEN; k++) {
+        F[j][i][k][v] =
+          LIBXSMM_VLA_ACCESS(6, input, 0, 0, 2-j, 2-i, v, k, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
       }
     }
   }
 }
-/*trans_F_2x2_3x3(FDVLEN, Fw, F);*/
+/*trans_F_2x2_3x3(TDVLEN, Fw, F);*/
 
 /* inline code start */
-for (i = 0; i < FDVLEN; i++) {
+for (i = 0; i < TDVLEN; i++) {
   LIBXSMM_PRAGMA_SIMD
-  for (l = 0; l < FDVLEN; l++) {
+  for (l = 0; l < TDVLEN; l++) {
     x0[l]  = half*F[0][1][i][l];
     x1[l]  = F[0][0][i][l] + F[0][2][i][l];
     x2[l]  = F[2][0][i][l] + F[2][2][i][l];
@@ -123,10 +117,10 @@ for (i = 0; i < FDVLEN; i++) {
 
 for (j = 0; j < ALPHA; j++) {
   for (i = 0; i < ALPHA; i++) {
-    for (v = 0; v < FDVLEN; v++) {
+    for (v = 0; v < TDVLEN; v++) {
       LIBXSMM_PRAGMA_SIMD
-      for (k = 0; k < FDVLEN; k++) {
-        LIBXSMM_VLA_ACCESS(5, output, j, i, 0, v, k, ALPHA, (handle->blocksifm/VRATIO)*(handle->blocksofm/VRATIO), FDVLEN, FDVLEN) =
+      for (k = 0; k < TDVLEN; k++) {
+        LIBXSMM_VLA_ACCESS(5, output, j, i, 0, v, k, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN) =
           Fw[j][i][v][k];
       }
     }
