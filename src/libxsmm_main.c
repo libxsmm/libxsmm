@@ -1204,7 +1204,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       }
     } break;
     case LIBXSMM_BUILD_KIND_MATCOPY: { /* matcopy kernel */
-      assert(0 != request->descriptor.trans);
+      assert(0 != request->descriptor.matcopy);
       if (LIBXSMM_DNN_DATATYPE_F32 == request->descriptor.matcopy->datatype || LIBXSMM_DNN_DATATYPE_F64 == request->descriptor.matcopy->datatype
           || LIBXSMM_DNN_DATATYPE_I16 == request->descriptor.matcopy->datatype || LIBXSMM_DNN_DATATYPE_I8 == request->descriptor.matcopy->datatype )
       {
