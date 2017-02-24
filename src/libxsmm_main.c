@@ -919,6 +919,7 @@ LIBXSMM_API_DEFINITION const char* internal_get_precision_string(libxsmm_dnn_dat
 {
   const char* result = "unk"; /* unknown */
   switch (datatype) {
+    case LIBXSMM_DNN_DATATYPE_F64: result = "f64"; break;
     case LIBXSMM_DNN_DATATYPE_F32: result = "f32"; break;
     case LIBXSMM_DNN_DATATYPE_I32: result = "i32"; break;
     case LIBXSMM_DNN_DATATYPE_I16: result = "i16"; break;
