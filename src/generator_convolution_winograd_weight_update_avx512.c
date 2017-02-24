@@ -109,7 +109,7 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
   l_micro_kernel_config.alu_jmp_instruction = LIBXSMM_X86_INSTR_JL;
   l_micro_kernel_config.alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
 
-  printf("\nGenerating assembly code with values:: itiles:%d jtiles:%d bimg:%d ur:%d\n", i_conv_desc->itiles, i_conv_desc->jtiles, i_conv_desc->bimg, i_conv_desc->ur);
+  /*printf("\nGenerating assembly code with values:: itiles:%d jtiles:%d bimg:%d ur:%d\n", i_conv_desc->itiles, i_conv_desc->jtiles, i_conv_desc->bimg, i_conv_desc->ur);*/
 
   /* open asm */
   libxsmm_x86_instruction_open_stream_convolution( io_generated_code, l_gp_reg_mapping.gp_reg_a,
