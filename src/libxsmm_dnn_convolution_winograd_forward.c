@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee, Alexander Heinecke (Intel Corp.)
+/* Kunal Banerjee (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_winograd_forward.h"
 #include "libxsmm_main.h"
@@ -49,50 +49,22 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_cus
                                            float *Iwp,
                                            const libxsmm_dnn_layer* handle )
 {
-  if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 6) {
+  if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_fwd.vratio == 2 && handle->cwino_fwd.alpha == 6) {
-#define ALPHA 6
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-  } else if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 4) {
+  } else if (handle->cwino_fwd.alpha == 4) {
 #define ALPHA 4
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha4.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-  } else if (handle->cwino_fwd.vratio == 2 && handle->cwino_fwd.alpha == 4) {
-#define ALPHA 4
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha4.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
   }
 #if !defined(NDEBUG)
   else {
-    fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+    fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_fwd.alpha);
     assert(0);
   }
 #endif
@@ -104,50 +76,22 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_nhwc_custo
                                          float *Iwp,
                                          const libxsmm_dnn_layer* handle )
 {
-  if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 6) {
+  if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha6.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_fwd.vratio == 2 && handle->cwino_fwd.alpha == 6) {
-#define ALPHA 6
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha6.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-  } else if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 4) {
+  } else if (handle->cwino_fwd.alpha == 4) {
 #define ALPHA 4
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha4.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-  } else if (handle->cwino_fwd.vratio == 2 && handle->cwino_fwd.alpha == 4) {
-#define ALPHA 4
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha4.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
   }
 #if !defined(NDEBUG)
   else {
-    fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+    fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_fwd.alpha);
     assert(0);
   }
 #endif
@@ -157,50 +101,22 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_weight_transform( float *w
                               float *twp,
                               const libxsmm_dnn_layer* handle )
 {
-  if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 6) {
+  if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha6.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_fwd.vratio == 2 && handle->cwino_fwd.alpha == 6) {
-#define ALPHA 6
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha6.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-  } else if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 4) {
+  } else if (handle->cwino_fwd.alpha == 4) {
 #define ALPHA 4
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha4.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-  } else if (handle->cwino_fwd.vratio == 2 && handle->cwino_fwd.alpha == 4) {
-#define ALPHA 4
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha4.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
   }
 #if !defined(NDEBUG)
   else {
-    fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+    fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_fwd.alpha);
     assert(0);
   }
 #endif
@@ -209,55 +125,26 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_weight_transform( float *w
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_custom_custom( float *toutp,
                                             float *outp,
                                             float *Owp,
-                                            const int vratio,
                                             float bias[/*vratio*/][16/*tdvlen*/],
                                             const libxsmm_dnn_layer* handle )
 {
   LIBXSMM_UNUSED(bias); /* TODO: remove */
-  if (vratio == 1 && handle->cwino_fwd.alpha == 6) {
+  if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (vratio == 2 && handle->cwino_fwd.alpha == 6) {
-#define ALPHA 6
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-  } else if (vratio == 1 && handle->cwino_fwd.alpha == 4) {
+  } else if (handle->cwino_fwd.alpha == 4) {
 #define ALPHA 4
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha4.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-  } else if (vratio == 2 && handle->cwino_fwd.alpha == 4) {
-#define ALPHA 4
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha4.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
   }
 #if !defined(NDEBUG)
   else {
-    fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+    fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_fwd.alpha);
     assert(0);
   }
 #endif
@@ -266,55 +153,26 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_custom_cu
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_nhwc_custom( float *toutp,
                                           float *outp,
                                           float *Owp,
-                                          const int vratio,
                                           float bias[/*vratio*/][16/*tdvlen*/],
                                           const libxsmm_dnn_layer* handle )
 {
   LIBXSMM_UNUSED(bias); /* TODO: remove */
-  if (vratio == 1 && handle->cwino_fwd.alpha == 6) {
+  if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha6.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-  } else if (vratio == 2 && handle->cwino_fwd.alpha == 6) {
-#define ALPHA 6
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha6.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-  } else if (vratio == 1 && handle->cwino_fwd.alpha == 4) {
+  } else if (handle->cwino_fwd.alpha == 4) {
 #define ALPHA 4
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha4.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-  } else if (vratio == 2 && handle->cwino_fwd.alpha == 4) {
-#define ALPHA 4
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha4.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
   }
 #if !defined(NDEBUG)
   else {
-    fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+    fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_fwd.alpha);
     assert(0);
   }
 #endif
@@ -352,50 +210,22 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_cu
 # include "template/libxsmm_dnn_convolve_winograd_st_fwd_custom_custom.tpl.c"
 #endif
 
-      if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 6) {
+      if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-      } else if (handle->cwino_fwd.vratio == 2 && handle->cwino_fwd.alpha == 6) {
-#define ALPHA 6
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-      } else if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 4) {
+      } else if (handle->cwino_fwd.alpha == 4) {
 #define ALPHA 4
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-      } else if (handle->cwino_fwd.vratio == 2 && handle->cwino_fwd.alpha == 4) {
-#define ALPHA 4
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
       }
 #if !defined(NDEBUG)
       else {
-        fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+        fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_fwd.alpha);
         assert(0);
       }
 #endif
@@ -440,50 +270,22 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_nh
 # include "template/libxsmm_dnn_convolve_winograd_st_fwd_nhwc_custom.tpl.c"
 #endif
 
-      if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 6) {
+      if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_inlined.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
-      } else if (handle->cwino_fwd.vratio == 2 && handle->cwino_fwd.alpha == 6) {
-#define ALPHA 6
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_inlined.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-      } else if (handle->cwino_fwd.vratio == 1 && handle->cwino_fwd.alpha == 4) {
+      } else if (handle->cwino_fwd.alpha == 4) {
 #define ALPHA 4
 #define TDVLEN 16
-#define FDVLEN 16
-#define VRATIO 1
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_inlined.tpl.c"
-#undef VRATIO
-#undef FDVLEN
-#undef TDVLEN
-#undef ALPHA
-      } else if (handle->cwino_fwd.vratio == 2 && handle->cwino_fwd.alpha == 4) {
-#define ALPHA 4
-#define TDVLEN 16
-#define FDVLEN 32
-#define VRATIO 2
-# include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_inlined.tpl.c"
-#undef VRATIO
-#undef FDVLEN
 #undef TDVLEN
 #undef ALPHA
       }
 #if !defined(NDEBUG)
       else {
-        fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_fwd.vratio*16, handle->cwino_fwd.alpha);
+        fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_fwd.alpha);
         assert(0);
       }
 #endif
