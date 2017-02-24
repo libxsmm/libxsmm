@@ -281,14 +281,8 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
   unsigned int jtiles;
   /** number of images in a block */
   unsigned int bimg;
-  /** unroll factor for itiles */
-  unsigned int ur_i;
-  /** unroll factor for jtiles */
-  unsigned int ur_j;
-  /** unroll factor for bimg */
-  unsigned int ur_m;
-  /** ratio between vector lengths in frequency domain and time domain */
-  unsigned int vratio;
+  /** unroll factor */
+  unsigned int ur;
   /** prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
   libxsmm_convolution_prefetch_type prefetch;
 } libxsmm_convolution_winograd_descriptor;

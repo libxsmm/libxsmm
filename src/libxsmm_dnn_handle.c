@@ -835,110 +835,31 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors(
 
 
 /**
- * This function finds the loop increments (ur_i, ur_j, ur_m) of (itiles, jtiles, bimg)
- * such that ur_i*ur_j*ur_m <= max_acc
+ * This function finds the unroll factor for (itiles*jtiles*bimg)
+ * such that ur <= max_acc
  * The following loop may not give an optimal solution (knapsack problem)
  * Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2
  */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors_ijm(
-                  unsigned int itiles,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors_all(
+                  unsigned int  itiles,
                   unsigned int  jtiles,
                   unsigned int  bimg,
-                  unsigned int* ur_i,
-                  unsigned int* ur_j,
-                  unsigned int* ur_m,
+                  unsigned int* ur,
                   unsigned int  max_acc)
 {
   unsigned int i;
-  unsigned int j;
-  unsigned int k;
-  unsigned int index;
-  int found;
-  unsigned int cur_acc;
   unsigned int fact[10];
-  unsigned int cur_fact[10];
-  unsigned int fact_i[10];
-  unsigned int fact_j[10];
-  unsigned int fact_m[10];
 
   for ( i = 0; i < 10; i++ ) {
     fact[i] = 1;
-    cur_fact[i] = 1;
   }
   internal_dnn_handle_factors(itiles*jtiles*bimg, fact);
 
-  cur_acc = 1;
-  index = 0;
+  *ur = 1;
   for ( i = 0; fact[i] != 1; i++ ) {
-    if ( (fact[i] * cur_acc) <= max_acc ) {
-      cur_acc = cur_acc*fact[i];
-      cur_fact[index] = fact[i];
-      index++;
+    if ( (fact[i] * (*ur)) <= max_acc ) {
+      *ur = (*ur)*fact[i];
     }
-  }
-
-  for ( i = 0; i < 10; i++ ) {
-    fact_i[i] = 1;
-    fact_j[i] = 1;
-    fact_m[i] = 1;
-  }
-  internal_dnn_handle_factors(itiles, fact_i);
-  internal_dnn_handle_factors(jtiles, fact_j);
-  internal_dnn_handle_factors(bimg,   fact_m);
-
-  *ur_i = 1;
-  *ur_j = 1;
-  *ur_m = 1;
-
-  for ( i= 0; cur_fact[i] != 1; i++ ) {
-    found = 0;
-    for ( j = 0; fact_i[j] != 1; j++ ) {
-      if ( cur_fact[i] == fact_i[j] ) {
-        *ur_i = (*ur_i)*fact_i[j];
-        found = 1;
-        /* Remove this element from fact_i */
-        for ( k = j; k < 9; k++ ) {
-          fact_i[k] = fact_i[k+1];
-        }
-        break;
-      }
-    }
-    if ( found == 1 )
-      continue;
-
-    for ( j = 0; fact_j[j] != 1; j++ ) {
-      if ( cur_fact[i] == fact_j[j] ) {
-        *ur_j = (*ur_j)*fact_j[j];
-        found = 1;
-        /* Remove this element from fact_j */
-        for ( k = j; k < 9; k++ ) {
-          fact_j[k] = fact_j[k+1];
-        }
-        break;
-      }
-    }
-    if ( found == 1 )
-      continue;
-
-    for ( j = 0; fact_m[j] != 1; j++ ) {
-      if ( cur_fact[i] == fact_m[j] ) {
-        *ur_m = (*ur_m)*fact_m[j];
-        found = 1;
-        /* Remove this element from fact_m */
-        for ( k = j; k < 9; k++ ) {
-          fact_m[k] = fact_m[k+1];
-        }
-        break;
-      }
-    }
-    if ( found == 1 ) {
-      continue;
-    }
-
-#if !defined(NDEBUG)
-    fprintf(stderr, "LIBXSMM error: Control should not reach here FACT=%u\n", cur_fact[i]);
-    assert(0);
-#endif
   }
 }
 
@@ -987,307 +908,190 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       wino_desc_fp.itiles = (handle->ofw + tileSize - 1) / tileSize;
 
       /* LUT for DeepBench */
-      if ((240 == handle->desc.W) && (24 == handle->desc.H) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 15;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
-        status = LIBXSMM_DNN_WARN_FALLBACK;
+      if ((240 == handle->ofw) && (24 == handle->ofh) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 6;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
         flagBenchmark = 1;
-      } else if ((120 == handle->desc.W) && (12 == handle->desc.H) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 15;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+      } else if ((120 == handle->ofw) && (12 == handle->ofh) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 6;
         flagBenchmark = 1;
-        status = LIBXSMM_DNN_WARN_FALLBACK;
-      } else if ((60 == handle->desc.W) && (6 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 15;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+      } else if ((60 == handle->ofw) && (6 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 6;
         flagBenchmark = 1;
-        status = LIBXSMM_DNN_WARN_FALLBACK;
-      } else if ((54 == handle->desc.W) && (54 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 14;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+      } else if ((54 == handle->ofw) && (54 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 7;
         flagBenchmark = 1;
-        status = LIBXSMM_DNN_WARN_FALLBACK;
-      } else if ((27 == handle->desc.W) && (27 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 7;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+      } else if ((27 == handle->ofw) && (27 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 7;
         flagBenchmark = 1;
-        status = LIBXSMM_DNN_WARN_FALLBACK;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 4;
-        wino_desc_fp.ur_j = 4;
-        wino_desc_fp.ur_m = 1;
-        flagBenchmark = 1;
-        status = LIBXSMM_DNN_WARN_FALLBACK;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur_i = 2;
-        wino_desc_fp.ur_j = 2;
-        wino_desc_fp.ur_m = 2;
+        wino_desc_fp.ur = 16;
         flagBenchmark = 1;
-        status = LIBXSMM_DNN_WARN_FALLBACK;
-      } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 14;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
-        flagBenchmark = 1;
-        status = LIBXSMM_DNN_WARN_FALLBACK;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 7;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 7;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur_i = 4;
-        wino_desc_fp.ur_j = 2;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 16;
         flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+      } else if ((112 == handle->ofw) && (112 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 14;
+        flagBenchmark = 1;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 2;
+        wino_desc_fp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur_i = 2;
-        wino_desc_fp.ur_j = 2;
-        wino_desc_fp.ur_m = 2;
+        wino_desc_fp.ur = 16;
         flagBenchmark = 1;
-        status = LIBXSMM_DNN_WARN_FALLBACK;
-      } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
+      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur = 16;
+        flagBenchmark = 1;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+      } else if ((112 == handle->ofw) && (112 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 14;
+        flagBenchmark = 1;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 14;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 14;
         flagBenchmark = 1;
-        status = LIBXSMM_DNN_WARN_FALLBACK;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 7;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 7;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur_i = 4;
-        wino_desc_fp.ur_j = 2;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 16;
         flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
+      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 16;
-        wino_desc_fp.ur_i = 2;
-        wino_desc_fp.ur_j = 2;
-        wino_desc_fp.ur_m = 2;
+        wino_desc_fp.ur = 16;
         flagBenchmark = 1;
       }
 
       /* LUT for AlexNet */
-      else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
+      else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur_i = 4;
-        wino_desc_fp.ur_j = 4;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 16;
         flagBenchmark = 1;
-      } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
+      } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur_i = 4;
-        wino_desc_fp.ur_j = 4;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 16;
         flagBenchmark = 1;
-      } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
+      } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur_i = 4;
-        wino_desc_fp.ur_j = 4;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 16;
         flagBenchmark = 1;
       }
 
       /* LUT for GoogLenetV1 */
-      else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 14;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+      else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 14;
         flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
+      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur_i = 7;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 14;
         flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
+      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur_i = 7;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 14;
         flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 4;
-        wino_desc_fp.ur_j = 4;
-        wino_desc_fp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
-        wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur_i = 4;
-        wino_desc_fp.ur_j = 4;
-        wino_desc_fp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 4;
-        wino_desc_fp.ur_j = 4;
-        wino_desc_fp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
-        wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur_i = 4;
-        wino_desc_fp.ur_j = 4;
-        wino_desc_fp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
-        wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur_i = 4;
-        wino_desc_fp.ur_j = 4;
-        wino_desc_fp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur_i = 2;
-        wino_desc_fp.ur_j = 2;
-        wino_desc_fp.ur_m = 2;
+        wino_desc_fp.ur = 16;
         flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
-        wino_desc_fp.bimg = 16;
-        wino_desc_fp.ur_i = 2;
-        wino_desc_fp.ur_j = 2;
-        wino_desc_fp.ur_m = 2;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur = 4;
+        flagBenchmark = 1;
+      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 8;
+        wino_desc_fp.ur = 4;
         flagBenchmark = 1;
       }
 
       /* LUT for Overfeat */
-      else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
+      else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur_i = 3;
-        wino_desc_fp.ur_j = 3;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 12;
         flagBenchmark = 1;
-      } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
+      } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur_i = 3;
-        wino_desc_fp.ur_j = 3;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 12;
         flagBenchmark = 1;
-      } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
+      } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur_i = 3;
-        wino_desc_fp.ur_j = 3;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 12;
         flagBenchmark = 1;
       }
 
       /* LUT for VGGA */
-      else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 7;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+      else if ((112 == handle->ofw) && (112 == handle->ofh) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 14;
         flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 7;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 14;
         flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 7;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 1;
+        wino_desc_fp.ur = 14;
         flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 7;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_fp.bimg = 4;
+        wino_desc_fp.ur = 14;
         flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 2;
+      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur_i = 7;
-        wino_desc_fp.ur_j = 1;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 14;
         flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_fp.vratio = 1;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur_i = 4;
-        wino_desc_fp.ur_j = 4;
-        wino_desc_fp.ur_m = 1;
+        wino_desc_fp.ur = 4;
         flagBenchmark = 1;
       }
 
       /* General scenario */
-      else if ((handle->desc.C >= 128) && (handle->desc.K >= 128)) {
-        if (((handle->desc.N % 8) == 0) && (handle->desc.C >= 256) && (handle->desc.K >= 256)) {
-          wino_desc_fp.bimg = 8;
+      else {
+        if ((handle->desc.N % 4) == 0) {
+          wino_desc_fp.bimg = 4;
         } else if ((handle->desc.N % 2) == 0) {
           wino_desc_fp.bimg = 2;
         } else {
@@ -1298,35 +1102,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         } else {
           max_acc = 26;
         }
-        internal_dnn_handle_factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
-                     &(wino_desc_fp.ur_i), &(wino_desc_fp.ur_j), &(wino_desc_fp.ur_m), max_acc );
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-          wino_desc_fp.vratio = 1;
-        } else if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
-          wino_desc_fp.vratio = 2;
-        } else {
-          wino_desc_fp.vratio = 1;
-        }
-      } else {
-        if ((handle->desc.N % 2) == 0) {
-          wino_desc_fp.bimg = 2;
-        } else {
-          wino_desc_fp.bimg = 1;
-        }
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-          max_acc = 24;
-        } else {
-          max_acc = 26;
-        }
-        internal_dnn_handle_factors_ijm( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg,
-                     &(wino_desc_fp.ur_i), &(wino_desc_fp.ur_j), &(wino_desc_fp.ur_m), max_acc );
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-          wino_desc_fp.vratio = 1;
-        } else if (wino_desc_fp.ur_i * wino_desc_fp.ur_j * wino_desc_fp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
-          wino_desc_fp.vratio = 2;
-        } else {
-          wino_desc_fp.vratio = 1;
-        }
+        internal_dnn_handle_factors_all( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg, &(wino_desc_fp.ur), max_acc );
       }
 
       /* The following condition checks whether we have encountered an input which is listed in our benchmark LUT */
@@ -1336,7 +1112,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
       /* TODO check JIT errors */
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || 
           libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
       {
         wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
@@ -1357,290 +1133,173 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       wino_desc_bp.itiles = (handle->desc.W + tileSize - 1) / tileSize;
 
       /* LUT for DeepBench */
-      if ((240 == handle->desc.W) && (24 == handle->desc.H) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 15;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+      if ((240 == handle->desc.W) && (24 == handle->desc.H) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 6;
         flagBenchmark = 1;
-      } else if ((120 == handle->desc.W) && (12 == handle->desc.H) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 15;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+      } else if ((120 == handle->desc.W) && (12 == handle->desc.H) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 6;
         flagBenchmark = 1;
-      } else if ((60 == handle->desc.W) && (6 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 15;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+      } else if ((60 == handle->desc.W) && (6 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 6;
         flagBenchmark = 1;
-      } else if ((54 == handle->desc.W) && (54 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 14;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+      } else if ((54 == handle->desc.W) && (54 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 7;
         flagBenchmark = 1;
-      } else if ((27 == handle->desc.W) && (27 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 7;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+      } else if ((27 == handle->desc.W) && (27 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 7;
         flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 4;
-        wino_desc_bp.ur_j = 4;
-        wino_desc_bp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
+      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur_i = 2;
-        wino_desc_bp.ur_j = 2;
-        wino_desc_bp.ur_m = 2;
+        wino_desc_bp.ur = 16;
         flagBenchmark = 1;
-      } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 14;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 7;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 7;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
+      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur_i = 4;
-        wino_desc_bp.ur_j = 2;
-        wino_desc_bp.ur_m = 1;
+        wino_desc_bp.ur = 16;
         flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
+      } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur_i = 2;
-        wino_desc_bp.ur_j = 2;
-        wino_desc_bp.ur_m = 2;
+        wino_desc_bp.ur = 16;
         flagBenchmark = 1;
-      } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
+      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 14;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+        wino_desc_bp.ur = 14;
         flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 7;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 7;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
+      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur_i = 4;
-        wino_desc_bp.ur_j = 2;
-        wino_desc_bp.ur_m = 1;
+        wino_desc_bp.ur = 16;
         flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
+      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 16;
-        wino_desc_bp.ur_i = 2;
-        wino_desc_bp.ur_j = 2;
-        wino_desc_bp.ur_m = 2;
+        wino_desc_bp.ur = 16;
         flagBenchmark = 1;
       }
 
       /* LUT for AlexNet */
-      else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
+      else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur_i = 4;
-        wino_desc_bp.ur_j = 4;
-        wino_desc_bp.ur_m = 1;
+        wino_desc_bp.ur = 16;
         flagBenchmark = 1;
-      } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
+      } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur_i = 4;
-        wino_desc_bp.ur_j = 4;
-        wino_desc_bp.ur_m = 1;
+        wino_desc_bp.ur = 16;
         flagBenchmark = 1;
-      } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
+      } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur_i = 4;
-        wino_desc_bp.ur_j = 4;
-        wino_desc_bp.ur_m = 1;
+        wino_desc_bp.ur = 16;
         flagBenchmark = 1;
       }
 
       /* LUT for GoogLenetV1 */
-      else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 14;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+      else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 14;
         flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
+      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur_i = 7;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+        wino_desc_bp.ur = 14;
         flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
+      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur_i = 7;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+        wino_desc_bp.ur = 14;
         flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 4;
-        wino_desc_bp.ur_j = 4;
-        wino_desc_bp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
-        wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur_i = 4;
-        wino_desc_bp.ur_j = 4;
-        wino_desc_bp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 4;
-        wino_desc_bp.ur_j = 4;
-        wino_desc_bp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
-        wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur_i = 4;
-        wino_desc_bp.ur_j = 4;
-        wino_desc_bp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
-        wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur_i = 4;
-        wino_desc_bp.ur_j = 4;
-        wino_desc_bp.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
+      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur_i = 2;
-        wino_desc_bp.ur_j = 2;
-        wino_desc_bp.ur_m = 2;
+        wino_desc_bp.ur = 16;
         flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
-        wino_desc_bp.bimg = 16;
-        wino_desc_bp.ur_i = 2;
-        wino_desc_bp.ur_j = 2;
-        wino_desc_bp.ur_m = 2;
+      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur = 4;
+        flagBenchmark = 1;
+      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur = 4;
         flagBenchmark = 1;
       }
 
       /* LUT for Overfeat */
-      else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
+      else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur_i = 3;
-        wino_desc_bp.ur_j = 3;
-        wino_desc_bp.ur_m = 1;
+        wino_desc_bp.ur = 12;
         flagBenchmark = 1;
-      } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
+      } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur_i = 3;
-        wino_desc_bp.ur_j = 3;
-        wino_desc_bp.ur_m = 1;
+        wino_desc_bp.ur = 12;
         flagBenchmark = 1;
-      } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
+      } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur_i = 3;
-        wino_desc_bp.ur_j = 3;
-        wino_desc_bp.ur_m = 1;
+        wino_desc_bp.ur = 12;
         flagBenchmark = 1;
       }
 
       /* LUT for VGGA */
-      else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 7;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+      else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 14;
         flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 7;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 14;
         flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 7;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 14;
         flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 7;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 4;
+        wino_desc_bp.ur = 14;
         flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 2;
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur_i = 7;
-        wino_desc_bp.ur_j = 1;
-        wino_desc_bp.ur_m = 1;
+      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 4;
+        wino_desc_bp.ur = 14;
         flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_bp.vratio = 1;
+      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur_i = 4;
-        wino_desc_bp.ur_j = 4;
-        wino_desc_bp.ur_m = 1;
+        wino_desc_bp.ur = 4;
         flagBenchmark = 1;
       }
 
@@ -1652,15 +1311,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         } else {
           max_acc = 26;
         }
-        internal_dnn_handle_factors_ijm( wino_desc_bp.itiles, wino_desc_bp.jtiles, wino_desc_bp.bimg,
-                     &(wino_desc_bp.ur_i), &(wino_desc_bp.ur_j), &(wino_desc_bp.ur_m), max_acc );
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-          wino_desc_bp.vratio = 1;
-        } else if (wino_desc_bp.ur_i * wino_desc_bp.ur_j * wino_desc_bp.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
-          wino_desc_bp.vratio = 2;
-        } else {
-          wino_desc_bp.vratio = 1;
-        }
+        internal_dnn_handle_factors_all( wino_desc_bp.itiles, wino_desc_bp.jtiles, wino_desc_bp.bimg, &(wino_desc_bp.ur), max_acc );
       }
 
       handle->cwino_bwd = wino_desc_bp;
@@ -1686,299 +1337,183 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       wino_desc_wu.itiles = wino_desc_fp.itiles;
 
       /* LUT for DeepBench */
-      if ((240 == handle->desc.W) && (24 == handle->desc.H) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 15;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+      if ((240 == handle->ofw) && (24 == handle->ofh) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
         flagBenchmark = 1;
-      } else if ((120 == handle->desc.W) && (12 == handle->desc.H) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 3;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+      } else if ((120 == handle->ofw) && (12 == handle->ofh) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
         flagBenchmark = 1;
-      } else if ((60 == handle->desc.W) && (6 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 15;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+      } else if ((60 == handle->ofw) && (6 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 1;
+        status = LIBXSMM_DNN_WARN_FALLBACK;
         flagBenchmark = 1;
-      } else if ((54 == handle->desc.W) && (54 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 7;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+      } else if ((54 == handle->ofw) && (54 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((27 == handle->desc.W) && (27 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 7;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 4;
-        wino_desc_wu.ur_j = 2;
-        wino_desc_wu.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
+      } else if ((27 == handle->ofw) && (27 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 8;
-        wino_desc_wu.ur_i = 2;
-        wino_desc_wu.ur_j = 2;
-        wino_desc_wu.ur_m = 2;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 7;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 7;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 7;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 8;
-        wino_desc_wu.ur_i = 4;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 2;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
+      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 8;
-        wino_desc_wu.ur_i = 2;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 4;
+        wino_desc_wu.ur = 4;
         flagBenchmark = 1;
-      } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
+      } else if ((112 == handle->ofw) && (112 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 1;
+        flagBenchmark = 1;
+      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 7;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 7;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 4;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 7;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 8;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
+      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 8;
+        wino_desc_wu.ur = 2;
+        flagBenchmark = 1;
+      } else if ((112 == handle->ofw) && (112 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 1;
+        flagBenchmark = 1;
+      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 2;
+        flagBenchmark = 1;
+      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 16;
-        wino_desc_wu.ur_i = 4;
-        wino_desc_wu.ur_j = 2;
-        wino_desc_wu.ur_m = 1;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 16;
-        wino_desc_wu.ur_i = 2;
-        wino_desc_wu.ur_j = 2;
-        wino_desc_wu.ur_m = 2;
+        wino_desc_wu.ur = 2;
+        flagBenchmark = 1;
+      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       }
 
       /* LUT for AlexNet */
-      else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur_i = 4;
-        wino_desc_wu.ur_j = 2;
-        wino_desc_wu.ur_m = 1;
+      else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur_i = 4;
-        wino_desc_wu.ur_j = 2;
-        wino_desc_wu.ur_m = 1;
+      } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur_i = 4;
-        wino_desc_wu.ur_j = 2;
-        wino_desc_wu.ur_m = 1;
+      } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       }
 
       /* LUT for GoogLenetV1 */
-      else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
+      else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 2;
+        flagBenchmark = 1;
+      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 2;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 8;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 16;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 16;
-        wino_desc_wu.ur_i = 4;
-        wino_desc_wu.ur_j = 4;
-        wino_desc_wu.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 16;
-        wino_desc_wu.ur_i = 4;
-        wino_desc_wu.ur_j = 4;
-        wino_desc_wu.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 8;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 16;
-        wino_desc_wu.ur_i = 4;
-        wino_desc_wu.ur_j = 4;
-        wino_desc_wu.ur_m = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
+      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 16;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 8;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 2;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur = 2;
+        flagBenchmark = 1;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur = 2;
+        flagBenchmark = 1;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur = 1;
+        flagBenchmark = 1;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur = 2;
+        flagBenchmark = 1;
+      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 32;
+        wino_desc_wu.ur = 2;
+        flagBenchmark = 1;
+      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 32;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       }
 
       /* LUT for Overfeat */
-      else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 16;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+      else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 32;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 16;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+      } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 32;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 16;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+      } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 32;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       }
 
       /* LUT for VGGA */
-      else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 2;
+      else if ((112 == handle->ofw) && (112 == handle->ofh) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
+      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 2;
+        flagBenchmark = 1;
+      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 2;
+        flagBenchmark = 1;
+      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 2;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 1;
+      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 2;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 2;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 2;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (1 == handle->desc.pad_h) && (6 == alpha)) {
-        wino_desc_wu.vratio = 2;
-        wino_desc_wu.bimg = 2;
-        wino_desc_wu.ur_i = 1;
-        wino_desc_wu.ur_j = 1;
-        wino_desc_wu.ur_m = 1;
+      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 16;
+        wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       }
 
       /* General scenario */
-      else if ((handle->desc.C >= 256) && (handle->desc.K >= 256)) {
-        if (((handle->desc.N % 16) == 0) && (handle->desc.C >= 512) && (handle->desc.K >= 512)) {
-          wino_desc_wu.bimg = 16;
-        } else if (((handle->desc.N % 8) == 0) && (handle->desc.C >= 256) && (handle->desc.K >= 256)) {
-          wino_desc_wu.bimg = 8;
+      else {
+        if ((handle->desc.N % 4) == 0) {
+          wino_desc_wu.bimg = 4;
         } else if ((handle->desc.N % 2) == 0) {
           wino_desc_wu.bimg = 2;
         } else {
@@ -1986,28 +1521,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
         allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
         allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
-        internal_dnn_handle_factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
-                     &(wino_desc_wu.ur_i), &(wino_desc_wu.ur_j), &(wino_desc_wu.ur_m), allowed_unroll );
-        if (wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
-          wino_desc_wu.vratio = 2;
-        } else {
-          wino_desc_wu.vratio = 1;
-        }
-      } else {
-        if ((handle->desc.N % 2) == 0) {
-          wino_desc_wu.bimg = 2;
-        } else {
-          wino_desc_wu.bimg = 1;
-        }
-        allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
-        allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
-        internal_dnn_handle_factors_ijm( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg,
-                     &(wino_desc_wu.ur_i), &(wino_desc_wu.ur_j), &(wino_desc_wu.ur_m), allowed_unroll );
-        if (wino_desc_wu.ur_i * wino_desc_wu.ur_j * wino_desc_wu.ur_m <= 13 && handle->blocksofm % 2 == 0 && handle->blocksifm % 2 == 0) {
-          wino_desc_wu.vratio = 2;
-        } else {
-          wino_desc_wu.vratio = 1;
-        }
+        internal_dnn_handle_factors_all( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg, &(wino_desc_wu.ur), allowed_unroll );
       }
 
       handle->cwino_upd = wino_desc_wu;
