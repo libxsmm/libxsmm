@@ -95,7 +95,7 @@ if (handle->datatype != handle->datatype_itm) {
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
     jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
-    
+
 #if defined(INPUT_PADDING)
     jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
 #endif

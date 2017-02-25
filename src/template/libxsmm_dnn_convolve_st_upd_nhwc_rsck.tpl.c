@@ -208,7 +208,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
 #if defined(INPUT_PADDING)
   libxsmm_barrier_init(handle->barrier, ltid);
-  
+
   /* Initialize in parallel scratch5 to zero */
   for (imgifm1 = zero_thr_begin; imgifm1 < zero_thr_end; ++imgifm1) {
     img = imgifm1/padded_h;

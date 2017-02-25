@@ -45,13 +45,13 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
                                                                  const libxsmm_matcopy_kernel_config*   i_micro_kernel_config,
                                                                  unsigned int                           remainder ) {
   int64_t l_mask = (1 << remainder) - 1;
-  
+
   /* Move mask to GP register */
   libxsmm_x86_instruction_alu_imm( io_generated_code,
                                   i_micro_kernel_config->alu_mov_instruction,
                                   i_gp_reg_mapping->gp_reg_help_0,
                                   l_mask );
-  
+
   /* Set mask register */
   if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC ||
        i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM ||
@@ -117,7 +117,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;
   }
-  
+
   /* More setup in the kernel config based on architecure and data type */
   if ( l_kernel_config.vector_name == 'y' ) {
     if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_F32  ) {
@@ -157,7 +157,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;
   }
-  
+
   l_kernel_config.alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
   l_kernel_config.alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;
   l_kernel_config.alu_mov_instruction = LIBXSMM_X86_INSTR_MOVQ;
@@ -174,7 +174,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                                l_gp_reg_mapping.gp_reg_lda, l_gp_reg_mapping.gp_reg_b,
                                                l_gp_reg_mapping.gp_reg_ldb, l_gp_reg_mapping.gp_reg_a_pf,
                                                l_gp_reg_mapping.gp_reg_b_pf, i_arch );
-  
+
   /* In case we should do masked load/store and we have AVX512 arch, precompute the mask */
   if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_MIC ||  l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM || l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE)) {
     libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask(io_generated_code,
@@ -182,7 +182,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                                                 &l_kernel_config,
                                                                 remaining);
   }
-  
+
   /* Initialize register 0 with zeros if we want to zero the destination */
   if (i_matcopy_desc->zero_source) {
     libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -203,23 +203,23 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                               0);
     }
   }
-  
+
   if (i_matcopy_desc->m > 1) {
     /* open m loop */
     libxsmm_generator_convolution_header_m_loop(  io_generated_code, &l_loop_label_tracker,
                                                   &l_kernel_config, l_gp_reg_mapping.gp_reg_m_loop );
   }
-  
+
   if (n_trips > 1) {
     /* open n loop */
     libxsmm_generator_convolution_header_n_loop(  io_generated_code, &l_loop_label_tracker,
                                                   &l_kernel_config, l_gp_reg_mapping.gp_reg_n_loop );
   }
-  
+
   if (n_trips >= 1) {
     /* Unroll the innermost loop as requested */
     for (i = 0; i < i_matcopy_desc->unroll_level; i++) {
-      
+
       if (i_matcopy_desc->zero_source == 0) {
         /* load input line to register 0 */
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -231,7 +231,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                          l_kernel_config.vector_name, 0,
                                          0, 0 );
       }
-      
+
       /* Prefetch if requested */
       if (i_matcopy_desc->prefetch) {
         libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -241,7 +241,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                          0,
                                          i*l_kernel_config.vector_length*l_kernel_config.datatype_size );
       }
-  
+
       /* store register 0 to destination line */
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                        l_kernel_config.instruction_set,
@@ -252,7 +252,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                        l_kernel_config.vector_name, 0,
                                        0, 1 );
     }
-  
+
     if (i_matcopy_desc->zero_source == 0) {
       /* adjust input pointer by VLEN * unroll-level elements */
       libxsmm_x86_instruction_alu_imm(  io_generated_code,
@@ -260,13 +260,13 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                       l_gp_reg_mapping.gp_reg_a,
                                       i_matcopy_desc->unroll_level * l_kernel_config.vector_length * l_kernel_config.datatype_size);
     }
-  
+
     /* adjust destination pointer by VLEN * unroll-level elements */
     libxsmm_x86_instruction_alu_imm(  io_generated_code,
                                     l_kernel_config.alu_add_instruction,
                                     l_gp_reg_mapping.gp_reg_b,
                                     i_matcopy_desc->unroll_level * l_kernel_config.vector_length * l_kernel_config.datatype_size);
-  
+
     /* Adjust prefecth pointer by VLEN * unroll-level elements */
     if (i_matcopy_desc->prefetch) {
       libxsmm_x86_instruction_alu_imm(  io_generated_code,
@@ -275,13 +275,13 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                       i_matcopy_desc->unroll_level * l_kernel_config.vector_length * l_kernel_config.datatype_size);
     }
   }
-  
+
   if (n_trips > 1) {
     /* close n loop */
     libxsmm_generator_convolution_footer_n_loop(  io_generated_code, &l_loop_label_tracker,
                                                   &l_kernel_config, l_gp_reg_mapping.gp_reg_n_loop, n_trips );
   }
-  
+
   /* Add unrolled load/stores for remaining without mask */
   for (i = 0; i < remaining_unrolled; i++) {
     if (i_matcopy_desc->zero_source == 0) {
@@ -311,7 +311,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                      l_kernel_config.vector_name, 0,
                                      0, 1 );
   }
-  
+
   /* Add load/store with mask if there is remaining and we have AVX512 arch */
   if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_MIC ||  l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM || l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE)) {
     if (i_matcopy_desc->zero_source == 0) {
@@ -374,7 +374,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                        0, 1 );
     }
   }
-  
+
   if (i_matcopy_desc->m > 1) {
     if (i_matcopy_desc->zero_source == 0) {
       /* adjust input pointer by (lda - n_trips * VLEN * unroll-level) elements (already has been increased by n_trips * VLEN * unroll-level in the above n_trips loop ) */

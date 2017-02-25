@@ -217,7 +217,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii, 0, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
     jitted_matzero(NULL, NULL, copy_ptr, NULL, NULL);
   }
-  
+
   libxsmm_barrier_wait(handle->barrier, ltid);
 
   for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
@@ -232,7 +232,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     }
     jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
   }
-  
+
   libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
 

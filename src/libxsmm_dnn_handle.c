@@ -553,7 +553,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           handle->matcopy_bwd[0].pmm = libxsmm_xmatcopydispatch(&matcopy_descriptor);
           handle->matcopy_bwd[1].pmm = libxsmm_xmatcopydispatch(&matcopyback_descriptor);
         }
-        
+
         descriptor.prefetch_output_ahead = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         handle->code_bwd[0].pmm = libxsmm_create_xconv_backward(&descriptor);
@@ -787,7 +787,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           handle->matcopy_upd[0].pmm = libxsmm_xmatcopydispatch(&matcopy_descriptor);
           handle->matcopy_upd[1].pmm = libxsmm_xmatcopydispatch(&matzero_descriptor);
         }
-        
+
         descriptor.transpose_ofw_ifm = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);

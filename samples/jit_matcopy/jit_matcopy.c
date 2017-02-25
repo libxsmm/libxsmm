@@ -66,11 +66,11 @@ int main(int argc, char* argv[])
   desc.zero_source = atoi(argv[7]);
   iters = atoi(argv[8]);
 
-  
+
   a = (float *) malloc(desc.m * desc.lda * sizeof(float));
   b = (float *) malloc(desc.m * desc.ldb * sizeof(float));
-  
-  
+
+
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
       a[j+desc.lda*i] = 1.0 * rand();
@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
       }
     }
   }
-  
+
   /* test dispatch call */
   fpointer = libxsmm_xmatcopydispatch( &desc );
   skernel = (libxsmm_smatcopyfunction)fpointer;
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
     exit(-1);
   }
 
-  
+
   /* let's call */
   skernel(a, &lda, b, &ldb, &a[128]);
 
@@ -98,10 +98,10 @@ int main(int argc, char* argv[])
   for (i=0; i<iters; i++) {
     skernel(a, &lda, b, &ldb, &a[128]);
   }
-  
+
   l_end = libxsmm_timer_tick();
   copy_time = libxsmm_timer_duration(l_start, l_end);
-  
+
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
       if (desc.zero_source) {
@@ -116,12 +116,12 @@ int main(int argc, char* argv[])
       }
     }
   }
-  
+
   if (error == 0) {
     printf("CORRECT copy!!!!\n");
     printf("Time taken is\t%.5f seconds\n",copy_time);
   }
-  
+
   return 0;
 }
 

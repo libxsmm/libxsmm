@@ -323,7 +323,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
-  
+
 #endif
 
   num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
@@ -860,7 +860,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     jitted_matzero(NULL, NULL, copy_ptr, NULL, NULL);
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
-  
+
   for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
     img = imgifm1/handle->blocksifm;
     ifm1 = imgifm1%handle->blocksifm;
