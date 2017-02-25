@@ -42,18 +42,6 @@
 #include <time.h>
 #endif
 
-double wall_time () {
-#ifdef GETTIMEOFDAY
-  struct timeval t;
-  gettimeofday (&t, NULL);
-  return 1.*t.tv_sec + 1.e-6*t.tv_usec;
-#else
-  struct timespec t;
-  clock_gettime (CLOCK_MONOTONIC, &t);
-  return 1.*t.tv_sec + 1.e-9*t.tv_nsec;
-#endif
-}
-
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* note: later on, this leads to (correct but) different than expected norm-values */
 # define drand48() ((double)rand() / RAND_MAX)
@@ -70,6 +58,7 @@ int main(int argc, char* argv[])
   int i, j, iters;
   int error = 0;
   double copy_time;
+  unsigned long long l_start, l_end;
 
   printf("This is a tester for JIT matcopy kernels!\n");
   desc.m = atoi(argv[1]);
@@ -98,19 +87,25 @@ int main(int argc, char* argv[])
   
   /* test dispatch call */
   fpointer = libxsmm_xmatcopydispatch( &desc );
-  printf("address of F32 kernel: %lld\n", (size_t)fpointer);
   skernel = (libxsmm_smatcopyfunction)fpointer;
+
+  if (fpointer == 0) {
+    printf("JIT error -> exit!!!!\n");
+    exit(-1);
+  }
+
   
   /* let's call */
   skernel(a, &lda, b, &ldb, &a[128]);
 
-  copy_time = -wall_time();
+  l_start = libxsmm_timer_tick();
 
   for (i=0; i<iters; i++) {
     skernel(a, &lda, b, &ldb, &a[128]);
   }
   
-  copy_time += wall_time();
+  l_end = libxsmm_timer_tick();
+  copy_time = libxsmm_timer_duration(l_start, l_end);
   
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
