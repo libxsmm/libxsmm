@@ -36,11 +36,6 @@
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
-#ifdef GETTIMEOFDAY
-#include <sys/time.h>
-#else
-#include <time.h>
-#endif
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* note: later on, this leads to (correct but) different than expected norm-values */
