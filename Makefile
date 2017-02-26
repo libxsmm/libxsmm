@@ -1205,6 +1205,9 @@ tests: build-tests
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) test
 
+.PHONY: cpp-test
+cpp-test: test-cpp
+
 .PHONY: test-cpp
 test-cpp: $(INCDIR)/libxsmm_source.h
 	@cd $(SPLDIR)/cp2k && $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
@@ -1405,7 +1408,7 @@ $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
 	@rm $(TMPFILE).tex
 
 .PHONY: documentation
-documentation: $(DOCDIR)/libxsmm.pdf $(DOCDIR)/cp2k.pdf $(DOCDIR)/samples.pdf
+documentation: $(DOCDIR)/libxsmm.pdf $(DOCDIR)/cp2k.pdf $(DOCDIR)/tensorflow.pdf $(DOCDIR)/samples.pdf
 
 .PHONY: clean
 clean:
