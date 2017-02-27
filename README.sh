@@ -104,6 +104,30 @@ iconv -t utf-8 ${HERE}/documentation/cp2k.md \
   -o ${DOCDIR}/cp2k.docx
 
 # cleanup markup and pipe into pandoc using the template
+# TensorFlow recipe
+iconv -t utf-8 ${HERE}/documentation/tensorflow.md \
+| sed \
+  -e 's/\[\[..*\](..*)\]//g' \
+  -e 's/\[!\[..*\](..*)\](..*)//g' \
+  -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+  -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+  -e 's/----*//g' \
+| tee >( pandoc \
+  --latex-engine=xelatex --template=${TMPFILE}.tex --listings \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -V documentclass=scrartcl \
+  -V title-meta="TensorFlow with LIBXSMM" \
+  -V author-meta="Hans Pabst" \
+  -V classoption=DIV=45 \
+  -V linkcolor=black \
+  -V citecolor=black \
+  -V urlcolor=black \
+  -o ${DOCDIR}/tensorflow.pdf) \
+| pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/tensorflow.docx
+
+# cleanup markup and pipe into pandoc using the template
 # LIBXSMM Sample Code Summary
 iconv -t utf-8 samples/*/README.md \
 | sed \

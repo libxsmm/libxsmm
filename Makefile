@@ -1205,6 +1205,9 @@ tests: build-tests
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) test
 
+.PHONY: cpp-test
+cpp-test: test-cpp
+
 .PHONY: test-cpp
 test-cpp: $(INCDIR)/libxsmm_source.h
 	@cd $(SPLDIR)/cp2k && $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
@@ -1347,6 +1350,35 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 		-o $@
 	@rm $(TMPFILE).tex
 
+$(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
+	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
+	@mv $(TMPFILE) $(TMPFILE).tex
+	@pandoc -D latex \
+	| sed \
+		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
+		> $(TMPFILE).tex
+	@iconv -t utf-8 $(ROOTDIR)/documentation/tensorflow.md \
+	| sed \
+		-e 's/\[\[..*\](..*)\]//g' \
+		-e 's/\[!\[..*\](..*)\](..*)//g' \
+		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+		-e 's/----*//g' \
+	| pandoc \
+		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
+		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-V documentclass=scrartcl \
+		-V title-meta="TensorFlow with LIBXSMM" \
+		-V author-meta="Hans Pabst" \
+		-V classoption=DIV=45 \
+		-V linkcolor=black \
+		-V citecolor=black \
+		-V urlcolor=black \
+		-o $@
+	@rm $(TMPFILE).tex
+
 $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
 	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
 	@mv $(TMPFILE) $(TMPFILE).tex
@@ -1376,7 +1408,7 @@ $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
 	@rm $(TMPFILE).tex
 
 .PHONY: documentation
-documentation: $(DOCDIR)/libxsmm.pdf $(DOCDIR)/cp2k.pdf $(DOCDIR)/samples.pdf
+documentation: $(DOCDIR)/libxsmm.pdf $(DOCDIR)/cp2k.pdf $(DOCDIR)/tensorflow.pdf $(DOCDIR)/samples.pdf
 
 .PHONY: clean
 clean:
