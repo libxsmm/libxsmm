@@ -29,6 +29,7 @@
 /* Kunal Banerjee (Intel Corp.), Rajkishore Barik (Intel Corp.), 
  * Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#include <libxsmm.h>
 #include "libxsmm_dnn_convolution_winograd_weight_update.h"
 #include "libxsmm_main.h"
 
@@ -210,16 +211,28 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_cu
 # include "template/libxsmm_dnn_convolve_winograd_st_upd_custom_custom.tpl.c"
 #endif
 
-      if (handle->cwino_upd.alpha == 6) {
+      if (handle->cwino_upd.alpha == 6  && libxsmm_target_archid != LIBXSMM_X86_AVX512_KNM) {
 #define ALPHA 6
 #define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_inlined.tpl.c"
 #undef TDVLEN
 #undef ALPHA
-      } else if (handle->cwino_upd.alpha == 4) {
+      } else if (handle->cwino_upd.alpha == 4  && libxsmm_target_archid != LIBXSMM_X86_AVX512_KNM) {
 #define ALPHA 4
 #define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_inlined.tpl.c"
+#undef TDVLEN
+#undef ALPHA
+      } else if (handle->cwino_upd.alpha == 6  && libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+#define ALPHA 6
+#define TDVLEN 16
+# include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_inlined_knm.tpl.c"
+#undef TDVLEN
+#undef ALPHA
+      } else if (handle->cwino_upd.alpha == 4  && libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+#define ALPHA 4
+#define TDVLEN 16
+# include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_inlined_knm.tpl.c"
 #undef TDVLEN
 #undef ALPHA
       }
@@ -270,16 +283,28 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_nh
 # include "template/libxsmm_dnn_convolve_winograd_st_upd_nhwc_custom.tpl.c"
 #endif
 
-      if (handle->cwino_upd.alpha == 6) {
+      if (handle->cwino_upd.alpha == 6 && libxsmm_target_archid != LIBXSMM_X86_AVX512_KNM) {
 #define ALPHA 6
 #define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_inlined.tpl.c"
 #undef TDVLEN
 #undef ALPHA
-      } else if (handle->cwino_upd.alpha == 4) {
+      } else if (handle->cwino_upd.alpha == 4 && libxsmm_target_archid != LIBXSMM_X86_AVX512_KNM) {
 #define ALPHA 4
 #define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_inlined.tpl.c"
+#undef TDVLEN
+#undef ALPHA
+      } else if (handle->cwino_upd.alpha == 6 && libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+#define ALPHA 6
+#define TDVLEN 16
+# include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_inlined_knm.tpl.c"
+#undef TDVLEN
+#undef ALPHA
+      } else if (handle->cwino_upd.alpha == 4 && libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+#define ALPHA 4
+#define TDVLEN 16
+# include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_inlined_knm.tpl.c"
 #undef TDVLEN
 #undef ALPHA
       }

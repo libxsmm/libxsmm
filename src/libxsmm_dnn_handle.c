@@ -841,9 +841,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors(
  * Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2
  */
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors_all(
-                  unsigned int  itiles,
-                  unsigned int  jtiles,
-                  unsigned int  bimg,
+                  unsigned int  product,
                   unsigned int* ur,
                   unsigned int  max_acc)
 {
@@ -853,7 +851,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors_all(
   for ( i = 0; i < 10; i++ ) {
     fact[i] = 1;
   }
-  internal_dnn_handle_factors(itiles*jtiles*bimg, fact);
+  internal_dnn_handle_factors(product, fact);
 
   *ur = 1;
   for ( i = 0; fact[i] != 1; i++ ) {
@@ -1102,7 +1100,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         } else {
           max_acc = 26;
         }
-        internal_dnn_handle_factors_all( wino_desc_fp.itiles, wino_desc_fp.jtiles, wino_desc_fp.bimg, &(wino_desc_fp.ur), max_acc );
+        internal_dnn_handle_factors_all( wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, &(wino_desc_fp.ur), max_acc );
       }
 
       /* The following condition checks whether we have encountered an input which is listed in our benchmark LUT */
@@ -1311,7 +1309,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         } else {
           max_acc = 26;
         }
-        internal_dnn_handle_factors_all( wino_desc_bp.itiles, wino_desc_bp.jtiles, wino_desc_bp.bimg, &(wino_desc_bp.ur), max_acc );
+        internal_dnn_handle_factors_all( wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, &(wino_desc_bp.ur), max_acc );
       }
 
       handle->cwino_bwd = wino_desc_bp;
@@ -1521,7 +1519,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
         allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
         allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
-        internal_dnn_handle_factors_all( wino_desc_wu.itiles, wino_desc_wu.jtiles, wino_desc_wu.bimg, &(wino_desc_wu.ur), allowed_unroll );
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+          internal_dnn_handle_factors_all( wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg/4, &(wino_desc_wu.ur), allowed_unroll );
+        } else {
+          internal_dnn_handle_factors_all( wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg,   &(wino_desc_wu.ur), allowed_unroll );
+        }
       }
 
       handle->cwino_upd = wino_desc_wu;
@@ -1561,6 +1563,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->scratchIw_size = ijtiles*alpha*alpha*32*libxsmm_dnn_typesize(handle->datatype)*handle->desc.threads;
       handle->scratchOw = 0;
       handle->scratchOw_size = ijtiles*alpha*alpha*32*libxsmm_dnn_typesize(handle->datatype_itm)*handle->desc.threads;
+      handle->scratchVk = 0;
+      handle->scratchVk_size = handle->scratch3_size;
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
     }
   } else {

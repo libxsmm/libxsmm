@@ -1278,6 +1278,9 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
       l_scratch_size += handle->scratch4_size + 64;
       l_scratch_size += handle->scratchIw_size + 64;
       l_scratch_size += handle->scratchOw_size + 64;
+      if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
+        l_scratch_size += handle->scratchVk_size + 64;
+      }
     } else {
       switch (kind) {
         case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -1394,6 +1397,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
         handle->scratchOw = (void*)(address+offset);
       }
       address += handle->scratchOw_size + 64;
+      if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
+        if (address % 64 == 0) {
+          handle->scratchVk = (void*)address;
+        } else {
+          offset = (64 - address % 64);
+          handle->scratchVk = (void*)(address+offset);
+        }
+        address += handle->scratchVk_size + 64;
+      }
     } else {
       switch (kind) {
         case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -1544,6 +1556,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn
       handle->scratch4 = 0;
       handle->scratchIw = 0;
       handle->scratchOw = 0;
+      handle->scratchVk = 0;
     } else {
       switch (kind) {
         case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
