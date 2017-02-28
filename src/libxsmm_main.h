@@ -143,9 +143,9 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_tensor_format filter_format;
   libxsmm_dnn_conv_fuse_op fuse_ops;
   libxsmm_dnn_conv_option options;
-  libxsmm_convolution_winograd_descriptor cwino_fwd; /* KB */
-  libxsmm_convolution_winograd_descriptor cwino_bwd; /* KB */
-  libxsmm_convolution_winograd_descriptor cwino_upd; /* KB */
+  libxsmm_convolution_winograd_descriptor cwino_fwd;
+  libxsmm_convolution_winograd_descriptor cwino_bwd;
+  libxsmm_convolution_winograd_descriptor cwino_upd;
 
   /* additional size for iternal data types */
   int ifhp;
@@ -200,6 +200,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t scratchIw_size;
   void* scratchOw;
   size_t scratchOw_size;
+  void* scratchVk;
+  size_t scratchVk_size;
 
   /* JIT-generated convolution code */
   /*

@@ -48,6 +48,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    ARCH: knm, knl, skx\n");
   printf("    PREFETCH: nopf, all\n");
   printf("    PRECISION: SP\n");
+  printf("    Pass: fwd, bwd, upd");
   printf("\n\n\n\n");
 }
 
@@ -74,20 +75,16 @@ void factors( unsigned int num,
 }
 
 
-void factors_all( unsigned int  itiles,
-                  unsigned int  jtiles,
-                  unsigned int  bimg,
+void factors_all( unsigned int  product,
                   unsigned int* ur,
-                  unsigned int  max_acc);
+                  unsigned int  max_acc );
 
 /* This function finds the unroll factor for itiles*jtiles*bimg such that ur <= max_acc */
 /* The following loop may not give an optimal solution (knapsack problem)               */
 /* Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2                            */
-void factors_all( unsigned int  itiles,
-                  unsigned int  jtiles,
-                  unsigned int  bimg,
+void factors_all( unsigned int  product,
                   unsigned int* ur,
-                  unsigned int  max_acc)
+                  unsigned int  max_acc )
 {
   unsigned int i;
   unsigned int fact[10];
@@ -95,7 +92,7 @@ void factors_all( unsigned int  itiles,
   for ( i = 0; i < 10; i++ ) {
     fact[i] = 1;
   }
-  factors(itiles*jtiles*bimg, fact);
+  factors(product, fact);
 
   *ur = 1;
   for ( i = 0; fact[i] != 1; i++ ) {
@@ -113,6 +110,7 @@ int main(int argc, char* argv []) {
   char* l_routine_name;
   char* l_arch;
   char* l_precision;
+  char* l_pass;
   int l_itiles = 0;
   int l_jtiles = 0;
   int l_bimg = 0;
@@ -122,7 +120,7 @@ int main(int argc, char* argv []) {
   libxsmm_convolution_prefetch_type l_prefetch;
 
   /* check argument count for a valid range */
-  if (argc != 11) {
+  if (argc != 12) {
     print_help();
     return -1;
   }
@@ -144,8 +142,8 @@ int main(int argc, char* argv []) {
 
   /* some intial parameters checks */
   /* check for sparse / dense only */
-  if ( (strcmp(l_type, "dense")          != 0) &&
-       (strcmp(l_type, "dense_asm")      != 0) ) {
+  if ( (strcmp(l_type, "dense")     != 0) &&
+       (strcmp(l_type, "dense_asm") != 0) ) {
     print_help();
     return -1;
   }
@@ -177,6 +175,14 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
+  /* check value of pass flag */
+  if ( (strcmp(l_pass, "fwd") != 0) &&
+       (strcmp(l_pass, "bwd") != 0) &&
+       (strcmp(l_pass, "upd") != 0) ) {
+    print_help();
+    return -1;
+  }
+
   if ( !flag_ur && (0 != (l_itiles*l_jtiles*l_bimg % l_ur)) ) {
     printf("\n(itiles*jtiles*bimg) = %d must be perfectly divisible by ur %d\n", l_itiles*l_jtiles*l_bimg, l_ur);
     return -1;
@@ -191,15 +197,26 @@ int main(int argc, char* argv []) {
   if ( (strcmp(l_type, "dense")     == 0) ||
        (strcmp(l_type, "dense_asm") == 0) ) {
     if ( flag_ur ) {
-      factors_all( l_conv_desc.itiles, l_conv_desc.jtiles, l_conv_desc.bimg, &(l_conv_desc.ur), 26 );
+      if( (strcmp(l_arch, "knm") == 0) &&
+          (strcmp(l_pass, "upd") == 0) ) {
+        factors_all( l_conv_desc.itiles*l_conv_desc.jtiles*l_conv_desc.bimg/4, &(l_conv_desc.ur), 26 );
+      } else {
+        factors_all( l_conv_desc.itiles*l_conv_desc.jtiles*l_conv_desc.bimg, &(l_conv_desc.ur), 26 );
+      }
     }
 
-    if ( strcmp(l_type, "dense")  == 0 ) {
+    if ( strcmp(l_type, "dense") == 0 ) {
+      if ( strcmp(l_pass, "upd") == 0 ) { 
        libxsmm_generator_convolution_winograd_weight_update_inlineasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
-       /*libxsmm_generator_convolution_winograd_forward_inlineasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );*/
+      } else {
+       libxsmm_generator_convolution_winograd_forward_inlineasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
+      }
     } else {
-      libxsmm_generator_convolution_winograd_weight_update_directasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
-      /*libxsmm_generator_convolution_winograd_forward_directasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );*/
+      if ( strcmp(l_pass, "upd") == 0 ) { 
+        libxsmm_generator_convolution_winograd_weight_update_directasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
+      } else {
+        libxsmm_generator_convolution_winograd_forward_directasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
+      }
     }
   }
 
