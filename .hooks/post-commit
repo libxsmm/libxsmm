@@ -6,7 +6,7 @@ GIT=$(which git)
 RM=$(which rm)
 
 if [ -e ${LOCKFILE} ] && \
-   [ "" != "${RN}" ]; \
+   [ "" != "${RM}" ]; \
 then
   # lock file must be deleted *prior* to below commit
   ${RM} ${LOCKFILE}

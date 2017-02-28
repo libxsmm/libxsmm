@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Rajkishore Barik (Intel Corp.)
+/* Rajkishore Barik (Intel Corp.), Ankush Mandal (Intel Corp.)
 ******************************************************************************/
 
 #include "generator_convolution_weight_update_avx512.h"
@@ -524,14 +524,14 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
                                           i_gp_reg_mapping->gp_reg_input_pf,
                                           LIBXSMM_X86_GP_REG_UNDEF,
                                           0,
-                                          l_k_1 * i_conv_desc->ifw_padded * i_conv_desc->stride_h * i_conv_desc->ifm_block * i_conv_kernel_config->datatype_size_in +  l_k_2 * i_conv_kernel_config->datatype_size_in * i_conv_desc->stride_w * i_conv_desc->ifm_block );
+                                          l_k_1 * i_conv_desc->ifw_padded * i_conv_desc->stride_h * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in +  l_k_2 * i_conv_kernel_config->datatype_size_in * i_conv_desc->stride_w * i_conv_kernel_config->l_ld_ifm_act );
      }
      if ( (l_n == 8) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2) ) {
         libxsmm_x86_instruction_prefetch( io_generated_code,
                                           i_conv_kernel_config->prefetch_instruction,
                                           i_gp_reg_mapping->gp_reg_output_pf,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          (l_k_1 * i_conv_desc->ofw_padded + l_k_2)*(i_conv_desc->ofm_block)*(i_conv_kernel_config->datatype_size_out) );
+                                          (l_k_1 * i_conv_desc->ofw_padded + l_k_2)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out) );
       }
     }
     l_displacement_k++;
