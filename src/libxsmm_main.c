@@ -919,6 +919,7 @@ LIBXSMM_API_DEFINITION const char* internal_get_precision_string(libxsmm_dnn_dat
 {
   const char* result = "unk"; /* unknown */
   switch (datatype) {
+    case LIBXSMM_DNN_DATATYPE_F64: result = "f64"; break;
     case LIBXSMM_DNN_DATATYPE_F32: result = "f32"; break;
     case LIBXSMM_DNN_DATATYPE_I32: result = "i32"; break;
     case LIBXSMM_DNN_DATATYPE_I16: result = "i16"; break;
@@ -1146,10 +1147,10 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_wfwd_%s_%s_t%ux%u_mb%u_u%u_p%i.convwino",
             target_arch/*code path name*/, precision_in, precision_out,
-            (unsigned int)request->descriptor.cwino->itiles/*itiles*/, 
+            (unsigned int)request->descriptor.cwino->itiles/*itiles*/,
             (unsigned int)request->descriptor.cwino->jtiles/*jtiles*/,
             (unsigned int)request->descriptor.cwino->bimg/*image block*/,
-            (unsigned int)request->descriptor.cwino->ur/*unrolliing*/, 
+            (unsigned int)request->descriptor.cwino->ur/*unrolliing*/,
             (int)request->descriptor.cwino->prefetch/*binary OR'd prefetch flags*/);
         }
       }
@@ -1170,7 +1171,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_wbwd_%s_%s_t%ux%u_mb%u_u%u_p%i.convwino",
             target_arch/*code path name*/, precision_in, precision_out,
-            (unsigned int)request->descriptor.cwino->itiles/*itiles*/, 
+            (unsigned int)request->descriptor.cwino->itiles/*itiles*/,
             (unsigned int)request->descriptor.cwino->jtiles/*jtiles*/,
             (unsigned int)request->descriptor.cwino->bimg/*image block*/,
             (unsigned int)request->descriptor.cwino->ur/*unrolling*/,
@@ -1194,11 +1195,33 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_wupd_%s_%s_t%ux%u_mb%u_u%u_p%i.convwino",
             target_arch/*code path name*/, precision_in, precision_out,
-            (unsigned int)request->descriptor.cwino->itiles/*itiles*/, 
+            (unsigned int)request->descriptor.cwino->itiles/*itiles*/,
             (unsigned int)request->descriptor.cwino->jtiles/*jtiles*/,
             (unsigned int)request->descriptor.cwino->bimg/*image block*/,
             (unsigned int)request->descriptor.cwino->ur/*unrolling*/,
             (int)request->descriptor.cwino->prefetch/*binary OR'd prefetch flags*/);
+        }
+      }
+    } break;
+    case LIBXSMM_BUILD_KIND_MATCOPY: { /* matcopy kernel */
+      assert(0 != request->descriptor.matcopy);
+      if (LIBXSMM_DNN_DATATYPE_F32 == request->descriptor.matcopy->datatype || LIBXSMM_DNN_DATATYPE_F64 == request->descriptor.matcopy->datatype
+          || LIBXSMM_DNN_DATATYPE_I16 == request->descriptor.matcopy->datatype || LIBXSMM_DNN_DATATYPE_I8 == request->descriptor.matcopy->datatype )
+      {
+        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
+        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_matcopy_kernel, &generated_code, request->descriptor.matcopy, target_arch);
+# if !defined(LIBXSMM_VTUNE)
+        if (0 > libxsmm_verbosity)
+# endif
+        {
+          const char *const precision = internal_get_precision_string(request->descriptor.matcopy->datatype);
+          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_matcopy_%s_%ux%u_%ux%u_p%u.matcopy",
+            target_arch/*code path name*/, precision,
+            request->descriptor.matcopy->m/*m*/, request->descriptor.matcopy->n/*n*/,
+            request->descriptor.matcopy->lda/*lda*/, request->descriptor.matcopy->ldb/*ldb*/,
+            request->descriptor.matcopy->prefetch);
         }
       }
     } break;
@@ -1607,6 +1630,19 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int
 #if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__)
 LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
+
+/* @TODO implement code cache */
+LIBXSMM_API_DEFINITION void* libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor)
+{
+  libxsmm_code_pointer code = { 0 };
+  libxsmm_build_request request;
+  LIBXSMM_INIT
+  request.descriptor.matcopy = descriptor;
+  request.kind = LIBXSMM_BUILD_KIND_MATCOPY;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  return code.pmm;
+}
+
 
 LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values)

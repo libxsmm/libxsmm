@@ -374,5 +374,35 @@ LIBXSMM_INTERNAL_API
 void libxsmm_x86_instruction_close_stream_convolution( libxsmm_generated_code*       io_generated_code,
                                                 const char*                   i_arch );
 
+
+/**
+ * @TODO: clean-up
+ * Opens the inline assembly section / jit stream for matcopy, this is hacked and should be cleaned up
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_arch architecture code was generated for (needed to build clobber)
+ */
+LIBXSMM_INTERNAL_API
+void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*                   io_generated_code,
+                                                  const unsigned int                        i_gp_reg_a,
+                                                  const unsigned int                        i_gp_reg_lda,
+                                                  const unsigned int                        i_gp_reg_b,
+                                                  const unsigned int                        i_gp_reg_ldb,
+                                                  const unsigned int                        i_gp_reg_a_pf,
+                                                  const unsigned int                        i_gp_reg_b_pf,
+                                                  const char*                               i_arch );
+
+/**
+ * @TODO: clean-up
+ * Closes the inline assembly section / jit stream for matcopy, this is hacked and should be cleaned up
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_arch architecture code was generated for (needed to build clobber)
+ */
+LIBXSMM_INTERNAL_API
+void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*       io_generated_code,
+                                                   const char*                   i_arch );
+
+
 #endif /* GENERATOR_X86_INSTRUCTIONS_H */
 

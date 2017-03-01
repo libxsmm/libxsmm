@@ -234,7 +234,7 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
       }
     }
   }
-    
+
   toggle = 0;
 
   for ( index = 0; index < i_conv_desc->ur; index++ ) {
