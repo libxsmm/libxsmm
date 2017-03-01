@@ -64,7 +64,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_input_transform_custom_cus
   }
 #if !defined(NDEBUG)
   else {
-    fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_bwd.vratio*16, handle->cwino_bwd.alpha);
+    fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_bwd.alpha);
     assert(0);
   }
 #endif
@@ -92,7 +92,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_input_transform_nhwc_custo
   }
 #if !defined(NDEBUG)
   else {
-    fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_bwd.vratio*16, handle->cwino_bwd.alpha);
+    fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_bwd.alpha);
     assert(0);
   }
 #endif
@@ -119,7 +119,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_weight_transform(
   }
 #if !defined(NDEBUG)
   else {
-    fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_bwd.vratio*16, handle->cwino_bwd.alpha);
+    fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_bwd.alpha);
     assert(0);
   }
 #endif
@@ -147,7 +147,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_output_transform_custom_cu
   }
 #if !defined(NDEBUG)
   else {
-    fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_bwd.vratio*16, handle->cwino_bwd.alpha);
+    fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_bwd.alpha);
     assert(0);
   }
 #endif
@@ -175,7 +175,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_output_transform_nhwc_cust
   }
 #if !defined(NDEBUG)
   else {
-    fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_bwd.vratio*16, handle->cwino_bwd.alpha);
+    fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_bwd.alpha);
     assert(0);
   }
 #endif
@@ -228,7 +228,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_cu
       }
 #if !defined(NDEBUG)
       else {
-        fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_bwd.vratio*16, handle->cwino_bwd.alpha);
+        fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_bwd.alpha);
         assert(0);
       }
 #endif
@@ -288,7 +288,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_nh
       }
 #if !defined(NDEBUG)
       else {
-        fprintf(stderr, "LIBXSMM error: Unsupported fdvlen %u or unsupported alpha %u\n", handle->cwino_bwd.vratio*16, handle->cwino_bwd.alpha);
+        fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_bwd.alpha);
         assert(0);
       }
 #endif
