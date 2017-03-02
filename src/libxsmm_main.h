@@ -148,6 +148,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_convolution_winograd_descriptor cwino_fwd;
   libxsmm_convolution_winograd_descriptor cwino_bwd;
   libxsmm_convolution_winograd_descriptor cwino_upd;
+  libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
   /* additional size for iternal data types */
   int ifhp;
@@ -171,6 +172,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int upd_use_thread_fil;
   int upd_use_external_reduce;
   int filter_transposed;
+  int nBImg;
+  int nbImg;
 
   /* internal data representation */
   libxsmm_dnn_buffer* reg_input;
