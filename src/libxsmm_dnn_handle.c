@@ -54,6 +54,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   /* general counting helper */
   int i = 0;
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
+  handle->custom_format_type = (0 == env || 0 == *env) ? LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1/*default*/ : atoi(env);
 
   /* now architecture specific */
   if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
@@ -391,16 +393,30 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_CORE ||
           libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM )
       {
-        descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-        handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
-        descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT;
-        handle->code_fwd[1].pmm = libxsmm_create_xconv_forward(&descriptor);
-        descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-        handle->code_fwd[2].pmm = libxsmm_create_xconv_forward(&descriptor);
-        descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT;
-        handle->code_fwd[3].pmm = libxsmm_create_xconv_forward(&descriptor);
-        if (handle->padding_flag == 1) {
-          handle->matcopy_fwd[0].pmm = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+        if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
+          /* Generate just the TMUL kernel */
+          /* TODO: Add some erro checking if relevant quantities are not multiple of 16 */
+          printf("GENERATING TMUL KERNEL VIA GEMM!!!!\n");
+          handle->nBImg = handle->desc.N/16;
+          handle->nbImg = 16;
+          handle->blocksifm = handle->desc.C/16;
+          handle->ifmblock = 16;
+          handle->blocksofm = handle->desc.K/16;
+          handle->ofmblock = 16;
+          handle->code_fwd[0].pmm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+        } else {
+          printf("GENERATING CONVOLUTION KERNELS!!!!\n");
+          descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
+          handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
+          descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT;
+          handle->code_fwd[1].pmm = libxsmm_create_xconv_forward(&descriptor);
+          descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
+          handle->code_fwd[2].pmm = libxsmm_create_xconv_forward(&descriptor);
+          descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT;
+          handle->code_fwd[3].pmm = libxsmm_create_xconv_forward(&descriptor);
+          if (handle->padding_flag == 1) {
+            handle->matcopy_fwd[0].pmm = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+          }
         }
       } else if (libxsmm_target_archid == LIBXSMM_X86_AVX2) {
         /* we don't do prefetching and kh/kw unrolling (ignored in kernel generator) for AVX2 */
