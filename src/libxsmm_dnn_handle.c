@@ -396,14 +396,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
           /* Generate just the TMUL kernel */
           /* TODO: Add some erro checking if relevant quantities are not multiple of 16 */
-          printf("GENERATING TMUL KERNEL VIA GEMM!!!!\n");
-          handle->nBImg = handle->desc.N/16;
-          handle->nbImg = 16;
-          handle->blocksifm = handle->desc.C/16;
-          handle->ifmblock = 16;
-          handle->blocksofm = handle->desc.K/16;
-          handle->ofmblock = 16;
-          handle->code_fwd[0].pmm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+          printf("GENERATING CONCOLUTION KERNEL VIA GEMM!!!!\n");
+          handle->nBImg = handle->desc.N/32;
+          handle->nbImg = 32;
+          handle->blocksifm = handle->desc.C/32;
+          handle->ifmblock = 32;
+          handle->blocksofm = handle->desc.K/32;
+          handle->ofmblock = 32;
+          handle->code_fwd[0].pmm = libxsmm_smmdispatch(32, 32, 32, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
           printf("GENERATING CONVOLUTION KERNELS!!!!\n");
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
