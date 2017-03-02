@@ -1278,7 +1278,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
       l_scratch_size += handle->scratch4_size + 64;
       l_scratch_size += handle->scratchIw_size + 64;
       l_scratch_size += handle->scratchOw_size + 64;
-      if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
+      if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
         l_scratch_size += handle->scratchVk_size + 64;
       }
     } else {
