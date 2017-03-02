@@ -323,6 +323,27 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   } else {
     handle->padding_flag = 0;
   }
+  
+  // FIXME Evangelos: Add logic for blocking factors etc based on datatypes */
+  /* If we request custom_2 format and input is float, setup blockings for MTAMUL kernel */
+  if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) && (handle->desc.N % 16 == 0) && (handle->desc.K % 16 == 0) && (handle->desc.C % 16 == 0) && (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) ) {
+    /* In this case regardless of requested padding, all the pad_in/pad_out parameters should be 0 */
+    if ( ((desc.pad_h > 0) && ((desc.pad_h_in != 0) || (desc.pad_h_out !=0))) || ((desc.pad_w > 0) && ((desc.pad_w_in != 0) || (desc.pad_w_out !=0))) ) {
+      status = LIBXSMM_DNN_ERR_INVALID_PADDING;
+      free(handle);
+      handle = 0;
+      return status;
+    }
+    handle->nBImg = handle->desc.N/16;
+    handle->nbImg = 16;
+    handle->blocksifm = handle->desc.C/16;
+    handle->ifmblock = 16;
+    handle->blocksofm = handle->desc.K/16;
+    handle->ofmblock = 16;
+  } else {
+    /* Fallback to custom_1 format */
+    handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
+  }
 
   /* TODO: we need to add much more checks here .... */
 
@@ -394,18 +415,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM )
       {
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-          /* Generate just the TMUL kernel */
-          /* TODO: Add some erro checking if relevant quantities are not multiple of 16 */
-          printf("GENERATING CONVOLUTION KERNEL VIA GEMM!!!!\n");
-          handle->nBImg = handle->desc.N/16;
-          handle->nbImg = 16;
-          handle->blocksifm = handle->desc.C/16;
-          handle->ifmblock = 16;
-          handle->blocksofm = handle->desc.K/16;
-          handle->ofmblock = 16;
+          printf("GENERATING CONVOLUTION KERNEL VIA GEMM !!!\n");
           handle->code_fwd[0].pmm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
-          printf("GENERATING CONVOLUTION KERNELS!!!!\n");
+          printf("GENERATING CONVOLUTION KERNELS !!!\n");
+          handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
           handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT;
