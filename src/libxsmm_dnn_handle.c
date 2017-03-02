@@ -328,7 +328,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   /* If we request custom_2 format and input is float, setup blockings for MTAMUL kernel */
   if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) && (handle->desc.N % 16 == 0) && (handle->desc.K % 16 == 0) && (handle->desc.C % 16 == 0) && (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) ) {
     /* In this case regardless of requested padding, all the pad_in/pad_out parameters should be 0 */
-    if ( ((desc.pad_h > 0) && ((desc.pad_h_in != 0) || (desc.pad_h_out !=0))) || ((desc.pad_w > 0) && ((desc.pad_w_in != 0) || (desc.pad_w_out !=0))) ) {
+    if ( ((handle->desc.pad_h > 0) && ((handle->desc.pad_h_in != 0) || (handle->desc.pad_h_out != 0))) || ((handle->desc.pad_w > 0) && ((handle->desc.pad_w_in != 0) || (handle->desc.pad_w_out !=0))) ) {
       status = LIBXSMM_DNN_ERR_INVALID_PADDING;
       free(handle);
       handle = 0;
