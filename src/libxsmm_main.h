@@ -104,6 +104,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer {
   int W;                            /* width of image */
   int lpb;                          /* low precision blocking factor */
   libxsmm_dnn_tensor_format format; /* format of activation buffer */
+  libxsmm_dnn_internal_format custom_format_type;
   libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
   char exp;                         /* fix point exponent for this tensor */
@@ -129,6 +130,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
   int S;                            /* width of filter kernel */
   int lpb;                          /* low precision blocking factor */
   libxsmm_dnn_tensor_format format; /* format of filter buffer */
+  libxsmm_dnn_internal_format custom_format_type;
   libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
   char exp;                         /* fix point exponent for this tensor */
