@@ -315,7 +315,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const li
     libxsmm_free(handle->scratch1);
     libxsmm_free(handle->scratch3);
     libxsmm_free(handle->scratch4);
-    if (handle->padding_flag) libxsmm_free(handle->scratch5);
+    if ((handle->padding_flag) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1)) libxsmm_free(handle->scratch5);
 
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_layer*)handle);
