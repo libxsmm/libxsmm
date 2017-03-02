@@ -206,13 +206,13 @@ int main(int argc, char* argv []) {
     }
 
     if ( strcmp(l_type, "dense") == 0 ) {
-      if ( strcmp(l_pass, "upd") == 0 ) { 
+      if ( strcmp(l_pass, "upd") == 0 ) {
        libxsmm_generator_convolution_winograd_weight_update_inlineasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
       } else {
        libxsmm_generator_convolution_winograd_forward_inlineasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
       }
     } else {
-      if ( strcmp(l_pass, "upd") == 0 ) { 
+      if ( strcmp(l_pass, "upd") == 0 ) {
         libxsmm_generator_convolution_winograd_weight_update_directasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
       } else {
         libxsmm_generator_convolution_winograd_forward_directasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
