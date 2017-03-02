@@ -279,7 +279,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const li
     if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM  ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) && (handle->avx512avx2fallback == 0) ) {
-      libxsmm_free(handle->code_fwd[0].pmm);
+      //libxsmm_free(handle->code_fwd[0].pmm);
       libxsmm_free(handle->code_fwd[1].pmm);
       libxsmm_free(handle->code_fwd[2].pmm);
       libxsmm_free(handle->code_fwd[3].pmm);
