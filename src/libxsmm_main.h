@@ -103,6 +103,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer {
   int H;                            /* height of image */
   int W;                            /* width of image */
   int lpb;                          /* low precision blocking factor */
+  int bimg;                         /* size of blocked images */
   libxsmm_dnn_tensor_format format; /* format of activation buffer */
   libxsmm_dnn_internal_format custom_format_type;
   libxsmm_dnn_datatype datatype;    /* data type */

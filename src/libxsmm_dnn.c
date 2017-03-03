@@ -357,6 +357,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_qbuffer(const libxsm
       buffer->N = handle->desc.N;
       buffer->fmb = handle->blocksifm;
       buffer->bfm = handle->ifmblock;
+      buffer->bimg = handle->nbImg;
       buffer->H = handle->ifhp;
       buffer->W = handle->ifwp;
       buffer->format = in_format;
@@ -378,6 +379,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_qbuffer(const libxsm
       buffer->N = handle->desc.N;
       buffer->fmb = handle->blocksofm;
       buffer->bfm = handle->ofmblock;
+      buffer->bimg = handle->nbImg;
       buffer->H = handle->ofhp;
       buffer->W = handle->ofwp;
       buffer->format = in_format;

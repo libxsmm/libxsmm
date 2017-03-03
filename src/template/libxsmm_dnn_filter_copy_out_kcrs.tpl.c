@@ -42,7 +42,7 @@ int C = ifmb * bifm * lpb;
 int K = bofm * ofmb * lpb;
 LIBXSMM_VLA_DECL(4, element_type, user_data, (element_type*)data, ifmb * bifm * lpb, R, S);
 LIBXSMM_VLA_DECL(7, const element_type, handle_data_1, (const element_type*)filter->data, ifmb, R, S, bifm, bofm, lpb);
-LIBXSMM_VLA_DECL(6, const element_type, handle_data_2, (const element_type*)filter->data, C/16, R, S, 16, 16);
+LIBXSMM_VLA_DECL(6, const element_type, handle_data_2, (const element_type*)filter->data, ifmb, R, S, bifm, bofm);
 
 if (filter->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
   for (i1 = 0; i1 < ofmb; ++i1) {
@@ -62,14 +62,14 @@ if (filter->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
     }
   }
 } else if (filter->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-  for ( i1 = 0; i1 < K/16; i1++ ) {
-    for ( i2 = 0; i2 < C/16; i2++ ) {
+  for ( i1 = 0; i1 < ofmb; i1++ ) {
+    for ( i2 = 0; i2 < ifmb; i2++ ) {
       for ( i3 = 0; i3 < R; i3++ ) {
         for ( i4 = 0; i4 < S; i4++ ) {
-          for ( i5 = 0; i5 < 16; i5++ ) {
-            for ( i6 = 0; i6 < 16; i6++ ) {
-              LIBXSMM_VLA_ACCESS(4, user_data, (i1*16)+i6, (i2*16)+i5, i3, i4, C, R, S) =
-              LIBXSMM_VLA_ACCESS(6, handle_data_2, i1, i2, i3, i4, i5, i6, C/16, R, S, 16, 16);
+          for ( i5 = 0; i5 < bifm; i5++ ) {
+            for ( i6 = 0; i6 < bofm; i6++ ) {
+              LIBXSMM_VLA_ACCESS(4, user_data, (i1*bofm)+i6, (i2*bifm)+i5, i3, i4, C, R, S) =
+              LIBXSMM_VLA_ACCESS(6, handle_data_2, i1, i2, i3, i4, i5, i6, ifmb, R, S, bifm, bofm);
             }
           }
         }

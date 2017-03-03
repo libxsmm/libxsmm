@@ -34,12 +34,13 @@ int i1, i2, i3, i4, i5, i6;
 int N = buffer->N;
 int fmb = buffer->fmb;
 int bfm = buffer->bfm;
+int bimg = buffer->bimg;
 int H = buffer->H;
 int W = buffer->W;
 int lpb = buffer->lpb;
 int C = fmb * bfm * lpb;
 LIBXSMM_VLA_DECL(6, element_type, handle_data_1, (element_type*)buffer->data, fmb, H, W, bfm, lpb);
-LIBXSMM_VLA_DECL(6, element_type, handle_data_2, (element_type*)buffer->data, C/16, H, W, 16, 16);
+LIBXSMM_VLA_DECL(6, element_type, handle_data_2, (element_type*)buffer->data, fmb, H, W, bimg, bfm);
 LIBXSMM_VLA_DECL(4, const element_type, user_data, (const element_type*)data, fmb * bfm * lpb, H, W);
 
 if (buffer->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
@@ -58,14 +59,14 @@ if (buffer->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
     }
   }
 } else if (buffer->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-  for (i1  = 0; i1 < N/16; i1++ ) {
-    for ( i2 = 0; i2 < C/16; i2++ ) {
+  for (i1  = 0; i1 < N/bimg; i1++ ) {
+    for ( i2 = 0; i2 < fmb; i2++ ) {
       for ( i3 = 0; i3 < H; i3++ ) {
         for ( i4 = 0; i4 < W; i4++ ) {
-          for ( i5 = 0; i5 < 16; i5++ ) {
-            for ( i6 = 0; i6 < 16; i6++ ) {
-              LIBXSMM_VLA_ACCESS(6, handle_data_2, i1, i2, i3, i4, i5, i6, C/16, H, W, 16, 16) =
-              LIBXSMM_VLA_ACCESS(4,  user_data, (i1*16)+i5, (i2*16)+i6, i3, i4, C, H, W);
+          for ( i5 = 0; i5 < bimg; i5++ ) {
+            for ( i6 = 0; i6 < bfm; i6++ ) {
+              LIBXSMM_VLA_ACCESS(6, handle_data_2, i1, i2, i3, i4, i5, i6, fmb, H, W, bimg, bfm) =
+              LIBXSMM_VLA_ACCESS(4,  user_data, (i1*bimg)+i5, (i2*bfm)+i6, i3, i4, C, H, W);
             }
           }
         }
