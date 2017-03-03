@@ -28,132 +28,22 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <libxsmm.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
+
+#include "edge_proxy_common.h"
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* note: later on, this leads to (correct but) different than expected norm-values */
 # define drand48() ((double)rand() / RAND_MAX)
 # define srand48 srand
 #endif
-
-LIBXSMM_INLINE
-void edge_sparse_csr_reader( const char*           i_csr_file_in,
-                             unsigned int**        o_row_idx,
-                             unsigned int**        o_column_idx,
-                             double**              o_values,
-                             unsigned int*         o_row_count,
-                             unsigned int*         o_column_count,
-                             unsigned int*         o_element_count ) {
-  FILE *l_csr_file_handle;
-  const unsigned int l_line_length = 512;
-  char l_line[512/*l_line_length*/+1];
-  unsigned int l_header_read = 0;
-  unsigned int* l_row_idx_id = NULL;
-  unsigned int l_i = 0;
-
-  l_csr_file_handle = fopen( i_csr_file_in, "r" );
-  if ( l_csr_file_handle == NULL ) {
-    fprintf( stderr, "cannot open CSR file!\n" );
-    return;
-  }
-
-  while (fgets(l_line, l_line_length, l_csr_file_handle) != NULL) {
-    if ( strlen(l_line) == l_line_length ) {
-      fprintf( stderr, "could not read file length!\n" );
-      return;
-    }
-    /* check if we are still reading comments header */
-    if ( l_line[0] == '%' ) {
-      continue;
-    } else {
-      /* if we are the first line after comment header, we allocate our data structures */
-      if ( l_header_read == 0 ) {
-        if ( sscanf(l_line, "%u %u %u", o_row_count, o_column_count, o_element_count) == 3 ) {
-          /* allocate CSC datastructue matching mtx file */
-          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_element_count));
-          *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_row_count + 1));
-          *o_values = (double*) malloc(sizeof(double) * (*o_element_count));
-          l_row_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * (*o_row_count));
-
-          /* check if mallocs were successful */
-          if ( ( *o_row_idx == NULL )      ||
-               ( *o_column_idx == NULL )   ||
-               ( *o_values == NULL )       ||
-               ( l_row_idx_id == NULL ) ) {
-            fprintf( stderr, "could not allocate sp data!\n" );
-            return;
-          }
-
-          /* set everything to zero for init */
-          memset(*o_row_idx, 0, sizeof(unsigned int)*(*o_row_count + 1));
-          memset(*o_column_idx, 0, sizeof(unsigned int)*(*o_element_count));
-          memset(*o_values, 0, sizeof(double)*(*o_element_count));
-          memset(l_row_idx_id, 0, sizeof(unsigned int)*(*o_row_count));
-
-          /* init column idx */
-          for ( l_i = 0; l_i < (*o_row_count + 1); l_i++)
-            (*o_row_idx)[l_i] = (*o_element_count);
-
-          /* init */
-          (*o_row_idx)[0] = 0;
-          l_i = 0;
-          l_header_read = 1;
-        } else {
-          fprintf( stderr, "could not csr descripton!\n" );
-          return;
-        }
-      /* now we read the actual content */
-      } else {
-        unsigned int l_row, l_column;
-        double l_value;
-        /* read a line of content */
-        if ( sscanf(l_line, "%u %u %lf", &l_row, &l_column, &l_value) != 3 ) {
-          fprintf( stderr, "could not read element!\n" );
-          return;
-        }
-        /* adjust numbers to zero termination */
-        l_row--;
-        l_column--;
-        /* add these values to row and value strucuture */
-        (*o_column_idx)[l_i] = l_column;
-        (*o_values)[l_i] = l_value;
-        l_i++;
-        /* handle columns, set id to onw for this column, yeah we need to hanle empty columns */
-        l_row_idx_id[l_row] = 1;
-        (*o_row_idx)[l_row+1] = l_i;
-      }
-    }
-  }
-
-  /* close mtx file */
-  fclose( l_csr_file_handle );
-
-  /* check if we read a file which was consitent */
-  if ( l_i != (*o_element_count) ) {
-    fprintf( stderr, "we were not able to read all elements!\n" );
-    return;
-  }
-
-  /* let's handle empty rows */
-  for ( l_i = 0; l_i < (*o_row_count); l_i++) {
-    if ( l_row_idx_id[l_i] == 0 ) {
-      (*o_row_idx)[l_i+1] = (*o_row_idx)[l_i];
-    }
-  }
-
-  /* free helper data structure */
-  if ( l_row_idx_id != NULL ) {
-    free( l_row_idx_id );
-  }
-}
-
 
 int main(int argc, char* argv[])
 {
@@ -219,10 +109,10 @@ int main(int argc, char* argv[])
 
   /* read matrices */
   printf("reading sparse matrices... ");
-  edge_sparse_csr_reader( mat_a, &mat_a_rowptr, &mat_a_colidx, &mat_a_values, &mat_a_rowcount, &mat_a_colcount, &mat_a_nnz );
-  edge_sparse_csr_reader( mat_b, &mat_b_rowptr, &mat_b_colidx, &mat_b_values, &mat_b_rowcount, &mat_b_colcount, &mat_b_nnz );
-  edge_sparse_csr_reader( mat_c, &mat_c_rowptr, &mat_c_colidx, &mat_c_values, &mat_c_rowcount, &mat_c_colcount, &mat_c_nnz );
-  edge_sparse_csr_reader( mat_st, &mat_st_rowptr, &mat_st_colidx, &mat_st_values, &mat_st_rowcount, &mat_st_colcount, &mat_st_nnz );
+  edge_sparse_csr_reader_double( mat_a, &mat_a_rowptr, &mat_a_colidx, &mat_a_values, &mat_a_rowcount, &mat_a_colcount, &mat_a_nnz );
+  edge_sparse_csr_reader_double( mat_b, &mat_b_rowptr, &mat_b_colidx, &mat_b_values, &mat_b_rowcount, &mat_b_colcount, &mat_b_nnz );
+  edge_sparse_csr_reader_double( mat_c, &mat_c_rowptr, &mat_c_colidx, &mat_c_values, &mat_c_rowcount, &mat_c_colcount, &mat_c_nnz );
+  edge_sparse_csr_reader_double( mat_st, &mat_st_rowptr, &mat_st_colidx, &mat_st_values, &mat_st_rowcount, &mat_st_colcount, &mat_st_nnz );
   printf("done!\n\n");
 
   /* generate kernels */
