@@ -304,12 +304,18 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const li
         libxsmm_free(handle->code_upd[5].pmm);
       }
     } else if ( (libxsmm_target_archid == LIBXSMM_X86_AVX2) || (handle->avx512avx2fallback != 0) ) {
-      libxsmm_free(handle->code_fwd[0].pmm);
+      if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
+        libxsmm_free(handle->code_fwd[0].pmm);
+      }
       if (handle->fwd_ofw_rb_2 != 0) {
         libxsmm_free(handle->code_fwd[1].pmm);
       }
-      libxsmm_free(handle->code_bwd[0].pmm);
-      libxsmm_free(handle->code_upd[0].pmm);
+      if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
+        libxsmm_free(handle->code_bwd[0].pmm);
+      }
+      if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
+        libxsmm_free(handle->code_upd[0].pmm);
+      }
     } else {
       /* no kernel was JITed */
     }
@@ -321,7 +327,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const li
     libxsmm_free(handle->scratch1);
     libxsmm_free(handle->scratch3);
     libxsmm_free(handle->scratch4);
-    if ((handle->padding_flag) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1)) libxsmm_free(handle->scratch5);
+    if (handle->padding_flag) libxsmm_free(handle->scratch5);
 
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_layer*)handle);
