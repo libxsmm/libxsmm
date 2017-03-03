@@ -101,7 +101,7 @@ for (job = thr_begin; job < thr_end; job++) {
   for (a1 = 0; a1 < ALPHA; a1++) {
     for (a2 = 0; a2 < ALPHA; a2++) {
       for (t = 0; t < TDVLEN; t++) {
-        for(i = 0; i < handle->cwino_upd.jtiles*handle->cwino_upd.itiles; i++) {
+        for (i = 0; i < handle->cwino_upd.jtiles*handle->cwino_upd.itiles; i++) {
           LIBXSMM_VLA_ACCESS(7, Vk, img/handle->cwino_upd.bimg, a1, a2, ifm1, ((img%handle->cwino_upd.bimg)*handle->cwino_upd.jtiles*handle->cwino_upd.itiles + i)/4, t, ((img%handle->cwino_upd.bimg)*handle->cwino_upd.jtiles*handle->cwino_upd.itiles + i)%4, ALPHA, ALPHA, handle->blocksifm, handle->cwino_upd.bimg*handle->cwino_upd.jtiles*handle->cwino_upd.itiles/4, TDVLEN, 4) =
             LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_upd.bimg, a1, a2, ifm1, img%handle->cwino_upd.bimg, i/handle->cwino_upd.itiles, i%handle->cwino_upd.itiles, t, ALPHA, ALPHA, handle->blocksifm, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, TDVLEN);
         }

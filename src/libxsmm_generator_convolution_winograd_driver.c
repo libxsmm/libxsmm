@@ -197,7 +197,7 @@ int main(int argc, char* argv []) {
   if ( (strcmp(l_type, "dense")     == 0) ||
        (strcmp(l_type, "dense_asm") == 0) ) {
     if ( flag_ur ) {
-      if( (strcmp(l_arch, "knm") == 0) &&
+      if ( (strcmp(l_arch, "knm") == 0) &&
           (strcmp(l_pass, "upd") == 0) ) {
         factors_all( l_conv_desc.itiles*l_conv_desc.jtiles*l_conv_desc.bimg/4, &(l_conv_desc.ur), 26 );
       } else {
