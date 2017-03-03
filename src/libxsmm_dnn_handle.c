@@ -336,7 +336,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   handle->blocksofm = handle->desc.K / (handle->ofmblock * handle->fm_lp_block);
   
   /* Calculate number of image blocks in case of custom_2 format */
-  if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
+  if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
     handle->nBImg = handle->desc.N / handle->nbImg;
   }
       
