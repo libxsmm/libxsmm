@@ -82,7 +82,7 @@ for (i = thr_begin; i < thr_end; ++i) {
             if(ii+ki < 0 || ii+ki >= ifw) continue;
             sixteen( &LIBXSMM_VLA_ACCESS(6,   output_t, img1, ofm1, oj,      oi,      0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->nbImg, handle->ofmblock) /* A */,
                     &LIBXSMM_VLA_ACCESS(6, tr_input_t, img1, ifm1, ij + kj, ii + ki, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->nbImg) /* B */,
-                    &LIBXSMM_VLA_ACCESS(6,   filter_t, ofm1, ifm1, kj,      ki,      0, 0, handle->nBIfm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) /* C */  );
+                    &LIBXSMM_VLA_ACCESS(6,   filter_t, ofm1, ifm1, kj,      ki,      0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) /* C */  );
           }
         }
       }
