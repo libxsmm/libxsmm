@@ -271,9 +271,9 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
               oj_=oj__*handle->upd_ofh_rb;
               ii_ = oi_*stride_w;
               ij_ = oj_*stride_h;
-              for(kj=0; kj < kh-1; ++kj) {
+              for (kj=0; kj < kh-1; ++kj) {
                 if (handle->ifmblock > 1) {
-                  for(ki=0; ki < kw-1; ++ki) {
+                  for (ki=0; ki < kw-1; ++ki) {
                     /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ij_+kj][ii_+ki+1][ifm1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
                     LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(
                                                        input, img, ifm1, ij_+kj, ii_+ki, 0,
@@ -300,7 +300,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
               }
               kj = kh-1;
               if (handle->ifmblock > 1) {
-                for(ki=0; ki < kw-1; ++ki) {
+                for (ki=0; ki < kw-1; ++ki) {
                   /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ij_+kj][ii_+ki+1][ifm1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
                   LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(
                                                      input, img, ifm1, ij_+kj, ii_+ki, 0,
@@ -315,7 +315,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
                 /*kw is unrolled when ifmblock == 1*/
                 ki=0;
               } /*end of ifmblock > 1 */
-              if((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
+              if ((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
                  if ((img+1 == handle->desc.N) && (ifm1+1 == handle->blocksifm)) {  /* prefetch next ofm1 */
                    /* 1 - prefetch for kj=0, ki=0; */
                    /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[0][0][0][0][0]), &(weight[ofm1+1][0][0][0][0][0]), &(output[0][0][0][ofm1+1][0]));*/
@@ -355,7 +355,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
                    }
                  }
               }
-              else if(oj__+1 == num_ofh_strips) {  /* end of oj_*/
+              else if (oj__+1 == num_ofh_strips) {  /* end of oj_*/
                 /* 1 - prefetch for kj=0, ki=0; */
                 /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[img][0][((oi__+1)*handle->upd_ofw_rb)*stride_w][ifm1][0]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img][0][(oi__+1)*handle->upd_ofw_rb][ofm1][0]));*/
                 LIBXSMM_JITTED_CONV_WU_PF_NHWC(
@@ -400,16 +400,16 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
          for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
            ofm1 = ofm1ifm1 / handle->blocksifm;
            ifm1 = ofm1ifm1 % handle->blocksifm;
-           for(img = 0; img < handle->desc.N; ++img) {
+           for (img = 0; img < handle->desc.N; ++img) {
              for (oi__=0; oi__<num_ofw_strips; ++oi__) {
                for (oj__=0; oj__<num_ofh_strips; ++oj__) {
                  oi_=oi__*handle->upd_ofw_rb;
                  oj_=oj__*handle->upd_ofh_rb;
                  ii_ = oi_*stride_w;
                  ij_ = oj_*stride_h;
-                 for(kj=0; kj < kh-1; ++kj) {
+                 for (kj=0; kj < kh-1; ++kj) {
                    if (handle->ifmblock > 1) {
-                     for(ki=0; ki < kw-1; ++ki) {
+                     for (ki=0; ki < kw-1; ++ki) {
                        /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ij_+kj][ii_+ki+1][ifm1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
                        LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(
                                                           input, img, ifm1, ij_+kj, ii_+ki, 0,
@@ -436,7 +436,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
                  }
                  kj = kh-1;
                  if (handle->ifmblock > 1) {
-                   for(ki=0; ki < kw-1; ++ki) {
+                   for (ki=0; ki < kw-1; ++ki) {
                      /*jitted_conv_wu_nooutput_pf(l_input, l_wt, l_output, &(input[img][ij_+kj][ii_+ki+1][ifm1][0]), &(weight[ofm1][ifm1][kj][ki+1][0][0]), NULL);*/
                      LIBXSMM_JITTED_CONV_WU_NOOUTPUT_PF_NHWC(
                                                         input, img, ifm1, ij_+kj, ii_+ki, 0,
@@ -451,7 +451,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
                    /*kw is unrolled when ifmblock == 1*/
                    ki = 0;
                  }
-                 if((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
+                 if ((oi__+1 == num_ofw_strips)  && (oj__+1 == num_ofh_strips)) {
                    if ((img+1 == handle->desc.N) && (ifm1+1 == handle->blocksifm)) {  /* prefetch next ofm1 */
                      /* 1 - prefetch for kj=0, ki=0; */
                      /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[0][0][0][0][0]), &(weight[ofm1+1][0][0][0][0][0]), &(output[0][0][0][ofm1+1][0]));*/
@@ -488,7 +488,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
                                                 );
                      }
                    }
-                 } else if(oj__+1 == num_ofh_strips) {  /* end of oj_*/
+                 } else if (oj__+1 == num_ofh_strips) {  /* end of oj_*/
                    /* 1 - prefetch for kj=0, ki=0; */
                    /*jitted_conv_wu_pf(l_input, l_wt, l_output, &(input[img][0][((oi__+1)*handle->upd_ofw_rb)*stride_w][ifm1][0]), &(weight[ofm1][ifm1][0][0][0][0]), &(output[img][0][(oi__+1)*handle->upd_ofw_rb][ofm1][0]));*/
                    LIBXSMM_JITTED_CONV_WU_PF_NHWC(

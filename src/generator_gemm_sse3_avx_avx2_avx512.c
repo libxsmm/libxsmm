@@ -40,6 +40,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <stdio.h>
 
 LIBXSMM_INTERNAL_API_DEFINITION
@@ -124,14 +125,17 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
             if (i_xgemm_desc->m == 56) {
               l_m_done = 32;
             } else {
+              assert(0 != l_m_blocking);
               l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
             }
           } else {
             l_m_done_old = l_m_done;
+            assert(0 != l_m_blocking);
             l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
           }
         } else {
           l_m_done_old = l_m_done;
+          assert(0 != l_m_blocking);
           l_m_done = l_m_done + (((i_xgemm_desc->m - l_m_done_old) / l_m_blocking) * l_m_blocking);
         }
 
