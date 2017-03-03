@@ -48,7 +48,7 @@ const int trans_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? 
 
 LIBXSMM_VLA_DECL(6, const element_output_type, output_t, ((const element_output_type*)handle->reg_output->data) + (handle->desc.pad_w_out * handle->ofwp + handle->desc.pad_h_out), handle->blocksofm, handle->ofhp, handle->ofwp, handle->nbImg, handle->ofmblock);
 LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, ((const element_input_type*)handle->reg_input->data) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), handle->blocksifm, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock);
-LIBXSMM_VLA_DECL(6, const element_input_type,  tr_input_t, ((const element_input_type*)handle->scratch3) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->nbImg);
+LIBXSMM_VLA_DECL(6,  element_input_type,  tr_input_t, ((element_input_type*)handle->scratch3) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->nbImg);
 LIBXSMM_VLA_DECL(6, element_filter_type, filter_t, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_upd[0].pmm;
 
