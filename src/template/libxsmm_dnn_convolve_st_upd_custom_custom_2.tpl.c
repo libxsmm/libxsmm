@@ -50,7 +50,7 @@ LIBXSMM_VLA_DECL(6, const element_output_type, output_t, ((const element_output_
 LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, ((const element_input_type*)handle->reg_input->data) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), handle->blocksifm, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock);
 LIBXSMM_VLA_DECL(6, const element_input_type,  tr_input_t, ((const element_input_type*)handle->scratch3) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->nbImg);
 LIBXSMM_VLA_DECL(6, element_filter_type, filter_t, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
-libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].pmm;
+libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_upd[0].pmm;
 
 /* Transpose in parallel the input  */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -61,8 +61,8 @@ for (i = trans_thr_begin; i < trans_thr_end; ++i) {
   ii = ((i%(handle->blocksifm * handle->ifhp * handle->ifwp))%(handle->ifhp * handle->ifwp))% handle->ifwp;
   for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
     for (img2 = 0; img2 < handle->nbImg; ++img2) {
-      LIBXSMM_VLA_ACCESS(6,  tr_input_t, img1, ifm1, ij, ii, ifm2, img2, handle->nBIfm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->nbImg) =
-      LIBXSMM_VLA_ACCESS(6,   input_t, img1, ifm1, ij, ii, img2, ifm2, handle->nBIfm, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock);
+      LIBXSMM_VLA_ACCESS(6,  tr_input_t, img1, ifm1, ij, ii, ifm2, img2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->nbImg) =
+      LIBXSMM_VLA_ACCESS(6,   input_t, img1, ifm1, ij, ii, img2, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock);
     }
   }
 }
