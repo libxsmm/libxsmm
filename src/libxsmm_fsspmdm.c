@@ -88,10 +88,12 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(const int M, co
     }
   }
 
-  /* allocate CSR structure */
-  a_csr_values = (double*)malloc(a_nnz * sizeof(double));
-  a_csr_rowptr = (unsigned int*)malloc((M + 1) * sizeof(unsigned int));
-  a_csr_colidx = (unsigned int*)malloc(a_nnz * sizeof(unsigned int));
+  if (0 < a_nnz) {
+    /* allocate CSR structure */
+    a_csr_values = (double*)malloc(a_nnz * sizeof(double));
+    a_csr_rowptr = (unsigned int*)malloc((M + 1) * sizeof(unsigned int));
+    a_csr_colidx = (unsigned int*)malloc(a_nnz * sizeof(unsigned int));
+  }
 
   if (0 != a_csr_values && 0 != a_csr_rowptr && 0 != a_csr_colidx) {
     int n = 0;
@@ -184,10 +186,12 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
     }
   }
 
-  /* allocate CSR structure */
-  a_csr_values = (float*)malloc(a_nnz * sizeof(float));
-  a_csr_rowptr = (unsigned int*)malloc((M + 1) * sizeof(unsigned int));
-  a_csr_colidx = (unsigned int*)malloc(a_nnz * sizeof(unsigned int));
+  if (0 < a_nnz) {
+    /* allocate CSR structure */
+    a_csr_values = (float*)malloc(a_nnz * sizeof(float));
+    a_csr_rowptr = (unsigned int*)malloc((M + 1) * sizeof(unsigned int));
+    a_csr_colidx = (unsigned int*)malloc(a_nnz * sizeof(unsigned int));
+  }
 
   if (0 != a_csr_values && 0 != a_csr_rowptr && 0 != a_csr_colidx) {
     int n = 0;
