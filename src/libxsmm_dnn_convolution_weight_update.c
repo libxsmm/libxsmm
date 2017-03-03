@@ -84,6 +84,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
         typedef libxsmm_sconvfunction libxsmm_convfunction;
         typedef libxsmm_smatcopyfunction libxsmm_matcopyfunction;
         typedef libxsmm_smatcopyfunction libxsmm_matzerofunction;
+        typedef libxsmm_smmfunction libxsmm_mmfunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
 #define LIBXSMM_WU_PER_THREAD_ALLOCATION
