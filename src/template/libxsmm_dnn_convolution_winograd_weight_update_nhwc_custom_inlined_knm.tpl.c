@@ -92,10 +92,12 @@ t_start = __rdtsc();
 for (job = thr_begin; job < thr_end; job++) {
   img  = job / handle->blocksifm;
   ifm1 = job % handle->blocksifm;
-  internal_upd_input_transform_nhwc_custom(
-    &LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, TDVLEN),
-    &LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_upd.bimg, 0, 0, ifm1, img%handle->cwino_upd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, TDVLEN),
-    &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_upd.itiles*handle->cwino_upd.jtiles, ALPHA, ALPHA, TDVLEN), handle);
+  if (handle->flag_reuseInput != 1 || handle->cwino_upd.alpha != 6 || handle->cwino_fwd.bimg != handle->cwino_upd.bimg) {
+    internal_upd_input_transform_nhwc_custom(
+      &LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, TDVLEN),
+      &LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_upd.bimg, 0, 0, ifm1, img%handle->cwino_upd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, TDVLEN),
+      &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_upd.itiles*handle->cwino_upd.jtiles, ALPHA, ALPHA, TDVLEN), handle);
+  } /*end flag_reuseInput*/
 
   for (a1 = 0; a1 < ALPHA; a1++) {
     for (a2 = 0; a2 < ALPHA; a2++) {
