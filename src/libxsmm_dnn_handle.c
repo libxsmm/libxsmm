@@ -827,7 +827,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
         descriptor.transpose_ofw_ifm = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-        handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+        if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
+          printf("GENERATING UPD CONVOLUTION KERNEL VIA GEMM !!!\n");
+          handle->code_upd[0].pmm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+        } else {
+          printf("GENERATING UPD CONVOLUTION KERNELS !!!\n");
+          handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+        }
         /*ALL*/
         descriptor.transpose_ofw_ifm = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
