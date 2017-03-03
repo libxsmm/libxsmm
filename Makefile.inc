@@ -640,6 +640,10 @@ ifneq (0,$(INTEL))
     CFLAGS += $(OMPFLAG)
     FCFLAGS += $(OMPFLAG)
     LDFLAGS += $(OMPFLAG)
+  else ifneq (0,$(OFFLOAD))
+    CXXFLAGS += -qoverride_limits
+    CFLAGS += -qoverride_limits
+    FCFLAGS += -qoverride_limits
   endif
   ifeq (1,$(STATIC))
     SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
