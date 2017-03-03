@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Rajkishore Barik (Intel Corp.), Ankush Mandal (Intel Corp.)
+/* Rajkishore Barik, Ankush Mandal (Intel Corp.)
 ******************************************************************************/
 
 int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__, ii_, ij_, kh, kw, ofm1ifm1, ki, kj;
@@ -96,13 +96,14 @@ LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, weight, handle->desc.S,
 
 #if defined(INPUT_PADDING)
 /* Define variables if padding is required */
-int iii, ij, oi, oj, ii;
+int ii;
 element_input_type (* __restrict input_ptr);
 element_input_type (* __restrict copy_ptr);
+element_input_type *prefetch_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
-const size_t small_block_size = handle->ifwp * handle->blocksifm * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype) * 8;
-const int block_size = handle->ifwp * handle->blocksifm * handle->ifmblock;
+libxsmm_matcopyfunction jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_upd[0].xmatcopy.smatcopy;
+libxsmm_matzerofunction jitted_matzero = (libxsmm_matzerofunction)handle->matcopy_upd[1].xmatcopy.smatcopy;
 LIBXSMM_VLA_DECL(5, const element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
 LIBXSMM_VLA_DECL(5, element_input_type, input_padded, (element_input_type*)handle->scratch5, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
 LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->scratch5, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
@@ -114,95 +115,13 @@ const int zerowork = handle->desc.N*padded_h;
 const int zerochunksize = (zerowork % handle->desc.threads == 0) ? (zerowork / handle->desc.threads) : (zerowork / handle->desc.threads) + 1;
 const int zero_thr_begin = (ltid * zerochunksize < zerowork) ? (ltid * zerochunksize) : zerowork;
 const int zero_thr_end = ((ltid + 1) * zerochunksize < zerowork) ? ((ltid + 1) * zerochunksize) : zerowork;
-
-/* Based on the input datatype select the right intrinsics */
-#ifdef INPUT_F32
-
-#if defined(__AVX512F__)
-#define LOAD(x)             _mm512_load_ps(x)
-#define LOADU(x)            _mm512_loadu_ps(x)
-#define MASK_LOADU(x,y)     _mm512_maskz_loadu_ps(x,y)
-#define STORE(x,y)          _mm512_store_ps(x,y)
-#define STOREU(x,y)         _mm512_storeu_ps(x,y)
-#define MASK_STOREU(x,y,z)  _mm512_mask_storeu_ps(x,y,z)
-#define ZERO_REG            _mm512_setzero_ps()
-#define INT_TO_MASK(x)      ( (__mmask16) x)
-#endif
-
-#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
-#define LOAD_256(x)         _mm256_load_ps(x)
-#define STORE_256(x,y)      _mm256_store_ps(x,y)
-#define ZERO_REG_256        _mm256_setzero_ps()
-#endif
-#define CHUNK_SIZE          16
-
-#endif
-
-#ifdef INPUT_I16
-
-#if defined(__AVX512F__)
-#define LOAD(x)             _mm512_load_si512 (x)
-#define LOADU(x)            _mm512_loadu_si512(x)
-#define MASK_LOADU(x,y)     _mm512_maskz_loadu_epi16(x,y)
-#define STORE(x,y)          _mm512_store_si512(x,y)
-#define STOREU(x,y)         _mm512_storeu_si512(x,y)
-#define MASK_STOREU(x,y,z)  _mm512_mask_storeu_epi16(x,y,z)
-#define ZERO_REG            _mm512_setzero_epi32()
-#define INT_TO_MASK(x)      ( (__mmask32) x)
-#endif
-
-#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
-#define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
-#define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
-#define ZERO_REG_256        _mm256_setzero_si256()
-#endif
-#define CHUNK_SIZE          32
-
-#endif
-
-#ifdef INPUT_I8
-
-#if defined(__AVX512F__)
-#define LOAD(x)             _mm512_load_si512 (x)
-#define LOADU(x)            _mm512_loadu_si512(x)
-#define MASK_LOADU(x,y)     _mm512_maskz_loadu_epi8(x,y)
-#define STORE(x,y)          _mm512_store_si512(x,y)
-#define STOREU(x,y)         _mm512_storeu_si512(x,y)
-#define MASK_STOREU(x,y,z)  _mm512_mask_storeu_epi8(x,y,z)
-#define ZERO_REG            _mm512_setzero_epi32()
-#define INT_TO_MASK(x)      ( (__mmask64) x)
-#endif
-
-#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
-#define LOAD_256(x)         _mm256_load_si256((__m256i const *)x)
-#define STORE_256(x,y)      _mm256_store_si256((__m256i*)x,y)
-#define ZERO_REG_256        _mm256_setzero_si256()
-#endif
-#define CHUNK_SIZE          64
-
-#endif
-
-const int img_size = padded_w * handle->blocksifm * handle->ifmblock;
-#if defined(__AVX512F__) || (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
-element_input_type *prefetch_ptr;
-#endif
-#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
-const int64_t remainder_mask = (block_size % CHUNK_SIZE != 0) ? (1 << (block_size % CHUNK_SIZE)) - 1 : -1;
-const int64_t zero_remainder_mask = (img_size % CHUNK_SIZE != 0) ? (1 << (img_size % CHUNK_SIZE)) - 1 : -1;
-#endif
 #else
 /* Define variables if padding is not required */
 LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->reg_input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+const int padded_h = handle->ifhp;
+const int padded_w = handle->ifwp;
 #endif
-
-unsigned int input_w, input_h;
-#if defined(INPUT_PADDING)
-input_w = padded_w;
-input_h = padded_h;
-#else
-input_w = handle->ifwp;
-input_h = handle->ifhp;
-#endif
+unsigned int input_w = padded_w, input_h = padded_h;
 
 kh = handle->desc.R;
 kw = handle->desc.S;
@@ -290,167 +209,27 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #if defined(INPUT_PADDING)
   libxsmm_barrier_init(handle->barrier, ltid);
 
-  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
+  /* Initialize in parallel scratch5 to zero */
+  for (imgifm1 = zero_thr_begin; imgifm1 < zero_thr_end; ++imgifm1) {
+    img = imgifm1/padded_h;
+    ii = imgifm1%padded_h;
+    copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii, 0, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
+    jitted_matzero(NULL, NULL, copy_ptr, NULL, NULL);
+  }
 
-    /* Initialize in parallel scratch5 to zero */
-    if (img_size % CHUNK_SIZE == 0) {
-      for (imgifm1 = zero_thr_begin; imgifm1 < zero_thr_end; ++imgifm1) {
-        img = imgifm1/padded_h;
-        ii = imgifm1%padded_h;
-        copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii, 0, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
-#if defined(__AVX512F__)
-        for (oj = 0; oj < img_size; oj+=CHUNK_SIZE) {
-          STORE(&copy_ptr[oj], ZERO_REG);
-        }
-#else
-        for (oj = 0; oj < img_size; oj++) {
-          copy_ptr[oj] = (element_input_type)0;
-        }
-#endif
-      }
+  libxsmm_barrier_wait(handle->barrier, ltid);
+
+  for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
+    img = imgifm1/handle->ifhp;
+    ii = imgifm1%handle->ifhp;
+    input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii, 0, 0, 0,  handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+    copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii+handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
+    if (ii != 0) {
+      prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii-1, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
     } else {
-      for (imgifm1 = zero_thr_begin; imgifm1 < zero_thr_end; ++imgifm1) {
-        img = imgifm1/padded_h;
-        ii = imgifm1%padded_h;
-        copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii, 0, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
-#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
-        for (oj = 0; oj < img_size-CHUNK_SIZE; oj+=CHUNK_SIZE) {
-          STOREU(&copy_ptr[oj], ZERO_REG);
-        }
-        MASK_STOREU(&copy_ptr[oj], INT_TO_MASK(zero_remainder_mask), ZERO_REG);
-#else
-        for (oj = 0; oj < img_size; oj++) {
-          copy_ptr[oj] = (element_input_type)0;
-        }
-#endif
-      }
+      prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img-1, handle->ifhp-1, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
     }
-
-    libxsmm_barrier_wait(handle->barrier, ltid);
-
-    if ( small_block_size % 512 == 0 ) {
-      for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
-        img = imgifm1/handle->ifhp;
-        ii = imgifm1%handle->ifhp;
-        input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii, 0, 0, 0,  handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-        copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii+handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
-#if defined(__AVX512F__)
-        if (ii != 0) {
-          prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii-1, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-        } else {
-          prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img-1, handle->ifhp-1, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-        }
-        for (oi = 0; oi < block_size; oi += CHUNK_SIZE) {
-          STORE(&copy_ptr[oi], LOAD(&input_ptr[oi]));
-          _mm_prefetch((const char*)&prefetch_ptr[oi], _MM_HINT_T1);
-        }
-#else
-        for (oi = 0; oi < block_size; oi++) {
-          copy_ptr[oi] = input_ptr[oi];
-        }
-#endif
-      }
-    } else {
-      for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
-        img = imgifm1/handle->ifhp;
-        ii = imgifm1%handle->ifhp;
-        input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii, 0, 0, 0,  handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-        copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii+handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
-#if defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_AVX512_NOMASK)
-        if (ii != 0) {
-          prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii-1, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-        } else {
-          prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img-1, handle->ifhp-1, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-        }
-        for (oi = 0; oi < block_size-CHUNK_SIZE; oi += CHUNK_SIZE) {
-          STOREU(&copy_ptr[oi], LOADU(&input_ptr[oi]));
-          _mm_prefetch((const char*)&prefetch_ptr[oi], _MM_HINT_T1);
-        }
-        MASK_STOREU(&copy_ptr[oi],
-                    INT_TO_MASK(remainder_mask),
-                    MASK_LOADU(INT_TO_MASK(remainder_mask),
-                               &input_ptr[oi]));
-        _mm_prefetch((const char*)&prefetch_ptr[oi], _MM_HINT_T1);
-#else
-        for (oi = 0; oi < block_size; oi++) {
-          copy_ptr[oi] = input_ptr[oi];
-        }
-#endif
-      }
-    }
-  } else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2) {
-
-    /* Initialize in parallel scratch5 to zero */
-    if (img_size % (CHUNK_SIZE/2) == 0) {
-      for (imgifm1 = zero_thr_begin; imgifm1 < zero_thr_end; ++imgifm1) {
-        img = imgifm1/padded_h;
-        ii = imgifm1%padded_h;
-        copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii, 0, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
-#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
-        for (oj = 0; oj < img_size; oj+=CHUNK_SIZE/2) {
-          STORE_256(&copy_ptr[oj], ZERO_REG_256);
-        }
-#else
-        for (oj = 0; oj < img_size; oj++) {
-          copy_ptr[oj] = (element_input_type)0;
-        }
-#endif
-      }
-    } else {
-      for (imgifm1 = zero_thr_begin; imgifm1 < zero_thr_end; ++imgifm1) {
-        img = imgifm1/padded_h;
-        ii = imgifm1%padded_h;
-        for (oj = 0; oj < padded_w; oj++) {
-          for (ij = 0; ij < handle->blocksifm; ij++) {
-            for (iii = 0; iii < handle->ifmblock; iii++) {
-              LIBXSMM_VLA_ACCESS(5, input_padded, img, ii, oj, ij, iii, padded_h, padded_w, handle->blocksifm, handle->ifmblock) = (element_input_type)0;
-
-            }
-          }
-        }
-      }
-    }
-
-    libxsmm_barrier_wait(handle->barrier, ltid);
-
-    if ( small_block_size % 256 == 0 ) {
-      for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
-        img = imgifm1/handle->ifhp;
-        ii = imgifm1%handle->ifhp;
-        input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii, 0, 0, 0,  handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-        copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii+handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
-#if (defined(__AVX__) && !defined(LIBXSMM_INTRINSICS_LEGACY))
-        if (ii != 0) {
-          prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii-1, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-        } else {
-          prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img-1, handle->ifhp-1, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-        }
-        for (oi = 0; oi < block_size; oi += CHUNK_SIZE/2) {
-          STORE_256(&copy_ptr[oi], LOAD_256(&input_ptr[oi]));
-          _mm_prefetch((const char*)&prefetch_ptr[oi], _MM_HINT_T1);
-        }
-#else
-        for (oi = 0; oi < block_size; oi++) {
-          copy_ptr[oi] = input_ptr[oi];
-        }
-#endif
-      }
-    } else {
-      for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
-        img = imgifm1/handle->ifhp;
-        ii = imgifm1%handle->ifhp;
-        for (oj = 0; oj < handle->ifwp; oj++) {
-          for (oi = 0; oi < handle->blocksifm; oi++) {
-            for (iii = 0; iii < handle->ifmblock; iii++) {
-              LIBXSMM_VLA_ACCESS(5, input_padded, img, ii+handle->desc.pad_h, oj+handle->desc.pad_w, oi, iii,  padded_h, padded_w, handle->blocksifm, handle->ifmblock) =
-              LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii, oj, oi, iii, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-            }
-          }
-        }
-      }
-    }
+    jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
 #endif
@@ -753,11 +532,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
     ifm1 = ofm1ifm1 % handle->blocksifm;
     for (kj=0; kj < handle->desc.R; ++kj) {
       for (ki=0; ki < handle->desc.S; ++ki) {
-#if defined(INPUT_PADDING)
         l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, kj, ki, ifm1, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
-#else
-        l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, kj, ki, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-#endif
         l_wt = &LIBXSMM_VLA_ACCESS(6, per_thread_weight, kj, ki, ifm1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
         l_output = &LIBXSMM_VLA_ACCESS(5, output, img, 0, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
         jitted_conv_wu_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
@@ -781,11 +556,7 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
     for (img = 0; img < handle->desc.N; ++img) {
       for (kj=0; kj < handle->desc.R; ++kj) {
         for (ki=0; ki < handle->desc.S; ++ki) {
-#if defined(INPUT_PADDING)
           l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, kj, ki, ifm1, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
-#else
-          l_input =  &LIBXSMM_VLA_ACCESS(5, input, img, kj, ki, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-#endif
           l_wt = &LIBXSMM_VLA_ACCESS(6, weight, kj, ki, ifm1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
           l_output = &LIBXSMM_VLA_ACCESS(5, output, img, 0, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
           jitted_conv_wu_no_pf(l_input, l_wt, l_output, NULL, NULL, NULL );
@@ -802,19 +573,3 @@ if ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads)) { /* spe
 } else {
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 }
-
-#if defined(INPUT_PADDING)
-#undef LOAD
-#undef LOAD_256
-#undef LOADU
-#undef MASK_LOADU
-#undef STORE
-#undef STORE_256
-#undef STOREU
-#undef MASK_STOREU
-#undef INT_TO_MASK
-#undef CHUNK_SIZE
-#undef ZERO_REG
-#undef ZERO_REG_256
-#endif
-

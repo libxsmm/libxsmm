@@ -295,7 +295,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_nh
 # include "template/libxsmm_dnn_convolution_winograd_backward_nhwc_custom_inlined.tpl.c"
 #undef TDVLEN
 #undef ALPHA
-      } else if (handle->cwino_bwd.alpha == 4) { 
+      } else if (handle->cwino_bwd.alpha == 4) {
 #define ALPHA 4
 #define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_backward_nhwc_custom_inlined.tpl.c"

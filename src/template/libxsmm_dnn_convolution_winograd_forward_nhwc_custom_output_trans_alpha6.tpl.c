@@ -35,7 +35,7 @@ LIBXSMM_VLA_DECL(4, float, output, outp, handle->ofwp, handle->blocksofm, TDVLEN
 LIBXSMM_VLA_DECL(4, float, Ow, Owp, ALPHA, ALPHA, TDVLEN);
 float O[ALPHA-2][ALPHA-2][TDVLEN];
 unsigned int ti, tj;
-int i, j, k, r;
+int i, j, k;
 int xdim, ydim;
 float T[4][6][TDVLEN];
 float t0[TDVLEN];

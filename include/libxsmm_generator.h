@@ -127,6 +127,18 @@ typedef struct libxsmm_gemm_descriptor {
   unsigned char prefetch;
 } libxsmm_gemm_descriptor;
 
+/** Structure storing the matcopy argument description. */
+typedef struct libxsmm_matcopy_descriptor {
+  unsigned int m;                       /* M */
+  unsigned int n;                       /* N */
+  unsigned int lda;                     /* LDA */
+  unsigned int ldb;                     /* LDB */
+  libxsmm_dnn_datatype datatype;        /* @TODO fix this */
+  unsigned int prefetch;                /* @TODO fix this, non zero for prefetch */
+  unsigned int unroll_level;            /* Defines the level of unrolling in the copy */
+  unsigned int zero_source;             /* If set, then use zero matrix as source */
+} libxsmm_matcopy_descriptor;
+
 /** Structure referring to the generated code with some attached information. */
 typedef struct libxsmm_generated_code {
   void* generated_code;       /** pointer to memory which can contain strings or binary code */
@@ -214,6 +226,12 @@ void libxsmm_generator_spgemm_csr_soa_kernel(libxsmm_generated_code*        io_g
                                              const unsigned int*            i_row_idx,
                                              const unsigned int*            i_column_idx,
                                              const double*                  i_values);
+
+/* @TODO change int based architecture value */
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*                      io_generated_code,
+                                       const libxsmm_matcopy_descriptor*            i_matcopy_desc,
+                                       const char*                                  i_arch );
 
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API

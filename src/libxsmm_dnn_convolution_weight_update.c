@@ -77,12 +77,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
   }
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-#define INPUT_F32
       if (handle->upd_use_thread_fil > 0) {
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
+        typedef libxsmm_smatcopyfunction libxsmm_matcopyfunction;
+        typedef libxsmm_smatcopyfunction libxsmm_matzerofunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
 #define LIBXSMM_WU_PER_THREAD_ALLOCATION
@@ -101,6 +102,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
+        typedef libxsmm_smatcopyfunction libxsmm_matcopyfunction;
+        typedef libxsmm_smatcopyfunction libxsmm_matzerofunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
           if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM)
@@ -126,7 +129,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
         }
       }
 #endif
-#undef INPUT_F32
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
@@ -173,12 +175,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(l
   }
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-#define INPUT_F32
       if (handle->upd_use_thread_fil > 0) {
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
+        typedef libxsmm_smatcopyfunction libxsmm_matcopyfunction;
+        typedef libxsmm_smatcopyfunction libxsmm_matzerofunction;
         if (handle->padding_flag == 1) {
 #define LIBXSMM_WU_PER_THREAD_ALLOCATION
 #define INPUT_PADDING
@@ -196,6 +199,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(l
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
+        typedef libxsmm_smatcopyfunction libxsmm_matcopyfunction;
+        typedef libxsmm_smatcopyfunction libxsmm_matzerofunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_st_upd_nhwc_rsck.tpl.c"
@@ -204,7 +209,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(l
 # include "template/libxsmm_dnn_convolve_st_upd_nhwc_rsck.tpl.c"
         }
       }
-#undef INPUT_F32
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
@@ -251,12 +255,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom
   }
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-#define INPUT_F32
       if (handle->upd_use_thread_fil > 0) {
         typedef float element_input_type;
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
+        typedef libxsmm_smatcopyfunction libxsmm_matcopyfunction;
+        typedef libxsmm_smatcopyfunction libxsmm_matzerofunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
 #define LIBXSMM_WU_PER_THREAD_ALLOCATION
@@ -274,6 +279,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
+        typedef libxsmm_smatcopyfunction libxsmm_matcopyfunction;
+        typedef libxsmm_smatcopyfunction libxsmm_matzerofunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_st_upd_nhwc_custom.tpl.c"
@@ -282,7 +289,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom
 # include "template/libxsmm_dnn_convolve_st_upd_nhwc_custom.tpl.c"
         }
       }
-#undef INPUT_F32
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;

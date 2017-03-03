@@ -160,6 +160,7 @@ typedef enum libxsmm_dnn_tensor_format{
 
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_dnn_datatype {
+  LIBXSMM_DNN_DATATYPE_F64,
   LIBXSMM_DNN_DATATYPE_F32,
   LIBXSMM_DNN_DATATYPE_I32,
   LIBXSMM_DNN_DATATYPE_I16,
@@ -293,6 +294,17 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const f
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; } libxsmm_xmmfunction;
+
+/** Specialized function for matcopy, and optional prefetch locations (single-precision). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_smatcopyfunction)(const float* a, const int* lda, float* b, const int* ldb, ...);
+/** Specialized function for matcopy, and optional prefetch locations (double-precision). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmatcopyfunction)(const double* a, const int* lda, double* b, const int* ldb, ...);
+/** Specialized function for matcopy, and optional prefetch locations (int16). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmatcopyfunction)(const short* a, const int* lda, short* b, const int* ldb, ...);
+/** Specialized function for matcopy, and optional prefetch locations (int8). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmatcopyfunction)(const unsigned char* a, const int* lda, unsigned char* b, const int* ldb, ...);
+/** Function type which is either s/d/w/b, weak-typed. */
+typedef union LIBXSMM_RETARGETABLE libxsmm_xmatcopyfunction { libxsmm_smatcopyfunction smatcopy; libxsmm_dmatcopyfunction dmatcopy; libxsmm_wmatcopyfunction wmatcopy; libxsmm_bmatcopyfunction bmatcopy; } libxsmm_xmatcopyfunction;
 
 /** Structure to receive information about the code registry status (libxsmm_get_registry_info). */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info { size_t capacity, size, nbytes, nstatic, ncache; } libxsmm_registry_info;
