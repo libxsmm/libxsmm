@@ -285,7 +285,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const li
       libxsmm_free(handle->code_fwd[1].pmm);
       libxsmm_free(handle->code_fwd[2].pmm);
       libxsmm_free(handle->code_fwd[3].pmm);
-      libxsmm_free(handle->code_bwd[0].pmm);
+      if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
+        libxsmm_free(handle->code_bwd[0].pmm);
+      }
       if ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)) {
         libxsmm_free(handle->code_bwd[1].pmm);
         libxsmm_free(handle->code_bwd[2].pmm);
