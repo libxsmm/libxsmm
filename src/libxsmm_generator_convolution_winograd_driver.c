@@ -110,7 +110,7 @@ int main(int argc, char* argv []) {
   char* l_routine_name;
   char* l_arch;
   char* l_precision;
-  char* l_pass;
+  char* l_pass = "fwd";
   int l_itiles = 0;
   int l_jtiles = 0;
   int l_bimg = 0;
@@ -166,7 +166,7 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  /* check and evaluate precison flag */
+  /* check and evaluate precision flag */
   if ( strcmp(l_precision, "SP") == 0 ) {
     l_single_precision = 1;
     LIBXSMM_UNUSED(l_single_precision/*TODO*/);
@@ -198,7 +198,7 @@ int main(int argc, char* argv []) {
        (strcmp(l_type, "dense_asm") == 0) ) {
     if ( flag_ur ) {
       if ( (strcmp(l_arch, "knm") == 0) &&
-          (strcmp(l_pass, "upd") == 0) ) {
+           (strcmp(l_pass, "upd") == 0) ) {
         factors_all( l_conv_desc.itiles*l_conv_desc.jtiles*l_conv_desc.bimg/4, &(l_conv_desc.ur), 26 );
       } else {
         factors_all( l_conv_desc.itiles*l_conv_desc.jtiles*l_conv_desc.bimg, &(l_conv_desc.ur), 26 );
@@ -207,9 +207,9 @@ int main(int argc, char* argv []) {
 
     if ( strcmp(l_type, "dense") == 0 ) {
       if ( strcmp(l_pass, "upd") == 0 ) {
-       libxsmm_generator_convolution_winograd_weight_update_inlineasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
+        libxsmm_generator_convolution_winograd_weight_update_inlineasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
       } else {
-       libxsmm_generator_convolution_winograd_forward_inlineasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
+        libxsmm_generator_convolution_winograd_forward_inlineasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
       }
     } else {
       if ( strcmp(l_pass, "upd") == 0 ) {
