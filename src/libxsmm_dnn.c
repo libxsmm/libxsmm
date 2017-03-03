@@ -2193,7 +2193,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_flag_reuseInput( libxsmm_dnn_layer* hand
       handle->flag_reuseInput = 0;
     }
 }
-  
+
 
 #endif /*defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)*/
 

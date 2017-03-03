@@ -590,7 +590,7 @@ int main(int argc, char* argv[])
     naive_conv_bp(&naive_param, naive_input, naive_output_bp, naive_filter);
   }
   if (type == 'A' || type == 'U') {
-    /* NB: We reuse naive_input_save for weight update because the input should not 
+    /* NB: We reuse naive_input_save for weight update because the input should not
      * have been modified between forward propagation and weight update; it further
      * helps in exploiting reuse to converted data. */
     naive_conv_wu(&naive_param, naive_input_save, naive_output_wu, naive_filter_wu);
@@ -690,7 +690,7 @@ int main(int argc, char* argv[])
       printf("    inf-norm of comp. rel. error: %f\n", norms_fwd.max_rel_err);
       printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
     }
-    
+
     if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
       printf("##########################################\n");
       printf("#   Correctness - BWD (custom-Storage)   #\n");
@@ -721,7 +721,7 @@ int main(int argc, char* argv[])
       printf("    inf-norm of comp. rel. error: %f\n", norms_bwd.max_rel_err);
       printf("    inf-norm of comp. abs. error: %f\n", norms_bwd.max_abs_err);
     }
-    
+
     if (type == 'A' || type == 'U') {
       printf("##########################################\n");
       printf("#   Correctness - UPD (custom-Storage)   #\n");
