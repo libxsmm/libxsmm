@@ -311,7 +311,7 @@
      &      libxsmm_available(xmm2).AND.                                &
      &      libxsmm_available(xmm3))                                    &
      &  THEN
-          !$OMP PARALLEL PRIVATE(i, j, r, start) !DEFAULT(NONE) &
+          !$OMP PARALLEL PRIVATE(i, j, r, start) & !DEFAULT(NONE)
           !$OMP   SHARED(a, dx, dy, dz, c, m, n, k, mm, nn, kk, duration, repetitions, xmm1, xmm2, xmm3)
           ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k), tm3(mm,nn,kk))
           tm1 = 0; tm2 = 0; tm3 = 3
