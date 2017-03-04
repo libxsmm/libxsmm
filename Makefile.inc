@@ -483,7 +483,9 @@ else ifneq (0,$(GCC))
   SUITE = GNU Compiler Collection
 else
   SUITE = Compiler
-  COMPATIBLE ?= 1
+  ifeq (0,$(CLANG))
+    COMPATIBLE ?= 1
+  endif
 endif
 
 # Avoid more sophisticated flags of the GCC tool chain,
@@ -698,31 +700,31 @@ else # GCC assumed
     endif
     FPEDANTIC += $(FWARNEXTRA)
   endif
-  ifeq (1,$(PEDANTIC))
-    CSTD = -std=c99
-    CXXFLAGS += $(CPEDANTIC) -Wno-long-long
-    CFLAGS += $(CSTD) $(CPEDANTIC)
-    FCFLAGS += -ffree-form
-    FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
-  else ifneq (0,$(PEDANTIC))
-    ifneq (Darwin,$(UNAME))
-      CPEDANTIC += -Wno-long-long
-      CSTD = -std=c89
-    else ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
-      CPEDANTIC += -Wno-long-long
-      CSTD = -std=c89
-    else # Clang may run into ICEs under OSX
-      CSTD = -std=c99
-    endif
-    CXXFLAGS += $(CPEDANTIC) -Wno-long-long
-    CFLAGS += $(CSTD) $(CPEDANTIC)
-    FCFLAGS += $(FSTD) $(FPEDANTIC)
-  else ifeq (0,$(COMPATIBLE))
-    CPEDANTIC += -Wno-long-long
-    FCFLAGS += -ffree-form
-    CSTD = -std=c89
-  endif
   ifeq (0,$(COMPATIBLE))
+    ifeq (1,$(PEDANTIC))
+      CSTD = -std=c99
+      CXXFLAGS += $(CPEDANTIC) -Wno-long-long
+      CFLAGS += $(CSTD) $(CPEDANTIC)
+      FCFLAGS += -ffree-form
+      FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
+    else ifneq (0,$(PEDANTIC))
+      ifneq (Darwin,$(UNAME))
+        CPEDANTIC += -Wno-long-long
+        CSTD = -std=c89
+      else ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
+        CPEDANTIC += -Wno-long-long
+        CSTD = -std=c89
+      else # Clang may run into ICEs under OSX
+        CSTD = -std=c99
+      endif
+      CXXFLAGS += $(CPEDANTIC) -Wno-long-long
+      CFLAGS += $(CSTD) $(CPEDANTIC)
+      FCFLAGS += $(FSTD) $(FPEDANTIC)
+    else ifeq (0,$(COMPATIBLE))
+      CPEDANTIC += -Wno-long-long
+      FCFLAGS += -ffree-form
+      CSTD = -std=c89
+    endif
     # flag specifying output directory must be last
     FMFLAGS += -J
   else # fallback
