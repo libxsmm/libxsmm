@@ -71,11 +71,6 @@ endif
 # Trace level
 TRACE ?= 0
 
-# Avoid more sophisticated flags of the GCC tool chain,
-# and improve compatibility with compilers supposed to be
-# compatible with the GCC tool chain
-COMPATIBLE ?= 0
-
 # Number of repeated calls (tests),
 # or used to scale the problem size
 TESTSIZE ?= 1
@@ -488,7 +483,13 @@ else ifneq (0,$(GCC))
   SUITE = GNU Compiler Collection
 else
   SUITE = Compiler
+  COMPATIBLE ?= 1
 endif
+
+# Avoid more sophisticated flags of the GCC tool chain,
+# and improve compatibility with compilers supposed to be
+# compatible with the GCC tool chain
+COMPATIBLE ?= 0
 
 ifneq (0,$(INTEL))
   AR ?= xiar
