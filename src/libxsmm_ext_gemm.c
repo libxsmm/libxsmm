@@ -112,7 +112,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
   tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
   assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-  if (0 == omp_in_parallel())
+  if (0 == omp_get_level())
 #endif
   {
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_EXT_PARALLEL,
@@ -186,7 +186,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
   tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
   assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-  if (0 == omp_in_parallel())
+  if (0 == omp_get_level())
 #endif
   {
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_EXT_PARALLEL,

@@ -37,6 +37,11 @@ float I[ALPHA][ALPHA][TDVLEN];
 unsigned int ti, tj;
 int i, j, k;
 int xdim, ydim;
+const float rcp3 = 1.0f/3.0f;
+const float rcp4  = 1.0f/4.0f;
+const float rcp6  = 1.0f/6.0f;
+const float rcp12 = 1.0f/12.0f;
+const float rcp24 = 1.0f/24.0f;
 float T[6][4][TDVLEN];
 float t0[TDVLEN];
 float t1[TDVLEN];
@@ -79,13 +84,13 @@ for (tj = 0; tj < handle->cwino_upd.jtiles; tj++) {
     for (i = 0; i < 4; i++) {
       LIBXSMM_PRAGMA_SIMD
       for (j = 0; j < TDVLEN; j++) {
-        t0[j] = I[2][i][j] * 0.26890756302521f;
-        t1[j] = I[0][i][j] * -0.688403361344538f - t0[j];
-        t2[j] = I[0][i][j] * 0.119514472455649f + t0[j];
-        t3[j] = I[1][i][j] * 0.430252100840336f + I[3][i][j] * 0.168067226890756f;
-        t4[j] = I[1][i][j] * 0.179271708683473f + I[3][i][j] * 0.403361344537815f;
+        t0[j] = I[2][i][j] * rcp6;
+        t1[j] = I[0][i][j] * -rcp6 - t0[j];
+        t2[j] = I[0][i][j] * rcp24 + t0[j];
+        t3[j] = (I[1][i][j]  + I[3][i][j]) * rcp6;
+        t4[j] = I[1][i][j] * rcp12 + I[3][i][j] * rcp3;
 
-        T[0][i][j] = I[0][i][j] * 1.13777777777778f;
+        T[0][i][j] = I[0][i][j] * rcp4;
         T[1][i][j] = t1[j] - t3[j];
         T[2][i][j] = t1[j] + t3[j];
         T[3][i][j] = t2[j] + t4[j];
@@ -97,13 +102,13 @@ for (tj = 0; tj < handle->cwino_upd.jtiles; tj++) {
     for (i = 0; i < 6; i++) {
       LIBXSMM_PRAGMA_SIMD
       for (j = 0; j < TDVLEN; j++) {
-        t0[j] = T[i][2][j] * 0.26890756302521f;
-        t1[j] = T[i][0][j] * -0.688403361344538f - t0[j];
-        t2[j] = T[i][0][j] * 0.119514472455649f + t0[j];
-        t3[j] = T[i][1][j] * 0.430252100840336f + T[i][3][j] * 0.168067226890756f;
-        t4[j] = T[i][1][j] * 0.179271708683473f + T[i][3][j] * 0.403361344537815f;
+        t0[j] = T[i][2][j] * rcp6;
+        t1[j] = T[i][0][j] * -rcp6 - t0[j];
+        t2[j] = T[i][0][j] * rcp24 + t0[j];
+        t3[j] = (T[i][1][j] + T[i][3][j]) * rcp6;
+        t4[j] = T[i][1][j] * rcp12 + T[i][3][j] * rcp3;
 
-        LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_upd.itiles + ti, i, 0, j, ALPHA, ALPHA, TDVLEN) = T[i][0][j] * 1.13777777777778f;
+        LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_upd.itiles + ti, i, 0, j, ALPHA, ALPHA, TDVLEN) = T[i][0][j] * rcp4;
         LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_upd.itiles + ti, i, 1, j, ALPHA, ALPHA, TDVLEN) = t1[j] - t3[j];
         LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_upd.itiles + ti, i, 2, j, ALPHA, ALPHA, TDVLEN) = t1[j] + t3[j];
         LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_upd.itiles + ti, i, 3, j, ALPHA, ALPHA, TDVLEN) = t2[j] + t4[j];

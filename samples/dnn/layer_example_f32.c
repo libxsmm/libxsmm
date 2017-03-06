@@ -590,7 +590,10 @@ int main(int argc, char* argv[])
     naive_conv_bp(&naive_param, naive_input, naive_output_bp, naive_filter);
   }
   if (type == 'A' || type == 'U') {
-    naive_conv_wu(&naive_param, naive_input, naive_output_wu, naive_filter_wu);
+    /* NB: We reuse naive_input_save for weight update because the input should not
+     * have been modified between forward propagation and weight update; it further
+     * helps in exploiting reuse to converted data. */
+    naive_conv_wu(&naive_param, naive_input_save, naive_output_wu, naive_filter_wu);
   }
   printf("##########################################\n");
   printf("#      Computing Reference ... done      #\n");
@@ -629,6 +632,9 @@ int main(int argc, char* argv[])
 
     libxsmm_handle = libxsmm_dnn_create_conv_layer( conv_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
+
+    /* The following assignment reuses input for convolution in Winograd domain */
+    libxsmm_set_flag_reuseInput( libxsmm_handle, type );
 
     /* setup LIBXSMM buffers and filter */
     libxsmm_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_INPUT, input_libxsmm, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status );
@@ -721,6 +727,7 @@ int main(int argc, char* argv[])
       printf("#   Correctness - UPD (custom-Storage)   #\n");
       printf("##########################################\n");
       /* let's do some additional init such that we can run passes standalone */
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_input, (void*)naive_input_save, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_output, (void*)naive_output_wu, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_filter( libxsmm_filter ) );
       /* run LIBXSMM convolutions */
@@ -984,6 +991,9 @@ int main(int argc, char* argv[])
       printf("# Correctness - UPD (NHWC/RSCK-Storage)  #\n");
       printf("##########################################\n");
       /* let's do some additional init such that we can run passes standalone */
+      naive_copy_NCHW_to_NHWC(naive_input_save, input_nhwc, nImg, ifhp, ifwp, nIfm);
+      libxsmm_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_INPUT, input_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
+      CHKERR_LIBXSMM_DNN( status );
       naive_copy_NCHW_to_NHWC(naive_output_wu, output_nhwc, nImg, ofhp, ofwp, nOfm);
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_filter( libxsmm_filter ) );
       /* run LIBXSMM convolutions */
@@ -1105,7 +1115,7 @@ int main(int argc, char* argv[])
       flops = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
 
       printf("GFLOP (NHWC,RSCK)  = %.5g\n", flops*1e-9/(double)iters);
-       printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
+      printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-RSCK,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
@@ -1161,6 +1171,9 @@ int main(int argc, char* argv[])
 
     libxsmm_handle = libxsmm_dnn_create_conv_layer( conv_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
+
+    /* The following assignment reuses input for convolution in Winograd domain */
+    libxsmm_set_flag_reuseInput( libxsmm_handle, type );
 
     /* zero output buffer again */
     zero_buf(output_nhwc,          nImg*nOfm*ofhp*ofwp);
@@ -1255,6 +1268,9 @@ int main(int argc, char* argv[])
       printf("# Correctness - UPD(NHWC/custom-Storage) #\n");
       printf("##########################################\n");
       /* let's do some additional init such that we can run passes standalone */
+      naive_copy_NCHW_to_NHWC(naive_input_save, input_nhwc, nImg, ifhp, ifwp, nIfm);
+      libxsmm_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_INPUT, input_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
+      CHKERR_LIBXSMM_DNN( status );
       naive_copy_NCHW_to_NHWC(naive_output_wu, output_nhwc, nImg, ofhp, ofwp, nOfm);
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_filter( libxsmm_filter ) );
       /* run LIBXSMM convolutions */

@@ -896,7 +896,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_qfma( 
     }
     output_counter += 4;
 
-    if(output_counter == i_conv_desc->ofw_rb ) {
+    if (output_counter == i_conv_desc->ofw_rb ) {
       output_counter = 0;
     }
 
@@ -981,12 +981,12 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_qfma( 
     l_displacement_k+=4;
   } /* l_k_2 */
 
-  if(l_k_updates > 0) {
+  if (l_k_updates > 0) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_sub_instruction,
                                        i_gp_reg_mapping->gp_reg_input, 8*l_k_updates*(i_conv_desc->ifm_block * i_conv_desc->stride_w)* i_conv_kernel_config->datatype_size_in );
   }
 
-  if(!no_unroll_no_block) {
+  if (!no_unroll_no_block) {
       /* Add ofw_block*40 to increment output */
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_add_instruction,

@@ -271,7 +271,13 @@ To generate the interface of the library inside of the 'include' directory and t
 make
 ```
 
-If the build process is not successful, it may help to avoid more advanced GCC flags. This is useful with a tool chain, which pretends to be GCC-compatible (or is treated as such) but fails to consume the afore mentioned flags. In such a case (CCE, etc.) one may raise the compatibility:
+On CRAY systems, the CRAY Compiling Environment (CCE) should be used regardless of using the CRAY compiler, the Intel Compiler, or the GNU Compiler Collection (GCC). The latter is achieved by switching the programming environment to the desired compiler, but always relying on:
+
+```
+make CXX=CC CC=cc FC=ftn
+```
+
+If the build process is not successful, it may help to avoid more advanced GCC flags. This is useful with a tool chain, which pretends to be GCC-compatible (or is treated as such) but fails to consume the afore mentioned flags. In such a case one may raise the compatibility:
 
 ```
 make COMPATIBLE=1

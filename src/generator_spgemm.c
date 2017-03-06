@@ -283,6 +283,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
         }
       }
 
+      assert(0 != l_tmp);
       for ( l_n = 0; l_n < l_row_count; l_n++) {
         for ( l_m = 0; l_m < l_column_count; l_m++) {
           printf("%f ", l_tmp[(l_n * l_column_count) + l_m]);
@@ -339,6 +340,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
         }
       }
 
+      assert(0 != l_tmp);
       for ( l_n = 0; l_n < l_row_count; l_n++) {
         for ( l_m = 0; l_m < l_column_count; l_m++) {
           printf("%f ", l_tmp[(l_n * l_column_count) + l_m]);

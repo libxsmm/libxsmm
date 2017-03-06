@@ -74,44 +74,42 @@ for (tj = 0; tj < handle->cwino_upd.jtiles; tj++) {
         }
       }
     }
-    /*trans_I_3x3_4x4(ALPHA, TDVLEN, Iw[tj*handle->cwino_upd.itiles + ti], I);*/
+    /*trans_I_4x4_3x3(ALPHA, TDVLEN, Iw[tj*handle->cwino_upd.itiles + ti], I);*/
 
     /* inline code start */
     for (i = 0; i < 6; i++) {
       LIBXSMM_PRAGMA_SIMD
       for (j = 0; j < TDVLEN; j++) {
-        t0[j] = I[4][i][j] - 2.25f * I[2][i][j];
-        t1[j] = I[3][i][j] - 2.25f * I[1][i][j];
-        t2[j] = I[4][i][j] - 0.390625f * I[2][i][j];
-        t3[j] = I[3][i][j] - 0.390625f * I[1][i][j];
-        t4[j] = I[4][i][j] + 0.87890625f * I[0][i][j];
-        t5[j] = I[5][i][j] + 0.87890625f * I[1][i][j];
-
-        T[0][i][j] = t4[j] - 2.640625f * I[2][i][j];
-        T[1][i][j] = t0[j] + 0.625f * t1[j];
-        T[2][i][j] = t0[j] - 0.625f * t1[j];
-        T[3][i][j] = t2[j] + 1.5f * t3[j];
-        T[4][i][j] = t2[j] - 1.5f * t3[j];
-        T[5][i][j] = t5[j] - 2.640625f * I[3][i][j];
+        t0[j] = I[4][i][j] - 4.0f*I[2][i][j];
+        t1[j] = I[3][i][j] - 4.0f*I[1][i][j];
+        t2[j] = I[4][i][j] - I[2][i][j];
+        t3[j] = I[3][i][j] - I[1][i][j];
+        t4[j] = I[4][i][j] - 5.0f*I[2][i][j];
+        t5[j] = I[5][i][j] - 5.0f*I[3][i][j];
+        T[0][i][j] = t4[j] + 4.0f*I[0][i][j];
+        T[1][i][j] = t0[j] + t1[j];
+        T[2][i][j] = t0[j] - t1[j];
+        T[3][i][j] = t2[j] + 2.0f*t3[j];
+        T[4][i][j] = t2[j] - 2.0f*t3[j];
+        T[5][i][j] = t5[j] + 4.0f*I[1][i][j];
       }
     }
 
     for (i = 0; i < 6; i++) {
       LIBXSMM_PRAGMA_SIMD
       for (j = 0; j < TDVLEN; j++) {
-        t0[j] = T[i][4][j] - 2.25f * T[i][2][j];
-        t1[j] = T[i][3][j] - 2.25f * T[i][1][j];
-        t2[j] = T[i][4][j] - 0.390625f * T[i][2][j];
-        t3[j] = T[i][3][j] - 0.390625f * T[i][1][j];
-        t4[j] = T[i][4][j] + 0.87890625f * T[i][0][j];
-        t5[j] = T[i][5][j] + 0.87890625f * T[i][1][j];
-
-        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_upd.itiles + ti, i, 0, j, ALPHA, ALPHA, TDVLEN) = t4[j] - 2.640625f * T[i][2][j];
-        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_upd.itiles + ti, i, 1, j, ALPHA, ALPHA, TDVLEN) = t0[j] + 0.625f * t1[j];
-        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_upd.itiles + ti, i, 2, j, ALPHA, ALPHA, TDVLEN) = t0[j] - 0.625f * t1[j];
-        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_upd.itiles + ti, i, 3, j, ALPHA, ALPHA, TDVLEN) = t2[j] + 1.5f * t3[j];
-        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_upd.itiles + ti, i, 4, j, ALPHA, ALPHA, TDVLEN) = t2[j] - 1.5f * t3[j];
-        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_upd.itiles + ti, i, 5, j, ALPHA, ALPHA, TDVLEN) = t5[j] - 2.640625f * T[i][3][j];
+        t0[j] = T[i][4][j] - 4.0f*T[i][2][j];
+        t1[j] = T[i][3][j] - 4.0f*T[i][1][j];
+        t2[j] = T[i][4][j] - T[i][2][j];
+        t3[j] = T[i][3][j] - T[i][1][j];
+        t4[j] = T[i][4][j] - 5.0f*T[i][2][j];
+        t5[j] = T[i][5][j] - 5.0f*T[i][3][j];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, i, 0, j, ALPHA, ALPHA, TDVLEN) = t4[j] + 4.0f*T[i][0][j];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, i, 1, j, ALPHA, ALPHA, TDVLEN) = t0[j] + t1[j];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, i, 2, j, ALPHA, ALPHA, TDVLEN) = t0[j] - t1[j];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, i, 3, j, ALPHA, ALPHA, TDVLEN) = t2[j] + 2.0f*t3[j];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, i, 4, j, ALPHA, ALPHA, TDVLEN) = t2[j] - 2.0f*t3[j];
+        LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, i, 5, j, ALPHA, ALPHA, TDVLEN) = t5[j] + 4.0f*T[i][1][j];
       }
     }
     /* inline code end */

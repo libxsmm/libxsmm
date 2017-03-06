@@ -42,10 +42,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(USE_VALIDATION)
-# define USE_VALIDATION
-#endif
-
 #if !defined(REAL_TYPE)
 # define REAL_TYPE double
 #endif
@@ -92,31 +88,32 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    const char *const env_tasks = getenv("TASKS");
+    const char *const env_tasks = getenv("TASKS"), *const env_check = getenv("CHECK");
     const int tasks = (0 == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
     REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc(lda * k * sizeof(REAL_TYPE));
     REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldb * n * sizeof(REAL_TYPE));
     REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
-#if defined(USE_VALIDATION)
-    REAL_TYPE *const d = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
-    init( 0, d, m, n, ldc, 1.0);
-#endif
+    REAL_TYPE* d = 0;
+    if (0 == env_check || 0 != atoi(env_check)) {
+      REAL_TYPE *const d = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
+      init( 0, d, m, n, ldc, 1.0);
+    }
     init( 0, c, m, n, ldc, 1.0);
     init(42, a, m, k, lda, 1.0);
     init(24, b, k, n, ldb, 1.0);
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
-    /* warmup BLAS library (populate thread pool) */
+    /* warmup OpenMP (populate thread pool) */
     LIBXSMM_YGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
-#if defined(USE_VALIDATION)
-    LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
-#endif
+    if (0 != d) {
+      LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
+    }
     libxsmm_gemm_print(stdout, LIBXSMM_GEMM_TYPEFLAG(REAL_TYPE),
       &transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
     fprintf(stdout, "\n\n");
 
-    if (0 == tasks) { /* Tiled xGEMM (with library-internal parallelization) */
+    if (0 == tasks) { /* tiled xGEMM (with library-internal parallelization) */
       int i; double duration;
       unsigned long long start = libxsmm_timer_tick();
       for (i = 0; i < nrepeat; ++i) {
@@ -127,7 +124,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
       }
     }
-    else { /* Tiled xGEMM (with external parallelization) */
+    else { /* tiled xGEMM (with external parallelization) */
       int i; double duration;
       unsigned long long start = libxsmm_timer_tick();
       for (i = 0; i < nrepeat; ++i) {
@@ -142,32 +139,32 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
       }
     }
-#if defined(USE_VALIDATION)
-    { /* LAPACK/BLAS xGEMM */
-      int i; double duration;
-      unsigned long long start = libxsmm_timer_tick();
-      for (i = 0; i < nrepeat; ++i) {
-        LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
-      }
-      duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-      if (0 < duration) {
-        fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
-      }
-    }
-    { /* Validate with LAPACK/BLAS */
-      libxsmm_blasint i, j; double diff = 0;
-      for (i = 0; i < n; ++i) {
-        for (j = 0; j < m; ++j) {
-          const libxsmm_blasint h = i * ldc + j;
-          const double e = c[h] - d[h];
-          diff = LIBXSMM_MAX(diff, e * e);
+    if (0 != d) { /* validate result */
+      { /* LAPACK/BLAS xGEMM */
+        int i; double duration;
+        unsigned long long start = libxsmm_timer_tick();
+        for (i = 0; i < nrepeat; ++i) {
+          LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
+        }
+        duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+        if (0 < duration) {
+          fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
         }
       }
-      fprintf(stdout, "\tdiff=%f\n", diff);
-      if (1.0 < diff) result = EXIT_FAILURE;
+      { /* validate with LAPACK/BLAS */
+        libxsmm_blasint i, j; double diff = 0;
+        for (i = 0; i < n; ++i) {
+          for (j = 0; j < m; ++j) {
+            const libxsmm_blasint h = i * ldc + j;
+            const double e = c[h] - d[h];
+            diff = LIBXSMM_MAX(diff, e * e);
+          }
+        }
+        fprintf(stdout, "\tdiff=%f\n", diff);
+        if (1.0 < diff) result = EXIT_FAILURE;
+      }
+      libxsmm_free(d);
     }
-    libxsmm_free(d);
-#endif
     libxsmm_free(c);
     libxsmm_free(a);
     libxsmm_free(b);

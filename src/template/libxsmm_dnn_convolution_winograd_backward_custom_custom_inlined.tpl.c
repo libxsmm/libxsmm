@@ -51,6 +51,7 @@ LIBXSMM_VLA_DECL(6, float, U,   (float*)handle->scratch1, ALPHA, handle->blocksi
 LIBXSMM_VLA_DECL(8, float, V,   (float*)handle->scratch3, ALPHA, ALPHA, handle->blocksifm, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN);
 LIBXSMM_VLA_DECL(8, float, M,   (float*)handle->scratch4, ALPHA, ALPHA, handle->blocksofm, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN);
 LIBXSMM_VLA_DECL(5, float, Iwp, (float*)handle->scratchIw, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, TDVLEN);
+LIBXSMM_VLA_DECL(5, float, Owp, (float*)handle->scratchOw, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, TDVLEN);
 #if 1
 typedef libxsmm_sconvfunction libxsmm_convfunction;
 libxsmm_convfunction jitted_conv_bp = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
@@ -94,7 +95,7 @@ for (job = thr_begin; job < thr_end; job++) {
   internal_bwd_input_transform_custom_custom(
     &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN),
     &LIBXSMM_VLA_ACCESS(8, M, img/handle->cwino_bwd.bimg, 0, 0, ofm1, img%handle->cwino_bwd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksofm, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN),
-    &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, TDVLEN), handle);
+    &LIBXSMM_VLA_ACCESS(5, Owp, tid, 0, 0, 0, 0, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, TDVLEN), handle);
 }
 #ifdef BTIME
 libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
