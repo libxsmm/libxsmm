@@ -30,7 +30,7 @@
  ******************************************************************************/
 
 /* loop counters */
-int img1, ofm1, ifm1, img2, ofm2, ifm2, oj, oi, ij, ii, kj, ki, i;
+int img1, ofm1, ifm1, ofm2, ifm2, oj, oi, ij, ii, kj, ki, i;
 const int ifh = handle->desc.H;
 const int ifw = handle->desc.W;
 const int ltid = tid-start_thread;
