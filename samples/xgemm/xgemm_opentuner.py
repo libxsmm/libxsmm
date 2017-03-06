@@ -62,6 +62,9 @@ class XgemmTuner(MeasurementInterface):
           IntegerParameter("K", self.granularity, max_k))
         return manipulator
 
+    def objective(self):
+        return opentuner.search.objective.MaximizeAccuracyMinimizeSize()
+
     def run(self, desired_result, input, limit):
         """
         Compile and run a given configuration then
@@ -77,7 +80,7 @@ class XgemmTuner(MeasurementInterface):
 
         geoperf = 0  # geometric mean
         compensation = 0  # see Kahan
-        sizelist = [1000, 2000, 3000, 4000]
+        sizelist = [1200, 1400, 1600, 1800, 2000]
         for size in sizelist:
             run_result = self.call_program(run_cmd + " " + str(size))
             assert(run_result["returncode"] == 0)
@@ -92,7 +95,8 @@ class XgemmTuner(MeasurementInterface):
         geoperf = math.exp(geoperf / len(sizelist))
         geotime = 1000000.0 / geoperf
 
-        return Result(time=geotime)
+        mnk = (self.granularity**3) * cfg["M"] * cfg["N"] * cfg["K"]
+        return Result(time=geotime, accuracy=geoperf, size=mnk)
 
     def save_final_config(self, configuration):
         """called at the end of tuning"""
