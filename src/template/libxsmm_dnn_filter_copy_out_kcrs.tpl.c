@@ -39,7 +39,6 @@ int R = filter->R;
 int S = filter->S;
 int lpb = filter->lpb;
 int C = ifmb * bifm * lpb;
-int K = bofm * ofmb * lpb;
 LIBXSMM_VLA_DECL(4, element_type, user_data, (element_type*)data, ifmb * bifm * lpb, R, S);
 LIBXSMM_VLA_DECL(7, const element_type, handle_data_1, (const element_type*)filter->data, ifmb, R, S, bifm, bofm, lpb);
 LIBXSMM_VLA_DECL(6, const element_type, handle_data_2, (const element_type*)filter->data, ifmb, R, S, bifm, bofm);
