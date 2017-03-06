@@ -74,6 +74,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   uintptr_t uimm;
   intptr_t imm;
   libxsmm_xmmfunction xmm;
+  libxsmm_smmfunction smm;
   void (*vmm)(const void* a, const void* b, void* c, ...);
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)
   libxsmm_xconvfunction xconv;
