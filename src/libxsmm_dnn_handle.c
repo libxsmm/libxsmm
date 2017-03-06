@@ -55,7 +55,23 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   int i = 0;
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
-  handle->custom_format_type = (0 == env || 0 == *env) ? LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1/*default*/ : atoi(env);
+  int internal_format_type;
+  if ( 0 == env || 0 == *env) {
+    /* Default internal format type */
+    handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
+  } else {
+    internal_format_type = atoi(env);
+    if (internal_format_type == 1) {
+      handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
+    } else if ( internal_format_type == 2) {
+      handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2;
+    } else {
+      status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
+      free(handle);
+      handle = 0;
+      return status;
+    }
+  }
 
   /* now architecture specific */
   if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
@@ -433,10 +449,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM )
       {
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-          printf("GENERATING FWD CONVOLUTION KERNEL VIA GEMM !!!\n");
           handle->code_fwd[0].pmm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
-          printf("GENERATING FWD CONVOLUTION KERNELS !!!\n");
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
           handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT;
@@ -455,10 +469,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.unroll_kw = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-          printf("GENERATING FWD CONVOLUTION KERNEL VIA GEMM !!!\n");
           handle->code_fwd[0].pmm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
-          printf("GENERATING FWD CONVOLUTION KERNELS !!!\n");
           handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
         }
         if (handle->fwd_ofw_rb_2 != 0) {
@@ -611,10 +623,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-          printf("GENERATING BWD CONVOLUTION KERNEL VIA GEMM !!!\n");
           handle->code_bwd[0].pmm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
-          printf("GENERATING BWD CONVOLUTION KERNELS !!!\n");
           handle->code_bwd[0].pmm = libxsmm_create_xconv_backward(&descriptor);
         }
         /*ALL*/
@@ -713,10 +723,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.peeled = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-          printf("GENERATING BWD CONVOLUTION KERNEL VIA GEMM !!!\n");
           handle->code_bwd[0].pmm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
-          printf("GENERATING BWD CONVOLUTION KERNELS !!!\n");
           handle->code_bwd[0].pmm = libxsmm_create_xconv_backward(&descriptor);
         }
         handle->code_bwd[1].pmm = handle->code_bwd[0].pmm;
@@ -857,10 +865,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.transpose_ofw_ifm = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-          printf("GENERATING UPD CONVOLUTION KERNEL VIA GEMM !!!\n");
           handle->code_upd[0].pmm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
-          printf("GENERATING UPD CONVOLUTION KERNELS !!!\n");
           handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
         }
         /*ALL*/
@@ -896,10 +902,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
                      
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-          printf("GENERATING UPD CONVOLUTION KERNEL VIA GEMM !!!\n");
           handle->code_upd[0].pmm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
-          printf("GENERATING UPD CONVOLUTION KERNELS !!!\n");
           handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
         }
         handle->code_upd[1].pmm = handle->code_upd[0].pmm;
