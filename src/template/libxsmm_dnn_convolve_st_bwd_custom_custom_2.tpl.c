@@ -50,7 +50,7 @@ LIBXSMM_VLA_DECL(6, const element_output_type, output_t, ((const element_output_
 LIBXSMM_VLA_DECL(6, element_input_type,  input_t, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), handle->blocksifm, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock);
 LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 LIBXSMM_VLA_DECL(6, element_filter_type, tr_filter_t, (element_filter_type*)handle->scratch1, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
-libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].pmm;
+libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
 /* Transpose in parallel the input filter */
 libxsmm_barrier_init(handle->barrier, ltid);
