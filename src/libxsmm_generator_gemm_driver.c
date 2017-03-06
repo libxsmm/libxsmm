@@ -206,7 +206,7 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  /* check and evaluate precison flag */
+  /* check and evaluate precision flag */
   if ( strcmp(l_precision, "SP") == 0 ) {
     l_single_precision = 1;
   } else if ( strcmp(l_precision, "DP") == 0 ) {

@@ -76,29 +76,31 @@ unsigned long long t_gemm   = 0;
 unsigned long long t_start  = 0;
 #endif
 
-/* number of tasks that could be run in parallel */
-work = handle->desc.N*handle->blocksifm;
-/* compute chunck size */
-chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
-/* compute thr_begin and thr_end */
-thr_begin = (ltid * work) / handle->desc.threads;
-thr_end = ((ltid+1) * work) / handle->desc.threads;
+if (handle->flag_reuseInput != 1 || handle->cwino_upd.alpha != 6 || handle->cwino_fwd.bimg != handle->cwino_upd.bimg) {
+  /* number of tasks that could be run in parallel */
+  work = handle->desc.N*handle->blocksifm;
+  /* compute chunck size */
+  chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
+  /* compute thr_begin and thr_end */
+  thr_begin = (ltid * work) / handle->desc.threads;
+  thr_end = ((ltid+1) * work) / handle->desc.threads;
 
 #ifdef WTIME
-t_start = __rdtsc();
+  t_start = __rdtsc();
 #endif
-for (job = thr_begin; job < thr_end; job++) {
-  img  = job / handle->blocksifm;
-  ifm1 = job % handle->blocksifm;
-  internal_upd_input_transform_custom_custom(
-    &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN),
-    &LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_upd.bimg, 0, 0, ifm1, img%handle->cwino_upd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, TDVLEN),
-    &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_upd.itiles*handle->cwino_upd.jtiles, ALPHA, ALPHA, TDVLEN), handle);
-}
+  for (job = thr_begin; job < thr_end; job++) {
+    img  = job / handle->blocksifm;
+    ifm1 = job % handle->blocksifm;
+    internal_upd_input_transform_custom_custom(
+      &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN),
+      &LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_upd.bimg, 0, 0, ifm1, img%handle->cwino_upd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, TDVLEN),
+      &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_upd.itiles*handle->cwino_upd.jtiles, ALPHA, ALPHA, TDVLEN), handle);
+  }
 #ifdef WTIME
-libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
-t_input = __rdtsc() - t_start;
+  libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
+  t_input = __rdtsc() - t_start;
 #endif
+} /*end flag_reuseInput*/
 
 /* number of tasks that could be run in parallel */
 work = handle->desc.N*handle->blocksofm;
@@ -143,6 +145,7 @@ for (job = thr_begin; job < thr_end; job++) {
     for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
       if (img == 0) {
         for (k = 0; k < TDVLEN; k++) {
+          LIBXSMM_PRAGMA_SIMD
           for (l = 0; l < TDVLEN; l++) {
             LIBXSMM_VLA_ACCESS(6, U, oj, oi, ofm1, ifm1, k, l, ALPHA, handle->blocksofm, handle->blocksifm, TDVLEN, TDVLEN) = 0.0f;
           }
@@ -151,7 +154,7 @@ for (job = thr_begin; job < thr_end; job++) {
 #if 1
       jitted_conv_wu(
         &LIBXSMM_VLA_ACCESS(8, M, img, oj, oi, ofm1, 0, 0, 0, 0, ALPHA, ALPHA, handle->blocksofm, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN),
-        &LIBXSMM_VLA_ACCESS(8, V, img, oj, oi, ifm1, 0, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, TDVLEN),
+        &LIBXSMM_VLA_ACCESS(8, V, img, oj, oi, ifm1, 0, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, TDVLEN),
         &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ofm1, ifm1, 0, 0, ALPHA, handle->blocksofm, handle->blocksifm, TDVLEN, TDVLEN),
         0, 0, 0);
 #else

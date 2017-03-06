@@ -172,6 +172,7 @@ PARALLEL_OUTER { /* use NN, etc. rather than N due to below char. constant */ \
   libxsmm_blasint libxsmm_tiled_xgemm_num_m_ = 0, libxsmm_tiled_xgemm_num_n_ = 0, libxsmm_tiled_xgemm_num_k_ = 0; \
   libxsmm_xmmfunction libxsmm_tiled_xgemm_kernel_ = { 0 }; \
   if (0 != libxsmm_tiled_xgemm_above_threshold_ && 0 != libxsmm_tiled_xgemm_no_bypass_) { \
+    assert(0 != (TILE_M) && 0 != (TILE_N) && 0 != (TILE_K)); \
     libxsmm_tiled_xgemm_num_m_ = ((MM) + (TILE_M) - 1) / (TILE_M); \
     libxsmm_tiled_xgemm_num_n_ = ((NN) + (TILE_N) - 1) / (TILE_N); \
     libxsmm_tiled_xgemm_num_k_ = ((KK) + (TILE_K) - 1) / (TILE_K); \
@@ -182,6 +183,7 @@ PARALLEL_OUTER { /* use NN, etc. rather than N due to below char. constant */ \
       const libxsmm_blasint libxsmm_tiled_xgemm_min_ntasks_ = MIN_TASKS(NT); \
       libxsmm_gemm_descriptor libxsmm_tiled_xgemm_desc_; \
       if (libxsmm_tiled_xgemm_min_ntasks_ <= libxsmm_tiled_xgemm_num_t_) { /* ensure enough parallel slack */ \
+        assert(0 != libxsmm_tiled_xgemm_num_m_ && 0 != libxsmm_tiled_xgemm_num_n_); \
         libxsmm_tiled_xgemm_tm_ = (MM) / libxsmm_tiled_xgemm_num_m_; \
         libxsmm_tiled_xgemm_tn_ = (NN) / libxsmm_tiled_xgemm_num_n_; \
       } \
@@ -213,7 +215,7 @@ PARALLEL_OUTER { /* use NN, etc. rather than N due to below char. constant */ \
       libxsmm_tiled_xgemm_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_desc_); \
     } \
   } \
-  if (0 != libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) { \
+  if (0 != libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) { assert(0 != libxsmm_tiled_xgemm_tk_); { \
     const int libxsmm_tiled_xgemm_amortized_ = (OVERHEAD(NT) * libxsmm_tiled_xgemm_tn_) < (KK); \
     const libxsmm_blasint libxsmm_tiled_xgemm_max_k_ = ((KK) / libxsmm_tiled_xgemm_tk_) * libxsmm_tiled_xgemm_tk_; \
     libxsmm_blasint libxsmm_tiled_xgemm_m_ = MM, libxsmm_tiled_xgemm_n_ = NN, libxsmm_tiled_xgemm_i_ = 0, libxsmm_tiled_xgemm_j_ = 0; \
@@ -252,7 +254,7 @@ PARALLEL_OUTER { /* use NN, etc. rather than N due to below char. constant */ \
       } \
     } \
     SYNC \
-  } \
+  }} \
   else if ((0 == libxsmm_tiled_xgemm_above_threshold_ /* small problem size */ \
     && 0 != libxsmm_tiled_xgemm_no_bypass_)) \
   { \
@@ -397,7 +399,7 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
   const double*, double*, const libxsmm_blasint*);
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE libxsmm_gemm_tile[2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/];
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][4/*size-range*/];
 /** Prefetch strategy. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tiled_gemm_prefetch;
 

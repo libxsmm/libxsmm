@@ -204,6 +204,9 @@
     <ClInclude Include="..\include\libxsmm_fsspmdm.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_matcopy_avx_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -369,6 +372,12 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_fsspmdm.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_matcopy_avx_avx512.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_matcopy.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

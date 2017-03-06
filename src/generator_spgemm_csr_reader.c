@@ -81,6 +81,7 @@ void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
                ( *o_column_idx == NULL )   ||
                ( *o_values == NULL )       ||
                ( l_row_idx_id == NULL ) ) {
+            free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_row_idx_id);
             libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_ALLOC_DATA );
             return;
           }
@@ -131,20 +132,20 @@ void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
 
   /* check if we read a file which was consistent */
   if ( l_i != (*o_element_count) ) {
+    free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_row_idx_id);
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSR_LEN );
     return;
   }
 
-  /* let's handle empty rows */
-  assert(NULL != l_row_idx_id);
-  for ( l_i = 0; l_i < (*o_row_count); l_i++) {
-    if ( l_row_idx_id[l_i] == 0 ) {
-      (*o_row_idx)[l_i+1] = (*o_row_idx)[l_i];
-    }
-  }
-
-  /* free helper data structure */
   if ( l_row_idx_id != NULL ) {
+    /* let's handle empty rows */
+    for ( l_i = 0; l_i < (*o_row_count); l_i++) {
+      if ( l_row_idx_id[l_i] == 0 ) {
+        (*o_row_idx)[l_i+1] = (*o_row_idx)[l_i];
+      }
+    }
+
+    /* free helper data structure */
     free( l_row_idx_id );
   }
 }

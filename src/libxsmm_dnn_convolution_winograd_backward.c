@@ -213,6 +213,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_cu
 # include "template/libxsmm_dnn_convolve_winograd_st_bwd_custom_custom.tpl.c"
 #endif
 
+      if (handle->flag_reuseInput == 1) {
+        if (handle->scratchInput == 0) {
+          status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
+          return status;
+        } else {
+        handle->scratch3 = handle->scratchInput;
+        }
+      }
       if (handle->cwino_bwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
@@ -273,6 +281,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_nh
 # include "template/libxsmm_dnn_convolve_winograd_st_bwd_nhwc_custom.tpl.c"
 #endif
 
+      if (handle->flag_reuseInput == 1) {
+        if (handle->scratchInput == 0) {
+          status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
+          return status;
+        } else {
+        handle->scratch3 = handle->scratchInput;
+        }
+      }
       if (handle->cwino_bwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16

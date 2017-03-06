@@ -71,11 +71,6 @@ endif
 # Trace level
 TRACE ?= 0
 
-# Avoid more sophisticated flags of the GCC tool chain,
-# and improve compatibility with compilers supposed to be
-# compatible with the GCC tool chain
-COMPATIBLE ?= 0
-
 # Number of repeated calls (tests),
 # or used to scale the problem size
 TESTSIZE ?= 1
@@ -488,7 +483,15 @@ else ifneq (0,$(GCC))
   SUITE = GNU Compiler Collection
 else
   SUITE = Compiler
+  ifeq (0,$(CLANG))
+    COMPATIBLE ?= 1
+  endif
 endif
+
+# Avoid more sophisticated flags of the GCC tool chain,
+# and improve compatibility with compilers supposed to be
+# compatible with the GCC tool chain
+COMPATIBLE ?= 0
 
 ifneq (0,$(INTEL))
   AR ?= xiar
@@ -640,6 +643,10 @@ ifneq (0,$(INTEL))
     CFLAGS += $(OMPFLAG)
     FCFLAGS += $(OMPFLAG)
     LDFLAGS += $(OMPFLAG)
+  else ifneq (0,$(OFFLOAD))
+    CXXFLAGS += -qoverride_limits
+    CFLAGS += -qoverride_limits
+    FCFLAGS += -qoverride_limits
   endif
   ifeq (1,$(STATIC))
     SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
@@ -693,31 +700,31 @@ else # GCC assumed
     endif
     FPEDANTIC += $(FWARNEXTRA)
   endif
-  ifeq (1,$(PEDANTIC))
-    CSTD = -std=c99
-    CXXFLAGS += $(CPEDANTIC) -Wno-long-long
-    CFLAGS += $(CSTD) $(CPEDANTIC)
-    FCFLAGS += -ffree-form
-    FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
-  else ifneq (0,$(PEDANTIC))
-    ifneq (Darwin,$(UNAME))
-      CPEDANTIC += -Wno-long-long
-      CSTD = -std=c89
-    else ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
-      CPEDANTIC += -Wno-long-long
-      CSTD = -std=c89
-    else # Clang may run into ICEs under OSX
-      CSTD = -std=c99
-    endif
-    CXXFLAGS += $(CPEDANTIC) -Wno-long-long
-    CFLAGS += $(CSTD) $(CPEDANTIC)
-    FCFLAGS += $(FSTD) $(FPEDANTIC)
-  else ifeq (0,$(COMPATIBLE))
-    CPEDANTIC += -Wno-long-long
-    FCFLAGS += -ffree-form
-    CSTD = -std=c89
-  endif
   ifeq (0,$(COMPATIBLE))
+    ifeq (1,$(PEDANTIC))
+      CSTD = -std=c99
+      CXXFLAGS += $(CPEDANTIC) -Wno-long-long
+      CFLAGS += $(CSTD) $(CPEDANTIC)
+      FCFLAGS += -ffree-form
+      FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
+    else ifneq (0,$(PEDANTIC))
+      ifneq (Darwin,$(UNAME))
+        CPEDANTIC += -Wno-long-long
+        CSTD = -std=c89
+      else ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
+        CPEDANTIC += -Wno-long-long
+        CSTD = -std=c89
+      else # Clang may run into ICEs under OSX
+        CSTD = -std=c99
+      endif
+      CXXFLAGS += $(CPEDANTIC) -Wno-long-long
+      CFLAGS += $(CSTD) $(CPEDANTIC)
+      FCFLAGS += $(FSTD) $(FPEDANTIC)
+    else ifeq (0,$(COMPATIBLE))
+      CPEDANTIC += -Wno-long-long
+      FCFLAGS += -ffree-form
+      CSTD = -std=c89
+    endif
     # flag specifying output directory must be last
     FMFLAGS += -J
   else # fallback

@@ -84,8 +84,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   unsigned int l_unique;
   unsigned int l_hit;
   unsigned int l_n_blocking = 1;
-  double* l_unique_values = (double*)malloc(sizeof(double)*i_row_idx[i_xgemm_desc->m]);
-  unsigned int* l_unique_pos = (unsigned int*)malloc(sizeof(unsigned int)*i_row_idx[i_xgemm_desc->m]);
+  double *const l_unique_values = (double*)malloc(sizeof(double)*i_row_idx[i_xgemm_desc->m]);
+  unsigned int *const l_unique_pos = (unsigned int*)malloc(sizeof(unsigned int)*i_row_idx[i_xgemm_desc->m]);
   double l_code_const_dp[8];
   float l_code_const_fp[16];
 
@@ -93,9 +93,17 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
+  /* check if mallocs were successful */
+  if ( 0 == l_unique_values || 0 == l_unique_pos ) {
+    free(l_unique_values); free(l_unique_pos);
+    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSR_ALLOC_DATA );
+    return;
+  }
+
   /* check that we build for AVX512 */
   if ( (strcmp(i_arch, "knl") != 0) &&
        (strcmp(i_arch, "skx") != 0) ) {
+    free(l_unique_values); free(l_unique_pos);
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
@@ -123,6 +131,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
 
   /* check that we have enough registers (N=20) for now */
   if ( l_unique > 31 ) {
+    free(l_unique_values); free(l_unique_pos);
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
     return;
   }
@@ -154,6 +163,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
 
   /* inner chunk size */
   if ( i_xgemm_desc->n != (int)l_micro_kernel_config.vector_length ) {
+    free(l_unique_values); free(l_unique_pos);
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }

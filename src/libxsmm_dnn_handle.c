@@ -1088,43 +1088,42 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       if ((240 == handle->ofw) && (24 == handle->ofh) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 1;
         wino_desc_fp.ur = 6;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        status = LIBXSMM_DNN_WARN_FALLBACK;
         flagBenchmark = 1;
       } else if ((120 == handle->ofw) && (12 == handle->ofh) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 1;
         wino_desc_fp.ur = 6;
         flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((60 == handle->ofw) && (6 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 1;
         wino_desc_fp.ur = 6;
         flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((54 == handle->ofw) && (54 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 1;
         wino_desc_fp.ur = 7;
         flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((27 == handle->ofw) && (27 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 1;
         wino_desc_fp.ur = 7;
         flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
         wino_desc_fp.ur = 16;
         flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 8;
         wino_desc_fp.ur = 16;
         flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((112 == handle->ofw) && (112 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 1;
         wino_desc_fp.ur = 14;
         flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
       } else if ((56 == handle->ofw) && (56 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 1;
         wino_desc_fp.ur = 14;
@@ -1141,12 +1140,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_fp.bimg = 8;
         wino_desc_fp.ur = 16;
         flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        status = LIBXSMM_DNN_WARN_FALLBACK;
       } else if ((112 == handle->ofw) && (112 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 1;
         wino_desc_fp.ur = 14;
         flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
       } else if ((56 == handle->ofw) && (56 == handle->ofh) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_fp.bimg = 1;
         wino_desc_fp.ur = 14;
@@ -1256,7 +1254,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_fp.ur = 14;
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 2;
+        wino_desc_fp.bimg = 4; /*2;*/
         wino_desc_fp.ur = 14;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
@@ -1534,7 +1532,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((27 == handle->ofw) && (27 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8;
+        wino_desc_wu.bimg = 1; /*8;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
@@ -1550,11 +1548,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_wu.ur = 1;
         flagBenchmark = 1;
       } else if ((56 == handle->ofw) && (56 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 2;
+        wino_desc_wu.bimg = 1; /*2;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 4;
+        wino_desc_wu.bimg = 2; /*4;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
@@ -1574,11 +1572,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 16;
+        wino_desc_wu.bimg = 2; /*16;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 16;
+        wino_desc_wu.bimg = 4; /*16;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((7 == handle->ofw) && (7 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
@@ -1589,15 +1587,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
       /* LUT for AlexNet */
       else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 16;
+        wino_desc_wu.bimg = 8; /*16;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 16;
+        wino_desc_wu.bimg = 8; /*16;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 16;
+        wino_desc_wu.bimg = 8; /*16;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       }
@@ -1616,23 +1614,23 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 16;
+        wino_desc_wu.bimg = 8; /*16;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 16;
+        wino_desc_wu.bimg = 8; /*16;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 16;
+        wino_desc_wu.bimg = 8; /*16;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 16;
+        wino_desc_wu.bimg = 8; /*16;*/
         wino_desc_wu.ur = 1;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 16;
+        wino_desc_wu.bimg = 8; /*16;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
@@ -1682,7 +1680,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 16;
+        wino_desc_wu.bimg = 8; /*16;*/
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       }
@@ -1739,11 +1737,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->scratch6 = 0;
       handle->scratch6_size = 0;
       handle->scratchIw = 0;
-      handle->scratchIw_size = ijtiles*alpha*alpha*32*libxsmm_dnn_typesize(handle->datatype)*handle->desc.threads;
+      handle->scratchIw_size = ijtiles*alpha*alpha*16*libxsmm_dnn_typesize(handle->datatype)*handle->desc.threads;
       handle->scratchOw = 0;
-      handle->scratchOw_size = ijtiles*alpha*alpha*32*libxsmm_dnn_typesize(handle->datatype_itm)*handle->desc.threads;
+      handle->scratchOw_size = ijtiles*alpha*alpha*16*libxsmm_dnn_typesize(handle->datatype_itm)*handle->desc.threads;
       handle->scratchVk = 0;
       handle->scratchVk_size = handle->scratch3_size;
+      handle->scratchInput = 0;
+      handle->scratchInput_size = handle->scratch3_size;
+      handle->scratchTemp  = 0;
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
     }
   } else {
