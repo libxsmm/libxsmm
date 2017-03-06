@@ -69,7 +69,7 @@ class XgemmTuner(MeasurementInterface):
         """
         cfg = desired_result.configuration.data
         run_cmd = (
-            "TASKS=1"
+            "CHECK=0 TASKS=1"
             " LIBXSMM_M=" + str(self.granularity * cfg["M"]) +
             " LIBXSMM_N=" + str(self.granularity * cfg["N"]) +
             " LIBXSMM_K=" + str(self.granularity * cfg["K"]) +
