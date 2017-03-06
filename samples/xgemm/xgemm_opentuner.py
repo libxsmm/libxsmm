@@ -50,9 +50,9 @@ class XgemmTuner(MeasurementInterface):
         """
         self.granularity = 4
         assert(0 < self.granularity)
-        max_m = (160 + self.granularity - 1) / self.granularity
-        max_n = (64 + self.granularity - 1) / self.granularity
-        max_k = (96 + self.granularity - 1) / self.granularity
+        max_m = (164 + self.granularity - 1) / self.granularity
+        max_n = (132 + self.granularity - 1) / self.granularity
+        max_k = (100 + self.granularity - 1) / self.granularity
         manipulator = ConfigurationManipulator()
         manipulator.add_parameter(
           IntegerParameter("M", self.granularity, max_m))
@@ -69,7 +69,7 @@ class XgemmTuner(MeasurementInterface):
         """
         cfg = desired_result.configuration.data
         run_cmd = (
-            "CHECK=0 TASKS=1"
+            "CHECK=0"
             " LIBXSMM_M=" + str(self.granularity * cfg["M"]) +
             " LIBXSMM_N=" + str(self.granularity * cfg["N"]) +
             " LIBXSMM_K=" + str(self.granularity * cfg["K"]) +
