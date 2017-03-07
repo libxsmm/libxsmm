@@ -74,6 +74,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   uintptr_t uimm;
   intptr_t imm;
   libxsmm_xmmfunction xmm;
+  libxsmm_smmfunction smm;
   void (*vmm)(const void* a, const void* b, void* c, ...);
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)
   libxsmm_xconvfunction xconv;
@@ -103,7 +104,9 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer {
   int H;                            /* height of image */
   int W;                            /* width of image */
   int lpb;                          /* low precision blocking factor */
+  int bimg;                         /* size of blocked images */
   libxsmm_dnn_tensor_format format; /* format of activation buffer */
+  libxsmm_dnn_internal_format custom_format_type;
   libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
   char exp;                         /* fix point exponent for this tensor */
@@ -129,6 +132,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
   int S;                            /* width of filter kernel */
   int lpb;                          /* low precision blocking factor */
   libxsmm_dnn_tensor_format format; /* format of filter buffer */
+  libxsmm_dnn_internal_format custom_format_type;
   libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
   char exp;                         /* fix point exponent for this tensor */
@@ -146,6 +150,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_convolution_winograd_descriptor cwino_fwd;
   libxsmm_convolution_winograd_descriptor cwino_bwd;
   libxsmm_convolution_winograd_descriptor cwino_upd;
+  libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
   /* additional size for iternal data types */
   int ifhp;
@@ -169,6 +174,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int upd_use_thread_fil;
   int upd_use_external_reduce;
   int filter_transposed;
+  int nBImg;
+  int nbImg;
 
   /* internal data representation */
   libxsmm_dnn_buffer* reg_input;
