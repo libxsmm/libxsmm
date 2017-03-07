@@ -80,6 +80,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
         typedef libxsmm_sconvfunction libxsmm_convfunction;
         typedef libxsmm_smatcopyfunction libxsmm_matcopyfunction;
         typedef libxsmm_smatcopyfunction libxsmm_matcopybackfunction;
+        typedef libxsmm_smmfunction libxsmm_mmfunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
 #include "template/libxsmm_dnn_convolve_st_bwd_custom_custom.tpl.c"

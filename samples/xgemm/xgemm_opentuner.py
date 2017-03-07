@@ -50,9 +50,9 @@ class XgemmTuner(MeasurementInterface):
         """
         self.granularity = 1
         assert(0 < self.granularity)
-        max_m = (172 + self.granularity - 1) / self.granularity
-        max_n = (148 + self.granularity - 1) / self.granularity
-        max_k = (100 + self.granularity - 1) / self.granularity
+        max_m = (256 + self.granularity - 1) / self.granularity
+        max_n = (256 + self.granularity - 1) / self.granularity
+        max_k = (256 + self.granularity - 1) / self.granularity
         manipulator = ConfigurationManipulator()
         manipulator.add_parameter(
           IntegerParameter("M", self.granularity, max_m))
