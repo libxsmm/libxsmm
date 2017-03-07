@@ -48,10 +48,10 @@ class XgemmTuner(MeasurementInterface):
         Define the search space by creating a
         ConfigurationManipulator
         """
-        self.granularity = 4
+        self.granularity = 1
         assert(0 < self.granularity)
-        max_m = (164 + self.granularity - 1) / self.granularity
-        max_n = (132 + self.granularity - 1) / self.granularity
+        max_m = (172 + self.granularity - 1) / self.granularity
+        max_n = (148 + self.granularity - 1) / self.granularity
         max_k = (100 + self.granularity - 1) / self.granularity
         manipulator = ConfigurationManipulator()
         manipulator.add_parameter(
