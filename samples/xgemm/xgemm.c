@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
     REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
     REAL_TYPE* d = 0;
     if (0 == env_check || 0 != atoi(env_check)) {
-      REAL_TYPE *const d = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
+      d = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
       init( 0, d, m, n, ldc, 1.0);
     }
     init( 0, c, m, n, ldc, 1.0);

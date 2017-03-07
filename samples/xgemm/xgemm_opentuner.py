@@ -48,11 +48,11 @@ class XgemmTuner(MeasurementInterface):
         Define the search space by creating a
         ConfigurationManipulator
         """
-        self.granularity = 4
+        self.granularity = 1
         assert(0 < self.granularity)
-        max_m = (160 + self.granularity - 1) / self.granularity
-        max_n = (64 + self.granularity - 1) / self.granularity
-        max_k = (96 + self.granularity - 1) / self.granularity
+        max_m = (172 + self.granularity - 1) / self.granularity
+        max_n = (148 + self.granularity - 1) / self.granularity
+        max_k = (100 + self.granularity - 1) / self.granularity
         manipulator = ConfigurationManipulator()
         manipulator.add_parameter(
           IntegerParameter("M", self.granularity, max_m))
@@ -62,6 +62,9 @@ class XgemmTuner(MeasurementInterface):
           IntegerParameter("K", self.granularity, max_k))
         return manipulator
 
+    def objective(self):
+        return opentuner.search.objective.MaximizeAccuracyMinimizeSize()
+
     def run(self, desired_result, input, limit):
         """
         Compile and run a given configuration then
@@ -69,7 +72,7 @@ class XgemmTuner(MeasurementInterface):
         """
         cfg = desired_result.configuration.data
         run_cmd = (
-            "CHECK=0 TASKS=1"
+            "CHECK=0"
             " LIBXSMM_M=" + str(self.granularity * cfg["M"]) +
             " LIBXSMM_N=" + str(self.granularity * cfg["N"]) +
             " LIBXSMM_K=" + str(self.granularity * cfg["K"]) +
@@ -77,7 +80,7 @@ class XgemmTuner(MeasurementInterface):
 
         geoperf = 0  # geometric mean
         compensation = 0  # see Kahan
-        sizelist = [1000, 2000, 3000, 4000]
+        sizelist = [1200, 1400, 1600, 1800, 2000]
         for size in sizelist:
             run_result = self.call_program(run_cmd + " " + str(size))
             assert(run_result["returncode"] == 0)
@@ -92,7 +95,8 @@ class XgemmTuner(MeasurementInterface):
         geoperf = math.exp(geoperf / len(sizelist))
         geotime = 1000000.0 / geoperf
 
-        return Result(time=geotime)
+        mnk = (self.granularity**3) * cfg["M"] * cfg["N"] * cfg["K"]
+        return Result(time=geotime, accuracy=geoperf, size=mnk)
 
     def save_final_config(self, configuration):
         """called at the end of tuning"""

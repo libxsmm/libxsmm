@@ -82,27 +82,30 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   { config = 2; }
 
   { /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/] = {
-      { { 136, 16, 16 }, { 136, 16, 16 } }, /* generic */
-      { {  80,  8, 64 }, {  80,  8, 64 } }, /* knl */
-      { { 160, 16, 32 }, { 160, 16, 32 } }  /* skx */
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/][4/*size-range*/] = {
+      { { {  28,  56, 144, 152 }, { 40, 100, 40,  80 }, {  92, 64, 24, 16 } }, { {  28,  56, 144, 152 }, { 40, 100,  40,  80 }, { 92, 64, 24, 16 } } }, /* generic */
+      { { { 168, 130,  36, 121 }, { 10,  28, 28,  25 }, {  39, 43, 32, 44 } }, { { 164, 129,  76, 112 }, {  9,  20,  20,  25 }, { 42, 46, 63, 52 } } }, /* knl */
+      { { {  33,  34, 145, 156 }, { 53, 134, 26, 130 }, { 100, 32, 56, 54 } }, { {  41, 119, 102, 106 }, { 32,  65, 108, 130 }, { 73, 90, 86, 89 } } }  /* skx */
     };
     const char* env[3];
+    int i;
     env[0] = getenv("LIBXSMM_M"); env[1] = getenv("LIBXSMM_N"); env[2] = getenv("LIBXSMM_K");
-    /* environment-defined tile sizes apply for DP and SP */
-    libxsmm_gemm_tile[0/*DP*/][0/*M*/] = libxsmm_gemm_tile[1/*SP*/][0/*M*/] = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
-      LIBXSMM_MIN((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(0 != env[0] ? atoi(env[0]) : 0), LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
-    libxsmm_gemm_tile[0/*DP*/][1/*N*/] = libxsmm_gemm_tile[1/*SP*/][1/*N*/] = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
-      LIBXSMM_MIN((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(0 != env[1] ? atoi(env[1]) : 0), LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
-    libxsmm_gemm_tile[0/*DP*/][2/*K*/] = libxsmm_gemm_tile[1/*SP*/][2/*K*/] = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
-      LIBXSMM_MIN((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(0 != env[2] ? atoi(env[2]) : 0), LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
-    /* load predefined configuration if tile size is not setup by the environment */
-    if (0 == libxsmm_gemm_tile[0/*DP*/][0/*M*/]) libxsmm_gemm_tile[0][0] = tile_configs[config][0][0];
-    if (0 == libxsmm_gemm_tile[0/*DP*/][1/*N*/]) libxsmm_gemm_tile[0][1] = tile_configs[config][0][1];
-    if (0 == libxsmm_gemm_tile[0/*DP*/][2/*K*/]) libxsmm_gemm_tile[0][2] = tile_configs[config][0][2];
-    if (0 == libxsmm_gemm_tile[1/*SP*/][0/*M*/]) libxsmm_gemm_tile[1][0] = tile_configs[config][1][0];
-    if (0 == libxsmm_gemm_tile[1/*SP*/][1/*N*/]) libxsmm_gemm_tile[1][1] = tile_configs[config][1][1];
-    if (0 == libxsmm_gemm_tile[1/*SP*/][2/*K*/]) libxsmm_gemm_tile[1][2] = tile_configs[config][1][2];
+    for (i = 0; i < 4; ++i) {
+      /* environment-defined tile sizes apply for DP and SP */
+      libxsmm_gemm_tile[0/*DP*/][0/*M*/][i] = libxsmm_gemm_tile[1/*SP*/][0/*M*/][i] = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
+        LIBXSMM_MIN((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(0 != env[0] ? atoi(env[0]) : 0), LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
+      libxsmm_gemm_tile[0/*DP*/][1/*N*/][i] = libxsmm_gemm_tile[1/*SP*/][1/*N*/][i] = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
+        LIBXSMM_MIN((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(0 != env[1] ? atoi(env[1]) : 0), LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
+      libxsmm_gemm_tile[0/*DP*/][2/*K*/][i] = libxsmm_gemm_tile[1/*SP*/][2/*K*/][i] = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
+        LIBXSMM_MIN((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(0 != env[2] ? atoi(env[2]) : 0), LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
+      /* load predefined configuration if tile size is not setup by the environment */
+      if (0 == libxsmm_gemm_tile[0/*DP*/][0/*M*/][i]) libxsmm_gemm_tile[0][0][i] = tile_configs[config][0][0][i];
+      if (0 == libxsmm_gemm_tile[0/*DP*/][1/*N*/][i]) libxsmm_gemm_tile[0][1][i] = tile_configs[config][0][1][i];
+      if (0 == libxsmm_gemm_tile[0/*DP*/][2/*K*/][i]) libxsmm_gemm_tile[0][2][i] = tile_configs[config][0][2][i];
+      if (0 == libxsmm_gemm_tile[1/*SP*/][0/*M*/][i]) libxsmm_gemm_tile[1][0][i] = tile_configs[config][1][0][i];
+      if (0 == libxsmm_gemm_tile[1/*SP*/][1/*N*/][i]) libxsmm_gemm_tile[1][1][i] = tile_configs[config][1][1][i];
+      if (0 == libxsmm_gemm_tile[1/*SP*/][2/*K*/][i]) libxsmm_gemm_tile[1][2][i] = tile_configs[config][1][2][i];
+    }
   }
 }
 
@@ -284,10 +287,11 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
 #else
   LIBXSMM_INIT
   { /* tiled GEMM */
+    const int index = LIBXSMM_MIN((int)((1ULL * (*m) * (*n) * (*k)) >> 30), 3);
     LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
-    tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/];
-    tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
-    tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
+    tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/][index];
+    tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/][index];
+    tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/][index];
     assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP,
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
@@ -350,10 +354,11 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 #else
   LIBXSMM_INIT
   { /* tiled GEMM */
+    const int index = LIBXSMM_MIN((int)((1ULL * (*m) * (*n) * (*k)) >> 30), 3);
     LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
-    tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/];
-    tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
-    tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
+    tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/][index];
+    tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/][index];
+    tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/][index];
     assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP,
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
