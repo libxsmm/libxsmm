@@ -838,7 +838,7 @@ unroll_factor = i_conv_desc->ifm_block;
   }
 #endif
 
-  if (!no_unroll_no_block) { 
+  if (!no_unroll_no_block) {
       /* Add ofw_block*40 to increment output */
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_add_instruction,
