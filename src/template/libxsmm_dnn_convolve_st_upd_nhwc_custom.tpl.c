@@ -34,7 +34,7 @@ int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__, ii_, 
 int imgifm1;
 #endif
 #if defined(LIBXSMM_WU_TRANSPOSE_OFW_IFM)
-int imgifhp;
+int imgifhp, ij;
 #endif
 #if defined(LIBXSMM_WU_PER_THREAD_ALLOCATION)
 int i, j, ofm1ifm1img;
@@ -115,9 +115,11 @@ LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, per_thread_weight, hand
 LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, weight, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 #endif
 
+#if defined(LIBXSMM_WU_TRANSPOSE_OFW_IFM) || defined(INPUT_PADDING)
+int ii;
+#endif
 #if defined(INPUT_PADDING)
 /* Define variables if padding is required */
-int ii;
 element_input_type (* __restrict input_ptr);
 element_input_type (*__restrict copy_ptr);
 element_input_type *prefetch_ptr;
@@ -350,7 +352,6 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
 
 #ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
-        int ii, ij;
         /* lazy barrier init */
         libxsmm_barrier_init(handle->barrier, ltid);
 #if defined(INPUT_PADDING)

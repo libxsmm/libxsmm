@@ -649,7 +649,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_sfma( 
   unsigned int l_scale;
   unsigned int l_disp;
   unsigned int l_displacement_k = 0;
-  unsigned int l_k_updates = 0;
+  /*unsigned int l_k_updates = 0;*/
   unsigned int l_w;
   unsigned int num_look_ahead;
   unsigned int output_counter = 0;
@@ -664,7 +664,7 @@ unroll_factor = i_conv_desc->ifm_block;
   /* apply k blocking */
   for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb ; l_k_1++ ) {
 
-  l_k_updates = 0;
+  /*l_k_updates = 0;*/
   for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb ; l_k_2++, l_k++ ) {
 
 #if 0
@@ -879,7 +879,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_qfma( 
   unsigned int l_scale;
   unsigned int l_disp;
   unsigned int l_displacement_k = 0;
-  unsigned int l_k_updates = 0;
+  /*unsigned int l_k_updates = 0;*/
   unsigned int l_w;
   unsigned int output_counter = 0;
   unsigned int unroll_factor = (i_conv_desc->ifm_block == 1) ? i_conv_desc->kw : i_conv_desc->ifm_block;
@@ -897,7 +897,7 @@ unroll_factor = i_conv_desc->ifm_block;
   /* apply k blocking */
   for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb ; l_k_1++ ) {
 
-  l_k_updates = 0;
+  /*l_k_updates = 0;*/
   for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb ; l_k_2+=4, l_k+=4 ) {
     /* for quad, we need to load weights in groups of 4 as this is the
        source block for qmadd */
