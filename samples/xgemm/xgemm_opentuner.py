@@ -38,8 +38,18 @@ from opentuner import ConfigurationManipulator
 from opentuner import IntegerParameter
 from opentuner import MeasurementInterface
 from opentuner import Result
+import inspect
+import time
 import math
+import sys
+import os
 import re
+
+here = os.path.dirname(inspect.getfile(inspect.currentframe()))
+if here not in sys.path:
+    sys.path.insert(0, os.path.realpath(os.path.join(
+        here, "..", "..", "scripts")))
+import libxsmm_utilities
 
 
 class XgemmTuner(MeasurementInterface):
@@ -78,11 +88,11 @@ class XgemmTuner(MeasurementInterface):
             " LIBXSMM_K=" + str(self.granularity * cfg["K"]) +
             " ./xgemm.sh")
 
+        dimset = libxsmm_utilities.load_mnklist(self.args.mnk, 0, -1)
         geoperf = 0  # geometric mean
         compensation = 0  # see Kahan
-        sizelist = [1200, 1400, 1600, 1800, 2000]
-        for size in sizelist:
-            run_result = self.call_program(run_cmd + " " + str(size))
+        for dims in dimset:
+            run_result = self.call_program(run_cmd + " " + " ".join(map(str, dims)))
             assert(run_result["returncode"] == 0)
             match = re.search(
                 "\s*LIBXSMM:\s+([0-9]+(\.[0-9]*)*)",
@@ -92,7 +102,7 @@ class XgemmTuner(MeasurementInterface):
             khb = geoperf + kha
             compensation = (khb - geoperf) - kha
             geoperf = khb
-        geoperf = math.exp(geoperf / len(sizelist))
+        geoperf = math.exp(geoperf / len(dimset))
         geotime = 1000000.0 / geoperf
 
         mnk = (self.granularity**3) * cfg["M"] * cfg["N"] * cfg["K"]
@@ -100,7 +110,7 @@ class XgemmTuner(MeasurementInterface):
 
     def save_final_config(self, configuration):
         """called at the end of tuning"""
-        filename = "xgemm_opentuner.json"
+        filename = "xgemm-" + time.strftime("%Y%m%d-%H%M%S") + ".json"
         print("Optimal block size written to " +
               filename + ": ", configuration.data)
         self.manipulator().save_to_file(configuration.data, filename)
@@ -108,4 +118,7 @@ class XgemmTuner(MeasurementInterface):
 
 if __name__ == "__main__":
     argparser = opentuner.default_argparser()
+    argparser.add_argument(
+        "mnk", metavar="N", nargs="*", default="1024,1280,1536,1792",
+        help="Set of MNK parameters to be tuned")
     XgemmTuner.main(argparser.parse_args())
