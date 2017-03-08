@@ -35,7 +35,7 @@ if [ "-mic" != "$1" ]; then
       DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../../lib \
       KMP_AFFINITY=compact,granularity=fine,1 \
       MIC_KMP_AFFINITY=compact,granularity=fine \
-      MIC_KMP_PLACE_THREADS=$((MICCORES-1))c${MICTPERC}t \
+      MIC_KMP_HW_SUBSET=$((MICCORES-1))c${MICTPERC}t \
       MIC_ENV_PREFIX=MIC \
       OFFLOAD_INIT=on_start \
     ${TOOL_COMMAND} ${HERE}/${NAME} $*
@@ -52,6 +52,6 @@ else
   micnativeloadex \
     ${HERE}/${NAME} -a "$*" \
     -e "KMP_AFFINITY=scatter,granularity=fine" \
-    -e "MIC_KMP_PLACE_THREADS=$((MICCORES-1))${MICTPERC}t"
+    -e "MIC_KMP_HW_SUBSET=$((MICCORES-1))${MICTPERC}t"
 fi
 
