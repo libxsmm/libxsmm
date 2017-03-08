@@ -43,12 +43,16 @@ bazel-bin/tensorflow/core/kernels/sparse_matmul_op_test --benchmarks=all
 bazel-bin/tensorflow/core/kernels/sparse_matmul_op_test
 ```
 
-To build and test the regular CNN routines:
+To build and test the regular CNN routines (note that below `bazel run...` may be deadlocking during the test):
 
 ```
 bazel build -c opt --copt=-mavx2 --copt=-mfma --linkopt=-pthread --verbose_failures \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   //tensorflow/core/kernels:conv_ops_test
+
+bazel run -c opt --copt=-mavx2 --copt=-mfma --linkopt=-pthread --verbose_failures \
+  --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
+  //tensorflow/python/kernel_tests:conv_ops_test
 
 bazel-bin/tensorflow/core/kernels/conv_ops_test
 ```
@@ -61,7 +65,7 @@ bazel build -c opt --copt=-mavx2 --copt=-mfma --linkopt=-pthread --verbose_failu
   //tensorflow/tools/pip_package:build_pip_package
 
 bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
-sudo pip install /tmp/tensorflow_pkg/<package-name-build-above.whl>
+sudo pip install -I /tmp/tensorflow_pkg/<package-name-build-above.whl>
 ```
 
 Please note that`--linkopt=-pthread` appears to fix unresolved symbols with GCC 6.x series on some systems. The flags `--define tensorflow_xsmm=1`, `--define eigen_xsmm=1`, and `--define tensorflow_xsmm_backward=1` are not actually needed for all the above cases, but are supplied for consistency. More important, `--copt=-mavx2 --copt=-mfma` are only suitable for Intel&#160;AVX2 capable systems. LIBXSMM does not impose to build for a specific code path, which is always true for JIT-enabled code paths. However, when using the Intel Compiler or GCC&#160;4.9 (or later), even some non-JIT code is CPUID-dispatched. In turn, older GCC compilers may be hit by some performance penalty when building without the necessary target flags. In any case, it makes sense to simply build at least with `--copt=-mavx`. As a further note, the LIBXSMM supports Intel&#160;AVX2 as the baseline code path for all JIT-generated DNN-code (SMM domain also supports AVX). For Intel&#160;AVX-512 (on top of AVX2), the foundational instructions are sufficient in many cases, but for the sparse domain the Core-flavor is a prerequisite ("Skylake server" or SKX), and VNNI/QFMA instructions are honored on Intel Xeon&#160;Phi code-named "Knights Mill" (KNM).
