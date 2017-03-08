@@ -69,8 +69,8 @@ libxsmm_convfunction jitted_conv_bp_peeled_noweight_pf = (libxsmm_convfunction)h
 /*element_output_type* l_output;*/
 
 #if defined(INPUT_PADDING)
-element_input_type (* __restrict input_ptr);
-element_input_type (* __restrict copy_ptr);
+element_input_type (* LIBXSMM_RESTRICT input_ptr);
+element_input_type (* LIBXSMM_RESTRICT copy_ptr);
 element_input_type *prefetch_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;

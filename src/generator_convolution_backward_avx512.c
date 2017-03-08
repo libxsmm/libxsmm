@@ -130,7 +130,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
 # define BP_UNROLL_FACTOR 2
   for (int oi=0; oi < ofw; oi+=BP_UNROLL_FACTOR) {
     int ii = oi;
-    float (* __restrict tmpin1)[VLEN] = &del_input[img][ifm1][ij][ii];
+    float (* LIBXSMM_RESTRICT tmpin1)[VLEN] = &del_input[img][ifm1][ij][ii];
 #   pragma unroll
     for (int ki=0; ki < KW; ki++) {
       __m512 acc00 = _mm512_load_ps(&tmpin1[ki + 0]);
