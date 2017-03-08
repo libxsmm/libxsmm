@@ -47,9 +47,9 @@ import re
 
 try:
     here = os.path.dirname(inspect.getfile(inspect.currentframe()))
-    if here not in sys.path:
-        sys.path.insert(0, os.path.realpath(os.path.join(
-            here, "..", "..", "scripts")))
+    scripts = os.path.realpath(os.path.join(here, "..", "..", "scripts"))
+    if scripts not in sys.path:
+        sys.path.insert(0, scripts)
     import libxsmm_utilities
 except:
     pass
@@ -102,7 +102,9 @@ class XgemmTuner(MeasurementInterface):
                 "\s*LIBXSMM:\s+([0-9]+(\.[0-9]*)*)",
                 run_result["stdout"])
             assert(match is not None)
-            kha = math.log(float(match.group(1))) - compensation
+            gflops = float(match.group(1))
+            assert(0 < gflops)
+            kha = math.log(gflops) - compensation
             khb = geoperf + kha
             compensation = (khb - geoperf) - kha
             geoperf = khb
@@ -123,6 +125,6 @@ class XgemmTuner(MeasurementInterface):
 if __name__ == "__main__":
     argparser = opentuner.default_argparser()
     argparser.add_argument(
-        "mnk", metavar="N", nargs="*", default="1024,1280,1536,1792",
+        "mnk", metavar="N", nargs="*", default=["1024,1280,1536,1792"],
         help="Set of MNK parameters to be tuned")
     XgemmTuner.main(argparser.parse_args())
