@@ -168,9 +168,10 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
 
   /* allocate handle */
   new_handle = (libxsmm_sfsspmdm*)malloc(sizeof(libxsmm_sfsspmdm));
-  memset((void*)new_handle, 0, sizeof(libxsmm_sfsspmdm));
+  if (0 == new_handle) return 0;
 
-  /* init stuff of the handle */
+  /* initialize the handle */
+  memset((void*)new_handle, 0, sizeof(libxsmm_sfsspmdm));
   new_handle->N = N;
   new_handle->M = M;
   new_handle->K = K;
