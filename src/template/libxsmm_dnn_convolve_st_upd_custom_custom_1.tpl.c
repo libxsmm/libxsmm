@@ -115,8 +115,8 @@ LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, weight, handle->blocksi
 
 #if defined(INPUT_PADDING)
 /* Define variables if padding is required */
-element_input_type (* __restrict input_ptr);
-element_input_type (* __restrict copy_ptr);
+element_input_type (* LIBXSMM_RESTRICT input_ptr);
+element_input_type (* LIBXSMM_RESTRICT copy_ptr);
 element_input_type *prefetch_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
