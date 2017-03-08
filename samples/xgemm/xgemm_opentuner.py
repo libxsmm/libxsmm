@@ -45,11 +45,14 @@ import sys
 import os
 import re
 
-here = os.path.dirname(inspect.getfile(inspect.currentframe()))
-if here not in sys.path:
-    sys.path.insert(0, os.path.realpath(os.path.join(
-        here, "..", "..", "scripts")))
-import libxsmm_utilities
+try:
+    here = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    if here not in sys.path:
+        sys.path.insert(0, os.path.realpath(os.path.join(
+            here, "..", "..", "scripts")))
+    import libxsmm_utilities
+except:
+    pass
 
 
 class XgemmTuner(MeasurementInterface):
@@ -92,7 +95,8 @@ class XgemmTuner(MeasurementInterface):
         geoperf = 0  # geometric mean
         compensation = 0  # see Kahan
         for dims in dimset:
-            run_result = self.call_program(run_cmd + " " + " ".join(map(str, dims)))
+            run_result = self.call_program(
+                run_cmd + " " + " ".join(map(str, dims)))
             assert(run_result["returncode"] == 0)
             match = re.search(
                 "\s*LIBXSMM:\s+([0-9]+(\.[0-9]*)*)",
