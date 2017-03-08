@@ -2241,15 +2241,15 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_wino_update_weights(
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_set_flag_reuseInput( libxsmm_dnn_layer* handle, char type )
+LIBXSMM_API void libxsmm_set_flag_reuseInput(libxsmm_dnn_layer* /*handle*/, char /*type*/);
+LIBXSMM_API_DEFINITION void libxsmm_set_flag_reuseInput(libxsmm_dnn_layer* handle, char type)
 {
-    if (type == 'A') {
-      handle->flag_reuseInput = 1;
-    } else {
-      handle->flag_reuseInput = 0;
-    }
+  if (type == 'A') {
+    handle->flag_reuseInput = 1;
+  } else {
+    handle->flag_reuseInput = 0;
+  }
 }
-
 
 #endif /*defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)*/
 
