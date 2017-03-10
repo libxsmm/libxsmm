@@ -538,14 +538,21 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_init_check(int archid)
 LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
   libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice** libxsmm_output_csr)
 {
+  double load_imbalance_tolerate = 1.1;
+  int max_work_per_block;
+  double avg_work_per_block;
+  int max_blocks_per_thread;
+  double avg_blocks_per_thread;
+  double load_imbalance_1, load_imbalance_2, load_imbalance;
+
   /* initialize internal library structures */
   LIBXSMM_INIT
 
   handle->m  = M;
   handle->n  = N;
   handle->k  = K;
-
   handle->bm = (M >= 4096 || M <= 1024) ? 512 : 256;
+
 #if defined(LIBXSMM_SPMDM_AVX512_CORE)
   if (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH) {
     internal_spmdm_init_check(LIBXSMM_X86_AVX512_CORE);
@@ -580,6 +587,27 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_thre
   handle->mb = (handle->m + handle->bm - 1) / handle->bm;
   handle->nb = (handle->n + handle->bn - 1) / handle->bn;
   handle->kb = (handle->k + handle->bk - 1) / handle->bk;
+
+  max_work_per_block    = (handle->bm*handle->bn);
+  avg_work_per_block    = (double)(handle->m*handle->n)/(handle->mb*handle->nb);
+  load_imbalance_1      = max_work_per_block/avg_work_per_block;
+  max_blocks_per_thread = (handle->mb*handle->nb + max_threads - 1)/max_threads;
+  avg_blocks_per_thread = (double)handle->mb*handle->nb/max_threads;
+  load_imbalance_2      = max_blocks_per_thread/avg_blocks_per_thread;
+  load_imbalance        = load_imbalance_1 * load_imbalance_2;
+
+  while (load_imbalance > load_imbalance_tolerate) {
+    handle->bm--;
+    handle->mb = (handle->m + handle->bm - 1) / handle->bm;
+
+    max_blocks_per_thread = (handle->mb*handle->nb + max_threads - 1)/max_threads;
+    avg_blocks_per_thread = (double)handle->mb*handle->nb/max_threads;
+    load_imbalance_2      = max_blocks_per_thread/avg_blocks_per_thread;
+    max_work_per_block    = (handle->bm*handle->bn);
+    avg_work_per_block    = (double)(handle->m*handle->n)/(handle->mb*handle->nb);
+    load_imbalance_1      = max_work_per_block/avg_work_per_block;
+    load_imbalance        = load_imbalance_1 * load_imbalance_2;
+  }
 
   /* This is temporary space needed; allocate for each different size of A */
   internal_spmdm_allocate_csr_a(handle, libxsmm_output_csr);

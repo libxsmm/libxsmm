@@ -6,6 +6,6 @@ This code sample attempts to benchmark the performance of the dispatch mechanism
 
 * Optionally takes the number of dispatches to be performed
 * Measures the duration needed to find the requested kernel
-* Excludes the time needed to actually generate the kernel
+* Excludes the time needed to generate the kernel
 * Shows time needed in relation to an empty function call
 

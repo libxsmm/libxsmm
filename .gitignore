@@ -1,5 +1,6 @@
 .hooks/.commit
 My Amplifier*
+opentuner.db
 bin/libxsmm_generator
 include/libxsmm_config.h
 include/libxsmm_source.h
@@ -11,8 +12,10 @@ build/*/*/*.xml
 lib/libxsmm*
 ide/_vs*-*.bat
 ide/*.amplxeproj
+ide/*.advixeproj
 ide/build
 ide/r*ah
+samples2
 tmp
 .state
 .make
@@ -35,6 +38,7 @@ _*.txt
 *.gcno
 *.gcda
 *.gcov
+*.html
 *.iobj
 *.ipdb
 *.URL

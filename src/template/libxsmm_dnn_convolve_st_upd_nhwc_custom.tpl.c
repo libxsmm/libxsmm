@@ -34,7 +34,7 @@ int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__, ii_, 
 int imgifm1;
 #endif
 #if defined(LIBXSMM_WU_TRANSPOSE_OFW_IFM)
-int imgifhp, ij;
+int imgifhp;
 #endif
 #if defined(LIBXSMM_WU_PER_THREAD_ALLOCATION)
 int i, j, ofm1ifm1img;
@@ -117,19 +117,9 @@ LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, per_thread_weight, hand
 LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, weight, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 #endif
 
-#if defined(LIBXSMM_WU_TRANSPOSE_OFW_IFM) || defined(INPUT_PADDING)
-int ii;
-#endif
 #if defined(INPUT_PADDING)
 /* Define variables if padding is required */
-<<<<<<< HEAD
-element_input_type (* __restrict input_ptr);
-element_input_type (*__restrict copy_ptr);
-element_input_type *prefetch_ptr;
-=======
-int ii;
 element_input_type *LIBXSMM_RESTRICT copy_ptr;
->>>>>>> b24735a95dc85425fc28b6248bcd847dc3263daa
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 libxsmm_matzerofunction jitted_matzero = (libxsmm_matzerofunction)handle->matcopy_upd[1].xmatcopy.smatcopy;
@@ -326,8 +316,8 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
   /* Initialize in parallel scratch5 to zero */
   for (imgifm1 = zero_thr_begin; imgifm1 < zero_thr_end; ++imgifm1) {
+    const int ii = imgifm1 % padded_h;
     img = imgifm1 / padded_h;
-    ii = imgifm1%padded_h;
     copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii, 0, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
     jitted_matzero(NULL, NULL, copy_ptr, NULL, NULL);
   }
@@ -337,8 +327,8 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   /* Copy the minibatch to a padded version only if no transpose is required -- otherwise we combine the transpose with the copying into the padded buffer */
 #ifndef LIBXSMM_WU_TRANSPOSE_OFW_IFM
   for (imgifm1 = copy_thr_end - 1; imgifm1 >= copy_thr_begin; imgifm1--) {
+    const int ii = imgifm1 % handle->ifhp;
     img = imgifm1 / handle->ifhp;
-    ii = imgifm1%handle->ifhp;
     input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
     copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii + handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
     if (ii != 0) {
@@ -362,45 +352,37 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     num_ofh_strips = handle->ofh / handle->upd_ofh_rb;
 
 #ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
-<<<<<<< HEAD
-        /* lazy barrier init */
-        libxsmm_barrier_init(handle->barrier, ltid);
-=======
-    { int ii, ij;
-      /* lazy barrier init */
-      libxsmm_barrier_init(handle->barrier, ltid);
->>>>>>> b24735a95dc85425fc28b6248bcd847dc3263daa
+    libxsmm_barrier_init(handle->barrier, ltid); /* lazy barrier initialization */
 #if defined(INPUT_PADDING)
-      /* Transpose IFW and IFM into the padded buffer!*/
-      for (imgifhp = transpose_thr_begin; imgifhp < transpose_thr_end; ++imgifhp) {
-        img = imgifhp / handle->ifhp;
-        ij = imgifhp%handle->ifhp;
-        for (ii = 0; ii < handle->ifwp; ++ii) {
-          for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              LIBXSMM_VLA_ACCESS(5, tr_input, img, ij + handle->desc.pad_h, ifm1, ifm2, ii + handle->desc.pad_w, padded_h, handle->blocksifm, handle->ifmblock, padded_w)
-                = LIBXSMM_VLA_ACCESS(5, input_nopad, img, ij, ii, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-            }
+    /* Transpose IFW and IFM into the padded buffer!*/
+    for (imgifhp = transpose_thr_begin; imgifhp < transpose_thr_end; ++imgifhp) {
+      int ij = imgifhp % handle->ifhp, ii;
+      img = imgifhp / handle->ifhp;
+      for (ii = 0; ii < handle->ifwp; ++ii) {
+        for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            LIBXSMM_VLA_ACCESS(5, tr_input, img, ij + handle->desc.pad_h, ifm1, ifm2, ii + handle->desc.pad_w, padded_h, handle->blocksifm, handle->ifmblock, padded_w)
+              = LIBXSMM_VLA_ACCESS(5, input_nopad, img, ij, ii, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
           }
         }
       }
-#else
-      /* First transpose IFW and IFM */
-      for (imgifhp = transpose_thr_begin; imgifhp < transpose_thr_end; ++imgifhp) {
-        img = imgifhp / handle->ifhp;
-        ij = imgifhp%handle->ifhp;
-        for (ii = 0; ii < handle->ifwp; ++ii) {
-          for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              LIBXSMM_VLA_ACCESS(5, tr_input, img, ij, ifm1, ifm2, ii, handle->ifhp, handle->blocksifm, handle->ifmblock, handle->ifwp)
-                = LIBXSMM_VLA_ACCESS(5, input, img, ij, ii, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
-            }
-          }
-        }
-      }
-#endif
-      libxsmm_barrier_wait(handle->barrier, ltid);
     }
+#else
+    /* First transpose IFW and IFM */
+    for (imgifhp = transpose_thr_begin; imgifhp < transpose_thr_end; ++imgifhp) {
+      int ij = imgifhp % handle->ifhp, ii;
+      img = imgifhp / handle->ifhp;
+      for (ii = 0; ii < handle->ifwp; ++ii) {
+        for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            LIBXSMM_VLA_ACCESS(5, tr_input, img, ij, ifm1, ifm2, ii, handle->ifhp, handle->blocksifm, handle->ifmblock, handle->ifwp)
+              = LIBXSMM_VLA_ACCESS(5, input, img, ij, ii, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+          }
+        }
+      }
+    }
+#endif
+    libxsmm_barrier_wait(handle->barrier, ltid);
 
     for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       ofm1 = ofm1ifm1 / handle->blocksifm;
