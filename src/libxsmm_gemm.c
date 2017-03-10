@@ -82,21 +82,21 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   { config = 2; }
 
   { /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/][4/*size-range*/] = {
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/][8/*size-range*/] = {
       /* generic/hsw */
-      { { { 25,  50,  69, 169, 169, 169, 169, 169 }, { 37, 98,  78,  39,  39,  39,  39,  39 }, { 100, 81,  55, 37, 37, 37, 37, 37 } },    /* DP */
-        { { 43,  49, 107, 103, 103, 103, 103, 103 }, { 38, 52, 113, 141, 141, 141, 141, 141 }, { 232, 89, 100, 76, 76, 76, 76, 76 } } },  /* SP */
+      { { {  25,  50,  69, 169, 169, 169, 169, 169 }, {  37,  98,  78,  39,  39,  39,  39,  39 }, { 100,  81,  55,  37,  37,  37,  37,  37 } },   /* DP */
+        { {  43,  49, 107, 103, 103, 103, 103, 103 }, {  38,  52, 113, 141, 141, 141, 141, 141 }, { 232,  89, 100,  76,  76,  76,  76,  76 } } }, /* SP */
       /* knl */
-      { { { 168, 130, 131, 110, 110, 110, 110, 110 }, { 10, 28, 20, 24, 24, 24, 24, 24 }, {  39,  43, 40, 63, 63, 63, 63, 63 } },         /* DP */
-        { {  69, 152, 149, 172, 172, 172, 172, 172 }, { 11, 14, 18, 28, 28, 28, 28, 28 }, { 100, 103, 61, 63, 63, 63, 63, 63 } } },       /* SP */
+      { { { 168, 130, 131, 110, 110, 110, 110, 110 }, {  10,  28,  20,  24,  24,  24,  24,  24 }, {  39,  43,  40,  63,  63,  63,  63,  63 } },   /* DP */
+        { {  69, 152, 149, 172, 172, 172, 172, 172 }, {  11,  14,  18,  28,  28,  28,  28,  28 }, { 100, 103,  61,  63,  63,  63,  63,  63 } } }, /* SP */
       /* skx */
-      { { { 33,  34,  62, 249, 249, 249, 249, 249 }, { 53, 134, 242, 129, 129, 129, 129, 129 }, { 100, 32, 174, 53, 53, 53, 53, 53 } },   /* DP */
-        { { 41, 119, 102, 106, 106, 106, 106, 106 }, { 32,  65, 108, 130, 130, 130, 130, 130 }, {  73, 90,  86, 89, 89, 89, 89, 89 } } }  /* SP */
+      { { {  34,  52,  57, 249, 249, 249, 249, 249 }, {  31,  86, 115, 129, 129, 129, 129, 129 }, { 164, 101, 102,  53,  53,  53,  53,  53 } },   /* DP */
+        { {  41, 119, 102, 106, 106, 106, 106, 106 }, {  32,  65, 108, 130, 130, 130, 130, 130 }, {  73,  90,  86,  89,  89,  89,  89,  89 } } }  /* SP */
     };
     const char* env[3];
     int i;
     env[0] = getenv("LIBXSMM_M"); env[1] = getenv("LIBXSMM_N"); env[2] = getenv("LIBXSMM_K");
-    for (i = 0; i < 4; ++i) {
+    for (i = 0; i < 8; ++i) {
       /* environment-defined tile sizes apply for DP and SP */
       libxsmm_gemm_tile[0/*DP*/][0/*M*/][i] = libxsmm_gemm_tile[1/*SP*/][0/*M*/][i] = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
         LIBXSMM_MIN((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(0 != env[0] ? atoi(env[0]) : 0), LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
@@ -135,11 +135,11 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
 
   if (0 == (LIBXSMM_GEMM_FLAG_F32PREC & precision)) {
     LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "%g", 0 != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
-    LIBXSMM_SNPRINTF(string_b, sizeof(string_b), "%g", 0 != beta ? *((const double*)beta) : LIBXSMM_BETA);
+    LIBXSMM_SNPRINTF(string_b, sizeof(string_b), "%g", 0 != beta  ? *((const double*)beta)  : LIBXSMM_BETA);
   }
   else {
     LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "%g", 0 != alpha ? *((const float*)alpha) : LIBXSMM_ALPHA);
-    LIBXSMM_SNPRINTF(string_b, sizeof(string_b), "%g", 0 != beta ? *((const float*)beta) : LIBXSMM_BETA);
+    LIBXSMM_SNPRINTF(string_b, sizeof(string_b), "%g", 0 != beta  ? *((const float*)beta)  : LIBXSMM_BETA);
   }
 
   if (0 != ostream) { /* print information about GEMM call */
