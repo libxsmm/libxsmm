@@ -87,10 +87,10 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
       { { {  25,  50,  69, 169, 169, 169, 169, 169 }, {  37,  98,  78,  39,  39,  39,  39,  39 }, { 100,  81,  55,  37,  37,  37,  37,  37 } },   /* DP */
         { {  43,  49, 107, 103, 103, 103, 103, 103 }, {  38,  52, 113, 141, 141, 141, 141, 141 }, { 232,  89, 100,  76,  76,  76,  76,  76 } } }, /* SP */
       /* knl */
-      { { { 168, 130, 131, 110, 110, 110, 110, 110 }, {  10,  28,  20,  24,  24,  24,  24,  24 }, {  39,  43,  40,  63,  63,  63,  63,  63 } },   /* DP */
+      { { { 168, 130, 131, 110, 110, 110, 110, 145 }, {  10,  28,  20,  24,  24,  24,  24,  10 }, {  39,  43,  40,  63,  63,  63,  63,  67 } },   /* DP */
         { {  69, 152, 149, 172, 172, 172, 172, 172 }, {  11,  14,  18,  28,  28,  28,  28,  28 }, { 100, 103,  61,  63,  63,  63,  63,  63 } } }, /* SP */
       /* skx */
-      { { {  34,  52,  57, 249, 249, 249, 249, 249 }, {  31,  86, 115, 129, 129, 129, 129, 129 }, { 164, 101, 102,  53,  53,  53,  53,  53 } },   /* DP */
+      { { {  39,  52,  57, 201, 201, 201, 201, 201 }, {  26,  86, 115,  14,  14,  14,  14,  14 }, { 256, 101, 102,  53,  53,  53,  53,  53 } },   /* DP */
         { {  41, 119, 102, 106, 106, 106, 106, 106 }, {  32,  65, 108, 130, 130, 130, 130, 130 }, {  73,  90,  86,  89,  89,  89,  89,  89 } } }  /* SP */
     };
     const char* env[3];
@@ -293,7 +293,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
 #else
   LIBXSMM_INIT
   { /* tiled GEMM */
-    const int index = LIBXSMM_MIN((int)((1ULL * (*m) * (*n) * (*k)) >> 30), 7);
+    const int index = LIBXSMM_MIN(libxsmm_icbrt(1ULL * (*m) * (*n) * (*k)) >> 10, 7);
     LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
     tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/][index];
     tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/][index];
@@ -360,7 +360,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 #else
   LIBXSMM_INIT
   { /* tiled GEMM */
-    const int index = LIBXSMM_MIN((int)((1ULL * (*m) * (*n) * (*k)) >> 30), 7);
+    const int index = LIBXSMM_MIN(libxsmm_icbrt(1ULL * (*m) * (*n) * (*k)) >> 10, 7);
     LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
     tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/][index];
     tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/][index];
