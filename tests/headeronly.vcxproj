@@ -30,6 +30,11 @@
     <ClCompile Include="headeronly.c" />
     <ClCompile Include="headeronly_aux.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="README.md" />
+    <None Include="test.sh" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>headeronly</ProjectName>
     <ProjectGuid>{88C3F7F5-A3AA-4974-B928-5EE69BC17C31}</ProjectGuid>

@@ -25,17 +25,29 @@ rm -rf opentuner.db
 The script tunes the geometric mean of the performance for each of the requested triplets. However, the optimizer not only maximizes the performance but also minimizes the value of *M&#160;\*&#160;N&#160;\*&#160;K* (which also helps to prune duplicated results due to an additional preference). As a limitation of the current implementation, the multiplication kernels are not accompanied by copy-kernels (and not accompanied by transpose kernels). This negatively impacts performance on power-of-two matrix shapes (POT) due to trashing the LLC. However, it has been found, that tuning for POT shapes likely achieves superior performance when compared to tuning for non-POT shapes of the same range.
 
 ```
-rm -rf ./opentuner.db
-./xgemm_opentuner.py --no-dups 256,512,768
+rm -rf opentuner.db
+./xgemm_opentuner.py --no-dups 192,256,320,512,768
 
-rm -rf ./opentuner.db
+rm -rf opentuner.db
 ./xgemm_opentuner.py --no-dups 1024,1280,1536,1792
 
-rm -rf ./opentuner.db
+rm -rf opentuner.db
 ./xgemm_opentuner.py --no-dups 2048,2304,2560,2816
 
-rm -rf ./opentuner.db
+rm -rf opentuner.db
 ./xgemm_opentuner.py --no-dups 3072,3328,3584,3840
+
+rm -rf opentuner.db
+./xgemm_opentuner.py --no-dups 4096,4416,4736
+
+rm -rf opentuner.db
+./xgemm_opentuner.py --no-dups 5120,5440,5760
+
+rm -rf opentuner.db
+./xgemm_opentuner.py --no-dups 6144,6464,6784
+
+rm -rf opentuner.db
+./xgemm_opentuner.py --no-dups 7168,7488,7808
 ```
 
-Above, the series of matrix multiplications from 256-4K is separately tuned in four ranges. The tuning script uses the environment variables `LIBXSMM_M`, `LIBXSMM_N`, and `LIBXSMM_K` which are internal to LIBXSMM. These variables are used to request a specific tiling-scheme within LIBXSMM's `libxsmm_?gemm_omp` routines.
+Above, the series of matrix multiplications from 192-8K is separately tuned in eight ranges. The tuning script uses the environment variables `LIBXSMM_M`, `LIBXSMM_N`, and `LIBXSMM_K` which are internal to LIBXSMM. These variables are used to request a specific tiling-scheme within LIBXSMM's `libxsmm_?gemm_omp` routines.

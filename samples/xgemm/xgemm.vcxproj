@@ -31,7 +31,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
+    <None Include="README.md" />
     <None Include="xgemm.sh" />
+    <None Include="xgemm_opentuner.py" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>xgemm</ProjectName>

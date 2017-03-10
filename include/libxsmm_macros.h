@@ -468,6 +468,16 @@
 # pragma offload_attribute(pop)
 #endif
 
+/* Implementation is taken from an anonymous GiHub Gist. */
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_icbrt(unsigned long long n) {
+  unsigned long long b; unsigned int y = 0; int s;
+  for (s = 63; s >= 0; s -= 3) {
+    y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
+    if (b <= (n >> s)) { n -= b << s; ++y; }
+  }
+  return y;
+}
+
 /** Similar to LIBXSMM_UNUSED, this helper "sinks" multiple arguments. */
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE int libxsmm_sink(int rvalue, ...) { return rvalue; }
 
