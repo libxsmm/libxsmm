@@ -29,6 +29,11 @@
   <ItemGroup>
     <ClCompile Include="blas.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="README.md" />
+    <None Include="test.sh" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>blas</ProjectName>
     <ProjectGuid>{CDCBFA7A-54BC-4D49-B57A-8B9E9A107320}</ProjectGuid>
