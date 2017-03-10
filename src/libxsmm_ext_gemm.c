@@ -107,7 +107,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
   }
 #endif
   LIBXSMM_INIT
-  { const int index = LIBXSMM_MIN((int)((1ULL * (*m) * (*n) * (*k)) >> 30), 3);
+  { const int index = LIBXSMM_MIN((int)((1ULL * (*m) * (*n) * (*k)) >> 30), 7);
     tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/][index];
     tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/][index];
     tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/][index];
@@ -183,7 +183,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
   }
 #endif
   LIBXSMM_INIT
-  { const int index = LIBXSMM_MIN((int)((1ULL * (*m) * (*n) * (*k)) >> 30), 3);
+  { const int index = LIBXSMM_MIN((int)((1ULL * (*m) * (*n) * (*k)) >> 30), 7);
     tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/][index];
     tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/][index];
     tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/][index];
