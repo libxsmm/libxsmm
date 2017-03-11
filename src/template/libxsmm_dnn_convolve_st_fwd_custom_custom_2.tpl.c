@@ -34,7 +34,7 @@ int img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki, i;
 const int blocksofm = handle->blocksofm, ofh = handle->ofh, ofw = handle->ofw, u = handle->desc.u, v = handle->desc.v, pad_h = handle->desc.pad_h, pad_w = handle->desc.pad_w, blocksifm = handle->blocksifm, R = handle->desc.R, S = handle->desc.S, ifhp = handle->ifhp, ifwp = handle->ifwp, nbImg = handle->nbImg, ifmblock = handle->ifmblock, ofhp = handle->ofhp, ofwp = handle->ofwp, ofmblock = handle->ofmblock, nBImg = handle->nBImg;
 const int ifh = handle->desc.H;
 const int ifw = handle->desc.W;
-const int ltid = tid-start_thread;
+const int ltid = tid-0;
 /* number of tasks that could be run in parallel */
 const int work = handle->nBImg*handle->blocksofm;
 /* compute chunck size */
@@ -48,10 +48,10 @@ LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, ((element_input_type*)ha
 LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
-#if defined(_OPENMP)
-#pragma omp for firstprivate(i, output_t, input_t, filter_t, img1, ofm1, oj, ofh, oi, ofw, ij, ii, u, v, pad_h, pad_w, ifm1, blocksofm, nBImg blocksifm, kj, R, ki, S, ifhp, ifwp, ofhp, ofwp, nbImg, ifmblock, ofmblock)
-#endif
-for (i = 0; i < blocksofm * nBImg; i++) {
+//#if defined(_OPENMP)
+//#pragma omp for firstprivate(i, output_t, input_t, filter_t, img1, ofm1, oj, ofh, oi, ofw, ij, ii, u, v, pad_h, pad_w, ifm1, blocksofm, nBImg blocksifm, kj, R, ki, S, ifhp, ifwp, ofhp, ofwp, nbImg, ifmblock, ofmblock)
+//#endif
+for (i =thr_begin; i < thr_end; i++) {
   img1 = i/blocksofm;
   ofm1 = i%blocksofm;
   for (oj = 0; oj < ofh; ++oj) {
