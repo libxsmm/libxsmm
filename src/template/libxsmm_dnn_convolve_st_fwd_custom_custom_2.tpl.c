@@ -49,9 +49,9 @@ LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (element_filter_type*)h
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
 #if defined(_OPENMP)
-#pragma omp parallel for private(img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki)
+#pragma omp parallel for firstprivate(img1, ofm1, oj, ofh, oi, ofw, ij, ii, u, v, pad_h, pad_w, ifm1, blocksofm, nBImg, blocksifm, kj, R, ki, S, ifhp, ifwp, ofhp, ofwp, nbImg, ifmblock, ofmblock)
 #endif
-for (i = 0; i < blocksofm * nBImg; i++) {
+for (i = 0; i < blocksofm*nBImg; i++) {
   img1 = i/blocksofm;
   ofm1 = i%blocksofm;
   for (oj = 0; oj < ofh; ++oj) {
