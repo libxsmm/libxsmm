@@ -63,9 +63,9 @@ for (i =thr_begin; i < thr_end; i++) {
           if(ij+kj < 0 || ij+kj >= ifh) continue;
           for (ki = 0; ki < S; ++ki) {
             if(ii+ki < 0 || ii+ki >= ifw) continue;
-            sixteen( &LIBXSMM_VLA_ACCESS(6, filter_t, ofm1, ifm1, kj,      ki,      0, 0, blocksifm, R, S, 16, 16) /* A */,
-                    &LIBXSMM_VLA_ACCESS(6,  input_t, img1, ifm1, ij + kj, ii + ki, 0, 0, blocksifm, ifhp, ifwp, 16, 16) /* B */,
-                    &LIBXSMM_VLA_ACCESS(6, output_t, img1, ofm1, oj,      oi,      0, 0, blocksofm, ofhp, ofwp, 16, 16) /* C */  );
+            sixteen( &LIBXSMM_VLA_ACCESS(6, filter_t, ofm1, ifm1, kj,      ki,      0, 0, blocksifm, R, S, ifmblock, ofmblock) /* A */,
+                    &LIBXSMM_VLA_ACCESS(6,  input_t, img1, ifm1, ij + kj, ii + ki, 0, 0, blocksifm, ifhp, ifwp, nbImg, ifmblock) /* B */,
+                    &LIBXSMM_VLA_ACCESS(6, output_t, img1, ofm1, oj,      oi,      0, 0, blocksofm, ofhp, ofwp, nbImg, ofmblock) /* C */  );
           }
         }
       }
