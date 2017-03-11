@@ -35,7 +35,7 @@ const int ifh = handle->desc.H;
 const int ifw = handle->desc.W;
 const int ltid = tid-start_thread;
 /* number of tasks that could be run in parallel */
-const int work = handle->nBImg*handle->blocksofm*handle->ofh*handle->ofw;
+const int work = handle->nBImg*handle->blocksofm;
 /* compute chunck size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
@@ -48,20 +48,22 @@ LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (element_filter_type*)h
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
 for (i = thr_begin; i < thr_end; ++i) {
-  img1 = i/(handle->blocksofm * handle->ofh * handle->ofw);
-  ofm1 = (i%(handle->blocksofm * handle->ofh * handle->ofw))/(handle->ofh * handle->ofw);
-  oj = ((i%(handle->blocksofm * handle->ofh * handle->ofw))%(handle->ofh * handle->ofw))/handle->ofw;
-  oi = ((i%(handle->blocksofm * handle->ofh * handle->ofw))%(handle->ofh * handle->ofw))%handle->ofw;
-  ij = oj * handle->desc.u - handle->desc.pad_h;
-  ii = oi * handle->desc.v - handle->desc.pad_w;
-  for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-    for (kj = 0; kj < handle->desc.R; ++kj) {
-      if(ij+kj < 0 || ij+kj >= ifh) continue;
-      for (ki = 0; ki < handle->desc.S; ++ki) {
-        if(ii+ki < 0 || ii+ki >= ifw) continue;
-        sixteen( &LIBXSMM_VLA_ACCESS(6, filter_t, ofm1, ifm1, kj,      ki,      0, 0, handle->blocksifm, handle->desc.R,   handle->desc.S,   handle->ifmblock, handle->ofmblock) /* A */,
-                &LIBXSMM_VLA_ACCESS(6,  input_t, img1, ifm1, ij + kj, ii + ki, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock) /* B */,
-                &LIBXSMM_VLA_ACCESS(6, output_t, img1, ofm1, oj,      oi,      0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->nbImg, handle->ofmblock) /* C */  );
+  img1 = i/handle->blocksofm;
+  ofm1 = i%handle->blocksofm;
+  for (oj = 0; oj < handle->ofh; ++oj) {
+    for (oi = 0; oi < handle->ofw; ++oi) {
+      ij = oj * handle->desc.u - handle->desc.pad_h;
+      ii = oi * handle->desc.v - handle->desc.pad_w;
+      for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+        for (kj = 0; kj < handle->desc.R; ++kj) {
+          if(ij+kj < 0 || ij+kj >= ifh) continue;
+          for (ki = 0; ki < handle->desc.S; ++ki) {
+            if(ii+ki < 0 || ii+ki >= ifw) continue;
+            sixteen( &LIBXSMM_VLA_ACCESS(6, filter_t, ofm1, ifm1, kj,      ki,      0, 0, handle->blocksifm, handle->desc.R,   handle->desc.S,   handle->ifmblock, handle->ofmblock) /* A */,
+                    &LIBXSMM_VLA_ACCESS(6,  input_t, img1, ifm1, ij + kj, ii + ki, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock) /* B */,
+                    &LIBXSMM_VLA_ACCESS(6, output_t, img1, ofm1, oj,      oi,      0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->nbImg, handle->ofmblock) /* C */  );
+          }
+        }
       }
     }
   }
