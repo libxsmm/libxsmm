@@ -34,7 +34,7 @@ int img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki, i;
 const int blocksofm = handle->blocksofm, ofh = handle->ofh, ofw = handle->ofw, u = handle->desc.u, v = handle->desc.v, pad_h = handle->desc.pad_h, pad_w = handle->desc.pad_w, blocksifm = handle->blocksifm, R = handle->desc.R, S = handle->desc.S, ifhp = handle->ifhp, ifwp = handle->ifwp, nbImg = handle->nbImg, ifmblock = handle->ifmblock, ofhp = handle->ofhp, ofwp = handle->ofwp, ofmblock = handle->ofmblock, nBImg = handle->nBImg;
 const int ifh = handle->desc.H;
 const int ifw = handle->desc.W;
-const int ltid = tid-start_thread;
+const int ltid = tid-0;
 /* number of tasks that could be run in parallel */
 const int work = handle->nBImg*handle->blocksofm;
 /* compute chunck size */
