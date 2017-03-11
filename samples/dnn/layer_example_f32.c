@@ -963,15 +963,15 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_buffer( libxsmm_input ) );
       /* run LIBXSMM convolutions */
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_transpose_filter( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER ) );
-//#if defined(_OPENMP)
-//# pragma omp parallel
-//#endif
+#if defined(_OPENMP)
+# pragma omp parallel
+#endif
       {
-//#if defined(_OPENMP)
-//        const int tid = omp_get_thread_num();
-//#else
+#if defined(_OPENMP)
+        const int tid = omp_get_thread_num();
+#else
         const int tid = 0;
-//#endif
+#endif
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWD, 0, tid ) );
       }
       /* copy input data into NCHW storage in user code */
