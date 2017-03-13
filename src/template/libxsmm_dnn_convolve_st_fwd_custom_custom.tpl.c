@@ -28,6 +28,12 @@
  ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas, Hans Pabst (Intel Corp.)
  ******************************************************************************/
+
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
+
+
 if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
 #include "libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
 } else if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
