@@ -273,8 +273,11 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sotrans
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sitrans
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dotrans
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ditrans
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans
         INTERFACE
           ! Initialize the library; pay for setup cost at a specific point.
           SUBROUTINE libxsmm_init() BIND(C)
@@ -374,6 +377,31 @@
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n
             REAL(C_DOUBLE), INTENT(OUT) :: output(ldo,*)
             REAL(C_DOUBLE), INTENT(IN) :: input(ldi,*)
+          END SUBROUTINE
+
+          ! Transpose a matrix (in-place form).
+          PURE SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)    &
+     &    BIND(C, NAME="libxsmmf_itrans")
+            IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, ld
+            TYPE(C_PTR), INTENT(IN), VALUE :: matrix
+            INTEGER(C_INT), INTENT(IN), VALUE :: typesize
+          END SUBROUTINE
+
+          ! Transpose a matrix (in-place form, single-precision).
+          PURE SUBROUTINE libxsmm_sitrans(matrix, m, n, ld)             &
+     &    BIND(C, NAME="libxsmmf_sitrans")
+            IMPORT LIBXSMM_BLASINT_KIND, C_FLOAT
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, ld
+            REAL(C_FLOAT), INTENT(INOUT) :: matrix(ld,*)
+          END SUBROUTINE
+
+          ! Transpose a matrix (in-place form, double-precision).
+          PURE SUBROUTINE libxsmm_ditrans(matrix, m, n, ld)             &
+     &    BIND(C, NAME="libxsmmf_ditrans")
+            IMPORT LIBXSMM_BLASINT_KIND, C_DOUBLE
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, ld
+            REAL(C_DOUBLE), INTENT(INOUT) :: matrix(ld,*)
           END SUBROUTINE
 
           ! Impure function which returns the current clock tick of a
