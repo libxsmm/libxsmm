@@ -1022,7 +1022,7 @@
 
         ! Transpose a matrix (in-place form).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans
-        PURE SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)      &
+        PURE SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n, ld
           TYPE(C_PTR), INTENT(IN), VALUE :: matrix
