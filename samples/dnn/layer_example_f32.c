@@ -668,7 +668,7 @@ int main(int argc, char* argv[])
       printf("#   Correctness - FWD (custom-Storage)   #\n");
       printf("##########################################\n");
       /* run LIBXSMM convolutions */
-      if (libxsmm_handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
+      if (libxsmm_handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
 #if defined(_OPENMP)
 # pragma omp parallel
 #endif
@@ -769,7 +769,7 @@ int main(int argc, char* argv[])
       /* run LIBXSMM convolution for performance */
       l_start = libxsmm_timer_tick();
       for (i = 0; i < iters; ++i) {
-        if (libxsmm_handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
+        if (libxsmm_handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
 #if defined(_OPENMP)
 #   pragma omp parallel
 #endif
