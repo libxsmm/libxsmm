@@ -44,7 +44,7 @@ const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 element_output_type *local_cpy_1 = (element_output_type*) handle->reg_output->data;
 const element_input_type *local_cpy_2 = (const element_input_type*) handle->reg_input->data;
-const element_filter_type *local_cpy_3 = (const element_filter_type*) handle->reg_output->data;
+const element_filter_type *local_cpy_3 = (const element_filter_type*) handle->reg_filter->data;
 
 
 LIBXSMM_VLA_DECL(6, element_output_type, output_t, local_cpy_1 + (handle->desc.pad_w_out * handle->ofwp + handle->desc.pad_h_out), handle->blocksofm, handle->ofhp, handle->ofwp, handle->nbImg, handle->ofmblock);
