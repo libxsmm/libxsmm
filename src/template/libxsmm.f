@@ -979,7 +979,7 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
-          TYPE(C_PTR), INTENT(IN), VALUE :: output, input
+          TYPE(C_PTR), INTENT(IN) :: output, input
           INTEGER(C_INT), INTENT(IN) :: typesize
           INTERFACE
             PURE SUBROUTINE internal_otrans(output, input, typesize,    &
@@ -1025,7 +1025,7 @@
         PURE SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n, ld
-          TYPE(C_PTR), INTENT(IN), VALUE :: matrix
+          TYPE(C_PTR), INTENT(IN) :: matrix
           INTEGER(C_INT), INTENT(IN) :: typesize
           INTERFACE
             PURE SUBROUTINE internal_itrans(matrix, typesize, m, n, ld) &
