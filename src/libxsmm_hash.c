@@ -102,7 +102,7 @@
 # define LIBXSMM_HASH(FN64, FN32, FN16, FN8, DATA, SIZE, SEED, N) { \
     const unsigned char *begin = (const unsigned char*)(DATA); \
     const unsigned char *const endb = begin + (SIZE); \
-    const unsigned char *const enda = LIBXSMM_ALIGN2(begin, LIBXSMM_HASH_ALIGNMENT); \
+    const unsigned char *const enda = LIBXSMM_ALIGN(begin, LIBXSMM_HASH_ALIGNMENT); \
     if ((SIZE) > (unsigned int)(endb - enda)) { \
       LIBXSMM_HASH_U64(FN64, SEED, N, begin, enda); \
       LIBXSMM_HASH_U32(FN32, SEED, N, begin, enda); \
@@ -119,7 +119,7 @@
 # define LIBXSMM_HASH(FN64, FN32, FN16, FN8, DATA, SIZE, SEED, N) { \
     const unsigned char *begin = (const unsigned char*)(DATA); \
     const unsigned char *const endb = begin + (SIZE); \
-    const unsigned char *const enda = LIBXSMM_ALIGN2(begin, LIBXSMM_HASH_ALIGNMENT); \
+    const unsigned char *const enda = LIBXSMM_ALIGN(begin, LIBXSMM_HASH_ALIGNMENT); \
     if ((SIZE) > (unsigned int)(endb - enda)) { \
       LIBXSMM_HASH_U32(FN32, SEED, N, begin, enda); \
       LIBXSMM_HASH_U16(FN16, SEED, N, begin, enda); \

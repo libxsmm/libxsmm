@@ -205,8 +205,8 @@ int main(int argc, char* argv[])
       raii(int asize_, int bsize_, int csize_): a(new T[asize_]), b(new T[bsize_]), c(new T[csize_]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, csize);
-    T *const a = LIBXSMM_ALIGN2(buffer.a, LIBXSMM_ALIGNMENT);
-    T *const b = LIBXSMM_ALIGN2(buffer.b, LIBXSMM_ALIGNMENT);
+    T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
+    T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
     T * /*const*/ c = buffer.c; // no alignment, but thread-local array will be aligned
 
 #if defined(_OPENMP)
