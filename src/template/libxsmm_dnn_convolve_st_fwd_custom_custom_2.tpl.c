@@ -32,14 +32,14 @@
 /* loop counters */
 int img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki, i;
 const int blocksofm = handle->blocksofm, ofh = handle->ofh, ofw = handle->ofw, u = handle->desc.u, v = handle->desc.v, pad_h = handle->desc.pad_h, pad_w = handle->desc.pad_w, blocksifm = handle->blocksifm, R = handle->desc.R, S = handle->desc.S, ifhp = handle->ifhp, ifwp = handle->ifwp, nbImg = handle->nbImg, ifmblock = handle->ifmblock, ofhp = handle->ofhp, ofwp = handle->ofwp, ofmblock = handle->ofmblock, nBImg = handle->nBImg, ifh = handle->desc.H, ifw = handle->desc.W;
-const int ltid = tid-start_thread;
+//const int ltid = tid-start_thread;
 /* number of tasks that could be run in parallel */
-const int work = nBImg * blocksofm;
+//const int work = nBImg * blocksofm;
 /* compute chunck size */
-const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
+//const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
-const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
-const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+//const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+//const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 LIBXSMM_VLA_DECL(6, element_output_type, output_t, ((element_output_type*) handle->reg_output->data) + (handle->desc.pad_w_out * handle->ofwp + handle->desc.pad_h_out), blocksofm, ofhp, ofwp, nbImg, ofmblock);
 LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, ((const element_input_type*) handle->reg_input->data) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), blocksifm, ifhp, ifwp, nbImg, ifmblock);
@@ -49,7 +49,7 @@ libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 //for (i = thr_begin; i < thr_end; i++) {
 //  img1 = i/blocksofm;
 //  ofm1 = i%blocksofm;
-# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki) firstprivate(sixteen)
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki)
 for (img1 = 0; img1 < nBImg; ++img1) {
   for (ofm1 = 0; ofm1 < blocksofm; ++ofm1) {
   for (oj = 0; oj < ofh; ++oj) {
