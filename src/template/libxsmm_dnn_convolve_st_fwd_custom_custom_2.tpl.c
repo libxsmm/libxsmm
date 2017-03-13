@@ -31,25 +31,19 @@
 
 /* loop counters */
 int img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki, i;
-const int blocksofm = handle->blocksofm, ofh = handle->ofh, ofw = handle->ofw, u = handle->desc.u, v = handle->desc.v, pad_h = handle->desc.pad_h, pad_w = handle->desc.pad_w, blocksifm = handle->blocksifm, R = handle->desc.R, S = handle->desc.S, ifhp = handle->ifhp, ifwp = handle->ifwp, nbImg = handle->nbImg, ifmblock = handle->ifmblock, ofhp = handle->ofhp, ofwp = handle->ofwp, ofmblock = handle->ofmblock;
-const int ifh = handle->desc.H;
-const int ifw = handle->desc.W;
+const int blocksofm = handle->blocksofm, ofh = handle->ofh, ofw = handle->ofw, u = handle->desc.u, v = handle->desc.v, pad_h = handle->desc.pad_h, pad_w = handle->desc.pad_w, blocksifm = handle->blocksifm, R = handle->desc.R, S = handle->desc.S, ifhp = handle->ifhp, ifwp = handle->ifwp, nbImg = handle->nbImg, ifmblock = handle->ifmblock, ofhp = handle->ofhp, ofwp = handle->ofwp, ofmblock = handle->ofmblock, nBImg = handle->nBImg, ifh = handle->desc.H, ifw = handle->desc.W;
 const int ltid = tid-start_thread;
 /* number of tasks that could be run in parallel */
-const int work = handle->nBImg*handle->blocksofm;
+const int work = nBImg * blocksofm;
 /* compute chunck size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-element_output_type *local_cpy_1 = (element_output_type*) handle->reg_output->data;
-const element_input_type *local_cpy_2 = (const element_input_type*) handle->reg_input->data;
-const element_filter_type *local_cpy_3 = (const element_filter_type*) handle->reg_filter->data;
 
-
-LIBXSMM_VLA_DECL(6, element_output_type, output_t, local_cpy_1 + (handle->desc.pad_w_out * handle->ofwp + handle->desc.pad_h_out), handle->blocksofm, handle->ofhp, handle->ofwp, handle->nbImg, handle->ofmblock);
-LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, local_cpy_2 + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), handle->blocksifm, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock);
-LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, local_cpy_3, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+LIBXSMM_VLA_DECL(6, element_output_type, output_t, ((element_output_type*) handle->reg_output->data) + (handle->desc.pad_w_out * handle->ofwp + handle->desc.pad_h_out), blocksofm, ofhp, ofwp, nbImg, ofmblock);
+LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, ((const element_input_type*) handle->reg_input->data) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), blocksifm, ifhp, ifwp, nbImg, ifmblock);
+LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (const element_filter_type*) handle->reg_filter->data, blocksifm, R, S, ifmblock, ofmblock);
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
 for (i = thr_begin; i < thr_end; i++) {
