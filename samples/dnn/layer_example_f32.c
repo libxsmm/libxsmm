@@ -34,6 +34,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include "libxsmm_dnn_handle.h"
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
