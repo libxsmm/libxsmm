@@ -31,12 +31,12 @@
 
 /* loop counters */
 int img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki, i;
-const int blocksofm = handle->blocksofm, ofh = handle->ofh, ofw = handle->ofw, u = handle->desc.u, v = handle->desc.v, pad_h = handle->desc.pad_h, pad_w = handle->desc.pad_w, blocksifm = handle->blocksifm, R = handle->desc.R, S = handle->desc.S, ifhp = handle->ifhp, ifwp = handle->ifwp, nbImg = handle->nbImg, ifmblock = handle->ifmblock, ofhp = handle->ofhp, ofwp = handle->ofwp, ofmblock = handle->ofmblock;
+const int blocksofm = handle->blocksofm, ofh = handle->ofh, ofw = handle->ofw, u = handle->desc.u, v = handle->desc.v, pad_h = handle->desc.pad_h, pad_w = handle->desc.pad_w, blocksifm = handle->blocksifm, R = handle->desc.R, S = handle->desc.S, ifhp = handle->ifhp, ifwp = handle->ifwp, nbImg = handle->nbImg, ifmblock = handle->ifmblock, ofhp = handle->ofhp, ofwp = handle->ofwp, ofmblock = handle->ofmblock, nBImg = handle->nBImg;
 const int ifh = handle->desc.H;
 const int ifw = handle->desc.W;
 const int ltid = tid-start_thread;
 /* number of tasks that could be run in parallel */
-const int work = handle->nBImg*handle->blocksofm;
+const int work = nBImg * blocksofm;
 /* compute chunck size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
@@ -48,7 +48,11 @@ LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, ((element_input_type*)ha
 LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
-for (i = thr_begin; i < thr_end; i++) {
+//for (i = thr_begin; i < thr_end; i++) {
+#if defined(_OPENMP)
+#pragma omp parallel for private(img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki)
+#endif
+for (i = 0; i < blocksofm * nBImg; i++) {
   img1 = i/blocksofm;
   ofm1 = i%blocksofm;
   for (oj = 0; oj < ofh; ++oj) {
