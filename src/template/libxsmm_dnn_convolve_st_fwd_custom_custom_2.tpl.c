@@ -60,8 +60,8 @@ for (i = 0; i < blocksofm * nBImg; i++) {
   ofm1 = i%blocksofm;
 #if defined(_OPENMP)
   debug_tid = omp_get_thread_num();
-#endif
   if (i == debug_tid) printf("Thread %d came here....\n", debug_tid);
+#endif
 
   for (oj = 0; oj < ofh; ++oj) {
     for (oi = 0; oi < ofw; ++oi) {
