@@ -622,7 +622,7 @@ int main(int argc, char* argv[])
     conv_desc.pad_h_out = pad_h_out;
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
-    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
+    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
@@ -668,15 +668,15 @@ int main(int argc, char* argv[])
       printf("#   Correctness - FWD (custom-Storage)   #\n");
       printf("##########################################\n");
       /* run LIBXSMM convolutions */
-#if defined(_OPENMP)
-# pragma omp parallel
-#endif
+//#if defined(_OPENMP)
+//# pragma omp parallel
+//#endif
       {
-#if defined(_OPENMP)
-        const int tid = omp_get_thread_num();
-#else
+//#if defined(_OPENMP)
+//const int tid = omp_get_thread_num();
+//#else
         const int tid = 0;
-#endif
+//#endif
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
       }
       /* copy out data */
@@ -764,15 +764,15 @@ int main(int argc, char* argv[])
       /* run LIBXSMM convolution for performance */
       l_start = libxsmm_timer_tick();
       for (i = 0; i < iters; ++i) {
-#if defined(_OPENMP)
-#   pragma omp parallel
-#endif
+//#if defined(_OPENMP)
+//#   pragma omp parallel
+//#endif
         {
-#if defined(_OPENMP)
-          const int tid = omp_get_thread_num();
-#else
+//#if defined(_OPENMP)
+//          const int tid = omp_get_thread_num();
+//#else
           const int tid = 0;
-#endif
+//#endif
           libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
         }
       }
@@ -894,7 +894,7 @@ int main(int argc, char* argv[])
     conv_desc.pad_h_out = pad_h_out;
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
-    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
+    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NHWC;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_RSCK;
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
@@ -1161,7 +1161,7 @@ int main(int argc, char* argv[])
     conv_desc.pad_h_out = pad_h_out;
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
-    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
+    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NHWC;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
