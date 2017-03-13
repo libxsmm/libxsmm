@@ -28,9 +28,6 @@
  ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas, Hans Pabst (Intel Corp.)
  ******************************************************************************/
-#if defined(_OPENMP)
-# include <omp.h>
-#endif
 
 /* loop counters */
 int img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki, i;
@@ -52,10 +49,7 @@ LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (element_filter_type*)h
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
 printf("Came here....\n");
-//for (i = thr_begin; i < thr_end; i++) {
-//#if defined(_OPENMP)
-#pragma omp parallel for private(i, img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki)
-//#endif
+# pragma omp parallel for private(i, img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki)
 for (i = 0; i < blocksofm * nBImg; i++) {
   img1 = i/blocksofm;
   ofm1 = i%blocksofm;
