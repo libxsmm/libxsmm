@@ -45,19 +45,24 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+int debug_tid;
 
 LIBXSMM_VLA_DECL(6, element_output_type, output_t, ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_w_out * handle->ofwp + handle->desc.pad_h_out), handle->blocksofm, handle->ofhp, handle->ofwp, handle->nbImg, handle->ofmblock);
 LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), handle->blocksifm, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock);
 LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
-printf("Came here....\n");
 #if defined(_OPENMP)
-# pragma omp parallel for private(i, img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki)
+# pragma omp parallel for private(i, img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki) num_threads(64)
 #endif
 for (i = 0; i < blocksofm * nBImg; i++) {
   img1 = i/blocksofm;
   ofm1 = i%blocksofm;
+#if defined(_OPENMP)
+  debug_tid = omp_get_thread_num();
+#endif
+  if (i == debug_tid) printf("Thread %d came here....\n", debug_tid);
+
   for (oj = 0; oj < ofh; ++oj) {
     for (oi = 0; oi < ofw; ++oi) {
       ij = oj * u - pad_h;
