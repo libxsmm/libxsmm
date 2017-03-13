@@ -28,6 +28,9 @@
  ******************************************************************************/
 /* Alexander Heinecke, Evangelos Georganas, Hans Pabst (Intel Corp.)
  ******************************************************************************/
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 
 /* loop counters */
 int img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki, i;
