@@ -49,12 +49,11 @@ libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 //for (i = thr_begin; i < thr_end; i++) {
 //  img1 = i/blocksofm;
 //  ofm1 = i%blocksofm;
-# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki) num_threads(64)
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki)
 for (img1 = 0; img1 < nBImg; ++img1) {
   for (ofm1 = 0; ofm1 < blocksofm; ++ofm1) {
   for (oj = 0; oj < ofh; ++oj) {
     for (oi = 0; oi < ofw; ++oi) {
-      printf("I am thread %d\n", omp_get_thread_num());
       ij = oj * u - pad_h;
       ii = oi * v - pad_w;
       for (ifm1 = 0; ifm1 < blocksifm; ++ifm1) {
