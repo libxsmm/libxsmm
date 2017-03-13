@@ -50,9 +50,9 @@ libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
 printf("Came here....\n");
 //for (i = thr_begin; i < thr_end; i++) {
-//#if defined(_OPENMP)
-#pragma omp parallel for private(i, img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki)
-//#endif
+#if defined(_OPENMP)
+#pragma omp parallel for private(i, img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki) num_threads(handle->desc.threads)
+#endif
 for (i = 0; i < blocksofm * nBImg; i++) {
   img1 = i/blocksofm;
   ofm1 = i%blocksofm;
