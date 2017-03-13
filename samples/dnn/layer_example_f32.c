@@ -669,7 +669,15 @@ int main(int argc, char* argv[])
       printf("#   Correctness - FWD (custom-Storage)   #\n");
       printf("##########################################\n");
       /* run LIBXSMM convolutions */
-      if (libxsmm_handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
+      const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
+      int internal_format_type;
+      if ( 0 == env || 0 == *env) {
+        /* Default internal format type */
+        internal_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
+      } else {
+        internal_format_type = atoi(env);
+      }
+      if (internal_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
 #if defined(_OPENMP)
 # pragma omp parallel
 #endif
@@ -768,9 +776,17 @@ int main(int argc, char* argv[])
       printf("#   Performance - FWD (custom-Storage)   #\n");
       printf("##########################################\n");
       /* run LIBXSMM convolution for performance */
+      const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
+      int internal_format_type;
+      if ( 0 == env || 0 == *env) {
+        /* Default internal format type */
+        internal_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
+      } else {
+        internal_format_type = atoi(env);
+      }
       l_start = libxsmm_timer_tick();
       for (i = 0; i < iters; ++i) {
-        if (libxsmm_handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
+        if (internal_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
 #if defined(_OPENMP)
 #   pragma omp parallel
 #endif
