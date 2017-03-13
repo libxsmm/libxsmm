@@ -72,4 +72,5 @@ for (img1 = 0; img1 < nBImg; ++img1) {
       }
     }
   }
+  }
 }
