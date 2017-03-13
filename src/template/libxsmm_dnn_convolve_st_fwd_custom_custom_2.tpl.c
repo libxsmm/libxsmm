@@ -46,9 +46,14 @@ LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, ((const element_input_ty
 LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (const element_filter_type*) handle->reg_filter->data, blocksifm, R, S, ifmblock, ofmblock);
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
-for (i = thr_begin; i < thr_end; i++) {
-  img1 = i/blocksofm;
-  ofm1 = i%blocksofm;
+//for (i = thr_begin; i < thr_end; i++) {
+//  img1 = i/blocksofm;
+//  ofm1 = i%blocksofm;
+#if defined(_OPENMP)
+# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki)
+#endif
+for (img1 = 0; img1 < nBImg; ++img1) {
+  for (ofm1 = 0; ofm1 < nBOfm; ++ofm1) {
   for (oj = 0; oj < ofh; ++oj) {
     for (oi = 0; oi < ofw; ++oi) {
       ij = oj * u - pad_h;
@@ -65,5 +70,6 @@ for (i = thr_begin; i < thr_end; i++) {
         }
       }
     }
+  }
   }
 }
