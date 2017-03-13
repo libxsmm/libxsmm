@@ -34,8 +34,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include "../../src/libxsmm_main.h"
-
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
@@ -670,20 +668,15 @@ int main(int argc, char* argv[])
       printf("#   Correctness - FWD (custom-Storage)   #\n");
       printf("##########################################\n");
       /* run LIBXSMM convolutions */
-      if (libxsmm_handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
 #if defined(_OPENMP)
 # pragma omp parallel
 #endif
-        {
+      {
 #if defined(_OPENMP)
-          const int tid = omp_get_thread_num();
+        const int tid = omp_get_thread_num();
 #else
-          const int tid = 0;
-#endif
-          CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
-        }
-      } else {
         const int tid = 0;
+#endif
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
       }
       /* copy out data */
@@ -771,20 +764,15 @@ int main(int argc, char* argv[])
       /* run LIBXSMM convolution for performance */
       l_start = libxsmm_timer_tick();
       for (i = 0; i < iters; ++i) {
-        if (libxsmm_handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
 #if defined(_OPENMP)
 #   pragma omp parallel
 #endif
-          {
+        {
 #if defined(_OPENMP)
-            const int tid = omp_get_thread_num();
+          const int tid = omp_get_thread_num();
 #else
-            const int tid = 0;
-#endif
-            libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
-          }
-        } else {
           const int tid = 0;
+#endif
           libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
         }
       }
