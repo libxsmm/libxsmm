@@ -42,10 +42,8 @@ LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, ((const element_input_ty
 LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (const element_filter_type*) handle->reg_filter->data, blocksifm, R, S, ifmblock, ofmblock);
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
-//for (i = thr_begin; i < thr_end; ++i) {
-//for (i = ltid; i < work; i += handle->desc.threads) {
-#pragma omp parallel for private(img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki)
-for (i = 0; i < work; i++) {
+for (i = thr_begin; i < thr_end; ++i) {
+  printf("Thread %d on i %d\n", ltid,i);
   img1 = i/blocksofm;
   ofm1 = i%blocksofm;
   for (ifm1 = 0; ifm1 < blocksifm; ++ifm1) {
