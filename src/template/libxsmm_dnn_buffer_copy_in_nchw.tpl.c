@@ -41,6 +41,7 @@ int lpb = buffer->lpb;
 int C = fmb * bfm * lpb;
 LIBXSMM_VLA_DECL(4, const element_type, user_data, (const element_type*)data, fmb * bfm * lpb, H, W);
 
+printf("JUST BEFORE\n");
 if (buffer->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
   printf("Cpy in format 1\n");
   LIBXSMM_VLA_DECL(6, element_type, handle_data_1, (element_type*)buffer->data, fmb, H, W, bfm, lpb);
