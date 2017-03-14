@@ -365,6 +365,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_qbuffer(const libxsm
       buffer->lpb = handle->fm_lp_block;
       buffer->exp = exp;
       buffer->custom_format_type = handle->custom_format_type;
+      printf("HANDLER val is %d\n", (int)handle->custom_format_type);
       /* NHWC */
       if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
         buffer->data = (void*)data;
@@ -389,6 +390,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_qbuffer(const libxsm
       buffer->lpb = handle->fm_lp_block;
       buffer->exp = exp;
       buffer->custom_format_type = handle->custom_format_type;
+      printf("HANDLER -- out val is %d\n", (int)handle->custom_format_type);
       /* NHWC */
       if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
         buffer->data = (void*)data;
