@@ -42,6 +42,7 @@ int C = fmb * bfm * lpb;
 LIBXSMM_VLA_DECL(4, element_type, user_data, (element_type*)data, fmb * bfm * lpb, H, W);
 
 if (buffer->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
+  printf("Cpy out format 1\n");
   LIBXSMM_VLA_DECL(6, const element_type, handle_data_1, (const element_type*)buffer->data, fmb, H, W, bfm, lpb);
   for (i1 = 0; i1 < N; ++i1) {
     for (i2 = 0; i2 < fmb; ++i2) {
@@ -58,6 +59,7 @@ if (buffer->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
     }
   }
 } else if (buffer->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
+  printf("Cpy out format 2\n");
   LIBXSMM_VLA_DECL(6, const element_type, handle_data_2, (const element_type*)buffer->data, N/bimg, H, W, bimg, bfm);
   for ( i1 = 0; i1 < N/bimg; i1++ ) {
     for ( i2 = 0; i2 < fmb; i2++ ) {
