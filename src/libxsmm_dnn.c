@@ -897,6 +897,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_buffer(const libxsmm
     switch (in_format) {
       case LIBXSMM_DNN_TENSOR_FORMAT_NCHW: {
         if ( (buffer->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
+          printf("Got in COPYIN!!!\n");
           switch (buffer->datatype) {
             case LIBXSMM_DNN_DATATYPE_F32: {
               typedef float element_type;
