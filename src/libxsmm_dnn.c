@@ -1661,9 +1661,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_execute_st(libxsm
   libxsmm_dnn_compute_kind kind, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  status = libxsmm_dnn_convolve_st_fwd_custom_custom(handle, start_thread, tid);
 
-/*
   if (0 != handle) {
     switch (handle->algo) {
       case LIBXSMM_DNN_CONV_ALGO_DIRECT: {
@@ -1859,7 +1857,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_dnn_err_t internal_execute_st(libxsm
   else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
   }
-*/
+
   return status;
 }
 
