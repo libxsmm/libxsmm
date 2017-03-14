@@ -43,7 +43,6 @@ LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (const element_filter_t
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
 for (i = thr_begin; i < thr_end; ++i) {
-  printf("Thread %d on i %d\n", ltid,i);
   img1 = i/blocksofm;
   ofm1 = i%blocksofm;
   for (ifm1 = 0; ifm1 < blocksifm; ++ifm1) {
