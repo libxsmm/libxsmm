@@ -900,6 +900,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_buffer(const libxsmm
           printf("Got in COPYIN!!!\n");
           switch (buffer->datatype) {
             case LIBXSMM_DNN_DATATYPE_F32: {
+              printf("Got in FLOAT32!!!\n");
               typedef float element_type;
 #             include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
             } break;
