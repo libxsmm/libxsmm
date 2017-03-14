@@ -1049,6 +1049,24 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   /* flag to test if we found an architecture which is supported */
   int noarch = 1;
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
+  int internal_format_type;
+  if ( 0 == env || 0 == *env) {
+    /* Default internal format type */
+    handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
+  } else {
+    internal_format_type = atoi(env);
+    if (internal_format_type == 1) {
+      handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
+    } else if ( internal_format_type == 2) {
+      handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2;
+    } else {
+      status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
+      free(handle);
+      handle = 0;
+      return status;
+    }
+  }
 
   /* now architecture specific */
   if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||

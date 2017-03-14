@@ -44,7 +44,6 @@ LIBXSMM_VLA_DECL(6, element_type, handle_data_2, (element_type*)filter->data, if
 LIBXSMM_VLA_DECL(4, const element_type, user_data, (const element_type*)data, ifmb * bifm * lpb, R, S);
 
 if (filter->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
-  printf("Copy in filter custom 1\n");
   for (i1 = 0; i1 < ofmb; ++i1) {
     for (i2 = 0; i2 < ifmb; ++i2) {
       for (i3 = 0; i3 < R; ++i3) {
@@ -62,7 +61,6 @@ if (filter->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
     }
   }
 } else if (filter->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-  printf("Copy in filter custom 2\n");
   for ( i1 = 0; i1 < ofmb; i1++ ) {
     for ( i2 = 0; i2 < ifmb; i2++ ) {
       for ( i3 = 0; i3 < R; i3++ ) {

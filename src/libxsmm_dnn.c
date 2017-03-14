@@ -365,15 +365,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_qbuffer(const libxsm
       buffer->lpb = handle->fm_lp_block;
       buffer->exp = exp;
       buffer->custom_format_type = handle->custom_format_type;
-      printf("HANDLER val is %d\n", (int)handle->custom_format_type);
       /* NHWC */
       if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
         buffer->data = (void*)data;
-        printf("I am NWC branch\n");
       /* custom LIBXSMM format */
       } else if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
         buffer->data = (void*)data;
-        printf("I am L:IBXSMM branch\n");
       } else {
         *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
       }
@@ -390,15 +387,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_buffer* libxsmm_dnn_link_qbuffer(const libxsm
       buffer->lpb = handle->fm_lp_block;
       buffer->exp = exp;
       buffer->custom_format_type = handle->custom_format_type;
-      printf("HANDLER -- out val is %d\n", (int)handle->custom_format_type);
       /* NHWC */
       if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
         buffer->data = (void*)data;
-        printf("I am NWC branch OUT\n");
       /* custom LIBXSMM format */
       } else if ( ((handle->buffer_format & in_format) > 0) && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) > 0)  && ((in_format & LIBXSMM_DNN_TENSOR_FORMAT_PTR ) > 0) ) {
         buffer->data = (void*)data;
-        printf("I am LIBXSMM OUT branch\n");
       } else {
         *status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
       }
@@ -903,10 +897,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_buffer(const libxsmm
     switch (in_format) {
       case LIBXSMM_DNN_TENSOR_FORMAT_NCHW: {
         if ( (buffer->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
-          printf("Got in COPYIN!!!\n");
           switch (buffer->datatype) {
             case LIBXSMM_DNN_DATATYPE_F32: {
-              printf("Got in FLOAT32!!!\n");
               typedef float element_type;
 #             include "template/libxsmm_dnn_buffer_copy_in_nchw.tpl.c"
             } break;
