@@ -45,7 +45,7 @@ libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 //for (i = thr_begin; i < thr_end; ++i) {
 //for (i = ltid; i < work; i += handle->desc.threads) {
 #pragma omp parallel for private(img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki)
-for (i = 0; i < work; i++)
+for (i = 0; i < work; i++) {
   img1 = i/blocksofm;
   ofm1 = i%blocksofm;
   for (ifm1 = 0; ifm1 < blocksifm; ++ifm1) {
