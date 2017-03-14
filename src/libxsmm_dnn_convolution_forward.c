@@ -38,16 +38,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check if we have input, output and filter */
-//  if (handle->reg_input == 0 || handle->reg_output == 0 || handle->reg_filter == 0) {
-//    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-//    return status;
-//  }
+  if (handle->reg_input == 0 || handle->reg_output == 0 || handle->reg_filter == 0) {
+    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
+    return status;
+  }
 
   /* for low/mixed precision we need some scratch to be bound */
-//  if ( (handle->datatype != handle->datatype_itm) && (handle->scratch6 == 0) ) {
-//    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-//    return status;
-//  }
+  if ( (handle->datatype != handle->datatype_itm) && (handle->scratch6 == 0) ) {
+    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
+    return status;
+  }
 
   /* check if we have a kernel JITed */
   if (handle->code_fwd[0].xconv.sconv == 0) {
