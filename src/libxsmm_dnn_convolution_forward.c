@@ -161,7 +161,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
           }
         }
       }
-    } else if (handle->datatype ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
+    }
+#if 0
+    else if (handle->datatype ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
         typedef short element_input_type;
         typedef int element_output_type;
@@ -336,6 +338,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
+#endif
   }
 
   return status;
