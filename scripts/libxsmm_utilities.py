@@ -30,6 +30,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 import itertools
+import inspect
 import sys
 import os
 
@@ -165,8 +166,9 @@ def align_value(n, typesize, alignment):
 
 
 def version_branch():
-    versionfilename = os.path.join(os.path.dirname(
-        sys.argv[0]), "..", "version.txt")
+    here = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    versionfilename = os.path.realpath(
+        os.path.join(here, "..", "version.txt"))
     versionfile = open(versionfilename, "r")
     version = "1.0"
     try:
@@ -215,7 +217,7 @@ if __name__ == "__main__":
     else:
         arg1 = 0
     if (-1 == arg1 and 5 < argc):
-        threshold = int(sys.argv[2])
+        # threshold = int(sys.argv[2])
         mnk_size = int(sys.argv[3])
         dims = load_mnklist(sys.argv[4:4+mnk_size], 0, -1)
         dims = load_mnklist(sys.argv[4+mnk_size:], 0, -2, dims)

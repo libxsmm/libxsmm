@@ -29,6 +29,11 @@
   <ItemGroup>
     <ClCompile Include="malloc.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="README.md" />
+    <None Include="test.sh" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>malloc</ProjectName>
     <ProjectGuid>{C535D386-FC53-42CF-B9FE-34630FB15929}</ProjectGuid>

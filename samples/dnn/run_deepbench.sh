@@ -26,7 +26,7 @@ if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
   fi
 fi
 
-export KMP_PLACE_THREADS=1T
+export KMP_HW_SUBSET=1T
  export KMP_AFFINITY=compact,granularity=fine
   export OMP_NUM_THREADS=64
 

@@ -29,6 +29,11 @@
   <ItemGroup>
     <ClCompile Include="otrans.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="README.md" />
+    <None Include="test.sh" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>otrans</ProjectName>
     <ProjectGuid>{C9CA7758-C0C9-4A50-9757-115410B599B0}</ProjectGuid>

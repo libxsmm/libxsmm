@@ -82,15 +82,21 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   { config = 2; }
 
   { /* attempt to setup tile sizes from the environment (LIBXSMM_M, LIBXSMM_N, and LIBXSMM_K) */
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/][4/*size-range*/] = {
-      { { {  25,  50,  69, 169 }, { 37,  98, 78,  39 }, { 100, 81, 55, 37 } }, { { 43,  49, 107, 103 }, { 38, 52, 113, 141 }, { 232,  89, 100, 76 } } }, /* generic */
-      { { { 168, 130, 131, 110 }, { 10,  28, 20,  24 }, {  39, 43, 40, 63 } }, { { 80, 152, 149, 172 }, { 16, 14,  18,  28 }, {  48, 103,  61, 63 } } }, /* knl */
-      { { {  33,  34, 145, 156 }, { 53, 134, 26, 130 }, { 100, 32, 56, 54 } }, { { 41, 119, 102, 106 }, { 32, 65, 108, 130 }, {  73,  90,  86, 89 } } }  /* skx */
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/][8/*size-range*/] = {
+      /* generic/hsw */
+      { { {  25,  50,  69, 169, 169, 169, 169, 169 }, {  37,  98,  78,  39,  39,  39,  39,  39 }, { 100,  81,  55,  37,  37,  37,  37,  37 } },   /* DP */
+        { {  43,  49, 107, 103, 103, 103, 103, 103 }, {  38,  52, 113, 141, 141, 141, 141, 141 }, { 232,  89, 100,  76,  76,  76,  76,  76 } } }, /* SP */
+      /* knl */
+      { { { 168, 130, 131, 110, 110, 110, 110, 256 }, {  10,  28,  20,  24,  24,  24,  24,  10 }, {  39,  43,  40,  63,  63,  63,  63,  77 } },   /* DP */
+        { {  69, 152, 149, 172, 172, 172, 172, 172 }, {  11,  14,  18,  28,  28,  28,  28,  28 }, { 100, 103,  61,  63,  63,  63,  63,  63 } } }, /* SP */
+      /* skx */
+      { { {  39,  52,  57, 201, 256, 201, 201, 201 }, {  26,  86, 115,  14,  27,  14,  14,  14 }, { 256, 101, 102,  53, 114,  53,  53,  53 } },   /* DP */
+        { {  41, 119, 102, 106, 106, 106, 106, 106 }, {  32,  65, 108, 130, 130, 130, 130, 130 }, {  73,  90,  86,  89,  89,  89,  89,  89 } } }  /* SP */
     };
     const char* env[3];
     int i;
     env[0] = getenv("LIBXSMM_M"); env[1] = getenv("LIBXSMM_N"); env[2] = getenv("LIBXSMM_K");
-    for (i = 0; i < 4; ++i) {
+    for (i = 0; i < 8; ++i) {
       /* environment-defined tile sizes apply for DP and SP */
       libxsmm_gemm_tile[0/*DP*/][0/*M*/][i] = libxsmm_gemm_tile[1/*SP*/][0/*M*/][i] = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
         LIBXSMM_MIN((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(0 != env[0] ? atoi(env[0]) : 0), LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
@@ -129,11 +135,11 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
 
   if (0 == (LIBXSMM_GEMM_FLAG_F32PREC & precision)) {
     LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "%g", 0 != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
-    LIBXSMM_SNPRINTF(string_b, sizeof(string_b), "%g", 0 != beta ? *((const double*)beta) : LIBXSMM_BETA);
+    LIBXSMM_SNPRINTF(string_b, sizeof(string_b), "%g", 0 != beta  ? *((const double*)beta)  : LIBXSMM_BETA);
   }
   else {
     LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "%g", 0 != alpha ? *((const float*)alpha) : LIBXSMM_ALPHA);
-    LIBXSMM_SNPRINTF(string_b, sizeof(string_b), "%g", 0 != beta ? *((const float*)beta) : LIBXSMM_BETA);
+    LIBXSMM_SNPRINTF(string_b, sizeof(string_b), "%g", 0 != beta  ? *((const float*)beta)  : LIBXSMM_BETA);
   }
 
   if (0 != ostream) { /* print information about GEMM call */
@@ -287,7 +293,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
 #else
   LIBXSMM_INIT
   { /* tiled GEMM */
-    const int index = LIBXSMM_MIN((int)((1ULL * (*m) * (*n) * (*k)) >> 30), 3);
+    const int index = LIBXSMM_MIN(libxsmm_icbrt(1ULL * (*m) * (*n) * (*k)) >> 10, 7);
     LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
     tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/][index];
     tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/][index];
@@ -354,7 +360,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 #else
   LIBXSMM_INIT
   { /* tiled GEMM */
-    const int index = LIBXSMM_MIN((int)((1ULL * (*m) * (*n) * (*k)) >> 30), 3);
+    const int index = LIBXSMM_MIN(libxsmm_icbrt(1ULL * (*m) * (*n) * (*k)) >> 10, 7);
     LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
     tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/][index];
     tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/][index];

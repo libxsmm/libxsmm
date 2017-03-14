@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Rajkishore Barik, Alexander Heinecke (Intel Corp.)
+/* Rajkishore Barik, Alexander Heinecke, Ankush Mandal (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_weight_update.h"
 #include <libxsmm_intrinsics_x86.h>
@@ -205,10 +205,24 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(l
         typedef libxsmm_smatcopyfunction libxsmm_matzerofunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
+          if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
+          {
+#define LIBXSMM_WU_TRANSPOSE_OFW_IFM
 # include "template/libxsmm_dnn_convolve_st_upd_nhwc_rsck.tpl.c"
+#undef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+          } else {
+# include "template/libxsmm_dnn_convolve_st_upd_nhwc_rsck.tpl.c"
+          }
 #undef INPUT_PADDING
         } else {
+          if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
+          {
+#define LIBXSMM_WU_TRANSPOSE_OFW_IFM
 # include "template/libxsmm_dnn_convolve_st_upd_nhwc_rsck.tpl.c"
+#undef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+          } else {
+# include "template/libxsmm_dnn_convolve_st_upd_nhwc_rsck.tpl.c"
+          }
         }
       }
     } else {
@@ -285,10 +299,24 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom
         typedef libxsmm_smatcopyfunction libxsmm_matzerofunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
+          if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
+          {
+#define LIBXSMM_WU_TRANSPOSE_OFW_IFM
 # include "template/libxsmm_dnn_convolve_st_upd_nhwc_custom.tpl.c"
+#undef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+          } else {
+# include "template/libxsmm_dnn_convolve_st_upd_nhwc_custom.tpl.c"
+          }
 #undef INPUT_PADDING
         } else {
+          if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
+          {
+#define LIBXSMM_WU_TRANSPOSE_OFW_IFM
 # include "template/libxsmm_dnn_convolve_st_upd_nhwc_custom.tpl.c"
+#undef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+          } else {
+# include "template/libxsmm_dnn_convolve_st_upd_nhwc_custom.tpl.c"
+          }
         }
       }
     } else {

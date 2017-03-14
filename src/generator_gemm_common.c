@@ -34,9 +34,10 @@
 #include "generator_x86_instructions.h"
 
 #include <libxsmm_intrinsics_x86.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+#include <stdio.h>
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_kernel_config*    io_micro_kernel_config,
@@ -688,14 +689,17 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                      const unsigned int                 i_m_blocking,
                                      const unsigned int                 i_n_blocking ) {
-  /* deriving register blocking from kernel config */
-  const unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
-  /* start register of accumulator */
-  const unsigned int l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
+  unsigned int l_m_blocking, l_vec_reg_acc_start;
   /* register blocking counter in n */
   unsigned int l_n = 0;
   /* register blocking counter in m */
   unsigned int l_m = 0;
+
+  assert(0 < i_micro_kernel_config->vector_length);
+  /* deriving register blocking from kernel config */
+  l_m_blocking = i_m_blocking / i_micro_kernel_config->vector_length;
+  /* start register of accumulator */
+  l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
 
 #if !defined(NDEBUG)
   /* Do some test if it's possible to generated the requested code.

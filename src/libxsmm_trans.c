@@ -118,7 +118,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
 
 
 LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
   int result = EXIT_SUCCESS;
   static int error_once = 0;
@@ -128,8 +128,8 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
       libxsmm_blasint i, j;
       for (i = 0; i < n; ++i) {
         for (j = 0; j < i; ++j) {
-          char *const a = ((char*)inout) + (i * ldi + j) * typesize;
-          char *const b = ((char*)inout) + (j * ldi + i) * typesize;
+          char *const a = ((char*)inout) + (i * ld + j) * typesize;
+          char *const b = ((char*)inout) + (j * ld + i) * typesize;
           unsigned int k;
           for (k = 0; k < typesize; ++k) {
             const char tmp = a[k];
@@ -169,94 +169,95 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
 
 #if defined(LIBXSMM_BUILD)
 
-LIBXSMM_API_DEFINITION int libxsmm_sotrans(float* out, const float* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
-{
-  return libxsmm_otrans(out, in, sizeof(float), m, n, ldi, ldo);
-}
-
-
-LIBXSMM_API_DEFINITION int libxsmm_dotrans(double* out, const double* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
-{
-  return libxsmm_otrans(out, in, sizeof(double), m, n, ldi, ldo);
-}
-
-
-LIBXSMM_API_DEFINITION int libxsmm_sitrans(float* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
-{
-  return libxsmm_itrans(inout, sizeof(float), m, n, ldi);
-}
-
-
-LIBXSMM_API_DEFINITION int libxsmm_ditrans(double* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi)
-{
-  return libxsmm_itrans(inout, sizeof(double), m, n, ldi);
-}
-
-
-/** code variant for the Fortran interface, which does not produce a return value */
-LIBXSMM_API void libxsmmf_otrans(void*, const void*, unsigned int, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint);
-LIBXSMM_API_DEFINITION void libxsmmf_otrans(void* out, const void* in, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
-{
-  libxsmm_otrans(out, in, typesize, m, n, ldi, ldo);
-}
-
-
-/** code variant for the Fortran interface, which does not produce a return value */
-LIBXSMM_API void libxsmmf_sotrans(float*, const float*, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint);
-LIBXSMM_API_DEFINITION void libxsmmf_sotrans(float* out, const float* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
-{
-  libxsmm_sotrans(out, in, m, n, ldi, ldo);
-}
-
-
-/** code variant for the Fortran interface, which does not produce a return value */
-LIBXSMM_API void libxsmmf_dotrans(double*, const double*, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint, libxsmm_blasint);
-LIBXSMM_API_DEFINITION void libxsmmf_dotrans(double* out, const double* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
-{
-  libxsmm_dotrans(out, in, m, n, ldi, ldo);
-}
-
-
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans)(void*, const void*, const unsigned int*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* /*out*/, const void* /*in*/, const unsigned int* /*typesize*/,
+  const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* out, const void* in, const unsigned int* typesize,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo)
 {
   libxsmm_blasint ldx;
   assert(0 != typesize && 0 != m);
-  ldx = *(ldi ? ldi : m);
+  ldx = *(0 != ldi ? ldi : m);
   libxsmm_otrans(out, in, *typesize, *m, *(n ? n : m), ldx, ldo ? *ldo : ldx);
 }
 
 
+LIBXSMM_API_DEFINITION int libxsmm_sotrans(float* out, const float* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
+{
+  return libxsmm_otrans(out, in, sizeof(float), m, n, ldi, ldo);
+}
+
+
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_sotrans)(float*, const float*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_sotrans)(float* /*out*/, const float* /*in*/,
+  const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_sotrans)(float* out, const float* in,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo)
 {
   libxsmm_blasint ldx;
   assert(0 != m);
-  ldx = *(ldi ? ldi : m);
+  ldx = *(0 != ldi ? ldi : m);
   libxsmm_sotrans(out, in, *m, *(n ? n : m), ldx, ldo ? *ldo : ldx);
 }
 
 
+LIBXSMM_API_DEFINITION int libxsmm_dotrans(double* out, const double* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
+{
+  return libxsmm_otrans(out, in, sizeof(double), m, n, ldi, ldo);
+}
+
+
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dotrans)(double*, const double*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dotrans)(double* /*out*/, const double* /*in*/,
+  const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dotrans)(double* out, const double* in,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo)
 {
   libxsmm_blasint ldx;
   assert(0 != m);
-  ldx = *(ldi ? ldi : m);
+  ldx = *(0 != ldi ? ldi : m);
   libxsmm_dotrans(out, in, *m, *(n ? n : m), ldx, ldo ? *ldo : ldx);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* /*inout*/, const unsigned int* /*typesize*/,
+  const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ld*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* inout, const unsigned int* typesize,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ld)
+{
+  assert(0 != typesize && 0 != m);
+  libxsmm_itrans(inout, *typesize, *m, *(n ? n : m), *(0 != ld ? ld : m));
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_sitrans(float* inout, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
+{
+  return libxsmm_itrans(inout, sizeof(float), m, n, ld);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_sitrans)(float* /*inout*/, const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ld*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_sitrans)(float* inout, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ld)
+{
+  assert(0 != m);
+  libxsmm_sitrans(inout, *m, *(n ? n : m), *(0 != ld ? ld : m));
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_ditrans(double* inout, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
+{
+  return libxsmm_itrans(inout, sizeof(double), m, n, ld);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_ditrans)(double* /*inout*/, const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ld*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_ditrans)(double* inout, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ld)
+{
+  assert(0 != m);
+  libxsmm_ditrans(inout, *m, *(n ? n : m), *(0 != ld ? ld : m));
 }
 
 #endif /*defined(LIBXSMM_BUILD)*/

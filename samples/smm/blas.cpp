@@ -111,11 +111,11 @@ int main(int argc, char* argv[])
       ~raii() { delete[] a; delete[] b; delete[] c; }
 #endif
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1);
-    T *const a = LIBXSMM_ALIGN2(buffer.a, LIBXSMM_ALIGNMENT);
-    T *const b = LIBXSMM_ALIGN2(buffer.b, LIBXSMM_ALIGNMENT);
-    T *c = LIBXSMM_ALIGN2(buffer.c, LIBXSMM_ALIGNMENT);
+    T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
+    T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
+    T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-    T *d = LIBXSMM_ALIGN2(buffer.c, LIBXSMM_ALIGNMENT);
+    T *d = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
 #endif
 
 #if defined(_OPENMP)

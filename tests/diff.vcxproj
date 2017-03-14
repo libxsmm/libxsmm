@@ -29,6 +29,11 @@
   <ItemGroup>
     <ClCompile Include="diff.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="README.md" />
+    <None Include="test.sh" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>diff</ProjectName>
     <ProjectGuid>{4C01D351-AB20-456B-8E75-8F4FC28FCF92}</ProjectGuid>
