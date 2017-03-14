@@ -112,25 +112,26 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_csr_a(libxsmm_s
   size_t sz_block = ((handle->bm + 1)*sizeof(uint16_t) + (handle->bm)*(handle->bk)*sizeof(uint16_t) + (handle->bm)*(handle->bk)*sizeof(float) + sizeof(libxsmm_CSR_sparseslice));
   size_t sz_all_blocks = sz_block * handle->mb * handle->kb;
 
-  char * memory_block = (char *)libxsmm_aligned_scratch(sz_all_blocks, 2097152);
-  char * memory_head  = memory_block;
+  char *const memory_block = (char *)libxsmm_aligned_scratch(sz_all_blocks, 2097152);
+  if (0 != memory_block) {
+    char * memory_head  = memory_block;
+    libxsmm_CSR_sparseslice* libxsmm_output_csr_a = (libxsmm_CSR_sparseslice*)(memory_head);
+    memory_head += handle->mb * handle->kb * sizeof(libxsmm_CSR_sparseslice);
 
-  libxsmm_CSR_sparseslice* libxsmm_output_csr_a = (libxsmm_CSR_sparseslice*)(memory_head);
-  memory_head += handle->mb * handle->kb * sizeof(libxsmm_CSR_sparseslice);
-
-  for (kb = 0; kb < k_blocks; kb++) {
-    for (mb = 0; mb < m_blocks; mb++) {
-      int i = kb*m_blocks + mb;
-      libxsmm_output_csr_a[i].rowidx = (uint16_t *)(memory_head);
-      memory_head += (handle->bm + 1)*sizeof(uint16_t);
-      libxsmm_output_csr_a[i].colidx = (uint16_t *)(memory_head);
-      memory_head += (handle->bm)*(handle->bk)*sizeof(uint16_t);
-      libxsmm_output_csr_a[i].values = (float*)(memory_head);
-      memory_head += (handle->bm)*(handle->bk)*sizeof(float);
+    for (kb = 0; kb < k_blocks; kb++) {
+      for (mb = 0; mb < m_blocks; mb++) {
+        int i = kb*m_blocks + mb;
+        libxsmm_output_csr_a[i].rowidx = (uint16_t *)(memory_head);
+        memory_head += (handle->bm + 1)*sizeof(uint16_t);
+        libxsmm_output_csr_a[i].colidx = (uint16_t *)(memory_head);
+        memory_head += (handle->bm)*(handle->bk)*sizeof(uint16_t);
+        libxsmm_output_csr_a[i].values = (float*)(memory_head);
+        memory_head += (handle->bm)*(handle->bk)*sizeof(float);
+      }
     }
+    assert(memory_head == (memory_block + sz_all_blocks));
+    *libxsmm_output_csr = libxsmm_output_csr_a;
   }
-  assert(memory_head == (memory_block + sz_all_blocks));
-  *libxsmm_output_csr = libxsmm_output_csr_a;
   handle->base_ptr_scratch_A = memory_block;
 }
 

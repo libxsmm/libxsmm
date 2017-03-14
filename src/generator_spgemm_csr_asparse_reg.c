@@ -36,6 +36,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <stdio.h>
 
 LIBXSMM_INTERNAL_API_DEFINITION
@@ -107,6 +108,9 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
+
+  /* prerequisite */
+  assert(0 != i_values);
 
   /* Let's figure out how many unique values we have */
   l_unique = 1;
