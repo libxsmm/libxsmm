@@ -116,9 +116,14 @@ class XgemmTuner(MeasurementInterface):
 
     def save_final_config(self, configuration):
         """called at the end of tuning"""
-        filename = "xgemm-" + time.strftime("%Y%m%d-%H%M%S") + ".json"
-        print("Optimal block size written to " +
-              filename + ": ", configuration.data)
+        dimset = libxsmm_utilities.load_mnklist(self.args.mnk, 0, -1)
+        matrices = (  # collects requested matrix shapes into string
+            "-".join(map(str, map(lambda mnk: "x".join(
+                     map(str, mnk)), dimset))))
+        filename = "xgemm-" + matrices + time.strftime(
+                   "-%Y%m%d-%H%M%S") + ".json"
+        print("Optimal block size written to " + filename +
+              ": ", configuration.data)
         self.manipulator().save_to_file(configuration.data, filename)
 
 
