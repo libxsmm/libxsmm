@@ -130,6 +130,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
           }
         }
+        return status;
       }
       else {
         typedef float element_input_type;
@@ -336,7 +337,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
     }
   }
 
-  return status;
+  //return status;
 }
 
 
