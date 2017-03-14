@@ -174,25 +174,21 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
           if (handle->padding_flag == 1) {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 #define INPUT_PADDING
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-            printf("Hello1!\n");
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
 #undef INPUT_PADDING
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ON
           } else {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-            printf("Hello2!\n");
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           }
         } else {
           if (handle->padding_flag == 1) {
 #define INPUT_PADDING
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-            printf("Hello3!\n");
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
 #undef INPUT_PADDING
           } else {
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-            printf("Hello4!\n");
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
           }
         }
       }
@@ -206,27 +202,21 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
           if (handle->padding_flag == 1) {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 #define INPUT_PADDING
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-            printf("Hello5!\n");
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
 #undef INPUT_PADDING
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           } else {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-            printf("Hello6!\n");
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           }
         } else {
           if (handle->padding_flag == 1) {
 #define INPUT_PADDING
-//#include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-            printf("Hello7!\n");
-
+#include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
 #undef INPUT_PADDING
           } else {
-//#include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-            printf("Hello8!\n");
-
+#include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
           }
         }
       }
@@ -241,29 +231,21 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
           if (handle->padding_flag == 1) {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 #define INPUT_PADDING
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-            printf("Hello9!\n");
-
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
 #undef INPUT_PADDING
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           } else {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-            printf("Hello10!\n");
-
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           }
         } else {
           if (handle->padding_flag == 1) {
 #define INPUT_PADDING
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-            printf("Hello11!\n");
-
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
 #undef INPUT_PADDING
           } else {
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-            printf("Hello12!\n");
-
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
           }
         }
       }
@@ -277,33 +259,26 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
           if (handle->padding_flag == 1) {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 #define INPUT_PADDING
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-            printf("Hello13!\n");
-
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
 #undef INPUT_PADDING
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           } else {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-            printf("Hello14!\n");
-
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           }
         } else {
           if (handle->padding_flag == 1) {
 #define INPUT_PADDING
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-            printf("Hello15!\n");
-
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
 #undef INPUT_PADDING
           } else {
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-            printf("Hello16!\n");
-
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
           }
         }
       }
     }
+#if 0
     else if (handle->datatype == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
         typedef unsigned char element_input_type;
@@ -315,29 +290,21 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
           if (handle->padding_flag == 1) {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 #define INPUT_PADDING
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-            printf("Hello18!\n");
-
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
 #undef INPUT_PADDING
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           } else {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-            printf("Hello81!\n");
-
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           }
         } else {
           if (handle->padding_flag == 1) {
 #define INPUT_PADDING
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-            printf("Hello4448!\n");
-
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
 #undef INPUT_PADDING
           } else {
-//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-            printf("Hell4444o8!\n");
-
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
           }
         }
       }
@@ -351,29 +318,21 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
           if (handle->padding_flag == 1) {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 #define INPUT_PADDING
-//#include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-            printf("Hell34534o8!\n");
-
+#include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
 #undef INPUT_PADDING
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           } else {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-//#include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-            printf("Hell34r324ro8!\n");
-
+#include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           }
         } else {
           if (handle->padding_flag == 1) {
 #define INPUT_PADDING
-//#include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-            printf("Hello7238973498!\n");
-
+#include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
 #undef INPUT_PADDING
           } else {
-//#include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
-            printf("Hel8329839238lo8!\n");
-
+#include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_img_par.tpl.c"
           }
         }
       }
@@ -381,6 +340,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
+#endif
   }
 
   return status;
