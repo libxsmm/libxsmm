@@ -121,6 +121,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           }
+          return status;
         } else {
           if (handle->padding_flag == 1) {
 #define INPUT_PADDING
@@ -129,6 +130,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
           } else {
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
           }
+          return status;
         }
       }
       else {
