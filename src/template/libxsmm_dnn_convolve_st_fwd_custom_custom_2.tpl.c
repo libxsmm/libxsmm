@@ -44,7 +44,7 @@ libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
 for (i = thr_begin; i < thr_end; ++i) {
   img1 = i/blocksofm;
-  ofm1 = i%(blocksofm;
+  ofm1 = i%blocksofm;
   for (ifm1 = 0; ifm1 < blocksifm; ++ifm1) {
     for (oj = 0; oj < ofh; ++oj) {
       for (oi = 0; oi < ofw; ++oi) {
