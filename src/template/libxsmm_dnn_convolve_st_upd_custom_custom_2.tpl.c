@@ -46,9 +46,9 @@ const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (
 const int trans_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;
 const int trans_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
 
-LIBXSMM_VLA_DECL(6, const element_output_type, output_t, ((const element_output_type*)handle->reg_output->data) + (handle->desc.pad_w_out * handle->ofwp + handle->desc.pad_h_out), handle->blocksofm, handle->ofhp, handle->ofwp, handle->nbImg, handle->ofmblock);
-LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, ((const element_input_type*)handle->reg_input->data) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), handle->blocksifm, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock);
-LIBXSMM_VLA_DECL(6,  element_input_type,  tr_input_t, ((element_input_type*)handle->scratch3) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->nbImg);
+LIBXSMM_VLA_DECL(6, const element_output_type, output_t, ((const element_output_type*)handle->reg_output->data) + (handle->desc.pad_w_out * handle->ofwp + handle->desc.pad_h_out), handle->nBImg, handle->ofhp, handle->ofwp, handle->nbImg, handle->ofmblock);
+LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, ((const element_input_type*)handle->reg_input->data) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), handle->nBImg, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock);
+LIBXSMM_VLA_DECL(6,  element_input_type,  tr_input_t, ((element_input_type*)handle->scratch3) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), handle->nBImg, handle->ifhp, handle->ifwp, handle->ifmblock, handle->nbImg);
 LIBXSMM_VLA_DECL(6, element_filter_type, filter_t, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_upd[0].smm;
 
@@ -61,8 +61,8 @@ for (i = trans_thr_begin; i < trans_thr_end; ++i) {
   ii = ((i%(handle->blocksifm * handle->ifhp * handle->ifwp))%(handle->ifhp * handle->ifwp))% handle->ifwp;
   for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
     for (img2 = 0; img2 < handle->nbImg; ++img2) {
-      LIBXSMM_VLA_ACCESS(6,  tr_input_t, img1, ifm1, ij, ii, ifm2, img2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->nbImg) =
-      LIBXSMM_VLA_ACCESS(6,   input_t, img1, ifm1, ij, ii, img2, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock);
+      LIBXSMM_VLA_ACCESS(6,  tr_input_t, ifm1, img1, ij, ii, ifm2, img2, handle->nBImg, handle->ifhp, handle->ifwp, handle->ifmblock, handle->nbImg) =
+      LIBXSMM_VLA_ACCESS(6,   input_t, ifm1, img1, ij, ii, img2, ifm2, handle->nBImg, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock);
     }
   }
 }
@@ -80,8 +80,8 @@ for (i = thr_begin; i < thr_end; ++i) {
           if(ij+kj < 0 || ij+kj >= ifh) continue;
           for (ki = 0; ki < handle->desc.S; ++ki) {
             if(ii+ki < 0 || ii+ki >= ifw) continue;
-            sixteen( &LIBXSMM_VLA_ACCESS(6,   output_t, img1, ofm1, oj,      oi,      0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->nbImg, handle->ofmblock) /* A */,
-                    &LIBXSMM_VLA_ACCESS(6, tr_input_t, img1, ifm1, ij + kj, ii + ki, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->nbImg) /* B */,
+            sixteen( &LIBXSMM_VLA_ACCESS(6,   output_t, ofm1, img1, oj,      oi,      0, 0, handle->nBImg, handle->ofhp, handle->ofwp, handle->nbImg, handle->ofmblock) /* A */,
+                    &LIBXSMM_VLA_ACCESS(6, tr_input_t, ifm1, img1, ij + kj, ii + ki, 0, 0, handle->nBImg, handle->ifhp, handle->ifwp, handle->ifmblock, handle->nbImg) /* B */,
                     &LIBXSMM_VLA_ACCESS(6,   filter_t, ofm1, ifm1, kj,      ki,      0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) /* C */  );
           }
         }

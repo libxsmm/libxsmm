@@ -386,7 +386,7 @@
 # define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
 # define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
 #else
-# if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__)
+# if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
 #   define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
 # else
 #   define LIBXSMM_SNPRINTF(S, N, ...) sprintf(S, __VA_ARGS__); LIBXSMM_UNUSED(N)
