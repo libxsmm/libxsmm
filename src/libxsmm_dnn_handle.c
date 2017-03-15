@@ -316,7 +316,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
     /* Adjust blocking factors if custom_2 format is requested */
     if ((handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2)) {
-      if ((handle->datatype == LIBXSMM_DNN_DATATYPE_F32) && ((handle->desc.N/16) * (handle->desc.K/16) >= handle->desc.threads )) /* if we dont have enough parallelism fallback to custom format_1... */ {
+      if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32)  {
         /* In this case of custom_2 format, regardless of requested padding, all the pad_in/pad_out parameters should be 0 */
         if ( ((handle->desc.pad_h > 0) && ((handle->desc.pad_h_in != 0) || (handle->desc.pad_h_out != 0))) || ((handle->desc.pad_w > 0) && ((handle->desc.pad_w_in != 0) || (handle->desc.pad_w_out !=0))) ) {
           status = LIBXSMM_DNN_ERR_INVALID_PADDING;
