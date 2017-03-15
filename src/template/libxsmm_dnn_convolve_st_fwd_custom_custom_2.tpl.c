@@ -33,7 +33,7 @@
 int img1, ofm1, ifm1, oj, oi, ij, ii, kj, ki, i;
 const int blocksofm = handle->blocksofm, ofh = handle->ofh, ofw = handle->ofw, u = handle->desc.u, v = handle->desc.v, pad_h = handle->desc.pad_h, pad_w = handle->desc.pad_w, blocksifm = handle->blocksifm, R = handle->desc.R, S = handle->desc.S, ifhp = handle->ifhp, ifwp = handle->ifwp, nbImg = handle->nbImg, ifmblock = handle->ifmblock, ofhp = handle->ofhp, ofwp = handle->ofwp, ofmblock = handle->ofmblock, nBImg = handle->nBImg, ifh = handle->desc.H, ifw = handle->desc.W;
 const int ltid = tid-start_thread;
-const int work = nBImg * blocksofm * ofh * ofw;
+const int work = nBImg * blocksofm;
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
@@ -43,13 +43,11 @@ LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (const element_filter_t
 libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
 
 for (i = thr_begin; i < thr_end; ++i) {
-  img1 = i/(blocksofm * ofh * ofw);
-  ofm1 = (i%(blocksofm * ofh * ofw))/(ofh * ofw);
+  img1 = i/blocksofm;
+  ofm1 = i%(blocksofm;
   for (ifm1 = 0; ifm1 < blocksifm; ++ifm1) {
-    //for (oj = 0; oj < ofh; ++oj) {
-      //for (oi = 0; oi < ofw; ++oi) {
-        oj = ((i%(blocksofm * ofh * ofw))%(ofh * ofw))/ofw;
-        oi = ((i%(blocksofm * ofh * ofw))%(ofh * ofw))%ofw;
+    for (oj = 0; oj < ofh; ++oj) {
+      for (oi = 0; oi < ofw; ++oi) {
         ij = oj * u - pad_h;
         ii = oi * v - pad_w;
         for (kj = 0; kj < R; ++kj) {
@@ -61,7 +59,7 @@ for (i = thr_begin; i < thr_end; ++i) {
                     &LIBXSMM_VLA_ACCESS(6, output_t, ofm1, img1, oj,      oi,      0, 0, nBImg, ofhp, ofwp, nbImg, ofmblock) );
           }
         }
-      //}
-    //}
+      }
+    }
   }
 }

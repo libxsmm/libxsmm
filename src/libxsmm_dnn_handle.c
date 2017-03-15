@@ -324,7 +324,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           handle = 0;
           return status;
         }
-        if (handle->desc.N % 16 == 0) {
+        if ( (handle->desc.N % 16 == 0) && (handle->desc.C % 16 == 0) && (handle->desc.K % 16 == 0) ) {
           handle->nbImg = 16;
           handle->ifmblock = 16;
           handle->ofmblock = 16;
@@ -359,6 +359,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   if ( (handle->desc.C % (handle->ifmblock * handle->fm_lp_block) != 0) ||
        (handle->desc.K % (handle->ofmblock * handle->fm_lp_block) != 0)    )
   {
+    handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
     status = LIBXSMM_DNN_WARN_FALLBACK;
     handle->ifmblock = 1;
     handle->ofmblock = 1;
