@@ -208,7 +208,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           handle = 0;
           return status;
         }
-        if (handle->desc.N % 16 == 0) {
+        if ((handle->desc.N % 16 == 0) && (handle->desc.K % 16 == 0) && (handle->desc.C % 16 == 0) ) {
           handle->nbImg = 16;
           handle->ifmblock = 16;
           handle->ofmblock = 16;
@@ -314,10 +314,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle = 0;
       return status;
     }
-
     /* Adjust blocking factors if custom_2 format is requested */
     if ((handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2)) {
-      if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) {
+      if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32)  {
         /* In this case of custom_2 format, regardless of requested padding, all the pad_in/pad_out parameters should be 0 */
         if ( ((handle->desc.pad_h > 0) && ((handle->desc.pad_h_in != 0) || (handle->desc.pad_h_out != 0))) || ((handle->desc.pad_w > 0) && ((handle->desc.pad_w_in != 0) || (handle->desc.pad_w_out !=0))) ) {
           status = LIBXSMM_DNN_ERR_INVALID_PADDING;
@@ -325,7 +324,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           handle = 0;
           return status;
         }
-        if (handle->desc.N % 16 == 0) {
+        if ( (handle->desc.N % 16 == 0) && (handle->desc.C % 16 == 0) && (handle->desc.K % 16 == 0) ) {
           handle->nbImg = 16;
           handle->ifmblock = 16;
           handle->ofmblock = 16;
@@ -360,6 +359,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   if ( (handle->desc.C % (handle->ifmblock * handle->fm_lp_block) != 0) ||
        (handle->desc.K % (handle->ofmblock * handle->fm_lp_block) != 0)    )
   {
+    handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
     status = LIBXSMM_DNN_WARN_FALLBACK;
     handle->ifmblock = 1;
     handle->ofmblock = 1;
@@ -621,7 +621,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
         descriptor.prefetch_output_ahead = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
           handle->code_bwd[0].smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
@@ -1049,6 +1048,24 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   /* flag to test if we found an architecture which is supported */
   int noarch = 1;
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
+  int internal_format_type;
+  if ( 0 == env || 0 == *env) {
+    /* Default internal format type */
+    handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
+  } else {
+    internal_format_type = atoi(env);
+    if (internal_format_type == 1) {
+      handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
+    } else if ( internal_format_type == 2) {
+      handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2;
+    } else {
+      status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
+      free(handle);
+      handle = 0;
+      return status;
+    }
+  }
 
   /* now architecture specific */
   if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
