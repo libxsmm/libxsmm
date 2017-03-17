@@ -127,6 +127,13 @@ typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
 #endif
 } internal_malloc_info_type;
 
+/* single bucket, which represents the entire scratch memory */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* internal_malloc_scratch_buffer;
+/* serves all scratch requests, and draws from internal_malloc_scratch_buffer */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE char* internal_malloc_scratch;
+/* minimum size allocated if allocated first or reallocated next */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t internal_malloc_scratchmin;
+
 
 LIBXSMM_API_DEFINITION size_t libxsmm_gcd(size_t a, size_t b)
 {
@@ -915,10 +922,68 @@ LIBXSMM_API_DEFINITION void* libxsmm_aligned_malloc(size_t size, size_t alignmen
 
 LIBXSMM_API_DEFINITION void* libxsmm_aligned_scratch(size_t size, size_t alignment)
 {
-  void* result = 0;
-  LIBXSMM_INIT
-  return 0 == libxsmm_xmalloc(&result, size, alignment, LIBXSMM_MALLOC_FLAG_SCRATCH,
-    0/*extra*/, 0/*extra_size*/) ? result : 0;
+  const size_t align_size = (0 == alignment ? libxsmm_alignment(size, alignment) : alignment);
+  const size_t inuse_size = internal_malloc_scratch - ((char*)internal_malloc_scratch_buffer);
+  const size_t alloc_size = size + align_size + (sizeof(internal_malloc_info_type) - 1);
+  const size_t total_size = libxsmm_malloc_size(internal_malloc_scratch_buffer);
+  size_t local_size = 0;
+  void* result;
+
+  if (total_size < inuse_size + alloc_size) {
+    const size_t minsize = LIBXSMM_MAX(internal_malloc_scratchmin, 2 * size);
+    if (0 == internal_malloc_scratch_buffer) {
+      LIBXSMM_INIT
+      LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
+      if (0 == internal_malloc_scratch_buffer) {
+        assert(0 == internal_malloc_scratch/*sanity check*/);
+        if (EXIT_SUCCESS == libxsmm_xmalloc(&internal_malloc_scratch_buffer, minsize, 0/*auto*/,
+          LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/))
+        {
+          /* atomic update needed since modifications will also happen ouside of this region */
+          LIBXSMM_ATOMIC_STORE(&internal_malloc_scratch, (char*)internal_malloc_scratch_buffer, LIBXSMM_ATOMIC_SEQ_CST);
+        }
+        else {
+          if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+            fprintf(stderr, "LIBXSMM: failed to allocate scratch memory!\n");
+          }
+          /* fallback to local memory allocation */
+          local_size = size;
+        }
+      }
+      else { /* fallback to local memory allocation */
+        local_size = size;
+      }
+      LIBXSMM_LOCK_RELEASE(&libxsmm_lock_global);
+    }
+    else { /* fallback to local memory allocation */
+      local_size = size;
+    }
+    LIBXSMM_ATOMIC_STORE(&internal_malloc_scratchmin, minsize, LIBXSMM_ATOMIC_RELAXED);
+  }
+
+  if (0 == local_size) { /* draw from internal_malloc_scratch_buffer */
+    char *const next = LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch, alloc_size, LIBXSMM_ATOMIC_SEQ_CST);
+    if (next <= ((char*)internal_malloc_scratch_buffer + total_size)) {
+      char *const aligned = LIBXSMM_ALIGN(next - alloc_size, align_size);
+      result = aligned;
+    }
+    else { /* scratch memory recently exhausted */
+      local_size = size;
+    }
+  }
+
+  if (0 != local_size) { /* fallback to local memory allocation */
+    static int error_once = 0;
+    if (EXIT_SUCCESS != libxsmm_xmalloc(&result, local_size, alignment,
+      LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/) &&
+      /* library code is expected to be mute */0 != libxsmm_verbosity &&
+      1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: scratch memory fallback failed!\n");
+    }
+  }
+
+  return result;
 }
 
 
@@ -930,7 +995,17 @@ LIBXSMM_API_DEFINITION void* libxsmm_malloc(size_t size)
 
 LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 {
-  libxsmm_xfree(memory);
+  const char *const scratch = (const char*)internal_malloc_scratch_buffer;
+  const char *const buffer = (const char*)memory;
+  /* check if memory belongs to scratch domain */
+  if (buffer < scratch || (scratch + libxsmm_malloc_size(internal_malloc_scratch_buffer) <= buffer)) {
+    assert(buffer + libxsmm_malloc_size(memory) <= scratch);
+    libxsmm_xfree(memory);
+  }
+  else { /* scratch memory domain */
+    /* TODO: document/check that allocation/deallocation adheres to linear/scoped allocator policy */
+    LIBXSMM_ATOMIC_STORE(&internal_malloc_scratch, (char*)internal_malloc_scratch_buffer, LIBXSMM_ATOMIC_SEQ_CST);
+  }
 }
 
 
@@ -938,6 +1013,10 @@ LIBXSMM_API_DEFINITION void libxsmm_release_scratch(size_t* npending)
 {
   /* TODO: to be implemented */
   LIBXSMM_UNUSED(npending);
+  /* TODO: thread-safety */
+  libxsmm_xfree(internal_malloc_scratch_buffer);
+  internal_malloc_scratch_buffer = 0;
+  internal_malloc_scratch = 0;
 }
 
 
