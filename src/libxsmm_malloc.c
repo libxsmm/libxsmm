@@ -998,8 +998,8 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
   const char *const scratch = (const char*)internal_malloc_scratch_buffer;
   const char *const buffer = (const char*)memory;
   /* check if memory belongs to scratch domain */
-  if (buffer < scratch || (scratch + libxsmm_malloc_size(internal_malloc_scratch_buffer) <= buffer)) {
-    assert(buffer + libxsmm_malloc_size(memory) <= scratch);
+  if (0 == scratch || buffer < scratch || (scratch + libxsmm_malloc_size(internal_malloc_scratch_buffer) <= buffer)) {
+    assert(0 == scratch || buffer + libxsmm_malloc_size(buffer) <= scratch);
     libxsmm_xfree(memory);
   }
   else { /* scratch memory domain */
