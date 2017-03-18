@@ -189,7 +189,7 @@ libxsmm_dnn_bind_output_buffer(libxsmm_handle, libxsmm_reg_output, LIBXSMM_DNN_R
 libxsmm_dnn_bind_filter(libxsmm_handle, libxsmm_reg_filter, LIBXSMM_DNN_REGULAR_FILTER);
 
 /* allocate and bind scratch */
-scratch = (void*)libxsmm_aligned_malloc(libxsmm_dnn_get_scratch_size(
+scratch = libxsmm_aligned_scratch(libxsmm_dnn_get_scratch_size(
   libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, &status), 2097152);
 libxsmm_dnn_bind_scratch(libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, scratch);
 
