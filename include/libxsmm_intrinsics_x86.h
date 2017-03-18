@@ -162,6 +162,9 @@
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
 #     else /* fall-back */
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_STATIC_TARGET_ARCH
+#       if !defined(LIBXSMM_INTRINSICS_NONE)
+#         define LIBXSMM_INTRINSICS_NONE
+#       endif
 #     endif
 #     if !defined(LIBXSMM_INTRINSICS_LEGACY) && (LIBXSMM_STATIC_TARGET_ARCH < LIBXSMM_X86_AVX2/*workaround*/)
 #       define LIBXSMM_INTRINSICS_LEGACY
@@ -170,7 +173,7 @@
 #       define LIBXSMM_INTRINSICS_PATCH
 #     endif
 #   endif /* GCC/legacy incl. Clang */
-#   if defined(LIBXSMM_INTRINSICS_PATCH)
+#   if defined(LIBXSMM_INTRINSICS_PATCH) && !defined(LIBXSMM_INTRINSICS_NONE)
 #     if !defined(__SSE3__)
 #       define __SSE3__ 1
 #     endif
@@ -322,7 +325,7 @@
 #endif
 
 /** Include basic x86 intrinsics such as __rdtsc. */
-#if defined(LIBXSMM_INTRINSICS)
+#if defined(LIBXSMM_INTRINSICS) && !defined(LIBXSMM_INTRINSICS_NONE)
 # if defined(_WIN32)
 #   include <intrin.h>
 # else
