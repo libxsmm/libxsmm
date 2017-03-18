@@ -51,8 +51,8 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
   unsigned int l_b_reg;
-  unsigned int l_b_idx;
-  unsigned int l_scale;
+  unsigned int l_b_idx = 0;
+  unsigned int l_scale = 0;
   unsigned int index;
   unsigned int max_index;
   unsigned int next_index;
