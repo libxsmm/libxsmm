@@ -962,7 +962,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_aligned_scratch(size_t size, size_t alignme
   }
 
   if (0 == local_size) { /* draw from internal_malloc_scratch_buffer */
-    char *const next = LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch, alloc_size, LIBXSMM_ATOMIC_SEQ_CST);
+    char *const next = (char*)LIBXSMM_ATOMIC_ADD_FETCH((uintptr_t*)&internal_malloc_scratch, alloc_size, LIBXSMM_ATOMIC_SEQ_CST);
     if (next <= ((char*)internal_malloc_scratch_buffer + total_size)) {
       char *const aligned = LIBXSMM_ALIGN(next - alloc_size, align_size);
       result = aligned;
