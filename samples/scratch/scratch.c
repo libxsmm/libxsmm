@@ -121,9 +121,11 @@ int main(int argc, char* argv[])
   }
 
   if (0 < dcall && 0 < dalloc) {
-    fprintf(stdout, "\tallocation+free calls/s: %.1f MHz\n", 1E-6 * ncalls / dalloc);
-    fprintf(stdout, "\tempty calls/s: %.1f MHz\n", 1E-6 * (ncycles * (MAX_MALLOC_N)) / dcall);
-    fprintf(stdout, "\toverhead: %.1fx\n", dalloc / dcall);
+    const double alloc_freq = 1E-6 * ncalls / dalloc;
+    const double empty_freq = 1E-6 * (ncycles * (MAX_MALLOC_N)) / dcall;
+    fprintf(stdout, "\tallocation+free calls/s: %.1f MHz\n", alloc_freq);
+    fprintf(stdout, "\tempty calls/s: %.1f MHz\n", empty_freq);
+    fprintf(stdout, "\toverhead: %.1fx\n", empty_freq / alloc_freq);
   }
 
   libxsmm_release_scratch(0/*npending*/);
