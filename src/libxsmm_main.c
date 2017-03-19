@@ -458,9 +458,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_finalize(void)
       const unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       const size_t scratch_size = libxsmm_scratch_size();
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak) {
-        fprintf(stderr, "LIBXSMM_TARGET=%s ", target_arch);
+        fprintf(stderr, "LIBXSMM_TARGET=%s", target_arch);
       }
-      fprintf(stderr, "Registry: %.f MB", 1.0 * internal_registry_nbytes / (1 << 20));
+      fprintf(stderr, "  Registry: %.f MB", 1.0 * internal_registry_nbytes / (1 << 20));
       if (0 < scratch_size) {
         fprintf(stderr, "  Scratch: %.f MB\n", 1.0 * scratch_size / (1 << 20));
       }

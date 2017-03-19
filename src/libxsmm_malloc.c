@@ -931,7 +931,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_aligned_scratch(size_t size, size_t alignme
 #else
   const size_t alloc_size = size + align_size - 1;
 #endif
-  size_t total_size = libxsmm_scratch_size(), local_size = 0;
+  size_t total_size = libxsmm_malloc_size(internal_malloc_scratch_buffer), local_size = 0;
   void* result = 0;
 
   if (total_size < inuse_size + alloc_size) {
@@ -1002,7 +1002,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_malloc(size_t size)
 
 LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 {
-  const size_t total_size = libxsmm_scratch_size();
+  const size_t total_size = libxsmm_malloc_size(internal_malloc_scratch_buffer);
   const char *const scratch = (const char*)internal_malloc_scratch_buffer;
   const char *const buffer = (const char*)memory;
   /* check if memory belongs to scratch domain */
@@ -1048,6 +1048,6 @@ LIBXSMM_API_DEFINITION size_t libxsmm_malloc_size(const void* memory)
 
 LIBXSMM_API_DEFINITION size_t libxsmm_scratch_size(void)
 {
-  return libxsmm_malloc_size(internal_malloc_scratch_buffer);
+  return internal_malloc_scratchmin;
 }
 
