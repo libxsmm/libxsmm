@@ -926,8 +926,12 @@ LIBXSMM_API_DEFINITION void* libxsmm_aligned_scratch(size_t size, size_t alignme
 {
   const size_t align_size = (0 == alignment ? libxsmm_alignment(size, alignment) : alignment);
   const size_t inuse_size = internal_malloc_scratch - ((char*)internal_malloc_scratch_buffer);
+#if 0 /* TODO: shall we support memory information for scratch memory? */
   const size_t alloc_size = size + align_size + (sizeof(internal_malloc_info_type) - 1);
-  size_t total_size = libxsmm_malloc_size(internal_malloc_scratch_buffer), local_size = 0;
+#else
+  const size_t alloc_size = size + align_size - 1;
+#endif
+  size_t total_size = libxsmm_scratch_size(), local_size = 0;
   void* result = 0;
 
   if (total_size < inuse_size + alloc_size) {
@@ -998,12 +1002,12 @@ LIBXSMM_API_DEFINITION void* libxsmm_malloc(size_t size)
 
 LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 {
-  const size_t total_size = libxsmm_malloc_size(internal_malloc_scratch_buffer);
+  const size_t total_size = libxsmm_scratch_size();
   const char *const scratch = (const char*)internal_malloc_scratch_buffer;
   const char *const buffer = (const char*)memory;
   /* check if memory belongs to scratch domain */
   if (0 == scratch || buffer < scratch || (scratch + total_size <= buffer)) { /* local */
-    /*assert(0 == scratch || buffer + libxsmm_malloc_size(buffer) <= scratch);*/
+    assert(0 == scratch || buffer + libxsmm_malloc_size(buffer) <= scratch);
     libxsmm_xfree(memory);
   }
   else if (0 == LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_nscratch, 1, LIBXSMM_ATOMIC_SEQ_CST) &&
@@ -1024,8 +1028,9 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 
 LIBXSMM_API_DEFINITION void libxsmm_release_scratch(size_t* npending)
 {
-  /* TODO: to be implemented */
-  LIBXSMM_UNUSED(npending);
+  if (0 != npending) {
+    *npending = internal_malloc_nscratch;
+  }
   /* TODO: thread-safety */
   libxsmm_xfree(internal_malloc_scratch_buffer);
   internal_malloc_scratch_buffer = 0;
@@ -1038,5 +1043,11 @@ LIBXSMM_API_DEFINITION size_t libxsmm_malloc_size(const void* memory)
   size_t size = 0;
   libxsmm_malloc_info(memory, &size, 0/*flags*/, 0/*extra*/);
   return size;
+}
+
+
+LIBXSMM_API_DEFINITION size_t libxsmm_scratch_size(void)
+{
+  return libxsmm_malloc_size(internal_malloc_scratch_buffer);
 }
 

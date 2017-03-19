@@ -256,6 +256,7 @@ void* libxsmm_malloc(size_t size);
 void libxsmm_free(const volatile void* memory);
 size_t libxsmm_malloc_size(const volatile void* memory);
 void* libxsmm_aligned_scratch(size_t size, size_t alignment);
+size_t libxsmm_scratch_size(void);
 ```
 
 The library exposes two memory allocation domains: (1)&#160;default memory allocation, and (2)&#160;scratch memory allocation. In contrast to the default memory allocation techniques, the scratch memory allocation is meant to establish a watermark for buffers which would be repeatedly allocated and deallocated. By establishing a (remaining) pool of "temporary" memory, the cost of repeated allocation and deallocation is avoided at some point (once the watermark is reached during execution).  

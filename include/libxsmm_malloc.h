@@ -129,6 +129,9 @@ LIBXSMM_API void libxsmm_release_scratch(size_t* npending);
 /** Get the size of the allocated memory; zero in case of an error. */
 LIBXSMM_API size_t libxsmm_malloc_size(const void* memory);
 
+/** Get the size of the allocated scratch memory. */
+LIBXSMM_API size_t libxsmm_scratch_size(void);
+
 
 #if defined(__cplusplus)
 

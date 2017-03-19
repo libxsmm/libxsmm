@@ -42,41 +42,52 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(MAX_BATCHSIZE)
-# define MAX_BATCHSIZE 10
+#if !defined(USE_SCRATCH_MALLOC)
+# define USE_SCRATCH_MALLOC
 #endif
-#if !defined(MAX_ALLOC_MB)
-# define MAX_ALLOC_MB 100
+#if defined(USE_SCRATCH_MALLOC)
+# define MALLOC(SIZE) libxsmm_aligned_scratch(SIZE, 0/*auto*/)
+# define FREE(POINTER) libxsmm_free(POINTER)
+#else
+# define MALLOC(SIZE) malloc(SIZE)
+# define FREE(POINTER) free(POINTER)
+#endif
+
+#if !defined(MAX_MALLOC_MB)
+# define MAX_MALLOC_MB 100
+#endif
+#if !defined(MAX_MALLOC_N)
+# define MAX_MALLOC_N 10
 #endif
 
 
 int main(int argc, char* argv[])
 {
-  const int size = LIBXSMM_DEFAULT(10, 1 < argc ? atoi(argv[1]) : 0);
-  const int nthreads = LIBXSMM_DEFAULT(1, 2 < argc ? atoi(argv[2]) : 0);
+  const int ncycles = LIBXSMM_DEFAULT(1000000, 1 < argc ? atoi(argv[1]) : 0);
+  const int nalloc = LIBXSMM_MIN(MAX_MALLOC_N, 2 < argc ? atoi(argv[2]) : (MAX_MALLOC_N));
+  const int nthreads = LIBXSMM_DEFAULT(1, 3 < argc ? atoi(argv[3]) : 0);
   unsigned long long start;
-  double dcall, dalloc;
-  void* p[MAX_BATCHSIZE];
-  int r[MAX_BATCHSIZE];
   unsigned int ncalls = 0;
+  double dcall, dalloc;
+  void* p[MAX_MALLOC_N];
+  int r[MAX_MALLOC_N];
   int i, j;
 
 #if defined(_OPENMP)
-  if (1 < nthreads) omp_set_num_threads(nthreads);
+  if (0 < nthreads) omp_set_num_threads(nthreads);
 #endif
 
   /* generate set of random number for parallel region */
-  for (i = 0; i < (MAX_BATCHSIZE); ++i) r[i] = rand();
+  for (i = 0; i < nalloc; ++i) r[i] = rand();
 
   /* count number of calls according to randomized scheme */
-  for (i = 0; i < size; ++i) {
-    ncalls += (r[i % (MAX_BATCHSIZE)] % (MAX_BATCHSIZE)) + 1;
+  for (i = 0; i < ncycles; ++i) {
+    ncalls += (r[i%nalloc] % nalloc) + 1;
   }
   assert(0 != ncalls);
 
-  fprintf(stdout, "Running %u allocation+free cycles using %i thread%s...\n", ncalls,
-    1 >= nthreads ? 1 : nthreads,
-    1 >= nthreads ? "" : "s");
+  fprintf(stdout, "Running %i cycles with max. %i malloc+free (%u calls) using %i thread%s...\n",
+    ncycles, nalloc, ncalls, 1 >= nthreads ? 1 : nthreads, 1 >= nthreads ? "" : "s");
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
@@ -87,7 +98,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #   pragma omp parallel for default(none) private(i)
 #endif
-    for (i = 0; i < (size * (MAX_BATCHSIZE)); ++i) {
+    for (i = 0; i < (ncycles * (MAX_MALLOC_N)); ++i) {
       libxsmm_init(); /* subsequent calls are not doing any work */
     }
     dcall = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -96,14 +107,14 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #   pragma omp parallel for default(none) private(i, j)
 #endif
-    for (i = 0; i < size; ++i) {
-      const int nbatch = (r[i%(MAX_BATCHSIZE)] % (MAX_BATCHSIZE)) + 1;
-      for (j = 0; j < nbatch; ++j) {
-        const size_t nbytes = (r[j%(MAX_BATCHSIZE)] % (MAX_ALLOC_MB) + 1) << 20;
-        p[j] = libxsmm_aligned_scratch(nbytes, 0/*auto*/);
+    for (i = 0; i < ncycles; ++i) {
+      const int count = (r[i%nalloc] % nalloc) + 1;
+      for (j = 0; j < count; ++j) {
+        const size_t nbytes = (r[j%nalloc] % (MAX_MALLOC_MB) + 1) << 20;
+        p[j] = MALLOC(nbytes);
       }
-      for (j = 0; j < nbatch; ++j) {
-        libxsmm_free(p[j]);
+      for (j = 0; j < count; ++j) {
+        FREE(p[j]);
       }
     }
     dalloc = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -111,9 +122,11 @@ int main(int argc, char* argv[])
 
   if (0 < dcall && 0 < dalloc) {
     fprintf(stdout, "\tallocation+free calls/s: %.1f MHz\n", 1E-6 * ncalls / dalloc);
-    fprintf(stdout, "\tempty calls/s: %.1f MHz\n", 1E-6 * (size * (MAX_BATCHSIZE)) / dcall);
+    fprintf(stdout, "\tempty calls/s: %.1f MHz\n", 1E-6 * (ncycles * (MAX_MALLOC_N)) / dcall);
     fprintf(stdout, "\toverhead: %.1fx\n", dalloc / dcall);
   }
+
+  libxsmm_release_scratch(0/*npending*/);
   fprintf(stdout, "Finished\n");
 
   return EXIT_SUCCESS;
