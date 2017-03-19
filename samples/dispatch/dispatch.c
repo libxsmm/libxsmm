@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
   int i;
 
 #if defined(_OPENMP)
-  if (1 < nthreads) omp_set_num_threads(nthreads);
+  if (0 < nthreads) omp_set_num_threads(nthreads);
 #endif
 
   fprintf(stdout, "Dispatching %i calls %s internal synchronization using %i thread%s...\n", size,
