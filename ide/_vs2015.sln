@@ -109,6 +109,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "malloc", "..\tests\malloc.v
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "diff", "..\tests\diff.vcxproj", "{4C01D351-AB20-456B-8E75-8F4FC28FCF92}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scratch", "..\samples\scratch\scratch.vcxproj", "{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug|Win32 = debug|Win32
@@ -371,6 +376,18 @@ Global
 		{4C01D351-AB20-456B-8E75-8F4FC28FCF92}.symbols|Win32.Build.0 = symbols|Win32
 		{4C01D351-AB20-456B-8E75-8F4FC28FCF92}.symbols|x64.ActiveCfg = symbols|x64
 		{4C01D351-AB20-456B-8E75-8F4FC28FCF92}.symbols|x64.Build.0 = symbols|x64
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}.debug|Win32.ActiveCfg = debug|Win32
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}.debug|Win32.Build.0 = debug|Win32
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}.debug|x64.ActiveCfg = debug|x64
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}.debug|x64.Build.0 = debug|x64
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}.release|Win32.ActiveCfg = release|Win32
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}.release|Win32.Build.0 = release|Win32
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}.release|x64.ActiveCfg = release|x64
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}.release|x64.Build.0 = release|x64
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}.symbols|Win32.ActiveCfg = symbols|Win32
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}.symbols|Win32.Build.0 = symbols|Win32
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}.symbols|x64.ActiveCfg = symbols|x64
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -397,5 +414,6 @@ Global
 		{E5AF3D43-4860-4F28-8674-D641A954C7C9} = {E2249458-2416-4A36-99D3-FB73A59427C1}
 		{C535D386-FC53-42CF-B9FE-34630FB15929} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{4C01D351-AB20-456B-8E75-8F4FC28FCF92} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
+		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3} = {E0C8F9A7-ABF4-4366-B2A7-31F06F01E6B3}
 	EndGlobalSection
 EndGlobal

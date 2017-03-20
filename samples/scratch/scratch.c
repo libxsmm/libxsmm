@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2017, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -42,80 +42,93 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(USE_SCRATCH_MALLOC)
+# define USE_SCRATCH_MALLOC
+#endif
+#if defined(USE_SCRATCH_MALLOC)
+# define MALLOC(SIZE) libxsmm_aligned_scratch(SIZE, 0/*auto*/)
+# define FREE(POINTER) libxsmm_free(POINTER)
+#else
+# define MALLOC(SIZE) malloc(SIZE)
+# define FREE(POINTER) free(POINTER)
+#endif
 
-/**
- * This (micro-)benchmark optionally takes a number of dispatches to be performed.
- * The program measures the duration needed to figure out whether a requested matrix
- * multiplication is available or not. The measured duration excludes the time taken
- * to actually generate the code during the first dispatch.
- */
+#if !defined(MAX_MALLOC_MB)
+# define MAX_MALLOC_MB 100
+#endif
+#if !defined(MAX_MALLOC_N)
+# define MAX_MALLOC_N 10
+#endif
+
+
 int main(int argc, char* argv[])
 {
-  const int size = LIBXSMM_DEFAULT(10000000, 1 < argc ? atoi(argv[1]) : 0);
-  const int nthreads = LIBXSMM_DEFAULT(1, 2 < argc ? atoi(argv[2]) : 0);
+  const int ncycles = LIBXSMM_DEFAULT(1000000, 1 < argc ? atoi(argv[1]) : 0);
+  const int nalloc = LIBXSMM_MIN(MAX_MALLOC_N, 2 < argc ? atoi(argv[2]) : (MAX_MALLOC_N));
+  const int nthreads = LIBXSMM_DEFAULT(1, 3 < argc ? atoi(argv[3]) : 0);
   unsigned long long start;
-  double dcall, ddisp;
-  int i;
+  unsigned int ncalls = 0;
+  double dcall, dalloc;
+  void* p[MAX_MALLOC_N];
+  int r[MAX_MALLOC_N];
+  int i, j;
 
 #if defined(_OPENMP)
   if (0 < nthreads) omp_set_num_threads(nthreads);
 #endif
 
-  fprintf(stdout, "Dispatching %i calls %s internal synchronization using %i thread%s...\n", size,
-#if 0 != LIBXSMM_SYNC
-    "with",
-#else
-    "without",
-#endif
-    1 >= nthreads ? 1 : nthreads,
-    1 >= nthreads ? "" : "s");
+  /* generate set of random number for parallel region */
+  for (i = 0; i < nalloc; ++i) r[i] = rand();
 
-#if 0 != LIBXSMM_JIT
-  if (LIBXSMM_X86_AVX > libxsmm_get_target_archid()) {
-    fprintf(stderr, "\tWarning: JIT support is not available at runtime!\n");
+  /* count number of calls according to randomized scheme */
+  for (i = 0; i < ncycles; ++i) {
+    ncalls += (r[i%nalloc] % nalloc) + 1;
   }
-#else
-  fprintf(stderr, "\tWarning: JIT support has been disabled at build time!\n");
-#endif
+  assert(0 != ncalls);
+
+  fprintf(stdout, "Running %i cycles with max. %i malloc+free (%u calls) using %i thread%s...\n",
+    ncycles, nalloc, ncalls, 1 >= nthreads ? 1 : nthreads, 1 >= nthreads ? "" : "s");
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    /* first invocation may initialize some internals (libxsmm_init),
-     * or actually generate code (code gen. time is out of scope)
-     */
-    libxsmm_dmmdispatch(LIBXSMM_AVG_M, LIBXSMM_AVG_N, LIBXSMM_AVG_K,
-      NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
-      NULL/*flags*/, NULL/*prefetch*/);
-
     /* run non-inline function to measure call overhead of an "empty" function */
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #   pragma omp parallel for default(none) private(i)
 #endif
-    for (i = 0; i < size; ++i) {
+    for (i = 0; i < (ncycles * (MAX_MALLOC_N)); ++i) {
       libxsmm_init(); /* subsequent calls are not doing any work */
     }
     dcall = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#   pragma omp parallel for default(none) private(i)
+#   pragma omp parallel for default(none) private(i, j)
 #endif
-    for (i = 0; i < size; ++i) {
-      libxsmm_dmmdispatch(LIBXSMM_AVG_M, LIBXSMM_AVG_N, LIBXSMM_AVG_K,
-        NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
-        NULL/*flags*/, NULL/*prefetch*/);
+    for (i = 0; i < ncycles; ++i) {
+      const int count = (r[i%nalloc] % nalloc) + 1;
+      for (j = 0; j < count; ++j) {
+        const size_t nbytes = (r[j%nalloc] % (MAX_MALLOC_MB) + 1) << 20;
+        p[j] = MALLOC(nbytes);
+      }
+      for (j = 0; j < count; ++j) {
+        FREE(p[j]);
+      }
     }
-    ddisp = libxsmm_timer_duration(start, libxsmm_timer_tick());
+    dalloc = libxsmm_timer_duration(start, libxsmm_timer_tick());
   }
 
-  if (0 < dcall && 0 < ddisp) {
-    fprintf(stdout, "\tdispatch calls/s: %.1f MHz\n", 1E-6 * size / ddisp);
-    fprintf(stdout, "\tempty calls/s: %.1f MHz\n", 1E-6 * size / dcall);
-    fprintf(stdout, "\toverhead: %.1fx\n", ddisp / dcall);
+  if (0 < dcall && 0 < dalloc) {
+    const double alloc_freq = 1E-6 * ncalls / dalloc;
+    const double empty_freq = 1E-6 * (ncycles * (MAX_MALLOC_N)) / dcall;
+    fprintf(stdout, "\tallocation+free calls/s: %.1f MHz\n", alloc_freq);
+    fprintf(stdout, "\tempty calls/s: %.1f MHz\n", empty_freq);
+    fprintf(stdout, "\toverhead: %.1fx\n", empty_freq / alloc_freq);
   }
+
+  libxsmm_release_scratch(0/*npending*/);
   fprintf(stdout, "Finished\n");
 
   return EXIT_SUCCESS;

@@ -191,6 +191,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE internal_reglock[INTERNA
 
 /** Determines the try-lock property (1<N: off, N=1: enabled). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_reglock_count;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t internal_registry_nbytes;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE internal_regkey_type* internal_registry_keys;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_registry;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE internal_statistic_type internal_statistic[2/*DP/SP*/][4/*sml/med/big/xxx*/];
@@ -198,7 +199,6 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_sml;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_med;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_mnk;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_teardown;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t internal_heapmem;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_dispatch_trylock_locked;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_gemm_auto_prefetch_locked;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_gemm_auto_prefetch;
@@ -456,10 +456,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_finalize(void)
     {
       const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
       const unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
+      const size_t scratch_size = libxsmm_scratch_size();
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak) {
-        fprintf(stderr, "LIBXSMM_TARGET=%s ", target_arch);
+        fprintf(stderr, "LIBXSMM_TARGET=%s", target_arch);
       }
-      fprintf(stderr, "HEAP: %.f MB\n", 1.0 * internal_heapmem / (1 << 20));
+      fprintf(stderr, "  Registry: %.f MB", 1.0 * internal_registry_nbytes / (1 << 20));
+      if (0 < scratch_size) {
+        fprintf(stderr, "  Scratch: %.f MB\n", 1.0 * scratch_size / (1 << 20));
+      }
+      else {
+        fprintf(stderr, "\n");
+      }
     }
   }
   {
@@ -679,7 +686,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 
     if (0 != registry) {
       internal_regkey_type *const registry_keys = internal_registry_keys;
-      internal_heapmem = (LIBXSMM_CAPACITY_REGISTRY) * (sizeof(libxsmm_code_pointer) + sizeof(internal_regkey_type));
+      internal_registry_nbytes = (LIBXSMM_CAPACITY_REGISTRY) * (sizeof(libxsmm_code_pointer) + sizeof(internal_regkey_type));
 
       /* serves as an id to invalidate the thread-local cache; never decremented */
       ++internal_teardown;
@@ -726,7 +733,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             if (EXIT_SUCCESS == libxsmm_malloc_info(code.const_pmm, &size, 0/*flags*/, &buffer)) {
               libxsmm_xfree(code.const_pmm);
               ++internal_statistic[precision][bucket].njit;
-              internal_heapmem += (unsigned int)(size + (((char*)code.const_pmm) - (char*)buffer));
+              internal_registry_nbytes += (unsigned int)(size + (((char*)code.const_pmm) - (char*)buffer));
             }
           }
           else {
