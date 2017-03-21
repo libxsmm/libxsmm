@@ -1014,7 +1014,7 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
     total_size < internal_malloc_scratchmin) /* reallocate scratch domain */
   {
     /* TODO: ensure thread-safety */
-    scratch = internal_malloc_scratch_buffer;
+    scratch = (const char*)internal_malloc_scratch_buffer; /* update */
     LIBXSMM_ATOMIC_STORE_ZERO(&internal_malloc_scratch_buffer, LIBXSMM_ATOMIC_SEQ_CST);
     LIBXSMM_ATOMIC_STORE_ZERO(&internal_malloc_scratch, LIBXSMM_ATOMIC_SEQ_CST);
     libxsmm_xfree(scratch);
