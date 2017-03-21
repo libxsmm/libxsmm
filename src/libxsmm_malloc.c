@@ -1003,7 +1003,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_malloc(size_t size)
 LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 {
   const size_t total_size = libxsmm_malloc_size(internal_malloc_scratch_buffer);
-  const char *const scratch = (const char*)internal_malloc_scratch_buffer;
+  const char* scratch = (const char*)internal_malloc_scratch_buffer;
   const char *const buffer = (const char*)memory;
   /* check if memory belongs to scratch domain */
   if (0 == scratch || buffer < scratch || (scratch + total_size <= buffer)) { /* local */
@@ -1014,10 +1014,10 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
     total_size < internal_malloc_scratchmin) /* reallocate scratch domain */
   {
     /* TODO: ensure thread-safety */
-    const void *const buffer = internal_malloc_scratch_buffer;
+    scratch = (const char*)internal_malloc_scratch_buffer; /* update */
     LIBXSMM_ATOMIC_STORE_ZERO(&internal_malloc_scratch_buffer, LIBXSMM_ATOMIC_SEQ_CST);
     LIBXSMM_ATOMIC_STORE_ZERO(&internal_malloc_scratch, LIBXSMM_ATOMIC_SEQ_CST);
-    libxsmm_xfree(buffer);
+    libxsmm_xfree(scratch);
   }
   else { /* reuse scratch domain */
     /* TODO: document/check that allocation/deallocation adheres to linear/scoped allocator policy */
