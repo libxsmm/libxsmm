@@ -209,6 +209,28 @@ LIBXSMM_API
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
+unsigned int libxsmm_trace_address(void* buffer[], unsigned int size);
+
+LIBXSMM_API_DEFINITION
+#if defined(_WIN32)
+/*TODO: no inline*/
+#elif defined(__GNUC__)
+/*LIBXSMM_ATTRIBUTE(noinline)*/
+#endif
+unsigned int libxsmm_trace_address(void* buffer[], unsigned int size)
+{
+#if defined(_WIN32) || defined(__CYGWIN__)
+  return CaptureStackBackTrace(0, size, buffer, NULL);
+#else
+  return (unsigned int)backtrace(buffer, (int)size);
+#endif
+}
+
+
+LIBXSMM_API
+#if defined(__GNUC__)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
 const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms);
 
 LIBXSMM_API_DEFINITION
@@ -239,11 +261,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
     if (0 <= i) { /* do nothing if not yet initialized */
       const int mindepth = filter_mindepth ? *filter_mindepth : internal_trace_mindepth;
       const int maxnsyms = filter_maxnsyms ? *filter_maxnsyms : internal_trace_maxnsyms;
-# if defined(_WIN32) || defined(__CYGWIN__)
-      i = CaptureStackBackTrace(0, max_n, stack, NULL);
-# else
-      i = backtrace(stack, max_n);
-# endif
+      i = libxsmm_trace_address(stack, max_n);
       /* filter depth against filter_mindepth and filter_maxnsyms */
       if ((0 >= mindepth ||      (min_n + mindepth) <= i) &&
           (0 >  maxnsyms || i <= (min_n + mindepth + maxnsyms - 1)))

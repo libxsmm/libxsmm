@@ -243,26 +243,40 @@ private:
   template<typename context_type> static void* malloc_ctx(void* context, size_t size) {
     typedef typename context_type::WrappedAllocator::first_type allocator_ptr;
     context_type *const tf_context = static_cast<context_type*>(context);
-    const allocator_ptr allocator = (0 != tf_context && 0 != tf_context->device())
-      ? tf_context->device()->GetStepAllocator(0 < tf_context->num_outputs()
-        ? tf_context->output_alloc_attr(0)
-        : tf_context->input_alloc_attr(0),
-        tf_context->resource_manager())
-      : 0;
-    /* no waste with (useless) alignment; raw result is re-aligned anyways */
-    return 0 != allocator ? allocator->AllocateRaw(1/*alignment*/, size) : 0;
+    if (0 != tf_context && 0 != tf_context->device()) {
+      allocator_ptr allocator = 0;
+      if (0 < tf_context->num_outputs()) {
+        allocator = tf_context->device()->GetStepAllocator(
+          tf_context->output_alloc_attr(0),
+          tf_context->resource_manager());
+      }
+      else if (0 < tf_context->num_inputs()) {
+        allocator = tf_context->device()->GetStepAllocator(
+          tf_context->input_alloc_attr(0),
+          tf_context->resource_manager());
+      }
+      /* no waste with (useless) alignment; raw result is re-aligned anyways */
+      return 0 != allocator ? allocator->AllocateRaw(1/*alignment*/, size) : 0;
+    }
   }
 
   template<typename context_type> static void free_ctx(void* context, void* buffer) {
     typedef typename context_type::WrappedAllocator::first_type allocator_ptr;
     context_type *const tf_context = static_cast<context_type*>(context);
-    const allocator_ptr allocator = (0 != tf_context && 0 != tf_context->device())
-      ? tf_context->device()->GetStepAllocator(0 < tf_context->num_outputs()
-        ? tf_context->output_alloc_attr(0)
-        : tf_context->input_alloc_attr(0),
-        tf_context->resource_manager())
-      : 0;
-    if (0 != allocator) { allocator->DeallocateRaw(buffer); }
+    if (0 != tf_context && 0 != tf_context->device()) {
+      allocator_ptr allocator = 0;
+      if (0 < tf_context->num_outputs()) {
+        allocator = tf_context->device()->GetStepAllocator(
+          tf_context->output_alloc_attr(0),
+          tf_context->resource_manager());
+      }
+      else if (0 < tf_context->num_inputs()) {
+        allocator = tf_context->device()->GetStepAllocator(
+          tf_context->input_alloc_attr(0),
+          tf_context->resource_manager());
+      }
+      if (0 != allocator) { allocator->DeallocateRaw(buffer); }
+    }
   }
 };
 

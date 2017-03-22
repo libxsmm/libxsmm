@@ -34,6 +34,7 @@
 # define _GNU_SOURCE
 #endif
 #include <libxsmm.h>
+#include "libxsmm_trace.h"
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -935,7 +936,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_aligned_scratch(size_t size, size_t alignme
   void* result = 0;
 
   if (total_size < inuse_size + alloc_size) {
-    const size_t minsize = 2 * LIBXSMM_MAX(size, internal_malloc_scratchmin);
+    const size_t minsize = 2 * LIBXSMM_MAX(alloc_size, internal_malloc_scratchmin);
     if (0 == internal_malloc_scratch_buffer) {
       LIBXSMM_INIT
       LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
