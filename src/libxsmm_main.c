@@ -738,17 +738,18 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       }
       free(registry_keys);
       free(registry);
+
+      { /* release scratch memory pool */
+        size_t n = 0;
+        libxsmm_release_scratch(&n);
+        if (0 < n && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+          fprintf(stderr, "LIBXSMM: pending scratch-memory allocations discovered!\n");
+        }
+      }
     }
 #if !defined(LIBXSMM_NO_SYNC) /* LIBXSMM_LOCK_RELEASE, but no LIBXSMM_LOCK_DESTROY */
     for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
 #endif
-  }
-  { /* release scratch memory pool */
-    size_t n = 0;
-    libxsmm_release_scratch(&n);
-    if (0 < n && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
-      fprintf(stderr, "LIBXSMM: pending scratch-memory allocations discovered!\n");
-    }
   }
 }
 
