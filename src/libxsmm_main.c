@@ -1092,7 +1092,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
           const char *const precision_in = internal_get_precision_string(request->descriptor.cbwd->datatype);
           const char *const precision_out = internal_get_precision_string(request->descriptor.cbwd->datatype_itm);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_bwd_%s_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%u_v%u_pa%u_p%i_f%i.conv",
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_bwd_%s_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_p%i_f%i.conv",
             target_arch/*code path name*/, precision_in, precision_out,
             (unsigned int)request->descriptor.cbwd->kw/*kernel width*/, (unsigned int)request->descriptor.cbwd->kh/*kernel height*/,
             (unsigned int)request->descriptor.cbwd->unroll_kw/*width*/, (unsigned int)request->descriptor.cbwd->unroll_kh/*height*/,
@@ -1103,9 +1103,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
             (unsigned int)request->descriptor.cbwd->ofh_padded/*2D register block*/,
             (unsigned int)request->descriptor.cbwd->ofw_rb/*register block ofw*/,
             (unsigned int)request->descriptor.cbwd->ofh_rb/*register block ofh*/,
-            (unsigned int)request->descriptor.cbwd->ofw/*ofw*/, (unsigned int)request->descriptor.cbwd->ofw_unroll/*ofw_unroll*/,
-            (unsigned int)request->descriptor.cbwd->peeled/*peeled version*/,
-            (unsigned int)request->descriptor.cbwd->prefetch_output_ahead/*prefetch kj outputs for jumping from non-peel to peel version*/,
             (int)request->descriptor.cbwd->prefetch/*binary OR'd prefetch flags*/,
             (int)request->descriptor.cbwd->format/*binary OR'd format flags*/);
         }

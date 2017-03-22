@@ -215,6 +215,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_forward_descriptor;
 
+#if 0 /* Old backward descriptor */
 /** Structure storing the convolution backward argument description. */
 typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
   unsigned int kw;                              /* kernel width */
@@ -246,6 +247,35 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
   libxsmm_dnn_datatype datatype_itm;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_backward_descriptor;
+#endif
+/* New backward descriptor similar to forward descriptor */
+/** Structure storing the convolution backward argument description. */
+typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
+  unsigned int kh;                              /* kernel height */
+  unsigned int kw;                              /* kernel width */
+  unsigned int unroll_kh;                       /* kernel height, unrolled */
+  unsigned int unroll_kw;                       /* kernel width, unrolled */
+  unsigned int blocks_ofm;
+  unsigned int blocks_ifm;
+  unsigned int ofm_block;                       /* should be VLEN */
+  unsigned int ifm_block;                       /* should be VLEN */
+  unsigned int ofh_padded;                      /* this we need for 2D register block */
+  unsigned int ofw_padded;                      /* this we use for 1D and 2D register block */
+  unsigned int ofh_rb;                          /* UR, register block of ofh */
+  unsigned int ofw_rb;                          /* UR, register block of ofw */
+  unsigned int ifh_padded;                      /* this we need for 2D register block */
+  unsigned int ifw_padded;                      /* this we use for 1D and 2D register block */
+  unsigned int stride_h;                        /* this we use for offsets in the input */
+  unsigned int stride_w;                        /* this we use for offsets in the input */
+  unsigned int ofw;
+  unsigned int fm_lp_block;                    /* additional blocking for low precision datatypes of ifm */
+  libxsmm_dnn_tensor_format format;
+  libxsmm_dnn_conv_option option;
+  libxsmm_dnn_datatype datatype;
+  libxsmm_dnn_datatype datatype_itm;
+  libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
+} libxsmm_convolution_backward_descriptor;
+
 
 /** Structure storing the convolution weight update argument description. */
 typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
