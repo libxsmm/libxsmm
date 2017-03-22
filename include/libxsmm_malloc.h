@@ -141,19 +141,22 @@ public:
   /** C'tor, which instantiates the new allocator (plain form). */
   libxsmm_scoped_allocator(libxsmm_malloc_fun malloc_fn, libxsmm_free_fun free_fn) {
     kind::get(m_context, m_malloc, m_free);
-    kind::set(0/*context*/, libxsmm_make_malloc_fun(malloc_fn), libxsmm_make_free_fun(free_fn));
+    kind::set(0/*context*/, 0/*malloc_ctx*/, 0/*free_ctx*/, malloc_fn, free_fn);
   }
 
   /** C'tor, which instantiates the new allocator (context form). */
-  libxsmm_scoped_allocator(void* context,
-    libxsmm_malloc_ctx malloc_fn, libxsmm_free_ctx free_fn) {
+  libxsmm_scoped_allocator(void* context, libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
+    libxsmm_malloc_fun malloc_fun = 0, libxsmm_free_fun free_fun = 0)
+  {
     kind::get(m_context, m_malloc, m_free);
-    kind::set(context, libxsmm_make_malloc_ctx(malloc_fn), libxsmm_make_free_ctx(free_fn));
+    kind::set(context, malloc_ctx, free_ctx, malloc_fun, free_fun);
   }
 
   /** Following the RAII idiom, the d'tor restores the previous allocator. */
   ~libxsmm_scoped_allocator() {
-    kind::set(m_context, m_malloc, m_free);
+    kind::set(m_context,
+      m_malloc.ctx_form, m_free.ctx_form,
+      m_malloc.function, m_free.function);
   }
 
 private: /* no copy/assignment */
@@ -169,9 +172,19 @@ private: /* saved/previous allocator */
 /** Allocator-kind to instantiate libxsmm_scoped_allocator<kind>. */
 struct LIBXSMM_RETARGETABLE libxsmm_default_allocator {
   static void set(void* context,
-    libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
+    libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
+    libxsmm_malloc_fun malloc_fun, libxsmm_free_fun free_fun)
   {
-    libxsmm_set_default_allocator(context, malloc_fn, free_fn);
+    if (0 == context) { /* use global form only when no context is given */
+      libxsmm_set_default_allocator(0/*context*/,
+        libxsmm_make_malloc_fun(malloc_fun),
+        libxsmm_make_free_fun(free_fun));
+    }
+    else {
+      libxsmm_set_default_allocator(context,
+        libxsmm_make_malloc_ctx(malloc_ctx),
+        libxsmm_make_free_ctx(free_ctx));
+    }
   }
   static void get(void*& context,
     libxsmm_malloc_function& malloc_fn, libxsmm_free_function& free_fn)
@@ -183,9 +196,19 @@ struct LIBXSMM_RETARGETABLE libxsmm_default_allocator {
 /** Allocator-kind to instantiate libxsmm_scoped_allocator<kind>. */
 struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
   static void set(void* context,
-    libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
+    libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
+    libxsmm_malloc_fun malloc_fun, libxsmm_free_fun free_fun)
   {
-    libxsmm_set_scratch_allocator(context, malloc_fn, free_fn);
+    if (0 != malloc_fun) { /* prefer/adopt global malloc/free functions */
+      libxsmm_set_scratch_allocator(0/*context*/,
+        libxsmm_make_malloc_fun(malloc_fun),
+        libxsmm_make_free_fun(free_fun));
+    }
+    else {
+      libxsmm_set_scratch_allocator(context,
+        libxsmm_make_malloc_ctx(malloc_ctx),
+        libxsmm_make_free_ctx(free_ctx));
+    }
   }
   static void get(void*& context,
     libxsmm_malloc_function& malloc_fn, libxsmm_free_function& free_fn)
@@ -222,7 +245,9 @@ public:
   explicit libxsmm_tf_allocator(context_type& context)
     : libxsmm_scoped_allocator<kind>(&context,
       libxsmm_tf_allocator::malloc_ctx<context_type>,
-      libxsmm_tf_allocator::free_ctx<context_type>)
+      libxsmm_tf_allocator::free_ctx<context_type>,
+      libxsmm_tf_allocator::malloc,
+      libxsmm_tf_allocator::free)
   {}
 
 private:
