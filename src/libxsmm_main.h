@@ -203,6 +203,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int padding_flag;           /* Flag that dictates if we should apply padding in the input */
   void* scratch6;
   size_t scratch6_size;
+  void* scratch7;         /* This scratch is used for low precision intermediate buffer for input in backward pass*/
+  size_t scratch7_size;
   void* scratchIw;
   size_t scratchIw_size;
   void* scratchOw;

@@ -1360,6 +1360,10 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
             scratch5_size = handle->fwdbwd_scratch_size;
             l_scratch_size += scratch5_size + 64;
           }
+          /* low precision intermediate buffer for input */
+          if (handle->datatype != handle->datatype_itm ) {
+            l_scratch_size = handle->scratch7_size + 64;
+          }
         } break;
         case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
           /* we need a minibatch copy for transpose of input, scratch3 */
@@ -1385,6 +1389,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
           /* low precision intermediate buffer */
           if ( handle->datatype != handle->datatype_itm ) {
             l_scratch_size += handle->scratch6_size + 64;
+            l_scratch_size += handle->scratch7_size + 64;
           }
           if (handle->padding_flag == 1) {
             scratch5_size = handle->max_scratch5_size;
@@ -1518,6 +1523,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
             /* Initialize scratch5 to zero */
             memset(handle->scratch5, 0, scratch5_size);
           }
+          if ( handle->datatype != handle->datatype_itm ) {
+            if (address % 64 == 0) {
+              handle->scratch7 = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch7 = (void*)(address+offset);
+            }
+          }
         } break;
         case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
           /* we need a minibatch copy for transpose of input, scratch3 */
@@ -1598,6 +1611,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
               handle->scratch6 = (void*)(address+offset);
             }
             address += handle->scratch6_size + 64;
+            if (address % 64 == 0) {
+              handle->scratch7 = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch7 = (void*)(address+offset);
+            }
+            address += handle->scratch7_size + 64;
           }
         } break;
         default: {
