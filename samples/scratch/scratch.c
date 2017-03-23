@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
   double dcall, dalloc;
   void* p[MAX_MALLOC_N];
   int r[MAX_MALLOC_N];
+  size_t npending;
   int i;
 
 #if defined(_OPENMP)
@@ -129,9 +130,9 @@ int main(int argc, char* argv[])
     fprintf(stdout, "\toverhead: %.1fx\n", empty_freq / alloc_freq);
   }
 
-  libxsmm_release_scratch(0/*npending*/);
+  libxsmm_release_scratch(&npending);
   fprintf(stdout, "Finished\n");
 
-  return EXIT_SUCCESS;
+  return 0 == npending ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
