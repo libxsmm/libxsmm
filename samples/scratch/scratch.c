@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
   double dcall, dalloc;
   void* p[MAX_MALLOC_N];
   int r[MAX_MALLOC_N];
-  int i, j;
+  int i;
 
 #if defined(_OPENMP)
   if (0 < nthreads) omp_set_num_threads(nthreads);
@@ -105,10 +105,11 @@ int main(int argc, char* argv[])
 
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#   pragma omp parallel for default(none) private(i, j)
+#   pragma omp parallel for default(none) private(i)
 #endif
     for (i = 0; i < ncycles; ++i) {
       const int count = (r[i%nalloc] % nalloc) + 1;
+      int j;
       for (j = 0; j < count; ++j) {
         const size_t nbytes = (r[j%nalloc] % (MAX_MALLOC_MB) + 1) << 20;
         p[j] = MALLOC(nbytes);
