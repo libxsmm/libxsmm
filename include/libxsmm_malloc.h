@@ -58,19 +58,6 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_free_function {
   libxsmm_free_fun function;
 } libxsmm_free_function;
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_make_malloc_fun(libxsmm_malloc_fun malloc_fn) {
-  libxsmm_malloc_function result; result.function = malloc_fn; return result;
-}
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_make_free_fun(libxsmm_free_fun free_fn) {
-  libxsmm_free_function result; result.function = free_fn; return result;
-}
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_make_malloc_ctx(libxsmm_malloc_ctx malloc_fn) {
-  libxsmm_malloc_function result; result.ctx_form = malloc_fn; return result;
-}
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_make_free_ctx(libxsmm_free_ctx free_fn) {
-  libxsmm_free_function result; result.ctx_form = free_fn; return result;
-}
-
 /**
  * To setup the custom default memory allocator, either a malloc_fn and a free_fn
  * are given, or two NULL-pointers designate to reset the default allocator to a
@@ -106,7 +93,10 @@ LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
    */
   size_t alignment);
 
-/** Allocate aligned scratch memory. */
+/**
+ * Allocate aligned scratch memory. It is not supported
+ * to query properties e.g., libxsmm_malloc_size.
+ */
 LIBXSMM_API void* libxsmm_aligned_scratch(size_t size,
   /**
    * =0: align automatically according to the size
@@ -175,16 +165,14 @@ struct LIBXSMM_RETARGETABLE libxsmm_default_allocator {
     libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
     libxsmm_malloc_fun malloc_fun, libxsmm_free_fun free_fun)
   {
+    libxsmm_malloc_function malloc_fn, free_fn;
     if (0 == context) { /* use global form only when no context is given */
-      libxsmm_set_default_allocator(0/*context*/,
-        libxsmm_make_malloc_fun(malloc_fun),
-        libxsmm_make_free_fun(free_fun));
+      malloc_fn.function = malloc_fun; free_fn.function = free_fun;
     }
     else {
-      libxsmm_set_default_allocator(context,
-        libxsmm_make_malloc_ctx(malloc_ctx),
-        libxsmm_make_free_ctx(free_ctx));
+      malloc_fn.ctx_form = malloc_ctx; free_fn.ctx_form = free_ctx;
     }
+    libxsmm_set_default_allocator(context, malloc_fn, free_fn);
   }
   static void get(void*& context,
     libxsmm_malloc_function& malloc_fn, libxsmm_free_function& free_fn)
@@ -199,16 +187,15 @@ struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
     libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
     libxsmm_malloc_fun malloc_fun, libxsmm_free_fun free_fun)
   {
+    libxsmm_malloc_function malloc_fn, free_fn;
     if (0 != malloc_fun) { /* prefer/adopt global malloc/free functions */
-      libxsmm_set_scratch_allocator(0/*context*/,
-        libxsmm_make_malloc_fun(malloc_fun),
-        libxsmm_make_free_fun(free_fun));
+      malloc_fn.function = malloc_fun; free_fn.function = free_fun;
+      context = 0; /* global malloc/free functions */
     }
     else {
-      libxsmm_set_scratch_allocator(context,
-        libxsmm_make_malloc_ctx(malloc_ctx),
-        libxsmm_make_free_ctx(free_ctx));
+      malloc_fn.ctx_form = malloc_ctx; free_fn.ctx_form = free_ctx;
     }
+    libxsmm_set_default_allocator(context, malloc_fn, free_fn);
   }
   static void get(void*& context,
     libxsmm_malloc_function& malloc_fn, libxsmm_free_function& free_fn)
