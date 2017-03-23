@@ -282,7 +282,7 @@ double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1
 ```
 
 ### Memory Allocation
-Without further claims on the properties of the memory allocation (e.g., thread scalability), there are C functions ('libxsmm_malloc.h') that allocate aligned memory one of which allows to specify the alignment (or to specify an automatically chosen alignment). The automatic alignment is also exposed by a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
+Without further claims on the properties of the memory allocation (e.g., thread scalability), there are C functions ('libxsmm_malloc.h') that allocate aligned memory one of which allows to specify the alignment (or to specify an automatically select an alignment). The automatic alignment is also available with the `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
 **NOTE**: Only `libxsmm_free` is supported in order to deallocate the memory.
 
 ```C
@@ -294,7 +294,16 @@ void* libxsmm_aligned_scratch(size_t size, size_t alignment);
 size_t libxsmm_scratch_size(void);
 ```
 
-The library exposes two memory allocation domains: (1)&#160;default memory allocation, and (2)&#160;scratch memory allocation. In contrast to the default memory allocation techniques, the scratch memory allocation is meant to establish a watermark for buffers which would be repeatedly allocated and deallocated. By establishing a (remaining) pool of "temporary" memory, the cost of repeated allocation and deallocation is avoided at some point (once the watermark is reached during execution).  
+The library exposes two memory allocation domains: (1)&#160;default memory allocation, and (2)&#160;scratch memory allocation. There are service functions for both domains that allow to change the allocation and deallocation function. The "context form" even supports a user-defined "object", which may represent an allocator or any other external facility. To set the default allocator is analogous to setting the scratch memory allocator as shown below. See [include/libxsmm_malloc.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_malloc.h) for details.
+
+```C
+int libxsmm_set_scratch_allocator(void* context,
+  libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+int libxsmm_get_scratch_allocator(void** context,
+  libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
+```
+
+In contrast to the default allocation technique, the scratch memory allocation establishes a watermark for buffers which would be repeatedly allocated and deallocated. By establishing a pool of "temporary" memory, the cost of repeated allocation and deallocation cycles is avoided when the watermark is reached. The scratch memory allocator is scope-oriented, and should not be used for buffers of different life-time!  
 **NOTE**: be careful with scratch memory as it only grows during execution (in between `libxsmm_init` and `libxsmm_finalize` unless `libxsmm_release_scratch` is called). This is true even when `libxsmm_free` is (and should be) used!
 
 ## Build Instructions
