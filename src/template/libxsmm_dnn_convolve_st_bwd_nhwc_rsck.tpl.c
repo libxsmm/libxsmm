@@ -120,7 +120,7 @@ for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
     for (ki=0; ki < handle->desc.S; ++ki) {
       /* TODO: enable this later */
       /*transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);*/
-      /*WARNING! may be a source of error for low precision */ 
+      /* WARNING! may be a source of error for low precision */
       for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
         for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
           /*for (lp = 0; lp < handle->fm_lp_block; ++lp) {*/
@@ -195,7 +195,7 @@ libxsmm_barrier_wait(handle->barrier, ltid);
                         &LIBXSMM_VLA_ACCESS(7, pf_tr_wt, (pw_ofm1), (pw_ifm1), (pw_kj), (pw_ki), (pw_ofm2), (pw_ifm2), 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block), \
                         &LIBXSMM_VLA_ACCESS(6, pf_del_out, (po_img), (po_oj), (po_oi), (po_ofm1), (po_ofm2), 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock, handle->fm_lp_block) \
                        )
-                       
+
 #define LIBXSMM_JITTED_CONV_BP_NOWEIGHT_PF(input_to_use, i_img, i_ifm1, i_ij, i_ii, i_ifm2, \
                                   tr_wt, w_ofm1, w_ifm1, w_kj, w_ki, w_ofm2, w_ifm2, \
                                   del_out, o_img, o_ofm1, o_oj, o_oi, o_ofm2, \

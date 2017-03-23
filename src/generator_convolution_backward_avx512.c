@@ -47,7 +47,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
   libxsmm_convolution_kernel_config l_conv_kernel_config = { 0/*avoid warning "maybe used uninitialized" */ };
   libxsmm_convolution_backward_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker l_loop_label_tracker;
-  unsigned int l_kw_trips = 1; 
+  unsigned int l_kw_trips = 1;
   unsigned int l_kh_trips = 1;
   unsigned int l_kh = 0;
   unsigned int num_output_prefetch; /* used for distributing output prefetch in over kh loops */
@@ -199,7 +199,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
   if (i_conv_desc->unroll_kh != 0) {
     l_kh_trips = i_conv_desc->kh;
   }
-  
+
   /* Setting out the number of output prefetches per kh iterations */
   num_output_prefetch = i_conv_desc->ofw_rb / i_conv_desc->kh;
   if ((i_conv_desc->ofw_rb % i_conv_desc->kh) != 0) {
@@ -234,7 +234,6 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0 );
   }
 
-  
 
   if ( i_conv_desc->unroll_kh == 0 ) {
     /* open KH loop, kj */
@@ -256,7 +255,6 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
                                                          i_conv_desc,
                                                          i_conv_desc->unroll_kw == 0 ? 1 : l_kw_trips,
                                                          num_output_prefetch );
-    
 
     if (l_kw_trips == 1) {
       /* Adjust weight pointer */
@@ -313,7 +311,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_input,
-                                     i_conv_desc->ifw_padded * l_conv_kernel_config.l_ld_ifm_act * i_conv_desc->fm_lp_block * l_conv_kernel_config.datatype_size_in ); 
+                                     i_conv_desc->ifw_padded * l_conv_kernel_config.l_ld_ifm_act * i_conv_desc->fm_lp_block * l_conv_kernel_config.datatype_size_in );
 #ifdef ENABLE_INPUT_PREFETCH
     /* Adjust input prefetch pointer */
     if ( (i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 ) {
@@ -322,7 +320,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
                                        l_gp_reg_mapping.gp_reg_input_pf,
                                        i_conv_desc->ifw_padded * l_conv_kernel_config.l_ld_ifm_act * i_conv_desc->fm_lp_block * l_conv_kernel_config.datatype_size_in );
     }
-#endif  
+#endif
 
 #ifdef ENABLE_OUTPUT_PREFETCH
     /* Adjust ouput prefetch pointer */
@@ -335,7 +333,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
 #endif
 
   } /* end of for l_kh_trips */
-  
+
   if ( i_conv_desc->unroll_kh == 0 ) {
     /* close KH loop, kj */
     libxsmm_generator_convolution_footer_kh_loop(  io_generated_code, &l_loop_label_tracker,
@@ -597,7 +595,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
   unsigned int weight_counter = 0;
   unsigned int current_acc_start;
   unsigned int l_accs = (i_conv_desc->ofw_rb < 9) ? 2 : 2;
-  
+
   /* determine the number of registers needed for an ifm block */
   unsigned int l_reg_per_block = i_conv_desc->ifm_block / i_conv_kernel_config->vector_length_in;
   /* start register of accumulator */
@@ -610,7 +608,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
         /* load all ofw_rb VLEN inputs */
         if ( ((i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM && i_conv_desc->ofw_rb <= 14 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) || (i_conv_desc->ofw_rb < 12     && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1)) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) ) {
           /* determine the number of accumulators */
-          for ( j = 0; j < i_conv_desc->ofw_rb; j++ ) { 
+          for ( j = 0; j < i_conv_desc->ofw_rb; j++ ) {
             for (k = l_accs; k > 1; k--) {
               libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                        i_conv_kernel_config->instruction_set,
@@ -725,7 +723,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
 #endif
         } /* end of if extra accumulator is used*/
       } /* end of if l_k_2 == 0 */
-     
+
       l_displacement_k = 0;
       for ( l_k_3 = 0; l_k_3 < i_conv_desc->ofm_block; l_k_3++, l_k++) {
         if ( l_k == 0) {
@@ -746,7 +744,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
                                               i_conv_kernel_config->vmove_instruction,
                                               i_gp_reg_mapping->gp_reg_weight,
                                               LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                              ((l_k_2 * i_conv_kernel_config->l_ld_ofm_fil + l_k_3 + l_w) * i_conv_kernel_config->l_ld_ifm_fil) *(i_conv_kernel_config->datatype_size_wt), 
+                                              ((l_k_2 * i_conv_kernel_config->l_ld_ofm_fil + l_k_3 + l_w) * i_conv_kernel_config->l_ld_ifm_fil) *(i_conv_kernel_config->datatype_size_wt),
                                               i_conv_kernel_config->vector_name, l_w,
                                               0, 0 );
             }
@@ -930,7 +928,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
   unsigned int i,j,k;
   unsigned int weight_counter = 0;
   /*unsigned int l_output_offset = 0;*/
-  
+
   /* determine the number of registers needed for an ifm block */
   const unsigned int l_reg_per_block = i_conv_desc->ifm_block / i_conv_kernel_config->vector_length_in;
   /* start register of accumulator */
@@ -976,7 +974,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
         } /* end of for ofh_rb loop */
       } else {
       /* load  ofh_rb VLEN inputs */
-	      for (i = 0; i < i_conv_desc->ofh_rb; ++i) {
+        for (i = 0; i < i_conv_desc->ofh_rb; ++i) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_conv_kernel_config->instruction_set,
                                       i_conv_kernel_config->vmove_instruction,
@@ -1002,7 +1000,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
         } /* end of for ofh_rb loop */
 #endif
       } /* end of if l_k_2 == 0 */
-     
+
       l_displacement_k = 0;
       for ( l_k_3 = 0; l_k_3 < i_conv_desc->ofm_block ; l_k_3++, l_k++) {
         if ( l_k == 0) {
@@ -1023,7 +1021,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
                                               i_conv_kernel_config->vmove_instruction,
                                               i_gp_reg_mapping->gp_reg_weight,
                                               LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                              ((l_k_2 * i_conv_kernel_config->l_ld_ofm_fil + l_k_3 + l_w) * i_conv_kernel_config->l_ld_ifm_fil) *(i_conv_kernel_config->datatype_size_wt), 
+                                              ((l_k_2 * i_conv_kernel_config->l_ld_ofm_fil + l_k_3 + l_w) * i_conv_kernel_config->l_ld_ifm_fil) *(i_conv_kernel_config->datatype_size_wt),
                                               i_conv_kernel_config->vector_name, l_w,
                                               0, 0 );
             }
@@ -1101,7 +1099,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
     } /* end of l_m over ofh_rb */
     l_displacement_k++;
   } /* end of l_k_3 over ofmblock*/
-      
+
 
   /* pipelined store of inputs */
   reg_count = 0;
@@ -1161,7 +1159,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generat
   unsigned int j,k;
   unsigned int l_accs = (i_conv_desc->ofw_rb < 9) ? 2 : 2;
   /* determine the number of registers needed for an ifm block */
-  unsigned int l_reg_per_block = i_conv_desc->ifm_block / i_conv_kernel_config->vector_length_in; 
+  unsigned int l_reg_per_block = i_conv_desc->ifm_block / i_conv_kernel_config->vector_length_in;
   /* start register of accumulator */
   const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb * l_reg_per_block);
 
@@ -1176,7 +1174,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generat
       /* load all ofw_rb VLEN inputs */
       if ( ((i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM && i_conv_desc->ofw_rb <= 14 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) || (i_conv_desc->ofw_rb < 12     && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1)) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) ) {
         /* determine the number of accumulators */
-        for ( j = 0; j < i_conv_desc->ofw_rb; j++ ) { 
+        for ( j = 0; j < i_conv_desc->ofw_rb; j++ ) {
           for (k = l_accs; k > 1; k--) {
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                      i_conv_kernel_config->instruction_set,
@@ -1291,7 +1289,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generat
 #endif
       } /* end of if extra accumulator is used*/
     } /* end of if l_k_2 == 0 */
-   
+
     l_displacement_k = 0;
     /* perform fused 4 FMAs for 4 consecutive values of ofm_block */
     for ( l_k_3 = 0; l_k_3 < i_conv_desc->ofm_block ; l_k_3 += 4, l_k += 4) {
@@ -1382,7 +1380,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generat
     } /* end of l_n over ofw_rb */
     l_displacement_k += 4;
   } /* end of l_k_3 over ofmblock*/
-      
+
   /* pipelined store of inputs */
   if (l_k_2 == i_kw_unroll-1) {
     if ( ((i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM && i_conv_desc->ofw_rb <= 14 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) || (i_conv_desc->ofw_rb < 12 && i_conv_desc->    ofh_rb == 1 && l_reg_per_block == 1)) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) ) {
@@ -1482,7 +1480,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_two_rows( libxsm
   unsigned int reg_count = 0;
   unsigned int l_k = 0;
   unsigned int i,j,k;
-  
+
   /* determine the number of registers needed for an ifm block */
   const unsigned int l_reg_per_block = i_conv_desc->ifm_block / i_conv_kernel_config->vector_length_in;
   /* start register of accumulator */
@@ -1534,7 +1532,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_two_rows( libxsm
         } /* end of for ofh_rb loop */
       } else {
       /* load  ofh_rb VLEN inputs */
-	for (i = 0; i < i_conv_desc->ofh_rb; ++i) {
+        for (i = 0; i < i_conv_desc->ofh_rb; ++i) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_conv_kernel_config->instruction_set,
                                       i_conv_kernel_config->vmove_instruction,
@@ -1560,7 +1558,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_two_rows( libxsm
         } /* end of for ofh_rb loop */
 #endif
       } /* end of if l_k_2 == 0 */
-     
+
       l_displacement_k = 0;
       for ( l_k_3 = 0; l_k_3 < i_conv_desc->ofm_block ; l_k_3+=4, l_k+=4) {
         /*load four source registers, we cannot perform a pipeline as in case of sfma */
@@ -1646,7 +1644,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_two_rows( libxsm
     } /* end of l_m over ofh_rb */
     l_displacement_k+=4;
   } /* end of l_k_3 over ofmblock*/
-      
+
 
   /* pipelined store of inputs */
   reg_count = 0;
