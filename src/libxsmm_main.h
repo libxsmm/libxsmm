@@ -358,6 +358,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_scratch_free
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_default_allocator_context;
 /** If non-NULL, this context used for the context-form of the malloc/free function. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_scratch_allocator_context;
+/** Number of scratch memory pools used; clamped against internal maximum. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_scratch_npools;
 /** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
