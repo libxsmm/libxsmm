@@ -165,7 +165,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_default_allocator {
     libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
     libxsmm_malloc_fun malloc_fun, libxsmm_free_fun free_fun)
   {
-    libxsmm_malloc_function malloc_fn, free_fn;
+    libxsmm_malloc_function malloc_fn;
+    libxsmm_free_function free_fn;
     if (0 == context) { /* use global form only when no context is given */
       malloc_fn.function = malloc_fun; free_fn.function = free_fun;
     }
@@ -187,7 +188,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
     libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
     libxsmm_malloc_fun malloc_fun, libxsmm_free_fun free_fun)
   {
-    libxsmm_malloc_function malloc_fn, free_fn;
+    libxsmm_malloc_function malloc_fn;
+    libxsmm_free_function free_fn;
     if (0 != malloc_fun) { /* prefer/adopt global malloc/free functions */
       malloc_fn.function = malloc_fun; free_fn.function = free_fun;
       context = 0; /* global malloc/free functions */
