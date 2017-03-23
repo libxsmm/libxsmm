@@ -245,7 +245,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 #if defined(__TRACE)
   const int max_n = (0 != depth ? (LIBXSMM_TRACE_MAXDEPTH) : 2);
   const int min_n = (0 != depth ? (LIBXSMM_TRACE_MINDEPTH + *depth) : 2);
-  void *stack[LIBXSMM_TRACE_MAXDEPTH], **symbol = stack + LIBXSMM_MIN(0 != depth ? ((int)(*depth + 1)) : 1, max_n - 1);
+  void *stacktrace[LIBXSMM_TRACE_MAXDEPTH], **symbol = stacktrace + LIBXSMM_MIN(0 != depth ? ((int)(*depth + 1)) : 1, max_n - 1);
   static LIBXSMM_TLS int cerberus = 0;
   int i;
 
@@ -261,7 +261,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
     if (0 <= i) { /* do nothing if not yet initialized */
       const int mindepth = (0 != filter_mindepth ? *filter_mindepth : internal_trace_mindepth);
       const int maxnsyms = (0 != filter_maxnsyms ? *filter_maxnsyms : internal_trace_maxnsyms);
-      i = libxsmm_backtrace(stack, max_n);
+      i = libxsmm_backtrace(stacktrace, max_n);
       /* filter depth against filter_mindepth and filter_maxnsyms */
       if ((0 >= mindepth ||      (min_n + mindepth) <= i) &&
           (0 >  maxnsyms || i <= (min_n + mindepth + maxnsyms - 1)))
