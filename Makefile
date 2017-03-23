@@ -129,6 +129,9 @@ WRAP ?= 0
 # JIT backend is enabled by default
 JIT ?= 1
 
+# TRACE facility
+INSTRUMENT ?= $(TRACE)
+
 # target library for a broad range of systems
 ifneq (0,$(JIT))
   SSE ?= 1
