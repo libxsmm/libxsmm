@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 #endif
   {
 #if defined(MAX_MALLOC_LONGLIFE)
-    const void *const longlife = malloc_offsite((MAX_MALLOC_MB) << 20);
+    void *const longlife = malloc_offsite((MAX_MALLOC_MB) << 20);
 #endif
     /* run non-inline function to measure call overhead of an "empty" function */
     start = libxsmm_timer_tick();
