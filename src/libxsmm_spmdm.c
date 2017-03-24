@@ -608,24 +608,24 @@ LIBXSMM_API_DEFINITION void libxsmm_spmdm_init(int M, int N, int K, int max_thre
   handle->nb = (handle->n + handle->bn - 1) / handle->bn;
   handle->kb = (handle->k + handle->bk - 1) / handle->bk;
 
-  max_work_per_block    = (handle->bm*handle->bn);
-  avg_work_per_block    = (double)(handle->m*handle->n)/(handle->mb*handle->nb);
-  load_imbalance_1      = max_work_per_block/avg_work_per_block;
-  max_blocks_per_thread = (handle->mb*handle->nb + max_threads - 1)/max_threads;
-  avg_blocks_per_thread = (double)handle->mb*handle->nb/max_threads;
-  load_imbalance_2      = max_blocks_per_thread/avg_blocks_per_thread;
+  max_work_per_block    = handle->bm * handle->bn;
+  avg_work_per_block    = (double)(handle->m * handle->n) / (handle->mb * handle->nb);
+  load_imbalance_1      = max_work_per_block / avg_work_per_block;
+  max_blocks_per_thread = (handle->mb * handle->nb + max_threads - 1) / max_threads;
+  avg_blocks_per_thread = (double)handle->mb * handle->nb / max_threads;
+  load_imbalance_2      = max_blocks_per_thread / avg_blocks_per_thread;
   load_imbalance        = load_imbalance_1 * load_imbalance_2;
 
-  while (load_imbalance > load_imbalance_tolerate) {
+  while (1 < handle->bm && load_imbalance > load_imbalance_tolerate) {
     handle->bm--;
     handle->mb = (handle->m + handle->bm - 1) / handle->bm;
 
-    max_blocks_per_thread = (handle->mb*handle->nb + max_threads - 1)/max_threads;
-    avg_blocks_per_thread = (double)handle->mb*handle->nb/max_threads;
-    load_imbalance_2      = max_blocks_per_thread/avg_blocks_per_thread;
-    max_work_per_block    = (handle->bm*handle->bn);
-    avg_work_per_block    = (double)(handle->m*handle->n)/(handle->mb*handle->nb);
-    load_imbalance_1      = max_work_per_block/avg_work_per_block;
+    max_blocks_per_thread = (handle->mb * handle->nb + max_threads - 1) / max_threads;
+    avg_blocks_per_thread = (double)handle->mb * handle->nb / max_threads;
+    load_imbalance_2      = max_blocks_per_thread / avg_blocks_per_thread;
+    max_work_per_block    = handle->bm * handle->bn;
+    avg_work_per_block    = (double)(handle->m * handle->n) / (handle->mb * handle->nb);
+    load_imbalance_1      = max_work_per_block / avg_work_per_block;
     load_imbalance        = load_imbalance_1 * load_imbalance_2;
   }
 
