@@ -940,7 +940,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_malloc_site(unsigned i
   *npools = LIBXSMM_MIN(libxsmm_scratch_npools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
   if (1 < *npools) {
 #if defined(NDEBUG) /* internal_malloc_site will be inlined */
+# if defined(_WIN32) || defined(__CYGWIN__)
     void* stacktrace[] = { 0, 0, 0 };
+# else
+    void* stacktrace[] = { 0, 0 };
+# endif
 #else /* not inlined */
     void* stacktrace[] = { 0, 0, 0, 0 };
 #endif
