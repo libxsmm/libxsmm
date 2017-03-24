@@ -111,16 +111,16 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_csr_a(libxsmm_s
 
   size_t sz_block = ((handle->bm + 1)*sizeof(uint16_t) + (handle->bm)*(handle->bk)*sizeof(uint16_t) + (handle->bm)*(handle->bk)*sizeof(float) + sizeof(libxsmm_CSR_sparseslice));
   size_t sz_all_blocks = sz_block * handle->mb * handle->kb;
-  char *const memory_block = 0;
+  char* memory_block = 0;
 
   /* use low-level scratch memory allocation since life-time of this buffer is unknown */
   if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&memory_block, sz_all_blocks, 2097152,
     LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/))
   {
-    char * memory_head  = memory_block;
+    char* memory_head  = memory_block;
     libxsmm_CSR_sparseslice* libxsmm_output_csr_a = (libxsmm_CSR_sparseslice*)(memory_head);
     memory_head += handle->mb * handle->kb * sizeof(libxsmm_CSR_sparseslice);
-    assert(0 != memory_block/*sanity check*/);
+    assert(0 != libxsmm_output_csr_a/*sanity check*/);
 
     for (kb = 0; kb < k_blocks; kb++) {
       for (mb = 0; mb < m_blocks; mb++) {
