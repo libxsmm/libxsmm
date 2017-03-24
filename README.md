@@ -83,7 +83,7 @@ libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
 In C++, `libxsmm_mmfunction<type>` can be used to instantiate a functor rather than making a distinction between numeric types per type-prefix (see [samples/smm/specialized.cpp](https://github.com/hfp/libxsmm/blob/master/samples/smm/specialized.cpp)).
 
 ```C
-const libxsmm_mmfunction<T> xmm(m, n, k);
+libxsmm_mmfunction<T> xmm(m, n, k); /* generates or dispatches the code specialization */
 if (xmm) { /* JIT'ted code */
   for (int i = 0; i < n; ++i) { /* perhaps OpenMP parallelized */
     xmm(a+i*asize, b+i*bsize, c+i*csize); /* already dispatched */
@@ -103,7 +103,7 @@ IF (libxsmm_available(xmm)) THEN
 END IF
 ```
 
-In case of batched SMMs, it can be beneficial to supply "next locations" such that the operands of the next multiplication are prefetched ahead of time. The "prefetch strategy" is requested at dispatch-time. A [strategy](#prefetch-strategy) other than `LIBXSMM_PREFETCH_NONE` turns the signature of a JIT'ted kernel into a six-argument function (`a,b,c, pa,pb,pc` instead of `a,b,c`). To defer the decision about the strategy to a CPUID-based mechanism, one can choose `LIBXSMM_PREFETCH_AUTO`.
+In case of batched SMMs, it can be beneficial to supply "next locations" such that the upcoming operands are prefetched ahead of time. The "prefetch strategy" is requested at dispatch-time of a kernel. A [strategy](#prefetch-strategy) other than `LIBXSMM_PREFETCH_NONE` turns the signature of a JIT'ted kernel into a function with six-arguments (`a,b,c, pa,pb,pc` instead of `a,b,c`). To defer the decision about the strategy to a CPUID-based mechanism, one can choose `LIBXSMM_PREFETCH_AUTO`.
 
 ```C
 int prefetch = LIBXSMM_PREFETCH_AUTO;
@@ -115,7 +115,7 @@ xmm = libxsmm_dmmdispatch(23/*m*/, 23/*n*/, 23/*k*/,
   &alpha, &beta, &flags, &prefetch);
 ```
 
-Above, pointer-arguments of `libxsmm_dmmdispatch` can be NULL (or OPTIONAL in FORTRAN): for LDx this means "tight" leading dimension, alpha, beta, and flags referring to the [default value](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h) selected at compile-time, and "no prefetch" used for the prefetch strategy (same as explicitly supplying `LIBXSMM_PREFETCH_NONE`).
+Above, pointer-arguments of `libxsmm_dmmdispatch` can be NULL (or OPTIONAL in FORTRAN): for LDx this means a "tight" leading dimension, alpha, beta, and flags are given by a [default value](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h) (which is selected at compile-time), and for the prefetch strategy a NULL-argument refers to "no prefetch" (which is equivalent to an explicit `LIBXSMM_PREFETCH_NONE`).
 
 ## Interface for Convolutions
 To achieve best performance with small convolutions for CNN on SIMD architectures, a specific data layout must be used. As this layout depends on several architectural parameters, the goal of the LIBXSMM's interface is to hide this complexity from the user by providing copy-in and copy-out routines. This happens using opaque data types which themselves are later bound to a convolution operation. The interface is available for C.
