@@ -111,16 +111,25 @@ LIBXSMM_API void* libxsmm_malloc(size_t size);
 LIBXSMM_API void libxsmm_free(const void* memory);
 
 /**
- * Release the scratch memory pool i.e., scratch memory
- * for which libxsmm_free has been called (non-pending).
+ * Release the entire scratch memory regardless
+ * of whether it is still referenced or not.
  */
-LIBXSMM_API void libxsmm_release_scratch(size_t* npending);
+LIBXSMM_API void libxsmm_release_scratch(void);
 
 /** Get the size of the allocated memory; zero in case of an error. */
 LIBXSMM_API size_t libxsmm_malloc_size(const void* memory);
 
-/** Get the size of the allocated scratch memory. */
-LIBXSMM_API size_t libxsmm_scratch_size(void);
+typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
+  /** Total size of all scratch memory pools. */
+  size_t size;
+  /** Pending allocations (not released). */
+  size_t npending;
+  /** Number of allocations so far. */
+  size_t nalloc;
+} libxsmm_scratch_info;
+
+/** Receive information about the scratch memory domain. */
+LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info);
 
 
 #if defined(__cplusplus)

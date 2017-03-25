@@ -456,13 +456,19 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_finalize(void)
     {
       const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
       const unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
-      const size_t scratch_size = libxsmm_scratch_size();
+      libxsmm_scratch_info scratch_info;
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak) {
         fprintf(stderr, "LIBXSMM_TARGET=%s", target_arch);
       }
       fprintf(stderr, "  Registry: %.f MB", 1.0 * internal_registry_nbytes / (1 << 20));
-      if (0 < scratch_size) {
-        fprintf(stderr, "  Scratch: %.f MB\n", 1.0 * scratch_size / (1 << 20));
+      if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info) && 0 < scratch_info.size) {
+        fprintf(stderr, "  Scratch: %.f MB", 1.0 * scratch_info.size / (1 << 20));
+        if (1 < libxsmm_verbosity) {
+          fprintf(stderr, " (nalloc=%lu)", (unsigned long int)scratch_info.nalloc);
+        }
+        else {
+          fprintf(stderr, "\n");
+        }
       }
       else {
         fprintf(stderr, "\n");
@@ -749,13 +755,8 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       free(registry_keys);
       free(registry);
 
-      { /* release scratch memory pool */
-        size_t n = 0;
-        libxsmm_release_scratch(&n);
-        if (0 < n && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
-          fprintf(stderr, "LIBXSMM: pending scratch-memory allocations discovered!\n");
-        }
-      }
+      /* release scratch memory pool */
+      libxsmm_release_scratch();
     }
 #if !defined(LIBXSMM_NO_SYNC) /* LIBXSMM_LOCK_RELEASE, but no LIBXSMM_LOCK_DESTROY */
     for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
