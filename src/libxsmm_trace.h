@@ -53,6 +53,9 @@ LIBXSMM_API int libxsmm_trace_init(
 /** Finalizes the trace facility; NOT thread-safe. */
 LIBXSMM_API int libxsmm_trace_finalize(void);
 
+/** Receives the backtrace of up to 'size' addresses. Returns the actual number of addresses (n <= size). */
+LIBXSMM_API unsigned int libxsmm_backtrace(void* buffer[], unsigned int size);
+
 /** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
 LIBXSMM_API const char* libxsmm_trace_info(
   /* Specify relative pos. in stack (NULL/0: default); output: abs. location in trace. */

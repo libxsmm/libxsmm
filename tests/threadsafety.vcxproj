@@ -29,6 +29,11 @@
   <ItemGroup>
     <ClCompile Include="threadsafety.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="README.md" />
+    <None Include="test.sh" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>threadsafety</ProjectName>
     <ProjectGuid>{25D60DA9-C699-4530-AD01-A1908DE9735F}</ProjectGuid>

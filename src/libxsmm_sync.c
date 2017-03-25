@@ -234,7 +234,7 @@ void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
 #if defined(__MIC__)
       /* cannot use LIBXSMM_ALIGNED since attribute may not apply to local non-static arrays */
       uint8_t sendbuffer[LIBXSMM_SYNC_CACHELINE_SIZE+LIBXSMM_SYNC_CACHELINE_SIZE-1];
-      uint8_t *const sendbuf = LIBXSMM_ALIGN2(sendbuffer, LIBXSMM_SYNC_CACHELINE_SIZE);
+      uint8_t *const sendbuf = LIBXSMM_ALIGN(sendbuffer, LIBXSMM_SYNC_CACHELINE_SIZE);
       __m512d m512d;
       _mm_prefetch((const char*)core->partner_flags[core->parity][0], _MM_HINT_ET1);
       sendbuf[0] = core->sense;

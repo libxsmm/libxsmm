@@ -71,9 +71,10 @@
 #include "generator_common.h"
 #include <libxsmm_macros.h>
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+#include <stdio.h>
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_sparse_csc_asparse_innerloop_scalar( libxsmm_generated_code*        io_generated_code,
@@ -248,6 +249,7 @@ void libxsmm_generator_spgemm_csc_asparse( libxsmm_generated_code*        io_gen
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
 
+  assert(0 != i_column_idx);
   /* loop over columns in A, rows in B and fully unroll */
   for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) {
     unsigned int l_column_elements = i_column_idx[l_k + 1] - i_column_idx[l_k];
@@ -272,6 +274,7 @@ void libxsmm_generator_spgemm_csc_asparse( libxsmm_generated_code*        io_gen
 
     /* loop over the columns of A and look for vectorization potential */
     for ( l_z = 0; l_z < l_column_elements; l_z++ ) {
+      assert(0 != i_row_idx);
       /* 4 element vector might be possible */
       if ( (l_z < (l_column_elements - 3)) && (l_column_elements > 3) ) {
         /* check for 256bit vector instruction */

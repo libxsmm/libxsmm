@@ -95,7 +95,7 @@ PROGRAM transpose
     start = libxsmm_timer_tick();
     CALL libxsmm_otrans(C_LOC(b), C_LOC(a), T, m, n, lda, ldb)
     !CALL libxsmm_otrans(C_LOC(a), C_LOC(b), T, n, m, ldb, lda)
-    CALL libxsmm_dotrans(a, b, n, m, ldb, lda)
+    CALL libxsmm_dotrans(a, b, n, m)
     duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
   ELSE ! in-place
     start = libxsmm_timer_tick();

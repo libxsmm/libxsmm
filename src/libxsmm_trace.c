@@ -209,6 +209,28 @@ LIBXSMM_API
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
+unsigned int libxsmm_backtrace(void* buffer[], unsigned int size);
+
+LIBXSMM_API_DEFINITION
+#if defined(_WIN32)
+/*TODO: no inline*/
+#elif defined(__GNUC__)
+/*LIBXSMM_ATTRIBUTE(noinline)*/
+#endif
+unsigned int libxsmm_backtrace(void* buffer[], unsigned int size)
+{
+#if defined(_WIN32) || defined(__CYGWIN__)
+  return CaptureStackBackTrace(0, size, buffer, NULL);
+#else
+  return (unsigned int)backtrace(buffer, (int)size);
+#endif
+}
+
+
+LIBXSMM_API
+#if defined(__GNUC__)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
 const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms);
 
 LIBXSMM_API_DEFINITION
@@ -221,9 +243,9 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 {
   const char *fname = NULL;
 #if defined(__TRACE)
-  const int max_n = depth ? (LIBXSMM_TRACE_MAXDEPTH) : 2;
-  const int min_n = depth ? (LIBXSMM_TRACE_MINDEPTH + *depth) : 2;
-  void *stack[LIBXSMM_TRACE_MAXDEPTH], **symbol = stack + LIBXSMM_MIN(depth ? ((int)(*depth + 1)) : 1, max_n - 1);
+  const int max_n = (0 != depth ? (LIBXSMM_TRACE_MAXDEPTH) : 2);
+  const int min_n = (0 != depth ? (LIBXSMM_TRACE_MINDEPTH + *depth) : 2);
+  void *stacktrace[LIBXSMM_TRACE_MAXDEPTH], **symbol = stacktrace + LIBXSMM_MIN(0 != depth ? ((int)(*depth + 1)) : 1, max_n - 1);
   static LIBXSMM_TLS int cerberus = 0;
   int i;
 
@@ -237,19 +259,15 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 # endif
     i = LIBXSMM_ATOMIC_LOAD(&internal_trace_initialized, LIBXSMM_ATOMIC_RELAXED);
     if (0 <= i) { /* do nothing if not yet initialized */
-      const int mindepth = filter_mindepth ? *filter_mindepth : internal_trace_mindepth;
-      const int maxnsyms = filter_maxnsyms ? *filter_maxnsyms : internal_trace_maxnsyms;
-# if defined(_WIN32) || defined(__CYGWIN__)
-      i = CaptureStackBackTrace(0, max_n, stack, NULL);
-# else
-      i = backtrace(stack, max_n);
-# endif
+      const int mindepth = (0 != filter_mindepth ? *filter_mindepth : internal_trace_mindepth);
+      const int maxnsyms = (0 != filter_maxnsyms ? *filter_maxnsyms : internal_trace_maxnsyms);
+      i = libxsmm_backtrace(stacktrace, max_n);
       /* filter depth against filter_mindepth and filter_maxnsyms */
       if ((0 >= mindepth ||      (min_n + mindepth) <= i) &&
           (0 >  maxnsyms || i <= (min_n + mindepth + maxnsyms - 1)))
       {
         if (min_n <= i) { /* check against min. depth */
-          const int filter = (filter_threadid ? *filter_threadid : internal_trace_threadid);
+          const int filter = (0 != filter_threadid ? *filter_threadid : internal_trace_threadid);
           int abs_tid = 0;
 # if defined(_WIN32) || defined(__CYGWIN__)
           static LIBXSMM_TLS char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
@@ -418,7 +436,7 @@ LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, cons
     filter_threadid, filter_mindepth, filter_maxnsyms);
 
   if (name && *name) { /* implies actual other results to be valid */
-    const int depth0 = LIBXSMM_MAX(filter_mindepth ? *filter_mindepth : internal_trace_mindepth, 0);
+    const int depth0 = LIBXSMM_MAX(0 != filter_mindepth ? *filter_mindepth : internal_trace_mindepth, 0);
     assert(0 != stream/*otherwise fprintf handle the error*/);
     if ((0 == filter_threadid && 0 > internal_trace_threadid) || (0 != filter_threadid && 0 > *filter_threadid)) {
       fprintf(stream, "%*s%s@%u\n", (int)(depth1 - depth0), "", name, threadid);
@@ -461,7 +479,7 @@ void __cyg_profile_func_enter(void* this_fn, void* call_site)
 #if defined(__TRACE)
 # if !defined(LIBXSMM_TRACE_DLINFO)
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
-  libxsmm_trace(stderr, 1/*no need for parent (0) but parent of parent (1)*/,
+  libxsmm_trace(stderr, 2/*no need for parent (0) but parent of parent (1)*/,
     /* inherit global settings from libxsmm_trace_init */
     NULL, NULL, NULL);
 # else

@@ -39,6 +39,7 @@
 #include <libxsmm_intrinsics_x86.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <stdio.h>
 
 LIBXSMM_INLINE
@@ -118,7 +119,8 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
     return;
   }
 
-  /* we proceed as much as we can in vector length steps, remainder is handled uisng masking */
+  /* we proceed as much as we can in vector length steps, remainder is handled using masking */
+  assert(0 < i_micro_kernel_config->vector_length);
   l_m_done = (i_xgemm_desc->m / i_micro_kernel_config->vector_length) * i_micro_kernel_config->vector_length;
 
   /* multiples of vector_length in M */

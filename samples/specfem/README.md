@@ -33,7 +33,7 @@ make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=2
 ```
 
-  - for Knights Corner (KNC) (and also creating Sandy Bridge version):
+  - for Knights Corner (KNC) (and thereby creating a Sandy Bridge version):
 ```
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 \
 OFFLOAD=1 KNC=1
@@ -60,7 +60,7 @@ cd sample/specfem
 make KNC=1
 ```
 
-  - additionally, adding some specific fortran compiler flags, for example:
+  - additionally, adding some specific Fortran compiler flags, for example:
 ```
 cd sample/specfem
 make FCFLAGS="-O3 -fopenmp" [...]

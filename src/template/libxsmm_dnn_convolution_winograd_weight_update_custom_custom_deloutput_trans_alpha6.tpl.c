@@ -79,7 +79,7 @@ for (tj = 0; tj < handle->cwino_upd.jtiles; tj++) {
       }
     }
     /*trans_F_3x3_4x4(ALPHA, TDVLEN, Ow[tj*handle->cwino_upd.itiles + ti], I);*/
-    
+
     /* inline code start */
     for (i = 0; i < 4; i++) {
       LIBXSMM_PRAGMA_SIMD

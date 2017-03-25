@@ -74,6 +74,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   uintptr_t uimm;
   intptr_t imm;
   libxsmm_xmmfunction xmm;
+  libxsmm_smmfunction smm;
   void (*vmm)(const void* a, const void* b, void* c, ...);
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)
   libxsmm_xconvfunction xconv;
@@ -103,7 +104,9 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer {
   int H;                            /* height of image */
   int W;                            /* width of image */
   int lpb;                          /* low precision blocking factor */
+  int bimg;                         /* size of blocked images */
   libxsmm_dnn_tensor_format format; /* format of activation buffer */
+  libxsmm_dnn_internal_format custom_format_type;
   libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
   char exp;                         /* fix point exponent for this tensor */
@@ -129,6 +132,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
   int S;                            /* width of filter kernel */
   int lpb;                          /* low precision blocking factor */
   libxsmm_dnn_tensor_format format; /* format of filter buffer */
+  libxsmm_dnn_internal_format custom_format_type;
   libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
   char exp;                         /* fix point exponent for this tensor */
@@ -146,6 +150,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_convolution_winograd_descriptor cwino_fwd;
   libxsmm_convolution_winograd_descriptor cwino_bwd;
   libxsmm_convolution_winograd_descriptor cwino_upd;
+  libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
   /* additional size for iternal data types */
   int ifhp;
@@ -169,6 +174,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int upd_use_thread_fil;
   int upd_use_external_reduce;
   int filter_transposed;
+  int nBImg;
+  int nbImg;
 
   /* internal data representation */
   libxsmm_dnn_buffer* reg_input;
@@ -196,6 +203,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int padding_flag;           /* Flag that dictates if we should apply padding in the input */
   void* scratch6;
   size_t scratch6_size;
+  void* scratch7;         /* This scratch is used for low precision intermediate buffer for input in backward pass*/
+  size_t scratch7_size;
   void* scratchIw;
   size_t scratchIw_size;
   void* scratchOw;
@@ -349,12 +358,12 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_scratch_free
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_default_allocator_context;
 /** If non-NULL, this context used for the context-form of the malloc/free function. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_scratch_allocator_context;
+/** Number of scratch memory pools used; clamped against internal maximum. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_scratch_npools;
 /** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_target_archid;
-/** Try-lock property of the code registry (0: off, 1: enabled). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_dispatch_trylock;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_auto_prefetch;
 /** Determines whether a threaded implementation is synchronized or not. */

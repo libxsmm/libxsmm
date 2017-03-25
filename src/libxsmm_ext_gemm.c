@@ -107,12 +107,14 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
   }
 #endif
   LIBXSMM_INIT
-  tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/];
-  tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/];
-  tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/];
+  { const int index = LIBXSMM_MIN(libxsmm_icbrt(1ULL * (*m) * (*n) * (*k)) >> 10, 7);
+    tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/][index];
+    tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/][index];
+    tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/][index];
+  }
   assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-  if (0 == omp_in_parallel())
+  if (0 == omp_get_level())
 #endif
   {
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_EXT_PARALLEL,
@@ -181,12 +183,14 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
   }
 #endif
   LIBXSMM_INIT
-  tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/];
-  tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/];
-  tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/];
+  { const int index = LIBXSMM_MIN(libxsmm_icbrt(1ULL * (*m) * (*n) * (*k)) >> 10, 7);
+    tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/][index];
+    tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/][index];
+    tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/][index];
+  }
   assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-  if (0 == omp_in_parallel())
+  if (0 == omp_get_level())
 #endif
   {
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_EXT_PARALLEL,

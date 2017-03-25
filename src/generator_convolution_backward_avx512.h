@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Rajkishore Barik (Intel Corp.), Alexander Heinecke (Intel Corp.)
+/* Ankush Mandal, Rajkishore Barik, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
 #ifndef GENERATOR_CONVOLUTION_BACKWARD_AVX512_H
@@ -45,51 +45,60 @@ void libxsmm_generator_convolution_backward_avx512_init_output_strides( libxsmm_
                                                                       const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                       const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
                                                                       const libxsmm_convolution_backward_descriptor*                  i_conv_desc );
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_backward_avx512_init_output_strides_two_rows( libxsmm_generated_code*                          io_generated_code,
+                                                                      const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                      const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
+                                                                      const libxsmm_convolution_backward_descriptor*                  i_conv_desc );
 
 LIBXSMM_INTERNAL_API
-void libxsmm_generator_convolution_backward_avx512_ofmloop( libxsmm_generated_code*                           io_generated_code,
-                                                           const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
-                                                           const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
-                                                           const libxsmm_convolution_backward_descriptor*                  i_conv_desc,
-                                                           const unsigned int                                 i_kw_unroll);
-
-LIBXSMM_INTERNAL_API
-void libxsmm_generator_convolution_backward_avx512_ofmloop_peeled( libxsmm_generated_code*                    io_generated_code,
+void libxsmm_generator_convolution_backward_avx512_ofmloop( libxsmm_generated_code*                    io_generated_code,
                                                            const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                            const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
                                                            const libxsmm_convolution_backward_descriptor*                  i_conv_desc,
                                                            const unsigned int                                 i_kw_unroll,
-                                                           const unsigned int                                 i_kh_unroll);
+                                                           const unsigned int                                 num_output_prefetch );
 
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generated_code*                            io_generated_code,
-                                                                 const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
-                                                                 const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
-                                                                 const libxsmm_convolution_backward_descriptor*     i_conv_desc,
-                                                                 const unsigned int                                 i_kw_unroll);
-
-LIBXSMM_INTERNAL_API
-void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_peeled( libxsmm_generated_code*                            io_generated_code,
                                                                         const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                         const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
                                                                         const libxsmm_convolution_backward_descriptor*     i_conv_desc,
                                                                         const unsigned int                                 i_kw_unroll,
-                                                                        const unsigned int                                 i_kh_unroll);
-
+                                                                        const unsigned int                                 num_output_prefetch );
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generated_code*                            io_generated_code,
-                                                                 const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
-                                                                 const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
-                                                                 const libxsmm_convolution_backward_descriptor*     i_conv_desc,
-                                                                 const unsigned int                                 i_kw_unroll);
-
-LIBXSMM_INTERNAL_API
-void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_peeled( libxsmm_generated_code*                            io_generated_code,
                                                                         const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                         const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
                                                                         const libxsmm_convolution_backward_descriptor*     i_conv_desc,
                                                                         const unsigned int                                 i_kw_unroll,
-                                                                        const unsigned int                                 i_kh_unroll);
+                                                                        const unsigned int                                 num_output_prefetch );
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsmm_generated_code*                            io_generated_code,
+                                                                        const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                        const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
+                                                                        const libxsmm_convolution_backward_descriptor*     i_conv_desc,
+                                                                        const unsigned int                                 i_kw_unroll,
+                                                                        const unsigned int                                 num_output_prefetch );
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_two_rows( libxsmm_generated_code*                            io_generated_code,
+                                                                        const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                        const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
+                                                                        const libxsmm_convolution_backward_descriptor*     i_conv_desc,
+                                                                        const unsigned int                                 i_kw_unroll,
+                                                                        const unsigned int                                 num_output_prefetch );
 
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_backward_avx512_calc_sib_output_strides( const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                            const int                                         i_stride_num,
+                                                                            unsigned int*                                     o_output_reg,
+                                                                            unsigned int*                                     o_output_idx,
+                                                                            unsigned int*                                     o_scale );
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_backward_avx512_calc_sib_output_strides_two_rows( const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                            const int                                         i_row_num,
+                                                                            const int                                         i_stride_num,
+                                                                            unsigned int*                                     o_output_reg,
+                                                                            unsigned int*                                     o_output_idx,
+                                                                            unsigned int*                                     o_scale );
 #endif /* GENERATOR_CONVOLUTION_BACKWARD_AVX512_H */
-

@@ -158,6 +158,15 @@ typedef enum libxsmm_dnn_tensor_format{
   LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM | LIBXSMM_DNN_TENSOR_FORMAT_PTR
 } libxsmm_dnn_tensor_format;
 
+typedef enum libxsmm_dnn_internal_format {
+  /* use LIBXSMM internal format NC_bHWc */
+  LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 = 1,
+  /* use LIBXSMM internal format C_bN_bHWnc */
+  LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2 = 2,
+  /* use LIBXSMM internal format HWN_bC_bnc */
+  LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_3 = 3
+} libxsmm_dnn_internal_format;
+
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_dnn_datatype {
   LIBXSMM_DNN_DATATYPE_F64,
@@ -206,9 +215,11 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_forward_descriptor;
 
-/** Structure storing the convolution backward argument description. */
+/** Backward convolution argument descriptor (similar to forward descriptor). */
 typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
+  unsigned int kh;                              /* kernel height */
   unsigned int kw;                              /* kernel width */
+  unsigned int unroll_kh;                       /* kernel height, unrolled */
   unsigned int unroll_kw;                       /* kernel width, unrolled */
   unsigned int blocks_ofm;
   unsigned int blocks_ifm;
@@ -222,15 +233,8 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
   unsigned int ifw_padded;                      /* this we use for 1D and 2D register block */
   unsigned int stride_h;                        /* this we use for offsets in the input */
   unsigned int stride_w;                        /* this we use for offsets in the input */
-
-  unsigned int ofw;                             /* upper bound for oi loop */
-  unsigned int ofw_unroll;                      /* this we use for ofw unroll factor */
-  unsigned int kh;                              /* kernel height */
-  unsigned int unroll_kh;                       /* kernel height, unrolled */
-  unsigned int peeled;                          /* generate multi version code for peeled and non-peeled loop -- that avoids conditional in back propagation */
-
-  unsigned int prefetch_output_ahead;           /* prefetch all outputs of kj when you jump from non-peeled to peeled */
-
+  unsigned int ofw;
+  unsigned int fm_lp_block;                    /* additional blocking for low precision datatypes of ifm */
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;

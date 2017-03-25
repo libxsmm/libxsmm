@@ -29,6 +29,11 @@
   <ItemGroup>
     <ClCompile Include="vla.c" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+    <None Include="README.md" />
+    <None Include="test.sh" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>vla</ProjectName>
     <ProjectGuid>{326EBB80-794E-4E06-BA06-85CFE26F7C3C}</ProjectGuid>
