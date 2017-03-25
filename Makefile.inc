@@ -72,6 +72,7 @@ endif
 ifeq (,$(strip $(INSTRUMENT)))
   INSTRUMENT = 0
 endif
+TRACE ?= 0
 
 # Number of repeated calls (tests),
 # or used to scale the problem size
