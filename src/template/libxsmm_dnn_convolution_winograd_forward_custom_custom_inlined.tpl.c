@@ -83,8 +83,8 @@ work = handle->desc.N*handle->blocksifm;
 /* compute chunck size */
 chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
-thr_begin = (ltid * work) / handle->desc.threads;
-thr_end = ((ltid+1) * work) / handle->desc.threads;
+thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 #ifdef FTIME
 t_start = __rdtsc();
