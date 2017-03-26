@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
 
   /* count number of calls according to randomized scheme */
   for (i = 0; i < ncycles; ++i) {
-    ncalls += (r[i%(MAX_MALLOC_N)] % nalloc) + 1;
+    ncalls += LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % nalloc, 1);
   }
   assert(0 != ncalls);
 
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for default(none) private(i)
 #endif
     for (i = 0; i < ncycles; ++i) {
-      const int count = (r[i%(MAX_MALLOC_N)] % nalloc) + 1;
+      const int count = LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % nalloc, 1);
       int j;
       for (j = 0; j < count; ++j) {
         const size_t nbytes = (r[j%(MAX_MALLOC_N)] % (MAX_MALLOC_MB) + 1) << 20;
