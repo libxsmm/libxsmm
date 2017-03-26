@@ -938,7 +938,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_malloc_site(unsigned i
 {
   assert(0 != npools && 0 != hit && 0 != site);
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-  *npools = LIBXSMM_MIN(libxsmm_scratch_npools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
+  *npools = LIBXSMM_MIN(libxsmm_scratch_pools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
   if (1 < *npools) {
 #if defined(NDEBUG) /* internal_malloc_site will be inlined */
 # if defined(_WIN32) || defined(__CYGWIN__)
@@ -1000,7 +1000,8 @@ LIBXSMM_API_DEFINITION void* libxsmm_aligned_scratch(size_t size, size_t alignme
         if (0 == internal_malloc_scratch_pool[i].buffer) {
           LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
           if (0 == internal_malloc_scratch_pool[i].buffer) {
-            const size_t minsize = 1.5 * LIBXSMM_MAX(internal_malloc_scratch_pool[i].minsize, req_size);
+            const double scratch_scale = 0 < libxsmm_scratch_scale ? libxsmm_scratch_scale : 1.5;
+            const size_t minsize = scratch_scale * LIBXSMM_MAX(internal_malloc_scratch_pool[i].minsize, req_size);
             assert(0 == internal_malloc_scratch_pool[i].head/*sanity check*/);
             if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&internal_malloc_scratch_pool[i].buffer, minsize, 0/*auto*/,
               LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/))
@@ -1136,7 +1137,7 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
   }
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
   else { /* find scratch memory pool */
-    npools = LIBXSMM_MAX(LIBXSMM_MIN(libxsmm_scratch_npools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS), 1);
+    npools = LIBXSMM_MAX(LIBXSMM_MIN(libxsmm_scratch_pools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS), 1);
     for (; i < npools; ++i) {
       if (0 != internal_scratch_free(memory, i)) {
         i = npools + 1; /* break */
@@ -1152,7 +1153,7 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 
 LIBXSMM_API_DEFINITION void libxsmm_release_scratch(void)
 {
-  const unsigned int npools = LIBXSMM_MAX(LIBXSMM_MIN(libxsmm_scratch_npools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS), 1);
+  const unsigned int npools = LIBXSMM_MAX(LIBXSMM_MIN(libxsmm_scratch_pools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS), 1);
   unsigned int i;
   for (i = 0; i < npools; ++i) { /* TODO: thread-safety */
     libxsmm_xfree(internal_malloc_scratch_pool[i].buffer);
@@ -1205,7 +1206,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
 
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
     {
-      const unsigned npools = LIBXSMM_MIN(libxsmm_scratch_npools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
+      const unsigned npools = LIBXSMM_MIN(libxsmm_scratch_pools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
       for (i = 1; i < npools; ++i) {
         info->npending += internal_malloc_scratch_pool[i].counter;
       }
