@@ -97,7 +97,7 @@
 
         ! workload is about 2 GByte in memory by default
         size0 = (m * n * k) * T * 6 ! size of single element in Byte
-        size1 = MERGE(2048_8, MERGE(size1,  ISHFT(ABS(size0 * size1)    &
+        size1 = MERGE(2048_8, MERGE(size1, ISHFT(ABS(size0 * size1)     &
      &            + ISHFT(1, 20) - 1, -20), 0.LE.size1), 0.EQ.size1)
         size = ISHFT(MERGE(MAX(size, size1), ISHFT(ABS(size) * size0    &
      &            + ISHFT(1, 20) - 1, -20), 0.LE.size), 20) / size0
