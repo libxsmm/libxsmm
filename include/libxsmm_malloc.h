@@ -116,6 +116,7 @@ LIBXSMM_API void libxsmm_free(const void* memory);
  */
 LIBXSMM_API void libxsmm_release_scratch(void);
 
+/** Information about a buffer (default memory domain). */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_malloc_info {
   /** Size of the buffer. */
   size_t size;
@@ -124,6 +125,7 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_malloc_info {
 /** Retrieve information about a buffer (default memory domain). */
 LIBXSMM_API int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info* info);
 
+/** Information about the scratch memory domain. */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
   /** Total size of all scratch memory pools. */
   size_t size;
