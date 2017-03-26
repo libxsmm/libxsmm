@@ -288,10 +288,10 @@ Without further claims on the properties of the memory allocation (e.g., thread 
 ```C
 void* libxsmm_aligned_malloc(size_t size, size_t alignment);
 void* libxsmm_malloc(size_t size);
-void libxsmm_free(const volatile void* memory);
-size_t libxsmm_malloc_size(const volatile void* memory);
 void* libxsmm_aligned_scratch(size_t size, size_t alignment);
-size_t libxsmm_scratch_size(void);
+void libxsmm_free(const volatile void* memory);
+int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info* info);
+int libxsmm_get_scratch_info(libxsmm_scratch_info* info);
 ```
 
 The library exposes two memory allocation domains: (1)&#160;default memory allocation, and (2)&#160;scratch memory allocation. There are service functions for both domains that allow to change the allocation and deallocation function. The "context form" even supports a user-defined "object", which may represent an allocator or any other external facility. To set the default allocator is analogous to setting the scratch memory allocator as shown below. See [include/libxsmm_malloc.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_malloc.h) for details.

@@ -316,7 +316,7 @@ LIBXSMM_API int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE* lock,
   void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /** Receive the size, the flags, or the extra attachment of the given buffer. */
-LIBXSMM_API int libxsmm_malloc_info(const void* memory, size_t* size, int* flags, void** extra);
+LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* flags, void** extra);
 
 /** Allocate memory of the requested size, which is aligned according to the given alignment. */
 LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,

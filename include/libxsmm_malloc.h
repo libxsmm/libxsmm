@@ -95,7 +95,7 @@ LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
 
 /**
  * Allocate aligned scratch memory. It is not supported
- * to query properties e.g., libxsmm_malloc_size.
+ * to query properties (libxsmm_get_malloc_info).
  */
 LIBXSMM_API void* libxsmm_aligned_scratch(size_t size,
   /**
@@ -116,8 +116,13 @@ LIBXSMM_API void libxsmm_free(const void* memory);
  */
 LIBXSMM_API void libxsmm_release_scratch(void);
 
-/** Get the size of the allocated memory; zero in case of an error. */
-LIBXSMM_API size_t libxsmm_malloc_size(const void* memory);
+typedef struct LIBXSMM_RETARGETABLE libxsmm_malloc_info {
+  /** Size of the buffer. */
+  size_t size;
+} libxsmm_malloc_info;
+
+/** Retrieve information about a buffer (default memory domain). */
+LIBXSMM_API int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info* info);
 
 typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
   /** Total size of all scratch memory pools. */
@@ -128,7 +133,7 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
   size_t nalloc;
 } libxsmm_scratch_info;
 
-/** Receive information about the scratch memory domain. */
+/** Retrieve information about the scratch memory domain. */
 LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info);
 
 

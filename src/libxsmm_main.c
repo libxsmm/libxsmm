@@ -741,7 +741,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 #if defined(LIBXSMM_HASH_COLLISION)
             code.uimm &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
-            if (EXIT_SUCCESS == libxsmm_malloc_info(code.const_pmm, &size, 0/*flags*/, &buffer)) {
+            if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.const_pmm, &size, 0/*flags*/, &buffer)) {
               libxsmm_xfree(code.const_pmm);
               ++internal_statistic[precision][bucket].njit;
               internal_registry_nbytes += (unsigned int)(size + (((char*)code.const_pmm) - (char*)buffer));
@@ -1302,7 +1302,7 @@ LIBXSMM_API_DEFINITION const libxsmm_gemm_descriptor* internal_get_gemm_descript
 {
   const libxsmm_gemm_descriptor* result = 0;
   void* extra = 0;
-  if (EXIT_SUCCESS == libxsmm_malloc_info(gemm_jit, 0/*size*/, 0/*flags*/, &extra) && 0 != extra) {
+  if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(gemm_jit, 0/*size*/, 0/*flags*/, &extra) && 0 != extra) {
     const unsigned int i = *((const unsigned int*)extra);
     result = &internal_registry_keys[i].descriptor;
   }
@@ -1473,7 +1473,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(libxsmm_registry_info* info
 #if defined(LIBXSMM_HASH_COLLISION)
             code.uimm &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
-            result = libxsmm_malloc_info(code.const_pmm, &buffer_size, 0/*flags*/, &buffer);
+            result = libxsmm_get_malloc_xinfo(code.const_pmm, &buffer_size, 0/*flags*/, &buffer);
             if (EXIT_SUCCESS == result) {
               info->nbytes += (unsigned int)(buffer_size + (((char*)code.const_pmm) - (char*)buffer));
             }
@@ -1732,7 +1732,7 @@ LIBXSMM_API_DEFINITION void libxsmm_release_kernel(const void* jit_code)
 {
   void* extra = 0;
   LIBXSMM_INIT
-  if (EXIT_SUCCESS == libxsmm_malloc_info(jit_code, 0/*size*/, 0/*flags*/, &extra) && 0 != extra) {
+  if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(jit_code, 0/*size*/, 0/*flags*/, &extra) && 0 != extra) {
     const unsigned int regindex = *((const unsigned int*)extra);
     if ((LIBXSMM_CAPACITY_REGISTRY) <= regindex) {
       libxsmm_xfree(jit_code);
