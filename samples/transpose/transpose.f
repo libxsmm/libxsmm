@@ -29,107 +29,113 @@
 !* Hans Pabst (Intel Corp.)                                                  *!
 !*****************************************************************************!
 
-PROGRAM transpose
-  USE :: LIBXSMM
-  IMPLICIT NONE
+      PROGRAM transpose
+        USE :: LIBXSMM
+        IMPLICIT NONE
 
-  INTEGER, PARAMETER :: T = KIND(0D0)
+        INTEGER, PARAMETER :: T = KIND(0D0)
 
-  REAL(T), ALLOCATABLE, TARGET :: a(:,:), b(:,:)
-  !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, b
-  INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, lda, ldb, i, j, size
-  DOUBLE PRECISION :: duration
-  INTEGER(8) :: start
-  REAL(T) :: diff
+        REAL(T), ALLOCATABLE, TARGET :: a(:,:), b(:,:)
+        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, b
+        INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, lda, ldb, i, j, size
+        DOUBLE PRECISION :: duration
+        INTEGER(8) :: start
+        REAL(T) :: diff
 
-  CHARACTER(32) :: argv
-  CHARACTER :: trans
-  INTEGER :: argc
+        CHARACTER(32) :: argv
+        CHARACTER :: trans
+        INTEGER :: argc
 
-  argc = COMMAND_ARGUMENT_COUNT()
-  IF (1 <= argc) THEN
-    CALL GET_COMMAND_ARGUMENT(1, trans)
-  ELSE
-    trans = 'o'
-  END IF
-  IF (2 <= argc) THEN
-    CALL GET_COMMAND_ARGUMENT(2, argv)
-    READ(argv, "(I32)") m
-  ELSE
-    m = 4096
-  END IF
-  IF (3 <= argc) THEN
-    CALL GET_COMMAND_ARGUMENT(3, argv)
-    READ(argv, "(I32)") n
-  ELSE
-    n = m
-  END IF
-  IF (4 <= argc) THEN
-    CALL GET_COMMAND_ARGUMENT(4, argv)
-    READ(argv, "(I32)") lda
-  ELSE
-    lda = m
-  END IF
-  IF (5 <= argc) THEN
-    CALL GET_COMMAND_ARGUMENT(5, argv)
-    READ(argv, "(I32)") ldb
-  ELSE
-    ldb = n
-  END IF
+        argc = COMMAND_ARGUMENT_COUNT()
+        IF (1 <= argc) THEN
+          CALL GET_COMMAND_ARGUMENT(1, trans)
+        ELSE
+          trans = 'o'
+        END IF
+        IF (2 <= argc) THEN
+          CALL GET_COMMAND_ARGUMENT(2, argv)
+          READ(argv, "(I32)") m
+        ELSE
+          m = 4096
+        END IF
+        IF (3 <= argc) THEN
+          CALL GET_COMMAND_ARGUMENT(3, argv)
+          READ(argv, "(I32)") n
+        ELSE
+          n = m
+        END IF
+        IF (4 <= argc) THEN
+          CALL GET_COMMAND_ARGUMENT(4, argv)
+          READ(argv, "(I32)") lda
+        ELSE
+          lda = m
+        END IF
+        IF (5 <= argc) THEN
+          CALL GET_COMMAND_ARGUMENT(5, argv)
+          READ(argv, "(I32)") ldb
+        ELSE
+          ldb = n
+        END IF
 
-  size = m * n * T ! size in Byte
-  WRITE(*, "(2(A,I0),2(A,I0),A,I0,A,2A,2A,1A)") "m=", m, " n=", n, " lda=", lda, " ldb=", ldb, &
-    " size=", (size / ISHFT(1, 20)), "MB (", MERGE("DP", "SP", 8.EQ.T), ", ", &
-    TRIM(MERGE("out-of-place", "in-place    ", 'o'.EQ.trans)), ")"
+        size = m * n * T ! size in Byte
+        WRITE(*, "(2(A,I0),2(A,I0),A,I0,A,2A,2A,1A)")                   &
+     &    "m=", m, " n=", n, " lda=", lda, " ldb=", ldb,                &
+     &    " size=", (size / ISHFT(1, 20)),                              &
+     &    "MB (", MERGE("DP", "SP", 8.EQ.T), ", ",                      &
+     &    TRIM(MERGE("out-of-place", "in-place    ", 'o'.EQ.trans)), ")"
 
-  ! Allocate matrices
-  ALLOCATE(a(lda,MERGE(n,lda,('o'.EQ.trans).OR.('O'.EQ.trans))))
-  ALLOCATE(b(ldb,MERGE(m,ldb,('o'.EQ.trans).OR.('O'.EQ.trans))))
+        ! Allocate matrices
+        ALLOCATE(a(lda,MERGE(n,lda,('o'.EQ.trans).OR.('O'.EQ.trans))))
+        ALLOCATE(b(ldb,MERGE(m,ldb,('o'.EQ.trans).OR.('O'.EQ.trans))))
 
-  DO j = 1, n
-    DO i = 1, m
-      a(i,j) = initial_value(i - 1, j - 1, m)
-    END DO
-  END DO
+        DO j = 1, n
+          DO i = 1, m
+            a(i,j) = initial_value(i - 1, j - 1, m)
+          END DO
+        END DO
 
-  IF (('o'.EQ.trans).OR.('O'.EQ.trans)) THEN
-    start = libxsmm_timer_tick();
-    CALL libxsmm_otrans(C_LOC(b), C_LOC(a), T, m, n, lda, ldb)
-    !CALL libxsmm_otrans(C_LOC(a), C_LOC(b), T, n, m, ldb, lda)
-    CALL libxsmm_dotrans(a, b, n, m)
-    duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-  ELSE ! in-place
-    start = libxsmm_timer_tick();
-    ! TODO: in-place
-    duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-  END IF
+        IF (('o'.EQ.trans).OR.('O'.EQ.trans)) THEN
+          start = libxsmm_timer_tick();
+          CALL libxsmm_otrans(C_LOC(b), C_LOC(a), T, m, n, lda, ldb)
+          !CALL libxsmm_otrans(C_LOC(a), C_LOC(b), T, n, m, ldb, lda)
+          CALL libxsmm_dotrans(a, b, n, m)
+          duration = libxsmm_timer_duration(                            &
+     &                  start, libxsmm_timer_tick());
+        ELSE ! in-place
+          start = libxsmm_timer_tick();
+          ! TODO: in-place
+          duration = libxsmm_timer_duration(                            &
+     &                  start, libxsmm_timer_tick());
+        END IF
 
-  diff = 0
-  DO j = 1, n
-    DO i = 1, m
-      diff = MAX(diff, ABS(a(i,j) - initial_value(i - 1, j - 1, m)))
-    END DO
-  END DO
+        diff = 0
+        DO j = 1, n
+          DO i = 1, m
+            diff = MAX(diff,                                            &
+     &                ABS(a(i,j) - initial_value(i - 1, j - 1, m)))
+          END DO
+        END DO
 
-  ! Deallocate matrices
-  DEALLOCATE(a)
-  DEALLOCATE(b)
+        ! Deallocate matrices
+        DEALLOCATE(a)
+        DEALLOCATE(b)
 
-  IF (0.EQ.diff) THEN
-    IF (0.LT.duration) THEN
-      WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ", &
-        (size / (duration * ISHFT(1_8, 30))), " GB/s"
-    END IF
-    WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ", 1D3 * duration, " ms"
-  ELSE
-    WRITE(*,*) "Validation failed!"
-    STOP 1
-  END IF
+        IF (0.EQ.diff) THEN
+          IF (0.LT.duration) THEN
+            WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ",         &
+     &        size / (duration * ISHFT(1_8, 30)), " GB/s"
+          END IF
+          WRITE(*, "(1A,A,F10.1,A)") CHAR(9),                           &
+     &        "duration:   ", 1D3 * duration, " ms"
+        ELSE
+          WRITE(*,*) "Validation failed!"
+          STOP 1
+        END IF
 
-CONTAINS
-  PURE REAL(T) FUNCTION initial_value(i, j, ld)
-    INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: i, j, ld
-    initial_value = j * ld + i
-  END FUNCTION
-END PROGRAM
+      CONTAINS
+        PURE REAL(T) FUNCTION initial_value(i, j, ld)
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: i, j, ld
+          initial_value = j * ld + i
+        END FUNCTION
+      END PROGRAM
 
