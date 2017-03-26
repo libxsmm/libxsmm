@@ -511,7 +511,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
     }
     { const char *const env = getenv("LIBXSMM_SCRATCH_SCALE");
       if (0 == env || 0 == *env) {
-        libxsmm_scratch_scale = 1.5;
+        libxsmm_scratch_scale = 1.4;
       }
       else {
         libxsmm_scratch_scale = LIBXSMM_CLMP(atof(env), 1.1, 3.0);

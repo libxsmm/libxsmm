@@ -1000,7 +1000,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_aligned_scratch(size_t size, size_t alignme
         if (0 == internal_malloc_scratch_pool[i].buffer) {
           LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
           if (0 == internal_malloc_scratch_pool[i].buffer) {
-            const double scratch_scale = 0 < libxsmm_scratch_scale ? libxsmm_scratch_scale : 1.5;
+            const double scratch_scale = 0 < libxsmm_scratch_scale ? libxsmm_scratch_scale : 1.4;
             const size_t minsize = scratch_scale * LIBXSMM_MAX(internal_malloc_scratch_pool[i].minsize, req_size);
             assert(0 == internal_malloc_scratch_pool[i].head/*sanity check*/);
             if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&internal_malloc_scratch_pool[i].buffer, minsize, 0/*auto*/,
