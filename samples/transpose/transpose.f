@@ -35,11 +35,12 @@ PROGRAM transpose
 
   INTEGER, PARAMETER :: T = KIND(0D0)
 
-  REAL(T), ALLOCATABLE, TARGET :: a(:,:), b(:,:), diff
+  REAL(T), ALLOCATABLE, TARGET :: a(:,:), b(:,:)
   !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, b
   INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, lda, ldb, i, j, size
   DOUBLE PRECISION :: duration
   INTEGER(8) :: start
+  REAL(T) :: diff
 
   CHARACTER(32) :: argv
   CHARACTER :: trans
