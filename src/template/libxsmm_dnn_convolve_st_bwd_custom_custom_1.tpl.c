@@ -227,30 +227,31 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
      libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
 #if defined(LIBXSMM_CONV_NO_PREFETCH)
-jitted_conv_bp_no_pf = (libxsmm_convfunction)handle->code_bwd[0].xconv.sconv;
+  jitted_conv_bp_no_pf = (libxsmm_convfunction)handle->code_bwd[0].xconv.sconv;
 #else
-jitted_conv_bp_noweight_pf = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
-jitted_conv_bp_pf = (libxsmm_convfunction)handle->code_bwd[2].xconv.sconv;
+  jitted_conv_bp_noweight_pf = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
+  jitted_conv_bp_pf = (libxsmm_convfunction)handle->code_bwd[2].xconv.sconv;
 #endif
-
-for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
+  /* Placing the if statement here to reduce number of branch predictions */
+  if (handle->bwd_ofw_rb == handle->ofw) {
+    /* Inside oi loop prefetch for next oj */
+    for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
       img = imgifm1/(handle->blocksifm*handle->fm_lp_block);
       ifm1lpblock = imgifm1%(handle->blocksifm*handle->fm_lp_block);
       ifm1 = ifm1lpblock / handle->fm_lp_block;
       lp = ifm1lpblock % handle->fm_lp_block;
-/* First upconvert for low precision */
-if (handle->datatype != handle->datatype_itm) {
-for (ij = 0; ij < handle->ifhp; ++ij) {
-for (ii = 0; ii < handle->ifwp; ++ii) {
-for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock) = (element_output_type)
-(LIBXSMM_VLA_ACCESS(6, del_input_lp, img, ifm1, ij, ii, ((handle->ifmblock/handle->fm_lp_block)*lp)+(ifm2/handle->fm_lp_block), lp, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block));
-}
-}
-}
-}/* end of upconvert for low precision */
+      /* First upconvert for low precision */
+      if (handle->datatype != handle->datatype_itm) {
+        for (ij = 0; ij < handle->ifhp; ++ij) {
+          for (ii = 0; ii < handle->ifwp; ++ii) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock) = (element_output_type)(LIBXSMM_VLA_ACCESS(6, del_input_lp, img, ifm1, ij, ii, ((handle->ifmblock/handle->fm_lp_block)*lp)+(ifm2/handle->fm_lp_block), lp, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block));
+            }
+          }
+        }
+      }/* end of upconvert for low precision */
 
-/* Probably input padding copy here */
+      /* Probably input padding copy here */
 #if defined(INPUT_PADDING)
       input_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
       if (ifm1lpblock+1 != handle->blocksifm * handle->fm_lp_block) {
@@ -262,86 +263,96 @@ LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, ij, ii, ifm2, handle->blocksi
       }
       jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
 #endif
-for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
-for (oj = 0; oj < handle->ofh; oj+= handle->bwd_ofh_rb) {
-/* define ij */
-ij = oj * handle->desc.u;
-for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
-/* define ii */
-ii = oi * handle->desc.v;
+      for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
+        for (oj = 0; oj < handle->ofh; oj+= handle->bwd_ofh_rb) {
+          /* define ij */
+          ij = oj * handle->desc.u;
+          for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
+            /* define ii */
+            ii = oi * handle->desc.v;
 #if !defined(LIBXSMM_CONV_NO_PREFETCH)
-/* check we are not at the end */
-if (oj < handle->ofh-1) {
-LIBXSMM_JITTED_CONV_BP_NOWEIGHT_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
-                                  tr_wt, ofm1, ifm1, 0, 0, 0, 0,
-                                  del_out, img, ofm1, oj, oi, 0,
-                                  input_to_use, img, ifm1lpblock, (oj + handle->bwd_ofh_rb) * handle->desc.u, ii, 0,
-                                  del_out, img, ofm1, (oj + handle->bwd_ofh_rb), oi, 0
-                                  );
-} else {
-if ((ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm) && (lp+1 == handle->fm_lp_block)) {
-LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
-                          tr_wt, ofm1, ifm1, 0, 0, 0, 0,
-                          del_out, img, ofm1, oj, oi, 0,
-                          input_to_use, img+1, 0, 0, 0, 0,
-                          tr_wt, 0, 0, 0, 0, 0, 0,
-                          del_out, img+1, 0, 0, 0, 0
-                         );
-} else {
-if ((ofm1+1 == handle->blocksofm) && (lp+1 == handle->fm_lp_block)) {
-LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
-                          tr_wt, ofm1, ifm1, 0, 0, 0, 0,
-                          del_out, img, ofm1, oj, oi, 0,
-                          input_to_use, img, (ifm1+1)*handle->fm_lp_block, 0, 0, 0,
-                          tr_wt, 0, ifm1+1, 0, 0, 0, 0,
-                          del_out, img, 0, 0, 0, 0
-                         );
-} else {
-LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
-                          tr_wt, ofm1, ifm1, 0, 0, 0, 0,
-                          del_out, img, ofm1, oj, oi, 0,
-                          input_to_use, img, ifm1lpblock, 0, 0, 0,
-                          tr_wt, ofm1+1, ifm1, 0, 0, 0, 0,
-                          del_out, img, ofm1+1, 0, 0, 0
-                         );
-} /* end of ofm1+1 == handle->blocksofm */
-} /* end of (ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm) */
-} /* end of oj < handle->ofh-1 */
+            /* check we are not at the end */
+            if (oj < handle->ofh-handle->bwd_ofh_rb) {
+              LIBXSMM_JITTED_CONV_BP_NOWEIGHT_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
+                                                tr_wt, ofm1, ifm1, 0, 0, 0, 0,
+                                                del_out, img, ofm1, oj, oi, 0,
+                                                input_to_use, img, ifm1lpblock, (oj + handle->bwd_ofh_rb) * handle->desc.u, ii, 0,
+                                                del_out, img, ofm1, (oj + handle->bwd_ofh_rb), oi, 0
+                                                );
+            } else {
+              if ((ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm)) {
+                LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
+                                          tr_wt, ofm1, ifm1, 0, 0, 0, 0,
+                                          del_out, img, ofm1, oj, oi, 0,
+                                          input_to_use, img+1, 0, 0, 0, 0,
+                                          tr_wt, 0, 0, 0, 0, 0, 0,
+                                          del_out, img+1, 0, 0, 0, 0
+                                         );
+              } else {
+                if (ofm1+1 == handle->blocksofm) {
+                  LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
+                                            tr_wt, ofm1, ifm1, 0, 0, 0, 0,
+                                            del_out, img, ofm1, oj, oi, 0,
+                                            input_to_use, img, (ifm1+1)*handle->fm_lp_block, 0, 0, 0,
+                                            tr_wt, 0, ifm1+1, 0, 0, 0, 0,
+                                            del_out, img, 0, 0, 0, 0
+                                           );
+                } else {
+                  LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
+                                            tr_wt, ofm1, ifm1, 0, 0, 0, 0,
+                                            del_out, img, ofm1, oj, oi, 0,
+                                            input_to_use, img, ifm1lpblock, 0, 0, 0,
+                                            tr_wt, ofm1+1, ifm1, 0, 0, 0, 0,
+                                            del_out, img, ofm1+1, 0, 0, 0
+                                           );
+                } /* end of ofm1+1 == handle->blocksofm */
+              } /* end of (ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm) */
+            } /* end of oj < handle->ofh-handle->bwd_ofh_rb */
 #else
-LIBXSMM_JITTED_CONV_BP_NO_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
-                             tr_wt, ofm1, ifm1, 0, 0, 0, 0,
-                             del_out, img, ofm1, oj, oi, 0
-                            );
+            LIBXSMM_JITTED_CONV_BP_NO_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
+                                         tr_wt, ofm1, ifm1, 0, 0, 0, 0,
+                                         del_out, img, ofm1, oj, oi, 0
+                                        );
 #endif
-} /* end of oi loop */
-} /* end of oj loop */
-} /* end of ofm1 loop */
-/* Probably input padding copy back here */
+          } /* end of oi loop */
+        } /* end of oj loop */
+      } /* end of ofm1 loop */
+      /* Probably input padding copy back here */
 #if defined(INPUT_PADDING)
-jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
+      jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
 #else
 #include "libxsmm_dnn_zero_rim_st_input_custom.tpl.c"
 #endif
-/* down-convert for low precision*/
-if (handle->datatype != handle->datatype_itm) {
-for (ij = 0; ij < handle->ifhp; ++ij) {
-for (ii = 0; ii < handle->ifwp; ++ii) {
-for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-LIBXSMM_VLA_ACCESS(6, del_input_lp, img, ifm1, ij, ii, ((handle->ifmblock/handle->fm_lp_block)*lp)+(ifm2/handle->fm_lp_block), lp, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block) = (element_input_type)(LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock));
-}
-}
-}
-}/* end of downconvert for low precision */
-} /* end of imgifm1 loop */
-} else if (libxsmm_target_archid == LIBXSMM_X86_AVX2 ) {
-jitted_conv_bp_no_pf = (libxsmm_convfunction)handle->code_bwd[0].xconv.sconv;
-for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
+      /* down-convert for low precision*/
+      if (handle->datatype != handle->datatype_itm) {
+        for (ij = 0; ij < handle->ifhp; ++ij) {
+          for (ii = 0; ii < handle->ifwp; ++ii) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(6, del_input_lp, img, ifm1, ij, ii, ((handle->ifmblock/handle->fm_lp_block)*lp)+(ifm2/handle->fm_lp_block), lp, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block) = (element_input_type)(LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock));
+            }
+          }
+        }
+      }/* end of downconvert for low precision */
+    } /* end of imgifm1 loop */
+  } else { /* If bwd_ofw_rb != ofw */
+    /* Inside oi loop prefetch for next ofw_rb */
+    for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
       img = imgifm1/(handle->blocksifm*handle->fm_lp_block);
       ifm1lpblock = imgifm1%(handle->blocksifm*handle->fm_lp_block);
       ifm1 = ifm1lpblock / handle->fm_lp_block;
       lp = ifm1lpblock % handle->fm_lp_block;
+      /* First upconvert for low precision */
+      if (handle->datatype != handle->datatype_itm) {
+        for (ij = 0; ij < handle->ifhp; ++ij) {
+          for (ii = 0; ii < handle->ifwp; ++ii) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock) = (element_output_type)(LIBXSMM_VLA_ACCESS(6, del_input_lp, img, ifm1, ij, ii, ((handle->ifmblock/handle->fm_lp_block)*lp)+(ifm2/handle->fm_lp_block), lp, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block));
+            }
+          }
+        }
+      }/* end of upconvert for low precision */
 
-/* Probably input padding copy here */
+      /* Probably input padding copy here */
 #if defined(INPUT_PADDING)
       input_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
       if (ifm1lpblock+1 != handle->blocksifm * handle->fm_lp_block) {
@@ -353,27 +364,127 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
       }
       jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
 #endif
-for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
-for (oj = 0; oj < handle->ofh; oj+= handle->bwd_ofh_rb) {
-/* define ij */
-ij = oj * handle->desc.u;
-for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
-/* define ii */
-ii = oi * handle->desc.v;
-LIBXSMM_JITTED_CONV_BP_NO_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
-                             tr_wt, ofm1, ifm1, 0, 0, 0, 0,
-                             del_out, img, ofm1, oj, oi, 0
-                            );
-} /* end of oi loop */
-} /* end of oj loop */
-} /* end of ofm1 loop */
-/* Probably input padding copy back here */
+      for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
+        for (oj = 0; oj < handle->ofh; oj+= handle->bwd_ofh_rb) {
+          /* define ij */
+          ij = oj * handle->desc.u;
+          for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
+            /* define ii */
+            ii = oi * handle->desc.v;
+#if !defined(LIBXSMM_CONV_NO_PREFETCH)
+            /* check we are not at the end */
+            if ((oj < handle->ofh-handle->bwd_ofh_rb) && (oi < handle->ofw-handle->bwd_ofw_rb)) {
+              LIBXSMM_JITTED_CONV_BP_NOWEIGHT_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
+                                                tr_wt, ofm1, ifm1, 0, 0, 0, 0,
+                                                del_out, img, ofm1, oj, oi, 0,
+                                                input_to_use, img, ifm1lpblock, ij, (oi + handle->bwd_ofw_rb) * handle->desc.v, 0,
+                                                del_out, img, ofm1, oj, oi + handle->bwd_ofw_rb, 0
+                                                );
+
+            } else if (oj < handle->ofh-handle->bwd_ofh_rb) {
+              LIBXSMM_JITTED_CONV_BP_NOWEIGHT_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
+                                                tr_wt, ofm1, ifm1, 0, 0, 0, 0,
+                                                del_out, img, ofm1, oj, oi, 0,
+                                                input_to_use, img, ifm1lpblock, (oj + handle->bwd_ofh_rb) * handle->desc.u, 0, 0,
+                                                del_out, img, ofm1, (oj + handle->bwd_ofh_rb), 0, 0
+                                                );
+            } else {
+              if ((ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm)) {
+                LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
+                                          tr_wt, ofm1, ifm1, 0, 0, 0, 0,
+                                          del_out, img, ofm1, oj, oi, 0,
+                                          input_to_use, img+1, 0, 0, 0, 0,
+                                          tr_wt, 0, 0, 0, 0, 0, 0,
+                                          del_out, img+1, 0, 0, 0, 0
+                                         );
+              } else {
+                if (ofm1+1 == handle->blocksofm) {
+                  LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
+                                            tr_wt, ofm1, ifm1, 0, 0, 0, 0,
+                                            del_out, img, ofm1, oj, oi, 0,
+                                            input_to_use, img, (ifm1+1)*handle->fm_lp_block, 0, 0, 0,
+                                            tr_wt, 0, ifm1+1, 0, 0, 0, 0,
+                                            del_out, img, 0, 0, 0, 0
+                                           );
+                } else {
+                  LIBXSMM_JITTED_CONV_BP_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
+                                            tr_wt, ofm1, ifm1, 0, 0, 0, 0,
+                                            del_out, img, ofm1, oj, oi, 0,
+                                            input_to_use, img, ifm1lpblock, 0, 0, 0,
+                                            tr_wt, ofm1+1, ifm1, 0, 0, 0, 0,
+                                            del_out, img, ofm1+1, 0, 0, 0
+                                           );
+                } /* end of ofm1+1 == handle->blocksofm */
+              } /* end of (ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm) */
+            } /* end of oj < handle->ofh-handle->bwd_ofh_rb */
+#else
+            LIBXSMM_JITTED_CONV_BP_NO_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
+                                         tr_wt, ofm1, ifm1, 0, 0, 0, 0,
+                                         del_out, img, ofm1, oj, oi, 0
+                                        );
+#endif
+          } /* end of oi loop */
+        } /* end of oj loop */
+      } /* end of ofm1 loop */
+      /* Probably input padding copy back here */
 #if defined(INPUT_PADDING)
-jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
+      jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
 #else
 #include "libxsmm_dnn_zero_rim_st_input_custom.tpl.c"
 #endif
-} /* end of imgifm1 loop */
+      /* down-convert for low precision*/
+      if (handle->datatype != handle->datatype_itm) {
+        for (ij = 0; ij < handle->ifhp; ++ij) {
+          for (ii = 0; ii < handle->ifwp; ++ii) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(6, del_input_lp, img, ifm1, ij, ii, ((handle->ifmblock/handle->fm_lp_block)*lp)+(ifm2/handle->fm_lp_block), lp, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block) = (element_input_type)(LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock));
+            }
+          }
+        }
+      }/* end of downconvert for low precision */
+    } /* end of imgifm1 loop */
+  } /* end of if bwd_ofw_rb == ofw */
+} else if (libxsmm_target_archid == LIBXSMM_X86_AVX2 ) {
+  jitted_conv_bp_no_pf = (libxsmm_convfunction)handle->code_bwd[0].xconv.sconv;
+  for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
+    img = imgifm1/(handle->blocksifm*handle->fm_lp_block);
+    ifm1lpblock = imgifm1%(handle->blocksifm*handle->fm_lp_block);
+    ifm1 = ifm1lpblock / handle->fm_lp_block;
+    lp = ifm1lpblock % handle->fm_lp_block;
+
+  /* Probably input padding copy here */
+#if defined(INPUT_PADDING)
+    input_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
+    if (ifm1lpblock+1 != handle->blocksifm * handle->fm_lp_block) {
+      /* Prefetch next ifm1lpblock, same image */
+      prefetch_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock+1, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
+    } else {
+      /* Prefetch ifm1lpblock 0 from next image */
+      prefetch_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
+    }
+    jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
+#endif
+    for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
+      for (oj = 0; oj < handle->ofh; oj+= handle->bwd_ofh_rb) {
+        /* define ij */
+        ij = oj * handle->desc.u;
+        for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
+          /* define ii */
+          ii = oi * handle->desc.v;
+          LIBXSMM_JITTED_CONV_BP_NO_PF(input_to_use, img, ifm1lpblock, ij, ii, 0,
+                                       tr_wt, ofm1, ifm1, 0, 0, 0, 0,
+                                       del_out, img, ofm1, oj, oi, 0
+                                      );
+        } /* end of oi loop */
+      } /* end of oj loop */
+    } /* end of ofm1 loop */
+    /* Probably input padding copy back here */
+#if defined(INPUT_PADDING)
+    jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
+#else
+#include "libxsmm_dnn_zero_rim_st_input_custom.tpl.c"
+#endif
+  } /* end of imgifm1 loop */
 /* should never happen, this is just an additional check */
 } else {
 status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
