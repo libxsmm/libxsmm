@@ -60,7 +60,7 @@
 # define MAX_MALLOC_MB 100
 #endif
 #if !defined(MAX_MALLOC_N)
-# define MAX_MALLOC_N 10
+# define MAX_MALLOC_N 24
 #endif
 
 
@@ -72,7 +72,7 @@ void* malloc_offsite(size_t size);
 int main(int argc, char* argv[])
 {
   const int ncycles = LIBXSMM_DEFAULT(1000000, 1 < argc ? atoi(argv[1]) : 0);
-  const int nalloc = LIBXSMM_MIN(MAX_MALLOC_N, 2 < argc ? atoi(argv[2]) : (MAX_MALLOC_N));
+  const int nalloc = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 4, 1, MAX_MALLOC_N);
   const int nthreads = LIBXSMM_DEFAULT(1, 3 < argc ? atoi(argv[3]) : 0);
   unsigned long long start;
   unsigned int ncalls = 0;
@@ -86,11 +86,11 @@ int main(int argc, char* argv[])
 #endif
 
   /* generate set of random number for parallel region */
-  for (i = 0; i < nalloc; ++i) r[i] = rand();
+  for (i = 0; i < (MAX_MALLOC_N); ++i) r[i] = rand();
 
   /* count number of calls according to randomized scheme */
   for (i = 0; i < ncycles; ++i) {
-    ncalls += (r[i%nalloc] % nalloc) + 1;
+    ncalls += (r[i%(MAX_MALLOC_N)] % nalloc) + 1;
   }
   assert(0 != ncalls);
 
@@ -119,10 +119,10 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for default(none) private(i)
 #endif
     for (i = 0; i < ncycles; ++i) {
-      const int count = (r[i%nalloc] % nalloc) + 1;
+      const int count = (r[i%(MAX_MALLOC_N)] % nalloc) + 1;
       int j;
       for (j = 0; j < count; ++j) {
-        const size_t nbytes = (r[j%nalloc] % (MAX_MALLOC_MB) + 1) << 20;
+        const size_t nbytes = (r[j%(MAX_MALLOC_N)] % (MAX_MALLOC_MB) + 1) << 20;
         p[j] = MALLOC(nbytes);
       }
       for (j = 0; j < count; ++j) {
