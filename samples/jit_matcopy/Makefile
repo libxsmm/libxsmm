@@ -25,6 +25,7 @@ CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
+BLAS = 0
 OMP = 1
 SYM = 1
 
