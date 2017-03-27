@@ -1218,8 +1218,8 @@ LIBXSMM_API_DEFINITION int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
     {
       const unsigned max_npools = LIBXSMM_MIN(libxsmm_scratch_pools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
       for (i = 1; i < max_npools; ++i) {
+        info->npools += (unsigned int)LIBXSMM_MIN(internal_malloc_scratch_pool[i].minsize, 1);
         info->npending += internal_malloc_scratch_pool[i].counter;
-        info->npools += LIBXSMM_MIN(internal_malloc_scratch_pool[i].minsize, 1);
       }
       if (0 != internal_malloc_scratch_pool[0].buffer) {
         for (i = 1; i < max_npools; ++i) {
