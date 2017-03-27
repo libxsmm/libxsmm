@@ -26,6 +26,8 @@ err*.txt
 out*.txt
 log.txt
 _*.txt
+check??????.c
+check??????.f
 *.lastcodeanalysissucceeded
 *.stackdump
 *.opensdf
