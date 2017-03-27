@@ -92,7 +92,7 @@ sudo ldconfig
 ```
 
 ## Benchmarks
-This document is an early recipe for building and running TensorFlow with LIBXSMM. Please do not expect any performance advantage (at this point) when comparing to TensorFlow without LIBXSMM! Please note that the symbolic link ("models") shown below should **not** be present when configuring TensorFlow!
+This document is an early recipe for building and running TensorFlow with LIBXSMM. Please do not expect any performance advantage (at this point) when comparing to TensorFlow without LIBXSMM! Please note that the symbolic link ("models") shown below should may not be present when configuring TensorFlow.
 
 ```
 https://github.com/soumith/convnet-benchmarks.git
