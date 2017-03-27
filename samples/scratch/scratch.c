@@ -53,9 +53,6 @@
 # define FREE(POINTER) free(POINTER)
 #endif
 
-#if !defined(MAX_MALLOC_LONGLIFE)
-/*# define MAX_MALLOC_LONGLIFE*/
-#endif
 #if !defined(MAX_MALLOC_MB)
 # define MAX_MALLOC_MB 100
 #endif
@@ -64,9 +61,7 @@
 #endif
 
 
-#if defined(MAX_MALLOC_LONGLIFE)
 void* malloc_offsite(size_t size);
-#endif
 
 
 int main(int argc, char* argv[])
@@ -101,9 +96,10 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-#if defined(MAX_MALLOC_LONGLIFE)
-    void *const longlife = malloc_offsite((MAX_MALLOC_MB) << 20);
-#endif
+    const char *const longlife_env = getenv("LONGLIFE");
+    const int enable_longlife = ((0 == longlife_env || 0 == *longlife_env) ? 0 : atoi(longlife_env));
+    void *const longlife = (0 == enable_longlife ? 0 : malloc_offsite((MAX_MALLOC_MB) << 20));
+
     /* run non-inline function to measure call overhead of an "empty" function */
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -130,9 +126,7 @@ int main(int argc, char* argv[])
       }
     }
     dalloc = libxsmm_timer_duration(start, libxsmm_timer_tick());
-#if defined(MAX_MALLOC_LONGLIFE)
     FREE(longlife);
-#endif
   }
 
   if (0 < dcall && 0 < dalloc) {
@@ -148,7 +142,5 @@ int main(int argc, char* argv[])
 }
 
 
-#if defined(MAX_MALLOC_LONGLIFE)
 void* malloc_offsite(size_t size) { return MALLOC(size); }
-#endif
 

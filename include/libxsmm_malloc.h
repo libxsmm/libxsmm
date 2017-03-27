@@ -85,6 +85,9 @@ LIBXSMM_API int libxsmm_set_scratch_allocator(/* malloc_fn/free_fn must correspo
 LIBXSMM_API int libxsmm_get_scratch_allocator(void** context,
   libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
+/** Allocate memory (malloc/free interface). */
+LIBXSMM_API void* libxsmm_malloc(size_t size);
+
 /** Allocate aligned default memory. */
 LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
   /**
@@ -97,15 +100,20 @@ LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
  * Allocate aligned scratch memory. It is not supported
  * to query properties (libxsmm_get_malloc_info).
  */
-LIBXSMM_API void* libxsmm_aligned_scratch(size_t size,
+LIBXSMM_API void* libxsmm_scratch_malloc(size_t size,
   /**
    * =0: align automatically according to the size
    * 0<: align according to the alignment value
    */
-  size_t alignment);
+  size_t alignment,
+  /**
+   * Identifies the call site, which is used
+   * to determine the memory pool.
+   */
+  const void* caller);
 
-/** Allocate memory (malloc/free interface). */
-LIBXSMM_API void* libxsmm_malloc(size_t size);
+#define libxsmm_aligned_scratch(size, alignment) \
+  libxsmm_scratch_malloc(size, alignment, LIBXSMM_CALLER)
 
 /** Deallocate memory (malloc/free interface). */
 LIBXSMM_API void libxsmm_free(const void* memory);
@@ -132,7 +140,9 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
   /** Pending allocations (not released). */
   size_t npending;
   /** Number of allocations so far. */
-  size_t nalloc;
+  size_t nmallocs;
+  /** Number of pools used. */
+  unsigned int npools;
 } libxsmm_scratch_info;
 
 /** Retrieve information about the scratch memory domain. */

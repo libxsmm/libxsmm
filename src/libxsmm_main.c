@@ -464,7 +464,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_finalize(void)
       if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info) && 0 < scratch_info.size) {
         fprintf(stderr, "  Scratch: %.f MB", 1.0 * scratch_info.size / (1 << 20));
         if (1 < libxsmm_verbosity) {
-          fprintf(stderr, " (nalloc=%lu)\n", (unsigned long int)scratch_info.nalloc);
+          fprintf(stderr, " (mallocs=%lu, pools=%u)\n",
+            (unsigned long int)scratch_info.nmallocs,
+            scratch_info.npools);
         }
         else {
           fprintf(stderr, "\n");
@@ -501,7 +503,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
     libxsmm_xset_scratch_allocator(0/*lock*/, 0/*context*/, null_malloc_fn, null_free_fn);
     { const char *const env = getenv("LIBXSMM_SCRATCH_POOLS");
       if (0 == env || 0 == *env) {
-        libxsmm_scratch_pools = 1;
+        libxsmm_scratch_pools = LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS;
       }
       else {
         libxsmm_scratch_pools = LIBXSMM_MAX(1, atoi(env));
@@ -511,7 +513,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
     }
     { const char *const env = getenv("LIBXSMM_SCRATCH_SCALE");
       if (0 == env || 0 == *env) {
-        libxsmm_scratch_scale = 1.4;
+        libxsmm_scratch_scale = LIBXSMM_MALLOC_SCRATCH_SCALE;
       }
       else {
         libxsmm_scratch_scale = LIBXSMM_CLMP(atof(env), 1.1, 3.0);
