@@ -283,11 +283,11 @@ double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1
 
 ### Memory Allocation
 Without further claims on the properties of the memory allocation (e.g., thread scalability), there are C functions ('libxsmm_malloc.h') that allocate aligned memory one of which allows to specify the alignment (or to specify an automatically select an alignment). The automatic alignment is also available with the `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
-**NOTE**: Only `libxsmm_free` is supported in order to deallocate the memory.
+**NOTE**: Only `libxsmm_free` is supported to deallocate the memory.
 
 ```C
-void* libxsmm_aligned_malloc(size_t size, size_t alignment);
 void* libxsmm_malloc(size_t size);
+void* libxsmm_aligned_malloc(size_t size, size_t alignment);
 void* libxsmm_aligned_scratch(size_t size, size_t alignment);
 void libxsmm_free(const volatile void* memory);
 int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info* info);
