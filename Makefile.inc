@@ -489,7 +489,14 @@ else
   ifeq (0,$(CLANG))
     COMPATIBLE ?= 1
   endif
+  ifneq (0,$(COMPATIBLE))
+  ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
+    LDFLAGS += -hsystem_alloc
+    CRAY ?= 1
+  endif
+  endif
 endif
+CRAY ?= 0
 
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
