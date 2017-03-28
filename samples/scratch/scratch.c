@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
     const double empty_freq = 1E-6 * (ncycles * (MAX_MALLOC_N)) / dcall;
     fprintf(stdout, "\tallocation+free calls/s: %.1f MHz\n", alloc_freq);
     fprintf(stdout, "\tempty calls/s: %.1f MHz\n", empty_freq);
-    fprintf(stdout, "\tduration/cycle: %.0f ms\n", 1000.0 * dalloc / ncycles);
+    fprintf(stdout, "\tduration/cycle: %.0f µs\n", 1E6 * dalloc / ncycles);
     fprintf(stdout, "\toverhead: %.1fx\n", empty_freq / alloc_freq);
   }
 
