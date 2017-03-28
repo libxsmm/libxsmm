@@ -308,7 +308,7 @@ void libxsmm_generator_spgemm_csc_asparse( libxsmm_generated_code*        io_gen
             libxsmm_sparse_csc_asparse_innerloop_scalar(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);
           }
         }
-      /* scalar anayways */
+      /* scalar anyways */
       } else {
         if ( (i_row_idx[i_column_idx[l_k] + l_z] < (unsigned int)i_xgemm_desc->m) ) {
           libxsmm_sparse_csc_asparse_innerloop_scalar(io_generated_code, i_xgemm_desc, l_k, l_z, i_row_idx, i_column_idx);

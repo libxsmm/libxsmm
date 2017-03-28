@@ -863,7 +863,7 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
 
   switch (i_error_code) {
     case LIBXSMM_ERR_GENERAL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: a general error occured!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: a general error occurred!\n" );
       break;
     case LIBXSMM_ERR_ARCH_PREC:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unknown architecture and precision!\n" );
@@ -953,12 +953,12 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: too many nested loops, exceeding loop label tracker!\n");
       break;
     case LIBXSMM_ERR_CSC_ALLOC_DATA:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: could not allocate temporay memory for reading CSC file!\n");
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: could not allocate temporary memory for reading CSC file!\n");
       break;
     case LIBXSMM_ERR_NO_AVX512_QFMA:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: arch error, no QFMA is available!\n");
     case LIBXSMM_ERR_CSR_ALLOC_DATA:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: could not allocate temporay memory for reading CSR file!\n");
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: could not allocate temporary memory for reading CSR file!\n");
       break;
     case LIBXSMM_ERR_CSR_INPUT:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: could not open the specified CSR input file!\n" );
@@ -979,16 +979,16 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid activation or filter format was detected during convolution kernel generation!\n" );
       break;
     case LIBXSMM_ERR_INVALID_KW_UNROLL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid kw unrull was detected during convolution kernel generation!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid kw unroll was detected during convolution kernel generation!\n" );
       break;
     case LIBXSMM_ERR_INVALID_KH_UNROLL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid kh unrull was detected during convolution kernel generation!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid kh unroll was detected during convolution kernel generation!\n" );
       break;
     case LIBXSMM_ERR_INVALID_OFW_UNROLL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid ofw unrull was detected during convolution kernel generation!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid ofw unroll was detected during convolution kernel generation!\n" );
       break;
     case LIBXSMM_ERR_INVALID_OFH_UNROLL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid ofh unrull was detected during convolution kernel generation!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid ofh unroll was detected during convolution kernel generation!\n" );
       break;
     case LIBXSMM_ERR_INVALID_CONV_ACC:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid size of accumulator was detected during convolution kernel generation!\n" );
@@ -1017,9 +1017,9 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_UNIQUE_VAL:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: for sparse-A in reg: too many values in A!\n" );
       break;
-    /* default, we didn't don't know what happend */
+    /* default, we do not know what happened */
     default:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: an unknown error occured!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: an unknown error occurred!\n" );
       break;
   }
 

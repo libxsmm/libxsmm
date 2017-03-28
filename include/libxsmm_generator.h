@@ -50,7 +50,7 @@
 #endif
 
 #if defined(LIBXSMM_BIG) && (0 == LIBXSMM_BIG)
-/* TODO: make sure to fallback earlier if index space is exhaused */
+/* TODO: make sure to fallback earlier if index space is exhausted */
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE unsigned short
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX ((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)0xFFFF)
 # define LIBXSMM_GEMM_DESCRIPTOR_SIZE 16 /* LDA,LDB,LDC: 3 * sizeof(LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)

@@ -151,7 +151,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
 #define UNROLL_REGISTER_BLOCK
 
 #ifdef UNROLL_REGISTER_BLOCK
-  /* initilize OFW and OFH unrolling */
+  /* initialize OFW and OFH unrolling */
   if (i_conv_desc->kw == 1 && i_conv_desc->kh == 1) {
   if (i_conv_desc->ofh_unroll != 0) {
     l_ofh_trips = i_conv_desc->ofh / i_conv_desc->ofh_rb;
@@ -320,7 +320,7 @@ void libxsmm_generator_convolution_weight_update_avx512_init_weight_strides( lib
 
   int unroll_factor = (i_conv_desc->ifm_block == 1) ? i_conv_desc->kw : i_conv_desc->ifm_block;
 
-  /* Intialize helper registers for SIB addressing */
+  /* Initialize helper registers for SIB addressing */
   /* helper 0: Index register holding ldb*datatype_size */
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction,
                                    i_gp_reg_mapping->gp_reg_help_0, i_conv_kernel_config->datatype_size_in );
@@ -335,7 +335,7 @@ void libxsmm_generator_convolution_weight_update_avx512_init_weight_strides( lib
                                    i_gp_reg_mapping->gp_reg_help_3, i_conv_kernel_config->datatype_size_in * 7 );
 
   /* helper 4: B + 9*ldb, additional base address
-     helper 5: B + 18*ldb, additional base adrress */
+     helper 5: B + 18*ldb, additional base address */
   if ( unroll_factor > 9 ) {
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_input, i_gp_reg_mapping->gp_reg_help_4);
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
@@ -600,7 +600,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_init_weight_st
 #endif
   int unroll_factor = i_conv_desc->ifm_block;
 
-  /* Intialize helper registers for SIB addressing */
+  /* Initialize helper registers for SIB addressing */
   /* helper 0: Index register holding ldb*datatype_size */
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction,
                                    i_gp_reg_mapping->gp_reg_help_0, i_conv_desc->ifw_padded * i_conv_kernel_config->datatype_size_in );
@@ -615,7 +615,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_init_weight_st
                                    i_gp_reg_mapping->gp_reg_help_3, i_conv_desc->ifw_padded * i_conv_kernel_config->datatype_size_in * 7 );
 
   /* helper 4: B + 9*ldb, additional base address
-     helper 5: B + 18*ldb, additional base adrress */
+     helper 5: B + 18*ldb, additional base address */
   if ( unroll_factor > 9 ) {
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_input, i_gp_reg_mapping->gp_reg_help_4);
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,

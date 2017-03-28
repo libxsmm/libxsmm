@@ -174,7 +174,7 @@ Example for ofm_block = 32, ifm_block%2 == 0
     return;
   }
 
-  /* caclulate the ifm unrolling */
+  /* calculate the ifm unrolling */
   for (l_m = 3; l_m > 0; l_m--) {
     if ( i_conv_desc->ifm_block%l_m == 0 ) {
       l_ifm_blocking = l_m;

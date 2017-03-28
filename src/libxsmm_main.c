@@ -1185,7 +1185,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
             (unsigned int)request->descriptor.cwino->itiles/*itiles*/,
             (unsigned int)request->descriptor.cwino->jtiles/*jtiles*/,
             (unsigned int)request->descriptor.cwino->bimg/*image block*/,
-            (unsigned int)request->descriptor.cwino->ur/*unrolliing*/,
+            (unsigned int)request->descriptor.cwino->ur/*unrolling*/,
             (int)request->descriptor.cwino->prefetch/*binary OR'd prefetch flags*/);
         }
       }

@@ -73,7 +73,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
     l_n_accs = 4;
   }
 
-  /* Intialize helper registers for SIB addressing */
+  /* Initialize helper registers for SIB addressing */
   /* helper 0: Index register holding ldb*datatype_size */
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
                                    i_gp_reg_mapping->gp_reg_help_0, i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
@@ -417,7 +417,7 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
     l_n_accs = 4;
   }
 
-  /* Intialize helper registers for SIB addressing */
+  /* Initialize helper registers for SIB addressing */
   /* helper 0: Index register holding ldb*datatype_size */
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
                                    i_gp_reg_mapping->gp_reg_help_0, i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
@@ -851,13 +851,13 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
   }
 #endif
 
-  /* Intialize helper registers for SIB addressing */
+  /* Initialize helper registers for SIB addressing */
   if ( i_k_blocking != 9 ) {
     /* helper 0: Index register holding ldb*datatype_size */
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction,
                                      i_gp_reg_mapping->gp_reg_help_0, i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb );
     /* helper 1: B + 3*ldb, additional base address
-      helper 2: B + 6*ldb, additional base adrress */
+      helper 2: B + 6*ldb, additional base address */
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_1);
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_2);
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
@@ -1211,7 +1211,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
     }
 
     /* compute vectorwidth (A) * column broadcast (B) */
-    /* defning the compute routine */
+    /* defining the compute routine */
     l_vcompute = i_micro_kernel_config->vmul_instruction;
     l_register_offset = l_n_blocking;
 

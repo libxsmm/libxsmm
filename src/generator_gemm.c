@@ -46,7 +46,7 @@ LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated_code,
                                     const libxsmm_gemm_descriptor* i_xgemm_desc,
                                     const char*                     i_arch ) {
-  /* apply the alignement override */
+  /* apply the alignment override */
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
 

@@ -174,7 +174,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
           l_found_mul = 1;
         }
       }
-      /* only load A if multiplcation loop is not empty */
+      /* only load A if multiplication loop is not empty */
       if (l_found_mul != 0) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           l_micro_kernel_config.instruction_set,

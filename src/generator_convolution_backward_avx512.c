@@ -190,12 +190,12 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
     return;
   }
 
-  /* initilize KW unrolling */
+  /* initialize KW unrolling */
   if (i_conv_desc->unroll_kw != 0) {
     l_kw_trips = i_conv_desc->kw;
   }
   /* ofw is not being unrolled now */
-  /* initilize KH unrolling */
+  /* initialize KH unrolling */
   if (i_conv_desc->unroll_kh != 0) {
     l_kh_trips = i_conv_desc->kh;
   }
@@ -219,7 +219,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
                                                    l_gp_reg_mapping.gp_reg_input_pf, l_gp_reg_mapping.gp_reg_weight_pf,
                                                    l_gp_reg_mapping.gp_reg_output_pf, i_arch );
 
-  /* load an additoinal temp register with 32 16bit 1s */
+  /* load an additional temp register with 32 16bit 1s */
   if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, 65537 );
     libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0 );
@@ -323,7 +323,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
 #endif
 
 #ifdef ENABLE_OUTPUT_PREFETCH
-    /* Adjust ouput prefetch pointer */
+    /* Adjust output prefetch pointer */
     if ( (i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        l_conv_kernel_config.alu_add_instruction,
@@ -387,7 +387,7 @@ void libxsmm_generator_convolution_backward_avx512_init_output_strides( libxsmm_
                                                                       const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                       const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
                                                                       const libxsmm_convolution_backward_descriptor*     i_conv_desc ) {
-  /* Intialize helper registers for SIB addressing */
+  /* Initialize helper registers for SIB addressing */
   /* helper 0: Index register holding ldb*datatype_size */
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction,
                                    i_gp_reg_mapping->gp_reg_help_0, i_conv_kernel_config->datatype_size_out * i_conv_kernel_config->l_ld_ofm_act * i_conv_desc->fm_lp_block);
@@ -402,7 +402,7 @@ void libxsmm_generator_convolution_backward_avx512_init_output_strides( libxsmm_
                                    i_gp_reg_mapping->gp_reg_help_3, i_conv_kernel_config->datatype_size_out * i_conv_kernel_config->l_ld_ofm_act * i_conv_desc->fm_lp_block * 7 );
 
   /* helper 4: B + 9*ldb, additional base address
-     helper 5: B + 18*ldb, additional base adrress */
+     helper 5: B + 18*ldb, additional base address */
   if ( i_conv_desc->ofw_rb > 9 ) {
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_output, i_gp_reg_mapping->gp_reg_help_4);
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
@@ -425,7 +425,7 @@ void libxsmm_generator_convolution_backward_avx512_init_output_strides_two_rows(
                                                                       const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                       const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
                                                                       const libxsmm_convolution_backward_descriptor*     i_conv_desc ) {
-  /* Intialize helper registers for SIB addressing */
+  /* Initialize helper registers for SIB addressing */
   /* helper 0: Index register holding ldb*datatype_size */
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction,
                                    i_gp_reg_mapping->gp_reg_help_0, i_conv_kernel_config->datatype_size_out * i_conv_kernel_config->l_ld_ofm_act * i_conv_desc->fm_lp_block);
@@ -440,8 +440,8 @@ void libxsmm_generator_convolution_backward_avx512_init_output_strides_two_rows(
                                    i_gp_reg_mapping->gp_reg_help_3, i_conv_kernel_config->datatype_size_out * i_conv_kernel_config->l_ld_ofm_act * i_conv_desc->fm_lp_block * 7 );
 
   /* helper 4: B+9*ldb,            additional base address
-     helper 5: B+ofw_padded,              additional base adrress
-     helper 6: B+ofw_padded+9*ldb,        additional base adrress */
+     helper 5: B+ofw_padded,              additional base address
+     helper 6: B+ofw_padded+9*ldb,        additional base address */
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_output, i_gp_reg_mapping->gp_reg_help_5);
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_help_5, i_conv_desc->ofw_padded * i_conv_kernel_config->l_ld_ofm_act * i_conv_desc->fm_lp_block *  i_conv_kernel_config->datatype_size_out);
@@ -906,7 +906,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
   } /* end of pipelined store of inputs */
 
 
-  } /* endof l_k_2 over i_kw_unroll */
+  } /* end of l_k_2 over i_kw_unroll */
 }
 
 LIBXSMM_INTERNAL_API_DEFINITION
@@ -1137,7 +1137,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
     }
   } /* end of pipelined store of inputs */
 
-  } /* endof l_k_2 over i_kw_unroll */
+  } /* end of l_k_2 over i_kw_unroll */
 
 }
 
@@ -1461,7 +1461,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generat
   } /* end of pipelined store of inputs */
 
 
-  } /* endof l_k_2 over i_kw_unroll */
+  } /* end of l_k_2 over i_kw_unroll */
 
 }
 
@@ -1682,7 +1682,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_two_rows( libxsm
     }
   } /* end of pipelined store of inputs */
 
-  } /* endof l_k_2 over i_kw_unroll */
+  } /* end of l_k_2 over i_kw_unroll */
 
 }
 

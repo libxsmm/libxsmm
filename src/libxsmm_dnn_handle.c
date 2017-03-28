@@ -106,7 +106,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         for (i = 26; i > 1; --i) {
           if (handle->ofw % i == 0) break;
         }
-      /* for 32 accumuation we need even one register more */
+      /* for 32 accumulation we need even one register more */
       } else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) &&
            (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) &&
            ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {

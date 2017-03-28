@@ -549,7 +549,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_init_check(int archid)
   {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: missed to enter \"%s\" code path due to the compiler used!\n", libxsmm_get_target_arch());
+      fprintf(stderr, "LIBXSMM: missued to enter \"%s\" code path due to the compiler used!\n", libxsmm_get_target_arch());
     }
   }
 }
