@@ -2924,17 +2924,17 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
     int l_code_length = 0;
     char l_gp_reg_name[4];
 
-    /* loading b pointer in assembley */
+    /* loading b pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_b, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "  __asm__ __volatile__(\"movq %%0, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* loading a pointer in assembley */
+    /* loading a pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_a, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%1, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* loading c pointer in assembley */
+    /* loading c pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_mapping->gp_reg_c, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%2, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -2976,7 +2976,7 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
                                            unsigned int                  i_prefetch) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO this is a very simple System V ABI 64 interfacce */
+    /* @TODO this is a very simple System V ABI 64 interface */
     unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
@@ -3270,32 +3270,32 @@ void libxsmm_x86_instruction_open_stream_convolution( libxsmm_generated_code*   
     int l_code_length = 0;
     char l_gp_reg_name[4];
 
-    /* loading input pointer in assembley */
+    /* loading input pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_input, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "  __asm__ __volatile__(\"movq %%0, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* loading weight pointer in assembley */
+    /* loading weight pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_weight, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%1, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* loading output pointer in assembley */
+    /* loading output pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_output, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%2, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* loading input pf pointer in assembley */
+    /* loading input pf pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_input_pf, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* loading weight pf pointer in assembley */
+    /* loading weight pf pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_weight_pf, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%4, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* loading output pf pointer in assembley */
+    /* loading output pf pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_output_pf, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%5, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -3307,7 +3307,7 @@ void libxsmm_x86_instruction_close_stream_convolution( libxsmm_generated_code*  
                                                        const char*                   i_arch) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO this is a very simple System V ABI 64 interfacce */
+    /* @TODO this is a very simple System V ABI 64 interface */
     unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
@@ -3435,32 +3435,32 @@ void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*       
     int l_code_length = 0;
     char l_gp_reg_name[4];
 
-    /* loading a pointer in assembley */
+    /* loading a pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_a, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "  __asm__ __volatile__(\"movq %%0, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* loading lda pointer in assembley */
+    /* loading lda pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_lda, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%1, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* loading b pointer in assembley */
+    /* loading b pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_b, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%2, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* loading ldb pointer in assembley */
+    /* loading ldb pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_ldb, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%3, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* loading a pf pointer in assembley */
+    /* loading a pf pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_a_pf, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%4, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
-    /* loading b pf pointer in assembley */
+    /* loading b pf pointer in assembly */
     libxsmm_get_x86_gp_reg_name( i_gp_reg_b_pf, l_gp_reg_name, 3 );
     l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%6, %%%%%s\\n\\t\"\n", l_gp_reg_name );
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -3472,7 +3472,7 @@ void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*      
                                                    const char*                   i_arch) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO this is a very simple System V ABI 64 interfacce */
+    /* @TODO this is a very simple System V ABI 64 interface */
     unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;

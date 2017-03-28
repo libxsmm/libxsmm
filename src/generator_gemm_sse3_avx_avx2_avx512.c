@@ -62,7 +62,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   unsigned int l_n_done_old = 0;
   unsigned int l_n_blocking = 3;
 
-  /* as we have 32 registers, we can block more aggessively */
+  /* as we have 32 registers, we can block more aggressively */
   if ( (strcmp(i_arch, "skx") == 0) ) {
     l_n_blocking = 6;
   }

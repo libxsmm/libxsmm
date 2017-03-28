@@ -133,7 +133,7 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
 
   max_index = i_conv_desc->ur - 1;
 
-  /* Intialize helper registers for SIB addressing */
+  /* Initialize helper registers for SIB addressing */
   if ( max_index >= 1 ) {
     /* helper 0: Index register holding ldb*datatype_size */
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,

@@ -348,7 +348,7 @@
 # else
 #   include <mm_malloc.h>
 # endif
-/** Intrinsic-specifc fixups */
+/** Intrinsic-specific fixups */
 # if defined(__clang__)
 #   define LIBXSMM_INTRINSICS_LDDQU_SI128(A) _mm_loadu_si128(A)
 # else

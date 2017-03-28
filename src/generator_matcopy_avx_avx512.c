@@ -118,7 +118,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     return;
   }
 
-  /* More setup in the kernel config based on architecure and data type */
+  /* More setup in the kernel config based on architecture and data type */
   if ( l_kernel_config.vector_name == 'y' ) {
     if ( i_matcopy_desc->datatype == LIBXSMM_DNN_DATATYPE_F32  ) {
       l_kernel_config.vector_length = 8;
@@ -164,7 +164,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   l_kernel_config.alu_jmp_instruction = LIBXSMM_X86_INSTR_JL;
   l_kernel_config.prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT2;
 
-  /* Calculate the trips in the n dimesnion (perform unrolling if requested) */
+  /* Calculate the trips in the n dimension (perform unrolling if requested) */
   n_trips = i_matcopy_desc->n / (l_kernel_config.vector_length * i_matcopy_desc->unroll_level);
   remaining_unrolled = (i_matcopy_desc->n % (l_kernel_config.vector_length * i_matcopy_desc->unroll_level)) / l_kernel_config.vector_length;
   remaining = (i_matcopy_desc->n % (l_kernel_config.vector_length * i_matcopy_desc->unroll_level)) % l_kernel_config.vector_length;
@@ -267,7 +267,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                     l_gp_reg_mapping.gp_reg_b,
                                     i_matcopy_desc->unroll_level * l_kernel_config.vector_length * l_kernel_config.datatype_size);
 
-    /* Adjust prefecth pointer by VLEN * unroll-level elements */
+    /* Adjust prefetch pointer by VLEN * unroll-level elements */
     if (i_matcopy_desc->prefetch) {
       libxsmm_x86_instruction_alu_imm(  io_generated_code,
                                       l_kernel_config.alu_add_instruction,
@@ -392,7 +392,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                       l_gp_reg_mapping.gp_reg_b,
                                       (i_matcopy_desc->ldb - n_trips * l_kernel_config.vector_length * i_matcopy_desc->unroll_level) * l_kernel_config.datatype_size);
     }
-    /* Adjust prefecth pointer if requested */
+    /* Adjust prefetch pointer if requested */
     if (i_matcopy_desc->prefetch) {
       if ( (i_matcopy_desc->lda - n_trips * l_kernel_config.vector_length * i_matcopy_desc->unroll_level) != 0 ) {
         libxsmm_x86_instruction_alu_imm(  io_generated_code,

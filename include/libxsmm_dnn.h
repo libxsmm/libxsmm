@@ -107,7 +107,7 @@ typedef enum libxsmm_dnn_tensor_dimtype {
   LIBXSMM_DNN_TENSOR_DIMTYPE_H,
   /** Image Width */
   LIBXSMM_DNN_TENSOR_DIMTYPE_W,
-  /** channles or input channels */
+  /** channels or input channels */
   LIBXSMM_DNN_TENSOR_DIMTYPE_C,
   /** output channels */
   LIBXSMM_DNN_TENSOR_DIMTYPE_K,

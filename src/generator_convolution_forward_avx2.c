@@ -124,7 +124,7 @@ void libxsmm_generator_convolution_forward_avx2_kernel( libxsmm_generated_code* 
     return;
   }
 
-  /* initilize KW and KH unrolling */
+  /* initialize KW and KH unrolling */
   if (i_conv_desc->unroll_kw != 0) {
     libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
     return;
@@ -189,7 +189,7 @@ void libxsmm_generator_convolution_forward_avx2_kernel( libxsmm_generated_code* 
                                           l_conv_kernel_config.l_ld_ifm_fil * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt );
       }
 
-      /* adjust innput pointer */
+      /* adjust input pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        l_conv_kernel_config.alu_add_instruction,
                                        l_gp_reg_mapping.gp_reg_input,

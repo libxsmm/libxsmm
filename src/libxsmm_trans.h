@@ -167,7 +167,7 @@
 }
 
 
-/** Initializes the tranpose functionality; NOT thread-safe. */
+/** Initializes the transpose functionality; NOT thread-safe. */
 LIBXSMM_API void libxsmm_trans_init(int archid);
 
 /** Finalizes the transpose functionality; NOT thread-safe. */
