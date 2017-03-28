@@ -786,6 +786,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
       current_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb* l_reg_per_block);
     }
 
+    assert(0 != i_conv_desc->ofw_rb && 0 != l_reg_per_block);
     /* compute vectorwidth (A) * column broadcast (B) */
     for ( l_n = 0; l_n < i_conv_desc->ofw_rb; l_n++) {
       /* determining base, idx and scale values */
@@ -892,6 +893,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
                                       l_vec_reg_acc_start + (l_k_2 % i_conv_desc->ofw_rb) , 0, 1 );
 
     } else {
+      assert(0 != i_conv_desc->ofw_rb && 0 != l_reg_per_block);
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_conv_kernel_config->instruction_set,
                                       i_conv_kernel_config->vmove_instruction,
@@ -1056,6 +1058,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
       weight_counter = 0;
     } else weight_counter++;
 
+    assert(0 != i_conv_desc->ofw_rb && 0 != l_reg_per_block);
     /* compute vectorwidth (A) * column broadcast (B) */
     for (l_m = 0; l_m < i_conv_desc->ofh_rb; l_m++) {
       for ( l_n = 0; l_n < i_conv_desc->ofw_rb; l_n++) {
@@ -1121,6 +1124,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
       }
     }
   } else {
+    assert(0 != i_conv_desc->ofw_rb && 0 != l_reg_per_block);
     for (i = 0; i < i_conv_desc->ofh_rb; i++) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_conv_kernel_config->instruction_set,
