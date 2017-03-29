@@ -70,7 +70,7 @@ EOD
       # trigger updating the version file
       ${TOUCH} ${LOCKFILE}
     else # cleanup
-      ${RM} ${LOCKFILE}
+      ${RM} -f ${LOCKFILE}
     fi
   fi
 fi
