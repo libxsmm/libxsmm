@@ -29,6 +29,13 @@ cd tensorflow-xsmm
 ./configure
 ```
 
+For people working behind a HTTP/S proxy, the environment variables must be setup with prefixed URLs (`https://` and `http://`):
+
+```
+export https_proxy=https://proxy.domain.com:912
+export http_proxy=http://proxy.domain.com:911
+```
+
 There are two aspects of LIBXSMM enabled within TensorFlow: (1)&#160;sparse CNN, and (2)&#160;CNN. To build and test the sparse routines:
 
 ```
@@ -69,7 +76,12 @@ bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
 sudo pip install -I /tmp/tensorflow_pkg/<package-name-build-above.whl>
 ```
 
-In general, if the build step of any of the above bazel commands goes wrong, `-s --verbose_failures` can be added to the command line (`-s` shows the full command of each of the build steps). The flags `--define tensorflow_xsmm=1`, `--define eigen_xsmm=1`, and `--define tensorflow_xsmm_backward=1` are not actually needed for all the above cases, but are supplied for consistency. More important, `--copt=-mavx2 --copt=-mfma` are only suitable for Intel&#160;AVX2 capable systems.
+In general, if the build step of any of the above bazel commands goes wrong, `-s --verbose_failures` can be added to the command line (`-s` shows the full command of each of the build steps). The flags `--define tensorflow_xsmm=1`, `--define eigen_xsmm=1`, and `--define tensorflow_xsmm_backward=1` are not actually needed for all the above cases, but are supplied for consistency. More important, `--copt=-mavx2 --copt=-mfma` are only suitable for Intel&#160;AVX2 capable systems:
+
+* AVX2/HSW/BDW: `--copt=-mavx2 --copt=-mfma`
+* AVX-512F (Foundational): `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd`
+* AVX-512/KNL: `--copt=-mavx512dq --copt=-mavx512bw --copt=-mavx512vl` (plus AVX-512F)
+* AVX-512/SKX: `--copt=-mavx512pf --copt=-mavx512er` (plus AVX-512F)
 
 LIBXSMM supports Intel&#160;AVX2 as the baseline code path for all JIT-generated DNN-code (SMM domain also supports AVX). For Intel&#160;AVX-512 (on top of AVX2), the foundational instructions are sufficient in many cases, but for the sparse domain the Core-flavor is a prerequisite ("Skylake server" or SKX), and VNNI/QFMA instructions are honored on Intel Xeon&#160;Phi code-named "Knights Mill" (KNM).
 
@@ -91,11 +103,13 @@ sudo mv software-gnu-gcc630.conf /etc/ld.so.conf.d/
 sudo ldconfig
 ```
 
+It apparently helps to build `bazel` using the regular compiler version (system default), and to avoid building it with a non-default compiler.
+
 ## Benchmarks
 This document is an early recipe for building and running TensorFlow with LIBXSMM. Please do not expect any performance advantage (at this point) when comparing to TensorFlow without LIBXSMM! Please note that the symbolic link ("models") shown below should may not be present when configuring TensorFlow.
 
 ```
-https://github.com/soumith/convnet-benchmarks.git
+git clone https://github.com/soumith/convnet-benchmarks.git
 cd tensorflow-xsmm; mkdir -p tensorflow/models
 ln -s /path/to/convnet-benchmarks/tensorflow-models tensorflow/models/convnetbenchmarks
 bazel build -c opt --copt=-O3 --copt=-mavx2 --copt=-mfma \
@@ -114,3 +128,5 @@ bazel-bin/tensorflow/models/convnetbenchmarks/benchmark_alexnet \
   --data_format=NHWC 2>&1 \
 | tee output_alexnet.log
 ```
+
+In case of ab `ImportError: No module named builtins`, it resolves with `sudo pip install future --upgrade`.
