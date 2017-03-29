@@ -112,7 +112,7 @@ bazel-bin/tensorflow/models/convnetbenchmarks/benchmark_alexnet \
 | tee output_alexnet.log
 ```
 
-In case of ab `ImportError: No module named builtins`, it resolves with `sudo pip install future --upgrade`.
+In case of an `ImportError: No module named builtins`, it resolves with `sudo pip install future --upgrade`.
 
 ## Non-default Compiler
 LIBXSMM does not impose to build for a specific code path, and always exploits the most suitable instruction set extension for JIT-enabled code paths. However, LIBXSMM may also use non-JIT code paths which are CPUID-dispatched when the static code path has lower capabilities. This only works when using GCC&#160;4.9 (or later) or the Intel Compiler. If TensorFlow does not match the highest possible CPU target (march=native), a performance penalty is possible.
