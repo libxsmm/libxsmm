@@ -319,7 +319,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
         for (ii = 0; ii < handle->ifwp; ii++) {
           input_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ij, ii, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm * handle->fm_lp_block, handle->ifmblock);
           copy_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(4, input_buffer, ij+handle->desc.pad_h, ii+handle->desc.pad_w, ifm1, 0, padded_w, handle->blocksifm, handle->ifmblock);
-          jitted_matcopyback(input_ptr, NULL, copy_ptr, NULL, NULL);
+          jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
         }
       }
 #else
@@ -432,7 +432,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
         for (ii = 0; ii < handle->ifwp; ii++) {
           input_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ij, ii, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm * handle->fm_lp_block, handle->ifmblock);
           copy_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(4, input_buffer, ij+handle->desc.pad_h, ii+handle->desc.pad_w, ifm1, 0, padded_w, handle->blocksifm, handle->ifmblock);
-          jitted_matcopyback(input_ptr, NULL, copy_ptr, NULL, NULL);
+          jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
         }
       }
 #else
@@ -489,7 +489,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       for (ii = 0; ii < handle->ifwp; ii++) {
         input_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ij, ii, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm * handle->fm_lp_block, handle->ifmblock);
         copy_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(4, input_buffer, ij+handle->desc.pad_h, ii+handle->desc.pad_w, ifm1, 0, padded_w, handle->blocksifm, handle->ifmblock);
-        jitted_matcopyback(input_ptr, NULL, copy_ptr, NULL, NULL);
+        jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
       }
     }
 #else
