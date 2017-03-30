@@ -946,7 +946,7 @@ ifneq (0,$(shell CINFILE=$$(mktemp checkXXXXXX.c); \
   echo "int main(void) { return 0; }" > $${CINFILE}; \
   CTEST=$$($(CC) $(CTARGET) -c $${CINFILE} 2>&1); \
   if [ "" = "$${CTEST}" ]; then echo $$?; else echo 1; fi; \
-  rm -f $$(basename $${CINFILE} .c)*))
+  rm -f check??????.c check??????.o*))
 # revoke target flags
   CTARGET = $(NULL)
 endif
@@ -957,7 +957,7 @@ ifeq (0,$(shell FINFILE=$$(mktemp checkXXXXXX.f); \
   echo "      END PROGRAM" >> $${FINFILE}; \
   FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
   if [ "" = "$${FTEST}" ]; then echo $$?; else echo 1; fi; \
-  rm -f $$(basename $${FINFILE} .f)*))
+  rm -f check??????.f check??????.o*))
 # inherit CTARGET flags
   FTARGET = $(CTARGET)
 endif
