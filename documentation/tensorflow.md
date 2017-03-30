@@ -29,7 +29,7 @@ cd tensorflow-xsmm
 ./configure
 ```
 
-For people working behind a HTTP/S proxy, the environment variables must be setup with prefixed URLs (`https://` and `http://`):
+When behind a HTTP-proxy, the environment variables should carry `https://` or `http://`:
 
 ```
 export https_proxy=https://proxy.domain.com:912
@@ -38,12 +38,11 @@ export http_proxy=http://proxy.domain.com:911
 
 In general, if the build step of any of the bazel commands goes wrong, `-s --verbose_failures` can be added to the command line (`-s` shows the full command of each of the build steps). The flags `--define tensorflow_xsmm=1`, `--define eigen_xsmm=1`, and `--define tensorflow_xsmm_backward=1` are not actually needed for all the cases, but are supplied for consistency.  
 
-**More important, in addition one set of below target flags should be added**:
+**More important, one line of below target flags should be added to any "bazel" command line**:
 
 * AVX2/HSW/BDW: `--copt=-mavx2 --copt=-mfma`
-* AVX-512F (Foundational): `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd`
-* AVX-512/SKX: `--copt=-mavx512dq --copt=-mavx512bw --copt=-mavx512vl` (plus AVX-512F)
-* AVX-512/KNL: `--copt=-mavx512pf --copt=-mavx512er` (plus AVX-512F)
+* AVX-512/SKX: `--copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl` (and `--copt=-mavx512dq` depending on certain fixes being already present in TensorFlow)
+* AVX-512/KNL: `--copt=-mavx512f --copt=-mavx512cd --copt=-mavx512pf --copt=-mavx512er`
 
 In order for Intel AVX-512 support, GCC&#160;5.x should be used (see more section [Non-default Compiler](#non-default-compiler)). LIBXSMM supports Intel&#160;AVX2 as the baseline code path for all JIT-generated DNN-code (SMM domain also supports AVX). For Intel&#160;AVX-512 (on top of AVX2), the foundational instructions are sufficient in many cases, but for the sparse domain the Core-flavor is a prerequisite ("Skylake server" or SKX), and VNNI/QFMA instructions are honored on Intel Xeon&#160;Phi code-named "Knights Mill" (KNM).
 
@@ -85,7 +84,9 @@ bazel build -c opt --copt=-O3 --linkopt=-pthread \
   //tensorflow/tools/pip_package:build_pip_package
 
 bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
-sudo pip install -I /tmp/tensorflow_pkg/<package-name-build-above.whl>
+sudo pip install \
+  --proxy proxy.domain.com:912 \
+  -I /tmp/tensorflow_pkg/<package-name-build-above.whl>
 ```
 
 ## Benchmarks
@@ -93,7 +94,8 @@ This document is an early recipe for building and running TensorFlow with LIBXSM
 
 ```
 git clone https://github.com/soumith/convnet-benchmarks.git
-cd tensorflow-xsmm; mkdir -p tensorflow/models
+cd tensorflow-xsmm
+mkdir -p tensorflow/models
 ln -s /path/to/convnet-benchmarks/tensorflow-models tensorflow/models/convnetbenchmarks
 bazel build -c opt --copt=-O3 --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
@@ -131,4 +133,6 @@ echo "/software/gnu/gcc-6.3.0/lib64" > software-gnu-gcc630.conf
 sudo mv software-gnu-gcc630.conf /etc/ld.so.conf.d/
 sudo ldconfig
 ```
+
+If there are still build problems when using the custom compiler (mismatched GLIBC version), the symbolic link `libstdc++.so.6` (under `/usr/lib64`) may be adjusted to point to the latest revision of this major version.
 
