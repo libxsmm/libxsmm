@@ -317,15 +317,21 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_get_pid(void)
 
 LIBXSMM_API_DEFINITION unsigned int libxsmm_get_tid(void)
 {
-#if defined(__linux__)
-  return (unsigned int)syscall(__NR_gettid);
-#else /* fallback */
   static LIBXSMM_TLS unsigned int tid = (unsigned int)(-1);
   if ((unsigned int)(-1) == tid) {
     static unsigned int tc = 0; tid = tc;
     LIBXSMM_ATOMIC_ADD_FETCH(&tc, 1, LIBXSMM_ATOMIC_RELAXED);
   }
   return tid;
+}
+
+
+LIBXSMM_API_DEFINITION unsigned int libxsmm_get_tid_os(void)
+{
+#if defined(__linux__)
+  return (unsigned int)syscall(__NR_gettid);
+#else /* fallback */
+  return libxsmm_get_tid();
 #endif
 }
 

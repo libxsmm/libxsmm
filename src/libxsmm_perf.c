@@ -258,7 +258,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_dump_code(const void* memory, size_t si
     rec.vma = (uintptr_t) memory;
     rec.code_addr = (uintptr_t) memory;
     rec.pid = (uint32_t) libxsmm_get_pid();
-    rec.tid = (uint32_t) libxsmm_get_tid();
+    rec.tid = (uint32_t) libxsmm_get_tid_os();
 
 #if !defined(LIBXSMM_NO_SYNC)
     flockfile(fp);
