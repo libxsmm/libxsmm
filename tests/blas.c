@@ -82,14 +82,14 @@ int main(void)
 {
 #if !defined(__BLAS) || (0 != __BLAS)
   const char transa = 'N', transb = 'N';
-  libxsmm_blasint m[]     = { 1, 3,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32 };
-  libxsmm_blasint n[]     = { 1, 3, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33 };
-  libxsmm_blasint k[]     = { 1, 3,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192 };
-  libxsmm_blasint lda[]   = { 1, 3,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32 };
-  libxsmm_blasint ldb[]   = { 1, 3, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048 };
-  libxsmm_blasint ldc[]   = { 1, 3, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048 };
-  const REAL_TYPE alpha[] = { 1, 1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1 };
-  const REAL_TYPE beta[]  = { 1, 1,   1,     0,     0,   0,   0,   0,   0,   0,  0,  0,  0,  0,    0 };
+  libxsmm_blasint m[]     = { 1, 3, 3, 1,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32 };
+  libxsmm_blasint n[]     = { 1, 3, 1, 3, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33 };
+  libxsmm_blasint k[]     = { 1, 3, 2, 2,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192 };
+  libxsmm_blasint lda[]   = { 1, 3, 3, 1,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32 };
+  libxsmm_blasint ldb[]   = { 1, 3, 2, 2, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048 };
+  libxsmm_blasint ldc[]   = { 1, 3, 3, 1, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048 };
+  const REAL_TYPE alpha[] = { 1, 1, 1, 1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1 };
+  const REAL_TYPE beta[]  = { 1, 1, 0, 0,   1,     0,     0,   0,   0,   0,   0,   0,  0,  0,  0,  0,    0 };
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint maxm = 0, maxn = 0, maxk = 0, maxa = 0, maxb = 0, maxc = 0;
   REAL_TYPE *a = 0, *b = 0, *c = 0, *d = 0;
@@ -158,7 +158,7 @@ int main(void)
   }
 #else
 # if defined(_DEBUG)
-  fprintf(stderr, "Warning: skipped the actual test due to missing BLAS support!\n");
+  fprintf(stderr, "Warning: skipped the test due to missing BLAS support!\n");
 # endif
   return EXIT_SUCCESS;
 #endif
