@@ -153,7 +153,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u16(
   unsigned int seed, unsigned int n, unsigned short value)
 {
   seed = internal_crc32_u8(seed, n, (uint8_t)value);
-  seed = internal_crc32_u8(seed, n, (uint8_t)(value << 8));
+  seed = internal_crc32_u8(seed, n, (uint8_t)(value >> 8));
   return seed;
 }
 
@@ -175,7 +175,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(
   unsigned int seed, unsigned int n, unsigned long long value)
 {
   seed = internal_crc32_u32(seed, n, (uint32_t)(value));
-  seed = internal_crc32_u32(seed, n, (uint32_t)(value << 32));
+  seed = internal_crc32_u32(seed, n, (uint32_t)(value >> 32));
   return seed;
 }
 
