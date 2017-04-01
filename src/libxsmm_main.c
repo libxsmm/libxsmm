@@ -63,30 +63,12 @@
 # pragma offload_attribute(pop)
 #endif
 
-/* alternative hash algorithm (instead of CRC32) */
-#if !defined(LIBXSMM_HASH_BASIC)
-# if (LIBXSMM_X86_SSE4 > LIBXSMM_MAX_STATIC_TARGET_ARCH)
-/*#   define LIBXSMM_HASH_BASIC*/
-# endif
-#endif
-
 /* LIBXSMM_CAPACITY_REGISTRY is POT */
 /*#define LIBXSMM_HASH_MOD(N, NGEN) ((N) % (NGEN))*/
 #define LIBXSMM_HASH_MOD(N, NPOT) LIBXSMM_MOD2(N, NPOT)
 
 #if !defined(LIBXSMM_CAPACITY_CACHE)
 # define LIBXSMM_CAPACITY_CACHE 4
-#endif
-
-#if defined(LIBXSMM_HASH_BASIC)
-# define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, DESCRIPTOR) \
-    HASH = libxsmm_hash_npot(&(DESCRIPTOR), LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_CAPACITY_REGISTRY); \
-    assert((LIBXSMM_CAPACITY_REGISTRY) > (HASH)); \
-    INDX = (HASH)
-#else
-# define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, DESCRIPTOR) \
-    HASH = libxsmm_crc32(&(DESCRIPTOR), LIBXSMM_GEMM_DESCRIPTOR_SIZE, 25071975/*seed*/); \
-    INDX = LIBXSMM_HASH_MOD(HASH, LIBXSMM_CAPACITY_REGISTRY)
 #endif
 
 /* flag fused into the memory address of a code version in case of non-JIT */
@@ -1358,7 +1340,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
   {
     assert(0 != internal_registry);
     /* check if the requested xGEMM is already JITted */
-    LIBXSMM_HASH_FUNCTION_CALL(hash, i = i0, *descriptor);
+    hash = libxsmm_crc32(descriptor, LIBXSMM_GEMM_DESCRIPTOR_SIZE, 25071975/*seed*/);
+    i = i0 = LIBXSMM_HASH_MOD(hash, LIBXSMM_CAPACITY_REGISTRY);
     while (0 != diff) {
       flux_entry.pmm = LIBXSMM_ATOMIC_LOAD(&internal_registry[i].pmm, LIBXSMM_ATOMIC_RELAXED); /* read registered code */
       if ((0 != flux_entry.const_pmm || 1 == mode) && 2 > mode) { /* check existing entry further */

@@ -78,7 +78,7 @@ script:
     2>&1) | tee log.txt && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-    make -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 MNK="13 9 5, 23" ECFLAGS="-DLIBXSMM_HASH_BASIC ${ECFLAGS}" install-artifacts tests test-cp2k test-smm
+    make -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 MNK="13 9 5, 23" install-artifacts tests test-cp2k test-smm
     2>&1) | tee log.txt && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (

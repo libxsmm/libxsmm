@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2017, Intel Corporation                                **
+** Copyright (c) 2017, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -28,46 +28,52 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_HASH_H
-#define LIBXSMM_HASH_H
-
-#include <libxsmm.h>
-
-#if !defined(LIBXSMM_HASH_SW)
-/*# define LIBXSMM_HASH_SW*/
-#endif
-
-#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_HASH_NOINLINE)
-# define LIBXSMM_HASH_API LIBXSMM_INLINE LIBXSMM_RETARGETABLE
-# define LIBXSMM_HASH_API_DEFINITION LIBXSMM_HASH_API LIBXSMM_ATTRIBUTE_UNUSED
-#else
-# define LIBXSMM_HASH_API LIBXSMM_API
-# define LIBXSMM_HASH_API_DEFINITION LIBXSMM_API_DEFINITION
+#include <libxsmm_source.h>
+#include <stdlib.h>
+#if defined(_DEBUG)
+# include <stdio.h>
 #endif
 
 
-/** Function type representing the CRC32 functionality. */
-typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(const void*, size_t, unsigned int);
+/**
+ * This test case is NOT an example of how to use LIBXSMM
+ * since INTERNAL functions are tested which are not part
+ * of the LIBXSMM API.
+ */
+int main(void)
+{
+  const unsigned int size = 2507, seed = 1975;
+  const unsigned int nbytes = size * sizeof(int);
+  unsigned int hash1, hash2, hash3, i;
+  int result = EXIT_SUCCESS;
 
-/** Initialize hash function module; not thread-safe. */
-LIBXSMM_HASH_API void libxsmm_hash_init(int target_arch);
-LIBXSMM_HASH_API void libxsmm_hash_finalize(void);
+  int *const data = (int*)libxsmm_malloc(nbytes);
+  assert(0 != data);
 
-/** Dispatched implementation which may (or may not) use a SIMD extension. */
-LIBXSMM_HASH_API unsigned int libxsmm_crc32(
-  const void* data, size_t size, unsigned int seed);
+  for (i = 0; i < size; ++i) {
+    data[i] = rand() - ((RAND_MAX) >> 1);
+  }
 
-/** Calculate the CRC32 for a given quantity (size) of raw data according to the seed. */
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_sw(
-  const void* data, size_t size, unsigned int seed);
+  hash1 = libxsmm_crc32(data, nbytes, seed);
+  hash2 = libxsmm_crc32_sw(data, nbytes, seed);
+  hash3 = libxsmm_hash(data, nbytes, seed);
 
-/** Similar to libxsmm_crc32_sw (uses CRC32 instructions available since SSE4.2). */
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_sse4(
-  const void* data, size_t size, unsigned int seed);
+  libxsmm_free(data);
 
-
-#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_HASH_NOINLINE)
-# include "libxsmm_hash.c"
+  if (hash1 != hash2) {
+#if defined(_DEBUG)
+    fprintf(stderr, "(crc32=%u) != (crc32_sw=%u)\n", hash1, hash2);
 #endif
+    result = EXIT_FAILURE;
+  }
 
-#endif /*LIBXSMM_HASH_H*/
+  if (hash1 != hash3) {
+#if defined(_DEBUG)
+    fprintf(stderr, "(crc32=%u) != (hash=%u)\n", hash1, hash3);
+#endif
+    result = EXIT_FAILURE;
+  }
+
+  return result;
+}
+

@@ -36,6 +36,7 @@
 #include <libxsmm.h>
 #include "libxsmm_trace.h"
 #include "libxsmm_main.h"
+#include "libxsmm_hash.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -93,11 +94,7 @@
 # elif !defined(LIBXSMM_BUILD)
 #   define LIBXSMM_MALLOC_NOCRC
 # endif
-#endif
-
-#if !defined(LIBXSMM_MALLOC_NOCRC)
-# include "libxsmm_hash.h"
-# if !defined(LIBXSMM_MALLOC_SEED)
+# if !defined(LIBXSMM_MALLOC_NOCRC) && !defined(LIBXSMM_MALLOC_SEED)
 #   define LIBXSMM_MALLOC_SEED 1051981
 # endif
 #endif
@@ -1243,5 +1240,11 @@ LIBXSMM_API_DEFINITION int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
     result = EXIT_FAILURE;
   }
   return result;
+}
+
+
+LIBXSMM_API_DEFINITION unsigned int libxsmm_hash(const void* data, size_t size, unsigned int seed)
+{
+  return libxsmm_crc32(data, size, seed);
 }
 

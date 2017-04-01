@@ -148,6 +148,9 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
 /** Retrieve information about the scratch memory domain. */
 LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info);
 
+/** Calculate a hash value for a given buffer. */
+LIBXSMM_API unsigned int libxsmm_hash(const void* data, size_t size, unsigned int seed);
+
 
 #if defined(__cplusplus)
 
