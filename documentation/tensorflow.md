@@ -40,9 +40,9 @@ In general, if the build step of any of the bazel commands goes wrong, `-s --ver
 
 **More important, one line of below target flags should be added to any "bazel" command line**:
 
-* AVX2/HSW/BDW: `--copt=-mavx2 --copt=-mfma`
-* AVX-512/SKX: `--copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl` (and `--copt=-mavx512dq` depending on certain fixes being already present in TensorFlow)
-* AVX-512/KNL: `--copt=-mavx512f --copt=-mavx512cd --copt=-mavx512pf --copt=-mavx512er`
+* AVX2/HSW/BDW: `--copt=-mfma --copt=-mavx2`
+* AVX-512/SKX: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl` (and `--copt=-mavx512dq` depending on certain fixes being already present in TensorFlow)
+* AVX-512/KNL: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512pf --copt=-mavx512er`
 
 In order for Intel AVX-512 support, GCC&#160;5.x should be used (see more section [Non-default Compiler](#non-default-compiler)). LIBXSMM supports Intel&#160;AVX2 as the baseline code path for all JIT-generated DNN-code (SMM domain also supports AVX). For Intel&#160;AVX-512 (on top of AVX2), the foundational instructions are sufficient in many cases, but for the sparse domain the Core-flavor is a prerequisite ("Skylake server" or SKX), and VNNI/QFMA instructions are honored on Intel Xeon&#160;Phi code-named "Knights Mill" (KNM).
 
