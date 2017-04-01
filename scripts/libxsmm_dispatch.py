@@ -63,7 +63,7 @@ if __name__ == "__main__":
                       "LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
                 print("    " + mnksig + ", " + ldxsig + ",")
                 print("    LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
-                print("    LIBXSMM_HASH_FUNCTION_CALL(hash, indx, desc);" +
+                print("    LIBXSMM_HASH_FUNCTION_CALL(hash, indx, &desc);" +
                       " func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" +
                       mnkstr + ";")
                 print("  internal_register_static_code(" +
@@ -85,7 +85,7 @@ if __name__ == "__main__":
                       "LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,")
                 print("    " + mnksig + ", " + ldxsig + ",")
                 print("    LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
-                print("  LIBXSMM_HASH_FUNCTION_CALL(hash, indx, desc);" +
+                print("  LIBXSMM_HASH_FUNCTION_CALL(hash, indx, &desc);" +
                       " func.smm = (libxsmm_smmfunction)libxsmm_smm_" +
                       mnkstr + ";")
                 print("  internal_register_static_code(" +

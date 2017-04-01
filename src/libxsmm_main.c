@@ -86,6 +86,10 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE LIBXSMM_GEMM_DESCRIPTOR_SIZE
 #endif
 
+#define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, DESCRIPTOR) \
+  HASH = libxsmm_crc32(DESCRIPTOR, LIBXSMM_GEMM_DESCRIPTOR_SIZE, 25071975/*seed*/); \
+  INDX = LIBXSMM_HASH_MOD(HASH, LIBXSMM_CAPACITY_REGISTRY)
+
 typedef union LIBXSMM_RETARGETABLE internal_regkey_type {
   char simd[LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE];
   libxsmm_gemm_descriptor descriptor;
@@ -1340,8 +1344,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_xmmfunction internal_find_code(const
   {
     assert(0 != internal_registry);
     /* check if the requested xGEMM is already JITted */
-    hash = libxsmm_crc32(descriptor, LIBXSMM_GEMM_DESCRIPTOR_SIZE, 25071975/*seed*/);
-    i = i0 = LIBXSMM_HASH_MOD(hash, LIBXSMM_CAPACITY_REGISTRY);
+    LIBXSMM_HASH_FUNCTION_CALL(hash, i = i0, descriptor);
     while (0 != diff) {
       flux_entry.pmm = LIBXSMM_ATOMIC_LOAD(&internal_registry[i].pmm, LIBXSMM_ATOMIC_RELAXED); /* read registered code */
       if ((0 != flux_entry.const_pmm || 1 == mode) && 2 > mode) { /* check existing entry further */
