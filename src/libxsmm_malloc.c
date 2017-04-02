@@ -1245,6 +1245,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
 
 LIBXSMM_API_DEFINITION unsigned int libxsmm_hash(const void* data, size_t size, unsigned int seed)
 {
+  LIBXSMM_INIT
   return libxsmm_crc32(data, size, seed);
 }
 
