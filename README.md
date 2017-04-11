@@ -569,7 +569,7 @@ There might be situations in which it is up-front not clear which problem-sizes 
 2. There is no support for the Intel&#160;SSE (Intel&#160;Xeon 5500/5600 series) and IMCI (Intel&#160;Xeon&#160;Phi coprocessor code-named Knights Corner) instruction set extensions. However, statically generated SSE-kernels can be leveraged without disabling support for JIT'ting AVX kernels.
 3. There is no support for the Windows calling convention (only kernels with PREFETCH=0 signature).
 
-The JIT backend can also be disabled at build time (`make JIT=0`) as well as at runtime (`LIBXSMM_TARGET=0`, or anything prior to Intel&#160;AVX). The latter is an environment variable which allows to set a code path independent of the CPUID (LIBXSMM_TARGET=0\|1\|sse\|snb\|hsw\|knl\|skx). Please note that LIBXSMM_TARGET cannot enable the JIT backend if it was disabled at build time (JIT=0).
+The JIT backend can also be disabled at build time (`make JIT=0`) as well as at runtime (`LIBXSMM_TARGET=0`, or anything prior to Intel&#160;AVX). The latter is an environment variable which allows to set a code path independent of the CPUID (LIBXSMM_TARGET=0\|1\|sse\|snb\|hsw\|knl\|knm\|skx). Please note that LIBXSMM_TARGET cannot enable the JIT backend if it was disabled at build time (JIT=0).
 
 One can use the afore mentioned THRESHOLD parameter to control the matrix sizes for which the JIT compilation will be automatically performed. However, explicitly requested kernels (by calling `libxsmm_?mmdispatch`) fall not under a threshold for the problem-size. In any case, JIT code generation can be used for accompanying statically generated code.
 
@@ -596,7 +596,7 @@ The code generator driver program accepts the following arguments:
 11. beta (0 or 1)
 12. Alignment override for A (1 auto, 0 no alignment)
 13. Alignment override for C (1 auto, 0 no alignment)
-14. Architecture (noarch, wsm, snb, hsw, knc, knl, skx)
+14. Architecture (noarch, wsm, snb, hsw, knc, knl, knm, skx)
 15. Prefetch strategy, see below enumeration (dense/dense_asm only)
 16. single precision (SP), or double precision (DP)
 17. CSC file (just required when 1. is "sparse"). Matrix market format.
