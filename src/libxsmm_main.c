@@ -786,8 +786,8 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
-    case LIBXSMM_X86_AVX512_KNM:
     case LIBXSMM_X86_AVX512_CORE:
+    case LIBXSMM_X86_AVX512_KNM:
     case LIBXSMM_X86_AVX512_MIC:
     case LIBXSMM_X86_AVX512:
     case LIBXSMM_X86_AVX2:
@@ -849,7 +849,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     else if (0 == strcmp("skx", arch) || 0 == strcmp("skl", arch)) {
       target_archid = LIBXSMM_X86_AVX512_CORE;
     }
-    else if (0 == strcmp("knm", arch) || 0 == strcmp("mic2", arch)) {
+    else if (0 == strcmp("knm", arch)) {
       target_archid = LIBXSMM_X86_AVX512_KNM;
     }
     else if (0 == strcmp("knl", arch) || 0 == strcmp("mic", arch)) {
@@ -878,7 +878,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     }
   }
 
-  if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid || LIBXSMM_X86_AVX512_KNM < target_archid) {
+  if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid || LIBXSMM_X86_AVX512_CORE < target_archid) {
     target_archid = libxsmm_cpuid();
   }
   else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
@@ -1243,6 +1243,25 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
             request->descriptor.matcopy->m/*m*/, request->descriptor.matcopy->n/*n*/,
             request->descriptor.matcopy->lda/*lda*/, request->descriptor.matcopy->ldb/*ldb*/,
             request->descriptor.matcopy->prefetch);
+        }
+      }
+    } break;
+    case LIBXSMM_BUILD_KIND_TRANS: { /* transpose kernel */
+      assert(0 != request->descriptor.trans);
+      if (LIBXSMM_DNN_DATATYPE_F32 == request->descriptor.trans->datatype || LIBXSMM_DNN_DATATYPE_F64 == request->descriptor.trans->datatype)
+      {
+        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
+        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_transpose_kernel, &generated_code, request->descriptor.trans, target_arch);
+# if !defined(LIBXSMM_VTUNE)
+        if (0 > libxsmm_verbosity)
+# endif
+        {
+          const char *const precision = internal_get_precision_string(request->descriptor.trans->datatype);
+          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_trans_%s_%ux%u.trans",
+            target_arch/*code path name*/, precision,
+            request->descriptor.trans->m/*m*/, request->descriptor.trans->n/*n*/);
         }
       }
     } break;
@@ -1716,6 +1735,53 @@ LIBXSMM_API_DEFINITION void* libxsmm_xmatcopydispatch(const libxsmm_matcopy_desc
   request.kind = LIBXSMM_BUILD_KIND_MATCOPY;
   libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
   return code.pmm;
+}
+
+
+/* @TODO implement code cache */
+LIBXSMM_API_DEFINITION libxsmm_stransfunction libxsmm_stransdispatch(unsigned int m, unsigned int n)
+{
+  libxsmm_code_pointer code = { 0 };
+  libxsmm_build_request request;
+  libxsmm_transpose_descriptor descriptor;
+  LIBXSMM_INIT
+  descriptor.m = m;
+  descriptor.n = n;
+  descriptor.datatype = LIBXSMM_DNN_DATATYPE_F32;
+  request.descriptor.trans = &descriptor;
+  request.kind = LIBXSMM_BUILD_KIND_TRANS;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  return code.xtrans.strans;
+}
+
+
+/* @TODO implement code cache */
+LIBXSMM_API_DEFINITION libxsmm_dtransfunction libxsmm_dtransdispatch(unsigned int m, unsigned int n)
+{
+  libxsmm_code_pointer code = { 0 };
+  libxsmm_build_request request;
+  libxsmm_transpose_descriptor descriptor;
+  LIBXSMM_INIT
+  descriptor.m = m;
+  descriptor.n = n;
+  descriptor.datatype = LIBXSMM_DNN_DATATYPE_F64;
+  request.descriptor.trans = &descriptor;
+  request.kind = LIBXSMM_BUILD_KIND_TRANS;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  return code.xtrans.dtrans;
+}
+
+
+/* @TODO implement code cache */
+LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor)
+{
+  libxsmm_code_pointer code = { 0 };
+  libxsmm_build_request request;
+  LIBXSMM_INIT
+  request.descriptor.trans = descriptor;
+  request.kind = LIBXSMM_BUILD_KIND_TRANS;
+  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  return code.xtrans;
 }
 
 

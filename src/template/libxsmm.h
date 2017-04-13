@@ -153,10 +153,28 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
    const unsigned int* row_ptr, const unsigned int* column_idx, const float* values);
 
 /**
- * Code generation routing for JIT matcopy using a descriptor
+ * Code generation routine for JIT matcopy using a descriptor
  * @TODO: we ideally want to have this in the same way as gemms (with dispatched format in future)
  */
 LIBXSMM_API void* libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor);
+
+/**
+ * Code generation routing for JIT transposes (single precision) using arguments
+ * @TODO: we ideally want to have this in the same way as gemms (with dispatched format in future)
+ */
+LIBXSMM_API libxsmm_stransfunction libxsmm_stransdispatch(unsigned int m, unsigned int n);
+
+/**
+ * Code generation routing for JIT transposes (double precision) using arguments
+ * @TODO: we ideally want to have this in the same way as gemms (with dispatched format in future)
+ */
+LIBXSMM_API libxsmm_dtransfunction libxsmm_dtransdispatch(unsigned int m, unsigned int n);
+
+/**
+ * Code generation routing for JIT transposes using a descriptor
+ * @TODO: we ideally want to have this in the same way as gemms (with dispatched format in future)
+ */
+LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor);
 
 /** Deallocates the JIT'ted code as returned by libxsmm_create_* function. TODO: this is a no-op at the moment. */
 LIBXSMM_API void libxsmm_release_kernel(const void* jit_code);

@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Greg Henry (Intel Corp.)
 ******************************************************************************/
 #ifndef GENERATOR_COMMON_H
 #define GENERATOR_COMMON_H
@@ -89,6 +89,8 @@
 #define LIBXSMM_X86_INSTR_VMOVDQU16      10032
 #define LIBXSMM_X86_INSTR_VMOVDQU32      10033
 #define LIBXSMM_X86_INSTR_VMOVDQU64      10034
+#define LIBXSMM_X86_INSTR_VMASKMOVPD     10035
+#define LIBXSMM_X86_INSTR_VMASKMOVPS     10036
 
 /* SSE */
 #define LIBXSMM_X86_INSTR_MOVAPD         10009
@@ -118,6 +120,11 @@
 #define LIBXSMM_X86_INSTR_VSCATTERDPD    11005
 #define LIBXSMM_X86_INSTR_VSCATTERQPS    11006
 #define LIBXSMM_X86_INSTR_VSCATTERQPD    11007
+
+/* Shuffle/Permute/Blend instructions */
+#define LIBXSMM_X86_INSTR_VSHUFPS        12000
+#define LIBXSMM_X86_INSTR_VPERM2F128     12001
+#define LIBXSMM_X86_INSTR_VSHUFF64X2     12002
 
 /* Vector compute instructions */
 /* AVX1,AVX2,AVX512 */
@@ -177,8 +184,13 @@
 #define LIBXSMM_X86_INSTR_VPMADDUBSW     20050
 #define LIBXSMM_X86_INSTR_VPADDSW        20051
 #define LIBXSMM_X86_INSTR_VPADDSB        20052
+/* Additional vector manipulations */
+#define LIBXSMM_X86_INSTR_VUNPCKLPD      20053
+#define LIBXSMM_X86_INSTR_VUNPCKLPS      20054
+#define LIBXSMM_X86_INSTR_VUNPCKHPD      20055
+#define LIBXSMM_X86_INSTR_VUNPCKHPS      20056
 
-/* AVX512, QUAD MADD, supported with Knight Mill */
+/* AVX512, QUAD MADD, supported with Knights Mill */
 #define LIBXSMM_X86_INSTR_V4FMADDPS      26000
 #define LIBXSMM_X86_INSTR_V4FNMADDPS     26001
 #define LIBXSMM_X86_INSTR_V4FMADDSS      26002
@@ -198,6 +210,10 @@
 #define LIBXSMM_X86_INSTR_PREFETCHT1     30008
 #define LIBXSMM_X86_INSTR_PREFETCHT2     30009
 #define LIBXSMM_X86_INSTR_PREFETCHNTA    30010
+#define LIBXSMM_X86_INSTR_MOVL           30011
+#define LIBXSMM_X86_INSTR_MOVSLQ         30012
+#define LIBXSMM_X86_INSTR_SALQ           30013
+#define LIBXSMM_X86_INSTR_IMUL           30014
 
 /* Mask move instructions */
 #define LIBXSMM_X86_INSTR_KMOV           40000
@@ -259,7 +275,7 @@
 #define LIBXSMM_ERR_INVALID_GEMM_CONFIG  90049
 #define LIBXSMM_ERR_UNIQUE_VAL           90050
 
-/* @TODO fix this vale for final integration */
+/* @TODO fix this value for final integration */
 #define LIBXSMM_ERR_NO_AVX512_QFMA       92000
 
 /* micro kernel config */
@@ -394,7 +410,7 @@ typedef struct libxsmm_convolution_weight_update_gp_reg_mapping_struct {
   unsigned int gp_reg_help_6;
 } libxsmm_convolution_weight_update_gp_reg_mapping;
 
-/* struct for storing the current gp reg mapping for transpose */
+/* struct for storing the current gp reg mapping for matcopy */
 typedef struct libxsmm_matcopy_gp_reg_mapping_struct {
   unsigned int gp_reg_a;
   unsigned int gp_reg_lda;
@@ -407,7 +423,7 @@ typedef struct libxsmm_matcopy_gp_reg_mapping_struct {
   unsigned int gp_reg_help_0;
 } libxsmm_matcopy_gp_reg_mapping;
 
-/* transpose kernel config */
+/* matcopy kernel config */
 typedef struct libxsmm_matcopy_kernel_config_struct {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
@@ -422,6 +438,29 @@ typedef struct libxsmm_matcopy_kernel_config_struct {
   unsigned int vxor_instruction;
   char vector_name;
 } libxsmm_matcopy_kernel_config;
+
+/* struct for storing the current gp reg mapping for transpose */
+typedef struct libxsmm_transpose_gp_reg_mapping_struct {
+  unsigned int gp_reg_a;
+  unsigned int gp_reg_lda;
+  unsigned int gp_reg_b;
+  unsigned int gp_reg_ldb;
+  unsigned int gp_reg_m_loop;
+  unsigned int gp_reg_n_loop;
+  unsigned int gp_reg_help_0;
+  unsigned int gp_reg_help_1;
+  unsigned int gp_reg_help_2;
+  unsigned int gp_reg_help_3;
+  unsigned int gp_reg_help_4;
+  unsigned int gp_reg_help_5;
+} libxsmm_transpose_gp_reg_mapping;
+
+/* transpose kernel config */
+typedef struct libxsmm_transpose_kernel_config_struct {
+  unsigned int instruction_set;
+  unsigned int vector_reg_count;
+  char vector_name;
+} libxsmm_transpose_kernel_config;
 
 /* struct for tracking local labels in assembly
    we don't allow overlapping loops */

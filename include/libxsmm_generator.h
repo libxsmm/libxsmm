@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
+/* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #ifndef LIBXSMM_GENERATOR_H
 #define LIBXSMM_GENERATOR_H
@@ -139,6 +139,13 @@ typedef struct libxsmm_matcopy_descriptor {
   unsigned int zero_source;             /* If set, then use zero matrix as source */
 } libxsmm_matcopy_descriptor;
 
+/** Structure storing the transpose argument description. */
+typedef struct libxsmm_transpose_descriptor {
+  unsigned int m;                       /* M */
+  unsigned int n;                       /* N */
+  libxsmm_dnn_datatype datatype;        /* @TODO fix this */
+} libxsmm_transpose_descriptor;
+
 /** Structure referring to the generated code with some attached information. */
 typedef struct libxsmm_generated_code {
   void* generated_code;       /** pointer to memory which can contain strings or binary code */
@@ -232,6 +239,11 @@ LIBXSMM_INTERNAL_API
 void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*                      io_generated_code,
                                        const libxsmm_matcopy_descriptor*            i_matcopy_desc,
                                        const char*                                  i_arch );
+
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_transpose_kernel( libxsmm_generated_code*                        io_generated_code,
+                                         const libxsmm_transpose_descriptor*            i_trans_desc,
+                                         const char*                                    i_arch );
 
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API
