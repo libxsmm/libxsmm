@@ -42,40 +42,6 @@
 /* #define GENERATOR_TRANSPOSE_DEBUG */
 
 
-/* This routine is for the jit code here and in generator_x86_instructions.c.
- * It doesn't make sense to include this same routine twice in two different
- * places. However, once this file here is built on top of the rest of
- * LIBXSMM, then we can remove this duplicate reference.
- * All offsets/displacements have similar byte patterns, so this is used for
- * all of them */
-LIBXSMM_INLINE
-int add_offset (const unsigned int i_place1,
-                const unsigned int i_place2,
-                const int i_offset,
-                const unsigned int i_forced,
-                const int i_sizereg,
-                unsigned char *buf )
-{
-   if ( (i_offset == 0) && (i_forced==0) ) return ( 0 );
-   else if ( ((i_offset%i_sizereg)==0) &&
-              (i_offset/i_sizereg <= 127) &&
-              (i_offset/i_sizereg >=-128) )
-   {
-      buf[i_place1] += 0x40;
-      buf[i_place2] = (unsigned char)(i_offset/i_sizereg);
-      return ( 1 );
-   } else {
-      unsigned char *l_cptr = (unsigned char *) &i_offset;
-      buf[ i_place1 ] += 0x80;
-      buf[ i_place2 ] = l_cptr[0];
-      buf[i_place2+1] = l_cptr[1];
-      buf[i_place2+2] = l_cptr[2];
-      buf[i_place2+3] = l_cptr[3];
-      return ( 4 );
-   }
-}
-
-
 /* d_ymm_or_zmm is automatically generated dispatching code
    Even on Skylake/KNL, zmm code doesn't always run better than ymm code.
    Given i_m x i_n matrix to transpose:
@@ -251,7 +217,6 @@ void gen_one_trans(
   int REGSIZE = 4;
   unsigned int l_instr;
   char cval = 'x';
-  extern int add_offset();
 
   if (datasize == 8)
   {
