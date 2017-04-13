@@ -350,7 +350,8 @@ if (handle->datatype != handle->datatype_itm) {
 #endif
 
 #endif
-                                   NULL,
+                                   &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1, 0, 0, 0, 0, 0,
+                                                       handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
                                    &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi + handle->fwd_ofw_rb, 0,
                                                        handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
               } else if (oj < handle->ofh-handle->fwd_ofh_rb) {
@@ -378,7 +379,8 @@ if (handle->datatype != handle->datatype_itm) {
 #endif
 
 #endif
-                                   NULL,
+                                   &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1, 0, 0, 0, 0, 0,
+                                                       handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
                                    &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj + handle->fwd_ofh_rb, 0, 0,
                                                        handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
               } else {
