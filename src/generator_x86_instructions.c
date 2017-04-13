@@ -103,7 +103,7 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
     int l_inst = 0;
     int l_place1;
 
-    if ( (i_gp_reg_idx>=0) && (i_gp_reg_idx<=15) ) l_regidx = i_gp_reg_idx % 8;
+    if ( /*(i_gp_reg_idx>=0) &&*/ i_gp_reg_idx<=15 ) l_regidx = i_gp_reg_idx % 8;
 
     if ( l_maxsize - i < 20 )
     {
@@ -138,7 +138,7 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
     buf[i++] = (unsigned char)(0x7d - l_oddgrp1 * 0x40 - l_vecval1*8);
     buf[i++] = (unsigned char)(0x2c + l_inst);
     l_place1 = i;
-    if ( (i_gp_reg_idx>=0) && (i_gp_reg_idx<=15) )
+    if ( /*(i_gp_reg_idx>=0) &&*/ i_gp_reg_idx<=15 )
     {
        buf[i++] = (unsigned char)(0x04 + l_vecval0*8);
        buf[i++] = (unsigned char)(l_sca + l_regbas0 + l_regidx*8);
