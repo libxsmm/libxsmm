@@ -19,6 +19,7 @@ samples2
 tmp
 .state
 .make
+.analyze.log
 codecov-*.txt
 keywords.txt
 notes.txt
