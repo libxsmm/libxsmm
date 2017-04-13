@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $# -ne 4 ]
+if [ $# -ne 6 ]
 then
   echo "Usage: $(basename $0) iters numa (1-mcdram/0-DDR) TYPE ('A'-ALL/'F'-FP/'B'-BP/'U'-WU) FORMAT ('A'-ALL/'L'-LIBXSMM/'T'-Tensorflow/'M'-Mixed) padding; using default values: 1000 1 f32 A L 0"
   ITERS=1000
