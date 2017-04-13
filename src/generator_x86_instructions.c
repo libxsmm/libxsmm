@@ -36,6 +36,7 @@
 #include <string.h>
 #include <stdio.h>
 
+
 /* This routine is for the jit code. All offsets/displacements have similar
    byte patterns, so this is used for all of them */
 LIBXSMM_INLINE
@@ -92,11 +93,9 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
     int l_vecval0 = i_vec_reg_number_0 % 8;
     int l_vecgrp0 = i_vec_reg_number_0 / 8;
     int l_oddgrp0 = ((l_vecgrp0 % 2)==1);
-    int l_2or3grp0 = (l_vecgrp0>=2);
     int l_vecval1 = i_vec_reg_mask_0 % 8;
     int l_vecgrp1 = i_vec_reg_mask_0 / 8;
     int l_oddgrp1 = ((l_vecgrp1 % 2)==1);
-    int l_2or3grp1 = (l_vecgrp1>=2);
     int l_sca=0;
     int l_inst = 0;
     int l_place1;
@@ -2293,8 +2292,6 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
   {
      unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
      int i = io_generated_code->code_size;
-     /* int i = *loc; */
-     unsigned int l_maxsize = io_generated_code->buffer_size;
      int l_inst = 0x00;
      int l_base = 0x00;
      int l_place2 = i+2;
@@ -2378,9 +2375,6 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
-    /* int i = *loc; */
-    /* unsigned int l_maxsize = io_generated_code->buffer_size; */
-    /* unsigned int l_maxsize = 1024; */
     int l_first = 0;
     int l_second = 0;
     int l_third = 0;
@@ -2488,9 +2482,6 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
-    /* int i = *loc; */
-    /* unsigned int l_maxsize = io_generated_code->buffer_size; */
-    /* unsigned int l_maxsize = 1024; */
     int l_first = 0;
     int l_second = 0;
     int l_reg0 = 0;
