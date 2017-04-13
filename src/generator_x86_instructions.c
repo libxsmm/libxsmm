@@ -92,7 +92,6 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
     int l_regbas0 = i_gp_reg_base % 8;
     int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
     int l_regidx  = 0;
-    if ( (i_gp_reg_idx>=0) && (i_gp_reg_idx<=15) ) l_regidx = i_gp_reg_idx % 8;
     int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
     int l_vecval0 = i_vec_reg_number_0 % 8;
     int l_vecgrp0 = i_vec_reg_number_0 / 8;
@@ -103,6 +102,8 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
     int l_sca=0;
     int l_inst = 0;
     int l_place1;
+
+    if ( (i_gp_reg_idx>=0) && (i_gp_reg_idx<=15) ) l_regidx = i_gp_reg_idx % 8;
 
     if ( l_maxsize - i < 20 )
     {
@@ -2304,9 +2305,8 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
   {
      unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
      int i = io_generated_code->code_size;
-     int l_inst = 0x00;
-     int l_base = 0x00;
-     int l_place2 = i+2;
+     int l_inst = 0x00, l_base = 0x00, l_place2 = i+2;
+     int l_regbas0, l_gp8, l_regnum, l_nx8, l_sca = 0;
 
      switch ( i_alu_instr ) {
        case LIBXSMM_X86_INSTR_MOVSLQ:
@@ -2339,11 +2339,10 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
           break;
      }
 
-     int l_regbas0 = i_gp_reg_base % 8;
-     int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
-     int l_regnum  = i_gp_reg_number % 8;
-     int l_nx8     = ((i_gp_reg_number>7)&&(i_gp_reg_number<=15)?1:0);
-     int l_sca=0;
+     l_regbas0 = i_gp_reg_base % 8;
+     l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
+     l_regnum  = i_gp_reg_number % 8;
+     l_nx8     = ((i_gp_reg_number>7)&&(i_gp_reg_number<=15)?1:0);
 
      if (i_scale==2) l_sca=0x40;
      else if (i_scale==4) l_sca=0x80;
