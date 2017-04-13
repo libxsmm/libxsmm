@@ -434,6 +434,7 @@
       <Filter>scripts</Filter>
     </None>
     <None Include="..\.buildkite.env" />
+    <None Include="..\.analyze.sh" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />

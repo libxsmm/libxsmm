@@ -169,6 +169,7 @@
     <ClCompile Include="..\src\libxsmm_trans.c" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\.analyze.sh" />
     <None Include="..\.buildkite.env" />
     <None Include="..\.codecov.env" />
     <None Include="..\.codefile" />
