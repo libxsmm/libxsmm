@@ -127,23 +127,32 @@ typedef struct libxsmm_gemm_descriptor {
   unsigned char prefetch;
 } libxsmm_gemm_descriptor;
 
+/** Flag enumeration which can be binary ORed. */
+typedef enum libxsmm_matcopy_flags {
+  /** If set, then use zero matrix as source */
+  LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE = 1
+} libxsmm_matcopy_flags;
+
 /** Structure storing the matcopy argument description. */
 typedef struct libxsmm_matcopy_descriptor {
-  unsigned int m;                       /* M */
-  unsigned int n;                       /* N */
-  unsigned int lda;                     /* LDA */
-  unsigned int ldb;                     /* LDB */
-  libxsmm_dnn_datatype datatype;        /* @TODO fix this */
-  unsigned int prefetch;                /* @TODO fix this, non zero for prefetch */
-  unsigned int unroll_level;            /* Defines the level of unrolling in the copy */
-  unsigned int zero_source;             /* If set, then use zero matrix as source */
+  unsigned int m, n;      /* M, and N */
+  unsigned int ldi, ldo;  /* LDx I/O */
+  /** Size of an individual data element */
+  unsigned char typesize;
+  /** Defines the level of unrolling in the copy */
+  unsigned char unroll_level;
+  /** Collection of various flags. */
+  unsigned char flags;
+  /** @TODO fix this, non-zero for prefetch */
+  unsigned char prefetch;
 } libxsmm_matcopy_descriptor;
 
 /** Structure storing the transpose argument description. */
 typedef struct libxsmm_transpose_descriptor {
-  unsigned int m;                       /* M */
-  unsigned int n;                       /* N */
-  libxsmm_dnn_datatype datatype;        /* @TODO fix this */
+  unsigned int m, n;      /* M, and N */
+  unsigned int ldi, ldo;  /* LDx I/O */
+  /** Size of an individual data element */
+  unsigned char typesize;
 } libxsmm_transpose_descriptor;
 
 /** Structure referring to the generated code with some attached information. */

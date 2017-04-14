@@ -33,15 +33,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#if defined(_OPENMP)
-# include <omp.h>
-#endif
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-/* note: later on, this leads to (correct but) different than expected norm-values */
-# define drand48() ((double)rand() / RAND_MAX)
-# define srand48 srand
-#endif
 
 int main(int argc, char* argv[])
 {
@@ -60,10 +52,10 @@ int main(int argc, char* argv[])
   desc.n = atoi(argv[2]);
   desc.lda = atoi(argv[3]);
   desc.ldb = atoi(argv[4]);
-  desc.unroll_level = atoi(argv[5]);
-  desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
-  desc.prefetch = atoi(argv[6]);;
-  desc.zero_source = atoi(argv[7]);
+  desc.unroll_level = (unsigned char)atoi(argv[5]);
+  desc.typesize = 4;
+  desc.prefetch = (unsigned char)atoi(argv[6]);;
+  desc.flags = (0 != atoi(argv[7]) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
   iters = atoi(argv[8]);
 
 
@@ -74,7 +66,7 @@ int main(int argc, char* argv[])
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
       a[j+desc.lda*i] = 1.0 * rand();
-      if (desc.zero_source) {
+      if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & desc.flags)) {
         b[j+desc.ldb*i] = 1.0 * rand();
       }
     }
@@ -104,7 +96,7 @@ int main(int argc, char* argv[])
 
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
-      if (desc.zero_source) {
+      if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & desc.flags)) {
         if (b[j+desc.ldb*i] > 0.00000000) {
           printf("ERROR!!!\n");
           error = 1;

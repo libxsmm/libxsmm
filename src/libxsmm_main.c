@@ -1726,7 +1726,7 @@ LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
 /* @TODO implement code cache */
-LIBXSMM_API_DEFINITION void* libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor)
+LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   libxsmm_build_request request;
@@ -1734,7 +1734,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_xmatcopydispatch(const libxsmm_matcopy_desc
   request.descriptor.matcopy = descriptor;
   request.kind = LIBXSMM_BUILD_KIND_MATCOPY;
   libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-  return code.pmm;
+  return code.xmatcopy;
 }
 
 
@@ -1747,7 +1747,7 @@ LIBXSMM_API_DEFINITION libxsmm_stransfunction libxsmm_stransdispatch(unsigned in
   LIBXSMM_INIT
   descriptor.m = m;
   descriptor.n = n;
-  descriptor.datatype = LIBXSMM_DNN_DATATYPE_F32;
+  descriptor.typesize = 4;
   request.descriptor.trans = &descriptor;
   request.kind = LIBXSMM_BUILD_KIND_TRANS;
   libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
@@ -1764,7 +1764,7 @@ LIBXSMM_API_DEFINITION libxsmm_dtransfunction libxsmm_dtransdispatch(unsigned in
   LIBXSMM_INIT
   descriptor.m = m;
   descriptor.n = n;
-  descriptor.datatype = LIBXSMM_DNN_DATATYPE_F64;
+  descriptor.typesize = 8;
   request.descriptor.trans = &descriptor;
   request.kind = LIBXSMM_BUILD_KIND_TRANS;
   libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);

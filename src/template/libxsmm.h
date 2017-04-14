@@ -156,7 +156,7 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
  * Code generation routine for JIT matcopy using a descriptor
  * @TODO: we ideally want to have this in the same way as gemms (with dispatched format in future)
  */
-LIBXSMM_API void* libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor);
+LIBXSMM_API libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor);
 
 /**
  * Code generation routing for JIT transposes (single precision) using arguments

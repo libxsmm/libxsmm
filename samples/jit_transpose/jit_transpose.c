@@ -33,9 +33,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#if defined(_OPENMP)
-# include <omp.h>
-#endif
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* note: later on, this leads to (correct but) different than expected norm-values */
@@ -43,13 +40,9 @@
 # define srand48 srand
 #endif
 
-#ifndef MAX
-#define MAX(x,y) ((x)<(y)?(y):(x))
-#endif
 
 void dfill_matrix ( double *matrix, int ld, int m, int n )
 {
-  extern double drand48();
   int i, j;
   double dtmp;
 
@@ -69,9 +62,9 @@ void dfill_matrix ( double *matrix, int ld, int m, int n )
   }
 }
 
+
 void sfill_matrix ( float *matrix, int ld, int m, int n )
 {
-  extern double drand48();
   int i, j;
   double dtmp;
 
@@ -90,6 +83,7 @@ void sfill_matrix ( float *matrix, int ld, int m, int n )
      }
   }
 }
+
 
 double residual_stranspose ( float *A, int lda, int m, int n, float *out,
                              int ld_out, int *nerrs )
@@ -116,6 +110,7 @@ double residual_stranspose ( float *A, int lda, int m, int n, float *out,
   return ( derror );
 }
 
+
 double residual_dtranspose ( double *A, int lda, int m, int n, double *out,
                              int ld_out, int *nerrs )
 {
@@ -137,6 +132,7 @@ double residual_dtranspose ( double *A, int lda, int m, int n, double *out,
   return ( derror );
 }
 
+
 /* Comment 1 of the following lines to compare to an ass. code byte-for-byte */
 /* #define COMPARE_TO_A_R32_ASSEMBLY_CODE */
 /* #define COMPARE_TO_A_R64_ASSEMBLY_CODE */
@@ -150,18 +146,20 @@ double residual_dtranspose ( double *A, int lda, int m, int n, double *out,
   #error Define a comparison to either R32 or R64 code, not both at once
 #endif
 
+
 int main(int argc, char* argv[])
 {
   int m=16, n=16, ld_in=16, ld_out=16, nerrs;
-  int i, nbest, istop;
   float  *sin, *sout;
   double *din, *dout, dtmp;
-  unsigned char *cptr, *cptr2;
+  const unsigned char *cptr;
 #ifdef COMPARE_TO_AN_ASSEMBLY_CODE
+  unsigned char *cptr2;
   extern void myro_();
+  int nbest, istop, i;
 #endif
-  libxsmm_stransfunction skernel;
-  libxsmm_dtransfunction dkernel;
+  union { libxsmm_stransfunction f; const void* p; } skernel;
+  union { libxsmm_dtransfunction f; const void* p; } dkernel;
 
   if ( argc <= 3 )
   {
@@ -174,21 +172,21 @@ int main(int argc, char* argv[])
   if ( argc > 1 ) m = atoi(argv[1]);
   if ( argc > 2 ) n = atoi(argv[2]);
   if ( argc > 3 ) ld_in = atoi(argv[3]);
-  m = MAX(m,1);
-  n = MAX(n,1);
-  ld_in = MAX(ld_in,m);
+  m = LIBXSMM_MAX(m,1);
+  n = LIBXSMM_MAX(n,1);
+  ld_in = LIBXSMM_MAX(ld_in,m);
   ld_out = n;
 
   printf("This is a tester for JIT transpose kernels! (m=%d n=%d ld_in=%d ld_out=%d)\n",m,n,ld_in,ld_out);
 
   /* test dispatch call */
-  skernel = libxsmm_stransdispatch( m, n );
-  dkernel = libxsmm_dtransdispatch( m, n );
+  skernel.f = libxsmm_stransdispatch( m, n );
+  dkernel.f = libxsmm_dtransdispatch( m, n );
 
-  printf("address of F32 kernel: %lld\n", (size_t)skernel);
-  printf("address of F64 kernel: %lld\n", (size_t)dkernel);
+  printf("address of F32 kernel: %p\n", skernel.p);
+  printf("address of F64 kernel: %p\n", dkernel.p);
 
-  cptr = (unsigned char *) dkernel;
+  cptr = (const unsigned char*)dkernel.p;
   printf("First few bytes/opcodes: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n",cptr[0],cptr[1],cptr[2],cptr[3],cptr[4],cptr[5]);
   printf("cptr[9:11]=0x%02x 0x%02x 0x%02x\n",cptr[9],cptr[10],cptr[11]);
   printf("cptr[12:14]=0x%02x 0x%02x 0x%02x\n",cptr[12],cptr[13],cptr[14]);
@@ -255,9 +253,9 @@ int main(int argc, char* argv[])
   /* let's call */
 #if 1
   printf("calling skernel\n");
-  skernel( sin, &ld_in, sout, &ld_out );
+  skernel.f( sin, &ld_in, sout, &ld_out );
   printf("calling dkernel\n");
-  dkernel( din, &ld_in, dout, &ld_out );
+  dkernel.f( din, &ld_in, dout, &ld_out );
 #endif
 
   /* Did it transpose correctly? */

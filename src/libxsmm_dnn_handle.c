@@ -407,12 +407,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         matcopy_descriptor.m = handle->ifhp;
         if (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) {
           matcopy_descriptor.n = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
-          matcopy_descriptor.lda = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
-          matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.ldi = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock * handle->fm_lp_block;
         } else { /* Assumes NHWC format */
           matcopy_descriptor.n = handle->ifwp * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
-          matcopy_descriptor.lda = handle->ifwp * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
-          matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.ldi = handle->ifwp * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
         }
         if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
           matcopy_descriptor.prefetch = 1;
@@ -420,8 +420,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matcopy_descriptor.prefetch = 0;
         }
         matcopy_descriptor.unroll_level = 2;
-        matcopy_descriptor.datatype = handle->datatype;
-        matcopy_descriptor.zero_source = 0;
+        matcopy_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype);
+        matcopy_descriptor.flags = 0;
       } else {
         descriptor.ifh_padded = handle->ifhp;
         descriptor.ifw_padded = handle->ifwp;
@@ -460,7 +460,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT;
           handle->code_fwd[3].pmm = libxsmm_create_xconv_forward(&descriptor);
           if (handle->padding_flag == 1) {
-            handle->matcopy_fwd[0].pmm = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+            handle->matcopy_fwd[0].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
           }
         }
       } else if (libxsmm_target_archid == LIBXSMM_X86_AVX2) {
@@ -482,7 +482,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->code_fwd[2].pmm = handle->code_fwd[0].pmm;
         handle->code_fwd[3].pmm = handle->code_fwd[0].pmm;
         if (handle->padding_flag == 1) {
-          handle->matcopy_fwd[0].pmm = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+          handle->matcopy_fwd[0].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
         }
       } else {
         assert(0/*should not happen*/);
@@ -500,28 +500,28 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matcopyback_descriptor.m = handle->ifhp;
           matcopy_descriptor.n = handle->ifwp * handle->ifmblock;
           matcopyback_descriptor.n = handle->ifwp * handle->ifmblock;
-          matcopy_descriptor.lda = handle->ifwp * handle->ifmblock;
-          matcopyback_descriptor.lda = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock;
-          matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock;
-          matcopyback_descriptor.ldb = handle->ifwp * handle->ifmblock;
+          matcopy_descriptor.ldi = handle->ifwp * handle->ifmblock;
+          matcopyback_descriptor.ldi = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock;
+          matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock;
+          matcopyback_descriptor.ldo = handle->ifwp * handle->ifmblock;
         } else { /* Assumes NHWC format */
           matcopy_descriptor.m = 1;
           matcopy_descriptor.n =  handle->ifmblock;
-          matcopy_descriptor.lda = handle->ifmblock;
-          matcopy_descriptor.ldb = handle->ifmblock;
+          matcopy_descriptor.ldi = handle->ifmblock;
+          matcopy_descriptor.ldo = handle->ifmblock;
           matcopyback_descriptor.m = 1;
           matcopyback_descriptor.n = handle->ifmblock;
-          matcopyback_descriptor.lda = handle->ifmblock;
-          matcopyback_descriptor.ldb = handle->ifmblock;
+          matcopyback_descriptor.ldi = handle->ifmblock;
+          matcopyback_descriptor.ldo = handle->ifmblock;
         }
         matcopy_descriptor.prefetch = 1;
         matcopyback_descriptor.prefetch = 0;
         matcopy_descriptor.unroll_level = 2;
         matcopyback_descriptor.unroll_level = 2;
-        matcopy_descriptor.datatype = handle->datatype;
-        matcopyback_descriptor.datatype = handle->datatype;
-        matcopy_descriptor.zero_source = 0;
-        matcopyback_descriptor.zero_source = 0;
+        matcopy_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype);
+        matcopyback_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype);
+        matcopy_descriptor.flags = 0;
+        matcopyback_descriptor.flags = 0;
       } else {
         descriptor.ifh_padded = handle->ifhp;
         descriptor.ifw_padded = handle->ifwp;
@@ -622,8 +622,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
         /* NONE */
         if (handle->padding_flag == 1) {
-          handle->matcopy_bwd[0].pmm = libxsmm_xmatcopydispatch(&matcopy_descriptor);
-          handle->matcopy_bwd[1].pmm = libxsmm_xmatcopydispatch(&matcopyback_descriptor);
+          handle->matcopy_bwd[0].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+          handle->matcopy_bwd[1].xmatcopy = libxsmm_xmatcopydispatch(&matcopyback_descriptor);
         }
 
         /*descriptor.prefetch_output_ahead = 0;*/
@@ -723,8 +723,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                    ((handle->filter_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) || (handle->buffer_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM))*/ ) {
         /* we don't do prefetching and kh/kw unrolling (ignored in kernel generator) for AVX2 */
         if (handle->padding_flag == 1) {
-          handle->matcopy_bwd[0].pmm = libxsmm_xmatcopydispatch(&matcopy_descriptor);
-          handle->matcopy_bwd[1].pmm = libxsmm_xmatcopydispatch(&matcopyback_descriptor);
+          handle->matcopy_bwd[0].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+          handle->matcopy_bwd[1].xmatcopy = libxsmm_xmatcopydispatch(&matcopyback_descriptor);
         }
         descriptor.unroll_kh = 0;
         descriptor.unroll_kw = 1;
@@ -756,27 +756,27 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matcopy_descriptor.m = handle->ifhp;
           matcopy_descriptor.n = handle->ifwp * handle->ifmblock;
           matzero_descriptor.n = descriptor.ifh_padded * descriptor.ifw_padded * handle->ifmblock;
-          matcopy_descriptor.lda = handle->ifwp * handle->ifmblock;
-          matzero_descriptor.lda = descriptor.ifh_padded * descriptor.ifw_padded * handle->ifmblock;
-          matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock;
-          matzero_descriptor.ldb = descriptor.ifh_padded * descriptor.ifw_padded * handle->ifmblock;
+          matcopy_descriptor.ldi = handle->ifwp * handle->ifmblock;
+          matzero_descriptor.ldi = descriptor.ifh_padded * descriptor.ifw_padded * handle->ifmblock;
+          matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock;
+          matzero_descriptor.ldo = descriptor.ifh_padded * descriptor.ifw_padded * handle->ifmblock;
         } else { /* Assumes NHWC format */
           matcopy_descriptor.m = 1;
           matcopy_descriptor.n = handle->ifwp * handle->blocksifm * handle->ifmblock;
-          matcopy_descriptor.lda = handle->ifwp * handle->blocksifm * handle->ifmblock;
-          matcopy_descriptor.ldb = (handle->ifwp + 2*handle->desc.pad_w) * handle->blocksifm * handle->ifmblock;
+          matcopy_descriptor.ldi = handle->ifwp * handle->blocksifm * handle->ifmblock;
+          matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->blocksifm * handle->ifmblock;
           matzero_descriptor.n = descriptor.ifw_padded * handle->blocksifm * handle->ifmblock;
-          matzero_descriptor.lda = descriptor.ifw_padded * handle->blocksifm * handle->ifmblock;
-          matzero_descriptor.ldb = descriptor.ifw_padded * handle->blocksifm * handle->ifmblock;
+          matzero_descriptor.ldi = descriptor.ifw_padded * handle->blocksifm * handle->ifmblock;
+          matzero_descriptor.ldo = descriptor.ifw_padded * handle->blocksifm * handle->ifmblock;
         }
         matcopy_descriptor.prefetch = 1;
         matzero_descriptor.prefetch = 0;
         matcopy_descriptor.unroll_level = 2;
         matzero_descriptor.unroll_level = 2;
-        matcopy_descriptor.datatype = handle->datatype;
-        matzero_descriptor.datatype = handle->datatype;
-        matcopy_descriptor.zero_source = 0;
-        matzero_descriptor.zero_source = 1;
+        matcopy_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype);
+        matzero_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype);
+        matcopy_descriptor.flags = 0;
+        matzero_descriptor.flags = LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE;
       } else {
         descriptor.ifh_padded = handle->ifhp;
         descriptor.ifw_padded = handle->ifwp;
@@ -868,8 +868,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 #endif
         /* NONE */
         if (handle->padding_flag == 1) {
-          handle->matcopy_upd[0].pmm = libxsmm_xmatcopydispatch(&matcopy_descriptor);
-          handle->matcopy_upd[1].pmm = libxsmm_xmatcopydispatch(&matzero_descriptor);
+          handle->matcopy_upd[0].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+          handle->matcopy_upd[1].xmatcopy = libxsmm_xmatcopydispatch(&matzero_descriptor);
         }
 
         descriptor.transpose_ofw_ifm = 0;
@@ -907,8 +907,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.transpose_ofw_ifm = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         if (handle->padding_flag == 1) {
-          handle->matcopy_upd[0].pmm = libxsmm_xmatcopydispatch(&matcopy_descriptor);
-          handle->matcopy_upd[1].pmm = libxsmm_xmatcopydispatch(&matzero_descriptor);
+          handle->matcopy_upd[0].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+          handle->matcopy_upd[1].xmatcopy = libxsmm_xmatcopydispatch(&matzero_descriptor);
         }
 
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {

@@ -656,7 +656,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
      int i = io_generated_code->code_size;
      unsigned int m = i_trans_desc->m;
      unsigned int n = i_trans_desc->n;
-     int imask = 0, datasize;
+     int imask = 0;
      int offsetA, offsetB, oldB;
      int j, k, m0, n0, shiftvalue, shiftmult;
      /** Note: the transpose routine only works when ldb is fixed at n.  **
@@ -669,21 +669,14 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
       *           16 for single on zmm    */
      int REGSIZE;
      int maskvar = 0;
+     int datasize = i_trans_desc->typesize;
 
-     datasize = 4;
-     switch ( i_trans_desc->datatype ) {
-        case LIBXSMM_DNN_DATATYPE_F64: datasize = 8; break;
-        case LIBXSMM_DNN_DATATYPE_F32: datasize = 4; break;
-        case LIBXSMM_DNN_DATATYPE_I32: datasize = 4; break;
-        default: assert(0/*should not happen*/);
-     }
 #ifdef GENERATOR_TRANSPOSE_DEBUG
-     {
-        const unsigned int l_maxsize = io_generated_code->buffer_size;
-        printf("Entering libxsmm_generator_transpose_avx_avx512_kernel with i loc=%d m=%d n=%d datasize=%d\n",i,m,n,datasize);
-        printf("Space available: %d - %d = %d\n",l_maxsize,i,l_maxsize-i);
-     }
+     const unsigned int l_maxsize = io_generated_code->buffer_size;
+     printf("Entering libxsmm_generator_transpose_avx_avx512_kernel with i loc=%d m=%d n=%d datasize=%d\n",i,m,n,datasize);
+     printf("Space available: %d - %d = %d\n",l_maxsize,i,l_maxsize-i);
 #endif
+     assert(0 < datasize);
      if ( (datasize != 4) && (datasize != 8) )
      {
         fprintf(stderr,"Expecting a datasize of 4 or 8, but got %d\n",datasize);
