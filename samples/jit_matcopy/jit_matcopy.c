@@ -37,11 +37,10 @@
 
 int main(int argc, char* argv[])
 {
-  void* fpointer;
   libxsmm_smatcopyfunction skernel;
   libxsmm_matcopy_descriptor desc;
   float *a, *b;
-  int lda, ldb;
+  int ldi, ldo;
   int i, j, iters;
   int error = 0;
   double copy_time;
@@ -50,8 +49,8 @@ int main(int argc, char* argv[])
   printf("This is a tester for JIT matcopy kernels!\n");
   desc.m = atoi(argv[1]);
   desc.n = atoi(argv[2]);
-  desc.lda = atoi(argv[3]);
-  desc.ldb = atoi(argv[4]);
+  desc.ldi = atoi(argv[3]);
+  desc.ldo = atoi(argv[4]);
   desc.unroll_level = (unsigned char)atoi(argv[5]);
   desc.typesize = 4;
   desc.prefetch = (unsigned char)atoi(argv[6]);;
@@ -59,36 +58,35 @@ int main(int argc, char* argv[])
   iters = atoi(argv[8]);
 
 
-  a = (float *) malloc(desc.m * desc.lda * sizeof(float));
-  b = (float *) malloc(desc.m * desc.ldb * sizeof(float));
+  a = (float *) malloc(desc.m * desc.ldi * sizeof(float));
+  b = (float *) malloc(desc.m * desc.ldo * sizeof(float));
 
 
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
-      a[j+desc.lda*i] = 1.0 * rand();
+      a[j+desc.ldi*i] = 1.0 * rand();
       if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & desc.flags)) {
-        b[j+desc.ldb*i] = 1.0 * rand();
+        b[j+desc.ldo*i] = 1.0 * rand();
       }
     }
   }
 
   /* test dispatch call */
-  fpointer = libxsmm_xmatcopydispatch( &desc );
-  skernel = (libxsmm_smatcopyfunction)fpointer;
+  skernel = libxsmm_xmatcopydispatch(&desc).smatcopy;
 
-  if (fpointer == 0) {
+  if (skernel == 0) {
     printf("JIT error -> exit!!!!\n");
     exit(-1);
   }
 
 
   /* let's call */
-  skernel(a, &lda, b, &ldb, &a[128]);
+  skernel(a, &ldi, b, &ldo, &a[128]);
 
   l_start = libxsmm_timer_tick();
 
   for (i=0; i<iters; i++) {
-    skernel(a, &lda, b, &ldb, &a[128]);
+    skernel(a, &ldi, b, &ldo, &a[128]);
   }
 
   l_end = libxsmm_timer_tick();
@@ -97,12 +95,12 @@ int main(int argc, char* argv[])
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
       if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & desc.flags)) {
-        if (b[j+desc.ldb*i] > 0.00000000) {
+        if (b[j+desc.ldo*i] > 0.00000000) {
           printf("ERROR!!!\n");
           error = 1;
         }
       }
-      else if ( (a[j+desc.lda*i] - b[j+desc.ldb*i]) > 0.000000001 ) {
+      else if ( (a[j+desc.ldi*i] - b[j+desc.ldo*i]) > 0.000000001 ) {
         printf("ERROR!!!\n");
         error = 1;
       }
