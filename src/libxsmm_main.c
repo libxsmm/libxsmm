@@ -1226,8 +1226,8 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
     } break;
     case LIBXSMM_BUILD_KIND_MATCOPY: { /* matcopy kernel */
       assert(0 != request->descriptor.matcopy);
-      if (LIBXSMM_DNN_DATATYPE_F32 == request->descriptor.matcopy->datatype || LIBXSMM_DNN_DATATYPE_F64 == request->descriptor.matcopy->datatype
-          || LIBXSMM_DNN_DATATYPE_I16 == request->descriptor.matcopy->datatype || LIBXSMM_DNN_DATATYPE_I8 == request->descriptor.matcopy->datatype )
+      if (4 == request->descriptor.matcopy->typesize || 8 == request->descriptor.matcopy->typesize
+       || 2 == request->descriptor.matcopy->typesize || 1 == request->descriptor.matcopy->typesize)
       {
         generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
         generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
@@ -1236,20 +1236,20 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const char *const precision = internal_get_precision_string(request->descriptor.matcopy->datatype);
+          char pbuffer[4];
+          const char *const precision = itoa(request->descriptor.matcopy->typesize, pbuffer, 10);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_matcopy_%s_%ux%u_%ux%u_p%u.matcopy",
             target_arch/*code path name*/, precision,
             request->descriptor.matcopy->m/*m*/, request->descriptor.matcopy->n/*n*/,
-            request->descriptor.matcopy->lda/*lda*/, request->descriptor.matcopy->ldb/*ldb*/,
+            request->descriptor.matcopy->ldi, request->descriptor.matcopy->ldo,
             request->descriptor.matcopy->prefetch);
         }
       }
     } break;
     case LIBXSMM_BUILD_KIND_TRANS: { /* transpose kernel */
       assert(0 != request->descriptor.trans);
-      if (LIBXSMM_DNN_DATATYPE_F32 == request->descriptor.trans->datatype || LIBXSMM_DNN_DATATYPE_F64 == request->descriptor.trans->datatype)
-      {
+      if (4 == request->descriptor.trans->typesize || 8 == request->descriptor.trans->typesize) {
         generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
         generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_transpose_kernel, &generated_code, request->descriptor.trans, target_arch);
@@ -1257,7 +1257,8 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const char *const precision = internal_get_precision_string(request->descriptor.trans->datatype);
+          char pbuffer[4];
+          const char *const precision = itoa(request->descriptor.trans->typesize, pbuffer, 10);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_trans_%s_%ux%u.trans",
             target_arch/*code path name*/, precision,
