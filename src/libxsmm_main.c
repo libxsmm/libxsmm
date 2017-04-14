@@ -1236,8 +1236,8 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         if (0 > libxsmm_verbosity)
 # endif
         {
-          char pbuffer[4];
-          const char *const precision = itoa(request->descriptor.matcopy->typesize, pbuffer, 10);
+          char precision[4];
+          LIBXSMM_SNPRINTF(precision, sizeof(precision), "%i", (int)request->descriptor.matcopy->typesize);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_matcopy_%s_%ux%u_%ux%u_p%u.matcopy",
             target_arch/*code path name*/, precision,
@@ -1257,8 +1257,8 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         if (0 > libxsmm_verbosity)
 # endif
         {
-          char pbuffer[4];
-          const char *const precision = itoa(request->descriptor.trans->typesize, pbuffer, 10);
+          char precision[4];
+          LIBXSMM_SNPRINTF(precision, sizeof(precision), "%i", (int)request->descriptor.trans->typesize);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_trans_%s_%ux%u.trans",
             target_arch/*code path name*/, precision,
