@@ -119,12 +119,12 @@ typedef struct libxsmm_gemm_descriptor {
   LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE lda, ldb, ldc;
   /** Extents of the matrix. */
   LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE m, n, k;
-  /** Collection of various flags. */
-  unsigned char flags;
   /** Integer value. */
   signed char alpha, beta;
   /** Prefetch strategy enumeration. */
   unsigned char prefetch;
+  /** Collection of various flags. */
+  unsigned char flags;
 } libxsmm_gemm_descriptor;
 
 /** Flag enumeration which can be binary ORed. */
@@ -135,23 +135,24 @@ typedef enum libxsmm_matcopy_flags {
 
 /** Structure storing the matcopy argument description. */
 typedef struct libxsmm_matcopy_descriptor {
-  unsigned int m, n;      /* M, and N */
-  unsigned int ldi, ldo;  /* LDx I/O */
+  /** M, N, and LDx I/O */
+  unsigned int m, n, ldi, ldo;
   /** Size of an individual data element */
   unsigned char typesize;
   /** Defines the level of unrolling in the copy */
   unsigned char unroll_level;
-  /** Collection of various flags. */
-  unsigned char flags;
   /** @TODO fix this, non-zero for prefetch */
   unsigned char prefetch;
+  /** Collection of various flags. */
+  unsigned char flags;
 } libxsmm_matcopy_descriptor;
 
 /** Structure storing the transpose argument description. */
 typedef struct libxsmm_transpose_descriptor {
-  unsigned int m, n;      /* M, and N */
+  /** M, and N */
+  unsigned int m, n;
   /** Size of an individual data element */
-  unsigned char typesize;
+  unsigned int typesize;
 } libxsmm_transpose_descriptor;
 
 /** Structure referring to the generated code with some attached information. */
