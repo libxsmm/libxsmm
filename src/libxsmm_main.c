@@ -102,7 +102,7 @@ typedef enum internal_regkey_kind {
   /** Matcopy kernel kind */
   LIBXSMM_GEMM_FLAG_MATCOPY = 2 * LIBXSMM_GEMM_FLAG_F32PREC,
   /** Transpose kernel kind */
-  LIBXSMM_GEMM_FLAG_TKERNEL = 4 * LIBXSMM_GEMM_FLAG_F32PREC,
+  LIBXSMM_GEMM_FLAG_TKERNEL = 4 * LIBXSMM_GEMM_FLAG_F32PREC
 } internal_regkey_kind;
 
 typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
