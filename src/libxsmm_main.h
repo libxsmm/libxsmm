@@ -353,8 +353,6 @@ LIBXSMM_API unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int
 LIBXSMM_API int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
 
-LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype);
-
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_lock_global;
 /** Function used to allocate default memory. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_default_malloc_fn;
