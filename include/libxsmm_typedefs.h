@@ -311,9 +311,9 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmatcopyfunction)(const unsigned cha
 typedef union LIBXSMM_RETARGETABLE libxsmm_xmatcopyfunction { libxsmm_smatcopyfunction smatcopy; libxsmm_dmatcopyfunction dmatcopy; libxsmm_wmatcopyfunction wmatcopy; libxsmm_bmatcopyfunction bmatcopy; } libxsmm_xmatcopyfunction;
 
 /** Specialized function for transpose (single-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_stransfunction)(const float* a, int *lda, float* b, int *ldb);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_stransfunction)(const float* a, int* lda, float* b, int* ldb);
 /** Specialized function for transpose (double-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_dtransfunction)(const double* a, int *lda, double* b, int *ldb);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_dtransfunction)(const double* a, int* lda, double* b, int* ldb);
 /** Function type which is either libxsmm_stransfunction or libxsmm_dmmfunction (weak-typed). */
 typedef union LIBXSMM_RETARGETABLE libxsmm_xtransfunction { libxsmm_stransfunction strans; libxsmm_dtransfunction dtrans; } libxsmm_xtransfunction;
 
