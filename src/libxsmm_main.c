@@ -1764,37 +1764,19 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
 }
 
 
-/* @TODO implement code cache */
 LIBXSMM_API_DEFINITION libxsmm_stransfunction libxsmm_stransdispatch(unsigned int m, unsigned int n)
 {
-  libxsmm_code_pointer code = { 0 };
-  libxsmm_build_request request;
-  libxsmm_transpose_descriptor descriptor;
-  LIBXSMM_INIT
-  descriptor.m = m;
-  descriptor.n = n;
-  descriptor.typesize = 4;
-  request.descriptor.trans = &descriptor;
-  request.kind = LIBXSMM_BUILD_KIND_TRANS;
-  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-  return code.xtrans.strans;
+  libxsmm_transpose_descriptor descriptor = { 0, 0, 4 };
+  descriptor.m = m; descriptor.n = n;
+  return libxsmm_xtransdispatch(&descriptor).strans;
 }
 
 
-/* @TODO implement code cache */
 LIBXSMM_API_DEFINITION libxsmm_dtransfunction libxsmm_dtransdispatch(unsigned int m, unsigned int n)
 {
-  libxsmm_code_pointer code = { 0 };
-  libxsmm_build_request request;
-  libxsmm_transpose_descriptor descriptor;
-  LIBXSMM_INIT
-  descriptor.m = m;
-  descriptor.n = n;
-  descriptor.typesize = 8;
-  request.descriptor.trans = &descriptor;
-  request.kind = LIBXSMM_BUILD_KIND_TRANS;
-  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-  return code.xtrans.dtrans;
+  libxsmm_transpose_descriptor descriptor = { 0, 0, 8 };
+  descriptor.m = m; descriptor.n = n;
+  return libxsmm_xtransdispatch(&descriptor).dtrans;
 }
 
 
