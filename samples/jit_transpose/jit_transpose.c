@@ -41,14 +41,15 @@
 #endif
 
 
-void dfill_matrix ( double *matrix, int ld, int m, int n )
+LIBXSMM_INLINE
+void dfill_matrix ( double *matrix, unsigned int ld, unsigned int m, unsigned int n )
 {
-  int i, j;
+  unsigned int i, j;
   double dtmp;
 
   if ( ld < m )
   {
-     fprintf(stderr,"Error is dfill_matrix: ld=%d m=%d mismatched!\n",ld,m);
+     fprintf(stderr,"Error is dfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(-1);
   }
   for ( j = 1 ; j <= n ; j++ )
@@ -63,14 +64,15 @@ void dfill_matrix ( double *matrix, int ld, int m, int n )
 }
 
 
-void sfill_matrix ( float *matrix, int ld, int m, int n )
+LIBXSMM_INLINE
+void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n )
 {
-  int i, j;
+  unsigned int i, j;
   double dtmp;
 
   if ( ld < m )
   {
-     fprintf(stderr,"Error is sfill_matrix: ld=%d m=%d mismatched!\n",ld,m);
+     fprintf(stderr,"Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(-1);
   }
   for ( j = 1 ; j <= n ; j++ )
@@ -85,10 +87,11 @@ void sfill_matrix ( float *matrix, int ld, int m, int n )
 }
 
 
-double residual_stranspose ( float *A, int lda, int m, int n, float *out,
-                             int ld_out, int *nerrs )
+LIBXSMM_INLINE
+double residual_stranspose ( float *A, unsigned int lda, unsigned int m, unsigned int n, float *out,
+                             unsigned int ld_out, unsigned int *nerrs )
 {
-  int i, j;
+  unsigned int i, j;
   double dtmp, derror;
 
   *nerrs = 0;
@@ -102,7 +105,7 @@ double residual_stranspose ( float *A, int lda, int m, int n, float *out,
          if ( dtmp > 0.0 )
          {
             *nerrs = *nerrs + 1;
-            if ( *nerrs < 10 ) printf("Err #%d: A(%d,%d)=%g B(%d,%d)=%g Diff=%g\n",*nerrs,i,j,A[(j-1)*lda+(i-1)],j,i,out[(i-1)*ld_out+(j-1)],dtmp);
+            if ( *nerrs < 10 ) printf("Err #%u: A(%u,%u)=%g B(%u,%u)=%g Diff=%g\n",*nerrs,i,j,A[(j-1)*lda+(i-1)],j,i,out[(i-1)*ld_out+(j-1)],dtmp);
          }
          derror += (double) dtmp;
      }
@@ -111,10 +114,11 @@ double residual_stranspose ( float *A, int lda, int m, int n, float *out,
 }
 
 
-double residual_dtranspose ( double *A, int lda, int m, int n, double *out,
-                             int ld_out, int *nerrs )
+LIBXSMM_INLINE
+double residual_dtranspose ( double *A, unsigned int lda, unsigned int m, unsigned int n, double *out,
+                             unsigned int ld_out, unsigned int *nerrs )
 {
-  int i, j;
+  unsigned int i, j;
   double dtmp, derror;
 
   *nerrs = 0;
@@ -138,25 +142,25 @@ double residual_dtranspose ( double *A, int lda, int m, int n, double *out,
 /* #define COMPARE_TO_A_R64_ASSEMBLY_CODE */
 
 #if defined(COMPARE_TO_A_R32_ASSEMBLY_CODE) || defined(COMPARE_TO_A_R64_ASSEMBLY_CODE)
-  #ifndef COMPARE_TO_AN_ASSEMBLY_CODE
-    #define COMPARE_TO_AN_ASSEMBLY_CODE
-  #endif
+# ifndef COMPARE_TO_AN_ASSEMBLY_CODE
+#   define COMPARE_TO_AN_ASSEMBLY_CODE
+# endif
 #endif
 #if defined(COMPARE_TO_A_R32_ASSEMBLY_CODE) && defined(COMPARE_TO_A_R64_ASSEMBLY_CODE)
-  #error Define a comparison to either R32 or R64 code, not both at once
+# error Define a comparison to either R32 or R64 code, not both at once
 #endif
 
 
 int main(int argc, char* argv[])
 {
-  int m=16, n=16, ld_in=16, ld_out=16, nerrs;
+  unsigned int m=16, n=16, ld_in=16, ld_out=16, nerrs;
   float  *sin, *sout;
   double *din, *dout, dtmp;
   const unsigned char *cptr;
 #ifdef COMPARE_TO_AN_ASSEMBLY_CODE
+  unsigned int nbest, istop, i;
   unsigned char *cptr2;
   extern void myro_();
-  int nbest, istop, i;
 #endif
   union { libxsmm_xtransfunction f; const void* p; } skernel, dkernel;
   libxsmm_transpose_descriptor descriptor;
@@ -177,7 +181,7 @@ int main(int argc, char* argv[])
   ld_in = LIBXSMM_MAX(ld_in,m);
   ld_out = n;
 
-  printf("This is a tester for JIT transpose kernels! (m=%d n=%d ld_in=%d ld_out=%d)\n",m,n,ld_in,ld_out);
+  printf("This is a tester for JIT transpose kernels! (m=%u n=%u ld_in=%u ld_out=%u)\n",m,n,ld_in,ld_out);
 
   /* test dispatch call */
   descriptor.m = m; descriptor.n = n;
@@ -203,7 +207,7 @@ int main(int argc, char* argv[])
   {
      if ( cptr[i] != cptr2[i] )
      {
-        printf("Byte: %d=0x%x differs. We generated: 0x%02x. Should be: 0x%02x\n",
+        printf("Byte: %u=0x%x differs. We generated: 0x%02x. Should be: 0x%02x\n",
                i,i,cptr[i],cptr2[i]);
      } else {
         ++nbest;
@@ -213,11 +217,13 @@ int main(int argc, char* argv[])
      {
         if ( (cptr2[i]==0xc3) && (cptr2[i-1]==0x5b) && (cptr2[i-2]==0x5d) )
            istop = 1;
-        //if ( i == 114 ) printf("cptr2=0x%02x 0x%02x 0x%02x istop=%d\n",cptr2[i],cptr2[i-1],cptr2[i-2],istop);
+#if 0
+        if ( i == 114 ) printf("cptr2=0x%02x 0x%02x 0x%02x istop=%u\n",cptr2[i],cptr2[i-1],cptr2[i-2],istop);
+#endif
      }
      ++i;
   }
-  printf("Bytes agree: %d\n",nbest);
+  printf("Bytes agree: %u\n",nbest);
 #endif
 
   sin  = (float  *) malloc ( ld_in*n*sizeof(float) );
@@ -233,7 +239,7 @@ int main(int argc, char* argv[])
 
   if ( ld_out != n )
   {
-     fprintf(stderr,"Final warning: This code only works for ld_out=n (n=%d,ld_out=%d)\n",n,ld_out);
+     fprintf(stderr,"Final warning: This code only works for ld_out=n (n=%u,ld_out=%u)\n",n,ld_out);
      exit(-1);
   }
 
@@ -241,17 +247,16 @@ int main(int argc, char* argv[])
   printf("Calling myro_: \n");
   myro_ ( din, &ld_in, dout, &ld_out );
   dtmp = residual_dtranspose ( din, ld_in, m, n, dout, ld_out, &nerrs );
-  printf("Myro_ R64 error: %g number of errors: %d\n",dtmp,nerrs);
+  printf("Myro_ R64 error: %g number of errors: %u\n",dtmp,nerrs);
   dfill_matrix ( dout, ld_out, n, m );
 #endif
 #ifdef COMPARE_TO_A_R32_ASSEMBLY_CODE
   printf("Calling myro_: \n");
   myro_ ( sin, &ld_in, sout, &ld_out );
   dtmp = residual_stranspose ( sin, ld_in, m, n, sout, ld_out, &nerrs );
-  printf("Myro_ R32 error: %g number of errors: %d\n",dtmp,nerrs);
+  printf("Myro_ R32 error: %g number of errors: %u\n",dtmp,nerrs);
   sfill_matrix ( sout, ld_out, n, m );
 #endif
-
 
   /* let's call */
 #if 1
@@ -263,18 +268,20 @@ int main(int argc, char* argv[])
 
   /* Did it transpose correctly? */
   dtmp = residual_stranspose ( sin, ld_in, m, n, sout, ld_out, &nerrs );
-  printf("Single precision m=%d n=%d ld_in=%d ld_out=%d error: %g number of errors: %d",m,n,ld_in,ld_out,dtmp,nerrs);
-  if ( nerrs > 0 ) printf(" ->FAILED at %dx%d real*4 case",m,n);
+  printf("Single precision m=%u n=%u ld_in=%u ld_out=%u error: %g number of errors: %u",m,n,ld_in,ld_out,dtmp,nerrs);
+  if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*4 case",m,n);
   printf("\n");
 
   dtmp = residual_dtranspose ( din, ld_in, m, n, dout, ld_out, &nerrs );
-  printf("Double precision m=%d n=%d ld_in=%d ld_out=%d error: %g number of errors: %d\n",m,n,ld_in,ld_out,dtmp,nerrs);
-  if ( nerrs > 0 ) printf(" ->FAILED at %dx%d real*8 case",m,n);
+  printf("Double precision m=%u n=%u ld_in=%u ld_out=%u error: %g number of errors: %u\n",m,n,ld_in,ld_out,dtmp,nerrs);
+  if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*8 case",m,n);
   printf("\n");
 
   free(dout);
   free(sout);
   free(din);
   free(sin);
+
   return 0;
 }
+

@@ -40,8 +40,8 @@ int main(int argc, char* argv[])
   libxsmm_xmatcopyfunction skernel;
   libxsmm_matcopy_descriptor desc;
   float *a, *b;
-  int ldi, ldo;
-  int i, j, iters;
+  unsigned int i, j, iters;
+  unsigned int ldi, ldo;
   int error = 0;
   double copy_time;
   unsigned long long l_start, l_end;
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   desc.unroll_level = (unsigned char)atoi(argv[5]);
   desc.typesize = 4;
   desc.prefetch = (unsigned char)atoi(argv[6]);;
-  desc.flags = (0 != atoi(argv[7]) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
+  desc.flags = (unsigned char)(0 != atoi(argv[7]) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
   iters = atoi(argv[8]);
 
 
@@ -64,9 +64,9 @@ int main(int argc, char* argv[])
 
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
-      a[j+desc.ldi*i] = 1.0 * rand();
+      a[j+desc.ldi*i] = 1.f * rand();
       if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & desc.flags)) {
-        b[j+desc.ldo*i] = 1.0 * rand();
+        b[j+desc.ldo*i] = 1.f * rand();
       }
     }
   }
