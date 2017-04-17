@@ -1766,22 +1766,6 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_stransfunction libxsmm_stransdispatch(unsigned int m, unsigned int n)
-{
-  libxsmm_transpose_descriptor descriptor = { 0, 0, 4 };
-  descriptor.m = m; descriptor.n = n;
-  return libxsmm_xtransdispatch(&descriptor).strans;
-}
-
-
-LIBXSMM_API_DEFINITION libxsmm_dtransfunction libxsmm_dtransdispatch(unsigned int m, unsigned int n)
-{
-  libxsmm_transpose_descriptor descriptor = { 0, 0, 8 };
-  descriptor.m = m; descriptor.n = n;
-  return libxsmm_xtransdispatch(&descriptor).dtrans;
-}
-
-
 LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor)
 {
   libxsmm_xtransfunction result = { 0 };

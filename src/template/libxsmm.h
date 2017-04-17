@@ -155,12 +155,6 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
 /** Code generation routine for JIT matcopy using a descriptor. */
 LIBXSMM_API libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor);
 
-/** Code generation routine for JIT transposes (single precision). */
-LIBXSMM_API libxsmm_stransfunction libxsmm_stransdispatch(unsigned int m, unsigned int n);
-
-/** Code generation routine for JIT transposes (double precision). */
-LIBXSMM_API libxsmm_dtransfunction libxsmm_dtransdispatch(unsigned int m, unsigned int n);
-
 /** Code generation routine for JIT transposes using a descriptor */
 LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor);
 

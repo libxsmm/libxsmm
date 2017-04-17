@@ -158,8 +158,8 @@ int main(int argc, char* argv[])
   extern void myro_();
   int nbest, istop, i;
 #endif
-  union { libxsmm_stransfunction f; const void* p; } skernel;
-  union { libxsmm_dtransfunction f; const void* p; } dkernel;
+  union { libxsmm_xtransfunction f; const void* p; } skernel, dkernel;
+  libxsmm_transpose_descriptor descriptor;
 
   if ( argc <= 3 )
   {
@@ -180,8 +180,11 @@ int main(int argc, char* argv[])
   printf("This is a tester for JIT transpose kernels! (m=%d n=%d ld_in=%d ld_out=%d)\n",m,n,ld_in,ld_out);
 
   /* test dispatch call */
-  skernel.f = libxsmm_stransdispatch( m, n );
-  dkernel.f = libxsmm_dtransdispatch( m, n );
+  descriptor.m = m; descriptor.n = n;
+  descriptor.typesize = sizeof(float);
+  skernel.f = libxsmm_xtransdispatch(&descriptor);
+  descriptor.typesize = sizeof(double);
+  dkernel.f = libxsmm_xtransdispatch(&descriptor);
 
   printf("address of F32 kernel: %p\n", skernel.p);
   printf("address of F64 kernel: %p\n", dkernel.p);
