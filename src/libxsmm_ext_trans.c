@@ -44,11 +44,12 @@
 
 
 #if defined(LIBXSMM_EXT_TASKS)
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_ext_otrans(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_ext_otrans(
+  libxsmm_xtransfunction xtrans, void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
-  LIBXSMM_OTRANS_MAIN(LIBXSMM_EXT_TSK_KERNEL_ARGS, internal_ext_otrans, out, in, typesize, m0, m1, n0, n1, ldi, ldo);
+  LIBXSMM_OTRANS_MAIN(internal_ext_otrans, LIBXSMM_EXT_TSK_KERNEL_ARGS, xtrans, out, in, typesize, m0, m1, n0, n1, ldi, ldo);
 }
 #endif /*defined(LIBXSMM_EXT_TASKS)*/
 
@@ -66,11 +67,11 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
       if ((LIBXSMM_EXT_TRANS_MT_THRESHOLD) < (m * n)) { /* consider problem-size (threshold) */
         if (0 == omp_get_level()) { /* enable internal parallelization */
           LIBXSMM_EXT_TSK_PARALLEL
-          internal_ext_otrans(out, in, typesize, 0, m, 0, n, ldi, ldo);
+          internal_ext_otrans(0, out, in, typesize, 0, m, 0, n, ldi, ldo);
           /* implicit synchronization (barrier) */
         }
         else { /* assume external parallelization */
-          internal_ext_otrans(out, in, typesize, 0, m, 0, n, ldi, ldo);
+          internal_ext_otrans(0, out, in, typesize, 0, m, 0, n, ldi, ldo);
           /* allow to omit synchronization */
           if (0 != libxsmm_sync) {
             LIBXSMM_EXT_TSK_SYNC

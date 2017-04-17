@@ -61,11 +61,12 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_finalize(void)
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans(void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans(
+  libxsmm_xtransfunction xtrans, void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
   unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
-  LIBXSMM_OTRANS_MAIN(LIBXSMM_NOOP_ARGS, internal_otrans, out, in, typesize, m0, m1, n0, n1, ldi, ldo);
+  LIBXSMM_OTRANS_MAIN(internal_otrans, LIBXSMM_NOOP_ARGS, xtrans, out, in, typesize, m0, m1, n0, n1, ldi, ldo);
 }
 
 
@@ -78,7 +79,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
   if (ldi >= m && ldo >= n && 0 != out && 0 != in) {
     LIBXSMM_INIT
     if (out != in) {
-      internal_otrans(out, in, typesize, 0, m, 0, n, ldi, ldo);
+      internal_otrans(0, out, in, typesize, 0, m, 0, n, ldi, ldo);
     }
     else if (ldi == ldo) {
       result = libxsmm_itrans(out, typesize, m, n, ldi);
