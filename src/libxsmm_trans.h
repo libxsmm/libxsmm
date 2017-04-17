@@ -106,10 +106,14 @@
  * due to splitting up tiles with one fixed-size extent (chunk).
  */
 #define LIBXSMM_OTRANS_MAIN(FN, KERNEL_START, KERNEL, OUT, IN, TYPESIZE, M0, M1, N0, N1, LDI, LDO) { \
+  const int libxsmm_otrans_main_chunksize_ = LIBXSMM_MAX(libxsmm_trans_chunksize, LIBXSMM_TRANS_MIN_CHUNKSIZE); \
   /*const*/ libxsmm_blasint libxsmm_otrans_main_m_ = (M1) - (M0), libxsmm_otrans_main_n_ = (N1) - (N0); \
   if (libxsmm_otrans_main_m_ * libxsmm_otrans_main_n_ * (TYPESIZE) <= ((LIBXSMM_CPU_DCACHESIZE) / 2)) { \
     KERNEL_START(firstprivate(libxsmm_otrans_main_n_) untied) \
-    if (0 != (KERNEL) && LIBXSMM_MAX(libxsmm_trans_chunksize, LIBXSMM_TRANS_MIN_CHUNKSIZE) == libxsmm_otrans_main_n_) { \
+    if (0 != (KERNEL) /* check below if the current tile is an inner tile */ \
+      && libxsmm_otrans_main_chunksize_ == libxsmm_otrans_main_m_ \
+      && libxsmm_otrans_main_chunksize_ == libxsmm_otrans_main_n_) \
+    { \
       const unsigned int libxsmm_otrans_main_ldi_ = LDI, libxsmm_otrans_main_ldo_ = LDO; \
       (KERNEL)( /* call the pre-scheduled JIT-kernel */ \
         ((const char*)(IN)) + (TYPESIZE) * ((N0) * (LDI) + (M0)), &libxsmm_otrans_main_ldi_, \
@@ -137,22 +141,16 @@
     } \
   } \
   else if (libxsmm_otrans_main_m_ >= libxsmm_otrans_main_n_) { \
-    const libxsmm_blasint libxsmm_otrans_main_mi_ = ((M0) + (M1)) / 2; \
+    const libxsmm_blasint libxsmm_otrans_main_mi_ = libxsmm_otrans_main_chunksize_ < libxsmm_otrans_main_m_ \
+      ? ((M0) + libxsmm_otrans_main_chunksize_) : (((M0) + (M1)) / 2); \
     (FN)(KERNEL, OUT, IN, TYPESIZE, M0, libxsmm_otrans_main_mi_, N0, N1, LDI, LDO); \
     (FN)(KERNEL, OUT, IN, TYPESIZE, libxsmm_otrans_main_mi_, M1, N0, N1, LDI, LDO); \
   } \
   else { \
-    const int libxsmm_otrans_main_chunksize_ = LIBXSMM_MAX(libxsmm_trans_chunksize, LIBXSMM_TRANS_MIN_CHUNKSIZE); \
-    if (libxsmm_otrans_main_chunksize_ < libxsmm_otrans_main_n_) { \
-      const libxsmm_blasint libxsmm_otrans_main_ni_ = (N0) + libxsmm_otrans_main_chunksize_; \
-      (FN)(KERNEL, OUT, IN, TYPESIZE, M0, M1, N0, libxsmm_otrans_main_ni_, LDI, LDO); \
-      (FN)(KERNEL, OUT, IN, TYPESIZE, M0, M1, libxsmm_otrans_main_ni_, N1, LDI, LDO); \
-    } \
-    else { \
-      const libxsmm_blasint libxsmm_otrans_main_ni_ = ((N0) + (N1)) / 2; \
-      (FN)(KERNEL, OUT, IN, TYPESIZE, M0, M1, N0, libxsmm_otrans_main_ni_, LDI, LDO); \
-      (FN)(KERNEL, OUT, IN, TYPESIZE, M0, M1, libxsmm_otrans_main_ni_, N1, LDI, LDO); \
-    } \
+    const libxsmm_blasint libxsmm_otrans_main_ni_ = libxsmm_otrans_main_chunksize_ < libxsmm_otrans_main_n_ \
+      ? ((N0) + libxsmm_otrans_main_chunksize_) : (((N0) + (N1)) / 2); \
+    (FN)(KERNEL, OUT, IN, TYPESIZE, M0, M1, N0, libxsmm_otrans_main_ni_, LDI, LDO); \
+    (FN)(KERNEL, OUT, IN, TYPESIZE, M0, M1, libxsmm_otrans_main_ni_, N1, LDI, LDO); \
   } \
 }
 
