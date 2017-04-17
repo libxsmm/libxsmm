@@ -111,6 +111,7 @@
   if (libxsmm_otrans_main_m_ * libxsmm_otrans_main_n_ * (TYPESIZE) <= ((LIBXSMM_CPU_DCACHESIZE) / 2)) { \
     KERNEL_START(firstprivate(libxsmm_otrans_main_n_) untied) \
     if (0 != (KERNEL) /* check below if the current tile is an inner tile */ \
+      && libxsmm_otrans_main_chunksize_ == (LDO) /* TODO: limitation */ \
       && libxsmm_otrans_main_chunksize_ == libxsmm_otrans_main_m_ \
       && libxsmm_otrans_main_chunksize_ == libxsmm_otrans_main_n_) \
     { \
