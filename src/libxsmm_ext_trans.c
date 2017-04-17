@@ -65,13 +65,19 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
     if (out != in) {
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
       if ((LIBXSMM_EXT_TRANS_MT_THRESHOLD) < (m * n)) { /* consider problem-size (threshold) */
+        libxsmm_xtransfunction xtrans = 0;
+#if 0 /* TODO: enable inner JIT'ted transpose kernel */
+        libxsmm_transpose_descriptor descriptor;
+        descriptor.m = descriptor.n = libxsmm_trans_chunksize; descriptor.typesize = typesize;
+        xtrans = libxsmm_xtransdispatch(&descriptor);
+#endif
         if (0 == omp_get_level()) { /* enable internal parallelization */
           LIBXSMM_EXT_TSK_PARALLEL
-          internal_ext_otrans(0, out, in, typesize, 0, m, 0, n, ldi, ldo);
+          internal_ext_otrans(xtrans, out, in, typesize, 0, m, 0, n, ldi, ldo);
           /* implicit synchronization (barrier) */
         }
         else { /* assume external parallelization */
-          internal_ext_otrans(0, out, in, typesize, 0, m, 0, n, ldi, ldo);
+          internal_ext_otrans(xtrans, out, in, typesize, 0, m, 0, n, ldi, ldo);
           /* allow to omit synchronization */
           if (0 != libxsmm_sync) {
             LIBXSMM_EXT_TSK_SYNC
