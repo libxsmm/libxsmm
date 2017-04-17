@@ -299,16 +299,8 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const 
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; } libxsmm_xmmfunction;
 
-/** Specialized function for matcopy, and optional prefetch locations (single-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_smatcopyfunction)(const float* a, const int* lda, float* b, const int* ldb, ...);
-/** Specialized function for matcopy, and optional prefetch locations (double-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmatcopyfunction)(const double* a, const int* lda, double* b, const int* ldb, ...);
-/** Specialized function for matcopy, and optional prefetch locations (int16). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmatcopyfunction)(const short* a, const int* lda, short* b, const int* ldb, ...);
-/** Specialized function for matcopy, and optional prefetch locations (int8). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmatcopyfunction)(const unsigned char* a, const int* lda, unsigned char* b, const int* ldb, ...);
-/** Function type which is either s/d/w/b, weak-typed. */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xmatcopyfunction { libxsmm_smatcopyfunction smatcopy; libxsmm_dmatcopyfunction dmatcopy; libxsmm_wmatcopyfunction wmatcopy; libxsmm_bmatcopyfunction bmatcopy; } libxsmm_xmatcopyfunction;
+/** Specialized function for matrix-copy (weak-typed). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmatcopyfunction)(const void* in, const int* ldi, void* out, const int* ldo, ...);
 
 /** Specialized function for transpose (weak-typed). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(const void* in, const int* ldi, void* out, const int* ldo);

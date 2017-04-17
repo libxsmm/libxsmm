@@ -122,7 +122,7 @@ LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, weight, handle->blocksi
 element_input_type *LIBXSMM_RESTRICT copy_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
-libxsmm_matzerofunction jitted_matzero = (libxsmm_matzerofunction)handle->matcopy_upd[1].xmatcopy.smatcopy;
+libxsmm_xmatcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
 LIBXSMM_VLA_DECL(5, const element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
 LIBXSMM_VLA_DECL(5, element_input_type, input_padded, (element_input_type*)handle->scratch5, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
 LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->scratch5, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
@@ -130,7 +130,7 @@ LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*)handle->scra
 LIBXSMM_VLA_DECL(5, element_input_type, tr_input, (element_input_type*)handle->scratch5, padded_h, handle->blocksifm, handle->ifmblock, padded_w);
 #else
 element_input_type *LIBXSMM_RESTRICT input_ptr, *prefetch_ptr;
-libxsmm_matcopyfunction jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_upd[0].xmatcopy.smatcopy;
+libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
 const int copywork = handle->desc.N*handle->ifhp;
 const int copychunksize = (copywork % handle->desc.threads == 0) ? (copywork / handle->desc.threads) : (copywork / handle->desc.threads) + 1;
 const int copy_thr_begin = (ltid * copychunksize < copywork) ? (ltid * copychunksize) : copywork;

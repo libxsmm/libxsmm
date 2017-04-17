@@ -62,7 +62,7 @@ element_input_type *copy_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
-libxsmm_matcopyfunction jitted_matcopy;
+libxsmm_xmatcopyfunction jitted_matcopy;
 #endif
 
 /* JIT kernel function pointers */
@@ -82,7 +82,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #endif
 
 #if defined(INPUT_PADDING)
-  jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
+  jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
   input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
   copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, handle->desc.pad_h, handle->desc.pad_w, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
   jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, NULL);
@@ -160,7 +160,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 
 #if defined(INPUT_PADDING)
-  jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
+  jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
   input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
   copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, handle->desc.pad_h, handle->desc.pad_w, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
   jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, NULL);

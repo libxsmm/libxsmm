@@ -86,8 +86,8 @@ const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(4, element_output_type, input_buffer, ((element_output_type*)handle->scratch5) + ltid * padded_h * padded_w * handle->blocksifm * handle->ifmblock, padded_w, handle->blocksifm, handle->ifmblock);
 LIBXSMM_VLA_DECL(4, element_output_type, input_to_use, input_buffer, padded_w, handle->blocksifm, handle->ifmblock);
-libxsmm_matcopyfunction jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_bwd[0].xmatcopy.smatcopy;
-libxsmm_matcopybackfunction jitted_matcopyback = (libxsmm_matcopybackfunction)handle->matcopy_bwd[1].xmatcopy.smatcopy;
+libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
+libxsmm_xmatcopyfunction jitted_matcopyback = handle->matcopy_bwd[1].xmatcopy;
 memset(&LIBXSMM_VLA_ACCESS(4, input_buffer, 0, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock), 0, padded_h * padded_w * handle->blocksifm * handle->ifmblock * sizeof(element_output_type));
 #else
 LIBXSMM_VLA_DECL(5, element_output_type, input_to_use, del_input, handle->ifhp, handle->ifwp, handle->blocksifm * handle->fm_lp_block, handle->ifmblock);
@@ -95,7 +95,7 @@ LIBXSMM_VLA_DECL(5, element_output_type, input_to_use, del_input, handle->ifhp, 
 
 
 #if 0
-/* on KNM prefetches are less costly, so let's avoid some branch mispredicts by running redundant weight prefeteches */
+/* on KNM prefetches are less costly, so let's avoid some branch mispredicts by running redundant weight prefetches */
 /* WARNING!! Currently nothing is being done for this in the code, i.e. NULL pointer is being passed on for extra prefetch */
 if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
 jitted_conv_bp_noweight_pf = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;

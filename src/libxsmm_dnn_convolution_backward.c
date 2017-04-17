@@ -78,8 +78,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
-        typedef libxsmm_smatcopyfunction libxsmm_matcopyfunction;
-        typedef libxsmm_smatcopyfunction libxsmm_matcopybackfunction;
         typedef libxsmm_smmfunction libxsmm_mmfunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
@@ -144,8 +142,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck(l
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
-        typedef libxsmm_smatcopyfunction libxsmm_matcopyfunction;
-        typedef libxsmm_smatcopyfunction libxsmm_matcopybackfunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
 #include "template/libxsmm_dnn_convolve_st_bwd_nhwc_rsck.tpl.c"
@@ -208,8 +204,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
-        typedef libxsmm_smatcopyfunction libxsmm_matcopyfunction;
-        typedef libxsmm_smatcopyfunction libxsmm_matcopybackfunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom.tpl.c"

@@ -57,7 +57,7 @@ element_input_type *prefetch_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
-libxsmm_matcopyfunction jitted_matcopy;
+libxsmm_xmatcopyfunction jitted_matcopy;
 #endif
 
 /* JIT kernel function pointers */
@@ -73,7 +73,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
 #if defined(INPUT_PADDING)
-  jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
+  jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
 #endif
   /* Placing the if statement here to reduce number of branch predictions */
   if (handle->fwd_ofw_rb == handle->ofw) {
@@ -295,7 +295,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
   jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 #if defined(INPUT_PADDING)
-  jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
+  jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
 #endif
 
   for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
