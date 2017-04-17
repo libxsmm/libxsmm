@@ -37,7 +37,7 @@
 
 int main(int argc, char* argv[])
 {
-  libxsmm_smatcopyfunction skernel;
+  libxsmm_xmatcopyfunction skernel;
   libxsmm_matcopy_descriptor desc;
   float *a, *b;
   int ldi, ldo;
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
   }
 
   /* test dispatch call */
-  skernel = libxsmm_xmatcopydispatch(&desc).smatcopy;
+  skernel = libxsmm_xmatcopydispatch(&desc);
 
   if (skernel == 0) {
     printf("JIT error -> exit!!!!\n");
