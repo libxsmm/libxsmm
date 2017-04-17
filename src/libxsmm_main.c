@@ -1270,9 +1270,9 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_matcopy%s_%ux%u_%ux%u_p%u.matcopy",
             target_arch/*code path name*/, internal_get_typepostfix(request->descriptor.matcopy->typesize),
-            request->descriptor.matcopy->m/*m*/, request->descriptor.matcopy->n/*n*/,
+            request->descriptor.matcopy->m, request->descriptor.matcopy->n,
             request->descriptor.matcopy->ldi, request->descriptor.matcopy->ldo,
-            request->descriptor.matcopy->prefetch);
+            (unsigned int)request->descriptor.matcopy->prefetch);
         }
       }
     } break;
@@ -1786,7 +1786,7 @@ LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxs
 {
   libxsmm_xtransfunction result = { 0 };
   if (0 != descriptor) {
-    internal_regkey_type query = { 0 };
+    internal_regkey_type query = { { 0 } };
     LIBXSMM_INIT
     query.trans = *descriptor;
     query.xgemm.flags = LIBXSMM_GEMM_FLAG_TKERNEL;
