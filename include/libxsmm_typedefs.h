@@ -300,10 +300,10 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const 
 typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; } libxsmm_xmmfunction;
 
 /** Specialized function for matrix-copy (weak-typed). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmatcopyfunction)(const void* in, const int* ldi, void* out, const int* ldo, ...);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmatcopyfunction)(const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);
 
 /** Specialized function for transpose (weak-typed). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(const void* in, const int* ldi, void* out, const int* ldo);
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo);
 
 /** Structure to receive information about the code registry status (libxsmm_get_registry_info). */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info { size_t capacity, size, nbytes, nstatic, ncache; } libxsmm_registry_info;
