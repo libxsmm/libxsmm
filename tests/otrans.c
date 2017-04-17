@@ -34,12 +34,12 @@
 # include <stdio.h>
 #endif
 
-#if !defined(REAL_TYPE)
-# define REAL_TYPE float
+#if !defined(ELEM_TYPE)
+# define ELEM_TYPE float
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, ELEM_TYPE *LIBXSMM_RESTRICT dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
@@ -51,11 +51,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTR
     libxsmm_blasint j = 0;
     for (; j < nrows; ++j) {
       const libxsmm_blasint k = i * ld + j;
-      dst[k] = (REAL_TYPE)(seed1 / (k + 1));
+      dst[k] = (ELEM_TYPE)(seed1 / (k + 1));
     }
     for (; j < ld; ++j) {
       const libxsmm_blasint k = i * ld + j;
-      dst[k] = (REAL_TYPE)seed;
+      dst[k] = (ELEM_TYPE)seed;
     }
   }
 }
@@ -69,7 +69,7 @@ int main(void)
   libxsmm_blasint ldo[]   = { 1, 2, 3, 16, 32, 512 };
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint maxm = 0, maxn = 0, maxi = 0, maxo = 0, nerrors = 0;
-  REAL_TYPE *a = 0, *b = 0;
+  ELEM_TYPE *a = 0, *b = 0;
   libxsmm_blasint i, j;
   int test;
 
@@ -79,8 +79,8 @@ int main(void)
     maxi = LIBXSMM_MAX(maxi, ldi[test]);
     maxo = LIBXSMM_MAX(maxo, ldo[test]);
   }
-  a = (REAL_TYPE*)libxsmm_malloc(maxi * maxn * sizeof(REAL_TYPE));
-  b = (REAL_TYPE*)libxsmm_malloc(maxo * maxm * sizeof(REAL_TYPE));
+  a = (ELEM_TYPE*)libxsmm_malloc(maxi * maxn * sizeof(ELEM_TYPE));
+  b = (ELEM_TYPE*)libxsmm_malloc(maxo * maxm * sizeof(ELEM_TYPE));
   assert(0 != a && 0 != b);
 
   init(42, a, maxm, maxn, maxi, 1.0);
@@ -88,7 +88,7 @@ int main(void)
 
   for (test = start; test < ntests; ++test) {
     libxsmm_blasint testerrors = (EXIT_SUCCESS == libxsmm_otrans(
-      b, a, sizeof(REAL_TYPE), m[test], n[test],
+      b, a, sizeof(ELEM_TYPE), m[test], n[test],
       ldi[test], ldo[test]) ? 0 : 1);
 
     if (0 == testerrors) {
@@ -106,11 +106,11 @@ int main(void)
   if (0 == nerrors) { /* previous results are correct and may be used to validate other tests */
     for (test = start; test < ntests; ++test) {
       /* prepare expected results in b (correct according to the previous test block) */
-      libxsmm_otrans(b, a, sizeof(REAL_TYPE), m[test], n[test], ldi[test], ldo[test]);
+      libxsmm_otrans(b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
 
       if (m[test] == n[test] && ldi[test] == ldo[test]) {
         libxsmm_blasint testerrors = (EXIT_SUCCESS == libxsmm_otrans(
-          a, a, sizeof(REAL_TYPE), m[test], n[test],
+          a, a, sizeof(ELEM_TYPE), m[test], n[test],
           ldi[test], ldo[test]) ? 0 : 1);
 
         if (0 == testerrors) {
@@ -126,7 +126,7 @@ int main(void)
       }
       else { /* negative tests */
         nerrors = LIBXSMM_MAX(EXIT_SUCCESS != libxsmm_otrans(
-          a, a, sizeof(REAL_TYPE), m[test], n[test],
+          a, a, sizeof(ELEM_TYPE), m[test], n[test],
           ldi[test], ldo[test]) ? 0 : 1, nerrors);
       }
     }
