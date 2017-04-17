@@ -176,10 +176,11 @@ int main(int argc, char* argv[])
   if ( argc > 1 ) m = atoi(argv[1]);
   if ( argc > 2 ) n = atoi(argv[2]);
   if ( argc > 3 ) ld_in = atoi(argv[3]);
+  if ( argc > 4 ) ld_out = atoi(argv[4]);
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
   ld_in = LIBXSMM_MAX(ld_in,m);
-  ld_out = n;
+  ld_out = LIBXSMM_MAX(ld_out,n);
 
   printf("This is a tester for JIT transpose kernels! (m=%u n=%u ld_in=%u ld_out=%u)\n",m,n,ld_in,ld_out);
 
