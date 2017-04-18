@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
     fprintf(stdout, "m=%i n=%i ldi=%i ldo=%i size=%.fMB (%s, %s)\n", m, n, ldi, ldo,
-      1.0 * (m * n * sizeof(ELEM_TYPE)) / (1 << 20), 8 == sizeof(ELEM_TYPE) ? "DP" : "SP",
+      1.0 * (m * n * sizeof(ELEM_TYPE)) / (1 << 20), LIBXSMM_STRINGIFY(ELEM_TYPE),
       ('o' == t || 'O' == t) ? "out-of-place" : "in-place");
 
     for (i = 0; i < n; ++i) {
