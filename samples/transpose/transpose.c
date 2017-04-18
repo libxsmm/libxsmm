@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint ldi = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
   const libxsmm_blasint ldx = 5 < argc ? atoi(argv[5]) : n;
   const libxsmm_blasint ldo = LIBXSMM_MAX/*sanitize ld*/(ldx, n);
-  const int r = 6 < argc ? atoi(argv[6]) : 0;
+  const int r = 6 < argc ? atoi(argv[6]) : 0, s = LIBXSMM_ABS(r);
   libxsmm_blasint km = m, kn = n, kldi = ldi, kldo = (('o' == t || 'O' == t) ? ldo : ldi);
   int result = EXIT_SUCCESS, k;
 
@@ -157,8 +157,8 @@ int main(int argc, char* argv[])
       }
     }
 
-    for (k = (0 == r ? -1 : 0); k < r && EXIT_SUCCESS == result; ++k) {
-      if (0 != r) {
+    for (k = (0 == r ? -1 : 0); k < s && EXIT_SUCCESS == result; ++k) {
+      if (0 < r) {
         const libxsmm_blasint rldi = (rand() % ldi) + 1;
         km = (rand() % m) + 1;
         kldi = LIBXSMM_MAX(rldi, km);
