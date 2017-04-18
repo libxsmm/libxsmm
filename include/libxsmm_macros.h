@@ -188,16 +188,6 @@
 # define LIBXSMM_OPENMP_COLLAPSE(N)
 #endif
 
-#define LIBXSMM_REPEAT_1(A) A
-#define LIBXSMM_REPEAT_2(A) LIBXSMM_REPEAT_1(A); A
-#define LIBXSMM_REPEAT_3(A) LIBXSMM_REPEAT_2(A); A
-#define LIBXSMM_REPEAT_4(A) LIBXSMM_REPEAT_3(A); A
-#define LIBXSMM_REPEAT_5(A) LIBXSMM_REPEAT_4(A); A
-#define LIBXSMM_REPEAT_6(A) LIBXSMM_REPEAT_5(A); A
-#define LIBXSMM_REPEAT_7(A) LIBXSMM_REPEAT_6(A); A
-#define LIBXSMM_REPEAT_8(A) LIBXSMM_REPEAT_7(A); A
-#define LIBXSMM_REPEAT(N, A) LIBXSMM_CONCATENATE(LIBXSMM_REPEAT_, N)(A)
-
 /*Based on Stackoverflow's NBITSx macro.*/
 #define LIBXSMM_LOG2_02(N) (0 != ((N) & 0x2/*0b10*/) ? 1 : 0)
 #define LIBXSMM_LOG2_04(N) (0 != ((N) & 0xC/*0b1100*/) ? (2 | LIBXSMM_LOG2_02((N) >> 2)) : LIBXSMM_LOG2_02(N))
@@ -272,6 +262,7 @@
 #define LIBXSMM_SELECT_ELEMENT_6(E0, E1, E2, E3, E4, E5, E6, E7) E5
 #define LIBXSMM_SELECT_ELEMENT_7(E0, E1, E2, E3, E4, E5, E6, E7) E6
 #define LIBXSMM_SELECT_ELEMENT_8(E0, E1, E2, E3, E4, E5, E6, E7) E7
+#define LIBXSMM_SELECT_FIRST(A, ...) A
 
 /**
  * For VLAs, check EXACTLY for C99 since a C11-conforming compiler may not provide VLAs.

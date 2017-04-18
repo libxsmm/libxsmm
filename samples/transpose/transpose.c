@@ -63,9 +63,7 @@
 #endif
 
 #if !defined(USE_SELF_VALIDATION)
-# if LIBXSMM_EQUAL(ELEM_TYPE, float, 1, 0)
-# elif LIBXSMM_EQUAL(ELEM_TYPE, double, 1, 0)
-# else
+# if !LIBXSMM_EQUAL(ELEM_TYPE, float) && !LIBXSMM_EQUAL(ELEM_TYPE, double)
 #   define USE_SELF_VALIDATION
 # endif
 #endif
