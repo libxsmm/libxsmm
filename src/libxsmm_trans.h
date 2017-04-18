@@ -108,10 +108,9 @@
 #define LIBXSMM_OTRANS_MAIN(FN, KERNEL_START, KERNEL, OUT, IN, TYPESIZE, M0, M1, N0, N1, LDI, LDO) { \
   const int libxsmm_otrans_main_chunksize_ = LIBXSMM_MAX(libxsmm_trans_chunksize, LIBXSMM_TRANS_MIN_CHUNKSIZE); \
   /*const*/ libxsmm_blasint libxsmm_otrans_main_m_ = (M1) - (M0), libxsmm_otrans_main_n_ = (N1) - (N0); \
-  if (libxsmm_otrans_main_m_ * libxsmm_otrans_main_n_ * (TYPESIZE) <= ((LIBXSMM_CPU_DCACHESIZE) / 2)) { \
+  if (libxsmm_otrans_main_m_ <= libxsmm_trans_chunksize && libxsmm_otrans_main_n_ <= libxsmm_trans_chunksize) { \
     KERNEL_START(firstprivate(libxsmm_otrans_main_n_) untied) \
     if (0 != (KERNEL) /* check below if the current tile is an inner tile */ \
-      && libxsmm_otrans_main_chunksize_ == (LDO) /* TODO: limitation */ \
       && libxsmm_otrans_main_chunksize_ == libxsmm_otrans_main_m_ \
       && libxsmm_otrans_main_chunksize_ == libxsmm_otrans_main_n_) \
     { \

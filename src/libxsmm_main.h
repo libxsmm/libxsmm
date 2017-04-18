@@ -44,9 +44,6 @@
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
 # define LIBXSMM_CAPACITY_REGISTRY 524288 /* 524287: Mersenne Prime number (2^19-1) */
 #endif
-#if !defined(LIBXSMM_CPU_DCACHESIZE)
-# define LIBXSMM_CPU_DCACHESIZE 32768
-#endif
 
 #if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)
 # define LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS 16
