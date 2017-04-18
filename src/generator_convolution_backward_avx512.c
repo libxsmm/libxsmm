@@ -1053,7 +1053,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
   for ( l_k_2 = 0; l_k_2 < i_kw_unroll ; l_k_2++) {
     /* load inputs */
     libxsmm_generator_convolution_backward_avx512_load_input(io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc, l_vec_reg_acc_start, l_accs, l_k_2);
-    
+
     l_displacement_k = 0;
     for ( l_k_3 = 0; l_k_3 < i_conv_desc->ofm_block; l_k_3++, l_k++) {
       if ( l_k == 0) {
@@ -1164,7 +1164,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
       l_displacement_k++;
     } /* end of l_k_3 over ofmblock*/
     /* Store inputs */
-    libxsmm_generator_convolution_backward_avx512_store_input(io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc, l_vec_reg_acc_start, i_kw_unroll, l_accs, l_k_2); 
+    libxsmm_generator_convolution_backward_avx512_store_input(io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc, l_vec_reg_acc_start, i_kw_unroll, l_accs, l_k_2);
   } /* end of l_k_2 over i_kw_unroll */
 }
 
@@ -1186,7 +1186,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
   unsigned int input_reg;
   unsigned int l_k = 0;
   unsigned int weight_counter = 0;
-  
+
   /****************************************/
   /***Assuming ifmblock is same as VLEN ***/
   /****************************************/
@@ -1372,7 +1372,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generat
       } else {
         current_acc_start = l_vec_reg_acc_start;
       }
-      
+
       assert(0 != i_conv_desc->ofw_rb);
       /* compute vectorwidth (A) * column broadcast (B) */
       for ( l_n = 0; l_n < i_conv_desc->ofw_rb; l_n++) {
