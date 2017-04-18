@@ -585,7 +585,7 @@ int main(int argc, char* argv[])
   if (type == 'A' || type == 'F') {
     naive_conv_fp(&naive_param, naive_input, naive_output, naive_filter);
   }
-  if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+  if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
     zero_buf(naive_input,         nImg*nIfm*ifhp*ifwp);
     naive_conv_bp(&naive_param, naive_input, naive_output_bp, naive_filter);
   }
@@ -691,7 +691,7 @@ int main(int argc, char* argv[])
       printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
     }
 
-    if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("#   Correctness - BWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -789,7 +789,7 @@ int main(int argc, char* argv[])
          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
     }
 
-    if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("#   Performance - BWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -954,7 +954,7 @@ int main(int argc, char* argv[])
       printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
     }
 
-    if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("# Correctness - BWD (NHWC/RSCK-Storage)  #\n");
       printf("##########################################\n");
@@ -1055,7 +1055,7 @@ int main(int argc, char* argv[])
          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
     }
 
-    if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("#  Performance - BWD (NHWC/RSCK-Storage) #\n");
       printf("##########################################\n");
@@ -1232,7 +1232,7 @@ int main(int argc, char* argv[])
       printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
     }
 
-    if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("# Correctness - BWD(NHWC/custom-Storage) #\n");
       printf("##########################################\n");
@@ -1332,7 +1332,7 @@ int main(int argc, char* argv[])
          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
     }
 
-    if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("# Performance - BWD(NHWC/custom-Storage) #\n");
       printf("##########################################\n");

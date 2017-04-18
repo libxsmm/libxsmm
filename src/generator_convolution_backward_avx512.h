@@ -101,4 +101,40 @@ void libxsmm_generator_convolution_backward_avx512_calc_sib_output_strides_two_r
                                                                             unsigned int*                                     o_output_reg,
                                                                             unsigned int*                                     o_output_idx,
                                                                             unsigned int*                                     o_scale );
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_backward_avx512_load_input( libxsmm_generated_code*                            io_generated_code,
+                                                               const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
+                                                               const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
+                                                               const libxsmm_convolution_backward_descriptor*     i_conv_desc,
+                                                               const unsigned int                                 l_vec_reg_acc_start,
+                                                               const unsigned int                                 l_accs,
+                                                               const unsigned int                                 l_k_2 );
+
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_backward_avx512_load_input_two_rows( libxsmm_generated_code*                            io_generated_code,
+                                                                        const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                        const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
+                                                                        const libxsmm_convolution_backward_descriptor*     i_conv_desc,
+                                                                        const unsigned int                                 l_vec_reg_acc_start,
+                                                                        const unsigned int                                 l_k_2 );
+
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_backward_avx512_store_input( libxsmm_generated_code*                            io_generated_code,
+                                                                const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
+                                                                const libxsmm_convolution_backward_descriptor*     i_conv_desc,
+                                                                const unsigned int                                 l_vec_reg_acc_start,
+                                                                const unsigned int                                 i_kw_unroll,
+                                                                const unsigned int                                 l_accs,
+                                                                const unsigned int                                 l_k_2 );
+
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_convolution_backward_avx512_store_input_two_rows( libxsmm_generated_code*                            io_generated_code,
+                                                                         const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                         const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
+                                                                         const libxsmm_convolution_backward_descriptor*     i_conv_desc,
+                                                                         const unsigned int                                 l_vec_reg_acc_start,
+                                                                         const unsigned int                                 i_kw_unroll,
+                                                                         const unsigned int                                 l_k_2 );
+
 #endif /* GENERATOR_CONVOLUTION_BACKWARD_AVX512_H */
