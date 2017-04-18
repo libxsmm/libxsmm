@@ -44,14 +44,21 @@
 
 LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
 {
+  const char *const env = getenv("LIBXSMM_TRANS_M");
+  const int chunksize = (0 == env && 0 == *env) ? -1 : atoi(env);
   libxsmm_trans_chunksize = LIBXSMM_TRANS_MAX_CHUNKSIZE;
+  if (0 >= chunksize) {
 #if defined(__MIC__)
-  LIBXSMM_UNUSED(archid);
+    LIBXSMM_UNUSED(archid);
 #else
-  if (LIBXSMM_X86_AVX512_MIC == archid)
+    if (LIBXSMM_X86_AVX512_MIC <= archid && LIBXSMM_X86_AVX512_CORE > archid)
 #endif
-  {
-    libxsmm_trans_chunksize = LIBXSMM_TRANS_MIN_CHUNKSIZE;
+    {
+      libxsmm_trans_chunksize = LIBXSMM_TRANS_MIN_CHUNKSIZE;
+    }
+  }
+  else {
+    libxsmm_trans_chunksize = LIBXSMM_MAX(chunksize, LIBXSMM_TRANS_MIN_CHUNKSIZE);
   }
 }
 
