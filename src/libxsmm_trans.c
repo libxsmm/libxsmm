@@ -45,7 +45,7 @@
 LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
 {
   const char *const env = getenv("LIBXSMM_TRANS_M");
-  const int chunksize = (0 == env && 0 == *env) ? -1 : atoi(env);
+  const int chunksize = (0 == env || 0 == *env) ? -1 : atoi(env);
   libxsmm_trans_chunksize = LIBXSMM_TRANS_MAX_CHUNKSIZE;
   if (0 >= chunksize) {
 #if defined(__MIC__)
