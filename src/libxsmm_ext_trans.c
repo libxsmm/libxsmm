@@ -66,7 +66,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
       if ((LIBXSMM_EXT_TRANS_MT_THRESHOLD) < (m * n)) { /* consider problem-size (threshold) */
         libxsmm_xtransfunction xtrans = 0;
-#if 0 /* TODO: enable inner JIT'ted transpose kernel */
+#if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted transpose kernel */
         libxsmm_transpose_descriptor descriptor;
         descriptor.m = descriptor.n = libxsmm_trans_chunksize; descriptor.typesize = typesize;
         xtrans = libxsmm_xtransdispatch(&descriptor);

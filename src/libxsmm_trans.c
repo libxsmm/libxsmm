@@ -86,7 +86,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
   if (ldi >= m && ldo >= n && 0 != out && 0 != in) {
     LIBXSMM_INIT
     if (out != in) {
-#if 0 /* TODO: enable inner JIT'ted transpose kernel */
+#if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted transpose kernel */
       libxsmm_transpose_descriptor descriptor;
       descriptor.m = descriptor.n = libxsmm_trans_chunksize; descriptor.typesize = typesize;
       internal_otrans(libxsmm_xtransdispatch(&descriptor), out, in, typesize, 0, m, 0, n, ldi, ldo);
