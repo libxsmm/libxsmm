@@ -104,11 +104,12 @@
 #define LIBXSMM_TPOSTFIX_float F32
 
 /** Helper macro for comparing types. */
-#define LIBXSMM_EQUAL(T1, T2, R) LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(LIBXSMM_EQUAL_, T1), T2)(R)
-#define LIBXSMM_EQUAL_doubledouble(R) R
-#define LIBXSMM_EQUAL_doublefloat(R)
-#define LIBXSMM_EQUAL_floatfloat(R) R
-#define LIBXSMM_EQUAL_floatdouble(R)
+#define LIBXSMM_EQUAL(T1, T2, TRUE, FALSE) LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(LIBXSMM_EQUAL_, T1), T2)(TRUE, FALSE)
+#define LIBXSMM_EQUAL_FALSE /* expands to nothing */
+#define LIBXSMM_EQUAL_doubledouble(TRUE, FALSE) TRUE
+#define LIBXSMM_EQUAL_doublefloat(TRUE, FALSE) FALSE
+#define LIBXSMM_EQUAL_floatfloat(TRUE, FALSE) TRUE
+#define LIBXSMM_EQUAL_floatdouble(TRUE, FALSE) FALSE
 
 /** Check ILP64 configuration for sanity. */
 #if !defined(LIBXSMM_ILP64) || (defined(MKL_ILP64) && 0 == LIBXSMM_ILP64)
