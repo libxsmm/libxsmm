@@ -100,7 +100,7 @@
 #define LIBXSMM_OTRANS_MAIN(FN, KERNEL_START, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) { \
   /*const*/ unsigned int libxsmm_otrans_main_m_ = (M1) - (M0), libxsmm_otrans_main_n_ = (N1) - (N0); \
   if (libxsmm_otrans_main_m_ <= (TILE_M) && libxsmm_otrans_main_n_ <= (TILE_N)) { \
-    KERNEL_START(firstprivate(libxsmm_otrans_main_n_, libxsmm_otrans_main_n_) untied) \
+    KERNEL_START(firstprivate(libxsmm_otrans_main_m_, libxsmm_otrans_main_n_) untied) \
     if (0 != (KERNEL) /* check below if the current tile is an inner tile */ \
       && (TILE_M) == libxsmm_otrans_main_m_ && (TILE_N) == libxsmm_otrans_main_n_) \
     { \
