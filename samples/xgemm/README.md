@@ -50,4 +50,4 @@ rm -rf opentuner.db
 ./xgemm_opentuner.py --no-dups 7168,7488,7808
 ```
 
-Above, the series of matrix multiplications from 192-8K is separately tuned in eight ranges. The tuning script uses the environment variables `LIBXSMM_M`, `LIBXSMM_N`, and `LIBXSMM_K` which are internal to LIBXSMM. These variables are used to request a specific tiling-scheme within LIBXSMM's `libxsmm_?gemm_omp` routines.
+Above, the series of matrix multiplications from 192-8K is separately tuned in eight ranges. The tuning script uses the environment variables `LIBXSMM_GEMM_M`, `LIBXSMM_GEMM_N`, and `LIBXSMM_GEMM_K` which are internal to LIBXSMM. These variables are used to request a specific tiling-scheme within LIBXSMM's `libxsmm_?gemm_omp` routines.
