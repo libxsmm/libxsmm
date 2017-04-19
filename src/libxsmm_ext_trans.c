@@ -44,12 +44,13 @@
 
 
 #if defined(LIBXSMM_EXT_TASKS)
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_ext_otrans(
-  libxsmm_xtransfunction xtrans, void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in,
-  unsigned int typesize, libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
-  libxsmm_blasint ldi, libxsmm_blasint ldo)
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_ext_otrans(libxsmm_xtransfunction xtrans,
+  void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in, unsigned int typesize,
+  unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1)
 {
-  LIBXSMM_OTRANS_MAIN(internal_ext_otrans, LIBXSMM_EXT_TSK_KERNEL_ARGS, xtrans, out, in, typesize, m0, m1, n0, n1, ldi, ldo);
+  LIBXSMM_OTRANS_MAIN(internal_ext_otrans, LIBXSMM_EXT_TSK_KERNEL_ARGS, xtrans,
+    out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
 }
 #endif /*defined(LIBXSMM_EXT_TASKS)*/
 
@@ -65,6 +66,9 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
     if (out != in) {
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
       if ((LIBXSMM_EXT_TRANS_MT_THRESHOLD) < (m * n)) { /* consider problem-size (threshold) */
+        const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1ULL * m * n) >> 10, 7);
+        const unsigned int tm = libxsmm_trans_tile[tindex][0/*M*/][index];
+        const unsigned int tn = libxsmm_trans_tile[tindex][1/*N*/][index];
         libxsmm_xtransfunction xtrans = 0;
 #if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted transpose kernel */
         if (libxsmm_trans_chunksize == ldo) { /* TODO: limitation */
@@ -75,11 +79,11 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
 #endif
         if (0 == omp_get_level()) { /* enable internal parallelization */
           LIBXSMM_EXT_TSK_PARALLEL
-          internal_ext_otrans(xtrans, out, in, typesize, 0, m, 0, n, ldi, ldo);
+          internal_ext_otrans(xtrans, out, in, typesize, ldi, ldo, tm, tn, 0, m, 0, n);
           /* implicit synchronization (barrier) */
         }
         else { /* assume external parallelization */
-          internal_ext_otrans(xtrans, out, in, typesize, 0, m, 0, n, ldi, ldo);
+          internal_ext_otrans(xtrans, out, in, typesize, ldi, ldo, tm, tn, 0, m, 0, n);
           /* allow to omit synchronization */
           if (0 != libxsmm_sync) {
             LIBXSMM_EXT_TSK_SYNC
