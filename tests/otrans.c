@@ -63,12 +63,13 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, ELEM_TYPE *LIBXSMM_RESTR
 
 int main(void)
 {
-  libxsmm_blasint m[]     = { 1, 2, 3, 16, 63,  16 };
-  libxsmm_blasint n[]     = { 1, 2, 3, 16, 31, 500 };
-  libxsmm_blasint ldi[]   = { 1, 2, 3, 16, 64,  16 };
-  libxsmm_blasint ldo[]   = { 1, 2, 3, 16, 32, 512 };
+  const libxsmm_blasint m[]   = { 1, 2, 3, 16, 63,  16, 2507 };
+  const libxsmm_blasint n[]   = { 1, 2, 3, 16, 31, 500, 1975 };
+  const libxsmm_blasint ldi[] = { 1, 2, 3, 16, 64,  16, 3000 };
+  const libxsmm_blasint ldo[] = { 1, 2, 3, 16, 32, 512, 3072 };
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
-  libxsmm_blasint maxm = 0, maxn = 0, maxi = 0, maxo = 0, nerrors = 0;
+  libxsmm_blasint maxm = 0, maxn = 0, maxi = 0, maxo = 0;
+  unsigned int nerrors = 0;
   ELEM_TYPE *a = 0, *b = 0;
   libxsmm_blasint i, j;
   int test;
@@ -87,7 +88,7 @@ int main(void)
   init( 0, b, maxn, maxm, maxo, 1.0);
 
   for (test = start; test < ntests; ++test) {
-    libxsmm_blasint testerrors = (EXIT_SUCCESS == libxsmm_otrans(
+    unsigned int testerrors = (EXIT_SUCCESS == libxsmm_otrans(
       b, a, sizeof(ELEM_TYPE), m[test], n[test],
       ldi[test], ldo[test]) ? 0 : 1);
 
@@ -96,7 +97,7 @@ int main(void)
         for (j = i + 1; j < m[test]; ++j) {
           const libxsmm_blasint u = i * ldi[test] + j;
           const libxsmm_blasint v = j * ldo[test] + i;
-          testerrors += (LIBXSMM_FEQ(a[u], b[v]) ? 0 : 1);
+          testerrors += (LIBXSMM_FEQ(a[u], b[v]) ? 0u : 1u);
         }
       }
     }
@@ -109,7 +110,7 @@ int main(void)
       libxsmm_otrans(b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
 
       if (m[test] == n[test] && ldi[test] == ldo[test]) {
-        libxsmm_blasint testerrors = (EXIT_SUCCESS == libxsmm_otrans(
+        unsigned int testerrors = (EXIT_SUCCESS == libxsmm_otrans(
           a, a, sizeof(ELEM_TYPE), m[test], n[test],
           ldi[test], ldo[test]) ? 0 : 1);
 
@@ -118,7 +119,7 @@ int main(void)
             for (j = i + 1; j < m[test]; ++j) {
               /* address serves both a and b since ldi and ldo are equal */
               const libxsmm_blasint uv = i * ldi[test] + j;
-              testerrors += (LIBXSMM_FEQ(a[uv], b[uv]) ? 0 : 1);
+              testerrors += (LIBXSMM_FEQ(a[uv], b[uv]) ? 0u : 1u);
             }
           }
         }
@@ -127,7 +128,7 @@ int main(void)
       else { /* negative tests */
         nerrors = LIBXSMM_MAX(EXIT_SUCCESS != libxsmm_otrans(
           a, a, sizeof(ELEM_TYPE), m[test], n[test],
-          ldi[test], ldo[test]) ? 0 : 1, nerrors);
+          ldi[test], ldo[test]) ? 0u : 1u, nerrors);
       }
     }
   }
@@ -140,7 +141,7 @@ int main(void)
   }
   else {
 # if defined(_DEBUG)
-    fprintf(stderr, "errors=%i\n", nerrors);
+    fprintf(stderr, "errors=%u\n", nerrors);
 # endif
     return EXIT_FAILURE;
   }
