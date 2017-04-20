@@ -117,9 +117,10 @@
       && (TILE_M) == libxsmm_xcopy_m_ && (TILE_N) == libxsmm_xcopy_n_) \
     { \
       const unsigned int libxsmm_xcopy_ldi_ = LDI, libxsmm_xcopy_ldo_ = LDO; \
+      XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, M0, N0, libxsmm_xcopy_src_, libxsmm_xcopy_dst_); \
       (KERNEL)( /* call the pre-scheduled JIT-kernel */ \
-        ((const char*)(IN)) + (TYPESIZE) * ((N0) * (LDI) + (M0)), &libxsmm_xcopy_ldi_, \
-        ((char*)(OUT)) + (TYPESIZE) * ((M0) * (LDO) + (N0)), &libxsmm_xcopy_ldo_); \
+        libxsmm_xcopy_src_, &libxsmm_xcopy_ldi_, \
+        libxsmm_xcopy_dst_, &libxsmm_xcopy_ldo_); \
     } \
     else { \
       switch(TYPESIZE) { \
