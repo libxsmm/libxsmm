@@ -1753,16 +1753,17 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int
 LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
-/* @TODO implement code cache */
 LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor)
 {
-  libxsmm_code_pointer code = { 0 };
-  libxsmm_build_request request;
-  LIBXSMM_INIT
-  request.descriptor.matcopy = descriptor;
-  request.kind = LIBXSMM_BUILD_KIND_MCOPY;
-  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-  return code.xmatcopy;
+  libxsmm_xmatcopyfunction result = { 0 };
+  if (0 != descriptor) {
+    internal_regkey_type query = { { 0 } };
+    LIBXSMM_INIT
+    query.mcopy = *descriptor;
+    query.xgemm.flags = LIBXSMM_GEMM_FLAG_MATCOPY;
+    result = internal_find_code(&query.xgemm).xmatcopy;
+  }
+  return result;
 }
 
 
