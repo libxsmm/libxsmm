@@ -52,8 +52,9 @@
 
 #define LIBXSMM_XCOPY_LOOP_UNALIGNED(...)
 #define LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1, NCHUNK) { \
+  /*const*/int generic_type = sizeof(TYPE) == (TYPESIZE); /* used to mute warning (conditional is constant) */ \
   unsigned int libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_; \
-  if (sizeof(TYPE) == (TYPESIZE)) { \
+  if (generic_type) { \
     for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (M1); ++libxsmm_xcopy_loop_i_) { \
       LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(libxsmm_xcopy_loop_out_) \
       for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < ((N0) + (NCHUNK)); ++libxsmm_xcopy_loop_j_) { \
