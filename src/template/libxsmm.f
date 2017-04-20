@@ -973,6 +973,32 @@
           END IF
         END SUBROUTINE
 
+        ! Matrix-copy (2-dimensional copy) routine. If the input (optional)
+        ! is not present, the routine is used to zero-fill the out-matrix.
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy
+        PURE SUBROUTINE libxsmm_matcopy(output, input, typesize,        &
+     &  m, n, ldi, ldo)
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
+          TYPE(C_PTR), INTENT(IN) :: output
+          TYPE(C_PTR), INTENT(IN), OPTIONAL :: input
+          INTEGER(C_INT), INTENT(IN) :: typesize
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_matcopy
+          INTERFACE
+            PURE SUBROUTINE internal_matcopy(output, input, typesize,   &
+     &      m, n, ldi, ldo) BIND(C, NAME="libxsmm_matcopy_")
+              IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldi, ldo
+              TYPE(C_PTR), INTENT(IN), VALUE :: output, input
+              INTEGER(C_INT), INTENT(IN) :: typesize
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_matcopy(output, input, typesize, m, n, ldi, ldo)
+        END SUBROUTINE
+
         ! Transpose a matrix (out-of-place form).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans
         PURE SUBROUTINE libxsmm_otrans(output, input, typesize,         &
