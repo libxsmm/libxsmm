@@ -56,7 +56,7 @@
   unsigned int libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_; \
   if (generic_type) { \
     for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (M1); ++libxsmm_xcopy_loop_i_) { \
-      LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(libxsmm_xcopy_loop_out_) \
+      LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(OUT) \
       for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < ((N0) + (NCHUNK)); ++libxsmm_xcopy_loop_j_) { \
         XKERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_, \
           libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); \
@@ -67,7 +67,7 @@
   else { \
     unsigned int libxsmm_xcopy_loop_k_; \
     for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (M1); ++libxsmm_xcopy_loop_i_) { \
-      LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(libxsmm_xcopy_loop_out_) \
+      LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(OUT) \
       for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < ((N0) + (NCHUNK)); ++libxsmm_xcopy_loop_j_) { \
         XKERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_, \
           libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); \

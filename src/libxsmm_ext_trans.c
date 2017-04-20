@@ -44,15 +44,88 @@
 
 
 #if defined(LIBXSMM_EXT_TASKS)
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_ext_otrans(libxsmm_xtransfunction xtrans,
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_matcopy_omp(libxsmm_xmatcopyfunction xmatcopy,
   void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in, unsigned int typesize,
   unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1)
 {
-  LIBXSMM_XCOPY(internal_ext_otrans, LIBXSMM_EXT_TSK_KERNEL_ARGS, LIBXSMM_TCOPY_KERNEL, xtrans,
+  LIBXSMM_XCOPY(internal_matcopy_omp, LIBXSMM_EXT_TSK_KERNEL_ARGS, LIBXSMM_MCOPY_KERNEL, xmatcopy,
     out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
 }
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans_omp(libxsmm_xtransfunction xtrans,
+  void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in, unsigned int typesize,
+  unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1)
+{
+  LIBXSMM_XCOPY(internal_otrans_omp, LIBXSMM_EXT_TSK_KERNEL_ARGS, LIBXSMM_TCOPY_KERNEL, xtrans,
+    out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
+}
+
 #endif /*defined(LIBXSMM_EXT_TASKS)*/
+
+
+LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
+  const int* prefetch)
+{
+  int result = EXIT_SUCCESS;
+  static int error_once = 0;
+
+  if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
+#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
+    if ((LIBXSMM_EXT_TRANS_MT_THRESHOLD) < (m * n)) { /* consider problem-size (threshold) */
+      const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1ULL * m * n) >> 10, 7);
+      libxsmm_matcopy_descriptor descriptor = { 0 };
+      libxsmm_xmatcopyfunction xmatcopy = 0;
+      LIBXSMM_INIT
+      descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
+      descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
+      descriptor.ldi = ldi; descriptor.ldo = ldo;
+      assert(typesize <= 255);
+      descriptor.typesize = (unsigned char)typesize;
+      descriptor.unroll_level = 0;
+      descriptor.prefetch = ((0 == prefetch || 0 == *prefetch) ? 0 : 1);
+      descriptor.flags = (0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
+#if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted matrix-copy kernel */
+      xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
+#endif
+      internal_matcopy_omp(xmatcopy, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
+    }
+    else
+#endif /*defined(LIBXSMM_EXT_TASKS)*/
+    {
+      libxsmm_matcopy(out, in, typesize, m, n, ldi, ldo, prefetch);
+    }
+  }
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      if (0 == out) {
+        fprintf(stderr, "LIBXSMM: the matcopy input and/or output is NULL!\n");
+      }
+      else if (out == in) {
+        fprintf(stderr, "LIBXSMM: output and input of the matcopy must be different!\n");
+      }
+      else if (0 == typesize) {
+        fprintf(stderr, "LIBXSMM: the typesize of the matcopy is zero!\n");
+      }
+      else if (0 >= m || 0 >= n) {
+        fprintf(stderr, "LIBXSMM: the matrix extent(s) of the matcopy is/are zero or negative!\n");
+      }
+      else {
+        assert(ldi < m || ldo < n);
+        fprintf(stderr, "LIBXSMM: the leading dimension(s) of the matcopy is/are too small!\n");
+      }
+    }
+    result = EXIT_FAILURE;
+  }
+
+  return result;
+}
 
 
 LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
@@ -79,11 +152,11 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
 #endif
         if (0 == omp_get_level()) { /* enable internal parallelization */
           LIBXSMM_EXT_TSK_PARALLEL
-          internal_ext_otrans(xtrans, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
+          internal_otrans_omp(xtrans, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
           /* implicit synchronization (barrier) */
         }
         else { /* assume external parallelization */
-          internal_ext_otrans(xtrans, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
+          internal_otrans_omp(xtrans, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
           /* allow to omit synchronization */
           if (0 != libxsmm_sync) {
             LIBXSMM_EXT_TSK_SYNC
@@ -91,7 +164,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
         }
       }
       else
-#endif
+#endif /*defined(LIBXSMM_EXT_TASKS)*/
       {
         libxsmm_otrans(out, in, typesize, m, n, ldi, ldo);
       }
