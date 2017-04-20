@@ -40,54 +40,65 @@
 # define LIBXSMM_TRANS_N LIBXSMM_TRANS_M
 #endif
 
-#define LIBXSMM_OTRANS_KERNEL(TYPE, TYPESIZE, INDEX_I, INDEX_J, OUT, IN, LDI, LDO) \
-  (OUT)[(INDEX_I)*(LDO)+(INDEX_J)] = (IN)[(INDEX_J)*(LDI)+(INDEX_I)]
+/* kernel uses consecutive stores and consecutive loads (copy) */
+#define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
+  const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_I) * (LDI) + (INDEX_J))); \
+  TYPE *const DST = (TYPE*)(((const char*)(OUT)) + (TYPESIZE) * ((INDEX_I) * (LDO) + (INDEX_J)))
 
-#define LIBXSMM_OTRANS_KERNEL_GENERIC(TYPE, TYPESIZE, INDEX_I, INDEX_J, OUT, IN, LDI, LDO) { \
-  const TYPE *const libxsmm_otrans_kernel_generic_a_ = (IN) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I)); \
-  TYPE *const libxsmm_otrans_kernel_generic_b_ = (OUT) + (TYPESIZE) * ((INDEX_I) * (LDO) + (INDEX_J)); \
-  unsigned int libxsmm_otrans_kernel_generic_k_; \
-  for (libxsmm_otrans_kernel_generic_k_ = 0; libxsmm_otrans_kernel_generic_k_ < (TYPESIZE); ++libxsmm_otrans_kernel_generic_k_) { \
-    libxsmm_otrans_kernel_generic_b_[libxsmm_otrans_kernel_generic_k_] = libxsmm_otrans_kernel_generic_a_[libxsmm_otrans_kernel_generic_k_]; \
+/* kernel uses consecutive stores and strided loads (transpose) */
+#define LIBXSMM_TCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
+  const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
+  TYPE *const DST = (TYPE*)(((const char*)(OUT)) + (TYPESIZE) * ((INDEX_I) * (LDO) + (INDEX_J)))
+
+#define LIBXSMM_XCOPY_LOOP_UNALIGNED(...)
+#define LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1, NCHUNK) { \
+  unsigned int libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_; \
+  if (sizeof(TYPE) == (TYPESIZE)) { \
+    for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (M1); ++libxsmm_xcopy_loop_i_) { \
+      LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(libxsmm_xcopy_loop_out_) \
+      for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < ((N0) + (NCHUNK)); ++libxsmm_xcopy_loop_j_) { \
+        XKERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_, \
+          libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); \
+        *libxsmm_xcopy_loop_dst_ = *libxsmm_xcopy_loop_src_; \
+      } \
+    } \
   } \
-}
-
-#define LIBXSMM_OTRANS_LOOP_UNALIGNED(...)
-#define LIBXSMM_OTRANS_LOOP(TYPE, TYPESIZE, KERNEL, HINT_ALIGNED, OUT, IN, M0, M1, N0, N1, NCHUNK, LDI, LDO) { \
-  const TYPE *const libxsmm_otrans_loop_a_ = (const TYPE*)(IN); \
-  TYPE *const libxsmm_otrans_loop_b_ = (TYPE*)(OUT); \
-  unsigned int libxsmm_otrans_loop_i_, libxsmm_otrans_loop_j_; \
-  for (libxsmm_otrans_loop_i_ = M0; libxsmm_otrans_loop_i_ < (M1); ++libxsmm_otrans_loop_i_) { \
-    LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(libxsmm_otrans_loop_b_) \
-    for (libxsmm_otrans_loop_j_ = N0; libxsmm_otrans_loop_j_ < ((N0) + (NCHUNK)); ++libxsmm_otrans_loop_j_) { \
-      /* kernel uses consecutive stores and strided loads */ \
-      KERNEL(TYPE, TYPESIZE, libxsmm_otrans_loop_i_, libxsmm_otrans_loop_j_, \
-        libxsmm_otrans_loop_b_, libxsmm_otrans_loop_a_, LDI, LDO); \
+  else { \
+    unsigned int libxsmm_xcopy_loop_k_; \
+    for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (M1); ++libxsmm_xcopy_loop_i_) { \
+      LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(libxsmm_xcopy_loop_out_) \
+      for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < ((N0) + (NCHUNK)); ++libxsmm_xcopy_loop_j_) { \
+        XKERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_, \
+          libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); \
+        for (libxsmm_xcopy_loop_k_ = 0; libxsmm_xcopy_loop_k_ < (TYPESIZE); ++libxsmm_xcopy_loop_k_) { \
+          libxsmm_xcopy_loop_dst_[libxsmm_xcopy_loop_k_] = libxsmm_xcopy_loop_src_[libxsmm_xcopy_loop_k_]; \
+        } \
+      } \
     } \
   } \
 }
 
-#define LIBXSMM_OTRANS(TYPE, TYPESIZE, OUT, IN, M0, M1, N0, N1, N, LDI, LDO) { \
+#define LIBXSMM_XCOPY_AUX(TYPE, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1, N) { \
   if (0 == LIBXSMM_MOD2((LDO) * (TYPESIZE), LIBXSMM_ALIGNMENT) \
    && 0 == LIBXSMM_MOD2((uintptr_t)(OUT), LIBXSMM_ALIGNMENT)) \
   { \
     if (LIBXSMM_TRANS_N == (N)) { \
-      LIBXSMM_OTRANS_LOOP(TYPE, TYPESIZE, LIBXSMM_OTRANS_KERNEL, LIBXSMM_PRAGMA_VALIGNED_VARS, \
-        OUT, IN, M0, M1, N0, N1, LIBXSMM_TRANS_N, LDI, LDO); \
+      LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, LIBXSMM_PRAGMA_VALIGNED_VARS, \
+        OUT, IN, LDI, LDO, M0, M1, N0, N1, LIBXSMM_TRANS_N); \
     } \
     else { \
-      LIBXSMM_OTRANS_LOOP(TYPE, TYPESIZE, LIBXSMM_OTRANS_KERNEL, LIBXSMM_PRAGMA_VALIGNED_VARS, \
-        OUT, IN, M0, M1, N0, N1, N, LDI, LDO); \
+      LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, LIBXSMM_PRAGMA_VALIGNED_VARS, \
+        OUT, IN, LDI, LDO, M0, M1, N0, N1, N); \
     } \
   } \
   else { /* unaligned store */ \
     if (LIBXSMM_TRANS_N == (N)) { \
-      LIBXSMM_OTRANS_LOOP(TYPE, TYPESIZE, LIBXSMM_OTRANS_KERNEL, LIBXSMM_OTRANS_LOOP_UNALIGNED, \
-        OUT, IN, M0, M1, N0, N1, LIBXSMM_TRANS_N, LDI, LDO); \
+      LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, LIBXSMM_XCOPY_LOOP_UNALIGNED, \
+        OUT, IN, LDI, LDO, M0, M1, N0, N1, LIBXSMM_TRANS_N); \
     } \
     else { \
-      LIBXSMM_OTRANS_LOOP(TYPE, TYPESIZE, LIBXSMM_OTRANS_KERNEL, LIBXSMM_OTRANS_LOOP_UNALIGNED, \
-        OUT, IN, M0, M1, N0, N1, N, LDI, LDO); \
+      LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, LIBXSMM_XCOPY_LOOP_UNALIGNED, \
+        OUT, IN, LDI, LDO, M0, M1, N0, N1, N); \
     } \
   } \
 }
@@ -97,50 +108,50 @@
  * optimization such as using a loop with bounds, which are known at compile-time
  * due to splitting up tiles with one fixed-size extent (chunk).
  */
-#define LIBXSMM_OTRANS_MAIN(FN, KERNEL_START, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) { \
-  /*const*/ unsigned int libxsmm_otrans_main_m_ = (M1) - (M0), libxsmm_otrans_main_n_ = (N1) - (N0); \
-  if (libxsmm_otrans_main_m_ <= (TILE_M) && libxsmm_otrans_main_n_ <= (TILE_N)) { \
-    KERNEL_START(firstprivate(libxsmm_otrans_main_m_, libxsmm_otrans_main_n_) untied) \
+#define LIBXSMM_XCOPY(FN, KERNEL_START, XKERNEL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) { \
+  /*const*/ unsigned int libxsmm_xcopy_m_ = (M1) - (M0), libxsmm_xcopy_n_ = (N1) - (N0); \
+  if (libxsmm_xcopy_m_ <= (TILE_M) && libxsmm_xcopy_n_ <= (TILE_N)) { \
+    KERNEL_START(firstprivate(libxsmm_xcopy_m_, libxsmm_xcopy_n_) untied) \
     if (0 != (KERNEL) /* check below if the current tile is an inner tile */ \
-      && (TILE_M) == libxsmm_otrans_main_m_ && (TILE_N) == libxsmm_otrans_main_n_) \
+      && (TILE_M) == libxsmm_xcopy_m_ && (TILE_N) == libxsmm_xcopy_n_) \
     { \
-      const unsigned int libxsmm_otrans_main_ldi_ = LDI, libxsmm_otrans_main_ldo_ = LDO; \
+      const unsigned int libxsmm_xcopy_ldi_ = LDI, libxsmm_xcopy_ldo_ = LDO; \
       (KERNEL)( /* call the pre-scheduled JIT-kernel */ \
-        ((const char*)(IN)) + (TYPESIZE) * ((N0) * (LDI) + (M0)), &libxsmm_otrans_main_ldi_, \
-        ((char*)(OUT)) + (TYPESIZE) * ((M0) * (LDO) + (N0)), &libxsmm_otrans_main_ldo_); \
+        ((const char*)(IN)) + (TYPESIZE) * ((N0) * (LDI) + (M0)), &libxsmm_xcopy_ldi_, \
+        ((char*)(OUT)) + (TYPESIZE) * ((M0) * (LDO) + (N0)), &libxsmm_xcopy_ldo_); \
     } \
     else { \
       switch(TYPESIZE) { \
         case 2: { \
-          LIBXSMM_OTRANS(short, 2, OUT, IN, M0, M1, N0, N1, libxsmm_otrans_main_n_, LDI, LDO); \
+          LIBXSMM_XCOPY_AUX(short, 2, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1, libxsmm_xcopy_n_); \
         } break; \
         case 4: { \
-          LIBXSMM_OTRANS(float, 4, OUT, IN, M0, M1, N0, N1, libxsmm_otrans_main_n_, LDI, LDO); \
+          LIBXSMM_XCOPY_AUX(float, 4, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1, libxsmm_xcopy_n_); \
         } break; \
         case 8: { \
-          LIBXSMM_OTRANS(double, 8, OUT, IN, M0, M1, N0, N1, libxsmm_otrans_main_n_, LDI, LDO); \
+          LIBXSMM_XCOPY_AUX(double, 8, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1, libxsmm_xcopy_n_); \
         } break; \
         case 16: { \
           typedef struct dvec2_t { double value[2]; } dvec2_t; \
-          LIBXSMM_OTRANS(dvec2_t, 16, OUT, IN, M0, M1, N0, N1, libxsmm_otrans_main_n_, LDI, LDO); \
+          LIBXSMM_XCOPY_AUX(dvec2_t, 16, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1, libxsmm_xcopy_n_); \
         } break; \
         default: { \
-          LIBXSMM_OTRANS(char, TYPESIZE, OUT, IN, M0, M1, N0, N1, libxsmm_otrans_main_n_, LDI, LDO); \
+          LIBXSMM_XCOPY_AUX(char, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1, libxsmm_xcopy_n_); \
         } break; \
       } \
     } \
   } \
-  else if (libxsmm_otrans_main_m_ >= libxsmm_otrans_main_n_) { \
-    const unsigned int libxsmm_otrans_main_mi_ = (TILE_M) < libxsmm_otrans_main_m_ \
+  else if (libxsmm_xcopy_m_ >= libxsmm_xcopy_n_) { \
+    const unsigned int libxsmm_xcopy_mi_ = (TILE_M) < libxsmm_xcopy_m_ \
       ? ((M0) + (TILE_M)) : (((M0) + (M1)) / 2); \
-    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, libxsmm_otrans_main_mi_, N0, N1); \
-    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, libxsmm_otrans_main_mi_, M1, N0, N1); \
+    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, libxsmm_xcopy_mi_, N0, N1); \
+    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, libxsmm_xcopy_mi_, M1, N0, N1); \
   } \
   else { \
-    const unsigned int libxsmm_otrans_main_ni_ = (TILE_N) < libxsmm_otrans_main_n_ \
+    const unsigned int libxsmm_xcopy_ni_ = (TILE_N) < libxsmm_xcopy_n_ \
       ? ((N0) + (TILE_N)) : (((N0) + (N1)) / 2); \
-    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, libxsmm_otrans_main_ni_); \
-    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, libxsmm_otrans_main_ni_, N1); \
+    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, libxsmm_xcopy_ni_); \
+    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, libxsmm_xcopy_ni_, N1); \
   } \
 }
 

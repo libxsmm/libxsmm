@@ -49,7 +49,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_ext_otrans(libxsmm_xtransfunct
   unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1)
 {
-  LIBXSMM_OTRANS_MAIN(internal_ext_otrans, LIBXSMM_EXT_TSK_KERNEL_ARGS, xtrans,
+  LIBXSMM_XCOPY(internal_ext_otrans, LIBXSMM_EXT_TSK_KERNEL_ARGS, LIBXSMM_TCOPY_KERNEL, xtrans,
     out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
 }
 #endif /*defined(LIBXSMM_EXT_TASKS)*/
