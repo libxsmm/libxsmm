@@ -116,6 +116,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "otrans", "..\tests\otrans.v
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "matcopy", "..\tests\matcopy.vcxproj", "{A674A92E-D92F-4AA0-9264-F719D39407B8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug|Win32 = debug|Win32
@@ -402,6 +407,18 @@ Global
 		{C9CA7758-C0C9-4A50-9757-115410B599B0}.symbols|Win32.Build.0 = symbols|Win32
 		{C9CA7758-C0C9-4A50-9757-115410B599B0}.symbols|x64.ActiveCfg = symbols|x64
 		{C9CA7758-C0C9-4A50-9757-115410B599B0}.symbols|x64.Build.0 = symbols|x64
+		{A674A92E-D92F-4AA0-9264-F719D39407B8}.debug|Win32.ActiveCfg = debug|Win32
+		{A674A92E-D92F-4AA0-9264-F719D39407B8}.debug|Win32.Build.0 = debug|Win32
+		{A674A92E-D92F-4AA0-9264-F719D39407B8}.debug|x64.ActiveCfg = debug|x64
+		{A674A92E-D92F-4AA0-9264-F719D39407B8}.debug|x64.Build.0 = debug|x64
+		{A674A92E-D92F-4AA0-9264-F719D39407B8}.release|Win32.ActiveCfg = release|Win32
+		{A674A92E-D92F-4AA0-9264-F719D39407B8}.release|Win32.Build.0 = release|Win32
+		{A674A92E-D92F-4AA0-9264-F719D39407B8}.release|x64.ActiveCfg = release|x64
+		{A674A92E-D92F-4AA0-9264-F719D39407B8}.release|x64.Build.0 = release|x64
+		{A674A92E-D92F-4AA0-9264-F719D39407B8}.symbols|Win32.ActiveCfg = symbols|Win32
+		{A674A92E-D92F-4AA0-9264-F719D39407B8}.symbols|Win32.Build.0 = symbols|Win32
+		{A674A92E-D92F-4AA0-9264-F719D39407B8}.symbols|x64.ActiveCfg = symbols|x64
+		{A674A92E-D92F-4AA0-9264-F719D39407B8}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -430,5 +447,6 @@ Global
 		{5A1EC2CD-47DE-405D-B47D-D8C68F56E7B3} = {E0C8F9A7-ABF4-4366-B2A7-31F06F01E6B3}
 		{4B3F30DD-1A04-4FA6-B5A4-7B1F86990A9A} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{C9CA7758-C0C9-4A50-9757-115410B599B0} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
+		{A674A92E-D92F-4AA0-9264-F719D39407B8} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 	EndGlobalSection
 EndGlobal

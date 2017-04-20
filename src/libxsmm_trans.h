@@ -42,8 +42,8 @@
 
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
-  const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_I) * (LDI) + (INDEX_J))); \
-  TYPE *const DST = (TYPE*)(((const char*)(OUT)) + (TYPESIZE) * ((INDEX_I) * (LDO) + (INDEX_J)))
+  const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
+  TYPE *const DST = (TYPE*)(((const char*)(OUT)) + (TYPESIZE) * ((INDEX_J) * (LDO) + (INDEX_I)))
 
 /* kernel uses consecutive stores and strided loads (transpose) */
 #define LIBXSMM_TCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
