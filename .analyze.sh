@@ -35,5 +35,5 @@ echo
 echo "================================================================================"
 echo "Errors (warnings)"
 echo "================================================================================"
-grep "warning:" .analyze.log | grep -v "is never read"
+grep -e "error:" -e "warning:" .analyze.log | grep -v "is never read"
 
