@@ -116,9 +116,9 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
     descriptor.ldi = ldi; descriptor.ldo = ldo;
     assert(typesize <= 255);
     descriptor.typesize = (unsigned char)typesize;
+    descriptor.prefetch = (unsigned char)((0 == prefetch || 0 == *prefetch) ? 0 : 1);
+    descriptor.flags = (unsigned char)(0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
     descriptor.unroll_level = 0;
-    descriptor.prefetch = ((0 == prefetch || 0 == *prefetch) ? 0 : 1);
-    descriptor.flags = (0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
 #if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted matrix-copy kernel */
     xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
 #endif
