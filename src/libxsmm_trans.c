@@ -89,6 +89,67 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_finalize(void)
 }
 
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_matcopy(libxsmm_xmatcopyfunction xmatcopy,
+  void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in, unsigned int typesize,
+  unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1)
+{
+  LIBXSMM_OTRANS_MAIN(internal_matcopy, LIBXSMM_NOOP_ARGS, xmatcopy,
+    out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
+  const int* prefetch)
+{
+  int result = EXIT_SUCCESS;
+  static int error_once = 0;
+
+  if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
+    const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1ULL * m * n) >> 10, 7);
+    libxsmm_matcopy_descriptor descriptor = { 0 };
+    libxsmm_xmatcopyfunction xmatcopy = 0;
+    LIBXSMM_INIT
+    descriptor.m = LIBXSMM_MIN(m, libxsmm_trans_tile[tindex][0/*M*/][index]);
+    descriptor.n = LIBXSMM_MIN(n, libxsmm_trans_tile[tindex][1/*N*/][index]);
+    descriptor.ldi = ldi; descriptor.ldo = ldo;
+    descriptor.typesize = typesize; descriptor.unroll_level = 0;
+    descriptor.prefetch = ((0 == prefetch || 0 == *prefetch) ? 0 : 1);
+    descriptor.flags = (0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
+#if 0
+    xmatcopy = libxsmm_xtransdispatch(&descriptor);
+#endif
+    internal_matcopy(xmatcopy, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
+  }
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      if (0 == out) {
+        fprintf(stderr, "LIBXSMM: the matcopy input and/or output is NULL!\n");
+      }
+      else if (out == in) {
+        fprintf(stderr, "LIBXSMM: output and input of the matcopy must be different!\n");
+      }
+      else if (0 == typesize) {
+        fprintf(stderr, "LIBXSMM: the typesize of the matcopy is zero!\n");
+      }
+      else if (0 >= m || 0 >= n) {
+        fprintf(stderr, "LIBXSMM: the matrix extent(s) of the matcopy is/are zero or negative!\n");
+      }
+      else {
+        assert(ldi < m || ldo < n);
+        fprintf(stderr, "LIBXSMM: the leading dimension(s) of the matcopy is/are too small!\n");
+      }
+    }
+    result = EXIT_FAILURE;
+  }
+
+  return result;
+}
+
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans(libxsmm_xtransfunction xtrans,
   void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in, unsigned int typesize,
   unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
@@ -104,22 +165,22 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
 {
   int result = EXIT_SUCCESS;
   static int error_once = 0;
-  assert(0 < typesize);
-  if (ldi >= m && ldo >= n && 0 != out && 0 != in) {
+
+  if (0 != out && 0 != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
     LIBXSMM_INIT
     if (out != in) {
-      const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1ULL * m * n) >> 10, 7);
-      const unsigned int tm = libxsmm_trans_tile[tindex][0/*M*/][index];
-      const unsigned int tn = libxsmm_trans_tile[tindex][1/*N*/][index];
       libxsmm_xtransfunction xtrans = 0;
+      libxsmm_transpose_descriptor descriptor = { 0 };
+      const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1ULL * m * n) >> 10, 7);
+      descriptor.m = LIBXSMM_MIN(m, libxsmm_trans_tile[tindex][0/*M*/][index]);
+      descriptor.n = LIBXSMM_MIN(n, libxsmm_trans_tile[tindex][1/*N*/][index]);
 #if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted transpose kernel */
-      if (libxsmm_trans_chunksize == ldo) { /* TODO: limitation */
-        libxsmm_transpose_descriptor descriptor;
-        descriptor.m = descriptor.n = libxsmm_trans_chunksize; descriptor.typesize = typesize;
+      if (descriptor.n == ldo) { /* TODO: limitation */
+        descriptor.typesize = typesize;
         xtrans = libxsmm_xtransdispatch(&descriptor);
       }
 #endif
-      internal_otrans(xtrans, out, in, typesize, ldi, ldo, tm, tn, 0, m, 0, n);
+      internal_otrans(xtrans, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
     }
     else if (ldi == ldo) {
       result = libxsmm_itrans(out, typesize, m, n, ldi);
@@ -128,7 +189,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM: output location of the transpose must be different from the input!\n");
+        fprintf(stderr, "LIBXSMM: output and input of the transpose must be different!\n");
       }
       result = EXIT_FAILURE;
     }
@@ -140,15 +201,18 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
       if (0 == out || 0 == in) {
         fprintf(stderr, "LIBXSMM: the transpose input and/or output is NULL!\n");
       }
-      else if (ldi < m && ldo < n) {
-        fprintf(stderr, "LIBXSMM: the leading dimensions of the transpose are too small!\n");
+      else if (out == in) {
+        fprintf(stderr, "LIBXSMM: output and input of the transpose must be different!\n");
       }
-      else if (ldi < m) {
-        fprintf(stderr, "LIBXSMM: the leading dimension of the transpose input is too small!\n");
+      else if (0 == typesize) {
+        fprintf(stderr, "LIBXSMM: the typesize of the transpose is zero!\n");
+      }
+      else if (0 >= m || 0 >= n) {
+        fprintf(stderr, "LIBXSMM: the matrix extent(s) of the transpose is/are zero or negative!\n");
       }
       else {
-        assert(ldo < n);
-        fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
+        assert(ldi < m || ldo < n);
+        fprintf(stderr, "LIBXSMM: the leading dimension(s) of the transpose is/are too small!\n");
       }
     }
     result = EXIT_FAILURE;
@@ -209,6 +273,21 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
 
 
 #if defined(LIBXSMM_BUILD)
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* /*out*/, const void* /*in*/, const unsigned int* /*typesize*/,
+  const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/,
+  const int* /*prefetch*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* out, const void* in, const unsigned int* typesize,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
+  const int* prefetch)
+{
+  libxsmm_blasint ldx;
+  assert(0 != typesize && 0 != m);
+  ldx = *(0 != ldi ? ldi : m);
+  libxsmm_matcopy(out, in, *typesize, *m, *(n ? n : m), ldx, ldo ? *ldo : ldx, prefetch);
+}
+
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* /*out*/, const void* /*in*/, const unsigned int* /*typesize*/,

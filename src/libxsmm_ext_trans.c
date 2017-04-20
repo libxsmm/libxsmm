@@ -60,30 +60,30 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
 {
   int result = EXIT_SUCCESS;
   static int error_once = 0;
-  assert(0 < typesize);
-  if (ldi >= m && ldo >= n && 0 != out && 0 != in) {
+
+  if (0 != out && 0 != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
     LIBXSMM_INIT
     if (out != in) {
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
       if ((LIBXSMM_EXT_TRANS_MT_THRESHOLD) < (m * n)) { /* consider problem-size (threshold) */
-        const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1ULL * m * n) >> 10, 7);
-        const unsigned int tm = libxsmm_trans_tile[tindex][0/*M*/][index];
-        const unsigned int tn = libxsmm_trans_tile[tindex][1/*N*/][index];
         libxsmm_xtransfunction xtrans = 0;
+        libxsmm_transpose_descriptor descriptor = { 0 };
+        const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1ULL * m * n) >> 10, 7);
+        descriptor.m = LIBXSMM_MIN(m, libxsmm_trans_tile[tindex][0/*M*/][index]);
+        descriptor.n = LIBXSMM_MIN(n, libxsmm_trans_tile[tindex][1/*N*/][index]);
 #if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted transpose kernel */
-        if (libxsmm_trans_chunksize == ldo) { /* TODO: limitation */
-          libxsmm_transpose_descriptor descriptor;
-          descriptor.m = descriptor.n = libxsmm_trans_chunksize; descriptor.typesize = typesize;
+        if (descriptor.n == ldo) { /* TODO: limitation */
+          descriptor.typesize = typesize;
           xtrans = libxsmm_xtransdispatch(&descriptor);
         }
 #endif
         if (0 == omp_get_level()) { /* enable internal parallelization */
           LIBXSMM_EXT_TSK_PARALLEL
-          internal_ext_otrans(xtrans, out, in, typesize, ldi, ldo, tm, tn, 0, m, 0, n);
+          internal_ext_otrans(xtrans, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
           /* implicit synchronization (barrier) */
         }
         else { /* assume external parallelization */
-          internal_ext_otrans(xtrans, out, in, typesize, ldi, ldo, tm, tn, 0, m, 0, n);
+          internal_ext_otrans(xtrans, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
           /* allow to omit synchronization */
           if (0 != libxsmm_sync) {
             LIBXSMM_EXT_TSK_SYNC
@@ -103,7 +103,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM: output location of the transpose must be different from the input!\n");
+        fprintf(stderr, "LIBXSMM: output and input of the transpose must be different!\n");
       }
       result = EXIT_FAILURE;
     }
@@ -115,15 +115,18 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
       if (0 == out || 0 == in) {
         fprintf(stderr, "LIBXSMM: the transpose input and/or output is NULL!\n");
       }
-      else if (ldi < m && ldo < n) {
-        fprintf(stderr, "LIBXSMM: the leading dimensions of the transpose are too small!\n");
+      else if (out == in) {
+        fprintf(stderr, "LIBXSMM: output and input of the transpose must be different!\n");
       }
-      else if (ldi < m) {
-        fprintf(stderr, "LIBXSMM: the leading dimension of the transpose input is too small!\n");
+      else if (0 == typesize) {
+        fprintf(stderr, "LIBXSMM: the typesize of the transpose is zero!\n");
+      }
+      else if (0 >= m || 0 >= n) {
+        fprintf(stderr, "LIBXSMM: the matrix extent(s) of the transpose is/are zero or negative!\n");
       }
       else {
-        assert(ldo < n);
-        fprintf(stderr, "LIBXSMM: the leading dimension of the transpose output is too small!\n");
+        assert(ldi < m || ldo < n);
+        fprintf(stderr, "LIBXSMM: the leading dimension(s) of the transpose is/are too small!\n");
       }
     }
     result = EXIT_FAILURE;

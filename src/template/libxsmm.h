@@ -126,6 +126,12 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch);
 
+/** Code generation routine for JIT matcopy using a descriptor. */
+LIBXSMM_API libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor);
+
+/** Code generation routine for JIT transposes using a descriptor */
+LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor);
+
 /**
  * Code generation routine for the CSR format which multiplies a dense SOA matrix (each element holds a SIMD-width
  * wide vector) and a sparse matrix or a sparse matrix with a dense SOA matrix.
@@ -152,14 +158,13 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descr
 LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor* descriptor,
    const unsigned int* row_ptr, const unsigned int* column_idx, const float* values);
 
-/** Code generation routine for JIT matcopy using a descriptor. */
-LIBXSMM_API libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor);
-
-/** Code generation routine for JIT transposes using a descriptor */
-LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor);
-
 /** Deallocates the JIT'ted code as returned by libxsmm_create_* function. TODO: this is a no-op at the moment. */
 LIBXSMM_API void libxsmm_release_kernel(const void* jit_code);
+
+/** Matrix copy function; "in" can be NULL to zero the destination. */
+LIBXSMM_API int libxsmm_matcopy(void* out, const void* in, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
+  const int* prefetch);
 
 /** Matrix transposition (out-of-place form). */
 LIBXSMM_API int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
