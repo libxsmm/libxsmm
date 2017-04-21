@@ -45,14 +45,17 @@
   const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
   TYPE *const DST = (TYPE*)(((const char*)(OUT)) + (TYPESIZE) * ((INDEX_J) * (LDO) + (INDEX_I)))
 /* call JIT-kernel (matrix-copy) */
-#define LIBXSMM_MCOPY_CALL(KERNEL, SRC, LDI, DST, LDO) (KERNEL)(SRC, LDI, DST, LDO, SRC)
+#define LIBXSMM_MCOPY_CALL_NOPF(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) (KERNEL)(SRC, LDI, DST, LDO)
+/* call JIT-kernel (matrix-copy with prefetch) */
+#define LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) (KERNEL)(SRC, LDI, DST, LDO, \
+  ((const char*)(SRC)) + (TYPESIZE) * (*(LDI))) /* prefetch next line*/
 
 /* kernel uses consecutive stores and strided loads (transpose) */
 #define LIBXSMM_TCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
   const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
   TYPE *const DST = (TYPE*)(((const char*)(OUT)) + (TYPESIZE) * ((INDEX_I) * (LDO) + (INDEX_J)))
 /* call JIT-kernel (transpose) */
-#define LIBXSMM_TCOPY_CALL(KERNEL, SRC, LDI, DST, LDO) (KERNEL)(SRC, LDI, DST, LDO)
+#define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) (KERNEL)(SRC, LDI, DST, LDO)
 
 #define LIBXSMM_XCOPY_LOOP_UNALIGNED(...)
 #define LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1, NCHUNK) { \
@@ -122,9 +125,7 @@
     { \
       const unsigned int libxsmm_xcopy_ldi_ = LDI, libxsmm_xcopy_ldo_ = LDO; \
       XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, M0, N0, libxsmm_xcopy_src_, libxsmm_xcopy_dst_); \
-      KERNEL_CALL(KERNEL, /* call the pre-scheduled JIT-kernel */ \
-        libxsmm_xcopy_src_, &libxsmm_xcopy_ldi_, \
-        libxsmm_xcopy_dst_, &libxsmm_xcopy_ldo_); \
+      KERNEL_CALL(KERNEL, TYPESIZE, libxsmm_xcopy_src_, &libxsmm_xcopy_ldi_, libxsmm_xcopy_dst_, &libxsmm_xcopy_ldo_); \
     } \
     else { \
       switch(TYPESIZE) { \

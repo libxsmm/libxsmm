@@ -89,6 +89,17 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_finalize(void)
 }
 
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_matcopy_nopf(libxsmm_xmatcopyfunction xmatcopy,
+  void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in, unsigned int typesize,
+  unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1)
+{
+  LIBXSMM_XCOPY(internal_matcopy_nopf,
+    LIBXSMM_NOOP_ARGS, LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, xmatcopy,
+    out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
+}
+
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_matcopy(libxsmm_xmatcopyfunction xmatcopy,
   void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in, unsigned int typesize,
   unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
@@ -114,16 +125,24 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
     LIBXSMM_INIT
     descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
     descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
-    descriptor.ldi = ldi; descriptor.ldo = ldo;
+    descriptor.ldi = ldi; descriptor.ldo = ldo; descriptor.unroll_level = 1;
     assert(typesize <= 255);
     descriptor.typesize = (unsigned char)typesize;
-    descriptor.prefetch = (unsigned char)((0 == prefetch || 0 == *prefetch) ? 0 : 1);
     descriptor.flags = (unsigned char)(0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
-    descriptor.unroll_level = 1;
+    if (0 == prefetch || 0 == *prefetch) {
+      descriptor.prefetch = (unsigned char)0;
 #if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted matrix-copy kernel */
-    xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
+      xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
 #endif
-    internal_matcopy(xmatcopy, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
+      internal_matcopy_nopf(xmatcopy, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
+    }
+    else {
+      descriptor.prefetch = (unsigned char)1;
+#if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted matrix-copy kernel */
+      xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
+#endif
+      internal_matcopy(xmatcopy, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
+    }
   }
   else {
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
