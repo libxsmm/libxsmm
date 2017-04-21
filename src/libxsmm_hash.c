@@ -82,7 +82,7 @@
 #else
 # define LIBXSMM_HASH_CRC32_U64(SEED, VALUE) LIBXSMM_HASH_CRC32_U32( \
     LIBXSMM_HASH_CRC32_U32((uint32_t)(SEED), (uint32_t)(VALUE)), \
-    (uint32_t)((VALUE) << 32))
+    (uint32_t)((VALUE) >> 32))
 #endif
 
 #define LIBXSMM_HASH_UNALIGNED(FN64, FN32, FN16, FN8, DATA, SIZE, SEED) { \
