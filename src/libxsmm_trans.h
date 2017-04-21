@@ -148,15 +148,14 @@
       } \
     } \
   } \
-  else if (libxsmm_xcopy_m_ >= libxsmm_xcopy_n_) { \
-    const unsigned int libxsmm_xcopy_mi_ = (TILE_M) < libxsmm_xcopy_m_ \
-      ? ((M0) + (TILE_M)) : (((M0) + (M1)) / 2); \
+  else if ((TILE_M) < libxsmm_xcopy_m_) { \
+    const unsigned int libxsmm_xcopy_mi_ = (M0) + (TILE_M); \
     (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, libxsmm_xcopy_mi_, N0, N1); \
     (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, libxsmm_xcopy_mi_, M1, N0, N1); \
   } \
   else { \
-    const unsigned int libxsmm_xcopy_ni_ = (TILE_N) < libxsmm_xcopy_n_ \
-      ? ((N0) + (TILE_N)) : (((N0) + (N1)) / 2); \
+    const unsigned int libxsmm_xcopy_ni_ = (N0) + (TILE_N); \
+    assert((TILE_N) < libxsmm_xcopy_n_); \
     (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, libxsmm_xcopy_ni_); \
     (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, libxsmm_xcopy_ni_, N1); \
   } \
