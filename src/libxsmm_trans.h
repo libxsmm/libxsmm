@@ -125,15 +125,13 @@
     LIBXSMM_XCOPY(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1); \
   } \
   else if (((M0) + (TILE_M)) < (M1)) { \
-    const unsigned int libxsmm_xcopy_mi_ = (M0) + (TILE_M); \
-    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, libxsmm_xcopy_mi_, N0, N1); \
-    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, libxsmm_xcopy_mi_, M1, N0, N1); \
+    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, (M0) + (TILE_M), N0, N1); \
+    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, (M0) + (TILE_M), M1, N0, N1); \
   } \
   else { \
-    const unsigned int libxsmm_xcopy_ni_ = (N0) + (TILE_N); \
     assert(((N0) + (TILE_N)) < (N1)); \
-    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, libxsmm_xcopy_ni_); \
-    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, libxsmm_xcopy_ni_, N1); \
+    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, (N0) + (TILE_N)); \
+    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, (N0) + (TILE_N), N1); \
   } \
 }
 
