@@ -659,10 +659,11 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
      int imask = 0;
      int offsetA, offsetB, oldB;
      int j, k, m0, n0, shiftvalue, shiftmult;
-     /** Note: the transpose routine only works when ldb is fixed at n.  **
-      ** So why do we need a variable "ldb"? Well, it's to keep track of **
-      ** the original "n" and that's the only reason                     **/
-     int ldb = n;
+     /** Note: the transpose routine only works when ldb is fixed at a value **
+      ** So why do we need a variable "ldb"? Well, it's to keep track of     **
+      ** the original "n" and that's the only reason                         **/
+     unsigned int ldo = i_trans_desc->ldo;
+     unsigned int ldb;
      /* REGSIZE is used for masking. REGSIZE is just:
       *           4 for double on ymm,
       *           8 for single on ymm or double on zmm,
@@ -670,6 +671,15 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
      int REGSIZE;
      int maskvar = 0;
      int datasize = i_trans_desc->typesize;
+
+     if ( ldo < n ) 
+     {
+        /* This means that we didn't store ldb correctly. Not sure why, Greg
+           thinks we should change/fix this. */
+        ldb = n;
+     } else {
+        ldb = ldo;
+     }
 
 #ifdef GENERATOR_TRANSPOSE_DEBUG
      const unsigned int l_maxsize = io_generated_code->buffer_size;

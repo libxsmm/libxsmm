@@ -167,11 +167,11 @@ int main(int argc, char* argv[])
 
   if ( argc <= 3 )
   {
-     printf("\nUSAGE: %s m n ld_in\n",argv[0]);
+     printf("\nUSAGE: %s m n ld_in ld_out\n",argv[0]);
      printf("Out-of-place transpose a mxn matrix of leading dimension ld_in\n");
-     printf("Defaults: m=n=ld_in=16\n");
-     printf("Note: ld_in is not needed for dispatching. Code works for any valid (>=m) ld_in\n");
-     printf("Note: ld_out is NOT a real parameter. For now, we assume ld_out=n\n");
+     printf("Defaults: m=n=ld_in=ld_out=16\n");
+     printf("Note: ld_in is NOT needed for dispatching. Code works for any valid (>=m) ld_in\n");
+     printf("Note: ld_out is now needed for dispatching. Code will only work for a fixed value, like m and n.\n");
   }
   if ( argc > 1 ) m = atoi(argv[1]);
   if ( argc > 2 ) n = atoi(argv[2]);
@@ -186,6 +186,7 @@ int main(int argc, char* argv[])
 
   /* test dispatch call */
   descriptor.m = m; descriptor.n = n;
+  descriptor.ldo = (unsigned int) ld_out;
   descriptor.typesize = sizeof(float);
   skernel.f = libxsmm_xtransdispatch(&descriptor);
   descriptor.typesize = sizeof(double);
@@ -238,11 +239,13 @@ int main(int argc, char* argv[])
   sfill_matrix ( sout, ld_out, n, m );
   dfill_matrix ( dout, ld_out, n, m );
 
+/*
   if ( ld_out != n )
   {
      fprintf(stderr,"Final warning: This code only works for ld_out=n (n=%u,ld_out=%u)\n",n,ld_out);
      exit(-1);
   }
+*/
 
 #ifdef COMPARE_TO_A_R64_ASSEMBLY_CODE
   printf("Calling myro_: \n");
