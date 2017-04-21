@@ -120,8 +120,8 @@
 #define LIBXSMM_XCOPY_RECURSIVE(FN, XKERNEL_START, XKERNEL, KERNEL_CALL, KERNEL, \
   OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) \
 { \
-  XKERNEL_START(untied) \
   if ((M1) <= ((M0) + (TILE_M)) && (N1) <= ((N0) + (TILE_N))) { \
+    XKERNEL_START(untied) \
     LIBXSMM_XCOPY(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1); \
   } \
   else if (((M0) + (TILE_M)) < (M1)) { \
