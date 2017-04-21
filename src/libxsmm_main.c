@@ -1774,6 +1774,9 @@ LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxs
     internal_regkey_type query = { { 0 } };
     LIBXSMM_INIT
     query.trans = *descriptor;
+    if (query.trans.ldo <= query.trans.n) {
+      query.trans.ldo = 0;
+    }
     query.xgemm.flags = LIBXSMM_GEMM_FLAG_TKERNEL;
     result = internal_find_code(&query.xgemm).xtrans;
   }

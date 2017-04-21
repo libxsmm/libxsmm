@@ -149,8 +149,8 @@ typedef struct libxsmm_matcopy_descriptor {
 
 /** Structure storing the transpose argument description. */
 typedef struct libxsmm_transpose_descriptor {
-  /** M, and N */
-  unsigned int m, n;
+  /** M, N, and LDO */
+  unsigned int m, n, ldo;
   /** Size of an individual data element */
   unsigned int typesize;
 } libxsmm_transpose_descriptor;

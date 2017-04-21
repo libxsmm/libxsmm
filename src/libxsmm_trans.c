@@ -177,10 +177,8 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
       descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
       descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
 #if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted transpose kernel */
-      if (descriptor.n == ldo) { /* TODO: limitation */
-        descriptor.typesize = typesize;
-        xtrans = libxsmm_xtransdispatch(&descriptor);
-      }
+      descriptor.typesize = typesize; descriptor.ldo = ldo;
+      xtrans = libxsmm_xtransdispatch(&descriptor);
 #endif
       internal_otrans(xtrans, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
     }

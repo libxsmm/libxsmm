@@ -145,10 +145,8 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
         descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
         descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
 #if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted transpose kernel */
-        if (descriptor.n == ldo) { /* TODO: limitation */
-          descriptor.typesize = typesize;
-          xtrans = libxsmm_xtransdispatch(&descriptor);
-        }
+        descriptor.typesize = typesize; descriptor.ldo = ldo;
+        xtrans = libxsmm_xtransdispatch(&descriptor);
 #endif
         if (0 == omp_get_level()) { /* enable internal parallelization */
           LIBXSMM_EXT_TSK_PARALLEL
