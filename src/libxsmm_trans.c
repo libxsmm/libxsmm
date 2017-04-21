@@ -94,7 +94,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_matcopy(libxsmm_xmatcopyfuncti
   unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1)
 {
-  LIBXSMM_XCOPY(internal_matcopy, LIBXSMM_NOOP_ARGS, LIBXSMM_MCOPY_KERNEL, xmatcopy,
+  LIBXSMM_XCOPY(internal_matcopy,
+    LIBXSMM_NOOP_ARGS, LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, xmatcopy,
     out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
 }
 
@@ -157,7 +158,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans(libxsmm_xtransfunction 
   unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1)
 {
-  LIBXSMM_XCOPY(internal_otrans, LIBXSMM_NOOP_ARGS, LIBXSMM_TCOPY_KERNEL, xtrans,
+  LIBXSMM_XCOPY(internal_otrans,
+    LIBXSMM_NOOP_ARGS, LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans,
     out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
 }
 

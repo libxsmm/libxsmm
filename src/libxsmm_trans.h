@@ -44,11 +44,15 @@
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
   const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
   TYPE *const DST = (TYPE*)(((const char*)(OUT)) + (TYPESIZE) * ((INDEX_J) * (LDO) + (INDEX_I)))
+/* call JIT-kernel (matrix-copy) */
+#define LIBXSMM_MCOPY_CALL(KERNEL, SRC, LDI, DST, LDO) (KERNEL)(SRC, LDI, DST, LDO, SRC)
 
 /* kernel uses consecutive stores and strided loads (transpose) */
 #define LIBXSMM_TCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
   const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
   TYPE *const DST = (TYPE*)(((const char*)(OUT)) + (TYPESIZE) * ((INDEX_I) * (LDO) + (INDEX_J)))
+/* call JIT-kernel (transpose) */
+#define LIBXSMM_TCOPY_CALL(KERNEL, SRC, LDI, DST, LDO) (KERNEL)(SRC, LDI, DST, LDO)
 
 #define LIBXSMM_XCOPY_LOOP_UNALIGNED(...)
 #define LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1, NCHUNK) { \
@@ -109,16 +113,16 @@
  * optimization such as using a loop with bounds, which are known at compile-time
  * due to splitting up tiles with one fixed-size extent (chunk).
  */
-#define LIBXSMM_XCOPY(FN, KERNEL_START, XKERNEL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) { \
+#define LIBXSMM_XCOPY(FN, XKERNEL_START, XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) { \
   /*const*/ unsigned int libxsmm_xcopy_m_ = (M1) - (M0), libxsmm_xcopy_n_ = (N1) - (N0); \
   if (libxsmm_xcopy_m_ <= (TILE_M) && libxsmm_xcopy_n_ <= (TILE_N)) { \
-    KERNEL_START(firstprivate(libxsmm_xcopy_m_, libxsmm_xcopy_n_) untied) \
+    XKERNEL_START(firstprivate(libxsmm_xcopy_m_, libxsmm_xcopy_n_) untied) \
     if (0 != (KERNEL) /* check below if the current tile is an inner tile */ \
       && (TILE_M) == libxsmm_xcopy_m_ && (TILE_N) == libxsmm_xcopy_n_) \
     { \
       const unsigned int libxsmm_xcopy_ldi_ = LDI, libxsmm_xcopy_ldo_ = LDO; \
       XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, M0, N0, libxsmm_xcopy_src_, libxsmm_xcopy_dst_); \
-      (KERNEL)( /* call the pre-scheduled JIT-kernel */ \
+      KERNEL_CALL(KERNEL, /* call the pre-scheduled JIT-kernel */ \
         libxsmm_xcopy_src_, &libxsmm_xcopy_ldi_, \
         libxsmm_xcopy_dst_, &libxsmm_xcopy_ldo_); \
     } \
