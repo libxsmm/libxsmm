@@ -47,20 +47,18 @@ int main(int argc, char* argv[])
   unsigned long long l_start, l_end;
 
   printf("This is a tester for JIT matcopy kernels!\n");
-  desc.m = atoi(argv[1]);
-  desc.n = atoi(argv[2]);
-  desc.ldi = atoi(argv[3]);
-  desc.ldo = atoi(argv[4]);
-  desc.unroll_level = (unsigned char)atoi(argv[5]);
+  desc.m = (1 < argc ? atoi(argv[1]) : 16);
+  desc.n = (2 < argc ? atoi(argv[2]) : 16);
+  desc.ldi = (3 < argc ? atoi(argv[3]) : 16);
+  desc.ldo = (4 < argc ? atoi(argv[4]) : 16);
+  desc.unroll_level = (unsigned char)(5 < argc ? atoi(argv[5]) : 1);
   desc.typesize = 4;
-  desc.prefetch = (unsigned char)atoi(argv[6]);;
-  desc.flags = (unsigned char)(0 != atoi(argv[7]) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
-  iters = atoi(argv[8]);
-
+  desc.prefetch = (unsigned char)(6 < argc ? atoi(argv[6]) : 0);
+  desc.flags = (unsigned char)((7 < argc && 0 != atoi(argv[7])) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
+  iters = (8 < argc ? atoi(argv[8]) : 1);
 
   a = (float *) malloc(desc.m * desc.ldi * sizeof(float));
   b = (float *) malloc(desc.m * desc.ldo * sizeof(float));
-
 
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
@@ -78,7 +76,6 @@ int main(int argc, char* argv[])
     printf("JIT error -> exit!!!!\n");
     exit(-1);
   }
-
 
   /* let's call */
   skernel(a, &ldi, b, &ldo, &a[128]);
