@@ -48,14 +48,14 @@ int main(int argc, char* argv[])
 
   printf("This is a tester for JIT matcopy kernels!\n");
   desc.m = (1 < argc ? atoi(argv[1]) : 16);
-  desc.n = (2 < argc ? atoi(argv[2]) : 16);
-  desc.ldi = (3 < argc ? atoi(argv[3]) : 16);
-  desc.ldo = (4 < argc ? atoi(argv[4]) : 16);
+  desc.n = (2 < argc ? atoi(argv[2]) : desc.m);
+  desc.ldi = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 0, desc.m);
+  desc.ldo = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 0, desc.m);
   desc.unroll_level = (unsigned char)(5 < argc ? atoi(argv[5]) : 1);
-  desc.typesize = 4;
   desc.prefetch = (unsigned char)(6 < argc ? atoi(argv[6]) : 0);
   desc.flags = (unsigned char)((7 < argc && 0 != atoi(argv[7])) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
   iters = (8 < argc ? atoi(argv[8]) : 1);
+  desc.typesize = 4;
 
   a = (float *) malloc(desc.m * desc.ldi * sizeof(float));
   b = (float *) malloc(desc.m * desc.ldo * sizeof(float));
@@ -92,14 +92,18 @@ int main(int argc, char* argv[])
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
       if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & desc.flags)) {
-        if (b[j+desc.ldo*i] > 0.00000000) {
+        if (0 == LIBXSMM_FEQ(b[j+desc.ldo*i], 0)) {
           printf("ERROR!!!\n");
+          i = desc.m;
           error = 1;
+          break;
         }
       }
-      else if ( (a[j+desc.ldi*i] - b[j+desc.ldo*i]) > 0.000000001 ) {
+      else if (0 == LIBXSMM_FEQ(a[j+desc.ldi*i], b[j+desc.ldo*i])) {
         printf("ERROR!!!\n");
+        i = desc.m;
         error = 1;
+        break;
       }
     }
   }
