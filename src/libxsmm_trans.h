@@ -33,13 +33,6 @@
 
 #include <libxsmm.h>
 
-#if !defined(LIBXSMM_TRANS_M)
-# define LIBXSMM_TRANS_M 192
-#endif
-#if !defined(LIBXSMM_TRANS_N)
-# define LIBXSMM_TRANS_N LIBXSMM_TRANS_M
-#endif
-
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
   const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_I) * (LDI) + (INDEX_J))); \
@@ -90,24 +83,12 @@
   if (0 == LIBXSMM_MOD2((LDO) * (TYPESIZE), LIBXSMM_ALIGNMENT) \
    && 0 == LIBXSMM_MOD2((uintptr_t)(OUT), LIBXSMM_ALIGNMENT)) \
   { \
-    if (LIBXSMM_TRANS_N == (N)) { \
-      LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, LIBXSMM_PRAGMA_VALIGNED_VARS, \
-        OUT, IN, LDI, LDO, M0, M1, N0, N1, LIBXSMM_TRANS_N); \
-    } \
-    else { \
-      LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, LIBXSMM_PRAGMA_VALIGNED_VARS, \
-        OUT, IN, LDI, LDO, M0, M1, N0, N1, N); \
-    } \
+    LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, LIBXSMM_PRAGMA_VALIGNED_VARS, \
+      OUT, IN, LDI, LDO, M0, M1, N0, N1, N); \
   } \
   else { /* unaligned store */ \
-    if (LIBXSMM_TRANS_N == (N)) { \
-      LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, LIBXSMM_XCOPY_LOOP_UNALIGNED, \
-        OUT, IN, LDI, LDO, M0, M1, N0, N1, LIBXSMM_TRANS_N); \
-    } \
-    else { \
-      LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, LIBXSMM_XCOPY_LOOP_UNALIGNED, \
-        OUT, IN, LDI, LDO, M0, M1, N0, N1, N); \
-    } \
+    LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, LIBXSMM_XCOPY_LOOP_UNALIGNED, \
+      OUT, IN, LDI, LDO, M0, M1, N0, N1, N); \
   } \
 }
 
