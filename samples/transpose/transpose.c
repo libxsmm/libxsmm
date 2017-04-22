@@ -130,12 +130,14 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    const char *const env_tasks = getenv("TASKS");
+    const char *const env_tasks = getenv("TASKS"), *const env_check = getenv("CHECK");
     const int tasks = (0 == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
     ELEM_TYPE *const a = (ELEM_TYPE*)libxsmm_malloc(ldi * (('o' == t || 'O' == t) ? n : ldo) * sizeof(ELEM_TYPE));
     ELEM_TYPE *const b = (ELEM_TYPE*)libxsmm_malloc(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE));
 #if !defined(USE_SELF_VALIDATION) /* check against an alternative/external implementation */
-    ELEM_TYPE *const c = (ELEM_TYPE*)libxsmm_malloc(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE));
+    ELEM_TYPE *const c = (ELEM_TYPE*)((0 == env_check || 0 != atoi(env_check))
+      ? libxsmm_malloc(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE))
+      : 0);
     const char tc = 'C', tt = 'T';
     const double alpha = 1;
     double duration2 = 0;
@@ -194,9 +196,11 @@ int main(int argc, char* argv[])
           duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
 #if !defined(USE_SELF_VALIDATION)
-        start = libxsmm_timer_tick();
-        OTRANS2(&tc, &tt, &km, &kn, &alpha, a, &kldi, c, &kldo);
-        duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
+        if (0 != c) { /* check */
+          start = libxsmm_timer_tick();
+          OTRANS2(&tc, &tt, &km, &kn, &alpha, a, &kldi, c, &kldo);
+          duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
+        }
 #endif
       }
       else {
@@ -218,25 +222,29 @@ int main(int argc, char* argv[])
           duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
 #if !defined(USE_SELF_VALIDATION)
-        memcpy(c, a, kldi * kn * sizeof(ELEM_TYPE));
-        start = libxsmm_timer_tick();
-        ITRANS2(&tc, &tt, &km, &kn, &alpha, c, &kldi, &kldo);
-        duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
+        if (0 != c) { /* check */
+          memcpy(c, a, kldi * kn * sizeof(ELEM_TYPE));
+          start = libxsmm_timer_tick();
+          ITRANS2(&tc, &tt, &km, &kn, &alpha, c, &kldi, &kldo);
+          duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
+        }
 #endif
       }
 
-      for (i = 0; i < km; ++i) {
-        for (j = 0; j < kn; ++j) {
-          const ELEM_TYPE u = b[i*kldo+j];
+      if ((0 == env_check || 0 != atoi(env_check))) { /* check */
+        for (i = 0; i < km; ++i) {
+          for (j = 0; j < kn; ++j) {
+            const ELEM_TYPE u = b[i*kldo+j];
 #if defined(USE_SELF_VALIDATION)
-          const ELEM_TYPE v = a[j*kldi+i];
+            const ELEM_TYPE v = a[j*kldi+i];
 #else /* check against an alternative/external implementation */
-          const ELEM_TYPE v = c[i*kldo+j];
+            const ELEM_TYPE v = c[i*kldo+j];
 #endif
-          if (0 == LIBXSMM_FEQ(u, v)) {
-            i += km; /* leave outer loop as well */
-            result = EXIT_FAILURE;
-            break;
+            if (0 == LIBXSMM_FEQ(u, v)) {
+              i += km; /* leave outer loop as well */
+              result = EXIT_FAILURE;
+              break;
+            }
           }
         }
       }
@@ -248,12 +256,12 @@ int main(int argc, char* argv[])
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if !defined(USE_SELF_VALIDATION)
-      if (0 < duration2) {
+      if (0 < duration2 && 0 != c) {
         fprintf(stdout, "\treference: %.1fx\n", duration / duration2);
       }
 #endif
     }
-    else {
+    else if ((0 == env_check || 0 != atoi(env_check))) { /* check */
       fprintf(stderr, "Error: "
 #if defined(USE_SELF_VALIDATION)
         "self-"
