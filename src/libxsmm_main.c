@@ -1758,6 +1758,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
   libxsmm_xmatcopyfunction result = { 0 };
   if (0 != descriptor) {
     internal_regkey_type query = { { 0 } };
+    assert(sizeof(*descriptor) < sizeof(query));
     LIBXSMM_INIT
     query.mcopy = *descriptor;
     query.xgemm.flags = LIBXSMM_GEMM_FLAG_MATCOPY;
@@ -1772,11 +1773,9 @@ LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxs
   libxsmm_xtransfunction result = { 0 };
   if (0 != descriptor) {
     internal_regkey_type query = { { 0 } };
+    assert(sizeof(*descriptor) < sizeof(query));
     LIBXSMM_INIT
     query.trans = *descriptor;
-    if (query.trans.ldo <= query.trans.n) {
-      query.trans.ldo = 0;
-    }
     query.xgemm.flags = LIBXSMM_GEMM_FLAG_TKERNEL;
     result = internal_find_code(&query.xgemm).xtrans;
   }

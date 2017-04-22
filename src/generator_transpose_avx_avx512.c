@@ -672,7 +672,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
      int maskvar = 0;
      int datasize = i_trans_desc->typesize;
 
-     if ( ldo < n ) 
+     if ( ldo < n )
      {
         /* This means that we didn't store ldb correctly. Not sure why, Greg
            thinks we should change/fix this. */
