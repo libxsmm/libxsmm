@@ -115,14 +115,13 @@ int main(int argc, char* argv[])
   const libxsmm_blasint n = 3 < argc ? (('o' == t || 'O' == t) ? atoi(argv[3]) : m) : m;
 #endif
   const libxsmm_blasint ldi = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
-  const libxsmm_blasint ldx = 5 < argc ? atoi(argv[5]) : n;
-  const libxsmm_blasint ldo = LIBXSMM_MAX/*sanitize ld*/(ldx, n);
+  const libxsmm_blasint ldo = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n);
   const int r = 6 < argc ? atoi(argv[6]) : 0, s = LIBXSMM_ABS(r);
   libxsmm_blasint km = m, kn = n, kldi = ldi, kldo = (('o' == t || 'O' == t) ? ldo : ldi);
   int result = EXIT_SUCCESS, k;
 
   if (0 == strchr("oOiI", t)) {
-    fprintf(stderr, "%s [<transpose-kind:o|i>] [<m>] [<n>] [<ld-in>] [<ld-out>] [random:0|1]\n", argv[0]);
+    fprintf(stderr, "%s [<transpose-kind:o|i>] [<m>] [<n>] [<ld-in>] [<ld-out>] [random:0|nruns]\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
@@ -167,7 +166,7 @@ int main(int argc, char* argv[])
         if (('o' == t || 'O' == t)) {
           const libxsmm_blasint rldo = (rand() % ldo) + 1;
           kn = (rand() % n) + 1;
-          kldo = 0 <= ldx ? LIBXSMM_MAX(rldo, kn) : kn;
+          kldo = LIBXSMM_MAX(rldo, kn);
         }
         else {
 #if 0 /* TODO: enable when in-place transpose is fully supported */
