@@ -105,23 +105,30 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE ELEM_TYPE initial_value(libxsmm_blasint i, l
 }
 
 
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_blasint randstart(libxsmm_blasint start, libxsmm_blasint value)
+{
+  return (rand() % LIBXSMM_MAX(value - start, 1)) + LIBXSMM_MAX(start, 1);
+}
+
+
 int main(int argc, char* argv[])
 {
   const char t = (char)(1 < argc ? *argv[1] : 'o');
-  const libxsmm_blasint m = 2 < argc ? atoi(argv[2]) : 4096;
+  const libxsmm_blasint m = (2 < argc ? atoi(argv[2]) : 4096);
 #if 0 /* TODO: enable when in-place transpose is fully supported */
-  const libxsmm_blasint n = 3 < argc ? atoi(argv[3]) : m;
+  const libxsmm_blasint n = (3 < argc ? atoi(argv[3]) : m);
 #else
-  const libxsmm_blasint n = 3 < argc ? (('o' == t || 'O' == t) ? atoi(argv[3]) : m) : m;
+  const libxsmm_blasint n = (3 < argc ? (('o' == t || 'O' == t) ? atoi(argv[3]) : m) : m);
 #endif
   const libxsmm_blasint ldi = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
   const libxsmm_blasint ldo = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n);
-  const int r = 6 < argc ? atoi(argv[6]) : 0, s = LIBXSMM_ABS(r);
+  const int r = (6 < argc ? atoi(argv[6]) : 0), s = LIBXSMM_ABS(r);
+  const libxsmm_blasint lower = LIBXSMM_MAX(7 < argc ? atoi(argv[7]) : 0, 0);
   libxsmm_blasint km = m, kn = n, kldi = ldi, kldo = (('o' == t || 'O' == t) ? ldo : ldi);
   int result = EXIT_SUCCESS, k;
 
   if (0 == strchr("oOiI", t)) {
-    fprintf(stderr, "%s [<transpose-kind:o|i>] [<m>] [<n>] [<ld-in>] [<ld-out>] [random:0|nruns]\n", argv[0]);
+    fprintf(stderr, "%s [<transpose-kind:o|i>] [<m>] [<n>] [<ld-in>] [<ld-out>] [random:0|nruns] [lbound]\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
@@ -160,17 +167,17 @@ int main(int argc, char* argv[])
 
     for (k = (0 == r ? -1 : 0); k < s && EXIT_SUCCESS == result; ++k) {
       if (0 < r) {
-        const libxsmm_blasint rldi = (rand() % ldi) + 1;
-        km = (rand() % m) + 1;
+        const libxsmm_blasint rldi = randstart(lower, ldi);
+        km = randstart(lower, m);
         kldi = LIBXSMM_MAX(rldi, km);
         if (('o' == t || 'O' == t)) {
-          const libxsmm_blasint rldo = (rand() % ldo) + 1;
-          kn = (rand() % n) + 1;
+          const libxsmm_blasint rldo = randstart(lower, ldo);
+          kn = randstart(lower, n);
           kldo = LIBXSMM_MAX(rldo, kn);
         }
         else {
 #if 0 /* TODO: enable when in-place transpose is fully supported */
-          kn = (rand() % n) + 1;
+          kn = randstart(lower, n);
 #else
           kn = km;
 #endif
