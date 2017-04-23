@@ -87,6 +87,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
   int result = EXIT_SUCCESS;
   static int error_once = 0;
 
+  assert(typesize <= 255);
   if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
     if ((LIBXSMM_EXT_TRANS_MT_THRESHOLD) < (m * n)) { /* consider problem-size (threshold) */
@@ -96,25 +97,19 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
       LIBXSMM_INIT
       descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
       descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
-      descriptor.ldi = ldi; descriptor.ldo = ldo; descriptor.unroll_level = 1;
-      assert(typesize <= 255);
-      descriptor.typesize = (unsigned char)typesize;
-      descriptor.flags = (unsigned char)(0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
-      if (0 == prefetch || 0 == *prefetch) {
-        descriptor.prefetch = (unsigned char)0;
-#if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted matrix-copy kernel */
+      descriptor.prefetch = (unsigned char)((0 == prefetch || 0 == *prefetch) ? 0 : 1);
+      if (0 != (1 & libxsmm_trans_jit)) { /* JIT'ted matcopy */
+        descriptor.ldi = ldi; descriptor.ldo = ldo; descriptor.unroll_level = 1;
+        descriptor.typesize = (unsigned char)typesize;
+        descriptor.flags = (unsigned char)(0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
         xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
-#endif
+      }
+      if (0 == xmatcopy || 0 == descriptor.prefetch) {
         internal_matcopy_nopf_omp(xmatcopy, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
       }
       else {
-        descriptor.prefetch = (unsigned char)1;
-#if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted matrix-copy kernel */
-        xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
-#endif
         internal_matcopy_omp(xmatcopy, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
       }
-
     }
     else
 #endif /*defined(LIBXSMM_EXT_TASKS)*/
@@ -166,10 +161,10 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
         const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1ULL * m * n) >> 10, 7);
         descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
         descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
-#if defined(LIBXSMM_JIT_TRANS) /* TODO: enable inner JIT'ted transpose kernel */
-        descriptor.typesize = typesize; descriptor.ldo = ldo;
-        xtrans = libxsmm_xtransdispatch(&descriptor);
-#endif
+        if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose */
+          descriptor.typesize = typesize; descriptor.ldo = ldo;
+          xtrans = libxsmm_xtransdispatch(&descriptor);
+        }
         if (0 == omp_get_level()) { /* enable internal parallelization */
           LIBXSMM_EXT_TSK_PARALLEL
           internal_otrans_omp(xtrans, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, 0, m, 0, n);
