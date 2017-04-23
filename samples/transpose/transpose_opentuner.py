@@ -114,6 +114,6 @@ if __name__ == "__main__":
         "end", type=int, default=2048,
         help="End of the range")
     argparser.add_argument(
-        "nruns", type=int, default=1000,
+        "nruns", type=int, default=100,
         help="Number of runs")
     TransposeTune.main(argparser.parse_args())
