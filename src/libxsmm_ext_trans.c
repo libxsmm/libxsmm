@@ -40,7 +40,13 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define LIBXSMM_EXT_TRANS_MT_THRESHOLD (LIBXSMM_MAX_MNK / LIBXSMM_AVG_K)
+#if !defined(LIBXSMM_EXT_TRANS_MT_THRESHOLD)
+# define LIBXSMM_EXT_TRANS_MT_THRESHOLD (LIBXSMM_MAX_MNK / LIBXSMM_AVG_K)
+#endif
+
+#if !defined(LIBXSMM_EXT_TRANS_ITERATIVE)
+/*# define LIBXSMM_EXT_TRANS_ITERATIVE*/
+#endif
 
 
 #if defined(LIBXSMM_EXT_TASKS)
@@ -50,9 +56,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_matcopy_nopf_omp(libxsmm_xmatc
   unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1)
 {
+#if defined(LIBXSMM_EXT_TRANS_ITERATIVE)
+  LIBXSMM_XCOPY_ITERATIVE(
+    LIBXSMM_EXT_TSK_KERNEL_ARGS, LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, xmatcopy,
+    out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
+#else
   LIBXSMM_XCOPY_RECURSIVE(internal_matcopy_nopf_omp,
     LIBXSMM_EXT_TSK_KERNEL_ARGS, LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, xmatcopy,
     out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
+#endif
 }
 
 
@@ -61,9 +73,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_matcopy_omp(libxsmm_xmatcopyfu
   unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1)
 {
+#if defined(LIBXSMM_EXT_TRANS_ITERATIVE)
+  LIBXSMM_XCOPY_ITERATIVE(
+    LIBXSMM_EXT_TSK_KERNEL_ARGS, LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, xmatcopy,
+    out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
+#else
   LIBXSMM_XCOPY_RECURSIVE(internal_matcopy_omp,
     LIBXSMM_EXT_TSK_KERNEL_ARGS, LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, xmatcopy,
     out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
+#endif
 }
 
 
@@ -72,9 +90,15 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans_omp(libxsmm_xtransfunct
   unsigned int ldi, unsigned int ldo, unsigned int tile_m, unsigned int tile_n,
   unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1)
 {
+#if defined(LIBXSMM_EXT_TRANS_ITERATIVE)
+  LIBXSMM_XCOPY_ITERATIVE(
+    LIBXSMM_EXT_TSK_KERNEL_ARGS, LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans,
+    out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
+#else
   LIBXSMM_XCOPY_RECURSIVE(internal_otrans_omp,
     LIBXSMM_EXT_TSK_KERNEL_ARGS, LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans,
     out, in, typesize, ldi, ldo, tile_m, tile_n, m0, m1, n0, n1);
+#endif
 }
 
 #endif /*defined(LIBXSMM_EXT_TASKS)*/
