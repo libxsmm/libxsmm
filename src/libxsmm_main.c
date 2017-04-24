@@ -1307,33 +1307,35 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
   }
 
   /* handle an eventual error in the else-branch */
-  if (0 == generated_code.last_error) {
-    assert(0 < generated_code.code_size/*sanity check*/);
-    /* attempt to create executable buffer */
-    result = libxsmm_xmalloc(&code->pmm, generated_code.code_size, 0/*auto*/,
-      /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
-      LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
-    if (EXIT_SUCCESS == result) { /* check for success */
-      assert(0 != code->pmm && 0 == (LIBXSMM_CODE_STATIC & code->uimm));
-      assert(0 != generated_code.generated_code/*sanity check*/);
-      /* copy temporary buffer into the prepared executable buffer */
-      memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
-      /* attribute/protect buffer and revoke unnecessary flags */
-      result = libxsmm_malloc_attrib(&code->pmm, LIBXSMM_MALLOC_FLAG_X, jit_name);
-    }
-  }
-  else {
-    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        LIBXSMM_NO_OFFLOAD(int, fprintf, stderr, "%s (error #%u)\n",
-          LIBXSMM_NO_OFFLOAD(const char*, libxsmm_strerror, generated_code.last_error),
-          generated_code.last_error);
+  if (generated_code.generated_code) {
+    if (0 == generated_code.last_error) {
+      assert(0 < generated_code.code_size/*sanity check*/);
+      /* attempt to create executable buffer */
+      result = libxsmm_xmalloc(&code->pmm, generated_code.code_size, 0/*auto*/,
+        /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
+        LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
+      if (EXIT_SUCCESS == result) { /* check for success */
+        assert(0 != code->pmm && 0 == (LIBXSMM_CODE_STATIC & code->uimm));
+        assert(0 != generated_code.generated_code/*sanity check*/);
+        /* copy temporary buffer into the prepared executable buffer */
+        memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
+        /* attribute/protect buffer and revoke unnecessary flags */
+        result = libxsmm_malloc_attrib(&code->pmm, LIBXSMM_MALLOC_FLAG_X, jit_name);
       }
     }
-    result = EXIT_FAILURE;
+    else {
+      if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+        static int error_once = 0;
+        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+          LIBXSMM_NO_OFFLOAD(int, fprintf, stderr, "%s (error #%u)\n",
+            LIBXSMM_NO_OFFLOAD(const char*, libxsmm_strerror, generated_code.last_error),
+            generated_code.last_error);
+        }
+      }
+      result = EXIT_FAILURE;
+    }
+    free(generated_code.generated_code); /* free temporary/initial code buffer */
   }
-  free(generated_code.generated_code); /* free temporary/initial code buffer */
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
   /* libxsmm_get_target_arch also serves as a runtime check whether JIT is available or not */
