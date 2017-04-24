@@ -41,11 +41,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_TRANS_THRESHOLD_JIT)
-# define LIBXSMM_TRANS_THRESHOLD_JIT LIBXSMM_MIN((LIBXSMM_MAX_M) * (LIBXSMM_MAX_N), \
-    (LIBXSMM_TRANS_LIMIT_JIT) * (LIBXSMM_TRANS_LIMIT_JIT))
-#endif
-
 
 LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
 {
@@ -180,7 +175,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
       libxsmm_transpose_descriptor descriptor = { 0 };
       const unsigned int uldi = ldi, uldo = ldo;
       const unsigned int size = 1U * m * n;
-      if (size <= (LIBXSMM_TRANS_THRESHOLD_JIT)) { /* no tiling */
+      if (size <= ((LIBXSMM_TRANS_LIMIT_JIT) * (LIBXSMM_TRANS_LIMIT_JIT))) { /* no tiling */
         descriptor.typesize = (unsigned char)typesize;
         descriptor.m = m; descriptor.n = n; descriptor.ldo = ldo;
         xtrans = libxsmm_xtransdispatch(&descriptor);
@@ -196,6 +191,8 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
         descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
         descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
         if (0 != (2 & libxsmm_trans_jit)) { /* JIT-kernel only when permitted */
+          descriptor.m = LIBXSMM_MIN(descriptor.m, LIBXSMM_TRANS_LIMIT_JIT);
+          descriptor.n = LIBXSMM_MIN(descriptor.m, LIBXSMM_TRANS_LIMIT_JIT);
           descriptor.typesize = (unsigned char)typesize; descriptor.ldo = ldo;
           xtrans = libxsmm_xtransdispatch(&descriptor);
         }
