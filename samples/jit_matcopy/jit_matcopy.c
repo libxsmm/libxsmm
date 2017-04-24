@@ -49,8 +49,8 @@ int main(int argc, char* argv[])
   printf("This is a tester for JIT matcopy kernels!\n");
   desc.m = (1 < argc ? atoi(argv[1]) : 16);
   desc.n = (2 < argc ? atoi(argv[2]) : desc.m);
-  desc.ldi = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 0, desc.m);
-  desc.ldo = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 0, desc.m);
+  desc.ldi = LIBXSMM_MAX((unsigned int)(3 < argc ? atoi(argv[3]) : 0), desc.m);
+  desc.ldo = LIBXSMM_MAX((unsigned int)(4 < argc ? atoi(argv[4]) : 0), desc.m);
   desc.unroll_level = (unsigned char)(5 < argc ? atoi(argv[5]) : 1);
   desc.prefetch = (unsigned char)(6 < argc ? atoi(argv[6]) : 0);
   desc.flags = (unsigned char)((7 < argc && 0 != atoi(argv[7])) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
