@@ -47,14 +47,14 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
   /* setup tile sizes according to CPUID or environment (LIBXSMM_TRANS_M, LIBXSMM_TRANS_N) */
   const unsigned int tile_configs[/*configs*/][2/*DP/SP*/][2/*TILE_M,TILE_N*/][8/*size-range*/] = {
     /* generic (hsw) */
-    { { { 192, 192, 192, 192, 192, 192, 192, 192 }, { 192, 192, 192, 192, 192, 192, 192, 192 } },   /* DP */
-      { { 192, 192, 192, 192, 192, 192, 192, 192 }, { 192, 192, 192, 192, 192, 192, 192, 192 } } }, /* SP */
+    { { { 176, 176, 176, 176, 176, 176, 176, 176 }, { 176, 176, 176, 176, 176, 176, 176, 176 } },   /* DP */
+      { { 176, 176, 176, 176, 176, 176, 176, 176 }, { 176, 176, 176, 176, 176, 176, 176, 176 } } }, /* SP */
     /* mic (knl/knm) */
-    { { { 192, 192, 192, 192, 192, 192, 192, 192 }, { 192, 192, 192, 192, 192, 192, 192, 192 } },   /* DP */
-      { { 192, 192, 192, 192, 192, 192, 192, 192 }, { 192, 192, 192, 192, 192, 192, 192, 192 } } }, /* SP */
+    { { { 176, 176, 176, 176, 176, 176, 176, 176 }, { 176, 176, 176, 176, 176, 176, 176, 176 } },   /* DP */
+      { { 176, 176, 176, 176, 176, 176, 176, 176 }, { 176, 176, 176, 176, 176, 176, 176, 176 } } }, /* SP */
     /* core (skx) */
-    { { { 192, 192, 192, 192, 192, 192, 192, 192 }, { 192, 192, 192, 192, 192, 192, 192, 192 } },   /* DP */
-      { { 192, 192, 192, 192, 192, 192, 192, 192 }, { 192, 192, 192, 192, 192, 192, 192, 192 } } }  /* SP */
+    { { { 176, 176, 176, 176, 176, 176, 176, 176 }, { 176, 176, 176, 176, 176, 176, 176, 176 } },   /* DP */
+      { { 176, 176, 176, 176, 176, 176, 176, 176 }, { 176, 176, 176, 176, 176, 176, 176, 176 } } }  /* SP */
   };
   const char *const env_jit = getenv("LIBXSMM_TRANS_JIT");
   const char *const env_m = getenv("LIBXSMM_TRANS_M"), *const env_n = getenv("LIBXSMM_TRANS_N");
@@ -93,28 +93,6 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_finalize(void)
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_matcopy_nopf(libxsmm_xmatcopyfunction xmatcopy,
-  void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in, unsigned int typesize,
-  unsigned int ldi, unsigned int ldo, unsigned int tm, unsigned int tn, unsigned int m, unsigned int n)
-{
-  LIBXSMM_XCOPY(
-    LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
-    LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, xmatcopy,
-    out, in, typesize, ldi, ldo, tm, tn, 0, m, 0, n);
-}
-
-
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_matcopy(libxsmm_xmatcopyfunction xmatcopy,
-  void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in, unsigned int typesize,
-  unsigned int ldi, unsigned int ldo, unsigned int tm, unsigned int tn, unsigned int m, unsigned int n)
-{
-  LIBXSMM_XCOPY(
-    LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
-    LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, xmatcopy,
-    out, in, typesize, ldi, ldo, tm, tn, 0, m, 0, n);
-}
-
-
 LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   const int* prefetch)
@@ -124,24 +102,35 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
 
   assert(typesize <= 255);
   if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
-    const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1ULL * m * n) >> 10, 7);
-    libxsmm_matcopy_descriptor descriptor = { 0 };
+    const unsigned int uldi = ldi, uldo = ldo;
     libxsmm_xmatcopyfunction xmatcopy = 0;
     LIBXSMM_INIT
-    descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
-    descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
-    descriptor.prefetch = (unsigned char)((0 == prefetch || 0 == *prefetch) ? 0 : 1);
-    if (0 != (1 & libxsmm_trans_jit)) { /* JIT'ted matcopy */
+    if (0 != (1 & libxsmm_trans_jit)) { /* JIT'ted matcopy permitted; use no tiling */
+      libxsmm_matcopy_descriptor descriptor = { 0 };
+      descriptor.prefetch = (unsigned char)((0 == prefetch || 0 == *prefetch) ? 0 : 1);
+      descriptor.flags = (unsigned char)(0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
       descriptor.ldi = ldi; descriptor.ldo = ldo; descriptor.unroll_level = 1;
       descriptor.typesize = (unsigned char)typesize;
-      descriptor.flags = (unsigned char)(0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
+      descriptor.m = m; descriptor.n = m;
       xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
     }
-    if (0 == xmatcopy || 0 == descriptor.prefetch) {
-      internal_matcopy_nopf(xmatcopy, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, m, n);
+    if (0 != xmatcopy) {
+      if (0 == prefetch || 0 == *prefetch) {
+        LIBXSMM_MCOPY_CALL_NOPF(xmatcopy, typesize, in, &uldi, out, &uldo);
+      }
+      else {
+        LIBXSMM_MCOPY_CALL(xmatcopy, typesize, in, &uldi, out, &uldo);
+      }
     }
-    else {
-      internal_matcopy(xmatcopy, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, m, n);
+    else { /* no JIT; tiled matrix-copy */
+      const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1ULL * m * n) >> 10, 7);
+      const libxsmm_blasint tm = libxsmm_trans_tile[tindex][0/*M*/][index];
+      const libxsmm_blasint tn = libxsmm_trans_tile[tindex][1/*N*/][index];
+      LIBXSMM_XCOPY(
+        LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
+        LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, xmatcopy, 
+        out, in, typesize, uldi, uldo, LIBXSMM_MIN(m, tm), LIBXSMM_MIN(n, tn),
+        0, m, 0, n);
     }
   }
   else {
@@ -172,17 +161,6 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_otrans(libxsmm_xtransfunction xtrans,
-  void *LIBXSMM_RESTRICT out, const void *LIBXSMM_RESTRICT in, unsigned int typesize,
-  unsigned int ldi, unsigned int ldo, unsigned int tm, unsigned int tn, unsigned int m, unsigned int n)
-{
-  LIBXSMM_XCOPY(
-    LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
-    LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans,
-    out, in, typesize, ldi, ldo, tm, tn, 0, m, 0, n);
-}
-
-
 LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
@@ -194,14 +172,36 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
     if (out != in) {
       libxsmm_xtransfunction xtrans = 0;
       libxsmm_transpose_descriptor descriptor = { 0 };
-      const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1ULL * m * n) >> 10, 7);
-      descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
-      descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
-      if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose */
+      const unsigned int uldi = ldi, uldo = ldo;
+      const int tindex = (4 < typesize ? 0 : 1);
+      const unsigned int threshold = /* low-bin tile size */
+        libxsmm_trans_tile[tindex][0/*M*/][0] *
+        libxsmm_trans_tile[tindex][1/*N*/][0];
+      const unsigned int size = 1U * m * n;
+      if (size <= threshold) { /* no tiling */
         descriptor.typesize = typesize; descriptor.ldo = ldo;
+        descriptor.m = m; descriptor.n = m;
         xtrans = libxsmm_xtransdispatch(&descriptor);
+        if (0 != xtrans) { /* prefer JIT for small problems */
+          LIBXSMM_TCOPY_CALL(xtrans, typesize, in, &uldi, out, &uldo);
+        }
+        else { /* JIT not available */
+          LIBXSMM_XCOPY_NONJIT(LIBXSMM_TCOPY_KERNEL, out, in, typesize, uldi, uldo, 0, m, 0, n);
+        }
       }
-      internal_otrans(xtrans, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, m, n);
+      else { /* tiled transpose */
+        const int index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7); /* bin-slot */
+        descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
+        descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
+        if (0 != (2 & libxsmm_trans_jit)) { /* JIT-kernel only when permitted */
+          descriptor.typesize = typesize; descriptor.ldo = ldo;
+          xtrans = libxsmm_xtransdispatch(&descriptor);
+        }
+        LIBXSMM_XCOPY(
+          LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
+          LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans,
+          out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
+      }
     }
     else if (ldi == ldo) {
       result = libxsmm_itrans(out, typesize, m, n, ldi);
