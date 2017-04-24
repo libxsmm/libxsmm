@@ -192,7 +192,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
         descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
         if (0 != (2 & libxsmm_trans_jit)) { /* JIT-kernel only when permitted */
           descriptor.m = LIBXSMM_MIN(descriptor.m, LIBXSMM_TRANS_LIMIT_JIT);
-          descriptor.n = LIBXSMM_MIN(descriptor.m, LIBXSMM_TRANS_LIMIT_JIT);
+          descriptor.n = LIBXSMM_MIN(descriptor.n, LIBXSMM_TRANS_LIMIT_JIT);
           descriptor.typesize = (unsigned char)typesize; descriptor.ldo = ldo;
           xtrans = libxsmm_xtransdispatch(&descriptor);
         }
