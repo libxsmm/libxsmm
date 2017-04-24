@@ -33,6 +33,10 @@
 
 #include <libxsmm.h>
 
+#if !defined(LIBXSMM_TRANS_COLLAPSE)
+# define LIBXSMM_TRANS_COLLAPSE 2
+#endif
+
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
   const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_I) * (LDI) + (INDEX_J))); \
@@ -53,11 +57,11 @@
 #define LIBXSMM_XCOPY_LOOP_UNALIGNED(...)
 #define LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1) { \
   /*const*/int generic_type = (sizeof(TYPE) == (TYPESIZE) ? 1 : 0); /* mute warning (constant conditional) */ \
-  unsigned int libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_; \
+  libxsmm_blasint libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_; \
   if (0 != generic_type) { \
-    for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (M1); ++libxsmm_xcopy_loop_i_) { \
+    for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (libxsmm_blasint)(M1); ++libxsmm_xcopy_loop_i_) { \
       LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(OUT) \
-      for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < (N1); ++libxsmm_xcopy_loop_j_) { \
+      for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < (libxsmm_blasint)(N1); ++libxsmm_xcopy_loop_j_) { \
         XKERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_, \
           libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); \
         *libxsmm_xcopy_loop_dst_ = *libxsmm_xcopy_loop_src_; \
@@ -66,9 +70,9 @@
   } \
   else { \
     unsigned int libxsmm_xcopy_loop_k_; \
-    for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (M1); ++libxsmm_xcopy_loop_i_) { \
+    for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (libxsmm_blasint)(M1); ++libxsmm_xcopy_loop_i_) { \
       LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(OUT) \
-      for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < (N1); ++libxsmm_xcopy_loop_j_) { \
+      for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < (libxsmm_blasint)(N1); ++libxsmm_xcopy_loop_j_) { \
         XKERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_, \
           libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); \
         for (libxsmm_xcopy_loop_k_ = 0; libxsmm_xcopy_loop_k_ < (TYPESIZE); ++libxsmm_xcopy_loop_k_) { \
@@ -88,7 +92,7 @@
   } \
 }
 
-#define LIBXSMM_XCOPY(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, M0, M1, N0, N1) { \
+#define LIBXSMM_XCOPY_NONJIT(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, M0, M1, N0, N1) { \
   switch(TYPESIZE) { \
     case 2: { \
       LIBXSMM_XCOPY_XALIGN(short, 2, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
@@ -109,58 +113,48 @@
   } \
 }
 
-#define LIBXSMM_XCOPY_RECURSIVE(FN, XKERNEL_START, XKERNEL, KERNEL_CALL, KERNEL, \
-  OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) \
-{ \
-  if ((M1) <= ((M0) + (TILE_M)) && (N1) <= ((N0) + (TILE_N))) { \
-    XKERNEL_START(untied) \
-    if (0 == (KERNEL) || (M1) != ((M0) + (TILE_M)) || (N1) != ((N0) + (TILE_N))) { \
-      LIBXSMM_XCOPY(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, M0, M1, N0, N1); \
+#define LIBXSMM_XCOPY(PARALLEL, LOOP_START, KERNEL_START, SYNC, \
+  XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) { \
+  PARALLEL \
+  { \
+    libxsmm_blasint libxsmm_xcopy_i_ = M0, libxsmm_xcopy_j_ = N0; \
+    LOOP_START(LIBXSMM_TRANS_COLLAPSE) \
+    for (libxsmm_xcopy_i_ = M0; libxsmm_xcopy_i_ < (libxsmm_blasint)((M1) - (TILE_M) + 1); libxsmm_xcopy_i_ += TILE_M) { \
+      for (libxsmm_xcopy_j_ = N0; libxsmm_xcopy_j_ < (libxsmm_blasint)((N1) - (TILE_N) + 1); libxsmm_xcopy_j_ += TILE_N) { \
+        KERNEL_START(firstprivate(libxsmm_xcopy_i_, libxsmm_xcopy_j_) untied) \
+        if (0 == (KERNEL)) { \
+          LIBXSMM_XCOPY_NONJIT(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
+            libxsmm_xcopy_i_, libxsmm_xcopy_i_ + (TILE_M), \
+            libxsmm_xcopy_j_, libxsmm_xcopy_j_ + (TILE_N)); \
+        } \
+        else { /* inner tile with JIT */ \
+          XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, M0, N0, \
+            libxsmm_xcopy_src_, libxsmm_xcopy_dst_); \
+          KERNEL_CALL(KERNEL, TYPESIZE, \
+            libxsmm_xcopy_src_, &(LDI), \
+            libxsmm_xcopy_dst_, &(LDO)); \
+        } \
+      } \
     } \
-    else { /* inner tile with JIT */ \
-      const unsigned int libxsmm_xcopy_recursive_ldi_ = LDI, libxsmm_xcopy_recursive_ldo_ = LDO; \
-      XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, M0, N0, \
-        libxsmm_xcopy_recursive_src_, libxsmm_xcopy_recursive_dst_); \
-      KERNEL_CALL(KERNEL, TYPESIZE, \
-        libxsmm_xcopy_recursive_src_, &libxsmm_xcopy_recursive_ldi_, \
-        libxsmm_xcopy_recursive_dst_, &libxsmm_xcopy_recursive_ldo_); \
+    LOOP_START(1/*COLLAPSE*/) \
+    for (libxsmm_xcopy_i_ = M0; libxsmm_xcopy_i_ < (libxsmm_blasint)((M1) - (TILE_M) + 1); libxsmm_xcopy_i_ += TILE_M) { \
+      KERNEL_START(firstprivate(libxsmm_xcopy_i_) untied) \
+      LIBXSMM_XCOPY_NONJIT(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
+        libxsmm_xcopy_i_, libxsmm_xcopy_i_ + (TILE_M), \
+        libxsmm_xcopy_j_, N1); \
     } \
-  } \
-  else if (((M0) + (TILE_M)) < (M1)) { \
-    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, (M0) + (TILE_M), N0, N1); \
-    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, (M0) + (TILE_M), M1, N0, N1); \
-  } \
-  else { \
-    assert(((N0) + (TILE_N)) < (N1)); \
-    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, (N0) + (TILE_N)); \
-    (FN)(KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, (N0) + (TILE_N), N1); \
-  } \
-}
-
-#define LIBXSMM_XCOPY_ITERATIVE(XKERNEL_START, XKERNEL, KERNEL_CALL, KERNEL, \
-  OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) \
-{ \
-  unsigned int libxsmm_xcopy_iterative_i_, libxsmm_xcopy_iterative_j_; \
-  for (libxsmm_xcopy_iterative_i_ = M0; (libxsmm_xcopy_iterative_i_ + (TILE_M) - 1) < (M1); libxsmm_xcopy_iterative_i_ += TILE_M) { \
-    for (libxsmm_xcopy_iterative_j_ = N0; (libxsmm_xcopy_iterative_j_ + (TILE_N) - 1) < (N1); libxsmm_xcopy_iterative_j_ += TILE_N) { \
-      LIBXSMM_XCOPY(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
-        libxsmm_xcopy_iterative_i_, libxsmm_xcopy_iterative_i_ + (TILE_M), \
-        libxsmm_xcopy_iterative_j_, libxsmm_xcopy_iterative_j_ + (TILE_N)); \
+    LOOP_START(1/*COLLAPSE*/) \
+    for (libxsmm_xcopy_j_ = N0; libxsmm_xcopy_j_ < (libxsmm_blasint)((N1) - (TILE_N) + 1); libxsmm_xcopy_j_ += TILE_N) { \
+      KERNEL_START(firstprivate(libxsmm_xcopy_j_) untied) \
+      LIBXSMM_XCOPY_NONJIT(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
+        libxsmm_xcopy_i_, M1, \
+        libxsmm_xcopy_j_, libxsmm_xcopy_j_ + (TILE_N)); \
     } \
+    LIBXSMM_XCOPY_NONJIT(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
+      libxsmm_xcopy_i_, M1, \
+      libxsmm_xcopy_j_, N1); \
+    SYNC \
   } \
-  for (libxsmm_xcopy_iterative_i_ = M0; (libxsmm_xcopy_iterative_i_ + (TILE_M)-1) < (M1); libxsmm_xcopy_iterative_i_ += TILE_M) { \
-    LIBXSMM_XCOPY(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
-      libxsmm_xcopy_iterative_i_, libxsmm_xcopy_iterative_i_ + (TILE_M), \
-      libxsmm_xcopy_iterative_j_, N1); \
-  } \
-  for (libxsmm_xcopy_iterative_j_ = N0; (libxsmm_xcopy_iterative_j_ + (TILE_N) - 1) < (N1); libxsmm_xcopy_iterative_j_ += TILE_N) { \
-    LIBXSMM_XCOPY(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
-      libxsmm_xcopy_iterative_i_, M1, \
-      libxsmm_xcopy_iterative_j_, libxsmm_xcopy_iterative_j_ + (TILE_N)); \
-  } \
-  LIBXSMM_XCOPY(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
-    libxsmm_xcopy_iterative_i_, M1, \
-    libxsmm_xcopy_iterative_j_, N1); \
 }
 
 
