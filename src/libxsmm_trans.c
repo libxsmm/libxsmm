@@ -111,7 +111,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
       descriptor.flags = (unsigned char)(0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
       descriptor.ldi = ldi; descriptor.ldo = ldo; descriptor.unroll_level = 1;
       descriptor.typesize = (unsigned char)typesize;
-      descriptor.m = m; descriptor.n = m;
+      descriptor.m = m; descriptor.n = n;
       xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
     }
     if (0 != xmatcopy) {
