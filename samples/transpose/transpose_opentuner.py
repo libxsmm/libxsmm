@@ -39,6 +39,7 @@ from opentuner import IntegerParameter
 from opentuner import MeasurementInterface
 from opentuner import Result
 import time
+import sys
 import re
 
 
@@ -80,16 +81,19 @@ class TransposeTune(MeasurementInterface):
             " " + str(self.args.nruns) +
             " " + str(self.args.begin))
         run_result = self.call_program(run_cmd)
-        assert(run_result["returncode"] == 0)
-        match = re.search(
-            "\s*duration:\s+([0-9]+(\.[0-9]*)*)",
-            run_result["stdout"])
-        assert(match is not None)
-        mseconds = float(match.group(1))
-        assert(0 < mseconds)
-        score = 1000000.0 / mseconds
-        psize = (self.granularity**2) * cfg["M"] * cfg["N"]
-        return Result(time=mseconds, accuracy=score, size=psize)
+        if (0 == run_result["returncode"]):
+            match = re.search(
+                "\s*duration:\s+([0-9]+(\.[0-9]*)*)",
+                run_result["stdout"])
+            assert(match is not None)
+            mseconds = float(match.group(1))
+            assert(0 < mseconds)
+            score = 1000000.0 / mseconds
+            psize = (self.granularity**2) * cfg["M"] * cfg["N"]
+            return Result(time=mseconds, accuracy=score, size=psize)
+        else:
+            sys.tracebacklimit = 0
+            raise RuntimeError("Execution failed for \"" + run_cmd + "\"!")
 
     def save_final_config(self, configuration):
         """
