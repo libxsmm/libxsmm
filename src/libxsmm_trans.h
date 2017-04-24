@@ -141,9 +141,9 @@
       LOOP_START(LIBXSMM_TRANS_COLLAPSE) \
       for (libxsmm_xcopy_i_ = M0; libxsmm_xcopy_i_ < (libxsmm_blasint)((M1) - (TILE_M) + 1); libxsmm_xcopy_i_ += TILE_M) { \
         for (libxsmm_xcopy_j_ = N0; libxsmm_xcopy_j_ < (libxsmm_blasint)((N1) - (TILE_N) + 1); libxsmm_xcopy_j_ += TILE_N) { \
-          KERNEL_START(untied) \
+          KERNEL_START(firstprivate(libxsmm_xcopy_i_, libxsmm_xcopy_j_) untied) \
           { \
-            XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, M0, N0, libxsmm_xcopy_src_, libxsmm_xcopy_dst_); \
+            XKERNEL(char, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_i_, libxsmm_xcopy_j_, libxsmm_xcopy_src_, libxsmm_xcopy_dst_); \
             KERNEL_CALL(KERNEL, TYPESIZE, libxsmm_xcopy_src_, &(LDI), libxsmm_xcopy_dst_, &(LDO)); \
           } \
         } \
