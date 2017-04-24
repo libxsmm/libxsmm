@@ -214,7 +214,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
         descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
         descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
         if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose */
-          descriptor.typesize = typesize; descriptor.ldo = ldo;
+          descriptor.typesize = (unsigned char)typesize; descriptor.ldo = ldo;
           xtrans = libxsmm_xtransdispatch(&descriptor);
         }
         internal_otrans_omp(xtrans, out, in, typesize, ldi, ldo, descriptor.m, descriptor.n, m, n);

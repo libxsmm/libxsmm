@@ -152,7 +152,7 @@ typedef struct libxsmm_transpose_descriptor {
   /** M, N, and LDO */
   unsigned int m, n, ldo;
   /** Size of an individual data element */
-  unsigned int typesize;
+  unsigned char typesize;
 } libxsmm_transpose_descriptor;
 
 /** Structure referring to the generated code with some attached information. */
