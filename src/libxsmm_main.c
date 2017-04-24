@@ -95,8 +95,8 @@ typedef union LIBXSMM_RETARGETABLE internal_regkey_type {
   libxsmm_gemm_descriptor xgemm;
 #if defined(LIBXSMM_BIG) && (0 != (LIBXSMM_BIG))
   libxsmm_matcopy_descriptor mcopy;
-#endif
   libxsmm_transpose_descriptor trans;
+#endif
 } internal_regkey_type;
 
 /** Internal descriptor kind stored in xgemm's flag set. */
@@ -1777,6 +1777,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
 LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor)
 {
   libxsmm_xtransfunction result = { 0 };
+#if defined(LIBXSMM_BIG) && (0 != (LIBXSMM_BIG))
   if (0 != descriptor) {
     internal_regkey_type query = { { 0 } };
     assert(sizeof(*descriptor) < sizeof(query));
@@ -1785,6 +1786,9 @@ LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxs
     query.xgemm.flags = LIBXSMM_GEMM_FLAG_TKERNEL;
     result = internal_find_code(&query.xgemm).xtrans;
   }
+#else
+  LIBXSMM_UNUSED(descriptor);
+#endif
   return result;
 }
 
