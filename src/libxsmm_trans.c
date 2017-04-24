@@ -73,7 +73,7 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
   }
 
   /* determine if JIT-kernels are used (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
-  libxsmm_trans_jit = ((0 == env_jit || 0 == *env_jit) ? 0 : atoi(env_jit));
+  libxsmm_trans_jit = ((0 == env_jit || 0 == *env_jit) ? 1 : atoi(env_jit));
 
   for (i = 0; i < 8; ++i) {
     /* environment-defined tile sizes apply for DP and SP */
@@ -180,7 +180,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
       const unsigned int size = 1U * m * n;
       if (size <= threshold) { /* no tiling */
         descriptor.typesize = typesize; descriptor.ldo = ldo;
-        descriptor.m = m; descriptor.n = m;
+        descriptor.m = m; descriptor.n = n;
         xtrans = libxsmm_xtransdispatch(&descriptor);
         if (0 != xtrans) { /* prefer JIT for small problems */
           LIBXSMM_TCOPY_CALL(xtrans, typesize, in, &uldi, out, &uldo);
