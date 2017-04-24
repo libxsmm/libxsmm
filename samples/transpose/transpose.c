@@ -174,6 +174,8 @@ int main(int argc, char* argv[])
           const libxsmm_blasint rldo = randstart(lower, ldo);
           kn = randstart(lower, n);
           kldo = LIBXSMM_MAX(rldo, kn);
+          /* trigger JIT-generated code */
+          OTRANS1(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
         }
         else {
 #if 0 /* TODO: enable when in-place transpose is fully supported */
@@ -182,6 +184,8 @@ int main(int argc, char* argv[])
           kn = km;
 #endif
           kldo = kldi;
+          /* trigger JIT-generated code */
+          ITRANS1(b, sizeof(ELEM_TYPE), km, kn, kldi);
         }
       }
       size += km * kn * sizeof(ELEM_TYPE);
