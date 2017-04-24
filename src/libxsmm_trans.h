@@ -36,6 +36,9 @@
 #if !defined(LIBXSMM_TRANS_COLLAPSE)
 # define LIBXSMM_TRANS_COLLAPSE 2
 #endif
+#if !defined(LIBXSMM_TRANS_LIMIT_JIT)
+# define LIBXSMM_TRANS_LIMIT_JIT 176
+#endif
 
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
