@@ -44,7 +44,7 @@ Please note that certain content under `tensorflow/models` may cause an error du
 * AVX-512/SKX: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl` (and `--copt=-mavx512dq` depending on certain fixes being already present in TensorFlow)
 * AVX-512/KNL: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512pf --copt=-mavx512er`
 
-In order for Intel AVX-512 support, GCC&#160;5.x should be used (see section [Non-default Compiler](#non-default-compiler)). LIBXSMM supports Intel&#160;AVX2 as the baseline code path for all JIT-generated DNN-code (SMM domain also supports AVX). For Intel&#160;AVX-512 (on top of AVX2), the foundational instructions are sufficient in many cases, but for the sparse domain the Core-flavor is a prerequisite ("Skylake server" or SKX), and VNNI/QFMA instructions are honored on Intel Xeon&#160;Phi code-named "Knights Mill" (KNM).
+For Intel AVX-512 support, GCC&#160;5.x should be used (see section [Non-default Compiler](#non-default-compiler)). LIBXSMM supports Intel&#160;AVX2 as the baseline code path for all JIT-generated DNN-code (SMM domain also supports AVX). For Intel&#160;AVX-512 (on top of AVX2), the foundational instructions are sufficient in many cases, but for the sparse domain the Core-flavor is a prerequisite ("Skylake server" or SKX), and VNNI/QFMA instructions are honored on Intel Xeon&#160;Phi code-named "Knights Mill" (KNM).
 
 Generally, please follow the [guide](https://www.tensorflow.org/install/install_sources) to build TensorFlow from the sources. Please invoke the following commands to build and install a pip-package, which represents your build of TensorFlow:
 
@@ -80,9 +80,9 @@ bazel build -c opt --copt=-O3 --linkopt=-pthread \
 The above bazel command may be combined to build `//tensorflow/tools/pip_package:build_pip_package` as well. When completed (wheel installed!) e.g., run the "Alexnet" benchmark:
 
 ```
-LIBXSMM_VERBOSE=1 \
+LIBXSMM_VERBOSE=2 \
 bazel-bin/tensorflow/models/convnetbenchmarks/benchmark_alexnet \
-  --data_format=NHWC --forward_only=true 2>&1 \
+  --data_format=NHWC --forward_only=true --batch_size=256 2>&1 \
 | tee output_alexnet.log
 ```
 
@@ -107,6 +107,16 @@ sudo ldconfig
 ```
 
 If there are still problems when using the custom compiler (mismatched GLIBC version), the symbolic link `libstdc++.so.6` (under `/usr/lib64`) may be adjusted to point to the latest update of the same major GLIBC version.
+
+## Performance Profiling
+To gain insight into performance bottlenecks, one might source the Intel VTune Amplifier and run:
+
+```
+amplxe-cl -r result -data-limit 0 \
+  -collect advanced-hotspots -knob collection-detail=stack-sampling -- \
+  bazel-bin/tensorflow/models/convnetbenchmarks/benchmark_alexnet \
+    --data_format=NHWC --forward_only=true --batch_size=64 --num_batches=50
+```
 
 ## Regression Tests
 There are two aspects of LIBXSMM enabled within TensorFlow: (1)&#160;sparse CNN, and (2)&#160;CNN. To build and test the sparse routines:

@@ -1307,9 +1307,8 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
   }
 
   /* handle an eventual error in the else-branch */
-  if (generated_code.generated_code) {
+  if (generated_code.generated_code && 0 < generated_code.code_size) {
     if (0 == generated_code.last_error) {
-      assert(0 < generated_code.code_size/*sanity check*/);
       /* attempt to create executable buffer */
       result = libxsmm_xmalloc(&code->pmm, generated_code.code_size, 0/*auto*/,
         /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
