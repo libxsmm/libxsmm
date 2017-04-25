@@ -51,8 +51,8 @@ class TransposeTune(MeasurementInterface):
         """
         self.granularity = 1
         assert(0 < self.granularity)
-        max_m = (176 + self.granularity - 1) / self.granularity
-        max_n = (176 + self.granularity - 1) / self.granularity
+        max_m = (160 + self.granularity - 1) / self.granularity
+        max_n = (160 + self.granularity - 1) / self.granularity
         manipulator = ConfigurationManipulator()
         manipulator.add_parameter(
           IntegerParameter("M", self.granularity, max_m))
