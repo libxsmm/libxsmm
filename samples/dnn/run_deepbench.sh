@@ -26,9 +26,14 @@ if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
   fi
 fi
 
-export KMP_HW_SUBSET=1T
- export KMP_AFFINITY=compact,granularity=fine
+if [[ -z "${OMP_NUM_THREADS}" ]]; then
+  echo "using defaults for OMP settings!"
+  export KMP_HW_SUBSET=1T
+  export KMP_AFFINITY=compact,granularity=fine
   export OMP_NUM_THREADS=64
+else
+  echo "using environment OMP settings!"
+fi
 
 # ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type
 
