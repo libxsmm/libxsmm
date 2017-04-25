@@ -35,4 +35,3 @@ ${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  256  256  3  3 1 1 ${
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  256  512  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  512  512  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512  512  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512  512  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}
