@@ -124,8 +124,8 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
     }
     else { /* no JIT; tiled matrix-copy */
       const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1U * m * n) >> 10, 7);
-      const libxsmm_blasint tm = LIBXSMM_MIN(libxsmm_trans_tile[tindex][0/*M*/][index], m);
-      const libxsmm_blasint tn = LIBXSMM_MIN(libxsmm_trans_tile[tindex][1/*N*/][index], n);
+      const libxsmm_blasint tm = LIBXSMM_MIN((libxsmm_blasint)libxsmm_trans_tile[tindex][0/*M*/][index], m);
+      const libxsmm_blasint tn = LIBXSMM_MIN((libxsmm_blasint)libxsmm_trans_tile[tindex][1/*N*/][index], n);
       LIBXSMM_XCOPY(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
         LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, xmatcopy,
