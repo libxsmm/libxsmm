@@ -991,13 +991,16 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
   int result = EXIT_SUCCESS;
 #if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
   const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
-  libxsmm_generated_code generated_code;
+  libxsmm_generated_code generated_code = { 0 };
+  char jit_buffer[262144];
   char jit_name[256] = { 0 };
 
   assert(0 != request && 0 != libxsmm_target_archid);
   assert(0 != code && 0 == code->const_pmm);
+  /* large enough temporary buffer for generated code */
+  generated_code.buffer_size = sizeof(jit_buffer);
+  generated_code.generated_code = jit_buffer;
   /* setup code generation */
-  memset(&generated_code, 0, sizeof(generated_code));
   generated_code.code_type = 2;
 
   switch (request->kind) { /* generate kernel */
@@ -1006,8 +1009,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       if (0 < request->descriptor.gemm->m   && 0 < request->descriptor.gemm->n   && 0 < request->descriptor.gemm->k &&
           0 < request->descriptor.gemm->lda && 0 < request->descriptor.gemm->ldb && 0 < request->descriptor.gemm->ldc)
       {
-        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
-        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_gemm_kernel, &generated_code, request->descriptor.gemm, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -1032,8 +1033,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       assert(0 != request->descriptor.ssoa && 0 != request->descriptor.ssoa->gemm);
       assert(0 != request->descriptor.ssoa->row_ptr && 0 != request->descriptor.ssoa->column_idx && 0 != request->descriptor.ssoa->values);
       if (0 == (LIBXSMM_GEMM_FLAG_F32PREC & (request->descriptor.ssoa->gemm->flags))/*only double-precision*/) {
-        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
-        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csr_soa_kernel, &generated_code, request->descriptor.ssoa->gemm, target_arch,
           request->descriptor.ssoa->row_ptr, request->descriptor.ssoa->column_idx,
           (const double*)request->descriptor.ssoa->values);
@@ -1062,8 +1061,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
 #if 1
       if (0 == (LIBXSMM_GEMM_FLAG_F32PREC & (request->descriptor.sreg->gemm->flags))/*only double-precision*/) {
 #endif
-        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
-        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csr_reg_kernel, &generated_code, request->descriptor.sreg->gemm, target_arch,
           request->descriptor.sreg->row_ptr, request->descriptor.sreg->column_idx,
           (const double*)request->descriptor.sreg->values);
@@ -1093,8 +1090,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       if (0 < request->descriptor.cfwd->kw && 0 < request->descriptor.cfwd->kh &&
           0 != request->descriptor.cfwd->stride_w && 0 != request->descriptor.cfwd->stride_h)
       {
-        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
-        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_convolution_forward_kernel, &generated_code, request->descriptor.cfwd, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -1124,8 +1119,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       if (0 < request->descriptor.cbwd->kw && 0 < request->descriptor.cbwd->kh &&
           0 != request->descriptor.cbwd->stride_w && 0 != request->descriptor.cbwd->stride_h)
       {
-        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
-        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_convolution_backward_kernel, &generated_code, request->descriptor.cbwd, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -1155,8 +1148,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       if (0 < request->descriptor.cupd->kw &&
           0 != request->descriptor.cupd->stride_w && 0 != request->descriptor.cupd->stride_h)
       {
-        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
-        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_convolution_weight_update_kernel, &generated_code, request->descriptor.cupd, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -1189,8 +1180,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       assert(0 != request->descriptor.cwino);
       if (0 < request->descriptor.cwino->itiles && 0 < request->descriptor.cwino->jtiles && 0 < request->descriptor.cwino->bimg && 0 < request->descriptor.cwino->ur)
       {
-        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
-        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_convolution_winograd_forward_kernel, &generated_code, request->descriptor.cwino, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -1213,8 +1202,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       assert(0 != request->descriptor.cwino);
       if (0 < request->descriptor.cwino->itiles && 0 < request->descriptor.cwino->jtiles && 0 < request->descriptor.cwino->bimg && 0 < request->descriptor.cwino->ur)
       {
-        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
-        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_convolution_winograd_forward_kernel, &generated_code, request->descriptor.cwino, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -1237,8 +1224,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       assert(0 != request->descriptor.cwino);
       if (0 < request->descriptor.cwino->itiles && 0 < request->descriptor.cwino->jtiles && 0 < request->descriptor.cwino->bimg && 0 < request->descriptor.cwino->ur)
       {
-        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
-        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_convolution_winograd_weight_update_kernel, &generated_code, request->descriptor.cwino, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -1262,8 +1247,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       if (4 == request->descriptor.matcopy->typesize || 8 == request->descriptor.matcopy->typesize
        || 2 == request->descriptor.matcopy->typesize || 1 == request->descriptor.matcopy->typesize)
       {
-        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
-        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_matcopy_kernel, &generated_code, request->descriptor.matcopy, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -1281,8 +1264,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
     case LIBXSMM_BUILD_KIND_TRANS: { /* transpose kernel */
       assert(0 != request->descriptor.trans);
       if (4 == request->descriptor.trans->typesize || 8 == request->descriptor.trans->typesize) {
-        generated_code.generated_code = malloc(131072); /* large enough temporary buffer for generated code */
-        generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_transpose_kernel, &generated_code, request->descriptor.trans, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -1307,34 +1288,31 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
   }
 
   /* handle an eventual error in the else-branch */
-  if (generated_code.generated_code) {
-    if (0 == generated_code.last_error) {
-      assert(0 < generated_code.code_size/*sanity check*/);
-      /* attempt to create executable buffer */
-      result = libxsmm_xmalloc(&code->pmm, generated_code.code_size, 0/*auto*/,
-        /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
-        LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
-      if (EXIT_SUCCESS == result) { /* check for success */
-        assert(0 != code->pmm && 0 == (LIBXSMM_CODE_STATIC & code->uimm));
-        assert(0 != generated_code.generated_code/*sanity check*/);
-        /* copy temporary buffer into the prepared executable buffer */
-        memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
-        /* attribute/protect buffer and revoke unnecessary flags */
-        result = libxsmm_malloc_attrib(&code->pmm, LIBXSMM_MALLOC_FLAG_X, jit_name);
+  if (0 == generated_code.last_error) {
+    assert(0 < generated_code.code_size/*sanity check*/);
+    /* attempt to create executable buffer */
+    result = libxsmm_xmalloc(&code->pmm, generated_code.code_size, 0/*auto*/,
+      /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
+      LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
+    if (EXIT_SUCCESS == result) { /* check for success */
+      assert(0 != code->pmm && 0 == (LIBXSMM_CODE_STATIC & code->uimm));
+      assert(0 != generated_code.generated_code/*sanity check*/);
+      /* copy temporary buffer into the prepared executable buffer */
+      memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
+      /* attribute/protect buffer and revoke unnecessary flags */
+      result = libxsmm_malloc_attrib(&code->pmm, LIBXSMM_MALLOC_FLAG_X, jit_name);
+    }
+  }
+  else {
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      static int error_once = 0;
+      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+        LIBXSMM_NO_OFFLOAD(int, fprintf, stderr, "%s (error #%u)\n",
+          LIBXSMM_NO_OFFLOAD(const char*, libxsmm_strerror, generated_code.last_error),
+          generated_code.last_error);
       }
     }
-    else {
-      if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-        static int error_once = 0;
-        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-          LIBXSMM_NO_OFFLOAD(int, fprintf, stderr, "%s (error #%u)\n",
-            LIBXSMM_NO_OFFLOAD(const char*, libxsmm_strerror, generated_code.last_error),
-            generated_code.last_error);
-        }
-      }
-      result = EXIT_FAILURE;
-    }
-    free(generated_code.generated_code); /* free temporary/initial code buffer */
+    result = EXIT_FAILURE;
   }
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
@@ -1779,8 +1757,8 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
 LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor)
 {
   libxsmm_xtransfunction result = { 0 };
-  if (0 != descriptor && /* basic sanity check against LIBXSMM_TRANS_LIMIT_JIT */
-     (descriptor->m * descriptor->n) <= ((LIBXSMM_TRANS_LIMIT_JIT) * (LIBXSMM_TRANS_LIMIT_JIT)))
+  if (0 != descriptor && /* basic sanity check against LIBXSMM_TRANS_THRESHOLD */
+     (descriptor->m * descriptor->n) <= ((LIBXSMM_TRANS_THRESHOLD) * (LIBXSMM_TRANS_THRESHOLD)))
   {
     internal_regkey_type query = { { 0 } };
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));

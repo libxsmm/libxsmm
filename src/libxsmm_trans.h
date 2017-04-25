@@ -36,8 +36,8 @@
 #if !defined(LIBXSMM_TRANS_COLLAPSE)
 # define LIBXSMM_TRANS_COLLAPSE 2
 #endif
-#if !defined(LIBXSMM_TRANS_LIMIT_JIT)
-# define LIBXSMM_TRANS_LIMIT_JIT 176
+#if !defined(LIBXSMM_TRANS_THRESHOLD)
+# define LIBXSMM_TRANS_THRESHOLD ((LIBXSMM_MAX_M) * (LIBXSMM_MAX_N))
 #endif
 
 /* kernel uses consecutive stores and consecutive loads (copy) */
