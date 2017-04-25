@@ -69,24 +69,22 @@ class TransposeTune(MeasurementInterface):
         return performance
         """
         cfg = desired_result.configuration.data
+        nruns = max(self.args.nruns, 1)
+        end = max(self.args.end, 0)
         run_cmd = (
             "CHECK=0"
             " LIBXSMM_TRANS_M=" + str(self.granularity * cfg["M"]) +
             " LIBXSMM_TRANS_N=" + str(self.granularity * cfg["N"]) +
-            " ./transpose.sh o" +
-            " " + str(self.args.end) +
-            " " + str(self.args.end) +
-            " " + str(self.args.end) +
-            " " + str(self.args.end) +
-            " " + str(self.args.nruns) +
-            " " + str(self.args.begin))
+            " ./transpose.sh o" + " " + str(end) + " " + str(end) +
+            " " + str(end) + " " + str(end) + " " + str(nruns) +
+            " " + str(max(self.args.begin, 0)))
         run_result = self.call_program(run_cmd)
         if (0 == run_result["returncode"]):
             match = re.search(
                 "\s*duration:\s+([0-9]+(\.[0-9]*)*)",
                 run_result["stdout"])
             assert(match is not None)
-            mseconds = float(match.group(1))
+            mseconds = float(match.group(1)) / nruns
             assert(0 < mseconds)
             score = 1000000.0 / mseconds
             psize = (self.granularity**2) * cfg["M"] * cfg["N"]
@@ -100,9 +98,9 @@ class TransposeTune(MeasurementInterface):
         called at the end of tuning
         """
         filename = (
-            "transpose-" + str(self.args.begin) +
-            "_" + str(self.args.end) +
-            "_" + str(self.args.nruns) +
+            "transpose-" + str(max(self.args.begin, 0)) +
+            "_" + str(max(self.args.end,   0)) +
+            "_" + str(max(self.args.nruns, 1)) +
             time.strftime("-%Y%m%d-%H%M%S") + ".json")
         print("Optimal block size written to " + filename +
               ": ", configuration.data)
