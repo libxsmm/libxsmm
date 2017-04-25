@@ -193,9 +193,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t internal_registry_nbytes;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE internal_regkey_type* internal_registry_keys;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_registry;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE internal_statistic_type internal_statistic[2/*DP/SP*/][4/*sml/med/big/xxx*/];
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_sml;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_med;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_mnk;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_sml, internal_statistic_med, internal_statistic_mnk;
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_num_mcopy, internal_statistic_num_tcopy;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_teardown;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_dispatch_trylock_locked;
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_gemm_auto_prefetch_locked;
@@ -454,13 +453,23 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_finalize(void)
     {
       const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
       const unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
+      const double regsize = 1.0 * internal_registry_nbytes / (1 << 20);
       libxsmm_scratch_info scratch_info;
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak) {
-        fprintf(stderr, "LIBXSMM_TARGET=%s", target_arch);
+        fprintf(stderr, "LIBXSMM_TARGET=%s", target_arch, regsize);
       }
-      fprintf(stderr, "  Registry: %.f MB", 1.0 * internal_registry_nbytes / (1 << 20));
+      fprintf(stderr, "\nRegistry: %.f MB", regsize);
+      if (1 < libxsmm_verbosity) {
+        size_t ngemms = 0;
+        int i; for (i = 0; i < 4; ++i) {
+          ngemms += internal_statistic[0/*DP*/][i].nsta + internal_statistic[1/*SP*/][i].nsta;
+          ngemms += internal_statistic[0/*DP*/][i].njit + internal_statistic[1/*SP*/][i].njit;
+        }
+        fprintf(stderr, " (gemm=%lu mcopy=%u tcopy=%u)", (unsigned long int)ngemms,
+          internal_statistic_num_mcopy, internal_statistic_num_tcopy);
+      }
       if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info) && 0 < scratch_info.size) {
-        fprintf(stderr, "  Scratch: %.f MB", 1.0 * scratch_info.size / (1 << 20));
+        fprintf(stderr, "\nScratch: %.f MB", 1.0 * scratch_info.size / (1 << 20));
         if (1 < libxsmm_verbosity) {
           fprintf(stderr, " (mallocs=%lu, pools=%u)\n",
             (unsigned long int)scratch_info.nmallocs,
@@ -730,9 +739,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
         const libxsmm_code_pointer code = registry[i];
-        if (0 != code.const_pmm && /* check if the registered entity is a GEMM kernel */
-            0 == ((LIBXSMM_GEMM_FLAG_MATCOPY | LIBXSMM_GEMM_FLAG_TKERNEL) & registry_keys[i].xgemm.flags))
-        {
+        if (0 != code.const_pmm) {
           /* check if the registered entity is a GEMM kernel */
           if (0 == ((LIBXSMM_GEMM_FLAG_MATCOPY | LIBXSMM_GEMM_FLAG_TKERNEL) & registry_keys[i].xgemm.flags)) {
             const libxsmm_gemm_descriptor *const desc = &registry_keys[i].xgemm;
@@ -755,6 +762,12 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             else {
               ++internal_statistic[precision][bucket].nsta;
             }
+          }
+          else if (0 != (LIBXSMM_GEMM_FLAG_MATCOPY & registry_keys[i].xgemm.flags)) {
+            ++internal_statistic_num_mcopy;
+          }
+          else if (0 != (LIBXSMM_GEMM_FLAG_TKERNEL & registry_keys[i].xgemm.flags)) {
+            ++internal_statistic_num_tcopy;
           }
           if (0 == (LIBXSMM_CODE_STATIC & code.uimm)) { /* check for allocated/generated JIT-code */
             void* buffer = 0;
@@ -989,7 +1002,7 @@ LIBXSMM_API_DEFINITION const char* internal_get_typepostfix(size_t typesize)
 LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code)
 {
   int result = EXIT_SUCCESS;
-#if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
+#if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/) && !defined(_WIN32)
   const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
   libxsmm_generated_code generated_code = { 0 };
   char jit_name[256] = { 0 };
