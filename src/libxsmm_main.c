@@ -994,13 +994,20 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
   libxsmm_generated_code generated_code = { 0 };
   char jit_name[256] = { 0 };
 
-  assert(0 != request && 0 != libxsmm_target_archid);
-  assert(0 != code && 0 == code->const_pmm);
   /* large enough temporary buffer for generated code */
+#if defined(NDEBUG)
+  char jit_buffer[262144];
+  generated_code.generated_code = jit_buffer;
+  generated_code.buffer_size = sizeof(jit_buffer);
+#else
   generated_code.generated_code = malloc(262144);
   generated_code.buffer_size = (0 != generated_code.generated_code ? 262144 : 0);
+#endif
   /* setup code generation */
   generated_code.code_type = 2;
+
+  assert(0 != request && 0 != libxsmm_target_archid);
+  assert(0 != code && 0 == code->const_pmm);
 
   switch (request->kind) { /* generate kernel */
     case LIBXSMM_BUILD_KIND_GEMM: { /* small MxM kernel */
@@ -1314,7 +1321,9 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       }
       result = EXIT_FAILURE;
     }
+# if !defined(NDEBUG)
     free(generated_code.generated_code); /* free temporary/initial code buffer */
+# endif
   }
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
