@@ -1779,7 +1779,9 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
 LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor)
 {
   libxsmm_xtransfunction result = { 0 };
-  if (0 != descriptor) {
+  if (0 != descriptor && /* basic sanity check against LIBXSMM_TRANS_LIMIT_JIT */
+     (descriptor->m * descriptor->n) <= ((LIBXSMM_TRANS_LIMIT_JIT) * (LIBXSMM_TRANS_LIMIT_JIT)))
+  {
     internal_regkey_type query = { { 0 } };
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
     LIBXSMM_INIT
