@@ -47,14 +47,14 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
   /* setup tile sizes according to CPUID or environment (LIBXSMM_TRANS_M, LIBXSMM_TRANS_N) */
   const unsigned int tile_configs[/*configs*/][2/*DP/SP*/][2/*TILE_M,TILE_N*/][8/*size-range*/] = {
     /* generic (hsw) */
-    { { { 176, 176, 176, 176, 176, 176, 176, 176 }, { 176, 176, 176, 176, 176, 176, 176, 176 } },   /* DP */
-      { { 176, 176, 176, 176, 176, 176, 176, 176 }, { 176, 176, 176, 176, 176, 176, 176, 176 } } }, /* SP */
+    { { { 11, 8, 12, 12, 12, 12, 12, 12 }, { 32, 11, 18, 18, 18, 18, 18, 18 } },   /* DP */
+      { { 11, 8, 12, 12, 12, 12, 12, 12 }, { 32, 11, 18, 18, 18, 18, 18, 18 } } }, /* SP */
     /* mic (knl/knm) */
-    { { { 176, 176, 176, 176, 176, 176, 176, 176 }, { 176, 176, 176, 176, 176, 176, 176, 176 } },   /* DP */
-      { { 176, 176, 176, 176, 176, 176, 176, 176 }, { 176, 176, 176, 176, 176, 176, 176, 176 } } }, /* SP */
+    { { { 11, 8, 12, 12, 12, 12, 12, 12 }, { 32, 11, 18, 18, 18, 18, 18, 18 } },   /* DP */
+      { { 11, 8, 12, 12, 12, 12, 12, 12 }, { 32, 11, 18, 18, 18, 18, 18, 18 } } }, /* SP */
     /* core (skx) */
-    { { { 176, 176, 176, 176, 176, 176, 176, 176 }, { 176, 176, 176, 176, 176, 176, 176, 176 } },   /* DP */
-      { {  11,   8, 176, 176, 176, 176, 176, 176 }, {  32,  11, 176, 176, 176, 176, 176, 176 } } }  /* SP */
+    { { { 11, 8, 12, 12, 12, 12, 12, 12 }, { 32, 11, 18, 18, 18, 18, 18, 18 } },   /* DP */
+      { { 11, 8, 12, 12, 12, 12, 12, 12 }, { 32, 11, 18, 18, 18, 18, 18, 18 } } }  /* SP */
   };
   const char *const env_jit = getenv("LIBXSMM_TRANS_JIT");
   const char *const env_m = getenv("LIBXSMM_TRANS_M"), *const env_n = getenv("LIBXSMM_TRANS_N");
@@ -128,7 +128,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
       const libxsmm_blasint tn = libxsmm_trans_tile[tindex][1/*N*/][index];
       LIBXSMM_XCOPY(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
-        LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, xmatcopy, 
+        LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, xmatcopy,
         out, in, typesize, uldi, uldo, LIBXSMM_MIN(m, tm), LIBXSMM_MIN(n, tn),
         0, m, 0, n);
     }
