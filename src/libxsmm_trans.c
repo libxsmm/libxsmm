@@ -47,14 +47,14 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
   /* setup tile sizes according to CPUID or environment (LIBXSMM_TRANS_M, LIBXSMM_TRANS_N) */
   const unsigned int tile_configs[/*configs*/][2/*DP/SP*/][2/*TILE_M,TILE_N*/][8/*size-range*/] = {
     /* generic (hsw) */
-    { { { 11, 8, 12, 12, 12, 12, 12, 12 }, { 32, 11, 18, 18, 18, 18, 18, 18 } },   /* DP */
-      { { 11, 8, 12, 12, 12, 12, 12, 12 }, { 32, 11, 18, 18, 18, 18, 18, 18 } } }, /* SP */
+    { { { 11, 8, 12, 12, 12, 12, 12, 25 }, { 32, 11, 18, 18, 18, 18, 18, 31 } },   /* DP */
+      { { 11, 8, 12, 12, 12, 12, 12, 25 }, { 32, 11, 18, 18, 18, 18, 18, 31 } } }, /* SP */
     /* mic (knl/knm) */
-    { { { 11, 8, 12, 12, 12, 12, 12, 12 }, { 32, 11, 18, 18, 18, 18, 18, 18 } },   /* DP */
-      { { 11, 8, 12, 12, 12, 12, 12, 12 }, { 32, 11, 18, 18, 18, 18, 18, 18 } } }, /* SP */
+    { { { 11, 8, 12, 12, 12, 12, 12, 25 }, { 32, 11, 18, 18, 18, 18, 18, 31 } },   /* DP */
+      { { 11, 8, 12, 12, 12, 12, 12, 25 }, { 32, 11, 18, 18, 18, 18, 18, 31 } } }, /* SP */
     /* core (skx) */
-    { { { 11, 8, 12, 12, 12, 12, 12, 12 }, { 32, 11, 18, 18, 18, 18, 18, 18 } },   /* DP */
-      { { 11, 8, 12, 12, 12, 12, 12, 12 }, { 32, 11, 18, 18, 18, 18, 18, 18 } } }  /* SP */
+    { { { 11, 8, 12, 12, 12, 12, 12, 25 }, { 32, 11, 18, 18, 18, 18, 18, 31 } },   /* DP */
+      { { 11, 8, 12, 12, 12, 12, 12, 25 }, { 32, 11, 18, 18, 18, 18, 18, 31 } } }  /* SP */
   };
   const char *const env_jit = getenv("LIBXSMM_TRANS_JIT");
   const char *const env_m = getenv("LIBXSMM_TRANS_M"), *const env_n = getenv("LIBXSMM_TRANS_N");
@@ -174,7 +174,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
       libxsmm_transpose_descriptor descriptor = { 0 };
       const unsigned int uldi = ldi, uldo = ldo;
       const unsigned int size = 1U * m * n;
-      if (size <= ((LIBXSMM_TRANS_THRESHOLD) * (LIBXSMM_TRANS_THRESHOLD))) { /* no tiling */
+      if (size <= (LIBXSMM_TRANS_THRESHOLD)) { /* no tiling */
         if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose permitted? */
           descriptor.typesize = (unsigned char)typesize;
           descriptor.m = m; descriptor.n = n; descriptor.ldo = ldo;
@@ -192,9 +192,9 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
         descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
         descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
         if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose permitted? */
-          descriptor.m = LIBXSMM_MIN(descriptor.m, LIBXSMM_TRANS_THRESHOLD);
-          descriptor.n = LIBXSMM_MIN(descriptor.n, LIBXSMM_TRANS_THRESHOLD);
           descriptor.typesize = (unsigned char)typesize; descriptor.ldo = ldo;
+          descriptor.m = LIBXSMM_MIN(descriptor.m, LIBXSMM_MAX_M);
+          descriptor.n = LIBXSMM_MIN(descriptor.n, LIBXSMM_MAX_N);
           xtrans = libxsmm_xtransdispatch(&descriptor);
         }
         LIBXSMM_XCOPY(

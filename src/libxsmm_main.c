@@ -1760,7 +1760,7 @@ LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxs
 {
   libxsmm_xtransfunction result = { 0 };
   if (0 != descriptor && /* basic sanity check against LIBXSMM_TRANS_THRESHOLD */
-     (descriptor->m * descriptor->n) <= ((LIBXSMM_TRANS_THRESHOLD) * (LIBXSMM_TRANS_THRESHOLD)))
+     (descriptor->m * descriptor->n) <= (LIBXSMM_TRANS_THRESHOLD))
   {
     internal_regkey_type query = { { 0 } };
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
