@@ -856,6 +856,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
            gen_one_trans(io_generated_code, LIBXSMM_MIN(REGSIZE,((int)m)-k+1),
                          LIBXSMM_MIN(REGSIZE,((int)n)-j+1),ldb,offsetA,offsetB,datasize,
                          avx512,maskvar);
+           if (0 != io_generated_code->last_error) return;
            i = io_generated_code->code_size;
 #ifdef GENERATOR_TRANSPOSE_DEBUG
            printf("done calling gen_one_trans m=%d n=%d i=%d datasize=%d\n",m,n,i,datasize);
