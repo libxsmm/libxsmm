@@ -278,8 +278,8 @@
 #define LIBXSMM_ERR_UNIQUE_VAL           90052
 
 /** Error-handling macro, which supports an optional string-literal (error context). */
-#define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE, ...) libxsmm_handle_error( \
-  GENERATED_CODE, ERROR_CODE, LIBXSMM_STRINGIFY(__VA_ARGS__!))
+#define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_STRINGIFY(LIBXSMM_CALLER))
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {

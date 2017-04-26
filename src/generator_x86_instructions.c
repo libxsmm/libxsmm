@@ -107,7 +107,7 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
 
     if ( l_maxsize - i < 20 )
     {
-       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
        return;
     }
 
@@ -203,7 +203,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     }
     if ( l_maxsize - i < 20 )
     {
-       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL, "libxsmm_instruction_vec_move");
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
        return;
     }
 
@@ -642,7 +642,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
 
     if ( l_maxsize - i < 20 )
     {
-       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL, "libxsmm_instruction_vec_compute_reg");
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
        return;
     }
 
@@ -1121,7 +1121,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
 
     if ( l_maxsize - i < 20 )
     {
-       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL, "libxsmm_instruction_vec_compute_mem");
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
        return;
     }
     switch ( i_vector_name ) {
@@ -1739,7 +1739,7 @@ void libxsmm_x86_instruction_vec_compute_qfma( libxsmm_generated_code* io_genera
 
     if ( l_maxsize - i < 20 )
     {
-       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
        return;
     }
     switch ( i_vec_instr ) {
@@ -1913,7 +1913,7 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
 
     if ( l_maxsize - i < 20 )
     {
-       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
        return;
     }
 
@@ -2029,7 +2029,7 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
 
     if ( l_maxsize - i < 20 )
     {
-       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
        return;
     }
     switch ( i_vmove_instr ) {
@@ -2158,7 +2158,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
 
     if ( l_maxsize - i < 20 )
     {
-       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
        return;
     }
     if ( ((int)i_gp_reg_base < LIBXSMM_X86_GP_REG_RAX) ||
@@ -2674,7 +2674,7 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
 
     if ( l_maxsize - i < 20 )
     {
-       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
        return;
     }
     switch ( i_mask_instr ) {
@@ -2756,7 +2756,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
 
     if ( l_maxsize - i < 20 )
     {
-       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
        return;
     }
     switch ( i_mask_instr ) {

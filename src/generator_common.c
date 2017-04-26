@@ -853,14 +853,12 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
                            const char* context ) {
 #if !defined(NDEBUG)
-  const int size = (int)strlen(context + 1);
   LIBXSMM_FLOCK(stderr);
-  if (2 >= size) {
-    fprintf(stderr, "LIBXSMM ERROR: %s\n", libxsmm_strerror(i_error_code));
+  if (0 != context && 0 != *context) {
+    fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
   }
   else {
-    fprintf(stderr, "LIBXSMM ERROR (%.*s): %s\n", size - 2, context + 1,
-      libxsmm_strerror(i_error_code));
+    fprintf(stderr, "LIBXSMM ERROR: %s\n", libxsmm_strerror(i_error_code));
   }
   LIBXSMM_FLOCK(stderr);
 #endif
