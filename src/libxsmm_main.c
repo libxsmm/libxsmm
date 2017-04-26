@@ -1009,12 +1009,12 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
 
   /* large enough temporary buffer for generated code */
 #if defined(NDEBUG)
-  char jit_buffer[262144];
+  char jit_buffer[131072];
   generated_code.generated_code = jit_buffer;
   generated_code.buffer_size = sizeof(jit_buffer);
 #else
-  generated_code.generated_code = malloc(262144);
-  generated_code.buffer_size = (0 != generated_code.generated_code ? 262144 : 0);
+  generated_code.generated_code = malloc(131072);
+  generated_code.buffer_size = (0 != generated_code.generated_code ? 131072 : 0);
 #endif
   /* setup code generation */
   generated_code.code_type = 2;
@@ -1307,19 +1307,21 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
   }
 
   /* handle an eventual error in the else-branch */
-  if (generated_code.generated_code && 0 < generated_code.code_size) {
-    if (0 == generated_code.last_error) {
-      /* attempt to create executable buffer */
-      result = libxsmm_xmalloc(&code->pmm, generated_code.code_size, 0/*auto*/,
-        /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
-        LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
-      if (EXIT_SUCCESS == result) { /* check for success */
-        assert(0 != code->pmm && 0 == (LIBXSMM_CODE_STATIC & code->uimm));
-        assert(0 != generated_code.generated_code/*sanity check*/);
-        /* copy temporary buffer into the prepared executable buffer */
-        memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
-        /* attribute/protect buffer and revoke unnecessary flags */
-        result = libxsmm_malloc_attrib(&code->pmm, LIBXSMM_MALLOC_FLAG_X, jit_name);
+  if (0 != generated_code.generated_code) {
+    if (0 == generated_code.last_error) { /* no error raised */
+      if (0 < generated_code.code_size) { /* sanity check */
+        /* attempt to create executable buffer */
+        result = libxsmm_xmalloc(&code->pmm, generated_code.code_size, 0/*auto*/,
+          /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
+          LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
+        if (EXIT_SUCCESS == result) { /* check for success */
+          assert(0 != code->pmm && 0 == (LIBXSMM_CODE_STATIC & code->uimm));
+          assert(0 != generated_code.generated_code/*sanity check*/);
+          /* copy temporary buffer into the prepared executable buffer */
+          memcpy(code->pmm, generated_code.generated_code, generated_code.code_size);
+          /* attribute/protect buffer and revoke unnecessary flags */
+          result = libxsmm_malloc_attrib(&code->pmm, LIBXSMM_MALLOC_FLAG_X, jit_name);
+        }
       }
     }
     else {
