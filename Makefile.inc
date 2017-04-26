@@ -508,10 +508,10 @@ ifneq (0,$(INTEL))
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  CXXFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,10006,10010,10411,13003
-  CFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,10006,10010,10411,13003
+  CXXFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,10006,10010,10411,13003 -qoverride_limits
+  CFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,10006,10010,10411,13003 -qoverride_limits
   LDFLAGS += -f$(PIC) -diag-disable 1879,3415,10006,10010,10411
-  FCFLAGS += -f$(PIC) -diag-disable 10006,10010,10411,13003
+  FCFLAGS += -f$(PIC) -diag-disable 10006,10010,10411,13003 -qoverride_limits
   ifneq (0,$(THREADS))
     FCMTFLAGS += -threads
   endif
