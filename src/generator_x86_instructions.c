@@ -107,8 +107,8 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
 
     if ( l_maxsize - i < 20 )
     {
-       fprintf(stderr, "libxsmm_instruction_vec_mask_move: Most instructions need at most 20 bytes\n");
-       exit(-1);
+       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       return;
     }
 
     if (i_scale==2) l_sca=0x40;
@@ -171,7 +171,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
 /* Greg asks: do we still need this condition? It seems to me this works now
 #if !defined(NDEBUG)
   if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_INDEX_SCALE_ADDR );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_INDEX_SCALE_ADDR );
     return;
   }
 #endif
@@ -203,9 +203,10 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     }
     if ( l_maxsize - i < 20 )
     {
-       fprintf(stderr, "libxsmm_instruction_vec_move: Most instructions need at most 20 bytes\n");
-       exit(-1);
+       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL, "libxsmm_instruction_vec_move");
+       return;
     }
+
     l_num = i_vec_reg_number_0 / 8;
     switch ( i_vmove_instr ) {
        case LIBXSMM_X86_INSTR_VMOVAPD:
@@ -641,9 +642,10 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
 
     if ( l_maxsize - i < 20 )
     {
-       fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Most instructions need at most 20 bytes\n");
-       exit(-1);
+       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL, "libxsmm_instruction_vec_compute_reg");
+       return;
     }
+
     switch ( i_vec_instr ) {
        case LIBXSMM_X86_INSTR_VXORPD:
           l_fpadj = -2;
@@ -1092,7 +1094,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        (i_instruction_set != LIBXSMM_X86_AVX512_CORE) &&
        (i_instruction_set != LIBXSMM_X86_AVX512_KNM)  &&
        (i_use_broadcast != 0) ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_IMCI_AVX512_BCAST );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_IMCI_AVX512_BCAST );
     return;
   }
 
@@ -1119,8 +1121,8 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
 
     if ( l_maxsize - i < 20 )
     {
-       fprintf(stderr, "libxsmm_instruction_vec_compute_mem: Most instructions need at most 20 bytes\n");
-       exit(-1);
+       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL, "libxsmm_instruction_vec_compute_mem");
+       return;
     }
     switch ( i_vector_name ) {
        case 'x':
@@ -1712,7 +1714,7 @@ void libxsmm_x86_instruction_vec_compute_qfma( libxsmm_generated_code* io_genera
                                                const unsigned int      i_vec_reg_number_dest ) {
   /* @TODO add checks in debug mode */
   if ( i_instruction_set != LIBXSMM_X86_AVX512_KNM ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_AVX512_QFMA );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_AVX512_QFMA );
     return;
   }
   if (libxsmm_is_x86_vec_instr_single_precision( i_vec_instr ) == 0) {
@@ -1737,8 +1739,8 @@ void libxsmm_x86_instruction_vec_compute_qfma( libxsmm_generated_code* io_genera
 
     if ( l_maxsize - i < 20 )
     {
-       fprintf(stderr, "Most instructions need at most 20 bytes\n");
-       exit(-1);
+       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       return;
     }
     switch ( i_vec_instr ) {
        case LIBXSMM_X86_INSTR_V4FMADDPS:
@@ -1911,8 +1913,8 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
 
     if ( l_maxsize - i < 20 )
     {
-       fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: Most instructions need at most 20 bytes\n");
-       exit(-1);
+       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       return;
     }
 
     switch ( i_vec_instr ) {
@@ -2027,8 +2029,8 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
 
     if ( l_maxsize - i < 20 )
     {
-       fprintf(stderr, "libxsmm_x86_instruction_vec_move_gathscat: Most instructions need at most 20 bytes\n");
-       exit(-1);
+       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       return;
     }
     switch ( i_vmove_instr ) {
        case LIBXSMM_X86_INSTR_VGATHERDPS:
@@ -2136,7 +2138,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
                                        const int               i_displacement ) {
 #if !defined(NDEBUG)
   if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_INDEX_SCALE_ADDR );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_INDEX_SCALE_ADDR );
     return;
   }
 #endif
@@ -2156,8 +2158,8 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
 
     if ( l_maxsize - i < 20 )
     {
-       fprintf(stderr, "libxsmm_instruction_prefetch: Most instructions need at most 20 bytes\n");
-       exit(-1);
+       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       return;
     }
     if ( ((int)i_gp_reg_base < LIBXSMM_X86_GP_REG_RAX) ||
          ((int)i_gp_reg_base > LIBXSMM_X86_GP_REG_R15) ||
@@ -2672,8 +2674,8 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
 
     if ( l_maxsize - i < 20 )
     {
-       fprintf(stderr, "libxsmm_instruction_mask_move: Most instructions need at most 20 bytes\n");
-       exit(-1);
+       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       return;
     }
     switch ( i_mask_instr ) {
        case LIBXSMM_X86_INSTR_KMOVW:
@@ -2754,8 +2756,8 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
 
     if ( l_maxsize - i < 20 )
     {
-       fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: Most instructions need at most 20 bytes\n");
-       exit(-1);
+       LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+       return;
     }
     switch ( i_mask_instr ) {
        case LIBXSMM_X86_INSTR_KXNORW:
@@ -2795,7 +2797,7 @@ void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io
                                                   libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   /* check if we still have lable we can jump to */
   if ( io_loop_label_tracker->label_count == 32 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
     return;
   }
 
@@ -2828,13 +2830,13 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
                                                  libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   /* check that we just handle jl */
   if ( i_jmp_instr != LIBXSMM_X86_INSTR_JL) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUPPORTED_JUMP );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUPPORTED_JUMP );
     return;
   }
 
   /* check if we still have lable we can jump to */
   if ( io_loop_label_tracker->label_count == 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_JMPLBL_AVAIL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_JMPLBL_AVAIL );
     return;
   }
 
@@ -3080,23 +3082,23 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
 
     /* check for a valid register allocation for input pointers */
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_c ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_C );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_C );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a_prefetch ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A_PREF );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A_PREF );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
       return;
     }
 
@@ -3182,23 +3184,23 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
     char l_gp_reg_name[4];
 
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_c ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_C );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_C );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a_prefetch ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A_PREF );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A_PREF );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
       return;
     }
     if ( (strcmp(i_arch, "wsm") == 0) ||
@@ -3302,23 +3304,23 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
 
     /* check for a valid register allocation for input pointers */
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a_prefetch ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A_PREF );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A_PREF );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_c ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_C );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_C );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
       return;
     }
 
@@ -3439,23 +3441,23 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
     }
 
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b_prefetch ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B_PREF );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a_prefetch ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A_PREF );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A_PREF );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_c ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_C );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_C );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_b ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_B );
       return;
     }
     if ( libxsmm_check_x86_gp_reg_name_callee_save( i_gp_reg_mapping->gp_reg_a ) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CALLEE_SAVE_A );
       return;
     }
     /* @TODO: I don't know if this is the correct placement in the generation process */
