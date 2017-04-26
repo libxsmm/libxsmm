@@ -260,11 +260,11 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
      things might happen.... HUAAH */
 #endif /*NDEBUG*/
   if ( i_conv_desc->ofh_rb*i_conv_desc->ofw_rb*l_reg_per_block > i_conv_kernel_config->vector_reg_count-4 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
     return;
   }
   if ( i_conv_desc->ofm_block % i_conv_kernel_config->vector_length_out != 0) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
     return;
   }
 
@@ -274,7 +274,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
   } else if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
     l_lead_dim = i_conv_desc->ofm_block;
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
     return;
   }
 
@@ -363,11 +363,11 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
      things might happen.... HUAAH */
 #endif /*NDEBUG*/
   if ( i_conv_desc->ofh_rb*i_conv_desc->ofw_rb*l_reg_per_block > i_conv_kernel_config->vector_reg_count-4 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
     return;
   }
   if ( i_conv_desc->ofm_block % i_conv_kernel_config->vector_length_out != 0) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
     return;
   }
 
@@ -377,7 +377,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
   } else if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
     l_lead_dim = i_conv_desc->ofm_block;
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
     return;
   }
 

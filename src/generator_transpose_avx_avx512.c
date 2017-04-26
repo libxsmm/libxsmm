@@ -633,7 +633,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
   } else if ( strcmp( i_arch, "knl" ) == 0 ) {
     avx512 = 2;
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;
   }
   /* @Greg add more fields here */

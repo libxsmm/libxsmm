@@ -52,7 +52,7 @@ void libxsmm_generator_convolution_winograd_weight_update_kernel( libxsmm_genera
        (strcmp(i_arch, "skx") == 0) ) {
     libxsmm_generator_convolution_winograd_weight_update_avx512( io_generated_code, i_conv_desc, i_arch );
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
 
@@ -165,7 +165,7 @@ void libxsmm_generator_convolution_winograd_forward_kernel( libxsmm_generated_co
        (strcmp(i_arch, "skx") == 0) ) {
     libxsmm_generator_convolution_winograd_forward_avx512( io_generated_code, i_conv_desc, i_arch );
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
 

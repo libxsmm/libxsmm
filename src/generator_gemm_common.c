@@ -709,24 +709,24 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX  ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2 ) {
     if ( (i_n_blocking > 3) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
   } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI        ||
              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
              ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) && (i_m_blocking == i_micro_kernel_config->vector_length) ) ) {
     if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
   } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {
     if ( (i_n_blocking > 6) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
   } else {}
   if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
     return;
   }
 #endif /*NDEBUG*/
@@ -809,24 +809,24 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX  ||
       i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX2 ) {
     if ( (i_n_blocking > 3) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
   } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_IMCI        ||
              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
              ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) && (i_m_blocking == i_micro_kernel_config->vector_length) ) ) {
     if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
   } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {
     if ( (i_n_blocking > 6) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
   } else {}
   if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
     return;
   }
 #endif

@@ -51,11 +51,11 @@ void libxsmm_generator_gemm_imci_microkernel( libxsmm_generated_code*           
 
 #if !defined(NDEBUG)
   if ( i_n_blocking > 30 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
   if ( (i_offset >= 0) && (i_k_blocking != 1) ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_K_BLOCK );
     return;
   }
 #endif
@@ -288,7 +288,7 @@ void libxsmm_x86_instruction_vec_move_imci( libxsmm_generated_code* io_generated
     libxsmm_x86_instruction_vec_move( io_generated_code, i_instruction_set, l_instr_2,
                                   i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement+64, i_vector_name, i_vec_reg_number_0, i_use_masking, i_is_store );
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_VEC_MOVE_IMCI );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_MOVE_IMCI );
     return;
   }
 }
@@ -314,15 +314,15 @@ void libxsmm_generator_gemm_load_C_imci( libxsmm_generated_code*             io_
      This is not done in release mode and therefore bad
      things might happen.... HUAAH */
   if (i_micro_kernel_config->instruction_set != LIBXSMM_X86_IMCI ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_IMCI );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_IMCI );
     return;
   }
   if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
     return;
   }
   if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
     return;
   }
 #endif /*NDEBUG*/
@@ -389,15 +389,15 @@ void libxsmm_generator_gemm_store_C_imci( libxsmm_generated_code*             io
      This is not done in release mode and therefore bad
      things might happen.... HUAAH */
   if (i_micro_kernel_config->instruction_set != LIBXSMM_X86_IMCI ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_NO_IMCI );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_IMCI );
     return;
   }
   if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
     return;
   }
   if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
     return;
   }
 #endif

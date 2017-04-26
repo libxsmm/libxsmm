@@ -115,7 +115,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
     l_generator_load = libxsmm_generator_gemm_load_C_imci;
     l_generator_store = libxsmm_generator_gemm_store_C_imci;
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
 

@@ -87,7 +87,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
   } else if ( strcmp( i_arch, "skx" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE;
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;
   }
   l_conv_kernel_config.vector_reg_count = 32;
@@ -132,7 +132,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
     l_conv_kernel_config.vadd_instruction = LIBXSMM_X86_INSTR_VPADDD;
     l_conv_kernel_config.vbcst_instruction = LIBXSMM_X86_INSTR_VPBROADCASTD;
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
     return;
   }
   l_conv_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
@@ -165,7 +165,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
     l_conv_kernel_config.l_ld_ofm_fil = i_conv_desc->ofm_block * i_conv_desc->blocks_ofm;
     l_found_fil_format = 1;
     if (i_conv_desc->datatype != LIBXSMM_DNN_DATATYPE_F32) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_DT_FORMAT );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DT_FORMAT );
       return;
     }
 #endif
@@ -174,20 +174,20 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
     l_found_fil_format = 1;
   }
   if ( (l_found_act_format == 0) || (l_found_fil_format == 0) ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
     return;
   }
 
   /* check if we have full vectors */
   if ( i_conv_desc->ifm_block % l_conv_kernel_config.vector_length_in != 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_IFM_VEC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CONV_IFM_VEC );
     return;
   }
 
 #if 0
   /* check if we have  stride of 1 */
   if ( i_conv_desc->stride_h != 1 || i_conv_desc->stride_w != 1 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_CONT_STRIDE );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CONV_CONT_STRIDE );
     return;
   }
 #endif
@@ -1196,7 +1196,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
 
   /* if kw loop is not unrolled, we are running out of GPRs */
   if ( i_kw_unroll == 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
     return;
   }
 
@@ -1479,7 +1479,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_two_rows( libxsm
 
   /* if kw loop is not unrolled, we are running out of GPRs */
   if ( i_kw_unroll == 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
     return;
   }
 

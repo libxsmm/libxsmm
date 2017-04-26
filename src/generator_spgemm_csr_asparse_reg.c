@@ -97,7 +97,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   /* check if mallocs were successful */
   if ( 0 == l_unique_values || 0 == l_unique_pos ) {
     free(l_unique_values); free(l_unique_pos);
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSR_ALLOC_DATA );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSR_ALLOC_DATA );
     return;
   }
 
@@ -105,7 +105,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   if ( (strcmp(i_arch, "knl") != 0) &&
        (strcmp(i_arch, "skx") != 0) ) {
     free(l_unique_values); free(l_unique_pos);
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
 
@@ -136,7 +136,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   /* check that we have enough registers (N=20) for now */
   if ( l_unique > 31 ) {
     free(l_unique_values); free(l_unique_pos);
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNIQUE_VAL );
     return;
   }
 
@@ -168,7 +168,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   /* inner chunk size */
   if ( i_xgemm_desc->n != (int)l_micro_kernel_config.vector_length ) {
     free(l_unique_values); free(l_unique_pos);
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
 

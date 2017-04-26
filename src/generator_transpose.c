@@ -54,7 +54,7 @@ void libxsmm_generator_transpose_kernel( libxsmm_generated_code*                
     libxsmm_generator_transpose_avx_avx512_kernel( io_generated_code, i_trans_desc, i_arch );
   } else {
     /* TODO fix this error */
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
 

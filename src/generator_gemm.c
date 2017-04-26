@@ -86,25 +86,25 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
   } else if ( (strcmp(i_arch, "noarch") == 0) ) {
     /* Nothing to do */
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
     return;
   }
 
   /* check LDA */
   if ( l_xgemm_desc_mod.lda < l_xgemm_desc_mod.m ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDA );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
     return;
   }
 
   /* check LDB */
   if ( l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.k ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDB );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
     return;
   }
 
   /* check LDC */
   if ( l_xgemm_desc_mod.ldc < l_xgemm_desc_mod.m ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
     return;
   }
 
@@ -138,7 +138,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_gemm_noarch_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
 

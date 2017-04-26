@@ -55,12 +55,12 @@ void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*        io_gene
   if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDB */
     if ( i_xgemm_desc->ldb < i_xgemm_desc->k ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDB );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
       return;
     }
     /* check LDC */
     if ( i_xgemm_desc->ldc < i_xgemm_desc->m ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
     libxsmm_generator_spgemm_csc_asparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
@@ -68,18 +68,18 @@ void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*        io_gene
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */
     if ( i_xgemm_desc->lda < i_xgemm_desc->m ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDA );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
       return;
     }
     /* check LDC */
     if ( i_xgemm_desc->ldc < i_xgemm_desc->m ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
     libxsmm_generator_spgemm_csc_bsparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   } else {
     /* something bad happened... */
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
     return;
   }
 }
@@ -95,12 +95,12 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_gene
   if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDB */
     if ( i_xgemm_desc->ldb < i_xgemm_desc->n ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDB );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
       return;
     }
     /* check LDC */
     if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
     libxsmm_generator_spgemm_csr_asparse( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
@@ -108,12 +108,12 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_gene
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */
     if ( i_xgemm_desc->lda < i_xgemm_desc->k ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDA );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
       return;
     }
     /* check LDC */
     if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
     /* something bad happened... */
@@ -121,7 +121,7 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_gene
     exit(-1);
   } else {
     /* something bad happened... */
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
     return;
   }
 }
@@ -137,12 +137,12 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
   if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDB */
     if ( i_xgemm_desc->ldb < i_xgemm_desc->n ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDB );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
       return;
     }
     /* check LDC */
     if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
     libxsmm_generator_spgemm_csr_asparse_reg( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
@@ -150,12 +150,12 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */
     if ( i_xgemm_desc->lda < i_xgemm_desc->k ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDA );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
       return;
     }
     /* check LDC */
     if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
     /* something bad happened... */
@@ -163,7 +163,7 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
     exit(-1);
   } else {
     /* something bad happened... */
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
     return;
   }
 }
@@ -179,12 +179,12 @@ void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_
   if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDB */
     if ( i_xgemm_desc->ldb < i_xgemm_desc->n ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDB );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
       return;
     }
     /* check LDC */
     if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
     libxsmm_generator_spgemm_csr_asparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
@@ -192,18 +192,18 @@ void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_
   } else if ( (i_xgemm_desc->lda > 0) && (i_xgemm_desc->ldb == 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDA */
     if ( i_xgemm_desc->lda < i_xgemm_desc->k ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDA );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
       return;
     }
     /* check LDC */
     if ( i_xgemm_desc->ldc < i_xgemm_desc->n ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
       return;
     }
     libxsmm_generator_spgemm_csr_bsparse_soa( io_generated_code, i_xgemm_desc, i_arch, i_row_idx, i_column_idx, i_values );
   } else {
     /* something bad happened... */
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_SPGEMM_GEN );
     return;
   }
 }

@@ -224,59 +224,62 @@
 
 /* define error codes */
 #define LIBXSMM_ERR_GENERAL              90000
-#define LIBXSMM_ERR_ARCH_PREC            90001
-#define LIBXSMM_ERR_ARCH                 90002
-#define LIBXSMM_ERR_LDA                  90003
-#define LIBXSMM_ERR_LDB                  90004
-#define LIBXSMM_ERR_LDC                  90005
-#define LIBXSMM_ERR_SPGEMM_GEN           90006
-#define LIBXSMM_ERR_CSC_INPUT            90007
-#define LIBXSMM_ERR_CSC_READ_LEN         90008
-#define LIBXSMM_ERR_CSC_READ_DESC        90009
-#define LIBXSMM_ERR_CSC_READ_ELEMS       90010
-#define LIBXSMM_ERR_CSC_LEN              90011
-#define LIBXSMM_ERR_N_BLOCK              90012
-#define LIBXSMM_ERR_M_BLOCK              90013
-#define LIBXSMM_ERR_NO_IMCI              90014
-#define LIBXSMM_ERR_REG_BLOCK            90015
-#define LIBXSMM_ERR_VEC_MOVE_IMCI        90016
-#define LIBXSMM_ERR_APPEND_STR           90017
-#define LIBXSMM_ERR_ALLOC                90018
-#define LIBXSMM_ERR_NO_IMCI_AVX512_BCAST 90019
-#define LIBXSMM_ERR_CALLEE_SAVE_A        90020
-#define LIBXSMM_ERR_CALLEE_SAVE_B        90021
-#define LIBXSMM_ERR_CALLEE_SAVE_C        90022
-#define LIBXSMM_ERR_CALLEE_SAVE_A_PREF   90023
-#define LIBXSMM_ERR_CALLEE_SAVE_B_PREF   90024
-#define LIBXSMM_ERR_NO_INDEX_SCALE_ADDR  90025
-#define LIBXSMM_ERR_UNSUPPORTED_JUMP     90026
-#define LIBXSMM_ERR_NO_JMPLBL_AVAIL      90027
-#define LIBXSMM_ERR_EXCEED_JMPLBL        90028
-#define LIBXSMM_ERR_CSC_ALLOC_DATA       90029
-#define LIBXSMM_ERR_CSR_INPUT            90030
-#define LIBXSMM_ERR_CSR_READ_LEN         90031
-#define LIBXSMM_ERR_CSR_READ_DESC        90032
-#define LIBXSMM_ERR_CSR_READ_ELEMS       90033
-#define LIBXSMM_ERR_CSR_LEN              90034
-#define LIBXSMM_ERR_CSR_ALLOC_DATA       90035
-#define LIBXSMM_ERR_UNSUP_CONV_FORMAT    90036
-#define LIBXSMM_ERR_INVALID_KW_UNROLL    90037
-#define LIBXSMM_ERR_INVALID_KH_UNROLL    90038
-#define LIBXSMM_ERR_INVALID_OFW_UNROLL   90039
-#define LIBXSMM_ERR_INVALID_OFH_UNROLL   90040
-#define LIBXSMM_ERR_INVALID_CONV_ACC     90041
-#define LIBXSMM_ERR_UNSUP_ARCH           90042
-#define LIBXSMM_ERR_CONV_IFM_VEC         90043
-#define LIBXSMM_ERR_CONV_OFM_VEC         90044
-#define LIBXSMM_ERR_CONV_CONT_STRIDE     90045
-#define LIBXSMM_ERR_UNSUP_DATATYPE       90046
-#define LIBXSMM_ERR_UNSUP_DT_FORMAT      90047
-#define LIBXSMM_ERR_K_BLOCK              90048
-#define LIBXSMM_ERR_INVALID_GEMM_CONFIG  90049
-#define LIBXSMM_ERR_UNIQUE_VAL           90050
+#define LIBXSMM_ERR_ALLOC                90001
+#define LIBXSMM_ERR_BUFFER_TOO_SMALL     90002
+#define LIBXSMM_ERR_APPEND_STR           90003
+#define LIBXSMM_ERR_ARCH_PREC            90004
+#define LIBXSMM_ERR_ARCH                 90005
+#define LIBXSMM_ERR_UNSUP_ARCH           90006
+#define LIBXSMM_ERR_LDA                  90007
+#define LIBXSMM_ERR_LDB                  90008
+#define LIBXSMM_ERR_LDC                  90009
+#define LIBXSMM_ERR_SPGEMM_GEN           90010
+#define LIBXSMM_ERR_CSC_INPUT            90011
+#define LIBXSMM_ERR_CSC_READ_LEN         90012
+#define LIBXSMM_ERR_CSC_READ_DESC        90013
+#define LIBXSMM_ERR_CSC_READ_ELEMS       90014
+#define LIBXSMM_ERR_CSC_LEN              90015
+#define LIBXSMM_ERR_N_BLOCK              90016
+#define LIBXSMM_ERR_M_BLOCK              90017
+#define LIBXSMM_ERR_K_BLOCK              90018
+#define LIBXSMM_ERR_NO_IMCI              90019
+#define LIBXSMM_ERR_REG_BLOCK            90020
+#define LIBXSMM_ERR_VEC_MOVE_IMCI        90021
+#define LIBXSMM_ERR_NO_IMCI_AVX512_BCAST 90022
+#define LIBXSMM_ERR_NO_AVX512_QFMA       90023
+#define LIBXSMM_ERR_CALLEE_SAVE_A        90024
+#define LIBXSMM_ERR_CALLEE_SAVE_B        90025
+#define LIBXSMM_ERR_CALLEE_SAVE_C        90026
+#define LIBXSMM_ERR_CALLEE_SAVE_A_PREF   90027
+#define LIBXSMM_ERR_CALLEE_SAVE_B_PREF   90028
+#define LIBXSMM_ERR_NO_INDEX_SCALE_ADDR  90029
+#define LIBXSMM_ERR_UNSUPPORTED_JUMP     90030
+#define LIBXSMM_ERR_NO_JMPLBL_AVAIL      90031
+#define LIBXSMM_ERR_EXCEED_JMPLBL        90032
+#define LIBXSMM_ERR_CSC_ALLOC_DATA       90033
+#define LIBXSMM_ERR_CSR_ALLOC_DATA       90034
+#define LIBXSMM_ERR_CSR_INPUT            90035
+#define LIBXSMM_ERR_CSR_READ_LEN         90036
+#define LIBXSMM_ERR_CSR_READ_DESC        90037
+#define LIBXSMM_ERR_CSR_READ_ELEMS       90038
+#define LIBXSMM_ERR_CSR_LEN              90039
+#define LIBXSMM_ERR_UNSUP_CONV_FORMAT    90040
+#define LIBXSMM_ERR_INVALID_KW_UNROLL    90041
+#define LIBXSMM_ERR_INVALID_KH_UNROLL    90042
+#define LIBXSMM_ERR_INVALID_OFW_UNROLL   90043
+#define LIBXSMM_ERR_INVALID_OFH_UNROLL   90044
+#define LIBXSMM_ERR_INVALID_CONV_ACC     90045
+#define LIBXSMM_ERR_CONV_OFM_VEC         90046
+#define LIBXSMM_ERR_CONV_IFM_VEC         90047
+#define LIBXSMM_ERR_CONV_CONT_STRIDE     90048
+#define LIBXSMM_ERR_UNSUP_DATATYPE       90049
+#define LIBXSMM_ERR_UNSUP_DT_FORMAT      90050
+#define LIBXSMM_ERR_INVALID_GEMM_CONFIG  90051
+#define LIBXSMM_ERR_UNIQUE_VAL           90052
 
-/* @TODO fix this value for final integration */
-#define LIBXSMM_ERR_NO_AVX512_QFMA       92000
+/** Error-handling macro, which supports an optional string-literal (error context). */
+#define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE, ...) libxsmm_handle_error( \
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_STRINGIFY(__VA_ARGS__!))
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {
@@ -516,7 +519,8 @@ void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_co
 
 LIBXSMM_INTERNAL_API
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
-                           const unsigned int      i_error_code );
+                           const unsigned int      i_error_code,
+                           const char*             context );
 
 
 LIBXSMM_INTERNAL_API

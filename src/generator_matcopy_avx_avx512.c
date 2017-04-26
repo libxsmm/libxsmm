@@ -115,7 +115,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     l_kernel_config.vector_name = 'z';
     l_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;
   }
 
@@ -133,7 +133,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
       l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       l_kernel_config.vector_length = 32;
     } else {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
     assert(l_kernel_config.vector_length == 32 / l_kernel_config.datatype_size);
@@ -150,12 +150,12 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
       l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVDQU8;
       l_kernel_config.vector_length = 64;
     } else {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_DATATYPE );
       return;
     }
     assert(l_kernel_config.vector_length == 64 / l_kernel_config.datatype_size);
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;
   }
 

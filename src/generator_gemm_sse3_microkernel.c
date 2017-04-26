@@ -56,11 +56,11 @@ void libxsmm_generator_gemm_sse3_microkernel( libxsmm_generated_code*           
 
 #if !defined(NDEBUG)
   if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
   if ( i_m_blocking % i_micro_kernel_config->vector_length != 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_M_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
     return;
   }
 #endif

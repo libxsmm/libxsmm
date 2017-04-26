@@ -59,7 +59,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
 
 #if !defined(NDEBUG)
   if ( i_n_blocking > 30 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
 #endif
@@ -399,11 +399,11 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
 
 #if !defined(NDEBUG)
   if ( i_n_blocking > 28 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
   if ( i_k_blocking % 4 != 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_K_BLOCK );
     return;
   }
 #endif
@@ -663,11 +663,11 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
 
 #if !defined(NDEBUG)
   if ( i_n_blocking > 24 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_N_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
   if ( i_k_blocking < 8 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_K_BLOCK );
     return;
   }
 #endif
@@ -846,7 +846,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
 
 #if !defined(NDEBUG)
   if ( i_k_blocking < 8 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_K_BLOCK );
     return;
   }
 #endif
@@ -1404,7 +1404,7 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
   LIBXSMM_UNUSED(i_arch);
 
   if ( (l_k_blocking >= l_k_threshold) ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_K_BLOCK );
     return 0;
   }
 
