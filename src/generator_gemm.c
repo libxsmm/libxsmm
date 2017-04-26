@@ -182,8 +182,7 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
-      libxsmm_strerror(l_generated_code.last_error));
+    LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
     return;
   }
 
@@ -232,8 +231,7 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
-      libxsmm_strerror(l_generated_code.last_error));
+    LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
     return;
   }
 

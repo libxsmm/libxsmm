@@ -287,6 +287,8 @@
 #endif
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_STRINGIFY(LIBXSMM_CALLER), LIBXSMM_BACKEND_VERBOSITY)
+#define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_STRINGIFY(LIBXSMM_CALLER), 1)
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {
