@@ -277,9 +277,16 @@
 #define LIBXSMM_ERR_INVALID_GEMM_CONFIG  90051
 #define LIBXSMM_ERR_UNIQUE_VAL           90052
 
-/** Error-handling macro, which supports an optional string-literal (error context). */
+#if !defined(LIBXSMM_VERBOSE_BACKEND) && !defined(NDEBUG)
+# define LIBXSMM_VERBOSE_BACKEND
+#endif
+#if defined(LIBXSMM_VERBOSE_BACKEND)
+# define LIBXSMM_BACKEND_VERBOSITY 1
+#else
+# define LIBXSMM_BACKEND_VERBOSITY 0
+#endif
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-  GENERATED_CODE, ERROR_CODE, LIBXSMM_STRINGIFY(LIBXSMM_CALLER))
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_STRINGIFY(LIBXSMM_CALLER), LIBXSMM_BACKEND_VERBOSITY)
 
 /* micro kernel config */
 typedef struct libxsmm_micro_kernel_config_struct {
@@ -520,8 +527,8 @@ void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_co
 LIBXSMM_INTERNAL_API
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
-                           const char*             context );
-
+                           const char*             context,
+                           int emit_message );
 
 LIBXSMM_INTERNAL_API
 void libxsmm_strncpy( char*        o_dest,
