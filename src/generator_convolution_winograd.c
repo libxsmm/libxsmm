@@ -83,8 +83,7 @@ void libxsmm_generator_convolution_winograd_weight_update_inlineasm(const char* 
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
-      libxsmm_strerror(l_generated_code.last_error));
+    LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
     exit(-1);
   }
 
@@ -131,8 +130,7 @@ void libxsmm_generator_convolution_winograd_weight_update_directasm(const char* 
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
-      libxsmm_strerror(l_generated_code.last_error));
+    LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
     exit(-1);
   }
 
@@ -196,8 +194,7 @@ void libxsmm_generator_convolution_winograd_forward_inlineasm( const char*      
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
-      libxsmm_strerror(l_generated_code.last_error));
+    LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
     exit(-1);
   }
 
@@ -244,8 +241,7 @@ void libxsmm_generator_convolution_winograd_forward_directasm( const char*      
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
-      libxsmm_strerror(l_generated_code.last_error));
+    LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
     exit(-1);
   }
 
