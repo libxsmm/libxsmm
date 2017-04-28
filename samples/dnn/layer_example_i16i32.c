@@ -555,7 +555,7 @@ int main(int argc, char* argv[])
 
   /* bind buffers and filter to handle */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_buffer( libxsmm_handle, libxsmm_input, LIBXSMM_DNN_REGULAR_INPUT ) );
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_buffer( libxsmm_handle, libxsmm_input, LIBXSMM_DNN_GRADIENT_INPUT ) ); 
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_buffer( libxsmm_handle, libxsmm_input, LIBXSMM_DNN_GRADIENT_INPUT ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_buffer( libxsmm_handle, libxsmm_output, LIBXSMM_DNN_REGULAR_OUTPUT ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_buffer( libxsmm_handle, libxsmm_output, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_filter( libxsmm_handle, libxsmm_filter, LIBXSMM_DNN_REGULAR_FILTER ) );
@@ -613,7 +613,7 @@ int main(int argc, char* argv[])
     }
     /* copy out data */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_buffer( libxsmm_input, (void*)naive_libxsmm_input, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    
+
     /* compare */
     compare_buf_int16(naive_input, naive_libxsmm_input, nImg*nIfm*ifhp*ifwp, &norms_bwd);
     printf("             1-norm of reference: %f\n", norms_bwd.one_norm_ref);

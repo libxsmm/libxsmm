@@ -153,7 +153,7 @@ if (handle->fm_lp_block == 1) {
   libxsmm_barrier_wait(handle->barrier, ltid);
 
   /* Then we convert the temporary weight tensor to
-   * [blocksofm][blocksifm * fm_lp_block][R][S][ofm_block][ifm_block][fm_lp_block] format 
+   * [blocksofm][blocksifm * fm_lp_block][R][S][ofm_block][ifm_block][fm_lp_block] format
    */
   for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
     ofm1 = ifm1ofm1 / (handle->blocksifm * handle->fm_lp_block);
@@ -163,7 +163,7 @@ if (handle->fm_lp_block == 1) {
         for (ki=0; ki < handle->desc.S; ++ki) {
           for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              LIBXSMM_VLA_ACCESS(7, tr_wt, ofm1, ifm1, kj, ki, ((handle->ofmblock / handle->fm_lp_block) * lp) + (ofm2/handle->fm_lp_block), ifm2, (ofm2 % handle->fm_lp_block), handle->blocksifm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block) = 
+              LIBXSMM_VLA_ACCESS(7, tr_wt, ofm1, ifm1, kj, ki, ((handle->ofmblock / handle->fm_lp_block) * lp) + (ofm2/handle->fm_lp_block), ifm2, (ofm2 % handle->fm_lp_block), handle->blocksifm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block) =
                 LIBXSMM_VLA_ACCESS(6, temp_wt, (ofm1 *  handle->fm_lp_block) + lp, ifm1, kj, ki, ofm2, ifm2, handle->blocksifm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
             }
           }

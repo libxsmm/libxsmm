@@ -618,7 +618,7 @@ int main(int argc, char* argv[])
     printf("    inf-norm of comp. rel. error: %f\n", norms_fwd.max_rel_err);
     printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
   }
-  
+
   if (type == 'A' || type == 'B') {
     printf("##############################################\n");
     printf("#  Check Correctness - BWD (custom-Storage)  #\n");
@@ -639,7 +639,7 @@ int main(int argc, char* argv[])
     }
     /* copy out data */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_buffer( libxsmm_input, (void*)naive_libxsmm_input, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    
+
     /* compare */
     compare_buf_uint8(naive_input, naive_libxsmm_input, nImg*nIfm*ifhp*ifwp, &norms_bwd);
     printf("             1-norm of reference: %f\n", norms_bwd.one_norm_ref);
@@ -680,7 +680,7 @@ int main(int argc, char* argv[])
        ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (lpOps*1e-9)/l_total,
        norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
   }
-  
+
   if (type == 'A' || type == 'B') {
     printf("##########################################\n");
     printf("#   Performance - BWD (custom-Storage)   #\n");

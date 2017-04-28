@@ -107,7 +107,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
-  } 
+  }
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
 #if 0
@@ -135,7 +135,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
 #include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_img_par.tpl.c"
       }
 #endif
-    } else if (handle->datatype ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) { 
+    } else if (handle->datatype ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
       typedef int element_input_type;
       typedef short element_output_type;
       typedef short element_filter_type;

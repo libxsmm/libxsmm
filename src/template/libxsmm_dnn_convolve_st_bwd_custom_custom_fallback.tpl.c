@@ -70,7 +70,7 @@ LIBXSMM_VLA_DECL(3, element_input_type, input_buffer, ((element_input_type*)hand
 for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
   img = imgifm1 / handle->blocksifm;
   ifm1 = imgifm1 % handle->blocksifm;
-  
+
   for (ifmlp = 0; ifmlp < handle->fm_lp_block; ++ifmlp) {
     /* upconvert for low precision */
     if (handle->datatype != handle->datatype_itm) {
@@ -82,7 +82,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
         }
       }
     }/* end of upconvert for low precision */
-    
+
     /* input padding copy */
 #if defined(INPUT_PADDING)
     memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock), 0, padded_w * padded_h * sizeof(element_input_type));
