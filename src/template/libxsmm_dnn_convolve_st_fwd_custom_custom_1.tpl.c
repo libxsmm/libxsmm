@@ -133,8 +133,8 @@ if (handle->datatype != handle->datatype_itm) {
           }
         }
         for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-          /* reset result buffer to zero when intent is to overwrite when first block 
-             of input channels should be convoluted */ 
+          /* reset result buffer to zero when intent is to overwrite when first block
+             of input channels should be convoluted */
           if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
             element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
             LIBXSMM_PRAGMA_SIMD
@@ -302,8 +302,8 @@ if (handle->datatype != handle->datatype_itm) {
           }
         }
         for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-          /* reset result buffer to zero when intent is to overwrite when first block 
-             of input channels should be convoluted */ 
+          /* reset result buffer to zero when intent is to overwrite when first block
+             of input channels should be convoluted */
           if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
             element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
             LIBXSMM_PRAGMA_SIMD
@@ -493,8 +493,8 @@ if (handle->datatype != handle->datatype_itm) {
       }
 #endif
       for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-        /* reset result buffer to zero when intent is to overwrite when first block 
-           of input channels should be convoluted */ 
+        /* reset result buffer to zero when intent is to overwrite when first block
+           of input channels should be convoluted */
         if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
           element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
           LIBXSMM_PRAGMA_SIMD

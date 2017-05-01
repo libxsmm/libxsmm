@@ -76,16 +76,19 @@
 #   define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED
 # endif
 # define LIBXSMM_VTUNE_JIT_UNLOAD iJVM_EVENT_TYPE_METHOD_UNLOAD_START
+# if !defined(LIBXSMM_MALLOC_FALLBACK)
+#   define LIBXSMM_MALLOC_FALLBACK 4
+# endif
+#else
+# if !defined(LIBXSMM_MALLOC_FALLBACK)
+#   define LIBXSMM_MALLOC_FALLBACK 0
+# endif
 #endif /*defined(LIBXSMM_VTUNE)*/
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 #if defined(LIBXSMM_PERF)
 # include "libxsmm_perf.h"
-#endif
-
-#if !defined(LIBXSMM_MALLOC_FALLBACK)
-# define LIBXSMM_MALLOC_FALLBACK 0
 #endif
 
 #if !defined(LIBXSMM_MALLOC_NOCRC)
