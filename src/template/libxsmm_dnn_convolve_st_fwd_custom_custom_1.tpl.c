@@ -138,7 +138,7 @@ if (handle->datatype != handle->datatype_itm) {
           if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
             element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
             LIBXSMM_PRAGMA_SIMD
-            for (oj = 0; oj < handle->ofh*handle->ofw*handle->ofmblock; oj++) {
+            for (oj = 0; oj < handle->ofhp*handle->ofwp*handle->ofmblock; oj++) {
               temp_ptr[oj] = (element_output_type)0;
             }
           }
@@ -307,7 +307,7 @@ if (handle->datatype != handle->datatype_itm) {
           if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
             element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
             LIBXSMM_PRAGMA_SIMD
-            for (oj = 0; oj < handle->ofh*handle->ofw*handle->ofmblock; oj++) {
+            for (oj = 0; oj < handle->ofhp*handle->ofwp*handle->ofmblock; oj++) {
               temp_ptr[oj] = (element_output_type)0;
             }
           }
@@ -498,7 +498,7 @@ if (handle->datatype != handle->datatype_itm) {
         if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
           element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
           LIBXSMM_PRAGMA_SIMD
-          for (oj = 0; oj < handle->ofh*handle->ofw*handle->ofmblock; oj++) {
+          for (oj = 0; oj < handle->ofhp*handle->ofwp*handle->ofmblock; oj++) {
             temp_ptr[oj] = (element_output_type)0;
           }
         }
