@@ -2735,14 +2735,14 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
     libxsmm_get_x86_instr_name( i_mask_instr, l_instr_name, 15 );
 
     /* check if we need to add a prefix for accessing 32bit in a 64bit register */
-    if ( i_gp_reg_number == LIBXSMM_X86_GP_REG_R8  ||
+    if ( (i_gp_reg_number == LIBXSMM_X86_GP_REG_R8  ||
          i_gp_reg_number == LIBXSMM_X86_GP_REG_R9  ||
          i_gp_reg_number == LIBXSMM_X86_GP_REG_R10 ||
          i_gp_reg_number == LIBXSMM_X86_GP_REG_R11 ||
          i_gp_reg_number == LIBXSMM_X86_GP_REG_R12 ||
          i_gp_reg_number == LIBXSMM_X86_GP_REG_R13 ||
          i_gp_reg_number == LIBXSMM_X86_GP_REG_R14 ||
-         i_gp_reg_number == LIBXSMM_X86_GP_REG_R15 ) {
+         i_gp_reg_number == LIBXSMM_X86_GP_REG_R15) && (i_mask_instr != LIBXSMM_X86_INSTR_KMOVQ) ) {
       l_prefix = 'd';
     }
 
