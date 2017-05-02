@@ -2680,6 +2680,12 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
     switch ( i_mask_instr ) {
        case LIBXSMM_X86_INSTR_KMOVW:
           break;
+       case LIBXSMM_X86_INSTR_KMOVB:
+          break;
+       case LIBXSMM_X86_INSTR_KMOVD:
+          break;
+       case LIBXSMM_X86_INSTR_KMOVQ:
+          break;
        default:
           fprintf(stderr, "libxsmm_instruction_mask_move: Strange kmov instruction");
           exit(-1);
