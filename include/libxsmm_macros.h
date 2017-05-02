@@ -120,6 +120,27 @@
 # endif
 #endif /*LIBXSMM_PRAGMA*/
 
+#if defined(_WIN32) && !defined(__GNUC__)
+# define LIBXSMM_ATTRIBUTE(A) __declspec(A)
+# if defined(__cplusplus)
+#   define LIBXSMM_INLINE_ALWAYS __forceinline
+# else
+#   define LIBXSMM_INLINE_ALWAYS static __forceinline
+# endif
+# define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
+# define LIBXSMM_CDECL __cdecl
+#elif defined(__GNUC__)
+# define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
+# define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
+# define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
+# define LIBXSMM_CDECL LIBXSMM_ATTRIBUTE(cdecl)
+#else
+# define LIBXSMM_ATTRIBUTE(A)
+# define LIBXSMM_INLINE_ALWAYS LIBXSMM_INLINE
+# define LIBXSMM_ALIGNED(DECL, N)
+# define LIBXSMM_CDECL
+#endif
+
 #if defined(_MSC_VER)
 # define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message(MSG))
 #elif LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
@@ -130,7 +151,6 @@
 #endif
 
 #if defined(__INTEL_COMPILER)
-# define LIBXSMM_ATTRIBUTE_SIMD
 # define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(simd reduction(EXPRESSION))
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(simd collapse(N))
 # define LIBXSMM_PRAGMA_SIMD_PRIVATE(...) LIBXSMM_PRAGMA(simd private(__VA_ARGS__))
@@ -138,14 +158,12 @@
 # define LIBXSMM_PRAGMA_NOVECTOR LIBXSMM_PRAGMA(novector)
 #elif (defined(_OPENMP) && (201307 <= _OPENMP)) /*OpenMP 4.0*/ || (defined(LIBXSMM_OPENMP_SIMD) \
   && LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
-# define LIBXSMM_ATTRIBUTE_SIMD LIBXSMM_PRAGMA(optimize("openmp-simd"))
 # define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(omp simd reduction(EXPRESSION))
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(omp simd collapse(N))
 # define LIBXSMM_PRAGMA_SIMD_PRIVATE(...) LIBXSMM_PRAGMA(omp simd private(__VA_ARGS__))
 # define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(omp simd)
 # define LIBXSMM_PRAGMA_NOVECTOR
 #else
-# define LIBXSMM_ATTRIBUTE_SIMD
 # define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION)
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N)
 # define LIBXSMM_PRAGMA_SIMD_PRIVATE(...)
@@ -221,27 +239,6 @@
 #define LIBXSMM_UP(N, UP) ((((N) + (UP) - 1) / (UP)) * (UP))
 /* compares floating point values but avoids warning about unreliable comparison */
 #define LIBXSMM_FEQ(A, B) (!((A) < (B) || (A) > (B)))
-
-#if defined(_WIN32) && !defined(__GNUC__)
-# define LIBXSMM_ATTRIBUTE(A) __declspec(A)
-# if defined(__cplusplus)
-#   define LIBXSMM_INLINE_ALWAYS __forceinline
-# else
-#   define LIBXSMM_INLINE_ALWAYS static __forceinline
-# endif
-# define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
-# define LIBXSMM_CDECL __cdecl
-#elif defined(__GNUC__)
-# define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
-# define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
-# define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
-# define LIBXSMM_CDECL LIBXSMM_ATTRIBUTE(cdecl)
-#else
-# define LIBXSMM_ATTRIBUTE(A)
-# define LIBXSMM_INLINE_ALWAYS LIBXSMM_INLINE
-# define LIBXSMM_ALIGNED(DECL, N)
-# define LIBXSMM_CDECL
-#endif
 
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N);
