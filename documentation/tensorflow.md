@@ -22,7 +22,7 @@ To try LIBXSMM's master revision, the file `tensorflow/workspace.bzl` can be adj
   )
 ```
 
-Beside of the regular prerequisites, nothing else is needed to use TensorFlow with LIBXSMM. Prior to bazel&#160;0.4.5, it was helpful to change TensorFlow's `configure` script by replacing `bazel clean --expunge` with `bazel clean --expunge_async` (at least when NFS-hosted).
+Beside of the regular prerequisites, nothing else is needed to use TensorFlow with LIBXSMM. Prior to Bazel&#160;0.4.5, it was helpful to change TensorFlow's `configure` script by replacing `bazel clean --expunge` with `bazel clean --expunge_async` (at least when NFS-hosted).
 
 ```
 cd tensorflow-xsmm
@@ -36,9 +36,9 @@ export https_proxy=https://proxy.domain.com:912
 export http_proxy=http://proxy.domain.com:911
 ```
 
-Please note that certain content under `tensorflow/models` may cause an error during the configuration. In such a case, simply configure with "models" temporarily not present. In general, if the build step of any of the bazel commands goes wrong, `-s --verbose_failures` can be added to the command line (`-s` shows the full command of each of the build steps). The flags `--define tensorflow_xsmm=1`, `--define eigen_xsmm=1`, and `--define tensorflow_xsmm_backward=1` are not actually needed for all the cases, but are supplied for consistency.  
+Please note that certain content under `tensorflow/models` may cause an error during the configuration. In such a case, simply configure with "models" temporarily not present. In general, if the build step of any of the Bazel commands goes wrong, `-s --verbose_failures` can be added to the command line (`-s` shows the full command of each of the build steps). The flags `--define tensorflow_xsmm=1`, `--define eigen_xsmm=1`, and `--define tensorflow_xsmm_backward=1` are not actually needed for all the cases, but are supplied for consistency.  
 
-**More important, one line of below target flags should be added to any "bazel" command line**:
+**More important, one line of below target flags should be added to Bazel's build line**:
 
 * AVX2/HSW/BDW: `--copt=-mfma --copt=-mavx2`
 * AVX-512/SKX: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl` (and `--copt=-mavx512dq` depending on certain fixes being already present in TensorFlow)
@@ -77,7 +77,7 @@ bazel build -c opt --copt=-O3 --linkopt=-pthread \
   //tensorflow/models/convnetbenchmarks:benchmark_googlenet
 ```
 
-The above bazel command may be combined to build `//tensorflow/tools/pip_package:build_pip_package` as well. When completed (wheel installed!) e.g., run the "Alexnet" benchmark:
+The above command may be combined to build `//tensorflow/tools/pip_package:build_pip_package` as well. When completed (wheel installed!) e.g., run the "Alexnet" benchmark:
 
 ```
 LIBXSMM_VERBOSE=2 \
@@ -91,7 +91,7 @@ In case of an `ImportError: No module named builtins` one can resolve the proble
 ## Non-default Compiler
 LIBXSMM does not impose to build for a specific code path, and always exploits the most suitable instruction set extension for JIT-enabled code paths. However, LIBXSMM may also use non-JIT code paths which are CPUID-dispatched when the static code path has lower capabilities. This only works when using GCC&#160;4.9 (or later) or the Intel Compiler. If TensorFlow does not match the highest possible CPU target (march=native), a performance penalty is possible.
 
-It is recommended to rely on a pre-built compiler by using for instance the "devtools" package (RedHat) or similar (depends on the Linux distribution). It apparently helps to build `bazel` using the compiler intended for building TensorFlow. To use a custom-built compiler with TensorFlow may not only ask to source this compiler:
+It is recommended to rely on a pre-built compiler by using for instance the "devtools" package (RedHat) or similar (depends on the Linux distribution). To use a custom-built compiler with TensorFlow may not only ask to source this compiler:
 
 ```
 export LD_LIBRARY_PATH=/software/gnu/gcc-6.3.0/lib64:/software/gnu/gcc-6.3.0/lib:${LD_LIBRARY_PATH}
@@ -116,6 +116,12 @@ amplxe-cl -r result -data-limit 0 \
   -collect advanced-hotspots -knob collection-detail=stack-sampling -- \
   bazel-bin/tensorflow/models/convnetbenchmarks/benchmark_alexnet \
     --data_format=NHWC --forward_only=true --batch_size=64 --num_batches=50
+```
+
+To get named JIT-kernels, one may add the following flags to Bazel's build line:
+
+```
+--copt=-DLIBXSMM_VTUNE=2 --linkopt=${VTUNE_AMPLIFIER_XE_2017_DIR}/lib64/libjitprofiling.a
 ```
 
 ## Regression Tests
