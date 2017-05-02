@@ -87,16 +87,20 @@
 #   define LIBXSMM_VTUNE_JIT_LOAD 21
 #   define LIBXSMM_VTUNE_JIT_UNLOAD 14
 #   define iJIT_SAMPLING_ON 0x0001
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int iJIT_GetNewMethodID(void);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE iJIT_IsProfilingActiveFlags iJIT_IsProfilingActive(void);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int iJIT_NotifyEvent(iJIT_JVM_EVENT event_type, void *EventSpecificData);
-typedef struct LIBXSMM_RETARGETABLE iJIT_Method_Load_V2 {
+LIBXSMM_EXTERN_C unsigned int iJIT_GetNewMethodID(void);
+LIBXSMM_EXTERN_C /*iJIT_IsProfilingActiveFlags*/int iJIT_IsProfilingActive(void);
+LIBXSMM_EXTERN_C int iJIT_NotifyEvent(/*iJIT_JVM_EVENT*/int event_type, void *EventSpecificData);
+typedef struct LineNumberInfo {
+  unsigned int Offset;
+  unsigned int LineNumber;
+} LineNumberInfo;
+typedef struct iJIT_Method_Load_V2 {
   unsigned int method_id;
   char* method_name;
   void* method_load_address;
   unsigned int method_size;
   unsigned int line_number_size;
-  pLineNumberInfo line_number_table;
+  LineNumberInfo* line_number_table;
   char* class_file_name;
   char* source_file_name;
   char* module_name;
