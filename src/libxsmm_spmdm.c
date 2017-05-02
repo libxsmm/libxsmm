@@ -74,7 +74,7 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i* internal_spmdm_shufmasks_16;
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
-LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_init_shufmask_avx()
+LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_init_shufmask_avx(void)
 {
 #if defined(LIBXSMM_SPMDM_AVX)
   static __m256i spmdm_shufmasks_32[256], spmdm_shufmasks_16[256];
