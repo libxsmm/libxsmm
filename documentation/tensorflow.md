@@ -49,7 +49,7 @@ For Intel AVX-512 support, GCC&#160;5.x should be used (see section [Non-default
 Generally, please follow the [guide](https://www.tensorflow.org/install/install_sources) to build TensorFlow from the sources. Please invoke the following commands to build and install a pip-package, which represents your build of TensorFlow:
 
 ```
-bazel build -c opt --copt=-O3 --linkopt=-pthread \
+bazel build -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
   //tensorflow/tools/pip_package:build_pip_package
@@ -68,7 +68,7 @@ git clone https://github.com/soumith/convnet-benchmarks.git
 cd tensorflow-xsmm
 mkdir -p tensorflow/models
 ln -s /path/to/convnet-benchmarks/tensorflow tensorflow/models/convnetbenchmarks
-bazel build -c opt --copt=-O3 --linkopt=-pthread \
+bazel build -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
   //tensorflow/models/convnetbenchmarks:benchmark_alexnet \
@@ -128,7 +128,7 @@ To get named JIT-kernels, one may add the following flags to Bazel's build line:
 There are two aspects of LIBXSMM enabled within TensorFlow: (1)&#160;sparse CNN, and (2)&#160;CNN. To build and test the sparse routines:
 
 ```
-bazel build -c opt --copt=-O3 --linkopt=-pthread \
+bazel build -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
   //tensorflow/core/kernels:sparse_matmul_op_test
@@ -136,7 +136,7 @@ bazel build -c opt --copt=-O3 --linkopt=-pthread \
 bazel-bin/tensorflow/core/kernels/sparse_matmul_op_test --benchmarks=all
 bazel-bin/tensorflow/core/kernels/sparse_matmul_op_test
 
-bazel run -c opt --copt=-O3 --linkopt=-pthread \
+bazel run -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
   //tensorflow/python/kernel_tests:sparse_matmul_op_test
@@ -145,14 +145,14 @@ bazel run -c opt --copt=-O3 --linkopt=-pthread \
 To build and test the regular CNN routines (note that below `bazel run...` may be deadlocking during the test):
 
 ```
-bazel build -c opt --copt=-O3 --linkopt=-pthread \
+bazel build -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
   //tensorflow/core/kernels:conv_ops_test
 
 bazel-bin/tensorflow/core/kernels/conv_ops_test
 
-bazel run -c opt --copt=-O3 --linkopt=-pthread \
+bazel run -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
   //tensorflow/python/kernel_tests:conv_ops_test
