@@ -67,8 +67,8 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
       }
     }
 #endif
-    /* reset result buffer to zero when intent is to overwrite when first block 
-      of input channels should be convoluted */ 
+    /* reset result buffer to zero when intent is to overwrite when first block
+      of input channels should be convoluted */
     if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
       for (oj = 0; oj < handle->ofh; oj++) {
         element_output_type* temp_ptr = &LIBXSMM_VLA_ACCESS(5, output, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);

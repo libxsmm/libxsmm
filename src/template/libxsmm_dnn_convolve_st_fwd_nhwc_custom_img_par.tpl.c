@@ -89,8 +89,8 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #endif
 
   for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-    /* reset result buffer to zero when intent is to overwrite when first block 
-      of input channels should be convoluted */ 
+    /* reset result buffer to zero when intent is to overwrite when first block
+      of input channels should be convoluted */
     if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
       for (oj = start_ofh; oj < end_ofh; oj++) {
         element_output_type* temp_ptr = &LIBXSMM_VLA_ACCESS(5, output, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
@@ -181,8 +181,8 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #endif
 
   for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-    /* reset result buffer to zero when intent is to overwrite when first block 
-      of input channels should be convoluted */ 
+    /* reset result buffer to zero when intent is to overwrite when first block
+      of input channels should be convoluted */
     if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
       for (oj = start_ofh; oj < end_ofh; oj++) {
         element_output_type* temp_ptr = &LIBXSMM_VLA_ACCESS(5, output, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
