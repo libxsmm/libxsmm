@@ -178,9 +178,15 @@
 # define LIBXSMM_PRAGMA_UNROLL
 #endif
 
-#if defined(__clang__) && !defined(__INTEL_COMPILER)
+#if defined(__INTEL_COMPILER)
+# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(optimize("", off))
+# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(optimize("", on))
+#elif defined(__clang__)
 # define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(clang optimize off)
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(clang optimize on)
+#elif defined(__GNUC__)
+# define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(GCC push_options) LIBXSMM_PRAGMA(GCC optimize("O0"))
+# define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(GCC pop_options)
 #else
 # define LIBXSMM_PRAGMA_OPTIMIZE_OFF
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON

@@ -1735,7 +1735,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
 #endif
 }
 
-#if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__)
+#if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__) && defined(__clang__) && !defined(__INTEL_COMPILER)
 LIBXSMM_PRAGMA_OPTIMIZE_OFF
 #endif
 
@@ -1758,7 +1758,7 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int
   INTERNAL_DISPATCH(double, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
 }
 
-#if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__)
+#if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__) && defined(__clang__) && !defined(__INTEL_COMPILER)
 LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
