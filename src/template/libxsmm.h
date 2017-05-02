@@ -161,7 +161,7 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
 /** Deallocates the JIT'ted code as returned by libxsmm_create_* function. TODO: this is a no-op at the moment. */
 LIBXSMM_API void libxsmm_release_kernel(const void* jit_code);
 
-/** Matrix copy function; "in" can be NULL to zero the destination. */
+/** Matrix copy function ("in" can be NULL to zero the destination). */
 LIBXSMM_API int libxsmm_matcopy(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   const int* prefetch);
@@ -377,6 +377,34 @@ public:
   }
 };
 
+/** Matrix copy function ("in" can be NULL to zero the destination). */
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo) {
+  return libxsmm_matcopy(out, in, sizeof(T), m, n, ldi, ldo);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi) {
+  return libxsmm_matcopy(out, in, m, n, ldi, ldi);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n) {
+  return libxsmm_matcopy(out, in, m, n, m);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy(T* out, const T* in, libxsmm_blasint n) {
+  return libxsmm_matcopy(out, in, n, n);
+}
+
+/** Matrix copy function ("in" can be NULL to zero the destination); MT via libxsmmext. */
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo) {
+  return libxsmm_matcopy_omp(out, in, sizeof(T), m, n, ldi, ldo);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi) {
+  return libxsmm_matcopy_omp(out, in, m, n, ldi, ldi);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n) {
+  return libxsmm_matcopy_omp(out, in, m, n, m);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy_omp(T* out, const T* in, libxsmm_blasint n) {
+  return libxsmm_matcopy_omp(out, in, n, n);
+}
+
 /** Matrix transposition (out-of-place form). */
 template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo) {
   return libxsmm_otrans(out, in, sizeof(T), m, n, ldi, ldo);
@@ -393,7 +421,7 @@ template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_tran
 
 /** Matrix transposition; MT via libxsmmext (out-of-place form). */
 template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo) {
-  return libxsmm_otrans(out, in, sizeof(T), m, n, ldi, ldo);
+  return libxsmm_otrans_omp(out, in, sizeof(T), m, n, ldi, ldo);
 }
 template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi) {
   return libxsmm_trans_omp(out, in, m, n, ldi, ldi);

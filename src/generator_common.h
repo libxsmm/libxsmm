@@ -218,6 +218,9 @@
 /* Mask move instructions */
 #define LIBXSMM_X86_INSTR_KMOV           40000
 #define LIBXSMM_X86_INSTR_KMOVW          40001
+#define LIBXSMM_X86_INSTR_KMOVB          40002
+#define LIBXSMM_X86_INSTR_KMOVD          40003
+#define LIBXSMM_X86_INSTR_KMOVQ          40004
 
 /* Mask compute instructions */
 #define LIBXSMM_X86_INSTR_KXNORW         45000

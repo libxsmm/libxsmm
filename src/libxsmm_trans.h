@@ -34,8 +34,13 @@
 #include <libxsmm.h>
 
 #if !defined(LIBXSMM_TRANS_COLLAPSE)
-# define LIBXSMM_TRANS_COLLAPSE 2
+# if !defined(_CRAYC)
+#   define LIBXSMM_TRANS_COLLAPSE 2
+# else
+#   define LIBXSMM_TRANS_COLLAPSE 1
+# endif
 #endif
+
 #if !defined(LIBXSMM_TRANS_THRESHOLD)
 # define LIBXSMM_TRANS_THRESHOLD ((LIBXSMM_MAX_M) * (LIBXSMM_MAX_N))
 #endif

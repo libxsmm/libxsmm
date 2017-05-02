@@ -44,7 +44,7 @@
      (!defined(_XOPEN_SOURCE) || !defined(_XOPEN_SOURCE_EXTENDED) || 500 > _XOPEN_SOURCE) && \
      (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
 /* C89: avoid warning about mkstemp declared implicitly */
-int mkstemp(char* filename_template);
+LIBXSMM_EXTERN_C int mkstemp(char* filename_template);
 # endif
 #include <string.h>
 #include <stdio.h>
@@ -72,7 +72,7 @@ int mkstemp(char* filename_template);
 # endif
 # if defined(__APPLE__) && defined(__MACH__)
 /* taken from "libtransmission" fdlimit.c */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE int posix_fallocate(int fd, off_t offset, off_t length)
+LIBXSMM_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
 {
   fstore_t fst;
   fst.fst_flags = F_ALLOCATECONTIG;
@@ -85,7 +85,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE int posix_fallocate(int fd, off_t offset, of
 # elif (!defined(_XOPEN_SOURCE) || 600 > _XOPEN_SOURCE) && \
        (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
 /* C89: avoid warning about posix_fallocate declared implicitly */
-int posix_fallocate(int, off_t, off_t);
+LIBXSMM_EXTERN_C int posix_fallocate(int, off_t, off_t);
 # endif
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)

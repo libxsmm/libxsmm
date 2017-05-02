@@ -86,9 +86,9 @@ class TransposeTune(MeasurementInterface):
             assert(match is not None)
             mseconds = float(match.group(1)) / nruns
             assert(0 < mseconds)
-            score = 1000000.0 / mseconds
-            psize = (self.granularity**2) * cfg["M"] * cfg["N"]
-            return Result(time=mseconds, accuracy=score, size=psize)
+            frequency = 1000.0 / mseconds
+            kernelsize = (self.granularity**2) * cfg["M"] * cfg["N"]
+            return Result(time=mseconds, accuracy=frequency, size=kernelsize)
         else:
             sys.tracebacklimit = 0
             raise RuntimeError("Execution failed for \"" + run_cmd + "\"!")

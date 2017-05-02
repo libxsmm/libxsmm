@@ -1041,7 +1041,7 @@ unroll_factor = i_conv_desc->ifm_block;
       /* Add ofw_block*40 to increment output */
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_add_instruction,
-                                     i_gp_reg_mapping->gp_reg_input, i_conv_desc->ifw_padded * i_conv_desc->stride_h * 
+                                     i_gp_reg_mapping->gp_reg_input, i_conv_desc->ifw_padded * i_conv_desc->stride_h *
                                        i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in  );
     if ( unroll_factor > 9 ) {
       libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_input, i_gp_reg_mapping->gp_reg_help_4);

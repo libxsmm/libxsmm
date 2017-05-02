@@ -29,7 +29,7 @@
 /* Alexander Heinecke, Hans Pabst, Ankush Mandal (Intel Corp.)
 ******************************************************************************/
 
-int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii;
+int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii, ofm2;
 /* computing first logical thread */
 const int ltid = tid-start_thread;
 /* number of tasks that could be run in parallel */
@@ -94,6 +94,20 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #endif
 
       for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+        /* reset result buffer to zero when intent is to overwrite when first block
+           of input channels should be convoluted */
+        if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+          for (oj = 0; oj < handle->ofh; oj++) {
+            element_output_type* temp_ptr = &LIBXSMM_VLA_ACCESS(5, output, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
+            for (oi = 0; oi < handle->ofw; oi++) {
+              LIBXSMM_PRAGMA_SIMD
+              for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
+                temp_ptr[ofm2] = (element_output_type)0;
+              }
+              temp_ptr += handle->blocksofm*handle->ofmblock;
+            }
+          }
+        }
         for (oj = 0; oj < handle->ofh; oj += handle->fwd_ofh_rb) {
           ij = oj * handle->desc.u;
           for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
@@ -195,6 +209,20 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #endif
 
       for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+        /* reset result buffer to zero when intent is to overwrite when first block
+           of input channels should be convoluted */
+        if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+          for (oj = 0; oj < handle->ofh; oj++) {
+            element_output_type* temp_ptr = &LIBXSMM_VLA_ACCESS(5, output, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
+            for (oi = 0; oi < handle->ofw; oi++) {
+              LIBXSMM_PRAGMA_SIMD
+              for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
+                temp_ptr[ofm2] = (element_output_type)0;
+              }
+              temp_ptr += handle->blocksofm*handle->ofmblock;
+            }
+          }
+        }
         for (oj = 0; oj < handle->ofh; oj += handle->fwd_ofh_rb) {
           ij = oj * handle->desc.u;
           for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
@@ -312,6 +340,20 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     }
 #endif
     for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+      /* reset result buffer to zero when intent is to overwrite when first block
+         of input channels should be convoluted */
+      if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+        for (oj = 0; oj < handle->ofh; oj++) {
+          element_output_type* temp_ptr = &LIBXSMM_VLA_ACCESS(5, output, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
+          for (oi = 0; oi < handle->ofw; oi++) {
+            LIBXSMM_PRAGMA_SIMD
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
+              temp_ptr[ofm2] = (element_output_type)0;
+            }
+            temp_ptr += handle->blocksofm*handle->ofmblock;
+          }
+        }
+      }
       for (oj = 0; oj < handle->ofh; oj += handle->fwd_ofh_rb) {
         ij = oj * handle->desc.u;
         for (oi = 0; oi < (handle->ofw - handle->fwd_ofw_rb_2); oi += handle->fwd_ofw_rb) {

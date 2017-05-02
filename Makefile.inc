@@ -540,9 +540,9 @@ ifneq (0,$(INTEL))
   FMFLAGS += -module
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
-    CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -fp-model fast=2
-    CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -fp-model fast=2
-    FCFLAGS += $(OPTFLAG) -fp-model fast=2
+    CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -qoverride_limits -fp-model fast=2
+    CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -qoverride_limits -fp-model fast=2
+    FCFLAGS += $(OPTFLAG) -qoverride_limits -fp-model fast=2
     ifneq (0,$(shell echo "$$((130000 <= $(FC_VERSION)))"))
       FCFLAGS += -align array64byte
     endif
@@ -646,7 +646,7 @@ ifneq (0,$(INTEL))
   ifeq (0,$(EXP))
     CXXFLAGS += -fno-exceptions
   endif
-  OMPFLAG = -fopenmp -qoverride_limits
+  OMPFLAG = -fopenmp
   ifeq (,$(strip $(OMPRT)))
     OMPRT = iomp5
   endif
@@ -655,10 +655,6 @@ ifneq (0,$(INTEL))
     CFLAGS += $(OMPFLAG)
     FCFLAGS += $(OMPFLAG)
     LDFLAGS += $(OMPFLAG)
-  else ifneq (0,$(OFFLOAD))
-    CXXFLAGS += -qoverride_limits
-    CFLAGS += -qoverride_limits
-    FCFLAGS += -qoverride_limits
   endif
   ifeq (1,$(STATIC))
     SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++

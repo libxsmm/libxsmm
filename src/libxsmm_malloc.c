@@ -66,26 +66,59 @@
 # endif
 #endif
 #if defined(LIBXSMM_VTUNE)
-# include <jitprofiling.h>
-# define LIBXSMM_VTUNE_JITVERSION 2
-# if (2 == LIBXSMM_VTUNE_JITVERSION)
+# if (2 <= LIBXSMM_VTUNE) /* no header file required */
+#   if !defined(LIBXSMM_VTUNE_JITVERSION)
+#     define LIBXSMM_VTUNE_JITVERSION LIBXSMM_VTUNE
+#   endif
 #   define LIBXSMM_VTUNE_JIT_DESC_TYPE iJIT_Method_Load_V2
-#   define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED_V2
-# else
-#   define LIBXSMM_VTUNE_JIT_DESC_TYPE iJIT_Method_Load
-#   define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED
+#   define LIBXSMM_VTUNE_JIT_LOAD 21
+#   define LIBXSMM_VTUNE_JIT_UNLOAD 14
+#   define iJIT_SAMPLING_ON 0x0001
+LIBXSMM_EXTERN_C unsigned int iJIT_GetNewMethodID(void);
+LIBXSMM_EXTERN_C /*iJIT_IsProfilingActiveFlags*/int iJIT_IsProfilingActive(void);
+LIBXSMM_EXTERN_C int iJIT_NotifyEvent(/*iJIT_JVM_EVENT*/int event_type, void *EventSpecificData);
+typedef struct LineNumberInfo {
+  unsigned int Offset;
+  unsigned int LineNumber;
+} LineNumberInfo;
+typedef struct iJIT_Method_Load_V2 {
+  unsigned int method_id;
+  char* method_name;
+  void* method_load_address;
+  unsigned int method_size;
+  unsigned int line_number_size;
+  LineNumberInfo* line_number_table;
+  char* class_file_name;
+  char* source_file_name;
+  char* module_name;
+} iJIT_Method_Load_V2;
+# else /* more safe due to header dependency */
+#   include <jitprofiling.h>
+#   if !defined(LIBXSMM_VTUNE_JITVERSION)
+#     define LIBXSMM_VTUNE_JITVERSION 2
+#   endif
+#   if (2 <= LIBXSMM_VTUNE_JITVERSION)
+#     define LIBXSMM_VTUNE_JIT_DESC_TYPE iJIT_Method_Load_V2
+#     define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED_V2
+#   else
+#     define LIBXSMM_VTUNE_JIT_DESC_TYPE iJIT_Method_Load
+#     define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED
+#   endif
+#   define LIBXSMM_VTUNE_JIT_UNLOAD iJVM_EVENT_TYPE_METHOD_UNLOAD_START
 # endif
-# define LIBXSMM_VTUNE_JIT_UNLOAD iJVM_EVENT_TYPE_METHOD_UNLOAD_START
+# if !defined(LIBXSMM_MALLOC_FALLBACK)
+#   define LIBXSMM_MALLOC_FALLBACK 4
+# endif
+#else
+# if !defined(LIBXSMM_MALLOC_FALLBACK)
+#   define LIBXSMM_MALLOC_FALLBACK 0
+# endif
 #endif /*defined(LIBXSMM_VTUNE)*/
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 #if defined(LIBXSMM_PERF)
 # include "libxsmm_perf.h"
-#endif
-
-#if !defined(LIBXSMM_MALLOC_FALLBACK)
-# define LIBXSMM_MALLOC_FALLBACK 0
 #endif
 
 #if !defined(LIBXSMM_MALLOC_NOCRC)
@@ -796,7 +829,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const void* 
   desc->line_number_table = NULL;
   desc->class_file_name = NULL;
   desc->source_file_name = NULL;
-# if (2 == LIBXSMM_VTUNE_JITVERSION)
+# if (2 <= LIBXSMM_VTUNE_JITVERSION)
   desc->module_name = "libxsmm.jit";
 # endif
 }
