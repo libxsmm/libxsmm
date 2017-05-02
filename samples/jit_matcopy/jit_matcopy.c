@@ -37,6 +37,7 @@
 
 int main(int argc, char* argv[])
 {
+  /* we should modify to test all datatypes here */
   libxsmm_xmatcopyfunction skernel;
   libxsmm_matcopy_descriptor desc;
   float *a, *b;
