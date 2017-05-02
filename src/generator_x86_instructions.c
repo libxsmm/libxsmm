@@ -323,6 +323,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_penultimate += 0x5f;
           l_num3 += 0x21;
           l_sizereg = 64;
+          if ( i_is_store == 1 ) l_aligned += 0xf;
           break;
        case LIBXSMM_X86_INSTR_VMOVDQA64:
           l_bytes = 5;
@@ -335,6 +336,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_penultimate += 0x5f;
           l_num3 += 0x21;
           l_sizereg = 64;
+          if ( i_is_store == 1 ) l_aligned += 0xf;
           break;
        case LIBXSMM_X86_INSTR_VMOVDQU8:
           l_bytes = 5;
@@ -347,6 +349,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_penultimate += 0x5f;
           l_num3 += 0x21;
           l_sizereg = 64;
+          if ( i_is_store == 1 ) l_aligned += 0xf;
           break;
        case LIBXSMM_X86_INSTR_VMOVDQU16:
           l_bytes = 5;
@@ -359,6 +362,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_penultimate += 0x5f;
           l_num3 += 0x21;
           l_sizereg = 64;
+          if ( i_is_store == 1 ) l_aligned += 0xf;
           break;
        case LIBXSMM_X86_INSTR_VMOVDQU32:
           l_bytes = 5;
@@ -371,6 +375,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_penultimate += 0x5f;
           l_num3 += 0x21;
           l_sizereg = 64;
+          if ( i_is_store == 1 ) l_aligned += 0xf;
           break;
        case LIBXSMM_X86_INSTR_VMOVDQU64:
           l_bytes = 5;
@@ -383,6 +388,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_penultimate += 0x5f;
           l_num3 += 0x21;
           l_sizereg = 64;
+          if ( i_is_store == 1 ) l_aligned += 0xf;
           break;
        case LIBXSMM_X86_INSTR_VBROADCASTSD:
           l_bytes = 5;
