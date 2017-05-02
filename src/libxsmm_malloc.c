@@ -66,20 +66,7 @@
 # endif
 #endif
 #if defined(LIBXSMM_VTUNE)
-# if (0 == LIBXSMM_VTUNE)
-#   include <jitprofiling.h>
-#   if !defined(LIBXSMM_VTUNE_JITVERSION)
-#     define LIBXSMM_VTUNE_JITVERSION 2
-#   endif
-#   if (2 <= LIBXSMM_VTUNE_JITVERSION)
-#     define LIBXSMM_VTUNE_JIT_DESC_TYPE iJIT_Method_Load_V2
-#     define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED_V2
-#   else
-#     define LIBXSMM_VTUNE_JIT_DESC_TYPE iJIT_Method_Load
-#     define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED
-#   endif
-#   define LIBXSMM_VTUNE_JIT_UNLOAD iJVM_EVENT_TYPE_METHOD_UNLOAD_START
-# elif (2 <= LIBXSMM_VTUNE) /* no header file required */
+# if (2 <= LIBXSMM_VTUNE) /* no header file required */
 #   if !defined(LIBXSMM_VTUNE_JITVERSION)
 #     define LIBXSMM_VTUNE_JITVERSION LIBXSMM_VTUNE
 #   endif
@@ -105,6 +92,19 @@ typedef struct iJIT_Method_Load_V2 {
   char* source_file_name;
   char* module_name;
 } iJIT_Method_Load_V2;
+# else /* more safe due to header dependency */
+#   include <jitprofiling.h>
+#   if !defined(LIBXSMM_VTUNE_JITVERSION)
+#     define LIBXSMM_VTUNE_JITVERSION 2
+#   endif
+#   if (2 <= LIBXSMM_VTUNE_JITVERSION)
+#     define LIBXSMM_VTUNE_JIT_DESC_TYPE iJIT_Method_Load_V2
+#     define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED_V2
+#   else
+#     define LIBXSMM_VTUNE_JIT_DESC_TYPE iJIT_Method_Load
+#     define LIBXSMM_VTUNE_JIT_LOAD iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED
+#   endif
+#   define LIBXSMM_VTUNE_JIT_UNLOAD iJVM_EVENT_TYPE_METHOD_UNLOAD_START
 # endif
 # if !defined(LIBXSMM_MALLOC_FALLBACK)
 #   define LIBXSMM_MALLOC_FALLBACK 4
