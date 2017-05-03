@@ -2706,7 +2706,7 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
        fprintf(stderr, "libxsmm_instruction_mask_move: Strange mask number=%u\n",i_mask_reg_number);
        exit(-1);
     }
-    if ( ((i_gp_reg_number >=8) && (i_gp_reg_number <=15)) || 
+    if ( ((i_gp_reg_number >=8) && (i_gp_reg_number <=15)) ||
           (i_mask_instr==LIBXSMM_X86_INSTR_KMOVQ) )
     {
        buf[i++] = 0xc4;
