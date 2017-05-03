@@ -1290,7 +1290,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
 # endif
         {
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_trans%s_%ux%u.trans",
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u.trans",
             target_arch/*code path name*/, internal_get_typepostfix(request->descriptor.trans->typesize),
             request->descriptor.trans->m, request->descriptor.trans->n);
         }
