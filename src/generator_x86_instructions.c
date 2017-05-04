@@ -2711,13 +2711,13 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
     if ( l_nx8 || i_mask_instr==LIBXSMM_X86_INSTR_KMOVQ )
     {
        buf[i++] = 0xc4;
-       buf[i++] = 0xe1 - l_nx8*0x20;
-       buf[i++] = 0x78 + l_case;
+       buf[i++] = (unsigned char)(0xe1 - l_nx8*0x20);
+       buf[i++] = (unsigned char)(0x78 + l_case);
        buf[i++] = 0x92;
        buf[i++] = (unsigned char)(0xc0 + l_regnum0 + 8*i_mask_reg_number);
     } else {
        buf[i++] = 0xc5;
-       buf[i++] = 0xf8 + l_case;
+       buf[i++] = (unsigned char)(0xf8 + l_case);
        buf[i++] = 0x92;
        buf[i++] = (unsigned char)(0xc0 + l_regnum0 + 8*i_mask_reg_number);
     }
@@ -2879,7 +2879,7 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
        {
           /* Single byte back jump */
           buf[i++] = 0x7c;
-          buf[i++] = (unsigned char) l_dist;
+          buf[i++] = (unsigned char)l_dist;
        } else {
           unsigned char *l_cptr = (unsigned char *) &l_dist;
           /* 4-byte back jump */
