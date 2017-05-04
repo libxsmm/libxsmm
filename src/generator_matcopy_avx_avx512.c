@@ -45,13 +45,14 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
                                                                  const libxsmm_matcopy_gp_reg_mapping*  i_gp_reg_mapping,
                                                                  const libxsmm_matcopy_kernel_config*   i_micro_kernel_config,
                                                                  unsigned int                           remainder ) {
-  unsigned long long l_mask = ( ((unsigned long long) 1) << remainder) - 1;
+  const unsigned long long l_mask = (1ULL << remainder) - 1;
 
   /* Move mask to GP register */
   libxsmm_x86_instruction_alu_imm( io_generated_code,
                                   i_micro_kernel_config->alu_mov_instruction,
                                   i_gp_reg_mapping->gp_reg_help_0,
-                                  (unsigned long long)l_mask );
+                                  /* immediate is passed as an integer */
+                                  (int)l_mask );
 
   /* Set mask register */
   if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC ||
