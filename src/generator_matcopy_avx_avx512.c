@@ -45,7 +45,12 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
                                                                  const libxsmm_matcopy_gp_reg_mapping*  i_gp_reg_mapping,
                                                                  const libxsmm_matcopy_kernel_config*   i_micro_kernel_config,
                                                                  unsigned int                           remainder ) {
-  const unsigned long long l_mask = (1ULL << remainder) - 1;
+  unsigned long long l_mask = (1ULL << remainder) - 1;
+  
+  /* If we have int16 input and KNM arch, we should make the remainder mask "half", since we have only VMOVUPS instruction (i.e. treat the int16 entries in pairs, thus the mask length should be half) */
+  if ( (i_micro_kernel_config->vector_length == 32) && (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) ) {
+    l_mask = l_mask/2;
+  }
 
   /* Move mask to GP register */
   libxsmm_x86_instruction_alu_imm( io_generated_code,
@@ -151,7 +156,13 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
       l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       l_kernel_config.vector_length = 16;
     } else if ( i_matcopy_desc->typesize == 2  ) {
-      l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVDQU16;
+      if (l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM) {
+        l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
+      } else if ( l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE) {
+        l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVDQU16;
+      } else {
+        /* Should not happen!!! */
+      }
       l_kernel_config.vector_length = 32;
     } else if ( i_matcopy_desc->typesize == 1  ) {
       l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVDQU8;
