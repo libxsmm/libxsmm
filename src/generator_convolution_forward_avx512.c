@@ -656,7 +656,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( libxsmm_generate
   unsigned int l_input_offset = 0;
 
   /* apply k blocking */
-  for ( l_k = 0; l_k < i_conv_desc->ifm_block*i_kw_unroll ; l_k++ ) {
+  for ( l_k = 0; l_k < i_conv_desc->ifm_block*i_kw_unroll; l_k++ ) {
     /* if we are not in LIBXSMM storage format, there are jumps */
     if ( (l_k > 0) && (l_k % i_conv_desc->ifm_block == 0) ) {
       /* input pointer advance */
@@ -885,7 +885,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( libxsmm
   }
 
   /* apply k blocking */
-  for ( l_k = 0; l_k < i_conv_desc->ifm_block*i_kw_unroll ; l_k++ ) {
+  for ( l_k = 0; l_k < i_conv_desc->ifm_block*i_kw_unroll; l_k++ ) {
     /* if we are not in LIBXSMM storage format, there are jumps */
     if ( (l_k > 0) && (l_k % i_conv_desc->ifm_block == 0) ) {
       /* input pointer advance */
@@ -1119,7 +1119,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generate
   }
 
   /* apply k blocking */
-  for ( l_k = 0; l_k < i_conv_desc->ifm_block*i_kw_unroll ; l_k+=4 ) {
+  for ( l_k = 0; l_k < i_conv_desc->ifm_block*i_kw_unroll; l_k+=4 ) {
     /* if we are not in LIBXSMM storage format, there are jumps */
     if ( (l_k > 0) && (l_k % i_conv_desc->ifm_block == 0) ) {
       /* input pointer advance */
@@ -1281,7 +1281,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_two_rows( libxsmm
   }
 
   /* apply k blocking */
-  for ( l_k = 0; l_k < i_conv_desc->ifm_block*i_kw_unroll ; l_k+=4 ) {
+  for ( l_k = 0; l_k < i_conv_desc->ifm_block*i_kw_unroll; l_k+=4 ) {
     /* if we are not in LIBXSMM storage format, there are jumps */
     if ( (l_k > 0) && (l_k % i_conv_desc->ifm_block == 0) ) {
       /* input pointer advance */

@@ -1058,7 +1058,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
   /* start register of accumulator */
   const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - i_conv_desc->ofw_rb;
 
-  for ( l_k_2 = 0; l_k_2 < i_kw_unroll ; l_k_2++) {
+  for ( l_k_2 = 0; l_k_2 < i_kw_unroll; l_k_2++) {
     /* load inputs */
     libxsmm_generator_convolution_backward_avx512_load_input(io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc, l_vec_reg_acc_start, l_accs, l_k_2);
 
@@ -1119,7 +1119,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
 
       /* if required, apply additional register block to hide FMA latencies */
       if ( i_conv_desc->ofw_rb < 12 ) {
-        current_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb* ((l_k_3 % l_accs) + 1)) ;
+        current_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb* ((l_k_3 % l_accs) + 1));
       } else {
         current_acc_start = l_vec_reg_acc_start;
       }
@@ -1280,12 +1280,12 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
   }
 
 
-  for ( l_k_2 = 0; l_k_2 < i_kw_unroll ; l_k_2++) {
+  for ( l_k_2 = 0; l_k_2 < i_kw_unroll; l_k_2++) {
     /* load inputs */
     libxsmm_generator_convolution_backward_avx512_load_input_two_rows(io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc, l_vec_reg_acc_start, l_k_2);
 
     l_displacement_k = 0;
-    for ( l_k_3 = 0; l_k_3 < i_conv_desc->ofm_block ; l_k_3++, l_k++) {
+    for ( l_k_3 = 0; l_k_3 < i_conv_desc->ofm_block; l_k_3++, l_k++) {
       if ( l_k == 0) {
         /* load weights */
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -1498,13 +1498,13 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generat
                                                                          i_conv_kernel_config, i_conv_desc, i_kw_unroll, num_output_prefetch );
     return;
   }
-  for ( l_k_2 = 0; l_k_2 < i_kw_unroll ; l_k_2++) {
+  for ( l_k_2 = 0; l_k_2 < i_kw_unroll; l_k_2++) {
     /* load inputs */
     libxsmm_generator_convolution_backward_avx512_load_input(io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc, l_vec_reg_acc_start, l_accs, l_k_2);
 
     l_displacement_k = 0;
     /* perform fused 4 FMAs for 4 consecutive values of ofm_block */
-    for ( l_k_3 = 0; l_k_3 < i_conv_desc->ofm_block ; l_k_3 += 4, l_k += 4) {
+    for ( l_k_3 = 0; l_k_3 < i_conv_desc->ofm_block; l_k_3 += 4, l_k += 4) {
       /*load four source registers, we cannot perform a pipeline as in case of sfma */
       for ( l_w = 0; l_w < 4; l_w++ ) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -1519,7 +1519,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generat
 
       /* if required, apply additional register block to hide FMA latencies */
       if ( i_conv_desc->ofw_rb <= 14 ) {
-        current_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb* ((l_k_3 % l_accs) + 1)) ;
+        current_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb* ((l_k_3 % l_accs) + 1));
       } else {
         current_acc_start = l_vec_reg_acc_start;
       }
@@ -1650,12 +1650,12 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_two_rows( libxsm
   }
 
 
-  for ( l_k_2 = 0; l_k_2 < i_kw_unroll ; l_k_2++) {
+  for ( l_k_2 = 0; l_k_2 < i_kw_unroll; l_k_2++) {
     /* load inputs */
     libxsmm_generator_convolution_backward_avx512_load_input_two_rows(io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc, l_vec_reg_acc_start, l_k_2);
 
     l_displacement_k = 0;
-    for ( l_k_3 = 0; l_k_3 < i_conv_desc->ofm_block ; l_k_3+=4, l_k+=4) {
+    for ( l_k_3 = 0; l_k_3 < i_conv_desc->ofm_block; l_k_3+=4, l_k+=4) {
       /*load four source registers, we cannot perform a pipeline as in case of sfma */
       for ( l_w = 0; l_w < 4; l_w++ ) {
         libxsmm_x86_instruction_vec_move( io_generated_code,

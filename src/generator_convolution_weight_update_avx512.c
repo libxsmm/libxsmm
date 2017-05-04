@@ -378,10 +378,10 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
 
 
   /* apply k blocking */
-  for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb ; l_k_1++ ) {
+  for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb; l_k_1++ ) {
 
   l_k_updates = 0;
-  for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb ; l_k_2++, l_k++ ) {
+  for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb; l_k_2++, l_k++ ) {
     /* advance b pointer if needed */
     if ( (l_k_2 > 0) &&(l_k_2%8 == 0) ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
@@ -664,9 +664,9 @@ unroll_factor = i_conv_desc->ifm_block;
   LIBXSMM_UNUSED(ofh_trip_counter);
 
   /* apply k blocking */
-  for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb ; l_k_1++ ) {
+  for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb; l_k_1++ ) {
 
-  for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb ; l_k_2++, l_k++ ) {
+  for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb; l_k_2++, l_k++ ) {
 
 #if 0
     /* advance b pointer if needed */
@@ -898,8 +898,8 @@ unroll_factor = i_conv_desc->ifm_block;
   }
 
   /* apply k blocking */
-  for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb ; l_k_1++ ) {
-    for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb ; l_k_2+=4, l_k+=4 ) {
+  for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb; l_k_1++ ) {
+    for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb; l_k_2+=4, l_k+=4 ) {
       /* for quad, we need to load weights in groups of 4 as this is the
          source block for qmadd */
       for ( l_w = 0; l_w < 4; l_w++ ) {

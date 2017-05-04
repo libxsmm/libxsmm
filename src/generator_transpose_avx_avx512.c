@@ -154,7 +154,7 @@ void load_mask_into_var (
    }
    if ( m == 1 ) by = 0x80; else by = 0;
    buf[i]=0xeb; buf[i+1]=0x20; i=i+2; /* unconditional jmp past the data */
-   for ( j = 1; j <= 8 ; j++ )
+   for ( j = 1; j <= 8; j++ )
    {
       if ( m2 >= j ) by = 0; else by = 0x80;
       buf[i]=0x00; buf[i+1]=0x00; buf[i+2]=0x80; buf[i+3]=(unsigned char)(0xbf-by); i+=4;
@@ -838,11 +838,11 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
      offsetA = 0;
      offsetB = 0;
      oldB = 0;
-     for (j = 1; j <= (int)n ; j += REGSIZE )
+     for (j = 1; j <= (int)n; j += REGSIZE )
      {
         offsetA = 0;
         oldB = offsetB;
-        for ( k = 1; k <= (int)m ; k += REGSIZE )
+        for ( k = 1; k <= (int)m; k += REGSIZE )
         {
            io_generated_code->code_size = i;
            /* Note that the m, n parameters aren't the original m, n;

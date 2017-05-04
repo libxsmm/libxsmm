@@ -152,8 +152,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->fm_lp_block = 1;
     }
     else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) && (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) ) {
-      handle->ifmblock = (handle->desc.C >=16) ? 16 : handle->desc.C/2;
-      handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K/2;
+      handle->ifmblock = (handle->desc.C >=16) ? 16 : (handle->desc.C/2);
+      handle->ofmblock = (handle->desc.K >=16) ? 16 : (handle->desc.K/2);
       handle->fm_lp_block = 2;
       if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ) {
         status = LIBXSMM_DNN_WARN_FALLBACK;
@@ -165,8 +165,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
     else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I16)
                  && ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
-      handle->ifmblock = (handle->desc.C >=32) ? 32 : handle->desc.C/2;
-      handle->ofmblock = (handle->desc.K >=32) ? 32 : handle->desc.K/2;
+      handle->ifmblock = (handle->desc.C >=32) ? 32 : (handle->desc.C/2);
+      handle->ofmblock = (handle->desc.K >=32) ? 32 : (handle->desc.K/2);
       handle->fm_lp_block = 2;
       if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
            libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
@@ -179,8 +179,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
     else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32)
                  && ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
-      handle->ifmblock = (handle->desc.C >=16) ? 16 : handle->desc.C/4;
-      handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K/4;
+      handle->ifmblock = (handle->desc.C >=16) ? 16 : (handle->desc.C/4);
+      handle->ofmblock = (handle->desc.K >=16) ? 16 : (handle->desc.K/4);
       handle->fm_lp_block = 4;
       if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
            libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
@@ -374,7 +374,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     handle->scratch5  = 0;
     handle->minibatch_scratch_size = handle->desc.N * handle->blocksifm * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_itm);
     handle->fwdbwd_scratch_size = handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_itm);
-    handle->max_scratch5_size = (handle->minibatch_scratch_size > handle->fwdbwd_scratch_size) ? handle->minibatch_scratch_size : handle->fwdbwd_scratch_size ;
+    handle->max_scratch5_size = (handle->minibatch_scratch_size > handle->fwdbwd_scratch_size) ? handle->minibatch_scratch_size : handle->fwdbwd_scratch_size;
   } else {
     handle->padding_flag = 0;
   }
@@ -1102,7 +1102,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     noarch = 0;
     /* calculate blockings */
     handle->ifmblock = 16;
-    handle->ofmblock = 16 ;
+    handle->ofmblock = 16;
     handle->blocksifm = handle->desc.C / 16;
     handle->blocksofm = handle->desc.K / 16;
     handle->fm_lp_block = 1;

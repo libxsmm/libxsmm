@@ -151,7 +151,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
 
     if (l_m_blocking == 4) {
       /* load column vectors of A and multiply with all broadcasted row entries of B */
-      for ( l_m = 0; l_m < l_m_blocking ; l_m++ ) {
+      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->a_vmove_instruction,
@@ -181,7 +181,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
       }
     } else {
       /* load column vectors of A and multiply with all broadcasted row entries of B */
-      for ( l_m = 0; l_m < l_m_blocking ; l_m++ ) {
+      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
                                       i_micro_kernel_config->a_vmove_instruction,
@@ -191,7 +191,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
                                       i_micro_kernel_config->vector_name,
                                       i_n_blocking+l_m, i_micro_kernel_config->use_masking_a_c, 0 );
       }
-      for ( l_m = 0; l_m < l_m_blocking ; l_m++ ) {
+      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
           /* post increment early */
           if ( (l_m == (l_m_blocking-1)) && (l_n == 0) ) {

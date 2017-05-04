@@ -315,7 +315,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
     /* adding to C, so let's load C */
     for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
       for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
-        for ( l_k = 0; l_k < l_reg_per_block ; l_k++ ) {
+        for ( l_k = 0; l_k < l_reg_per_block; l_k++ ) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             i_conv_kernel_config->instruction_set,
                                             i_conv_kernel_config->vmove_instruction,
@@ -412,7 +412,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
     /* adding to C, so let's store C */
     for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
       for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
-        for ( l_k = 0; l_k < l_reg_per_block ; l_k++ ) {
+        for ( l_k = 0; l_k < l_reg_per_block; l_k++ ) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             i_conv_kernel_config->instruction_set,
                                             i_conv_kernel_config->vmove_instruction,
@@ -566,7 +566,7 @@ void libxsmm_generator_convolution_backward_load_input( libxsmm_generated_code* 
   unsigned int l_j, l_k;
   /* adding to C, so let's load C */
     for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
-      for ( l_k = 0; l_k < l_reg_per_block ; l_k++, reg_count++ ) {
+      for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_conv_kernel_config->instruction_set,
                                     i_conv_kernel_config->vmove_instruction,
@@ -594,7 +594,7 @@ void libxsmm_generator_convolution_backward_store_input( libxsmm_generated_code*
   unsigned int l_j, l_k;
   /* adding to C, so let's load C */
     for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
-      for ( l_k = 0; l_k < l_reg_per_block ; l_k++, reg_count++ ) {
+      for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_conv_kernel_config->instruction_set,
                                     i_conv_kernel_config->vmove_instruction,
@@ -635,7 +635,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
 
   /* adding to C, so let's load C */
     for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
-      for ( l_k = 0; l_k < l_reg_per_block ; l_k++, reg_count++ ) {
+      for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_conv_kernel_config->instruction_set,
                                     i_conv_kernel_config->vmove_instruction,
@@ -643,7 +643,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
                                     (reg_count)*offset * i_conv_kernel_config->datatype_size_wt,
                                     i_conv_kernel_config->vector_name,
-                                    l_vec_reg_acc_start + reg_count , 0, 0) ;
+                                    l_vec_reg_acc_start + reg_count , 0, 0);
         if ( (i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
                                             LIBXSMM_X86_INSTR_PREFETCHT0 ,
@@ -669,7 +669,7 @@ void libxsmm_generator_convolution_weight_update_transpose_load_weight( libxsmm_
   unsigned int l_j, l_k;
   /* adding to C, so let's load C */
     for ( l_j = 0; l_j < i_conv_desc->ofm_block; l_j++ ) {
-      for ( l_k = 0; l_k < l_reg_per_block ; l_k++, reg_count++ ) {
+      for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_conv_kernel_config->instruction_set,
                                     i_conv_kernel_config->vmove_instruction,
@@ -714,7 +714,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
 
   /* adding to C, so let's load C */
     for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
-      for ( l_k = 0; l_k < l_reg_per_block ; l_k++, reg_count++ ) {
+      for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_conv_kernel_config->instruction_set,
                                     i_conv_kernel_config->vmove_instruction,
@@ -741,7 +741,7 @@ void libxsmm_generator_convolution_weight_update_transpose_store_weight( libxsmm
   unsigned int l_j, l_k;
   /* adding to C, so let's load C */
     for ( l_j = 0; l_j < i_conv_desc->ofm_block; l_j++ ) {
-      for ( l_k = 0; l_k < l_reg_per_block ; l_k++, reg_count++ ) {
+      for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_conv_kernel_config->instruction_set,
                                     i_conv_kernel_config->vmove_instruction,

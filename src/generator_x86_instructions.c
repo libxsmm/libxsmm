@@ -1549,7 +1549,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        l_regi = i_gp_reg_idx-8;
     }
     if ( i_vector_name == 'x' ) l_xreg = -4;
-    l_reg0 = i_gp_reg_base % 8 ;
+    l_reg0 = i_gp_reg_base % 8;
     l_reg1 = i_vec_reg_number_0 % 8;
     l_reg2 = i_vec_reg_number_1 % 8;
     if ( i_vec_reg_number_0 >= 8 ) { l_third  -= 0x40; }
@@ -2969,8 +2969,8 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
     /* Replace this code with real code to find the right offset "l_stop" so
      * buf[l_stop] has the right alignment, where l_stop >= i+2
      */
-    for ( j = i+2, l_stop = -1 ; (j < i+number_of_bytes_to_load+2) &&
-                                (l_stop==-1) ; j++ )
+    for ( j = i+2, l_stop = -1; (j < i+number_of_bytes_to_load+2) &&
+                                (l_stop==-1); j++ )
     {
       if ( ((size_t)&buf[j])%number_of_bytes_to_load == 0 ) { l_stop = j; }
     }
@@ -2985,12 +2985,12 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
     buf[ i ] = 0xeb;
     buf[i+1] = (unsigned char)jmpval;
     /* Let's insert nops until we reach an aligned address */
-    for ( j = i+2 ; j < l_stop ; j++ ) {
+    for ( j = i+2; j < l_stop; j++ ) {
       buf[ j ] = 0x90; /* nop */
     }
     i = l_stop;
 
-    for ( j = 0 ; j < number_of_bytes_to_load ; j++ ) {
+    for ( j = 0; j < number_of_bytes_to_load; j++ ) {
       buf[ i ] = cval[j];
       i++;
     }
@@ -3050,7 +3050,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".data_%s:\\n\\t\"\n", i_id );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      for ( j = 0 ; j < number_of_bytes_to_load ; j += 4 ) {
+      for ( j = 0; j < number_of_bytes_to_load; j += 4 ) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\\n\\t\"\n",
                                                                                                         cval[0],cval[1],cval[2],cval[3] );
         cval = cval + 4;
@@ -3066,7 +3066,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .data_%s:\n", i_id );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-      for ( j = 0 ; j < number_of_bytes_to_load ; j += 4 ) {
+      for ( j = 0; j < number_of_bytes_to_load; j += 4 ) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       .byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",
                                                                                                       cval[0],cval[1],cval[2],cval[3] );
         cval = cval + 4;
@@ -3813,7 +3813,7 @@ void libxsmm_x86_instruction_close_stream_transpose( libxsmm_generated_code*    
       exit(-1);
     }
 
-if ( l_code_size==59 ) printf("Starting wrap-up on byte 59\n") ;
+if ( l_code_size==59 ) printf("Starting wrap-up on byte 59\n");
 
     /* pop r15 */
     l_code_buffer[l_code_size++] = 0x41;
