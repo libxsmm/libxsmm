@@ -409,43 +409,6 @@ LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_des
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch)
-{
-  switch (prefetch) {
-    case LIBXSMM_PREFETCH_SIGONLY:            return 2;
-    case LIBXSMM_PREFETCH_BL2_VIA_C:          return 3;
-    case LIBXSMM_PREFETCH_AL2_AHEAD:          return 4;
-    case LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD: return 5;
-    case LIBXSMM_PREFETCH_AL2:                return 6;
-    case LIBXSMM_PREFETCH_AL2BL2_VIA_C:       return 7;
-    case LIBXSMM_PREFETCH_AL2_JPST:           return 8;
-    case LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST:  return 9;
-    case LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C:    return 10;
-    default: {
-      assert(LIBXSMM_PREFETCH_NONE == prefetch);
-      return 0;
-    }
-  }
-}
-
-
-LIBXSMM_API_DEFINITION libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid)
-{
-  switch (uid) {
-    case  2: return LIBXSMM_PREFETCH_SIGONLY;             /* pfsigonly */
-    case  3: return LIBXSMM_PREFETCH_BL2_VIA_C;           /* BL2viaC */
-    case  4: return LIBXSMM_PREFETCH_AL2_AHEAD;           /* curAL2 */
-    case  5: return LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD;  /* curAL2_BL2viaC */
-    case  6: return LIBXSMM_PREFETCH_AL2;                 /* AL2 */
-    case  7: return LIBXSMM_PREFETCH_AL2BL2_VIA_C;        /* AL2_BL2viaC */
-    case  8: return LIBXSMM_PREFETCH_AL2_JPST;            /* AL2jpst */
-    case  9: return LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST;   /* AL2jpst_BL2viaC */
-    case 10: return LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C;     /* AL2_BL2viaC_CL2 */
-    default: return LIBXSMM_PREFETCH_NONE;
-  }
-}
-
-
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_finalize(void)
 {
   libxsmm_finalize();

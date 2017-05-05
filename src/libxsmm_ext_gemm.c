@@ -86,71 +86,69 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
 {
   const float ralpha = (0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA));
   const float rbeta = (0 != beta ? *beta : ((float)LIBXSMM_BETA));
-  LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
-#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-  const char *const check = getenv("LIBXSMM_CHECK");
-  float* d;
-#endif
+  const unsigned long long size = 1ULL * (*m) * (*n) * (*k);
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
-#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-  d = (float*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
-      || 0 == check || 0 == *check || 0 == check[0]) ? 0
-    : malloc((*m) * (*n) * sizeof(float)));
-  if (0 != d) {
-    const libxsmm_blasint ldx = *(0 == ldc ? n : ldc);
-    libxsmm_blasint i, j;
-    for (i = 0; i < (*n); ++i) {
-      for (j = 0; j < (*m); ++j) {
-        d[i*(*m)+j] = c[i*ldx+j];
-      }
-    }
-  }
-#endif
   LIBXSMM_INIT
-  { const int index = LIBXSMM_MIN(libxsmm_icbrt(1ULL * (*m) * (*n) * (*k)) >> 10, 7);
-    tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/][index];
-    tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/][index];
-    tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/][index];
-  }
-  assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
-#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-  if (0 == omp_get_level())
-#endif
-  {
-    LIBXSMM_TILED_XGEMM(
-      LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
-      LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-      float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
-      ralpha, a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-       rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-  }
-#if defined(LIBXSMM_EXT_TASKS)
-  else {
-    LIBXSMM_TILED_XGEMM(
-      LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
-      if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
-      LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-      float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
-      ralpha, a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-       rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-  }
-#endif
+  if (0 < size) {
+    const int index = LIBXSMM_MIN(libxsmm_icbrt(size) >> 10, 7);
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][index], *m);
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][index], *n);
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][index], *k);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-  if (0 != d) {
-    libxsmm_stat_info s1, s2;
-    if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F32PREC, c, *m, *n, ldc, &s1)) {
-      libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
-      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F32PREC, d, *m, *n, m, &s2)) {
-        LIBXSMM_FLOCK(stderr);
-        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_FLAG_F32PREC, transa, transb,
-          m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-        fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
-        LIBXSMM_FUNLOCK(stderr);
+    const char *const check = getenv("LIBXSMM_CHECK");
+    float *const d = (float*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
+        || 0 == check || 0 == *check || 0 == check[0]) ? 0
+      : malloc((*m) * (*n) * sizeof(float)));
+    if (0 != d) {
+      const libxsmm_blasint ldx = *(0 == ldc ? n : ldc);
+      libxsmm_blasint i, j;
+      for (i = 0; i < (*n); ++i) {
+        for (j = 0; j < (*m); ++j) {
+          d[i*(*m)+j] = c[i*ldx+j];
+        }
       }
     }
-    free(d);
-  }
 #endif
+    assert((0 < tm || 0 == *m) && (0 < tn || 0 == *n) && (0 < tk || 0 == *k) && 0 < libxsmm_nt);
+#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
+    if (0 == omp_get_level())
+#endif
+    {
+      LIBXSMM_TILED_XGEMM(
+        LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
+        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
+        ralpha, a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+         rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
+#if defined(LIBXSMM_EXT_TASKS)
+    else {
+      LIBXSMM_TILED_XGEMM(
+        LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
+        if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
+        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
+        ralpha, a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+         rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
+#endif
+#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
+    if (0 != d) {
+      libxsmm_stat_info s1, s2;
+      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F32PREC, c, *m, *n, ldc, &s1)) {
+        libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
+        if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F32PREC, d, *m, *n, m, &s2)) {
+          LIBXSMM_FLOCK(stderr);
+          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_FLAG_F32PREC, transa, transb,
+            m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+          fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
+          LIBXSMM_FUNLOCK(stderr);
+        }
+      }
+      free(d);
+    }
+#endif
+  }
 }
 
 
@@ -162,71 +160,69 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
 {
   const double ralpha = (0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA));
   const double rbeta = (0 != beta ? *beta : ((double)LIBXSMM_BETA));
-  LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm, tn, tk;
-#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-  const char *const check = getenv("LIBXSMM_CHECK");
-  double* d;
-#endif
+  const unsigned long long size = 1ULL * (*m) * (*n) * (*k);
   LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
-#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-  d = (double*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
-      || 0 == check || 0 == *check || 0 == check[0]) ? 0
-    : malloc((*m) * (*n) * sizeof(double)));
-  if (0 != d) {
-    const libxsmm_blasint ldx = *(0 == ldc ? n : ldc);
-    libxsmm_blasint i, j;
-    for (i = 0; i < (*n); ++i) {
-      for (j = 0; j < (*m); ++j) {
-        d[i*(*m)+j] = c[i*ldx+j];
-      }
-    }
-  }
-#endif
   LIBXSMM_INIT
-  { const int index = LIBXSMM_MIN(libxsmm_icbrt(1ULL * (*m) * (*n) * (*k)) >> 10, 7);
-    tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/][index];
-    tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/][index];
-    tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/][index];
-  }
-  assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
-#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-  if (0 == omp_get_level())
-#endif
-  {
-    LIBXSMM_TILED_XGEMM(
-      LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
-      LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-      double, flags, tm, tn, tk, *m, *n, *k,
-      ralpha, a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-       rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-  }
-#if defined(LIBXSMM_EXT_TASKS)
-  else {
-    LIBXSMM_TILED_XGEMM(
-      LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
-      if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
-      LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-      double, flags, tm, tn, tk, *m, *n, *k,
-      ralpha, a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-       rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-  }
-#endif
+  if (0 < size) {
+    const int index = LIBXSMM_MIN(libxsmm_icbrt(size) >> 10, 7);
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][index], *m);
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][index], *n);
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][index], *k);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-  if (0 != d) {
-    libxsmm_stat_info s1, s2;
-    if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F64PREC, c, *m, *n, ldc, &s1)) {
-      libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
-      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F64PREC, d, *m, *n, m, &s2)) {
-        LIBXSMM_FLOCK(stderr);
-        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_FLAG_F64PREC, transa, transb,
-          m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-        fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
-        LIBXSMM_FUNLOCK(stderr);
+    const char *const check = getenv("LIBXSMM_CHECK");
+    double *const d = (double*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
+        || 0 == check || 0 == *check || 0 == check[0]) ? 0
+      : malloc((*m) * (*n) * sizeof(double)));
+    if (0 != d) {
+      const libxsmm_blasint ldx = *(0 == ldc ? n : ldc);
+      libxsmm_blasint i, j;
+      for (i = 0; i < (*n); ++i) {
+        for (j = 0; j < (*m); ++j) {
+          d[i*(*m)+j] = c[i*ldx+j];
+        }
       }
     }
-    free(d);
-  }
 #endif
+    assert((0 < tm || 0 == *m) && (0 < tn || 0 == *n) && (0 < tk || 0 == *k) && 0 < libxsmm_nt);
+#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
+    if (0 == omp_get_level())
+#endif
+    {
+      LIBXSMM_TILED_XGEMM(
+        LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
+        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+        double, flags, tm, tn, tk, *m, *n, *k,
+        ralpha, a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+         rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
+#if defined(LIBXSMM_EXT_TASKS)
+    else {
+      LIBXSMM_TILED_XGEMM(
+        LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
+        if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
+        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+        double, flags, tm, tn, tk, *m, *n, *k,
+        ralpha, a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
+         rbeta, c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
+    }
+#endif
+#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
+    if (0 != d) {
+      libxsmm_stat_info s1, s2;
+      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F64PREC, c, *m, *n, ldc, &s1)) {
+        libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
+        if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F64PREC, d, *m, *n, m, &s2)) {
+          LIBXSMM_FLOCK(stderr);
+          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_FLAG_F64PREC, transa, transb,
+            m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+          fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
+          LIBXSMM_FUNLOCK(stderr);
+        }
+      }
+      free(d);
+    }
+#endif
+  }
 }
 
 

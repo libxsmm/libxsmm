@@ -117,7 +117,7 @@
   if (((TILE_M) == libxsmm_tiled_xgemm_kernel_tm_) && ((TILE_N) == libxsmm_tiled_xgemm_kernel_tn_) && ((TILE_K) == libxsmm_tiled_xgemm_kernel_tk_)) { \
     if (libxsmm_tiled_xgemm_kernel_k_ < (MAX_K)) { /* peel */ \
       LIBXSMM_GEMM_DESCRIPTOR(libxsmm_tiled_xgemm_kernel_desc_, LIBXSMM_ALIGNMENT, FLAGS, TILE_M, TILE_N, TILE_K, \
-        LDA, LDB, LDC, ALPHA, BETA, libxsmm_tiled_gemm_prefetch); \
+        LDA, LDB, LDC, ALPHA, BETA, libxsmm_gemm_tiled_prefetch); \
       libxsmm_gemm_tiled_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_kernel_desc_); \
       LIBXSMM_GEMM_TILED_FALLBACK_CHECK(0 != libxsmm_gemm_tiled_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) \
       { \
@@ -148,7 +148,7 @@
   if (libxsmm_tiled_xgemm_kernel_k_ < (K)) { /* remainder */ \
     LIBXSMM_GEMM_DESCRIPTOR(libxsmm_tiled_xgemm_kernel_desc_, LIBXSMM_ALIGNMENT, FLAGS, \
       libxsmm_tiled_xgemm_kernel_tm_, libxsmm_tiled_xgemm_kernel_tn_, (K) - libxsmm_tiled_xgemm_kernel_k_, \
-      LDA, LDB, LDC, ALPHA, libxsmm_tiled_xgemm_kernel_beta_, libxsmm_tiled_gemm_prefetch); \
+      LDA, LDB, LDC, ALPHA, libxsmm_tiled_xgemm_kernel_beta_, libxsmm_gemm_tiled_prefetch); \
     libxsmm_gemm_tiled_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_kernel_desc_); \
     LIBXSMM_GEMM_TILED_FALLBACK_CHECK(0 != libxsmm_gemm_tiled_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) \
     { \
@@ -211,7 +211,7 @@
       } \
       LIBXSMM_GEMM_DESCRIPTOR(libxsmm_tiled_xgemm_desc_, LIBXSMM_ALIGNMENT, FLAGS, \
         libxsmm_tiled_xgemm_tm_, libxsmm_tiled_xgemm_tn_, libxsmm_tiled_xgemm_tk_, \
-        LDA, LDB, LDC, ALPHA, 1/*beta*/, libxsmm_tiled_gemm_prefetch); \
+        LDA, LDB, LDC, ALPHA, 1/*beta*/, libxsmm_gemm_tiled_prefetch); \
       libxsmm_tiled_xgemm_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_desc_); \
     } \
   } \
@@ -267,7 +267,7 @@
     && 0 != libxsmm_tiled_xgemm_no_bypass_)) \
   { \
     LIBXSMM_GEMM_DESCRIPTOR_TYPE(libxsmm_tiled_xgemm_smalldesc_, LIBXSMM_ALIGNMENT, FLAGS, MM, NN, KK, \
-      LDA, LDB, LDC, ALPHA, BETA, libxsmm_tiled_gemm_prefetch); \
+      LDA, LDB, LDC, ALPHA, BETA, libxsmm_gemm_tiled_prefetch); \
     libxsmm_tiled_xgemm_kernel_ = libxsmm_xmmdispatch(&libxsmm_tiled_xgemm_smalldesc_); \
     if (0 != libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm)) { \
       LIBXSMM_MMCALL_ABC/*no prefetch*/(libxsmm_tiled_xgemm_kernel_.LIBXSMM_TPREFIX(TYPE, mm), A, B, C); \
@@ -369,6 +369,9 @@ LIBXSMM_API void libxsmm_gemm_init(int archid, int prefetch/*default prefetch st
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API void libxsmm_gemm_finalize(void);
 
+LIBXSMM_API int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
+LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
+
 /** Structure to hold basic statistical information. */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_stat_info { double sum; } libxsmm_stat_info;
 
@@ -409,8 +412,10 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][8/*size-range*/];
-/** Prefetch strategy. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_tiled_gemm_prefetch;
+/** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_auto_prefetch;
+/** Prefetch strategy for tiled GEMM. */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_tiled_prefetch;
 
 #endif /*LIBXSMM_GEMM_H*/
 

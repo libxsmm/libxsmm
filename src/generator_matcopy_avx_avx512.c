@@ -46,7 +46,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
                                                                  const libxsmm_matcopy_kernel_config*   i_micro_kernel_config,
                                                                  unsigned int                           remainder ) {
   unsigned long long l_mask = (1ULL << remainder) - 1;
-  
+
   /* If we have int16 input and KNM arch, we should make the remainder mask "half", since we have only VMOVUPS instruction (i.e. treat the int16 entries in pairs, thus the mask length should be half) */
   if ( (i_micro_kernel_config->vector_length == 32) && (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) ) {
     l_mask = l_mask/2;
@@ -58,7 +58,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
                                   i_gp_reg_mapping->gp_reg_help_0,
                                   /* immediate is passed as an integer */
                                   (int)l_mask );
-  
+
   /* Set mask register */
   if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {
     libxsmm_x86_instruction_mask_move( io_generated_code,
@@ -73,7 +73,6 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
   } else {
     /* Should not happen! */
   }
-  
 }
 
 LIBXSMM_INTERNAL_API_DEFINITION
