@@ -717,7 +717,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
       }
     }
     else {
-      if (0 > libxsmm_verbosity || 1 < libxsmm_verbosity /* library code is expected to be mute */
+      if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
         fprintf(stderr, "LIBXSMM: zero-sized memory allocation detected!\n");
