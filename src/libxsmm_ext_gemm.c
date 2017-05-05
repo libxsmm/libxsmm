@@ -108,9 +108,9 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
 #endif
   LIBXSMM_INIT
   { const int index = LIBXSMM_MIN(libxsmm_icbrt(1ULL * (*m) * (*n) * (*k)) >> 10, 7);
-    tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/][index];
-    tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/][index];
-    tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/][index];
+    tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][index], *m);
+    tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][index], *n);
+    tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][index], *k);
   }
   assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
@@ -184,9 +184,9 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
 #endif
   LIBXSMM_INIT
   { const int index = LIBXSMM_MIN(libxsmm_icbrt(1ULL * (*m) * (*n) * (*k)) >> 10, 7);
-    tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/][index];
-    tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/][index];
-    tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/][index];
+    tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][index], *m);
+    tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][index], *n);
+    tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][index], *k);
   }
   assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */

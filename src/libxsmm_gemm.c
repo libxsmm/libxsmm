@@ -293,9 +293,9 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
   LIBXSMM_INIT
   { /* tiled GEMM */
     const int index = LIBXSMM_MIN(libxsmm_icbrt(1ULL * (*m) * (*n) * (*k)) >> 10, 7);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = libxsmm_gemm_tile[1/*SP*/][0/*M*/][index];
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = libxsmm_gemm_tile[1/*SP*/][1/*N*/][index];
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = libxsmm_gemm_tile[1/*SP*/][2/*K*/][index];
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][index], *m);
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][index], *n);
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][index], *k);
     assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP,
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
@@ -359,9 +359,9 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
   LIBXSMM_INIT
   { /* tiled GEMM */
     const int index = LIBXSMM_MIN(libxsmm_icbrt(1ULL * (*m) * (*n) * (*k)) >> 10, 7);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = libxsmm_gemm_tile[0/*DP*/][0/*M*/][index];
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = libxsmm_gemm_tile[0/*DP*/][1/*N*/][index];
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = libxsmm_gemm_tile[0/*DP*/][2/*K*/][index];
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][index], *m);
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][index], *n);
+    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][index], *k);
     assert(0 < tm && 0 < tn && 0 < tk && 0 < libxsmm_nt);
     LIBXSMM_TILED_XGEMM(LIBXSMM_NOOP, LIBXSMM_NOOP,
       LIBXSMM_GEMM_COLLAPSE, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
