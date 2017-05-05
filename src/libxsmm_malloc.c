@@ -514,6 +514,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
 {
   int result = EXIT_SUCCESS;
   if (memory) {
+    static int error_once = 0;
     if (0 < size) {
       const size_t internal_size = size + extra_size + sizeof(internal_malloc_info_type);
       /* ATOMIC BEGIN: this region should be atomic/locked */
@@ -523,7 +524,6 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
       /* ATOMIC END: this region should be atomic */
       size_t alloc_alignment = 0, alloc_size = 0;
       void *alloc_failed = 0, *buffer = 0, *reloc = 0;
-      static int error_once = 0;
       if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
         context = libxsmm_scratch_allocator_context;
         malloc_fn = libxsmm_scratch_malloc_fn;
@@ -717,6 +717,11 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
       }
     }
     else {
+      if (0 > libxsmm_verbosity || 1 < libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM: zero-sized memory allocation detected!\n");
+      }
       *memory = 0;
     }
   }
