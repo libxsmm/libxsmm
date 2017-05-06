@@ -65,11 +65,6 @@
 # define LIBXSMM_GEMM_COLLAPSE 2
 #endif
 
-/** Enable tiled GEMM in non-ext. library */
-#if !defined(LIBXSMM_GEMM_TILED)
-/*# define LIBXSMM_GEMM_TILED*/
-#endif
-
 #if !defined(LIBXSMM_NO_BLAS)
 # if !defined(__BLAS) || (0 != __BLAS)
 #   define LIBXSMM_NO_BLAS 0
