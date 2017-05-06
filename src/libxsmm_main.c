@@ -1008,9 +1008,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
             request->descriptor.gemm->alpha, request->descriptor.gemm->beta, uid);
         }
       }
-      else { /* this case is not an actual error */
-        return result;
-      }
     } break;
     case LIBXSMM_BUILD_KIND_SSOA: { /* sparse SOA kernel */
       assert(0 != request->descriptor.ssoa && 0 != request->descriptor.ssoa->gemm);
@@ -1033,9 +1030,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
             (unsigned int)request->descriptor.ssoa->gemm->lda, (unsigned int)request->descriptor.ssoa->gemm->ldb, (unsigned int)request->descriptor.ssoa->gemm->ldc,
             request->descriptor.ssoa->gemm->alpha, request->descriptor.ssoa->gemm->beta, uid);
         }
-      }
-      else { /* this case is not an actual error */
-        return result;
       }
     } break;
     case LIBXSMM_BUILD_KIND_SREG: { /* sparse register kernel */
@@ -1062,9 +1056,6 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
             request->descriptor.sreg->gemm->alpha, request->descriptor.sreg->gemm->beta, uid);
         }
 #if 1
-      }
-      else { /* this case is not an actual error */
-        return result;
       }
 #endif
     } break;
