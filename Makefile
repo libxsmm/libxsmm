@@ -126,6 +126,11 @@ STATIC ?= 1
 # 2: enables wrapping DGEMM only
 WRAP ?= 0
 
+# Determines kind routine called for intercepted GEMMs
+# 1: sequential and non-tiled (small problem sizes only)
+# 2: parallelized and tiled
+GEMM ?= 2
+
 # JIT backend is enabled by default
 JIT ?= 1
 
@@ -422,7 +427,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 		$(MAKE_ILP64) $(BIG) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) > $@
 	$(info ================================================================================)
 	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py))
 	$(info --------------------------------------------------------------------------------)
@@ -490,7 +495,7 @@ $(INCDIR)/libxsmm.f: $(BLDDIR)/.make \
 		$(MAKE_ILP64) $(BIG) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) | \
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) | \
 	sed "/ATTRIBUTES OFFLOAD:MIC/d" > $@
 
 .PHONY: sources

@@ -46,6 +46,7 @@ if __name__ == "__main__":
         alpha = beta = 1
         sync = jit = 1
         alignment = 64
+        wrap = 2
         mnklist = list()
 
         # optional argument(s)
@@ -72,7 +73,9 @@ if __name__ == "__main__":
         if (12 < argc):
             beta = int(sys.argv[12])
         if (13 < argc):
-            mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[13:], 0))
+            wrap = int(sys.argv[13])
+        if (14 < argc):
+            mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[14:], 0))
 
         if (0 == threshold):
             threshold = 128 * 128 * 128
@@ -108,6 +111,7 @@ if __name__ == "__main__":
             "ILP64":      [0, 1][0 != ilp64],
             "ALPHA":      alpha,
             "BETA":       beta,
+            "WRAP":       [1, 2][0 == (wrap % 2) or (0 > wrap)],
             "SYNC":       [0, 1][0 != sync],
             "JIT":        [0, 1][0 != jit],
             "BIG":        big

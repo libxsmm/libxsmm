@@ -76,7 +76,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
       { {  41, 119, 102, 106, 106, 106, 106, 106 }, {  32,  65, 108, 130, 130, 130, 130, 130 }, {  73,  90,  86,  89,  89,  89,  89,  89 } } }  /* SP */
   };
   const char *const env_m = getenv("LIBXSMM_GEMM_M"), *const env_n = getenv("LIBXSMM_GEMM_N"), *const env_k = getenv("LIBXSMM_GEMM_K");
-  const char *const env_p = getenv("LIBXSMM_GEMM_TILED_PREFETCH");
+  const char *const env_p = getenv("LIBXSMM_GEMM_TILED_PREFETCH"), *const env_w = getenv("LIBXSMM_GEMM_WRAP");
   const int uid = ((0 == env_p || 0 == *env_p) ? 6/*LIBXSMM_PREFETCH_AL2_AHEAD*/ : atoi(env_p));
   const int gemm_m = ((0 == env_m || 0 == *env_m) ? -1 : atoi(env_m));
   const int gemm_n = ((0 == env_n || 0 == *env_n) ? -1 : atoi(env_n));
@@ -94,7 +94,10 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   }
 
   /* setup prefetch strategy for tiled GEMMs */
-  libxsmm_gemm_tiled_prefetch = 0 <= uid ? libxsmm_gemm_uid2prefetch(uid) : prefetch;
+  libxsmm_gemm_tiled_prefetch = (0 <= uid ? libxsmm_gemm_uid2prefetch(uid) : prefetch);
+
+  /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled). */
+  libxsmm_gemm_wrap = ((0 == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
 
   for (i = 0; i < 8; ++i) {
     /* environment-defined tile sizes apply for DP and SP */

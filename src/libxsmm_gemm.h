@@ -379,6 +379,8 @@ LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE libxsmm_g
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_auto_prefetch;
 /** Prefetch strategy for tiled GEMM. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_tiled_prefetch;
+/** Intercepted GEMM (1: sequential and non-tiled, 2: parallelized and tiled). */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_wrap;
 
 #endif /*LIBXSMM_GEMM_H*/
 
