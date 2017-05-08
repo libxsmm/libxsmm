@@ -129,14 +129,10 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
     l_generator_load( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
                       i_xgemm_desc, i_micro_kernel_config->vector_length, i_n_blocking );
 
-    /* if we are generating for KNL && i_n_blocking is greater 26 && we prefetch via C -> push prefetch gpr */
-    if ( (i_n_blocking > 26)          &&
-         (strcmp(i_arch, "knc") != 0) &&
-         (i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_BL2_VIA_C ||
-          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C ||
-          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD ||
-          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST ) ) {
-      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_b_prefetch );
+    /* if we are generating for KNL && i_n_blocking is greater 18  -> push prefetch gpr */
+    if ( (i_n_blocking > 18)          &&
+         (strcmp(i_arch, "knc") != 0) ) {
+      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_c );
     }
 
     l_k_unrolled = l_generator_microkernel_kloop( io_generated_code,
@@ -147,14 +143,10 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
                                                   i_arch,
                                                   i_n_blocking );
 
-    /* if we are generating for KNL && i_n_blocking is greater 26 && we prefetch via C -> push prefetch gpr */
-    if ( (i_n_blocking > 26)          &&
-         (strcmp(i_arch, "knc") != 0) &&
-         (i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_BL2_VIA_C ||
-          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C ||
-          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD ||
-          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST ) ) {
-      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_b_prefetch );
+    /* if we are generating for KNL && i_n_blocking is greater 18  -> pop prefetch gpr */
+    if ( (i_n_blocking > 18)          &&
+         (strcmp(i_arch, "knc") != 0) ) {
+      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_c );
     }
 
     l_generator_store( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
@@ -180,14 +172,10 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
     l_generator_load( io_generated_code, i_gp_reg_mapping, &l_micro_kernel_config_mask,
                       i_xgemm_desc, l_micro_kernel_config_mask.vector_length, i_n_blocking );
 
-    /* if we are generating for KNL && i_n_blocking is greater 26 && we prefetch via C -> push prefetch gpr */
-    if ( (i_n_blocking > 26)          &&
-         (strcmp(i_arch, "knc") != 0) &&
-         (i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_BL2_VIA_C ||
-          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C ||
-          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD ||
-          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST ) ) {
-      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_b_prefetch );
+    /* if we are generating for KNL && i_n_blocking is greater 18  -> push prefetch gpr */
+    if ( (i_n_blocking > 18)          &&
+         (strcmp(i_arch, "knc") != 0) ) {
+      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_c );
     }
 
     l_k_unrolled = l_generator_microkernel_kloop( io_generated_code,
@@ -198,14 +186,10 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
                                                   i_arch,
                                                   i_n_blocking );
 
-    /* if we are generating for KNL && i_n_blocking is greater 26 && we prefetch via C -> push prefetch gpr */
-    if ( (i_n_blocking > 26)          &&
-         (strcmp(i_arch, "knc") != 0) &&
-         (i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_BL2_VIA_C ||
-          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C ||
-          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD ||
-          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST ) ) {
-      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_b_prefetch );
+    /* if we are generating for KNL && i_n_blocking is greater 18  -> push prefetch gpr */
+    if ( (i_n_blocking > 18)          &&
+         (strcmp(i_arch, "knc") != 0) ) {
+      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_c );
     }
 
     l_generator_store( io_generated_code, i_gp_reg_mapping, &l_micro_kernel_config_mask,
@@ -256,15 +240,16 @@ void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         
   l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
+  l_gp_reg_mapping.gp_reg_c_prefetch = LIBXSMM_X86_GP_REG_R9;
   l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R13;
   l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R14;
   l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_R15; /* masking */
   l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_X86_GP_REG_RAX; /* B stride helper */
   l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_X86_GP_REG_RBX; /* B stride helper */
-  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_X86_GP_REG_R9;  /* B stride helper */
+  l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_X86_GP_REG_R11;  /* B stride helper */
   l_gp_reg_mapping.gp_reg_help_4 = LIBXSMM_X86_GP_REG_R10; /* B stride helper */
-  l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_X86_GP_REG_R11; /* B stride helper */
+  l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_X86_GP_REG_R9; /* B stride helper */
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
