@@ -90,16 +90,19 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    const char *const env_tasks = getenv("TASKS"), *const env_check = getenv("CHECK");
+    const char *const env_tasks = getenv("TASKS");
     const int tasks = (0 == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
     REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc(lda * k * sizeof(REAL_TYPE));
     REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldb * n * sizeof(REAL_TYPE));
     REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
+#if !defined(__BLAS) || (0 != __BLAS)
+    const char *const env_check = getenv("CHECK");
     REAL_TYPE* d = 0;
     if (0 == env_check || 0 != atoi(env_check)) {
       d = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
       init( 0, d, m, n, ldc, 1.0);
     }
+#endif
     init( 0, c, m, n, ldc, 1.0);
     init(42, a, m, k, lda, 1.0);
     init(24, b, k, n, ldb, 1.0);
@@ -108,9 +111,11 @@ int main(int argc, char* argv[])
 #endif
     /* warmup OpenMP (populate thread pool) */
     LIBXSMM_YGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+#if !defined(__BLAS) || (0 != __BLAS)
     if (0 != d) {
       LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
     }
+#endif
     libxsmm_gemm_print(stdout, LIBXSMM_GEMM_TYPEFLAG(REAL_TYPE),
       &transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
     fprintf(stdout, "\n\n");
@@ -141,6 +146,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
       }
     }
+#if !defined(__BLAS) || (0 != __BLAS)
     if (0 != d) { /* validate result */
       { /* LAPACK/BLAS xGEMM */
         int i; double duration;
@@ -167,6 +173,7 @@ int main(int argc, char* argv[])
       }
       libxsmm_free(d);
     }
+#endif
     libxsmm_free(c);
     libxsmm_free(a);
     libxsmm_free(b);
