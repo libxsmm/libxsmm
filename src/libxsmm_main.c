@@ -635,15 +635,18 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
   if (0 == registry) {
 #if !defined(LIBXSMM_NO_SYNC) /* setup the locks in a thread-safe fashion */
     static int reglock_check = 0;
-    int i;
-    assert(sizeof(internal_reglock) == (INTERNAL_REGLOCK_MAXN * sizeof(*internal_reglock)));
+    static LIBXSMM_LOCK_TYPE global_lock;
+    memset(&global_lock, -1, sizeof(LIBXSMM_LOCK_TYPE)); /* mark invalid */
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&reglock_check, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
+      int i;
+      assert(sizeof(internal_reglock) == (INTERNAL_REGLOCK_MAXN * sizeof(*internal_reglock)));
       for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_INIT(internal_reglock + i);
-      LIBXSMM_LOCK_INIT(&libxsmm_lock_global);
+      LIBXSMM_LOCK_INIT(&libxsmm_lock_global); /* valid */
+      global_lock = libxsmm_lock_global;
     }
     else {
-      while (0 == libxsmm_lock_global) {
-        if (0 != LIBXSMM_ATOMIC_LOAD(&libxsmm_lock_global, LIBXSMM_ATOMIC_SEQ_CST)) break;
+      while (0 == memcmp(&global_lock, &libxsmm_lock_global, sizeof(LIBXSMM_LOCK_TYPE))) {
+        if  (0 != memcmp(&global_lock, &libxsmm_lock_global, sizeof(LIBXSMM_LOCK_TYPE))) break;
       }
     }
 #endif
