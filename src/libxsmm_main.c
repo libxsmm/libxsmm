@@ -640,17 +640,14 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&reglock_check, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
       for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_INIT(internal_reglock + i);
       LIBXSMM_LOCK_INIT(&libxsmm_lock_global);
-      internal_init();
     }
-    else { /* wait until locks are initialized, or until shutdown */
-      while (0 == internal_registry && 0 == internal_teardown) {
-        if (0 != LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST)) break;
-        if (0 != LIBXSMM_ATOMIC_LOAD(&internal_teardown, LIBXSMM_ATOMIC_SEQ_CST)) break;
+    else {
+      while (0 == libxsmm_lock_global) {
+        if (0 != LIBXSMM_ATOMIC_LOAD(&libxsmm_lock_global, LIBXSMM_ATOMIC_SEQ_CST)) break;
       }
     }
-#else
-    internal_init();
 #endif
+    internal_init();
   }
 }
 
