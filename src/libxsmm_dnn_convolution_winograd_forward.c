@@ -35,8 +35,8 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <assert.h>
 #if !defined(NDEBUG)
-# include <assert.h>
 # include <stdio.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
