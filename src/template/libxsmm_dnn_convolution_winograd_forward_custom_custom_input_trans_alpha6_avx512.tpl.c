@@ -42,15 +42,15 @@ __m512 t0, t1, t2, t3, t4, t5;
 
 for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
   for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) { /* for each tile */
-    if (ti*(ALPHA-2) >= handle->desc.pad_w && ti*(ALPHA-2) + ALPHA <= handle->desc.W + handle->desc.pad_w &&
-        tj*(ALPHA-2) >= handle->desc.pad_h && tj*(ALPHA-2) + ALPHA <= handle->desc.H + handle->desc.pad_h) { /* common case */
+    if (ti*((ALPHA)-2) >= ((unsigned int)handle->desc.pad_w) && ti*((ALPHA)-2) + (ALPHA) <= ((unsigned int)(handle->desc.W + handle->desc.pad_w)) &&
+        tj*((ALPHA)-2) >= ((unsigned int)handle->desc.pad_h) && tj*((ALPHA)-2) + (ALPHA) <= ((unsigned int)(handle->desc.H + handle->desc.pad_h))) { /* common case */
 
       /* left multiplication */
       /* this unrolling didn't help performance much so we may want to remove later if code size becomes an issue */
       LIBXSMM_PRAGMA_UNROLL_N(ALPHA)
-      for (i = 0; i < ALPHA; i++) {
-        xdim = ti*(ALPHA - 2) - handle->desc.pad_w + handle->desc.pad_w_in + i;
-        ydim = tj*(ALPHA - 2) - handle->desc.pad_h + handle->desc.pad_h_in;
+      for (i = 0; i < (ALPHA); i++) {
+        xdim = ti*((ALPHA) - 2) - handle->desc.pad_w + handle->desc.pad_w_in + i;
+        ydim = tj*((ALPHA) - 2) - handle->desc.pad_h + handle->desc.pad_h_in;
 
         /* HW prefetcher should be able to cover these sequential accesses */
         I[0] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 0, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
@@ -78,7 +78,7 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
       /* right multiplication */
       /* this unrolling didn't help performance much so we may want to remove later if code size becomes an issue */
       LIBXSMM_PRAGMA_UNROLL_N(ALPHA)
-      for (j = 0; j < ALPHA; j++) {
+      for (j = 0; j < (ALPHA); j++) {
         t0 = _mm512_fnmadd_ps(_mm512_set1_ps(4.0f), T[j][2], T[j][4]);
         t1 = _mm512_fnmadd_ps(_mm512_set1_ps(4.0f), T[j][1], T[j][3]);
         t2 = _mm512_sub_ps(T[j][4], T[j][2]);
@@ -108,8 +108,8 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
     }
     else { /* corner case */
       /* left multiplication */
-      for (i = 0; i < ALPHA; i++) {
-        xdim = ti*(ALPHA - 2) - handle->desc.pad_w + handle->desc.pad_w_in + i;
+      for (i = 0; i < (ALPHA); i++) {
+        xdim = ti*((ALPHA) - 2) - handle->desc.pad_w + handle->desc.pad_w_in + i;
         if ((xdim < handle->desc.pad_w_in) || (xdim >= handle->desc.W + handle->desc.pad_w_in)) {
           T[0][i] = _mm512_setzero_ps();
           T[1][i] = _mm512_setzero_ps();
@@ -118,14 +118,14 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
           T[4][i] = _mm512_setzero_ps();
           T[5][i] = _mm512_setzero_ps();
         } else {
-          for (j = 0; j < LIBXSMM_MIN(handle->desc.pad_h - (int)tj*(ALPHA - 2), ALPHA); j++) {
+          for (j = 0; j < LIBXSMM_MIN(handle->desc.pad_h - (int)tj*((ALPHA) - 2), ALPHA); j++) {
             I[j] = _mm512_setzero_ps();
           }
-          for ( ; j < LIBXSMM_MIN(handle->desc.H + handle->desc.pad_h - (int)tj*(ALPHA - 2), ALPHA); j++) {
-            ydim = tj*(ALPHA - 2) - handle->desc.pad_h + handle->desc.pad_h_in + j;
+          for ( ; j < LIBXSMM_MIN(handle->desc.H + handle->desc.pad_h - (int)tj*((ALPHA) - 2), ALPHA); j++) {
+            ydim = tj*((ALPHA) - 2) - handle->desc.pad_h + handle->desc.pad_h_in + j;
             I[j] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
           }
-          for ( ; j < ALPHA; j++) {
+          for ( ; j < (ALPHA); j++) {
             I[j] = _mm512_setzero_ps();
           }
 
@@ -148,7 +148,7 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
       /* right multiplication */
       /* this unrolling didn't help performance much so we may want to remove later if code size becomes an issue */
       LIBXSMM_PRAGMA_UNROLL_N(ALPHA)
-      for (j = 0; j < ALPHA; j++) {
+      for (j = 0; j < (ALPHA); j++) {
         t0 = _mm512_fnmadd_ps(_mm512_set1_ps(4.0f), T[j][2], T[j][4]);
         t1 = _mm512_fnmadd_ps(_mm512_set1_ps(4.0f), T[j][1], T[j][3]);
         t2 = _mm512_sub_ps(T[j][4], T[j][2]);
@@ -185,8 +185,8 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
 /* Since now we're using streaming stores long stride accesses might not be an issue but
  * moving streaming stores to the loop above slowed things down. */
 /* the order of this loop is optimized for the target array which bigger */
-for (j = 0; j < ALPHA; j++) {
-  for (i = 0; i < ALPHA; i++) {
+for (j = 0; j < (ALPHA); j++) {
+  for (i = 0; i < (ALPHA); i++) {
     for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
       for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
         /* this prefetch didn't help performance much so we may want to remove it later */
