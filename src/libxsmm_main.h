@@ -347,6 +347,9 @@ LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned reg
 /** Updates counters of the statistic, which is shown at program termination. */
 LIBXSMM_API unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int k, unsigned int ntry, unsigned int ncol);
 
+LIBXSMM_API void libxsmm_dnn_init(int target_arch);
+LIBXSMM_API void libxsmm_dnn_finalize(void);
+
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_lock_global;
 /** Function used to allocate default memory. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_default_malloc_fn;

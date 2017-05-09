@@ -55,6 +55,18 @@
 #endif
 
 
+LIBXSMM_API_DEFINITION void libxsmm_dnn_init(int target_arch)
+{
+  libxsmm_dnn_convolve_winograd_init(target_arch);
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_dnn_finalize(void)
+{
+  libxsmm_dnn_convolve_winograd_finalize();
+}
+
+
 LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
 {
   switch (code) {

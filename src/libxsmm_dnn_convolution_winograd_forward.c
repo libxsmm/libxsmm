@@ -43,24 +43,57 @@
 # pragma offload_attribute(pop)
 #endif
 
+/* Enable/disable specific code paths */
+#if defined(LIBXSMM_INTRINSICS_AVX512) && !defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
+# define LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512
+#endif
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_custom(
-                                           const float *inp,
-                                           float *tinp,
-                                           float *Iwp,
-                                           const libxsmm_dnn_layer* handle )
+
+/* function pointer for the CPUID-dispatched implementation */
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*internal_fwd_input_transform_custom_custom_alpha6)(
+  const float*, float*, float*, const libxsmm_dnn_layer*);
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_custom_alpha6_default(
+  const float* inp, float* tinp, float* Iwp, const libxsmm_dnn_layer* handle)
 {
-  if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
-#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
-# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6_avx512.tpl.c"
-#else
-# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6.tpl.c"
-#endif
+#include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6.tpl.c"
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_fwd.alpha == 4) {
+}
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+LIBXSMM_ATTRIBUTE_UNUSED void internal_fwd_input_transform_custom_custom_alpha6_avx512(
+  const float* inp, float* tinp, float* Iwp, const libxsmm_dnn_layer* handle)
+{
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
+# define ALPHA 6
+# define TDVLEN 16
+# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6_avx512.tpl.c"
+# undef TDVLEN
+# undef ALPHA
+#else /* next lower/available code path (fallback chain) */
+  internal_fwd_input_transform_custom_custom_alpha6_default(inp, tinp, Iwp, handle);
+#endif
+}
+
+
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_custom(
+  const float* inp, float* tinp, float* Iwp, const libxsmm_dnn_layer* handle)
+{
+  if (handle->cwino_fwd.alpha == 6) {
+    /* if highest implemented code path is statically present, no need for an indirect call (function pointer) */
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+    internal_fwd_input_transform_custom_custom_alpha6_avx512(inp, tinp, Iwp, handle);
+#else /* pointer based function call */
+    assert(0 != internal_fwd_input_transform_custom_custom_alpha6);
+    internal_fwd_input_transform_custom_custom_alpha6(inp, tinp, Iwp, handle);
+#endif
+  }
+  else if (handle->cwino_fwd.alpha == 4) {
 #define ALPHA 4
 #define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha4.tpl.c"
@@ -311,5 +344,22 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_nh
   }
 
   return status;
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve_winograd_init(int target_arch)
+{
+  if (LIBXSMM_X86_AVX512 <= target_arch) {
+    internal_fwd_input_transform_custom_custom_alpha6 = internal_fwd_input_transform_custom_custom_alpha6_avx512;
+  }
+  else {
+    internal_fwd_input_transform_custom_custom_alpha6 = internal_fwd_input_transform_custom_custom_alpha6_default;
+  }
+  assert(0 != internal_fwd_input_transform_custom_custom_alpha6);
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve_winograd_finalize(void)
+{
 }
 
