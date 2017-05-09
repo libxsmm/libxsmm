@@ -42,7 +42,8 @@ if __name__ == "__main__":
         filename = sys.argv[1]
 
         # default configuration if no arguments are given
-        precision = prefetch = 0
+        precision = 0  # all
+        prefetch = -1  # auto
         mnklist = list()
 
         # optional argument(s)

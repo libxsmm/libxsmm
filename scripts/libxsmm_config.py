@@ -42,10 +42,11 @@ if __name__ == "__main__":
         filename = sys.argv[1]
 
         # default configuration if no arguments are given
-        ilp64 = big = offload = flags = prefetch = threshold = 0
+        ilp64 = offload = flags = threshold = 0
+        big = sync = jit = 1
         alpha = beta = 1
-        sync = jit = 1
         alignment = 64
+        prefetch = -1
         wrap = 2
         mnklist = list()
 
