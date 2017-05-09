@@ -53,12 +53,12 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
         ydim = tj*(ALPHA - 2) - handle->desc.pad_h + handle->desc.pad_h_in;
 
         /* HW prefetcher should be able to cover these sequential accesses */
-        I[0] = _mm512_load_ps(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 0, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
-        I[1] = _mm512_load_ps(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 1, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
-        I[2] = _mm512_load_ps(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 2, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
-        I[3] = _mm512_load_ps(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 3, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
-        I[4] = _mm512_load_ps(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 4, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
-        I[5] = _mm512_load_ps(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 5, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
+        I[0] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 0, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
+        I[1] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 1, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
+        I[2] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 2, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
+        I[3] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 3, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
+        I[4] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 4, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
+        I[5] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim + 5, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
 
         t0 = _mm512_fnmadd_ps(_mm512_set1_ps(4.0f), I[2], I[4]);
         t1 = _mm512_fnmadd_ps(_mm512_set1_ps(4.0f), I[1], I[3]);
@@ -123,7 +123,7 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
           }
           for ( ; j < LIBXSMM_MIN(handle->desc.H + handle->desc.pad_h - (int)tj*(ALPHA - 2), ALPHA); j++) {
             ydim = tj*(ALPHA - 2) - handle->desc.pad_h + handle->desc.pad_h_in + j;
-            I[j] = _mm512_load_ps(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
+            I[j] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim, xdim, 0, handle->ifhp, handle->ifwp, TDVLEN));
           }
           for ( ; j < ALPHA; j++) {
             I[j] = _mm512_setzero_ps();
@@ -195,9 +195,9 @@ for (j = 0; j < ALPHA; j++) {
             _MM_HINT_T0);
         /* using streaming store here may actually hurt performance if batch size is small
          * so that the entire output fits in on-chip cache */
-        _mm512_stream_ps(
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS(
             &LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->blocksifm*handle->cwino_fwd.bimg, total_tiles, TDVLEN),
-            _mm512_load_ps(
+            LIBXSMM_INTRINSICS_MM512_LOAD_PS(
                 &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, i, 0, ALPHA, ALPHA, TDVLEN)));
       }
     }
