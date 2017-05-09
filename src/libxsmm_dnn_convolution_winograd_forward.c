@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_winograd_forward.h"
 #include "libxsmm_main.h"
+#include <libxsmm_intrinsics_x86.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -42,7 +43,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-#include <immintrin.h>
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_custom(
                                            const float *inp,
@@ -75,6 +75,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_cus
 #endif
 }
 
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_nhwc_custom(
                                          const float *inp,
                                          float *tinp,
@@ -102,6 +103,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_nhwc_custo
 #endif
 }
 
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_weight_transform( float *wp,
                               float *twp,
                               const libxsmm_dnn_layer* handle )
@@ -126,6 +128,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_weight_transform( float *w
   }
 #endif
 }
+
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_custom_custom( float *toutp,
                                             float *outp,
@@ -159,6 +162,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_custom_cu
 #endif
 }
 
+
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_nhwc_custom( float *toutp,
                                           float *outp,
                                           float *Owp,
@@ -186,6 +190,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_nhwc_cust
   }
 #endif
 }
+
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_custom_custom( libxsmm_dnn_layer* handle, int start_thread, int tid )
 {
@@ -247,6 +252,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_cu
   return status;
 }
 
+
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_nhwc_custom( libxsmm_dnn_layer* handle, int start_thread, int tid )
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -306,3 +312,4 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_nh
 
   return status;
 }
+
