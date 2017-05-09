@@ -369,10 +369,11 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
            }
            
            if ( (point == 12) && (index < i_n_blocking) ) {
-             if (i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL1 ||
+             if ((i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL1 ||
                  i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_BL1_CL1 ||
                  i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_CL1 ||
-                 i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_BL1_CL1) {
+                 i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_BL1_CL1)
+                 && (i_n_blocking <= 27) ) {
                libxsmm_x86_instruction_prefetch( io_generated_code,
                                               LIBXSMM_X86_INSTR_PREFETCHT0,
                                               i_gp_reg_mapping->gp_reg_c_prefetch,
@@ -408,10 +409,11 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
            }
            
            if ( point == 9 && (index < i_n_blocking) ) {
-             if (i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL1 ||
+             if ((i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL1 ||
                  i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_BL1_CL1 ||
                  i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_CL1 ||
-                 i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_BL1_CL1) {
+                 i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_BL1_CL1)
+                 && (i_n_blocking <= 27)) {
                libxsmm_x86_instruction_prefetch( io_generated_code,
                                                 LIBXSMM_X86_INSTR_PREFETCHT0,
                                                 i_gp_reg_mapping->gp_reg_c_prefetch,
@@ -434,10 +436,11 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
            }
            
            if ( point == 15 && (index+16 < i_n_blocking) ) {
-             if (i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL1 ||
+             if ((i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL1 ||
                  i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_BL1_CL1 ||
                  i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_CL1 ||
-                 i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_BL1_CL1) {
+                 i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_BL1_CL1)
+                 && (i_n_blocking <= 27)) {
                libxsmm_x86_instruction_prefetch( io_generated_code,
                                                 LIBXSMM_X86_INSTR_PREFETCHT0,
                                                 i_gp_reg_mapping->gp_reg_c_prefetch,
@@ -491,10 +494,11 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
           }
           
           if ( (point == 15) && (index < i_n_blocking) ) {
-            if (i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL1 ||
+            if ((i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL1 ||
                 i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_BL1_CL1 ||
                 i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_CL1 ||
-                i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_BL1_CL1) {
+                i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_BL1_CL1)
+                && (i_n_blocking <= 27)) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
                                                LIBXSMM_X86_INSTR_PREFETCHT0,
                                                i_gp_reg_mapping->gp_reg_c_prefetch,
@@ -563,10 +567,11 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
           }
           
           if ( (point == 15) && (index < i_n_blocking) ) {
-            if (i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL1 ||
+            if ((i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL1 ||
                 i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_BL1_CL1 ||
                 i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_CL1 ||
-                i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_BL1_CL1) {
+                i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_BL1_CL1)
+                && (i_n_blocking <= 27)) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
                                                LIBXSMM_X86_INSTR_PREFETCHT0,
                                                i_gp_reg_mapping->gp_reg_c_prefetch,
@@ -649,10 +654,11 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
           }
           
           if ( (point == 15) && (index < i_n_blocking) ) {
-            if (i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL1 ||
+            if ((i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_CL1 ||
                 i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_BL1_CL1 ||
                 i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_CL1 ||
-                i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_BL1_CL1) {
+                i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL1_BL1_CL1)
+                && (i_n_blocking <= 27) ) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
                                                LIBXSMM_X86_INSTR_PREFETCHT0,
                                                i_gp_reg_mapping->gp_reg_c_prefetch,
@@ -662,8 +668,6 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
           }
           
         }
-
-        
       }
 #else
       libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
