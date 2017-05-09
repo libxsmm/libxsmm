@@ -37,7 +37,7 @@ __m512 I[ALPHA];
 unsigned int ti, tj;
 int i, j;
 int xdim, ydim;
-__m512 T[ALPHA][ALPHA]; // FIXME: too big and causing spills
+__m512 T[ALPHA][ALPHA]; /* FIXME: too big and causing spills */
 __m512 t0, t1, t2, t3, t4, t5;
 
 for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {

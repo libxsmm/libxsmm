@@ -37,7 +37,7 @@ __m512 O[ALPHA-2];
 unsigned int ti, tj;
 int i, j;
 int xdim, ydim;
-__m512 T[4][6]; // FIXME: too big and causing spills
+__m512 T[4][6]; /* FIXME: too big and causing spills */
 __m512 t0, t1, t2, t3;
 __m512 I0, I1, I2, I3, I4, I5;
 
