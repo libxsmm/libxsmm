@@ -42,6 +42,7 @@
 # pragma offload_attribute(pop)
 #endif
 
+#include <immintrin.h>
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_custom(
                                            const float *inp,
@@ -52,7 +53,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_cus
   if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6_avx512.tpl.c"
+#else
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6.tpl.c"
+#endif
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_fwd.alpha == 4) {
@@ -132,7 +137,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_custom_cu
   if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6_avx512.tpl.c"
+#else
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6.tpl.c"
+#endif
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_fwd.alpha == 4) {
