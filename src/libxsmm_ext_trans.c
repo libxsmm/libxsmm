@@ -67,7 +67,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
         xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
       }
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-      if (0 == omp_get_level())
+      if (0 == omp_get_active_level())
 #endif
       { /* enable internal parallelization */
         if (0 == xmatcopy || 0 == descriptor.prefetch) {
@@ -161,7 +161,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
           xtrans = libxsmm_xtransdispatch(&descriptor);
         }
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-        if (0 == omp_get_level())
+        if (0 == omp_get_active_level())
 #endif
         { /* enable internal parallelization */
           LIBXSMM_XCOPY(

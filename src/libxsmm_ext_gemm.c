@@ -114,7 +114,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
 #endif
     assert((0 < tm || 0 == *m) && (0 < tn || 0 == *n) && (0 < tk || 0 == *k) && 0 < libxsmm_nt);
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-    if (0 == omp_get_level())
+    if (0 == omp_get_active_level())
 #endif
     {
       LIBXSMM_TILED_XGEMM(
@@ -190,7 +190,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
 #endif
     assert((0 < tm || 0 == *m) && (0 < tn || 0 == *n) && (0 < tk || 0 == *k) && 0 < libxsmm_nt);
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-    if (0 == omp_get_level())
+    if (0 == omp_get_active_level())
 #endif
     {
       LIBXSMM_TILED_XGEMM(
