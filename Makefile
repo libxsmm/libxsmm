@@ -31,9 +31,10 @@ PBINDIR = $(BINDIR)
 PTSTDIR = tests
 PDOCDIR = share/libxsmm
 
-# initial default flags
-CXXFLAGS = $(NULL)
-CFLAGS = $(NULL)
+# initial default flags: RPM_OPT_FLAGS are usually NULL
+CFLAGS = $(RPM_OPT_FLAGS)
+FCFLAGS = $(CFLAGS)
+CXXFLAGS = $(CFLAGS)
 DFLAGS = -DLIBXSMM_BUILD
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
