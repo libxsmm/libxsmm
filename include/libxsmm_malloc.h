@@ -269,18 +269,24 @@ public:
   {}
 
 private:
-  /** Breaks the dependency with TensorFlow such that it is header-only. */
-  template<typename type> static type& header_only(type& object) { return object; }
+  template<typename allocator_type> /* break interface dependency with TF */
+  static void* allocate(allocator_type* allocator, size_t size) {
+    /* no waste with (useless) alignment; raw result is re-aligned anyways */
+    return 0 != allocator ? allocator->AllocateRaw(1/*alignment*/, size) : 0;
+  }
+
+  template<typename allocator_type> /* break interface dependency with TF */
+  static void deallocate(allocator_type* allocator, void* buffer) {
+    /* no waste with (useless) alignment; raw result is re-aligned anyways */
+    if (0 != allocator) allocator->DeallocateRaw(buffer);
+  }
 
   static void* malloc(size_t size) {
-    tensorflow::Allocator *const allocator = tensorflow::cpu_allocator();
-    /* no waste with (useless) alignment; raw result is re-aligned anyways */
-    return 0 != allocator ? header_only(*allocator).AllocateRaw(1/*alignment*/, size) : 0;
+    return allocate(tensorflow::cpu_allocator(), size);
   }
 
   static void free(void* buffer) {
-    tensorflow::Allocator *const allocator = tensorflow::cpu_allocator();
-    if (0 != allocator) { header_only(*allocator).DeallocateRaw(buffer); }
+    deallocate(tensorflow::cpu_allocator(), buffer);
   }
 
   template<typename context_type> static void* malloc_ctx(void* context, size_t size) {
