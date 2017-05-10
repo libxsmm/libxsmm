@@ -33,8 +33,8 @@ PDOCDIR = share/libxsmm
 
 # initial default flags: RPM_OPT_FLAGS are usually NULL
 CFLAGS = $(RPM_OPT_FLAGS)
-FCFLAGS = $(CFLAGS)
-CXXFLAGS = $(CFLAGS)
+CXXFLAGS := $(CFLAGS)
+FCFLAGS := $(CFLAGS)
 DFLAGS = -DLIBXSMM_BUILD
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
