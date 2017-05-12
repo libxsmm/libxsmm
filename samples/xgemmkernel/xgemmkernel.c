@@ -320,14 +320,14 @@ int main(int argc, char* argv []) {
 
   libxsmm_gemm_descriptor l_xgemm_desc;
   /* init data structures */
-  double* l_a_d;
+  double* l_c_gold_d = 0;
+  double* l_a_d = 0;
   double* l_b_d;
   double* l_c_d;
-  double* l_c_gold_d;
-  float* l_a_f;
+  float* l_c_gold_f = 0;
+  float* l_a_f = 0;
   float* l_b_f;
   float* l_c_f;
-  float* l_c_gold_f;
 
   /* check argument count for a valid range */
   if ( argc != 14 ) {
