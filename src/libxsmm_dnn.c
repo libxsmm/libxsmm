@@ -2275,6 +2275,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_wino_update_weights(
 }
 
 
+/* TODO: fix this hack and provide a proper API */
 LIBXSMM_API void libxsmm_set_flag_reuseInput(libxsmm_dnn_layer* /*handle*/, char /*type*/);
 LIBXSMM_API_DEFINITION void libxsmm_set_flag_reuseInput(libxsmm_dnn_layer* handle, char type)
 {

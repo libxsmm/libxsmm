@@ -87,11 +87,11 @@
 
         IF ((0.LT.dcall).AND.(0.LT.ddisp)) THEN
           WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "dispatch calls/s: ",     &
-     &                               (1D-6 * size / ddisp), " MHz"
+     &                      (1D-6 * REAL(size, 8) / ddisp), " MHz"
           WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "empty calls/s:    ",     &
-     &                               (1D-6 * size / dcall), " MHz"
+     &                      (1D-6 * REAL(size, 8) / dcall), " MHz"
           WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "overhead:         ",     &
-     &                               (ddisp / dcall), "x"
+     &                      (ddisp / dcall), "x"
         END IF
         WRITE(*, "(A)") "Finished"
       END PROGRAM

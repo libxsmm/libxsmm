@@ -406,6 +406,9 @@ LIBXSMM_INLINE void naive_conv_wu(naive_conv_t* param, const float* input, const
   }
 }
 
+/* TODO: fix this hack and rely on a proper API */
+void libxsmm_set_flag_reuseInput(libxsmm_dnn_layer* /*handle*/, char /*type*/);
+
 int main(int argc, char* argv[])
 {
   float *naive_input, *naive_output, *naive_output_save, *naive_filter, *naive_filter_wu, *naive_output_bp, *naive_output_wu, *naive_libxsmm_output;
