@@ -177,7 +177,13 @@ typedef enum libxsmm_dnn_internal_format {
 } libxsmm_dnn_internal_format;
 
 /** Denotes the element/pixel type of an image/channel. */
-typedef libxsmm_datatype libxsmm_dnn_datatype;
+typedef enum libxsmm_dnn_datatype {
+  LIBXSMM_DNN_DATATYPE_F64 = LIBXSMM_DATATYPE_F64,
+  LIBXSMM_DNN_DATATYPE_F32 = LIBXSMM_DATATYPE_F32,
+  LIBXSMM_DNN_DATATYPE_I32 = LIBXSMM_DATATYPE_I32,
+  LIBXSMM_DNN_DATATYPE_I16 = LIBXSMM_DATATYPE_I16,
+  LIBXSMM_DNN_DATATYPE_I8 = LIBXSMM_DATATYPE_I8
+} libxsmm_dnn_datatype;
 
 typedef enum libxsmm_dnn_conv_option {
   /* we get default settings */
