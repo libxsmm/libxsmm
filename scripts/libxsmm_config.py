@@ -78,9 +78,13 @@ if __name__ == "__main__":
         if (14 < argc):
             mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[14:], 0))
 
+        version, branch = \
+            libxsmm_utilities.version_branch()
+        major, minor, update, patch = \
+            libxsmm_utilities.version_numbers(version)
+
         if (0 == threshold):
             threshold = 128 * 128 * 128
-        template = Template(open(filename, "r").read())
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
         maxdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
         avgdim = int(0.5 * maxdim + 0.5)
@@ -97,8 +101,12 @@ if __name__ == "__main__":
         maxk = libxsmm_utilities.max_mnk(mnklist, avgdim, 2)
 
         substitute = {
-            "LIBXSMM_OFFLOAD_BUILD":
-                ["", "\n#define LIBXSMM_OFFLOAD_BUILD"][0 != offload],
+            "VERSION":    version,
+            "BRANCH":     branch,
+            "MAJOR":      major,
+            "MINOR":      minor,
+            "UPDATE":     update,
+            "PATCH":      patch,
             "ALIGNMENT":  alignment,
             "PREFETCH":   [-1, prefetch][0 <= prefetch],
             "MAX_MNK":    maxmnk,
@@ -115,9 +123,13 @@ if __name__ == "__main__":
             "WRAP":       [1, 2][0 == (wrap % 2) or (0 > wrap)],
             "SYNC":       [0, 1][0 != sync],
             "JIT":        [0, 1][0 != jit],
-            "BIG":        big
+            "BIG":        big,
+            "LIBXSMM_OFFLOAD_BUILD":
+                ["", "\n#define LIBXSMM_OFFLOAD_BUILD"][0 != offload],
+            "MNK_INTERFACE_LIST": ""
         }
 
+        template = Template(open(filename, "r").read())
         if (fnmatch.fnmatch(filename, "*.h*")):
             print(template.substitute(substitute))
         else:

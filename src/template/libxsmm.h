@@ -31,18 +31,27 @@
 #ifndef LIBXSMM_H
 #define LIBXSMM_H
 
-/** Name of the version (stringized set of version numbers). */
-#define LIBXSMM_VERSION "$VERSION"
-/** Name of the branch of which the version is derived from. */
-#define LIBXSMM_BRANCH  "$BRANCH"
-/** Major version based on the last reachable tag under RCS. */
-#define LIBXSMM_VERSION_MAJOR $MAJOR
-/** Minor version based on the last reachable tag of the RCS. */
-#define LIBXSMM_VERSION_MINOR $MINOR
-/** Update number based on the last reachable tag under RCS. */
-#define LIBXSMM_VERSION_UPDATE $UPDATE
-/** Patch number counting commits since the last version stamp. */
-#define LIBXSMM_VERSION_PATCH $PATCH
+#include "libxsmm_config.h"
+
+/**
+ * Strings to denote the version of LIBXSMM (libxsmm_config.h).
+ * LIBXSMM_VERSION: Name of the version (stringized version numbers).
+ * LIBXSMM_BRANCH:  Name of the branch this version is derived from.
+ */
+#define LIBXSMM_VERSION LIBXSMM_CONFIG_VERSION
+#define LIBXSMM_BRANCH  LIBXSMM_CONFIG_BRANCH
+
+/**
+ * Numbers to denote the version of LIBXSMM (libxsmm_config.h).
+ * LIBXSMM_VERSION_MAJOR:  Major version derived from the most recent RCS-tag.
+ * LIBXSMM_VERSION_MINOR:  Minor version derived from the most recent RCS-tag.
+ * LIBXSMM_VERSION_UPDATE: Update number derived from the most recent RCS-tag. 
+ * LIBXSMM_VERSION_PATCH:  Patch number based on distance to most recent RCS-tag.
+ */
+#define LIBXSMM_VERSION_MAJOR  LIBXSMM_CONFIG_VERSION_MAJOR
+#define LIBXSMM_VERSION_MINOR  LIBXSMM_CONFIG_VERSION_MINOR
+#define LIBXSMM_VERSION_UPDATE LIBXSMM_CONFIG_VERSION_UPDATE
+#define LIBXSMM_VERSION_PATCH  LIBXSMM_CONFIG_VERSION_PATCH
 
 #include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"

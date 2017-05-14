@@ -408,7 +408,8 @@ config: $(INCDIR)/libxsmm_config.h
 $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_config.h \
                             $(SCRDIR)/libxsmm_config.py $(SCRDIR)/libxsmm_utilities.py \
                             $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
-                            $(wildcard $(ROOTDIR)/.hooks/*)
+                            $(wildcard $(ROOTDIR)/.hooks/*) \
+                            $(ROOTDIR)/version.txt
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
@@ -474,7 +475,7 @@ endif
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
 $(INCDIR)/libxsmm.h: $(SCRDIR)/libxsmm_interface.py \
-                     $(SRCDIR)/template/libxsmm.h $(ROOTDIR)/version.txt \
+                     $(SRCDIR)/template/libxsmm.h \
                      $(INCDIR)/libxsmm_config.h $(HEADERS)
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.h \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) > $@
@@ -486,10 +487,9 @@ $(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(SCRDIR)/libxsmm_source.sh $(INCDIR
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
-$(INCDIR)/libxsmm.f: $(BLDDIR)/.make \
-                     $(ROOTDIR)/version.txt $(INCDIR)/libxsmm_config.h \
-                     $(SRCDIR)/template/libxsmm.f $(SCRDIR)/libxsmm_interface.py \
-                     $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
+$(INCDIR)/libxsmm.f: $(SCRDIR)/libxsmm_interface.py \
+                     $(SRCDIR)/template/libxsmm.f \
+                     $(INCDIR)/libxsmm_config.h
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.f \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) | \
 	$(PYTHON) $(SCRDIR)/libxsmm_config.py /dev/stdin \
