@@ -111,7 +111,7 @@ typedef enum libxsmm_matcopy_flags {
 } libxsmm_matcopy_flags;
 
 /** Structure storing the matcopy argument description. */
-typedef struct libxsmm_matcopy_descriptor {
+typedef struct libxsmm_matcopy_descriptor { /* 20 Byte */
   /** M, N, and LDx I/O */
   unsigned int m, n, ldi, ldo;
   /** Size of an individual data element */
@@ -125,7 +125,7 @@ typedef struct libxsmm_matcopy_descriptor {
 } libxsmm_matcopy_descriptor;
 
 /** Structure storing the transpose argument description. */
-typedef struct libxsmm_transpose_descriptor {
+typedef struct libxsmm_transpose_descriptor { /* 13 Byte */
   /** M, N, and LDO */
   unsigned int m, n, ldo;
   /** Size of an individual data element */
