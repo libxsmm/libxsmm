@@ -55,33 +55,33 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
 
   /* determining vector length depending on architecture and precision */
   /* @TODO fix me */
-  if ( (strcmp(i_arch, "wsm") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  if ( (strcmp(i_arch, "wsm") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 2;
-  } else if ( (strcmp(i_arch, "wsm") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "wsm") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 4;
-  } else if ( (strcmp(i_arch, "snb") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "snb") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 4;
-  } else if ( (strcmp(i_arch, "snb") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "snb") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "hsw") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "hsw") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 4;
-  } else if ( (strcmp(i_arch, "hsw") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "hsw") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "knc") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "knc") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "knc") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "knc") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 16;
-  } else if ( (strcmp(i_arch, "knl") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "knl") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "knl") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "knl") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 16;
-  } else if ( (strcmp(i_arch, "knm") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "knm") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "knm") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "knm") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 16;
-  } else if ( (strcmp(i_arch, "skx") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "skx") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "skx") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "skx") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 16;
   } else if ( (strcmp(i_arch, "noarch") == 0) ) {
     /* Nothing to do */

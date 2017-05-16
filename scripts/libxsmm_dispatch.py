@@ -60,7 +60,7 @@ if __name__ == "__main__":
                 print("if (LIBXSMM_GEMM_NO_BYPASS_DIMS(" + mnksig + ") &&")
                 print("    LIBXSMM_GEMM_NO_BYPASS_DIMS(" + ldxsig + ")) {")
                 print("  LIBXSMM_GEMM_DESCRIPTOR(desc, " +
-                      "LIBXSMM_ALIGNMENT, LIBXSMM_FLAGS,")
+                      "LIBXSMM_GEMM_PRECISION_F64, LIBXSMM_FLAGS,")
                 print("    " + mnksig + ", " + ldxsig + ",")
                 print("    LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
                 print("    LIBXSMM_HASH_FUNCTION_CALL(hash, indx, &desc);" +
@@ -81,8 +81,8 @@ if __name__ == "__main__":
             if (2 != precision):  # only single-precision
                 print("if (LIBXSMM_GEMM_NO_BYPASS_DIMS(" + mnksig + ") &&")
                 print("    LIBXSMM_GEMM_NO_BYPASS_DIMS(" + ldxsig + ")) {")
-                print("  LIBXSMM_GEMM_DESCRIPTOR(desc, LIBXSMM_ALIGNMENT, " +
-                      "LIBXSMM_FLAGS | LIBXSMM_GEMM_FLAG_F32PREC,")
+                print("  LIBXSMM_GEMM_DESCRIPTOR(desc, " +
+                      "LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_FLAGS,")
                 print("    " + mnksig + ", " + ldxsig + ",")
                 print("    LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
                 print("  LIBXSMM_HASH_FUNCTION_CALL(hash, indx, &desc);" +

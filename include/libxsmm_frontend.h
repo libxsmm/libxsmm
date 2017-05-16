@@ -162,7 +162,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(cons
 LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller);
 
 /** Construct symbol name from a given real type name (float or double). */
-#define LIBXSMM_GEMM_TYPEFLAG(TYPE)     LIBXSMM_CONCATENATE(LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_GEMM_FLAG_), PREC)
+#define LIBXSMM_GEMM_PRECISION(TYPE)    LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_GEMM_PRECISION_)
 #define LIBXSMM_ORIGINAL_GEMM(TYPE)     LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_BLAS_GEMM_SYMBOL(TYPE)  LIBXSMM_ORIGINAL_GEMM(TYPE)(LIBXSMM_CALLER)
 #define LIBXSMM_GEMMFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm_function))

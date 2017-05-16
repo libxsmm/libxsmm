@@ -81,8 +81,8 @@
         ! Flag which denotes the value type (for weak-typed interface
         ! functions such as libxsmm_xmmdispatch).
         INTEGER(C_INT), PARAMETER ::                                    &
-     &    LIBXSMM_GEMM_FLAG_F64PREC = 0,                                &
-     &    LIBXSMM_GEMM_FLAG_F32PREC = 16
+     &    LIBXSMM_GEMM_PRECISION_F64 = 0,                               &
+     &    LIBXSMM_GEMM_PRECISION_F32 = 1
 
         ! Enumeration of the available prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &

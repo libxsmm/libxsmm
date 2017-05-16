@@ -49,7 +49,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+    if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
       io_micro_kernel_config->vector_length = 2;
       io_micro_kernel_config->datatype_size = 8;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
@@ -91,7 +91,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'y';
-    if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+    if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 8;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
@@ -133,7 +133,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'y';
-    if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+    if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
       io_micro_kernel_config->vector_length = 4;
       io_micro_kernel_config->datatype_size = 8;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
@@ -186,7 +186,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
     io_micro_kernel_config->vector_reg_count = 32;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'z';
-    if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+    if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
       io_micro_kernel_config->vector_length = 8;
       io_micro_kernel_config->datatype_size = 8;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
@@ -262,7 +262,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_halfvector( libxsmm_micro_k
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+    if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
       io_micro_kernel_config->vector_length = 2;
       io_micro_kernel_config->datatype_size = 8;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
@@ -304,7 +304,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_halfvector( libxsmm_micro_k
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+    if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
       io_micro_kernel_config->vector_length = 2;
       io_micro_kernel_config->datatype_size = 8;
       if ( (LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0 ) {
@@ -383,7 +383,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+    if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size = 8;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_MOVSD;
@@ -409,7 +409,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+    if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size = 8;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVSD;
@@ -435,7 +435,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+    if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size = 8;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVSD;
@@ -476,7 +476,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
     io_micro_kernel_config->vector_name = 'x';
-    if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+    if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
       io_micro_kernel_config->vector_length = 1;
       io_micro_kernel_config->datatype_size = 8;
       io_micro_kernel_config->a_vmove_instruction = LIBXSMM_X86_INSTR_VMOVSD;

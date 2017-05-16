@@ -117,8 +117,8 @@ int main(int argc, char* argv[])
 
   /* generate kernels */
   printf("generating code... ");
-  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc_stiff, 1, 0, num_quants, num_modes, num_modes, num_modes, 0, num_modes, 1.0, 1.0, LIBXSMM_PREFETCH_NONE);
-  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc_star, 1, 0, num_quants, num_modes, num_quants, 0, num_modes, num_modes, 1.0, 1.0, LIBXSMM_PREFETCH_NONE);
+  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc_stiff, LIBXSMM_GEMM_PRECISION_F64, 0/*flags*/, num_quants, num_modes, num_modes,  num_modes, 0, num_modes, 1.0, 1.0, LIBXSMM_PREFETCH_NONE);
+  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc_star,  LIBXSMM_GEMM_PRECISION_F64, 0/*flags*/, num_quants, num_modes, num_quants, 0, num_modes, num_modes, 1.0, 1.0, LIBXSMM_PREFETCH_NONE);
   a_kernel = libxsmm_create_dcsr_soa( &l_xgemm_desc_stiff, mat_a_rowptr, mat_a_colidx, mat_a_values ).dmm;
   b_kernel = libxsmm_create_dcsr_soa( &l_xgemm_desc_stiff, mat_b_rowptr, mat_b_colidx, mat_b_values ).dmm;
   c_kernel = libxsmm_create_dcsr_soa( &l_xgemm_desc_stiff, mat_c_rowptr, mat_c_colidx, mat_c_values ).dmm;

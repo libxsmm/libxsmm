@@ -1217,7 +1217,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
 
     if ( i_k_blocking != 9 ) {
       if (l_k == 1) {
-        if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+        if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
           l_vcompute = LIBXSMM_X86_INSTR_VMULPD;
         } else {
           l_vcompute = LIBXSMM_X86_INSTR_VMULPS;
@@ -1418,7 +1418,7 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
     l_k_unrolled = 1;
   } else if ( (unsigned int)i_xgemm_desc->k <= l_k_threshold ) {
     if ( ((unsigned int)i_xgemm_desc->k%4 == 0) &&
-         ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0)) ) {
+         ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) && (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype)) ) {
       libxsmm_generator_gemm_avx512_microkernel_qfma( io_generated_code,
                                                       i_gp_reg_mapping,
                                                       i_micro_kernel_config,
@@ -1439,7 +1439,7 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
                                           i_micro_kernel_config->vector_length, l_k_blocking);
 
     if ( (l_k_blocking%4 == 0) &&
-         ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0)) ) {
+         ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) && (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype)) ) {
       libxsmm_generator_gemm_avx512_microkernel_qfma( io_generated_code,
                                                       i_gp_reg_mapping,
                                                       i_micro_kernel_config,
@@ -1464,7 +1464,7 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
                                             i_micro_kernel_config->vector_length, l_k_blocking);
 
       if ( (l_k_blocking%4 == 0) &&
-           ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) && ((LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) != 0)) ) {
+           ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) && (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype)) ) {
         libxsmm_generator_gemm_avx512_microkernel_qfma( io_generated_code,
                                                         i_gp_reg_mapping,
                                                         i_micro_kernel_config,
