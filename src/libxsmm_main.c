@@ -94,9 +94,7 @@
 typedef union LIBXSMM_RETARGETABLE internal_regkey_type {
   char simd[LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE];
   libxsmm_gemm_descriptor xgemm;
-#if defined(LIBXSMM_BIG) && (0 != (LIBXSMM_BIG))
   libxsmm_matcopy_descriptor mcopy;
-#endif
   libxsmm_transpose_descriptor trans;
 } internal_regkey_type;
 
@@ -153,9 +151,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   const int internal_dispatch_main_ldc_ = (0 == (PLDC) ? LIBXSMM_LD(M, N) : *(PLDC)); \
   const TYPE internal_dispatch_main_alpha_ = (0 == (PALPHA) ? ((TYPE)LIBXSMM_ALPHA) : *(PALPHA)); \
   const TYPE internal_dispatch_main_beta_ = (0 == (PBETA) ? ((TYPE)LIBXSMM_BETA) : *(PBETA)); \
-  if (LIBXSMM_GEMM_NO_BYPASS(internal_dispatch_main_flags_, internal_dispatch_main_alpha_, internal_dispatch_main_beta_) && LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) && \
-    LIBXSMM_GEMM_NO_BYPASS_DIMS(internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_)) \
-  { \
+  if (LIBXSMM_GEMM_NO_BYPASS(internal_dispatch_main_flags_, internal_dispatch_main_alpha_, internal_dispatch_main_beta_)) { \
     const int internal_dispatch_main_prefetch_ = (0 == (PREFETCH) ? libxsmm_gemm_auto_prefetch : *(PREFETCH)); \
     DESCRIPTOR_DECL; LIBXSMM_GEMM_DESCRIPTOR(*(DESC), 0 != (VECTOR_WIDTH) ? (VECTOR_WIDTH): LIBXSMM_ALIGNMENT, \
       internal_dispatch_main_flags_, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_, \
@@ -1533,7 +1529,6 @@ LIBXSMM_API_DEFINITION void libxsmm_release_gemm_descriptor(const libxsmm_gemm_d
 LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
 {
   libxsmm_xmmfunction result = { 0 };
-  /* there is no need to check LIBXSMM_GEMM_NO_BYPASS_DIMS (M, N, K, LDx) since we already got a descriptor */
   if (0 != descriptor && LIBXSMM_GEMM_NO_BYPASS(descriptor->flags, descriptor->alpha, descriptor->beta)) {
     libxsmm_gemm_descriptor backend_descriptor;
     LIBXSMM_INIT
@@ -1722,7 +1717,6 @@ LIBXSMM_PRAGMA_OPTIMIZE_ON
 LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor)
 {
   libxsmm_xmatcopyfunction result = { 0 };
-#if defined(LIBXSMM_BIG) && (0 != (LIBXSMM_BIG))
   if (0 != descriptor) {
     internal_regkey_type query = { { 0 } };
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->flags) < sizeof(query));
@@ -1731,9 +1725,6 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
     query.xgemm.flags = LIBXSMM_GEMM_FLAG_MATCOPY;
     result = internal_find_code(&query.xgemm).xmatcopy;
   }
-#else
-  LIBXSMM_UNUSED(descriptor);
-#endif
   return result;
 }
 
