@@ -49,19 +49,12 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_AUTOALIGN(VECTOR_WIDTH, FLAGS, LDA, LDC) (FLAGS)
 #endif
 
-# if (0 != LIBXSMM_ILP64)
-#   define LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE long long
-#   define LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX ((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)0x7FFFFFFFFFFFFFFF)
-# else
-#   define LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE int
-#   define LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX ((LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)0x7FFFFFFF)
-# endif
-# define LIBXSMM_GEMM_DESCRIPTOR_SIZE 28 /* LDA,LDB,LDC: 3 * sizeof(LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
-                                          * M,N,K:       3 * sizeof(LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)
-                                          * flags:       1 * sizeof(unsigned char)
-                                          * alpha,beta:  2 * sizeof(signed char)
-                                          * prefetch:    1 * sizeof(unsigned char)
-                                          */
+/** Check if M, N, K, or LDx fits into the descriptor. */
+#if (0 != LIBXSMM_ILP64)
+# define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) (((unsigned int)(-1)) >= (M) && ((unsigned int)(-1)) >= (N) && ((unsigned int)(-1)) >= (K))
+#else /* always fits */
+# define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) 1
+#endif
 
 #if defined(LIBXSMM_FRONTEND_H) /* assert available */
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K) assert(LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K))
@@ -75,9 +68,8 @@
  */
 #define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K); LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(LDA, LDB, LDC); \
-  (DESCRIPTOR).lda = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(LDA); (DESCRIPTOR).ldb = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(LDB); \
-  (DESCRIPTOR).ldc = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(LDC); (DESCRIPTOR).m = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(M); \
-  (DESCRIPTOR).n = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(N); (DESCRIPTOR).k = (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)(K); \
+  (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
+  (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
   (DESCRIPTOR).flags = (unsigned char)LIBXSMM_GEMM_DESCRIPTOR_AUTOALIGN(VECTOR_WIDTH, FLAGS, LDA, LDC); \
   (DESCRIPTOR).alpha = (signed char)(ALPHA); (DESCRIPTOR).beta = (signed char)(BETA); \
   (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH)
@@ -87,21 +79,28 @@
   libxsmm_gemm_descriptor DESCRIPTOR; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, VECTOR_WIDTH, \
     FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
 
+#define LIBXSMM_GEMM_DESCRIPTOR_SIZE 32
+
 /**
- * Structure storing the GEMM argument description. The binary data layout must be fixed across translation units
- * regardless of the alignment and the padding. This structure must be ordered by the size of the members (packed).
+ * Structure, which stores the argument description of GEMM routines.
+ * This structure must be ordered by the size of the members (packed).
+ * The size of the structure matches LIBXSMM_GEMM_DESCRIPTOR_SIZE.
  */
 typedef struct libxsmm_gemm_descriptor {
   /** Leading dimensions are general offsets. */
-  LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE lda, ldb, ldc;
+  unsigned int lda, ldb, ldc;
   /** Extents of the matrix. */
-  LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE m, n, k;
+  unsigned int m, n, k;
+  unsigned short pad0;
   /** Integer value. */
   signed char alpha, beta;
+  /** Denotes the data-type*/
+  unsigned char datatype;
   /** Prefetch strategy enumeration. */
   unsigned char prefetch;
   /** Collection of various flags. */
   unsigned char flags;
+  unsigned char pad1;
 } libxsmm_gemm_descriptor;
 
 /** Flag enumeration which can be binary ORed. */

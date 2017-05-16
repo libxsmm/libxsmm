@@ -374,7 +374,7 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE void LIBXSMM_FSYMBOL(dgemm)(
   const double*, double*, const libxsmm_blasint*);
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][8/*size-range*/];
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][8/*size-range*/];
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_gemm_auto_prefetch;
 /** Prefetch strategy for tiled GEMM. */

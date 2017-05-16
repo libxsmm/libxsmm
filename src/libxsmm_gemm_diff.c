@@ -278,8 +278,8 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diff_imci(const libxs
 }
 
 
-LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
-  unsigned int hint, unsigned int ndescs, int nbytes)
+LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descriptor* reference,
+  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
 {
   /* attempt to rely on static code path avoids to rely on capability of inlining pointer-based function call */
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (0 != LIBXSMM_GEMM_DIFF_SW)
@@ -304,8 +304,8 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn(const libxsmm_g
 }
 
 
-LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
-  unsigned int hint, unsigned int ndescs, int nbytes)
+LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference,
+  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
 {
   const char *const desc = (const char*)descs;
   const unsigned int end = hint + ndescs;
@@ -332,9 +332,8 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_sw(const libxsm
 
 
 LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
-unsigned int libxsmm_gemm_diffn_avx(
-  const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
-  unsigned int hint, unsigned int ndescs, int nbytes)
+unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference,
+  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_AVX)
   assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
@@ -387,9 +386,8 @@ unsigned int libxsmm_gemm_diffn_avx(
 
 
 LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
-unsigned int libxsmm_gemm_diffn_avx2(
-  const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
-  unsigned int hint, unsigned int ndescs, int nbytes)
+unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference,
+  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_AVX2)
   assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
@@ -442,9 +440,8 @@ unsigned int libxsmm_gemm_diffn_avx2(
 
 
 LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
-unsigned int libxsmm_gemm_diffn_avx512(
-  const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
-  unsigned int hint, unsigned int ndescs, int nbytes)
+unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
+  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_AVX512) && !defined(LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS)
   assert(/*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
@@ -498,8 +495,8 @@ unsigned int libxsmm_gemm_diffn_avx512(
 }
 
 
-LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_descriptor* reference, const libxsmm_gemm_descriptor* descs,
-  unsigned int hint, unsigned int ndescs, int nbytes)
+LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_descriptor* reference,
+  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_KNC) && (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(/*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));

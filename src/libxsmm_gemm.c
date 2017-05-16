@@ -64,7 +64,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original
 LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 {
   /* setup tile sizes according to CPUID or environment (LIBXSMM_GEMM_M, LIBXSMM_GEMM_N, LIBXSMM_GEMM_K) */
-  const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/][8/*size-range*/] = {
+  const unsigned int tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/][8/*size-range*/] = {
     /* generic (hsw) */
     { { {  25,  50,  69, 169, 169, 169, 169, 169 }, {  37,  98,  78,  39,  39,  39,  39,  39 }, { 100,  81,  55,  37,  37,  37,  37,  37 } },   /* DP */
       { {  43,  49, 107, 103, 103, 103, 103, 103 }, {  38,  52, 113, 141, 141, 141, 141, 141 }, { 232,  89, 100,  76,  76,  76,  76,  76 } } }, /* SP */
@@ -101,12 +101,9 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 
   for (i = 0; i < 8; ++i) {
     /* environment-defined tile sizes apply for DP and SP */
-    libxsmm_gemm_tile[0/*DP*/][0/*M*/][i] = libxsmm_gemm_tile[1/*SP*/][0/*M*/][i] =
-      (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)LIBXSMM_CLMP(gemm_m, 0, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
-    libxsmm_gemm_tile[0/*DP*/][1/*N*/][i] = libxsmm_gemm_tile[1/*SP*/][1/*N*/][i] =
-      (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)LIBXSMM_CLMP(gemm_n, 0, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
-    libxsmm_gemm_tile[0/*DP*/][2/*K*/][i] = libxsmm_gemm_tile[1/*SP*/][2/*K*/][i] =
-      (LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE)LIBXSMM_CLMP(gemm_k, 0, LIBXSMM_GEMM_DESCRIPTOR_DIM_MAX);
+    libxsmm_gemm_tile[0/*DP*/][0/*M*/][i] = libxsmm_gemm_tile[1/*SP*/][0/*M*/][i] = (unsigned int)LIBXSMM_MAX(gemm_m, 0);
+    libxsmm_gemm_tile[0/*DP*/][1/*N*/][i] = libxsmm_gemm_tile[1/*SP*/][1/*N*/][i] = (unsigned int)LIBXSMM_MAX(gemm_n, 0);
+    libxsmm_gemm_tile[0/*DP*/][2/*K*/][i] = libxsmm_gemm_tile[1/*SP*/][2/*K*/][i] = (unsigned int)LIBXSMM_MAX(gemm_k, 0);
     /* load predefined configuration if tile size is not setup by the environment */
     if (0 >= libxsmm_gemm_tile[0/*DP*/][0/*M*/][i]) libxsmm_gemm_tile[0][0][i] = tile_configs[config][0][0][i];
     if (0 >= libxsmm_gemm_tile[0/*DP*/][1/*N*/][i]) libxsmm_gemm_tile[0][1][i] = tile_configs[config][0][1][i];

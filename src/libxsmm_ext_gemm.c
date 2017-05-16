@@ -90,9 +90,9 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
   LIBXSMM_INIT
   if (LIBXSMM_MAX_MNK < size) {
     const int index = LIBXSMM_MIN(libxsmm_icbrt(size) >> 10, 7);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][index], *m);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][index], *n);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][index], *k);
+    const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][index], (unsigned int)*m);
+    const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][index], (unsigned int)*n);
+    const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][index], (unsigned int)*k);
     const float ralpha = (0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA));
     const float rbeta = (0 != beta ? *beta : ((float)LIBXSMM_BETA));
     const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
@@ -166,9 +166,9 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
   LIBXSMM_INIT
   if (LIBXSMM_MAX_MNK < size) {
     const int index = LIBXSMM_MIN(libxsmm_icbrt(size) >> 10, 7);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][index], *m);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][index], *n);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][index], *k);
+    const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][index], (unsigned int)*m);
+    const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][index], (unsigned int)*n);
+    const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][index], (unsigned int)*k);
     const double ralpha = (0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA));
     const double rbeta = (0 != beta ? *beta : ((double)LIBXSMM_BETA));
     const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));

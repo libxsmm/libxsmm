@@ -79,20 +79,11 @@
 #define LIBXSMM_HASH_COLLISION (1ULL << (8 * sizeof(void*) - 2))
 #endif
 
-#if 16 >= (LIBXSMM_GEMM_DESCRIPTOR_SIZE)
-# define LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE 16
-#elif 32 >= (LIBXSMM_GEMM_DESCRIPTOR_SIZE)
-# define LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE 32
-#else
-# define LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE LIBXSMM_GEMM_DESCRIPTOR_SIZE
-#endif
-
 #define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, DESCRIPTOR) \
   HASH = libxsmm_crc32(DESCRIPTOR, LIBXSMM_GEMM_DESCRIPTOR_SIZE, 25071975/*seed*/); \
   INDX = LIBXSMM_HASH_MOD(HASH, LIBXSMM_CAPACITY_REGISTRY)
 
 typedef union LIBXSMM_RETARGETABLE internal_regkey_type {
-  char simd[LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE];
   libxsmm_gemm_descriptor xgemm;
   libxsmm_matcopy_descriptor mcopy;
   libxsmm_transpose_descriptor trans;
@@ -151,7 +142,9 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   const int internal_dispatch_main_ldc_ = (0 == (PLDC) ? LIBXSMM_LD(M, N) : *(PLDC)); \
   const TYPE internal_dispatch_main_alpha_ = (0 == (PALPHA) ? ((TYPE)LIBXSMM_ALPHA) : *(PALPHA)); \
   const TYPE internal_dispatch_main_beta_ = (0 == (PBETA) ? ((TYPE)LIBXSMM_BETA) : *(PBETA)); \
-  if (LIBXSMM_GEMM_NO_BYPASS(internal_dispatch_main_flags_, internal_dispatch_main_alpha_, internal_dispatch_main_beta_)) { \
+  if (LIBXSMM_GEMM_NO_BYPASS(internal_dispatch_main_flags_, internal_dispatch_main_alpha_, internal_dispatch_main_beta_) && LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) && \
+    LIBXSMM_GEMM_NO_BYPASS_DIMS(internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_)) \
+  { \
     const int internal_dispatch_main_prefetch_ = (0 == (PREFETCH) ? libxsmm_gemm_auto_prefetch : *(PREFETCH)); \
     DESCRIPTOR_DECL; LIBXSMM_GEMM_DESCRIPTOR(*(DESC), 0 != (VECTOR_WIDTH) ? (VECTOR_WIDTH): LIBXSMM_ALIGNMENT, \
       internal_dispatch_main_flags_, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_, \
@@ -168,16 +161,9 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   } \
 }
 
-#if defined(LIBXSMM_GEMM_DIFF_MASK_A) /* no padding i.e., LIBXSMM_GEMM_DESCRIPTOR_SIZE */
-# define INTERNAL_DISPATCH(TYPE, PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH) \
-    INTERNAL_DISPATCH_MAIN(TYPE, libxsmm_gemm_descriptor descriptor = { 0 }, &descriptor, \
-      PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH)
-#else /* padding: LIBXSMM_GEMM_DESCRIPTOR_SIZE -> LIBXSMM_ALIGNMENT */
-# define INTERNAL_DISPATCH(TYPE, PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH) \
-    INTERNAL_DISPATCH_MAIN(TYPE, union { libxsmm_gemm_descriptor desc; char simd[LIBXSMM_ALIGNMENT]; } simd_descriptor; int i; \
-      for (i = LIBXSMM_GEMM_DESCRIPTOR_SIZE; i < sizeof(simd_descriptor.simd); ++i) simd_descriptor.simd[i] = 0, &simd_descriptor.desc, \
-      PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH)
-#endif
+#define INTERNAL_DISPATCH(TYPE, PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH) \
+  INTERNAL_DISPATCH_MAIN(TYPE, libxsmm_gemm_descriptor descriptor = { 0 }, &descriptor, \
+    PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH)
 
 #if !defined(LIBXSMM_NO_SYNC)
 # define INTERNAL_REGLOCK_MAXN 256
@@ -1312,14 +1298,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer internal_find_code(cons
 #endif
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
   static LIBXSMM_TLS struct {
-    union { char padding[LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE]; libxsmm_gemm_descriptor desc; } keys[LIBXSMM_CAPACITY_CACHE];
+    libxsmm_gemm_descriptor keys[LIBXSMM_CAPACITY_CACHE];
     libxsmm_code_pointer code[LIBXSMM_CAPACITY_CACHE];
     unsigned int hit, id;
   } cache;
   unsigned int cache_index;
-  assert(0 != descriptor && LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE >= LIBXSMM_GEMM_DESCRIPTOR_SIZE);
+  assert(0 != descriptor);
   /* search small cache starting with the last hit on record */
-  cache_index = libxsmm_gemm_diffn(descriptor, &cache.keys->desc, cache.hit, LIBXSMM_CAPACITY_CACHE, LIBXSMM_GEMM_DESCRIPTOR_SIMD_SIZE);
+  cache_index = libxsmm_gemm_diffn(descriptor, &cache.keys, cache.hit, LIBXSMM_CAPACITY_CACHE, LIBXSMM_GEMM_DESCRIPTOR_SIZE);
   if ((LIBXSMM_CAPACITY_CACHE) > cache_index && cache.id == internal_teardown) { /* cache hit, and valid */
     flux_entry = cache.code[cache_index];
     cache.hit = cache_index;
@@ -1436,7 +1422,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer internal_find_code(cons
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
     if (0 != flux_entry.const_pmm) { /* keep code version on record (cache) */
       INTERNAL_FIND_CODE_CACHE_INDEX(cache.hit, cache_index);
-      cache.keys[cache_index].desc = *descriptor;
+      cache.keys[cache_index] = *descriptor;
       cache.code[cache_index] = flux_entry;
       cache.hit = cache_index;
       assert(0 == diff);
@@ -1529,6 +1515,7 @@ LIBXSMM_API_DEFINITION void libxsmm_release_gemm_descriptor(const libxsmm_gemm_d
 LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
 {
   libxsmm_xmmfunction result = { 0 };
+  /* there is no need to check LIBXSMM_GEMM_NO_BYPASS_DIMS (M, N, K, LDx) since we already got a descriptor */
   if (0 != descriptor && LIBXSMM_GEMM_NO_BYPASS(descriptor->flags, descriptor->alpha, descriptor->beta)) {
     libxsmm_gemm_descriptor backend_descriptor;
     LIBXSMM_INIT
