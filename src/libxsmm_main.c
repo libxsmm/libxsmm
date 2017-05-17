@@ -633,14 +633,6 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 }
 
 
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_init)(void);
-LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_init)(void)
-{
-  libxsmm_init();
-}
-
-
 LIBXSMM_API
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
@@ -736,14 +728,6 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
 #endif
   }
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_finalize)(void);
-LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_finalize)(void)
-{
-  libxsmm_finalize();
 }
 
 
@@ -1532,147 +1516,6 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
 }
 
 
-/* implementation provided for CCE compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_smmdispatch)(libxsmm_smmfunction* /*fn*/,
-  const int* /*m*/, const int* /*n*/, const int* /*k*/, const int* /*lda*/, const int* /*ldb*/, const int* /*ldc*/,
-  const float* /*alpha*/, const float* /*beta*/, const int* /*flags*/, const int* /*prefetch*/);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smmdispatch)(libxsmm_smmfunction* fn,
-  const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
-  const float* alpha, const float* beta, const int* flags, const int* prefetch)
-{
-#if !defined(NDEBUG) /* this should not happen */
-  if (0 != fn && 0 != m && 0 != n && 0 != k)
-#endif
-  {
-    *fn = libxsmm_smmdispatch(*m, *n, *k, lda, ldb, ldc, alpha, beta, flags, prefetch);
-  }
-#if !defined(NDEBUG)
-  else {
-    static int error_once = 0;
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
-     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM: invalid pointer, M, N, or K passed into libxsmm_smmfunction!\n");
-    }
-  }
-#endif
-}
-
-
-/* implementation provided for CCE compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dmmdispatch)(libxsmm_dmmfunction* /*fn*/,
-  const int* /*m*/, const int* /*n*/, const int* /*k*/, const int* /*lda*/, const int* /*ldb*/, const int* /*ldc*/,
-  const double* /*alpha*/, const double* /*beta*/, const int* /*flags*/, const int* /*prefetch*/);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dmmdispatch)(libxsmm_dmmfunction* fn,
-  const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
-  const double* alpha, const double* beta, const int* flags, const int* prefetch)
-{
-#if !defined(NDEBUG) /* this should not happen */
-  if (0 != fn && 0 != m && 0 != n && 0 != k)
-#endif
-  {
-    *fn = libxsmm_dmmdispatch(*m, *n, *k, lda, ldb, ldc, alpha, beta, flags, prefetch);
-  }
-#if !defined(NDEBUG)
-  else {
-    static int error_once = 0;
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
-     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM: invalid pointer, M, N, or K passed into libxsmm_dmmfunction!\n");
-    }
-  }
-#endif
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* /*fn*/, const libxsmm_gemm_precision* /*precision*/,
-  const int* /*m*/, const int* /*n*/, const int* /*k*/, const int* /*lda*/, const int* /*ldb*/, const int* /*ldc*/,
-  const void* /*alpha*/, const void* /*beta*/, const int* /*flags*/, const int* /*prefetch*/);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn, const libxsmm_gemm_precision* precision,
-  const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
-  const void* alpha, const void* beta, const int* flags, const int* prefetch)
-{
-#if !defined(NDEBUG) /* this should not happen */
-  static int error_once = 0;
-  if (0 != fn && 0 != m && 0 != n && 0 != k)
-#endif
-  {
-    const libxsmm_gemm_precision gemm_precision = (0 != precision ? *precision : LIBXSMM_GEMM_PRECISION_F64);
-    switch (gemm_precision) {
-      case LIBXSMM_GEMM_PRECISION_F64: {
-        *fn = (intptr_t)libxsmm_dmmdispatch(*m, *n, *k, lda, ldb, ldc,
-          (const double*)alpha, (const double*)beta,
-          flags, prefetch);
-      } break;
-      case LIBXSMM_GEMM_PRECISION_F32: {
-        *fn = (intptr_t)libxsmm_smmdispatch(*m, *n, *k, lda, ldb, ldc,
-          (const float*)alpha, (const float*)beta,
-          flags, prefetch);
-      } break;
-#if !defined(NDEBUG) /* this should not happen */
-      default: {
-        if (0 != libxsmm_verbosity /* library code is expected to be mute */
-         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-        {
-          fprintf(stderr, "LIBXSMM: invalid precision requested for libxsmm_xmmdispatch!\n");
-        }
-        *fn = 0;
-      }
-#endif
-    }
-  }
-#if !defined(NDEBUG)
-  else {
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
-     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM: invalid M, N, or K passed into libxsmm_xmmdispatch!\n");
-    }
-  }
-#endif
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
-  const intptr_t* /*fn*/, const void* /*a*/, const void* /*b*/, void* /*c*/,
-  const void* /*pa*/, const void* /*pb*/, const void* /*pc*/);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
-  const intptr_t* fn, const void* a, const void* b, void* c,
-  const void* pa, const void* pb, const void* pc)
-{
-#if !defined(NDEBUG) /* this should not happen */
-  static int error_once = 0;
-  if (0 != fn && 0 != a && 0 != b && 0 != c)
-#endif
-  {
-#if !defined(NDEBUG) /* this should not happen */
-    if (0 != *fn)
-#endif
-    {
-      libxsmm_code_pointer code_pointer = { 0 };
-      code_pointer.imm = *fn;
-      code_pointer.vmm(a, b, c, pa, pb, pc);
-    }
-#if !defined(NDEBUG)
-    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM: NULL-function passed into libxsmm_xmmcall!\n");
-    }
-#endif
-  }
-#if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM: invalid arguments for libxsmm_xmmcall specified!\n");
-  }
-#endif
-}
-
 #if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__) && defined(__clang__) && !defined(__INTEL_COMPILER)
 LIBXSMM_PRAGMA_OPTIMIZE_OFF
 #endif
@@ -1815,4 +1658,169 @@ LIBXSMM_API_DEFINITION void libxsmm_release_kernel(const void* jit_code)
     }
   }
 }
+
+
+#if defined(LIBXSMM_BUILD)
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_init)(void);
+LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_init)(void)
+{
+  libxsmm_init();
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_finalize)(void);
+LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_finalize)(void)
+{
+  libxsmm_finalize();
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* /*fn*/, const libxsmm_gemm_precision* /*precision*/,
+  const int* /*m*/, const int* /*n*/, const int* /*k*/, const int* /*lda*/, const int* /*ldb*/, const int* /*ldc*/,
+  const void* /*alpha*/, const void* /*beta*/, const int* /*flags*/, const int* /*prefetch*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn, const libxsmm_gemm_precision* precision,
+  const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
+  const void* alpha, const void* beta, const int* flags, const int* prefetch)
+{
+#if !defined(NDEBUG) /* this should not happen */
+  static int error_once = 0;
+  if (0 != fn && 0 != m && 0 != n && 0 != k)
+#endif
+  {
+    const libxsmm_gemm_precision gemm_precision = (0 != precision ? *precision : LIBXSMM_GEMM_PRECISION_F64);
+    switch (gemm_precision) {
+      case LIBXSMM_GEMM_PRECISION_F64: {
+        *fn = (intptr_t)libxsmm_dmmdispatch(*m, *n, *k, lda, ldb, ldc,
+          (const double*)alpha, (const double*)beta,
+          flags, prefetch);
+      } break;
+      case LIBXSMM_GEMM_PRECISION_F32: {
+        *fn = (intptr_t)libxsmm_smmdispatch(*m, *n, *k, lda, ldb, ldc,
+          (const float*)alpha, (const float*)beta,
+          flags, prefetch);
+      } break;
+#if !defined(NDEBUG) /* this should not happen */
+      default: {
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM: invalid precision requested for libxsmm_xmmdispatch!\n");
+        }
+        *fn = 0;
+      }
+#endif
+    }
+  }
+#if !defined(NDEBUG)
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: invalid M, N, or K passed into libxsmm_xmmdispatch!\n");
+    }
+    if (0 != fn) *fn = 0;
+  }
+#endif
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
+  const intptr_t* /*fn*/, const void* /*a*/, const void* /*b*/, void* /*c*/,
+  const void* /*pa*/, const void* /*pb*/, const void* /*pc*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
+  const intptr_t* fn, const void* a, const void* b, void* c,
+  const void* pa, const void* pb, const void* pc)
+{
+#if !defined(NDEBUG) /* this should not happen */
+  static int error_once = 0;
+  if (0 != fn && 0 != a && 0 != b && 0 != c)
+#endif
+  {
+#if !defined(NDEBUG) /* this should not happen */
+    if (0 != *fn)
+#endif
+    {
+      libxsmm_code_pointer code_pointer = { 0 };
+      code_pointer.imm = *fn;
+      code_pointer.vmm(a, b, c, pa, pb, pc);
+    }
+#if !defined(NDEBUG)
+    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: NULL-function passed into libxsmm_xmmcall!\n");
+    }
+#endif
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM: invalid arguments for libxsmm_xmmcall specified!\n");
+  }
+#endif
+}
+
+
+/* implementation provided for CCE compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_smmdispatch)(libxsmm_smmfunction* /*fn*/,
+  const int* /*m*/, const int* /*n*/, const int* /*k*/, const int* /*lda*/, const int* /*ldb*/, const int* /*ldc*/,
+  const float* /*alpha*/, const float* /*beta*/, const int* /*flags*/, const int* /*prefetch*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smmdispatch)(libxsmm_smmfunction* fn,
+  const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
+  const float* alpha, const float* beta, const int* flags, const int* prefetch)
+{
+#if !defined(NDEBUG) /* this should not happen */
+  if (0 != fn && 0 != m && 0 != n && 0 != k)
+#endif
+  {
+    *fn = libxsmm_smmdispatch(*m, *n, *k, lda, ldb, ldc, alpha, beta, flags, prefetch);
+  }
+#if !defined(NDEBUG)
+  else {
+    static int error_once = 0;
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: invalid pointer, M, N, or K passed into libxsmm_smmfunction!\n");
+    }
+    if (0 != fn) *fn = 0;
+  }
+#endif
+}
+
+
+/* implementation provided for CCE compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dmmdispatch)(libxsmm_dmmfunction* /*fn*/,
+  const int* /*m*/, const int* /*n*/, const int* /*k*/, const int* /*lda*/, const int* /*ldb*/, const int* /*ldc*/,
+  const double* /*alpha*/, const double* /*beta*/, const int* /*flags*/, const int* /*prefetch*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dmmdispatch)(libxsmm_dmmfunction* fn,
+  const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
+  const double* alpha, const double* beta, const int* flags, const int* prefetch)
+{
+#if !defined(NDEBUG) /* this should not happen */
+  if (0 != fn && 0 != m && 0 != n && 0 != k)
+#endif
+  {
+    *fn = libxsmm_dmmdispatch(*m, *n, *k, lda, ldb, ldc, alpha, beta, flags, prefetch);
+  }
+#if !defined(NDEBUG)
+  else {
+    static int error_once = 0;
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: invalid pointer, M, N, or K passed into libxsmm_dmmfunction!\n");
+    }
+    if (0 != fn) *fn = 0;
+  }
+#endif
+}
+
+#endif /*defined(LIBXSMM_BUILD)*/
 
