@@ -55,22 +55,8 @@ if __name__ == "__main__":
             mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[4:], 0))
 
         template = Template(open(filename, "r").read())
-        version, branch = \
-            libxsmm_utilities.version_branch()
-        major, minor, update, patch = \
-            libxsmm_utilities.version_numbers(version)
-
-        substitute = {
-            "VERSION":  version,
-            "BRANCH":   branch,
-            "MAJOR":    major,
-            "MINOR":    minor,
-            "UPDATE":   update,
-            "PATCH":    patch,
-            "MNK_INTERFACE_LIST": ""
-        }
-
         if (fnmatch.fnmatch(filename, "*.h*")):
+            substitute = {"MNK_INTERFACE_LIST": ""}
             for mnk in mnklist:
                 mnkstr = "_".join(map(str, mnk))
                 if (2 != precision):
@@ -97,6 +83,19 @@ if __name__ == "__main__":
                 substitute["MNK_INTERFACE_LIST"] += "\n"
             print(template.substitute(substitute))
         else:
+            version, branch = \
+                libxsmm_utilities.version_branch()
+            major, minor, update, patch = \
+                libxsmm_utilities.version_numbers(version)
+            substitute = {
+                "VERSION":  version,
+                "BRANCH":   branch,
+                "MAJOR":    major,
+                "MINOR":    minor,
+                "UPDATE":   update,
+                "PATCH":    patch,
+                "MNK_INTERFACE_LIST": ""
+            }
             if (mnklist):
                 substitute["MNK_INTERFACE_LIST"] += "\n"
                 for mnk in mnklist:

@@ -88,7 +88,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
   LIBXSMM_UNUSED(i_values);
 
   /* select soa width */
-  if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+  if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
     l_soa_width = 8;
   } else {
     l_soa_width = 16;

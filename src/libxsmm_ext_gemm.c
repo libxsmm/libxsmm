@@ -90,9 +90,9 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
   LIBXSMM_INIT
   if (LIBXSMM_MAX_MNK < size) {
     const int index = LIBXSMM_MIN(libxsmm_icbrt(size) >> 10, 7);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][index], *m);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][index], *n);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][index], *k);
+    const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][index], (unsigned int)*m);
+    const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][index], (unsigned int)*n);
+    const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][index], (unsigned int)*k);
     const float ralpha = (0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA));
     const float rbeta = (0 != beta ? *beta : ((float)LIBXSMM_BETA));
     const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
@@ -120,7 +120,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
+        float, flags, tm, tn, tk, *m, *n, *k,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
 #if defined(LIBXSMM_EXT_TASKS)
@@ -129,18 +129,18 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
         if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        float, flags | LIBXSMM_GEMM_FLAG_F32PREC, tm, tn, tk, *m, *n, *k,
+        float, flags, tm, tn, tk, *m, *n, *k,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
 #endif
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
     if (0 != d) {
       libxsmm_stat_info s1, s2;
-      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F32PREC, c, *m, *n, ldc, &s1)) {
+      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_PRECISION_F32, c, *m, *n, ldc, &s1)) {
         libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
-        if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F32PREC, d, *m, *n, m, &s2)) {
+        if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_PRECISION_F32, d, *m, *n, m, &s2)) {
           LIBXSMM_FLOCK(stderr);
-          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_FLAG_F32PREC, transa, transb,
+          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F32, transa, transb,
             m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
           fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
           LIBXSMM_FUNLOCK(stderr);
@@ -166,9 +166,9 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
   LIBXSMM_INIT
   if (LIBXSMM_MAX_MNK < size) {
     const int index = LIBXSMM_MIN(libxsmm_icbrt(size) >> 10, 7);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][index], *m);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][index], *n);
-    const LIBXSMM_GEMM_DESCRIPTOR_DIM_TYPE tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][index], *k);
+    const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][index], (unsigned int)*m);
+    const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][index], (unsigned int)*n);
+    const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][index], (unsigned int)*k);
     const double ralpha = (0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA));
     const double rbeta = (0 != beta ? *beta : ((double)LIBXSMM_BETA));
     const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
@@ -212,11 +212,11 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
     if (0 != d) {
       libxsmm_stat_info s1, s2;
-      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F64PREC, c, *m, *n, ldc, &s1)) {
+      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_PRECISION_F64, c, *m, *n, ldc, &s1)) {
         libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
-        if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_FLAG_F64PREC, d, *m, *n, m, &s2)) {
+        if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_PRECISION_F64, d, *m, *n, m, &s2)) {
           LIBXSMM_FLOCK(stderr);
-          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_FLAG_F64PREC, transa, transb,
+          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F64, transa, transb,
             m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
           fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
           LIBXSMM_FUNLOCK(stderr);

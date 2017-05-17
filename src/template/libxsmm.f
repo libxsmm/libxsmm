@@ -56,17 +56,8 @@
         INTEGER(C_INT), PARAMETER :: LIBXSMM_ALIGNMENT = $ALIGNMENT
         INTEGER(C_INT), PARAMETER :: LIBXSMM_PREFETCH = $PREFETCH
         INTEGER(C_INT), PARAMETER :: LIBXSMM_MAX_MNK = $MAX_MNK
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_MAX_M = $MAX_M
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_MAX_N = $MAX_N
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_MAX_K = $MAX_K
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_AVG_M = $AVG_M
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_AVG_N = $AVG_N
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_AVG_K = $AVG_K
         INTEGER(C_INT), PARAMETER :: LIBXSMM_FLAGS = $FLAGS
         INTEGER(C_INT), PARAMETER :: LIBXSMM_ILP64 = $ILP64
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_SYNC = $SYNC
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_JIT = $JIT
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_BIG = $BIG
 
         ! Parameters supplied for backward compatibility (deprecated).
         INTEGER(C_INT), PARAMETER :: LIBXSMM_COL_MAJOR = 1
@@ -90,8 +81,8 @@
         ! Flag which denotes the value type (for weak-typed interface
         ! functions such as libxsmm_xmmdispatch).
         INTEGER(C_INT), PARAMETER ::                                    &
-     &    LIBXSMM_GEMM_FLAG_F64PREC = 0,                                &
-     &    LIBXSMM_GEMM_FLAG_F32PREC = 16
+     &    LIBXSMM_GEMM_PRECISION_F64 = 0,                               &
+     &    LIBXSMM_GEMM_PRECISION_F32 = 1
 
         ! Enumeration of the available prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
@@ -381,7 +372,7 @@
             REAL(C_DOUBLE), INTENT(IN) :: a(lda,*), b(ldb,*)
             REAL(C_DOUBLE), INTENT(INOUT) :: c(ldc,*)
           END SUBROUTINE
-      END INTERFACE$MNK_INTERFACE_LIST
+        END INTERFACE$MNK_INTERFACE_LIST
 
       CONTAINS
         ! Returns the name of the target architecture as determined by

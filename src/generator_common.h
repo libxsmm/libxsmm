@@ -295,7 +295,7 @@
   GENERATED_CODE, ERROR_CODE, LIBXSMM_STRINGIFY(LIBXSMM_CALLER), 1)
 
 /* micro kernel config */
-typedef struct libxsmm_micro_kernel_config_struct {
+typedef struct libxsmm_micro_kernel_config {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
   unsigned int vector_length;
