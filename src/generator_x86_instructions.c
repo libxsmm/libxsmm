@@ -914,6 +914,11 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           }
           l_bytes = 5;
           break;
+       case LIBXSMM_X86_INSTR_VPSRAVD:
+          l_second += 0x01;
+          l_fpadj  -= 0x13;
+          l_fpadj2 -= 0x80;
+          break;
        /* SSE instruction support */
        case LIBXSMM_X86_INSTR_VMULSS:
           if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: VMULSS and ymm/zmm?\n");
@@ -1509,6 +1514,12 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           if ( l_broadcast != 0 ) l_sizereg = 4;
           l_fpadj += 0x96;
           l_fpadj2 += 0x80;
+          break;
+       case LIBXSMM_X86_INSTR_VPSRAVD:
+          l_second += 0x01;
+          l_fpadj  -= 0x13;
+          l_fpadj2 -= 0x80;
+          if ( l_broadcast == 1 ) l_sizereg = 4;
           break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_mem: Unknown instruction type: %u\n", i_vec_instr);

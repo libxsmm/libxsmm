@@ -424,6 +424,9 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_VPMADDUBSW:
       libxsmm_strncpy(o_instr_name, "vpmaddubsw", i_instr_name_max_length, 10 );
       break;
+    case LIBXSMM_X86_INSTR_VPSRAVD:
+      libxsmm_strncpy(o_instr_name, "vpsravd", i_instr_name_max_length, 7 );
+      break;
     /* AVX512, QFMA */
     case LIBXSMM_X86_INSTR_V4FMADDPS:
       libxsmm_strncpy(o_instr_name, "v4fmaddps", i_instr_name_max_length, 9 );
@@ -755,7 +758,7 @@ void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
   } else {
     /* selecting the correct signature */
-    if (0 != (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags)) {
+    if (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) {
       if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
       } else {

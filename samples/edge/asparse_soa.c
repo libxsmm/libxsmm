@@ -155,10 +155,7 @@ int main(int argc, char* argv[]) {
 
   /* sparse routine */
   libxsmm_gemm_descriptor l_xgemm_desc;
-  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, 1,
-    (0 == 0 ? 0 : LIBXSMM_GEMM_FLAG_F32PREC)
-      | (0 != 0 ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0)
-      | (0 != 0 ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0),
+  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, LIBXSMM_GEMM_PRECISION_F32, 0/*flags*/,
     N_QUANTITIES, N_ELEMENT_MODES, N_QUANTITIES, 0, N_ELEMENT_MODES, N_ELEMENT_MODES,
     1.0, 1.0, LIBXSMM_PREFETCH_NONE);
   libxsmm_dmmfunction mykernel = libxsmm_create_dcsr_soa( &l_xgemm_desc, l_rowptr, l_colidx, l_a_sp ).dmm;

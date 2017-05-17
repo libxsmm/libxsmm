@@ -31,18 +31,27 @@
 #ifndef LIBXSMM_H
 #define LIBXSMM_H
 
-/** Name of the version (stringized set of version numbers). */
-#define LIBXSMM_VERSION "$VERSION"
-/** Name of the branch of which the version is derived from. */
-#define LIBXSMM_BRANCH  "$BRANCH"
-/** Major version based on the last reachable tag under RCS. */
-#define LIBXSMM_VERSION_MAJOR $MAJOR
-/** Minor version based on the last reachable tag of the RCS. */
-#define LIBXSMM_VERSION_MINOR $MINOR
-/** Update number based on the last reachable tag under RCS. */
-#define LIBXSMM_VERSION_UPDATE $UPDATE
-/** Patch number counting commits since the last version stamp. */
-#define LIBXSMM_VERSION_PATCH $PATCH
+#include "libxsmm_config.h"
+
+/**
+ * Strings to denote the version of LIBXSMM (libxsmm_config.h).
+ * LIBXSMM_VERSION: Name of the version (stringized version numbers).
+ * LIBXSMM_BRANCH:  Name of the branch this version is derived from.
+ */
+#define LIBXSMM_VERSION LIBXSMM_CONFIG_VERSION
+#define LIBXSMM_BRANCH  LIBXSMM_CONFIG_BRANCH
+
+/**
+ * Numbers to denote the version of LIBXSMM (libxsmm_config.h).
+ * LIBXSMM_VERSION_MAJOR:  Major version derived from the most recent RCS-tag.
+ * LIBXSMM_VERSION_MINOR:  Minor version derived from the most recent RCS-tag.
+ * LIBXSMM_VERSION_UPDATE: Update number derived from the most recent RCS-tag. 
+ * LIBXSMM_VERSION_PATCH:  Patch number based on distance to most recent RCS-tag.
+ */
+#define LIBXSMM_VERSION_MAJOR  LIBXSMM_CONFIG_VERSION_MAJOR
+#define LIBXSMM_VERSION_MINOR  LIBXSMM_CONFIG_VERSION_MINOR
+#define LIBXSMM_VERSION_UPDATE LIBXSMM_CONFIG_VERSION_UPDATE
+#define LIBXSMM_VERSION_PATCH  LIBXSMM_CONFIG_VERSION_PATCH
 
 #include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
@@ -176,22 +185,12 @@ LIBXSMM_API int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix transposition (out-of-place form, single-precision). */
-LIBXSMM_API_INLINE int libxsmm_sotrans(float* out, const float* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_otrans(out, in, sizeof(float), m, n, ldi, ldo); }
-#endif
+LIBXSMM_API int libxsmm_sotrans(float* out, const float* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix transposition (out-of-place form, double-precision). */
-LIBXSMM_API_INLINE int libxsmm_dotrans(double* out, const double* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_otrans(out, in, sizeof(double), m, n, ldi, ldo); }
-#endif
+LIBXSMM_API int libxsmm_dotrans(double* out, const double* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix transposition; MT via libxsmmext (out-of-place form). */
 LIBXSMM_API int libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
@@ -210,58 +209,26 @@ LIBXSMM_API int libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Matrix transposition (in-place form, single-precision). */
-LIBXSMM_API_INLINE int libxsmm_sitrans(float* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_itrans(inout, sizeof(float), m, n, ld); }
-#endif
+LIBXSMM_API int libxsmm_sitrans(float* inout,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Matrix transposition (in-place form, double-precision). */
-LIBXSMM_API_INLINE int libxsmm_ditrans(double* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_itrans(inout, sizeof(double), m, n, ld); }
-#endif
+LIBXSMM_API int libxsmm_ditrans(double* inout,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Dispatched general dense matrix multiplication (single-precision); can be called from F77 code. */
-LIBXSMM_API_INLINE void libxsmm_sgemm(const char* transa, const char* transb,
+LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
-  LIBXSMM_SGEMM(flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((float)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-}
-#endif
+  const float* beta, float* c, const libxsmm_blasint* ldc);
 
 /** Dispatched general dense matrix multiplication (double-precision); can be called from F77 code. */
-LIBXSMM_API_INLINE void libxsmm_dgemm(const char* transa, const char* transb,
+LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
-  LIBXSMM_DGEMM(flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((double)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-}
-#endif
+  const double* beta, double* c, const libxsmm_blasint* ldc);
 
 /** General dense matrix multiplication; MT via libxsmmext (single-precision). */
 LIBXSMM_API void libxsmm_sgemm_omp(const char* transa, const char* transb,

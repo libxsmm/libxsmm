@@ -104,7 +104,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
 
   /* select soa width */
-  if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+  if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
     l_soa_width = 8;
     l_micro_kernel_config.a_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSD;
   } else {

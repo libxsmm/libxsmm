@@ -25,7 +25,7 @@ To try LIBXSMM's master revision, the file `tensorflow/workspace.bzl` can be adj
 Beside of the regular prerequisites, nothing else is needed to use TensorFlow with LIBXSMM. Prior to Bazel&#160;0.4.5, it was helpful to change TensorFlow's `configure` script by replacing `bazel clean --expunge` with `bazel clean --expunge_async` (at least when NFS-hosted).
 
 ```
-cd tensorflow-xsmm
+cd /path/to/tensorflow-xsmm
 ./configure
 ```
 
@@ -55,7 +55,7 @@ bazel build -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD 
   //tensorflow/tools/pip_package:build_pip_package
 
 bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
-sudo pip install \
+sudo -H pip install \
   --proxy proxy.domain.com:912 \
   -I /tmp/tensorflow_pkg/<package-name-build-above.whl>
 ```
@@ -63,11 +63,15 @@ sudo pip install \
 ## Benchmarks
 This document is an early recipe for building and running TensorFlow with LIBXSMM. Please do not expect any performance advantage (at this point) when comparing to TensorFlow without LIBXSMM!
 
+### Convnet Benchmarks
+The section helps to quickly setup benchmarks for Alexnet, Overfeat, VGG, and Googlenet&#160;v1. To setup a more complete set of models, please have a look at the next subsection.
+
 ```
 git clone https://github.com/soumith/convnet-benchmarks.git
-cd tensorflow-xsmm
+cd /path/to/tensorflow-xsmm
 mkdir -p tensorflow/models
 ln -s /path/to/convnet-benchmarks/tensorflow tensorflow/models/convnetbenchmarks
+
 bazel build -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
@@ -86,7 +90,7 @@ bazel-bin/tensorflow/models/convnetbenchmarks/benchmark_alexnet \
 | tee output_alexnet.log
 ```
 
-In case of an `ImportError: No module named builtins` one can resolve the problem with `sudo pip install future --upgrade`.
+In case of an `ImportError: No module named builtins` one can resolve the problem with `sudo -H pip install future --upgrade`.
 
 ## Non-default Compiler
 LIBXSMM does not impose to build for a specific code path, and always exploits the most suitable instruction set extension for JIT-enabled code paths. However, LIBXSMM may also use non-JIT code paths which are CPUID-dispatched when the static code path has lower capabilities. This only works when using GCC&#160;4.9 (or later) or the Intel Compiler. If TensorFlow does not match the highest possible CPU target (march=native), a performance penalty is possible.

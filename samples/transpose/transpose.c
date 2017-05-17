@@ -62,7 +62,7 @@
 # define ITRANS1 libxsmm_itrans
 #endif
 
-#if !defined(USE_SELF_VALIDATION)
+#if !defined(USE_SELF_VALIDATION) && !defined(__BLAS) || (0 != __BLAS)
 # if !LIBXSMM_EQUAL(ELEM_TYPE, float) && !LIBXSMM_EQUAL(ELEM_TYPE, double)
 #   define USE_SELF_VALIDATION
 # endif

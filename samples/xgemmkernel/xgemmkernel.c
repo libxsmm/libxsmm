@@ -320,14 +320,14 @@ int main(int argc, char* argv []) {
 
   libxsmm_gemm_descriptor l_xgemm_desc;
   /* init data structures */
-  double* l_a_d;
+  double* l_c_gold_d = 0;
+  double* l_a_d = 0;
   double* l_b_d;
   double* l_c_d;
-  double* l_c_gold_d;
-  float* l_a_f;
+  float* l_c_gold_f = 0;
+  float* l_a_f = 0;
   float* l_b_f;
   float* l_c_f;
-  float* l_c_gold_f;
 
   /* check argument count for a valid range */
   if ( argc != 14 ) {
@@ -408,10 +408,8 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, 1,
-    (0 == l_single_precision ? 0 : LIBXSMM_GEMM_FLAG_F32PREC)
-      | (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0)
-      | (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0),
+  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, 0 == l_single_precision ? LIBXSMM_GEMM_PRECISION_F64 : LIBXSMM_GEMM_PRECISION_F32,
+    (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0) | (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0),
     l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
     l_alpha, l_beta, l_prefetch);
 

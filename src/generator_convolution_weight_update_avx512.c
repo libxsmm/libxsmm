@@ -132,13 +132,13 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
 
             // JIT this code below
               for (int ifm2 = 0; ifm2 < VLEN; ifm2+=WU_UNROLL_FACTOR_1) { // We should completely unroll this!
-                __m512 acc00 = _mm512_load_ps(&del_wt[ofm1][ifm1][kj][ki][ifm2]);
-                __m512 acc01 = _mm512_load_ps(&del_wt[ofm1][ifm1][kj][ki][ifm2 + 1]);
+                __m512 acc00 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&del_wt[ofm1][ifm1][kj][ki][ifm2]);
+                __m512 acc01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&del_wt[ofm1][ifm1][kj][ki][ifm2 + 1]);
                 LIBXSMM_PRAGMA_UNROLL
                 for (int ij=0, oj=0; oj < ofh; ij+=stride_h, oj++) {
                   LIBXSMM_PRAGMA_UNROLL
                   for (int ii=0, oi=0; oi < ofw; ii+=WU_UNROLL_FACTOR_2*stride_w, oi+=WU_UNROLL_FACTOR_2) {
-                    __m512 out00 = _mm512_load_ps(&del_output[img][ofm1][oj][oi + 0]);
+                    __m512 out00 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&del_output[img][ofm1][oj][oi + 0]);
                     acc00 = _mm512_fmadd_ps(_mm512_set1_ps(input[img][ifm1][ij+kj][ii+ki][ifm2]), out00, acc00);
                     acc01 = _mm512_fmadd_ps(_mm512_set1_ps(input[img][ifm1][ij+kj][ii+ki][ifm2+1]), out00, acc01);
                   }

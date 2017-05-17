@@ -31,9 +31,10 @@ PBINDIR = $(BINDIR)
 PTSTDIR = tests
 PDOCDIR = share/libxsmm
 
-# initial default flags
-CXXFLAGS = $(NULL)
-CFLAGS = $(NULL)
+# initial default flags: RPM_OPT_FLAGS are usually NULL
+CFLAGS = $(RPM_OPT_FLAGS)
+CXXFLAGS := $(CFLAGS)
+FCFLAGS := $(CFLAGS)
 DFLAGS = -DLIBXSMM_BUILD
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
@@ -82,11 +83,6 @@ PREFETCH ?= 1
 # 2: DP only
 PRECISION ?= 0
 
-# Support SMM kernels with larger extent(s)
-# 0: optimized JIT descriptor size
-# 1: regular descriptor size
-BIG ?= 1
-
 # Specify an alignment (Bytes)
 ALIGNMENT ?= 64
 
@@ -125,6 +121,11 @@ STATIC ?= 1
 # 1: enables wrapping SGEMM and DGEMM
 # 2: enables wrapping DGEMM only
 WRAP ?= 0
+
+# Determines kind routine called for intercepted GEMMs
+# 1: sequential and non-tiled (small problem sizes only)
+# 2: parallelized and tiled
+GEMM ?= 2
 
 # JIT backend is enabled by default
 JIT ?= 1
@@ -402,7 +403,8 @@ config: $(INCDIR)/libxsmm_config.h
 $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_config.h \
                             $(SCRDIR)/libxsmm_config.py $(SCRDIR)/libxsmm_utilities.py \
                             $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
-                            $(wildcard $(ROOTDIR)/.hooks/*)
+                            $(wildcard $(ROOTDIR)/.hooks/*) \
+                            $(ROOTDIR)/version.txt
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
@@ -419,10 +421,10 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_config.py $(SRCDIR)/template/libxsmm_config.h \
-		$(MAKE_ILP64) $(BIG) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) > $@
 	$(info ================================================================================)
 	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py))
 	$(info --------------------------------------------------------------------------------)
@@ -468,7 +470,7 @@ endif
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
 $(INCDIR)/libxsmm.h: $(SCRDIR)/libxsmm_interface.py \
-                     $(SRCDIR)/template/libxsmm.h $(ROOTDIR)/version.txt \
+                     $(SRCDIR)/template/libxsmm.h \
                      $(INCDIR)/libxsmm_config.h $(HEADERS)
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.h \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) > $@
@@ -480,17 +482,16 @@ $(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(SCRDIR)/libxsmm_source.sh $(INCDIR
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
-$(INCDIR)/libxsmm.f: $(BLDDIR)/.make \
-                     $(ROOTDIR)/version.txt $(INCDIR)/libxsmm_config.h \
-                     $(SRCDIR)/template/libxsmm.f $(SCRDIR)/libxsmm_interface.py \
-                     $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
+$(INCDIR)/libxsmm.f: $(SCRDIR)/libxsmm_interface.py \
+                     $(SRCDIR)/template/libxsmm.f \
+                     $(INCDIR)/libxsmm_config.h
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.f \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) | \
 	$(PYTHON) $(SCRDIR)/libxsmm_config.py /dev/stdin \
-		$(MAKE_ILP64) $(BIG) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) | \
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) | \
 	sed "/ATTRIBUTES OFFLOAD:MIC/d" > $@
 
 .PHONY: sources

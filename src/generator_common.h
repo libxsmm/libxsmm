@@ -189,6 +189,7 @@
 #define LIBXSMM_X86_INSTR_VUNPCKLPS      20054
 #define LIBXSMM_X86_INSTR_VUNPCKHPD      20055
 #define LIBXSMM_X86_INSTR_VUNPCKHPS      20056
+#define LIBXSMM_X86_INSTR_VPSRAVD        20057
 
 /* AVX512, QUAD MADD, supported with Knights Mill */
 #define LIBXSMM_X86_INSTR_V4FMADDPS      26000
@@ -294,7 +295,7 @@
   GENERATED_CODE, ERROR_CODE, LIBXSMM_STRINGIFY(LIBXSMM_CALLER), 1)
 
 /* micro kernel config */
-typedef struct libxsmm_micro_kernel_config_struct {
+typedef struct libxsmm_micro_kernel_config {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
   unsigned int vector_length;

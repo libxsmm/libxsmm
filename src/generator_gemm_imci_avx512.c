@@ -51,7 +51,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel_initialize_mask( libxsmm_generate
   unsigned int l_mask;
 
   /* init full mask */
-  if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+  if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
     l_mask = 0xff;
   } else {
     l_mask = 0xffff;

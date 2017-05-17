@@ -25,7 +25,7 @@ keywords.txt
 notes.txt
 err*.txt
 out*.txt
-log.txt
+.travis.log
 _*.txt
 check??????.c
 check??????.f

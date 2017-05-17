@@ -238,7 +238,7 @@ void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
       __m512d m512d;
       _mm_prefetch((const char*)core->partner_flags[core->parity][0], _MM_HINT_ET1);
       sendbuf[0] = core->sense;
-      m512d = _mm512_load_pd(sendbuf);
+      m512d = LIBXSMM_INTRINSICS_MM512_LOAD_PD(sendbuf);
 #endif
 
       for (i = di = 0; i < barrier->ncores_log2 - 1; ++i, di += LIBXSMM_SYNC_CACHELINE_SIZE) {

@@ -214,7 +214,7 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
     new_handle->N_chunksize = 16;
     /* @TODO change to macro */
     xgemm_desc = libxsmm_create_dgemm_descriptor('n', 'n', M, new_handle->N_chunksize, K, 0, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH_NONE);
-    xgemm_desc->flags = LIBXSMM_GEMM_FLAG_F32PREC;
+    xgemm_desc->datatype = LIBXSMM_GEMM_PRECISION_F32; /* somewhat a hack */
     new_handle->kernel = libxsmm_create_scsr_reg(xgemm_desc, a_csr_rowptr, a_csr_colidx, a_csr_values);
   }
 

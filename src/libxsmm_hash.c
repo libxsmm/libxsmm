@@ -133,13 +133,13 @@
 
 typedef uint32_t internal_crc32_entry_type[256];
 LIBXSMM_EXTERN_C const LIBXSMM_RETARGETABLE internal_crc32_entry_type* internal_crc32_table;
-
 LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_hash_function internal_hash_function;
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(
   unsigned int seed, unsigned char value)
 {
+  assert(0 != internal_crc32_table);
   return internal_crc32_table[0][(seed^value)&0xFF] ^ (seed >> 8);
 }
 
@@ -157,10 +157,12 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u32(
   unsigned int seed, unsigned int value)
 {
   const unsigned int s = seed ^ value;
-  const uint32_t c0 = internal_crc32_table[0][(s>>24)&0xFF];
-  const uint32_t c1 = internal_crc32_table[1][(s>>16)&0xFF];
-  const uint32_t c2 = internal_crc32_table[2][(s>>8)&0xFF];
-  const uint32_t c3 = internal_crc32_table[3][s&0xFF];
+  uint32_t c0, c1, c2, c3;
+  assert(0 != internal_crc32_table);
+  c0 = internal_crc32_table[0][(s>>24)&0xFF];
+  c1 = internal_crc32_table[1][(s>>16)&0xFF];
+  c2 = internal_crc32_table[2][(s>>8)&0xFF];
+  c3 = internal_crc32_table[3][s&0xFF];
   return (c0 ^ c1) ^ (c2 ^ c3);
 }
 
