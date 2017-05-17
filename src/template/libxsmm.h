@@ -186,21 +186,11 @@ LIBXSMM_API int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
 
 /** Matrix transposition (out-of-place form, single-precision). */
 LIBXSMM_API_INLINE int libxsmm_sotrans(float* out, const float* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_otrans(out, in, sizeof(float), m, n, ldi, ldo); }
-#endif
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix transposition (out-of-place form, double-precision). */
 LIBXSMM_API_INLINE int libxsmm_dotrans(double* out, const double* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_otrans(out, in, sizeof(double), m, n, ldi, ldo); }
-#endif
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix transposition; MT via libxsmmext (out-of-place form). */
 LIBXSMM_API int libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
@@ -220,57 +210,25 @@ LIBXSMM_API int libxsmm_itrans(void* inout, unsigned int typesize,
 
 /** Matrix transposition (in-place form, single-precision). */
 LIBXSMM_API_INLINE int libxsmm_sitrans(float* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_itrans(inout, sizeof(float), m, n, ld); }
-#endif
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Matrix transposition (in-place form, double-precision). */
 LIBXSMM_API_INLINE int libxsmm_ditrans(double* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_itrans(inout, sizeof(double), m, n, ld); }
-#endif
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Dispatched general dense matrix multiplication (single-precision); can be called from F77 code. */
 LIBXSMM_API_INLINE void libxsmm_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
-  LIBXSMM_SGEMM(flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((float)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-}
-#endif
+  const float* beta, float* c, const libxsmm_blasint* ldc);
 
 /** Dispatched general dense matrix multiplication (double-precision); can be called from F77 code. */
 LIBXSMM_API_INLINE void libxsmm_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
-  LIBXSMM_DGEMM(flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((double)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-}
-#endif
+  const double* beta, double* c, const libxsmm_blasint* ldc);
 
 /** General dense matrix multiplication; MT via libxsmmext (single-precision). */
 LIBXSMM_API void libxsmm_sgemm_omp(const char* transa, const char* transb,
