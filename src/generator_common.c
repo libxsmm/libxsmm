@@ -424,6 +424,9 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_VPMADDUBSW:
       libxsmm_strncpy(o_instr_name, "vpmaddubsw", i_instr_name_max_length, 10 );
       break;
+    case LIBXSMM_X86_INSTR_VPSRAVD:
+      libxsmm_strncpy(o_instr_name, "vpsravd", i_instr_name_max_length, 7 );
+      break;
     /* AVX512, QFMA */
     case LIBXSMM_X86_INSTR_V4FMADDPS:
       libxsmm_strncpy(o_instr_name, "v4fmaddps", i_instr_name_max_length, 9 );
