@@ -185,11 +185,11 @@ LIBXSMM_API int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix transposition (out-of-place form, single-precision). */
-LIBXSMM_API_INLINE int libxsmm_sotrans(float* out, const float* in,
+LIBXSMM_API int libxsmm_sotrans(float* out, const float* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix transposition (out-of-place form, double-precision). */
-LIBXSMM_API_INLINE int libxsmm_dotrans(double* out, const double* in,
+LIBXSMM_API int libxsmm_dotrans(double* out, const double* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix transposition; MT via libxsmmext (out-of-place form). */
@@ -209,22 +209,22 @@ LIBXSMM_API int libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Matrix transposition (in-place form, single-precision). */
-LIBXSMM_API_INLINE int libxsmm_sitrans(float* inout,
+LIBXSMM_API int libxsmm_sitrans(float* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Matrix transposition (in-place form, double-precision). */
-LIBXSMM_API_INLINE int libxsmm_ditrans(double* inout,
+LIBXSMM_API int libxsmm_ditrans(double* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Dispatched general dense matrix multiplication (single-precision); can be called from F77 code. */
-LIBXSMM_API_INLINE void libxsmm_sgemm(const char* transa, const char* transb,
+LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
 
 /** Dispatched general dense matrix multiplication (double-precision); can be called from F77 code. */
-LIBXSMM_API_INLINE void libxsmm_dgemm(const char* transa, const char* transb,
+LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
