@@ -185,9 +185,11 @@ int main(int argc, char* argv []) {
   else if (strcmp("AL2jpst_BL2viaC", argv[15]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST;
   }
-  //else if (strcmp("AL2_BL2viaC_CL2", argv[15]) == 0) {
-    //l_prefetch = LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C;
-  //}
+#if 0
+  else if (strcmp("AL2_BL2viaC_CL2", argv[15]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C;
+  }
+#endif
   else {
     print_help();
     return -1;

@@ -128,10 +128,8 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
                                                    l_gp_reg_mapping.gp_reg_input_pf, l_gp_reg_mapping.gp_reg_weight_pf,
                                                    l_gp_reg_mapping.gp_reg_output_pf, i_arch );
 
-  /***** Code to generate
-
-            // JIT this code below
-              for (int ifm2 = 0; ifm2 < VLEN; ifm2+=WU_UNROLL_FACTOR_1) { // We should completely unroll this!
+  /***** Code to generate; JIT this code below
+              for (int ifm2 = 0; ifm2 < VLEN; ifm2+=WU_UNROLL_FACTOR_1) {
                 __m512 acc00 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&del_wt[ofm1][ifm1][kj][ki][ifm2]);
                 __m512 acc01 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&del_wt[ofm1][ifm1][kj][ki][ifm2 + 1]);
                 LIBXSMM_PRAGMA_UNROLL
