@@ -51,8 +51,9 @@
 
         DOUBLE PRECISION :: start, dcall, ddisp
         INTEGER :: i, size = 10000000
-        ! Can be called using libxsmm_xmmcall(function, a, b, c, pa, pb, pc)
-        ! NOTE: pa, pb, pc must be passed when relying on FORTRAN 77.
+        ! Can be called using:
+        ! - libxsmm_xmmcall_abc(function, a, b, c)
+        ! - libxsmm_xmmcall[_prf](function, a, b, c, pa, pb, pc)
         INTEGER(8) :: function
 
         WRITE(*, "(A,I0,A)") "Dispatching ", size," calls..."

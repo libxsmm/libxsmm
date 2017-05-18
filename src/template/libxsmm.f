@@ -135,36 +135,24 @@
      &    LIBXSMM_X86_AVX512_KNM  = 1011,                               &
      &    LIBXSMM_X86_AVX512_CORE = 1020
 
-        ! Generic function type which is representing either one of the
-        ! two wrapped backend procedure pointers (single-precision).
+        ! Generic function type (single-precision).
         TYPE :: LIBXSMM_SMMFUNCTION
           PRIVATE
             INTEGER(C_INTPTR_T) :: handle
         END TYPE
 
-        ! Generic function type which is representing either one of the
-        ! two wrapped backend procedure pointers (double-precision).
+        ! Generic function type (double-precision).
         TYPE :: LIBXSMM_DMMFUNCTION
           PRIVATE
             INTEGER(C_INTPTR_T) :: handle
         END TYPE
 
-        ! Construct procedure pointer depending on given argument set.
+        ! Construct JIT-code depending on given argument set.
         INTERFACE libxsmm_mmdispatch
           MODULE PROCEDURE libxsmm_smmdispatch, libxsmm_dmmdispatch
         END INTERFACE
 
-        ! Construct procedure pointer depending on given argument set.
-        INTERFACE libxsmm_sdispatch
-          MODULE PROCEDURE libxsmm_smmdispatch
-        END INTERFACE
-
-        ! Construct procedure pointer depending on given argument set.
-        INTERFACE libxsmm_ddispatch
-          MODULE PROCEDURE libxsmm_dmmdispatch
-        END INTERFACE
-
-        ! Construct procedure pointer depending on given argument set.
+        ! Construct JIT-code depending on given argument set.
         INTERFACE libxsmm_dispatch
           MODULE PROCEDURE libxsmm_smmdispatch, libxsmm_dmmdispatch
         END INTERFACE
@@ -172,16 +160,6 @@
         ! Check if a function is available (LIBXSMM_?MMFUNCTION).
         INTERFACE libxsmm_mmavailable
           MODULE PROCEDURE libxsmm_smmavailable, libxsmm_dmmavailable
-        END INTERFACE
-
-        ! Check if a function is available (LIBXSMM_?MMFUNCTION).
-        INTERFACE libxsmm_savailable
-          MODULE PROCEDURE libxsmm_smmavailable
-        END INTERFACE
-
-        ! Check if a function is available (LIBXSMM_?MMFUNCTION).
-        INTERFACE libxsmm_davailable
-          MODULE PROCEDURE libxsmm_dmmavailable
         END INTERFACE
 
         ! Check if a function is available (LIBXSMM_?MMFUNCTION).
@@ -223,6 +201,8 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_xtick
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_abc
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_prf
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
         INTERFACE
@@ -232,6 +212,30 @@
 
           ! De-initialize the library and free internal memory (optional).
           SUBROUTINE libxsmm_finalize() BIND(C)
+          END SUBROUTINE
+
+          ! Get the default prefetch strategy.
+          PURE FUNCTION libxsmm_get_gemm_auto_prefetch() BIND(C)
+            IMPORT :: C_INT
+            INTEGER(C_INT) :: libxsmm_get_gemm_auto_prefetch
+          END FUNCTION
+
+          ! Set the default prefetch strategy.
+          SUBROUTINE libxsmm_set_gemm_auto_prefetch(strategy) BIND(C)
+            IMPORT :: C_INT
+            INTEGER(C_INT), INTENT(IN), VALUE :: strategy
+          END SUBROUTINE
+
+          ! Query the try-lock property of the code registry.
+          PURE FUNCTION libxsmm_get_dispatch_trylock() BIND(C)
+            IMPORT :: C_INT
+            INTEGER(C_INT) :: libxsmm_get_dispatch_trylock
+          END FUNCTION
+
+          ! Set the try-lock property of the code registry.
+          SUBROUTINE libxsmm_set_dispatch_trylock(trylock) BIND(C)
+            IMPORT :: C_INT
+            INTEGER(C_INT), INTENT(IN), VALUE :: trylock
           END SUBROUTINE
 
           ! Returns the architecture and instruction set extension as determined
@@ -269,30 +273,6 @@
             INTEGER(C_INT), INTENT(IN), VALUE :: level
           END SUBROUTINE
 
-          ! Get the default prefetch strategy.
-          PURE FUNCTION libxsmm_get_gemm_auto_prefetch() BIND(C)
-            IMPORT :: C_INT
-            INTEGER(C_INT) :: libxsmm_get_gemm_auto_prefetch
-          END FUNCTION
-
-          ! Set the default prefetch strategy.
-          SUBROUTINE libxsmm_set_gemm_auto_prefetch(strategy) BIND(C)
-            IMPORT :: C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: strategy
-          END SUBROUTINE
-
-          ! Query the try-lock property of the code registry.
-          PURE FUNCTION libxsmm_get_dispatch_trylock() BIND(C)
-            IMPORT :: C_INT
-            INTEGER(C_INT) :: libxsmm_get_dispatch_trylock
-          END FUNCTION
-
-          ! Set the try-lock property of the code registry.
-          SUBROUTINE libxsmm_set_dispatch_trylock(trylock) BIND(C)
-            IMPORT :: C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: trylock
-          END SUBROUTINE
-
           ! Impure function which returns the current clock tick of a
           ! monotonic timer source; uses a platform-specific resolution.
           INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_tick() BIND(C)
@@ -312,6 +292,20 @@
             IMPORT :: C_LONG_LONG, C_DOUBLE
             INTEGER(C_LONG_LONG), INTENT(IN), VALUE :: tick0, tick1
           END FUNCTION
+
+          PURE SUBROUTINE libxsmm_xmmcall_abc(fn, a, b, c)              &
+     &    BIND(C, NAME="libxsmm_xmmcall_abc_")
+            IMPORT :: C_INTPTR_T, C_PTR
+            INTEGER(C_INTPTR_T), INTENT(IN) :: fn
+            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          END SUBROUTINE
+
+          PURE SUBROUTINE libxsmm_xmmcall_prf(fn, a, b, c, pa, pb, pc)  &
+     &    BIND(C, NAME="libxsmm_xmmcall_prf_")
+            IMPORT :: C_INTPTR_T, C_PTR
+            INTEGER(C_INTPTR_T), INTENT(IN) :: fn
+            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
+          END SUBROUTINE
 
           SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,         &
      &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
@@ -409,39 +403,6 @@
      &      lda, ldb, ldc, alpha, beta, flags, prefetch)
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall
-        PURE SUBROUTINE libxsmm_xmmcall(fn, a, b, c, pa, pb, pc)
-          INTEGER(C_INTPTR_T), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN) :: a, b, c
-          TYPE(C_PTR), INTENT(IN), OPTIONAL :: pa, pb, pc
-          TYPE(C_PTR) :: cpa, cpb, cpc
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xmmcall
-          INTERFACE
-            PURE SUBROUTINE internal_xmmcall(fn, a, b, c, pa, pb, pc)   &
-     &      BIND(C, NAME="libxsmm_xmmcall_")
-              IMPORT :: C_INTPTR_T, C_PTR
-              INTEGER(C_INTPTR_T), INTENT(IN) :: fn
-              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
-            END SUBROUTINE
-          END INTERFACE
-          IF (PRESENT(pa)) THEN
-            cpa = pa
-          ELSE
-            cpa = a
-          END IF
-          IF (PRESENT(pb)) THEN
-            cpb = pb
-          ELSE
-            cpb = b
-          END IF
-          IF (PRESENT(pc)) THEN
-            cpc = pc
-          ELSE
-            cpc = c
-          END IF
-          CALL internal_xmmcall(fn, a, b, c, cpa, cpb, cpc)
-        END SUBROUTINE
-
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmdispatch
         SUBROUTINE libxsmm_smmdispatch(fn,                              &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
@@ -510,24 +471,14 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pa(*)
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pb(*)
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pc(*)
-          TYPE(C_PTR) :: ca, cb, cc, cpa, cpb, cpc
-          ca = C_LOC(a); cb = C_LOC(b); cc = C_LOC(c)
-          IF (PRESENT(pa)) THEN
-            cpa = C_LOC(pa)
+          IF (PRESENT(pa).AND.PRESENT(pb).AND.PRESENT(pc)) THEN
+            CALL libxsmm_xmmcall_prf(fn%handle,                         &
+     &        C_LOC(a), C_LOC(b), C_LOC(c),                             &
+     &        C_LOC(pa), C_LOC(pb), C_LOC(pc))
           ELSE
-            cpa = ca
+            CALL libxsmm_xmmcall_abc(fn%handle,                         &
+     &        C_LOC(a), C_LOC(b), C_LOC(c))
           END IF
-          IF (PRESENT(pb)) THEN
-            cpb = C_LOC(pb)
-          ELSE
-            cpb = cb
-          END IF
-          IF (PRESENT(pc)) THEN
-            cpc = C_LOC(pc)
-          ELSE
-            cpc = cc
-          END IF
-          CALL libxsmm_xmmcall(fn%handle, ca, cb, cc, cpa, cpb, cpc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall
@@ -538,52 +489,42 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pa(*)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pb(*)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pc(*)
-          TYPE(C_PTR) :: ca, cb, cc, cpa, cpb, cpc
-          ca = C_LOC(a); cb = C_LOC(b); cc = C_LOC(c)
-          IF (PRESENT(pa)) THEN
-            cpa = C_LOC(pa)
+          IF (PRESENT(pa).AND.PRESENT(pb).AND.PRESENT(pc)) THEN
+            CALL libxsmm_xmmcall_prf(fn%handle,                         &
+     &        C_LOC(a), C_LOC(b), C_LOC(c),                             &
+     &        C_LOC(pa), C_LOC(pb), C_LOC(pc))
           ELSE
-            cpa = ca
+            CALL libxsmm_xmmcall_abc(fn%handle,                         &
+     &        C_LOC(a), C_LOC(b), C_LOC(c))
           END IF
-          IF (PRESENT(pb)) THEN
-            cpb = C_LOC(pb)
-          ELSE
-            cpb = cb
-          END IF
-          IF (PRESENT(pc)) THEN
-            cpc = C_LOC(pc)
-          ELSE
-            cpc = cc
-          END IF
-          CALL libxsmm_xmmcall(fn%handle, ca, cb, cc, cpa, cpb, cpc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abc
         PURE SUBROUTINE libxsmm_smmcall_abc(fn, a, b, c)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN) :: a, b, c
-          CALL libxsmm_xmmcall(fn%handle, a, b, c)
+          CALL libxsmm_xmmcall_abc(fn%handle, a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abc
         PURE SUBROUTINE libxsmm_dmmcall_abc(fn, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN) :: a, b, c
-          CALL libxsmm_xmmcall(fn%handle, a, b, c)
+          CALL libxsmm_xmmcall_abc(fn%handle, a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prf
         PURE SUBROUTINE libxsmm_smmcall_prf(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
-          CALL libxsmm_xmmcall(fn%handle, a, b, c, pa, pb, pc)
+          CALL libxsmm_xmmcall_prf(fn%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prf
         PURE SUBROUTINE libxsmm_dmmcall_prf(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
-          CALL libxsmm_xmmcall(fn%handle, a, b, c, pa, pb, pc)
+          CALL libxsmm_xmmcall_prf(fn%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm

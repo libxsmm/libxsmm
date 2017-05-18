@@ -1729,10 +1729,47 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn, c
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
+  const intptr_t* /*fn*/, const void* /*a*/, const void* /*b*/, void* /*c*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
+  const intptr_t* fn, const void* a, const void* b, void* c)
+{
+#if !defined(NDEBUG) /* this should not happen */
+  static int error_once = 0;
+  if (0 != fn && 0 != a && 0 != b && 0 != c)
+#endif
+  {
+#if !defined(NDEBUG) /* this should not happen */
+    if (0 != *fn)
+#endif
+    {
+      libxsmm_code_pointer code_pointer = { 0 };
+      code_pointer.imm = *fn;
+      code_pointer.vmm(a, b, c);
+    }
+#if !defined(NDEBUG)
+    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: NULL-function passed into libxsmm_xmmcall_abc!\n");
+    }
+#endif
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM: invalid arguments for libxsmm_xmmcall_abc specified!\n");
+  }
+#endif
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
   const intptr_t* /*fn*/, const void* /*a*/, const void* /*b*/, void* /*c*/,
   const void* /*pa*/, const void* /*pb*/, const void* /*pc*/);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
   const intptr_t* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc)
 {
@@ -1753,7 +1790,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */
           && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: NULL-function passed into libxsmm_xmmcall!\n");
+      fprintf(stderr, "LIBXSMM: NULL-function passed into libxsmm_xmmcall_prf!\n");
     }
 #endif
   }
@@ -1761,9 +1798,21 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
-    fprintf(stderr, "LIBXSMM: invalid arguments for libxsmm_xmmcall specified!\n");
+    fprintf(stderr, "LIBXSMM: invalid arguments for libxsmm_xmmcall_prf specified!\n");
   }
 #endif
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
+  const intptr_t* /*fn*/, const void* /*a*/, const void* /*b*/, void* /*c*/,
+  const void* /*pa*/, const void* /*pb*/, const void* /*pc*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
+  const intptr_t* fn, const void* a, const void* b, void* c,
+  const void* pa, const void* pb, const void* pc)
+{
+  LIBXSMM_FSYMBOL(libxsmm_xmmcall)(fn, a, b, c, pa, pb, pc);
 }
 
 
