@@ -404,19 +404,34 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall
         PURE SUBROUTINE libxsmm_xmmcall(fn, a, b, c, pa, pb, pc)
           INTEGER(C_INTPTR_T), INTENT(IN), VALUE :: fn
-          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          TYPE(C_PTR), INTENT(IN) :: a, b, c
           TYPE(C_PTR), INTENT(IN), OPTIONAL :: pa, pb, pc
+          TYPE(C_PTR) :: cpa, cpb, cpc
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xmmcall
           INTERFACE
             PURE SUBROUTINE internal_xmmcall(fn, a, b, c, pa, pb, pc)   &
      &      BIND(C, NAME="libxsmm_xmmcall_")
               IMPORT :: C_INTPTR_T, C_PTR
               INTEGER(C_INTPTR_T), INTENT(IN) :: fn
-              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
-              TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
+              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
             END SUBROUTINE
           END INTERFACE
-          CALL internal_xmmcall(fn, a, b, c, pa, pb, pc)
+          IF (PRESENT(pa)) THEN
+            cpa = pa
+          ELSE
+            cpa = a
+          END IF
+          IF (PRESENT(pb)) THEN
+            cpb = pb
+          ELSE
+            cpb = b
+          END IF
+          IF (PRESENT(pc)) THEN
+            cpc = pc
+          ELSE
+            cpc = c
+          END IF
+          CALL internal_xmmcall(fn, a, b, c, cpa, cpb, cpc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmdispatch
@@ -487,24 +502,24 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pa(*)
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pb(*)
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pc(*)
-          TYPE(C_PTR) :: cpa, cpb, cpc
+          TYPE(C_PTR) :: ca, cb, cc, cpa, cpb, cpc
+          ca = C_LOC(a); cb = C_LOC(b); cc = C_LOC(c)
           IF (PRESENT(pa)) THEN
             cpa = C_LOC(pa)
           ELSE
-            cpa = C_NULL_PTR
+            cpa = ca
           END IF
           IF (PRESENT(pb)) THEN
             cpb = C_LOC(pb)
           ELSE
-            cpb = C_NULL_PTR
+            cpb = cb
           END IF
           IF (PRESENT(pc)) THEN
             cpc = C_LOC(pc)
           ELSE
-            cpc = C_NULL_PTR
+            cpc = cc
           END IF
-          CALL libxsmm_xmmcall(fn%handle,                               &
-     &      C_LOC(a), C_LOC(b), C_LOC(c), cpa, cpb, cpc)
+          CALL libxsmm_xmmcall(fn%handle, ca, cb, cc, cpa, cpb, cpc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall
@@ -515,51 +530,51 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pa(*)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pb(*)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pc(*)
-          TYPE(C_PTR) :: cpa, cpb, cpc
+          TYPE(C_PTR) :: ca, cb, cc, cpa, cpb, cpc
+          ca = C_LOC(a); cb = C_LOC(b); cc = C_LOC(c)
           IF (PRESENT(pa)) THEN
             cpa = C_LOC(pa)
           ELSE
-            cpa = C_NULL_PTR
+            cpa = ca
           END IF
           IF (PRESENT(pb)) THEN
             cpb = C_LOC(pb)
           ELSE
-            cpb = C_NULL_PTR
+            cpb = cb
           END IF
           IF (PRESENT(pc)) THEN
             cpc = C_LOC(pc)
           ELSE
-            cpc = C_NULL_PTR
+            cpc = cc
           END IF
-          CALL libxsmm_xmmcall(fn%handle,                               &
-     &      C_LOC(a), C_LOC(b), C_LOC(c), cpa, cpb, cpc)
+          CALL libxsmm_xmmcall(fn%handle, ca, cb, cc, cpa, cpb, cpc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abc
         PURE SUBROUTINE libxsmm_smmcall_abc(fn, a, b, c)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          TYPE(C_PTR), INTENT(IN) :: a, b, c
           CALL libxsmm_xmmcall(fn%handle, a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abc
         PURE SUBROUTINE libxsmm_dmmcall_abc(fn, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          TYPE(C_PTR), INTENT(IN) :: a, b, c
           CALL libxsmm_xmmcall(fn%handle, a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prf
         PURE SUBROUTINE libxsmm_smmcall_prf(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
+          TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
           CALL libxsmm_xmmcall(fn%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prf
         PURE SUBROUTINE libxsmm_dmmcall_prf(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
+          TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
           CALL libxsmm_xmmcall(fn%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
