@@ -201,6 +201,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_xtick
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_abc
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_prf
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
@@ -293,6 +294,23 @@
             INTEGER(C_LONG_LONG), INTENT(IN), VALUE :: tick0, tick1
           END FUNCTION
 
+          ! Type-generic (unsafe) code dispatch (trylock: impure routine),
+          ! which is also suited for FORTRAN 77 when relying on:
+          ! INTEGER(4) :: precision, m, n, k, lda, ldb, ldc, flags, prefetch
+          ! REAL(4|8)  :: alpha, beta
+          ! INTEGER(8) :: fn
+          SUBROUTINE libxsmm_xmmdispatch(fn, precision,                 &
+     &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
+     &    BIND(C, NAME="libxsmm_xmmdispatch_")
+            IMPORT :: C_INTPTR_T, C_PTR, C_INT
+            INTEGER(C_INTPTR_T), INTENT(OUT) :: fn
+            INTEGER(C_INT), INTENT(IN) :: precision, m, n, k
+            INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
+            TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+            INTEGER(C_INT), INTENT(IN) :: flags, prefetch
+          END SUBROUTINE
+
+          ! Generic call routine (3-argument form).
           PURE SUBROUTINE libxsmm_xmmcall_abc(fn, a, b, c)              &
      &    BIND(C, NAME="libxsmm_xmmcall_abc_")
             IMPORT :: C_INTPTR_T, C_PTR
@@ -300,6 +318,7 @@
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
           END SUBROUTINE
 
+          ! Generic call routine (6-argument form).
           PURE SUBROUTINE libxsmm_xmmcall_prf(fn, a, b, c, pa, pb, pc)  &
      &    BIND(C, NAME="libxsmm_xmmcall_prf_")
             IMPORT :: C_INTPTR_T, C_PTR
@@ -369,39 +388,6 @@
           fptr => a(LBOUND(a,1),LBOUND(a,2))
           drealptr = C_LOC(fptr)
         END FUNCTION
-
-        ! Type-generic (unsafe) variant of libxsmm_*mmdispatch,
-        ! which is also suited for FORTRAN 77 when relying on an
-        ! own function prototype (use an INTEGER kind which can
-        ! hold the size of a (PROCEDURE-)pointer i.e., 64-bit).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch
-        SUBROUTINE libxsmm_xmmdispatch(fn, precision,                   &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-          INTEGER(C_INTPTR_T), INTENT(OUT) :: fn            ! INTEGER(8)
-          INTEGER(C_INT), INTENT(IN), VALUE :: precision    ! INTEGER(4)
-          INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k      ! INTEGER(4)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda       ! INTEGER(4)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldb       ! INTEGER(4)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldc       ! INTEGER(4)
-          TYPE(C_PTR), INTENT(IN), OPTIONAL :: alpha, beta  ! REAL(4|8)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags     ! INTEGER(4)
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: prefetch  ! INTEGER(4)
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xmmdispatch
-          INTERFACE
-            SUBROUTINE internal_xmmdispatch(fn, precision,              &
-     &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)       &
-     &      BIND(C, NAME="libxsmm_xmmdispatch_")
-              IMPORT :: C_INTPTR_T, C_PTR, C_INT
-              INTEGER(C_INTPTR_T), INTENT(OUT) :: fn
-              INTEGER(C_INT), INTENT(IN) :: precision, m, n, k
-              INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
-              TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
-              INTEGER(C_INT), INTENT(IN) :: flags, prefetch
-            END SUBROUTINE
-          END INTERFACE
-          CALL internal_xmmdispatch(fn, precision, m, n, k,             &
-     &      lda, ldb, ldc, alpha, beta, flags, prefetch)
-        END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmdispatch
         SUBROUTINE libxsmm_smmdispatch(fn,                              &
