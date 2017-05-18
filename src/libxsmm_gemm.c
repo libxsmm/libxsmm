@@ -131,13 +131,14 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type 
     case LIBXSMM_PREFETCH_AL2BL2_VIA_C:       return 7;
     case LIBXSMM_PREFETCH_AL2_JPST:           return 8;
     case LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST:  return 9;
-    case LIBXSMM_PREFETCH_AL1:                return 11;
-    case LIBXSMM_PREFETCH_BL1:                return 12;
-    case LIBXSMM_PREFETCH_CL1:                return 13;
-    case LIBXSMM_PREFETCH_AL1_BL1:            return 14;
-    case LIBXSMM_PREFETCH_BL1_CL1:            return 15;
-    case LIBXSMM_PREFETCH_AL1_CL1:            return 16;
-    case LIBXSMM_PREFETCH_AL1_BL1_CL1:        return 17;
+    /*case LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C:    return 10;*/
+    case LIBXSMM_PREFETCH_AL1:                return 10;
+    case LIBXSMM_PREFETCH_BL1:                return 11;
+    case LIBXSMM_PREFETCH_CL1:                return 12;
+    case LIBXSMM_PREFETCH_AL1_BL1:            return 13;
+    case LIBXSMM_PREFETCH_BL1_CL1:            return 14;
+    case LIBXSMM_PREFETCH_AL1_CL1:            return 15;
+    case LIBXSMM_PREFETCH_AL1_BL1_CL1:        return 16;
     default: {
       assert(LIBXSMM_PREFETCH_NONE == prefetch);
       return 0;
@@ -157,13 +158,14 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int 
     case  7: return LIBXSMM_PREFETCH_AL2BL2_VIA_C;        /* AL2_BL2viaC */
     case  8: return LIBXSMM_PREFETCH_AL2_JPST;            /* AL2jpst */
     case  9: return LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST;   /* AL2jpst_BL2viaC */
-    case 11: return LIBXSMM_PREFETCH_AL1;
-    case 12: return LIBXSMM_PREFETCH_BL1;
-    case 13: return LIBXSMM_PREFETCH_CL1;
-    case 14: return LIBXSMM_PREFETCH_AL1_BL1;
-    case 15: return LIBXSMM_PREFETCH_BL1_CL1;
-    case 16: return LIBXSMM_PREFETCH_AL1_CL1;
-    case 17: return LIBXSMM_PREFETCH_AL1_BL1_CL1;
+    /*case 10: return LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C;*/     /* AL2_BL2viaC_CL2 */
+    case 10: return LIBXSMM_PREFETCH_AL1;
+    case 11: return LIBXSMM_PREFETCH_BL1;
+    case 12: return LIBXSMM_PREFETCH_CL1;
+    case 13: return LIBXSMM_PREFETCH_AL1_BL1;
+    case 14: return LIBXSMM_PREFETCH_BL1_CL1;
+    case 15: return LIBXSMM_PREFETCH_AL1_CL1;
+    case 16: return LIBXSMM_PREFETCH_AL1_BL1_CL1;
     default: return LIBXSMM_PREFETCH_NONE;
   }
 }

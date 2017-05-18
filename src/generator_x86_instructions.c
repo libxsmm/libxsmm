@@ -3315,7 +3315,7 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "                       \"movq %%5, %%%%%s\\n\\t\"\n", l_gp_reg_name );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else {}
-    
+
   }
 
   /* reset loop counters */

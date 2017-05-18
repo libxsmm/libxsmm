@@ -418,9 +418,9 @@
   ! with A(n1,n2,n4) 5x5x5-matrix, B(n2,n3) 5x5-matrix and C(n1,n3,n4) 5x5x5-matrix
   ! static version
   !do k = 1,5
-  !  call libxsmm_call(xmm3, A1(:,:,k), B, C1(:,:,k))
-  !  call libxsmm_call(xmm3, A2(:,:,k), B, C2(:,:,k))
-  !  call libxsmm_call(xmm3, A3(:,:,k), B, C3(:,:,k))
+  !  call libxsmm_mmcall(xmm3, A1(:,:,k), B, C1(:,:,k))
+  !  call libxsmm_mmcall(xmm3, A2(:,:,k), B, C2(:,:,k))
+  !  call libxsmm_mmcall(xmm3, A3(:,:,k), B, C3(:,:,k))
   !enddo
 
   ! unrolled

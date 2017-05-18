@@ -21,7 +21,7 @@ module my_libxsmm
   !       we haven't had issues yet though with array pointers when passing to C-functions, thus we omit it for now.
   !use,intrinsic :: ISO_C_BINDING
 
-  use libxsmm !,only: C_LOC,LIBXSMM_SMMFUNCTION,libxsmm_dispatch,libxsmm_call,libxsmm_init,libxsmm_finalize
+  use libxsmm !,only: C_LOC,LIBXSMM_SMMFUNCTION,libxsmm_dispatch,libxsmm_mmcall,libxsmm_init,libxsmm_finalize
 
   implicit none
 

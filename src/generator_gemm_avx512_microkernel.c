@@ -325,12 +325,12 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                i_micro_kernel_config->vector_name,
                                                l_k%2,
                                                i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
-      
+
       if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_AL1_BL1_CL1) {
         b_prefetch_blocks = i_xgemm_desc->k/i_micro_kernel_config->vector_length;
         index = l_k;
         point = l_n;
-        
+
         /* Case where K == cache line */
         if (b_prefetch_blocks == 1) {
          /* Spread out prefetches */
@@ -344,7 +344,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                 (i_xgemm_desc->lda * index * i_micro_kernel_config->datatype_size) );
              }
            }
-           
+
            if ( (point == 7) && (index < i_n_blocking) ) {
              if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
                libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -354,7 +354,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                               (i_xgemm_desc->ldb * index * i_micro_kernel_config->datatype_size) );
              }
            }
-           
+
            if ( (point == 12) && (index < i_n_blocking) ) {
              if ((i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_CL1) && (i_n_blocking <= 27) ) {
                libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -374,7 +374,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                 (i_xgemm_desc->lda * index * i_micro_kernel_config->datatype_size) );
              }
            }
-           
+
            if ( point == 5 && (index < i_n_blocking) ) {
              if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
                libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -384,7 +384,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                 (i_xgemm_desc->ldb * index * i_micro_kernel_config->datatype_size) );
              }
            }
-           
+
            if ( point == 9 && (index < i_n_blocking) ) {
              if ((i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_CL1) && (i_n_blocking <= 27)) {
                libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -394,7 +394,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                 (i_xgemm_desc->ldc * index * i_micro_kernel_config->datatype_size) );
              }
            }
-           
+
            if ( point == 13 && ( index+16 < i_n_blocking) ) {
              if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
                libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -404,7 +404,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                 (i_xgemm_desc->ldb * (index+16) * i_micro_kernel_config->datatype_size) );
              }
            }
-           
+
            if ( point == 15 && (index+16 < i_n_blocking) ) {
              if ((i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_CL1) && (i_n_blocking <= 27)) {
                libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -416,7 +416,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
            }
          }
         }
-        
+
         /* Case where K == 2 cache lines */
         if (b_prefetch_blocks == 2) {
           if ( point == 2 ) {
@@ -428,7 +428,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->lda * index * i_micro_kernel_config->datatype_size) );
             }
           }
-          
+
           if ( (point == 7) && (index < i_n_blocking) ) {
             if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -438,7 +438,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->ldb * index * i_micro_kernel_config->datatype_size) );
             }
           }
-          
+
           if ( (point == 12) && (index < i_n_blocking) ) {
             if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -448,7 +448,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->ldb * index + 16) * i_micro_kernel_config->datatype_size );
             }
           }
-          
+
           if ( (point == 15) && (index < i_n_blocking) ) {
             if ((i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_CL1) && (i_n_blocking <= 27)) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -458,9 +458,9 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->ldc * index * i_micro_kernel_config->datatype_size) );
             }
           }
-          
+
         }
-        
+
         /* Case where K == 3 cache lines */
         if (b_prefetch_blocks == 3) {
           if ( point == 1 ) {
@@ -472,7 +472,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->lda * index * i_micro_kernel_config->datatype_size) );
             }
           }
-          
+
           if ( (point == 5) && (index < i_n_blocking) ) {
             if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -482,7 +482,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->ldb * index * i_micro_kernel_config->datatype_size) );
             }
           }
-          
+
           if ( (point == 9) && (index < i_n_blocking) ) {
             if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -492,7 +492,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->ldb * index + 16) * i_micro_kernel_config->datatype_size );
             }
           }
-          
+
           if ( (point == 13) && (index < i_n_blocking) ) {
             if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -502,7 +502,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->ldb * index + 32) * i_micro_kernel_config->datatype_size );
             }
           }
-          
+
           if ( (point == 15) && (index < i_n_blocking) ) {
             if ((i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_CL1) && (i_n_blocking <= 27)) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -512,9 +512,9 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->ldc * index * i_micro_kernel_config->datatype_size) );
             }
           }
-        
+
         }
-        
+
         /* Case where K == 4 cache lines */
         if (b_prefetch_blocks == 4) {
           if ( point == 1 ) {
@@ -526,7 +526,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->lda * index * i_micro_kernel_config->datatype_size) );
             }
           }
-          
+
           if ( (point == 4) && (index < i_n_blocking) ) {
             if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -536,7 +536,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->ldb * index * i_micro_kernel_config->datatype_size) );
             }
           }
-          
+
           if ( (point == 7) && (index < i_n_blocking) ) {
             if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -546,7 +546,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->ldb * index + 16) * i_micro_kernel_config->datatype_size );
             }
           }
-          
+
           if ( (point == 10) && (index < i_n_blocking) ) {
             if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -556,7 +556,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->ldb * index + 32) * i_micro_kernel_config->datatype_size );
             }
           }
-          
+
           if ( (point == 13) && (index < i_n_blocking) ) {
             if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -566,7 +566,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                                (i_xgemm_desc->ldb * index + 48) * i_micro_kernel_config->datatype_size );
             }
           }
-          
+
           if ( (point == 15) && (index < i_n_blocking) ) {
             if ((i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_CL1) && (i_n_blocking <= 27) ) {
               libxsmm_x86_instruction_prefetch( io_generated_code,

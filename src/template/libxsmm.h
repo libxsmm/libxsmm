@@ -45,7 +45,7 @@
  * Numbers to denote the version of LIBXSMM (libxsmm_config.h).
  * LIBXSMM_VERSION_MAJOR:  Major version derived from the most recent RCS-tag.
  * LIBXSMM_VERSION_MINOR:  Minor version derived from the most recent RCS-tag.
- * LIBXSMM_VERSION_UPDATE: Update number derived from the most recent RCS-tag. 
+ * LIBXSMM_VERSION_UPDATE: Update number derived from the most recent RCS-tag.
  * LIBXSMM_VERSION_PATCH:  Patch number based on distance to most recent RCS-tag.
  */
 #define LIBXSMM_VERSION_MAJOR  LIBXSMM_CONFIG_VERSION_MAJOR

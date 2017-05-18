@@ -322,13 +322,13 @@
           DO r = 1, repetitions
             !$OMP DO
             DO i = LBOUND(a, 4), UBOUND(a, 4)
-              CALL libxsmm_call(xmm1,                                   &
+              CALL libxsmm_mmcall(xmm1,                                 &
      &                C_LOC(dx), C_LOC(a(1,1,1,i)), C_LOC(tm1))
               DO j = 1, k
-                CALL libxsmm_call(xmm2,                                 &
+                CALL libxsmm_mmcall(xmm2,                               &
      &                C_LOC(tm1(1,1,j)), C_LOC(dy), C_LOC(tm2(1,1,j)))
               END DO
-              CALL libxsmm_call(xmm3,                                   &
+              CALL libxsmm_mmcall(xmm3,                                 &
      &                C_LOC(tm2), C_LOC(dz), C_LOC(tm3(1,1,1)))
               CALL stream_vector_copy(                                  &
      &                tm3(1,1,1), c(1,1,1,i), mm*nn*kk )

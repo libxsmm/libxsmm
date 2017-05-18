@@ -284,7 +284,7 @@
 ! 3 different arrays for x/y/z-components, 2-dimensional arrays (25,5)/(5,25), same B matrix for all 3 component arrays
 
 #ifdef XSMM
-  use my_libxsmm,only: USE_XSMM_FUNCTION_PREFETCH,libxsmm_call,xmm1
+  use my_libxsmm,only: USE_XSMM_FUNCTION_PREFETCH,libxsmm_mmcall,xmm1
   use my_libxsmm,only: xmm1p,C_LOC
   ! debug timing
   !use my_libxsmm,only: libxsmm_timer_tick,libxsmm_timer_duration
@@ -313,10 +313,10 @@
   ! with A(n1,n2) 5x5-matrix, B(n2,n3) 5x25-matrix and C(n1,n3) 5x25-matrix
   if (USE_XSMM_FUNCTION_PREFETCH) then
     ! prefetch version
-    call libxsmm_call(xmm1p, a=C_LOC(A), b=C_LOC(B1), c=C_LOC(C1), pa=C_LOC(A), pb=C_LOC(B2), pc=C_LOC(C2)) ! with prefetch
-    call libxsmm_call(xmm1p, a=C_LOC(A), b=C_LOC(B2), c=C_LOC(C2), pa=C_LOC(A), pb=C_LOC(B3), pc=C_LOC(C3)) ! with prefetch
-    call libxsmm_call(xmm1, a=C_LOC(A), b=C_LOC(B3), c=C_LOC(C3))
-    !call libxsmm_call(xmm1p, a=C_LOC(A), b=C_LOC(B3), c=C_LOC(C3), pa=C_LOC(A), pb=C_LOC(B1), pc=C_LOC(C1)) ! with dummy prefetch
+    call libxsmm_mmcall(xmm1p, a=C_LOC(A), b=C_LOC(B1), c=C_LOC(C1), pa=C_LOC(A), pb=C_LOC(B2), pc=C_LOC(C2)) ! with prefetch
+    call libxsmm_mmcall(xmm1p, a=C_LOC(A), b=C_LOC(B2), c=C_LOC(C2), pa=C_LOC(A), pb=C_LOC(B3), pc=C_LOC(C3)) ! with prefetch
+    call libxsmm_mmcall(xmm1, a=C_LOC(A), b=C_LOC(B3), c=C_LOC(C3))
+    !call libxsmm_mmcall(xmm1p, a=C_LOC(A), b=C_LOC(B3), c=C_LOC(C3), pa=C_LOC(A), pb=C_LOC(B1), pc=C_LOC(C1)) ! with dummy prefetch
 
     ! debug timing
     !duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -368,7 +368,7 @@
 ! 3 different arrays for x/y/z-components, 2-dimensional arrays (25,5)/(5,25), same B matrix for all 3 component arrays
 
 #ifdef XSMM
-  use my_libxsmm,only: USE_XSMM_FUNCTION_PREFETCH,libxsmm_call,xmm2
+  use my_libxsmm,only: USE_XSMM_FUNCTION_PREFETCH,libxsmm_mmcall,xmm2
   use my_libxsmm,only: xmm2p,C_LOC
 #endif
 
@@ -388,10 +388,10 @@
   ! with A(n1,n2) 25x5-matrix, B(n2,n3) 5x5-matrix and C(n1,n3) 25x5-matrix
   if (USE_XSMM_FUNCTION_PREFETCH) then
     ! prefetch version
-    call libxsmm_call(xmm2p, a=C_LOC(A1), b=C_LOC(B), c=C_LOC(C1), pa=C_LOC(A2), pb=C_LOC(B), pc=C_LOC(C2)) ! with prefetch
-    call libxsmm_call(xmm2p, a=C_LOC(A2), b=C_LOC(B), c=C_LOC(C2), pa=C_LOC(A3), pb=C_LOC(B), pc=C_LOC(C3)) ! with prefetch
-    call libxsmm_call(xmm2, a=C_LOC(A3), b=C_LOC(B), c=C_LOC(C3))
-    !call libxsmm_call(xmm2p, a=C_LOC(A3), b=C_LOC(B), c=C_LOC(C3), pa=C_LOC(A1), pb=C_LOC(B), pc=C_LOC(C1)) ! with dummy prefetch
+    call libxsmm_mmcall(xmm2p, a=C_LOC(A1), b=C_LOC(B), c=C_LOC(C1), pa=C_LOC(A2), pb=C_LOC(B), pc=C_LOC(C2)) ! with prefetch
+    call libxsmm_mmcall(xmm2p, a=C_LOC(A2), b=C_LOC(B), c=C_LOC(C2), pa=C_LOC(A3), pb=C_LOC(B), pc=C_LOC(C3)) ! with prefetch
+    call libxsmm_mmcall(xmm2, a=C_LOC(A3), b=C_LOC(B), c=C_LOC(C3))
+    !call libxsmm_mmcall(xmm2p, a=C_LOC(A3), b=C_LOC(B), c=C_LOC(C3), pa=C_LOC(A1), pb=C_LOC(B), pc=C_LOC(C1)) ! with dummy prefetch
     return
   endif
 #endif
@@ -430,7 +430,7 @@
 ! 3 different arrays for x/y/z-components, 3-dimensional arrays (5,5,5), same B matrix for all 3 component arrays
 
 #ifdef XSMM
-  use my_libxsmm,only: USE_XSMM_FUNCTION_PREFETCH,libxsmm_call,xmm3
+  use my_libxsmm,only: USE_XSMM_FUNCTION_PREFETCH,libxsmm_mmcall,xmm3
   use my_libxsmm,only: xmm3p,C_LOC
 #endif
 
@@ -451,15 +451,15 @@
   if (USE_XSMM_FUNCTION_PREFETCH) then
     do k = 1,5
       ! prefetch version
-      call libxsmm_call(xmm3p, a=C_LOC(A1(1,1,k)), b=C_LOC(B), c=C_LOC(C1(1,1,k)), &
+      call libxsmm_mmcall(xmm3p, a=C_LOC(A1(1,1,k)), b=C_LOC(B), c=C_LOC(C1(1,1,k)), &
                               pa=C_LOC(A2(1,1,k)), pb=C_LOC(B), pc=C_LOC(C2(1,1,k))) ! with prefetch
-      call libxsmm_call(xmm3p, a=C_LOC(A2(1,1,k)), b=C_LOC(B), c=C_LOC(C2(1,1,k)), &
+      call libxsmm_mmcall(xmm3p, a=C_LOC(A2(1,1,k)), b=C_LOC(B), c=C_LOC(C2(1,1,k)), &
                               pa=C_LOC(A3(1,1,k)), pb=C_LOC(B), pc=C_LOC(C3(1,1,k))) ! with prefetch
 
       !if (k == 5) then
-        call libxsmm_call(xmm3, a=C_LOC(A3(1,1,k)), b=C_LOC(B), c=C_LOC(C3(1,1,k)))
+        call libxsmm_mmcall(xmm3, a=C_LOC(A3(1,1,k)), b=C_LOC(B), c=C_LOC(C3(1,1,k)))
       !else
-      !  call libxsmm_call(xmm3p, a=C_LOC(A3(1,1,k)), b=C_LOC(B), c=C_LOC(C3(1,1,k)), &
+      !  call libxsmm_mmcall(xmm3p, a=C_LOC(A3(1,1,k)), b=C_LOC(B), c=C_LOC(C3(1,1,k)), &
       !                        pa=C_LOC(A1(1,1,k+1)), pb=C_LOC(B), pc=C_LOC(C1(1,1,k+1))) ! with dummy prefetch
       !endif
     enddo
