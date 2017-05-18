@@ -284,7 +284,7 @@
 ! 3 different arrays for x/y/z-components, 2-dimensional arrays (25,5)/(5,25), same B matrix for all 3 component arrays
 
 #ifdef XSMM
-  use my_libxsmm,only: USE_XSMM_FUNCTION,libxsmm_call,xmm1
+  use my_libxsmm,only: USE_XSMM_FUNCTION,libxsmm_mmcall,xmm1
   ! debug timing
   !use my_libxsmm,only: libxsmm_timer_tick,libxsmm_timer_duration
 #endif
@@ -310,9 +310,9 @@
   ! matrix-matrix multiplication C = alpha A * B + beta C
   ! with A(n1,n2) 5x5-matrix, B(n2,n3) 5x25-matrix and C(n1,n3) 5x25-matrix
   if (USE_XSMM_FUNCTION) then
-    call libxsmm_call(xmm1, A, B1, C1)
-    call libxsmm_call(xmm1, A, B2, C2)
-    call libxsmm_call(xmm1, A, B3, C3)
+    call libxsmm_mmcall(xmm1, A, B1, C1)
+    call libxsmm_mmcall(xmm1, A, B2, C2)
+    call libxsmm_mmcall(xmm1, A, B3, C3)
 
     ! debug timing
     !duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -364,7 +364,7 @@
 ! 3 different arrays for x/y/z-components, 2-dimensional arrays (25,5)/(5,25), same B matrix for all 3 component arrays
 
 #ifdef XSMM
-  use my_libxsmm,only: USE_XSMM_FUNCTION,libxsmm_call,xmm2
+  use my_libxsmm,only: USE_XSMM_FUNCTION,libxsmm_mmcall,xmm2
 #endif
 
   implicit none
@@ -381,9 +381,9 @@
   ! matrix-matrix multiplication C = alpha A * B + beta C
   ! with A(n1,n2) 25x5-matrix, B(n2,n3) 5x5-matrix and C(n1,n3) 25x5-matrix
   if (USE_XSMM_FUNCTION) then
-    call libxsmm_call(xmm2, A1, B, C1)
-    call libxsmm_call(xmm2, A2, B, C2)
-    call libxsmm_call(xmm2, A3, B, C3)
+    call libxsmm_mmcall(xmm2, A1, B, C1)
+    call libxsmm_mmcall(xmm2, A2, B, C2)
+    call libxsmm_mmcall(xmm2, A3, B, C3)
     return
   endif
 #endif
@@ -422,7 +422,7 @@
 ! 3 different arrays for x/y/z-components, 3-dimensional arrays (5,5,5), same B matrix for all 3 component arrays
 
 #ifdef XSMM
-  use my_libxsmm,only: USE_XSMM_FUNCTION,libxsmm_call,xmm3
+  use my_libxsmm,only: USE_XSMM_FUNCTION,libxsmm_mmcall,xmm3
 #endif
 
   implicit none
@@ -440,9 +440,9 @@
   ! with A(n1,n2,n4) 5x5x5-matrix, B(n2,n3) 5x5-matrix and C(n1,n3,n4) 5x5x5-matrix
   if (USE_XSMM_FUNCTION) then
     do k = 1,5
-      call libxsmm_call(xmm3, A1(:,:,k), B, C1(:,:,k))
-      call libxsmm_call(xmm3, A2(:,:,k), B, C2(:,:,k))
-      call libxsmm_call(xmm3, A3(:,:,k), B, C3(:,:,k))
+      call libxsmm_mmcall(xmm3, A1(:,:,k), B, C1(:,:,k))
+      call libxsmm_mmcall(xmm3, A2(:,:,k), B, C2(:,:,k))
+      call libxsmm_mmcall(xmm3, A3(:,:,k), B, C3(:,:,k))
     enddo
     return
   endif

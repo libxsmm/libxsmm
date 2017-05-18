@@ -36,8 +36,7 @@
      &    C_PTR, C_NULL_PTR, C_FUNPTR
         IMPLICIT NONE
 
-        PRIVATE ::  construct_smmfunction, construct_dmmfunction,       &
-     &              construct_fn3, construct_fn6, srealptr, drealptr
+        PRIVATE :: srealptr, drealptr
 
         ! Name of the version (stringized set of version numbers).
         CHARACTER(*), PARAMETER :: LIBXSMM_VERSION = "$VERSION"
@@ -128,41 +127,18 @@
      &    LIBXSMM_X86_AVX512_KNM  = 1011,                               &
      &    LIBXSMM_X86_AVX512_CORE = 1020
 
-        ! Type of a function specialized for a given parameter set.
-        ABSTRACT INTERFACE
-          ! Specialized function with fused alpha and beta arguments.
-          PURE SUBROUTINE LIBXSMM_MMFUNCTION3(a, b, c) BIND(C)
-            IMPORT :: C_PTR
-            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
-          END SUBROUTINE
-
-          ! Specialized function with alpha, beta, and prefetch arguments.
-          PURE SUBROUTINE LIBXSMM_MMFUNCTION6(a, b, c,                  &
-     &    pa, pb, pc) BIND(C)
-            IMPORT :: C_PTR
-            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
-            TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
-          END SUBROUTINE
-        END INTERFACE
-
         ! Generic function type which is representing either one of the
         ! two wrapped backend procedure pointers (single-precision).
         TYPE :: LIBXSMM_SMMFUNCTION
           PRIVATE
-            PROCEDURE(LIBXSMM_MMFUNCTION3), NOPASS,                     &
-     &                                      POINTER :: fn3 => NULL()
-            PROCEDURE(LIBXSMM_MMFUNCTION6), NOPASS,                     &
-     &                                      POINTER :: fn6 => NULL()
+            INTEGER(C_INTPTR_T) :: handle
         END TYPE
 
         ! Generic function type which is representing either one of the
         ! two wrapped backend procedure pointers (double-precision).
         TYPE :: LIBXSMM_DMMFUNCTION
           PRIVATE
-            PROCEDURE(LIBXSMM_MMFUNCTION3), NOPASS,                     &
-     &                                      POINTER :: fn3 => NULL()
-            PROCEDURE(LIBXSMM_MMFUNCTION6), NOPASS,                     &
-     &                                      POINTER :: fn6 => NULL()
+            INTEGER(C_INTPTR_T) :: handle
         END TYPE
 
         ! Construct procedure pointer depending on given argument set.
@@ -207,29 +183,7 @@
 
         ! Call a specialized function.
         INTERFACE libxsmm_mmcall
-          MODULE PROCEDURE libxsmm_smmcall_abx, libxsmm_smmcall_prx
           MODULE PROCEDURE libxsmm_smmcall_abc, libxsmm_smmcall_prf
-          MODULE PROCEDURE libxsmm_dmmcall_abx, libxsmm_dmmcall_prx
-          MODULE PROCEDURE libxsmm_dmmcall_abc, libxsmm_dmmcall_prf
-        END INTERFACE
-
-        ! Call a specialized function.
-        INTERFACE libxsmm_scall
-          MODULE PROCEDURE libxsmm_smmcall_abx, libxsmm_smmcall_prx
-          MODULE PROCEDURE libxsmm_smmcall_abc, libxsmm_smmcall_prf
-        END INTERFACE
-
-        ! Call a specialized function.
-        INTERFACE libxsmm_dcall
-          MODULE PROCEDURE libxsmm_dmmcall_abx, libxsmm_dmmcall_prx
-          MODULE PROCEDURE libxsmm_dmmcall_abc, libxsmm_dmmcall_prf
-        END INTERFACE
-
-        ! Call a specialized function.
-        INTERFACE libxsmm_call
-          MODULE PROCEDURE libxsmm_smmcall_abx, libxsmm_smmcall_prx
-          MODULE PROCEDURE libxsmm_smmcall_abc, libxsmm_smmcall_prf
-          MODULE PROCEDURE libxsmm_dmmcall_abx, libxsmm_dmmcall_prx
           MODULE PROCEDURE libxsmm_dmmcall_abc, libxsmm_dmmcall_prf
         END INTERFACE
 
@@ -399,31 +353,19 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: srealptr
         FUNCTION srealptr(a)
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:)
-          REAL(C_FLOAT), POINTER :: srealptr
-          srealptr => a(LBOUND(a,1),LBOUND(a,2))
+          REAL(C_FLOAT), POINTER :: fptr
+          TYPE(C_PTR) :: srealptr
+          fptr => a(LBOUND(a,1),LBOUND(a,2))
+          srealptr = C_LOC(fptr)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: drealptr
         FUNCTION drealptr(a)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:)
-          REAL(C_DOUBLE), POINTER :: drealptr
-          drealptr => a(LBOUND(a,1),LBOUND(a,2))
-        END FUNCTION
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_fn3
-        FUNCTION construct_fn3(cfn) RESULT(fn)
-          PROCEDURE(LIBXSMM_MMFUNCTION3), POINTER :: fn, tmp
-          TYPE(C_FUNPTR), INTENT(IN) :: cfn
-          CALL C_F_PROCPOINTER(cfn, tmp)
-          fn => tmp
-        END FUNCTION
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_fn6
-        FUNCTION construct_fn6(cfn) RESULT(fn)
-          PROCEDURE(LIBXSMM_MMFUNCTION6), POINTER :: fn, tmp
-          TYPE(C_FUNPTR), INTENT(IN) :: cfn
-          CALL C_F_PROCPOINTER(cfn, tmp)
-          fn => tmp
+          REAL(C_DOUBLE), POINTER :: fptr
+          TYPE(C_PTR) :: drealptr
+          fptr => a(LBOUND(a,1),LBOUND(a,2))
+          drealptr = C_LOC(fptr)
         END FUNCTION
 
         ! Type-generic (unsafe) variant of libxsmm_*mmdispatch,
@@ -434,7 +376,8 @@
         SUBROUTINE libxsmm_xmmdispatch(fn, precision,                   &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           INTEGER(C_INTPTR_T), INTENT(OUT) :: fn            ! INTEGER(8)
-          INTEGER(C_INT), INTENT(IN) :: precision, m, n, k  ! INTEGER(4)
+          INTEGER(C_INT), INTENT(IN), VALUE :: precision    ! INTEGER(4)
+          INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k      ! INTEGER(4)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda       ! INTEGER(4)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldb       ! INTEGER(4)
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: ldc       ! INTEGER(4)
@@ -459,15 +402,15 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall
-        SUBROUTINE libxsmm_xmmcall(fn, a, b, c, pa, pb, pc)
-          INTEGER(C_INTPTR_T), INTENT(IN) :: fn
+        PURE SUBROUTINE libxsmm_xmmcall(fn, a, b, c, pa, pb, pc)
+          INTEGER(C_INTPTR_T), INTENT(IN), VALUE :: fn
           TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
           TYPE(C_PTR), INTENT(IN), OPTIONAL :: pa, pb, pc
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_xmmcall
           INTERFACE
-            SUBROUTINE internal_xmmcall(fn, a, b, c, pa, pb, pc)        &
+            PURE SUBROUTINE internal_xmmcall(fn, a, b, c, pa, pb, pc)   &
      &      BIND(C, NAME="libxsmm_xmmcall_")
-              IMPORT :: C_PTR, C_INTPTR_T
+              IMPORT :: C_INTPTR_T, C_PTR
               INTEGER(C_INTPTR_T), INTENT(IN) :: fn
               TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
               TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
@@ -476,223 +419,92 @@
           CALL internal_xmmcall(fn, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_smmfunction
-        TYPE(LIBXSMM_SMMFUNCTION) FUNCTION construct_smmfunction(       &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-          INTEGER(C_INT), INTENT(IN) :: m, n, k
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          INTEGER(C_INT) :: oprefetch
-          TYPE(C_FUNPTR) :: fn
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_smmdispatch
-          INTERFACE
-            SUBROUTINE internal_smmdispatch(fn, m, n, k,                &
-     &      lda, ldb, ldc, alpha, beta, flags, prefetch)                &
-     &      BIND(C, NAME="libxsmm_smmdispatch_")
-              IMPORT :: C_FUNPTR, C_PTR, C_INT, C_FLOAT
-              TYPE(C_FUNPTR), INTENT(OUT) :: fn
-              INTEGER(C_INT), INTENT(IN) :: m, n, k, lda, ldb, ldc
-              REAL(C_FLOAT), INTENT(IN) :: alpha, beta
-              INTEGER(C_INT), INTENT(IN) :: flags, prefetch
-            END SUBROUTINE
-          END INTERFACE
-          IF (.NOT.PRESENT(prefetch)) THEN
-            oprefetch = LIBXSMM_PREFETCH_NONE
-          ELSE
-            oprefetch = prefetch
-          END IF
-          CALL internal_smmdispatch(fn, m, n, k,                        &
-     &      lda, ldb, ldc, alpha, beta, flags, prefetch)
-          IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
-            construct_smmfunction = LIBXSMM_SMMFUNCTION(                &
-     &        construct_fn3(fn), NULL())
-          ELSE
-            construct_smmfunction = LIBXSMM_SMMFUNCTION(                &
-     &        NULL(), construct_fn6(fn))
-          END IF
-        END FUNCTION
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: construct_dmmfunction
-        TYPE(LIBXSMM_DMMFUNCTION) FUNCTION construct_dmmfunction(       &
-     &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-          INTEGER(C_INT), INTENT(IN) :: m, n, k
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
-          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          INTEGER(C_INT) :: oprefetch
-          TYPE(C_FUNPTR) :: fn
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_dmmdispatch
-          INTERFACE
-            SUBROUTINE internal_dmmdispatch(fn, m, n, k,                &
-     &      lda, ldb, ldc, alpha, beta, flags, prefetch)                &
-     &      BIND(C, NAME="libxsmm_dmmdispatch_")
-              IMPORT :: C_FUNPTR, C_PTR, C_INT, C_DOUBLE
-              TYPE(C_FUNPTR), INTENT(OUT) :: fn
-              INTEGER(C_INT), INTENT(IN) :: m, n, k, lda, ldb, ldc
-              REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
-              INTEGER(C_INT), INTENT(IN) :: flags, prefetch
-            END SUBROUTINE
-          END INTERFACE
-          IF (.NOT.PRESENT(prefetch)) THEN
-            oprefetch = LIBXSMM_PREFETCH_NONE
-          ELSE
-            oprefetch = prefetch
-          END IF
-          CALL internal_dmmdispatch(fn, m, n, k,                        &
-     &      lda, ldb, ldc, alpha, beta, flags, prefetch)
-          IF (LIBXSMM_PREFETCH_NONE.EQ.oprefetch) THEN
-            construct_dmmfunction = LIBXSMM_DMMFUNCTION(                &
-     &        construct_fn3(fn), NULL())
-          ELSE
-            construct_dmmfunction = LIBXSMM_DMMFUNCTION(                &
-     &        NULL(), construct_fn6(fn))
-          END IF
-        END FUNCTION
-
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmdispatch
         SUBROUTINE libxsmm_smmdispatch(fn,                              &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(OUT) :: fn
-          INTEGER(C_INT), INTENT(IN) :: m, n, k
+          INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          fn = construct_smmfunction(                                   &
-     &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
+          TYPE(C_PTR) :: calpha, cbeta
+          IF (PRESENT(alpha)) THEN
+            calpha = C_LOC(alpha)
+          ELSE
+            calpha = C_NULL_PTR
+          END IF
+          IF (PRESENT(beta)) THEN
+            cbeta = C_LOC(beta)
+          ELSE
+            cbeta = C_NULL_PTR
+          END IF
+          CALL libxsmm_xmmdispatch(                                     &
+     &      fn%handle, LIBXSMM_GEMM_PRECISION_F32,                      &
+     &      m, n, k, lda, ldb, ldc, calpha, cbeta, flags, prefetch)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmdispatch
         SUBROUTINE libxsmm_dmmdispatch(fn,                              &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(OUT) :: fn
-          INTEGER(C_INT), INTENT(IN) :: m, n, k
+          INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
-          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          fn = construct_dmmfunction(                                   &
-     &      m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
+          TYPE(C_PTR) :: calpha, cbeta
+          IF (PRESENT(alpha)) THEN
+            calpha = C_LOC(alpha)
+          ELSE
+            calpha = C_NULL_PTR
+          END IF
+          IF (PRESENT(beta)) THEN
+            cbeta = C_LOC(beta)
+          ELSE
+            cbeta = C_NULL_PTR
+          END IF
+          CALL libxsmm_xmmdispatch(                                     &
+     &      fn%handle, LIBXSMM_GEMM_PRECISION_F64,                      &
+     &      m, n, k, lda, ldb, ldc, calpha, cbeta, flags, prefetch)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmavailable
         LOGICAL PURE FUNCTION libxsmm_smmavailable(fn)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
-          libxsmm_smmavailable =                                        &
-     &      ASSOCIATED(fn%fn3).OR.ASSOCIATED(fn%fn6)
+          libxsmm_smmavailable = 0.NE.fn%handle
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmavailable
         LOGICAL PURE FUNCTION libxsmm_dmmavailable(fn)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
-          libxsmm_dmmavailable =                                        &
-     &      ASSOCIATED(fn%fn3).OR.ASSOCIATED(fn%fn6)
+          libxsmm_dmmavailable = 0.NE.fn%handle
         END FUNCTION
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abx
-        PURE SUBROUTINE libxsmm_smmcall_abx(fn, a, b, c)
-          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN) :: a, b, c
-          CALL fn%fn3(a, b, c)
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abx
-        PURE SUBROUTINE libxsmm_dmmcall_abx(fn, a, b, c)
-          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN) :: a, b, c
-          CALL fn%fn3(a, b, c)
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prx
-        PURE SUBROUTINE libxsmm_smmcall_prx(fn, a, b, c, pa, pb, pc)
-          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
-          CALL fn%fn6(a, b, c, pa, pb, pc)
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prx
-        PURE SUBROUTINE libxsmm_dmmcall_prx(fn, a, b, c, pa, pb, pc)
-          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
-          TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
-          CALL fn%fn6(a, b, c, pa, pb, pc)
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abc
-        SUBROUTINE libxsmm_smmcall_abc(fn, a, b, c)
-          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
-          REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
-          REAL(C_FLOAT), POINTER :: ra, rb, rc
-          ra => srealptr(a); rb => srealptr(b); rc => srealptr(c)
-          CALL libxsmm_smmcall_abx(fn, C_LOC(ra), C_LOC(rb), C_LOC(rc))
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abc
-        SUBROUTINE libxsmm_dmmcall_abc(fn, a, b, c)
-          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
-          REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:), b(:,:)
-          REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
-          REAL(C_DOUBLE), POINTER :: ra, rb, rc
-          ra => drealptr(a); rb => drealptr(b); rc => drealptr(c)
-          CALL libxsmm_dmmcall_abx(fn, C_LOC(ra), C_LOC(rb), C_LOC(rc))
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prf
-        SUBROUTINE libxsmm_smmcall_prf(fn, a, b, c, pa, pb, pc)
-          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
-          REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
-          REAL(C_FLOAT), INTENT(IN), TARGET :: pa(*), pb(*), pc(*)
-          REAL(C_FLOAT), POINTER :: ra, rb, rc
-          ra => srealptr(a); rb => srealptr(b); rc => srealptr(c)
-          CALL libxsmm_smmcall_prx(fn,                                  &
-     &      C_LOC(ra), C_LOC(rb), C_LOC(rc),                            &
-     &      C_LOC(pa), C_LOC(pb), C_LOC(pc))
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prf
-        SUBROUTINE libxsmm_dmmcall_prf(fn, a, b, c, pa, pb, pc)
-          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
-          REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:), b(:,:)
-          REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
-          REAL(C_DOUBLE), INTENT(IN), TARGET :: pa(*), pb(*), pc(*)
-          REAL(C_DOUBLE), POINTER :: ra, rb, rc
-          ra => drealptr(a); rb => drealptr(b); rc => drealptr(c)
-          CALL libxsmm_dmmcall_prx(fn,                                  &
-     &      C_LOC(ra), C_LOC(rb), C_LOC(rc),                            &
-     &      C_LOC(pa), C_LOC(pb), C_LOC(pc))
-        END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall
         SUBROUTINE libxsmm_smmcall(fn, a, b, c, pa, pb, pc)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(*), b(*)
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(*)
-          REAL(C_FLOAT), INTENT(IN), TARGET, OPTIONAL :: pa(*)
-          REAL(C_FLOAT), INTENT(IN), TARGET, OPTIONAL :: pb(*)
-          REAL(C_FLOAT), INTENT(IN), TARGET, OPTIONAL :: pc(*)
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pa(*)
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pb(*)
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pc(*)
           TYPE(C_PTR) :: cpa, cpb, cpc
-          IF (PRESENT(pa).OR.PRESENT(pb).OR.PRESENT(pc)) THEN
-            IF (PRESENT(pa)) THEN
-              cpa = C_LOC(pa)
-            ELSE
-              cpa = C_NULL_PTR
-            END IF
-            IF (PRESENT(pb)) THEN
-              cpb = C_LOC(pb)
-            ELSE
-              cpb = C_NULL_PTR
-            END IF
-            IF (PRESENT(pc)) THEN
-              cpc = C_LOC(pc)
-            ELSE
-              cpc = C_NULL_PTR
-            END IF
-            CALL libxsmm_smmcall_prx(fn,                                &
-     &        C_LOC(a), C_LOC(b), C_LOC(c),                             &
-     &        cpa, cpb, cpc)
+          IF (PRESENT(pa)) THEN
+            cpa = C_LOC(pa)
           ELSE
-            CALL libxsmm_smmcall_abx(fn, C_LOC(a), C_LOC(b), C_LOC(c))
+            cpa = C_NULL_PTR
           END IF
+          IF (PRESENT(pb)) THEN
+            cpb = C_LOC(pb)
+          ELSE
+            cpb = C_NULL_PTR
+          END IF
+          IF (PRESENT(pc)) THEN
+            cpc = C_LOC(pc)
+          ELSE
+            cpc = C_NULL_PTR
+          END IF
+          CALL libxsmm_xmmcall(fn%handle,                               &
+     &      C_LOC(a), C_LOC(b), C_LOC(c), cpa, cpb, cpc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall
@@ -700,39 +512,62 @@
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a(*), b(*)
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(*)
-          REAL(C_DOUBLE), INTENT(IN), TARGET, OPTIONAL :: pa(*)
-          REAL(C_DOUBLE), INTENT(IN), TARGET, OPTIONAL :: pb(*)
-          REAL(C_DOUBLE), INTENT(IN), TARGET, OPTIONAL :: pc(*)
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pa(*)
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pb(*)
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pc(*)
           TYPE(C_PTR) :: cpa, cpb, cpc
-          IF (PRESENT(pa).OR.PRESENT(pb).OR.PRESENT(pc)) THEN
-            IF (PRESENT(pa)) THEN
-              cpa = C_LOC(pa)
-            ELSE
-              cpa = C_NULL_PTR
-            END IF
-            IF (PRESENT(pb)) THEN
-              cpb = C_LOC(pb)
-            ELSE
-              cpb = C_NULL_PTR
-            END IF
-            IF (PRESENT(pc)) THEN
-              cpc = C_LOC(pc)
-            ELSE
-              cpc = C_NULL_PTR
-            END IF
-            CALL libxsmm_dmmcall_prx(fn,                                &
-     &        C_LOC(a), C_LOC(b), C_LOC(c),                             &
-     &        cpa, cpb, cpc)
+          IF (PRESENT(pa)) THEN
+            cpa = C_LOC(pa)
           ELSE
-            CALL libxsmm_dmmcall_abx(fn, C_LOC(a), C_LOC(b), C_LOC(c))
+            cpa = C_NULL_PTR
           END IF
+          IF (PRESENT(pb)) THEN
+            cpb = C_LOC(pb)
+          ELSE
+            cpb = C_NULL_PTR
+          END IF
+          IF (PRESENT(pc)) THEN
+            cpc = C_LOC(pc)
+          ELSE
+            cpc = C_NULL_PTR
+          END IF
+          CALL libxsmm_xmmcall(fn%handle,                               &
+     &      C_LOC(a), C_LOC(b), C_LOC(c), cpa, cpb, cpc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abc
+        PURE SUBROUTINE libxsmm_smmcall_abc(fn, a, b, c)
+          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          CALL libxsmm_xmmcall(fn%handle, a, b, c)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abc
+        PURE SUBROUTINE libxsmm_dmmcall_abc(fn, a, b, c)
+          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          CALL libxsmm_xmmcall(fn%handle, a, b, c)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prf
+        PURE SUBROUTINE libxsmm_smmcall_prf(fn, a, b, c, pa, pb, pc)
+          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
+          CALL libxsmm_xmmcall(fn%handle, a, b, c, pa, pb, pc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prf
+        PURE SUBROUTINE libxsmm_dmmcall_prf(fn, a, b, c, pa, pb, pc)
+          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
+          CALL libxsmm_xmmcall(fn%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm
         SUBROUTINE libxsmm_sgemm(transa, transb, m, n, k,               &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
@@ -761,7 +596,7 @@
         SUBROUTINE libxsmm_dgemm(transa, transb, m, n, k,               &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
@@ -790,7 +625,7 @@
         SUBROUTINE libxsmm_blas_sgemm(transa, transb, m, n, k,          &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
@@ -819,7 +654,7 @@
         SUBROUTINE libxsmm_blas_dgemm(transa, transb, m, n, k,          &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
@@ -969,7 +804,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy
         PURE SUBROUTINE libxsmm_matcopy(output, input, typesize,        &
      &  m, n, ldi, ldo, prefetch)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
@@ -997,7 +832,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans
         PURE SUBROUTINE libxsmm_otrans(output, input, typesize,         &
      &  m, n, ldi, ldo)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
@@ -1020,33 +855,29 @@
         ! Transpose a matrix (out-of-place form, single-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sotrans
         SUBROUTINE libxsmm_sotrans(output, input, m, n)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           REAL(C_FLOAT), INTENT(OUT), TARGET :: output(:,:)
           REAL(C_FLOAT), INTENT(IN), TARGET :: input(:,:)
-          REAL(C_FLOAT), POINTER :: i, o
-          i => srealptr(input); o => srealptr(output)
-          CALL libxsmm_otrans(C_LOC(o), C_LOC(i), 4, m, n,              &
-     &      UBOUND(input,1), UBOUND(output,1))
+          CALL libxsmm_otrans(srealptr(input), srealptr(output),        &
+     &      4, m, n, UBOUND(input,1), UBOUND(output,1))
         END SUBROUTINE
 
         ! Transpose a matrix (out-of-place form, double-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dotrans
         SUBROUTINE libxsmm_dotrans(output, input, m, n)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           REAL(C_DOUBLE), INTENT(OUT), TARGET :: output(:,:)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: input(:,:)
-          REAL(C_DOUBLE), POINTER :: i, o
-          i => drealptr(input); o => drealptr(output)
-          CALL libxsmm_otrans(C_LOC(o), C_LOC(i), 8, m, n,              &
-     &      UBOUND(input,1), UBOUND(output,1))
+          CALL libxsmm_otrans(drealptr(input), drealptr(output),        &
+     &      8, m, n, UBOUND(input,1), UBOUND(output,1))
         END SUBROUTINE
 
         ! Transpose a matrix (in-place form).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans
         PURE SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n, ld
           TYPE(C_PTR), INTENT(IN) :: matrix
           INTEGER(C_INT), INTENT(IN) :: typesize
@@ -1066,23 +897,21 @@
         ! Transpose a matrix (in-place form, single-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sitrans
         SUBROUTINE libxsmm_sitrans(matrix, m, n)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: matrix(:,:)
-          REAL(C_FLOAT), POINTER :: p
-          p => srealptr(matrix)
-          CALL libxsmm_itrans(C_LOC(p), 4, m, n, UBOUND(matrix,1))
+          CALL libxsmm_itrans(srealptr(matrix),                         &
+     &      4, m, n, UBOUND(matrix,1))
         END SUBROUTINE
 
         ! Transpose a matrix (in-place form, double-precision).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ditrans
         SUBROUTINE libxsmm_ditrans(matrix, m, n)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: matrix(:,:)
-          REAL(C_DOUBLE), POINTER :: p
-          p => drealptr(matrix)
-          CALL libxsmm_itrans(C_LOC(p), 8, m, n, UBOUND(matrix,1))
+          CALL libxsmm_itrans(drealptr(matrix),                         &
+     &      8, m, n, UBOUND(matrix,1))
         END SUBROUTINE
       END MODULE
 

@@ -202,7 +202,7 @@
           DO r = 1, repetitions
             !$OMP DO
             DO i = LBOUND(a, 3), UBOUND(a, 3)
-              CALL libxsmm_call(xmm, a(:,:,i), b(:,:,i), tmp)
+              CALL libxsmm_dmmcall(xmm, a(:,:,i), b(:,:,i), tmp)
             END DO
           END DO
           !$OMP BARRIER
