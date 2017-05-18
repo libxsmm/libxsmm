@@ -99,17 +99,25 @@
      &    LIBXSMM_PREFETCH_BL2_VIA_C  = 8,                              &
           ! Prefetch A ahead.
      &    LIBXSMM_PREFETCH_AL2_AHEAD  = 16,                             &
-          ! Prefetch PC using accesses to C.
-     &    LIBXSMM_PREFETCH_CL2        = 32,                             &
           ! Composed prefetch strategies.
      &    LIBXSMM_PREFETCH_AL2BL2_VIA_C = IOR(                          &
      &        LIBXSMM_PREFETCH_BL2_VIA_C, LIBXSMM_PREFETCH_AL2),        &
-     &    LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C = IOR(                       &
-     &        LIBXSMM_PREFETCH_AL2BL2_VIA_C, LIBXSMM_PREFETCH_CL2),     &
      &    LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST = IOR(                     &
      &        LIBXSMM_PREFETCH_BL2_VIA_C, LIBXSMM_PREFETCH_AL2_JPST),   &
      &    LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = IOR(                    &
-     &        LIBXSMM_PREFETCH_BL2_VIA_C, LIBXSMM_PREFETCH_AL2_AHEAD)
+     &        LIBXSMM_PREFETCH_BL2_VIA_C, LIBXSMM_PREFETCH_AL2_AHEAD),  &
+          ! Prefetch PA/PB/PC in L1 (using accesses to A, B, C)
+     &    LIBXSMM_PREFETCH_AL1        = 32,                             &
+     &    LIBXSMM_PREFETCH_BL1        = 64,                             &
+     &    LIBXSMM_PREFETCH_CL1        = 128,                            &
+     &    LIBXSMM_PREFETCH_AL1_BL1 = IOR(                               &
+     &        LIBXSMM_PREFETCH_AL1, LIBXSMM_PREFETCH_BL1),              &
+     &    LIBXSMM_PREFETCH_BL1_CL1 = IOR(                               &
+     &        LIBXSMM_PREFETCH_BL1, LIBXSMM_PREFETCH_CL1),              &
+     &    LIBXSMM_PREFETCH_AL1_CL1 = IOR(                               &
+     &        LIBXSMM_PREFETCH_AL1, LIBXSMM_PREFETCH_CL1),              &
+     &    LIBXSMM_PREFETCH_AL1_BL1_CL1 = IOR(                           &
+     &        LIBXSMM_PREFETCH_AL1_BL1, LIBXSMM_PREFETCH_CL1)
 
         ! Enumerates the available target architectures and instruction
         ! set extensions as returned by libxsmm_get_target_archid().
