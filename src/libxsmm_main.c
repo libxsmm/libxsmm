@@ -1812,7 +1812,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
   const intptr_t* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc)
 {
-  LIBXSMM_FSYMBOL(libxsmm_xmmcall)(fn, a, b, c, pa, pb, pc);
+  LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(fn, a, b, c, pa, pb, pc);
 }
 
 
