@@ -94,7 +94,7 @@ TYPE(LIBXSMM_DMMFUNCTION) :: xmm
 CALL libxsmm_dispatch(xmm, m, n, k)
 IF (libxsmm_available(xmm)) THEN
   DO i = LBOUND(c, 3), UBOUND(c, 3) ! perhaps OpenMP parallelized
-    CALL libxsmm_call(xmm, a(:,:,i), b(:,:,i), c(:,:,i))
+    CALL libxsmm_dmmcall(xmm, a(:,:,i), b(:,:,i), c(:,:,i))
   END DO
 END IF
 ```
@@ -612,13 +612,13 @@ The code generator driver program accepts the following arguments:
 7. "AL2_BL2viaC": combines AL2 and BL2viaC
 8. "AL2jpst": aggressive A' prefetch of first rows without any structure
 9. "AL2jpst_BL2viaC": combines AL2jpst and BL2viaC
-10. "AL1": prefetch A into L1
-11. "BL1": prefetch B into L1
-12. "CL1": prefetch C into L1
-13. "AL1_BL1": prefetch A and B into L1
-14. "BL1_CL1": prefetch A and B into L1
-15. "AL1_CL1": prefetch A and C into L1
-16. "AL1_BL1_CL1": prefetch A, B, and C into L1
+10. "AL1": prefetch A' into L1 via accesses to A
+11. "BL1": prefetch B' into L1 via accesses to B
+12. "CL1": prefetch C' into L1 via accesses to C
+13. "AL1_BL1": prefetch A' and B' into L1
+14. "BL1_CL1": prefetch B' and C' into L1
+15. "AL1_CL1": prefetch A' and C' into L1
+16. "AL1_BL1_CL1": prefetch A', B', and C' into L1
 
 Here are some examples of invoking the driver program:
 
