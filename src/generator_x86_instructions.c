@@ -1521,6 +1521,11 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           l_fpadj2 -= 0x80;
           if ( l_broadcast == 1 ) l_sizereg = 4;
           break;
+       case LIBXSMM_X86_INSTR_VPADDD:
+          l_fpadj2 -= 0x80;
+          l_fpadj  += 0xA5;
+          if ( l_broadcast == 1 ) l_sizereg = 4;
+          break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_mem: Unknown instruction type: %u\n", i_vec_instr);
           break;
