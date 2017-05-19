@@ -96,9 +96,8 @@ typedef enum libxsmm_gemm_prefetch_type {
   LIBXSMM_PREFETCH_BL1_CL1            = LIBXSMM_PREFETCH_BL1 | LIBXSMM_PREFETCH_CL1,
   LIBXSMM_PREFETCH_AL1_CL1            = LIBXSMM_PREFETCH_AL1 | LIBXSMM_PREFETCH_CL1,
   LIBXSMM_PREFETCH_AL1_BL1_CL1        = LIBXSMM_PREFETCH_AL1_BL1 | LIBXSMM_PREFETCH_CL1,
-  /** Prefetch PC into L2 using accesses to C. TODO: reintroduce/repurpose below flags. */
-  LIBXSMM_PREFETCH_CL2                = LIBXSMM_PREFETCH_CL1,  /* Workaround for previously deployed L2 prefetch flag */
-  LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C    = LIBXSMM_PREFETCH_CL2 | /*LIBXSMM_PREFETCH_AL2BL2_VIA_C*/LIBXSMM_PREFETCH_AL1_BL1
+  /** Backward compatibility: AL2CL2BL2_VIA_C is an alias for AL2BL2_VIA_C. */
+  LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C    = LIBXSMM_PREFETCH_AL2BL2_VIA_C
 } libxsmm_gemm_prefetch_type;
 
 /** Provided for compatibility with older codes. */
