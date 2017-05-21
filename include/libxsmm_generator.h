@@ -57,7 +57,7 @@
   (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
   (DESCRIPTOR).flags = (unsigned short)(FLAGS); (DESCRIPTOR).prefetch = (unsigned short)(PREFETCH); \
   (DESCRIPTOR).alpha = (signed char)(ALPHA); (DESCRIPTOR).beta = (signed char)(BETA); \
-  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); iflags = 0
+  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).iflags = 0
 
 /** Declare and construct a GEMM descriptor. */
 #define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, DATA_TYPE, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
