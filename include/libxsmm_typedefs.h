@@ -57,10 +57,20 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_TRANS_A = 1,
   /** Transpose matrix B. */
   LIBXSMM_GEMM_FLAG_TRANS_B = 2,
+#if 0
+  /** Alpha=0|1 */
+  LIBXSMM_GEMM_FLAG_ALPHA_0 = 4,
+  /** Alpha=neg|pos */
+  LIBXSMM_GEMM_FLAG_ALPHA_S = 8,
+  /** Beta=0|1 */
+  LIBXSMM_GEMM_FLAG_BETA_0  = 16,
+  /** Beta=neg|pos */
+  LIBXSMM_GEMM_FLAG_BETA_S  = 32,
+#endif
   /** Generate aligned load instructions. */
-  LIBXSMM_GEMM_FLAG_ALIGN_A = 4,
+  LIBXSMM_GEMM_FLAG_ALIGN_A = 64,
   /** Aligned load/store instructions. */
-  LIBXSMM_GEMM_FLAG_ALIGN_C = 8
+  LIBXSMM_GEMM_FLAG_ALIGN_C = 128
 } libxsmm_gemm_flags;
 
 /** Denotes the element/pixel type of an image/channel. */
