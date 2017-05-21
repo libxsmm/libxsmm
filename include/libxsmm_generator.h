@@ -55,10 +55,9 @@
   LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K); LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(LDA, LDB, LDC); \
   (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
   (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
-  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
+  (DESCRIPTOR).flags = (unsigned short)(FLAGS); (DESCRIPTOR).prefetch = (unsigned short)(PREFETCH); \
   (DESCRIPTOR).alpha = (signed char)(ALPHA); (DESCRIPTOR).beta = (signed char)(BETA); \
-  (DESCRIPTOR).flags = (unsigned short)(FLAGS); \
-  (DESCRIPTOR).pad0 = 0
+  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); iflags = 0
 
 /** Declare and construct a GEMM descriptor. */
 #define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, DATA_TYPE, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
@@ -80,12 +79,11 @@ typedef struct libxsmm_gemm_descriptor {
   /** Flag set. */
   unsigned short flags;
   /** Prefetch strategy enumeration. */
-  unsigned char prefetch;
+  unsigned short prefetch;
   /** Integer value. */
   signed char alpha, beta;
   /** Denotes the data-type*/
   unsigned char datatype;
-  unsigned char pad0;
   /** INTERNAL (last member!) */
   unsigned char iflags;
 } libxsmm_gemm_descriptor;
