@@ -80,13 +80,13 @@ typedef struct libxsmm_gemm_descriptor {
   unsigned short pad0;
   /** Integer value. */
   signed char alpha, beta;
-  /** Prefetch strategy enumeration. */
-  unsigned char prefetch;
-  /** Collection of various flags. */
-  unsigned char flags;
   /** Denotes the data-type*/
   unsigned char datatype;
+  /** Prefetch strategy enumeration. */
+  unsigned char prefetch;
   unsigned char pad1;
+  /** Flag set (last struct member!). */
+  unsigned char flags;
 } libxsmm_gemm_descriptor;
 
 /** Flag enumeration which can be binary ORed. */
