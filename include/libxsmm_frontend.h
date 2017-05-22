@@ -52,24 +52,19 @@
 # define LIBXSMM_MAX2(A, B) (A)
 #endif
 
-/** Helper macro for aligning a buffer for aligned loads/store instructions. */
-#if (0 != (4/*LIBXSMM_GEMM_FLAG_ALIGN_A*/ & LIBXSMM_FLAGS) || 0 != (8/*LIBXSMM_GEMM_FLAG_ALIGN_C*/ & LIBXSMM_FLAGS))
-# define LIBXSMM_ALIGN_LDST(POINTER) LIBXSMM_ALIGN(POINTER, LIBXSMM_ALIGNMENT)
-#else
-# define LIBXSMM_ALIGN_LDST(POINTER) (POINTER)
-#endif
-
 /** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
-#if !defined(_WIN32) /* disable prefetch due to issues with the calling convention */
-#if 0 != ((LIBXSMM_PREFETCH) & 2/*AL2*/) || 0 != ((LIBXSMM_PREFETCH) & 4/*AL2_JPST*/)
+#if 0 != ((LIBXSMM_PREFETCH) & 2/*AL2*/) \
+ || 0 != ((LIBXSMM_PREFETCH) & 4/*AL2_JPST*/) \
+ || 0 != ((LIBXSMM_PREFETCH) & 16/*AL2_AHEAD*/) \
+ || 0 != ((LIBXSMM_PREFETCH) & 32/*AL1*/)
 # define LIBXSMM_PREFETCH_A(EXPR) (EXPR)
 #endif
-#if 0 != ((LIBXSMM_PREFETCH) & 8/*BL2_VIA_C*/)
+#if 0 != ((LIBXSMM_PREFETCH) & 8/*BL2_VIA_C*/) \
+ || 0 != ((LIBXSMM_PREFETCH) & 64/*BL1*/)
 # define LIBXSMM_PREFETCH_B(EXPR) (EXPR)
 #endif
-#if 0 != ((LIBXSMM_PREFETCH) & 32/*CL2*/)
+#if 0 != ((LIBXSMM_PREFETCH) & 128/*CL1*/)
 # define LIBXSMM_PREFETCH_C(EXPR) (EXPR)
-#endif
 #endif
 /** Secondary helper macros derived from the above group. */
 #if defined(LIBXSMM_PREFETCH_A)

@@ -202,9 +202,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for
 #endif
           for (int i = 0; i < s; ++i) {
-            // make sure that stacksize is covering the problem size
-            T tls[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-            T *const tmp = LIBXSMM_ALIGN_LDST(tls);
+            T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             // do nothing else with tmp; just a benchmark
             LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
               LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
@@ -229,9 +227,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for
 #endif
           for (int i = 0; i < s; ++i) {
-            // make sure that stacksize is covering the problem size
-            T tls[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-            T *const tmp = LIBXSMM_ALIGN_LDST(tls);
+            T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             // do nothing else with tmp; just a benchmark
             LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
               LIBXSMM_ALPHA, a, LIBXSMM_LD(m, k), b, LIBXSMM_LD(k, n),
