@@ -76,7 +76,7 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/$(OUTNAME)_smm: $(OUTDIR)/.make $(OBJECTS) $(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
 ifneq (0,$(BLAS))
 	$(LD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 else
