@@ -1653,8 +1653,8 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
                                                          const char*                        i_arch,
                                                          unsigned int                       i_n_blocking ) {
   /* l_k_blocking must be smaller than l_k_threshold */
-  const unsigned int l_k_blocking = 8;
-  const unsigned int l_k_threshold = 64;
+  /*const*/ unsigned int l_k_blocking = 8;
+  /*const*/ unsigned int l_k_threshold = 64;
   unsigned int l_k_unrolled = 0;
 
   LIBXSMM_UNUSED(i_arch);
