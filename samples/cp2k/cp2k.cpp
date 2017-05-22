@@ -58,7 +58,7 @@
 #endif
 
 #if !defined(MAX_SIZE)
-# define MAX_SIZE (LIBXSMM_MAX_MNK / LIBXSMM_MAX_K)
+# define MAX_SIZE ((LIBXSMM_MAX_M) * (LIBXSMM_MAX_N))
 #endif
 
 /** >1: number of locks, =1: omp critical, =0: atomic */
