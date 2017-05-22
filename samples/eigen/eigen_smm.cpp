@@ -32,6 +32,10 @@
 /** This sample uses LIBXSMM's header-only implementation. */
 #include <libxsmm_source.h>
 
+#if !defined(__EIGEN)
+/*# define __EIGEN*/
+#endif
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif

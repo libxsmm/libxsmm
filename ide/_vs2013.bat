@@ -7,7 +7,7 @@ cd ide
 
 SET LIBXSMMROOT=%~d0%~p0..
 
-IF EXIST 'C:\cygwin64\usr\include\eigen3\Eigen\Dense' (
+IF EXIST C:\cygwin64\usr\include\eigen3\Eigen\Dense (
   SET EIGENROOT=C:\cygwin64\usr\include\eigen3
 )
 
