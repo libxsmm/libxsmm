@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           const T *const ai = a + i * asize, *const bi = b + i * bsize;
           T *const ci = c + i * csize;
-          smm_xsmm_specialized(xmm, ai, bi, ci,
+          smm_xsmm_specialized<T>(xmm, ai, bi, ci,
             LIBXSMM_PREFETCH_A(ai + asize),
             LIBXSMM_PREFETCH_B(bi + bsize),
             LIBXSMM_PREFETCH_C(ci + csize));
@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           const T *const ai = a + i * asize;
           T* ci = c + i * csize;
-          smm_xsmm_specialized(xmm, ai, b, ci,
+          smm_xsmm_specialized<T>(xmm, ai, b, ci,
             LIBXSMM_PREFETCH_A(ai + asize),
             LIBXSMM_PREFETCH_B(b),
             LIBXSMM_PREFETCH_C(ci + csize));
@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           const T *const bi = b + i * bsize;
           T* ci = c + i * csize;
-          smm_xsmm_specialized(xmm, a, bi, ci,
+          smm_xsmm_specialized<T>(xmm, a, bi, ci,
             LIBXSMM_PREFETCH_A(a),
             LIBXSMM_PREFETCH_B(bi + bsize),
             LIBXSMM_PREFETCH_C(ci + csize));
@@ -322,7 +322,7 @@ int main(int argc, char* argv[])
             T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             const T *const ai = a + i * asize, *const bi = b + i * bsize;
             // do nothing else with tmp; just a benchmark
-            smm_xsmm_specialized(xmm, ai, bi, tmp,
+            smm_xsmm_specialized<T>(xmm, ai, bi, tmp,
               LIBXSMM_PREFETCH_A(ai + asize),
               LIBXSMM_PREFETCH_B(bi + bsize),
               LIBXSMM_PREFETCH_C(tmp));
@@ -372,7 +372,7 @@ int main(int argc, char* argv[])
           for (int i = 0; i < s; ++i) {
             T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             // do nothing else with tmp; just a benchmark
-            smm_xsmm_specialized(xmm, a, b, tmp,
+            smm_xsmm_specialized<T>(xmm, a, b, tmp,
               LIBXSMM_PREFETCH_A(a),
               LIBXSMM_PREFETCH_B(b),
               LIBXSMM_PREFETCH_C(c));
