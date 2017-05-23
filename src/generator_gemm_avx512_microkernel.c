@@ -915,6 +915,7 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
                                              i_xgemm_desc->ldc * l_n * i_micro_kernel_config->datatype_size );
           }
         }
+      }
     }
     l_displacement_k_b+=4;
   }
