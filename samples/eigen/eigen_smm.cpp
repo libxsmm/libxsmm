@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2017, Intel Corporation                                **
+** Copyright (c) 2017, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -28,24 +28,23 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
+
+/** This sample uses LIBXSMM's header-only implementation. */
+#include <libxsmm_source.h>
+
+#if !defined(__EIGEN)
+/*# define __EIGEN*/
+#endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#if defined(__EIGEN)
+# include <Eigen/Dense>
+#endif
 #include <algorithm>
-#include <stdexcept>
 #include <cstdlib>
-#include <cstring>
-#include <cassert>
 #include <cstdio>
-#include <cmath>
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-# include <mkl_service.h>
-#endif
-#if defined(_OPENMP)
-# include <omp.h>
-#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -59,7 +58,42 @@
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
+#if defined(__EIGEN)
+
+template<typename T>
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+void smm_eigen_dynamic(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const T *LIBXSMM_RESTRICT a, const T *LIBXSMM_RESTRICT b, T *LIBXSMM_RESTRICT c)
+{
+  typedef Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor|Eigen::AutoAlign> matrix_type;
+  matrix_type::Map(c, m, n).noalias() =
+    matrix_type::Map(a, m, k) *
+    matrix_type::Map(b, k, n);
+}
+
+#endif /*defined(__EIGEN)*/
+
+
+template<typename T>
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+void smm_xsmm_specialized(const libxsmm_mmfunction<T>& xmm,
+  const T *LIBXSMM_RESTRICT a, const T *LIBXSMM_RESTRICT b, T *LIBXSMM_RESTRICT c,
+  const T* next_a, const T* next_b, const T* next_c)
+{
+#if (0 != LIBXSMM_PREFETCH)
+  xmm(a, b, c, next_a, next_b, next_c);
+#else
+  xmm(a, b, c);
+  LIBXSMM_UNUSED(next_a);
+  LIBXSMM_UNUSED(next_b);
+  LIBXSMM_UNUSED(next_c);
+#endif
+}
+
+
+template<typename T>
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+void init(int seed, T *LIBXSMM_RESTRICT dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
@@ -71,11 +105,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTR
     libxsmm_blasint j = 0;
     for (; j < nrows; ++j) {
       const libxsmm_blasint k = i * ld + j;
-      dst[k] = (REAL_TYPE)(seed1 / (k + 1));
+      dst[k] = static_cast<T>(seed1 / (k + 1));
     }
     for (; j < ld; ++j) {
       const libxsmm_blasint k = i * ld + j;
-      dst[k] = (REAL_TYPE)seed;
+      dst[k] = static_cast<T>(seed);
     }
   }
 }
@@ -128,10 +162,9 @@ int main(int argc, char* argv[])
         1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
       const libxsmm_mmfunction<T> xmm(m, n, k);
-      if (!xmm) throw "no specialized routine found!";
 
-      { // batched
-        fprintf(stdout, "Batched (A,B,C)...\n");
+      if (xmm) {
+        fprintf(stdout, "LIBXSMM batched (A,B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
         unsigned long long x = libxsmm_timer_xtick();
 #if defined(_OPENMP)
@@ -139,15 +172,11 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; ++i) {
           const T *const ai = a + i * asize, *const bi = b + i * bsize;
-          T* ci = c + i * csize;
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(ai, bi, ci,
+          T *const ci = c + i * csize;
+          smm_xsmm_specialized<T>(xmm, ai, bi, ci,
             LIBXSMM_PREFETCH_A(ai + asize),
             LIBXSMM_PREFETCH_B(bi + bsize),
             LIBXSMM_PREFETCH_C(ci + csize));
-#else
-          xmm(ai, bi, ci);
-#endif
         }
         x = std::max(libxsmm_timer_xtick(), x) - x;
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -159,8 +188,32 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
-      { // streaming A and C
-        fprintf(stdout, "Streamed (A,C)...\n");
+#if defined(__EIGEN)
+      {
+        fprintf(stdout, "Eigen/dynamic batched (A,B,C)...\n");
+        const unsigned long long start = libxsmm_timer_tick();
+        unsigned long long x = libxsmm_timer_xtick();
+#if defined(_OPENMP)
+#       pragma omp parallel for
+#endif
+        for (int i = 0; i < s; ++i) {
+          const T *const ai = a + i * asize, *const bi = b + i * bsize;
+          T *const ci = c + i * csize;
+          smm_eigen_dynamic(m, n, k, ai, bi, ci);
+        }
+        x = std::max(libxsmm_timer_xtick(), x) - x;
+        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      }
+#endif /*defined(__EIGEN)*/
+
+      if (xmm) {
+        fprintf(stdout, "LIBXSMM streamed (A,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
         unsigned long long x = libxsmm_timer_xtick();
 #if defined(_OPENMP)
@@ -169,13 +222,10 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           const T *const ai = a + i * asize;
           T* ci = c + i * csize;
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(ai, b, ci,
-            LIBXSMM_PREFETCH_A(ai + asize), LIBXSMM_PREFETCH_B(b),
+          smm_xsmm_specialized<T>(xmm, ai, b, ci,
+            LIBXSMM_PREFETCH_A(ai + asize),
+            LIBXSMM_PREFETCH_B(b),
             LIBXSMM_PREFETCH_C(ci + csize));
-#else
-          xmm(ai, b, ci);
-#endif
         }
         x = std::max(libxsmm_timer_xtick(), x) - x;
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -187,8 +237,32 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
-      { // streaming B and C
-        fprintf(stdout, "Streamed (B,C)...\n");
+#if defined(__EIGEN)
+      {
+        fprintf(stdout, "Eigen/dynamic streamed (A,C)...\n");
+        const unsigned long long start = libxsmm_timer_tick();
+        unsigned long long x = libxsmm_timer_xtick();
+#if defined(_OPENMP)
+#       pragma omp parallel for
+#endif
+        for (int i = 0; i < s; ++i) {
+          const T *const ai = a + i * asize;
+          T* ci = c + i * csize;
+          smm_eigen_dynamic(m, n, k, ai, b, ci);
+        }
+        x = std::max(libxsmm_timer_xtick(), x) - x;
+        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      }
+#endif /*defined(__EIGEN)*/
+
+      if (xmm) {
+        fprintf(stdout, "LIBXSMM streamed (B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
         unsigned long long x = libxsmm_timer_xtick();
 #if defined(_OPENMP)
@@ -197,13 +271,10 @@ int main(int argc, char* argv[])
         for (int i = 0; i < s; ++i) {
           const T *const bi = b + i * bsize;
           T* ci = c + i * csize;
-#if (0 != LIBXSMM_PREFETCH)
-          xmm(a, bi, ci,
-            LIBXSMM_PREFETCH_A(a), LIBXSMM_PREFETCH_B(bi + bsize),
+          smm_xsmm_specialized<T>(xmm, a, bi, ci,
+            LIBXSMM_PREFETCH_A(a),
+            LIBXSMM_PREFETCH_B(bi + bsize),
             LIBXSMM_PREFETCH_C(ci + csize));
-#else
-          xmm(a, bi, ci);
-#endif
         }
         x = std::max(libxsmm_timer_xtick(), x) - x;
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -215,9 +286,33 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
+#if defined(__EIGEN)
+      {
+        fprintf(stdout, "Eigen/dynamic streamed (B,C)...\n");
+        const unsigned long long start = libxsmm_timer_tick();
+        unsigned long long x = libxsmm_timer_xtick();
+#if defined(_OPENMP)
+#       pragma omp parallel for
+#endif
+        for (int i = 0; i < s; ++i) {
+          const T *const bi = b + i * bsize;
+          T* ci = c + i * csize;
+          smm_eigen_dynamic(m, n, k, a, bi, ci);
+        }
+        x = std::max(libxsmm_timer_xtick(), x) - x;
+        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      }
+#endif /*defined(__EIGEN)*/
+
       if ((MAX_SIZE) >= csize) {
-        { // streaming A and B
-          fprintf(stdout, "Streamed (A,B)...\n");
+        if (xmm) {
+          fprintf(stdout, "LIBXSMM streamed (A,B)...\n");
           const unsigned long long start = libxsmm_timer_tick();
           unsigned long long x = libxsmm_timer_xtick();
 #if defined(_OPENMP)
@@ -227,14 +322,10 @@ int main(int argc, char* argv[])
             T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             const T *const ai = a + i * asize, *const bi = b + i * bsize;
             // do nothing else with tmp; just a benchmark
-#if (0 != LIBXSMM_PREFETCH)
-            xmm(ai, bi, tmp,
+            smm_xsmm_specialized<T>(xmm, ai, bi, tmp,
               LIBXSMM_PREFETCH_A(ai + asize),
               LIBXSMM_PREFETCH_B(bi + bsize),
               LIBXSMM_PREFETCH_C(tmp));
-#else
-            xmm(ai, bi, tmp);
-#endif
           }
           x = std::max(libxsmm_timer_xtick(), x) - x;
           const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -246,8 +337,33 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         }
 
-        { // cached
-          fprintf(stdout, "Cached...\n");
+#if defined(__EIGEN)
+        {
+          fprintf(stdout, "Eigen/dynamic streamed (A,B)...\n");
+          const unsigned long long start = libxsmm_timer_tick();
+          unsigned long long x = libxsmm_timer_xtick();
+#if defined(_OPENMP)
+#         pragma omp parallel for
+#endif
+          for (int i = 0; i < s; ++i) {
+            T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
+            const T *const ai = a + i * asize, *const bi = b + i * bsize;
+            // do nothing else with tmp; just a benchmark
+            smm_eigen_dynamic(m, n, k, ai, bi, tmp);
+          }
+          x = std::max(libxsmm_timer_xtick(), x) - x;
+          const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+          if (0 < duration && 0 != x) {
+            fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+            fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
+          }
+          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        }
+#endif /*defined(__EIGEN)*/
+
+        if (xmm) {
+          fprintf(stdout, "LIBXSMM cached...\n");
           const unsigned long long start = libxsmm_timer_tick();
           unsigned long long x = libxsmm_timer_xtick();
 #if defined(_OPENMP)
@@ -256,7 +372,10 @@ int main(int argc, char* argv[])
           for (int i = 0; i < s; ++i) {
             T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             // do nothing else with tmp; just a benchmark
-            xmm(a, b, tmp);
+            smm_xsmm_specialized<T>(xmm, a, b, tmp,
+              LIBXSMM_PREFETCH_A(a),
+              LIBXSMM_PREFETCH_B(b),
+              LIBXSMM_PREFETCH_C(c));
           }
           x = std::max(libxsmm_timer_xtick(), x) - x;
           const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -266,9 +385,32 @@ int main(int argc, char* argv[])
           }
           fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         }
+
+#if defined(__EIGEN)
+        {
+          fprintf(stdout, "Eigen/dynamic cached...\n");
+          const unsigned long long start = libxsmm_timer_tick();
+          unsigned long long x = libxsmm_timer_xtick();
+#if defined(_OPENMP)
+#         pragma omp parallel for
+#endif
+          for (int i = 0; i < s; ++i) {
+            T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
+            // do nothing else with tmp; just a benchmark
+            smm_eigen_dynamic(m, n, k, a, b, tmp);
+          }
+          x = std::max(libxsmm_timer_xtick(), x) - x;
+          const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+          if (0 < duration && 0 != x) {
+            fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          }
+          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        }
+#endif /*defined(__EIGEN)*/
       }
       else {
-        fprintf(stderr, "Warning: size M x N is exceeding MAX_SIZE!\n");
+        fprintf(stderr, "Warning: size M x N exceeds MAX_SIZE!\n");
       }
 
       // finalize LIBXSMM

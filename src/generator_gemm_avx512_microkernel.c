@@ -789,7 +789,7 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
                                           (i_xgemm_desc->lda * (l_k+l_z) * i_micro_kernel_config->datatype_size) );
       }
-      if ( (l_k+4) == (i_k_blocking - 1) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
+      if ( ((l_k+4) == i_k_blocking) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                          i_micro_kernel_config->alu_add_instruction,
                                          i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -798,7 +798,7 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
     }
 
     /* in last k-iteration: advance pointers */
-    if ( ((l_k+4) == (i_k_blocking - 1)) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
+    if ( ((l_k+4) == i_k_blocking) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_add_instruction,
                                        i_gp_reg_mapping->gp_reg_a,
@@ -1653,8 +1653,8 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
                                                          const char*                        i_arch,
                                                          unsigned int                       i_n_blocking ) {
   /* l_k_blocking must be smaller than l_k_threshold */
-  const unsigned int l_k_blocking = 8;
-  const unsigned int l_k_threshold = 64;
+  /*const*/ unsigned int l_k_blocking = 8;
+  /*const*/ unsigned int l_k_threshold = 64;
   unsigned int l_k_unrolled = 0;
 
   LIBXSMM_UNUSED(i_arch);

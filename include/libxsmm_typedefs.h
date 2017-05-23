@@ -57,10 +57,20 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_TRANS_A = 1,
   /** Transpose matrix B. */
   LIBXSMM_GEMM_FLAG_TRANS_B = 2,
+#if 0
+  /** Alpha=0|1 */
+  LIBXSMM_GEMM_FLAG_ALPHA_0 = 4,
+  /** Alpha=neg|pos */
+  LIBXSMM_GEMM_FLAG_ALPHA_S = 8,
+  /** Beta=0|1 */
+  LIBXSMM_GEMM_FLAG_BETA_0  = 16,
+  /** Beta=neg|pos */
+  LIBXSMM_GEMM_FLAG_BETA_S  = 32,
+#endif
   /** Generate aligned load instructions. */
-  LIBXSMM_GEMM_FLAG_ALIGN_A = 4,
+  LIBXSMM_GEMM_FLAG_ALIGN_A = 64,
   /** Aligned load/store instructions. */
-  LIBXSMM_GEMM_FLAG_ALIGN_C = 8
+  LIBXSMM_GEMM_FLAG_ALIGN_C = 128
 } libxsmm_gemm_flags;
 
 /** Denotes the element/pixel type of an image/channel. */
@@ -85,7 +95,6 @@ typedef enum libxsmm_gemm_prefetch_type {
   LIBXSMM_PREFETCH_BL2_VIA_C          = 8,
   /** Prefetch A ahead. */
   LIBXSMM_PREFETCH_AL2_AHEAD          = 16,
-  /** Prefetch PC using accesses to C. */
   LIBXSMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2,
   LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST  = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_JPST,
   LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD,
@@ -96,7 +105,9 @@ typedef enum libxsmm_gemm_prefetch_type {
   LIBXSMM_PREFETCH_AL1_BL1            = LIBXSMM_PREFETCH_AL1 | LIBXSMM_PREFETCH_BL1,
   LIBXSMM_PREFETCH_BL1_CL1            = LIBXSMM_PREFETCH_BL1 | LIBXSMM_PREFETCH_CL1,
   LIBXSMM_PREFETCH_AL1_CL1            = LIBXSMM_PREFETCH_AL1 | LIBXSMM_PREFETCH_CL1,
-  LIBXSMM_PREFETCH_AL1_BL1_CL1        = LIBXSMM_PREFETCH_AL1_BL1 | LIBXSMM_PREFETCH_CL1
+  LIBXSMM_PREFETCH_AL1_BL1_CL1        = LIBXSMM_PREFETCH_AL1_BL1 | LIBXSMM_PREFETCH_CL1,
+  /** Backward compatibility: AL2CL2BL2_VIA_C is an alias for AL2BL2_VIA_C. */
+  LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C    = LIBXSMM_PREFETCH_AL2BL2_VIA_C
 } libxsmm_gemm_prefetch_type;
 
 /** Provided for compatibility with older codes. */

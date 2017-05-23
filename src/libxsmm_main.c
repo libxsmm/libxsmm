@@ -92,9 +92,9 @@ typedef union LIBXSMM_RETARGETABLE internal_regkey_type {
 /** Internal descriptor kind stored in xgemm's flag set. */
 typedef enum internal_regkey_kind {
   /** Matcopy kernel kind */
-  LIBXSMM_GEMM_FLAG_MATCOPY = 2 * LIBXSMM_GEMM_FLAG_ALIGN_C,
+  LIBXSMM_GEMM_FLAG_MATCOPY = 1,
   /** Transpose kernel kind */
-  LIBXSMM_GEMM_FLAG_TKERNEL = 4 * LIBXSMM_GEMM_FLAG_ALIGN_C
+  LIBXSMM_GEMM_FLAG_TKERNEL = 2
 } internal_regkey_kind;
 
 typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
@@ -204,7 +204,7 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(int datatype, int
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_update_mmstatistic(const libxsmm_gemm_descriptor* desc,
   unsigned int ntry, unsigned int ncol)
 {
-  assert(0 != desc && 0 == ((LIBXSMM_GEMM_FLAG_MATCOPY | LIBXSMM_GEMM_FLAG_TKERNEL) & desc->flags));
+  assert(0 != desc && 0 == ((LIBXSMM_GEMM_FLAG_MATCOPY | LIBXSMM_GEMM_FLAG_TKERNEL) & desc->iflags));
   return libxsmm_update_mmstatistic(desc->datatype, desc->m, desc->n, desc->k, ntry, ncol);
 }
 
@@ -678,7 +678,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
         const libxsmm_code_pointer code = registry[i];
         if (0 != code.const_pmm) {
           /* check if the registered entity is a GEMM kernel */
-          if (0 == ((LIBXSMM_GEMM_FLAG_MATCOPY | LIBXSMM_GEMM_FLAG_TKERNEL) & registry_keys[i].xgemm.flags)) {
+          if (0 == ((LIBXSMM_GEMM_FLAG_MATCOPY | LIBXSMM_GEMM_FLAG_TKERNEL) & registry_keys[i].xgemm.iflags)) {
             const libxsmm_gemm_descriptor *const desc = &registry_keys[i].xgemm;
             const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
             const int precision = (LIBXSMM_GEMM_PRECISION_F64 == desc->datatype ? 0 : 1);
@@ -700,10 +700,10 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
               ++internal_statistic[precision][bucket].nsta;
             }
           }
-          else if (0 != (LIBXSMM_GEMM_FLAG_MATCOPY & registry_keys[i].xgemm.flags)) {
+          else if (0 != (LIBXSMM_GEMM_FLAG_MATCOPY & registry_keys[i].xgemm.iflags)) {
             ++internal_statistic_num_mcopy;
           }
-          else if (0 != (LIBXSMM_GEMM_FLAG_TKERNEL & registry_keys[i].xgemm.flags)) {
+          else if (0 != (LIBXSMM_GEMM_FLAG_TKERNEL & registry_keys[i].xgemm.iflags)) {
             ++internal_statistic_num_tcopy;
           }
           if (0 == (LIBXSMM_CODE_STATIC & code.uimm)) { /* check for allocated/generated JIT-code */
@@ -1350,8 +1350,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer internal_find_code(cons
           if (0 == internal_registry[i].const_pmm) { /* double-check registry after acquiring the lock */
             libxsmm_build_request request; /* setup the code build request */
             request.descriptor.gemm = descriptor;
-            if (0 == (LIBXSMM_GEMM_FLAG_MATCOPY & descriptor->flags)) {
-              if (0 == (LIBXSMM_GEMM_FLAG_TKERNEL & descriptor->flags)) { /* gemm */
+            if (0 == (LIBXSMM_GEMM_FLAG_MATCOPY & descriptor->iflags)) {
+              if (0 == (LIBXSMM_GEMM_FLAG_TKERNEL & descriptor->iflags)) { /* gemm */
                 internal_update_mmstatistic(descriptor, 1/*try*/, 0); /* count attempt */
                 request.kind = LIBXSMM_BUILD_KIND_GEMM;
               }
@@ -1551,7 +1551,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->flags) < sizeof(query));
     LIBXSMM_INIT
     query.mcopy = *descriptor;
-    query.xgemm.flags = LIBXSMM_GEMM_FLAG_MATCOPY;
+    query.xgemm.iflags = LIBXSMM_GEMM_FLAG_MATCOPY;
     result = internal_find_code(&query.xgemm).xmatcopy;
   }
   return result;
@@ -1568,7 +1568,7 @@ LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxs
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
     LIBXSMM_INIT
     query.trans = *descriptor;
-    query.xgemm.flags = LIBXSMM_GEMM_FLAG_TKERNEL;
+    query.xgemm.iflags = LIBXSMM_GEMM_FLAG_TKERNEL;
     result = internal_find_code(&query.xgemm).xtrans;
   }
   return result;
