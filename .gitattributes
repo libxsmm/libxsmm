@@ -20,4 +20,4 @@ samples/seissol/*.sides export-ignore
 samples/seissol/*.size export-ignore
 samples/edge/mats export-ignore
 samples/pyfr/mats export-ignore
-version.txt merge=theirs
+version.txt merge=ours

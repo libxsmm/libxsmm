@@ -81,6 +81,16 @@ TESTSIZE ?= 1
 # Static or shared binary
 STATIC ?= 0
 
+# Intrinsics support level
+INTRINSICS ?= 2
+ifneq (0,$(INTRINSICS))
+  ifeq (1,$(INTRINSICS))
+    DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+  endif
+else # disabled
+  DFLAGS += -DLIBXSMM_INTRINSICS_NONE
+endif
+
 OFFLOAD ?= 0
 ifneq (0,$(OFFLOAD))
   MPSS ?= 1

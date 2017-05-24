@@ -53,6 +53,7 @@ typedef enum libxsmm_datatype {
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
+  LIBXSMM_GEMM_FLAG_NONE    = 0,
   /** Transpose matrix A. */
   LIBXSMM_GEMM_FLAG_TRANS_A = 1,
   /** Transpose matrix B. */

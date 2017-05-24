@@ -652,6 +652,8 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
   unsigned int l_displacement_k_a = 0;
   unsigned int l_k_a_update = 0;
   unsigned int l_n_accs = 0;
+  unsigned int b_prefetch_blocks = 0;
+  unsigned int b_pref_freq = 1;
 
 #if !defined(NDEBUG)
   if ( i_n_blocking > 28 ) {
@@ -875,7 +877,59 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
                                                   l_disp,
                                                   i_micro_kernel_config->vector_name,
                                                   0,
-                                                  i_micro_kernel_config->vector_reg_count - (i_n_blocking*(((l_k/4)%l_n_accs)+1)) + l_n );      
+                                                  i_micro_kernel_config->vector_reg_count - (i_n_blocking*(((l_k/4)%l_n_accs)+1)) + l_n );
+      } else {
+        /* shouldn't happen */
+      }
+      
+      if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_AL1_BL1_CL1) {
+        
+        b_prefetch_blocks = i_xgemm_desc->k/i_micro_kernel_config->vector_length;
+        b_pref_freq = ((i_k_blocking/4)/b_prefetch_blocks)/2;
+        
+        if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_AL1) {
+          if ( (l_n == 1) || (l_n == 6) || (l_n == 10) || (l_n == 15) ) {
+            libxsmm_x86_instruction_prefetch( io_generated_code,
+                                              LIBXSMM_X86_INSTR_PREFETCHT0,
+                                              i_gp_reg_mapping->gp_reg_a_prefetch,
+                                              LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                              i_xgemm_desc->lda * (l_k + l_n/4) * i_micro_kernel_config->datatype_size );
+          }
+        }
+        
+        if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL1) {
+          if ( l_k % (b_pref_freq*4) == 0 ) {
+            if ( l_k % (b_pref_freq*8) == 0) {
+              /* prefetch N/2 columns of B */
+              if (l_n % 2 == 0) {
+                libxsmm_x86_instruction_prefetch( io_generated_code,
+                                                 LIBXSMM_X86_INSTR_PREFETCHT0,
+                                                 i_gp_reg_mapping->gp_reg_b_prefetch,
+                                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                 i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size + (l_k /(b_pref_freq*8)) * i_micro_kernel_config->vector_length * i_micro_kernel_config->datatype_size );
+              }
+            } else {
+              /* prefetch the remaining N/2 columns of B */
+              if (l_n % 2 == 1) {
+                libxsmm_x86_instruction_prefetch( io_generated_code,
+                                                 LIBXSMM_X86_INSTR_PREFETCHT0,
+                                                 i_gp_reg_mapping->gp_reg_b_prefetch,
+                                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                 i_xgemm_desc->ldb * l_n * i_micro_kernel_config->datatype_size + (l_k /(b_pref_freq*8))  * i_micro_kernel_config->vector_length * i_micro_kernel_config->datatype_size );
+              }
+            }
+          }
+        }
+        
+        if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_CL1) {
+          if ( l_k == 4 ) {
+            libxsmm_x86_instruction_prefetch( io_generated_code,
+                                             LIBXSMM_X86_INSTR_PREFETCHT0,
+                                             i_gp_reg_mapping->gp_reg_c_prefetch,
+                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                             i_xgemm_desc->ldc * l_n * i_micro_kernel_config->datatype_size );
+          }
+        }
       }
     }
     l_displacement_k_b+=4;
@@ -1666,8 +1720,8 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
                                                          const char*                        i_arch,
                                                          unsigned int                       i_n_blocking ) {
   /* l_k_blocking must be smaller than l_k_threshold */
-  const unsigned int l_k_blocking = 8;
-  const unsigned int l_k_threshold = 64;
+  /*const*/ unsigned int l_k_blocking = 8;
+  /*const*/ unsigned int l_k_threshold = 64;
   unsigned int l_k_unrolled = 0;
 
   LIBXSMM_UNUSED(i_arch);

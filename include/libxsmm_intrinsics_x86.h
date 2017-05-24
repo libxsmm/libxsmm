@@ -75,7 +75,7 @@
 # elif defined(__x86_64__) || defined(_WIN32) || defined(_WIN64)
 #   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_GENERIC
 # endif
-# if defined(LIBXSMM_STATIC_TARGET_ARCH) /* prerequisite */
+# if defined(LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_INTRINSICS_STATIC)
 #   if defined(__INTEL_COMPILER)
       /* TODO: compiler version check for LIBXSMM_MAX_STATIC_TARGET_ARCH */
 #     if 1500 <= (__INTEL_COMPILER)
@@ -313,6 +313,8 @@
 #       define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     endif
 #   endif /*!defined(LIBXSMM_INTRINSICS)*/
+# elif defined(LIBXSMM_STATIC_TARGET_ARCH)
+#   include <immintrin.h>
 # endif /*defined(LIBXSMM_STATIC_TARGET_ARCH)*/
 #endif /*!defined(LIBXSMM_INTRINSICS_NONE)*/
 
