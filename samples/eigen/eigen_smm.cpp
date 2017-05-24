@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
       fprintf(stdout, "m=%i n=%i k=%i size=%i memory=%.1f MB (%s)\n\n", m, n, k, s,
         1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
-      const libxsmm_mmfunction<T> xmm((LIBXSMM_FLAGS, m, n, k, LIBXSMM_PREFETCH_AUTO);
+      const libxsmm_mmfunction<T> xmm(LIBXSMM_FLAGS, m, n, k, LIBXSMM_PREFETCH_AUTO);
 
       if (xmm) {
         fprintf(stdout, "LIBXSMM batched (A,B,C)...\n");
