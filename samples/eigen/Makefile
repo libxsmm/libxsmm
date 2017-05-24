@@ -57,6 +57,13 @@ MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basena
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/$(OUTNAME)_smm
 
+ifeq (,$(strip $(EIGENROOT)))
+  ifneq (,$(wildcard $(HOME)/eigen/Eigen/Dense))
+    EIGENROOT = $(HOME)/eigen
+  else ifneq (,$(wildcard /usr/include/eigen3/Eigen/Dense))
+    EIGENROOT = /usr/include/eigen3
+  endif
+endif
 ifneq (,$(EIGENROOT))
   DFLAGS += -D__EIGEN
   IFLAGS += -I$(EIGENROOT)
