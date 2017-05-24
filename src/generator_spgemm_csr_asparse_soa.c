@@ -73,6 +73,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
   unsigned int l_n_chunksize = 0;
   unsigned int l_n_remain = 0;
   unsigned int l_n_max_block = 28;
+  unsigned int l_n_loop = 0;
 
   libxsmm_micro_kernel_config l_micro_kernel_config = { 0 };
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -127,7 +128,8 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
   /* calculate the chunk size of current columns to work on */
   l_n_chunks = ( (i_xgemm_desc->n % l_n_max_block) == 0 ) ? (i_xgemm_desc->n / l_n_max_block) : (i_xgemm_desc->n / l_n_max_block) + 1;
   l_n_chunksize = ( (i_xgemm_desc->n % l_n_chunks) == 0 ) ? (i_xgemm_desc->n / l_n_chunks) : (i_xgemm_desc->n / l_n_chunks) + 1;
-  l_n_remain = ( ((i_xgemm_desc->n % l_n_chunks) == 0) || ((unsigned int)i_xgemm_desc->n <= l_n_max_block) ) ? 0 : 1;
+  l_n_remain = ( ((i_xgemm_desc->n % l_n_chunksize) == 0) || ((unsigned int)i_xgemm_desc->n <= l_n_max_block) ) ? 0 : 1;
+  l_n_loop = ( l_n_remain == 0 ) ? (l_n_chunks * l_n_chunksize) : ((l_n_chunks-1) * l_n_chunksize);
 
   /* loop over blocks of n */
   libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
@@ -154,7 +156,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
 
 
   /* N loop jump back */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_nloop, i_xgemm_desc->n );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_loop );
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
 
   /* handle remainder of N loop */
