@@ -1539,6 +1539,17 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int
   INTERNAL_DISPATCH(double, descriptor, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
 }
 
+
+LIBXSMM_API_DEFINITION libxsmm_wmmfunction libxsmm_wmmdispatch(int m, int n, int k,
+  const int* lda, const int* ldb, const int* ldc,
+  const int* alpha, const int* beta,
+  const int* flags, const int* prefetch)
+{
+  LIBXSMM_INIT
+  INTERNAL_DISPATCH(short, descriptor, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+}
+
+
 #if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__) && defined(__clang__) && !defined(__INTEL_COMPILER)
 LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
@@ -1701,6 +1712,11 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn, c
       case LIBXSMM_GEMM_PRECISION_F32: {
         *fn = (intptr_t)libxsmm_smmdispatch(*m, *n, *k, lda, ldb, ldc,
           (const float*)alpha, (const float*)beta,
+          flags, prefetch);
+      } break;
+      case LIBXSMM_GEMM_PRECISION_I16: {
+        *fn = (intptr_t)libxsmm_wmmdispatch(*m, *n, *k, lda, ldb, ldc,
+          (const int*)alpha, (const int*)beta,
           flags, prefetch);
       } break;
 #if !defined(NDEBUG) /* this should not happen */

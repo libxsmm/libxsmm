@@ -78,7 +78,7 @@ typedef enum libxsmm_gemm_flags {
 typedef enum libxsmm_gemm_precision {
   LIBXSMM_GEMM_PRECISION_F64 = LIBXSMM_DATATYPE_F64,
   LIBXSMM_GEMM_PRECISION_F32 = LIBXSMM_DATATYPE_F32,
-  LIBXSMM_GEMM_PRECISION_I16I32 = LIBXSMM_DATATYPE_I16
+  LIBXSMM_GEMM_PRECISION_I16 = LIBXSMM_DATATYPE_I16
 } libxsmm_gemm_precision;
 
 /** Enumeration of the available prefetch strategies. */
@@ -327,8 +327,10 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
+/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmmfunction)(const short* a, const short* b, int* c, ...);
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; } libxsmm_xmmfunction;
+typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; libxsmm_wmmfunction wmm; } libxsmm_xmmfunction;
 
 /** Specialized function for matrix-copy (weak-typed). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmatcopyfunction)(const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);

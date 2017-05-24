@@ -263,7 +263,7 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_stat(libxsmm_gemm_precision precision, c
           }
         }
       } break;
-      case LIBXSMM_GEMM_PRECISION_I16I32: {
+      case LIBXSMM_GEMM_PRECISION_I16: {
         result = EXIT_FAILURE;
       } break;
 #if !defined(NDEBUG)

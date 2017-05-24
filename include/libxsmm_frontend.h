@@ -91,6 +91,7 @@
 #define LIBXSMM_TPREFIX(TYPE, SYMBOL) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_NAME(TYPE), SYMBOL)
 #define LIBXSMM_TPREFIX_double d
 #define LIBXSMM_TPREFIX_float s
+#define LIBXSMM_TPREFIX_short w
 
 /** Helper macro for type postfixes. */
 #define LIBXSMM_TPOSTFIX_NAME(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TPOSTFIX_, TYPE)
@@ -158,7 +159,7 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
 LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller);
 LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller);
 
-/** Construct symbol name from a given real type name (float or double). */
+/** Construct symbol name from a given real type name (float, double and short). */
 #define LIBXSMM_GEMM_PRECISION(TYPE)    LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_GEMM_PRECISION_)
 #define LIBXSMM_ORIGINAL_GEMM(TYPE)     LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_BLAS_GEMM_SYMBOL(TYPE)  LIBXSMM_ORIGINAL_GEMM(TYPE)(LIBXSMM_CALLER)
