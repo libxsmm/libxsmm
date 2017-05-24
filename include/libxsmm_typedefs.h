@@ -78,7 +78,7 @@ typedef enum libxsmm_gemm_flags {
 typedef enum libxsmm_gemm_precision {
   LIBXSMM_GEMM_PRECISION_F64 = LIBXSMM_DATATYPE_F64,
   LIBXSMM_GEMM_PRECISION_F32 = LIBXSMM_DATATYPE_F32,
-  LIBXSMM_GEMM_PRECISION_I16 = LIBXSMM_DATATYPE_I16
+  LIBXSMM_GEMM_PRECISION_I16I32 = LIBXSMM_DATATYPE_I16
 } libxsmm_gemm_precision;
 
 /** Enumeration of the available prefetch strategies. */
