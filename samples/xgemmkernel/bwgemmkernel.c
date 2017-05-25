@@ -50,110 +50,87 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    0: unaligned A, otherwise aligned\n");
   printf("    0: unaligned C, otherwise aligned\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC\n");
-  printf("    PRECISION: SP, DP\n");
+  printf("    PRECISION: I16\n");
   printf("    #repetitions\n");
   printf("\n\n");
 }
 
 LIBXSMM_INLINE
-void init_double( double*                         io_a,
-                  double*                         io_b,
-                  double*                         io_c,
-                  double*                         io_c_gold,
-                  const libxsmm_gemm_descriptor* i_xgemm_desc ) {
-  unsigned int l_i, l_j;
-
-  /* touch A */
-  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->lda; l_i++) {
-    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->k; l_j++) {
-      io_a[(l_j * i_xgemm_desc->lda) + l_i] = (double)drand48();
-    }
-  }
-  /* touch B */
-  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->ldb; l_i++ ) {
-    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++ ) {
-      io_b[(l_j * i_xgemm_desc->ldb) + l_i] = (double)drand48();
-    }
-  }
-  /* touch C */
-  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->ldc; l_i++) {
-    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++) {
-      io_c[(l_j * i_xgemm_desc->ldc) + l_i] = (double)0.0;
-      io_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] = (double)0.0;
-    }
-  }
-}
-
-LIBXSMM_INLINE
-void init_float( float*                          io_a,
-                 float*                          io_b,
-                 float*                          io_c,
-                 float*                          io_c_gold,
+void init_short( short*                       io_a,
+                 short*                       io_b,
+                 int*                         io_c,
+                 int*                         io_c_gold,
                  const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   unsigned int l_i, l_j;
 
   /* touch A */
   for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->lda; l_i++) {
     for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->k; l_j++) {
-      io_a[(l_j * i_xgemm_desc->lda) + l_i] = (float)drand48();
+      io_a[(l_j * i_xgemm_desc->lda) + l_i] = (short)(drand48()*10.0);
     }
   }
   /* touch B */
   for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->ldb; l_i++ ) {
     for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++ ) {
-      io_b[(l_j * i_xgemm_desc->ldb) + l_i] = (float)drand48();
+      io_b[(l_j * i_xgemm_desc->ldb) + l_i] = (short)(drand48()*10.0);
     }
   }
   /* touch C */
   for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->ldc; l_i++) {
     for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++) {
-      io_c[(l_j * i_xgemm_desc->ldc) + l_i] = (float)0.0;
-      io_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] = (float)0.0;
+      io_c[(l_j * i_xgemm_desc->ldc) + l_i] = (int)0;
+      io_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] = (int)0;
     }
   }
 }
 
 LIBXSMM_INLINE
-void run_gold_double( const double*                   i_a,
-                      const double*                   i_b,
-                      double*                         o_c,
-                      const libxsmm_gemm_descriptor* i_xgemm_desc ) {
-  unsigned int l_m, l_n, l_k, l_t;
-  double l_runtime = 0.0;
+void init_byte( unsigned char*                io_a,
+                char*                         io_b,
+                int*                          io_c,
+                int*                          io_c_gold,
+                const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  unsigned int l_i, l_j;
 
-  const unsigned long long l_start = libxsmm_timer_tick();
-
-  for ( l_t = 0; l_t < g_jit_code_reps; l_t++ ) {
-    for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++ ) {
-      for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) {
-        for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
-          o_c[(l_n * i_xgemm_desc->ldc) + l_m] += i_a[(l_k * i_xgemm_desc->lda) + l_m] * i_b[(l_n * i_xgemm_desc->ldb) + l_k];
-        }
-      }
+  /* touch A */
+  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->lda; l_i++) {
+    for ( l_j = 0; l_j < (unsigned int)(i_xgemm_desc->k/2); l_j++) {
+      io_a[(l_j * i_xgemm_desc->lda) + l_i] = (unsigned char)(drand48()*10.0);
     }
   }
-
-  l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
-
-  printf("%fs for C\n", l_runtime);
-  printf("%f GFLOPS for C\n", ((double)((double)g_jit_code_reps * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
+  /* touch B */
+  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->ldb; l_i++ ) {
+    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++ ) {
+      io_b[(l_j * i_xgemm_desc->ldb) + l_i] = (char)(drand48()*10.0);
+    }
+  }
+  /* touch C */
+  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->ldc; l_i++) {
+    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++) {
+      io_c[(l_j * i_xgemm_desc->ldc) + l_i] = (int)0;
+      io_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] = (int)0;
+    }
+  }
 }
 
 LIBXSMM_INLINE
-void run_gold_float( const float*                   i_a,
-                     const float*                   i_b,
-                     float*                         o_c,
+void run_gold_short( const short*                   i_a,
+                     const short*                   i_b,
+                     int*                           o_c,
                      const libxsmm_gemm_descriptor* i_xgemm_desc ) {
-  unsigned int l_m, l_n, l_k, l_t;
+  unsigned int l_m, l_n, l_k, l_k2, l_t, l_k_block;
   double l_runtime = 0.0;
+  l_k_block = 2;
 
   const unsigned long long l_start = libxsmm_timer_tick();
 
   for ( l_t = 0; l_t < g_jit_code_reps; l_t++ ) {
     for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++ ) {
-      for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) {
+      for ( l_k = 0; l_k < (unsigned int)(i_xgemm_desc->k/l_k_block); l_k++ ) {
         for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
-          o_c[(l_n * i_xgemm_desc->ldc) + l_m] += i_a[(l_k * i_xgemm_desc->lda) + l_m] * i_b[(l_n * i_xgemm_desc->ldb) + l_k];
+          for ( l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+            o_c[(l_n * i_xgemm_desc->ldc) + l_m] += i_a[(l_k * (i_xgemm_desc->lda*l_k_block)) + (l_m*l_k_block) + l_k2] * i_b[(l_n * i_xgemm_desc->ldb) + (l_k*l_k_block) + l_k2];
+          }
         }
       }
     }
@@ -162,22 +139,51 @@ void run_gold_float( const float*                   i_a,
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   printf("%fs for C\n", l_runtime);
-  printf("%f GFLOPS for C\n", ((double)((double)g_jit_code_reps * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
+  printf("%f GOPS for C\n", ((double)((double)g_jit_code_reps * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 }
 
 LIBXSMM_INLINE
-void run_jit_double( const double*                    i_a,
-                     const double*                    i_b,
-                     double*                          o_c,
-                     const int                        i_M,
-                     const int                        i_N,
-                     const int                        i_K,
-                     const libxsmm_gemm_prefetch_type i_prefetch ) {
+void run_gold_byte( const unsigned char*          i_a,
+                    const char*                   i_b,
+                    int*                          o_c,
+                    const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+  unsigned int l_m, l_n, l_k, l_k2, l_t, l_k_block;
+  double l_runtime = 0.0;
+  l_k_block = 4;
+
+  const unsigned long long l_start = libxsmm_timer_tick();
+
+  for ( l_t = 0; l_t < g_jit_code_reps; l_t++ ) {
+    for ( l_n = 0; l_n < (unsigned int)i_xgemm_desc->n; l_n++ ) {
+      for ( l_k = 0; l_k < (unsigned int)(i_xgemm_desc->k/l_k_block); l_k++ ) {
+        for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
+          for ( l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+            o_c[(l_n * i_xgemm_desc->ldc) + l_m] += i_a[(l_k * (i_xgemm_desc->lda*l_k_block)) + (l_m*l_k_block) + l_k2] * i_b[(l_n * i_xgemm_desc->ldb) + (l_k*l_k_block) + l_k2];
+          }
+        }
+      }
+    }
+  }
+
+  l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
+
+  printf("%fs for C\n", l_runtime);
+  printf("%f GOPS for C\n", ((double)((double)g_jit_code_reps * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
+}
+
+LIBXSMM_INLINE
+void run_jit_short( const short*                     i_a,
+                    const short*                     i_b,
+                    int*                             o_c,
+                    const int                        i_M,
+                    const int                        i_N,
+                    const int                        i_K,
+                    const libxsmm_gemm_prefetch_type i_prefetch ) {
   /* define function pointer */
-  libxsmm_dmmfunction l_test_jit;
+  libxsmm_wmmfunction l_test_jit;
   double l_jittime = 0.0, l_runtime = 0.0;
-  double l_alpha = 1.0;
-  double l_beta = 1.0;
+  int l_alpha = 1;
+  int l_beta = 1;
   unsigned long long l_start;
   unsigned int l_t;
 
@@ -191,9 +197,14 @@ void run_jit_double( const double*                    i_a,
   }
 
   l_start = libxsmm_timer_tick();
-  l_test_jit = libxsmm_dmmdispatch(i_M, i_N, i_K, &i_M, &i_K, &i_M, &l_alpha, &l_beta, NULL, &i_prefetch );
+  l_test_jit = libxsmm_wmmdispatch(i_M, i_N, i_K, &i_M, &i_K, &i_M, &l_alpha, &l_beta, NULL, &i_prefetch );
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   printf("function pointer address: %llx\n", (unsigned long long)l_test_jit);
+
+  if (l_test_jit == 0) {
+    printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
+    exit(-1);
+  }
 
   l_start = libxsmm_timer_tick();
 
@@ -211,9 +222,10 @@ void run_jit_double( const double*                    i_a,
 
   printf("%fs for creating jit\n", l_jittime);
   printf("%fs for executing jit\n", l_runtime);
-  printf("%f GFLOPS for jit\n", ((double)((double)g_jit_code_reps * (double)i_M * (double)i_N * (double)i_K) * 2.0) / (l_runtime * 1.0e9));
+  printf("%f GOPS for jit\n", ((double)((double)g_jit_code_reps * (double)i_M * (double)i_N * (double)i_K) * 2.0) / (l_runtime * 1.0e9));
 }
 
+#if 0
 LIBXSMM_INLINE
 void run_jit_float( const float*                     i_a,
                     const float*                     i_b,
@@ -244,6 +256,11 @@ void run_jit_float( const float*                     i_a,
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   printf("function pointer address: %llx\n", (unsigned long long)l_test_jit);
 
+  if (l_test_jit == 0) {
+    printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
+    exit(-1);
+  }
+
   l_start = libxsmm_timer_tick();
 
   if ( i_prefetch == LIBXSMM_PREFETCH_NONE ) {
@@ -260,13 +277,14 @@ void run_jit_float( const float*                     i_a,
 
   printf("%fs for creating jit\n", l_jittime);
   printf("%fs for executing jit\n", l_runtime);
-  printf("%f GFLOPS for jit\n", ((double)((double)g_jit_code_reps * (double)i_M * (double)i_N * (double)i_K) * 2.0) / (l_runtime * 1.0e9));
+  printf("%f GOPS for jit\n", ((double)((double)g_jit_code_reps * (double)i_M * (double)i_N * (double)i_K) * 2.0) / (l_runtime * 1.0e9));
 }
+#endif
 
 LIBXSMM_INLINE
-void max_error_double( const double*                   i_c,
-                       const double*                   i_c_gold,
-                       const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+void max_error( const int*                     i_c,
+                const int*                     i_c_gold,
+                const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   unsigned int l_i, l_j;
   double l_max_error = 0.0;
 
@@ -283,25 +301,6 @@ void max_error_double( const double*                   i_c,
   printf("max. error: %f\n", l_max_error);
 }
 
-LIBXSMM_INLINE
-void max_error_float( const float*                    i_c,
-                      const float*                    i_c_gold,
-                      const libxsmm_gemm_descriptor* i_xgemm_desc ) {
-  unsigned int l_i, l_j;
-  double l_max_error = 0.0;
-
-  for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->m; l_i++) {
-    for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++) {
-#if 0
-      printf("Entries in row %i, column %i, gold: %f, jit: %f\n", l_i+1, l_j+1, i_c_gold[(l_j*i_xgemm_desc->ldc)+l_i], i_c[(l_j*i_xgemm_desc->ldc)+l_i]);
-#endif
-      if (l_max_error < fabs( (double)i_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] - (double)i_c[(l_j * i_xgemm_desc->ldc) + l_i]))
-        l_max_error = fabs( (double)i_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] - (double)i_c[(l_j * i_xgemm_desc->ldc) + l_i]);
-    }
-  }
-
-  printf("max. error: %f\n", l_max_error);
-}
 
 int main(int argc, char* argv []) {
   char* l_precision = NULL;
@@ -315,19 +314,19 @@ int main(int argc, char* argv []) {
   int l_aligned_c = 0;
   int l_alpha = 0;
   int l_beta = 0;
-  int l_single_precision = 0;
+  int l_short_precision = 0;
   libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_PREFETCH_NONE;
 
   libxsmm_gemm_descriptor l_xgemm_desc;
   /* init data structures */
-  double* l_c_gold_d = 0;
-  double* l_a_d = 0;
-  double* l_b_d;
-  double* l_c_d;
-  float* l_c_gold_f = 0;
-  float* l_a_f = 0;
-  float* l_b_f;
-  float* l_c_f;
+  int* l_c_gold_w = 0;
+  short* l_a_w = 0;
+  short* l_b_w;
+  int* l_c_w;
+  int* l_c_gold_b = 0;
+  unsigned char* l_a_b = 0;
+  char* l_b_b;
+  int* l_c_b;
 
   /* check argument count for a valid range */
   if ( argc != 14 ) {
@@ -387,10 +386,10 @@ int main(int argc, char* argv []) {
   }
 
   /* check and evaluate precision flag */
-  if ( strcmp(l_precision, "SP") == 0 ) {
-    l_single_precision = 1;
-  } else if ( strcmp(l_precision, "DP") == 0 ) {
-    l_single_precision = 0;
+  if ( strcmp(l_precision, "I16") == 0 ) {
+    l_short_precision = 1;
+  } else if ( strcmp(l_precision, "I8") == 0 ) {
+    l_short_precision = 0;
   } else {
     print_help();
     return -1;
@@ -408,67 +407,75 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, 0 == l_single_precision ? LIBXSMM_GEMM_PRECISION_F64 : LIBXSMM_GEMM_PRECISION_F32,
+  /* short is only supported for now */
+  if ( l_short_precision == 0 ) {
+    print_help();
+    return -1;
+  }
+
+  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, 0 == l_short_precision ? LIBXSMM_GEMM_PRECISION_I16 : LIBXSMM_GEMM_PRECISION_I16,
     (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0) | (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0),
     l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
     l_alpha, l_beta, l_prefetch);
 
-  if ( l_single_precision == 0 ) {
-    l_a_d = (double*)libxsmm_aligned_malloc(l_xgemm_desc.lda * l_xgemm_desc.k * sizeof(double), 64);
-    l_b_d = (double*)libxsmm_aligned_malloc(l_xgemm_desc.ldb * l_xgemm_desc.n * sizeof(double), 64);
-    l_c_d = (double*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(double), 64);
-    l_c_gold_d = (double*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(double), 64);
-    init_double(l_a_d, l_b_d, l_c_d, l_c_gold_d, &l_xgemm_desc);
+  if ( l_short_precision == 1 ) {
+    l_a_w = (short*)libxsmm_aligned_malloc(l_xgemm_desc.lda * l_xgemm_desc.k * sizeof(short), 64);
+    l_b_w = (short*)libxsmm_aligned_malloc(l_xgemm_desc.ldb * l_xgemm_desc.n * sizeof(short), 64);
+    l_c_w = (int*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(int), 64);
+    l_c_gold_w = (int*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(int), 64);
+    init_short(l_a_w, l_b_w, l_c_w, l_c_gold_w, &l_xgemm_desc);
   } else {
-    l_a_f = (float*)libxsmm_aligned_malloc(l_xgemm_desc.lda * l_xgemm_desc.k * sizeof(float), 64);
-    l_b_f = (float*)libxsmm_aligned_malloc(l_xgemm_desc.ldb * l_xgemm_desc.n * sizeof(float), 64);
-    l_c_f = (float*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(float), 64);
-    l_c_gold_f = (float*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(float), 64);
-    init_float(l_a_f, l_b_f, l_c_f, l_c_gold_f, &l_xgemm_desc);
+#if 0
+    l_a_b = (unsigned char*)libxsmm_aligned_malloc(l_xgemm_desc.lda * l_xgemm_desc.k * sizeof(unsigned char), 64);
+    l_b_b = (char*)libxsmm_aligned_malloc(l_xgemm_desc.ldb * l_xgemm_desc.n * sizeof(char), 64);
+    l_c_b = (int*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(int), 64);
+    l_c_gold_b = (int*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(int), 64);
+    init_byte(l_a_b, l_b_b, l_c_b, l_c_gold_b, &l_xgemm_desc);
+#endif
   }
 
   /* print some output... */
   printf("------------------------------------------------\n");
   printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i)", l_xgemm_desc.m, l_xgemm_desc.k, l_xgemm_desc.k, l_xgemm_desc.n, l_xgemm_desc.m, l_xgemm_desc.n);
-  if ( l_single_precision == 0 ) {
-    printf(", DP\n");
+  if ( l_short_precision == 1 ) {
+    printf(", int16\n");
   } else {
-    printf(", SP\n");
+    printf(", int8\n");
   }
   printf("------------------------------------------------\n");
 
   /* run C */
-  if ( l_single_precision == 0 ) {
-    run_gold_double( l_a_d, l_b_d, l_c_gold_d, &l_xgemm_desc );
+  if ( l_short_precision == 1 ) {
+    run_gold_short( l_a_w, l_b_w, l_c_gold_w, &l_xgemm_desc );
   } else {
-    run_gold_float( l_a_f, l_b_f, l_c_gold_f, &l_xgemm_desc );
+    /*run_gold_byte( l_a_b, l_b_b, l_c_gold_b, &l_xgemm_desc );*/
   }
 
   /* run jit */
-  if ( l_single_precision == 0 ) {
-    run_jit_double( l_a_d, l_b_d, l_c_d, l_m, l_n, l_k, l_prefetch );
+  if ( l_short_precision == 1 ) {
+    run_jit_short( l_a_w, l_b_w, l_c_w, l_m, l_n, l_k, l_prefetch );
   } else {
-    run_jit_float( l_a_f, l_b_f, l_c_f, l_m, l_n, l_k, l_prefetch );
+    /*run_jit_byte( l_a_b, l_b_b, l_c_b, l_m, l_n, l_k, l_prefetch );*/
   }
 
   /* test result */
-  if ( l_single_precision == 0 ) {
-    max_error_double( l_c_d, l_c_gold_d, &l_xgemm_desc );
+  if ( l_short_precision == 1 ) {
+    max_error( l_c_w, l_c_gold_w, &l_xgemm_desc );
   } else {
-    max_error_float( l_c_f, l_c_gold_f, &l_xgemm_desc );
+    /*max_error( l_c_b, l_c_gold_b, &l_xgemm_desc );*/
   }
 
   /* free */
-  if ( l_single_precision == 0 ) {
-    libxsmm_free(l_a_d);
-    libxsmm_free(l_b_d);
-    libxsmm_free(l_c_d);
-    libxsmm_free(l_c_gold_d);
+  if ( l_short_precision == 1 ) {
+    libxsmm_free(l_a_w);
+    libxsmm_free(l_b_w);
+    libxsmm_free(l_c_w);
+    libxsmm_free(l_c_gold_w);
   } else {
-    libxsmm_free(l_a_f);
-    libxsmm_free(l_b_f);
-    libxsmm_free(l_c_f);
-    libxsmm_free(l_c_gold_f);
+    libxsmm_free(l_a_b);
+    libxsmm_free(l_b_b);
+    libxsmm_free(l_c_b);
+    libxsmm_free(l_c_gold_b);
   }
 
   printf("------------------------------------------------\n");
