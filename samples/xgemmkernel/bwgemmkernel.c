@@ -139,7 +139,7 @@ void run_gold_short( const short*                   i_a,
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   printf("%fs for C\n", l_runtime);
-  printf("%f GFLOPS for C\n", ((double)((double)g_jit_code_reps * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
+  printf("%f GOPS for C\n", ((double)((double)g_jit_code_reps * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 }
 
 LIBXSMM_INLINE
@@ -168,7 +168,7 @@ void run_gold_byte( const unsigned char*          i_a,
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
 
   printf("%fs for C\n", l_runtime);
-  printf("%f GFLOPS for C\n", ((double)((double)g_jit_code_reps * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
+  printf("%f GOPS for C\n", ((double)((double)g_jit_code_reps * (double)i_xgemm_desc->m * (double)i_xgemm_desc->n * (double)i_xgemm_desc->k) * 2.0) / (l_runtime * 1.0e9));
 }
 
 LIBXSMM_INLINE
@@ -222,7 +222,7 @@ void run_jit_short( const short*                     i_a,
 
   printf("%fs for creating jit\n", l_jittime);
   printf("%fs for executing jit\n", l_runtime);
-  printf("%f GFLOPS for jit\n", ((double)((double)g_jit_code_reps * (double)i_M * (double)i_N * (double)i_K) * 2.0) / (l_runtime * 1.0e9));
+  printf("%f GOPS for jit\n", ((double)((double)g_jit_code_reps * (double)i_M * (double)i_N * (double)i_K) * 2.0) / (l_runtime * 1.0e9));
 }
 
 #if 0
@@ -277,7 +277,7 @@ void run_jit_float( const float*                     i_a,
 
   printf("%fs for creating jit\n", l_jittime);
   printf("%fs for executing jit\n", l_runtime);
-  printf("%f GFLOPS for jit\n", ((double)((double)g_jit_code_reps * (double)i_M * (double)i_N * (double)i_K) * 2.0) / (l_runtime * 1.0e9));
+  printf("%f GOPS for jit\n", ((double)((double)g_jit_code_reps * (double)i_M * (double)i_N * (double)i_K) * 2.0) / (l_runtime * 1.0e9));
 }
 #endif
 
