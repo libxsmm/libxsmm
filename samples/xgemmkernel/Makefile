@@ -55,7 +55,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/xgemmkernel $(OUTDIR)/bwgemmkernel
+XFILES := $(OUTDIR)/sdgemmkernel $(OUTDIR)/bwgemmkernel
 
 .PHONY: all
 all: $(XFILES)
@@ -63,8 +63,8 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/xgemmkernel: $(OUTDIR)/.make $(BLDDIR)/xgemmkernel-c.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/xgemmkernel-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/sdgemmkernel: $(OUTDIR)/.make $(BLDDIR)/sdgemmkernel-c.o $(LIBNAME).$(LIBEXT)
+	$(LD) -o $@ $(BLDDIR)/sdgemmkernel-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/bwgemmkernel: $(OUTDIR)/.make $(BLDDIR)/bwgemmkernel-c.o $(LIBNAME).$(LIBEXT)
 	$(LD) -o $@ $(BLDDIR)/bwgemmkernel-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
