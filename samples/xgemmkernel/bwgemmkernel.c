@@ -201,6 +201,11 @@ void run_jit_short( const short*                     i_a,
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   printf("function pointer address: %llx\n", (unsigned long long)l_test_jit);
 
+  if (l_test_jit == 0) {
+    printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
+    exit(-1);
+  }
+
   l_start = libxsmm_timer_tick();
 
   if ( i_prefetch == LIBXSMM_PREFETCH_NONE ) {
@@ -250,6 +255,11 @@ void run_jit_float( const float*                     i_a,
   l_test_jit = libxsmm_smmdispatch(i_M, i_N, i_K, &i_M, &i_K, &i_M, &l_alpha, &l_beta, NULL, &i_prefetch );
   l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
   printf("function pointer address: %llx\n", (unsigned long long)l_test_jit);
+
+  if (l_test_jit == 0) {
+    printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
+    exit(-1);
+  }
 
   l_start = libxsmm_timer_tick();
 
