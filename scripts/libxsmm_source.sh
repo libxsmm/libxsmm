@@ -34,25 +34,23 @@ cat << EOM
 #ifndef LIBXSMM_SOURCE_H
 #define LIBXSMM_SOURCE_H
 
-#if !defined(LIBXSMM_INTERNAL_API)
-# if defined(__cplusplus)
-#   define LIBXSMM_INTERNAL_API LIBXSMM_INLINE
-# else
-#   define LIBXSMM_INTERNAL_API static
-# endif
-# define LIBXSMM_INTERNAL_API_DEFINITION LIBXSMM_INLINE
-# if !defined(LIBXSMM_DNN_INTERNAL_API)
-#   define LIBXSMM_DNN_INTERNAL_API
-# endif
-#else
-# error Please do not include any LIBXSMM header prior to libxsmm_source.h!
+#if defined(LIBXSMM_MACROS_H)
+# error Please do not include any LIBXSMM header other than libxsmm_source.h!
 #endif
-
 #if defined(LIBXSMM_BUILD)
 # error LIBXSMM_BUILD cannot be defined for the header-only LIBXSMM!
 #endif
 
-#include "libxsmm_macros.h"
+#if defined(__cplusplus)
+# define LIBXSMM_INTERNAL_API LIBXSMM_INLINE
+#else
+# define LIBXSMM_INTERNAL_API static
+#endif
+#define LIBXSMM_INTERNAL_API_DEFINITION LIBXSMM_INLINE
+
+#if !defined(LIBXSMM_DNN_INTERNAL_API)
+# define LIBXSMM_DNN_INTERNAL_API
+#endif
 
 /**
  * This header is intentionally called "libxsmm_source.h" since the followings block
