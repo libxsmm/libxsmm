@@ -155,10 +155,17 @@ int main(int argc, char* argv[]) {
 
   /* sparse routine */
   libxsmm_gemm_descriptor l_xgemm_desc;
+#if defined(__EDGE_EXECUTE_F32__)
+  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, LIBXSMM_GEMM_PRECISION_F32, 0/*flags*/,
+    N_QUANTITIES, N_ELEMENT_MODES, N_QUANTITIES, 0, N_ELEMENT_MODES, N_ELEMENT_MODES,
+    1.0, 1.0, LIBXSMM_PREFETCH_NONE);
+  libxsmm_smmfunction mykernel = libxsmm_create_xcsr_soa( &l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_a_sp ).smm;
+#else
   LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, LIBXSMM_GEMM_PRECISION_F64, 0/*flags*/,
     N_QUANTITIES, N_ELEMENT_MODES, N_QUANTITIES, 0, N_ELEMENT_MODES, N_ELEMENT_MODES,
     1.0, 1.0, LIBXSMM_PREFETCH_NONE);
-  libxsmm_dmmfunction mykernel = libxsmm_create_dcsr_soa( &l_xgemm_desc, l_rowptr, l_colidx, l_a_sp ).dmm;
+  libxsmm_dmmfunction mykernel = libxsmm_create_xcsr_soa( &l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_a_sp ).dmm;
+#endif
 
   gettimeofday(&l_start, NULL);
   for ( l_n = 0; l_n < REPS; l_n++) {

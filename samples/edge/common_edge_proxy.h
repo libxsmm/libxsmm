@@ -35,10 +35,15 @@
 #include <assert.h>
 #include <sys/time.h>
 
-#define N_CRUNS 8
 #define N_QUANTITIES 9
 
+#if defined(__EDGE_EXECUTE_F32__)
+#define REALTYPE float
+#define N_CRUNS 16
+#else
 #define REALTYPE double
+#define N_CRUNS 8
+#endif
 
 static double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
@@ -114,10 +119,17 @@ void libxsmm_sparse_csr_reader( const char*             i_csr_file_in,
         unsigned int l_row, l_column;
         REALTYPE l_value;
         /* read a line of content */
+#if defined(__EDGE_EXECUTE_F32__)
+        if ( sscanf(l_line, "%u %u %f", &l_row, &l_column, &l_value) != 3 ) {
+          fprintf( stderr, "could not read element!\n" );
+          return;
+        }
+#else
         if ( sscanf(l_line, "%u %u %lf", &l_row, &l_column, &l_value) != 3 ) {
           fprintf( stderr, "could not read element!\n" );
           return;
         }
+#endif
         /* adjust numbers to zero termination */
         l_row--;
         l_column--;
