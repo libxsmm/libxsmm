@@ -45,7 +45,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa( libxsmm_generated_code*         i
                                                const char*                     i_arch,
                                                const unsigned int*             i_row_idx,
                                                const unsigned int*             i_column_idx,
-                                               const double*                   i_values ) {
+                                               const void*                     i_values ) {
   if ( strcmp(i_arch, "knl") == 0 ||
        strcmp(i_arch, "skx") == 0 ) {
     libxsmm_generator_spgemm_csr_bsparse_soa_avx512( io_generated_code,
@@ -66,7 +66,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
                                                       const char*                     i_arch,
                                                       const unsigned int*             i_row_idx,
                                                       const unsigned int*             i_column_idx,
-                                                      const double*                   i_values ) {
+                                                      const void*                     i_values ) {
   unsigned int l_m;
   unsigned int l_n;
   unsigned int l_k;

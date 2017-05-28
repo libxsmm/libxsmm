@@ -174,7 +174,7 @@ void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_
                                               const char*                    i_arch,
                                               const unsigned int*            i_row_idx,
                                               const unsigned int*            i_column_idx,
-                                              const double*                  i_values ) {
+                                              const void*                    i_values ) {
   /* A matrix is sparse */
   if ( (i_xgemm_desc->lda == 0) && (i_xgemm_desc->ldb > 0) && (i_xgemm_desc->ldc > 0) ) {
     /* check LDB */

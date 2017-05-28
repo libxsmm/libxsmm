@@ -976,23 +976,23 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
     case LIBXSMM_BUILD_KIND_SSOA: { /* sparse SOA kernel */
       assert(0 != request->descriptor.ssoa && 0 != request->descriptor.ssoa->gemm);
       assert(0 != request->descriptor.ssoa->row_ptr && 0 != request->descriptor.ssoa->column_idx && 0 != request->descriptor.ssoa->values);
-      if (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.ssoa->gemm->datatype) { /* only double-precision */
+      /* only floating point */
+      if (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.ssoa->gemm->datatype || LIBXSMM_GEMM_PRECISION_F32 == request->descriptor.ssoa->gemm->datatype) {
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csr_soa_kernel, &generated_code, request->descriptor.ssoa->gemm, target_arch,
-          request->descriptor.ssoa->row_ptr, request->descriptor.ssoa->column_idx,
-          (const double*)request->descriptor.ssoa->values);
+          request->descriptor.ssoa->row_ptr, request->descriptor.ssoa->column_idx, request->descriptor.ssoa->values);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.ssoa->gemm->prefetch);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.ssoa",
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_nnz%i.ssoa",
             target_arch/*code path name*/, internal_get_typename(request->descriptor.ssoa->gemm->datatype),
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.ssoa->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.ssoa->gemm->flags) ? 'n' : 't',
             (unsigned int)request->descriptor.ssoa->gemm->m,   (unsigned int)request->descriptor.ssoa->gemm->n,   (unsigned int)request->descriptor.ssoa->gemm->k,
             (unsigned int)request->descriptor.ssoa->gemm->lda, (unsigned int)request->descriptor.ssoa->gemm->ldb, (unsigned int)request->descriptor.ssoa->gemm->ldc,
-            request->descriptor.ssoa->gemm->alpha, request->descriptor.ssoa->gemm->beta, uid);
+            request->descriptor.ssoa->gemm->alpha, request->descriptor.ssoa->gemm->beta, uid, request->descriptor.ssoa->row_ptr[request->descriptor.ssoa->gemm->m]);
         }
       }
     } break;
@@ -1586,8 +1586,8 @@ LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxs
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
-  const unsigned int* row_ptr, const unsigned int* column_idx, const double* values)
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor* descriptor,
+  const unsigned int* row_ptr, const unsigned int* column_idx, const void* values)
 {
   libxsmm_code_pointer code = { 0 };
   libxsmm_csr_soa_descriptor ssoa;

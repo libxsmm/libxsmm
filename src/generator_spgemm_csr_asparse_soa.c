@@ -44,7 +44,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         i
                                                const char*                     i_arch,
                                                const unsigned int*             i_row_idx,
                                                const unsigned int*             i_column_idx,
-                                               const double*                   i_values ) {
+                                               const void*                     i_values ) {
   if ( strcmp(i_arch, "knl") == 0 ||
        strcmp(i_arch, "skx") == 0 ) {
     libxsmm_generator_spgemm_csr_asparse_soa_avx512( io_generated_code,
@@ -65,7 +65,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
                                                       const char*                     i_arch,
                                                       const unsigned int*             i_row_idx,
                                                       const unsigned int*             i_column_idx,
-                                                      const double*                   i_values ) {
+                                                      const void*                     i_values ) {
   unsigned int l_soa_width = 0;
   unsigned int l_gen_m_trips = 0;
   unsigned int l_a_is_dense = 0;
@@ -179,7 +179,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop_avx512( libxsmm_generated_c
                                                              const char*                        i_arch,
                                                              const unsigned int*                i_row_idx,
                                                              const unsigned int*                i_column_idx,
-                                                             const double*                      i_values,
+                                                             const void*                        i_values,
                                                              const unsigned int                 i_soa_width,
                                                              const unsigned int                 i_gen_m_trips,
                                                              const unsigned int                 i_a_is_dense,

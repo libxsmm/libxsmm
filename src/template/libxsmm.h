@@ -151,10 +151,9 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpos
  * wide vector) and a sparse matrix or a sparse matrix with a dense SOA matrix.
  * The result is always a SOA matrix. There is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
- * @TODO: This is not great, probably need to declare values as void pointer
  */
-LIBXSMM_API libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
-   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values);
+LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor* descriptor,
+   const unsigned int* row_ptr, const unsigned int* column_idx, const void* values);
 
 /**
  * Code generation routine for the CSR format which multiplies a dense matrix B into a dense matrix C.
