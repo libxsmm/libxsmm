@@ -8,8 +8,13 @@ if [ "" = "${GIT_DIR}" ]; then
   GIT_DIR=${HERE}/../.git
 fi
 
+ECHO=$(which echo)
+GREP=$(which grep)
+GIT=$(which git)
+CAT=$(which cat)
+
 ROOTDIR=$(cd ${GIT_DIR}/..; pwd -P)
-PATTERNS="$(cat ${ROOTDIR}/.codefile)"
+CODEFILE=${ROOTDIR}/.codefile
 MSG_TAG="[skip ci]"
 MSG_FILE=$1
 MSG_KIND=$2
@@ -18,16 +23,23 @@ MSG_KIND=$2
 set -o noglob
 
 if [ "message" = "${MSG_KIND}" ] && [ "" != "${MSG_FILE}" ] && \
-   [ "0" != "$(grep -qs -F "${MSG_TAG}" ${MSG_FILE}; echo $?)" ];
+   [ "0" != "$(${GREP} -qs -F "${MSG_TAG}" ${MSG_FILE}; ${ECHO} $?)" ];
 then
-  for FILE in $(git diff --cached --name-only); do
-    BASENAME=$(basename ${FILE})
+  if [ -e ${CODEFILE} ]; then
+    PATTERNS="$(${CAT} ${CODEFILE} 2> /dev/null)"
+  fi
+  PATTERNS+=$(${ECHO} -e "\nMakefile*")
+  for FILENAME in $(${GIT} diff --cached --name-only); do
+    if [[ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e '^.hooks/..*' 2> /dev/null)" ]]; then
+      exit 0
+    fi
+    BASENAME=$(basename ${FILENAME})
     for PATTERN in ${PATTERNS}; do
       if [[ ${BASENAME} = ${PATTERN} ]]; then
         exit 0
       fi
     done
   done
-  echo "${MSG_TAG}" >> ${MSG_FILE}
+  ${ECHO} "${MSG_TAG}" >> ${MSG_FILE}
 fi
 
