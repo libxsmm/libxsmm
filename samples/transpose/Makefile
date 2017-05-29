@@ -78,12 +78,13 @@ else
 .PHONY: $(OUTDIR)/$(OUTNAME)f
 endif
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) #$(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
 ifneq (0,$(BLAS))
-	$(LD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+#$(LD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJECTS) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 else
-	$(LD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(EXTLIB) \
-		$(call abslib, $(LIBNAME)noblas.$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+#$(LD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(EXTLIB) $(call abslib, $(LIBNAME)noblas.$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJECTS) $(call abslib, $(LIBNAME)noblas.$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 endif
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
