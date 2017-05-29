@@ -777,8 +777,8 @@ else # GCC assumed
       CXXFLAGS += -flto -ffat-lto-objects
       CFLAGS += -flto -ffat-lto-objects
       FCFLAGS += -flto -ffat-lto-objects
+      FLDFLAGS += -fno-lto
       LDFLAGS += -flto
-      FLD += -fno-lto
     endif
     ifneq (0,$(INSTRUMENT))
       SYM = $(INSTRUMENT)
