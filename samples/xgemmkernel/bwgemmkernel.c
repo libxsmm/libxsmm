@@ -49,7 +49,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    beta: 0 or 1\n");
   printf("    0: unaligned A, otherwise aligned\n");
   printf("    0: unaligned C, otherwise aligned\n");
-  printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC\n");
+  printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC, AL1_BL1_CL1\n");
   printf("    PRECISION: I16\n");
   printf("    #repetitions\n");
   printf("\n\n");
@@ -379,6 +379,9 @@ int main(int argc, char* argv []) {
   }
   else if (strcmp("AL2jpst_BL2viaC", argv[11]) == 0) {
     l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST;
+  }
+  else if (strcmp("AL1_BL1_CL1", argv[11]) == 0) {
+    l_prefetch = LIBXSMM_PREFETCH_AL1_BL1_CL1;
   }
   else {
     print_help();
