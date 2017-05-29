@@ -97,8 +97,10 @@
 
 #if defined(__cplusplus)
 # define LIBXSMM_API_INTERN extern "C" static LIBXSMM_RETARGETABLE
+# define LIBXSMM_API_PRIVATE
 #else
 # define LIBXSMM_API_INTERN LIBXSMM_RETARGETABLE
+# define LIBXSMM_API_PRIVATE static
 #endif
 
 #if !defined(LIBXSMM_INTERNAL_API)
