@@ -753,10 +753,15 @@ else # GCC assumed
     CFLAGS += $(OPTFLAG)
     FCFLAGS += $(OPTFLAG)
     ifeq (0,$(COMPATIBLE))
-      CXXFLAGS += -funroll-loops -ftree-vectorize -fdata-sections -ffunction-sections
-      CFLAGS += -funroll-loops -ftree-vectorize -fdata-sections -ffunction-sections
-      FCFLAGS += -funroll-loops -ftree-vectorize -fdata-sections -ffunction-sections
-      LDFLAGS += -Wl,--gc-sections
+      CXXFLAGS += -funroll-loops -ftree-vectorize
+      CFLAGS += -funroll-loops -ftree-vectorize
+      FCFLAGS += -funroll-loops -ftree-vectorize
+      ifneq (Darwin,$(UNAME))
+        CXXFLAGS += -fdata-sections -ffunction-sections
+        CFLAGS += -fdata-sections -ffunction-sections
+        FCFLAGS += -fdata-sections -ffunction-sections
+        LDFLAGS += -Wl,--gc-sections
+      endif
       ifneq (0,$(GCC))
         CXXFLAGS += -ffast-math
         CFLAGS += -ffast-math
