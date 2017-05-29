@@ -44,7 +44,7 @@
      (!defined(_XOPEN_SOURCE) || !defined(_XOPEN_SOURCE_EXTENDED) || 500 > _XOPEN_SOURCE) && \
      (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
 /* C89: avoid warning about mkstemp declared implicitly */
-LIBXSMM_EXTERN_C int mkstemp(char* filename_template);
+LIBXSMM_EXTERN int mkstemp(char* filename_template);
 # endif
 #include <string.h>
 #include <stdio.h>
@@ -85,7 +85,7 @@ LIBXSMM_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
 # elif (!defined(_XOPEN_SOURCE) || 600 > _XOPEN_SOURCE) && \
        (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
 /* C89: avoid warning about posix_fallocate declared implicitly */
-LIBXSMM_EXTERN_C int posix_fallocate(int, off_t, off_t);
+LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 # endif
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -103,12 +103,12 @@ LIBXSMM_EXTERN_C int posix_fallocate(int, off_t, off_t);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE volatile LONG internal_trace_initialized /*= -1*/;
+LIBXSMM_API_INTERN volatile LONG internal_trace_initialized /*= -1*/;
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_trace_initialized /*= -1*/;
+LIBXSMM_API_INTERN int internal_trace_initialized /*= -1*/;
 #if !defined(LIBXSMM_NO_SYNC)
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE pthread_key_t internal_trace_key /*= 0*/;
+LIBXSMM_API_INTERN pthread_key_t internal_trace_key /*= 0*/;
 #endif
 LIBXSMM_API void internal_delete(void* value);
 LIBXSMM_API_DEFINITION void internal_delete(void* value)
@@ -137,9 +137,9 @@ LIBXSMM_API_DEFINITION void internal_delete(void* value)
 #endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_trace_mindepth /*=  0*/;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_trace_threadid /*= -1*/;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_trace_maxnsyms /*= -1*/;
+LIBXSMM_API_INTERN int internal_trace_mindepth /*=  0*/;
+LIBXSMM_API_INTERN int internal_trace_threadid /*= -1*/;
+LIBXSMM_API_INTERN int internal_trace_maxnsyms /*= -1*/;
 
 
 LIBXSMM_API
@@ -460,21 +460,8 @@ LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, cons
 LIBXSMM_PRAGMA_OPTIMIZE_OFF
 #endif
 
-LIBXSMM_EXTERN_C
-#if defined(__cplusplus) || defined(LIBXSMM_BUILD)
-LIBXSMM_API
-#else
-static
-#endif
-LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
-
-LIBXSMM_EXTERN_C
-#if defined(__cplusplus) || defined(LIBXSMM_BUILD)
-LIBXSMM_API_DEFINITION
-#else
-static
-#endif
-void __cyg_profile_func_enter(void* this_fn, void* call_site)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void*, void*);
+LIBXSMM_API_INTERN void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if defined(__TRACE)
 # if !defined(LIBXSMM_TRACE_DLINFO)
@@ -510,21 +497,8 @@ void __cyg_profile_func_enter(void* this_fn, void* call_site)
 }
 
 
-LIBXSMM_EXTERN_C
-#if defined(__cplusplus) || defined(LIBXSMM_BUILD)
-LIBXSMM_API
-#else
-static
-#endif
-LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
-
-LIBXSMM_EXTERN_C
-#if defined(__cplusplus) || defined(LIBXSMM_BUILD)
-LIBXSMM_API_DEFINITION
-#else
-static
-#endif
-void __cyg_profile_func_exit(void* this_fn, void* call_site)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void*, void*);
+LIBXSMM_API_INTERN void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }

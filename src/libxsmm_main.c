@@ -163,21 +163,21 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 
 #if !defined(LIBXSMM_NO_SYNC)
 # define INTERNAL_REGLOCK_MAXN 256
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE internal_reglock[INTERNAL_REGLOCK_MAXN];
+LIBXSMM_API_INTERN LIBXSMM_LOCK_TYPE internal_reglock[INTERNAL_REGLOCK_MAXN];
 #endif
 
 /** Determines the try-lock property (1<N: off, N=1: enabled). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_reglock_count;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t internal_registry_nbytes;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE internal_regkey_type* internal_registry_keys;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_code_pointer* internal_registry;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE internal_statistic_type internal_statistic[2/*DP/SP*/][4/*sml/med/big/xxx*/];
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_sml, internal_statistic_med, internal_statistic_mnk;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_statistic_num_mcopy, internal_statistic_num_tcopy;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int internal_teardown;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_dispatch_trylock_locked;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_gemm_auto_prefetch_locked;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int internal_gemm_auto_prefetch;
+LIBXSMM_API_INTERN int internal_reglock_count;
+LIBXSMM_API_INTERN size_t internal_registry_nbytes;
+LIBXSMM_API_INTERN internal_regkey_type* internal_registry_keys;
+LIBXSMM_API_INTERN libxsmm_code_pointer* internal_registry;
+LIBXSMM_API_INTERN internal_statistic_type internal_statistic[2/*DP/SP*/][4/*sml/med/big/xxx*/];
+LIBXSMM_API_INTERN unsigned int internal_statistic_sml, internal_statistic_med, internal_statistic_mnk;
+LIBXSMM_API_INTERN unsigned int internal_statistic_num_mcopy, internal_statistic_num_tcopy;
+LIBXSMM_API_INTERN unsigned int internal_teardown;
+LIBXSMM_API_INTERN int internal_dispatch_trylock_locked;
+LIBXSMM_API_INTERN int internal_gemm_auto_prefetch_locked;
+LIBXSMM_API_INTERN int internal_gemm_auto_prefetch;
 
 
 LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(int datatype, int m, int n, int k, unsigned int ntry, unsigned int ncol)

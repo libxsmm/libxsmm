@@ -95,8 +95,18 @@
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
 #endif /*__cplusplus*/
 
+#if defined(__cplusplus)
+# define LIBXSMM_API_INTERN extern "C" static LIBXSMM_RETARGETABLE
+#else
+# define LIBXSMM_API_INTERN LIBXSMM_RETARGETABLE
+#endif
+
 #if !defined(LIBXSMM_INTERNAL_API)
-# define LIBXSMM_INTERNAL_API LIBXSMM_EXTERN
+# if defined(__cplusplus)
+#   define LIBXSMM_INTERNAL_API extern "C"
+# else
+#   define LIBXSMM_INTERNAL_API
+# endif
 #endif
 #if !defined(LIBXSMM_INTERNAL_API_DEFINITION)
 # define LIBXSMM_INTERNAL_API_DEFINITION LIBXSMM_INTERNAL_API
@@ -110,15 +120,7 @@
 #define LIBXSMM_API LIBXSMM_INTERNAL_API LIBXSMM_RETARGETABLE
 #define LIBXSMM_API_DEFINITION LIBXSMM_INTERNAL_API_DEFINITION LIBXSMM_RETARGETABLE
 #define LIBXSMM_API_INLINE LIBXSMM_INTERNAL_API_INLINE LIBXSMM_RETARGETABLE
-
-/* Some definitions kept for compatibility with earlier versions */
-#if !defined(LIBXSMM_EXTERN_C)
-# if defined(__cplusplus)
-#   define LIBXSMM_EXTERN_C LIBXSMM_EXTERN
-# else
-#   define LIBXSMM_EXTERN_C
-# endif
-#endif
+#define LIBXSMM_API_EXTERN LIBXSMM_EXTERN LIBXSMM_RETARGETABLE
 
 #if !defined(LIBXSMM_RESTRICT)
 # if ((defined(__GNUC__) && !defined(__CYGWIN32__)) || defined(__INTEL_COMPILER)) && !defined(_WIN32)

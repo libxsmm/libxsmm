@@ -71,10 +71,10 @@
 #endif
 
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE FILE * fp;
+LIBXSMM_API_INTERN FILE * fp;
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* marker_addr;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int code_index /*= 0*/;
+LIBXSMM_API_INTERN void* marker_addr;
+LIBXSMM_API_INTERN int code_index /*= 0*/;
 #endif
 
 

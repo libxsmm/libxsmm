@@ -184,9 +184,9 @@ LIBXSMM_API void libxsmm_trans_finalize(void);
 
 
 /** Size of peeled chunks during transposing inner tiles. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_trans_tile[2/*DP/SP*/][2/*M,N*/][8/*size-range*/];
+LIBXSMM_API_INTERN unsigned int libxsmm_trans_tile[2/*DP/SP*/][2/*M,N*/][8/*size-range*/];
 /** Determines whether JIT-kernels are used or not (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_trans_jit;
+LIBXSMM_API_INTERN int libxsmm_trans_jit;
 
 #endif /*LIBXSMM_TRANS_H*/
 

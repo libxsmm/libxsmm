@@ -74,9 +74,9 @@
 #   define LIBXSMM_VTUNE_JIT_LOAD 21
 #   define LIBXSMM_VTUNE_JIT_UNLOAD 14
 #   define iJIT_SAMPLING_ON 0x0001
-LIBXSMM_EXTERN_C unsigned int iJIT_GetNewMethodID(void);
-LIBXSMM_EXTERN_C /*iJIT_IsProfilingActiveFlags*/int iJIT_IsProfilingActive(void);
-LIBXSMM_EXTERN_C int iJIT_NotifyEvent(/*iJIT_JVM_EVENT*/int event_type, void *EventSpecificData);
+LIBXSMM_EXTERN unsigned int iJIT_GetNewMethodID(void);
+LIBXSMM_EXTERN /*iJIT_IsProfilingActiveFlags*/int iJIT_IsProfilingActive(void);
+LIBXSMM_EXTERN int iJIT_NotifyEvent(/*iJIT_JVM_EVENT*/int event_type, void *EventSpecificData);
 typedef struct LineNumberInfo {
   unsigned int Offset;
   unsigned int LineNumber;
@@ -172,8 +172,8 @@ typedef struct LIBXSMM_RETARGETABLE internal_malloc_pool_type {
 } internal_malloc_pool_type;
 
 /** Scratch pool, which supports up to MAX_NSCRATCH allocation sites. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE internal_malloc_pool_type internal_malloc_scratch_pool[LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS];
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE size_t internal_malloc_scratch_nmallocs;
+LIBXSMM_API_INTERN internal_malloc_pool_type internal_malloc_scratch_pool[LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS];
+LIBXSMM_API_INTERN size_t internal_malloc_scratch_nmallocs;
 
 
 LIBXSMM_API_DEFINITION size_t libxsmm_gcd(size_t a, size_t b)

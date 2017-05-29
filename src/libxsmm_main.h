@@ -351,31 +351,31 @@ LIBXSMM_API unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int
 LIBXSMM_API void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API void libxsmm_dnn_finalize(void);
 
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_LOCK_TYPE libxsmm_lock_global;
+LIBXSMM_API_INTERN LIBXSMM_LOCK_TYPE libxsmm_lock_global;
 /** Function used to allocate default memory. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_default_malloc_fn;
+LIBXSMM_API_INTERN libxsmm_malloc_function libxsmm_default_malloc_fn;
 /** Function used to allocate scratch memory. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_malloc_function libxsmm_scratch_malloc_fn;
+LIBXSMM_API_INTERN libxsmm_malloc_function libxsmm_scratch_malloc_fn;
 /** Function used to release default memory. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_default_free_fn;
+LIBXSMM_API_INTERN libxsmm_free_function libxsmm_default_free_fn;
 /** Function used to release scratch memory. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE libxsmm_free_function libxsmm_scratch_free_fn;
+LIBXSMM_API_INTERN libxsmm_free_function libxsmm_scratch_free_fn;
 /** If non-NULL, this context used for the context-form of the malloc/free function. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_default_allocator_context;
+LIBXSMM_API_INTERN void* libxsmm_default_allocator_context;
 /** If non-NULL, this context used for the context-form of the malloc/free function. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* libxsmm_scratch_allocator_context;
+LIBXSMM_API_INTERN void* libxsmm_scratch_allocator_context;
 /** Number of scratch memory pools used; clamped against internal maximum. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE unsigned int libxsmm_scratch_pools;
+LIBXSMM_API_INTERN unsigned int libxsmm_scratch_pools;
 /** Growth factor used to scale the scratch memory in case of reallocation. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE double libxsmm_scratch_scale;
+LIBXSMM_API_INTERN double libxsmm_scratch_scale;
 /** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_verbosity;
+LIBXSMM_API_INTERN int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_target_archid;
+LIBXSMM_API_INTERN int libxsmm_target_archid;
 /** Determines whether a threaded implementation is synchronized or not. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_sync;
+LIBXSMM_API_INTERN int libxsmm_sync;
 /** Number of threads per core. */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE int libxsmm_nt;
+LIBXSMM_API_INTERN int libxsmm_nt;
 
 #endif /*LIBXSMM_MAIN_H*/
 
