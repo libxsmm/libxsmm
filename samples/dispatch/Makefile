@@ -64,7 +64,7 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (,$(strip $(FC)))
 $(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME)f.$(LIBEXT) $(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
-	$(FC) -o $@ $(FTNOBJS) $(EXTLIB) $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(call abslib,$(LIBNAME).$(LIBEXT)) \
+	$(FLD) -o $@ $(FTNOBJS) $(EXTLIB) $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(call abslib,$(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(OUTDIR)/$(OUTNAME)f
