@@ -140,8 +140,8 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   const int internal_dispatch_main_lda_ = (0 == LIBXSMM_LD(PLDA, PLDB) ? LIBXSMM_LD(M, N) : *LIBXSMM_LD(PLDA, PLDB)); \
   const int internal_dispatch_main_ldb_ = (0 == LIBXSMM_LD(PLDB, PLDA) ? (K) : *LIBXSMM_LD(PLDB, PLDA)); \
   const int internal_dispatch_main_ldc_ = (0 == (PLDC) ? LIBXSMM_LD(M, N) : *(PLDC)); \
-  const TYPE internal_dispatch_main_alpha_ = (0 == (PALPHA) ? ((TYPE)LIBXSMM_ALPHA) : *(PALPHA)); \
-  const TYPE internal_dispatch_main_beta_ = (0 == (PBETA) ? ((TYPE)LIBXSMM_BETA) : *(PBETA)); \
+  const TYPE internal_dispatch_main_alpha_ = (TYPE)(0 == (PALPHA) ? (LIBXSMM_ALPHA) : *(PALPHA)); \
+  const TYPE internal_dispatch_main_beta_ = (TYPE)(0 == (PBETA) ? (LIBXSMM_BETA) : *(PBETA)); \
   if (LIBXSMM_GEMM_NO_BYPASS(internal_dispatch_main_flags_, internal_dispatch_main_alpha_, internal_dispatch_main_beta_) && \
     LIBXSMM_GEMM_NO_BYPASS_DIMS(internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_) && \
     LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K)) \
