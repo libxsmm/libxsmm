@@ -983,7 +983,11 @@ ifneq (0,$(THREADS))
     CFLAGS += -pthread
     FLDFLAGS += -lpthread
     ifneq (Windows_NT,$(UNAME))
-      CLDFLAGS += -pthread
+      ifneq (Darwin,$(UNAME))
+        CLDFLAGS += -pthread
+      else ifeq (0,$(CLANG))
+        CLDFLAGS += -pthread
+      endif
     endif
   endif
 else
