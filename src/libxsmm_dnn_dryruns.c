@@ -38,8 +38,7 @@
 # include <omp.h>
 #endif
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct( libxsmm_dnn_layer* handle ) {
-  
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct( libxsmm_dnn_layer* handle ) {  
   /* Switch based on the format to use the correct dryrun */
 
 }
