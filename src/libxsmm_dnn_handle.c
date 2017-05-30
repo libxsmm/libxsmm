@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Rajkishore Barik, Ankush Mandal (Intel Corp.)
+/* Alexander Heinecke, Rajkishore Barik, Ankush Mandal, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_handle.h"
 #include "libxsmm_main.h"
@@ -55,6 +55,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   int i = 0;
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
+  const char *const env_jit = getenv("LIBXSMM_DNN_THREAD_PRIVATE_JIT");
   int internal_format_type;
   if ( 0 == env || 0 == *env) {
     /* Default internal format type */
@@ -71,6 +72,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle = 0;
       return status;
     }
+  }
+  
+  if ( 0 == env_jit || 0 == *env_jit) {
+    /* By default do not do any thread private jitting */
+    handle->use_thread_private_jit = 0;
+  } else {
+    handle->use_thread_private_jit = 1;
   }
 
   /* now architecture specific */
@@ -486,6 +494,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
       } else {
         assert(0/*should not happen*/);
+      }
+      
+      /* TODO: So far support for thread private jit only for FWD */
+      if ( handle->use_thread_private_jit ) {
+        handle->n_entries_fwd = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->compute_fwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+        handle->kernel_fwd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
+        
+        /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
+        
       }
     }
     /* Backward path */
