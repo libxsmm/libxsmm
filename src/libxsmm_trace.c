@@ -114,7 +114,9 @@ LIBXSMM_API void internal_delete(void* value);
 LIBXSMM_API_DEFINITION void internal_delete(void* value)
 {
   int fd;
+#if !(defined(__APPLE__) && defined(__MACH__))
   assert(value);
+#endif
   fd = *((int*)value);
 #if defined(NDEBUG)
   munmap(value, LIBXSMM_TRACE_SYMBOLSIZE);
