@@ -458,10 +458,6 @@ LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, cons
 
 #if defined(__GNUC__) && defined(LIBXSMM_BUILD)
 
-#if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__)
-LIBXSMM_PRAGMA_OPTIMIZE_OFF
-#endif
-
 LIBXSMM_API_EXTERN LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
 LIBXSMM_API_INTERN void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
@@ -504,10 +500,6 @@ LIBXSMM_API_INTERN void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }
-
-#if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__)
-LIBXSMM_PRAGMA_OPTIMIZE_ON
-#endif
 
 #endif /*defined(__GNUC__) && defined(LIBXSMM_BUILD)*/
 

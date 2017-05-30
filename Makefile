@@ -131,9 +131,7 @@ GEMM ?= 2
 JIT ?= 1
 
 # TRACE facility
-ifneq (Darwin,$(shell uname))
-  INSTRUMENT ?= $(TRACE)
-endif
+INSTRUMENT ?= $(TRACE)
 
 # target library for a broad range of systems
 ifneq (0,$(JIT))
@@ -927,7 +925,7 @@ endif
 
 .PHONY: samples
 samples: cp2k nek smm wrap
-	@find $(SPLDIR) -type f -name Makefile | grep -v /specfem/ | grep -v /pyfr/ | grep -v /edge/ | grep -v /eigen/ \
+	@find $(SPLDIR) -type f -name Makefile | grep -v /specfem/ | grep -v /pyfr/ | grep -v /edge/ \
 		$(patsubst %, | grep -v /%/,$^) | xargs -I {} dirname {} | xargs -I {} $(SHELL) -c \
 		"cd {}; $(MAKE) --no-print-directory"
 
