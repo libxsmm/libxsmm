@@ -3,7 +3,7 @@
 HERE=$(cd $(dirname $0); pwd -P)
 DEPDIR=${HERE}/../..
 
-TMPF=$(mktemp /tmp/fileXXXXXX)
+TMPF=$(mktemp /tmp/.libxsmm_XXXXXX.out)
 UNAME=$(which uname)
 ECHO=$(which echo)
 GREP=$(which grep)

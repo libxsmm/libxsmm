@@ -605,7 +605,7 @@ ifneq (1,$(PRECISION))
 endif
 endif
 endif
-	$(eval TMPFILE = $(shell mktemp /tmp/fileXXXXXX))
+	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
 	@cat $@ | sed \
 		-e "s/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/" \
 		-e "s/#ifndef NDEBUG/$(SUPPRESS_UNUSED_PREFETCH_WARNINGS)#ifdef LIBXSMM_NEVER_DEFINED/" \
@@ -1314,7 +1314,7 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 endif
 
 $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
-	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
+	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
 	@mv $(TMPFILE) $(TMPFILE).tex
 	@pandoc -D latex \
 	| sed \
@@ -1343,7 +1343,7 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 	@rm $(TMPFILE).tex
 
 $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
-	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
+	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
 	@mv $(TMPFILE) $(TMPFILE).tex
 	@pandoc -D latex \
 	| sed \
@@ -1372,7 +1372,7 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 	@rm $(TMPFILE).tex
 
 $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
-	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
+	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
 	@mv $(TMPFILE) $(TMPFILE).tex
 	@pandoc -D latex \
 	| sed \
@@ -1401,7 +1401,7 @@ $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
 	@rm $(TMPFILE).tex
 
 $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
-	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
+	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
 	@mv $(TMPFILE) $(TMPFILE).tex
 	@pandoc -D latex \
 	| sed \

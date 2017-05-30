@@ -331,7 +331,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
             }
           }
           else {
-            char filename[] = "/tmp/fileXXXXXX";
+            char filename[] = "/tmp/.libxsmm_XXXXXX.map";
             fd = mkstemp(filename);
 
             if (0 <= fd && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {

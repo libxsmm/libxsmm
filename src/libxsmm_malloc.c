@@ -483,7 +483,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void* internal_xmap(const char* dir, size_t 
 {
   void* result = MAP_FAILED;
   char filename[4096];
-  int i = LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/libxsmm_XXXXXX.jit", dir);
+  int i = LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/.libxsmm_XXXXXX.jit", dir);
   assert(0 != rx);
   if (0 <= i && i < (int)sizeof(filename)) {
     i = mkstemps(filename, 4);
