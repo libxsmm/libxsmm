@@ -456,7 +456,7 @@ LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, cons
 }
 
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && defined(LIBXSMM_BUILD)
 
 #if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__)
 LIBXSMM_PRAGMA_OPTIMIZE_OFF
@@ -509,5 +509,5 @@ LIBXSMM_API_INTERN void __cyg_profile_func_exit(void* this_fn, void* call_site)
 LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
-#endif /*defined(__GNUC__)*/
+#endif /*defined(__GNUC__) && defined(LIBXSMM_BUILD)*/
 
