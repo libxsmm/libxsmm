@@ -462,8 +462,7 @@ LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, cons
 LIBXSMM_PRAGMA_OPTIMIZE_OFF
 #endif
 
-LIBXSMM_API_PRIVATE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void*, void*);
-LIBXSMM_API_PRIVATE void __cyg_profile_func_enter(void* this_fn, void* call_site)
+LIBXSMM_INLINE void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if defined(__TRACE)
 # if !defined(LIBXSMM_TRACE_DLINFO)
@@ -499,8 +498,7 @@ LIBXSMM_API_PRIVATE void __cyg_profile_func_enter(void* this_fn, void* call_site
 }
 
 
-LIBXSMM_API_PRIVATE LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void*, void*);
-LIBXSMM_API_PRIVATE void __cyg_profile_func_exit(void* this_fn, void* call_site)
+LIBXSMM_INLINE void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }
