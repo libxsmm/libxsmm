@@ -71,10 +71,10 @@
 #endif
 
 
-LIBXSMM_API_INTERN FILE * fp;
+LIBXSMM_API_VARIABLE FILE * fp;
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
-LIBXSMM_API_INTERN void* marker_addr;
-LIBXSMM_API_INTERN int code_index /*= 0*/;
+LIBXSMM_API_VARIABLE void* marker_addr;
+LIBXSMM_API_VARIABLE int code_index /*= 0*/;
 #endif
 
 

@@ -172,8 +172,8 @@ typedef struct LIBXSMM_RETARGETABLE internal_malloc_pool_type {
 } internal_malloc_pool_type;
 
 /** Scratch pool, which supports up to MAX_NSCRATCH allocation sites. */
-LIBXSMM_API_INTERN internal_malloc_pool_type internal_malloc_scratch_pool[LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS];
-LIBXSMM_API_INTERN size_t internal_malloc_scratch_nmallocs;
+LIBXSMM_API_VARIABLE internal_malloc_pool_type internal_malloc_scratch_pool[LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS];
+LIBXSMM_API_VARIABLE size_t internal_malloc_scratch_nmallocs;
 
 
 LIBXSMM_API_DEFINITION size_t libxsmm_gcd(size_t a, size_t b)

@@ -393,13 +393,13 @@ LIBXSMM_API_EXTERN void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char*, LIBXSMM
   LIBXSMM_GEMM_CONST double*, double*, LIBXSMM_GEMM_CONST libxsmm_blasint*);
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
-LIBXSMM_API_INTERN unsigned int libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][8/*size-range*/];
+LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][8/*size-range*/];
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_API_INTERN int libxsmm_gemm_auto_prefetch;
+LIBXSMM_API_VARIABLE int libxsmm_gemm_auto_prefetch;
 /** Prefetch strategy for tiled GEMM. */
-LIBXSMM_API_INTERN int libxsmm_gemm_tiled_prefetch;
+LIBXSMM_API_VARIABLE int libxsmm_gemm_tiled_prefetch;
 /** Intercepted GEMM (1: sequential and non-tiled, 2: parallelized and tiled). */
-LIBXSMM_API_INTERN int libxsmm_gemm_wrap;
+LIBXSMM_API_VARIABLE int libxsmm_gemm_wrap;
 
 #endif /*LIBXSMM_GEMM_H*/
 

@@ -103,12 +103,12 @@ LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
-LIBXSMM_API_INTERN volatile LONG internal_trace_initialized /*= -1*/;
+LIBXSMM_API_VARIABLE volatile LONG internal_trace_initialized /*= -1*/;
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
-LIBXSMM_API_INTERN int internal_trace_initialized /*= -1*/;
+LIBXSMM_API_VARIABLE int internal_trace_initialized /*= -1*/;
 #if !defined(LIBXSMM_NO_SYNC)
-LIBXSMM_API_INTERN pthread_key_t internal_trace_key /*= 0*/;
+LIBXSMM_API_VARIABLE pthread_key_t internal_trace_key /*= 0*/;
 #endif
 LIBXSMM_API void internal_delete(void* value);
 LIBXSMM_API_DEFINITION void internal_delete(void* value)
@@ -139,9 +139,9 @@ LIBXSMM_API_DEFINITION void internal_delete(void* value)
 #endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
 
 
-LIBXSMM_API_INTERN int internal_trace_mindepth /*=  0*/;
-LIBXSMM_API_INTERN int internal_trace_threadid /*= -1*/;
-LIBXSMM_API_INTERN int internal_trace_maxnsyms /*= -1*/;
+LIBXSMM_API_VARIABLE int internal_trace_mindepth /*=  0*/;
+LIBXSMM_API_VARIABLE int internal_trace_threadid /*= -1*/;
+LIBXSMM_API_VARIABLE int internal_trace_maxnsyms /*= -1*/;
 
 
 LIBXSMM_API
@@ -462,7 +462,8 @@ LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, cons
 LIBXSMM_PRAGMA_OPTIMIZE_OFF
 #endif
 
-LIBXSMM_API_INLINE void __cyg_profile_func_enter(void* this_fn, void* call_site)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
+LIBXSMM_API_INTERN void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if defined(__TRACE)
 # if !defined(LIBXSMM_TRACE_DLINFO)
@@ -498,7 +499,8 @@ LIBXSMM_API_INLINE void __cyg_profile_func_enter(void* this_fn, void* call_site)
 }
 
 
-LIBXSMM_API_INLINE void __cyg_profile_func_exit(void* this_fn, void* call_site)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
+LIBXSMM_API_INTERN void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }

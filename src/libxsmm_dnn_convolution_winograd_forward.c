@@ -50,7 +50,7 @@
 
 
 /* function pointer for the CPUID-dispatched implementation */
-LIBXSMM_API_INTERN void (*internal_fwd_input_transform_custom_custom_alpha6)(
+LIBXSMM_API_VARIABLE void (*internal_fwd_input_transform_custom_custom_alpha6)(
   const float*, float*, float*, const libxsmm_dnn_layer*);
 
 

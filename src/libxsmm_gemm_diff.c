@@ -62,8 +62,8 @@
 #endif
 
 
-LIBXSMM_API_INTERN libxsmm_gemm_diff_function internal_gemm_diff_fn;
-LIBXSMM_API_INTERN libxsmm_gemm_diffn_function internal_gemm_diffn_fn;
+LIBXSMM_API_VARIABLE libxsmm_gemm_diff_function internal_gemm_diff_fn;
+LIBXSMM_API_VARIABLE libxsmm_gemm_diffn_function internal_gemm_diffn_fn;
 
 
 LIBXSMM_GEMM_DIFF_API_DEFINITION void libxsmm_gemm_diff_init(int target_arch)

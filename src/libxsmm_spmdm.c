@@ -58,18 +58,18 @@
 
 
 /* function pointer for the CPUID-dispatched implementation */
-LIBXSMM_API_INTERN void (*internal_spmdm_createSparseSlice_fp32_thread)(const libxsmm_spmdm_handle*, char,
+LIBXSMM_API_VARIABLE void (*internal_spmdm_createSparseSlice_fp32_thread)(const libxsmm_spmdm_handle*, char,
   const float*, libxsmm_CSR_sparseslice*, int, int, int);
-LIBXSMM_API_INTERN void (*internal_spmdm_createSparseSlice_bfloat16_thread)(const libxsmm_spmdm_handle*, char,
+LIBXSMM_API_VARIABLE void (*internal_spmdm_createSparseSlice_bfloat16_thread)(const libxsmm_spmdm_handle*, char,
   const uint16_t*, libxsmm_CSR_sparseslice*, int, int, int);
-LIBXSMM_API_INTERN void (*internal_spmdm_compute_fp32_thread)(const libxsmm_spmdm_handle*, char, char,
+LIBXSMM_API_VARIABLE void (*internal_spmdm_compute_fp32_thread)(const libxsmm_spmdm_handle*, char, char,
   const float*, libxsmm_CSR_sparseslice*, const float*, char, const float*, float*, int, int, int);
-LIBXSMM_API_INTERN void (*internal_spmdm_compute_bfloat16_thread)(const libxsmm_spmdm_handle*, char, char,
+LIBXSMM_API_VARIABLE void (*internal_spmdm_compute_bfloat16_thread)(const libxsmm_spmdm_handle*, char, char,
   const uint16_t*, libxsmm_CSR_sparseslice*, const uint16_t*, char, const uint16_t*, float*, int, int, int);
 
 #if defined(LIBXSMM_SPMDM_AVX)
-LIBXSMM_API_INTERN __m256i* internal_spmdm_shufmasks_32;
-LIBXSMM_API_INTERN __m256i* internal_spmdm_shufmasks_16;
+LIBXSMM_API_VARIABLE __m256i* internal_spmdm_shufmasks_32;
+LIBXSMM_API_VARIABLE __m256i* internal_spmdm_shufmasks_16;
 #endif
 
 
