@@ -131,7 +131,9 @@ GEMM ?= 2
 JIT ?= 1
 
 # TRACE facility
-INSTRUMENT ?= $(TRACE)
+ifneq (Darwin,$(shell uname))
+  INSTRUMENT ?= $(TRACE)
+endif
 
 # target library for a broad range of systems
 ifneq (0,$(JIT))
