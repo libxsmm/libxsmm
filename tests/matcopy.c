@@ -82,12 +82,12 @@ int main(void)
     maxi = LIBXSMM_MAX(maxi, ldi[test]);
     maxo = LIBXSMM_MAX(maxo, ldo[test]);
   }
-  a = (ELEM_TYPE*)libxsmm_malloc(maxi * maxm * sizeof(ELEM_TYPE));
-  b = (ELEM_TYPE*)libxsmm_malloc(maxo * maxm * sizeof(ELEM_TYPE));
+  a = (ELEM_TYPE*)libxsmm_malloc(maxi * maxn * sizeof(ELEM_TYPE));
+  b = (ELEM_TYPE*)libxsmm_malloc(maxo * maxn * sizeof(ELEM_TYPE));
   assert(0 != a && 0 != b);
 
-  init(42, a, maxn, maxm, maxi, 1.0);
-  init( 0, b, maxn, maxm, maxo, 1.0);
+  init(42, a, maxm, maxn, maxi, 1.0);
+  init( 0, b, maxm, maxn, maxo, 1.0);
 
   for (test = start; test < ntests; ++test) {
     unsigned int testerrors = (EXIT_SUCCESS == libxsmm_matcopy(
@@ -96,8 +96,8 @@ int main(void)
 
     if (0 == testerrors) {
       libxsmm_blasint i, j;
-      for (i = 0; i < m[test]; ++i) {
-        for (j = 0; j < n[test]; ++j) {
+      for (i = 0; i < n[test]; ++i) {
+        for (j = 0; j < m[test]; ++j) {
           const libxsmm_blasint u = i * ldi[test] + j;
           const libxsmm_blasint v = i * ldo[test] + j;
           testerrors += (LIBXSMM_FEQ(a[u], b[v]) ? 0u : 1u);
