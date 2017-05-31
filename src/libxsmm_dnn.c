@@ -55,6 +55,18 @@
 #endif
 
 
+LIBXSMM_API_DEFINITION void libxsmm_dnn_init(int target_arch)
+{
+  libxsmm_dnn_convolve_winograd_init(target_arch);
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_dnn_finalize(void)
+{
+  libxsmm_dnn_convolve_winograd_finalize();
+}
+
+
 LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
 {
   switch (code) {
@@ -63,7 +75,7 @@ LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
     case LIBXSMM_DNN_WARN_FALLBACK:
       return "LIBXSMM DNN Warning: Falling back to naive code as target is currently not supported by LIBXSMM!";
     case LIBXSMM_DNN_ERR_GENERAL:
-      return "LIBXSMM DNN Error: General error occured!";
+      return "LIBXSMM DNN Error: General error occurred!";
     case LIBXSMM_DNN_ERR_CREATE_HANDLE:
       return "LIBXSMM DNN Error: Handle creation failed!";
     case LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE:
@@ -71,7 +83,7 @@ LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
     case LIBXSMM_DNN_ERR_INVALID_BLOCKING:
       return "LIBXSMM DNN Error: Requested Input/Output buffer size cannot be blocked!";
     case LIBXSMM_DNN_ERR_INVALID_HANDLE:
-      return "LIBXSMM DNN Error: An invalid handle was proivded!";
+      return "LIBXSMM DNN Error: An invalid handle was provided!";
     case LIBXSMM_DNN_ERR_DATA_NOT_BOUND:
       return "LIBXSMM DNN Error: Not all required sources and destinations have been bound to convolution!";
     case LIBXSMM_DNN_ERR_CREATE_BUFFER:
@@ -89,9 +101,9 @@ LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
     case LIBXSMM_DNN_ERR_MISMATCH_BUFFER:
       return "LIBXSMM DNN Error: Layer doesn't match handle it should be bind to!";
     case LIBXSMM_DNN_ERR_INVALID_HANDLE_BUFFER:
-      return "LIBXSMM DNN Error: Invalid hanlde or buffer!";
+      return "LIBXSMM DNN Error: Invalid handle or buffer!";
     case LIBXSMM_DNN_ERR_MISMATCH_FILTER:
-      return "LIBXSMM DNN Error: Filter doens't match handle it should be bind to!";
+      return "LIBXSMM DNN Error: Filter does not match handle it should be bound to!";
     case LIBXSMM_DNN_ERR_INVALID_HANDLE_FILTER:
       return "LIBXSMM DNN Error: Invalid handle or filter!";
     case LIBXSMM_DNN_ERR_INVALID_KIND:
@@ -125,7 +137,7 @@ LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
     case LIBXSMM_DNN_ERR_INVALID_PADDING:
       return "LIBXSMM DNN Error: Invalid padding was specified!";
     default:
-      return "LIBXSMM DNN Error: Unknown error or warning occured!";
+      return "LIBXSMM DNN Error: Unknown error or warning occurred!";
   }
 }
 
@@ -226,7 +238,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
     handle->upd_use_thread_fil = 0;
     handle->upd_use_external_reduce = 0;
     handle->filter_transposed = 0;
-
     /* Set algorithm to use */
     if (conv_desc.algo == LIBXSMM_DNN_CONV_ALGO_AUTO) {
       if ( (((conv_desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) || ((conv_desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0)) &&
@@ -248,13 +259,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
       handle = 0;
       return 0;
     }
-    /* @TODO we might want to fall back to direct convolutoin if winograd fails */
+    /* @TODO we might want to fall back to direct convolution if winograd fails */
     if ( handle->algo == LIBXSMM_DNN_CONV_ALGO_WINOGRAD ) {
       *status = libxsmm_dnn_internal_create_conv_handle_winograd_check( handle );
       if ( *status == LIBXSMM_DNN_WARN_FALLBACK ) handle->algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
     }
-
-    if ( handle->algo == LIBXSMM_DNN_CONV_ALGO_DIRECT ) {
+    else if ( handle->algo == LIBXSMM_DNN_CONV_ALGO_DIRECT ) {
       *status = libxsmm_dnn_internal_create_conv_handle_direct( handle );
     } else {
       assert(0/*should not happen*/);
@@ -666,7 +676,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_filter* libxsmm_dnn_link_qfilter(const libxsm
     /* set properties of the buffer according to convolution handle */
     filter->ifmb = handle->blocksifm;
     filter->bifm = handle->ifmblock;
-    filter->ofmb = handle->blocksofm*handle->fm_lp_block; /* @TODO this is a flacky hack */
+    filter->ofmb = handle->blocksofm*handle->fm_lp_block; /* @TODO this is a flaky hack */
     filter->bofm = handle->ofmblock;
     filter->R = handle->desc.R;
     filter->S = handle->desc.S;
@@ -1274,7 +1284,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_filter(libxsmm_dnn_lay
       && handle->ifmblock == filter->bifm
       && handle->blocksifm == filter->ifmb
       && handle->ofmblock == filter->bofm
-      && (handle->blocksofm*handle->fm_lp_block) == filter->ofmb /* @TODO this check is flacky */
+      && (handle->blocksofm*handle->fm_lp_block) == filter->ofmb /* @TODO this check is flaky */
       && handle->fm_lp_block == filter->lpb
       && ((handle->filter_format & filter->format) > 0)
       && handle->datatype == filter->datatype)
@@ -1354,7 +1364,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
           }
         } break;
         case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
-          /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
+          /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
           l_scratch_size = handle->scratch1_size + 64;
           if (handle->padding_flag == 1) {
             scratch5_size = handle->fwdbwd_scratch_size;
@@ -1378,7 +1388,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
           }
         } break;
         case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-          /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
+          /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
           l_scratch_size += handle->scratch1_size + 64;
           /* we need a minibatch copy for transpose of input, scratch3 */
           l_scratch_size += handle->scratch3_size + 64;
@@ -1426,7 +1436,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
 
   if (0 != handle) {
     if (handle->algo == LIBXSMM_DNN_CONV_ALGO_WINOGRAD) {
-      /* + 64 to do alignement while performing bind, scratch1 */
+      /* + 64 to do alignment while performing bind, scratch1 */
       if (address % 64 == 0) {
         handle->scratch1 = (void*)address;
       } else {
@@ -1504,7 +1514,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
           }
         } break;
         case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
-          /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
+          /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
           if (address % 64 == 0) {
             handle->scratch1 = (void*)address;
           } else {
@@ -1564,7 +1574,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
           }
         } break;
         case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-          /* we need filter for transpose, + 64 to do alignement while performing bind, scratch1 */
+          /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
           if (handle->padding_flag == 1) {
             scratch5_size = handle->max_scratch5_size;
           if (address % 64 == 0) {
@@ -2264,6 +2274,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_wino_update_weights(
 }
 
 
+/* TODO: fix this hack and provide a proper API */
 LIBXSMM_API void libxsmm_set_flag_reuseInput(libxsmm_dnn_layer* /*handle*/, char /*type*/);
 LIBXSMM_API_DEFINITION void libxsmm_set_flag_reuseInput(libxsmm_dnn_layer* handle, char type)
 {

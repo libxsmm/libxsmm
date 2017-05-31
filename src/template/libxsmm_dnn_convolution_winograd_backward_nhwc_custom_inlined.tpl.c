@@ -151,7 +151,7 @@ for (job = thr_begin; job < thr_end; job++) {
         }
       }
     }
-    for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1++) {
+    for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1+=handle->cwino_bwd.ur_ifm) {
 #if 1
       jitted_conv_bp(
         &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ifm1, ofm1, 0, 0, ALPHA, handle->blocksifm, handle->blocksofm, TDVLEN, TDVLEN),

@@ -151,7 +151,7 @@ for (job = thr_begin; job < thr_end; job++) {
         }
       }
     }
-    for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1++) {
+    for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1+=handle->cwino_bwd.ur_ifm) {
 #if 1
       jitted_conv_bp(
         &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ifm1, ofm1, 0, 0, ALPHA, handle->blocksifm, handle->blocksofm, TDVLEN, TDVLEN),
@@ -159,8 +159,8 @@ for (job = thr_begin; job < thr_end; job++) {
         &LIBXSMM_VLA_ACCESS(8, V, img, oj, oi, ifm1, 0, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN),
         0, 0, 0);
 #else
-      unsigned int ti, tj;
-      unsigned int img1;
+      int ti, tj;
+      int img1;
       int ifm2, ofm2;
       for (img1 = 0; img1 < handle->cwino_bwd.bimg; img1++) {
         for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {

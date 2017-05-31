@@ -49,6 +49,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    PREFETCH: nopf, all\n");
   printf("    PRECISION: SP\n");
   printf("    Pass: fwd, bwd, upd");
+  printf("    ur_ifm:");
   printf("\n\n\n\n");
 }
 
@@ -117,10 +118,11 @@ int main(int argc, char* argv []) {
   int l_ur   = 0;
   int l_single_precision = 0;
   int flag_ur = 0;
+  int l_ur_ifm = 0;
   libxsmm_convolution_prefetch_type l_prefetch;
 
   /* check argument count for a valid range */
-  if (argc != 12) {
+  if (argc != 13) {
     print_help();
     return -1;
   }
@@ -139,6 +141,9 @@ int main(int argc, char* argv []) {
   /* arch specific stuff */
   l_arch = argv[8];
   l_precision = argv[10];
+
+  l_pass= argv[11];
+  l_ur_ifm = atoi(argv[12]);
 
   /* some intial parameters checks */
   /* check for sparse / dense only */
@@ -192,6 +197,7 @@ int main(int argc, char* argv []) {
   l_conv_desc.jtiles = l_jtiles;
   l_conv_desc.bimg = l_bimg;
   l_conv_desc.ur = l_ur;
+  l_conv_desc.ur_ifm = l_ur_ifm;
   l_conv_desc.prefetch = l_prefetch;
 
   if ( (strcmp(l_type, "dense")     == 0) ||

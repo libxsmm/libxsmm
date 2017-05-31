@@ -42,6 +42,15 @@
 #endif
 
 
+/** Enumerates element/data types. */
+typedef enum libxsmm_datatype {
+  LIBXSMM_DATATYPE_F64,
+  LIBXSMM_DATATYPE_F32,
+  LIBXSMM_DATATYPE_I32,
+  LIBXSMM_DATATYPE_I16,
+  LIBXSMM_DATATYPE_I8
+} libxsmm_datatype;
+
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
   /** Transpose matrix A. */
@@ -54,12 +63,10 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_ALIGN_C = 8
 } libxsmm_gemm_flags;
 
-/** Extended flag set complementing libxsmm_gemm_flags. */
+/** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_gemm_precision {
-  /** Not an actual flag; just provided for symmetry. */
-  LIBXSMM_GEMM_FLAG_F64PREC = 0,
-  /** Single-precision (sgemm rather than dgemm). */
-  LIBXSMM_GEMM_FLAG_F32PREC = 16
+  LIBXSMM_GEMM_PRECISION_F64 = LIBXSMM_DATATYPE_F64,
+  LIBXSMM_GEMM_PRECISION_F32 = LIBXSMM_DATATYPE_F32
 } libxsmm_gemm_precision;
 
 /** Enumeration of the available prefetch strategies. */
@@ -79,11 +86,19 @@ typedef enum libxsmm_gemm_prefetch_type {
   /** Prefetch A ahead. */
   LIBXSMM_PREFETCH_AL2_AHEAD          = 16,
   /** Prefetch PC using accesses to C. */
-  LIBXSMM_PREFETCH_CL2                = 32,
+  /*LIBXSMM_PREFETCH_CL2                = 32,*/
   LIBXSMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2,
-  LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C    = LIBXSMM_PREFETCH_AL2BL2_VIA_C | LIBXSMM_PREFETCH_CL2,
+  /*LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C    = LIBXSMM_PREFETCH_AL2BL2_VIA_C | LIBXSMM_PREFETCH_CL2,*/
   LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST  = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_JPST,
-  LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD
+  LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD,
+  /** Prefetch PA/PB/PC in L1 (using accesses to A, B, C) */
+  LIBXSMM_PREFETCH_AL1                = 32,
+  LIBXSMM_PREFETCH_BL1                = 64,
+  LIBXSMM_PREFETCH_CL1                = 128,
+  LIBXSMM_PREFETCH_AL1_BL1            = LIBXSMM_PREFETCH_AL1 | LIBXSMM_PREFETCH_BL1,
+  LIBXSMM_PREFETCH_BL1_CL1            = LIBXSMM_PREFETCH_BL1 | LIBXSMM_PREFETCH_CL1,
+  LIBXSMM_PREFETCH_AL1_CL1            = LIBXSMM_PREFETCH_AL1 | LIBXSMM_PREFETCH_CL1,
+  LIBXSMM_PREFETCH_AL1_BL1_CL1        = LIBXSMM_PREFETCH_AL1_BL1 | LIBXSMM_PREFETCH_CL1
 } libxsmm_gemm_prefetch_type;
 
 /** Provided for compatibility with older codes. */
@@ -149,9 +164,9 @@ typedef enum libxsmm_dnn_tensor_format{
   LIBXSMM_DNN_TENSOR_FORMAT_RSCK = 8,
   /* use KCRS format internally, this will include shadow copies, not preferred */
   LIBXSMM_DNN_TENSOR_FORMAT_KCRS = 16,
-  /* use ptr copy when copying in -> no copy takes place, this is just an additional option */
+  /* use pointer copy when copying in -> no copy takes place, this is just an additional option */
   LIBXSMM_DNN_TENSOR_FORMAT_PTR = 32,
-  /* now some combinded types */
+  /* now some combined types */
   LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR = LIBXSMM_DNN_TENSOR_FORMAT_NHWC | LIBXSMM_DNN_TENSOR_FORMAT_PTR,
   LIBXSMM_DNN_TENSOR_FORMAT_RSCK_PTR = LIBXSMM_DNN_TENSOR_FORMAT_RSCK | LIBXSMM_DNN_TENSOR_FORMAT_PTR,
   LIBXSMM_DNN_TENSOR_FORMAT_NHWC_RSCK = LIBXSMM_DNN_TENSOR_FORMAT_NHWC | LIBXSMM_DNN_TENSOR_FORMAT_RSCK,
@@ -169,11 +184,11 @@ typedef enum libxsmm_dnn_internal_format {
 
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_dnn_datatype {
-  LIBXSMM_DNN_DATATYPE_F64,
-  LIBXSMM_DNN_DATATYPE_F32,
-  LIBXSMM_DNN_DATATYPE_I32,
-  LIBXSMM_DNN_DATATYPE_I16,
-  LIBXSMM_DNN_DATATYPE_I8
+  LIBXSMM_DNN_DATATYPE_F64 = LIBXSMM_DATATYPE_F64,
+  LIBXSMM_DNN_DATATYPE_F32 = LIBXSMM_DATATYPE_F32,
+  LIBXSMM_DNN_DATATYPE_I32 = LIBXSMM_DATATYPE_I32,
+  LIBXSMM_DNN_DATATYPE_I16 = LIBXSMM_DATATYPE_I16,
+  LIBXSMM_DNN_DATATYPE_I8 = LIBXSMM_DATATYPE_I8
 } libxsmm_dnn_datatype;
 
 typedef enum libxsmm_dnn_conv_option {
@@ -185,8 +200,13 @@ typedef enum libxsmm_dnn_conv_option {
   LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE = 2,
   /* use 16 bit accumulate instead of 32 bit accumulate for fix point */
   LIBXSMM_DNN_CONV_OPTION_16BIT_ACC = 4,
+  /* overwrite results buffer (set it to zero before running the operations) */
+  LIBXSMM_DNN_CONV_OPTION_OVERWRITE = 8,
   /* compound types */
-  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED_16BIT_ACC = LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED | LIBXSMM_DNN_CONV_OPTION_16BIT_ACC
+  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED_16BIT_ACC = LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED | LIBXSMM_DNN_CONV_OPTION_16BIT_ACC,
+  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED_16BIT_ACC_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED | LIBXSMM_DNN_CONV_OPTION_16BIT_ACC | LIBXSMM_DNN_CONV_OPTION_OVERWRITE,
+  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED | LIBXSMM_DNN_CONV_OPTION_OVERWRITE,
+  LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE | LIBXSMM_DNN_CONV_OPTION_OVERWRITE
 } libxsmm_dnn_conv_option;
 
 /** Structure storing the convolution argument description. */
@@ -288,6 +308,8 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
   unsigned int bimg;
   /** unroll factor */
   unsigned int ur;
+  /** number of ifm blocks to unroll */
+  unsigned int ur_ifm;
   /** prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
   libxsmm_convolution_prefetch_type prefetch;
 } libxsmm_convolution_winograd_descriptor;
@@ -299,16 +321,11 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const 
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; } libxsmm_xmmfunction;
 
-/** Specialized function for matcopy, and optional prefetch locations (single-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_smatcopyfunction)(const float* a, const int* lda, float* b, const int* ldb, ...);
-/** Specialized function for matcopy, and optional prefetch locations (double-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmatcopyfunction)(const double* a, const int* lda, double* b, const int* ldb, ...);
-/** Specialized function for matcopy, and optional prefetch locations (int16). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmatcopyfunction)(const short* a, const int* lda, short* b, const int* ldb, ...);
-/** Specialized function for matcopy, and optional prefetch locations (int8). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmatcopyfunction)(const unsigned char* a, const int* lda, unsigned char* b, const int* ldb, ...);
-/** Function type which is either s/d/w/b, weak-typed. */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xmatcopyfunction { libxsmm_smatcopyfunction smatcopy; libxsmm_dmatcopyfunction dmatcopy; libxsmm_wmatcopyfunction wmatcopy; libxsmm_bmatcopyfunction bmatcopy; } libxsmm_xmatcopyfunction;
+/** Specialized function for matrix-copy (weak-typed). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmatcopyfunction)(const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);
+
+/** Specialized function for transpose (weak-typed). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo);
 
 /** Structure to receive information about the code registry status (libxsmm_get_registry_info). */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info { size_t capacity, size, nbytes, nstatic, ncache; } libxsmm_registry_info;

@@ -38,6 +38,10 @@
 # include <omp.h>
 #endif
 
+#if 0
+#define USE_OVERWRITE
+#endif
+
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* note: later on, this leads to (correct but) different than expected norm-values */
 # define drand48() ((double)rand() / RAND_MAX)
@@ -402,9 +406,12 @@ LIBXSMM_INLINE void naive_conv_wu(naive_conv_t* param, const float* input, const
   }
 }
 
+/* TODO: fix this hack and rely on a proper API */
+void libxsmm_set_flag_reuseInput(libxsmm_dnn_layer* /*handle*/, char /*type*/);
+
 int main(int argc, char* argv[])
 {
-  float *naive_input, *naive_output, *naive_filter, *naive_filter_wu, *naive_output_bp, *naive_output_wu, *naive_libxsmm_output;
+  float *naive_input, *naive_output, *naive_output_save, *naive_filter, *naive_filter_wu, *naive_output_bp, *naive_output_wu, *naive_libxsmm_output;
   float *naive_libxsmm_input, *naive_libxsmm_filter, *naive_input_save, *naive_filter_save, *naive_filter_kcrs;
   float *input_nhwc, *output_nhwc, *filter_rsck, *naive_output_nhwc, *naive_input_nhwc;
   float *input_libxsmm, *filter_libxsmm, *output_libxsmm;
@@ -543,6 +550,7 @@ int main(int argc, char* argv[])
   naive_input           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   naive_input_save      = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   naive_output          = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_output_save     = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   naive_output_bp       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   naive_output_wu       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   naive_libxsmm_output  = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
@@ -567,7 +575,9 @@ int main(int argc, char* argv[])
   init_buf(naive_output_wu,      nImg*nOfm*ofhp*ofwp, 0, 0);
   set_zeropad_nchw(naive_input, nImg, nIfm, ifhp, ifwp, pad_h_in, pad_w_in);
   copy_buf(naive_input, naive_input_save, nImg*nIfm*ifhp*ifwp);
-  zero_buf(naive_output,         nImg*nOfm*ofhp*ofwp);
+  zero_buf(naive_output_save,    nImg*nOfm*ofhp*ofwp);
+  init_buf(naive_output,         nImg*nOfm*ofhp*ofwp, 0, 0);
+  copy_buf(naive_output, naive_output_save, nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_libxsmm_input,  nImg*nIfm*ifhp*ifwp);
   init_buf(naive_filter,         nOfm*nIfm*kh*kw, 0, 0);
@@ -583,9 +593,12 @@ int main(int argc, char* argv[])
   printf("#         Computing Reference ...        #\n");
   printf("##########################################\n");
   if (type == 'A' || type == 'F') {
+#ifdef USE_OVERWRITE
+    zero_buf(naive_output,    nImg*nOfm*ofhp*ofwp);
+#endif
     naive_conv_fp(&naive_param, naive_input, naive_output, naive_filter);
   }
-  if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+  if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
     zero_buf(naive_input,         nImg*nIfm*ifhp*ifwp);
     naive_conv_bp(&naive_param, naive_input, naive_output_bp, naive_filter);
   }
@@ -623,10 +636,15 @@ int main(int argc, char* argv[])
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
     conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
+    /*conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;*/
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
+#ifdef USE_OVERWRITE
+    conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
+#else
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
+#endif
     /*conv_desc.options = LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE;*/
     conv_desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
 
@@ -647,9 +665,9 @@ int main(int argc, char* argv[])
     /* copy in data to LIBXSMM format */
     /* we can also use the layout functions and set the data on our
        own external to the library, @TODO, we plan to add an example here */
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_input, (void*)naive_input_save, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_buffer( libxsmm_output ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_filter( libxsmm_filter, (void*)naive_filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_input,  (void*)naive_input_save,  LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_output, (void*)naive_output_save, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_filter( libxsmm_filter, (void*)naive_filter,      LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
 
     /* bind buffers and filter to handle */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_buffer( libxsmm_handle, libxsmm_input, LIBXSMM_DNN_REGULAR_INPUT ) );
@@ -691,7 +709,7 @@ int main(int argc, char* argv[])
       printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
     }
 
-    if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("#   Correctness - BWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -789,7 +807,7 @@ int main(int argc, char* argv[])
          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
     }
 
-    if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("#   Performance - BWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -894,7 +912,8 @@ int main(int argc, char* argv[])
     conv_desc.pad_h_out = pad_h_out;
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
-    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
+    /*conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;*/
+    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NHWC;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_RSCK;
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
@@ -954,7 +973,7 @@ int main(int argc, char* argv[])
       printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
     }
 
-    if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("# Correctness - BWD (NHWC/RSCK-Storage)  #\n");
       printf("##########################################\n");
@@ -1055,7 +1074,7 @@ int main(int argc, char* argv[])
          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
     }
 
-    if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("#  Performance - BWD (NHWC/RSCK-Storage) #\n");
       printf("##########################################\n");
@@ -1161,7 +1180,8 @@ int main(int argc, char* argv[])
     conv_desc.pad_h_out = pad_h_out;
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
-    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
+    /*conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;*/
+    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NHWC;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
@@ -1232,7 +1252,7 @@ int main(int argc, char* argv[])
       printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
     }
 
-    if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("# Correctness - BWD(NHWC/custom-Storage) #\n");
       printf("##########################################\n");
@@ -1332,7 +1352,7 @@ int main(int argc, char* argv[])
          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
     }
 
-    if ( (type == 'A' || type == 'B') && (stride == 1 && nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("# Performance - BWD(NHWC/custom-Storage) #\n");
       printf("##########################################\n");
@@ -1418,6 +1438,7 @@ int main(int argc, char* argv[])
   libxsmm_free(naive_input);
   libxsmm_free(naive_input_save);
   libxsmm_free(naive_output);
+  libxsmm_free(naive_output_save);
   libxsmm_free(naive_output_bp);
   libxsmm_free(naive_output_wu);
   libxsmm_free(naive_libxsmm_output);

@@ -68,7 +68,6 @@ LIBXSMM_ASSUME_ALIGNED(handle->scratchOw, 64);
 /* computing first logical thread */
 ltid = tid - start_thread;
 libxsmm_barrier_init((libxsmm_barrier*)handle->barrier, ltid);
-
 /* #define FTIME */
 #ifdef FTIME
 unsigned long long t_input  = 0;
@@ -151,7 +150,7 @@ for (job = thr_begin; job < thr_end; job++) {
         }
       }
     }
-    for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
+    for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1+=handle->cwino_fwd.ur_ifm) {
 #if 1
       jitted_conv_fp(
         &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ofm1, ifm1, 0, 0, ALPHA, handle->blocksofm, handle->blocksifm, TDVLEN, TDVLEN),
@@ -159,8 +158,8 @@ for (job = thr_begin; job < thr_end; job++) {
         &LIBXSMM_VLA_ACCESS(8, M, img, oj, oi, ofm1, 0, 0, 0, 0, ALPHA, ALPHA, handle->blocksofm, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, TDVLEN),
         0, 0, 0);
 #else
-      unsigned int ti, tj;
-      unsigned int img1;
+      int ti, tj;
+      int img1;
       int ifm2, ofm2;
       for (img1 = 0; img1 < handle->cwino_fwd.bimg; img1++) {
         for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
