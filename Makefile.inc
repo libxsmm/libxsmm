@@ -551,7 +551,7 @@ ifneq (0,$(INTEL))
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
     CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -qoverride_limits -fp-model fast=2
-    CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -fopenmp -qoverride_limits -fp-model fast=2
+    CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -qoverride_limits -fp-model fast=2
     FCFLAGS += $(OPTFLAG) -qoverride_limits -fp-model fast=2
     ifneq (0,$(shell echo "$$((130000 <= $(FC_VERSION)))"))
       FCFLAGS += -align array64byte
