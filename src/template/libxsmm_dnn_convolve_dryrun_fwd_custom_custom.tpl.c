@@ -38,14 +38,15 @@ handle->block_fwd_oj = 14;
 
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
+#else
+int ltid;
+for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #endif
 {
 #if defined(_OPENMP)
-  const int ltid = omp_get_thread_num();
-#else
-  const int ltid = 0;
+  int ltid = omp_get_thread_num();
 #endif
-  int  img, ofm1, ifm1, oj, oi, ij, ii,local_entries = 0, ojb, ifmb, ofmb;  
+  int img, ofm1, ifm1, oj, oi, ij, ii,local_entries = 0, ojb, ifmb, ofmb;  
 
   /* Threading related variables */
   int imgpt = handle->desc.N/handle->desc.threads;
