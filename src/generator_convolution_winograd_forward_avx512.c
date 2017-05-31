@@ -64,7 +64,6 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
   unsigned int l_qinstr = 0;
   unsigned int qfac   = 0;
   unsigned int qindex = 0;
-  unsigned int ur_knm = 0;
   int reg  = 0;
   int wreg = 0;
 
