@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_dnn_dryrun.h"
+#include "libxsmm_dnn_dryruns.h"
 #include "libxsmm_main.h"
 #include <libxsmm.h>
 #include <stdlib.h>
@@ -38,20 +38,10 @@
 # include <omp.h>
 #endif
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct( libxsmm_dnn_layer* handle ) {  
-  /* Switch based on the format to use the correct dryrun */
-
-}
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle ) {
   
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  
-  /* check if we have input, output and filter */
-  if (handle->reg_input == 0 || handle->reg_output == 0 || handle->reg_filter == 0) {
-    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-    return status;
-  }
   
   /* check if we have a kernel JITed */
   if (handle->code_fwd[0].xconv.sconv == 0) {
@@ -98,7 +88,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
         typedef libxsmm_sconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
-/*
+            /*
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
@@ -107,18 +97,19 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 */
           } else {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+            //# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           }
         } else {
-/*
+
           if (handle->padding_flag == 1) {
+            /*
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
 #undef INPUT_PADDING
 */
           } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+            //# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
           }
         }
       }
@@ -130,7 +121,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
         typedef libxsmm_wconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
-/*
+            /*
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
@@ -144,7 +135,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
           }
         } else {
           if (handle->padding_flag == 1) {
-/*
+            /*
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
 #undef INPUT_PADDING
@@ -161,7 +152,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
         typedef libxsmm_wconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
-/*
+            /*
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
@@ -170,18 +161,18 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 */
           } else {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+            //# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           }
         } else {
           if (handle->padding_flag == 1) {
-/*
+            /*
 #define INPUT_PADDING
 #include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
 #undef INPUT_PADDING
 */
           } else {
-#include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+            //#include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
           }
         }
       }
@@ -193,7 +184,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
         typedef libxsmm_busconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
-/*
+            /*
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
@@ -207,7 +198,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
           }
         } else {
           if (handle->padding_flag == 1) {
-/*
+            /*
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
 #undef INPUT_PADDING
@@ -224,7 +215,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
         typedef libxsmm_busconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
-/*
+            /*
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
@@ -233,18 +224,18 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 */
           } else {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+            //# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           }
         } else {
           if (handle->padding_flag == 1) {
-/*
+            /*
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
 #undef INPUT_PADDING
 */
           } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+            //# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
           }
         }
       }
@@ -283,7 +274,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
         typedef libxsmm_budconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
-/*
+            /*
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 #define INPUT_PADDING
 #include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
@@ -292,18 +283,18 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 */
           } else {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-#include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+            //#include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           }
         } else {
           if (handle->padding_flag == 1) {
-/*
+            /*
 #define INPUT_PADDING
 #include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
 #undef INPUT_PADDING
 */
           } else {
-#include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+            //#include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
           }
         }
       }
@@ -312,7 +303,13 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
       return status;
     }
   }
-  
+
   return status;
 }
 
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct( libxsmm_dnn_layer* handle ) { 
+
+  /* Switch based on the format to use the correct dryrun */
+  return libxsmm_dnn_perform_fwd_dryrun_direct_custom_custom( handle );
+}

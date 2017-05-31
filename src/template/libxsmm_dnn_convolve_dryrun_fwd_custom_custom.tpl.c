@@ -28,11 +28,109 @@
  ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
  ******************************************************************************/
-if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
-#include "libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-} else if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-#include "libxsmm_dnn_convolve_st_fwd_custom_custom_2.tpl.c"
+
+#define MIN(a,b) (((a)<(b))?(a):(b))
+
+/* FIXME: Add some logic for the blocking...  */
+handle->block_fwd_ofm = 8;
+handle->block_fwd_ifm = 8;
+handle->block_fwd_oj = 14;
+
+#if defined(_OPENMP)
+# pragma omp parallel num_threads(handle->desc.threads)
+#endif
+{
+#if defined(_OPENMP)
+  const int ltid = omp_get_thread_num();
+#else
+  const int ltid = 0;
+#endif
+  int  img, ofm1, ifm1, oj, oi, ij, ii,local_entries = 0, ojb, ifmb, ofmb;  
+
+  /* Threading related variables */
+  int imgpt = handle->desc.N/handle->desc.threads;
+  int threads_per_image = handle->desc.threads / handle->desc.N;
+  int my_img_start = ltid * imgpt;
+  int my_img_end = (ltid+1) * imgpt;
+  int my_ofm_start = 0;
+  int my_ofm_end = handle->blocksofm;
+  int myOfmId;
+  int nOfmBlocks;
+
+  /* Arrays of stream indices */
+  int *compute_indices;
+  char *kernel_variant;
+
+  if ( imgpt < 1 ) {
+    my_img_start = ltid / threads_per_image;
+    my_img_end = my_img_start + 1;
+    myOfmId = ltid % threads_per_image;
+    nOfmBlocks = handle->blocksofm / threads_per_image;
+    my_ofm_start = MIN(myOfmId * nOfmBlocks, handle->blocksofm);
+    my_ofm_end = MIN((myOfmId+1) * nOfmBlocks, handle->blocksofm);
+  } 
+
+  /* Perform a dryrun to compute the memory requirements of the stream of indices */
+  for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+    for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) { 
+      for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+        for (img = my_img_start; img < my_img_end; img++) {
+          for ( ofm1 = ofmb; ofm1 < MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+            for (ifm1 = ifmb; ifm1 < MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
+              for (oj = ojb; oj < MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+                for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
+                  local_entries += 3;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+  handle->n_entries_fwd[ltid] = local_entries/3;
+
+  /* Alocate auxiliary data structures for index jitting  */
+  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152); 
+  handle->compute_fwd_indices_ptrs[ltid] = compute_indices;
+  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152); 
+  handle->kernel_fwd_variant_ptrs[ltid] = kernel_variant;
+  local_entries = 0;
+
+  /* Second run to compute actual indices */
+  for (img = my_img_start; img < my_img_end; img++) {
+    for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+      for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) { 
+        for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+          for ( ofm1 = ofmb; ofm1 < MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+            for (ifm1 = ifmb; ifm1 < MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
+              for (oj = ojb; oj < MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+                for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+
+                  ij = oj * handle->desc.u;
+                  ii = oi * handle->desc.v;
+                  compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block  ;
+                  compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
+                  compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock  ;
+
+                  /* FIXME: Select correct kernel variant  */
+                  kernel_variant[local_entries/3] = 2;
+                  local_entries += 3;   
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /* At the end of stream do not prefetch garbage */
+  compute_indices[local_entries] = 0;
+  compute_indices[local_entries+1] = 0;
+  compute_indices[local_entries+2] = 0;
+
 }
-else {
-  /* New custom format code here */
-}
+

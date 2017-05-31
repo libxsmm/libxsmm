@@ -680,7 +680,7 @@ int main(int argc, char* argv[])
     scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status ), 2097152);
     CHKERR_LIBXSMM_DNN( status );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
-
+    
     if (type == 'A' || type == 'F') {
       printf("##########################################\n");
       printf("#   Correctness - FWD (custom-Storage)   #\n");
