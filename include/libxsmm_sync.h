@@ -179,6 +179,8 @@ LIBXSMM_API void libxsmm_barrier_release(const libxsmm_barrier* barrier);
 LIBXSMM_API unsigned int libxsmm_get_pid(void);
 /** Utility function to receive the thread ID of the calling thread. */
 LIBXSMM_API unsigned int libxsmm_get_tid(void);
+/** Utility function to receive the OS-specific thread ID. */
+LIBXSMM_API unsigned int libxsmm_get_tid_os(void);
 
 #endif /*LIBXSMM_SYNC_H*/
 

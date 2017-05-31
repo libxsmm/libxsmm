@@ -47,7 +47,7 @@
 
 
 /** Function type representing the CRC32 functionality. */
-typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(const void*, unsigned int, unsigned int);
+typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(const void*, size_t, unsigned int);
 
 /** Initialize hash function module; not thread-safe. */
 LIBXSMM_HASH_API void libxsmm_hash_init(int target_arch);
@@ -55,27 +55,15 @@ LIBXSMM_HASH_API void libxsmm_hash_finalize(void);
 
 /** Dispatched implementation which may (or may not) use a SIMD extension. */
 LIBXSMM_HASH_API unsigned int libxsmm_crc32(
-  const void* data, unsigned int size, unsigned int seed);
+  const void* data, size_t size, unsigned int seed);
 
 /** Calculate the CRC32 for a given quantity (size) of raw data according to the seed. */
 LIBXSMM_HASH_API unsigned int libxsmm_crc32_sw(
-  const void* data, unsigned int size, unsigned int seed);
+  const void* data, size_t size, unsigned int seed);
 
 /** Similar to libxsmm_crc32_sw (uses CRC32 instructions available since SSE4.2). */
 LIBXSMM_HASH_API unsigned int libxsmm_crc32_sse4(
-  const void* data, unsigned int size, unsigned int seed);
-
-/** Calculate a hash value for a given quantity (size) of raw data according to the seed. */
-LIBXSMM_HASH_API unsigned int libxsmm_hash(
-  const void* data, unsigned int size,
-  /** Upper bound of the result. */
-  unsigned int n);
-
-/** Calculate a hash value for a given quantity (size) of raw data according to the seed. */
-LIBXSMM_HASH_API unsigned int libxsmm_hash_npot(
-  const void* data, unsigned int size,
-  /** Upper bound of the result. */
-  unsigned int npot);
+  const void* data, size_t size, unsigned int seed);
 
 
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_HASH_NOINLINE)

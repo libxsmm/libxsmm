@@ -107,7 +107,7 @@ typedef enum libxsmm_dnn_tensor_dimtype {
   LIBXSMM_DNN_TENSOR_DIMTYPE_H,
   /** Image Width */
   LIBXSMM_DNN_TENSOR_DIMTYPE_W,
-  /** channles or input channels */
+  /** channels or input channels */
   LIBXSMM_DNN_TENSOR_DIMTYPE_C,
   /** output channels */
   LIBXSMM_DNN_TENSOR_DIMTYPE_K,
@@ -290,8 +290,17 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction)(const unsigned char
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction)(const unsigned char* input1, const char* input2, int* output,
                                                              const unsigned char* ipf1, const char* ipf2, const int* opf);
 
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction_bwd)(int* input1, const short* input2, const short* output,
+                                                           const int* ipf1, const short* ipf2, const short* opf);
+
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction_bwd)(const unsigned short* input1, const char* input2, const char* output,
+                                                             const unsigned short* ipf1, const char* ipf2, const char* opf);
+
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction_bwd)(const unsigned int* input1, const char* input2, const char* output,
+                                                             const unsigned int* ipf1, const char* ipf2, const char* opf);
+
 /** Function type which is either libxsmm_sconvfunction or libxsmm_wconvfunction (weak-typed). */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction { libxsmm_sconvfunction sconv; libxsmm_wconvfunction wconv; libxsmm_busconvfunction busconv; libxsmm_busconvfunction budconv; } libxsmm_xconvfunction;
+typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction { libxsmm_sconvfunction sconv; libxsmm_wconvfunction wconv; libxsmm_busconvfunction busconv; libxsmm_budconvfunction budconv; libxsmm_wconvfunction_bwd wconvb; libxsmm_busconvfunction_bwd busconvb; libxsmm_budconvfunction_bwd budconvb; } libxsmm_xconvfunction;
 
 /** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
 LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);

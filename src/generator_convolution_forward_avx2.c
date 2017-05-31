@@ -78,7 +78,7 @@ void libxsmm_generator_convolution_forward_avx2_kernel( libxsmm_generated_code* 
   if ( strcmp( i_arch, "hsw" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX2;
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;
   }
   l_conv_kernel_config.vector_reg_count = 16;
@@ -120,23 +120,23 @@ void libxsmm_generator_convolution_forward_avx2_kernel( libxsmm_generated_code* 
     l_found_fil_format = 1;
   }
   if ( (l_found_act_format == 0) || (l_found_fil_format == 0) ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
     return;
   }
 
-  /* initilize KW and KH unrolling */
+  /* initialize KW and KH unrolling */
   if (i_conv_desc->unroll_kw != 0) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
     return;
   }
   if (i_conv_desc->unroll_kh != 0) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_KH_UNROLL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_KH_UNROLL );
     return;
   }
 
   /* check if we have full vectors */
   if ( i_conv_desc->ofm_block % l_conv_kernel_config.vector_length_out != 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
     return;
   }
 
@@ -189,7 +189,7 @@ void libxsmm_generator_convolution_forward_avx2_kernel( libxsmm_generated_code* 
                                           l_conv_kernel_config.l_ld_ifm_fil * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt );
       }
 
-      /* adjust innput pointer */
+      /* adjust input pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        l_conv_kernel_config.alu_add_instruction,
                                        l_gp_reg_mapping.gp_reg_input,
@@ -291,11 +291,11 @@ void libxsmm_generator_convolution_forward_avx2_ifmloop( libxsmm_generated_code*
 
   /* Some checks */
   if ( i_conv_desc->ofh_rb != 1 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_OFH_UNROLL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_OFH_UNROLL );
     return;
   }
   if ( i_conv_desc->ofh_rb*i_conv_desc->ofw_rb*l_ofm_blocking > i_conv_kernel_config->vector_reg_count-4 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
     return;
   }
 

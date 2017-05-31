@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $# -ne 4 ]
+if [ $# -ne 6 ]
 then
   echo "Usage: $(basename $0) iters numa (1-mcdram/0-DDR) TYPE ('A'-ALL/'F'-FP/'B'-BP/'U'-WU) FORMAT ('A'-ALL/'L'-LIBXSMM/'T'-Tensorflow/'M'-Mixed) padding; using default values: 1000 1 f32 A L 0"
   ITERS=1000
@@ -26,9 +26,14 @@ if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
   fi
 fi
 
-export KMP_HW_SUBSET=1T
- export KMP_AFFINITY=compact,granularity=fine
+if [[ -z "${OMP_NUM_THREADS}" ]]; then
+  echo "using defaults for OMP settings!"
+  export KMP_HW_SUBSET=1T
+  export KMP_AFFINITY=compact,granularity=fine
   export OMP_NUM_THREADS=64
+else
+  echo "using environment OMP settings!"
+fi
 
 # ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type
 

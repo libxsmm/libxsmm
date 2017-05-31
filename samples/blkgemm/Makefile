@@ -17,7 +17,7 @@ ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../..
 SRCDIR = $(ROOTDIR)
 INCDIR = .
-BLDDIR = .
+BLDDIR = build
 OUTDIR = .
 
 CXXFLAGS = $(NULL)

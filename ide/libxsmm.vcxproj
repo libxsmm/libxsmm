@@ -72,6 +72,7 @@
     <ClInclude Include="..\src\generator_spgemm_csr_asparse_soa.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_bsparse_soa.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_reader.h" />
+    <ClInclude Include="..\src\generator_transpose_avx_avx512.h" />
     <ClInclude Include="..\src\generator_x86_instructions.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_backward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_forward.h" />
@@ -127,6 +128,8 @@
     <ClCompile Include="..\src\generator_spgemm_csr_asparse_soa.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_bsparse_soa.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_reader.c" />
+    <ClCompile Include="..\src\generator_transpose.c" />
+    <ClCompile Include="..\src\generator_transpose_avx_avx512.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
     <ClCompile Include="..\src\libxsmm_dnn.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_backward.c" />
@@ -166,6 +169,7 @@
     <ClCompile Include="..\src\libxsmm_trans.c" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\.analyze.sh" />
     <None Include="..\.buildkite.env" />
     <None Include="..\.codecov.env" />
     <None Include="..\.codefile" />

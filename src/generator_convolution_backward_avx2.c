@@ -87,7 +87,7 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
        strcmp( i_arch, "hsw" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX2;
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;
   }
   l_conv_kernel_config.vector_reg_count = 16;
@@ -128,25 +128,25 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
     l_found_fil_format = 1;
   }
   if ( (l_found_act_format == 0) || (l_found_fil_format == 0) ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
     return;
   }
 
   /* check if we have full vectors */
   if ( i_conv_desc->ifm_block % l_conv_kernel_config.vector_length_in != 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_IFM_VEC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CONV_IFM_VEC );
     return;
   }
 
   /* check if we have  stride of 1 */
   if ( i_conv_desc->stride_h != 1 || i_conv_desc->stride_w != 1 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_CONT_STRIDE );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CONV_CONT_STRIDE );
     return;
   }
 
-  /* initilize KW and OFW unrolling */
+  /* initialize KW and OFW unrolling */
   if (i_conv_desc->unroll_kw != 0) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
     return;
   }
 
@@ -338,11 +338,11 @@ void libxsmm_generator_convolution_backward_avx2_ofmloop( libxsmm_generated_code
 
   /* Some checks */
   if ( i_conv_desc->ofh_rb != 1 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_OFH_UNROLL );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_OFH_UNROLL );
     return;
   }
   if ( i_ofw_rb*l_ifm_blocking > i_conv_kernel_config->vector_reg_count-4 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
     return;
   }
 

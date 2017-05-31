@@ -38,6 +38,7 @@ int main(void)
   void *context, *p;
   int nerrors = 0;
 
+  libxsmm_malloc_info malloc_info;
   libxsmm_malloc_function malloc_fn;
   libxsmm_free_function free_fn;
   malloc_fn.function = malloc; free_fn.function = free;
@@ -55,12 +56,12 @@ int main(void)
   p = libxsmm_malloc(size);
 
   /* query and check the size of the buffer */
-  if (0 != p && size != libxsmm_malloc_size(p)) {
+  if (0 != p && (EXIT_SUCCESS != libxsmm_get_malloc_info(p, &malloc_info) || size != malloc_info.size)) {
     ++nerrors;
   }
 
   /* check that a NULL-pointer yields no size */
-  if (0 != libxsmm_malloc_size(NULL)) {
+  if (EXIT_SUCCESS != libxsmm_get_malloc_info(NULL, &malloc_info) || 0 != malloc_info.size) {
     ++nerrors;
   }
 

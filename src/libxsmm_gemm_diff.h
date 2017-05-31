@@ -41,7 +41,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-/** Enable masked load of reference (A) descriptor (disabled: descriptor must be SIMD-padded!) */
+/** Enable masked load of reference (A) descriptor */
 #if !defined(LIBXSMM_GEMM_DIFF_MASK_A)
 # define LIBXSMM_GEMM_DIFF_MASK_A
 #endif
@@ -67,7 +67,7 @@ typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diff_function)(
   const libxsmm_gemm_descriptor*, const libxsmm_gemm_descriptor*);
 /** Function type representing the gemm_diffn functionality. */
 typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diffn_function)(
-  const libxsmm_gemm_descriptor*, const libxsmm_gemm_descriptor*, unsigned int, unsigned int, int);
+  const libxsmm_gemm_descriptor*, const void*, unsigned int, unsigned int, int);
 
 
 /** Initialize GEMM/DIFF module; not thread-safe. */
@@ -97,22 +97,22 @@ LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diff_imci(
  */
 LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descriptor* reference,
   /** Array of descriptors with ndesc elements. */
-  const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs,
+  const void* descs, unsigned int hint, unsigned int ndescs,
   /** Number of bytes until the next descriptor is reached (stride). */
   int nbytes);
 
 /** Generic implementation of libxsmm_gemm_diffn which is only relying on high-level constructs. */
 LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference,
-  const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
+  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes);
 /** Collection of implementations which are using specific instruction set extensions. */
 LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference,
-  const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
+  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes);
 LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference,
-  const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
+  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes);
 LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
-  const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
+  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes);
 LIBXSMM_GEMM_DIFF_API unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_descriptor* reference,
-  const libxsmm_gemm_descriptor* descs, unsigned int hint, unsigned int ndescs, int nbytes);
+  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes);
 
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_GEMM_DIFF_NOINLINE)
 # include "libxsmm_gemm_diff.c"

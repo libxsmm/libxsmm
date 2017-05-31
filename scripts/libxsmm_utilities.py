@@ -191,6 +191,8 @@ def version_branch():
 
 def version_numbers(version):
     versionlist = version.split("-")
+    minor = update = patch = 0
+    major = 1
     n = len(versionlist)
     if (1 < n):
         patchlist = versionlist[n-1]
@@ -199,14 +201,15 @@ def version_numbers(version):
             patch = int(patchlist)
         else:
             versionlist = patchlist.split(".")
-            patch = 0
     else:
         versionlist = version.split(".")
-        patch = 0
     n = len(versionlist)
-    major = [1, int(versionlist[0])][0 < n]
-    minor = [0, int(versionlist[1])][1 < n]
-    update = [0, int(versionlist[2])][2 < n]
+    if (0 < n):
+        major = int(versionlist[0])
+    if (1 < n):
+        minor = int(versionlist[1])
+    if (2 < n):
+        update = int(versionlist[2])
     return major, minor, update, patch
 
 

@@ -29,7 +29,7 @@
 /* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-int ifm1, oj, ij, oi, ii;
+int ifm1, oj, ij, oi, ii, ofm2;
 /* calculate local thread ids */
 const int ltid = tid - start_thread;
 /* calculate group sizes */
@@ -62,7 +62,7 @@ element_input_type *copy_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
-libxsmm_matcopyfunction jitted_matcopy;
+libxsmm_xmatcopyfunction jitted_matcopy;
 #endif
 
 /* JIT kernel function pointers */
@@ -82,13 +82,27 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #endif
 
 #if defined(INPUT_PADDING)
-  jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
+  jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
   input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
   copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, handle->desc.pad_h, handle->desc.pad_w, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
   jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, NULL);
 #endif
 
   for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+    /* reset result buffer to zero when intent is to overwrite when first block
+      of input channels should be convoluted */
+    if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+      for (oj = start_ofh; oj < end_ofh; oj++) {
+        element_output_type* temp_ptr = &LIBXSMM_VLA_ACCESS(5, output, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
+        for (oi = 0; oi < handle->ofw; oi++) {
+          LIBXSMM_PRAGMA_SIMD
+          for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
+            temp_ptr[ofm2] = (element_output_type)0;
+          }
+          temp_ptr += handle->blocksofm*handle->ofmblock;
+        }
+      }
+    }
     for (oj = start_ofh; oj < end_ofh; oj += handle->fwd_ofh_rb) {
       ij = oj * handle->desc.u;
       for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
@@ -160,13 +174,27 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 
 #if defined(INPUT_PADDING)
-  jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
+  jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
   input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, 0, 0, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
   copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, handle->desc.pad_h, handle->desc.pad_w, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
   jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, NULL);
 #endif
 
   for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+    /* reset result buffer to zero when intent is to overwrite when first block
+      of input channels should be convoluted */
+    if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+      for (oj = start_ofh; oj < end_ofh; oj++) {
+        element_output_type* temp_ptr = &LIBXSMM_VLA_ACCESS(5, output, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
+        for (oi = 0; oi < handle->ofw; oi++) {
+          LIBXSMM_PRAGMA_SIMD
+          for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
+            temp_ptr[ofm2] = (element_output_type)0;
+          }
+          temp_ptr += handle->blocksofm*handle->ofmblock;
+        }
+      }
+    }
     for (oj = start_ofh; oj < end_ofh; oj += handle->fwd_ofh_rb) {
       ij = oj * handle->desc.u;
       for (oi = 0; oi < (handle->ofw - handle->fwd_ofw_rb_2); oi += handle->fwd_ofw_rb) {

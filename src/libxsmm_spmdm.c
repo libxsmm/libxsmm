@@ -58,23 +58,23 @@
 
 
 /* function pointer for the CPUID-dispatched implementation */
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*internal_spmdm_createSparseSlice_fp32_thread)(const libxsmm_spmdm_handle*, char,
+LIBXSMM_API_VARIABLE void (*internal_spmdm_createSparseSlice_fp32_thread)(const libxsmm_spmdm_handle*, char,
   const float*, libxsmm_CSR_sparseslice*, int, int, int);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*internal_spmdm_createSparseSlice_bfloat16_thread)(const libxsmm_spmdm_handle*, char,
+LIBXSMM_API_VARIABLE void (*internal_spmdm_createSparseSlice_bfloat16_thread)(const libxsmm_spmdm_handle*, char,
   const uint16_t*, libxsmm_CSR_sparseslice*, int, int, int);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*internal_spmdm_compute_fp32_thread)(const libxsmm_spmdm_handle*, char, char,
+LIBXSMM_API_VARIABLE void (*internal_spmdm_compute_fp32_thread)(const libxsmm_spmdm_handle*, char, char,
   const float*, libxsmm_CSR_sparseslice*, const float*, char, const float*, float*, int, int, int);
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void (*internal_spmdm_compute_bfloat16_thread)(const libxsmm_spmdm_handle*, char, char,
+LIBXSMM_API_VARIABLE void (*internal_spmdm_compute_bfloat16_thread)(const libxsmm_spmdm_handle*, char, char,
   const uint16_t*, libxsmm_CSR_sparseslice*, const uint16_t*, char, const uint16_t*, float*, int, int, int);
 
 #if defined(LIBXSMM_SPMDM_AVX)
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i* internal_spmdm_shufmasks_32;
-LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE __m256i* internal_spmdm_shufmasks_16;
+LIBXSMM_API_VARIABLE __m256i* internal_spmdm_shufmasks_32;
+LIBXSMM_API_VARIABLE __m256i* internal_spmdm_shufmasks_16;
 #endif
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
-LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_init_shufmask_avx()
+LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_init_shufmask_avx(void)
 {
 #if defined(LIBXSMM_SPMDM_AVX)
   static __m256i spmdm_shufmasks_32[256], spmdm_shufmasks_16[256];
@@ -549,7 +549,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_init_check(int archid)
   {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: missed to enter \"%s\" code path due to the compiler used!\n", libxsmm_get_target_arch());
+      fprintf(stderr, "LIBXSMM: missued to enter \"%s\" code path due to the compiler used!\n", libxsmm_get_target_arch());
     }
   }
 }

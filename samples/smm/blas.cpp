@@ -57,7 +57,7 @@
 #endif
 
 #if !defined(MAX_SIZE)
-# define MAX_SIZE (LIBXSMM_MAX_MNK / LIBXSMM_MAX_K)
+# define MAX_SIZE ((LIBXSMM_MAX_M) * (LIBXSMM_MAX_N))
 #endif
 
 
@@ -230,6 +230,52 @@ int main(int argc, char* argv[])
       }
 #endif
 
+      { // streaming A and C
+        fprintf(stdout, "Streamed (A,C)...\n");
+        const unsigned long long start = libxsmm_timer_tick();
+        unsigned long long x = libxsmm_timer_xtick();
+#if defined(_OPENMP)
+#       pragma omp parallel for
+#endif
+        for (int i = 0; i < s; ++i) {
+          // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
+          LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
+            LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b, LIBXSMM_LD(k, n),
+            LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
+        }
+        x = std::max(libxsmm_timer_xtick(), x) - x;
+        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      }
+
+      { // streaming B and C
+        fprintf(stdout, "Streamed (B,C)...\n");
+        const unsigned long long start = libxsmm_timer_tick();
+        unsigned long long x = libxsmm_timer_xtick();
+#if defined(_OPENMP)
+#       pragma omp parallel for
+#endif
+        for (int i = 0; i < s; ++i) {
+          // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
+          LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
+            LIBXSMM_ALPHA, a, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
+            LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
+        }
+        x = std::max(libxsmm_timer_xtick(), x) - x;
+        const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      }
+
       if ((MAX_SIZE) >= csize) {
         { // streaming A and B
           fprintf(stdout, "Streamed (A,B)...\n");
@@ -239,60 +285,12 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for
 #endif
           for (int i = 0; i < s; ++i) {
-            // make sure that stacksize is covering the problem size
-            T tls[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-            T *const tmp = LIBXSMM_ALIGN_LDST(tls);
+            T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             // do nothing else with tmp; just a benchmark
             // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
             LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
               LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
               LIBXSMM_BETA, tmp, LIBXSMM_LD(m, n));
-          }
-          x = std::max(libxsmm_timer_xtick(), x) - x;
-          const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-          if (0 < duration && 0 != x) {
-            fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
-            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-            fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
-          }
-          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        }
-
-        { // streaming A and C
-          fprintf(stdout, "Streamed (A,C)...\n");
-          const unsigned long long start = libxsmm_timer_tick();
-          unsigned long long x = libxsmm_timer_xtick();
-#if defined(_OPENMP)
-#         pragma omp parallel for
-#endif
-          for (int i = 0; i < s; ++i) {
-            // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
-            LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
-              LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b, LIBXSMM_LD(k, n),
-              LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
-          }
-          x = std::max(libxsmm_timer_xtick(), x) - x;
-          const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-          if (0 < duration && 0 != x) {
-            fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
-            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-            fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
-          }
-          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        }
-
-        { // streaming B and C
-          fprintf(stdout, "Streamed (B,C)...\n");
-          const unsigned long long start = libxsmm_timer_tick();
-          unsigned long long x = libxsmm_timer_xtick();
-#if defined(_OPENMP)
-#         pragma omp parallel for
-#endif
-          for (int i = 0; i < s; ++i) {
-            // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
-            LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
-              LIBXSMM_ALPHA, a, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
-              LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
           }
           x = std::max(libxsmm_timer_xtick(), x) - x;
           const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -312,9 +310,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for
 #endif
           for (int i = 0; i < s; ++i) {
-            // make sure that stacksize is covering the problem size
-            T tls[MAX_SIZE]; // LIBXSMM_ALIGNED does not apply to non-static local stack variables
-            T *const tmp = LIBXSMM_ALIGN_LDST(tls);
+            T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             // do nothing else with tmp; just a benchmark
             // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
             LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,

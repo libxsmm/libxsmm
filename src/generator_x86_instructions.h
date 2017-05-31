@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Greg Henry (Intel Corp.)
 ******************************************************************************/
 
 #ifndef GENERATOR_X86_INSTRUCTIONS_H
@@ -61,6 +61,22 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
                                            const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                            const char*                   i_arch,
                                            unsigned int                  i_prefetch );
+
+/**
+ * Generates vmaskmovps/vmaskmovpd with displacements for loads and stores.
+ * Only works with i_vector_name='Y'
+ */
+LIBXSMM_INTERNAL_API
+void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated_code,
+                                     const unsigned int      i_vmove_instr,
+                                     const unsigned int      i_gp_reg_base,
+                                     const unsigned int      i_gp_reg_idx,
+                                     const unsigned int      i_scale,
+                                     const int               i_displacement,
+                                     const char              i_vector_name,
+                                     const unsigned int      i_vec_reg_number_0,
+                                     const unsigned int      i_vec_reg_mask_0,
+                                     const unsigned int      i_is_store );
 
 /**
  * Generates vmovapd/vmovupd/vmovaps/vmovups/vmovsd/vmovss/vbroadcastsd/vbroastcastss/vmovddup instructions with displacements, explicit SIB addressing is not
@@ -229,6 +245,21 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_gp_reg_idx,
                                        const unsigned int      i_scale,
                                        const int               i_displacement );
+
+/**
+ * Generates alu memory movements like movq 7(%rax,%rbx,2), %rcx
+ * Takes 3 gp_registers (0-15 values)
+ * i_is_store tells whether this is a store or load
+ */
+LIBXSMM_INTERNAL_API
+void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
+                                      const unsigned int     i_alu_instr,
+                                      const unsigned int     i_gp_reg_base,
+                                      const unsigned int     i_gp_reg_idx,
+                                      const unsigned int     i_scale,
+                                      const int              i_displacement,
+                                      const unsigned int     i_gp_reg_number,
+                                      const unsigned int     i_is_store );
 
 /**
  * Generates regular all instructions with immediates
@@ -403,6 +434,31 @@ LIBXSMM_INTERNAL_API
 void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*       io_generated_code,
                                                    const char*                   i_arch );
 
+/**
+ * @TODO: clean-up
+ * Opens the inline assembly section / jit stream for transposes, this is hacked and should be cleaned up
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_arch architecture code was generated for (needed to build clobber)
+ */
+LIBXSMM_INTERNAL_API
+void libxsmm_x86_instruction_open_stream_transpose( libxsmm_generated_code*                   io_generated_code,
+                                                    const unsigned int                        i_gp_reg_a,
+                                                    const unsigned int                        i_gp_reg_lda,
+                                                    const unsigned int                        i_gp_reg_b,
+                                                    const unsigned int                        i_gp_reg_ldb,
+                                                    const char*                               i_arch );
+
+/**
+ * @TODO: clean-up
+ * Closes the inline assembly section / jit stream for transposes, this is hacked and should be cleaned up
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_arch architecture code was generated for (needed to build clobber)
+ */
+LIBXSMM_INTERNAL_API
+void libxsmm_x86_instruction_close_stream_transpose( libxsmm_generated_code*       io_generated_code,
+                                                     const char*                   i_arch );
 
 #endif /* GENERATOR_X86_INSTRUCTIONS_H */
 

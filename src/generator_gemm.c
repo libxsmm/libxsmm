@@ -46,7 +46,7 @@ LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated_code,
                                     const libxsmm_gemm_descriptor* i_xgemm_desc,
                                     const char*                     i_arch ) {
-  /* apply the alignement override */
+  /* apply the alignment override */
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
 
@@ -55,56 +55,65 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
 
   /* determining vector length depending on architecture and precision */
   /* @TODO fix me */
-  if ( (strcmp(i_arch, "wsm") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  if ( (strcmp(i_arch, "wsm") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 2;
-  } else if ( (strcmp(i_arch, "wsm") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "wsm") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 4;
-  } else if ( (strcmp(i_arch, "snb") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "snb") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 4;
-  } else if ( (strcmp(i_arch, "snb") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "snb") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "hsw") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "hsw") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 4;
-  } else if ( (strcmp(i_arch, "hsw") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "hsw") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "knc") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "knc") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "knc") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "knc") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 16;
-  } else if ( (strcmp(i_arch, "knl") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "knl") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "knl") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "knl") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 16;
-  } else if ( (strcmp(i_arch, "knm") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "knm") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "knm") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "knm") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 16;
-  } else if ( (strcmp(i_arch, "skx") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) == 0 ) {
+  } else if ( (strcmp(i_arch, "knm") == 0) && LIBXSMM_GEMM_PRECISION_I16 == l_xgemm_desc_mod.datatype ) {
+    l_vector_length = 16;
+    l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/2;
+    l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/2;
+    /* some checks as we cannot mask everything */
+    if ( (l_xgemm_desc_mod.k % 4 != 0) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+      return;
+    }
+  } else if ( (strcmp(i_arch, "skx") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "skx") == 0) && (LIBXSMM_GEMM_FLAG_F32PREC & l_xgemm_desc_mod.flags) != 0 ) {
+  } else if ( (strcmp(i_arch, "skx") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 16;
   } else if ( (strcmp(i_arch, "noarch") == 0) ) {
     /* Nothing to do */
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
     return;
   }
 
   /* check LDA */
   if ( l_xgemm_desc_mod.lda < l_xgemm_desc_mod.m ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDA );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDA );
     return;
   }
 
   /* check LDB */
   if ( l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.k ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDB );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
     return;
   }
 
   /* check LDC */
   if ( l_xgemm_desc_mod.ldc < l_xgemm_desc_mod.m ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_LDC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
     return;
   }
 
@@ -138,7 +147,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_gemm_noarch_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
 
@@ -182,8 +191,7 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
-      libxsmm_strerror(l_generated_code.last_error));
+    LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
     return;
   }
 
@@ -232,8 +240,7 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
-      libxsmm_strerror(l_generated_code.last_error));
+    LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
     return;
   }
 

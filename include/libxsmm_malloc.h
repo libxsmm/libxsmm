@@ -85,6 +85,9 @@ LIBXSMM_API int libxsmm_set_scratch_allocator(/* malloc_fn/free_fn must correspo
 LIBXSMM_API int libxsmm_get_scratch_allocator(void** context,
   libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
+/** Allocate memory (malloc/free interface). */
+LIBXSMM_API void* libxsmm_malloc(size_t size);
+
 /** Allocate aligned default memory. */
 LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
   /**
@@ -95,32 +98,58 @@ LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
 
 /**
  * Allocate aligned scratch memory. It is not supported
- * to query properties e.g., libxsmm_malloc_size.
+ * to query properties (libxsmm_get_malloc_info).
  */
-LIBXSMM_API void* libxsmm_aligned_scratch(size_t size,
+LIBXSMM_API void* libxsmm_scratch_malloc(size_t size,
   /**
    * =0: align automatically according to the size
    * 0<: align according to the alignment value
    */
-  size_t alignment);
+  size_t alignment,
+  /**
+   * Identifies the call site, which is used
+   * to determine the memory pool.
+   */
+  const void* caller);
 
-/** Allocate memory (malloc/free interface). */
-LIBXSMM_API void* libxsmm_malloc(size_t size);
+#define libxsmm_aligned_scratch(size, alignment) \
+  libxsmm_scratch_malloc(size, alignment, LIBXSMM_CALLER)
 
 /** Deallocate memory (malloc/free interface). */
 LIBXSMM_API void libxsmm_free(const void* memory);
 
 /**
- * Release the scratch memory pool i.e., scratch memory
- * for which libxsmm_free has been called (non-pending).
+ * Release the entire scratch memory regardless
+ * of whether it is still referenced or not.
  */
-LIBXSMM_API void libxsmm_release_scratch(size_t* npending);
+LIBXSMM_API void libxsmm_release_scratch(void);
 
-/** Get the size of the allocated memory; zero in case of an error. */
-LIBXSMM_API size_t libxsmm_malloc_size(const void* memory);
+/** Information about a buffer (default memory domain). */
+typedef struct LIBXSMM_RETARGETABLE libxsmm_malloc_info {
+  /** Size of the buffer. */
+  size_t size;
+} libxsmm_malloc_info;
 
-/** Get the size of the allocated scratch memory. */
-LIBXSMM_API size_t libxsmm_scratch_size(void);
+/** Retrieve information about a buffer (default memory domain). */
+LIBXSMM_API int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info* info);
+
+/** Information about the scratch memory domain. */
+typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
+  /** Total size of all scratch memory pools. */
+  size_t size;
+  /** Pending allocations (not released). */
+  size_t npending;
+  /** Number of allocations so far. */
+  size_t nmallocs;
+  /** Number of pools used. */
+  unsigned int npools;
+} libxsmm_scratch_info;
+
+/** Retrieve information about the scratch memory domain. */
+LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info);
+
+/** Calculate a hash value for a given buffer. */
+LIBXSMM_API unsigned int libxsmm_hash(const void* data, size_t size, unsigned int seed);
 
 
 #if defined(__cplusplus)
@@ -240,18 +269,24 @@ public:
   {}
 
 private:
-  /** Breaks the dependency with TensorFlow such that it is header-only. */
-  template<typename type> static type& header_only(type& object) { return object; }
+  template<typename allocator_type> /* break interface dependency with TF */
+  static void* allocate(allocator_type* allocator, size_t size) {
+    /* no waste with (useless) alignment; raw result is re-aligned anyways */
+    return 0 != allocator ? allocator->AllocateRaw(1/*alignment*/, size) : 0;
+  }
+
+  template<typename allocator_type> /* break interface dependency with TF */
+  static void deallocate(allocator_type* allocator, void* buffer) {
+    /* no waste with (useless) alignment; raw result is re-aligned anyways */
+    if (0 != allocator) allocator->DeallocateRaw(buffer);
+  }
 
   static void* malloc(size_t size) {
-    tensorflow::Allocator *const allocator = tensorflow::cpu_allocator();
-    /* no waste with (useless) alignment; raw result is re-aligned anyways */
-    return 0 != allocator ? header_only(*allocator).AllocateRaw(1/*alignment*/, size) : 0;
+    return allocate(tensorflow::cpu_allocator(), size);
   }
 
   static void free(void* buffer) {
-    tensorflow::Allocator *const allocator = tensorflow::cpu_allocator();
-    if (0 != allocator) { header_only(*allocator).DeallocateRaw(buffer); }
+    deallocate(tensorflow::cpu_allocator(), buffer);
   }
 
   template<typename context_type> static void* malloc_ctx(void* context, size_t size) {

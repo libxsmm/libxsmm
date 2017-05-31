@@ -123,7 +123,7 @@ Example for ofm_block = 32, ifm_block%2 == 0
        strcmp( i_arch, "hsw" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX2;
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;
   }
   l_conv_kernel_config.vector_reg_count = 16;
@@ -164,17 +164,17 @@ Example for ofm_block = 32, ifm_block%2 == 0
     l_found_fil_format = 1;
   }
   if ( (l_found_act_format == 0) || (l_found_fil_format == 0) ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_CONV_FORMAT );
     return;
   }
 
   /* check if we have full vectors */
   if ( i_conv_desc->ofm_block % l_conv_kernel_config.vector_length_out != 0 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
     return;
   }
 
-  /* caclulate the ifm unrolling */
+  /* calculate the ifm unrolling */
   for (l_m = 3; l_m > 0; l_m--) {
     if ( i_conv_desc->ifm_block%l_m == 0 ) {
       l_ifm_blocking = l_m;
@@ -188,7 +188,7 @@ Example for ofm_block = 32, ifm_block%2 == 0
 
   /* check accumulator size */
   if ( l_ofm_blocking*l_ifm_blocking > l_conv_kernel_config.vector_reg_count-4 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_CONV_ACC );
     return;
   }
 

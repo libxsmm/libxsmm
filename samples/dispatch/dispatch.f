@@ -41,7 +41,7 @@
         !USE :: LIBXSMM
         !IMPLICIT NONE
 
-        INTEGER, PARAMETER :: GEMM_PRECISION = 0 ! LIBXSMM_GEMM_FLAG_F64PREC
+        INTEGER, PARAMETER :: PRECISION = 0 ! LIBXSMM_GEMM_PRECISION_F64
         INTEGER, PARAMETER :: M = 23, N = 23, K = 23
         INTEGER, PARAMETER :: LDA = M, LDB = K, LDC = M
         DOUBLE PRECISION, PARAMETER :: Alpha = 1D0
@@ -51,8 +51,9 @@
 
         DOUBLE PRECISION :: start, dcall, ddisp
         INTEGER :: i, size = 10000000
-        ! Can be called using libxsmm_xmmcall(function, a, b, c, pa, pb, pc)
-        ! NOTE: pa, pb, pc must be passed when relying on FORTRAN 77.
+        ! Can be called using:
+        ! - libxsmm_xmmcall_abc(function, a, b, c)
+        ! - libxsmm_xmmcall[_prf](function, a, b, c, pa, pb, pc)
         INTEGER(8) :: function
 
         WRITE(*, "(A,I0,A)") "Dispatching ", size," calls..."
@@ -62,7 +63,7 @@
         ! NOTE: libxsmm_xmmdispatch must be called with all arguments
         ! when relying on FORTRAN 77.
         !
-        CALL libxsmm_xmmdispatch(function, GEMM_PRECISION, M, N, K,     &
+        CALL libxsmm_xmmdispatch(function, PRECISION, M, N, K,          &
      &    LDA, LDB, LDC, Alpha, Beta, Flags, Prefetch)
 
         ! run non-inline function to measure call overhead of an "empty" function
@@ -79,7 +80,7 @@
         DO i = 1, size
           ! NOTE: libxsmm_xmmdispatch must be called with all arguments
           ! when relying on FORTRAN 77.
-          CALL libxsmm_xmmdispatch(function, GEMM_PRECISION, M, N, K,   &
+          CALL libxsmm_xmmdispatch(function, PRECISION, M, N, K,        &
      &      LDA, LDB, LDC, Alpha, Beta, Flags, Prefetch)
         END DO
         CALL CPU_TIME(ddisp)
@@ -87,11 +88,11 @@
 
         IF ((0.LT.dcall).AND.(0.LT.ddisp)) THEN
           WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "dispatch calls/s: ",     &
-     &                               (1D-6 * size / ddisp), " MHz"
+     &                      (1D-6 * REAL(size, 8) / ddisp), " MHz"
           WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "empty calls/s:    ",     &
-     &                               (1D-6 * size / dcall), " MHz"
+     &                      (1D-6 * REAL(size, 8) / dcall), " MHz"
           WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "overhead:         ",     &
-     &                               (ddisp / dcall), "x"
+     &                      (ddisp / dcall), "x"
         END IF
         WRITE(*, "(A)") "Finished"
       END PROGRAM

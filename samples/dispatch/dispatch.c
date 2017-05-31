@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     /* first invocation may initialize some internals (libxsmm_init),
      * or actually generate code (code gen. time is out of scope)
      */
-    libxsmm_dmmdispatch(LIBXSMM_AVG_M, LIBXSMM_AVG_N, LIBXSMM_AVG_K,
+    libxsmm_dmmdispatch(23, 23, 23,
       NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
       NULL/*flags*/, NULL/*prefetch*/);
 
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for default(none) private(i)
 #endif
     for (i = 0; i < size; ++i) {
-      libxsmm_dmmdispatch(LIBXSMM_AVG_M, LIBXSMM_AVG_N, LIBXSMM_AVG_K,
+      libxsmm_dmmdispatch(23, 23, 23,
         NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
         NULL/*flags*/, NULL/*prefetch*/);
     }

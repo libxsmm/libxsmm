@@ -67,7 +67,7 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
 
   /* check if end up here accidentally */
   if ( io_generated_code->code_type > 1 ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_APPEND_STR );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_APPEND_STR );
     return;
   }
 
@@ -87,7 +87,7 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
   /* allocate new string */
   l_new_string = (char*) malloc( (l_length_1+l_length_2+1)*sizeof(char) );
   if (l_new_string == NULL) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ALLOC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ALLOC );
     return;
   }
 
@@ -194,7 +194,7 @@ void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
       libxsmm_strncpy(o_gp_reg_name, "r15", i_gp_reg_name_max_length, 3 );
       break;
     default:
-      fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_gp_req_name i_gp_reg_number is out of range!\n");
+      fprintf(stderr, "libxsmm_get_x86_64_gp_req_name i_gp_reg_number is out of range!\n");
       exit(-1);
   }
 }
@@ -424,6 +424,9 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_VPMADDUBSW:
       libxsmm_strncpy(o_instr_name, "vpmaddubsw", i_instr_name_max_length, 10 );
       break;
+    case LIBXSMM_X86_INSTR_VPSRAVD:
+      libxsmm_strncpy(o_instr_name, "vpsravd", i_instr_name_max_length, 7 );
+      break;
     /* AVX512, QFMA */
     case LIBXSMM_X86_INSTR_V4FMADDPS:
       libxsmm_strncpy(o_instr_name, "v4fmaddps", i_instr_name_max_length, 9 );
@@ -438,14 +441,10 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
       libxsmm_strncpy(o_instr_name, "v4fnmaddss", i_instr_name_max_length, 10 );
       break;
     case LIBXSMM_X86_INSTR_VP4DPWSSD:
-      /*libxsmm_strncpy(o_instr_name, "vp4dpwssd", i_instr_name_max_length, 9 );*/
-      /* Updated with the correct form of instruction mnemonic for QVNNI non-saturating  */
-      libxsmm_strncpy(o_instr_name, "vp4maddwdaccd", i_instr_name_max_length, 13 );
+      libxsmm_strncpy(o_instr_name, "vp4dpwssd", i_instr_name_max_length, 13 );
       break;
     case LIBXSMM_X86_INSTR_VP4DPWSSDS:
-      /*libxsmm_strncpy(o_instr_name, "vp4dpwssds", i_instr_name_max_length, 10 );*/
-      /* Updated with the correct form of instruction mnemonic for QVNNI saturating  */
-      libxsmm_strncpy(o_instr_name, "vp4maddwdaccssd", i_instr_name_max_length, 15 );
+      libxsmm_strncpy(o_instr_name, "vp4dpwssds", i_instr_name_max_length, 15 );
       break;
     /* GP instructions */
     case LIBXSMM_X86_INSTR_ADDQ:
@@ -481,12 +480,30 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_KMOVW:
       libxsmm_strncpy(o_instr_name, "kmovw", i_instr_name_max_length, 5 );
       break;
+    case LIBXSMM_X86_INSTR_KMOVB:
+      libxsmm_strncpy(o_instr_name, "kmovb", i_instr_name_max_length, 5 );
+      break;
+    case LIBXSMM_X86_INSTR_KMOVD:
+      libxsmm_strncpy(o_instr_name, "kmovd", i_instr_name_max_length, 5 );
+      break;
+    case LIBXSMM_X86_INSTR_KMOVQ:
+      libxsmm_strncpy(o_instr_name, "kmovq", i_instr_name_max_length, 5 );
+      break;
     case LIBXSMM_X86_INSTR_KXNORW:
       libxsmm_strncpy(o_instr_name, "kxnorw", i_instr_name_max_length, 6 );
       break;
+    case LIBXSMM_X86_INSTR_VMOVNTPD:
+      libxsmm_strncpy(o_instr_name, "vmovntpd", i_instr_name_max_length, 8 );
+      break;
+    case LIBXSMM_X86_INSTR_VMOVNTPS:
+      libxsmm_strncpy(o_instr_name, "vmovntps", i_instr_name_max_length, 8 );
+      break;
+    case LIBXSMM_X86_INSTR_VMOVNTDQA:
+      libxsmm_strncpy(o_instr_name, "vmovntdqa", i_instr_name_max_length, 9 );
+      break;
     /* default, we didn't had a match */
     default:
-      fprintf(stderr, " LIBXSMM ERROR: libxsmm_get_x86_64_instr_name i_instr_number (%u) is out of range!\n", i_instr_number);
+      fprintf(stderr, "libxsmm_get_x86_64_instr_name i_instr_number (%u) is out of range!\n", i_instr_number);
       exit(-1);
   }
 }
@@ -697,7 +714,7 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
 
     /* default, we didn't had a match */
     default:
-      fprintf(stderr, " LIBXSMM ERROR: libxsmm_is_x86_vec_instr_single_precision i_instr_number (%u) is not a x86 FP vector instruction!\n", i_instr_number);
+      fprintf(stderr, "libxsmm_is_x86_vec_instr_single_precision i_instr_number (%u) is not a x86 FP vector instruction!\n", i_instr_number);
       exit(-1);
   }
 
@@ -711,6 +728,7 @@ void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping
   io_gp_reg_mapping->gp_reg_c = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
+  io_gp_reg_mapping->gp_reg_c_prefetch = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_mloop = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_nloop = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_kloop = LIBXSMM_X86_GP_REG_UNDEF;
@@ -745,7 +763,7 @@ void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
   } else {
     /* selecting the correct signature */
-    if (0 != (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags)) {
+    if (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) {
       if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
       } else {
@@ -810,7 +828,7 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling arch-independent gemm kernel in: \" __FILE__)\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
     }
   }
@@ -842,7 +860,7 @@ void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
     } else {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
     }
   }
@@ -850,11 +868,24 @@ void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_co
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
-                           const unsigned int      i_error_code ) {
+                           const unsigned int      i_error_code,
+                           const char* context,
+                           int emit_message ) {
+  static LIBXSMM_TLS unsigned int last_error_code;
+  if (i_error_code != last_error_code) {
+    if (0 != emit_message) {
+      LIBXSMM_FLOCK(stderr);
+      if (0 != context && 0 != *context && '0' != *context) {
+        fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
+      }
+      else {
+        fprintf(stderr, "LIBXSMM ERROR: %s\n", libxsmm_strerror(i_error_code));
+      }
+      LIBXSMM_FLOCK(stderr);
+    }
+    last_error_code = i_error_code;
+  }
   io_generated_code->last_error = i_error_code;
-#if !defined(NDEBUG)
-  fprintf( stderr, "%s\n", libxsmm_strerror( i_error_code ) );
-#endif
 }
 
 LIBXSMM_INTERNAL_API_DEFINITION
@@ -863,163 +894,220 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
 
   switch (i_error_code) {
     case LIBXSMM_ERR_GENERAL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: a general error occured!\n" );
-      break;
-    case LIBXSMM_ERR_ARCH_PREC:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unknown architecture and precision!\n" );
-      break;
-    case LIBXSMM_ERR_ARCH:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unknown architecture!\n" );
-      break;
-    case LIBXSMM_ERR_LDA:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: lda needs to be greater than or equal to m!\n" );
-      break;
-    case LIBXSMM_ERR_LDB:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: ldb needs to be greater than or equal to k!\n" );
-      break;
-    case LIBXSMM_ERR_LDC:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: ldc needs to be greater than or equal to m!\n" );
-      break;
-    case LIBXSMM_ERR_SPGEMM_GEN:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: could not determine which sparse code generation variant is requested!\n" );
-      break;
-    case LIBXSMM_ERR_CSC_INPUT:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: could not open the specified CSC input file!\n" );
-      break;
-    case LIBXSMM_ERR_CSC_READ_LEN:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: exceeded predefined line-length when reading line of CSC file!\n" );
-      break;
-    case LIBXSMM_ERR_CSC_READ_DESC:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: error when reading descriptor of CSC file!\n" );
-      break;
-    case LIBXSMM_ERR_CSC_READ_ELEMS:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: error when reading line of CSC file!\n" );
-      break;
-    case LIBXSMM_ERR_CSC_LEN:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: number of elements read differs from number of elements specified in CSC file!\n" );
-      break;
-    case LIBXSMM_ERR_N_BLOCK:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid N blocking in microkernel!\n" );
-      break;
-    case LIBXSMM_ERR_M_BLOCK:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid M blocking in microkernel!\n" );
-      break;
-    case LIBXSMM_ERR_K_BLOCK:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid K blocking in microkernel!\n" );
-      break;
-    case LIBXSMM_ERR_NO_IMCI:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: IMCI architecture requested but called for a different one!\n" );
-      break;
-    case LIBXSMM_ERR_REG_BLOCK:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid MxN register blocking was specified!\n" );
-      break;
-    case LIBXSMM_ERR_VEC_MOVE_IMCI:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid vec move instruction for IMCI instruction replacement!\n" );
-      break;
-    case LIBXSMM_ERR_APPEND_STR:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: append code as string was called for generation mode which does not support this!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "a general error occurred (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_ALLOC:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: memory allocation failed!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "memory allocation failed (error #%u)!", i_error_code );
       break;
-    case LIBXSMM_ERR_NO_IMCI_AVX512_BCAST:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: fused memory broadcast is not supported on other platforms than AVX512/IMCI!\n" );
+    case LIBXSMM_ERR_BUFFER_TOO_SMALL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "code generation ran out of buffer capacity (error #%u)!", i_error_code );
       break;
-    case LIBXSMM_ERR_CALLEE_SAVE_A:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: reg_a cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
+    case LIBXSMM_ERR_APPEND_STR:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "append code as string was called for generation mode which does not support this (error #%u)!", i_error_code );
       break;
-    case LIBXSMM_ERR_CALLEE_SAVE_B:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: reg_b cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
+    case LIBXSMM_ERR_ARCH_PREC:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "unknown architecture and precision (error #%u)!", i_error_code );
       break;
-    case LIBXSMM_ERR_CALLEE_SAVE_C:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: reg_c cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
-      break;
-    case LIBXSMM_ERR_CALLEE_SAVE_A_PREF:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: reg_a_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
-      break;
-    case LIBXSMM_ERR_CALLEE_SAVE_B_PREF:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: reg_b_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value!\n" );
-      break;
-    case LIBXSMM_ERR_NO_INDEX_SCALE_ADDR:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: Index + Scale addressing mode is currently not implemented!\n");
-      break;
-    case LIBXSMM_ERR_UNSUPPORTED_JUMP:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: Unsupported jump instruction requested!\n");
-      break;
-    case LIBXSMM_ERR_NO_JMPLBL_AVAIL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: No destination jump label is available!\n");
-      break;
-    case LIBXSMM_ERR_EXCEED_JMPLBL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: too many nested loops, exceeding loop label tracker!\n");
-      break;
-    case LIBXSMM_ERR_CSC_ALLOC_DATA:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: could not allocate temporay memory for reading CSC file!\n");
-      break;
-    case LIBXSMM_ERR_NO_AVX512_QFMA:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: arch error, no QFMA is available!\n");
-    case LIBXSMM_ERR_CSR_ALLOC_DATA:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: could not allocate temporay memory for reading CSR file!\n");
-      break;
-    case LIBXSMM_ERR_CSR_INPUT:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: could not open the specified CSR input file!\n" );
-      break;
-    case LIBXSMM_ERR_CSR_READ_LEN:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: exceeded predefined line-length when reading line of CSR file!\n" );
-      break;
-    case LIBXSMM_ERR_CSR_READ_DESC:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: error when reading descriptor of CSR file!\n" );
-      break;
-    case LIBXSMM_ERR_CSR_READ_ELEMS:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: error when reading line of CSR file!\n" );
-      break;
-    case LIBXSMM_ERR_CSR_LEN:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: number of elements read differs from number of elements specified in CSR file!\n" );
-      break;
-    case LIBXSMM_ERR_UNSUP_CONV_FORMAT:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid activation or filter format was detected during convolution kernel generation!\n" );
-      break;
-    case LIBXSMM_ERR_INVALID_KW_UNROLL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid kw unrull was detected during convolution kernel generation!\n" );
-      break;
-    case LIBXSMM_ERR_INVALID_KH_UNROLL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid kh unrull was detected during convolution kernel generation!\n" );
-      break;
-    case LIBXSMM_ERR_INVALID_OFW_UNROLL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid ofw unrull was detected during convolution kernel generation!\n" );
-      break;
-    case LIBXSMM_ERR_INVALID_OFH_UNROLL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid ofh unrull was detected during convolution kernel generation!\n" );
-      break;
-    case LIBXSMM_ERR_INVALID_CONV_ACC:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid size of accumulator was detected during convolution kernel generation!\n" );
+    case LIBXSMM_ERR_ARCH:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "unknown architecture (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_UNSUP_ARCH:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unsupported arch for the selected module was specified!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "unsupported arch for the selected module was specified (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_LDA:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "lda needs to be greater than or equal to m (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_LDB:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "ldb needs to be greater than or equal to k (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_LDC:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "ldc needs to be greater than or equal to m (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_SPGEMM_GEN:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "could not determine which sparse code generation variant is requested (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CSC_INPUT:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "could not open the specified CSC input file (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CSC_READ_LEN:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "exceeded predefined line-length when reading line of CSC file (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CSC_READ_DESC:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "error when reading descriptor of CSC file (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CSC_READ_ELEMS:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "error when reading line of CSC file (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CSC_LEN:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "number of elements read differs from number of elements specified in CSC file (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_N_BLOCK:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "invalid N blocking in microkernel (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_M_BLOCK:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "invalid M blocking in microkernel (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_K_BLOCK:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "invalid K blocking in microkernel (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_NO_IMCI:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "IMCI architecture requested but called for a different one (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_REG_BLOCK:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "invalid MxN register blocking was specified (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_VEC_MOVE_IMCI:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "invalid vec move instruction for IMCI instruction replacement (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_NO_IMCI_AVX512_BCAST:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "fused memory broadcast is not supported on other platforms than AVX512/IMCI (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_NO_AVX512_QFMA:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "there is no QFMA instruction set extension available (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CALLEE_SAVE_A:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "reg_a cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CALLEE_SAVE_B:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "reg_b cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CALLEE_SAVE_C:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "reg_c cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CALLEE_SAVE_A_PREF:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "reg_a_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CALLEE_SAVE_B_PREF:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "reg_b_prefetch cannot be callee save, since input, please use either rdi, rsi, rdx, rcx, r8, r9 for this value (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_NO_INDEX_SCALE_ADDR:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "Index + Scale addressing mode is currently not implemented (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_UNSUPPORTED_JUMP:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "Unsupported jump instruction requested (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_NO_JMPLBL_AVAIL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "No destination jump label is available (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_EXCEED_JMPLBL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "too many nested loops, exceeding loop label tracker (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CSC_ALLOC_DATA:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "could not allocate temporary memory for reading CSC file (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CSR_ALLOC_DATA:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "could not allocate temporary memory for reading CSR file (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CSR_INPUT:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "could not open the specified CSR input file (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CSR_READ_LEN:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "exceeded predefined line-length when reading line of CSR file (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CSR_READ_DESC:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "error when reading descriptor of CSR file (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CSR_READ_ELEMS:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "error when reading line of CSR file (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_CSR_LEN:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "number of elements read differs from number of elements specified in CSR file (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_UNSUP_CONV_FORMAT:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "invalid activation or filter format was detected during convolution kernel generation (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_INVALID_KW_UNROLL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "invalid kw unroll was detected during convolution kernel generation (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_INVALID_KH_UNROLL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "invalid kh unroll was detected during convolution kernel generation (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_INVALID_OFW_UNROLL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "invalid ofw unroll was detected during convolution kernel generation (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_INVALID_OFH_UNROLL:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "invalid ofh unroll was detected during convolution kernel generation (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_INVALID_CONV_ACC:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "invalid size of accumulator was detected during convolution kernel generation (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_CONV_OFM_VEC:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: forward conv/weight updated vectorization failed, OFM blocking is not divisible by VLEN!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "forward conv/weight updated vectorization failed, OFM blocking is not divisible by VLEN (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_CONV_IFM_VEC:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: backward conv vectorization failed, IFM blocking is not divisible by VLEN!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "backward conv vectorization failed, IFM blocking is not divisible by VLEN (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_CONV_CONT_STRIDE:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: backward conv vectorization failed, stride_h/w need to be 1!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "backward conv vectorization failed, stride_h/w need to be 1 (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_UNSUP_DATATYPE:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unsupported datatype was requested!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "unsupported datatype was requested (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_UNSUP_DT_FORMAT:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: unsupported datatype and format combination was requested!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "unsupported datatype and format combination was requested (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_INVALID_GEMM_CONFIG:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: invalid GEMM config in setup detected!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "invalid GEMM config in setup detected (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_UNIQUE_VAL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: for sparse-A in reg: too many values in A!\n" );
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "for sparse-A in reg: too many values in A (error #%u)!", i_error_code );
       break;
-    /* default, we didn't don't know what happend */
-    default:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH, " LIBXSMM ERROR: an unknown error occured!\n" );
+    default: /* we do not know what happened */
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "an unknown error occurred (error #%u)!", i_error_code );
       break;
   }
 

@@ -207,6 +207,9 @@
     <ClInclude Include="..\src\generator_matcopy_avx_avx512.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_transpose_avx_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -380,6 +383,12 @@
     <ClCompile Include="..\src\generator_matcopy.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\generator_transpose.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_transpose_avx_avx512.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">
@@ -425,6 +434,7 @@
       <Filter>scripts</Filter>
     </None>
     <None Include="..\.buildkite.env" />
+    <None Include="..\.analyze.sh" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />

@@ -31,9 +31,10 @@ PBINDIR = $(BINDIR)
 PTSTDIR = tests
 PDOCDIR = share/libxsmm
 
-# initial default flags
-CXXFLAGS = $(NULL)
-CFLAGS = $(NULL)
+# initial default flags: RPM_OPT_FLAGS are usually NULL
+CFLAGS = $(RPM_OPT_FLAGS)
+CXXFLAGS := $(CFLAGS)
+FCFLAGS := $(CFLAGS)
 DFLAGS = -DLIBXSMM_BUILD
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
@@ -62,8 +63,8 @@ CACHE ?= 1
 
 # Issue software prefetch instructions (see end of section
 # https://github.com/hfp/libxsmm/#generator-driver)
-# Use the enumerator 1...10, or the exact strategy
-# name pfsigonly...AL2_BL2viaC_CL2.
+# Use the enumerator 1...16, or the exact strategy
+# name pfsigonly...AL1_BL1_CL1.
 #  1: auto-select
 #  2: pfsigonly
 #  3: BL2viaC
@@ -73,7 +74,13 @@ CACHE ?= 1
 #  6: AL2_BL2viaC
 #  8: AL2jpst
 #  9: AL2jpst_BL2viaC
-# 10: AL2_BL2viaC_CL2
+# 10: AL1
+# 11: BL1
+# 12: CL1
+# 13: AL1_BL1
+# 14: BL1_CL1
+# 15: AL1_CL1
+# 16: AL1_BL1_CL1
 PREFETCH ?= 1
 
 # Preferred precision when registering statically generated code versions
@@ -82,19 +89,8 @@ PREFETCH ?= 1
 # 2: DP only
 PRECISION ?= 0
 
-# Support SMM kernels with larger extent(s)
-# 0: optimized JIT descriptor size
-# 1: regular descriptor size
-BIG ?= 1
-
 # Specify an alignment (Bytes)
 ALIGNMENT ?= 64
-
-# Generate code using aligned Load/Store instructions
-# !=0: enable if lda/ldc (m) is a multiple of ALIGNMENT
-# ==0: disable emitting aligned Load/Store instructions
-ALIGNED_STORES ?= 0
-ALIGNED_LOADS ?= 0
 
 # Alpha argument of GEMM
 # Supported: 1.0
@@ -125,6 +121,11 @@ STATIC ?= 1
 # 1: enables wrapping SGEMM and DGEMM
 # 2: enables wrapping DGEMM only
 WRAP ?= 0
+
+# Determines kind routine called for intercepted GEMMs
+# 1: sequential and non-tiled (small problem sizes only)
+# 2: parallelized and tiled
+GEMM ?= 2
 
 # JIT backend is enabled by default
 JIT ?= 1
@@ -345,8 +346,20 @@ else ifeq (AL2jpst,$(PREFETCH))
   PREFETCH_UID = 8
 else ifeq (AL2jpst_BL2viaC,$(PREFETCH))
   PREFETCH_UID = 9
-else ifeq (AL2_BL2viaC_CL2,$(PREFETCH))
+else ifeq (AL1,$(PREFETCH))
   PREFETCH_UID = 10
+else ifeq (BL1,$(PREFETCH))
+  PREFETCH_UID = 11
+else ifeq (CL1,$(PREFETCH))
+  PREFETCH_UID = 12
+else ifeq (AL1_BL1,$(PREFETCH))
+  PREFETCH_UID = 13
+else ifeq (BL1_CL1,$(PREFETCH))
+  PREFETCH_UID = 14
+else ifeq (AL1_CL1,$(PREFETCH))
+  PREFETCH_UID = 15
+else ifeq (AL1_BL1_CL1,$(PREFETCH))
+  PREFETCH_UID = 16
 endif
 
 # Mapping build options to libxsmm_gemm_prefetch_type (see include/libxsmm_typedefs.h)
@@ -380,15 +393,34 @@ else ifeq (9,$(PREFETCH_UID))
   PREFETCH_SCHEME = AL2jpst_BL2viaC
   PREFETCH_TYPE = $(shell echo $$((8 | 4)))
 else ifeq (10,$(PREFETCH_UID))
-  PREFETCH_SCHEME = AL2_BL2viaC_CL2
-  PREFETCH_TYPE = $(shell echo $$((8 | 2 | 32)))
+  PREFETCH_SCHEME = AL1
+  PREFETCH_TYPE = 32
+else ifeq (11,$(PREFETCH_UID))
+  PREFETCH_SCHEME = BL1
+  PREFETCH_TYPE = 64
+else ifeq (12,$(PREFETCH_UID))
+  PREFETCH_SCHEME = CL1
+  PREFETCH_TYPE = 128
+else ifeq (13,$(PREFETCH_UID))
+  PREFETCH_SCHEME = AL1_BL1
+  PREFETCH_TYPE = $(shell echo $$((32 | 64)))
+else ifeq (14,$(PREFETCH_UID))
+  PREFETCH_SCHEME = BL1_CL1
+  PREFETCH_TYPE = $(shell echo $$((64 | 128)))
+else ifeq (15,$(PREFETCH_UID))
+  PREFETCH_SCHEME = AL1_CL1
+  PREFETCH_TYPE = $(shell echo $$((32 | 128)))
+else ifeq (16,$(PREFETCH_UID))
+  PREFETCH_SCHEME = AL1_BL1_CL1
+  PREFETCH_TYPE = $(shell echo $$((32 | 64 | 128)))
 endif
 ifeq (,$(PREFETCH_SCHEME_MIC))
   PREFETCH_SCHEME_MIC = $(PREFETCH_SCHEME)
 endif
 
 # Mapping build options to libxsmm_gemm_flags (see include/libxsmm_typedefs.h)
-FLAGS = $(shell echo $$((((0!=$(ALIGNED_LOADS))*4) | ((0!=$(ALIGNED_STORES))*8))))
+#FLAGS = $(shell echo $$((((0==$(ALPHA))*4) | ((0>$(ALPHA))*8) | ((0==$(BETA))*16) | ((0>$(BETA))*32))))
+FLAGS = 0
 
 SUPPRESS_UNUSED_VARIABLE_WARNINGS = LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C);
 ifneq (nopf,$(PREFETCH_SCHEME))
@@ -402,7 +434,8 @@ config: $(INCDIR)/libxsmm_config.h
 $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_config.h \
                             $(SCRDIR)/libxsmm_config.py $(SCRDIR)/libxsmm_utilities.py \
                             $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
-                            $(wildcard $(ROOTDIR)/.hooks/*)
+                            $(wildcard $(ROOTDIR)/.hooks/*) \
+                            $(ROOTDIR)/version.txt
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
@@ -419,10 +452,10 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_config.py $(SRCDIR)/template/libxsmm_config.h \
-		$(MAKE_ILP64) $(BIG) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) > $@
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) > $@
 	$(info ================================================================================)
 	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py))
 	$(info --------------------------------------------------------------------------------)
@@ -468,7 +501,7 @@ endif
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
 $(INCDIR)/libxsmm.h: $(SCRDIR)/libxsmm_interface.py \
-                     $(SRCDIR)/template/libxsmm.h $(ROOTDIR)/version.txt \
+                     $(SRCDIR)/template/libxsmm.h \
                      $(INCDIR)/libxsmm_config.h $(HEADERS)
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.h \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) > $@
@@ -480,17 +513,16 @@ $(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(SCRDIR)/libxsmm_source.sh $(INCDIR
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
-$(INCDIR)/libxsmm.f: $(BLDDIR)/.make \
-                     $(ROOTDIR)/version.txt $(INCDIR)/libxsmm_config.h \
-                     $(SRCDIR)/template/libxsmm.f $(SCRDIR)/libxsmm_interface.py \
-                     $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc
+$(INCDIR)/libxsmm.f: $(SCRDIR)/libxsmm_interface.py \
+                     $(SRCDIR)/template/libxsmm.f \
+                     $(INCDIR)/libxsmm_config.h
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.f \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) | \
 	$(PYTHON) $(SCRDIR)/libxsmm_config.py /dev/stdin \
-		$(MAKE_ILP64) $(BIG) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(INDICES) | \
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) | \
 	sed "/ATTRIBUTES OFFLOAD:MIC/d" > $@
 
 .PHONY: sources
@@ -506,10 +538,6 @@ ifneq (,$(strip $(SRCFILES_KERNELS)))
 	$(eval KVALUE := $(shell echo $(basename $@) | cut -d_ -f4))
 	$(eval MNVALUE := $(MVALUE))
 	$(eval NMVALUE := $(NVALUE))
-	$(eval ASTSP := $(shell echo $$((0!=$(ALIGNED_STORES)&&0==($(MNVALUE)*4)%$(ALIGNMENT)))))
-	$(eval ASTDP := $(shell echo $$((0!=$(ALIGNED_STORES)&&0==($(MNVALUE)*8)%$(ALIGNMENT)))))
-	$(eval ALDSP := $(shell echo $$((0!=$(ALIGNED_LOADS)&&0==($(MNVALUE)*4)%$(ALIGNMENT)))))
-	$(eval ALDDP := $(shell echo $$((0!=$(ALIGNED_LOADS)&&0==($(MNVALUE)*8)%$(ALIGNMENT)))))
 	@echo "#include <libxsmm.h>" > $@
 	@echo >> $@
 ifneq (0,$(MIC))
@@ -539,16 +567,16 @@ endif
 	@echo >> $@
 	@echo >> $@
 ifneq (2,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) knl $(PREFETCH_SCHEME) SP
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) hsw $(PREFETCH_SCHEME) SP
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) snb $(PREFETCH_SCHEME) SP
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) wsm $(PREFETCH_SCHEME) SP
+	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) SP
+	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) SP
+	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) SP
+	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) SP
 endif
 ifneq (1,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) knl $(PREFETCH_SCHEME) DP
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) hsw $(PREFETCH_SCHEME) DP
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) snb $(PREFETCH_SCHEME) DP
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) wsm $(PREFETCH_SCHEME) DP
+	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) DP
+	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) DP
+	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) DP
+	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) DP
 endif
 endif # target
 else # noarch
@@ -561,23 +589,23 @@ endif
 	@echo >> $@
 	@echo >> $@
 ifneq (2,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTSP) $(GENTARGET) $(PREFETCH_SCHEME) SP
+	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) SP
 endif
 ifneq (1,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDDP) $(ASTDP) $(GENTARGET) $(PREFETCH_SCHEME) DP
+	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) DP
 endif
 endif # noarch
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ifneq (2,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTDP) knc $(PREFETCH_SCHEME_MIC) SP
+	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knc $(PREFETCH_SCHEME_MIC) SP
 endif
 ifneq (1,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) $(ALDSP) $(ASTDP) knc $(PREFETCH_SCHEME_MIC) DP
+	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knc $(PREFETCH_SCHEME_MIC) DP
 endif
 endif
 endif
-	$(eval TMPFILE = $(shell mktemp /tmp/fileXXXXXX))
+	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
 	@cat $@ | sed \
 		-e "s/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/" \
 		-e "s/#ifndef NDEBUG/$(SUPPRESS_UNUSED_PREFETCH_WARNINGS)#ifdef LIBXSMM_NEVER_DEFINED/" \
@@ -761,7 +789,7 @@ else
 endif
 
 .PHONY: generator
-generator: $(BINDIR)/libxsmm_gemm_generator $(BINDIR)/libxsmm_conv_generator $(BINDIR)/libxsmm_convwino_generator 
+generator: $(BINDIR)/libxsmm_gemm_generator $(BINDIR)/libxsmm_conv_generator $(BINDIR)/libxsmm_convwino_generator
 $(BINDIR)/libxsmm_gemm_generator: $(BINDIR)/.make $(OBJFILES_GEN_GEMM_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT)
 	$(CC) -o $@ $(OBJFILES_GEN_GEMM_BIN) $(call abslib,$(OUTDIR)/libxsmmgen.$(LIBEXT)) $(LDFLAGS) $(CLDFLAGS)
 $(BINDIR)/libxsmm_conv_generator: $(BINDIR)/.make $(OBJFILES_GEN_CONV_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT)
@@ -802,7 +830,7 @@ ifneq (,$(strip $(FC)))
 flib_mic: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	$(FC) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(FCMTFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(BLDDIR)/mic/libxsmm-mod.o $(call abslib,$(OUTDIR)/mic/libxsmm.$(LIBEXT)) $(LDFLAGS) $(FLDFLAGS)
+	$(FLD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(FCMTFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(BLDDIR)/mic/libxsmm-mod.o $(call abslib,$(OUTDIR)/mic/libxsmm.$(LIBEXT)) $(LDFLAGS) $(FLDFLAGS)
 	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@.$(VERSION_MAJOR)
 	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@
 else
@@ -820,7 +848,7 @@ ifneq (,$(strip $(FC)))
 flib_hst: $(OUTDIR)/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT)
-	$(FC) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(FCMTFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(LIBEXT)) $(LDFLAGS) $(FLDFLAGS)
+	$(FLD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(FCMTFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(LIBEXT)) $(LDFLAGS) $(FLDFLAGS)
 	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@.$(VERSION_MAJOR)
 	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@
 else
@@ -1286,7 +1314,7 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 endif
 
 $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
-	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
+	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
 	@mv $(TMPFILE) $(TMPFILE).tex
 	@pandoc -D latex \
 	| sed \
@@ -1315,7 +1343,7 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 	@rm $(TMPFILE).tex
 
 $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
-	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
+	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
 	@mv $(TMPFILE) $(TMPFILE).tex
 	@pandoc -D latex \
 	| sed \
@@ -1344,7 +1372,7 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 	@rm $(TMPFILE).tex
 
 $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
-	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
+	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
 	@mv $(TMPFILE) $(TMPFILE).tex
 	@pandoc -D latex \
 	| sed \
@@ -1373,7 +1401,7 @@ $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
 	@rm $(TMPFILE).tex
 
 $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
-	$(eval TMPFILE = $(shell mktemp fileXXXXXX))
+	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
 	@mv $(TMPFILE) $(TMPFILE).tex
 	@pandoc -D latex \
 	| sed \

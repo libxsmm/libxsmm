@@ -55,7 +55,7 @@ void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*                  
     libxsmm_generator_matcopy_avx_avx512_kernel( io_generated_code, i_matcopy_desc, i_arch );
   } else {
     /* TODO fix this error */
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
 

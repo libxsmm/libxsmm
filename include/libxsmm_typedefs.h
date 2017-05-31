@@ -53,20 +53,32 @@ typedef enum libxsmm_datatype {
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
+  LIBXSMM_GEMM_FLAG_NONE    = 0,
   /** Transpose matrix A. */
   LIBXSMM_GEMM_FLAG_TRANS_A = 1,
   /** Transpose matrix B. */
   LIBXSMM_GEMM_FLAG_TRANS_B = 2,
+#if 0
+  /** Alpha=0|1 */
+  LIBXSMM_GEMM_FLAG_ALPHA_0 = 4,
+  /** Alpha=neg|pos */
+  LIBXSMM_GEMM_FLAG_ALPHA_S = 8,
+  /** Beta=0|1 */
+  LIBXSMM_GEMM_FLAG_BETA_0  = 16,
+  /** Beta=neg|pos */
+  LIBXSMM_GEMM_FLAG_BETA_S  = 32,
+#endif
   /** Generate aligned load instructions. */
-  LIBXSMM_GEMM_FLAG_ALIGN_A = 4,
+  LIBXSMM_GEMM_FLAG_ALIGN_A = 64,
   /** Aligned load/store instructions. */
-  LIBXSMM_GEMM_FLAG_ALIGN_C = 8
+  LIBXSMM_GEMM_FLAG_ALIGN_C = 128
 } libxsmm_gemm_flags;
 
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_gemm_precision {
   LIBXSMM_GEMM_PRECISION_F64 = LIBXSMM_DATATYPE_F64,
-  LIBXSMM_GEMM_PRECISION_F32 = LIBXSMM_DATATYPE_F32
+  LIBXSMM_GEMM_PRECISION_F32 = LIBXSMM_DATATYPE_F32,
+  LIBXSMM_GEMM_PRECISION_I16 = LIBXSMM_DATATYPE_I16
 } libxsmm_gemm_precision;
 
 /** Enumeration of the available prefetch strategies. */
@@ -85,10 +97,7 @@ typedef enum libxsmm_gemm_prefetch_type {
   LIBXSMM_PREFETCH_BL2_VIA_C          = 8,
   /** Prefetch A ahead. */
   LIBXSMM_PREFETCH_AL2_AHEAD          = 16,
-  /** Prefetch PC using accesses to C. */
-  /*LIBXSMM_PREFETCH_CL2                = 32,*/
   LIBXSMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2,
-  /*LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C    = LIBXSMM_PREFETCH_AL2BL2_VIA_C | LIBXSMM_PREFETCH_CL2,*/
   LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST  = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_JPST,
   LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD,
   /** Prefetch PA/PB/PC in L1 (using accesses to A, B, C) */
@@ -98,7 +107,9 @@ typedef enum libxsmm_gemm_prefetch_type {
   LIBXSMM_PREFETCH_AL1_BL1            = LIBXSMM_PREFETCH_AL1 | LIBXSMM_PREFETCH_BL1,
   LIBXSMM_PREFETCH_BL1_CL1            = LIBXSMM_PREFETCH_BL1 | LIBXSMM_PREFETCH_CL1,
   LIBXSMM_PREFETCH_AL1_CL1            = LIBXSMM_PREFETCH_AL1 | LIBXSMM_PREFETCH_CL1,
-  LIBXSMM_PREFETCH_AL1_BL1_CL1        = LIBXSMM_PREFETCH_AL1_BL1 | LIBXSMM_PREFETCH_CL1
+  LIBXSMM_PREFETCH_AL1_BL1_CL1        = LIBXSMM_PREFETCH_AL1_BL1 | LIBXSMM_PREFETCH_CL1,
+  /** Backward compatibility: AL2CL2BL2_VIA_C is an alias for AL2BL2_VIA_C. */
+  LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C    = LIBXSMM_PREFETCH_AL2BL2_VIA_C
 } libxsmm_gemm_prefetch_type;
 
 /** Provided for compatibility with older codes. */
@@ -318,8 +329,10 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
+/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmmfunction)(const short* a, const short* b, int* c, ...);
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; } libxsmm_xmmfunction;
+typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; libxsmm_wmmfunction wmm; } libxsmm_xmmfunction;
 
 /** Specialized function for matrix-copy (weak-typed). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmatcopyfunction)(const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);

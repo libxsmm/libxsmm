@@ -108,7 +108,7 @@ int main(void)
       const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
       union { libxsmm_xmmfunction x; void* p; } fi;
-      LIBXSMM_GEMM_DESCRIPTOR_TYPE(descriptor, LIBXSMM_ALIGNMENT, flags | LIBXSMM_GEMM_TYPEFLAG(float),
+      LIBXSMM_GEMM_DESCRIPTOR_TYPE(descriptor, LIBXSMM_GEMM_PRECISION(float), flags,
         m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, LIBXSMM_ALPHA, LIBXSMM_BETA, prefetch);
       fi.x = libxsmm_xmmdispatch(&descriptor);
 

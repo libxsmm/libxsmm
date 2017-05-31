@@ -53,33 +53,27 @@
 # define FREE(POINTER) free(POINTER)
 #endif
 
-#if !defined(MAX_MALLOC_LONGLIFE)
-/*# define MAX_MALLOC_LONGLIFE*/
-#endif
 #if !defined(MAX_MALLOC_MB)
 # define MAX_MALLOC_MB 100
 #endif
 #if !defined(MAX_MALLOC_N)
-# define MAX_MALLOC_N 10
+# define MAX_MALLOC_N 24
 #endif
 
 
-#if defined(MAX_MALLOC_LONGLIFE)
 void* malloc_offsite(size_t size);
-#endif
 
 
 int main(int argc, char* argv[])
 {
   const int ncycles = LIBXSMM_DEFAULT(1000000, 1 < argc ? atoi(argv[1]) : 0);
-  const int nalloc = LIBXSMM_MIN(MAX_MALLOC_N, 2 < argc ? atoi(argv[2]) : (MAX_MALLOC_N));
+  const int nalloc = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 4, 1, MAX_MALLOC_N);
   const int nthreads = LIBXSMM_DEFAULT(1, 3 < argc ? atoi(argv[3]) : 0);
   unsigned long long start;
   unsigned int ncalls = 0;
   double dcall, dalloc;
   void* p[MAX_MALLOC_N];
   int r[MAX_MALLOC_N];
-  size_t npending;
   int i;
 
 #if defined(_OPENMP)
@@ -87,11 +81,11 @@ int main(int argc, char* argv[])
 #endif
 
   /* generate set of random number for parallel region */
-  for (i = 0; i < nalloc; ++i) r[i] = rand();
+  for (i = 0; i < (MAX_MALLOC_N); ++i) r[i] = rand();
 
   /* count number of calls according to randomized scheme */
   for (i = 0; i < ncycles; ++i) {
-    ncalls += (r[i%nalloc] % nalloc) + 1;
+    ncalls += LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % nalloc, 1);
   }
   assert(0 != ncalls);
 
@@ -102,9 +96,10 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-#if defined(MAX_MALLOC_LONGLIFE)
-    void *const longlife = malloc_offsite((MAX_MALLOC_MB) << 20);
-#endif
+    const char *const longlife_env = getenv("LONGLIFE");
+    const int enable_longlife = ((0 == longlife_env || 0 == *longlife_env) ? 0 : atoi(longlife_env));
+    void *const longlife = (0 == enable_longlife ? 0 : malloc_offsite((MAX_MALLOC_MB) << 20));
+
     /* run non-inline function to measure call overhead of an "empty" function */
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -120,10 +115,10 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for default(none) private(i)
 #endif
     for (i = 0; i < ncycles; ++i) {
-      const int count = (r[i%nalloc] % nalloc) + 1;
+      const int count = LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % nalloc, 1);
       int j;
       for (j = 0; j < count; ++j) {
-        const size_t nbytes = (r[j%nalloc] % (MAX_MALLOC_MB) + 1) << 20;
+        const size_t nbytes = (r[j%(MAX_MALLOC_N)] % (MAX_MALLOC_MB) + 1) << 20;
         p[j] = MALLOC(nbytes);
       }
       for (j = 0; j < count; ++j) {
@@ -131,12 +126,10 @@ int main(int argc, char* argv[])
       }
     }
     dalloc = libxsmm_timer_duration(start, libxsmm_timer_tick());
-#if defined(MAX_MALLOC_LONGLIFE)
     FREE(longlife);
-#endif
   }
 
-  if (0 < dcall && 0 < dalloc) {
+  if (0 < dcall && 0 < dalloc && 0 < ncalls) {
     const double alloc_freq = 1E-6 * ncalls / dalloc;
     const double empty_freq = 1E-6 * (ncycles * (MAX_MALLOC_N)) / dcall;
     fprintf(stdout, "\tallocation+free calls/s: %.1f MHz\n", alloc_freq);
@@ -144,14 +137,10 @@ int main(int argc, char* argv[])
     fprintf(stdout, "\toverhead: %.1fx\n", empty_freq / alloc_freq);
   }
 
-  libxsmm_release_scratch(&npending);
   fprintf(stdout, "Finished\n");
-
-  return 0 == npending ? EXIT_SUCCESS : EXIT_FAILURE;
+  return EXIT_SUCCESS;
 }
 
 
-#if defined(MAX_MALLOC_LONGLIFE)
 void* malloc_offsite(size_t size) { return MALLOC(size); }
-#endif
 

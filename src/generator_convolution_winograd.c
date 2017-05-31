@@ -52,7 +52,7 @@ void libxsmm_generator_convolution_winograd_weight_update_kernel( libxsmm_genera
        (strcmp(i_arch, "skx") == 0) ) {
     libxsmm_generator_convolution_winograd_weight_update_avx512( io_generated_code, i_conv_desc, i_arch );
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
 
@@ -83,8 +83,7 @@ void libxsmm_generator_convolution_winograd_weight_update_inlineasm(const char* 
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
-      libxsmm_strerror(l_generated_code.last_error));
+    LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
     exit(-1);
   }
 
@@ -131,8 +130,7 @@ void libxsmm_generator_convolution_winograd_weight_update_directasm(const char* 
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
-      libxsmm_strerror(l_generated_code.last_error));
+    LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
     exit(-1);
   }
 
@@ -165,7 +163,7 @@ void libxsmm_generator_convolution_winograd_forward_kernel( libxsmm_generated_co
        (strcmp(i_arch, "skx") == 0) ) {
     libxsmm_generator_convolution_winograd_forward_avx512( io_generated_code, i_conv_desc, i_arch );
   } else {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_ARCH );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
 
@@ -196,8 +194,7 @@ void libxsmm_generator_convolution_winograd_forward_inlineasm( const char*      
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
-      libxsmm_strerror(l_generated_code.last_error));
+    LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
     exit(-1);
   }
 
@@ -244,8 +241,7 @@ void libxsmm_generator_convolution_winograd_forward_directasm( const char*      
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR there was an error generating code. Last known error is:\n%s\n",
-      libxsmm_strerror(l_generated_code.last_error));
+    LIBXSMM_HANDLE_ERROR_VERBOSE( &l_generated_code, l_generated_code.last_error );
     exit(-1);
   }
 

@@ -44,7 +44,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         i
                                                const char*                     i_arch,
                                                const unsigned int*             i_row_idx,
                                                const unsigned int*             i_column_idx,
-                                               const double*                   i_values ) {
+                                               const void*                     i_values ) {
   if ( strcmp(i_arch, "knl") == 0 ||
        strcmp(i_arch, "skx") == 0 ) {
     libxsmm_generator_spgemm_csr_asparse_soa_avx512( io_generated_code,
@@ -65,7 +65,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
                                                       const char*                     i_arch,
                                                       const unsigned int*             i_row_idx,
                                                       const unsigned int*             i_column_idx,
-                                                      const double*                   i_values ) {
+                                                      const void*                     i_values ) {
   unsigned int l_soa_width = 0;
   unsigned int l_gen_m_trips = 0;
   unsigned int l_a_is_dense = 0;
@@ -73,6 +73,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
   unsigned int l_n_chunksize = 0;
   unsigned int l_n_remain = 0;
   unsigned int l_n_max_block = 28;
+  unsigned int l_n_loop = 0;
 
   libxsmm_micro_kernel_config l_micro_kernel_config = { 0 };
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -104,7 +105,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
 
   /* select soa width */
-  if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+  if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
     l_soa_width = 8;
     l_micro_kernel_config.a_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSD;
   } else {
@@ -127,7 +128,8 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
   /* calculate the chunk size of current columns to work on */
   l_n_chunks = ( (i_xgemm_desc->n % l_n_max_block) == 0 ) ? (i_xgemm_desc->n / l_n_max_block) : (i_xgemm_desc->n / l_n_max_block) + 1;
   l_n_chunksize = ( (i_xgemm_desc->n % l_n_chunks) == 0 ) ? (i_xgemm_desc->n / l_n_chunks) : (i_xgemm_desc->n / l_n_chunks) + 1;
-  l_n_remain = ( ((i_xgemm_desc->n % l_n_chunks) == 0) || ((unsigned int)i_xgemm_desc->n <= l_n_max_block) ) ? 0 : 1;
+  l_n_remain = ( ((i_xgemm_desc->n % l_n_chunksize) == 0) || ((unsigned int)i_xgemm_desc->n <= l_n_max_block) ) ? 0 : 1;
+  l_n_loop = ( l_n_remain == 0 ) ? (l_n_chunks * l_n_chunksize) : ((l_n_chunks-1) * l_n_chunksize);
 
   /* loop over blocks of n */
   libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
@@ -154,7 +156,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_avx512( libxsmm_generated_code*   
 
 
   /* N loop jump back */
-  libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_nloop, i_xgemm_desc->n );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_loop );
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
 
   /* handle remainder of N loop */
@@ -177,7 +179,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop_avx512( libxsmm_generated_c
                                                              const char*                        i_arch,
                                                              const unsigned int*                i_row_idx,
                                                              const unsigned int*                i_column_idx,
-                                                             const double*                      i_values,
+                                                             const void*                        i_values,
                                                              const unsigned int                 i_soa_width,
                                                              const unsigned int                 i_gen_m_trips,
                                                              const unsigned int                 i_a_is_dense,

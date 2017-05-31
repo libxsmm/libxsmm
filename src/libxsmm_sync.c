@@ -238,7 +238,7 @@ void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
       __m512d m512d;
       _mm_prefetch((const char*)core->partner_flags[core->parity][0], _MM_HINT_ET1);
       sendbuf[0] = core->sense;
-      m512d = _mm512_load_pd(sendbuf);
+      m512d = LIBXSMM_INTRINSICS_MM512_LOAD_PD(sendbuf);
 #endif
 
       for (i = di = 0; i < barrier->ncores_log2 - 1; ++i, di += LIBXSMM_SYNC_CACHELINE_SIZE) {
@@ -317,15 +317,21 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_get_pid(void)
 
 LIBXSMM_API_DEFINITION unsigned int libxsmm_get_tid(void)
 {
-#if defined(__linux__)
-  return (unsigned int)syscall(__NR_gettid);
-#else /* fallback */
   static LIBXSMM_TLS unsigned int tid = (unsigned int)(-1);
   if ((unsigned int)(-1) == tid) {
     static unsigned int tc = 0; tid = tc;
     LIBXSMM_ATOMIC_ADD_FETCH(&tc, 1, LIBXSMM_ATOMIC_RELAXED);
   }
   return tid;
+}
+
+
+LIBXSMM_API_DEFINITION unsigned int libxsmm_get_tid_os(void)
+{
+#if defined(__linux__)
+  return (unsigned int)syscall(__NR_gettid);
+#else /* fallback */
+  return libxsmm_get_tid();
 #endif
 }
 

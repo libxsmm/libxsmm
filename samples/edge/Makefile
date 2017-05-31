@@ -17,7 +17,7 @@ ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../..
 SRCDIR = $(ROOTDIR)
 INCDIR = .
-BLDDIR = .
+BLDDIR = build
 OUTDIR = .
 
 CXXFLAGS = $(NULL)
@@ -56,7 +56,7 @@ FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/edge_vol_int
-#XFILES := $(OUTDIR)/edge_vol_int $(OUTDIR)/asparse_soa $(OUTDIR)/bsparse_soa
+#XFILES := $(OUTDIR)/edge_vol_int $(OUTDIR)/asparse_soa_f64 $(OUTDIR)/bsparse_soa_f64 $(OUTDIR)/asparse_soa_f32 $(OUTDIR)/bsparse_soa_f32
 
 .PHONY: all
 all: $(XFILES)
@@ -67,17 +67,29 @@ compile: $(OBJECTS) $(FTNOBJS)
 $(OUTDIR)/edge_vol_int: $(OUTDIR)/.make $(BLDDIR)/edge_vol_int-c.o $(BLDDIR)/edge_proxy_common-c.o $(LIBNAME).$(LIBEXT)
 	$(LD) -o $@ $(BLDDIR)/edge_vol_int-c.o $(BLDDIR)/edge_proxy_common-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-#$(OUTDIR)/asparse_soa: $(OUTDIR)/.make $(BLDDIR)/asparse_soa-c.o $(LIBNAME).$(LIBEXT)
+#$(OUTDIR)/asparse_soa_f64: $(OUTDIR)/.make $(BLDDIR)/asparse_soa-c.o $(LIBNAME).$(LIBEXT)
 #	$(LD) -o $@ $(BLDDIR)/asparse_soa-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 #
-#$(OUTDIR)/bsparse_soa: $(OUTDIR)/.make $(BLDDIR)/bsparse_soa-c.o $(LIBNAME).$(LIBEXT)
+#$(OUTDIR)/bsparse_soa_f64: $(OUTDIR)/.make $(BLDDIR)/bsparse_soa-c.o $(LIBNAME).$(LIBEXT)
 #	$(LD) -o $@ $(BLDDIR)/bsparse_soa-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+#
+#$(OUTDIR)/asparse_soa_f32: $(OUTDIR)/.make $(BLDDIR)/asparse_soa-c-f32.o $(LIBNAME).$(LIBEXT)
+#	$(LD) -o $@ $(BLDDIR)/asparse_soa-c-f32.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+#
+#$(OUTDIR)/bsparse_soa_f32: $(OUTDIR)/.make $(BLDDIR)/bsparse_soa-c-f32.o $(LIBNAME).$(LIBEXT)
+#	$(LD) -o $@ $(BLDDIR)/bsparse_soa-c-f32.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
 
 $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
+
+$(BLDDIR)/%-cpp-f32.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+	$(CXX) $(CXXFLAGS) $(DFLAGS) -D__EDGE_EXECUTE_F32__ $(IFLAGS) $(CTARGET) -c $< -o $@
+
+$(BLDDIR)/%-c-f32.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+	$(CC) $(CFLAGS) $(DFLAGS) -D__EDGE_EXECUTE_F32__ $(IFLAGS) $(CTARGET) -c $< -o $@
 
 .PHONY: clean
 clean:

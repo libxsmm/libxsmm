@@ -52,24 +52,19 @@
 # define LIBXSMM_MAX2(A, B) (A)
 #endif
 
-/** Helper macro for aligning a buffer for aligned loads/store instructions. */
-#if (0 != (4/*LIBXSMM_GEMM_FLAG_ALIGN_A*/ & LIBXSMM_FLAGS) || 0 != (8/*LIBXSMM_GEMM_FLAG_ALIGN_C*/ & LIBXSMM_FLAGS))
-# define LIBXSMM_ALIGN_LDST(POINTER) LIBXSMM_ALIGN(POINTER, LIBXSMM_ALIGNMENT)
-#else
-# define LIBXSMM_ALIGN_LDST(POINTER) (POINTER)
-#endif
-
 /** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
-#if !defined(_WIN32) /* disable prefetch due to issues with the calling convention */
-#if 0 != ((LIBXSMM_PREFETCH) & 2/*AL2*/) || 0 != ((LIBXSMM_PREFETCH) & 4/*AL2_JPST*/)
+#if 0 != ((LIBXSMM_PREFETCH) & 2/*AL2*/) \
+ || 0 != ((LIBXSMM_PREFETCH) & 4/*AL2_JPST*/) \
+ || 0 != ((LIBXSMM_PREFETCH) & 16/*AL2_AHEAD*/) \
+ || 0 != ((LIBXSMM_PREFETCH) & 32/*AL1*/)
 # define LIBXSMM_PREFETCH_A(EXPR) (EXPR)
 #endif
-#if 0 != ((LIBXSMM_PREFETCH) & 8/*BL2_VIA_C*/)
+#if 0 != ((LIBXSMM_PREFETCH) & 8/*BL2_VIA_C*/) \
+ || 0 != ((LIBXSMM_PREFETCH) & 64/*BL1*/)
 # define LIBXSMM_PREFETCH_B(EXPR) (EXPR)
 #endif
-#if 0 != ((LIBXSMM_PREFETCH) & 32/*CL2*/)
+#if 0 != ((LIBXSMM_PREFETCH) & 128/*CL1*/)
 # define LIBXSMM_PREFETCH_C(EXPR) (EXPR)
-#endif
 #endif
 /** Secondary helper macros derived from the above group. */
 #if defined(LIBXSMM_PREFETCH_A)
@@ -96,19 +91,21 @@
 #define LIBXSMM_TPREFIX(TYPE, SYMBOL) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_NAME(TYPE), SYMBOL)
 #define LIBXSMM_TPREFIX_double d
 #define LIBXSMM_TPREFIX_float s
+#define LIBXSMM_TPREFIX_short w
 
 /** Helper macro for type postfixes. */
 #define LIBXSMM_TPOSTFIX_NAME(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TPOSTFIX_, TYPE)
 #define LIBXSMM_TPOSTFIX(TYPE, SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, LIBXSMM_TPOSTFIX_NAME(TYPE))
 #define LIBXSMM_TPOSTFIX_double F64
 #define LIBXSMM_TPOSTFIX_float F32
+#define LIBXSMM_TPOSTFIX_int I32
+#define LIBXSMM_TPOSTFIX_short I16
 
 /** Helper macro for comparing types. */
-#define LIBXSMM_EQUAL(T1, T2, R) LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(LIBXSMM_EQUAL_, T1), T2)(R)
-#define LIBXSMM_EQUAL_doubledouble(R) R
-#define LIBXSMM_EQUAL_doublefloat(R)
-#define LIBXSMM_EQUAL_floatfloat(R) R
-#define LIBXSMM_EQUAL_floatdouble(R)
+#define LIBXSMM_EQUAL_CHECK(...) LIBXSMM_SELECT_HEAD(__VA_ARGS__, 0)
+#define LIBXSMM_EQUAL(T1, T2) LIBXSMM_EQUAL_CHECK(LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(LIBXSMM_EQUAL_, T1), T2))
+#define LIBXSMM_EQUAL_floatfloat 1
+#define LIBXSMM_EQUAL_doubledouble 1
 
 /** Check ILP64 configuration for sanity. */
 #if !defined(LIBXSMM_ILP64) || (defined(MKL_ILP64) && 0 == LIBXSMM_ILP64)
@@ -162,8 +159,8 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
 LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller);
 LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller);
 
-/** Construct symbol name from a given real type name (float or double). */
-#define LIBXSMM_GEMM_TYPEFLAG(TYPE)     LIBXSMM_CONCATENATE(LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_GEMM_FLAG_), PREC)
+/** Construct symbol name from a given real type name (float, double and short). */
+#define LIBXSMM_GEMM_PRECISION(TYPE)    LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_GEMM_PRECISION_)
 #define LIBXSMM_ORIGINAL_GEMM(TYPE)     LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_BLAS_GEMM_SYMBOL(TYPE)  LIBXSMM_ORIGINAL_GEMM(TYPE)(LIBXSMM_CALLER)
 #define LIBXSMM_GEMMFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm_function))

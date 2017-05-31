@@ -31,18 +31,27 @@
 #ifndef LIBXSMM_H
 #define LIBXSMM_H
 
-/** Name of the version (stringized set of version numbers). */
-#define LIBXSMM_VERSION "$VERSION"
-/** Name of the branch of which the version is derived from. */
-#define LIBXSMM_BRANCH  "$BRANCH"
-/** Major version based on the last reachable tag under RCS. */
-#define LIBXSMM_VERSION_MAJOR $MAJOR
-/** Minor version based on the last reachable tag of the RCS. */
-#define LIBXSMM_VERSION_MINOR $MINOR
-/** Update number based on the last reachable tag under RCS. */
-#define LIBXSMM_VERSION_UPDATE $UPDATE
-/** Patch number counting commits since the last version stamp. */
-#define LIBXSMM_VERSION_PATCH $PATCH
+#include "libxsmm_config.h"
+
+/**
+ * Strings to denote the version of LIBXSMM (libxsmm_config.h).
+ * LIBXSMM_VERSION: Name of the version (stringized version numbers).
+ * LIBXSMM_BRANCH:  Name of the branch this version is derived from.
+ */
+#define LIBXSMM_VERSION LIBXSMM_CONFIG_VERSION
+#define LIBXSMM_BRANCH  LIBXSMM_CONFIG_BRANCH
+
+/**
+ * Numbers to denote the version of LIBXSMM (libxsmm_config.h).
+ * LIBXSMM_VERSION_MAJOR:  Major version derived from the most recent RCS-tag.
+ * LIBXSMM_VERSION_MINOR:  Minor version derived from the most recent RCS-tag.
+ * LIBXSMM_VERSION_UPDATE: Update number derived from the most recent RCS-tag.
+ * LIBXSMM_VERSION_PATCH:  Patch number based on distance to most recent RCS-tag.
+ */
+#define LIBXSMM_VERSION_MAJOR  LIBXSMM_CONFIG_VERSION_MAJOR
+#define LIBXSMM_VERSION_MINOR  LIBXSMM_CONFIG_VERSION_MINOR
+#define LIBXSMM_VERSION_UPDATE LIBXSMM_CONFIG_VERSION_UPDATE
+#define LIBXSMM_VERSION_PATCH  LIBXSMM_CONFIG_VERSION_PATCH
 
 #include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
@@ -125,16 +134,26 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
   const int* lda, const int* ldb, const int* ldc,
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch);
+/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (double-precision). */
+LIBXSMM_API libxsmm_wmmfunction libxsmm_wmmdispatch(int m, int n, int k,
+  const int* lda, const int* ldb, const int* ldc,
+  const int* alpha, const int* beta,
+  const int* flags, const int* prefetch);
+
+/** Code generation routine for JIT matcopy using a descriptor. */
+LIBXSMM_API libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor);
+
+/** Code generation routine for JIT transposes using a descriptor */
+LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor);
 
 /**
  * Code generation routine for the CSR format which multiplies a dense SOA matrix (each element holds a SIMD-width
  * wide vector) and a sparse matrix or a sparse matrix with a dense SOA matrix.
  * The result is always a SOA matrix. There is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
- * @TODO: This is not great, probably need to declare values as void pointer
  */
-LIBXSMM_API libxsmm_xmmfunction libxsmm_create_dcsr_soa(const libxsmm_gemm_descriptor* descriptor,
-   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values);
+LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor* descriptor,
+   const unsigned int* row_ptr, const unsigned int* column_idx, const void* values);
 
 /**
  * Code generation routine for the CSR format which multiplies a dense matrix B into a dense matrix C.
@@ -152,46 +171,40 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descr
 LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor* descriptor,
    const unsigned int* row_ptr, const unsigned int* column_idx, const float* values);
 
-/**
- * Code generation routing for JIT matcopy using a descriptor
- * @TODO: we ideally want to have this in the same way as gemms (with dispatched format in future)
- */
-LIBXSMM_API void* libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor);
-
 /** Deallocates the JIT'ted code as returned by libxsmm_create_* function. TODO: this is a no-op at the moment. */
 LIBXSMM_API void libxsmm_release_kernel(const void* jit_code);
+
+/** Matrix copy function ("in" can be NULL to zero the destination). */
+LIBXSMM_API int libxsmm_matcopy(void* out, const void* in, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
+  const int* prefetch);
+
+/** Matrix copy function ("in" can be NULL to zero the destination); MT via libxsmmext. */
+LIBXSMM_API int libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
+  const int* prefetch);
 
 /** Matrix transposition (out-of-place form). */
 LIBXSMM_API int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix transposition (out-of-place form, single-precision). */
-LIBXSMM_API_INLINE int libxsmm_sotrans(float* out, const float* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_otrans(out, in, sizeof(float), m, n, ldi, ldo); }
-#endif
+LIBXSMM_API int libxsmm_sotrans(float* out, const float* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix transposition (out-of-place form, double-precision). */
-LIBXSMM_API_INLINE int libxsmm_dotrans(double* out, const double* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_otrans(out, in, sizeof(double), m, n, ldi, ldo); }
-#endif
+LIBXSMM_API int libxsmm_dotrans(double* out, const double* in,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
-/** Matrix transposition, which is multi-threadable using libxsmmext (out-of-place form). */
+/** Matrix transposition; MT via libxsmmext (out-of-place form). */
 LIBXSMM_API int libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
-/** Matrix transposition, which is multi-threadable (out-of-place form, single-precision). */
+/** Matrix transposition; MT via libxsmmext (out-of-place form, single-precision). */
 LIBXSMM_API int libxsmm_sotrans_omp(float* out, const float* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
-/** Matrix transposition, which is multi-threadable (out-of-place form, double-precision). */
+/** Matrix transposition; MT via libxsmmext (out-of-place form, double-precision). */
 LIBXSMM_API int libxsmm_dotrans_omp(double* out, const double* in,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
@@ -200,67 +213,35 @@ LIBXSMM_API int libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Matrix transposition (in-place form, single-precision). */
-LIBXSMM_API_INLINE int libxsmm_sitrans(float* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_itrans(inout, sizeof(float), m, n, ld); }
-#endif
+LIBXSMM_API int libxsmm_sitrans(float* inout,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Matrix transposition (in-place form, double-precision). */
-LIBXSMM_API_INLINE int libxsmm_ditrans(double* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ return libxsmm_itrans(inout, sizeof(double), m, n, ld); }
-#endif
+LIBXSMM_API int libxsmm_ditrans(double* inout,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Dispatched general dense matrix multiplication (single-precision); can be called from F77 code. */
-LIBXSMM_API_INLINE void libxsmm_sgemm(const char* transa, const char* transb,
+LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
-  LIBXSMM_SGEMM(flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((float)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-}
-#endif
+  const float* beta, float* c, const libxsmm_blasint* ldc);
 
 /** Dispatched general dense matrix multiplication (double-precision); can be called from F77 code. */
-LIBXSMM_API_INLINE void libxsmm_dgemm(const char* transa, const char* transb,
+LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc)
-#if defined(LIBXSMM_BUILD)
-;
-#else
-{ LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
-  LIBXSMM_DGEMM(flags, *m, *n, *k,
-    0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA),
-    a, *(lda ? lda : LIBXSMM_LD(m, k)), b, *(ldb ? ldb : LIBXSMM_LD(k, n)),
-    0 != beta ? *beta : ((double)LIBXSMM_BETA),
-    c, *(ldc ? ldc : LIBXSMM_LD(m, n)));
-}
-#endif
+  const double* beta, double* c, const libxsmm_blasint* ldc);
 
-/** Multi-threadable general dense matrix multiplication; requires linking libxsmmext (single-precision). */
+/** General dense matrix multiplication; MT via libxsmmext (single-precision). */
 LIBXSMM_API void libxsmm_sgemm_omp(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
 
-/** Multi-threadable general dense matrix multiplication; requires linking libxsmmext (double-precision). */
+/** General dense matrix multiplication; MT via libxsmmext (double-precision). */
 LIBXSMM_API void libxsmm_dgemm_omp(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
@@ -367,6 +348,34 @@ public:
   }
 };
 
+/** Matrix copy function ("in" can be NULL to zero the destination). */
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo) {
+  return libxsmm_matcopy(out, in, sizeof(T), m, n, ldi, ldo);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi) {
+  return libxsmm_matcopy(out, in, m, n, ldi, ldi);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n) {
+  return libxsmm_matcopy(out, in, m, n, m);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy(T* out, const T* in, libxsmm_blasint n) {
+  return libxsmm_matcopy(out, in, n, n);
+}
+
+/** Matrix copy function ("in" can be NULL to zero the destination); MT via libxsmmext. */
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo) {
+  return libxsmm_matcopy_omp(out, in, sizeof(T), m, n, ldi, ldo);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi) {
+  return libxsmm_matcopy_omp(out, in, m, n, ldi, ldi);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n) {
+  return libxsmm_matcopy_omp(out, in, m, n, m);
+}
+template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_matcopy_omp(T* out, const T* in, libxsmm_blasint n) {
+  return libxsmm_matcopy_omp(out, in, n, n);
+}
+
 /** Matrix transposition (out-of-place form). */
 template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo) {
   return libxsmm_otrans(out, in, sizeof(T), m, n, ldi, ldo);
@@ -381,9 +390,9 @@ template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_tran
   return libxsmm_trans(out, in, n, n);
 }
 
-/** Matrix transposition, which is multi-threadable (out-of-place form). */
+/** Matrix transposition; MT via libxsmmext (out-of-place form). */
 template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo) {
-  return libxsmm_otrans(out, in, sizeof(T), m, n, ldi, ldo);
+  return libxsmm_otrans_omp(out, in, sizeof(T), m, n, ldi, ldo);
 }
 template<typename T> inline/*superfluous*/ LIBXSMM_RETARGETABLE int libxsmm_trans_omp(T* out, const T* in, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi) {
   return libxsmm_trans_omp(out, in, m, n, ldi, ldi);

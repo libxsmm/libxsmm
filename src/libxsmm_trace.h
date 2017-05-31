@@ -79,3 +79,4 @@ LIBXSMM_API void libxsmm_trace(FILE* stream, unsigned int depth,
   const int* filter_maxnsyms);
 
 #endif /*LIBXSMM_TRACE_H*/
+

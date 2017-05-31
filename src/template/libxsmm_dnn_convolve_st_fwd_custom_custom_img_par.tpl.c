@@ -65,7 +65,7 @@ element_input_type *copy_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
-libxsmm_matcopyfunction jitted_matcopy;
+libxsmm_xmatcopyfunction jitted_matcopy;
 #endif
 
 /* select pointer based on precision */
@@ -100,7 +100,7 @@ if (handle->datatype != handle->datatype_itm) {
     jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 #endif
 #if defined(INPUT_PADDING)
-    jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
+    jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
     for (ifm1 = handle->blocksifm-1; ifm1 >= 0; ifm1--) {
       input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
       copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
@@ -120,6 +120,15 @@ if (handle->datatype != handle->datatype_itm) {
       }
     }
     for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+      /* reset result buffer to zero when intent is to overwrite when first block
+         of input channels should be convoluted */
+      if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+        element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, start_ofh, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+        LIBXSMM_PRAGMA_SIMD
+        for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp*handle->ofmblock; oj++) {
+          temp_ptr[oj] = (element_output_type)0;
+        }
+      }
       for (oj = start_ofh; oj < end_ofh; oj += handle->fwd_ofh_rb) {
 #if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
         ij = oj * handle->desc.u;
@@ -234,7 +243,7 @@ if (handle->datatype != handle->datatype_itm) {
     jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
     jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 #if defined(INPUT_PADDING)
-    jitted_matcopy = (libxsmm_matcopyfunction)handle->matcopy_fwd[0].xmatcopy.smatcopy;
+    jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
     for (ifm1 = handle->blocksifm-1; ifm1 >= 0; ifm1--) {
       input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
       copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
@@ -243,6 +252,15 @@ if (handle->datatype != handle->datatype_itm) {
 #endif
 
     for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+      /* reset result buffer to zero when intent is to overwrite when first block
+         of input channels should be convoluted */
+      if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+        element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, start_ofh, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+        LIBXSMM_PRAGMA_SIMD
+        for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp*handle->ofmblock; oj++) {
+          temp_ptr[oj] = (element_output_type)0;
+        }
+      }
       for (oj = start_ofh; oj < end_ofh; oj += handle->fwd_ofh_rb) {
 #if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
         ij = oj * handle->desc.u;

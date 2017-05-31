@@ -33,70 +33,58 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#if defined(_OPENMP)
-# include <omp.h>
-#endif
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-/* note: later on, this leads to (correct but) different than expected norm-values */
-# define drand48() ((double)rand() / RAND_MAX)
-# define srand48 srand
-#endif
 
 int main(int argc, char* argv[])
 {
-  void* fpointer;
-  libxsmm_smatcopyfunction skernel;
+  /* we should modify to test all datatypes here */
+  libxsmm_xmatcopyfunction skernel;
   libxsmm_matcopy_descriptor desc;
   float *a, *b;
-  int lda, ldb;
-  int i, j, iters;
+  unsigned int i, j, iters;
+  unsigned int ldi, ldo;
   int error = 0;
   double copy_time;
   unsigned long long l_start, l_end;
 
   printf("This is a tester for JIT matcopy kernels!\n");
-  desc.m = atoi(argv[1]);
-  desc.n = atoi(argv[2]);
-  desc.lda = atoi(argv[3]);
-  desc.ldb = atoi(argv[4]);
-  desc.unroll_level = atoi(argv[5]);
-  desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
-  desc.prefetch = atoi(argv[6]);;
-  desc.zero_source = atoi(argv[7]);
-  iters = atoi(argv[8]);
+  desc.m = (1 < argc ? atoi(argv[1]) : 16);
+  desc.n = (2 < argc ? atoi(argv[2]) : desc.m);
+  desc.ldi = LIBXSMM_MAX((unsigned int)(3 < argc ? atoi(argv[3]) : 0), desc.m);
+  desc.ldo = LIBXSMM_MAX((unsigned int)(4 < argc ? atoi(argv[4]) : 0), desc.m);
+  desc.unroll_level = (unsigned char)(5 < argc ? atoi(argv[5]) : 1);
+  desc.prefetch = (unsigned char)(6 < argc ? atoi(argv[6]) : 0);
+  desc.flags = (unsigned char)((7 < argc && 0 != atoi(argv[7])) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
+  iters = (8 < argc ? atoi(argv[8]) : 1);
+  desc.typesize = 4;
 
-
-  a = (float *) malloc(desc.m * desc.lda * sizeof(float));
-  b = (float *) malloc(desc.m * desc.ldb * sizeof(float));
-
+  a = (float *) malloc(desc.m * desc.ldi * sizeof(float));
+  b = (float *) malloc(desc.m * desc.ldo * sizeof(float));
 
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
-      a[j+desc.lda*i] = 1.0 * rand();
-      if (desc.zero_source) {
-        b[j+desc.ldb*i] = 1.0 * rand();
+      a[j+desc.ldi*i] = 1.f * rand();
+      if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & desc.flags)) {
+        b[j+desc.ldo*i] = 1.f * rand();
       }
     }
   }
 
   /* test dispatch call */
-  fpointer = libxsmm_xmatcopydispatch( &desc );
-  skernel = (libxsmm_smatcopyfunction)fpointer;
+  skernel = libxsmm_xmatcopydispatch(&desc);
 
-  if (fpointer == 0) {
+  if (skernel == 0) {
     printf("JIT error -> exit!!!!\n");
     exit(-1);
   }
 
-
   /* let's call */
-  skernel(a, &lda, b, &ldb, &a[128]);
+  skernel(a, &ldi, b, &ldo, &a[128]);
 
   l_start = libxsmm_timer_tick();
 
   for (i=0; i<iters; i++) {
-    skernel(a, &lda, b, &ldb, &a[128]);
+    skernel(a, &ldi, b, &ldo, &a[128]);
   }
 
   l_end = libxsmm_timer_tick();
@@ -104,15 +92,19 @@ int main(int argc, char* argv[])
 
   for (i=0; i < desc.m; i++ ) {
     for (j=0; j < desc.n; j++) {
-      if (desc.zero_source) {
-        if (b[j+desc.ldb*i] > 0.00000000) {
+      if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & desc.flags)) {
+        if (0 == LIBXSMM_FEQ(b[j+desc.ldo*i], 0)) {
           printf("ERROR!!!\n");
+          i = desc.m;
           error = 1;
+          break;
         }
       }
-      else if ( (a[j+desc.lda*i] - b[j+desc.ldb*i]) > 0.000000001 ) {
+      else if (0 == LIBXSMM_FEQ(a[j+desc.ldi*i], b[j+desc.ldo*i])) {
         printf("ERROR!!!\n");
+        i = desc.m;
         error = 1;
+        break;
       }
     }
   }

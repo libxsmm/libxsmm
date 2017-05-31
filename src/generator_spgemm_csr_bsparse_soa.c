@@ -45,7 +45,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa( libxsmm_generated_code*         i
                                                const char*                     i_arch,
                                                const unsigned int*             i_row_idx,
                                                const unsigned int*             i_column_idx,
-                                               const double*                   i_values ) {
+                                               const void*                     i_values ) {
   if ( strcmp(i_arch, "knl") == 0 ||
        strcmp(i_arch, "skx") == 0 ) {
     libxsmm_generator_spgemm_csr_bsparse_soa_avx512( io_generated_code,
@@ -66,7 +66,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
                                                       const char*                     i_arch,
                                                       const unsigned int*             i_row_idx,
                                                       const unsigned int*             i_column_idx,
-                                                      const double*                   i_values ) {
+                                                      const void*                     i_values ) {
   unsigned int l_m;
   unsigned int l_n;
   unsigned int l_k;
@@ -88,7 +88,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
   LIBXSMM_UNUSED(i_values);
 
   /* select soa width */
-  if ( (LIBXSMM_GEMM_FLAG_F32PREC & i_xgemm_desc->flags) == 0 ) {
+  if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
     l_soa_width = 8;
   } else {
     l_soa_width = 16;
@@ -174,7 +174,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
           l_found_mul = 1;
         }
       }
-      /* only load A if multiplcation loop is not empty */
+      /* only load A if multiplication loop is not empty */
       if (l_found_mul != 0) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           l_micro_kernel_config.instruction_set,

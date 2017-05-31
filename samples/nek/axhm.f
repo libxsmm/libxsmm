@@ -97,7 +97,7 @@
 
         ! workload is about 2 GByte in memory by default
         size0 = (m * n * k) * T * 6 ! size of single element in Byte
-        size1 = MERGE(2048_8, MERGE(size1,  ISHFT(ABS(size0 * size1)    &
+        size1 = MERGE(2048_8, MERGE(size1, ISHFT(ABS(size0 * size1)     &
      &            + ISHFT(1, 20) - 1, -20), 0.LE.size1), 0.EQ.size1)
         size = ISHFT(MERGE(MAX(size, size1), ISHFT(ABS(size) * size0    &
      &            + ISHFT(1, 20) - 1, -20), 0.LE.size), 20) / size0
@@ -325,13 +325,13 @@
           DO r = 1, repetitions
             !$OMP DO
             DO i = LBOUND(a, 4), UBOUND(a, 4)
-              CALL libxsmm_call(xmm1,                                   &
+              CALL libxsmm_mmcall(xmm1,                                 &
      &                C_LOC(dx), C_LOC(a(1,1,1,i)), C_LOC(tm1))
               DO j = 1, k
-                CALL libxsmm_call(xmm2,                                 &
+                CALL libxsmm_mmcall(xmm2,                               &
      &                C_LOC(a(1,1,j,i)), C_LOC(dy), C_LOC(tm2(1,1,j)))
               END DO
-              CALL libxsmm_call(xmm3,                                   &
+              CALL libxsmm_mmcall(xmm3,                                 &
      &                C_LOC(a(1,1,1,i)), C_LOC(dz), C_LOC(tm3))
               CALL stream_update_helmholtz(                             &
      &                g1(1,1,1,i), g2(1,1,1,i), g3(1,1,1,i),            &

@@ -93,13 +93,13 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
 
   l_csc_file_handle = fopen( i_csc_file_in, "r" );
   if ( l_csc_file_handle == NULL ) {
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_INPUT );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_INPUT );
     return;
   }
 
   while (fgets(l_line, l_line_length, l_csc_file_handle) != NULL) {
     if ( strlen(l_line) == l_line_length ) {
-      libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_READ_LEN );
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_READ_LEN );
       return;
     }
     /* check if we are still reading comments header */
@@ -121,7 +121,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
                ( *o_values == NULL )       ||
                ( l_column_idx_id == NULL ) ) {
             free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_column_idx_id);
-            libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_ALLOC_DATA );
+            LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_ALLOC_DATA );
             return;
           }
 
@@ -140,7 +140,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
           l_i = 0;
           l_header_read = 1;
         } else {
-          libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_READ_DESC );
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_READ_DESC );
           return;
         }
       /* now we read the actual content */
@@ -149,7 +149,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
         double l_value = 0;
         /* read a line of content */
         if ( sscanf(l_line, "%u %u %lf", &l_row, &l_column, &l_value) != 3 ) {
-          libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_READ_ELEMS );
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_READ_ELEMS );
           return;
         }
         /* adjust numbers to zero termination */
@@ -172,7 +172,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
   /* check if we read a file which was consistent */
   if ( l_i != (*o_element_count) ) {
     free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_column_idx_id);
-    libxsmm_handle_error( io_generated_code, LIBXSMM_ERR_CSC_LEN );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_LEN );
     return;
   }
 

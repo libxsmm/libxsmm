@@ -11,8 +11,6 @@ build/mm_*_*_*.c
 build/*/*/*.xml
 lib/libxsmm*
 ide/_vs*-*.bat
-ide/*.amplxeproj
-ide/*.advixeproj
 ide/build
 ide/r*ah
 samples2
@@ -24,9 +22,13 @@ keywords.txt
 notes.txt
 err*.txt
 out*.txt
-log.txt
 _*.txt
+check??????.c
+check??????.f
 *.lastcodeanalysissucceeded
+*.amplxeproj
+*.advixeproj
+*.inspxeproj
 *.stackdump
 *.opensdf
 *.opendb

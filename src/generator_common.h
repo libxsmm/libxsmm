@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Greg Henry (Intel Corp.)
 ******************************************************************************/
 #ifndef GENERATOR_COMMON_H
 #define GENERATOR_COMMON_H
@@ -89,6 +89,11 @@
 #define LIBXSMM_X86_INSTR_VMOVDQU16      10032
 #define LIBXSMM_X86_INSTR_VMOVDQU32      10033
 #define LIBXSMM_X86_INSTR_VMOVDQU64      10034
+#define LIBXSMM_X86_INSTR_VMASKMOVPD     10035
+#define LIBXSMM_X86_INSTR_VMASKMOVPS     10036
+#define LIBXSMM_X86_INSTR_VMOVNTPD       10037
+#define LIBXSMM_X86_INSTR_VMOVNTPS       10038
+#define LIBXSMM_X86_INSTR_VMOVNTDQA      10039
 
 /* SSE */
 #define LIBXSMM_X86_INSTR_MOVAPD         10009
@@ -118,6 +123,11 @@
 #define LIBXSMM_X86_INSTR_VSCATTERDPD    11005
 #define LIBXSMM_X86_INSTR_VSCATTERQPS    11006
 #define LIBXSMM_X86_INSTR_VSCATTERQPD    11007
+
+/* Shuffle/Permute/Blend instructions */
+#define LIBXSMM_X86_INSTR_VSHUFPS        12000
+#define LIBXSMM_X86_INSTR_VPERM2F128     12001
+#define LIBXSMM_X86_INSTR_VSHUFF64X2     12002
 
 /* Vector compute instructions */
 /* AVX1,AVX2,AVX512 */
@@ -177,8 +187,14 @@
 #define LIBXSMM_X86_INSTR_VPMADDUBSW     20050
 #define LIBXSMM_X86_INSTR_VPADDSW        20051
 #define LIBXSMM_X86_INSTR_VPADDSB        20052
+/* Additional vector manipulations */
+#define LIBXSMM_X86_INSTR_VUNPCKLPD      20053
+#define LIBXSMM_X86_INSTR_VUNPCKLPS      20054
+#define LIBXSMM_X86_INSTR_VUNPCKHPD      20055
+#define LIBXSMM_X86_INSTR_VUNPCKHPS      20056
+#define LIBXSMM_X86_INSTR_VPSRAVD        20057
 
-/* AVX512, QUAD MADD, supported with Knight Mill */
+/* AVX512, QUAD MADD, supported with Knights Mill */
 #define LIBXSMM_X86_INSTR_V4FMADDPS      26000
 #define LIBXSMM_X86_INSTR_V4FNMADDPS     26001
 #define LIBXSMM_X86_INSTR_V4FMADDSS      26002
@@ -198,72 +214,91 @@
 #define LIBXSMM_X86_INSTR_PREFETCHT1     30008
 #define LIBXSMM_X86_INSTR_PREFETCHT2     30009
 #define LIBXSMM_X86_INSTR_PREFETCHNTA    30010
+#define LIBXSMM_X86_INSTR_MOVL           30011
+#define LIBXSMM_X86_INSTR_MOVSLQ         30012
+#define LIBXSMM_X86_INSTR_SALQ           30013
+#define LIBXSMM_X86_INSTR_IMUL           30014
 
 /* Mask move instructions */
 #define LIBXSMM_X86_INSTR_KMOV           40000
 #define LIBXSMM_X86_INSTR_KMOVW          40001
+#define LIBXSMM_X86_INSTR_KMOVB          40002
+#define LIBXSMM_X86_INSTR_KMOVD          40003
+#define LIBXSMM_X86_INSTR_KMOVQ          40004
 
 /* Mask compute instructions */
 #define LIBXSMM_X86_INSTR_KXNORW         45000
 
 /* define error codes */
 #define LIBXSMM_ERR_GENERAL              90000
-#define LIBXSMM_ERR_ARCH_PREC            90001
-#define LIBXSMM_ERR_ARCH                 90002
-#define LIBXSMM_ERR_LDA                  90003
-#define LIBXSMM_ERR_LDB                  90004
-#define LIBXSMM_ERR_LDC                  90005
-#define LIBXSMM_ERR_SPGEMM_GEN           90006
-#define LIBXSMM_ERR_CSC_INPUT            90007
-#define LIBXSMM_ERR_CSC_READ_LEN         90008
-#define LIBXSMM_ERR_CSC_READ_DESC        90009
-#define LIBXSMM_ERR_CSC_READ_ELEMS       90010
-#define LIBXSMM_ERR_CSC_LEN              90011
-#define LIBXSMM_ERR_N_BLOCK              90012
-#define LIBXSMM_ERR_M_BLOCK              90013
-#define LIBXSMM_ERR_NO_IMCI              90014
-#define LIBXSMM_ERR_REG_BLOCK            90015
-#define LIBXSMM_ERR_VEC_MOVE_IMCI        90016
-#define LIBXSMM_ERR_APPEND_STR           90017
-#define LIBXSMM_ERR_ALLOC                90018
-#define LIBXSMM_ERR_NO_IMCI_AVX512_BCAST 90019
-#define LIBXSMM_ERR_CALLEE_SAVE_A        90020
-#define LIBXSMM_ERR_CALLEE_SAVE_B        90021
-#define LIBXSMM_ERR_CALLEE_SAVE_C        90022
-#define LIBXSMM_ERR_CALLEE_SAVE_A_PREF   90023
-#define LIBXSMM_ERR_CALLEE_SAVE_B_PREF   90024
-#define LIBXSMM_ERR_NO_INDEX_SCALE_ADDR  90025
-#define LIBXSMM_ERR_UNSUPPORTED_JUMP     90026
-#define LIBXSMM_ERR_NO_JMPLBL_AVAIL      90027
-#define LIBXSMM_ERR_EXCEED_JMPLBL        90028
-#define LIBXSMM_ERR_CSC_ALLOC_DATA       90029
-#define LIBXSMM_ERR_CSR_INPUT            90030
-#define LIBXSMM_ERR_CSR_READ_LEN         90031
-#define LIBXSMM_ERR_CSR_READ_DESC        90032
-#define LIBXSMM_ERR_CSR_READ_ELEMS       90033
-#define LIBXSMM_ERR_CSR_LEN              90034
-#define LIBXSMM_ERR_CSR_ALLOC_DATA       90035
-#define LIBXSMM_ERR_UNSUP_CONV_FORMAT    90036
-#define LIBXSMM_ERR_INVALID_KW_UNROLL    90037
-#define LIBXSMM_ERR_INVALID_KH_UNROLL    90038
-#define LIBXSMM_ERR_INVALID_OFW_UNROLL   90039
-#define LIBXSMM_ERR_INVALID_OFH_UNROLL   90040
-#define LIBXSMM_ERR_INVALID_CONV_ACC     90041
-#define LIBXSMM_ERR_UNSUP_ARCH           90042
-#define LIBXSMM_ERR_CONV_IFM_VEC         90043
-#define LIBXSMM_ERR_CONV_OFM_VEC         90044
-#define LIBXSMM_ERR_CONV_CONT_STRIDE     90045
-#define LIBXSMM_ERR_UNSUP_DATATYPE       90046
-#define LIBXSMM_ERR_UNSUP_DT_FORMAT      90047
-#define LIBXSMM_ERR_K_BLOCK              90048
-#define LIBXSMM_ERR_INVALID_GEMM_CONFIG  90049
-#define LIBXSMM_ERR_UNIQUE_VAL           90050
+#define LIBXSMM_ERR_ALLOC                90001
+#define LIBXSMM_ERR_BUFFER_TOO_SMALL     90002
+#define LIBXSMM_ERR_APPEND_STR           90003
+#define LIBXSMM_ERR_ARCH_PREC            90004
+#define LIBXSMM_ERR_ARCH                 90005
+#define LIBXSMM_ERR_UNSUP_ARCH           90006
+#define LIBXSMM_ERR_LDA                  90007
+#define LIBXSMM_ERR_LDB                  90008
+#define LIBXSMM_ERR_LDC                  90009
+#define LIBXSMM_ERR_SPGEMM_GEN           90010
+#define LIBXSMM_ERR_CSC_INPUT            90011
+#define LIBXSMM_ERR_CSC_READ_LEN         90012
+#define LIBXSMM_ERR_CSC_READ_DESC        90013
+#define LIBXSMM_ERR_CSC_READ_ELEMS       90014
+#define LIBXSMM_ERR_CSC_LEN              90015
+#define LIBXSMM_ERR_N_BLOCK              90016
+#define LIBXSMM_ERR_M_BLOCK              90017
+#define LIBXSMM_ERR_K_BLOCK              90018
+#define LIBXSMM_ERR_NO_IMCI              90019
+#define LIBXSMM_ERR_REG_BLOCK            90020
+#define LIBXSMM_ERR_VEC_MOVE_IMCI        90021
+#define LIBXSMM_ERR_NO_IMCI_AVX512_BCAST 90022
+#define LIBXSMM_ERR_NO_AVX512_QFMA       90023
+#define LIBXSMM_ERR_CALLEE_SAVE_A        90024
+#define LIBXSMM_ERR_CALLEE_SAVE_B        90025
+#define LIBXSMM_ERR_CALLEE_SAVE_C        90026
+#define LIBXSMM_ERR_CALLEE_SAVE_A_PREF   90027
+#define LIBXSMM_ERR_CALLEE_SAVE_B_PREF   90028
+#define LIBXSMM_ERR_NO_INDEX_SCALE_ADDR  90029
+#define LIBXSMM_ERR_UNSUPPORTED_JUMP     90030
+#define LIBXSMM_ERR_NO_JMPLBL_AVAIL      90031
+#define LIBXSMM_ERR_EXCEED_JMPLBL        90032
+#define LIBXSMM_ERR_CSC_ALLOC_DATA       90033
+#define LIBXSMM_ERR_CSR_ALLOC_DATA       90034
+#define LIBXSMM_ERR_CSR_INPUT            90035
+#define LIBXSMM_ERR_CSR_READ_LEN         90036
+#define LIBXSMM_ERR_CSR_READ_DESC        90037
+#define LIBXSMM_ERR_CSR_READ_ELEMS       90038
+#define LIBXSMM_ERR_CSR_LEN              90039
+#define LIBXSMM_ERR_UNSUP_CONV_FORMAT    90040
+#define LIBXSMM_ERR_INVALID_KW_UNROLL    90041
+#define LIBXSMM_ERR_INVALID_KH_UNROLL    90042
+#define LIBXSMM_ERR_INVALID_OFW_UNROLL   90043
+#define LIBXSMM_ERR_INVALID_OFH_UNROLL   90044
+#define LIBXSMM_ERR_INVALID_CONV_ACC     90045
+#define LIBXSMM_ERR_CONV_OFM_VEC         90046
+#define LIBXSMM_ERR_CONV_IFM_VEC         90047
+#define LIBXSMM_ERR_CONV_CONT_STRIDE     90048
+#define LIBXSMM_ERR_UNSUP_DATATYPE       90049
+#define LIBXSMM_ERR_UNSUP_DT_FORMAT      90050
+#define LIBXSMM_ERR_INVALID_GEMM_CONFIG  90051
+#define LIBXSMM_ERR_UNIQUE_VAL           90052
 
-/* @TODO fix this vale for final integration */
-#define LIBXSMM_ERR_NO_AVX512_QFMA       92000
+#if !defined(LIBXSMM_VERBOSE_BACKEND) && !defined(NDEBUG)
+# define LIBXSMM_VERBOSE_BACKEND
+#endif
+#if defined(LIBXSMM_VERBOSE_BACKEND)
+# define LIBXSMM_BACKEND_VERBOSITY 1
+#else
+# define LIBXSMM_BACKEND_VERBOSITY 0
+#endif
+#define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_STRINGIFY(LIBXSMM_CALLER), LIBXSMM_BACKEND_VERBOSITY)
+#define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_STRINGIFY(LIBXSMM_CALLER), 1)
 
 /* micro kernel config */
-typedef struct libxsmm_micro_kernel_config_struct {
+typedef struct libxsmm_micro_kernel_config {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
   unsigned int vector_length;
@@ -394,7 +429,7 @@ typedef struct libxsmm_convolution_weight_update_gp_reg_mapping_struct {
   unsigned int gp_reg_help_6;
 } libxsmm_convolution_weight_update_gp_reg_mapping;
 
-/* struct for storing the current gp reg mapping for transpose */
+/* struct for storing the current gp reg mapping for matcopy */
 typedef struct libxsmm_matcopy_gp_reg_mapping_struct {
   unsigned int gp_reg_a;
   unsigned int gp_reg_lda;
@@ -407,7 +442,7 @@ typedef struct libxsmm_matcopy_gp_reg_mapping_struct {
   unsigned int gp_reg_help_0;
 } libxsmm_matcopy_gp_reg_mapping;
 
-/* transpose kernel config */
+/* matcopy kernel config */
 typedef struct libxsmm_matcopy_kernel_config_struct {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
@@ -422,6 +457,29 @@ typedef struct libxsmm_matcopy_kernel_config_struct {
   unsigned int vxor_instruction;
   char vector_name;
 } libxsmm_matcopy_kernel_config;
+
+/* struct for storing the current gp reg mapping for transpose */
+typedef struct libxsmm_transpose_gp_reg_mapping_struct {
+  unsigned int gp_reg_a;
+  unsigned int gp_reg_lda;
+  unsigned int gp_reg_b;
+  unsigned int gp_reg_ldb;
+  unsigned int gp_reg_m_loop;
+  unsigned int gp_reg_n_loop;
+  unsigned int gp_reg_help_0;
+  unsigned int gp_reg_help_1;
+  unsigned int gp_reg_help_2;
+  unsigned int gp_reg_help_3;
+  unsigned int gp_reg_help_4;
+  unsigned int gp_reg_help_5;
+} libxsmm_transpose_gp_reg_mapping;
+
+/* transpose kernel config */
+typedef struct libxsmm_transpose_kernel_config_struct {
+  unsigned int instruction_set;
+  unsigned int vector_reg_count;
+  char vector_name;
+} libxsmm_transpose_kernel_config;
 
 /* struct for tracking local labels in assembly
    we don't allow overlapping loops */
@@ -477,8 +535,9 @@ void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_co
 
 LIBXSMM_INTERNAL_API
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
-                           const unsigned int      i_error_code );
-
+                           const unsigned int      i_error_code,
+                           const char*             context,
+                           int emit_message );
 
 LIBXSMM_INTERNAL_API
 void libxsmm_strncpy( char*        o_dest,
