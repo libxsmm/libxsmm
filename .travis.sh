@@ -100,6 +100,10 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
       # prepare temporary script
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
+        # re-source the required environment
+        echo "source ${TRAVIS_BUILD_DIR}/.travis.env" >> ${TESTSCRIPT}
+        echo "source ${TRAVIS_BUILD_DIR}/.buildkite.env" >> ${TESTSCRIPT}
+        # record the actual test case
         echo "${TEST}" >> ${TESTSCRIPT}
       fi
 
