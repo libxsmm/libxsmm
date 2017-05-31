@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
+#include <assert.h>
 #if defined(_DEBUG)
 # include <stdio.h>
 #endif
@@ -71,10 +72,10 @@ int main(void)
   libxsmm_blasint maxm = 0, maxn = 0, maxi = 0, maxo = 0;
   unsigned int nerrors = 0;
   ELEM_TYPE *a = 0, *b = 0;
-  libxsmm_blasint i, j;
   int test;
 
   for (test = start; test < ntests; ++test) {
+    assert(m[test] <= ldi[test] && n[test] <= ldo[test]);
     maxm = LIBXSMM_MAX(maxm, m[test]);
     maxn = LIBXSMM_MAX(maxn, n[test]);
     maxi = LIBXSMM_MAX(maxi, ldi[test]);
@@ -93,8 +94,9 @@ int main(void)
       ldi[test], ldo[test]) ? 0 : 1);
 
     if (0 == testerrors) {
+      libxsmm_blasint i, j;
       for (i = 0; i < n[test]; ++i) {
-        for (j = i + 1; j < m[test]; ++j) {
+        for (j = 0; j < m[test]; ++j) {
           const libxsmm_blasint u = i * ldi[test] + j;
           const libxsmm_blasint v = j * ldo[test] + i;
           testerrors += (LIBXSMM_FEQ(a[u], b[v]) ? 0u : 1u);
@@ -115,8 +117,9 @@ int main(void)
           ldi[test], ldo[test]) ? 0 : 1);
 
         if (0 == testerrors) {
+          libxsmm_blasint i, j;
           for (i = 0; i < n[test]; ++i) {
-            for (j = i + 1; j < m[test]; ++j) {
+            for (j = 0; j < m[test]; ++j) {
               /* address serves both a and b since ldi and ldo are equal */
               const libxsmm_blasint uv = i * ldi[test] + j;
               testerrors += (LIBXSMM_FEQ(a[uv], b[uv]) ? 0u : 1u);
