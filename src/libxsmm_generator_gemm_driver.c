@@ -76,7 +76,7 @@ LIBXSMM_INLINE void print_help(void) {
          "              AL2jpst, AL2_BL2viaC, curAL2_BL2viaC,\n"
          "              AL2jpst_BL2viaC, AL1, BL1, CL1,\n"
          "              AL1_BL1, BL1_CL1, AL1_CL1, AL1_BL1_CL1\n");
-  printf("    PRECISION: SP, DP\n");
+  printf("    PRECISION: I16, SP, DP\n");
   printf("\n\n\n\n");
 }
 
@@ -232,6 +232,8 @@ int main(int argc, char* argv []) {
     l_single_precision = 1;
   } else if ( strcmp(l_precision, "DP") == 0 ) {
     l_single_precision = 0;
+  } else if ( strcmp(l_precision, "I16") == 0 ) {
+    l_single_precision = 2;
   } else {
     print_help();
     return -1;
@@ -249,7 +251,7 @@ int main(int argc, char* argv []) {
     return -1;
   }
 
-  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, 0 == l_single_precision ? LIBXSMM_GEMM_PRECISION_F64 : LIBXSMM_GEMM_PRECISION_F32,
+  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, 0 == l_single_precision ? LIBXSMM_GEMM_PRECISION_F64 : ( 1 == l_single_precision ? LIBXSMM_GEMM_PRECISION_F32 : LIBXSMM_GEMM_PRECISION_I16 ),
     (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0) | (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0),
     l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
     l_alpha, l_beta, l_prefetch);
@@ -271,6 +273,11 @@ int main(int argc, char* argv []) {
     }
 
     if (l_ldc < 1) {
+      print_help();
+      return -1;
+    }
+
+    if ( l_single_precision > 1 ) {
       print_help();
       return -1;
     }

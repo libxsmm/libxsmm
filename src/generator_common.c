@@ -769,13 +769,19 @@ void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_
       } else {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C, const float* A_prefetch, const float* B_prefetch, const float* C_prefetch) {\n", i_routine_name);
       }
-    } else {
+    } else if (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) {
       if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
       } else {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C, const double* A_prefetch, const double* B_prefetch, const double* C_prefetch) {\n", i_routine_name);
       }
-    }
+    } else if (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype) {
+      if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const short* A, const short* B, int* C) {\n", i_routine_name);
+      } else {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const short* A, const short* B, int* C, const short* A_prefetch, const short* B_prefetch, const int* C_prefetch) {\n", i_routine_name);
+      }
+    } else {}
   }
 
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
