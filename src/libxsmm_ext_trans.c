@@ -56,14 +56,16 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
       const unsigned int uldi = ldi, uldo = ldo;
       libxsmm_matcopy_descriptor descriptor = { 0 };
       libxsmm_xmatcopyfunction xmatcopy = 0;
+      unsigned int tm = 0, tn = 0;
       LIBXSMM_INIT
-      descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
-      descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
+      tm = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
+      tn = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
       descriptor.prefetch = (unsigned char)((0 == prefetch || 0 == *prefetch) ? 0 : 1);
       if (0 != (1 & libxsmm_trans_jit)) { /* JIT'ted matcopy permitted? */
         descriptor.flags = (unsigned char)(0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
         descriptor.ldi = ldi; descriptor.ldo = ldo; descriptor.unroll_level = 2;
         descriptor.typesize = (unsigned char)typesize;
+        descriptor.m = tn; descriptor.n = tm;
         xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
       }
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
@@ -74,14 +76,14 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
           LIBXSMM_XCOPY(
             LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
             LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, xmatcopy,
-            out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
+            out, in, typesize, uldi, uldo, tm, tn, 0, m, 0, n);
           /* implicit synchronization (barrier) */
         }
         else {
           LIBXSMM_XCOPY(
             LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
             LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, xmatcopy,
-            out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
+            out, in, typesize, uldi, uldo, tm, tn, 0, m, 0, n);
           /* implicit synchronization (barrier) */
         }
       }
@@ -92,14 +94,14 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
             LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
             if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
             LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, xmatcopy,
-            out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
+            out, in, typesize, uldi, uldo, tm, tn, 0, m, 0, n);
         }
         else {
           LIBXSMM_XCOPY(
             LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
             if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
             LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, xmatcopy,
-            out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
+            out, in, typesize, uldi, uldo, tm, tn, 0, m, 0, n);
         }
       }
 #endif
