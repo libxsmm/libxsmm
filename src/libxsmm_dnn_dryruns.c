@@ -42,217 +42,28 @@
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle ) {
   
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  
+
   /* check if we have a kernel JITed */
   if (handle->code_fwd[0].xconv.sconv == 0) {
-    /* In these case we run fallback code so we do not support thread private jitting, throw a warning */
+    /* In these case we run fallback code so we do not support thread private jitting */
+    status = LIBXSMM_DNN_WARN_FALLBACK;
   }
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-        if (handle->desc.u == 1 && handle->desc.v == 1) {
-          if (handle->padding_flag == 1) {
-/*
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-#undef INPUT_PADDING
-*/
-          } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-          }
+        if (handle->padding_flag == 1) {
+          /* FIXME: For now support only physical padding  */
+          status = LIBXSMM_DNN_ERR_INVALID_PADDING;
         } else {
-          if (handle->padding_flag == 1) {
-/*
-#define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-#undef INPUT_PADDING
-*/
-          } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-          }
         }
       }
       else {
-        if (handle->desc.u == 1 && handle->desc.v == 1) {
-          if (handle->padding_flag == 1) {
-            /*
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-#define INPUT_PADDING
+        if (handle->padding_flag == 1) {
+          /* FIXME: For now support only physical padding  */
+          status = LIBXSMM_DNN_ERR_INVALID_PADDING;
+        } else {
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-#undef INPUT_PADDING
-*/
-          } else {
-            # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-          }
-        } else {
-
-          if (handle->padding_flag == 1) {
-            /*
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-#undef INPUT_PADDING
-*/
-          } else {
-            # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-          }
-        }
-      }
-    } else if (handle->datatype ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
-      if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-        if (handle->desc.u == 1 && handle->desc.v == 1) {
-          if (handle->padding_flag == 1) {
-            /*
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-#undef INPUT_PADDING
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ON
-*/
-          } else {
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-          }
-        } else {
-          if (handle->padding_flag == 1) {
-            /*
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-#undef INPUT_PADDING
-*/
-          } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-          }
-        }
-      }
-      else {
-        if (handle->desc.u == 1 && handle->desc.v == 1) {
-          if (handle->padding_flag == 1) {
-            /*
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-#undef INPUT_PADDING
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-*/
-          } else {
-            #include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-          }
-        } else {
-          if (handle->padding_flag == 1) {
-            /*
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-#undef INPUT_PADDING
-*/
-          } else {
-            #include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-          }
-        }
-      }
-    } else if (handle->datatype == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I16 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
-      if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-        if (handle->desc.u == 1 && handle->desc.v == 1) {
-          if (handle->padding_flag == 1) {
-            /*
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-#undef INPUT_PADDING
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-*/
-          } else {
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-          }
-        } else {
-          if (handle->padding_flag == 1) {
-            /*
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-#undef INPUT_PADDING
-*/
-          } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-          }
-        }
-      }
-      else {
-        if (handle->desc.u == 1 && handle->desc.v == 1) {
-          if (handle->padding_flag == 1) {
-            /*
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-#undef INPUT_PADDING
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-*/
-          } else {
-            # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-          }
-        } else {
-          if (handle->padding_flag == 1) {
-            /*
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-#undef INPUT_PADDING
-*/
-          } else {
-            # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-          }
-        }
-      }
-    } else if (handle->datatype == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
-      if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-        if (handle->desc.u == 1 && handle->desc.v == 1) {
-          if (handle->padding_flag == 1) {
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-#undef INPUT_PADDING
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-          } else {
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-          }
-        } else {
-          if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-#undef INPUT_PADDING
-          } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-          }
-        }
-      }
-      else {
-        if (handle->desc.u == 1 && handle->desc.v == 1) {
-          if (handle->padding_flag == 1) {
-            /*
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-#undef INPUT_PADDING
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-*/
-          } else {
-            #include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-          }
-        } else {
-          if (handle->padding_flag == 1) {
-            /*
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-#undef INPUT_PADDING
-*/
-          } else {
-            #include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-          }
         }
       }
     } else {

@@ -39,8 +39,7 @@ int ltid;
 handle->block_fwd_ofm = 8;
 handle->block_fwd_ifm = 8;
 
-
-if ( handle->ofh == 14 || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
+if ( (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
   block_j = 4;
 }
 
