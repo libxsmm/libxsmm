@@ -58,7 +58,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #if defined(_OPENMP)
   int ltid = omp_get_thread_num();
 #endif
-  int img, ofm1, ifm1, oj, oi, ij, ii, local_entries = 0, ojb, ifmb, ofmb;  
+  int img, ofm1, ifm1, oj, oi, ij, ii, local_entries = 0, ojb, ifmb, ofmb;
+  int cur_wt, next_wt, cur_out, next_out;
 
   /* Threading related variables */
   int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -69,6 +70,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int my_ofm_end = handle->blocksofm;
   int myOfmId;
   int nOfmBlocks;
+  int total_calls;
 
   /* Arrays of stream indices */
   int *compute_indices;
@@ -127,9 +129,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                   compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
                   compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock  ;
 
-                  /* TODO: Add some index processing  to tune prefetching  */
-
-                  /* FIXME: Select correct kernel variant  */
+                  /* Initialize  kernel variant the one that prefetches everything */
                   kernel_variant[local_entries/3] = 2;
                   local_entries += 3;   
                 }
@@ -145,6 +145,20 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   compute_indices[local_entries] = 0;
   compute_indices[local_entries+1] = 0;
   compute_indices[local_entries+2] = 0;
+
+  total_calls = local_entries/3;
+
+  for (ii = 0; ii < total_calls-1; ii++) {
+    cur_wt = compute_indices[ii*3+1];
+    next_wt = compute_indices[(ii+1)*3+1];
+    cur_out = compute_indices[ii*3+2];
+    next_out = compute_indices[(ii+1)*3+2];
+    if ( cur_wt == next_wt ) {
+      kernel_variant[ii] = 1;
+    } else if ( cur_out == next_out ) {
+      kernel_variant[ii] = 3;
+    }
+  } 
 
 }
 
