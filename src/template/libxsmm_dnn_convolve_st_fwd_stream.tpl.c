@@ -32,14 +32,16 @@
 const int ltid = tid-start_thread;
 const element_input_type *input_base;
 const element_filter_type *weight_base;
-element_output_type *output_base, *out;
+element_output_type *output_base;
+int offset_i, offset_o, offset_w, pi, po, pw, pc, i = 0;
+int *stream = handle->compute_fwd_indices_ptrs[ltid];
+libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
+const int instr = handle->n_entries_fwd[ltid];
 
-out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->ofmblock);
+element_output_type *out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->ofmblock);
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock);
 LIBXSMM_VLA_DECL(6, const element_input_type, input, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
 LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
-
-int offset_i, offset_o, offset_w, pi, po, pw, pc, i = 0;
 
 input_base  = &LIBXSMM_VLA_ACCESS(6, input, 0, 0, 0, 0, 0, 0,
     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
@@ -47,10 +49,6 @@ weight_base = &LIBXSMM_VLA_ACCESS(7, weight, 0, 0, 0, 0, 0, 0, 0,
     handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
 output_base = &LIBXSMM_VLA_ACCESS(5, output, 0, 0, 0, 0, 0,
     handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock);
-
-int *stream = handle->compute_fwd_indices_ptrs[ltid];
-libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
-const int instr = handle->n_entries_fwd[ltid];
 
 for (pc = 0; pc < instr; pc++) {
   offset_i = stream[i];

@@ -50,11 +50,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-        typedef float element_input_type;
-        typedef float element_output_type;
-        typedef float element_filter_type;
-        typedef libxsmm_sconvfunction libxsmm_convfunction;
-        typedef libxsmm_smmfunction libxsmm_mmfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
 /*
@@ -65,9 +60,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 #undef INPUT_PADDING
 */
           } else {
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
           }
         } else {
           if (handle->padding_flag == 1) {
@@ -82,10 +75,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
         }
       }
       else {
-        typedef float element_input_type;
-        typedef float element_output_type;
-        typedef float element_filter_type;
-        typedef libxsmm_sconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
             /*
@@ -96,9 +85,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 #undef INPUT_PADDING
 */
           } else {
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-            //# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
+            # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
           }
         } else {
 
@@ -109,16 +96,12 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 #undef INPUT_PADDING
 */
           } else {
-            //# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+            # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
           }
         }
       }
     } else if (handle->datatype ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-        typedef short element_input_type;
-        typedef int element_output_type;
-        typedef short element_filter_type;
-        typedef libxsmm_wconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
             /*
@@ -146,10 +129,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
         }
       }
       else {
-        typedef short element_input_type;
-        typedef int element_output_type;
-        typedef short element_filter_type;
-        typedef libxsmm_wconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
             /*
@@ -160,9 +139,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 */
           } else {
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-            //# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
+            #include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
           }
         } else {
           if (handle->padding_flag == 1) {
@@ -172,16 +149,12 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 #undef INPUT_PADDING
 */
           } else {
-            //#include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+            #include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
           }
         }
       }
     } else if (handle->datatype == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I16 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-        typedef unsigned char element_input_type;
-        typedef short element_output_type;
-        typedef char element_filter_type;
-        typedef libxsmm_busconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
             /*
@@ -209,10 +182,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
         }
       }
       else {
-        typedef unsigned char element_input_type;
-        typedef short element_output_type;
-        typedef char element_filter_type;
-        typedef libxsmm_busconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
             /*
@@ -223,9 +192,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 */
           } else {
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-            //# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
+            # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
           }
         } else {
           if (handle->padding_flag == 1) {
@@ -235,16 +202,12 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 #undef INPUT_PADDING
 */
           } else {
-            //# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+            # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
           }
         }
       }
     } else if (handle->datatype == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-        typedef unsigned char element_input_type;
-        typedef int element_output_type;
-        typedef char element_filter_type;
-        typedef libxsmm_budconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
 #define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
@@ -268,10 +231,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
         }
       }
       else {
-        typedef unsigned char element_input_type;
-        typedef int element_output_type;
-        typedef char element_filter_type;
-        typedef libxsmm_budconvfunction libxsmm_convfunction;
         if (handle->desc.u == 1 && handle->desc.v == 1) {
           if (handle->padding_flag == 1) {
             /*
@@ -282,9 +241,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 #undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
 */
           } else {
-#define LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
-            //#include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-#undef LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE
+            #include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
           }
         } else {
           if (handle->padding_flag == 1) {
@@ -294,7 +251,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 #undef INPUT_PADDING
 */
           } else {
-            //#include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+            #include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
           }
         }
       }

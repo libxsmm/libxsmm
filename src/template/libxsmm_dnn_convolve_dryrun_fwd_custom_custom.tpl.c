@@ -31,28 +31,41 @@
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 
-/* FIXME: Add some logic for the blocking...  */
+/* FIXME: Add some logic for the blocking of the loops */
+int block_j = 14;
+#if !defined(_OPENMP)
+int ltid;
+#endif
 handle->block_fwd_ofm = 8;
 handle->block_fwd_ifm = 8;
-handle->block_fwd_oj = 14;
+
+
+if ( handle->ofh == 14 || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
+  block_j = 4;
+}
+
+while ( block_j % handle->fwd_ofh_rb != 0 ) {
+  block_j--;
+}
+
+handle->block_fwd_oj = block_j;
 
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
 #else
-int ltid;
 for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #endif
 {
 #if defined(_OPENMP)
   int ltid = omp_get_thread_num();
 #endif
-  int img, ofm1, ifm1, oj, oi, ij, ii,local_entries = 0, ojb, ifmb, ofmb;  
+  int img, ofm1, ifm1, oj, oi, ij, ii, local_entries = 0, ojb, ifmb, ofmb;  
 
   /* Threading related variables */
-  int imgpt = handle->desc.N/handle->desc.threads;
+  int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
   int threads_per_image = handle->desc.threads / handle->desc.N;
-  int my_img_start = ltid * imgpt;
-  int my_img_end = (ltid+1) * imgpt;
+  int my_img_start = MIN( ltid * imgpt, handle->desc.N);
+  int my_img_end = MIN( (ltid+1) * imgpt, handle->desc.N);
   int my_ofm_start = 0;
   int my_ofm_end = handle->blocksofm;
   int myOfmId;
@@ -62,11 +75,11 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int *compute_indices;
   char *kernel_variant;
 
-  if ( imgpt < 1 ) {
-    my_img_start = ltid / threads_per_image;
-    my_img_end = my_img_start + 1;
+  if ( imgpt <= 1 ) {
+    my_img_start = MIN( ltid / threads_per_image, handle->desc.N);
+    my_img_end = MIN( my_img_start + 1, handle->desc.N);
     myOfmId = ltid % threads_per_image;
-    nOfmBlocks = handle->blocksofm / threads_per_image;
+    nOfmBlocks = (handle->blocksofm + threads_per_image -1) / threads_per_image;
     my_ofm_start = MIN(myOfmId * nOfmBlocks, handle->blocksofm);
     my_ofm_end = MIN((myOfmId+1) * nOfmBlocks, handle->blocksofm);
   } 
@@ -114,6 +127,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                   compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block  ;
                   compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
                   compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock  ;
+
+                  /* TODO: Add some index processing  to tune prefetching  */
 
                   /* FIXME: Select correct kernel variant  */
                   kernel_variant[local_entries/3] = 2;
