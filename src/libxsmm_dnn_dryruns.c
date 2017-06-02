@@ -110,7 +110,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_custom(
           /* FIXME: For now support only physical padding  */
           status = LIBXSMM_DNN_ERR_INVALID_PADDING;
         } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
+# include "template/libxsmm_dnn_convolve_dryrun_fwd_nhwc_custom.tpl.c"
         }
       }
       else {
@@ -118,7 +118,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_custom(
           /* FIXME: For now support only physical padding  */
           status = LIBXSMM_DNN_ERR_INVALID_PADDING;
         } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+# include "template/libxsmm_dnn_convolve_dryrun_fwd_nhwc_custom_img_par.tpl.c"
         }
       }
     } else {
@@ -146,7 +146,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_rsck( l
           /* FIXME: For now support only physical padding  */
           status = LIBXSMM_DNN_ERR_INVALID_PADDING;
         } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
+# include "template/libxsmm_dnn_convolve_dryrun_fwd_nhwc_rsck.tpl.c"
         }
       }
       else {
@@ -154,7 +154,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_rsck( l
           /* FIXME: For now support only physical padding  */
           status = LIBXSMM_DNN_ERR_INVALID_PADDING;
         } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+# include "template/libxsmm_dnn_convolve_dryrun_fwd_nhwc_rsck_img_par.tpl.c"
         }
       }
     } else {

@@ -38,17 +38,21 @@ int *stream = handle->compute_fwd_indices_ptrs[ltid];
 libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
 const int instr = handle->n_entries_fwd[ltid];
 char *kernel_stream = handle->kernel_fwd_variant_ptrs[ltid];
+#if 0
 libxsmm_convfunction kernel_pool[4];
+#endif
 
 element_output_type *out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->ofmblock);
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock);
 LIBXSMM_VLA_DECL(6, const element_input_type, input, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
 LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
 
+#if 0
 kernel_pool[0] =  (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 kernel_pool[1] =  (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 kernel_pool[2] =  (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
 kernel_pool[3] =  (libxsmm_convfunction)handle->code_fwd[3].xconv.sconv;
+#endif
 
 input_base  = &LIBXSMM_VLA_ACCESS(6, input, 0, 0, 0, 0, 0, 0,
     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
@@ -64,8 +68,10 @@ for (pc = 0; pc < instr; pc++) {
   pi = stream[i+3];
   pw = stream[i+4];
   po = stream[i+5];
-  kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po); 
-  /* kernel_pool[kernel_stream[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po); */
+  kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
   i+=3;
+#if 0 
+  kernel_pool[kernel_stream[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+#endif
 }
 

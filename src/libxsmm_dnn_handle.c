@@ -499,12 +499,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
       /* TODO: So far support for thread private jit only for FWD */
       if ( handle->use_thread_private_jit ) {
+
         handle->n_entries_fwd = (int*) malloc(handle->desc.threads * sizeof(int));
         handle->compute_fwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
         handle->kernel_fwd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
-
         /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
-        libxsmm_dnn_perform_fwd_dryrun_direct(handle); 
+        status = libxsmm_dnn_perform_fwd_dryrun_direct(handle); 
       }
     }
     /* Backward path */
