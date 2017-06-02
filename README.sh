@@ -41,8 +41,7 @@ else
 fi
 
 # temporary file
-TMPFILE=$(mktemp /tmp/.libxsmm_XXXXXX.mak)
-mv ${TMPFILE} ${TMPFILE}.tex
+TMPFILE=$(mktemp .libxsmm_XXXXXX.tex)
 
 # dump pandoc template for latex, and adjust the template
 pandoc -D latex \
@@ -50,7 +49,7 @@ pandoc -D latex \
   -e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
   -e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
   -e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-  > ${TMPFILE}.tex
+  > ${TMPFILE}
 
 # cleanup markup and pipe into pandoc using the template
 # LIBXSMM documentation
@@ -62,7 +61,7 @@ iconv -t utf-8 README.md \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
   -e 's/----*//g' \
 | tee >( pandoc \
-  --latex-engine=xelatex --template=${TMPFILE}.tex --listings \
+  --latex-engine=xelatex --template=${TMPFILE} --listings \
   -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
   -V title-meta="LIBXSMM Documentation" \
@@ -89,7 +88,7 @@ iconv -t utf-8 ${HERE}/documentation/cp2k.md \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
   -e 's/----*//g' \
 | tee >( pandoc \
-  --latex-engine=xelatex --template=${TMPFILE}.tex --listings \
+  --latex-engine=xelatex --template=${TMPFILE} --listings \
   -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
   -V title-meta="CP2K with LIBXSMM" \
@@ -113,7 +112,7 @@ iconv -t utf-8 ${HERE}/documentation/tensorflow.md \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
   -e 's/----*//g' \
 | tee >( pandoc \
-  --latex-engine=xelatex --template=${TMPFILE}.tex --listings \
+  --latex-engine=xelatex --template=${TMPFILE} --listings \
   -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
   -V title-meta="TensorFlow with LIBXSMM" \
@@ -137,7 +136,7 @@ iconv -t utf-8 samples/*/README.md \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
   -e 's/----*//g' \
 | tee >( pandoc \
-  --latex-engine=xelatex --template=${TMPFILE}.tex --listings \
+  --latex-engine=xelatex --template=${TMPFILE} --listings \
   -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
   -V title-meta="LIBXSMM Sample Code Summary" \
@@ -154,4 +153,4 @@ iconv -t utf-8 samples/*/README.md \
   -o ${DOCDIR}/samples.docx
 
 # remove temporary file
-rm ${TMPFILE}.tex
+rm ${TMPFILE}
