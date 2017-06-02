@@ -29,10 +29,8 @@
 /* Evangelos Georganas (Intel Corp.)
  ******************************************************************************/
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
-
-/* FIXME: Add some logic for the blocking of the loops */
 int block_j = 14;
+int h_chunk_size;
 #if !defined(_OPENMP)
 int ltid;
 #endif
@@ -70,76 +68,85 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     threads_per_image--;
   }
 
-  my_img_start = MIN( ltid / threads_per_image, handle->desc.N);
-  my_img_end = MIN( my_img_start + 1, handle->desc.N);
+  my_img_start = LIBXSMM_MIN( ltid / threads_per_image, handle->desc.N);
+  my_img_end = LIBXSMM_MIN( my_img_start + 1, handle->desc.N);
   my_ofm_start = 0;
   my_ofm_end = handle->blocksofm;
+  my_w_start = 0;
+  my_w_end = handle->ofw;
 
-  /* Threading strategies...  */
+  /* Threading strategie  */
   if (threads_per_image == 16 ) {
-
     myOfmId = (ltid/8) % 2;
     if (myOfmId == 0) {
-      my_ofm_end = my_ofm_end/2;
+      my_ofm_end = handle->blocksofm/2;
     } else {
-      my_ofm_start = my_ofm_end/2;
+      my_ofm_start = handle->blocksofm/2;
     }
-    my_w_start = 0;
-    my_w_end = handle->ofw;
     myHId = ltid % 8;
-    my_h_start = MIN(myHId * ((handle->ofh+7)/8), handle->ofh);
-    my_h_end = MIN((myHId + 1) * ((handle->ofh+7)/8), handle->ofh);
+    h_chunk_size = (handle->ofh+7)/8;
+    while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
+      h_chunk_size++;
+    }
+    my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
+    my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
 
   } else if (threads_per_image == 8) {
-
     if (handle->blocksofm == 2) {
       myOfmId = (ltid/4) % 2;
       my_ofm_start = myOfmId;
       my_ofm_end = myOfmId + 1;
       myHId = ltid % 4;
-      my_h_start = MIN(myHId * ((handle->ofh+3)/4), handle->ofh);
-      my_h_end = MIN((myHId + 1) * ((handle->ofh+3)/4), handle->ofh);
-      my_w_start = 0;
-      my_w_end = handle->ofw;
+      h_chunk_size = (handle->ofh+3)/4;
+      while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
+        h_chunk_size++;
+      }      
+      my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
+      my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
     } else if (handle->blocksofm == 4) {
       myOfmId = (ltid/2) % 4;
       my_ofm_start = myOfmId;
       my_ofm_end = myOfmId + 1;
-      my_w_start = 0;
-      my_w_end = handle->ofw;
       myHId = ltid % 2;
-      my_h_start = MIN(myHId * (handle->ofh/2), handle->ofh);
-      my_h_end = MIN((myHId + 1) * (handle->ofh/2), handle->ofh);
+      h_chunk_size = (handle->ofh+1)/2;
+      while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
+        h_chunk_size++;
+      }
+      my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
+      my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
     } else {
-      my_w_start = 0;
-      my_w_end = handle->ofw;
       myHId = ltid % 8;
-      my_h_start = MIN(myHId * ((handle->ofh+7)/8), handle->ofh);
-      my_h_end = MIN((myHId + 1) * ((handle->ofh+7)/8), handle->ofh);
+      h_chunk_size = (handle->ofh+7)/8;
+      while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
+        h_chunk_size++;
+      }
+      my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
+      my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
     }
 
   } else if (threads_per_image == 4 ) {
-
     if ( handle->blocksofm == 2 ) {
       myOfmId = (ltid/2) % 2;
       my_ofm_start = myOfmId;
       my_ofm_end = myOfmId + 1;
       myHId = ltid % 2;
-      my_h_start = MIN(myHId * ((handle->ofh+1)/2), handle->ofh);
-      my_h_end = MIN((myHId + 1) * ((handle->ofh+1)/2), handle->ofh);
-      my_w_start = 0;
-      my_w_end = handle->ofw;
+      h_chunk_size = (handle->ofh+1)/2;
+      while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
+        h_chunk_size++;
+      }  
+      my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
+      my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
     } else {
       myHId = ltid % 4;
-      my_h_start = MIN(myHId * ((handle->ofh+3)/4), handle->ofh);
-      my_h_end = MIN((myHId + 1) * ((handle->ofh+3)/4), handle->ofh);
-      my_w_start = 0;
-      my_w_end = handle->ofw;
+      h_chunk_size = (handle->ofh+3)/4;
+      while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
+        h_chunk_size++;
+      }
+      my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
+      my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
     } 
 
   } else {
-    my_w_start = 0;
-    my_w_end = handle->ofw;
     my_h_start = 0;
     my_h_end = handle->ofh;
   }
@@ -149,9 +156,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) { 
       for (ojb = my_h_start; ojb < my_h_end; ojb += handle->block_fwd_oj) {
         for (img = my_img_start; img < my_img_end; img++) {
-          for ( ofm1 = ofmb; ofm1 < MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-            for (ifm1 = ifmb; ifm1 < MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
-              for (oj = ojb; oj < MIN(ojb+handle->block_fwd_oj,my_h_end); oj += handle->fwd_ofh_rb) {
+          for ( ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
+              for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,my_h_end); oj += handle->fwd_ofh_rb) {
                 for (oi = my_w_start; oi < my_w_end; oi += handle->fwd_ofw_rb) {
                   local_entries += 3;
                 }
@@ -164,7 +171,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   }
 
   handle->n_entries_fwd[ltid] = local_entries/3;
-
   /* Alocate auxiliary data structures for index jitting  */
   compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152); 
   handle->compute_fwd_indices_ptrs[ltid] = compute_indices;
@@ -177,18 +183,15 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) { 
         for (ojb = my_h_start; ojb < my_h_end; ojb += handle->block_fwd_oj) {
-          for ( ofm1 = ofmb; ofm1 < MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-            for (ifm1 = ifmb; ifm1 < MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
-              for (oj = ojb; oj < MIN(ojb+handle->block_fwd_oj,my_h_end); oj += handle->fwd_ofh_rb) {
+          for ( ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
+              for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,my_h_end); oj += handle->fwd_ofh_rb) {
                 for (oi = my_w_start; oi < my_w_end; oi += handle->fwd_ofw_rb) {
-
                   ij = oj * handle->desc.u;
                   ii = oi * handle->desc.v;
-                  compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block  ;
+                  compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->ifhp) +  ij) *  handle->ifwp )  +  ii) * handle->blocksifm)  +  ifm1  ) *  handle->ifmblock * handle->fm_lp_block;
                   compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
-                  compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock  ;
-
-                  /* TODO: Add some index processing  to tune prefetching  */
+                  compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->ofhp ) +  oj) *  handle->ofwp )  +  oi) * handle->blocksofm)  +  ofm1) *  handle->ofmblock;
 
                   /* FIXME: Select correct kernel variant  */
                   kernel_variant[local_entries/3] = 2;
@@ -206,6 +209,5 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   compute_indices[local_entries] = 0;
   compute_indices[local_entries+1] = 0;
   compute_indices[local_entries+2] = 0;
-
 }
 

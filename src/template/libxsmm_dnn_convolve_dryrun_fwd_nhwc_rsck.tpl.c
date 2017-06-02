@@ -29,9 +29,6 @@
 /* Evangelos Georganas (Intel Corp.)
  ******************************************************************************/
 
-#define MIN(a,b) (((a)<(b))?(a):(b))
-
-/* FIXME: Add some logic for the blocking of the loops */
 int block_j = 14;
 #if !defined(_OPENMP)
 int ltid;
@@ -42,7 +39,6 @@ handle->block_fwd_ifm = 8;
 if ( (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
   block_j = 4;
 }
-
 while ( block_j % handle->fwd_ofh_rb != 0 ) {
   block_j--;
 }
@@ -64,8 +60,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   /* Threading related variables */
   int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
   int threads_per_image = handle->desc.threads / handle->desc.N;
-  int my_img_start = MIN( ltid * imgpt, handle->desc.N);
-  int my_img_end = MIN( (ltid+1) * imgpt, handle->desc.N);
+  int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
+  int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
   int my_ofm_start = 0;
   int my_ofm_end = handle->blocksofm;
   int myOfmId;
@@ -77,12 +73,12 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   char *kernel_variant;
 
   if ( imgpt <= 1 ) {
-    my_img_start = MIN( ltid / threads_per_image, handle->desc.N);
-    my_img_end = MIN( my_img_start + 1, handle->desc.N);
+    my_img_start = LIBXSMM_MIN( ltid / threads_per_image, handle->desc.N);
+    my_img_end = LIBXSMM_MIN( my_img_start + 1, handle->desc.N);
     myOfmId = ltid % threads_per_image;
     nOfmBlocks = (handle->blocksofm + threads_per_image -1) / threads_per_image;
-    my_ofm_start = MIN(myOfmId * nOfmBlocks, handle->blocksofm);
-    my_ofm_end = MIN((myOfmId+1) * nOfmBlocks, handle->blocksofm);
+    my_ofm_start = LIBXSMM_MIN(myOfmId * nOfmBlocks, handle->blocksofm);
+    my_ofm_end = LIBXSMM_MIN((myOfmId+1) * nOfmBlocks, handle->blocksofm);
   } 
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */
@@ -90,9 +86,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) { 
       for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
         for (img = my_img_start; img < my_img_end; img++) {
-          for ( ofm1 = ofmb; ofm1 < MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-            for (ifm1 = ifmb; ifm1 < MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
-              for (oj = ojb; oj < MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+          for ( ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
+              for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
                 for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
                   local_entries += 3;
                 }
@@ -118,16 +114,15 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) { 
         for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
-          for ( ofm1 = ofmb; ofm1 < MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-            for (ifm1 = ifmb; ifm1 < MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
-              for (oj = ojb; oj < MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+          for ( ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
+              for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
                 for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
-
                   ij = oj * handle->desc.u;
                   ii = oi * handle->desc.v;
-                  compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block  ;
-                  compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
-                  compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock  ;
+                  compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->ifhp) +  ij) *  handle->ifwp )  +  ii) * handle->blocksifm)  +  ifm1) *  handle->ifmblock * handle->fm_lp_block;
+                  compute_indices[local_entries+1] = ( ifm1 * handle->ifmblock * handle->blocksofm  + ofm1) * handle->ofmblock *  handle->fm_lp_block;
+                  compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->ofhp ) +  oj) *  handle->ofwp )  +  oi) * handle->blocksofm)  +  ofm1) *  handle->ofmblock;
 
                   /* Initialize  kernel variant the one that prefetches everything */
                   kernel_variant[local_entries/3] = 2;
