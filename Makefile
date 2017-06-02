@@ -925,7 +925,7 @@ endif
 
 .PHONY: samples
 samples: cp2k nek smm wrap
-	@find $(SPLDIR) -type f -name Makefile | grep -v /specfem/ | grep -v /pyfr/ | grep -v /edge/ \
+	@find $(SPLDIR) -type f -name Makefile | grep -v /specfem/ | grep -v /pyfr/ \
 		$(patsubst %, | grep -v /%/,$^) | xargs -I {} dirname {} | xargs -I {} $(SHELL) -c \
 		"cd {}; $(MAKE) --no-print-directory"
 
@@ -1314,14 +1314,13 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 endif
 
 $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
-	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
-	@mv $(TMPFILE) $(TMPFILE).tex
+	$(eval TMPFILE = $(shell mktemp .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE).tex
+		> $(TMPFILE)
 	@iconv -t utf-8 $(ROOTDIR)/README.md \
 	| sed \
 		-e 's/\[\[..*\](..*)\]//g' \
@@ -1330,7 +1329,7 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
+		--latex-engine=xelatex --template=$(TMPFILE) --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
@@ -1340,17 +1339,16 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 		-V citecolor=black \
 		-V urlcolor=black \
 		-o $@
-	@rm $(TMPFILE).tex
+	@rm $(TMPFILE)
 
 $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
-	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
-	@mv $(TMPFILE) $(TMPFILE).tex
+	$(eval TMPFILE = $(shell mktemp .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE).tex
+		> $(TMPFILE)
 	@iconv -t utf-8 $(ROOTDIR)/documentation/cp2k.md \
 	| sed \
 		-e 's/\[\[..*\](..*)\]//g' \
@@ -1359,7 +1357,7 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
+		--latex-engine=xelatex --template=$(TMPFILE) --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="CP2K with LIBXSMM" \
@@ -1369,17 +1367,16 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 		-V citecolor=black \
 		-V urlcolor=black \
 		-o $@
-	@rm $(TMPFILE).tex
+	@rm $(TMPFILE)
 
 $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
-	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
-	@mv $(TMPFILE) $(TMPFILE).tex
+	$(eval TMPFILE = $(shell mktemp .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE).tex
+		> $(TMPFILE)
 	@iconv -t utf-8 $(ROOTDIR)/documentation/tensorflow.md \
 	| sed \
 		-e 's/\[\[..*\](..*)\]//g' \
@@ -1388,7 +1385,7 @@ $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
+		--latex-engine=xelatex --template=$(TMPFILE) --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="TensorFlow with LIBXSMM" \
@@ -1398,17 +1395,16 @@ $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
 		-V citecolor=black \
 		-V urlcolor=black \
 		-o $@
-	@rm $(TMPFILE).tex
+	@rm $(TMPFILE)
 
 $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
-	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
-	@mv $(TMPFILE) $(TMPFILE).tex
+	$(eval TMPFILE = $(shell mktemp .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE).tex
+		> $(TMPFILE)
 	@iconv -t utf-8 $(SPLDIR)/*/README.md \
 	| sed \
 		-e 's/\[\[..*\](..*)\]//g' \
@@ -1417,7 +1413,7 @@ $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE).tex --listings \
+		--latex-engine=xelatex --template=$(TMPFILE) --listings \
 		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Sample Code Summary" \
@@ -1426,7 +1422,7 @@ $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
 		-V citecolor=black \
 		-V urlcolor=black \
 		-o $@
-	@rm $(TMPFILE).tex
+	@rm $(TMPFILE)
 
 .PHONY: documentation
 documentation: $(DOCDIR)/libxsmm.pdf $(DOCDIR)/cp2k.pdf $(DOCDIR)/tensorflow.pdf $(DOCDIR)/samples.pdf
