@@ -39,8 +39,26 @@
 #endif
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct( libxsmm_dnn_layer* handle ) { 
   
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  /* Switch based on the format to use the correct dryrun */
+  if ( handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM && handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) {
+    status = libxsmm_dnn_perform_fwd_dryrun_direct_custom_custom( handle );
+  } else if ( handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NHWC && handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) {
+    status = libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_custom( handle );
+  } else if ( handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NHWC && handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_RSCK ) {
+    status = libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_rsck( handle );
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
+  }
+
+  return status;
+}
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle ) {
+
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check if we have a kernel JITed */
@@ -76,8 +94,75 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct( libxsmm_dnn_layer* handle ) { 
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_custom( libxsmm_dnn_layer* handle ) {
 
-  /* Switch based on the format to use the correct dryrun */
-  return libxsmm_dnn_perform_fwd_dryrun_direct_custom_custom( handle );
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  /* check if we have a kernel JITed */
+  if (handle->code_fwd[0].xconv.sconv == 0) {
+    /* In these case we run fallback code so we do not support thread private jitting */
+    status = LIBXSMM_DNN_WARN_FALLBACK;
+  }
+  else {
+    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+      if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
+        if (handle->padding_flag == 1) {
+          /* FIXME: For now support only physical padding  */
+          status = LIBXSMM_DNN_ERR_INVALID_PADDING;
+        } else {
+# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
+        }
+      }
+      else {
+        if (handle->padding_flag == 1) {
+          /* FIXME: For now support only physical padding  */
+          status = LIBXSMM_DNN_ERR_INVALID_PADDING;
+        } else {
+# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+        }
+      }
+    } else {
+      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+      return status;
+    }
+  }
+
+  return status;
 }
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_rsck( libxsmm_dnn_layer* handle ) {
+
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  /* check if we have a kernel JITed */
+  if (handle->code_fwd[0].xconv.sconv == 0) {
+    /* In these case we run fallback code so we do not support thread private jitting */
+    status = LIBXSMM_DNN_WARN_FALLBACK;
+  }
+  else {
+    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+      if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
+        if (handle->padding_flag == 1) {
+          /* FIXME: For now support only physical padding  */
+          status = LIBXSMM_DNN_ERR_INVALID_PADDING;
+        } else {
+# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
+        }
+      }
+      else {
+        if (handle->padding_flag == 1) {
+          /* FIXME: For now support only physical padding  */
+          status = LIBXSMM_DNN_ERR_INVALID_PADDING;
+        } else {
+# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
+        }
+      }
+    } else {
+      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+      return status;
+    }
+  }
+
+  return status;
+}
+
