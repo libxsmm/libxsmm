@@ -64,7 +64,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   /* Threading related variables */
   int threads_per_image = handle->desc.threads / handle->desc.N;
-  while (threads_per_image % 4 != 0) {
+  while (threads_per_image % 4 != 0 && threads_per_image > 2) {
     threads_per_image--;
   }
 
@@ -145,6 +145,15 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
       my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
     } 
+
+  } else if (threads_per_image == 2 ) { 
+    myHId = ltid % 2;
+    h_chunk_size = (handle->ofh+1)/2;
+    while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
+      h_chunk_size++;
+    }  
+    my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
+    my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
 
   } else {
     my_h_start = 0;
