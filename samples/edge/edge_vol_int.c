@@ -28,11 +28,13 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
 #include <libxsmm.h>
+
 #if defined(_OPENMP)
 # include <omp.h>
 #endif

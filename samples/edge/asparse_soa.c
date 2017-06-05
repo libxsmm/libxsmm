@@ -34,14 +34,9 @@
 #include <common_edge_proxy.h>
 
 int main(int argc, char* argv[]) {
-  if (argc != 4) {
-    fprintf( stderr, "arguments: M #iters CSR-file!\n" );
-    exit(-1);
-  }
-
-  unsigned int N_ELEMENT_MODES = atoi(argv[1]);
-  unsigned int REPS = atoi(argv[2]);
-  char* l_csr_file = argv[3];
+  unsigned int N_ELEMENT_MODES = ( argc == 4 ) ? atoi(argv[1]) : 20;
+  unsigned int REPS = ( argc == 4 ) ? atoi(argv[2]) : 1;
+  char* l_csr_file = ( argc == 4 ) ? argv[3] : "file.csr" ;
 
   REALTYPE* l_a_de = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_QUANTITIES * sizeof(REALTYPE), 64);
   REALTYPE* l_a_sp;
@@ -64,8 +59,20 @@ int main(int argc, char* argv[]) {
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c_asm, l_c_asm, N_ELEMENT_MODES, N_CRUNS);
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c_gold, l_c_gold, N_ELEMENT_MODES, N_CRUNS);
 
+  libxsmm_gemm_descriptor l_xgemm_desc;
+#if defined(__EDGE_EXECUTE_F32__)
+  libxsmm_smmfunction mykernel = NULL;
+#else
+  libxsmm_dmmfunction mykernel = NULL;
+#endif
+
   struct timeval l_start, l_end;
   double l_total;
+
+  if (argc != 4) {
+    fprintf( stderr, "arguments: M #iters CSR-file!\n" );
+    return -1;
+  }
 
   /* touch B */
   for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
@@ -157,19 +164,17 @@ int main(int argc, char* argv[]) {
   printf("%fs for sparse\n", l_total);
   printf("%f GFLOPS for sparse\n", ((double)((double)REPS * (double)N_QUANTITIES * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
 
-
   /* sparse routine */
-  libxsmm_gemm_descriptor l_xgemm_desc;
 #if defined(__EDGE_EXECUTE_F32__)
   LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, LIBXSMM_GEMM_PRECISION_F32, 0/*flags*/,
     N_QUANTITIES, N_ELEMENT_MODES, N_QUANTITIES, 0, N_ELEMENT_MODES, N_ELEMENT_MODES,
     1.0, 1.0, LIBXSMM_PREFETCH_NONE);
-  libxsmm_smmfunction mykernel = libxsmm_create_xcsr_soa( &l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_a_sp ).smm;
+  mykernel = libxsmm_create_xcsr_soa( &l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_a_sp ).smm;
 #else
   LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, LIBXSMM_GEMM_PRECISION_F64, 0/*flags*/,
     N_QUANTITIES, N_ELEMENT_MODES, N_QUANTITIES, 0, N_ELEMENT_MODES, N_ELEMENT_MODES,
     1.0, 1.0, LIBXSMM_PREFETCH_NONE);
-  libxsmm_dmmfunction mykernel = libxsmm_create_xcsr_soa( &l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_a_sp ).dmm;
+  mykernel = libxsmm_create_xcsr_soa( &l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_a_sp ).dmm;
 #endif
 
   gettimeofday(&l_start, NULL);
@@ -215,4 +220,6 @@ int main(int argc, char* argv[]) {
   libxsmm_free( l_c );
   libxsmm_free( l_c_gold );
   libxsmm_free( l_c_asm );
+
+  return 0;
 }
