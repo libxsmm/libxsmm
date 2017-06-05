@@ -18,3 +18,7 @@ for i in `ls mats/f*3D_${ORDER}_csr.mtx`; do ${SDE} ./bsparse_soa_${PREC} ${MODE
 for i in `ls mats/k*3D_${ORDER}_csr.mtx`; do ${SDE} ./bsparse_soa_${PREC} ${MODES} ${REPS} $i; done
 # test star matrices
 ${SDE} ./asparse_soa_${PREC} ${MODES} ${REPS} mats/starMatrix_3D_csr.mtx
+# test flux matrices
+${SDE} ./asparse_soa_${PREC} ${MODES} ${REPS} mats/fluxMatrix_3D_csr_sp.mtx
+${SDE} ./asparse_soa_${PREC} ${MODES} ${REPS} mats/fluxMatrix_3D_csr_de.mtx
+
