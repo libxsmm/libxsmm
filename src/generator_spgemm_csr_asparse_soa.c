@@ -202,6 +202,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop_avx512( libxsmm_generated_c
 
     /* generate M loop */
     if (i_a_is_dense != 0 ) {
+      libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_mloop, 0 );
       libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_mloop, 1 );
     }
