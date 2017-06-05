@@ -29,7 +29,7 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#include "edge_proxy_common.h"
+#include <edge_proxy_common.h>
 
 void edge_sparse_csr_reader_double( const char*           i_csr_file_in,
                                     unsigned int**        o_row_idx,

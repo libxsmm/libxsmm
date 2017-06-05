@@ -29,8 +29,9 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#include "common_edge_proxy.h"
 #include <libxsmm.h>
+
+#include <common_edge_proxy.h>
 
 int main(int argc, char* argv[]) {
   if (argc != 4) {
@@ -42,15 +43,15 @@ int main(int argc, char* argv[]) {
   unsigned int REPS = atoi(argv[2]);
   char* l_csr_file = argv[3];
 
-  REALTYPE* l_a_de = (REALTYPE*)_mm_malloc(N_QUANTITIES * N_QUANTITIES * sizeof(REALTYPE), 64);
+  REALTYPE* l_a_de = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_QUANTITIES * sizeof(REALTYPE), 64);
   REALTYPE* l_a_sp;
-  REALTYPE* l_b = (REALTYPE*)_mm_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS* sizeof(REALTYPE), 64);
+  REALTYPE* l_b = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS* sizeof(REALTYPE), 64);
   unsigned int* l_rowptr;
   unsigned int* l_colidx;
   unsigned int l_rowcount, l_colcount, l_elements;
-  REALTYPE* l_c = (REALTYPE*)_mm_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
-  REALTYPE* l_c_gold = (REALTYPE*)_mm_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
-  REALTYPE* l_c_asm = (REALTYPE*)_mm_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
+  REALTYPE* l_c = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
+  REALTYPE* l_c_gold = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
+  REALTYPE* l_c_asm = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
   REALTYPE l_max_error = 0.0;
   unsigned int l_i;
   unsigned int l_j;
@@ -58,10 +59,10 @@ int main(int argc, char* argv[]) {
   unsigned int l_jj;
   unsigned int l_n;
 
-  REALTYPE (*l_p_b)     [N_ELEMENT_MODES][N_CRUNS] = (REALTYPE (*)[N_ELEMENT_MODES][N_CRUNS])l_b;
-  REALTYPE (*l_p_c)     [N_ELEMENT_MODES][N_CRUNS] = (REALTYPE (*)[N_ELEMENT_MODES][N_CRUNS])l_c;
-  REALTYPE (*l_p_c_asm) [N_ELEMENT_MODES][N_CRUNS] = (REALTYPE (*)[N_ELEMENT_MODES][N_CRUNS])l_c_asm;
-  REALTYPE (*l_p_c_gold)[N_ELEMENT_MODES][N_CRUNS] = (REALTYPE (*)[N_ELEMENT_MODES][N_CRUNS])l_c_gold;
+  LIBXSMM_VLA_DECL(3, REALTYPE, l_p_b, l_b, N_ELEMENT_MODES, N_CRUNS);
+  LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c, l_c, N_ELEMENT_MODES, N_CRUNS);
+  LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c_asm, l_c_asm, N_ELEMENT_MODES, N_CRUNS);
+  LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c_gold, l_c_gold, N_ELEMENT_MODES, N_CRUNS);
 
   struct timeval l_start, l_end;
   double l_total;
@@ -70,7 +71,7 @@ int main(int argc, char* argv[]) {
   for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
     for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
       for ( l_k = 0; l_k < N_CRUNS; l_k++ ) {
-        l_p_b[l_i][l_j][l_k] = (REALTYPE)drand48();
+        LIBXSMM_VLA_ACCESS(3, l_p_b, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) = (REALTYPE)drand48();
       }
     }
   }
@@ -79,9 +80,9 @@ int main(int argc, char* argv[]) {
   for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
     for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
       for ( l_k = 0; l_k < N_CRUNS; l_k++ ) {
-        l_p_c[l_i][l_j][l_k] = (REALTYPE)0.0;
-        l_p_c_gold[l_i][l_j][l_k] = (REALTYPE)0.0;
-        l_p_c_asm[l_i][l_j][l_k] = (REALTYPE)0.0;
+        LIBXSMM_VLA_ACCESS(3, l_p_c,      l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) = (REALTYPE)0.0;
+        LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) = (REALTYPE)0.0;
+        LIBXSMM_VLA_ACCESS(3, l_p_c_asm,  l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) = (REALTYPE)0.0;
       }
     }
   }
@@ -119,7 +120,9 @@ int main(int argc, char* argv[]) {
         for ( l_jj = 0; l_jj < N_QUANTITIES; l_jj++) {
           #pragma simd
           for (l_k = 0; l_k < N_CRUNS; l_k++) {
-            l_p_c_gold[l_i][l_j][l_k] += l_a_de[(l_i*N_QUANTITIES)+l_jj] * l_p_b[l_jj][l_j][l_k] ;
+            LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
+              +=   l_a_de[(l_i*N_QUANTITIES)+l_jj] 
+                 * LIBXSMM_VLA_ACCESS(3, l_p_b, l_jj, l_j, l_k, N_ELEMENT_MODES, N_CRUNS);
           }
         }
       }
@@ -141,7 +144,9 @@ int main(int argc, char* argv[]) {
         for ( l_jj = 0; l_jj < l_elems_per_row; l_jj++) {
           #pragma simd
           for (l_k = 0; l_k < N_CRUNS; l_k++) {
-            l_p_c[l_i][l_j][l_k] += l_a_sp[l_rowstart+l_jj] * l_p_b[l_colidx[l_rowptr[l_i] + l_jj]][l_j][l_k];
+            LIBXSMM_VLA_ACCESS(3, l_p_c, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
+              +=   l_a_sp[l_rowstart+l_jj] 
+                 * LIBXSMM_VLA_ACCESS(3, l_p_b, l_colidx[l_rowptr[l_i] + l_jj], l_j, l_k, N_ELEMENT_MODES, N_CRUNS);
           }
         }
       }
@@ -169,7 +174,7 @@ int main(int argc, char* argv[]) {
 
   gettimeofday(&l_start, NULL);
   for ( l_n = 0; l_n < REPS; l_n++) {
-    mykernel( l_a_sp, &(l_p_b[0][0][0]), &(l_p_c_asm[0][0][0]) );
+    mykernel( l_a_sp, l_b, l_c_asm );
   }
   gettimeofday(&l_end, NULL);
   l_total = sec(l_start, l_end);
@@ -179,8 +184,10 @@ int main(int argc, char* argv[]) {
   for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
     for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
       for ( l_k = 0; l_k < N_CRUNS; l_k++ ) {
-        if (fabs(l_p_c_gold[l_i][l_j][l_k]-l_p_c[l_i][l_j][l_k]) > l_max_error ) {
-          l_max_error = fabs(l_p_c_gold[l_i][l_j][l_k]-l_p_c[l_i][l_j][l_k]);
+        if (fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
+                    - LIBXSMM_VLA_ACCESS(3, l_p_c, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) ) > l_max_error ) {
+          l_max_error = fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
+                                - LIBXSMM_VLA_ACCESS(3, l_p_c, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) );
         }
       }
     }
@@ -192,12 +199,20 @@ int main(int argc, char* argv[]) {
   for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
     for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
       for ( l_k = 0; l_k < N_CRUNS; l_k++ ) {
-        if (fabs(l_p_c_gold[l_i][l_j][l_k]-l_p_c_asm[l_i][l_j][l_k]) > l_max_error ) {
-          l_max_error = fabs(l_p_c_gold[l_i][l_j][l_k]-l_p_c_asm[l_i][l_j][l_k]);
+        if (fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
+                    - LIBXSMM_VLA_ACCESS(3, l_p_c_asm, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) ) > l_max_error ) {
+          l_max_error = fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
+                                -LIBXSMM_VLA_ACCESS(3, l_p_c_asm, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) );
         }
       }
     }
   }
   printf("max error: %f\n", l_max_error);
+
   /* free */
+  libxsmm_free( l_a_de );
+  libxsmm_free( l_b );
+  libxsmm_free( l_c );
+  libxsmm_free( l_c_gold );
+  libxsmm_free( l_c_asm );
 }
