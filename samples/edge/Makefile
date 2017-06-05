@@ -55,8 +55,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/edge_vol_int
-#XFILES := $(OUTDIR)/edge_vol_int $(OUTDIR)/asparse_soa_f64 $(OUTDIR)/bsparse_soa_f64 $(OUTDIR)/asparse_soa_f32 $(OUTDIR)/bsparse_soa_f32
+XFILES := $(OUTDIR)/edge_vol_int $(OUTDIR)/asparse_soa_f64 $(OUTDIR)/bsparse_soa_f64 $(OUTDIR)/asparse_soa_f32 $(OUTDIR)/bsparse_soa_f32
 
 .PHONY: all
 all: $(XFILES)
