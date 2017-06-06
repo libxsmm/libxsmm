@@ -1932,6 +1932,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dn
     return status;
   }
 
+  /* check if we have scratch */
+  if (handle->scratch1 = 0) {
+    status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
+    return status;
+  }
+
   /* check that filter is in RSCK storage */
   if ( (handle->filter_format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) == 0 ) {
     status = LIBXSMM_DNN_ERR_MISMATCH_FILTER;

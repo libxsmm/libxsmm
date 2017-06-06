@@ -925,6 +925,7 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( status );
 
     /* setup LIBXSMM buffers and filter */
+    naive_copy_NCHW_to_NHWC(naive_output_save, output_nhwc, nImg, ofhp, ofwp, nOfm);
     libxsmm_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_INPUT, input_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_output = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_OUTPUT, output_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
@@ -981,7 +982,6 @@ int main(int argc, char* argv[])
       naive_copy_NCHW_to_NHWC(naive_output_bp, output_nhwc, nImg, ofhp, ofwp, nOfm);
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_buffer( libxsmm_input ) );
       /* run LIBXSMM convolutions */
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_transpose_filter( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER ) );
 #if defined(_OPENMP)
 # pragma omp parallel
 #endif
@@ -1081,7 +1081,6 @@ int main(int argc, char* argv[])
       /* run LIBXSMM convolution for performance */
       l_start = libxsmm_timer_tick();
       for (i = 0; i < iters; ++i) {
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_transpose_filter( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER ) );
 #if defined(_OPENMP)
 #   pragma omp parallel
 #endif
@@ -1195,12 +1194,9 @@ int main(int argc, char* argv[])
     /* The following assignment reuses input for convolution in Winograd domain */
     libxsmm_set_flag_reuseInput( libxsmm_handle, type );
 
-    /* zero output buffer again */
-    zero_buf(output_nhwc,          nImg*nOfm*ofhp*ofwp);
-    /* init input agian */
-    naive_copy_NCHW_to_NHWC(naive_input_save, input_nhwc, nImg, ifhp, ifwp, nIfm);
-
     /* setup LIBXSMM buffers and filter */
+    naive_copy_NCHW_to_NHWC(naive_output_save, output_nhwc, nImg, ofhp, ofwp, nOfm);
+    naive_copy_NCHW_to_NHWC(naive_input_save, input_nhwc, nImg, ifhp, ifwp, nIfm);
     libxsmm_input = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_INPUT, input_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_output = libxsmm_dnn_link_buffer( libxsmm_handle, LIBXSMM_DNN_OUTPUT, output_nhwc, LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR, &status );
