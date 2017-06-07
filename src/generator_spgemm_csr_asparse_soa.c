@@ -46,6 +46,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         i
                                                const unsigned int*             i_column_idx,
                                                const void*                     i_values ) {
   if ( strcmp(i_arch, "knl") == 0 ||
+       strcmp(i_arch, "knm") == 0 ||
        strcmp(i_arch, "skx") == 0 ) {
     libxsmm_generator_spgemm_csr_asparse_soa_avx512( io_generated_code,
                                                      i_xgemm_desc,
