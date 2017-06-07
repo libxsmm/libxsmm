@@ -64,7 +64,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       for (oi = 0; oi < handle->ifwp; ++oi) {
         for (iii = 0; iii < handle->ifmblock; ++iii) {
           LIBXSMM_VLA_ACCESS(3, input_buffer, oj + handle->desc.pad_h , oi + handle->desc.pad_w, iii, padded_w, handle->ifmblock) =
-          (element_input_type) LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, iii, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, iii, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
         }
       }
     }
@@ -79,7 +79,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
               for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
                 LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) += (element_filter_type)(
 #if defined(INPUT_PADDING)
-                    LIBXSMM_VLA_ACCESS(3,  input_buffer, ij + kj + handle->desc.pad_h, ii + ki + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock)
+                    LIBXSMM_VLA_ACCESS(3,  input_buffer, ij + kj, ii + ki, ifm2, padded_w, handle->ifmblock)
 #else
                     LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij + kj, ii + ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock)
 #endif

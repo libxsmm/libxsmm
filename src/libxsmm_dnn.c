@@ -1560,93 +1560,97 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
                                              }
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
-                                             /* we need a minibatch copy for transpose of input, scratch3 */
-                                             if (handle->padding_flag == 1) {
-                                               scratch5_size = handle->minibatch_scratch_size;
-                                               if (address % 64 == 0) {
-                                                 handle->scratch5 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch5 = (void*)(address+offset);
-                                               }
-                                               /* Initialize scratch5 to zero */
-                                               memset(handle->scratch5, 0, scratch5_size);
-                                               address += scratch5_size + 64;
-                                             }
-                                             if (address % 64 == 0) {
-                                               handle->scratch3 = (void*)address;
-                                             } else {
-                                               offset = (64 - address % 64);
-                                               handle->scratch3 = (void*)(address+offset);
-                                             }
-                                             /* potentially we need thread-local filter copies, scratch4 */
-                                             if (handle->upd_use_thread_fil == 1) {
-                                               address += handle->scratch3_size + 64;
-                                               if (address % 64 == 0) {
-                                                 handle->scratch4 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch4 = (void*)(address+offset);
-                                               }
-                                             }
-                                           } break;
+          /* we need a minibatch copy for transpose of input, scratch3 */
+          if (handle->padding_flag == 1) {
+            scratch5_size = handle->minibatch_scratch_size;
+            if (address % 64 == 0) {
+              handle->scratch5 = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch5 = (void*)(address+offset);
+            }
+            /* Initialize scratch5 to zero */
+            memset(handle->scratch5, 0, scratch5_size);
+            address += scratch5_size + 64;
+          }
+          if (address % 64 == 0) {
+            handle->scratch3 = (void*)address;
+          } else {
+            offset = (64 - address % 64);
+            handle->scratch3 = (void*)(address+offset);
+          }
+          /* potentially we need thread-local filter copies, scratch4 */
+          if (handle->upd_use_thread_fil == 1) {
+            address += handle->scratch3_size + 64;
+            if (address % 64 == 0) {
+              handle->scratch4 = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch4 = (void*)(address+offset);
+            }
+            /* Initialize scratch4 to zero */
+            memset(handle->scratch4, 0, handle->scratch4_size);
+          }
+        } break;
         case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                             /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
-                                             if (handle->padding_flag == 1) {
-                                               scratch5_size = handle->max_scratch5_size;
-                                               if (address % 64 == 0) {
-                                                 handle->scratch5 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch5 = (void*)(address+offset);
-                                               }
-                                               /* Initialize scratch5 to zero */
-                                               memset(handle->scratch5, 0, scratch5_size);
-                                               address += scratch5_size + 64;
-                                             }
-                                             if (address % 64 == 0) {
-                                               handle->scratch1 = (void*)address;
-                                             } else {
-                                               offset = (64 - address % 64);
-                                               handle->scratch1 = (void*)(address+offset);
-                                             }
-                                             address += handle->scratch1_size + 64;
-                                             /* we need a minibatch copy for transpose of input, scratch3 */
-                                             if (address % 64 == 0) {
-                                               handle->scratch3 = (void*)address;
-                                             } else {
-                                               offset = (64 - address % 64);
-                                               handle->scratch3 = (void*)(address+offset);
-                                             }
-                                             address += handle->scratch3_size + 64;
-                                             /* potentially we need thread-local filter copies, scratch4 */
-                                             if (handle->upd_use_thread_fil == 1) {
-                                               if (address % 64 == 0) {
-                                                 handle->scratch4 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch4 = (void*)(address+offset);
-                                               }
-                                               address += handle->scratch4_size + 64;
-                                             }
-                                             /* low precision intermediate buffer */
-                                             if ( handle->datatype != handle->datatype_itm ) {
-                                               if (address % 64 == 0) {
-                                                 handle->scratch6 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch6 = (void*)(address+offset);
-                                               }
-                                               address += handle->scratch6_size + 64;
-                                               if (address % 64 == 0) {
-                                                 handle->scratch7 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch7 = (void*)(address+offset);
-                                               }
-                                               address += handle->scratch7_size + 64;
-                                             }
-                                           } break;
+          /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
+          if (handle->padding_flag == 1) {
+            scratch5_size = handle->max_scratch5_size;
+          if (address % 64 == 0) {
+              handle->scratch5 = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch5 = (void*)(address+offset);
+            }
+            /* Initialize scratch5 to zero */
+            memset(handle->scratch5, 0, scratch5_size);
+            address += scratch5_size + 64;
+          }
+          if (address % 64 == 0) {
+            handle->scratch1 = (void*)address;
+          } else {
+            offset = (64 - address % 64);
+            handle->scratch1 = (void*)(address+offset);
+          }
+          address += handle->scratch1_size + 64;
+          /* we need a minibatch copy for transpose of input, scratch3 */
+          if (address % 64 == 0) {
+            handle->scratch3 = (void*)address;
+          } else {
+            offset = (64 - address % 64);
+            handle->scratch3 = (void*)(address+offset);
+          }
+          address += handle->scratch3_size + 64;
+          /* potentially we need thread-local filter copies, scratch4 */
+          if (handle->upd_use_thread_fil == 1) {
+            if (address % 64 == 0) {
+              handle->scratch4 = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch4 = (void*)(address+offset);
+            }
+            /* Initialize scratch4 to zero */
+            memset(handle->scratch4, 0, handle->scratch4_size);
+            address += handle->scratch4_size + 64;
+          }
+          /* low precision intermediate buffer */
+          if ( handle->datatype != handle->datatype_itm ) {
+            if (address % 64 == 0) {
+              handle->scratch6 = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch6 = (void*)(address+offset);
+            }
+            address += handle->scratch6_size + 64;
+            if (address % 64 == 0) {
+              handle->scratch7 = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch7 = (void*)(address+offset);
+            }
+            address += handle->scratch7_size + 64;
+          }
+        } break;
         default: {
                    status = LIBXSMM_DNN_ERR_INVALID_KIND;
                  }
@@ -1946,6 +1950,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dn
   /* check if we have input, output and filter */
   if (handle->reg_filter == 0) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
+    return status;
+  }
+
+  /* check if we have scratch */
+  if (handle->scratch1 == 0) {
+    status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
     return status;
   }
 

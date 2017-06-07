@@ -9,6 +9,8 @@ NUMS="1 2 3 4 5 6"
 
 if [ "" != "${MKDIR}" ] && [ "" != "${WGET}" ]; then
   ${MKDIR} -p ${HERE}/mats; cd ${HERE}/mats
+  ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/edge/mats/fluxMatrix_3D_csr_de.mtx
+  ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/edge/mats/fluxMatrix_3D_csr_sp.mtx
   ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/edge/mats/starMatrix_3D_csr.mtx
   for DATA in ${DATASET}; do
     for NUM in ${NUMS}; do

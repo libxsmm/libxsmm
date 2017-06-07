@@ -8,15 +8,26 @@ Some additional reference can found under
 The source code is hosted at GitHub and is supposed to represent the master version of CP2K in a timely fashion. CP2K's main repository is actually hosted at SourceForge but automatically mirrored at GitHub. The LIBXSMM library can be found under [https://github.com/hfp/libxsmm](https://github.com/hfp/libxsmm).
 
 ## Build Instructions
-In order to build [CP2K/intel](https://github.com/cp2k/cp2k/tree/intel) from source, one may rely on Intel Compiler 16 or 17 series. A validated recipe targeting "Haswell" (HSW) is shown below. In order to target for instance "Knights Landing" (KNL), use "AVX=3 MIC=1" instead of "AVX=2". To build the CP2K application, building LIBXSMM separately is not required when relying on CP2K/intel (it will be built in an out-of-tree fashion as long as the LIBXSMMROOT path is detected or supplied).
+In order to build [CP2K/intel](https://github.com/cp2k/cp2k/tree/intel) from source, one may rely on Intel Compiler 16 or 17 series (the 2018 version may be supported at a later point in time). For the Intel Compiler&#160;2017 prior to Update&#160;4, one should source the compiler and libraries like:
+
+```
+source /opt/intel/compilers_and_libraries_2017.3.191/linux/bin/compilervars.sh intel64
+source /opt/intel/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh intel64
+```
+
+The above prevents an issue in Intel MKL. Since Update&#160;4, one can source the compiler and libraries as shown below:
+
+```
+source /opt/intel/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64
+```
+
+In order to target for instance "Knights Landing" (KNL), use "AVX=3 MIC=1" instead of "AVX=2". To build the CP2K application, building LIBXSMM separately is not required when relying on CP2K/intel (it will be built in an out-of-tree fashion as long as the LIBXSMMROOT path is detected or supplied). A recipe targeting "Haswell" (HSW) may look like below.
 
 ```
 git clone https://github.com/hfp/libxsmm.git
 git clone --branch intel https://github.com/cp2k/cp2k.git cp2k.git
 ln -s cp2k.git/cp2k cp2k
 cd cp2k/makefiles
-source /opt/intel/compilers_and_libraries_2017.1.132/linux/bin/compilervars.sh intel64
-source /opt/intel/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh intel64
 make ARCH=Linux-x86-64-intel VERSION=psmp AVX=2
 ```
 

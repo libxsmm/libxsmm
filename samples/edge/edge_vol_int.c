@@ -28,16 +28,18 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
 #include <libxsmm.h>
+
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
 
-#include "edge_proxy_common.h"
+#include <edge_proxy_common.h>
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* note: later on, this leads to (correct but) different than expected norm-values */
