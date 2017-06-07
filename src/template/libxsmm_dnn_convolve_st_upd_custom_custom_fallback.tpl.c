@@ -64,7 +64,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       for (oi = 0; oi < handle->ifwp; ++oi) {
         for (iii = 0; iii < handle->ifmblock; ++iii) {
           LIBXSMM_VLA_ACCESS(3, input_buffer, oj + handle->desc.pad_h , oi + handle->desc.pad_w, iii, padded_w, handle->ifmblock) =
-          (element_input_type) LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, iii, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, iii, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
         }
       }
     }

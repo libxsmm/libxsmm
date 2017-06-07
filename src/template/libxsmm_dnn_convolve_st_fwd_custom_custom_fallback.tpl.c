@@ -65,6 +65,8 @@ if (handle->datatype != handle->datatype_itm) {
   const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
   const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
   LIBXSMM_VLA_DECL(3, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * padded_h * padded_w * handle->ifmblock, padded_w, handle->ifmblock);
+  /* Reset input padding buffer to zero (in case it is not set to zero due to fwd/bwd computations) */
+  memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock), 0, padded_w * padded_h * handle->ifmblock * sizeof(element_input_type));
 #endif
 
 
@@ -89,7 +91,7 @@ if (handle->datatype != handle->datatype_itm) {
         for (oi = 0; oi < handle->ifwp; ++oi) {
           for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
             LIBXSMM_VLA_ACCESS(3, input_buffer, oj + handle->desc.pad_h, oi + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
-            (element_input_type) LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+              LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           }
         }
       }
