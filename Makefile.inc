@@ -959,7 +959,7 @@ ifneq (0,$(shell CINFILE=$$(mktemp /tmp/.libxsmm_XXXXXX.c); \
   echo "int main(void) { return 0; }" > $${CINFILE}; \
   CTEST=$$($(CC) $(CTARGET) -c $${CINFILE} 2>&1); \
   if [ "" = "$${CTEST}" ]; then echo $$?; else echo 1; fi; \
-  rm -f /tmp/.libxsmm_??????.c .libxsmm_??????.o*))
+  rm -f /tmp/.libxsmm_??????.c .libxsmm_??????.o* 2> /dev/null))
 # revoke target flags
   CTARGET = $(NULL)
 endif
@@ -970,7 +970,7 @@ ifeq (0,$(shell FINFILE=$$(mktemp /tmp/.libxsmm_XXXXXX.f); \
   echo "      END PROGRAM" >> $${FINFILE}; \
   FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
   if [ "" = "$${FTEST}" ]; then echo $$?; else echo 1; fi; \
-  rm -f /tmp/.libxsmm_??????.f .libxsmm_??????.o*))
+  rm -f /tmp/.libxsmm_??????.f .libxsmm_??????.o* 2> /dev/null))
 # inherit CTARGET flags
   FTARGET = $(CTARGET)
 endif
