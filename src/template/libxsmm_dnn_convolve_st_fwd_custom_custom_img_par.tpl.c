@@ -26,10 +26,10 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Evangelos Georganas,  Hans Pabst (Intel Corp.)
+/* Alexander Heinecke, Evangelos Georganas, Hans Pabst (Intel Corp.)
  ******************************************************************************/
 if (handle->use_thread_private_jit) {
-#include "libxsmm_dnn_convolve_st_fwd_stream.tpl.c"
+#include "libxsmm_dnn_convolve_st_fwd_custom_custom_stream.tpl.c"
 } else {
   int ifm1, oj, oi, ofm2;
 #if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
