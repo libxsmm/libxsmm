@@ -260,10 +260,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom
       typedef float element_output_type;
       typedef float element_filter_type;
       if (handle->padding_flag == 1) {
-      } else {
 #define INPUT_PADDING
 # include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom_fallback.tpl.c"
 #undef INPUT_PADDING
+      } else {
+# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom_fallback.tpl.c"
       }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
