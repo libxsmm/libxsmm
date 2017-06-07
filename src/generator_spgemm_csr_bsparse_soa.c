@@ -138,10 +138,13 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
   libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_mloop, 1 );
 
-  /* loop over n-blocks of 20 */
+  /* loop over n-blocks of 28 */
   l_n_processed = 0;
   l_n_limit = l_n_chunksize;
   while ( l_n_processed < l_max_cols ) {
+#if 0
+    printf("l_max_cols: %i, l_n_processed: %i, l_n_limit: %i\n", l_max_cols, l_n_processed, l_n_limit);
+#endif
     /* load C accumulator */
     for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
       if ( i_xgemm_desc->beta == 0 ) {
@@ -221,7 +224,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512( libxsmm_generated_code*   
 
     /* adjust n progression */
     l_n_processed += l_n_chunksize;
-    l_n_limit = LIBXSMM_MAX(l_n_processed + l_n_chunksize, l_max_cols);
+    l_n_limit = LIBXSMM_MIN(l_n_processed + l_n_chunksize, l_max_cols);
   }
 
   /* advance C pointer */
