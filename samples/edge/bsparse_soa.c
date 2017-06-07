@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
           #pragma simd
           for (l_k = 0; l_k < N_CRUNS; l_k++) {
             LIBXSMM_VLA_ACCESS(3, l_p_c, l_i, l_colidx[l_rowstart+l_jj], l_k, N_ELEMENT_MODES, N_CRUNS)
-              +=   l_b_sp[l_rowstart+l_jj] 
+              +=   l_b_sp[l_rowstart+l_jj]
                  * LIBXSMM_VLA_ACCESS(3, l_p_a, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS);
           }
         }

@@ -91,7 +91,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
     for (ij = 0; ij < handle->ifhp; ij++) {
       for (ii = 0; ii < handle->ifwp; ii++) {
         for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-          LIBXSMM_VLA_ACCESS(3, input_buffer, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) = 
+          LIBXSMM_VLA_ACCESS(3, input_buffer, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
             LIBXSMM_VLA_ACCESS(5, del_input, img, (ifm1 * handle->fm_lp_block) + ifmlp, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
         }
       }
