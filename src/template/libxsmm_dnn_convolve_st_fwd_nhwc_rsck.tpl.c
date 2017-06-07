@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 if ( handle->use_thread_private_jit ) {
-#include "libxsmm_dnn_convolve_st_fwd_stream.tpl.c"
+#include "libxsmm_dnn_convolve_st_fwd_nhwc_rsck_stream.tpl.c"
 } else {
   int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii, bufi, bufj, ofm2;
   /* computing first logical thread */

@@ -30,7 +30,7 @@
  ******************************************************************************/
 if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
   if ( handle->use_thread_private_jit ) {
-#include "libxsmm_dnn_convolve_st_fwd_stream.tpl.c"
+#include "libxsmm_dnn_convolve_st_fwd_custom_custom_stream.tpl.c"
   } else {
 #include "libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
   }

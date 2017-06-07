@@ -246,6 +246,9 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int block_fwd_oi;
   int block_fwd_ifm;
   int block_fwd_ofm;
+  int *n_fwd_code_segments;
+  int **fwd_code_segments;
+  int *img_start;
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
