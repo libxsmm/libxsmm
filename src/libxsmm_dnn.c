@@ -1933,7 +1933,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dn
   }
 
   /* check if we have scratch */
-  if (handle->scratch1 = 0) {
+  if (handle->scratch1 == 0) {
     status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
     return status;
   }
