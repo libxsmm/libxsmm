@@ -262,7 +262,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
     /* @TODO we might want to fall back to direct convolution if winograd fails */
     if ( handle->algo == LIBXSMM_DNN_CONV_ALGO_WINOGRAD ) {
       *status = libxsmm_dnn_internal_create_conv_handle_winograd_check( handle );
-      if ( *status == LIBXSMM_DNN_WARN_FALLBACK ) handle->algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
+      if ( *status == LIBXSMM_DNN_WARN_FALLBACK ) {
+        handle->algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
+        *status = libxsmm_dnn_internal_create_conv_handle_direct( handle );
+      }
     }
     else if ( handle->algo == LIBXSMM_DNN_CONV_ALGO_DIRECT ) {
       *status = libxsmm_dnn_internal_create_conv_handle_direct( handle );
