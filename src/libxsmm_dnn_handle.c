@@ -727,10 +727,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           handle->matcopy_bwd[1].xmatcopy = libxsmm_xmatcopydispatch(&matcopyback_descriptor);
         }
         descriptor.unroll_kh = 0;
-        descriptor.unroll_kw = 1;
-        /*descriptor.ofw_unroll = 0;
-        descriptor.prefetch_output_ahead = 0;
-        descriptor.peeled = 0;*/
+        descriptor.unroll_kw = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
           handle->code_bwd[0].smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
