@@ -208,7 +208,7 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 EXTLIB = $(call abslib,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides a libxsmmext as a dummy library which satisfies BLAS symbols
-  BLASLIB ?= $(EXTLIB)
+  BLASLIB = $(EXTLIB)
 else
   BLASLIB ?= $(NULL)
 endif
