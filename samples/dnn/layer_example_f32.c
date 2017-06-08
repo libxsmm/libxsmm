@@ -548,6 +548,9 @@ int main(int argc, char* argv[])
   printf("SIZE Input   (1): %10.2f MiB\n", (double)(1*nIfm*ifhp*ifwp*   sizeof(float))/(1024.0*1024.0) );
   printf("SIZE Output  (1): %10.2f MiB\n", (double)(1*nOfm*ofhp*ofwp*   sizeof(float))/(1024.0*1024.0) );
   printf("SIZE Weight     : %10.2f MiB\n", (double)(nIfm*nOfm*kw*kh*    sizeof(float))/(1024.0*1024.0) );
+#if defined(USE_OVERWRITE)
+  printf("Using Overwrite Option\n");
+#endif
 
   /* allocate data */
   naive_input           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
@@ -582,6 +585,8 @@ int main(int argc, char* argv[])
   set_zeropad_nchw(naive_input, nImg, nIfm, ifhp, ifwp, pad_h_in, pad_w_in);
   copy_buf(naive_input, naive_input_save, nImg*nIfm*ifhp*ifwp);
   zero_buf(naive_output_save,    nImg*nOfm*ofhp*ofwp);
+  init_buf(naive_output,         nImg*nOfm*ofhp*ofwp, 0, 0);
+  copy_buf(naive_output, naive_output_save, nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_libxsmm_input,  nImg*nIfm*ifhp*ifwp);
   init_buf(naive_filter,         nOfm*nIfm*kh*kw, 0, 0);
@@ -639,8 +644,8 @@ int main(int argc, char* argv[])
     conv_desc.pad_h_out = pad_h_out;
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
-    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
-    /*conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;*/
+    /*conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;*/
+    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
@@ -690,7 +695,7 @@ int main(int argc, char* argv[])
     scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status ), 2097152);
     CHKERR_LIBXSMM_DNN( status );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
-    
+
     if (type == 'A' || type == 'F') {
       printf("##########################################\n");
       printf("#   Correctness - FWD (custom-Storage)   #\n");

@@ -57,6 +57,7 @@ const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
 libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
+libxsmm_xmatcopyfunction jitted_zero_overwrite = handle->matcopy_fwd[1].xmatcopy;
 
 #if 0
 kernel_pool[0] =  (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
@@ -104,6 +105,14 @@ if (n_segments) {
       prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img+1, handle->blocksifm-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
       jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
       img++;
+
+    } else if ( instr == OFM_LOOP_INIT ) {
+      /* Overwrite output with zeros if requested */
+      if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+        jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);     
+      }      
+    } else {
+
     }
 
     for (conv_i = 0; conv_i < n_convs; conv_i++) {
