@@ -123,8 +123,13 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
     l_found_act_format = 1;
   }
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0 ) {
+#if 0
+    /* copy of weights goes into LIBXSMM format when RSCK is used */
     l_conv_kernel_config.l_ld_ifm_fil = i_conv_desc->ifm_block * i_conv_desc->blocks_ifm;
     l_conv_kernel_config.l_ld_ofm_fil = i_conv_desc->ofm_block * i_conv_desc->blocks_ofm;
+#endif
+    l_conv_kernel_config.l_ld_ifm_fil = i_conv_desc->ifm_block;
+    l_conv_kernel_config.l_ld_ofm_fil = i_conv_desc->ofm_block;
     l_found_fil_format = 1;
   }
   if ( (l_found_act_format == 0) || (l_found_fil_format == 0) ) {

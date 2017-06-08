@@ -107,28 +107,30 @@ jitted_conv_bp_noweight_pf = (libxsmm_convfunction)handle->code_bwd[3].xconv.sco
 
 /* transpose last two dimensions of weight tensor for vectorization */
 /* lazy barrier init */
-libxsmm_barrier_init(handle->barrier, ltid);
+if (handle->filter_transposed == 0) {
+  libxsmm_barrier_init(handle->barrier, ltid);
 
-for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-  ofm1 = ifm1ofm1 / handle->blocksifm;
-  ifm1 = ifm1ofm1 % handle->blocksifm;
-  for (kj=0; kj < handle->desc.R; ++kj) {
-    for (ki=0; ki < handle->desc.S; ++ki) {
-      /* TODO: enable this later */
-      /*transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);*/
-      /* WARNING! may be a source of error for low precision */
-      for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-        for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-          /*for (lp = 0; lp < handle->fm_lp_block; ++lp) {*/
-            LIBXSMM_VLA_ACCESS(7, tr_wt, ofm1, ifm1, kj, ki, ofm2, ifm2, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block) =
-            LIBXSMM_VLA_ACCESS(7, wt, kj, ki, ifm1, ifm2, ofm1, ofm2, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock, handle->fm_lp_block);
-          /*}*/
+  for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+    ofm1 = ifm1ofm1 / handle->blocksifm;
+    ifm1 = ifm1ofm1 % handle->blocksifm;
+    for (kj=0; kj < handle->desc.R; ++kj) {
+      for (ki=0; ki < handle->desc.S; ++ki) {
+        /* TODO: enable this later */
+        /*transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);*/
+        /* WARNING! may be a source of error for low precision */
+        for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            /*for (lp = 0; lp < handle->fm_lp_block; ++lp) {*/
+              LIBXSMM_VLA_ACCESS(7, tr_wt, ofm1, ifm1, kj, ki, ofm2, ifm2, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block) =
+              LIBXSMM_VLA_ACCESS(7, wt, kj, ki, ifm1, ifm2, ofm1, ofm2, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock, handle->fm_lp_block);
+            /*}*/
+          }
         }
       }
     }
   }
+  libxsmm_barrier_wait(handle->barrier, ltid);
 }
-libxsmm_barrier_wait(handle->barrier, ltid);
 
 /******************************************************/
 /*******Macros to be defined***************************/

@@ -1954,7 +1954,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dn
   /* check that we are in FP32 */
   if ( handle->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
     LIBXSMM_VLA_DECL(6, float, wt, (float*)handle->reg_filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
-    LIBXSMM_VLA_DECL(6, float, tr_wt, (float*)handle->scratch1, handle->desc.S, handle->blocksofm, handle->ofmblock, handle->blocksifm, handle->ifmblock);
+    LIBXSMM_VLA_DECL(6, float, tr_wt, (float*)handle->scratch1, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
 
     for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
       for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
@@ -1962,7 +1962,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dn
           for (ki=0; ki < handle->desc.S; ++ki) {
             for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
               for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                LIBXSMM_VLA_ACCESS(6, tr_wt, kj, ki, ofm1, ofm2, ifm1, ifm2, handle->desc.S, handle->blocksofm, handle->ofmblock, handle->blocksifm, handle->ifmblock) =
+                LIBXSMM_VLA_ACCESS(6, tr_wt, ofm1, ifm1, kj, ki, ofm2, ifm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock) =
                   LIBXSMM_VLA_ACCESS(6, wt,  kj, ki, ifm1, ifm2, ofm1, ofm2, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
               }
             }
