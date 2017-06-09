@@ -34,7 +34,6 @@ int i1, i2, i3;
 int fmb = bias->fmb;
 int bfm = bias->bfm;
 int lpb = bias->lpb;
-int C = fmb * bfm * lpb;
 element_type* user_data = (element_type*)data;
 LIBXSMM_VLA_DECL(3, const element_type, handle_data, (const element_type*)bias->data, bfm, lpb);
 
