@@ -76,7 +76,7 @@ if (handle->datatype != handle->datatype_itm) {
     ofm1 = imgofm1 % handle->blocksofm;
     /* handle fused bias addition */
     if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
-      LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_input_type*)handle->reg_bias->data, handle->ofmblock);
+      LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
       element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
       element_output_type* temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
 

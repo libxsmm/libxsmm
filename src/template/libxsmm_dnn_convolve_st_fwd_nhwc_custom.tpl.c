@@ -94,7 +94,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #endif
       /* handle fused bias addition */
       if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
-        LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_input_type*)handle->reg_bias->data, handle->ofmblock);
+        LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
         element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, 0, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
         element_output_type* temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
 
@@ -231,7 +231,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #endif
       /* handle fused bias addition */
       if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
-        LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_input_type*)handle->reg_bias->data, handle->ofmblock);
+        LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
         element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, 0, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
         element_output_type* temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
 
@@ -385,7 +385,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #endif
     /* handle fused bias addition */
     if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
-      LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_input_type*)handle->reg_bias->data, handle->ofmblock);
+      LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
       element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, 0, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
       element_output_type* temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
  
