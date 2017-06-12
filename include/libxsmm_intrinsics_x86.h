@@ -358,7 +358,7 @@
 # endif
 
 /* at least Clang 3.8.1 misses _mm512_stream_p?. */
-# if defined(__clang__) && (LIBXSMM_VERSION3(3, 9, 0) >  LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+# if defined(__clang__) && (LIBXSMM_VERSION3(3, 9, 0) > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 #   define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_store_ps(A, B)
 #   define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_store_pd(A, B)
 # else
@@ -367,7 +367,8 @@
 # endif
 
 /* at least Clang 3.8.1 declares prototypes with incorrect signature (_mm512_load_ps takes DP*, _mm512_load_pd takes SP*) */
-# if defined(__clang__)
+# if defined(__clang__) && (LIBXSMM_VERSION3(3, 9, 0) >  LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
+                        && (LIBXSMM_VERSION3(0, 0, 0) != LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 #   define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const double*)(A))
 #   define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const float*)(A))
 # else
