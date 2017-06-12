@@ -424,11 +424,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matcopy_descriptor.ldi = handle->ifwp * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
           matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
         }
-        if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-          matcopy_descriptor.prefetch = 1;
-        } else {
-          matcopy_descriptor.prefetch = 0;
-        }
+        matcopy_descriptor.prefetch = 1;
         matcopy_descriptor.unroll_level = 2;
         matcopy_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype);
         matcopy_descriptor.flags = 0;
@@ -505,6 +501,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->n_fwd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
         handle->fwd_code_segments = (int**) malloc(handle->desc.threads * sizeof(int*));
         handle->img_start = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->ofh_start = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->ofh_end = (int*) malloc(handle->desc.threads * sizeof(int));
+
+        /* In case of logical padding also add a kernel that copies only one line of the image -- in case we exploit intra-image parallelism we should avoid copying entire image for each thread but only the minimum required number of input pixels... */
+        if (handle->padding_flag == 1) {
+          matcopy_descriptor.n = 1;  
+          handle->matcopy_fwd[2].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+        }
 
         /* In case overwrite is requested, generate zero-ing kernel */
         if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0 )  {

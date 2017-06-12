@@ -149,6 +149,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     encoded_code_segments = (int*) libxsmm_aligned_malloc( 2 * n_code_segments * sizeof(int), 2097152);
     handle->fwd_code_segments[ltid] = encoded_code_segments;
     handle->img_start[ltid] = my_img_start;
+    handle->ofh_start[ltid] = my_h_start;
+    handle->ofh_end[ltid] = my_h_end;
   }
   local_entries = 0;
 

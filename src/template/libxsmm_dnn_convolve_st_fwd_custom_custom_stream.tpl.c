@@ -33,7 +33,7 @@ const int ltid = tid-start_thread;
 const element_input_type *input_base;
 const element_filter_type *weight_base;
 element_output_type *output_base;
-int offset_i, offset_o, offset_w, pi, po, pw, pc, i = 0;
+int offset_i, offset_o, offset_w, pi, po, pw, pc, i = 0, ih;
 int *stream = handle->compute_fwd_indices_ptrs[ltid];
 libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
 int instr, n_segments; 
@@ -41,6 +41,7 @@ char *kernel_stream = handle->kernel_fwd_variant_ptrs[ltid];
 int *code_stream;
 int n_convs, conv_i, ifm1;
 int img = handle->img_start[ltid];
+int input_h_start, input_h_end;
 #if 0
 libxsmm_convfunction kernel_pool[4];
 #endif
@@ -87,46 +88,94 @@ n_segments = handle->n_fwd_code_segments[ltid];
 #define CONVOLUTION_KERNEL 3
 
 if (n_segments) {
-  code_stream = handle->fwd_code_segments[ltid]; 
-  for (pc = 0; pc < 2*n_segments; pc += 2) {
-    instr = code_stream[pc];
-    n_convs = code_stream[pc+1];
+  code_stream = handle->fwd_code_segments[ltid];
+  /* If we are in the img_par execution then avoid fine-grained copy in case of padding...  */
+  if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
+    for (pc = 0; pc < 2*n_segments; pc += 2) {
+      instr = code_stream[pc];
+      n_convs = code_stream[pc+1];
 
-    if (instr == IMG_LOOP_INIT) {
-      /* Padding code via jitted matcopy kernel */
-      for (ifm1 = handle->blocksifm-1; ifm1 >= 1; ifm1--) {
+      if (instr == IMG_LOOP_INIT) {
+        /* Padding code via jitted matcopy kernel */
+        for (ifm1 = handle->blocksifm-1; ifm1 >= 1; ifm1--) {
+          input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+          copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
+          prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+          jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
+        }
         input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
         copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
-        prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+        prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img+1, handle->blocksifm-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
         jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
+        img++;
+      } else if ( instr == OFM_LOOP_INIT ) {
+        /* Overwrite output with zeros if requested */
+        if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+          jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);     
+        }      
+      } else {
+
       }
-      input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-      copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
-      prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img+1, handle->blocksifm-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-      jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
-      img++;
 
-    } else if ( instr == OFM_LOOP_INIT ) {
-      /* Overwrite output with zeros if requested */
-      if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
-        jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);     
-      }      
-    } else {
-
-    }
-
-    for (conv_i = 0; conv_i < n_convs; conv_i++) {
-      offset_i = stream[i];
-      offset_w = stream[i+1];
-      offset_o = stream[i+2];
-      pi = stream[i+3];
-      pw = stream[i+4];
-      po = stream[i+5];
-      kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
-      i+=3;
+      for (conv_i = 0; conv_i < n_convs; conv_i++) {
+        offset_i = stream[i];
+        offset_w = stream[i+1];
+        offset_o = stream[i+2];
+        pi = stream[i+3];
+        pw = stream[i+4];
+        po = stream[i+5];
+        kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+        i+=3;
 #if 0 
-      kernel_pool[kernel_stream[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+        kernel_pool[kernel_stream[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
 #endif
+      }
+    }
+  } else { /* Use fine-grained copy if padding has been requested */
+    jitted_matcopy = handle->matcopy_fwd[2].xmatcopy;
+    input_h_start = LIBXSMM_MAX(0,  handle->ofh_start[ltid] - handle->desc.R + 1);
+    input_h_end = LIBXSMM_MIN( handle->ifhp, handle->ofh_end[ltid] + handle->desc.R -1 ) ;
+    for (pc = 0; pc < 2*n_segments; pc += 2) {
+      instr = code_stream[pc];
+      n_convs = code_stream[pc+1];
+      if (instr == IMG_LOOP_INIT) {
+        /* Padding code via jitted matcopy kernel */
+        for (ifm1 = handle->blocksifm-1; ifm1 >= 1; ifm1--) {
+          for (ih = input_h_start; ih < input_h_end; ih++) {
+            input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, ih, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h + ih, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
+            prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1-1, ih, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
+          }
+        }
+        for (ih = input_h_start; ih < input_h_end; ih++) {
+          input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, ih, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+          copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h + ih, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
+          prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, handle->blocksifm-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+          jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
+        }
+      } else if ( instr == OFM_LOOP_INIT ) {
+        /* Overwrite output with zeros if requested */
+        if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+          jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);     
+        }      
+      } else {
+
+      }
+
+      for (conv_i = 0; conv_i < n_convs; conv_i++) {
+        offset_i = stream[i];
+        offset_w = stream[i+1];
+        offset_o = stream[i+2];
+        pi = stream[i+3];
+        pw = stream[i+4];
+        po = stream[i+5];
+        kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+        i+=3;
+#if 0 
+        kernel_pool[kernel_stream[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+#endif
+      }
     }
   }
 } else {
