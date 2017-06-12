@@ -116,7 +116,7 @@ if (handle->datatype != handle->datatype_itm) {
 
 /* @TODO this is very hacky as it assumes ofmblock is VLEN */
 #if defined(__AVX512F__)
-      __m512 vbias = _mm512_load_ps((void*)temp_ptr_2);
+      __m512 vbias = LIBXSMM_INTRINSICS_MM512_LOAD_PS((void*)temp_ptr_2);
 #endif
       /* @TODO check these loops for physical output padding */
       for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp; ++oj) {
