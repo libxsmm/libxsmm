@@ -371,6 +371,9 @@
                         && (LIBXSMM_VERSION3(0, 0, 0) != LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 #   define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const double*)(A))
 #   define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const float*)(A))
+# elif defined(__clang__)
+#   define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const float*)(A))
+#   define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const double*)(A))
 # else
 #   define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps(A)
 #   define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd(A)
