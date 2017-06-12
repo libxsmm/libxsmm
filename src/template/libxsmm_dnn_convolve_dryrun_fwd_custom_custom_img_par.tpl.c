@@ -56,7 +56,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #if defined(_OPENMP)
   int ltid = omp_get_thread_num();
 #endif
-  int img, ofm1, ifm1, oj, oi, ij, ii, local_entries = 0, ojb, ifmb, ofmb, my_img_start, my_img_end, my_ofm_start, my_ofm_end, myOfmId, myHId, my_h_start, my_h_end, my_w_start, my_w_end;
+  int img, ofm1, ifm1, oj, oi, ij, ii, local_entries = 0, ojb, ifmb, ofmb, my_img_start, my_img_end, my_ofm_start, my_ofm_end, my_h_start, my_h_end, my_w_start, my_w_end;
   int total_calls;
   int n_code_segments;
   int mark_ofm_init, mark_ofm_close;
@@ -70,113 +70,34 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   /* Arrays of stream indices */
   int *compute_indices;
   char *kernel_variant;
-  /* Threading related variables */
-  int threads_per_image = handle->desc.threads / handle->desc.N;
-  while (threads_per_image % 4 != 0 && threads_per_image > 2) {
-    threads_per_image--;
-  }
-
-  my_img_start = LIBXSMM_MIN( ltid / threads_per_image, handle->desc.N);
-  my_img_end = LIBXSMM_MIN( my_img_start + 1, handle->desc.N);
-  my_ofm_start = 0;
-  my_ofm_end = handle->blocksofm;
+  /* calculate group sizes, we handle splits as additional images */
+  const int l_l1 = handle->desc.N * (handle->blocksofm*handle->fm_lp_block);
+  const int l_l3 = handle->ofh / handle->fwd_ofh_rb;
+  /* number of threads need in the ofh loop (as we have l_l1 global parallel tasks) */
+  const int l_l1_gs = handle->desc.threads / l_l1;
+  /* number of elemens of ofh loop per thread */
+  const int l_l2_ts = (l_l3 % l_l1_gs == 0) ? ((l_l3 / l_l1_gs)*handle->fwd_ofh_rb) : (((l_l3 / l_l1_gs) + 1)*handle->fwd_ofh_rb);
+  /* get group id */
+  const int l_tidgroup = ltid / l_l1_gs;
+  /* compute img and ofm1 based on group */
+  my_img_start = l_tidgroup / (handle->blocksofm*handle->fm_lp_block);
+  my_img_end = my_img_start + 1;
+  my_h_start =  l_l2_ts * (ltid % l_l1_gs);
+  my_h_end = ((my_h_start + l_l2_ts) <= handle->ofh) ? (my_h_start + l_l2_ts) : handle->ofh;
   my_w_start = 0;
   my_w_end = handle->ofw;
+  my_ofm_start = l_tidgroup % (handle->blocksofm*handle->fm_lp_block);
+  my_ofm_end = my_ofm_start+1;;
 
   if (handle->padding_flag == 1) {
     padded_h = handle->ifhp + 2 * handle->desc.pad_h;
     padded_w = handle->ifwp + 2 * handle->desc.pad_w;
   }
 
-  n_code_segments = 0;
-  tmp_stream_index = 0;
-  /* Threading strategie  */
-  if (threads_per_image == 16 ) {
-    myOfmId = (ltid/8) % 2;
-    if (myOfmId == 0) {
-      my_ofm_end = handle->blocksofm/2;
-    } else {
-      my_ofm_start = handle->blocksofm/2;
-    }
-    myHId = ltid % 8;
-    h_chunk_size = (handle->ofh+7)/8;
-    while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
-      h_chunk_size++;
-    }
-    my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
-    my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
-
-  } else if (threads_per_image == 8) {
-    if (handle->blocksofm == 2) {
-      myOfmId = (ltid/4) % 2;
-      my_ofm_start = myOfmId;
-      my_ofm_end = myOfmId + 1;
-      myHId = ltid % 4;
-      h_chunk_size = (handle->ofh+3)/4;
-      while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
-        h_chunk_size++;
-      }      
-      my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
-      my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
-    } else if (handle->blocksofm == 4) {
-      myOfmId = (ltid/2) % 4;
-      my_ofm_start = myOfmId;
-      my_ofm_end = myOfmId + 1;
-      myHId = ltid % 2;
-      h_chunk_size = (handle->ofh+1)/2;
-      while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
-        h_chunk_size++;
-      }
-      my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
-      my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
-    } else {
-      myHId = ltid % 8;
-      h_chunk_size = (handle->ofh+7)/8;
-      while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
-        h_chunk_size++;
-      }
-      my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
-      my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
-    }
-
-  } else if (threads_per_image == 4 ) {
-    if ( handle->blocksofm == 2 ) {
-      myOfmId = (ltid/2) % 2;
-      my_ofm_start = myOfmId;
-      my_ofm_end = myOfmId + 1;
-      myHId = ltid % 2;
-      h_chunk_size = (handle->ofh+1)/2;
-      while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
-        h_chunk_size++;
-      }  
-      my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
-      my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
-    } else {
-      myHId = ltid % 4;
-      h_chunk_size = (handle->ofh+3)/4;
-      while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
-        h_chunk_size++;
-      }
-      my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
-      my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
-    } 
-
-  } else if (threads_per_image == 2 ) { 
-    myHId = ltid % 2;
-    h_chunk_size = (handle->ofh+1)/2;
-    while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
-      h_chunk_size++;
-    }  
-    my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
-    my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
-
-  } else {
-    my_h_start = 0;
-    my_h_end = handle->ofh;
-  }
-
   mark_ofm_init = ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ? 1 : 0;
   mark_ofm_close = (handle->datatype != handle->datatype_itm) ? 1 : 0;
+  n_code_segments = 0;
+  tmp_stream_index = 0;
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */
   for (img = my_img_start; img < my_img_end; img++) {
