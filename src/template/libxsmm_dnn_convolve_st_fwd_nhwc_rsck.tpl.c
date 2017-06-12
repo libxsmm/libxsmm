@@ -109,7 +109,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #else
           /*LIBXSMM_PRAGMA_SIMD*/
           for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-            temp_ptr[ofm2] = temp_ptr_2[ofm2];          
+            temp_ptr[ofm2] = temp_ptr_2[ofm2];
           }
           temp_ptr += handle->blocksofm*handle->ofmblock;
 #endif
@@ -245,7 +245,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #else
           LIBXSMM_PRAGMA_SIMD
           for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-            temp_ptr[ofm2] = temp_ptr_2[ofm2];          
+            temp_ptr[ofm2] = temp_ptr_2[ofm2];
           }
 #endif
           temp_ptr +=  handle->blocksofm*handle->ofmblock;
@@ -391,7 +391,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       for (oj = 0; oj < handle->ofhp*handle->ofwp; ++oj) {
         LIBXSMM_PRAGMA_SIMD
         for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-          temp_ptr[ofm2] = temp_ptr_2[ofm2];          
+          temp_ptr[ofm2] = temp_ptr_2[ofm2];
         }
         temp_ptr +=  handle->blocksofm*handle->ofmblock;
       }
