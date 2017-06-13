@@ -525,6 +525,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matzero_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype);
           matzero_descriptor.flags = LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE;
           handle->matcopy_fwd[1].xmatcopy = libxsmm_xmatcopydispatch(&matzero_descriptor);
+  
+          if (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) {
+            matzero_descriptor.m = handle->ofwp*handle->ofmblock;
+            matzero_descriptor.ldi = handle->ofwp*handle->ofmblock;
+            matzero_descriptor.ldo = handle->ofwp*handle->ofmblock;
+          } else { /* Assumes NHWC format */
+            status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;   
+          }
+          handle->matcopy_fwd[3].xmatcopy = libxsmm_xmatcopydispatch(&matzero_descriptor);
+
         }
         /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
         status = libxsmm_dnn_perform_fwd_dryrun_direct(handle); 

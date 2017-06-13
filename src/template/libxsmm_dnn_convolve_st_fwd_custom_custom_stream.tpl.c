@@ -41,7 +41,7 @@ char *kernel_stream = handle->kernel_fwd_variant_ptrs[ltid];
 int *code_stream;
 int n_convs, conv_i, ifm1;
 int img = handle->img_start[ltid];
-int input_h_start, input_h_end;
+int input_h_start, input_h_end, my_h_out;
 #if 0
 libxsmm_convfunction kernel_pool[4];
 #endif
@@ -133,8 +133,10 @@ if (n_segments) {
     }
   } else { /* Use fine-grained copy if padding has been requested */
     jitted_matcopy = handle->matcopy_fwd[2].xmatcopy;
+    jitted_zero_overwrite = handle->matcopy_fwd[3].xmatcopy;
     input_h_start = LIBXSMM_MAX(0,  handle->ofh_start[ltid] - handle->desc.R + 1);
     input_h_end = LIBXSMM_MIN( handle->ifhp, handle->ofh_end[ltid] + handle->desc.R -1 ) ;
+    my_h_out = handle->ofh_end[ltid]-handle->ofh_start[ltid];
     for (pc = 0; pc < 2*n_segments; pc += 2) {
       instr = code_stream[pc];
       n_convs = code_stream[pc+1];
@@ -157,7 +159,9 @@ if (n_segments) {
       } else if ( instr == OFM_LOOP_INIT ) {
         /* Overwrite output with zeros if requested */
         if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
-          jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);     
+          for ( ih = 0; ih < my_h_out * handle->ofmblock * handle->ofwp; ih += handle->ofmblock * handle->ofwp) {
+            jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2] + ih, NULL, NULL);     
+          }
         }      
       } else {
 
