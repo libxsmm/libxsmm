@@ -971,7 +971,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_bias(const libxsmm_
 
   if (0 != bias) { /* it is not an error attempting to destroy a NULL-handle */
     /* deallocate data components; not an error to deallocate a NULL-pointer */
-    libxsmm_free(bias->data);
+    if ( (bias->format & LIBXSMM_DNN_TENSOR_FORMAT_PTR) == 0 ) {
+      libxsmm_free(bias->data);
+    }
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_bias*)bias);
   }
