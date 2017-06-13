@@ -109,48 +109,49 @@ if (handle->use_thread_private_jit) {
         jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, NULL);
       }
 #endif
-    /* handle fused bias addition */
-    if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
-      LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
-      element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, start_ofh, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
-      element_output_type* temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
+      /* handle fused bias addition */
+      if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
+        LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
+        element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, start_ofh, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+        element_output_type* temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
 
-/* @TODO this is very hacky as it assumes ofmblock is VLEN */
+        /* @TODO this is very hacky as it assumes ofmblock is VLEN */
 #if defined(__AVX512F__)
-      __m512 vbias = LIBXSMM_INTRINSICS_MM512_LOAD_PS((void*)temp_ptr_2);
+        __m512 vbias = LIBXSMM_INTRINSICS_MM512_LOAD_PS((void*)temp_ptr_2);
 #endif
-      /* @TODO check these loops for physical output padding */
-      for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp; ++oj) {
+        /* @TODO check these loops for physical output padding */
+        for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp; ++oj) {
 #if defined(__AVX512F__)
-        _mm512_store_ps((void*)temp_ptr, vbias);
+          _mm512_store_ps((void*)temp_ptr, vbias);
 #else
-        LIBXSMM_PRAGMA_SIMD
-        for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-          temp_ptr[ofm2] = temp_ptr_2[ofm2];
-        }
+          LIBXSMM_PRAGMA_SIMD
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+              temp_ptr[ofm2] = temp_ptr_2[ofm2];
+            }
 #endif
-        temp_ptr += handle->ofmblock;
+          temp_ptr += handle->ofmblock;
+        }
       }
-    }
-    /* up-convert */
-    if (handle->datatype != handle->datatype_itm) {
-      for (oj = start_ofh; oj < end_ofh; ++oj) {
-        for (oi = 0; oi < handle->ofw; ++oi) {
-          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-            LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock) = (element_output_type)
-              (LIBXSMM_VLA_ACCESS(  6, output_lp, img, ofm1/handle->fm_lp_block, oj, oi, ((handle->ofmblock/handle->fm_lp_block)*(ofm1%handle->fm_lp_block))+ofm2/handle->fm_lp_block, ofm2%handle->fm_lp_block, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block));
+      /* up-convert */
+      if (handle->datatype != handle->datatype_itm) {
+        for (oj = start_ofh; oj < end_ofh; ++oj) {
+          for (oi = 0; oi < handle->ofw; ++oi) {
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+              LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock) = (element_output_type)
+                (LIBXSMM_VLA_ACCESS(  6, output_lp, img, ofm1/handle->fm_lp_block, oj, oi, ((handle->ofmblock/handle->fm_lp_block)*(ofm1%handle->fm_lp_block))+ofm2/handle->fm_lp_block, ofm2%handle->fm_lp_block, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block));
+            }
           }
         }
       }
-    }
-    for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-      /* reset result buffer to zero when intent is to overwrite when first block
-         of input channels should be convoluted */
-      if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
-        element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, start_ofh, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
-        LIBXSMM_PRAGMA_SIMD
-        for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp*handle->ofmblock; oj++) {
-          temp_ptr[oj] = (element_output_type)0;
+      for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+        /* reset result buffer to zero when intent is to overwrite when first block
+           of input channels should be convoluted */
+        if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
+          element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, start_ofh, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+          LIBXSMM_PRAGMA_SIMD
+            for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp*handle->ofmblock; oj++) {
+              temp_ptr[oj] = (element_output_type)0;
+            }
         }
         for (oj = start_ofh; oj < end_ofh; oj += handle->fwd_ofh_rb) {
 #if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
@@ -273,28 +274,29 @@ if (handle->use_thread_private_jit) {
         jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, NULL);
       }
 #endif
-    /* handle fused bias addition */
-    if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
-      LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
-      element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, start_ofh, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
-      element_output_type* temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
-      /* @TODO check these loops for physical output padding */
-      for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp; ++oj) {
-        LIBXSMM_PRAGMA_SIMD
-        for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-          temp_ptr[ofm2] = temp_ptr_2[ofm2];
+      /* handle fused bias addition */
+      if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
+        LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
+        element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, start_ofh, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+        element_output_type* temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
+        /* @TODO check these loops for physical output padding */
+        for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp; ++oj) {
+          LIBXSMM_PRAGMA_SIMD
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+              temp_ptr[ofm2] = temp_ptr_2[ofm2];
+            }
+          temp_ptr += handle->ofmblock;
         }
-        temp_ptr += handle->ofmblock;
       }
-    }
-    for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-      /* reset result buffer to zero when intent is to overwrite when first block
-         of input channels should be convoluted */
-      if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
-        element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, start_ofh, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
-        LIBXSMM_PRAGMA_SIMD
-        for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp*handle->ofmblock; oj++) {
-          temp_ptr[oj] = (element_output_type)0;
+      for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+        /* reset result buffer to zero when intent is to overwrite when first block
+           of input channels should be convoluted */
+        if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
+          element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, start_ofh, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+          LIBXSMM_PRAGMA_SIMD
+            for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp*handle->ofmblock; oj++) {
+              temp_ptr[oj] = (element_output_type)0;
+            }
         }
         for (oj = start_ofh; oj < end_ofh; oj += handle->fwd_ofh_rb) {
 #if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
@@ -359,5 +361,4 @@ if (handle->use_thread_private_jit) {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
     }
   }
-
 }

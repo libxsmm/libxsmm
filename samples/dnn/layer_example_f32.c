@@ -41,9 +41,9 @@
 #if 0
 #define USE_OVERWRITE
 #endif
-#if 0
+//#if 0
 #define USE_FUSED_BIAS
-#endif
+//#endif
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* note: later on, this leads to (correct but) different than expected norm-values */
