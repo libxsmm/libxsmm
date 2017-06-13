@@ -19,8 +19,9 @@ matrix:
 env:
   global:
   - UPLOAD_DIR=libxsmm
+  - LIBXSMM_VERBOSE=2
   matrix:
-  - LIBXSMM_TARGET=0 LIBXSMM_VERBOSE=1
+  - OPT=1 LIBXSMM_TARGET=0
   - DBG=1
 
 language: cpp
