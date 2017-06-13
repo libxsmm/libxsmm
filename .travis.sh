@@ -101,6 +101,9 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
       # prepare temporary script
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
+        if [ "" != "${MKLROOT}" ]; then
+          echo "export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${MKLROOT}/lib/intel64" >> ${TESTSCRIPT}
+        fi
         # record the actual test case
         echo "${TEST}" >> ${TESTSCRIPT}
       fi
