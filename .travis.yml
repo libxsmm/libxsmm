@@ -19,8 +19,9 @@ matrix:
 env:
   global:
   - UPLOAD_DIR=libxsmm
+  - LIBXSMM_VERBOSE=2
   matrix:
-  - LIBXSMM_TARGET=0 LIBXSMM_VERBOSE=1
+  - OPT=1 LIBXSMM_TARGET=0
   - DBG=1
 
 language: cpp
@@ -76,7 +77,7 @@ script:
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-    make -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 MNK="13 9, 23" ECFLAGS="-DELEM_TYPE=char" install-artifacts tests test-smm
+    make -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 ECFLAGS="-DELEM_TYPE=char" install-artifacts tests
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (

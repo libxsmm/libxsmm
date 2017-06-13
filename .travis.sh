@@ -42,6 +42,7 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
     export TRAVIS_BUILD_DIR=${BUILDKITE_BUILD_CHECKOUT_PATH}
   fi
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
+    export BUILDKITE_BUILD_CHECKOUT_PATH=${HERE}
     export TRAVIS_BUILD_DIR=${HERE}
   fi
   if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "$(which uname)" ]; then
@@ -76,7 +77,7 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
     LAUNCH=\${TEST}
   fi
   if [ "" != "${LAUNCH_USER}" ]; then
-    LAUNCH="su ${LAUNCH_USER} -c \'${LAUNCH}\'"
+    LAUNCH="su ${LAUNCH_USER} -p -c \'${LAUNCH}\'"
   fi
 
   RESULT=0
@@ -100,9 +101,9 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
       # prepare temporary script
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
-        # re-source the required environment
-        echo "source ${TRAVIS_BUILD_DIR}/.travis.env" >> ${TESTSCRIPT}
-        echo "source ${TRAVIS_BUILD_DIR}/.buildkite.env" >> ${TESTSCRIPT}
+        if [ "" != "${MKLROOT}" ]; then
+          echo "export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${MKLROOT}/lib/intel64" >> ${TESTSCRIPT}
+        fi
         # record the actual test case
         echo "${TEST}" >> ${TESTSCRIPT}
       fi
