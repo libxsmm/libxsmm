@@ -76,7 +76,7 @@ script:
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-    make -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 MNK="13 9, 23" ECFLAGS="-DELEM_TYPE=char" install-artifacts tests
+    make -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 ECFLAGS="-DELEM_TYPE=char" install-artifacts tests
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
