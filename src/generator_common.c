@@ -498,8 +498,8 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_VMOVNTPS:
       libxsmm_strncpy(o_instr_name, "vmovntps", i_instr_name_max_length, 8 );
       break;
-    case LIBXSMM_X86_INSTR_VMOVNTDQA:
-      libxsmm_strncpy(o_instr_name, "vmovntdqa", i_instr_name_max_length, 9 );
+    case LIBXSMM_X86_INSTR_VMOVNTDQ:
+      libxsmm_strncpy(o_instr_name, "vmovntdq", i_instr_name_max_length, 8 );
       break;
     /* default, we didn't had a match */
     default:

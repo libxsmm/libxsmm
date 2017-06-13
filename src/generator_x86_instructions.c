@@ -179,7 +179,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
 
   if ( (i_is_store == 0) && ( (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTPD) ||
                               (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTPS) ||
-                              (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTDQA)   )) {
+                              (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTDQ)   )) {
     fprintf(stderr, "libxsmm_instruction_vec_move: streaming stores are only avaiable when setting storing option to true!\n");
     exit(-1);
   }

@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
     for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
       for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
         for ( l_jj = 0; l_jj < N_QUANTITIES; l_jj++) {
-          #pragma simd
+          LIBXSMM_PRAGMA_SIMD
           for (l_k = 0; l_k < N_CRUNS; l_k++) {
             LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
               +=   l_a_de[(l_i*N_QUANTITIES)+l_jj]
@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
         unsigned int l_elems_per_row = l_rowptr[l_i+1] - l_rowptr[l_i];
         unsigned int l_rowstart = l_rowptr[l_i];
         for ( l_jj = 0; l_jj < l_elems_per_row; l_jj++) {
-          #pragma simd
+          LIBXSMM_PRAGMA_SIMD
           for (l_k = 0; l_k < N_CRUNS; l_k++) {
             LIBXSMM_VLA_ACCESS(3, l_p_c, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
               +=   l_a_sp[l_rowstart+l_jj]

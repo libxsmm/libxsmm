@@ -114,7 +114,7 @@ do
 #          ./xgemm_${m}_${n}_${k}_${PREC}_asm_gcc
         fi
       elif [ "${ARCH}" == 'hsw' ]; then
-        #icc -O3 -xCORE_AVX2 -fma -D__USE_MKL -mkl=sequential -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}
+        #icc -O3 -xCORE_AVX2 -fma -D__USE_MKL -mkl=sequential -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}_icc
         icc -O2 -ansi-alias -xCORE_AVX2 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}_icc
 #        gcc -O2 -fstrict-aliasing -mavx2 -mfma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}_gcc
         ./xgemm_${m}_${n}_${k}_${PREC}_icc
@@ -132,6 +132,7 @@ do
         scp ./xgemm_${m}_${n}_${k}_${PREC} mic0:
         ssh mic0 "./xgemm_${m}_${n}_${k}_${PREC}"
       elif [ "${ARCH}" == 'knl' ]; then
+        #icc -O2 -ansi-alias -D__USE_MKL -mkl=sequential -xCOMMON-AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}_icc
         icc -O2 -ansi-alias -xCOMMON-AVX512 -fma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}_icc
 #        gcc -O2 -fstrict-aliasing -mavx512f -mfma -DNDEBUG -DMY_M=$m -DMY_N=$n -DMY_K=$k -DMY_LDA=$lda -DMY_LDB=$ldb -DMY_LDC=$ldc -DREALTYPE=${DATATYPE} -DGEMM_HEADER=\"kernel_${m}_${n}_${k}_${PREC}.h\" validation.c -o xgemm_${m}_${n}_${k}_${PREC}_gcc
         ${SDE_KNL} ./xgemm_${m}_${n}_${k}_${PREC}_icc

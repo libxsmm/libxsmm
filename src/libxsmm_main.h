@@ -123,6 +123,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_bias {
   int fmb;                          /* number of feature map blocks */
   int bfm;                          /* sized of blocked feature maps, in a block */
   int lpb;                          /* low precision blocking factor */
+  libxsmm_dnn_tensor_format format; /* format of activation buffer */
   libxsmm_dnn_datatype datatype;    /* data type */
   void* data;                       /* pointer to data */
   char exp;                         /* fix point exponent for this tensor */
@@ -190,7 +191,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_buffer* grad_input;
   libxsmm_dnn_buffer* grad_output;
   libxsmm_dnn_filter* grad_filter;
-  libxsmm_dnn_bias* bias;
+  libxsmm_dnn_bias* reg_bias;
+  libxsmm_dnn_bias* grad_bias;
 
   /* barrier */
   libxsmm_barrier* barrier;

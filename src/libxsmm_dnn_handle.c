@@ -771,30 +771,27 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
             descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT_L2;
             handle->code_bwd[3].pmm = libxsmm_create_xconv_backward(&descriptor);
 #endif
-          } else if (/*(*/libxsmm_target_archid == LIBXSMM_X86_AVX2/*) ||
-                                                                     ((handle->filter_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) || (handle->buffer_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM))*/ ) {
-            /* we don't do prefetching and kh/kw unrolling (ignored in kernel generator) for AVX2 */
-            if (handle->padding_flag == 1) {
-              handle->matcopy_bwd[0].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
-              handle->matcopy_bwd[1].xmatcopy = libxsmm_xmatcopydispatch(&matcopyback_descriptor);
-            }
-            descriptor.unroll_kh = 0;
-            descriptor.unroll_kw = 1;
-            /*descriptor.ofw_unroll = 0;
-              descriptor.prefetch_output_ahead = 0;
-              descriptor.peeled = 0;*/
-            descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-            if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-              handle->code_bwd[0].smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-            } else {
-              handle->code_bwd[0].pmm = libxsmm_create_xconv_backward(&descriptor);
-            }
-            handle->code_bwd[1].pmm = handle->code_bwd[0].pmm;
-            handle->code_bwd[2].pmm = handle->code_bwd[0].pmm;
-            handle->code_bwd[3].pmm = handle->code_bwd[0].pmm;
-          } else {
-            assert(0/*should not happen*/);
-          }
+      } else if (/*(*/libxsmm_target_archid == LIBXSMM_X86_AVX2/*) ||
+                   ((handle->filter_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) || (handle->buffer_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM))*/ ) {
+        /* we don't do prefetching and kh/kw unrolling (ignored in kernel generator) for AVX2 */
+        if (handle->padding_flag == 1) {
+          handle->matcopy_bwd[0].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+          handle->matcopy_bwd[1].xmatcopy = libxsmm_xmatcopydispatch(&matcopyback_descriptor);
+        }
+        descriptor.unroll_kh = 0;
+        descriptor.unroll_kw = 0;
+        descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
+        if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
+          handle->code_bwd[0].smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+        } else {
+          handle->code_bwd[0].pmm = libxsmm_create_xconv_backward(&descriptor);
+        }
+        handle->code_bwd[1].pmm = handle->code_bwd[0].pmm;
+        handle->code_bwd[2].pmm = handle->code_bwd[0].pmm;
+        handle->code_bwd[3].pmm = handle->code_bwd[0].pmm;
+      } else {
+        assert(0/*should not happen*/);
+      }
     } /* End of backward */
     /* TODO weight update path */
     { libxsmm_convolution_weight_update_descriptor descriptor;
