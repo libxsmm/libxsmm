@@ -42,6 +42,7 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
     export TRAVIS_BUILD_DIR=${BUILDKITE_BUILD_CHECKOUT_PATH}
   fi
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
+    export BUILDKITE_BUILD_CHECKOUT_PATH=${HERE}
     export TRAVIS_BUILD_DIR=${HERE}
   fi
   if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "$(which uname)" ]; then
