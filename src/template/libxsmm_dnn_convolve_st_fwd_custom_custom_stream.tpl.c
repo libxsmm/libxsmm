@@ -38,9 +38,9 @@ int *stream = handle->compute_fwd_indices_ptrs[ltid];
 libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
 int instr, n_segments; 
 char *kernel_stream = handle->kernel_fwd_variant_ptrs[ltid];
-int *code_stream;
+segment_t *code_stream;
 int n_convs, conv_i, ifm1;
-int img = handle->img_start[ltid];
+int img;
 int input_h_start, input_h_end, my_h_out;
 #if 0
 libxsmm_convfunction kernel_pool[4];
@@ -69,7 +69,7 @@ kernel_pool[3] =  (libxsmm_convfunction)handle->code_fwd[3].xconv.sconv;
 
 if (handle->padding_flag == 1) {
   input_base  = &LIBXSMM_VLA_ACCESS(5, input_buffer, 0, 0, 0, 0, 0,
-     padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
+      padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
 } else {
   input_base  = &LIBXSMM_VLA_ACCESS(6, input, 0, 0, 0, 0, 0, 0,
       handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
@@ -87,16 +87,19 @@ n_segments = handle->n_fwd_code_segments[ltid];
 #define OFM_LOOP_CLOSE 2
 #define CONVOLUTION_KERNEL 3
 
+/* lazy barrier init */
+libxsmm_barrier_init(handle->barrier, ltid);
+
 if (n_segments) {
   code_stream = handle->fwd_code_segments[ltid];
   /* If we are in the img_par execution then avoid fine-grained copy in case of padding...  */
   if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-    for (pc = 0; pc < 2*n_segments; pc += 2) {
-      instr = code_stream[pc];
-      n_convs = code_stream[pc+1];
-
+    for (pc = 0; pc < n_segments; pc++) {
+      instr = code_stream[pc].segment_type;
+      n_convs = code_stream[pc].n_convs;
       if (instr == IMG_LOOP_INIT) {
         /* Padding code via jitted matcopy kernel */
+        img = code_stream[pc].aux_index;
         for (ifm1 = handle->blocksifm-1; ifm1 >= 1; ifm1--) {
           input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
           copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
@@ -107,7 +110,6 @@ if (n_segments) {
         copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
         prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img+1, handle->blocksifm-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
         jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
-        img++;
       } else if ( instr == OFM_LOOP_INIT ) {
         /* Overwrite output with zeros if requested */
         if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
@@ -137,12 +139,13 @@ if (n_segments) {
     input_h_start = LIBXSMM_MAX(0,  handle->ofh_start[ltid] - handle->desc.R + 1);
     input_h_end = LIBXSMM_MIN( handle->ifhp, handle->ofh_end[ltid] + handle->desc.R -1 ) ;
     my_h_out = handle->ofh_end[ltid]-handle->ofh_start[ltid];
-    for (pc = 0; pc < 2*n_segments; pc += 2) {
-      instr = code_stream[pc];
-      n_convs = code_stream[pc+1];
+    for (pc = 0; pc < n_segments; pc++) {
+      instr = code_stream[pc].segment_type;
+      n_convs = code_stream[pc].n_convs;
       if (instr == IMG_LOOP_INIT) {
         /* Padding code via jitted matcopy kernel */
         for (ifm1 = handle->blocksifm-1; ifm1 >= 1; ifm1--) {
+          img = code_stream[pc].aux_index;
           for (ih = input_h_start; ih < input_h_end; ih++) {
             input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, ih, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
             copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h + ih, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
@@ -198,4 +201,6 @@ if (n_segments) {
 #endif
   }
 }
+
+libxsmm_barrier_wait(handle->barrier, ltid);
 

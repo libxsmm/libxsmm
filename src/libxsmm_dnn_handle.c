@@ -499,8 +499,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->compute_fwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
         handle->kernel_fwd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
         handle->n_fwd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
-        handle->fwd_code_segments = (int**) malloc(handle->desc.threads * sizeof(int*));
-        handle->img_start = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->fwd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
         handle->ofh_start = (int*) malloc(handle->desc.threads * sizeof(int));
         handle->ofh_end = (int*) malloc(handle->desc.threads * sizeof(int));
 

@@ -38,12 +38,12 @@
 # include <omp.h>
 #endif
 
-#if 0
-#define USE_OVERWRITE
-#endif
 //#if 0
-#define USE_FUSED_BIAS
+#define USE_OVERWRITE
 //#endif
+#if 0
+#define USE_FUSED_BIAS
+#endif
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* note: later on, this leads to (correct but) different than expected norm-values */
@@ -840,16 +840,16 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       /* run LIBXSMM convolution for performance */
       l_start = libxsmm_timer_tick();
-      for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
-#   pragma omp parallel
+#   pragma omp parallel private(i)
 #endif
-        {
+      {
 #if defined(_OPENMP)
-          const int tid = omp_get_thread_num();
+        const int tid = omp_get_thread_num();
 #else
-          const int tid = 0;
+        const int tid = 0;
 #endif
+        for (i = 0; i < iters; ++i) {
           libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
         }
       }
@@ -862,8 +862,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-         ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-         norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
+          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
     }
 
     if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
@@ -894,8 +894,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-         ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-         norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
+          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+          norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
     }
 
     if (type == 'A' || type == 'U') {
@@ -929,8 +929,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-         ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-         norms_upd.max_rel_err, norms_upd.max_abs_err, norms_upd.l2_rel_err, norms_upd.one_norm_ref, norms_upd.one_norm_test );
+          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+          norms_upd.max_rel_err, norms_upd.max_abs_err, norms_upd.l2_rel_err, norms_upd.one_norm_ref, norms_upd.one_norm_test );
     }
 
     /* clean-up */
@@ -1030,7 +1030,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       printf("#  Correctness - FWD (NHWC/RSCK-Storage) #\n");
       printf("##########################################\n");
-    /* run LIBXSMM convolutions */
+      /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
 # pragma omp parallel
 #endif
@@ -1130,7 +1130,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #   pragma omp parallel
 #endif
-       {
+        {
 #if defined(_OPENMP)
           const int tid = omp_get_thread_num();
 #else
@@ -1148,8 +1148,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-RSCK,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-         ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-         norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
+          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
     }
 
     if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
@@ -1180,8 +1180,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-RSCK,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-         ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-         norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
+          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+          norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
     }
 
     if (type == 'A' || type == 'U') {
@@ -1200,7 +1200,7 @@ int main(int argc, char* argv[])
 #else
           const int tid = 0;
 #endif
-           libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
+          libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
         }
         if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
           CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );
@@ -1215,8 +1215,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-RSCK,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-         ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-         norms_upd.max_rel_err, norms_upd.max_abs_err, norms_upd.l2_rel_err, norms_upd.one_norm_ref, norms_upd.one_norm_test );
+          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+          norms_upd.max_rel_err, norms_upd.max_abs_err, norms_upd.l2_rel_err, norms_upd.one_norm_ref, norms_upd.one_norm_test );
     }
 
     /* clean-up */
@@ -1436,8 +1436,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-custom,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-         ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-         norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
+          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
     }
 
     if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
@@ -1468,8 +1468,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-custom,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-         ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-         norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
+          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+          norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
     }
 
     if (type == 'A' || type == 'U') {
@@ -1503,8 +1503,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-custom,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-         ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-         norms_upd.max_rel_err, norms_upd.max_abs_err, norms_upd.l2_rel_err, norms_upd.one_norm_ref, norms_upd.one_norm_test );
+          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
+          norms_upd.max_rel_err, norms_upd.max_abs_err, norms_upd.l2_rel_err, norms_upd.one_norm_ref, norms_upd.one_norm_test );
     }
 
     /* clean-up */

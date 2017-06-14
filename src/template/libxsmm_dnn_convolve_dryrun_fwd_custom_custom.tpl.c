@@ -74,7 +74,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int n_code_segments;
   int mark_ofm_init, mark_ofm_close;
   int *tmp_expanded_stream, tmp_stream_index;
-  int *encoded_code_segments;
+  segment_t *encoded_code_segments;
   int expanded_size;
   int stretch_of_convs;
   int encoded_stream_index;
@@ -151,9 +151,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   tmp_expanded_stream = (int*) malloc( expanded_size * sizeof(int) );
   tmp_stream_index = 0;
   if (n_code_segments) {
-    encoded_code_segments = (int*) libxsmm_aligned_malloc( 2 * n_code_segments * sizeof(int), 2097152);
+    encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 2097152);
     handle->fwd_code_segments[ltid] = encoded_code_segments;
-    handle->img_start[ltid] = my_img_start;
   }
   local_entries = 0;
 
@@ -224,18 +223,79 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
         lookahead_index++;
         if ( lookahead_index >= expanded_size ) break;
       }
-      encoded_code_segments[encoded_stream_index] = tmp_expanded_stream[tmp_stream_index];
-      encoded_code_segments[encoded_stream_index+1] = stretch_of_convs;
-      encoded_stream_index += 2;
+      encoded_code_segments[encoded_stream_index].segment_type = tmp_expanded_stream[tmp_stream_index];
+      encoded_code_segments[encoded_stream_index].n_convs = stretch_of_convs;
+      encoded_stream_index++;
       stretch_of_convs = 0;
       tmp_stream_index = lookahead_index;
       lookahead_index++;
     }
 
     /* Check if we have not written last segment entry -- in this case the stream ends with an action point */
-    if ( encoded_stream_index/2 < n_code_segments ) {
-      encoded_code_segments[encoded_stream_index] = tmp_expanded_stream[tmp_stream_index];
-      encoded_code_segments[encoded_stream_index+1] = stretch_of_convs;
+    if ( encoded_stream_index < n_code_segments ) {
+      encoded_code_segments[encoded_stream_index].segment_type = tmp_expanded_stream[tmp_stream_index];
+      encoded_code_segments[encoded_stream_index].n_convs = stretch_of_convs;
+    }
+
+    tmp_stream_index = 0;
+    encoded_stream_index = 0;
+    /* Final pass over the segments to fill-in auxiliary indices...  */
+    for (img = my_img_start; img < my_img_end; img++) {
+      if (handle->padding_flag == 1) {
+        tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
+        encoded_code_segments[encoded_stream_index].aux_index = img;
+        tmp_stream_index++;
+        encoded_stream_index++;
+      } 
+      for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+        for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) { 
+          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {  
+            for ( ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+              for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
+                for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+                  for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+                    ij = oj * handle->desc.u;
+                    ii = oi * handle->desc.v;
+
+                    if (mark_ofm_init == 1) {
+                      if (ifm1 == 0 && oj == 0 && oi == 0) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
+                        encoded_code_segments[encoded_stream_index].aux_index = ofm1;
+                        tmp_stream_index++;
+                        encoded_stream_index++;
+                      }
+                    }
+
+                    if (handle->padding_flag == 1) { 
+                      compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij) * padded_w)  +  ii) *  handle->ifmblock * handle->fm_lp_block;
+                    } else {
+                      compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block;
+                    }
+                    compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
+                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
+
+                    /* Initialize kernel variant with the one that prefetches everything */
+                    kernel_variant[local_entries/3] = 2;
+                    local_entries += 3;
+
+                    tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                    tmp_stream_index++;
+
+                    if (mark_ofm_close == 1) {
+                      if (ifm1 == handle->blocksifm-1  && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
+                        encoded_code_segments[encoded_stream_index].aux_index = ofm1;
+                        tmp_stream_index++;
+                        encoded_stream_index++; 
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 
@@ -247,6 +307,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   compute_indices[local_entries+2] = 0;
   total_calls = local_entries/3;
 
+  /* Adjust the kernel variant  */
   for (ii = 0; ii < total_calls-1; ii++) {
     cur_wt = compute_indices[ii*3+1];
     next_wt = compute_indices[(ii+1)*3+1];

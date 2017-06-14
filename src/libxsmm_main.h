@@ -145,6 +145,13 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
   char exp;                         /* fix point exponent for this tensor */
 };
 
+/* Structure to record segment in stream of code  */
+typedef struct LIBXSMM_RETARGETABLE segment_t {
+  int segment_type;
+  int n_convs;
+  int aux_index;
+} segment_t;
+
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_datatype datatype;
   libxsmm_dnn_datatype datatype_itm;
@@ -249,8 +256,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int block_fwd_ifm;
   int block_fwd_ofm;
   int *n_fwd_code_segments;
-  int **fwd_code_segments;
-  int *img_start;
+  segment_t **fwd_code_segments;
   int *ofh_start;
   int *ofh_end;
 };
