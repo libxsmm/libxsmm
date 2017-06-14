@@ -279,7 +279,7 @@ LIBXSMM_API_INLINE unsigned int internal_print_statistic(FILE* ostream,
   const internal_statistic_type statistic_big = internal_statistic[precision][2/*BIG*/];
   const internal_statistic_type statistic_xxx = internal_statistic[precision][3/*XXX*/];
   int printed = 0;
-  assert(0 != ostream && 0 != target_arch && (0 <= precision && precision < 2));
+  assert(0 != ostream && (0 <= precision && precision < 2));
 
   if (/* omit to print anything if it is superfluous */
     0 != statistic_sml.ntry || 0 != statistic_sml.njit || 0 != statistic_sml.nsta || 0 != statistic_sml.ncol ||
@@ -291,12 +291,17 @@ LIBXSMM_API_INLINE unsigned int internal_print_statistic(FILE* ostream,
     unsigned int counter[4];
     {
       unsigned int n;
-      assert(strlen(target_arch) < sizeof(title));
-      for (n = 0; 0 != target_arch[n] /*avoid code-gen. issue with some clang versions: && n < sizeof(title)*/; ++n) {
-        const char c = target_arch[n];
-        title[n] = (char)(('a' <= c && c <= 'z') ? (c - 32) : c); /* toupper */
+      if (0 != target_arch) {
+        assert(strlen(target_arch) < sizeof(title));
+        for (n = 0; 0 != target_arch[n] /*avoid code-gen. issue with some clang versions: && n < sizeof(title)*/; ++n) {
+          const char c = target_arch[n];
+          title[n] = (char)(('a' <= c && c <= 'z') ? (c - 32) : c); /* toupper */
+        }
+        LIBXSMM_SNPRINTF(title + n, sizeof(title) - n, "/%s", 0 == precision ? "DP" : "SP");
       }
-      LIBXSMM_SNPRINTF(title + n, sizeof(title) - n, "/%s", 0 == precision ? "DP" : "SP");
+      else {
+        LIBXSMM_SNPRINTF(title, sizeof(title), "%s", 0 == precision ? "DP" : "SP");
+      }
       for (n = 0; n < linebreaks; ++n) fprintf(ostream, "\n");
     }
     fprintf(ostream, "%*s%-8s %6s %6s %6s %6s\n", (int)indent, "", title, "TRY" ,"JIT", "STA", "COL");
@@ -393,15 +398,21 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     fflush(stdout); /* synchronize with standard output */
     {
-      const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
+      const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
+      const char *const target_arch = (0 == env_target_hidden || 0 != atoi(env_target_hidden))
+        ? internal_get_target_arch(libxsmm_target_archid)
+        : 0/*hidden*/;
       const unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       const double regsize = 1.0 * internal_registry_nbytes / (1 << 20);
       libxsmm_scratch_info scratch_info;
-      if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak) {
+      if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && 0 != target_arch) {
         fprintf(stderr, "LIBXSMM_TARGET=%s", target_arch);
       }
+      if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
+        fprintf(stderr, "LIBXSMM %s-%s", LIBXSMM_BRANCH, LIBXSMM_VERSION);
+      }
       fprintf(stderr, "\nRegistry: %.f MB", regsize);
-      if (1 < libxsmm_verbosity) {
+      if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
         size_t ngemms = 0;
         int i; for (i = 0; i < 4; ++i) {
           ngemms += internal_statistic[0/*DP*/][i].nsta + internal_statistic[1/*SP*/][i].nsta;
