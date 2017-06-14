@@ -237,14 +237,11 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       encoded_code_segments[encoded_stream_index].n_convs = stretch_of_convs;
     }
 
-    tmp_stream_index = 0;
-    encoded_stream_index = 0;
     /* Final pass over the segments to fill-in auxiliary indices...  */
+    encoded_stream_index = 0;  
     for (img = my_img_start; img < my_img_end; img++) {
       if (handle->padding_flag == 1) {
-        tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
         encoded_code_segments[encoded_stream_index].aux_index = img;
-        tmp_stream_index++;
         encoded_stream_index++;
       } 
       for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
@@ -259,33 +256,14 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
                     if (mark_ofm_init == 1) {
                       if (ifm1 == 0 && oj == 0 && oi == 0) {
-                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
                         encoded_code_segments[encoded_stream_index].aux_index = ofm1;
-                        tmp_stream_index++;
                         encoded_stream_index++;
                       }
                     }
 
-                    if (handle->padding_flag == 1) { 
-                      compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij) * padded_w)  +  ii) *  handle->ifmblock * handle->fm_lp_block;
-                    } else {
-                      compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block;
-                    }
-                    compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
-                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
-
-                    /* Initialize kernel variant with the one that prefetches everything */
-                    kernel_variant[local_entries/3] = 2;
-                    local_entries += 3;
-
-                    tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
-                    tmp_stream_index++;
-
                     if (mark_ofm_close == 1) {
                       if (ifm1 == handle->blocksifm-1  && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
-                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
                         encoded_code_segments[encoded_stream_index].aux_index = ofm1;
-                        tmp_stream_index++;
                         encoded_stream_index++; 
                       }
                     }

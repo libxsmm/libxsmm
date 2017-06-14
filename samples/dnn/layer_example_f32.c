@@ -38,9 +38,9 @@
 # include <omp.h>
 #endif
 
-//#if 0
+#if 0
 #define USE_OVERWRITE
-//#endif
+#endif
 #if 0
 #define USE_FUSED_BIAS
 #endif
