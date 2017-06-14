@@ -39,7 +39,7 @@ libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sc
 int instr, n_segments; 
 char *kernel_stream = handle->kernel_fwd_variant_ptrs[ltid];
 segment_t *code_stream;
-int n_convs, conv_i, ifm1;
+int n_convs, conv_i, ifm1, ofm1, ofm2, oj;
 int img;
 int input_h_start, input_h_end, my_h_out;
 #if 0
@@ -97,7 +97,9 @@ if (n_segments) {
     for (pc = 0; pc < n_segments; pc++) {
       instr = code_stream[pc].segment_type;
       n_convs = code_stream[pc].n_convs;
+
       if (instr == IMG_LOOP_INIT) {
+
         /* Padding code via jitted matcopy kernel */
         img = code_stream[pc].aux_index;
         for (ifm1 = handle->blocksifm-1; ifm1 >= 1; ifm1--) {
@@ -110,13 +112,41 @@ if (n_segments) {
         copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
         prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img+1, handle->blocksifm-1, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
         jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
+
       } else if ( instr == OFM_LOOP_INIT ) {
+
+        /* Apply bias if requested  */
+        if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
+          LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
+          element_output_type* temp_ptr;
+          element_output_type* temp_ptr_2;
+          ofm1 = code_stream[pc].aux_index;
+          temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
+          temp_ptr =  output_base + stream[i+2];
+          /* @TODO this is very hacky as it assumes ofmblock is VLEN */
+#if defined(__AVX512F__)
+          __m512 vbias = LIBXSMM_INTRINSICS_MM512_LOAD_PS((void*)temp_ptr_2);
+#endif
+          /* @TODO check these loops for physical output padding */
+          for (oj = 0; oj < handle->ofhp*handle->ofwp; ++oj) {
+#if defined(__AVX512F__)
+            _mm512_store_ps((void*)temp_ptr, vbias);
+#else
+            LIBXSMM_PRAGMA_SIMD
+              for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+                temp_ptr[ofm2] = temp_ptr_2[ofm2];
+              }
+#endif
+            temp_ptr += handle->ofmblock;
+          }
+        }
+
         /* Overwrite output with zeros if requested */
         if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
           jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);     
         }      
       } else {
-
+        /* Placeholder for downconvert   */
       }
 
       for (conv_i = 0; conv_i < n_convs; conv_i++) {
@@ -144,8 +174,8 @@ if (n_segments) {
       n_convs = code_stream[pc].n_convs;
       if (instr == IMG_LOOP_INIT) {
         /* Padding code via jitted matcopy kernel */
-        for (ifm1 = handle->blocksifm-1; ifm1 >= 1; ifm1--) {
-          img = code_stream[pc].aux_index;
+        img = code_stream[pc].aux_index;
+        for (ifm1 = handle->blocksifm-1; ifm1 >= 1; ifm1--) {  
           for (ih = input_h_start; ih < input_h_end; ih++) {
             input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(6, input, img, ifm1, ih, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
             copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1, handle->desc.pad_h + ih, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
@@ -160,6 +190,25 @@ if (n_segments) {
           jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
         }
       } else if ( instr == OFM_LOOP_INIT ) {
+
+        /* Apply bias if requested  */
+        if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
+          LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
+          element_output_type* temp_ptr;
+          element_output_type* temp_ptr_2;
+          ofm1 = code_stream[pc].aux_index;
+          temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
+          temp_ptr =  output_base + stream[i+2];
+          /* @TODO check these loops for physical output padding */
+          for (oj = 0; oj <my_h_out*handle->ofwp; ++oj) {
+            LIBXSMM_PRAGMA_SIMD
+              for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+                temp_ptr[ofm2] = temp_ptr_2[ofm2];
+              }
+            temp_ptr += handle->ofmblock;
+          }
+        }
+
         /* Overwrite output with zeros if requested */
         if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
           for ( ih = 0; ih < my_h_out * handle->ofmblock * handle->ofwp; ih += handle->ofmblock * handle->ofwp) {

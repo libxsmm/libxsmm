@@ -101,7 +101,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     my_ofm_end = LIBXSMM_MIN((myOfmId+1) * nOfmBlocks, handle->blocksofm);
   }
 
-  mark_ofm_init = ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ? 1 : 0;
+  mark_ofm_init = ( ( (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) || ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) ? 1 : 0;
   mark_ofm_close = (handle->datatype != handle->datatype_itm) ? 1 : 0;
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */

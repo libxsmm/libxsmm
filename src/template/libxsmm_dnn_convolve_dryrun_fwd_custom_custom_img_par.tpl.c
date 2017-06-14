@@ -94,7 +94,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     padded_w = handle->ifwp + 2 * handle->desc.pad_w;
   }
 
-  mark_ofm_init = ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ? 1 : 0;
+  mark_ofm_init = ( ( (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) || ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) ? 1 : 0;
   mark_ofm_close = (handle->datatype != handle->datatype_itm) ? 1 : 0;
   n_code_segments = 0;
   tmp_stream_index = 0;
@@ -253,14 +253,14 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     ii = oi * handle->desc.v;
 
                     if (mark_ofm_init == 1) {
-                      if (ifm1 == 0 && oj == 0 && oi == 0) {
+                      if (ifm1 == 0 && oj == my_h_start && oi == my_w_start) {
                         encoded_code_segments[encoded_stream_index].aux_index = ofm1;
                         encoded_stream_index++;
                       }
                     }
 
                     if (mark_ofm_close == 1) {
-                      if (ifm1 == handle->blocksifm-1  && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                      if (ifm1 == handle->blocksifm-1  && oj == my_h_end - handle->fwd_ofh_rb && oi == my_w_end - handle->fwd_ofw_rb) {
                         encoded_code_segments[encoded_stream_index].aux_index = ofm1;
                         encoded_stream_index++; 
                       }
