@@ -32,13 +32,33 @@
 
 HERE=$(cd $(dirname $0); pwd -P)
 MKTEMP=$(which mktemp 2> /dev/null)
+MKDIR=$(which mkdir 2> /dev/null)
 CHMOD=$(which chmod 2> /dev/null)
+SORT=$(which sort 2> /dev/null)
+GREP=$(which grep 2> /dev/null)
 SED=$(which sed 2> /dev/null)
 TR=$(which tr 2> /dev/null)
+WC=$(which wc 2> /dev/null)
 RM=$(which rm 2> /dev/null)
+CP=$(which cp 2> /dev/null)
 
-if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${RM}" ]; then
+if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ]&& [ "" != "${CHMOD}" ] && \
+   [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${WC}" ] && \
+   [ "" != "${RM}" ] && [ "" != "${CP}" ]; \
+then
   HOST=$(hostname -s 2> /dev/null)
+
+  if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ -e /proc/cpuinfo ]; then
+    HT=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
+    NT=$(${GREP} "physical id" /proc/cpuinfo | ${WC} -l)
+  fi
+  if [ "" != "${NT}" ] && [ "" != "${HT}" ]; then
+    NC=$((NT/HT))
+    MAKEJ="-j ${NC}"
+  else
+    NT=1; HT=1; NC=1
+    MAKEJ=""
+  fi
 
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
     export TRAVIS_BUILD_DIR=${BUILDKITE_BUILD_CHECKOUT_PATH}
@@ -69,11 +89,12 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
 
   # setup batch execution
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ]; then
-    if [ "" = "${SRUN_CPUS_PER_TASK}" ]; then SRUN_CPUS_PER_TASK=2; fi
+    if [ "" != "${SRUN_CPUS_PER_TASK}" ]; then
+      SRUN_CPUS_PER_TASK_FLAG="--cpus-per-task=${SRUN_CPUS_PER_TASK}"
+    fi
     TESTSCRIPT=$(${MKTEMP} ${HERE}/.libxsmm_XXXXXX.sh)
     ${CHMOD} a+rwx ${TESTSCRIPT}
-    LAUNCH="${SRUN} \
-      --ntasks=1 --cpus-per-task=${SRUN_CPUS_PER_TASK} \
+    LAUNCH="${SRUN} --ntasks=1 ${SRUN_CPUS_PER_TASK_FLAG} \
       --partition=\${PARTITION} --preserve-env --pty ${TESTSCRIPT}"
   else # avoid temporary script in case of non-batch execution
     # make execution environment available
@@ -113,8 +134,8 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
         if [ "" != "${HOST}" ] && [ "" != "${CONFIG}" ] && \
            [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env ]; \
         then
-          mkdir -p ${TRAVIS_BUILD_DIR}/licenses
-          cp -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2> /dev/null
+          ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
+          ${CP} -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2> /dev/null
           echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
           echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env" >> ${TESTSCRIPT}
         fi
