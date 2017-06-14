@@ -38,6 +38,8 @@ TR=$(which tr 2> /dev/null)
 RM=$(which rm 2> /dev/null)
 
 if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${RM}" ]; then
+  HOST=$(hostname -s 2> /dev/null)
+
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
     export TRAVIS_BUILD_DIR=${BUILDKITE_BUILD_CHECKOUT_PATH}
   fi
@@ -72,8 +74,14 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
     ${CHMOD} a+rwx ${TESTSCRIPT}
     LAUNCH="${SRUN} \
       --ntasks=1 --cpus-per-task=${SRUN_CPUS_PER_TASK} \
-      --partition=\${PARTITION} --preserve-env --pty bash -l ${TESTSCRIPT}"
+      --partition=\${PARTITION} --preserve-env --pty ${TESTSCRIPT}"
   else # avoid temporary script in case of non-batch execution
+    # make execution environment available
+    if [ "" != "${HOST}" ] && [ "" != "${CONFIG}" ] && \
+       [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env ]; \
+    then
+      source ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env
+    fi
     LAUNCH=\${TEST}
   fi
   if [ "" != "${LAUNCH_USER}" ]; then
@@ -91,7 +99,7 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
       # print some header if all tests are selected or in case of multi-tests
       if [ "" = "$1" ] || [ "none" != "${PARTITION}" ]; then
         echo "================================================================================"
-        if [ "none" != "${PARTITION}" ]; then
+        if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
           echo "Test Case #${TESTID} (${PARTITION})"
         else
           echo "Test Case #${TESTID}"
@@ -101,8 +109,14 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${CHMOD}" ] && [ "" != "${SED}" ] && [ "" !
       # prepare temporary script
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
-        if [ "" != "${MKLROOT}" ]; then
-          echo "export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${MKLROOT}/lib/intel64" >> ${TESTSCRIPT}
+        # make execution environment available
+        if [ "" != "${HOST}" ] && [ "" != "${CONFIG}" ] && \
+           [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env ]; \
+        then
+          mkdir -p ${TRAVIS_BUILD_DIR}/licenses
+          cp -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2> /dev/null
+          echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
+          echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env" >> ${TESTSCRIPT}
         fi
         # record the actual test case
         echo "${TEST}" >> ${TESTSCRIPT}
