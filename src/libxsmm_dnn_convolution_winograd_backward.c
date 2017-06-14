@@ -43,7 +43,7 @@
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_input_transform_custom_custom(
+LIBXSMM_API_INLINE void internal_bwd_input_transform_custom_custom(
                                            const float *inp,
                                            float *tinp,
                                            float *Iwp,
@@ -71,7 +71,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_input_transform_custom_cus
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_input_transform_nhwc_custom(
+LIBXSMM_API_INLINE void internal_bwd_input_transform_nhwc_custom(
                                          const float *inp,
                                          float *tinp,
                                          float *Iwp,
@@ -99,7 +99,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_input_transform_nhwc_custo
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_weight_transform(
+LIBXSMM_API_INLINE void internal_bwd_weight_transform(
                               float *wp,
                               float *twp,
                               const libxsmm_dnn_layer* handle )
@@ -126,7 +126,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_weight_transform(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_output_transform_custom_custom(
+LIBXSMM_API_INLINE void internal_bwd_output_transform_custom_custom(
                                             float *toutp,
                                             float *outp,
                                             float *Owp,
@@ -154,7 +154,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_output_transform_custom_cu
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_output_transform_nhwc_custom(
+LIBXSMM_API_INLINE void internal_bwd_output_transform_nhwc_custom(
                                           float *toutp,
                                           float *outp,
                                           float *Owp,

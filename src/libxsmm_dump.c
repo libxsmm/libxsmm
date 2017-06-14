@@ -59,7 +59,7 @@ LIBXSMM_API_DEFINITION const char* libxsmm_meta_image_typeinfo(libxsmm_mhd_elemt
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_write(FILE* file, const void* data,
+LIBXSMM_API_INLINE int internal_write(FILE* file, const void* data,
   const size_t* data_size, const size_t* size, size_t typesize,
   size_t ndims)
 {

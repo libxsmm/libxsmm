@@ -1016,7 +1016,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
 
 /* This function finds the prime factors of a number */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors(
+LIBXSMM_API_INLINE void internal_dnn_handle_factors(
               unsigned int num,
               unsigned int num_factors[] )
 {
@@ -1041,7 +1041,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors(
  * The following loop may not give an optimal solution (knapsack problem)
  * Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2
  */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors_all(
+LIBXSMM_API_INLINE void internal_dnn_handle_factors_all(
                   unsigned int  product,
                   unsigned int* ur,
                   unsigned int  max_acc)

@@ -201,7 +201,7 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(int datatype, int
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_update_mmstatistic(const libxsmm_gemm_descriptor* desc,
+LIBXSMM_API_INLINE unsigned int internal_update_mmstatistic(const libxsmm_gemm_descriptor* desc,
   unsigned int ntry, unsigned int ncol)
 {
   assert(0 != desc && 0 == ((LIBXSMM_GEMM_FLAG_MATCOPY | LIBXSMM_GEMM_FLAG_TKERNEL) & desc->iflags));
@@ -209,8 +209,8 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_update_mmstatistic(con
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int id);
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int id)
+LIBXSMM_API_INLINE const char* internal_get_target_arch(int id);
+LIBXSMM_API_INLINE const char* internal_get_target_arch(int id)
 {
   const char* target_arch = 0;
   switch (id) {
@@ -254,7 +254,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE const char* internal_get_target_arch(int id)
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_number(unsigned int n, char default_unit, char* unit)
+LIBXSMM_API_INLINE unsigned int internal_print_number(unsigned int n, char default_unit, char* unit)
 {
   unsigned int number = n;
   assert(0 != unit);
@@ -271,7 +271,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_number(unsigned 
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* ostream,
+LIBXSMM_API_INLINE unsigned int internal_print_statistic(FILE* ostream,
   const char* target_arch, int precision, unsigned int linebreaks, unsigned int indent)
 {
   const internal_statistic_type statistic_sml = internal_statistic[precision][0/*SML*/];
@@ -337,7 +337,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_print_statistic(FILE* 
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_statistic_ntry(int precision)
+LIBXSMM_API_INLINE unsigned int internal_statistic_ntry(int precision)
 {
   return internal_statistic[precision][0/*SML*/].ntry + internal_statistic[precision][1/*MED*/].ntry
        + internal_statistic[precision][2/*BIG*/].ntry + internal_statistic[precision][3/*XXX*/].ntry;
@@ -387,7 +387,7 @@ LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_des
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_finalize(void)
+LIBXSMM_API_INLINE void internal_finalize(void)
 {
   libxsmm_finalize();
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
@@ -436,7 +436,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_finalize(void)
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_init(void)
+LIBXSMM_API_INLINE void internal_init(void)
 {
   libxsmm_code_pointer* result;
   int init_code = EXIT_FAILURE, i;
@@ -1271,7 +1271,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_descriptor* descriptor)
+LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_descriptor* descriptor)
 {
   libxsmm_code_pointer flux_entry = { 0 };
   unsigned int hash, i0, i = 0, mode = 0, diff = 1;

@@ -45,7 +45,7 @@
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_input_transform_custom_custom(
+LIBXSMM_API_INLINE void internal_upd_input_transform_custom_custom(
                                            float *inp,
                                            float *tinp,
                                            float *Iwp,
@@ -72,7 +72,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_input_transform_custom_cus
 #endif
 }
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_input_transform_nhwc_custom(
+LIBXSMM_API_INLINE void internal_upd_input_transform_nhwc_custom(
                                          float *inp,
                                          float *tinp,
                                          float *Iwp,
@@ -99,7 +99,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_input_transform_nhwc_custo
 #endif
 }
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_deloutput_transform_custom_custom(
+LIBXSMM_API_INLINE void internal_upd_deloutput_transform_custom_custom(
                                                float *inp,
                                                float *tinp,
                                                float *Owp,
@@ -126,7 +126,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_deloutput_transform_custom
 #endif
 }
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_deloutput_transform_nhwc_custom(
+LIBXSMM_API_INLINE void internal_upd_deloutput_transform_nhwc_custom(
                                              float *inp,
                                              float *tinp,
                                              float *Owp,
@@ -153,7 +153,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_deloutput_transform_nhwc_c
 #endif
 }
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_upd_delweight_transform(
+LIBXSMM_API_INLINE void internal_upd_delweight_transform(
                                  float *wp,
                                  float *twp,
                                  const libxsmm_dnn_layer* handle )

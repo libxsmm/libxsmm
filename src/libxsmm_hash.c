@@ -136,7 +136,7 @@ LIBXSMM_API_VARIABLE const internal_crc32_entry_type* internal_crc32_table;
 LIBXSMM_API_VARIABLE libxsmm_hash_function internal_hash_function;
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(
+LIBXSMM_API_INLINE unsigned int internal_crc32_u8(
   unsigned int seed, unsigned char value)
 {
   assert(0 != internal_crc32_table);
@@ -144,7 +144,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u8(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u16(
+LIBXSMM_API_INLINE unsigned int internal_crc32_u16(
   unsigned int seed, unsigned short value)
 {
   seed = internal_crc32_u8(seed, (uint8_t)value);
@@ -153,7 +153,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u16(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u32(
+LIBXSMM_API_INLINE unsigned int internal_crc32_u32(
   unsigned int seed, unsigned int value)
 {
   const unsigned int s = seed ^ value;
@@ -167,7 +167,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u32(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_crc32_u64(
+LIBXSMM_API_INLINE unsigned int internal_crc32_u64(
   unsigned int seed, unsigned long long value)
 {
   seed = internal_crc32_u32(seed, (uint32_t)(value));
