@@ -291,7 +291,7 @@ LIBXSMM_API_INLINE unsigned int internal_print_statistic(FILE* ostream,
     unsigned int counter[4];
     {
       unsigned int n;
-      if (0 != target_arch) {
+      if (0 != target_arch && 0 != *target_arch) {
         assert(strlen(target_arch) < sizeof(title));
         for (n = 0; 0 != target_arch[n] /*avoid code-gen. issue with some clang versions: && n < sizeof(title)*/; ++n) {
           const char c = target_arch[n];
@@ -399,17 +399,19 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     fflush(stdout); /* synchronize with standard output */
     {
       const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
-      const char *const target_arch = (0 == env_target_hidden || 0 != atoi(env_target_hidden))
+      const char *const target_arch = (0 == env_target_hidden || 0 == atoi(env_target_hidden))
         ? internal_get_target_arch(libxsmm_target_archid)
         : 0/*hidden*/;
-      const unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       const double regsize = 1.0 * internal_registry_nbytes / (1 << 20);
       libxsmm_scratch_info scratch_info;
-      if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && 0 != target_arch) {
-        fprintf(stderr, "LIBXSMM_TARGET=%s", target_arch);
-      }
+      unsigned int linebreak;
+
       if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
-        fprintf(stderr, "LIBXSMM %s-%s", LIBXSMM_BRANCH, LIBXSMM_VERSION);
+        fprintf(stderr, "LIBXSMM_VERSION=%s-%s", LIBXSMM_BRANCH, LIBXSMM_VERSION);
+      }
+      linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
+      if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && 0 != target_arch) {
+        fprintf(stderr, "\nLIBXSMM_TARGET=%s", target_arch);
       }
       fprintf(stderr, "\nRegistry: %.f MB", regsize);
       if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
