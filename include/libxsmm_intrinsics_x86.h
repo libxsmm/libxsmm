@@ -80,7 +80,7 @@
       /* TODO: compiler version check for LIBXSMM_MAX_STATIC_TARGET_ARCH */
 #     if 1500 <= (__INTEL_COMPILER)
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
-#     elif 1300 <= (__INTEL_COMPILER)
+#     elif 1400 <= (__INTEL_COMPILER)
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
 #     else
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
@@ -356,8 +356,8 @@
 # else
 #   define LIBXSMM_INTRINSICS_LDDQU_SI128(A) _mm_lddqu_si128(A)
 # endif
-# if (defined(__clang__) && (LIBXSMM_VERSION3(3, 9, 0) > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))) \
-  || (1400 > (__INTEL_COMPILER)) /* Clang misses _mm512_stream_p? (checked with v3.8.1). */
+/* Clang misses _mm512_stream_p? (checked with v3.8.1). */
+# if defined(__clang__) && (LIBXSMM_VERSION3(3, 9, 0) > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 #   define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_store_ps(A, B)
 #   define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_store_pd(A, B)
 # else
