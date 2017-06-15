@@ -94,7 +94,7 @@ then
     fi
     umask 007
     TESTSCRIPT=$(${MKTEMP} ${HERE}/.libxsmm_XXXXXX.sh)
-    ${CHMOD} +x ${TESTSCRIPT}
+    ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 ${SRUN_CPUS_PER_TASK_FLAG} \
       --partition=\${PARTITION} --preserve-env --pty ${TESTSCRIPT}"
   else # avoid temporary script in case of non-batch execution
