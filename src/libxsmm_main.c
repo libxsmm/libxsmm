@@ -407,7 +407,10 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       unsigned int linebreak;
 
       if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
-        fprintf(stderr, "LIBXSMM_VERSION=%s-%s", LIBXSMM_BRANCH, LIBXSMM_VERSION);
+        fprintf(stderr, "\nLIBXSMM_VERSION=%s-%s", LIBXSMM_BRANCH, LIBXSMM_VERSION);
+      }
+      else {
+        fprintf(stderr, "\n");
       }
       linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && 0 != target_arch) {
