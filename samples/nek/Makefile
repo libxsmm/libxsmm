@@ -86,9 +86,10 @@ $(OUTDIR)/rstr: $(OUTDIR)/.make $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(
 		$(call abslib,$(LIBNAME)f.$(LIBEXT)) $(call abslib,$(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 
-$(BLDDIR)/axhm-f.o: $(BLDDIR)/stream_update_kernels-f.o
-$(BLDDIR)/grad-f.o: $(BLDDIR)/stream_update_kernels-f.o
-$(BLDDIR)/rstr-f.o: $(BLDDIR)/stream_update_kernels-f.o
+stream_update_kernels.mod: $(BLDDIR)/stream_update_kernels-f.o
+$(BLDDIR)/axhm-f.o: stream_update_kernels.mod
+$(BLDDIR)/grad-f.o: stream_update_kernels.mod
+$(BLDDIR)/rstr-f.o: stream_update_kernels.mod
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
