@@ -86,10 +86,19 @@ $(OUTDIR)/rstr: $(OUTDIR)/.make $(OUTDIR)/libstream_update_kernels.$(SLIBEXT) $(
 		$(call abslib,$(LIBNAME)f.$(LIBEXT)) $(call abslib,$(LIBNAME).$(LIBEXT)) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 
+$(BLDDIR)/stream_update_kernels-f.o: $(SRCDIR)/stream_update_kernels.f .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+	-@rm -f stream_update_kernels.mod
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
 stream_update_kernels.mod: $(BLDDIR)/stream_update_kernels-f.o
-$(BLDDIR)/axhm-f.o: stream_update_kernels.mod
-$(BLDDIR)/grad-f.o: stream_update_kernels.mod
-$(BLDDIR)/rstr-f.o: stream_update_kernels.mod
+
+$(BLDDIR)/axhm-f.o: $(SRCDIR)/axhm.f stream_update_kernels.mod .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
+
+$(BLDDIR)/grad-f.o: $(SRCDIR)/grad.f stream_update_kernels.mod .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
+
+$(BLDDIR)/rstr-f.o: $(SRCDIR)/rstr.f stream_update_kernels.mod .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
