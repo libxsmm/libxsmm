@@ -397,20 +397,10 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          TYPE(C_PTR) :: calpha, cbeta
-          IF (PRESENT(alpha)) THEN
-            calpha = C_LOC(alpha)
-          ELSE
-            calpha = C_NULL_PTR
-          END IF
-          IF (PRESENT(beta)) THEN
-            cbeta = C_LOC(beta)
-          ELSE
-            cbeta = C_NULL_PTR
-          END IF
           CALL libxsmm_xmmdispatch(                                     &
      &      fn%handle, LIBXSMM_GEMM_PRECISION_F32,                      &
-     &      m, n, k, lda, ldb, ldc, calpha, cbeta, flags, prefetch)
+     &      m, n, k, lda, ldb, ldc, C_LOC(alpha), C_LOC(beta),          &
+     &      flags, prefetch)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmdispatch
@@ -421,20 +411,10 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          TYPE(C_PTR) :: calpha, cbeta
-          IF (PRESENT(alpha)) THEN
-            calpha = C_LOC(alpha)
-          ELSE
-            calpha = C_NULL_PTR
-          END IF
-          IF (PRESENT(beta)) THEN
-            cbeta = C_LOC(beta)
-          ELSE
-            cbeta = C_NULL_PTR
-          END IF
           CALL libxsmm_xmmdispatch(                                     &
      &      fn%handle, LIBXSMM_GEMM_PRECISION_F64,                      &
-     &      m, n, k, lda, ldb, ldc, calpha, cbeta, flags, prefetch)
+     &      m, n, k, lda, ldb, ldc, C_LOC(alpha), C_LOC(beta),          &
+     &      flags, prefetch)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmavailable
@@ -516,59 +496,57 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm
         SUBROUTINE libxsmm_sgemm(transa, transb, m, n, k,               &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                               OPTIONAL, TARGET :: lda, ldb, ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:), b(:,:)
+          REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_sgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_FLOAT
-              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-              REAL(C_FLOAT), INTENT(IN) :: alpha, beta
-              REAL(C_FLOAT), INTENT(IN) :: a(lda,*), b(ldb,*)
-              REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
+              TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
+              TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
             END SUBROUTINE
           END INTERFACE
-          CALL internal_gemm(transa, transb, m, n, k,                   &
-     &      alpha, a, lda, b, ldb, beta, c, ldc)
+          CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
+     &      C_LOC(alpha), C_LOC(a), C_LOC(lda), C_LOC(b), C_LOC(ldb),   &
+     &      C_LOC(beta), C_LOC(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm
         SUBROUTINE libxsmm_dgemm(transa, transb, m, n, k,               &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
-          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
-          REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                                OPTIONAL, TARGET :: lda, ldb, ldc
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:), b(:,:)
+          REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_dgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_DOUBLE
-              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-              REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
-              REAL(C_DOUBLE), INTENT(IN) :: a(lda,*), b(ldb,*)
-              REAL(C_DOUBLE), INTENT(INOUT) :: c(ldc,*)
+              TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
+              TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
             END SUBROUTINE
           END INTERFACE
-          CALL internal_gemm(transa, transb, m, n, k,                   &
-     &      alpha, a, lda, b, ldb, beta, c, ldc)
+          CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
+     &      C_LOC(alpha), C_LOC(a), C_LOC(lda), C_LOC(b), C_LOC(ldb),   &
+     &      C_LOC(beta), C_LOC(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm
