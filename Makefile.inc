@@ -132,7 +132,7 @@ else
 endif
 
 # Utilities
-MKTEMP = $(DEPDIR)/.mktmp.sh
+MKTEMP = bash $(DEPDIR)/.mktmp.sh
 FLOCK = $(DEPDIR)/.flock.sh
 
 # Debugging and symbols (e.g., when profiling)
