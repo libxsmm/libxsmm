@@ -517,8 +517,9 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
-     &      C_LOC(alpha), C_LOC(a), C_LOC(lda), C_LOC(b), C_LOC(ldb),   &
-     &      C_LOC(beta), C_LOC(c), C_LOC(ldc))
+     &      C_LOC(alpha), srealptr(a), C_LOC(lda),                      &
+     &                    srealptr(b), C_LOC(ldb),                      &
+     &       C_LOC(beta), srealptr(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm
@@ -545,8 +546,9 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
-     &      C_LOC(alpha), C_LOC(a), C_LOC(lda), C_LOC(b), C_LOC(ldb),   &
-     &      C_LOC(beta), C_LOC(c), C_LOC(ldc))
+     &      C_LOC(alpha), drealptr(a), C_LOC(lda),                      &
+     &                    drealptr(b), C_LOC(ldb),                      &
+     &       C_LOC(beta), drealptr(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm
