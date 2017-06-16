@@ -605,7 +605,7 @@ ifneq (1,$(PRECISION))
 endif
 endif
 endif
-	$(eval TMPFILE = $(shell mktemp /tmp/.libxsmm_XXXXXX.mak))
+	$(eval TMPFILE = $(shell $(ROOTDIR)/.mktmp.sh /tmp/.libxsmm_XXXXXX.mak))
 	@cat $@ | sed \
 		-e "s/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/" \
 		-e "s/#ifndef NDEBUG/$(SUPPRESS_UNUSED_PREFETCH_WARNINGS)#ifdef LIBXSMM_NEVER_DEFINED/" \
@@ -1316,7 +1316,7 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 endif
 
 $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
-	$(eval TMPFILE = $(shell mktemp .libxsmm_XXXXXX.tex))
+	$(eval TMPFILE = $(shell $(ROOTDIR)/.mktmp.sh .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
@@ -1344,7 +1344,7 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 	@rm $(TMPFILE)
 
 $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
-	$(eval TMPFILE = $(shell mktemp .libxsmm_XXXXXX.tex))
+	$(eval TMPFILE = $(shell $(ROOTDIR)/.mktmp.sh .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
@@ -1372,7 +1372,7 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 	@rm $(TMPFILE)
 
 $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
-	$(eval TMPFILE = $(shell mktemp .libxsmm_XXXXXX.tex))
+	$(eval TMPFILE = $(shell $(ROOTDIR)/.mktmp.sh .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
@@ -1400,7 +1400,7 @@ $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
 	@rm $(TMPFILE)
 
 $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
-	$(eval TMPFILE = $(shell mktemp .libxsmm_XXXXXX.tex))
+	$(eval TMPFILE = $(shell $(ROOTDIR)/.mktmp.sh .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \

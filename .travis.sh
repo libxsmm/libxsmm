@@ -31,7 +31,8 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
-MKTEMP=$(which mktemp 2> /dev/null)
+#MKTEMP=$(which mktemp 2> /dev/null)
+MKTEMP=${HERE}/.mktmp.sh
 MKDIR=$(which mkdir 2> /dev/null)
 CHMOD=$(which chmod 2> /dev/null)
 SORT=$(which sort 2> /dev/null)
