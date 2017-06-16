@@ -605,7 +605,7 @@ ifneq (1,$(PRECISION))
 endif
 endif
 endif
-	$(eval TMPFILE = $(shell $(ROOTDIR)/.mktmp.sh /tmp/.libxsmm_XXXXXX.mak))
+	$(eval TMPFILE = $(shell $(MKTEMP) /tmp/.libxsmm_XXXXXX.mak))
 	@cat $@ | sed \
 		-e "s/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/" \
 		-e "s/#ifndef NDEBUG/$(SUPPRESS_UNUSED_PREFETCH_WARNINGS)#ifdef LIBXSMM_NEVER_DEFINED/" \
@@ -927,55 +927,55 @@ endif
 samples: cp2k nek smm wrap
 	@find $(SPLDIR) -type f -name Makefile | grep -v /specfem/ | grep -v /pyfr/ \
 		$(patsubst %, | grep -v /%/,$^) | xargs -I {} dirname {} | xargs -I {} $(SHELL) -c \
-		"cd {}; $(ROOTDIR)/.flock.sh {} $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+		"cd {} && $(FLOCK) {} $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
 
 .PHONY: cp2k
 cp2k: lib_hst
-	@cd $(SPLDIR)/cp2k && $(ROOTDIR)/.flock.sh $(SPLDIR)/cp2k $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/cp2k && $(FLOCK) $(SPLDIR)/cp2k $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: cp2k_mic
 cp2k_mic: lib_mic
-	@cd $(SPLDIR)/cp2k && $(ROOTDIR)/.flock.sh $(SPLDIR)/cp2k $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/cp2k && $(FLOCK) $(SPLDIR)/cp2k $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) KNC=1 TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: wrap
 wrap: lib_hst
-	@cd $(SPLDIR)/wrap && $(ROOTDIR)/.flock.sh $(SPLDIR)/wrap $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/wrap && $(FLOCK) $(SPLDIR)/wrap $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=0 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: wrap_mic
 wrap_mic: lib_mic
-	@cd $(SPLDIR)/wrap && $(ROOTDIR)/.flock.sh $(SPLDIR)/wrap $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/wrap && $(FLOCK) $(SPLDIR)/wrap $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) KNC=1 TRACE=0 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: nek
 nek: lib_hst
-	@cd $(SPLDIR)/nek && $(ROOTDIR)/.flock.sh $(SPLDIR)/nek $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/nek && $(FLOCK) $(SPLDIR)/nek $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: nek_mic
 nek_mic: lib_mic
-	@cd $(SPLDIR)/nek && $(ROOTDIR)/.flock.sh $(SPLDIR)/nek $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/nek && $(FLOCK) $(SPLDIR)/nek $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) KNC=1 TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: smm
 smm: lib_hst
-	@cd $(SPLDIR)/smm && $(ROOTDIR)/.flock.sh $(SPLDIR)/smm $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/smm && $(FLOCK) $(SPLDIR)/smm $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: smm_mic
 smm_mic: lib_mic
-	@cd $(SPLDIR)/smm && $(ROOTDIR)/.flock.sh $(SPLDIR)/smm $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/smm && $(FLOCK) $(SPLDIR)/smm $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) KNC=1 TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
@@ -983,13 +983,13 @@ smm_mic: lib_mic
 # will need option: make MNK="5 25" ..
 .PHONY: specfem
 specfem: lib_hst
-	@cd $(SPLDIR)/specfem && $(ROOTDIR)/.flock.sh $(SPLDIR)/specfem $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/specfem && $(FLOCK) $(SPLDIR)/specfem $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: specfem_mic
 specfem_mic: lib_mic
-	@cd $(SPLDIR)/specfem && $(ROOTDIR)/.flock.sh $(SPLDIR)/specfem $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/specfem && $(FLOCK) $(SPLDIR)/specfem $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) KNC=1 TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
@@ -1218,13 +1218,13 @@ test-all: tests test-cp2k test-smm test-nek test-wrap
 
 .PHONY: build-tests
 build-tests: lib_hst
-	@cd $(TSTDIR) && $(ROOTDIR)/.flock.sh $(TSTDIR) $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(TSTDIR) && $(FLOCK) $(TSTDIR) $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)
 
 .PHONY: tests
 tests: build-tests
-	@cd $(TSTDIR) && $(ROOTDIR)/.flock.sh $(TSTDIR) $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(TSTDIR) && $(FLOCK) $(TSTDIR) $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) test
 
@@ -1233,7 +1233,7 @@ cpp-test: test-cpp
 
 .PHONY: test-cpp
 test-cpp: $(INCDIR)/libxsmm_source.h
-	@cd $(SPLDIR)/cp2k && $(ROOTDIR)/.flock.sh $(SPLDIR)/cp2k $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/cp2k && $(FLOCK) $(SPLDIR)/cp2k $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=0 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) \
 		ECXXFLAGS="-DUSE_HEADER_ONLY $(ECXXFLAGS)" clean compile
@@ -1244,7 +1244,7 @@ $(SPLDIR)/cp2k/cp2k-test.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
 	$(info ========================)
 	$(info Running CP2K Code Sample)
 	$(info ========================)
-	@cd $(SPLDIR)/cp2k && $(ROOTDIR)/.flock.sh $(SPLDIR)/cp2k $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/cp2k && $(FLOCK) $(SPLDIR)/cp2k $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) cp2k
 	@$(SPLDIR)/cp2k/cp2k-perf.sh $@ $(shell echo $$(($(TESTSIZE) * 128)))
@@ -1252,14 +1252,14 @@ $(SPLDIR)/cp2k/cp2k-test.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
 .PHONY: perf-cp2k
 perf-cp2k: $(SPLDIR)/cp2k/cp2k-perf.txt
 $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
-	@cd $(SPLDIR)/cp2k && $(ROOTDIR)/.flock.sh $(SPLDIR)/cp2k $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/cp2k && $(FLOCK) $(SPLDIR)/cp2k $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) cp2k
 	@$(SPLDIR)/cp2k/cp2k-perf.sh $@
 
 .PHONY: test-wrap
 test-wrap: wrap
-	@cd $(SPLDIR)/wrap && $(ROOTDIR)/.flock.sh $(SPLDIR)/wrap $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/wrap && $(FLOCK) $(SPLDIR)/wrap $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=0 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) test
 
@@ -1270,7 +1270,7 @@ $(SPLDIR)/smm/smm-test.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
 	$(info =======================)
 	$(info Running SMM Code Sample)
 	$(info =======================)
-	@cd $(SPLDIR)/smm && $(ROOTDIR)/.flock.sh $(SPLDIR)/smm $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/smm && $(FLOCK) $(SPLDIR)/smm $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) smm
 	@$(SPLDIR)/smm/smmf-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))
@@ -1280,7 +1280,7 @@ endif
 ifneq (,$(strip $(FC)))
 perf-smm: $(SPLDIR)/smm/smmf-perf.txt
 $(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
-	@cd $(SPLDIR)/smm && $(ROOTDIR)/.flock.sh $(SPLDIR)/smm $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/smm && $(FLOCK) $(SPLDIR)/smm $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) smm
 	@$(SPLDIR)/smm/smmf-perf.sh $@
@@ -1293,7 +1293,7 @@ $(SPLDIR)/nek/axhm-perf.txt: $(SPLDIR)/nek/axhm-perf.sh lib_hst
 	$(info =======================)
 	$(info Running NEK/AXHM Sample)
 	$(info =======================)
-	@cd $(SPLDIR)/nek && $(ROOTDIR)/.flock.sh $(SPLDIR)/nek $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/nek && $(FLOCK) $(SPLDIR)/nek $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) axhm
 	@$(SPLDIR)/nek/axhm-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))
@@ -1301,7 +1301,7 @@ $(SPLDIR)/nek/grad-perf.txt: $(SPLDIR)/nek/grad-perf.sh lib_hst
 	$(info =======================)
 	$(info Running NEK/GRAD Sample)
 	$(info =======================)
-	@cd $(SPLDIR)/nek && $(ROOTDIR)/.flock.sh $(SPLDIR)/nek $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/nek && $(FLOCK) $(SPLDIR)/nek $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) grad
 	@$(SPLDIR)/nek/grad-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))
@@ -1309,14 +1309,14 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 	$(info =======================)
 	$(info Running NEK/RSTR Sample)
 	$(info =======================)
-	@cd $(SPLDIR)/nek && $(ROOTDIR)/.flock.sh $(SPLDIR)/nek $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
+	@cd $(SPLDIR)/nek && $(FLOCK) $(SPLDIR)/nek $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) rstr
 	@$(SPLDIR)/nek/rstr-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))
 endif
 
 $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
-	$(eval TMPFILE = $(shell $(ROOTDIR)/.mktmp.sh .libxsmm_XXXXXX.tex))
+	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
@@ -1344,7 +1344,7 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 	@rm $(TMPFILE)
 
 $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
-	$(eval TMPFILE = $(shell $(ROOTDIR)/.mktmp.sh .libxsmm_XXXXXX.tex))
+	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
@@ -1372,7 +1372,7 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 	@rm $(TMPFILE)
 
 $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
-	$(eval TMPFILE = $(shell $(ROOTDIR)/.mktmp.sh .libxsmm_XXXXXX.tex))
+	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
@@ -1400,7 +1400,7 @@ $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
 	@rm $(TMPFILE)
 
 $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
-	$(eval TMPFILE = $(shell $(ROOTDIR)/.mktmp.sh .libxsmm_XXXXXX.tex))
+	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
@@ -1481,12 +1481,12 @@ endif
 .PHONY: clean-all
 clean-all: clean
 	@find $(ROOTDIR) -type f -name Makefile -exec dirname {} \; | xargs -I {} $(SHELL) -c \
-		"cd {}; $(ROOTDIR)/.flock.sh {} $(MAKE) --no-print-directory clean 2> /dev/null || true"
+		"cd {} && $(FLOCK) {} $(MAKE) --no-print-directory clean 2> /dev/null || true"
 
 .PHONY: realclean-all
 realclean-all: realclean
 	@find $(ROOTDIR) -type f -name Makefile -exec dirname {} \; | xargs -I {} $(SHELL) -c \
-		"cd {}; $(ROOTDIR)/.flock.sh {} $(MAKE) --no-print-directory realclean 2> /dev/null || true"
+		"cd {} && $(FLOCK) {} $(MAKE) --no-print-directory realclean 2> /dev/null || true"
 
 # Dummy prefix
 ifneq (,$(strip $(PREFIX)))
