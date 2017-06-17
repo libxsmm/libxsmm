@@ -31,11 +31,12 @@
 #############################################################################
 
 FLOCK=$(which flock 2> /dev/null)
+DIR=$1
 
+shift
 if [ "" != "${FLOCK}" ]; then
-  ${FLOCK} "$*"
+  ${FLOCK} ${DIR} bash -c "$*"
 else
-  shift
   eval "$*"
 fi
 
