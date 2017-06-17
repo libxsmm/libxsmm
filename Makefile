@@ -1236,7 +1236,7 @@ test-cpp: $(INCDIR)/libxsmm_source.h
 	@$(FLOCK) $(SPLDIR)/cp2k "cd $(SPLDIR)/cp2k; make --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
 		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=0 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) \
-		ECXXFLAGS="-DUSE_HEADER_ONLY $(ECXXFLAGS) clean compile"
+		ECXXFLAGS=-DUSE_HEADER_ONLY $(ECXXFLAGS) clean compile"
 
 .PHONY: test-cp2k
 test-cp2k: $(SPLDIR)/cp2k/cp2k-test.txt
