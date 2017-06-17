@@ -135,6 +135,9 @@ endif
 MKTEMP = $(DEPDIR)/.mktmp.sh
 FLOCK = $(DEPDIR)/.flock.sh
 
+# In case it is not defined
+MAKE ?= make
+
 # Debugging and symbols (e.g., when profiling)
 SYM ?= 0
 DBG ?= 0
