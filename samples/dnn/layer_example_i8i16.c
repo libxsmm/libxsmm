@@ -77,6 +77,13 @@ typedef struct {
   double one_norm_test;
 } correctness_t;
 
+LIBXSMM_INLINE void aggregate_norms(correctness_t* output, const correctness_t* input) {
+  assert(0 != output && 0 != input);
+  output->l2_rel_err += input->l2_rel_err;
+  output->max_rel_err += input->max_rel_err;
+  output->max_abs_err += input->max_abs_err;
+}
+
 LIBXSMM_INLINE void zero_buf_int8(char* buf, long size) {
   int i;
   for (i = 0; i < size; ++i) {
@@ -365,7 +372,7 @@ int main(int argc, char* argv[])
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   naive_conv_t naive_param;
-  correctness_t norms_fwd, norms_bwd;
+  correctness_t norms_fwd, norms_bwd, norms_check;
   void* scratch;
 
   /* some parameters we can overwrite via cli,
@@ -381,6 +388,8 @@ int main(int argc, char* argv[])
   int pad = 2;            /* padding in output */
   int stride = 1;         /* stride when accessing inputs */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
+  const char *const env_check = getenv("CHECK");
+  const int check = (0 == env_check ? 0 : atoi(env_check));
 
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads();       /* number of threads */
@@ -403,6 +412,7 @@ int main(int argc, char* argv[])
 
   memset(&norms_fwd, 0, sizeof(norms_fwd));
   memset(&norms_bwd, 0, sizeof(norms_bwd));
+  memset(&norms_check, 0, sizeof(norms_check));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type padding_mode\n", argv[0]);
@@ -617,6 +627,7 @@ int main(int argc, char* argv[])
     printf("       L2-error-norm of JIT-code: %f\n", norms_fwd.l2_rel_err);
     printf("    inf-norm of comp. rel. error: %f\n", norms_fwd.max_rel_err);
     printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
+    aggregate_norms(&norms_check, &norms_fwd);
   }
 
   if (type == 'A' || type == 'B') {
@@ -647,9 +658,10 @@ int main(int argc, char* argv[])
     printf("       L2-error-norm of JIT-code: %f\n", norms_bwd.l2_rel_err);
     printf("    inf-norm of comp. rel. error: %f\n", norms_bwd.max_rel_err);
     printf("    inf-norm of comp. abs. error: %f\n", norms_bwd.max_abs_err);
+    aggregate_norms(&norms_check, &norms_bwd);
   }
 
-  if (type == 'A' || type == 'F') {
+  if ((type == 'A' || type == 'F') && 0 == check) {
     printf("##########################################\n");
     printf("#   Performance Run   (custom-Storage)   #\n");
     printf("##########################################\n");
@@ -681,7 +693,7 @@ int main(int argc, char* argv[])
        norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
   }
 
-  if (type == 'A' || type == 'B') {
+  if ((type == 'A' || type == 'B') && 0 == check) {
     printf("##########################################\n");
     printf("#   Performance - BWD (custom-Storage)   #\n");
     printf("##########################################\n");
@@ -741,6 +753,12 @@ int main(int argc, char* argv[])
   /* some empty lines at the end */
   printf("\n\n\n");
 
-  return 0;
+  if (0 != check && (0 < norms_check.l2_rel_err
+                  || 0 < norms_check.max_rel_err
+                  || 0 < norms_check.max_abs_err))
+  {
+    exit(EXIT_FAILURE);
+  }
+  return EXIT_SUCCESS;
 }
 
