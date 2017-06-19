@@ -988,12 +988,14 @@ ifneq (0,$(THREADS))
   ifeq (0,$(COMPATIBLE))
     CXXFLAGS += -pthread
     CFLAGS += -pthread
-    FLDFLAGS += -lpthread
-    ifneq (Windows_NT,$(UNAME))
-      ifneq (Darwin,$(UNAME))
-        CLDFLAGS += -pthread
-      else ifeq (0,$(CLANG))
-        CLDFLAGS += -pthread
+    ifneq (0,$(shell echo "$$((0==$(INTEL) || 0!=$(STATIC)))"))
+      FLDFLAGS += -lpthread
+      ifneq (Windows_NT,$(UNAME))
+        ifneq (Darwin,$(UNAME))
+          CLDFLAGS += -pthread
+        else ifeq (0,$(CLANG))
+          CLDFLAGS += -pthread
+        endif
       endif
     endif
   endif
