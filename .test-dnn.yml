@@ -1,0 +1,3 @@
+script:
+  - make ${MAKEJ} && cd samples/dnn && make ${MAKEJ} && ./run_alexnet.sh
+

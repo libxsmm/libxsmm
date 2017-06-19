@@ -88,6 +88,11 @@ then
     PARTITIONS=none
   fi
 
+  # select test-set ("travis" by default)
+  if [ "" = "${TESTSET}" ]; then
+    TESTSET=travis
+  fi
+
   # setup batch execution
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ]; then
     if [ "" != "${SRUN_CPUS_PER_TASK}" ]; then
@@ -113,7 +118,7 @@ then
 
   RESULT=0
   while TEST=$(eval " \
-    ${SED} -e '/^\s*script:\s*$/,\$!d' -e '/^\s*script:\s*$/d' ${HERE}/.travis.yml | \
+    ${SED} -e '/^\s*script:\s*$/,\$!d' -e '/^\s*script:\s*$/d' ${HERE}/.${TESTSET}.yml | \
     ${SED} -nr \"/^\s*-\s*/H;//,/^\s*$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
     ${SED} -e 's/^\s*-\s*//' -e 's/^\s\s*//' | ${TR} '\n' ' ' | \
     ${SED} -e 's/\s\s*$//'") && [ "" != "${TEST}" ];
