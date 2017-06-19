@@ -988,7 +988,7 @@ ifneq (0,$(THREADS))
   ifeq (0,$(COMPATIBLE))
     CXXFLAGS += -pthread
     CFLAGS += -pthread
-    ifneq (0,$(shell echo "$$((0==$(INTEL) || 0!=$(STATIC)))"))
+    ifneq (0,$(shell echo "$$((0==$(INTEL) || 0!=$(DEPSTATIC)))"))
       FLDFLAGS += -lpthread
       ifneq (Windows_NT,$(UNAME))
         ifneq (Darwin,$(UNAME))
