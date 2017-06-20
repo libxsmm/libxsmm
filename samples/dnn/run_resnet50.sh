@@ -34,7 +34,7 @@ fi
 
 if [[ -z "${OMP_NUM_THREADS}" ]]; then
   echo "using defaults for OMP settings!"
-  export KMP_PLACE_THREADS=1T
+  export KMP_HW_SUBSET=1T
   export KMP_AFFINITY=compact,granularity=fine
   export OMP_NUM_THREADS=64
 else

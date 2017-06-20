@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <float.h>
 #include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
@@ -87,9 +88,11 @@ typedef struct {
 
 LIBXSMM_INLINE void aggregate_norms(correctness_t* output, const correctness_t* input) {
   assert(0 != output && 0 != input);
-  output->l2_rel_err = LIBXSMM_MAX(output->l2_rel_err, input->l2_rel_err);
-  output->max_rel_err = LIBXSMM_MAX(output->max_rel_err, input->max_rel_err);
-  output->max_abs_err = LIBXSMM_MAX(output->max_rel_err, input->max_abs_err);
+  if (FLT_EPSILON < input->max_abs_err && output->max_rel_err < input->max_rel_err) {
+    output->max_abs_err = input->max_abs_err;
+    output->max_rel_err = input->max_rel_err;
+    output->l2_rel_err = input->l2_rel_err;
+  }
 }
 
 LIBXSMM_INLINE void zero_buf(float* buf, long size) {
@@ -463,7 +466,7 @@ int main(int argc, char* argv[])
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'A';      /* 'A': ALL, 'L': LIBXSMM, 'T': Tensorflow, 'M', Mixed */
   const char *const env_check = getenv("CHECK");
-  const int check = (0 == env_check ? 0 : atoi(env_check));
+  const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads();      /* number of threads */
 #else
@@ -850,7 +853,7 @@ int main(int argc, char* argv[])
       aggregate_norms(&norms_check, &norms_upd);
     }
 
-    if ((type == 'A' || type == 'F') && 0 == check) {
+    if ((type == 'A' || type == 'F') && LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("#   Performance - FWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -882,7 +885,7 @@ int main(int argc, char* argv[])
          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
     }
 
-    if ( (type == 'A' || type == 'B') && (nIfm > 3) && 0 == check ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) && LIBXSMM_FEQ(0, check) ) {
       printf("##########################################\n");
       printf("#   Performance - BWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -914,7 +917,7 @@ int main(int argc, char* argv[])
          norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
     }
 
-    if ((type == 'A' || type == 'U') && 0 == check) {
+    if ((type == 'A' || type == 'U') && LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("#   Performance - UPD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -1139,7 +1142,7 @@ int main(int argc, char* argv[])
       aggregate_norms(&norms_check, &norms_upd);
     }
 
-    if ((type == 'A' || type == 'F') && 0 == check) {
+    if ((type == 'A' || type == 'F') && LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("#  Performance - FWD (NHWC/RSCK-Storage) #\n");
       printf("##########################################\n");
@@ -1171,7 +1174,7 @@ int main(int argc, char* argv[])
          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
     }
 
-    if ( (type == 'A' || type == 'B') && (nIfm > 3) && 0 == check ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) && LIBXSMM_FEQ(0, check) ) {
       printf("##########################################\n");
       printf("#  Performance - BWD (NHWC/RSCK-Storage) #\n");
       printf("##########################################\n");
@@ -1203,7 +1206,7 @@ int main(int argc, char* argv[])
          norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
     }
 
-    if ((type == 'A' || type == 'U') && 0 == check) {
+    if ((type == 'A' || type == 'U') && LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("#  Performance - UPD (NHWC/RSCK-Storage) #\n");
       printf("##########################################\n");
@@ -1430,7 +1433,7 @@ int main(int argc, char* argv[])
       aggregate_norms(&norms_check, &norms_upd);
     }
 
-    if ((type == 'A' || type == 'F') && 0 == check) {
+    if ((type == 'A' || type == 'F') && LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("# Performance - FWD(NHWC/custom-Storage) #\n");
       printf("##########################################\n");
@@ -1462,7 +1465,7 @@ int main(int argc, char* argv[])
          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
     }
 
-    if ( (type == 'A' || type == 'B') && (nIfm > 3) && 0 == check ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) && LIBXSMM_FEQ(0, check) ) {
       printf("##########################################\n");
       printf("# Performance - BWD(NHWC/custom-Storage) #\n");
       printf("##########################################\n");
@@ -1494,7 +1497,7 @@ int main(int argc, char* argv[])
          norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
     }
 
-    if ((type == 'A' || type == 'U') && 0 == check) {
+    if ((type == 'A' || type == 'U') && LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("# Performance - UPD(NHWC/custom-Storage) #\n");
       printf("##########################################\n");
@@ -1580,14 +1583,19 @@ int main(int argc, char* argv[])
   libxsmm_free(bias_libxsmm);
   libxsmm_free(dbias_libxsmm);
 
+  if (check < norms_check.max_rel_err) {
+    const char *const env_check_tolerance = getenv("CHECK_DNN_TOLERANCE");
+    const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
+    if (check_tolerance < norms_check.max_abs_err) {
+      fprintf(stderr, "\nFAILED with an error of L1=%f, L1rel=%f%% and L2sum=%f!\n\n",
+        norms_check.max_abs_err, norms_check.max_rel_err, norms_check.l2_rel_err);
+      exit(EXIT_FAILURE);
+    }
+  }
+
   /* some empty lines at the end */
   printf("\n\n\n");
 
-  if (0 != check && 0 < norms_check.max_abs_err) {
-    const char *const env_check_tolerance = getenv("CHECK_TOLERANCE");
-    const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 2.0 : atof(env_check_tolerance));
-    if (check_tolerance < norms_check.max_rel_err) exit(EXIT_FAILURE);
-  }
   return EXIT_SUCCESS;
 }
 
