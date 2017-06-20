@@ -79,9 +79,9 @@ typedef struct {
 
 LIBXSMM_INLINE void aggregate_norms(correctness_t* output, const correctness_t* input) {
   assert(0 != output && 0 != input);
-  output->l2_rel_err += input->l2_rel_err;
-  output->max_rel_err += input->max_rel_err;
-  output->max_abs_err += input->max_abs_err;
+  output->l2_rel_err = LIBXSMM_MAX(output->l2_rel_err, input->l2_rel_err);
+  output->max_rel_err = LIBXSMM_MAX(output->max_rel_err, input->max_rel_err);
+  output->max_abs_err = LIBXSMM_MAX(output->max_rel_err, input->max_abs_err);
 }
 
 LIBXSMM_INLINE void zero_buf_int8(char* buf, long size) {
@@ -755,11 +755,10 @@ int main(int argc, char* argv[])
   /* some empty lines at the end */
   printf("\n\n\n");
 
-  if (0 != check && (0 < norms_check.l2_rel_err
-                  || 0 < norms_check.max_rel_err
-                  || 0 < norms_check.max_abs_err))
-  {
-    exit(EXIT_FAILURE);
+  if (0 != check && 0 < norms_check.max_abs_err) {
+    const char *const env_check_tolerance = getenv("CHECK_TOLERANCE");
+    const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 2.0 : atof(env_check_tolerance));
+    if (check_tolerance < norms_check.max_rel_err) exit(EXIT_FAILURE);
   }
   return EXIT_SUCCESS;
 }
