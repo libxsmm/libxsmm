@@ -398,6 +398,42 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_sizereg = 64;
           if ( i_is_store == 1 ) l_aligned += 0xf;
           break;
+       case LIBXSMM_X86_INSTR_VMOVNTPD:
+          l_bytes = 4;
+          if ( i_vector_name=='x' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovntpd not yet implemented for xmm\n");
+             exit(-1);
+          }
+          if ( l_num == 1 ) l_ivectype3 += 0x80;
+          l_ivectype2 += 0x81;
+          l_penultimate += 0x1A;
+          l_sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVNTPS:
+          l_bytes = 4;
+          if ( i_vector_name=='x' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovntps not yet implemented for xmm\n");
+             exit(-1);
+          }
+          if ( l_num == 1 ) l_ivectype3 += 0x80;
+          l_ivectype -= 0x01;
+          l_penultimate += 0x1A;
+          l_sizereg = 64;
+          break;
+       case LIBXSMM_X86_INSTR_VMOVNTDQ:
+          l_bytes = 4;
+          if ( i_vector_name=='x' )
+          {
+             fprintf(stderr,"libxsmm_instruction_vec_move: vmovntdq not yet implemented for xmm\n");
+             exit(-1);
+          }
+          if ( l_num == 1 ) l_ivectype3 += 0x80;
+          l_ivectype2 += 0x01;
+          l_penultimate += 0xD6;
+          l_sizereg = 64;
+          break;
        case LIBXSMM_X86_INSTR_VBROADCASTSD:
           l_bytes = 5;
           if ( i_vector_name=='x' )
