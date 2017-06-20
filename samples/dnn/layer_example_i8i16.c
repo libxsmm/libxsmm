@@ -446,12 +446,15 @@ int main(int argc, char* argv[])
   pad_h = pad;
   pad_w = pad;
 
-  if (padding_mode == 1) {
-    pad_h_in = pad_h;
-    pad_w_in = pad_w;
-  } else {
+  if (0 == padding_mode) {
     pad_h_in = 0;
     pad_w_in = 0;
+  }
+  else {
+    /* TODO: change "1" to "0" if "padding_mode = -1" is acknowledged */
+    if (1 < padding_mode) pad_w = padding_mode;
+    pad_h_in = pad_h;
+    pad_w_in = pad_w;
   }
 
   pad_h_in = pad_h;
