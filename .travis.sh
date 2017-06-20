@@ -85,7 +85,20 @@ then
 
   # setup PARTITIONS for multi-tests
   if [ "" = "${PARTITIONS}" ]; then
-    PARTITIONS=none
+    if [ "" != "${PARTITION}" ]; then
+      PARTITIONS=${PARTITION}
+    else
+      PARTITIONS=none
+    fi
+  fi
+
+  # setup CONFIGS (multiple configurations)
+  if [ "" = "${CONFIGS}" ]; then
+    if [ "" != "${CONFIG}" ]; then
+      CONFIGS=${CONFIG}
+    else
+      CONFIGS=none
+    fi
   fi
 
   # select test-set ("travis" by default)
@@ -104,12 +117,6 @@ then
     LAUNCH="${SRUN} --ntasks=1 ${SRUN_CPUS_PER_TASK_FLAG} \
       --partition=\${PARTITION} --preserve-env --pty ${TESTSCRIPT}"
   else # avoid temporary script in case of non-batch execution
-    # make execution environment available
-    if [ "" != "${HOST}" ] && [ "" != "${CONFIG}" ] && \
-       [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env ]; \
-    then
-      source ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env
-    fi
     LAUNCH=\${TEST}
   fi
   if [ "" != "${LAUNCH_USER}" ]; then
@@ -124,6 +131,7 @@ then
     ${SED} -e 's/\s\s*$//'") && [ "" != "${TEST}" ];
   do
     for PARTITION in ${PARTITIONS}; do
+    for CONFIG in ${CONFIGS}; do
       # print some header if all tests are selected or in case of multi-tests
       if [ "" = "$1" ] || [ "none" != "${PARTITION}" ]; then
         echo "================================================================================"
@@ -134,11 +142,11 @@ then
         fi
       fi
 
-      # prepare temporary script
+      # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
         # make execution environment available
-        if [ "" != "${HOST}" ] && [ "" != "${CONFIG}" ] && \
+        if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
            [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env ]; \
         then
           ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
@@ -148,6 +156,12 @@ then
         fi
         # record the actual test case
         echo "${TEST}" >> ${TESTSCRIPT}
+      else # make execution environment locally available
+        if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
+           [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env ]; \
+        then
+          source ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env
+        fi
       fi
 
       # run the prepared test case/script
@@ -164,7 +178,8 @@ then
       else
         break
       fi
-    done
+    done # CONFIGS
+    done # PARTITIONS
 
     # increment the case number, or exit the script
     if [ "" = "$1" ] && [ "0" = "${RESULT}" ]; then
