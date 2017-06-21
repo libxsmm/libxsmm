@@ -50,15 +50,15 @@ then
   HOST=$(hostname -s 2> /dev/null)
 
   if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ -e /proc/cpuinfo ]; then
-    HT=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
-    NT=$(${GREP} "physical id" /proc/cpuinfo | ${WC} -l)
+    export HT=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
+    export NT=$(${GREP} "physical id" /proc/cpuinfo | ${WC} -l)
   fi
   if [ "" != "${NT}" ] && [ "" != "${HT}" ]; then
-    NC=$((NT/HT))
-    MAKEJ="-j ${NC}"
+    export NC=$((NT/HT))
+    export MAKEJ="-j ${NC}"
   else
-    NT=1; HT=1; NC=1
-    MAKEJ=""
+    export NT=1 HT=1 NC=1
+    export MAKEJ=""
   fi
 
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
