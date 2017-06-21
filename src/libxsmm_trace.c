@@ -44,7 +44,7 @@
      (!defined(_XOPEN_SOURCE) || !defined(_XOPEN_SOURCE_EXTENDED) || 500 > _XOPEN_SOURCE) && \
      (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
 /* C89: avoid warning about mkstemp declared implicitly */
-LIBXSMM_EXTERN int mkstemp(char* filename_template);
+LIBXSMM_EXTERN int mkstemps(char*, int);
 # endif
 #include <string.h>
 #include <stdio.h>
@@ -332,7 +332,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
           }
           else {
             char filename[] = "/tmp/.libxsmm_XXXXXX.map";
-            fd = mkstemp(filename);
+            fd = mkstemps(filename, 4/*.map*/);
 
             if (0 <= fd && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {
               char *const buffer = (char*)mmap(NULL, LIBXSMM_TRACE_SYMBOLSIZE,
