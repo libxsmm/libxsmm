@@ -51,8 +51,6 @@
 # define srand48 srand
 #endif
 
-typedef float real;
-
 int main(int argc, char* argv []) {
   real *a, *b, *c, *a_gold, *b_gold, *c_gold;
   int M, N, K, LDA, LDB, LDC;
@@ -100,6 +98,7 @@ int main(int argc, char* argv []) {
   handle.m = 2048;
   handle.n = 2048;
   handle.k = 2048;
+  handle._ORDER = 0;
   handle.bm = 32;
   handle.bn = 32;
   handle.bk = 32;
@@ -111,9 +110,11 @@ int main(int argc, char* argv []) {
 
   /* reading new values from cli */
   i = 1;
+  if (argc > i) reps          = atoi(argv[i++]);
   if (argc > i) handle.m      = atoi(argv[i++]);
   if (argc > i) handle.n      = atoi(argv[i++]);
   if (argc > i) handle.k      = atoi(argv[i++]);
+  if (argc > i) handle._ORDER = atoi(argv[i++]);
   if (argc > i) handle.bm     = atoi(argv[i++]);
   if (argc > i) handle.bn     = atoi(argv[i++]);
   if (argc > i) handle.bk     = atoi(argv[i++]);
