@@ -29,8 +29,8 @@
 /* Kunal Banerjee (Intel Corp.), Dheevatsa Mudigere (Intel Corp.)
 ******************************************************************************/
 
-#ifndef BLOCK_XGEMM_H
-#define BLOCK_XGEMM_H
+#ifndef LIBXSMM_BGEMM_H
+#define LIBXSMM_BGEMM_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -122,87 +122,68 @@ _Pragma("omp parallel") \
   extern "C"{
 #endif
 
-struct BGEMM_HANDLE_s {
-  int _B_M1, _B_N1, _B_K1, _B_K2, _ORDER;
-  int C_pre_init;
-  LOCK_T* _wlock;
-  void* bar;
-  _KERNEL _l_kernel;
-#ifdef _USE_LIBXSMM_PREFETCH
-  _KERNEL _l_kernel_pf;
-#endif
-  libxsmm_barrier* barrier;
-};
-typedef struct BGEMM_HANDLE_s BGEMM_HANDLE;
-void BGEMM_HANDLE_init (BGEMM_HANDLE* handle);
-
-struct BGEMM_GROUP_HANDLE_s {
-  void* bar;
-  int* work_part;
-  int* work_id;
-};
-typedef struct BGEMM_GROUP_HANDLE_s BGEMM_GROUP_HANDLE;
-void BGEMM_GROUP_HANDLE_init (BGEMM_GROUP_HANDLE* grp_handle);
-
-/* The following functions are to be added in a later version */
-/*void BGEMM_HANDLE_alloc (BGEMM_HANDLE* handle, const int M, const int MB, const int N, const int NB);*/ /*KB*/
-void BGEMM_HANDLE_delete (BGEMM_HANDLE* handle);
-
 /******************************************************************************
-  Fine grain parallelized version(s) of BGEMM - BGEMM2_7
+  Fine grain parallelized version(s) of BGEMM
     - Requires block structure layout for A,B matrices
     - Parallelized across all three dims - M, N, K
     - Uses fine-grain on-demand locks for write to C and fast barrier
     - Allows for calling multiple GEMMs, specified by 'count'
 ******************************************************************************/
-/*void bgemm2_7(const int _M, const int _N, const int _K, const int B_M, const int B_N, const int B_K, BG_TYPE *Ap, BG_TYPE *Bp, BG_TYPE *Cp, int tid, int nthrds, BGEMM_HANDLE* handle);*/ /*KB*/
-void mbgemm2_7_A(const int _M, const int _N, const int _K, const int B_M, const int B_N, const int B_K, BG_TYPE *Ap, BG_TYPE *Bp, BG_TYPE *Cp, int tid, int nthrds, BGEMM_HANDLE* handle);
-void mbgemm2_7_B(const int _M, const int _N, const int _K, const int B_M, const int B_N, const int B_K, BG_TYPE *Ap, BG_TYPE *Bp, BG_TYPE *Cp, int tid, int nthrds, BGEMM_HANDLE* handle);
+void LIBXSMM_FSYMBOL(sgemm)(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const real*, const real*, const libxsmm_blasint*, const real*, const libxsmm_blasint*,
+  const real*, real*, const libxsmm_blasint*);
 
-int BGEMM( int transA, int transB, const int M, const int N, const int K, const int MB, const int NB, const int KB, BG_TYPE ALPHA, BG_TYPE* A, BG_TYPE * B, BG_TYPE BETA, BG_TYPE *C, const int count, BGEMM_HANDLE* handle);
+typedef struct libxsmm_blkgemm_handle {
+  int m;
+  int n;
+  int k;
+  int bm;
+  int bn;
+  int bk;
+  int mb;
+  int nb;
+  int kb;
+  /* The following have been added by KB */
+  int b_m1, b_n1, b_k1, b_k2;
+  int _ORDER;
+  int C_pre_init;
+  LOCK_T* _wlock;
+  _KERNEL _l_kernel;
+#ifdef _USE_LIBXSMM_PREFETCH
+  _KERNEL _l_kernel_pf;
+#endif
+  libxsmm_barrier* bar;
+} libxsmm_blkgemm_handle;
 
-// Init function - for one-time setup and book-keeping, the locak aray can be placed in a MKL-like handle/struct instead of explictly passing around as global variaible
-int BGEMM_init( int transA, int transB, const int M, const int N, const int K, const int MB, const int NB, const int KB, BG_TYPE ALPHA, BG_TYPE* A, BG_TYPE* B, BG_TYPE BETA, BG_TYPE* C, const int count, BGEMM_HANDLE* handle);
+void libxsmm_blkgemm_handle_alloc(libxsmm_blkgemm_handle* handle, const int M, const int MB, const int N, const int NB);
 
-/******************************************************************************
-  Explicitly threaded interface to BGEMM - BGEMM_THR
-    - Allows for calling within threaded region
-    - Assumes user take care of work-partitioning and synchronization
-******************************************************************************/
-int BGEMM_THR( int transA, int transB, const int M, const int N, const int K, const int MB, const int NB, const int KB, BG_TYPE ALPHA, BG_TYPE* A, BG_TYPE* B, BG_TYPE BETA, BG_TYPE* C, int tid, int nthrds, BGEMM_HANDLE* handle);
+LIBXSMM_INLINE void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* handle,
+                                             real* libxsmm_mat_dst,
+                                             real* colmaj_mat_src );
 
-/******************************************************************************
-  Group interface for BGEMM
-    - Allows for multiple GEMM, each running on a subset of the machine
-    - Requries using seperate BGEMM_group_init routine to initiale the kernel
-******************************************************************************/
-int BGEMM_group( int* transA, int* transB, const int* M, const int* N, const int* K, const int* MB, const int* NB, const int* KB, BG_TYPE* ALPHA, BG_TYPE** A, BG_TYPE** B, BG_TYPE* BETA, BG_TYPE** C, const int count, const int ngroups, BGEMM_HANDLE* handle, BGEMM_GROUP_HANDLE* grp_handle);
+LIBXSMM_INLINE void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* handle,
+                                             real* libxsmm_mat_dst,
+                                             real* colmaj_mat_src );
 
-int BGEMM_group_init( int* transA, int* transB, const int* M, const int* N, const int* K, const int* MB, const int* NB, const int* KB, BG_TYPE* ALPHA, BG_TYPE** A, BG_TYPE** B, BG_TYPE* BETA, BG_TYPE** C, const int count, const int ngrooups, BGEMM_HANDLE* handle, BGEMM_GROUP_HANDLE* grp_handle);
+LIBXSMM_INLINE void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* handle,
+                                             real* libxsmm_mat_dst,
+                                             real* colmaj_mat_src );
 
+LIBXSMM_INLINE void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* handle,
+                                              real* libxsmm_mat_dst,
+                                              real* colmaj_mat_src );
 
-
-/******************************************************************************
-  Stride variant of BGEMM, using huge pages HPBGEMM
-    - Works with non-block strucred data layout
-******************************************************************************/
-int HPBGEMM (int transA, int transB, const int M, const int N, const int K, const int MB, const int NB, const int KB, BG_TYPE ALPHA, BG_TYPE* A, const int LDA, BG_TYPE* B, const int LDB, BG_TYPE BETA, BG_TYPE* C, const int LDC, const int count, BGEMM_HANDLE* handle);
-
-int HPBGEMM_init (int transA, int transB, const int M, const int N, const int K, const int MB, const int NB, const int KB, BG_TYPE ALPHA, BG_TYPE* A, const int LDA, BG_TYPE* B, const int LDB, BG_TYPE BETA, BG_TYPE* C, const int LDC, const int count, BGEMM_HANDLE* handle);
-
-
-
-/******************************************************************************
-  Mixed data-layout variant MBGEMM
-    - Allows for A and/or B to non block structred
-******************************************************************************/
-int MBGEMM (int transA, int transB, const int M, const int N, const int K, const int MB, const int NB, const int KB, BG_TYPE ALPHA, BG_TYPE* A, const int LDA, BG_TYPE* B, const int LDB, BG_TYPE BETA, BG_TYPE* C, const int LDC, const int count, BGEMM_HANDLE* handle);
-
-int MBGEMM_init (int transA, int transB, const int M, const int N, const int K, const int MB, const int NB, const int KB, BG_TYPE ALPHA, BG_TYPE* A, const int LDA, BG_TYPE* B, const int LDB, BG_TYPE BETA, BG_TYPE* C, const int LDC, const int count, BGEMM_HANDLE* handle);
-
+LIBXSMM_INLINE void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
+                                           const char transA,
+                                           const char transB,
+                                           const real* alpha,
+                                           const real* a,
+                                           const real* b,
+                                           const real* beta,
+                                           real* c );
 
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* BLOCK_XGEMM_H */
+#endif /* LIBXSMM_BGEMM_H */
