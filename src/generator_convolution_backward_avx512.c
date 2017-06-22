@@ -137,7 +137,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
   }
   l_conv_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
   l_conv_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
-  l_conv_kernel_config.prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT2;
+  l_conv_kernel_config.prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT1;
   l_conv_kernel_config.alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
   l_conv_kernel_config.alu_sub_instruction = LIBXSMM_X86_INSTR_SUBQ;
   l_conv_kernel_config.alu_cmp_instruction = LIBXSMM_X86_INSTR_CMPQ;

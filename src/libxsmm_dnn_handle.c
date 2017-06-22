@@ -500,8 +500,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->kernel_fwd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
         handle->n_fwd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
         handle->fwd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
-        handle->ofh_start = (int*) malloc(handle->desc.threads * sizeof(int));
-        handle->ofh_end = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->ofh_fwd_start = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->ofh_fwd_end = (int*) malloc(handle->desc.threads * sizeof(int));
 
         /* In case of logical padding also add a kernel that copies only one line of the image -- in case we exploit intra-image parallelism we should avoid copying entire image for each thread but only the minimum required number of input pixels... */
         if (handle->padding_flag == 1) {
@@ -790,6 +790,20 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->code_bwd[3].pmm = handle->code_bwd[0].pmm;
       } else {
         assert(0/*should not happen*/);
+      }
+
+      if ( handle->use_thread_private_jit ) {
+        handle->n_entries_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->compute_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+        handle->kernel_bwd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
+        handle->n_bwd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->bwd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
+        handle->ofh_bwd_start = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->ofh_bwd_end = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->n_entries_trans_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->transpose_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+        /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
+        status = libxsmm_dnn_perform_bwd_dryrun_direct(handle); 
       }
     } /* End of backward */
     /* TODO weight update path */

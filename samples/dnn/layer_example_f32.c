@@ -872,16 +872,17 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       /* run LIBXSMM convolution for performance */
       l_start = libxsmm_timer_tick();
-      for (i = 0; i < iters; ++i) {
+
 #if defined(_OPENMP)
-#   pragma omp parallel
+#   pragma omp parallel  private(i)
 #endif
-        {
+      {
 #if defined(_OPENMP)
-          const int tid = omp_get_thread_num();
+        const int tid = omp_get_thread_num();
 #else
-          const int tid = 0;
+        const int tid = 0;
 #endif
+        for (i = 0; i < iters; ++i) {
           libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWD, 0, tid );
         }
       }

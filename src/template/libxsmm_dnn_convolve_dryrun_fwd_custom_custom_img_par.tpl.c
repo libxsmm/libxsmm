@@ -87,7 +87,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   my_w_start = 0;
   my_w_end = handle->ofw;
   my_ofm_start = l_tidgroup % (handle->blocksofm*handle->fm_lp_block);
-  my_ofm_end = my_ofm_start+1;;
+  my_ofm_end = my_ofm_start+1;
 
   if (handle->padding_flag == 1) {
     padded_h = handle->ifhp + 2 * handle->desc.pad_h;
@@ -148,8 +148,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   if (n_code_segments) {
     encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 2097152);
     handle->fwd_code_segments[ltid] = encoded_code_segments;
-    handle->ofh_start[ltid] = my_h_start;
-    handle->ofh_end[ltid] = my_h_end;
+    handle->ofh_fwd_start[ltid] = my_h_start;
+    handle->ofh_fwd_end[ltid] = my_h_end;
   }
   local_entries = 0;
 

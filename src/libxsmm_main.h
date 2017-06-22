@@ -257,8 +257,22 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int block_fwd_ofm;
   int *n_fwd_code_segments;
   segment_t **fwd_code_segments;
-  int *ofh_start;
-  int *ofh_end;
+  int *ofh_fwd_start;
+  int *ofh_fwd_end;
+
+  int *n_entries_bwd;
+  int **compute_bwd_indices_ptrs;
+  char **kernel_bwd_variant_ptrs;
+  int block_bwd_oj;
+  int block_bwd_oi;
+  int block_bwd_ifm;
+  int block_bwd_ofm;
+  int *n_bwd_code_segments;
+  segment_t **bwd_code_segments;
+  int *n_entries_trans_bwd;
+  int **transpose_bwd_indices_ptrs;
+  int *ofh_bwd_start;
+  int *ofh_bwd_end;
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {

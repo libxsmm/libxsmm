@@ -38,4 +38,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_custom( libxsmm_dnn_layer* handle );
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_rsck( libxsmm_dnn_layer* handle );
 
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct( libxsmm_dnn_layer* handle );
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle );
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct( libxsmm_dnn_layer* handle );
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle );
+
 #endif /* LIBXSMM_DNN_DRYRUN_H */

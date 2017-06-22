@@ -115,9 +115,9 @@ if (n_segments) {
     /* Use fine-grained operations since we are in the img_par path, so update relevant kernel pointers... */
     jitted_matcopy = handle->matcopy_fwd[2].xmatcopy;
     jitted_zero_overwrite = handle->matcopy_fwd[3].xmatcopy;
-    input_h_start = LIBXSMM_MAX(0,  handle->ofh_start[ltid] - handle->desc.R + 1);
-    input_h_end = LIBXSMM_MIN( handle->ifhp, handle->ofh_end[ltid] + handle->desc.R -1 ) ;
-    my_h_out = handle->ofh_end[ltid]-handle->ofh_start[ltid];
+    input_h_start = LIBXSMM_MAX(0,  handle->ofh_fwd_start[ltid] - handle->desc.R + 1);
+    input_h_end = LIBXSMM_MIN( handle->ifhp, handle->ofh_fwd_end[ltid] + handle->desc.R -1 ) ;
+    my_h_out = handle->ofh_fwd_end[ltid]-handle->ofh_fwd_start[ltid];
     for (pc = 0; pc < n_segments; pc++) {
       instr = code_stream[pc].segment_type;
       n_convs = code_stream[pc].n_convs;
