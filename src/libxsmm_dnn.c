@@ -27,7 +27,7 @@
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke, Rajkishore Barik (Intel Corp.)
-******************************************************************************/
+ ******************************************************************************/
 #include <libxsmm.h>
 #include <libxsmm_sync.h>
 #include "libxsmm_main.h"
@@ -348,17 +348,49 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const li
 
     /* Deallocate per-thread jitted data structures */
     if ( handle->use_thread_private_jit ) {
+
+      /* Free per thread allocated arrays  */
       for (loop = 0; loop < handle->desc.threads; loop++) {
+        /* Fwd related arrays */
         if ( handle->compute_fwd_indices_ptrs[loop] != NULL ) {
           libxsmm_free( handle->compute_fwd_indices_ptrs[loop] );
         }
         if ( handle->kernel_fwd_variant_ptrs[loop] != NULL ) {
           libxsmm_free( handle->kernel_fwd_variant_ptrs[loop] );
         }
+        if ( handle->fwd_code_segments[loop] != NULL ) {
+          libxsmm_free( handle->fwd_code_segments[loop] );
+        } 
+        /* Bwd related arrays  */
+        if ( handle->compute_bwd_indices_ptrs[loop] != NULL ) {
+          libxsmm_free( handle->compute_bwd_indices_ptrs[loop] );
+        }
+        if ( handle->kernel_bwd_variant_ptrs[loop] != NULL ) {
+          libxsmm_free( handle->kernel_bwd_variant_ptrs[loop] );
+        }
+        if ( handle->bwd_code_segments[loop] != NULL ) {
+          libxsmm_free( handle->bwd_code_segments[loop] );
+        }          
+        if ( handle->transpose_bwd_indices_ptrs[loop] != NULL ) {
+          libxsmm_free( handle->transpose_bwd_indices_ptrs[loop] );
+        }        
       }
+
+      /* Free shared arrays  */
       free( handle->compute_fwd_indices_ptrs );
       free( handle->kernel_fwd_variant_ptrs );
       free( handle->n_entries_fwd );
+      free( handle->n_fwd_code_segments );
+      free( handle->ofh_fwd_start );
+      free( handle->ofh_fwd_end );
+
+      free( handle->compute_bwd_indices_ptrs );
+      free( handle->kernel_bwd_variant_ptrs );
+      free( handle->n_entries_bwd );
+      free( handle->n_bwd_code_segments );
+      free( handle->ofh_bwd_start );
+      free( handle->ofh_bwd_end );
+      free( handle->transpose_bwd_indices_ptrs );
     }
 
     if (handle->padding_flag) libxsmm_free(handle->scratch5);
@@ -1283,31 +1315,31 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_bias(const libxsmm_d
   if (0 != bias) {
     switch (in_format) {
       case LIBXSMM_DNN_TENSOR_FORMAT_NCHW: {
-        if ( (bias->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
-          switch (bias->datatype) {
-            case LIBXSMM_DNN_DATATYPE_F32: {
-              typedef float element_type;
+                                             if ( (bias->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
+                                               switch (bias->datatype) {
+                                                 case LIBXSMM_DNN_DATATYPE_F32: {
+                                                                                  typedef float element_type;
 #             include "template/libxsmm_dnn_bias_copy_in_nchw.tpl.c"
-            } break;
-            case LIBXSMM_DNN_DATATYPE_I16: {
-              typedef short element_type;
+                                                                                } break;
+                                                 case LIBXSMM_DNN_DATATYPE_I16: {
+                                                                                  typedef short element_type;
 #             include "template/libxsmm_dnn_bias_copy_in_nchw.tpl.c"
-            } break;
-            case LIBXSMM_DNN_DATATYPE_I8: {
-              typedef char element_type;
+                                                                                } break;
+                                                 case LIBXSMM_DNN_DATATYPE_I8: {
+                                                                                 typedef char element_type;
 #             include "template/libxsmm_dnn_bias_copy_in_nchw.tpl.c"
-            } break;
-            default: {
-              status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-            }
-          }
-        } else {
-          status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
-        }
-      } break;
+                                                                               } break;
+                                                 default: {
+                                                            status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+                                                          }
+                                               }
+                                             } else {
+                                               status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
+                                             }
+                                           } break;
       default: {
-        status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
-      }
+                 status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
+               }
     }
   }
   else {
@@ -1325,35 +1357,35 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_bias(const libxsmm_
   if (0 != bias) {
     switch (out_format) {
       case LIBXSMM_DNN_TENSOR_FORMAT_NCHW: {
-        if ( (bias->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
-          switch (bias->datatype) {
-            case LIBXSMM_DNN_DATATYPE_F32: {
-              typedef float element_type;
+                                             if ( (bias->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
+                                               switch (bias->datatype) {
+                                                 case LIBXSMM_DNN_DATATYPE_F32: {
+                                                                                  typedef float element_type;
 #             include "template/libxsmm_dnn_bias_copy_out_nchw.tpl.c"
-            } break;
-            case LIBXSMM_DNN_DATATYPE_I32: {
-              typedef int element_type;
+                                                                                } break;
+                                                 case LIBXSMM_DNN_DATATYPE_I32: {
+                                                                                  typedef int element_type;
 #             include "template/libxsmm_dnn_bias_copy_out_nchw.tpl.c"
-            } break;
-            case LIBXSMM_DNN_DATATYPE_I16: {
-              typedef short element_type;
+                                                                                } break;
+                                                 case LIBXSMM_DNN_DATATYPE_I16: {
+                                                                                  typedef short element_type;
 #             include "template/libxsmm_dnn_bias_copy_out_nchw.tpl.c"
-            } break;
-            case LIBXSMM_DNN_DATATYPE_I8: {
-              typedef char element_type;
+                                                                                } break;
+                                                 case LIBXSMM_DNN_DATATYPE_I8: {
+                                                                                 typedef char element_type;
 #             include "template/libxsmm_dnn_bias_copy_out_nchw.tpl.c"
-            } break;
-            default: {
-              status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-            }
-          }
-        } else {
-          status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
-        }
-      } break;
+                                                                               } break;
+                                                 default: {
+                                                            status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+                                                          }
+                                               }
+                                             } else {
+                                               status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
+                                             }
+                                           } break;
       default: {
-        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
-      }
+                 status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
+               }
     }
   }
   else {
@@ -1374,24 +1406,24 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_zero_bias(const libxsmm_dnn
     /* use for-loops to potentially leverage NUMA in the future */
     switch (bias->datatype) {
       case LIBXSMM_DNN_DATATYPE_F32: {
-        float* fp32_data = (float*)bias->data;
-        for (i = 0; i < size; ++i) fp32_data[i] = 0.0f;
-      } break;
+                                       float* fp32_data = (float*)bias->data;
+                                       for (i = 0; i < size; ++i) fp32_data[i] = 0.0f;
+                                     } break;
       case LIBXSMM_DNN_DATATYPE_I32: {
-        int* int32_data = (int*)bias->data;
-        for (i = 0; i < size; ++i) int32_data[i] = 0;
-      } break;
+                                       int* int32_data = (int*)bias->data;
+                                       for (i = 0; i < size; ++i) int32_data[i] = 0;
+                                     } break;
       case LIBXSMM_DNN_DATATYPE_I16: {
-        short* int16_data = (short*)bias->data;
-        for (i = 0; i < size; ++i) int16_data[i] = 0;
-      } break;
+                                       short* int16_data = (short*)bias->data;
+                                       for (i = 0; i < size; ++i) int16_data[i] = 0;
+                                     } break;
       case LIBXSMM_DNN_DATATYPE_I8: {
-        char* int8_data = (char*)bias->data;
-        for (i = 0; i < size; ++i) int8_data[i] = 0;
-      } break;
+                                      char* int8_data = (char*)bias->data;
+                                      for (i = 0; i < size; ++i) int8_data[i] = 0;
+                                    } break;
       default: {
-        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-      }
+                 status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+               }
     }
   }
   else {
@@ -1574,10 +1606,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_bias(libxsmm_dnn_layer
   if (handle != 0 && bias != 0) {
     /* check if format matches */
     if ( handle->ofmblock == bias->bfm
-      && handle->blocksofm == bias->fmb /* @TODO this check is flaky */
-      && handle->fm_lp_block == bias->lpb
-      && ((handle->buffer_format & bias->format) > 0)
-      && handle->datatype == bias->datatype)
+        && handle->blocksofm == bias->fmb /* @TODO this check is flaky */
+        && handle->fm_lp_block == bias->lpb
+        && ((handle->buffer_format & bias->format) > 0)
+        && handle->datatype == bias->datatype)
     {
       if ( type == LIBXSMM_DNN_REGULAR_BIAS ) {
         handle->reg_bias = (libxsmm_dnn_bias*)bias;
@@ -1833,97 +1865,97 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
                                              }
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
-          /* we need a minibatch copy for transpose of input, scratch3 */
-          if (handle->padding_flag == 1) {
-            scratch5_size = handle->minibatch_scratch_size;
-            if (address % 64 == 0) {
-              handle->scratch5 = (void*)address;
-            } else {
-              offset = (64 - address % 64);
-              handle->scratch5 = (void*)(address+offset);
-            }
-            /* Initialize scratch5 to zero */
-            memset(handle->scratch5, 0, scratch5_size);
-            address += scratch5_size + 64;
-          }
-          if (address % 64 == 0) {
-            handle->scratch3 = (void*)address;
-          } else {
-            offset = (64 - address % 64);
-            handle->scratch3 = (void*)(address+offset);
-          }
-          /* potentially we need thread-local filter copies, scratch4 */
-          if (handle->upd_use_thread_fil == 1) {
-            address += handle->scratch3_size + 64;
-            if (address % 64 == 0) {
-              handle->scratch4 = (void*)address;
-            } else {
-              offset = (64 - address % 64);
-              handle->scratch4 = (void*)(address+offset);
-            }
-            /* Initialize scratch4 to zero */
-            memset(handle->scratch4, 0, handle->scratch4_size);
-          }
-        } break;
+                                             /* we need a minibatch copy for transpose of input, scratch3 */
+                                             if (handle->padding_flag == 1) {
+                                               scratch5_size = handle->minibatch_scratch_size;
+                                               if (address % 64 == 0) {
+                                                 handle->scratch5 = (void*)address;
+                                               } else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch5 = (void*)(address+offset);
+                                               }
+                                               /* Initialize scratch5 to zero */
+                                               memset(handle->scratch5, 0, scratch5_size);
+                                               address += scratch5_size + 64;
+                                             }
+                                             if (address % 64 == 0) {
+                                               handle->scratch3 = (void*)address;
+                                             } else {
+                                               offset = (64 - address % 64);
+                                               handle->scratch3 = (void*)(address+offset);
+                                             }
+                                             /* potentially we need thread-local filter copies, scratch4 */
+                                             if (handle->upd_use_thread_fil == 1) {
+                                               address += handle->scratch3_size + 64;
+                                               if (address % 64 == 0) {
+                                                 handle->scratch4 = (void*)address;
+                                               } else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch4 = (void*)(address+offset);
+                                               }
+                                               /* Initialize scratch4 to zero */
+                                               memset(handle->scratch4, 0, handle->scratch4_size);
+                                             }
+                                           } break;
         case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-          /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
-          if (handle->padding_flag == 1) {
-            scratch5_size = handle->max_scratch5_size;
-          if (address % 64 == 0) {
-              handle->scratch5 = (void*)address;
-            } else {
-              offset = (64 - address % 64);
-              handle->scratch5 = (void*)(address+offset);
-            }
-            /* Initialize scratch5 to zero */
-            memset(handle->scratch5, 0, scratch5_size);
-            address += scratch5_size + 64;
-          }
-          if (address % 64 == 0) {
-            handle->scratch1 = (void*)address;
-          } else {
-            offset = (64 - address % 64);
-            handle->scratch1 = (void*)(address+offset);
-          }
-          address += handle->scratch1_size + 64;
-          /* we need a minibatch copy for transpose of input, scratch3 */
-          if (address % 64 == 0) {
-            handle->scratch3 = (void*)address;
-          } else {
-            offset = (64 - address % 64);
-            handle->scratch3 = (void*)(address+offset);
-          }
-          address += handle->scratch3_size + 64;
-          /* potentially we need thread-local filter copies, scratch4 */
-          if (handle->upd_use_thread_fil == 1) {
-            if (address % 64 == 0) {
-              handle->scratch4 = (void*)address;
-            } else {
-              offset = (64 - address % 64);
-              handle->scratch4 = (void*)(address+offset);
-            }
-            /* Initialize scratch4 to zero */
-            memset(handle->scratch4, 0, handle->scratch4_size);
-            address += handle->scratch4_size + 64;
-          }
-          /* low precision intermediate buffer */
-          if ( handle->datatype != handle->datatype_itm ) {
-            if (address % 64 == 0) {
-              handle->scratch6 = (void*)address;
-            } else {
-              offset = (64 - address % 64);
-              handle->scratch6 = (void*)(address+offset);
-            }
-            address += handle->scratch6_size + 64;
-            if (address % 64 == 0) {
-              handle->scratch7 = (void*)address;
-            } else {
-              offset = (64 - address % 64);
-              handle->scratch7 = (void*)(address+offset);
-            }
-            address += handle->scratch7_size + 64;
-          }
-        } break;
+                                             /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
+                                             if (handle->padding_flag == 1) {
+                                               scratch5_size = handle->max_scratch5_size;
+                                               if (address % 64 == 0) {
+                                                 handle->scratch5 = (void*)address;
+                                               } else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch5 = (void*)(address+offset);
+                                               }
+                                               /* Initialize scratch5 to zero */
+                                               memset(handle->scratch5, 0, scratch5_size);
+                                               address += scratch5_size + 64;
+                                             }
+                                             if (address % 64 == 0) {
+                                               handle->scratch1 = (void*)address;
+                                             } else {
+                                               offset = (64 - address % 64);
+                                               handle->scratch1 = (void*)(address+offset);
+                                             }
+                                             address += handle->scratch1_size + 64;
+                                             /* we need a minibatch copy for transpose of input, scratch3 */
+                                             if (address % 64 == 0) {
+                                               handle->scratch3 = (void*)address;
+                                             } else {
+                                               offset = (64 - address % 64);
+                                               handle->scratch3 = (void*)(address+offset);
+                                             }
+                                             address += handle->scratch3_size + 64;
+                                             /* potentially we need thread-local filter copies, scratch4 */
+                                             if (handle->upd_use_thread_fil == 1) {
+                                               if (address % 64 == 0) {
+                                                 handle->scratch4 = (void*)address;
+                                               } else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch4 = (void*)(address+offset);
+                                               }
+                                               /* Initialize scratch4 to zero */
+                                               memset(handle->scratch4, 0, handle->scratch4_size);
+                                               address += handle->scratch4_size + 64;
+                                             }
+                                             /* low precision intermediate buffer */
+                                             if ( handle->datatype != handle->datatype_itm ) {
+                                               if (address % 64 == 0) {
+                                                 handle->scratch6 = (void*)address;
+                                               } else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch6 = (void*)(address+offset);
+                                               }
+                                               address += handle->scratch6_size + 64;
+                                               if (address % 64 == 0) {
+                                                 handle->scratch7 = (void*)address;
+                                               } else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch7 = (void*)(address+offset);
+                                               }
+                                               address += handle->scratch7_size + 64;
+                                             }
+                                           } break;
         default: {
                    status = LIBXSMM_DNN_ERR_INVALID_KIND;
                  }
