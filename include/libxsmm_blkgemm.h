@@ -43,11 +43,11 @@
 #define _USE_LIBXSMM_PREFETCH
 #define BG_type 1 /* 1-float, 2-double */
 #if (BG_type==2)
-  #define BG_TYPE double
+  typedef double real;
   #define _KERNEL libxsmm_dmmfunction
   #define _KERNEL_JIT libxsmm_dmmdispatch
 #else
-  #define BG_TYPE float
+  typedef float real;
   #define _KERNEL libxsmm_smmfunction
   #define _KERNEL_JIT libxsmm_smmdispatch
 #endif
@@ -175,8 +175,6 @@ LIBXSMM_API  void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
                                            const real* b,
                                            const real* beta,
                                            real* c );
-
-
 #ifdef __cplusplus
 }
 #endif
