@@ -39,7 +39,7 @@
 #if defined(_OPENMP)
 #include <omp.h>
 #endif
-#include "libxsmm_blkgemm.h"
+#include <libxsmm_blkgemm.h>
 
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_service.h>
@@ -50,8 +50,6 @@
 # define drand48() ((double)rand() / RAND_MAX)
 # define srand48 srand
 #endif
-
-typedef float real;
 
 int main(int argc, char* argv []) {
   real *a, *b, *c, *a_gold, *b_gold, *c_gold;
@@ -92,7 +90,7 @@ int main(int argc, char* argv []) {
 
   /* check command line */
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("\nUsage: ./block_gemm [M] [N] [K] [bm] [bn] [bk] [b_m1] [b_n1] [b_k1] [b_k2] [reps]\n\n");
+    printf("\nUsage: ./block_gemm [M] [N] [K] [bm] [bn] [bk] [b_m1] [b_n1] [b_k1] [b_k2] [order] [reps]\n\n");
     return 0;
   }
 
@@ -100,6 +98,7 @@ int main(int argc, char* argv []) {
   handle.m = 2048;
   handle.n = 2048;
   handle.k = 2048;
+  handle._ORDER = 0;
   handle.bm = 32;
   handle.bn = 32;
   handle.bk = 32;
@@ -107,13 +106,19 @@ int main(int argc, char* argv []) {
   handle.b_n1 = 1;
   handle.b_k1 = 1;
   handle.b_k2 = 1;
+  handle._ORDER = 0;
+  handle.C_pre_init = 0;
+  handle._wlock = NULL; 
+  handle.bar = NULL;
   reps = 100;
-
+  
   /* reading new values from cli */
   i = 1;
+  if (argc > i) reps          = atoi(argv[i++]);
   if (argc > i) handle.m      = atoi(argv[i++]);
   if (argc > i) handle.n      = atoi(argv[i++]);
   if (argc > i) handle.k      = atoi(argv[i++]);
+  if (argc > i) handle._ORDER = atoi(argv[i++]);
   if (argc > i) handle.bm     = atoi(argv[i++]);
   if (argc > i) handle.bn     = atoi(argv[i++]);
   if (argc > i) handle.bk     = atoi(argv[i++]);
@@ -121,6 +126,7 @@ int main(int argc, char* argv []) {
   if (argc > i) handle.b_n1   = atoi(argv[i++]);
   if (argc > i) handle.b_k1   = atoi(argv[i++]);
   if (argc > i) handle.b_k2   = atoi(argv[i++]);
+  if (argc > i) handle._ORDER = atoi(argv[i++]);
   if (argc > i) reps          = atoi(argv[i++]);
   M = handle.m;
   LDA = handle.m;
@@ -209,11 +215,6 @@ int main(int argc, char* argv []) {
   libxsmm_blksgemm_init_a( &handle, a, a_gold );
   libxsmm_blksgemm_init_b( &handle, b, b_gold );
 
-  handle._ORDER = 0;
-  handle.C_pre_init = 0;
-  handle._wlock = NULL; 
-  handle.bar = NULL;
-  
   libxsmm_blkgemm_handle_alloc(&handle, handle.m, handle.bm, handle.n, handle.bn);
 
   handle._l_kernel =_KERNEL_JIT(handle.bm, handle.bn, handle.bk, NULL, NULL, NULL, NULL, NULL, NULL, NULL);

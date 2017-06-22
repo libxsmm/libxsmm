@@ -236,6 +236,7 @@ HEADERS = $(wildcard $(SRCDIR)/template/*.c) $(wildcard $(SRCDIR)/*.h) \
           $(SRCDIR)/libxsmm_hash.c $(SRCDIR)/libxsmm_gemm_diff.c \
           $(ROOTDIR)/include/libxsmm_cpuid.h \
           $(ROOTDIR)/include/libxsmm_dnn.h \
+          $(ROOTDIR)/include/libxsmm_blkgemm.h \
           $(ROOTDIR)/include/libxsmm_frontend.h \
           $(ROOTDIR)/include/libxsmm_fsspmdm.h \
           $(ROOTDIR)/include/libxsmm_generator.h \
@@ -250,6 +251,7 @@ SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_malloc.c \
           libxsmm_sync.c libxsmm_dump.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_trans.c libxsmm_spmdm.c libxsmm_fsspmdm.c \
+	  libxsmm_blkgemm.c \
           libxsmm_dnn.c libxsmm_dnn_handle.c \
           libxsmm_dnn_convolution_forward.c \
           libxsmm_dnn_convolution_backward.c \

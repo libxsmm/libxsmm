@@ -43,11 +43,11 @@
 #define _USE_LIBXSMM_PREFETCH
 #define BG_type 1 /* 1-float, 2-double */
 #if (BG_type==2)
-  #define BG_TYPE double
+  typedef double real;
   #define _KERNEL libxsmm_dmmfunction
   #define _KERNEL_JIT libxsmm_dmmdispatch
 #else
-  #define BG_TYPE float
+  typedef float real;
   #define _KERNEL libxsmm_smmfunction
   #define _KERNEL_JIT libxsmm_smmdispatch
 #endif
@@ -64,14 +64,6 @@
   mmap(NULL, size, PROT_READ | PROT_WRITE, \
       MAP_ANONYMOUS | MAP_SHARED | MAP_HUGETLB| MAP_POPULATE, -1, 0);
 #define _free(addr) {munmap(addr, 0);}
-
-#if defined( __MIC__) || defined (__AVX512F__)
-#define VLEN 16
-#elif defined (__AVX__)
-#define VLEN 8
-#else
-#error "Either AVX or MIC must be used"
-#endif
 
 //#define OMP_LOCK 
 #ifdef OMP_LOCK
@@ -108,7 +100,7 @@ _Pragma("omp parallel")\
 _Pragma("omp parallel") \
   { \
     libxsmm_barrier_init(x, omp_get_thread_num()); \
-  } \ 
+  } \
 }
 #define BG_BARRIER(x, y) {libxsmm_barrier_wait((libxsmm_barrier*)x, y);}
 #define BG_BARRIER_DEL(x) {libxsmm_barrier_release((libxsmm_barrier*)x);}
@@ -122,6 +114,8 @@ _Pragma("omp parallel") \
   extern "C"{
 #endif
 
+  typedef float real;
+
 /******************************************************************************
   Fine grain parallelized version(s) of BGEMM
     - Requires block structure layout for A,B matrices
@@ -129,7 +123,7 @@ _Pragma("omp parallel") \
     - Uses fine-grain on-demand locks for write to C and fast barrier
     - Allows for calling multiple GEMMs, specified by 'count'
 ******************************************************************************/
-void LIBXSMM_FSYMBOL(sgemm)(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+LIBXSMM_API void LIBXSMM_FSYMBOL(sgemm)(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const real*, const real*, const libxsmm_blasint*, const real*, const libxsmm_blasint*,
   const real*, real*, const libxsmm_blasint*);
 
@@ -155,25 +149,25 @@ typedef struct libxsmm_blkgemm_handle {
   libxsmm_barrier* bar;
 } libxsmm_blkgemm_handle;
 
-void libxsmm_blkgemm_handle_alloc(libxsmm_blkgemm_handle* handle, const int M, const int MB, const int N, const int NB);
+LIBXSMM_API void libxsmm_blkgemm_handle_alloc(libxsmm_blkgemm_handle* handle, const int M, const int MB, const int N, const int NB);
 
-LIBXSMM_INLINE void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* handle,
+LIBXSMM_API  void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* handle,
                                              real* libxsmm_mat_dst,
                                              real* colmaj_mat_src );
 
-LIBXSMM_INLINE void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* handle,
+LIBXSMM_API  void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* handle,
                                              real* libxsmm_mat_dst,
                                              real* colmaj_mat_src );
 
-LIBXSMM_INLINE void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* handle,
+LIBXSMM_API  void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* handle,
                                              real* libxsmm_mat_dst,
                                              real* colmaj_mat_src );
 
-LIBXSMM_INLINE void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* handle,
+LIBXSMM_API  void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* handle,
                                               real* libxsmm_mat_dst,
                                               real* colmaj_mat_src );
 
-LIBXSMM_INLINE void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
+LIBXSMM_API  void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
                                            const char transA,
                                            const char transB,
                                            const real* alpha,
@@ -181,8 +175,6 @@ LIBXSMM_INLINE void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
                                            const real* b,
                                            const real* beta,
                                            real* c );
-
-
 #ifdef __cplusplus
 }
 #endif
