@@ -210,14 +210,12 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
           typeprefix, ctransa, ctransa, *m, nn, kk, string_a, a, ilda, b, ildb, string_b, c, ildc);
       }
       else {
-        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
-                                "  %s/*alpha*/, %i/*lda*/,\n"
-                                "              %i/*ldb*/,\n"
-                                "   %s/*beta*/, %i/*ldc*/)",
-          typeprefix, ctransa, ctransa, *m, nn, kk, string_a, ilda, ildb, string_b, ildc);
+        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/, "
+                                "%i/*lda*/, %i/*ldb*/, %i/*ldc*/, %s/*alpha*/, %s/*beta*/)",
+          typeprefix, ctransa, ctransa, *m, nn, kk, ilda, ildb, ildc, string_a, string_b);
       }
     }
-    else { /* dump input and output of the GEMM call into separate MHD files */
+    else { /* dump A, B, and C matrices into MHD files */
       char extension_header[256];
       size_t data_size[2], size[2];
 
