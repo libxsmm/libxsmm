@@ -208,17 +208,9 @@ void libxsmm_bgemm( const int _M,
 
   LIBXSMM_VLA_DECL(2, LOCK_T, locks, handle->_wlock, _N/B_N);
   real l_out[B_N][B_M];
-  int ki;
-  int kj;
-  for (ki = 0; ki < B_N; ki++) {
-    LIBXSMM_PRAGMA_SIMD
-    for (kj = 0; kj < B_M; kj++) {
-      l_out[ki][kj] = 0.f;
-    }
-  }
 
-  LIBXSMM_VLA_DECL(4, real, A, Ap, _M/B_M, B_K, B_M);
-  LIBXSMM_VLA_DECL(4, real, B, Bp, _K/B_K, B_N, B_K);
+  LIBXSMM_VLA_DECL(4, const real, A, Ap, _M/B_M, B_K, B_M);
+  LIBXSMM_VLA_DECL(4, const real, B, Bp, _K/B_K, B_N, B_K);
   LIBXSMM_VLA_DECL(4, real, C, Cp, _M/B_M, B_N, B_M);
 
   int B_M1 = handle->b_m1;
@@ -239,14 +231,23 @@ void libxsmm_bgemm( const int _M,
   int _mb, _nb, _kb;
   int _m, _n, _k;
   int w_i, _ki;
+  int ki, kj;
+
+  for (ki = 0; ki < B_N; ki++) {
+    LIBXSMM_PRAGMA_SIMD
+    for (kj = 0; kj < B_M; kj++) {
+      l_out[ki][kj] = 0.f;
+    }
+  }
+
   for (_mb=0, _m=0; _mb < B_M1; _mb++, _m+=nw_i) {
     for (_nb=0, _n=0; _nb < B_N1; _nb++, _n+=nw_j) {
       for (_kb=0, _k=0; _kb < B_K1; _kb++, _k+=nw_k) {
-        nw_k = (K/B_K)/B_K2;
         int s = (tid*nw)/nthrds;
         int e = ((tid+1)*nw)/nthrds;
-
         int o_i2, o_j2;
+        nw_k = (K/B_K)/B_K2;
+
         for (w_i = s; w_i < e; w_i++) {
           int i2, j2, k2;
           libxsmm_order(w_i, nw_i, nw_j, nw_k, ORDER, &i2, &j2, &k2);
@@ -348,14 +349,6 @@ void libxsmm_bgemm_dry_run( const int _M,
 #endif
   LIBXSMM_VLA_DECL(2, LOCK_T, locks, handle->_wlock, _N/B_N);
   real l_out[B_N][B_M];
-  int ki;
-  int kj;
-  for (ki = 0; ki < B_N; ki++) {
-    LIBXSMM_PRAGMA_SIMD
-    for (kj = 0; kj < B_M; kj++) {
-      l_out[ki][kj] = 0.f;
-    }
-  }
 
   LIBXSMM_VLA_DECL(4, real, C, Cp, _M/B_M, B_N, B_M);
 
@@ -376,18 +369,27 @@ void libxsmm_bgemm_dry_run( const int _M,
 
   int _mb, _nb, _kb;
   int _m, _n, _k;
+  int ki, kj;
   int w_i;
 #if 0/*disabled*/
   int _ki;
 #endif
+
+  for (ki = 0; ki < B_N; ki++) {
+    LIBXSMM_PRAGMA_SIMD
+    for (kj = 0; kj < B_M; kj++) {
+      l_out[ki][kj] = 0.f;
+    }
+  }
+
   for (_mb=0, _m=0; _mb < B_M1; _mb++, _m+=nw_i) {
     for (_nb=0, _n=0; _nb < B_N1; _nb++, _n+=nw_j) {
       for (_kb=0, _k=0; _kb < B_K1; _kb++, _k+=nw_k) {
-        nw_k = (K/B_K)/B_K2;
         int s = (tid*nw)/nthrds;
         int e = ((tid+1)*nw)/nthrds;
-
         int o_i2, o_j2;
+        nw_k = (K/B_K)/B_K2;
+
         for (w_i = s; w_i < e; w_i++) {
           int i2, j2, k2;
           libxsmm_order(w_i, nw_i, nw_j, nw_k, ORDER, &i2, &j2, &k2);
@@ -478,7 +480,11 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle*
                                                    const real* a,
                                                    const real* b,
                                                    const real* beta,
-                                                   real* c ) {
+                                                   real* c )
+{
+  /*The following value can be >1 for RNNs*/
+  int count = 1;
+
   /* TODO: take transpose into account */
   LIBXSMM_UNUSED(transA);
   LIBXSMM_UNUSED(transB);
@@ -487,9 +493,6 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle*
     printf(" alpha and beta need to be 1.0\n" );
     exit(-1);
   }
-
-  /*The following value can be >1 for RNNs*/
-  int count = 1;
 
 #if defined(_OPENMP)
 #pragma omp parallel
