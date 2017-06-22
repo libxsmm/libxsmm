@@ -98,18 +98,14 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
     const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
     const libxsmm_blasint ildb = *(ldb ? ldb : LIBXSMM_LD(k, n));
     const libxsmm_blasint ildc = *(ldc ? ldc : LIBXSMM_LD(m, n));
+    const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-    float* d = 0;
-#endif
-    LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
-#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-    { const char *const check = getenv("LIBXSMM_CHECK");
-      d = (float*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
-          || 0 == check || 0 == *check || 0 == check[0]) ? 0
-        : malloc((*m) * (*n) * sizeof(float)));
-      if (0 != d) {
-        libxsmm_matcopy(d, c, sizeof(float), *m, *n, ildc, *m, 0/*prefetch*/);
-      }
+    const char *const check = getenv("LIBXSMM_CHECK");
+    float *const d = (float*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
+        || 0 == check || 0 == *check || 0 == check[0]) ? 0
+      : malloc((*m) * (*n) * sizeof(float)));
+    if (0 != d) {
+      libxsmm_matcopy(d, c, sizeof(float), *m, *n, ildc, *m, 0/*prefetch*/);
     }
 #endif
     assert((0 < tm || 0 == *m) && (0 < tn || 0 == *n) && (0 < tk || 0 == *k) && 0 < libxsmm_nt);
@@ -174,18 +170,14 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
     const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
     const libxsmm_blasint ildb = *(ldb ? ldb : LIBXSMM_LD(k, n));
     const libxsmm_blasint ildc = *(ldc ? ldc : LIBXSMM_LD(m, n));
+    const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-    double* d = 0;
-#endif
-    LIBXSMM_GEMM_DECLARE_FLAGS(flags, transa, transb);
-#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-    { const char *const check = getenv("LIBXSMM_CHECK");
-      d = (double*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
-          || 0 == check || 0 == *check || 0 == check[0]) ? 0
-        : malloc((*m) * (*n) * sizeof(double)));
-      if (0 != d) {
-        libxsmm_matcopy(d, c, sizeof(double), *m, *n, ildc, *m, 0/*prefetch*/);
-      }
+    const char *const check = getenv("LIBXSMM_CHECK");
+    double *const d = (double*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
+        || 0 == check || 0 == *check || 0 == check[0]) ? 0
+      : malloc((*m) * (*n) * sizeof(double)));
+    if (0 != d) {
+      libxsmm_matcopy(d, c, sizeof(double), *m, *n, ildc, *m, 0/*prefetch*/);
     }
 #endif
     assert((0 < tm || 0 == *m) && (0 < tn || 0 == *n) && (0 < tk || 0 == *k) && 0 < libxsmm_nt);
