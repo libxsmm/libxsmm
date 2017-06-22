@@ -256,6 +256,7 @@ SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
           libxsmm_dnn_convolution_weight_update.c \
           libxsmm_dnn_convolution_winograd_forward.c \
           libxsmm_dnn_convolution_winograd_backward.c \
+					libxsmm_blkgemm.c \
           libxsmm_dnn_convolution_winograd_weight_update.o )
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
