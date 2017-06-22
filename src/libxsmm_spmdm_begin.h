@@ -52,40 +52,33 @@
 #define _MM_MUL_FP32(x,y) ((x)*(y))
 #define _MM_PREFETCH(x, y)
 #define TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_A, ldA, ptr_B, ldB) ((*(ptr_B)) = (*(ptr_A)))
-#define TRANSPOSE_SIMD_WIDTH_KERNEL_BFLOAT16(ptr_A, ldA, ptr_B, ldB) \
-{\
-            uint16_t restmp = (*(ptr_A));\
-            union { int i; float f; } res;\
-            res.i = restmp;\
-            res.i <<= 16;\
-            (*(ptr_B)) = res.f;\
+#define TRANSPOSE_SIMD_WIDTH_KERNEL_BFLOAT16(ptr_A, ldA, ptr_B, ldB) { \
+  uint16_t restmp = (*(ptr_A)); \
+  union { int i; float f; } res; \
+  res.i = restmp; \
+  res.i <<= 16; \
+  (*(ptr_B)) = res.f; \
 }
 
-#define COMPRESS_FP32(v, k, m, cnt) \
-  { \
-  if (m) \
-  { \
-    values_ptr[cnt] = v; \
-    colidx_ptr[cnt] = (uint16_t)(k); \
-    cnt++; \
-  } \
-  }
+#define COMPRESS_FP32(v, k, m, cnt) if (m) { \
+  values_ptr[cnt] = v; \
+  colidx_ptr[cnt] = (uint16_t)(k); \
+  cnt++; \
+}
 
-#define EXPAND_BFLOAT16(v, vlo_final, vhi_final) \
-  { \
-    union { int i; float f; } vlo_tmp, vhi_tmp; \
-    vlo_tmp.i = (v) & 0xFFFF; vlo_tmp.i <<= 16; \
-    vlo_final = vlo_tmp.f; \
-    vhi_tmp.i = (v) & 0x0000FFFF; \
-    vhi_final = vhi_tmp.f; \
-  }
+#define EXPAND_BFLOAT16(v, vlo_final, vhi_final) { \
+  union { int i; float f; } vlo_tmp, vhi_tmp; \
+  vlo_tmp.i = (v) & 0xFFFF; vlo_tmp.i <<= 16; \
+  vlo_final = vlo_tmp.f; \
+  vhi_tmp.i = (v) & 0x0000FFFF; \
+  vhi_final = vhi_tmp.f; \
+}
 
-#define COMPRESS_BFLOAT16(vlo, vhi, v) \
-  { \
-    union { int i; float f; } vlo_tmp, vhi_tmp; \
-    vlo_tmp.f = vlo; \
-    v = (vlo_tmp.i >> 16); \
-    vhi_tmp.f = vhi; \
-    v = v | (vhi_tmp.i & 0xFFFF0000); \
-  }
+#define COMPRESS_BFLOAT16(vlo, vhi, v) { \
+  union { int i; float f; } vlo_tmp, vhi_tmp; \
+  vlo_tmp.f = vlo; \
+  v = (vlo_tmp.i >> 16); \
+  vhi_tmp.f = vhi; \
+  v = v | (vhi_tmp.i & 0xFFFF0000); \
+}
 
