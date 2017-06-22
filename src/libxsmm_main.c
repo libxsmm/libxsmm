@@ -140,6 +140,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   if (0 != libxsmm_verbosity && 0 != (RESULT).pmm) { \
     const int internal_dispatch_debug_m_ = M, internal_dispatch_debug_n_ = N, internal_dispatch_debug_k_ = K; \
     LIBXSMM_FLOCK(stderr); \
+    fprintf(stderr, "LIBXSMM: "); \
     LIBXSMM_GEMM_PRINT(stderr, LIBXSMM_GEMM_PRECISION(TYPE), FLAGS, \
       &internal_dispatch_debug_m_, &internal_dispatch_debug_n_, &internal_dispatch_debug_k_, \
       PALPHA, 0/*a*/, PLDA, 0/*b*/, PLDB, PBETA, 0/*c*/, PLDC); \
