@@ -115,7 +115,7 @@ if (handle->datatype != handle->datatype_itm) {
   /* lazy barrier init */
   libxsmm_barrier_init(handle->barrier, ltid);
 
-  /*for ( trans_i = 0; trans_i < n_trans_tasks; trans_i++ ) {
+  for ( trans_i = 0; trans_i < n_trans_tasks; trans_i++ ) {
     trans_offset = trans_indices[trans_i];
     mat = wt_base + trans_offset;
     matT = wt_trans_base + trans_offset;
@@ -126,7 +126,7 @@ if (handle->datatype != handle->datatype_itm) {
     }
   }
 
-  libxsmm_barrier_wait(handle->barrier, ltid);*/
+  libxsmm_barrier_wait(handle->barrier, ltid);
 
   if (1) {
     //if (handle->desc.N*handle->blocksifm*handle->fm_lp_block >= handle->desc.threads) {
@@ -171,6 +171,7 @@ if (handle->datatype != handle->datatype_itm) {
       }
     }
   } else {
+    /* Code for *par_img* version goes here ... */
 
   } 
   libxsmm_barrier_wait(handle->barrier, ltid);
