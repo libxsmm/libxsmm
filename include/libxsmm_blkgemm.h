@@ -52,7 +52,7 @@
   #define _KERNEL_JIT libxsmm_smmdispatch
 #endif
 
-// ORDER: 0-jik, 1-ijk, 2-jki, 3-ikj, 4-kji, 5-kij 
+// ORDER: 0-jik, 1-ijk, 2-jki, 3-ikj, 4-kji, 5-kij
 #define jik 0
 #define ijk 1
 #define jki 2
@@ -65,7 +65,7 @@
       MAP_ANONYMOUS | MAP_SHARED | MAP_HUGETLB| MAP_POPULATE, -1, 0);
 #define _free(addr) {munmap(addr, 0);}
 
-//#define OMP_LOCK 
+//#define OMP_LOCK
 #ifdef OMP_LOCK
 #define LOCK_T omp_lock_t
 #define LOCK_INIT(x) {omp_init_lock(x);}

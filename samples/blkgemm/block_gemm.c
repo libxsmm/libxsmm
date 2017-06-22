@@ -108,10 +108,10 @@ int main(int argc, char* argv []) {
   handle.b_k2 = 1;
   handle._ORDER = 0;
   handle.C_pre_init = 0;
-  handle._wlock = NULL; 
+  handle._wlock = NULL;
   handle.bar = NULL;
   reps = 100;
-  
+
   /* reading new values from cli */
   i = 1;
   if (argc > i) reps          = atoi(argv[i++]);

@@ -190,7 +190,7 @@ LIBXSMM_INLINE void libxsmm_order (int w_i, int nw_i, int nw_j, int nw_k, int _o
   - Allows for calling multiple GEMMs, specified by 'count'
  ******************************************************************************/
 void libxsmm_bgemm( const int _M,
-               const int _N,  
+               const int _N,
                const int _K,
                const int B_M,
                const int B_N,
@@ -256,7 +256,7 @@ void libxsmm_bgemm( const int _M,
           j2 = _n + j2;
           k2 = _k + k2;
 
-          if (w_i == s) { 
+          if (w_i == s) {
             o_i2 = i2;
             o_j2 = j2;
             o_k2 = k2;
@@ -282,24 +282,24 @@ void libxsmm_bgemm( const int _M,
           }
           for (_ki = 0, ki=B_K2*k2; _ki < B_K2 ; _ki++, ki++) {
 #ifndef _USE_LIBXSMM_PREFETCH
-            l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M), 
+            l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
                      (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out);
 #else
             /* avoiding prefetch for untouched data */
             if ( k2 < (K/B_K)-2 ) {
 #if defined(__AVX2__)
-              l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M), 
-                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out, 
-                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki+1, 0, 0, _K/B_K, B_N, B_K), 
+              l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
+                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out,
+                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki+1, 0, 0, _K/B_K, B_N, B_K),
                           (const real*)&LIBXSMM_VLA_ACCESS(4, A, ki+1, i2, 0, 0, _M/B_M, B_K, B_M), NULL);
 #else
-              l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M), 
-                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out, 
-                          (const real*)&LIBXSMM_VLA_ACCESS(4, A, ki+1, i2, 0, 0, _M/B_M, B_K, B_M), 
+              l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
+                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out,
+                          (const real*)&LIBXSMM_VLA_ACCESS(4, A, ki+1, i2, 0, 0, _M/B_M, B_K, B_M),
                           (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki+1, 0, 0, _K/B_K, B_N, B_K), NULL);
 #endif
             } else {
-              l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M), 
+              l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
                        (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out);
             }
 #endif
@@ -331,7 +331,7 @@ void libxsmm_bgemm( const int _M,
 
 /* TODO: To be used with per-thread jitting */
 void libxsmm_bgemm_dry_run( const int _M,
-                       const int _N,  
+                       const int _N,
                        const int _K,
                        const int B_M,
                        const int B_N,
@@ -397,7 +397,7 @@ void libxsmm_bgemm_dry_run( const int _M,
           j2 = _n + j2;
           k2 = _k + k2;
 
-          if (w_i == s) { 
+          if (w_i == s) {
             o_i2 = i2;
             o_j2 = j2;
             o_k2 = k2;
@@ -423,26 +423,26 @@ void libxsmm_bgemm_dry_run( const int _M,
           }
           for (_ki = 0, ki=B_K2*k2; _ki < B_K2 ; _ki++, ki++) {
 #ifndef _USE_LIBXSMM_PREFETCH
-            /*l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M), 
+            /*l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
                      (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out);*/
 #else
             /* avoiding prefetch for untouched data */
             if ( k2 < (K/B_K)-2 ) {
 #if defined(__AVX2__)
-              /*l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M), 
-                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out, 
-                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki+1, 0, 0, _K/B_K, B_N, B_K), 
+              /*l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
+                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out,
+                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki+1, 0, 0, _K/B_K, B_N, B_K),
                           (const real*)&LIBXSMM_VLA_ACCESS(4, A, ki+1, i2, 0, 0, _M/B_M, B_K, B_M), NULL);*/
 #else
               /*Put memory address computation code here*/
-              /*l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M), 
-                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out, 
-                          (const real*)&LIBXSMM_VLA_ACCESS(4, A, ki+1, i2, 0, 0, _M/B_M, B_K, B_M), 
+              /*l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
+                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out,
+                          (const real*)&LIBXSMM_VLA_ACCESS(4, A, ki+1, i2, 0, 0, _M/B_M, B_K, B_M),
                           (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki+1, 0, 0, _K/B_K, B_N, B_K), NULL);*/
 #endif
             } else {
               /*Put memory address computation code here*/
-              /*l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M), 
+              /*l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
                        (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out);*/
             }
 #endif
