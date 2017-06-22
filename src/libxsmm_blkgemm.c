@@ -29,29 +29,67 @@
 /* Kunal Banerjee (Intel Corp.), Dheevatsa Mudigere (Intel Corp.)
    Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
-
+#include <libxsmm_blkgemm.h>
 #include <libxsmm.h>
+
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <string.h>
 
 #if defined(_OPENMP)
 #include <omp.h>
 #endif
-#include <libxsmm_blkgemm.h>
 
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-# include <mkl_service.h>
+#define _USE_LIBXSMM_PREFETCH
+#define BG_type 1 /* 1-float, 2-double */
+#if (BG_type==2)
+  #define _KERNEL libxsmm_dmmfunction
+  #define _KERNEL_JIT libxsmm_dmmdispatch
+#else
+  #define _KERNEL libxsmm_smmfunction
+  #define _KERNEL_JIT libxsmm_smmdispatch
 #endif
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-/* note: this does not reproduce 48-bit RNG quality */
-# define drand48() ((double)rand() / RAND_MAX)
-# define srand48 srand
+/* ORDER: 0-jik, 1-ijk, 2-jki, 3-ikj, 4-kji, 5-kij */
+#define jik 0
+#define ijk 1
+#define jki 2
+#define ikj 3
+#define kji 4
+#define kij 5
+
+#define _alloc(size,alignment)  \
+  mmap(NULL, size, PROT_READ | PROT_WRITE, \
+      MAP_ANONYMOUS | MAP_SHARED | MAP_HUGETLB| MAP_POPULATE, -1, 0);
+#define _free(addr) {munmap(addr, 0);}
+
+#if defined(_OPENMP)
+#define BG_BARRIER_INIT(x) { \
+  int nthrds; \
+_Pragma("omp parallel")\
+  { \
+    nthrds = omp_get_num_threads(); \
+  } \
+  int Cores = Cores = nthrds > 68 ? nthrds > 136 ? nthrds/4 : nthrds/2 : nthrds; \
+  /*printf("Cores=%d, Threads=%d\n", Cores, nthrds);*/ \
+  /* create a new barrier */ \
+  x = libxsmm_barrier_create(Cores, nthrds/Cores); \
+  assert(x!= NULL); \
+  /* each thread must initialize with the barrier */ \
+_Pragma("omp parallel") \
+  { \
+    libxsmm_barrier_init(x, omp_get_thread_num()); \
+  } \
+}
+#define BG_BARRIER(x, y) {libxsmm_barrier_wait((libxsmm_barrier*)x, y);}
+#define BG_BARRIER_DEL(x) {libxsmm_barrier_release((libxsmm_barrier*)x);}
+#else
+#define BG_BARRIER_INIT(x) {}
+#define BG_BARRIER(x, y) {}
+#define BG_BARRIER_DEL(x) {}
 #endif
 
-/** Function prototype for SGEMM; this way any kind of LAPACK/BLAS library is sufficient at link-time. */
 
 LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* handle,
                                                      real* libxsmm_mat_dst,
@@ -60,10 +98,10 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* han
   LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->m);
   int mb, kb, bm, bk;
 
-  for ( kb = 0; kb < handle->kb; kb++ ) {
-    for ( mb = 0; mb < handle->mb; mb++ ) {
-      for ( bk = 0; bk < handle->bk; bk++ ) {
-        for ( bm = 0; bm < handle->bm; bm++ ) {
+  for (kb = 0; kb < handle->kb; kb++) {
+    for (mb = 0; mb < handle->mb; mb++) {
+      for (bk = 0; bk < handle->bk; bk++) {
+        for (bm = 0; bm < handle->bm; bm++) {
           LIBXSMM_VLA_ACCESS(4, dst, kb, mb, bk, bm, handle->mb, handle->bk, handle->bm) =
           LIBXSMM_VLA_ACCESS(2, src, kb * handle->bk + bk, mb * handle->bm + bm, handle->m);
         }
@@ -80,10 +118,10 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* han
   LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->k);
   int kb, nb, bk, bn;
 
-  for ( nb = 0; nb < handle->nb; nb++ ) {
-    for ( kb = 0; kb < handle->kb; kb++ ) {
-      for ( bn = 0; bn < handle->bn; bn++ ) {
-        for ( bk = 0; bk < handle->bk; bk++ ) {
+  for (nb = 0; nb < handle->nb; nb++) {
+    for (kb = 0; kb < handle->kb; kb++) {
+      for (bn = 0; bn < handle->bn; bn++) {
+        for (bk = 0; bk < handle->bk; bk++) {
           LIBXSMM_VLA_ACCESS(4, dst, nb, kb, bn, bk, handle->kb, handle->bn, handle->bk) =
           LIBXSMM_VLA_ACCESS(2, src, nb * handle->bn + bn, kb * handle->bk + bk, handle->k);
         }
@@ -92,6 +130,7 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* han
   }
 }
 
+
 LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* handle,
                                                      real* libxsmm_mat_dst,
                                                      real* colmaj_mat_src ) {
@@ -99,10 +138,10 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* han
   LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->m);
   int mb, nb, bm, bn;
 
-  for ( nb = 0; nb < handle->nb; nb++ ) {
-    for ( mb = 0; mb < handle->mb; mb++ ) {
-      for ( bn = 0; bn < handle->bn; bn++ ) {
-        for ( bm = 0; bm < handle->bm; bm++ ) {
+  for (nb = 0; nb < handle->nb; nb++) {
+    for (mb = 0; mb < handle->mb; mb++) {
+      for (bn = 0; bn < handle->bn; bn++) {
+        for (bm = 0; bm < handle->bm; bm++) {
           LIBXSMM_VLA_ACCESS(4, dst, nb, mb, bn, bm, handle->mb, handle->bn, handle->bm) =
           LIBXSMM_VLA_ACCESS(2, src, nb * handle->bn + bn, mb * handle->bm + bm, handle->m);
         }
@@ -110,6 +149,7 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* han
     }
   }
 }
+
 
 LIBXSMM_API_DEFINITION void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* handle,
                                                       real* libxsmm_mat_dst,
@@ -121,10 +161,10 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* ha
   double src_norm = 0.0;
   double dst_norm = 0.0;
 
-  for ( nb = 0; nb < handle->nb; nb++ ) {
-    for ( mb = 0; mb < handle->mb; mb++ ) {
-      for ( bn = 0; bn < handle->bn; bn++ ) {
-        for ( bm = 0; bm < handle->bm; bm++ ) {
+  for (nb = 0; nb < handle->nb; nb++) {
+    for (mb = 0; mb < handle->mb; mb++) {
+      for (bn = 0; bn < handle->bn; bn++) {
+        for (bm = 0; bm < handle->bm; bm++) {
           const double dstval = (double)LIBXSMM_VLA_ACCESS(4, dst, nb, mb, bn, bm, handle->mb, handle->bn, handle->bm);
           const double srcval = (double)LIBXSMM_VLA_ACCESS(2, src, nb * handle->bn + bn, mb * handle->bm + bm, handle->m);
           const double local_error = fabs(dstval - srcval);
@@ -141,7 +181,8 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* ha
   printf(" max error: %f, sum BLAS: %f, sum LIBXSMM: %f \n", max_error, src_norm, dst_norm );
 }
 
-LIBXSMM_INLINE void libxsmm_order (int w_i, int nw_i, int nw_j, int nw_k, int _order, int *i2, int *j2, int *k2)
+
+LIBXSMM_API_INLINE void internal_blkgemm_order(int w_i, int nw_i, int nw_j, int nw_k, int _order, int* i2, int* j2, int* k2)
 {
   switch (_order) {
     case jik: /*jik*/
@@ -182,28 +223,23 @@ LIBXSMM_INLINE void libxsmm_order (int w_i, int nw_i, int nw_j, int nw_k, int _o
   }
 }
 
-/******************************************************************************
-  Fine grain parallelized version(s) of BGEMM - LIBXSMM_BGEMM
-  - Requires block structure layout for A,B matrices
-  - Parallelized across all three dims - M, N, K
-  - Uses fine-grain on-demand locks for write to C and fast barrier
-  - Allows for calling multiple GEMMs, specified by 'count'
- ******************************************************************************/
-void libxsmm_bgemm( const int _M,
-               const int _N,
-               const int _K,
-               const int B_M,
-               const int B_N,
-               const int B_K,
-               const real *Ap,
-               const real *Bp,
-               real *Cp,
+
+LIBXSMM_API_DEFINITION void libxsmm_bgemm(
+               int _M,
+               int _N,
+               int _K,
+               int B_M,
+               int B_N,
+               int B_K,
+               const real* Ap,
+               const real* Bp,
+               real* Cp,
                int tid,
                int nthrds,
                const libxsmm_blkgemm_handle* handle ) {
-  _KERNEL l_kernel = handle->_l_kernel;
+  _KERNEL l_kernel = handle->_l_kernel.smm;
 #if defined(_USE_LIBXSMM_PREFETCH)
-  _KERNEL l_kernel_pf = handle->_l_kernel_pf;
+  _KERNEL l_kernel_pf = handle->_l_kernel_pf.smm;
 #endif
 
   LIBXSMM_VLA_DECL(2, LOCK_T, locks, handle->_wlock, _N/B_N);
@@ -250,7 +286,7 @@ void libxsmm_bgemm( const int _M,
 
         for (w_i = s; w_i < e; w_i++) {
           int i2, j2, k2;
-          libxsmm_order(w_i, nw_i, nw_j, nw_k, ORDER, &i2, &j2, &k2);
+          internal_blkgemm_order(w_i, nw_i, nw_j, nw_k, ORDER, &i2, &j2, &k2);
 
           i2 = _m + i2;
           j2 = _n + j2;
@@ -285,7 +321,7 @@ void libxsmm_bgemm( const int _M,
                      (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out);
 #else
             /* avoiding prefetch for untouched data */
-            if ( k2 < (K/B_K)-2 ) {
+            if (k2 < (K/B_K)-2) {
 #if defined(__AVX2__)
               l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
                           (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out,
@@ -328,23 +364,32 @@ void libxsmm_bgemm( const int _M,
   }
 }
 
+
 /* TODO: To be used with per-thread jitting */
-void libxsmm_bgemm_dry_run( const int _M,
-                       const int _N,
-                       const int _K,
-                       const int B_M,
-                       const int B_N,
-                       const int B_K,
-                       const real *Ap,
-                       const real *Bp,
-                       real *Cp,
+LIBXSMM_API void libxsmm_bgemm_dry_run(
+  int _M, int _N, int _K,
+  int B_M, int B_N, int B_K,
+  const real* Ap, const real* Bp, real* Cp,
+  int tid, int nthrds,
+  const libxsmm_blkgemm_handle* handle);
+LIBXSMM_API_DEFINITION void libxsmm_bgemm_dry_run(
+                       int _M,
+                       int _N,
+                       int _K,
+                       int B_M,
+                       int B_N,
+                       int B_K,
+                       const real* Ap,
+                       const real* Bp,
+                       real* Cp,
                        int tid,
                        int nthrds,
-                       const libxsmm_blkgemm_handle* handle ) {
+                       const libxsmm_blkgemm_handle* handle )
+{
 #if 0/*disabled*/
-  _KERNEL l_kernel = handle->_l_kernel;
+  _KERNEL l_kernel = handle->_l_kernel.smm;
 #if defined(_USE_LIBXSMM_PREFETCH)
-  _KERNEL l_kernel_pf = handle->_l_kernel_pf;
+  _KERNEL l_kernel_pf = handle->_l_kernel_pf.smm;
 #endif
 #endif
   LIBXSMM_VLA_DECL(2, LOCK_T, locks, handle->_wlock, _N/B_N);
@@ -392,7 +437,7 @@ void libxsmm_bgemm_dry_run( const int _M,
 
         for (w_i = s; w_i < e; w_i++) {
           int i2, j2, k2;
-          libxsmm_order(w_i, nw_i, nw_j, nw_k, ORDER, &i2, &j2, &k2);
+          internal_blkgemm_order(w_i, nw_i, nw_j, nw_k, ORDER, &i2, &j2, &k2);
 
           i2 = _m + i2;
           j2 = _n + j2;
@@ -428,7 +473,7 @@ void libxsmm_bgemm_dry_run( const int _M,
                      (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out);
 #else
             /* avoiding prefetch for untouched data */
-            if ( k2 < (K/B_K)-2 ) {
+            if (k2 < (K/B_K)-2) {
 #if defined(__AVX2__)
               l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
                           (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out,
@@ -473,6 +518,7 @@ void libxsmm_bgemm_dry_run( const int _M,
   }
 }
 
+
 LIBXSMM_API_DEFINITION void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
                                                    const char transA,
                                                    const char transB,
@@ -489,7 +535,7 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle*
   LIBXSMM_UNUSED(transA);
   LIBXSMM_UNUSED(transB);
 
-  if ( !(LIBXSMM_FEQ(*beta, (real)1.0) && LIBXSMM_FEQ(*alpha, (real)1.0)) ) {
+  if (!(LIBXSMM_FEQ(*beta, (real)1.0) && LIBXSMM_FEQ(*alpha, (real)1.0))) {
     printf(" alpha and beta need to be 1.0\n" );
     exit(-1);
   }
@@ -513,7 +559,8 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle*
   }
 }
 
-LIBXSMM_API_DEFINITION void libxsmm_blkgemm_handle_alloc(libxsmm_blkgemm_handle* handle, const int M, const int MB, const int N, const int NB)
+
+LIBXSMM_API_DEFINITION void libxsmm_blkgemm_handle_alloc(libxsmm_blkgemm_handle* handle, int M, int MB, int N, int NB)
 {
   int i;
   /* allocating lock array */
@@ -525,3 +572,4 @@ LIBXSMM_API_DEFINITION void libxsmm_blkgemm_handle_alloc(libxsmm_blkgemm_handle*
 
   BG_BARRIER_INIT(handle->bar);
 }
+

@@ -131,6 +131,7 @@
     <ClCompile Include="..\src\generator_transpose.c" />
     <ClCompile Include="..\src\generator_transpose_avx_avx512.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
+    <ClCompile Include="..\src\libxsmm_blkgemm.c" />
     <ClCompile Include="..\src\libxsmm_dnn.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_backward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_forward.c" />

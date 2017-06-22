@@ -389,6 +389,9 @@
     <ClCompile Include="..\src\generator_transpose_avx_avx512.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\libxsmm_blkgemm.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">
