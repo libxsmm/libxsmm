@@ -202,7 +202,7 @@ void libxsmm_bgemm( const int _M,
                int nthrds,
                const libxsmm_blkgemm_handle* handle ) {
   _KERNEL l_kernel = handle->_l_kernel;
-#ifdef _USE_LIBXSMM_PREFETCH
+#if defined(_USE_LIBXSMM_PREFETCH)
   _KERNEL l_kernel_pf = handle->_l_kernel_pf;
 #endif
 
@@ -243,11 +243,10 @@ void libxsmm_bgemm( const int _M,
     for (_nb=0, _n=0; _nb < B_N1; _nb++, _n+=nw_j) {
       for (_kb=0, _k=0; _kb < B_K1; _kb++, _k+=nw_k) {
         nw_k = (K/B_K)/B_K2;
-        int nw = nw_i*nw_j*nw_k;
         int s = (tid*nw)/nthrds;
         int e = ((tid+1)*nw)/nthrds;
 
-        int o_i2, o_j2, o_k2;
+        int o_i2, o_j2;
         for (w_i = s; w_i < e; w_i++) {
           int i2, j2, k2;
           libxsmm_order(w_i, nw_i, nw_j, nw_k, ORDER, &i2, &j2, &k2);
@@ -259,7 +258,6 @@ void libxsmm_bgemm( const int _M,
           if (w_i == s) {
             o_i2 = i2;
             o_j2 = j2;
-            o_k2 = k2;
           } else {
             if ((o_i2 != i2) || (o_j2 != j2)) {
               LOCK_SET(&LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, _N/B_N));
@@ -281,7 +279,7 @@ void libxsmm_bgemm( const int _M,
             }
           }
           for (_ki = 0, ki=B_K2*k2; _ki < B_K2 ; _ki++, ki++) {
-#ifndef _USE_LIBXSMM_PREFETCH
+#if !defined(_USE_LIBXSMM_PREFETCH)
             l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
                      (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out);
 #else
@@ -342,11 +340,12 @@ void libxsmm_bgemm_dry_run( const int _M,
                        int tid,
                        int nthrds,
                        const libxsmm_blkgemm_handle* handle ) {
+#if 0/*disabled*/
   _KERNEL l_kernel = handle->_l_kernel;
-#ifdef _USE_LIBXSMM_PREFETCH
+#if defined(_USE_LIBXSMM_PREFETCH)
   _KERNEL l_kernel_pf = handle->_l_kernel_pf;
 #endif
-
+#endif
   LIBXSMM_VLA_DECL(2, LOCK_T, locks, handle->_wlock, _N/B_N);
   real l_out[B_N][B_M];
   int ki;
@@ -358,8 +357,6 @@ void libxsmm_bgemm_dry_run( const int _M,
     }
   }
 
-  LIBXSMM_VLA_DECL(4, real, A, Ap, _M/B_M, B_K, B_M);
-  LIBXSMM_VLA_DECL(4, real, B, Bp, _K/B_K, B_N, B_K);
   LIBXSMM_VLA_DECL(4, real, C, Cp, _M/B_M, B_N, B_M);
 
   int B_M1 = handle->b_m1;
@@ -379,16 +376,18 @@ void libxsmm_bgemm_dry_run( const int _M,
 
   int _mb, _nb, _kb;
   int _m, _n, _k;
-  int w_i, _ki;
+  int w_i;
+#if 0/*disabled*/
+  int _ki;
+#endif
   for (_mb=0, _m=0; _mb < B_M1; _mb++, _m+=nw_i) {
     for (_nb=0, _n=0; _nb < B_N1; _nb++, _n+=nw_j) {
       for (_kb=0, _k=0; _kb < B_K1; _kb++, _k+=nw_k) {
         nw_k = (K/B_K)/B_K2;
-        int nw = nw_i*nw_j*nw_k;
         int s = (tid*nw)/nthrds;
         int e = ((tid+1)*nw)/nthrds;
 
-        int o_i2, o_j2, o_k2;
+        int o_i2, o_j2;
         for (w_i = s; w_i < e; w_i++) {
           int i2, j2, k2;
           libxsmm_order(w_i, nw_i, nw_j, nw_k, ORDER, &i2, &j2, &k2);
@@ -400,7 +399,6 @@ void libxsmm_bgemm_dry_run( const int _M,
           if (w_i == s) {
             o_i2 = i2;
             o_j2 = j2;
-            o_k2 = k2;
           } else {
             if ((o_i2 != i2) || (o_j2 != j2)) {
               LOCK_SET(&LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, _N/B_N));
@@ -421,33 +419,34 @@ void libxsmm_bgemm_dry_run( const int _M,
               o_j2 = j2;
             }
           }
+#if 0/*disabled*/
           for (_ki = 0, ki=B_K2*k2; _ki < B_K2 ; _ki++, ki++) {
-#ifndef _USE_LIBXSMM_PREFETCH
-            /*l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
-                     (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out);*/
+#if !defined(_USE_LIBXSMM_PREFETCH)
+            l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
+                     (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out);
 #else
             /* avoiding prefetch for untouched data */
             if ( k2 < (K/B_K)-2 ) {
 #if defined(__AVX2__)
-              /*l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
+              l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
                           (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out,
                           (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki+1, 0, 0, _K/B_K, B_N, B_K),
-                          (const real*)&LIBXSMM_VLA_ACCESS(4, A, ki+1, i2, 0, 0, _M/B_M, B_K, B_M), NULL);*/
+                          (const real*)&LIBXSMM_VLA_ACCESS(4, A, ki+1, i2, 0, 0, _M/B_M, B_K, B_M), NULL);
 #else
               /*Put memory address computation code here*/
-              /*l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
+              l_kernel_pf((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
                           (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out,
                           (const real*)&LIBXSMM_VLA_ACCESS(4, A, ki+1, i2, 0, 0, _M/B_M, B_K, B_M),
-                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki+1, 0, 0, _K/B_K, B_N, B_K), NULL);*/
+                          (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki+1, 0, 0, _K/B_K, B_N, B_K), NULL);
 #endif
             } else {
               /*Put memory address computation code here*/
-              /*l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
-                       (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out);*/
+              l_kernel((const real*)&LIBXSMM_VLA_ACCESS(4, A, ki, i2, 0, 0, _M/B_M, B_K, B_M),
+                       (const real*)&LIBXSMM_VLA_ACCESS(4, B, j2, ki, 0, 0, _K/B_K, B_N, B_K), (real*)l_out);
             }
 #endif
           }
-
+#endif
           if (w_i == e-1) {
             o_i2 = i2;
             o_j2 = j2;
