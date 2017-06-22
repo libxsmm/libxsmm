@@ -173,8 +173,8 @@
 }
 
 #define TRANSPOSE_SIMD_WIDTH_KERNEL_BFLOAT16(ptr_A, ldA, ptr_B, ldB) { \
-  __m512 r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf \
-  __m512 t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf \
+  __m512 r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf; \
+  __m512 t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf; \
   __m512i vload_1 =  _mm512_castsi256_si512(_mm256_loadu_si256((const __m256i*)(ptr_A))); \
   vload_1 =  _mm512_inserti32x8(vload_1, _mm256_loadu_si256((const __m256i*)(ptr_A + ldA)), 1); \
   EXPAND_BFLOAT16(vload_1, r0, r1);{ \
@@ -200,98 +200,98 @@
   vload_8 =  _mm512_inserti32x8(vload_8, _mm256_loadu_si256((const __m256i*)(ptr_A + 15*ldA)), 1); \
   EXPAND_BFLOAT16(vload_8, re, rf); \
   \
-  t0 = _mm512_unpacklo_ps(r0,r1) \
-  t1 = _mm512_unpackhi_ps(r0,r1) \
-  t2 = _mm512_unpacklo_ps(r2,r3) \
-  t3 = _mm512_unpackhi_ps(r2,r3) \
-  t4 = _mm512_unpacklo_ps(r4,r5) \
-  t5 = _mm512_unpackhi_ps(r4,r5) \
-  t6 = _mm512_unpacklo_ps(r6,r7) \
-  t7 = _mm512_unpackhi_ps(r6,r7) \
-  t8 = _mm512_unpacklo_ps(r8,r9) \
-  t9 = _mm512_unpackhi_ps(r8,r9) \
-  ta = _mm512_unpacklo_ps(ra,rb) \
-  tb = _mm512_unpackhi_ps(ra,rb) \
-  tc = _mm512_unpacklo_ps(rc,rd) \
-  td = _mm512_unpackhi_ps(rc,rd) \
-  te = _mm512_unpacklo_ps(re,rf) \
-  tf = _mm512_unpackhi_ps(re,rf) \
+  t0 = _mm512_unpacklo_ps(r0,r1); \
+  t1 = _mm512_unpackhi_ps(r0,r1); \
+  t2 = _mm512_unpacklo_ps(r2,r3); \
+  t3 = _mm512_unpackhi_ps(r2,r3); \
+  t4 = _mm512_unpacklo_ps(r4,r5); \
+  t5 = _mm512_unpackhi_ps(r4,r5); \
+  t6 = _mm512_unpacklo_ps(r6,r7); \
+  t7 = _mm512_unpackhi_ps(r6,r7); \
+  t8 = _mm512_unpacklo_ps(r8,r9); \
+  t9 = _mm512_unpackhi_ps(r8,r9); \
+  ta = _mm512_unpacklo_ps(ra,rb); \
+  tb = _mm512_unpackhi_ps(ra,rb); \
+  tc = _mm512_unpacklo_ps(rc,rd); \
+  td = _mm512_unpackhi_ps(rc,rd); \
+  te = _mm512_unpacklo_ps(re,rf); \
+  tf = _mm512_unpackhi_ps(re,rf); \
   \
-  { const __m512d td1 = _mm512_castps_pd(t0), td2 = _mm512_castps_pd(t2) \
-    r0 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)) \
-    r1 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); \
-  { const __m512d td1 = _mm512_castps_pd(t1), td2 = _mm512_castps_pd(t3) \
-    r2 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)) \
-    r3 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); \
-  { const __m512d td1 = _mm512_castps_pd(t4), td2 = _mm512_castps_pd(t6) \
-    r4 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)) \
-    r5 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); \
-  { const __m512d td1 = _mm512_castps_pd(t5), td2 = _mm512_castps_pd(t7) \
-    r6 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)) \
-    r7 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); \
-  { const __m512d td1 = _mm512_castps_pd(t8), td2 = _mm512_castps_pd(ta) \
-    r8 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)) \
-    r9 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); \
-  { const __m512d td1 = _mm512_castps_pd(t9), td2 = _mm512_castps_pd(tb) \
-    ra = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)) \
-    rb = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); \
-  { const __m512d td1 = _mm512_castps_pd(tc), td2 = _mm512_castps_pd(te) \
-    rc = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)) \
-    rd = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); \
-  { const __m512d td1 = _mm512_castps_pd(td), td2 = _mm512_castps_pd(tf) \
-    re = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)) \
-    rf = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); \
+  { const __m512d td1 = _mm512_castps_pd(t0), td2 = _mm512_castps_pd(t2); \
+    r0 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)); \
+    r1 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); } \
+  { const __m512d td1 = _mm512_castps_pd(t1), td2 = _mm512_castps_pd(t3); \
+    r2 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)); \
+    r3 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); } \
+  { const __m512d td1 = _mm512_castps_pd(t4), td2 = _mm512_castps_pd(t6); \
+    r4 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)); \
+    r5 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); } \
+  { const __m512d td1 = _mm512_castps_pd(t5), td2 = _mm512_castps_pd(t7); \
+    r6 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)); \
+    r7 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); } \
+  { const __m512d td1 = _mm512_castps_pd(t8), td2 = _mm512_castps_pd(ta); \
+    r8 = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)); \
+    r9 = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); } \
+  { const __m512d td1 = _mm512_castps_pd(t9), td2 = _mm512_castps_pd(tb); \
+    ra = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)); \
+    rb = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); } \
+  { const __m512d td1 = _mm512_castps_pd(tc), td2 = _mm512_castps_pd(te); \
+    rc = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)); \
+    rd = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); } \
+  { const __m512d td1 = _mm512_castps_pd(td), td2 = _mm512_castps_pd(tf); \
+    re = _mm512_castpd_ps(_mm512_unpacklo_pd(td1, td2)); \
+    rf = _mm512_castpd_ps(_mm512_unpackhi_pd(td1, td2)); } \
   \
-  t0 = _mm512_shuffle_f32x4(r0, r4, 0x88) \
-  t1 = _mm512_shuffle_f32x4(r1, r5, 0x88) \
-  t2 = _mm512_shuffle_f32x4(r2, r6, 0x88) \
-  t3 = _mm512_shuffle_f32x4(r3, r7, 0x88) \
-  t4 = _mm512_shuffle_f32x4(r0, r4, 0xdd) \
-  t5 = _mm512_shuffle_f32x4(r1, r5, 0xdd) \
-  t6 = _mm512_shuffle_f32x4(r2, r6, 0xdd) \
-  t7 = _mm512_shuffle_f32x4(r3, r7, 0xdd) \
-  t8 = _mm512_shuffle_f32x4(r8, rc, 0x88) \
-  t9 = _mm512_shuffle_f32x4(r9, rd, 0x88) \
-  ta = _mm512_shuffle_f32x4(ra, re, 0x88) \
-  tb = _mm512_shuffle_f32x4(rb, rf, 0x88) \
-  tc = _mm512_shuffle_f32x4(r8, rc, 0xdd) \
-  td = _mm512_shuffle_f32x4(r9, rd, 0xdd) \
-  te = _mm512_shuffle_f32x4(ra, re, 0xdd) \
-  tf = _mm512_shuffle_f32x4(rb, rf, 0xdd) \
+  t0 = _mm512_shuffle_f32x4(r0, r4, 0x88); \
+  t1 = _mm512_shuffle_f32x4(r1, r5, 0x88); \
+  t2 = _mm512_shuffle_f32x4(r2, r6, 0x88); \
+  t3 = _mm512_shuffle_f32x4(r3, r7, 0x88); \
+  t4 = _mm512_shuffle_f32x4(r0, r4, 0xdd); \
+  t5 = _mm512_shuffle_f32x4(r1, r5, 0xdd); \
+  t6 = _mm512_shuffle_f32x4(r2, r6, 0xdd); \
+  t7 = _mm512_shuffle_f32x4(r3, r7, 0xdd); \
+  t8 = _mm512_shuffle_f32x4(r8, rc, 0x88); \
+  t9 = _mm512_shuffle_f32x4(r9, rd, 0x88); \
+  ta = _mm512_shuffle_f32x4(ra, re, 0x88); \
+  tb = _mm512_shuffle_f32x4(rb, rf, 0x88); \
+  tc = _mm512_shuffle_f32x4(r8, rc, 0xdd); \
+  td = _mm512_shuffle_f32x4(r9, rd, 0xdd); \
+  te = _mm512_shuffle_f32x4(ra, re, 0xdd); \
+  tf = _mm512_shuffle_f32x4(rb, rf, 0xdd); \
   \
-  r0 = _mm512_shuffle_f32x4(t0, t8, 0x88) \
-  r1 = _mm512_shuffle_f32x4(t1, t9, 0x88) \
-  r2 = _mm512_shuffle_f32x4(t2, ta, 0x88) \
-  r3 = _mm512_shuffle_f32x4(t3, tb, 0x88) \
-  r4 = _mm512_shuffle_f32x4(t4, tc, 0x88) \
-  r5 = _mm512_shuffle_f32x4(t5, td, 0x88) \
-  r6 = _mm512_shuffle_f32x4(t6, te, 0x88) \
-  r7 = _mm512_shuffle_f32x4(t7, tf, 0x88) \
-  r8 = _mm512_shuffle_f32x4(t0, t8, 0xdd) \
-  r9 = _mm512_shuffle_f32x4(t1, t9, 0xdd) \
-  ra = _mm512_shuffle_f32x4(t2, ta, 0xdd) \
-  rb = _mm512_shuffle_f32x4(t3, tb, 0xdd) \
-  rc = _mm512_shuffle_f32x4(t4, tc, 0xdd) \
-  rd = _mm512_shuffle_f32x4(t5, td, 0xdd) \
-  re = _mm512_shuffle_f32x4(t6, te, 0xdd) \
-  rf = _mm512_shuffle_f32x4(t7, tf, 0xdd) \
+  r0 = _mm512_shuffle_f32x4(t0, t8, 0x88); \
+  r1 = _mm512_shuffle_f32x4(t1, t9, 0x88); \
+  r2 = _mm512_shuffle_f32x4(t2, ta, 0x88); \
+  r3 = _mm512_shuffle_f32x4(t3, tb, 0x88); \
+  r4 = _mm512_shuffle_f32x4(t4, tc, 0x88); \
+  r5 = _mm512_shuffle_f32x4(t5, td, 0x88); \
+  r6 = _mm512_shuffle_f32x4(t6, te, 0x88); \
+  r7 = _mm512_shuffle_f32x4(t7, tf, 0x88); \
+  r8 = _mm512_shuffle_f32x4(t0, t8, 0xdd); \
+  r9 = _mm512_shuffle_f32x4(t1, t9, 0xdd); \
+  ra = _mm512_shuffle_f32x4(t2, ta, 0xdd); \
+  rb = _mm512_shuffle_f32x4(t3, tb, 0xdd); \
+  rc = _mm512_shuffle_f32x4(t4, tc, 0xdd); \
+  rd = _mm512_shuffle_f32x4(t5, td, 0xdd); \
+  re = _mm512_shuffle_f32x4(t6, te, 0xdd); \
+  rf = _mm512_shuffle_f32x4(t7, tf, 0xdd); \
   \
-  _mm512_storeu_ps(ptr_B + 0*ldB, r0) \
-  _mm512_storeu_ps(ptr_B + 1*ldB, r1) \
-  _mm512_storeu_ps(ptr_B + 2*ldB, r2) \
-  _mm512_storeu_ps(ptr_B + 3*ldB, r3) \
-  _mm512_storeu_ps(ptr_B + 4*ldB, r4) \
-  _mm512_storeu_ps(ptr_B + 5*ldB, r5) \
-  _mm512_storeu_ps(ptr_B + 6*ldB, r6) \
-  _mm512_storeu_ps(ptr_B + 7*ldB, r7) \
-  _mm512_storeu_ps(ptr_B + 8*ldB, r8) \
-  _mm512_storeu_ps(ptr_B + 9*ldB, r9) \
-  _mm512_storeu_ps(ptr_B + 10*ldB, ra) \
-  _mm512_storeu_ps(ptr_B + 11*ldB, rb) \
-  _mm512_storeu_ps(ptr_B + 12*ldB, rc) \
-  _mm512_storeu_ps(ptr_B + 13*ldB, rd) \
-  _mm512_storeu_ps(ptr_B + 14*ldB, re) \
-  _mm512_storeu_ps(ptr_B + 15*ldB, rf);}}}}}} \
+  _mm512_storeu_ps(ptr_B + 0*ldB, r0); \
+  _mm512_storeu_ps(ptr_B + 1*ldB, r1); \
+  _mm512_storeu_ps(ptr_B + 2*ldB, r2); \
+  _mm512_storeu_ps(ptr_B + 3*ldB, r3); \
+  _mm512_storeu_ps(ptr_B + 4*ldB, r4); \
+  _mm512_storeu_ps(ptr_B + 5*ldB, r5); \
+  _mm512_storeu_ps(ptr_B + 6*ldB, r6); \
+  _mm512_storeu_ps(ptr_B + 7*ldB, r7); \
+  _mm512_storeu_ps(ptr_B + 8*ldB, r8); \
+  _mm512_storeu_ps(ptr_B + 9*ldB, r9); \
+  _mm512_storeu_ps(ptr_B + 10*ldB, ra); \
+  _mm512_storeu_ps(ptr_B + 11*ldB, rb); \
+  _mm512_storeu_ps(ptr_B + 12*ldB, rc); \
+  _mm512_storeu_ps(ptr_B + 13*ldB, rd); \
+  _mm512_storeu_ps(ptr_B + 14*ldB, re); \
+  _mm512_storeu_ps(ptr_B + 15*ldB, rf);}}}}}}} \
 }
 
 #define COMPRESS_FP32(v, k, m, cnt) { \
