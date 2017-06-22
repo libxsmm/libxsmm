@@ -235,10 +235,10 @@ endif
 # Automatically pickup the environment (make -e not needed),
 # or pickup the Intel Compiler (if available).
 ifneq (,$(notdir $(shell which icpc 2> /dev/null)))
-  CXX = g++
+  CXX = icpc
 endif
 ifneq (,$(notdir $(shell which icc 2> /dev/null)))
-  CC = gcc
+  CC = icc
 endif
 ifneq (,$(notdir $(shell which ifort 2> /dev/null)))
   FC = ifort

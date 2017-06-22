@@ -51,20 +51,11 @@
 # define srand48 srand
 #endif
 
-<<<<<<< HEAD
-
-/** Function prototype for SGEMM; this way any kind of LAPACK/BLAS library is sufficient at link-time. */
-
-LIBXSMM_API_DEFINITION  void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* handle,
-                                             real* libxsmm_mat_dst,
-                                             real* colmaj_mat_src ) {
-=======
 /** Function prototype for SGEMM; this way any kind of LAPACK/BLAS library is sufficient at link-time. */
 
 LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* handle,
                                                      real* libxsmm_mat_dst,
                                                      real* colmaj_mat_src ) {
->>>>>>> block_gemm
   LIBXSMM_VLA_DECL(4, real, dst, libxsmm_mat_dst, handle->mb, handle->bk, handle->bm);
   LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->m);
   int mb, kb, bm, bk;
@@ -81,15 +72,10 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* han
   }
 }
 
-<<<<<<< HEAD
-LIBXSMM_API_DEFINITION  void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* handle,
-                                             real* libxsmm_mat_dst,
-                                             real* colmaj_mat_src ) {
-=======
+
 LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* handle,
                                                      real* libxsmm_mat_dst,
                                                      real* colmaj_mat_src ) {
->>>>>>> block_gemm
   LIBXSMM_VLA_DECL(4, real, dst, libxsmm_mat_dst, handle->kb, handle->bn, handle->bk);
   LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->k);
   int kb, nb, bk, bn;
@@ -106,15 +92,9 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* han
   }
 }
 
-<<<<<<< HEAD
-LIBXSMM_API_DEFINITION  void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* handle,
-                                             real* libxsmm_mat_dst,
-                                             real* colmaj_mat_src ) {
-=======
 LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* handle,
                                                      real* libxsmm_mat_dst,
                                                      real* colmaj_mat_src ) {
->>>>>>> block_gemm
   LIBXSMM_VLA_DECL(4, real, dst, libxsmm_mat_dst, handle->mb, handle->bn, handle->bm);
   LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->m);
   int mb, nb, bm, bn;
@@ -131,15 +111,9 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* han
   }
 }
 
-<<<<<<< HEAD
-LIBXSMM_API_DEFINITION  void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* handle,
-                                              real* libxsmm_mat_dst,
-                                              real* colmaj_mat_src ) {
-=======
 LIBXSMM_API_DEFINITION void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* handle,
                                                       real* libxsmm_mat_dst,
                                                       real* colmaj_mat_src ) {
->>>>>>> block_gemm
   LIBXSMM_VLA_DECL(4, real, dst, libxsmm_mat_dst, handle->mb, handle->bn, handle->bm);
   LIBXSMM_VLA_DECL(2, const real, src, colmaj_mat_src, handle->m);
   int mb, nb, bm, bn;
@@ -498,16 +472,6 @@ void libxsmm_bgemm_dry_run( const int _M,
   }
 }
 
-<<<<<<< HEAD
-LIBXSMM_API_DEFINITION  void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
-                                           const char transA,
-                                           const char transB,
-                                           const real* alpha,
-                                           const real* a,
-                                           const real* b,
-                                           const real* beta,
-                                           real* c ) {
-=======
 LIBXSMM_API_DEFINITION void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
                                                    const char transA,
                                                    const char transB,
@@ -516,7 +480,6 @@ LIBXSMM_API_DEFINITION void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle*
                                                    const real* b,
                                                    const real* beta,
                                                    real* c ) {
->>>>>>> block_gemm
   /* TODO: take transpose into account */
   LIBXSMM_UNUSED(transA);
   LIBXSMM_UNUSED(transB);

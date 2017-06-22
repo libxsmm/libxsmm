@@ -100,7 +100,7 @@ _Pragma("omp parallel")\
 _Pragma("omp parallel") \
   { \
     libxsmm_barrier_init(x, omp_get_thread_num()); \
-  } \ 
+  } \
 }
 #define BG_BARRIER(x, y) {libxsmm_barrier_wait((libxsmm_barrier*)x, y);}
 #define BG_BARRIER_DEL(x) {libxsmm_barrier_release((libxsmm_barrier*)x);}
