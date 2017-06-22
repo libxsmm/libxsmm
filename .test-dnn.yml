@@ -1,16 +1,16 @@
 script:
-  - make ${MAKEJ} && cd samples/dnn && make ${MAKEJ} && 
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} && 
     env CHECK=2 ./run_alexnet.sh
-  - make ${MAKEJ} && cd samples/dnn && make ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
     env CHECK=3 ./run_deepbench.sh
-  - make ${MAKEJ} && cd samples/dnn && make ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
     env CHECK=1 ./run_googlenetv1.sh
-  - make ${MAKEJ} && cd samples/dnn && make ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
     env CHECK=1 ./run_googlenetv3.sh
-  - make ${MAKEJ} && cd samples/dnn && make ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
     env CHECK=1 CHECK_DNN_TOLERANCE=0.000003 ./run_overfeat.sh
-  - make ${MAKEJ} && cd samples/dnn && make ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
     env CHECK=1 ./run_resnet50.sh
-  - make ${MAKEJ} && cd samples/dnn && make ${MAKEJ} &&
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
     env CHECK=1 ./run_vgga.sh
 
