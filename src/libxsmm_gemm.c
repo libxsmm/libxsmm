@@ -202,11 +202,20 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
 
   if (0 != typeprefix) {
     if (0 != ostream) { /* print information about GEMM call */
-      fprintf((FILE*)ostream, "%cgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
-                              "  %s/*alpha*/, %p/*a*/, %i/*lda*/,\n"
-                              "              %p/*b*/, %i/*ldb*/,\n"
-                              "   %s/*beta*/, %p/*c*/, %i/*ldc*/)",
-        typeprefix, ctransa, ctransa, *m, nn, kk, string_a, a, ilda, b, ildb, string_b, c, ildc);
+      if (0 != a && 0 != b && 0 != c) {
+        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
+                                "  %s/*alpha*/, %p/*a*/, %i/*lda*/,\n"
+                                "              %p/*b*/, %i/*ldb*/,\n"
+                                "   %s/*beta*/, %p/*c*/, %i/*ldc*/)",
+          typeprefix, ctransa, ctransa, *m, nn, kk, string_a, a, ilda, b, ildb, string_b, c, ildc);
+      }
+      else {
+        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
+                                "  %s/*alpha*/, %i/*lda*/,\n"
+                                "              %i/*ldb*/,\n"
+                                "   %s/*beta*/, %i/*ldc*/)",
+          typeprefix, ctransa, ctransa, *m, nn, kk, string_a, ilda, ildb, string_b, ildc);
+      }
     }
     else { /* dump input and output of the GEMM call into separate MHD files */
       char extension_header[256];
