@@ -135,30 +135,48 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
     RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((LIBXSMM_CAPACITY_CACHE) - 1), LIBXSMM_CAPACITY_CACHE)
 #endif
 
+#if defined(_DEBUG)
+# define INTERNAL_DISPATCH_DEBUG(RESULT, TYPE, FLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA) \
+  if (0 != libxsmm_verbosity && 0 != (RESULT).pmm) { \
+    const int internal_dispatch_debug_m_ = M, internal_dispatch_debug_n_ = N, internal_dispatch_debug_k_ = K; \
+    LIBXSMM_FLOCK(stderr); \
+    fprintf(stderr, "LIBXSMM: "); \
+    LIBXSMM_GEMM_PRINT(stderr, LIBXSMM_GEMM_PRECISION(TYPE), FLAGS, \
+      &internal_dispatch_debug_m_, &internal_dispatch_debug_n_, &internal_dispatch_debug_k_, \
+      PALPHA, 0/*a*/, PLDA, 0/*b*/, PLDB, PBETA, 0/*c*/, PLDC); \
+    fprintf(stderr, " = %p\n", (RESULT).pmm); \
+    LIBXSMM_FUNLOCK(stderr); \
+  }
+#else
+# define INTERNAL_DISPATCH_DEBUG(RESULT, TYPE, FLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA)
+#endif
+
 #define INTERNAL_DISPATCH(TYPE, DESC, PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH) { \
-  const int internal_dispatch_main_flags_ = (0 == (PFLAGS) ? LIBXSMM_FLAGS : *(PFLAGS)); \
-  const int internal_dispatch_main_lda_ = (0 == LIBXSMM_LD(PLDA, PLDB) ? LIBXSMM_LD(M, N) : *LIBXSMM_LD(PLDA, PLDB)); \
-  const int internal_dispatch_main_ldb_ = (0 == LIBXSMM_LD(PLDB, PLDA) ? (K) : *LIBXSMM_LD(PLDB, PLDA)); \
-  const int internal_dispatch_main_ldc_ = (0 == (PLDC) ? LIBXSMM_LD(M, N) : *(PLDC)); \
-  const TYPE internal_dispatch_main_alpha_ = (TYPE)(0 == (PALPHA) ? (LIBXSMM_ALPHA) : *(PALPHA)); \
-  const TYPE internal_dispatch_main_beta_ = (TYPE)(0 == (PBETA) ? (LIBXSMM_BETA) : *(PBETA)); \
-  if (LIBXSMM_GEMM_NO_BYPASS(internal_dispatch_main_flags_, internal_dispatch_main_alpha_, internal_dispatch_main_beta_) && \
-    LIBXSMM_GEMM_NO_BYPASS_DIMS(internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_) && \
+  const int internal_dispatch_flags_ = (0 == (PFLAGS) ? LIBXSMM_FLAGS : *(PFLAGS)); \
+  const int internal_dispatch_lda_ = (0 == LIBXSMM_LD(PLDA, PLDB) ? LIBXSMM_LD(M, N) : *LIBXSMM_LD(PLDA, PLDB)); \
+  const int internal_dispatch_ldb_ = (0 == LIBXSMM_LD(PLDB, PLDA) ? (K) : *LIBXSMM_LD(PLDB, PLDA)); \
+  const int internal_dispatch_ldc_ = (0 == (PLDC) ? LIBXSMM_LD(M, N) : *(PLDC)); \
+  const TYPE internal_dispatch_alpha_ = (TYPE)(0 == (PALPHA) ? (LIBXSMM_ALPHA) : *(PALPHA)); \
+  const TYPE internal_dispatch_beta_ = (TYPE)(0 == (PBETA) ? (LIBXSMM_BETA) : *(PBETA)); \
+  libxsmm_code_pointer internal_dispatch_result_; \
+  if (LIBXSMM_GEMM_NO_BYPASS(internal_dispatch_flags_, internal_dispatch_alpha_, internal_dispatch_beta_) && \
+    LIBXSMM_GEMM_NO_BYPASS_DIMS(internal_dispatch_lda_, internal_dispatch_ldb_, internal_dispatch_ldc_) && \
     LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K)) \
   { \
-    const int internal_dispatch_main_prefetch_ = (0 == (PREFETCH) ? libxsmm_gemm_auto_prefetch : *(PREFETCH)); \
-    LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESC, LIBXSMM_GEMM_PRECISION(TYPE), internal_dispatch_main_flags_, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, \
-      internal_dispatch_main_lda_, internal_dispatch_main_ldb_, internal_dispatch_main_ldc_, internal_dispatch_main_alpha_, internal_dispatch_main_beta_, \
-      (0 > internal_dispatch_main_prefetch_ ? internal_gemm_auto_prefetch : internal_dispatch_main_prefetch_)); \
-    { \
-      return internal_find_code(&(DESC)).xmm.LIBXSMM_TPREFIX(TYPE, mm); \
-    } \
+    const int internal_dispatch_prefetch_ = (0 == (PREFETCH) ? libxsmm_gemm_auto_prefetch : *(PREFETCH)); \
+    LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESC, LIBXSMM_GEMM_PRECISION(TYPE), internal_dispatch_flags_, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, \
+      internal_dispatch_lda_, internal_dispatch_ldb_, internal_dispatch_ldc_, internal_dispatch_alpha_, internal_dispatch_beta_, \
+      (0 > internal_dispatch_prefetch_ ? internal_gemm_auto_prefetch : internal_dispatch_prefetch_)); \
+    internal_dispatch_result_ = internal_find_code(&(DESC)); \
   } \
   else { /* bypass (not supported) */ \
     /* libxsmm_gemm_print is not suitable here since A, B, and C are unknown at this point */ \
     libxsmm_update_mmstatistic(LIBXSMM_GEMM_PRECISION(TYPE), LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, 1/*try*/, 0); \
-    return 0; \
+    internal_dispatch_result_.pmm = 0; \
   } \
+  INTERNAL_DISPATCH_DEBUG(internal_dispatch_result_, TYPE, internal_dispatch_flags_, \
+    M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA); \
+  return internal_dispatch_result_.xmm.LIBXSMM_TPREFIX(TYPE, mm); \
 }
 
 #if !defined(LIBXSMM_NO_SYNC)
@@ -928,8 +946,8 @@ LIBXSMM_API_DEFINITION const char* internal_get_typename(int datatype)
 }
 
 
-LIBXSMM_API const char* internal_get_typesizename(size_t typesize);
-LIBXSMM_API_DEFINITION const char* internal_get_typesizename(size_t typesize)
+LIBXSMM_API const char* internal_get_typesize_string(size_t typesize);
+LIBXSMM_API_DEFINITION const char* internal_get_typesize_string(size_t typesize)
 {
   static LIBXSMM_TLS char result[4];
   assert(256 > typesize);
@@ -1209,7 +1227,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const char *const tsizename = internal_get_typesizename(request->descriptor.matcopy->typesize);
+          const char *const tsizename = internal_get_typesize_string(request->descriptor.matcopy->typesize);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u_%ux%u_p%u.mcopy", target_arch, tsizename,
             request->descriptor.matcopy->m, request->descriptor.matcopy->n,
@@ -1226,7 +1244,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const char *const tsizename = internal_get_typesizename(request->descriptor.trans->typesize);
+          const char *const tsizename = internal_get_typesize_string(request->descriptor.trans->typesize);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_%ux%u.trans", target_arch, tsizename,
             request->descriptor.trans->m, request->descriptor.trans->n);
