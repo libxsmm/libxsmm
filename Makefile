@@ -213,7 +213,15 @@ ifeq (1,$(AVX_STATIC))
 else ifeq (2,$(AVX_STATIC))
   GENTARGET = hsw
 else ifeq (3,$(AVX_STATIC))
-  GENTARGET = knl
+  ifneq (0,$(MIC))
+    ifeq (2,$(MIC))
+      GENTARGET = knm
+    else
+      GENTARGET = knl
+    endif
+  else
+    GENTARGET = skx
+  endif
 else ifneq (0,$(SSE))
   GENTARGET = wsm
 else
