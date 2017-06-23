@@ -403,7 +403,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_scratch_allocator(void** context,
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE internal_malloc_info_type* internal_malloc_info(const void* memory)
+LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* memory)
 {
   internal_malloc_info_type *const result = (internal_malloc_info_type*)
     (0 != memory ? (((const char*)memory) - sizeof(internal_malloc_info_type)) : 0);
@@ -463,7 +463,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_malloc_xinfo(const void* memory, size_t* 
 
 #if !defined(_WIN32)
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_mhint(void* buffer, size_t size)
+LIBXSMM_API_INLINE void internal_mhint(void* buffer, size_t size)
 {
   assert((MAP_FAILED != buffer && 0 != buffer) || 0 == size);
   /* proceed after failed madvise (even in case of an error; take what we got) */
@@ -479,7 +479,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_mhint(void* buffer, size_t siz
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void* internal_xmap(const char* dir, size_t size, int flags, void** rx)
+LIBXSMM_API_INLINE void* internal_xmap(const char* dir, size_t size, int flags, void** rx)
 {
   void* result = MAP_FAILED;
   char filename[4096];
@@ -819,7 +819,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
 
 
 #if defined(LIBXSMM_VTUNE)
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_get_vtune_jitdesc(const void* code,
+LIBXSMM_API_INLINE void internal_get_vtune_jitdesc(const void* code,
   unsigned int code_id, size_t code_size, const char* code_name,
   LIBXSMM_VTUNE_JIT_DESC_TYPE* desc)
 {
@@ -966,7 +966,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_aligned_malloc(size_t size, size_t alignmen
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int internal_malloc_site(unsigned int* npools, unsigned int* hit, const void** site)
+LIBXSMM_API_INLINE unsigned int internal_malloc_site(unsigned int* npools, unsigned int* hit, const void** site)
 {
   assert(0 != npools && 0 != hit && 0 != site);
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
@@ -1131,7 +1131,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_malloc(size_t size)
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE int internal_scratch_free(const void* memory, unsigned int pool)
+LIBXSMM_API_INLINE int internal_scratch_free(const void* memory, unsigned int pool)
 {
   const char *const scratch = internal_malloc_scratch_pool[pool].buffer;
   int released = 0;

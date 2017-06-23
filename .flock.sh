@@ -30,10 +30,13 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-make CXX=clang++ CC=clang DBG=1 ECFLAGS=--analyze $* 2> .analyze.log
-echo
-echo "================================================================================"
-echo "Errors (warnings)"
-echo "================================================================================"
-grep -e "error:" -e "warning:" .analyze.log | grep -v "is never read"
+FLOCK=$(which flock 2> /dev/null)
+DIR=$1
+
+shift
+if [ "" != "${FLOCK}" ]; then
+  ${FLOCK} ${DIR} bash -c "$*"
+else
+  eval "$*"
+fi
 

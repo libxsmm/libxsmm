@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <float.h>
 #include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
@@ -76,6 +77,17 @@ typedef struct {
   double one_norm_ref;
   double one_norm_test;
 } correctness_t;
+
+LIBXSMM_INLINE void aggregate_norms(correctness_t* output, const correctness_t* input) {
+  assert(0 != output && 0 != input);
+  if (FLT_EPSILON < input->max_abs_err &&
+     (output->max_abs_err * output->max_rel_err) < (input->max_abs_err * input->max_rel_err))
+  {
+    output->max_abs_err = input->max_abs_err;
+    output->max_rel_err = input->max_rel_err;
+    output->l2_rel_err = input->l2_rel_err;
+  }
+}
 
 LIBXSMM_INLINE void zero_buf_int16(short* buf, long size) {
   int i;
@@ -343,7 +355,7 @@ int main(int argc, char* argv[])
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   naive_conv_t naive_param;
-  correctness_t norms_fwd, norms_bwd;
+  correctness_t norms_fwd, norms_bwd, norms_check;
   void* scratch;
 
   /* some parameters we can overwrite via cli,
@@ -359,6 +371,9 @@ int main(int argc, char* argv[])
   int pad = 2;            /* padding in output */
   int stride = 1;         /* stride when accessing inputs */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
+  const char *const env_check = getenv("CHECK");
+  const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads();       /* number of threads */
 #else
@@ -380,6 +395,7 @@ int main(int argc, char* argv[])
 
   memset(&norms_fwd, 0, sizeof(norms_fwd));
   memset(&norms_bwd, 0, sizeof(norms_bwd));
+  memset(&norms_check, 0, sizeof(norms_check));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type padding_mode\n", argv[0]);
@@ -413,12 +429,15 @@ int main(int argc, char* argv[])
   pad_h = pad;
   pad_w = pad;
 
-  if (padding_mode == 1) {
-    pad_h_in = pad_h;
-    pad_w_in = pad_w;
-  } else {
+  if (0 == padding_mode) {
     pad_h_in = 0;
     pad_w_in = 0;
+  }
+  else {
+    /* TODO: change "1" to "0" if "padding_mode = -1" is acknowledged */
+    if (1 < padding_mode) pad_w = padding_mode;
+    pad_h_in = pad_h;
+    pad_w_in = pad_w;
   }
 
   pad_h_out = 0;
@@ -591,6 +610,7 @@ int main(int argc, char* argv[])
     printf("       L2-error-norm of JIT-code: %f\n", norms_fwd.l2_rel_err);
     printf("    inf-norm of comp. rel. error: %f\n", norms_fwd.max_rel_err);
     printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
+    aggregate_norms(&norms_check, &norms_fwd);
   }
 
   if (type == 'A' || type == 'B') {
@@ -621,9 +641,10 @@ int main(int argc, char* argv[])
     printf("       L2-error-norm of JIT-code: %f\n", norms_bwd.l2_rel_err);
     printf("    inf-norm of comp. rel. error: %f\n", norms_bwd.max_rel_err);
     printf("    inf-norm of comp. abs. error: %f\n", norms_bwd.max_abs_err);
+    aggregate_norms(&norms_check, &norms_bwd);
   }
 
-  if (type == 'A' || type == 'F') {
+  if ((type == 'A' || type == 'F') && LIBXSMM_FEQ(0, check)) {
     printf("##########################################\n");
     printf("#   Performance - FWD (custom-Storage)   #\n");
     printf("##########################################\n");
@@ -655,7 +676,7 @@ int main(int argc, char* argv[])
        norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
   }
 
-  if (type == 'A' || type == 'B') {
+  if ((type == 'A' || type == 'B') && LIBXSMM_FEQ(0, check)) {
     printf("##########################################\n");
     printf("#   Performance - BWD (custom-Storage)   #\n");
     printf("##########################################\n");
@@ -712,9 +733,19 @@ int main(int argc, char* argv[])
   libxsmm_free(output_libxsmm);
   libxsmm_free(filter_libxsmm);
 
+  if (check < norms_check.max_rel_err) {
+    const char *const env_check_tolerance = getenv("CHECK_DNN_TOLERANCE");
+    const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
+    if (check_tolerance < norms_check.max_abs_err) {
+      fprintf(stderr, "\nFAILED with an error of L1=%f, L1rel=%f%% and L2sum=%f!\n\n",
+        norms_check.max_abs_err, norms_check.max_rel_err, norms_check.l2_rel_err);
+      exit(EXIT_FAILURE);
+    }
+  }
+
   /* some empty lines at the end */
   printf("\n\n\n");
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 

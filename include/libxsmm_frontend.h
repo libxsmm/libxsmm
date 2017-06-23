@@ -171,15 +171,14 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(TYPE), _omp)
 
 /** Helper macro consolidating the applicable GEMM arguments into LIBXSMM's flags. */
-#define LIBXSMM_GEMM_DECLARE_FLAGS(FLAGS, TRANSA, TRANSB) \
-  int FLAGS = (0 != (TRANSA) \
-    ? (('N' == *(TRANSA) || 'n' == *(TRANSA)) ? (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_A) \
-                                              : (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_A)) \
-    : LIBXSMM_FLAGS); \
-  FLAGS = (0 != (TRANSB) \
-    ? (('N' == *(TRANSB) || 'n' == *(TRANSB)) ? ((FLAGS) & ~LIBXSMM_GEMM_FLAG_TRANS_B) \
-                                              : ((FLAGS) |  LIBXSMM_GEMM_FLAG_TRANS_B)) \
-    : (FLAGS)); \
+#define LIBXSMM_GEMM_FLAGS(TRANSA, TRANSB) ( \
+    (0 != (TRANSA) ? (('T' == *(TRANSA) || 't' == *(TRANSA)) \
+                        ? (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_A) \
+                        : (LIBXSMM_FLAGS | ~LIBXSMM_GEMM_FLAG_TRANS_A)) : LIBXSMM_FLAGS) \
+  & (0 != (TRANSB) ? (('T' == *(TRANSB) || 't' == *(TRANSB)) \
+                        ? (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_B) \
+                        : (LIBXSMM_FLAGS | ~LIBXSMM_GEMM_FLAG_TRANS_B)) : LIBXSMM_FLAGS) \
+)
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (template). */
 #if !defined(__BLAS) || (0 != __BLAS)
@@ -205,7 +204,8 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
     LIBXSMM_UNUSED(LDA); LIBXSMM_UNUSED(LDB); LIBXSMM_UNUSED(LDC); \
     LIBXSMM_UNUSED(M); LIBXSMM_UNUSED(N); LIBXSMM_UNUSED(K); \
     LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C); \
-    LIBXSMM_UNUSED(ALPHA); LIBXSMM_UNUSED(BETA)
+    LIBXSMM_UNUSED(ALPHA); LIBXSMM_UNUSED(BETA); \
+    LIBXSMM_UNUSED(FLAGS)
 #endif
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (single-precision). */
@@ -219,7 +219,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
   if (sizeof(double) == sizeof(*(A)) /*always true:*/&& 0 != (LDC)) { \
     LIBXSMM_BLAS_DGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
-  else {\
+  else { \
     LIBXSMM_BLAS_SGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
 }
@@ -262,7 +262,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
   if (sizeof(double) == sizeof(*(A)) /*always true:*/&& 0 != (LDC)) { \
     LIBXSMM_INLINE_DGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
-  else {\
+  else { \
     LIBXSMM_INLINE_SGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
 }
@@ -347,9 +347,17 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
   if (sizeof(double) == sizeof(*(A)) /*always true:*/&& 0 != (LDC)) { \
     LIBXSMM_DGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
-  else {\
+  else { \
     LIBXSMM_SGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
+}
+
+/** Call libxsmm_gemm_print using LIBXSMM's GEMM-flags. */
+#define LIBXSMM_GEMM_PRINT(OSTREAM, PRECISION, FLAGS, PM, PN, PK, PALPHA, A, PLDA, B, PLDB, PBETA, C, PLDC) { \
+  const char libxsmm_gemm_print_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T'); \
+  const char libxsmm_gemm_print_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'N' : 'T'); \
+  libxsmm_gemm_print(OSTREAM, PRECISION, &libxsmm_gemm_print_transa_, &libxsmm_gemm_print_transb_, \
+    PM, PN, PK, PALPHA, A, PLDA, B, PLDB, PBETA, C, PLDC); \
 }
 
 /**

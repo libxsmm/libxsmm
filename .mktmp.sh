@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #############################################################################
 # Copyright (c) 2017, Intel Corporation                                     #
 # All rights reserved.                                                      #
@@ -30,10 +30,18 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-make CXX=clang++ CC=clang DBG=1 ECFLAGS=--analyze $* 2> .analyze.log
-echo
-echo "================================================================================"
-echo "Errors (warnings)"
-echo "================================================================================"
-grep -e "error:" -e "warning:" .analyze.log | grep -v "is never read"
+MKTEMP=$(which mktemp 2> /dev/null)
+ECHO=$(which echo 2> /dev/null)
+MV=$(which mv 2> /dev/null)
+
+if [ "" != "${MKTEMP}" ] && [ "" != "${ECHO}" ] && [ "" != "${MV}" ]; then
+  TEMPLATE=${1/XXXXXX/}.XXXXXX
+  TMPFILE=$(${MKTEMP} ${TEMPLATE})
+  EXTFILE=${TMPFILE: -6}
+  NEWFILE=${1/XXXXXX/${EXTFILE}}
+  ${MV} ${TMPFILE} ${NEWFILE}
+  ${ECHO} "${NEWFILE}"
+else
+  touch $1
+fi
 

@@ -57,8 +57,23 @@ memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock)
 for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
   img = imgofm1 / handle->blocksofm;
   ofm1 = imgofm1 % handle->blocksofm;
-  for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
 
+  /* handle fused bias addition */
+  if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
+    LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
+    element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, 0, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
+    element_output_type* temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
+
+    /* @TODO check these loops for physical output padding */
+    for (oj = 0; oj < handle->ofhp*handle->ofwp; ++oj) {
+      LIBXSMM_PRAGMA_SIMD
+      for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+        temp_ptr[ofm2] = temp_ptr_2[ofm2];
+      }
+      temp_ptr +=  handle->blocksofm*handle->ofmblock;
+    }
+  }
+  for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
 #if defined(INPUT_PADDING)
     for (oj = 0; oj < handle->ifhp; ++oj) {
       for (oi = 0; oi < handle->ifwp; ++oi) {
@@ -71,7 +86,7 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
 #endif
     /* reset result buffer to zero when intent is to overwrite when first block
       of input channels should be convoluted */
-    if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+    if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
       for (oj = 0; oj < handle->ofh; oj++) {
         element_output_type* temp_ptr = &LIBXSMM_VLA_ACCESS(5, output, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
         for (oi = 0; oi < handle->ofw; oi++) {
