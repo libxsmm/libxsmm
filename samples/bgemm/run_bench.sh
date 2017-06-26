@@ -29,9 +29,9 @@ else
   echo "using environment OMP settings!"
 fi
 
-#./block_gemm iters M N K order BM BN BK B_M B_N B_K K_unroll
-# current block_gemm only supports non-tranposne GEMM, TODO to transpose support
-_bin="$NUMACTL ./block_gemm"
+#./bgemm iters M N K order BM BN BK B_M B_N B_K K_unroll
+# current bgemm only supports non-transpose GEMM, TODO: transpose support
+_bin="$NUMACTL ./bgemm"
 _it=$ITERS
 function run_bsgemm {
 _M=$1
