@@ -31,80 +31,49 @@
 #ifndef LIBXSMM_BGEMM_H
 #define LIBXSMM_BGEMM_H
 
-#include <libxsmm.h>
+#include <libxsmm_typedefs.h>
+#include <libxsmm_sync.h>
 
-#define _USE_LIBXSMM_PREFETCH
-#define BG_type 1 /* 1-float, 2-double */
 
-/*#define OMP_LOCK*/
-#if defined(OMP_LOCK)
-#define LOCK_T omp_lock_t
-#define LOCK_INIT(x) {omp_init_lock(x);}
-#define LOCK_SET(x) {omp_set_lock(x);}
-#define LOCK_UNSET(x) {omp_unset_lock(x);}
-#else
-typedef struct{volatile int var[16];}lock_var;
+#include <libxsmm_intrinsics_x86.h>
+typedef struct{ volatile int var[16]; } lock_var;
 #define LOCK_T lock_var
-#define LOCK_INIT(x) {(x)->var[0] = 0;}
-#define LOCK_SET(x) {do { \
+#define LOCK_INIT(x) { (x)->var[0] = 0; }
+#define LOCK_SET(x) { do { \
         while ((x)->var[0] ==1); \
         _mm_pause(); \
       } while(__sync_lock_test_and_set(&((x)->var[0]), 1) != 0); \
 }
-#define LOCK_CHECK(x) {while ((x)->var[0] ==0); _mm_pause();}
-#define LOCK_UNSET(x) {__sync_lock_release(&((x)->var[0]));}
-#endif
-
-#if (BG_type==2)
-  typedef double real;
-#else
-  typedef float real;
-#endif
+#define LOCK_CHECK(x) { while ((x)->var[0] ==0); _mm_pause(); }
+#define LOCK_UNSET(x) { __sync_lock_release(&((x)->var[0])); }
 
 
-typedef struct LIBXSMM_RETARGETABLE libxsmm_blkgemm_handle {
-  int m, n, k;
-  int bm, bn, bk;
-  int mb, nb, kb;
-  /* The following have been added by KB */
-  int b_m1, b_n1, b_k1, b_k2;
-  int _ORDER;
-  int C_pre_init;
-  LOCK_T* _wlock;
-  libxsmm_xmmfunction _l_kernel;
-#if defined(_USE_LIBXSMM_PREFETCH)
-  libxsmm_xmmfunction _l_kernel_pf;
-#endif
-  libxsmm_barrier* bar;
-} libxsmm_blkgemm_handle;
+/** Denotes the BGEMM data order. */
+typedef enum libxsmm_bgemm_order {
+  LIBXSMM_BGEMM_ORDER_JIK = 0,
+  LIBXSMM_BGEMM_ORDER_IJK = 1,
+  LIBXSMM_BGEMM_ORDER_JKI = 2,
+  LIBXSMM_BGEMM_ORDER_IKJ = 3,
+  LIBXSMM_BGEMM_ORDER_KJI = 4,
+  LIBXSMM_BGEMM_ORDER_KIJ = 5
+} libxsmm_bgemm_order;
 
 
-LIBXSMM_API void libxsmm_blkgemm_handle_alloc(libxsmm_blkgemm_handle* handle, int M, int MB, int N, int NB);
+/** Describes the Block-GEMM (BGEMM) operation. */
+typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle libxsmm_bgemm_handle;
 
-LIBXSMM_API void libxsmm_blksgemm_init_a( libxsmm_blkgemm_handle* handle,
-                                             real* libxsmm_mat_dst,
-                                             real* colmaj_mat_src );
 
-LIBXSMM_API void libxsmm_blksgemm_init_b( libxsmm_blkgemm_handle* handle,
-                                             real* libxsmm_mat_dst,
-                                             real* colmaj_mat_src );
+LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
+  libxsmm_gemm_precision precision, char transa, char transb,
+  int m, int n, int k, int bm, int bn, int bk,
+  const void* alpha, const void* beta,
+  const libxsmm_bgemm_order* order);
 
-LIBXSMM_API void libxsmm_blksgemm_init_c( libxsmm_blkgemm_handle* handle,
-                                             real* libxsmm_mat_dst,
-                                             real* colmaj_mat_src );
+LIBXSMM_API void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_handle* handle);
 
-LIBXSMM_API void libxsmm_blksgemm_check_c( libxsmm_blkgemm_handle* handle,
-                                              real* libxsmm_mat_dst,
-                                              real* colmaj_mat_src );
-
-LIBXSMM_API void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
-                                           const char transA,
-                                           const char transB,
-                                           const real* alpha,
-                                           const real* a,
-                                           const real* b,
-                                           const real* beta,
-                                           real* c );
+LIBXSMM_API int libxsmm_bgemm_init_a(const libxsmm_bgemm_handle* handle, const void* colmaj_mat_src, void* libxsmm_mat_dst);
+LIBXSMM_API int libxsmm_bgemm_init_b(const libxsmm_bgemm_handle* handle, const void* colmaj_mat_src, void* libxsmm_mat_dst);
+LIBXSMM_API int libxsmm_bgemm_init_c(const libxsmm_bgemm_handle* handle, const void* colmaj_mat_src, void* libxsmm_mat_dst);
 
 /**
  * Fine grain parallelized version(s) of BGEMM
@@ -113,12 +82,11 @@ LIBXSMM_API void libxsmm_blksgemm_exec( const libxsmm_blkgemm_handle* handle,
  * - Uses fine-grain on-demand locks for write to C and fast barrier
  * - Allows for calling multiple GEMMs, specified by 'count'
  */
-LIBXSMM_API void libxsmm_bgemm(
-  int _M, int _N, int _K,
-  int B_M, int B_N, int B_K,
-  const real* Ap, const real* Bp, real* Cp,
-  int tid, int nthrds,
-  const libxsmm_blkgemm_handle* handle);
+LIBXSMM_API void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
+  const void* a, const void* b, void* c, int tid, int nthreads);
+
+LIBXSMM_API void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
+  const void* a, const void* b, void* c);
 
 #endif /*LIBXSMM_BGEMM_H*/
 

@@ -57,7 +57,7 @@
 #include "libxsmm_typedefs.h"
 #include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
-#include "libxsmm_blkgemm.h"
+#include "libxsmm_bgemm.h"
 #include "libxsmm_fsspmdm.h"
 #include "libxsmm_malloc.h"
 #include "libxsmm_spmdm.h"
