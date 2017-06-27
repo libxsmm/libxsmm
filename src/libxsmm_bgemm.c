@@ -30,6 +30,7 @@
    Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_bgemm.h>
+#include <libxsmm_sync.h>
 #include "libxsmm_main.h"
 
 #include <assert.h>
@@ -45,9 +46,11 @@
 #if !defined(LIBXSMM_BGEMM_MAX_NTHREADS)
 # define LIBXSMM_BGEMM_MAX_NTHREADS 512
 #endif
-
 #if !defined(LIBXSMM_BGEMM_PREFETCH)
 # define LIBXSMM_BGEMM_PREFETCH
+#endif
+#if !defined(LIBXSMM_BGEMM_BARRIER)
+/*# define LIBXSMM_BGEMM_BARRIER*/
 #endif
 
 #if (BG_type==2)
@@ -58,37 +61,6 @@
 # define _KERNEL_JIT libxsmm_smmdispatch
 #endif
 
-#define _alloc(size,alignment)  \
-  mmap(NULL, size, PROT_READ | PROT_WRITE, \
-      MAP_ANONYMOUS | MAP_SHARED | MAP_HUGETLB| MAP_POPULATE, -1, 0);
-#define _free(addr) {munmap(addr, 0);}
-
-#if defined(_OPENMP)
-#define BG_BARRIER_INIT(x) { \
-  int nthreads; \
-_Pragma("omp parallel")\
-  { \
-    nthreads = omp_get_num_threads(); \
-  } \
-  int Cores = Cores = nthreads > 68 ? nthreads > 136 ? nthreads/4 : nthreads/2 : nthreads; \
-  /*printf("Cores=%d, Threads=%d\n", Cores, nthreads);*/ \
-  /* create a new barrier */ \
-  x = libxsmm_barrier_create(Cores, nthreads/Cores); \
-  assert(x!= NULL); \
-  /* each thread must initialize with the barrier */ \
-_Pragma("omp parallel") \
-  { \
-    libxsmm_barrier_init(x, omp_get_thread_num()); \
-  } \
-}
-#define BG_BARRIER(x, y) {libxsmm_barrier_wait((libxsmm_barrier*)x, y);}
-#define BG_BARRIER_DEL(x) {libxsmm_barrier_release((libxsmm_barrier*)x);}
-#else
-#define BG_BARRIER_INIT(x) {}
-#define BG_BARRIER(x, y) {}
-#define BG_BARRIER_DEL(x) {}
-#endif
-
 
 struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
   union { double d; float s; } alpha, beta;
@@ -96,7 +68,6 @@ struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
 #if defined(LIBXSMM_BGEMM_PREFETCH)
   libxsmm_xmmfunction _l_kernel_pf;
 #endif
-  libxsmm_barrier* barrier;
   void* buffer;
   LOCK_T* _wlock;
   libxsmm_gemm_precision precision;
@@ -153,7 +124,6 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
         for (i = 0; i < size; ++i) {
           LOCK_INIT(&handle._wlock[i]);
         }
-        BG_BARRIER_INIT(handle.barrier);
         handle.order = (0 == order ? LIBXSMM_BGEMM_ORDER_JIK : *order);
         handle.typesize = typesize;
         *result = handle;
@@ -700,24 +670,50 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_dry_run(
 LIBXSMM_API_DEFINITION void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
   const void* a, const void* b, void* c)
 {
-  /* count can be >1 for RNNs */
-  const int count = 1;
+  const int count = 1; /* count can be >1 for RNNs */
+  int nthreads = 1;
+#if defined(LIBXSMM_BGEMM_BARRIER)
+  libxsmm_barrier barrier = 0;
+# if defined(_OPENMP)
+# pragma omp parallel
+  {
+    nthreads = omp_get_num_threads();
+  }
+  /* make an informed guess about the number of threads per core */
+  if (128 < nthreads && (LIBXSMM_X86_AVX512_MIC <= libxsmm_target_archid &&
+                         LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid))
+  {
+    barrier = libxsmm_barrier_create(nthreads / 4, 4);
+  }
+  else
+# endif
+  {
+    barrier = libxsmm_barrier_create(nthreads / 2, 2);
+  }
+#endif
 
 #if defined(_OPENMP)
 # pragma omp parallel
 #endif
   {
+    int tid = 0, i;
 #if defined(_OPENMP)
-    const int nthreads = omp_get_num_threads();
-    const int tid = omp_get_thread_num();
-#else
-    const int nthreads = 1, tid = 0;
+    tid = omp_get_thread_num();
 #endif
-    int i;
+#if defined(LIBXSMM_BGEMM_BARRIER)
+    libxsmm_barrier_init(barrier, tid);
+#endif
     for (i = 0; i < count; ++i) {
       libxsmm_bgemm(handle, a, b, c, tid, nthreads);
-      BG_BARRIER(handle->barrier, tid);
+#if defined(LIBXSMM_BGEMM_BARRIER)
+      libxsmm_barrier_wait(barrier, tid)
+#elif defined(_OPENMP)
+#     pragma omp barrier
+#endif
     }
   }
+#if defined(LIBXSMM_BGEMM_BARRIER)
+  libxsmm_barrier_release(barrier);
+#endif
 }
 
