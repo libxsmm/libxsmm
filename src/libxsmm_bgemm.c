@@ -91,7 +91,7 @@ _Pragma("omp parallel") \
 
 
 struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
-  union { char buffer[8]; void* pointer; } alpha, beta;
+  union { double d; float s; } alpha, beta;
   libxsmm_xmmfunction _l_kernel;
 #if defined(LIBXSMM_BGEMM_PREFETCH)
   libxsmm_xmmfunction _l_kernel_pf;
@@ -105,34 +105,36 @@ struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
   int b_m1, b_n1, b_k1, b_k2;
   int mb, nb, kb;
   int typesize;
-  char transa;
-  char transb;
+  int flags;
 };
 
 
-LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
-  libxsmm_gemm_precision precision, char transa, char transb,
-  int m, int n, int k, int bm, int bn, int bk,
-  const void* alpha, const void* beta,
-  const libxsmm_bgemm_order* order)
+LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm_gemm_precision precision,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint bm, libxsmm_blasint bn, libxsmm_blasint bk,
+  const void* alpha, const void* beta, const int* gemm_flags, const libxsmm_bgemm_order* order)
 {
-  libxsmm_bgemm_handle* result = 0;
+  libxsmm_bgemm_handle handle = { 0 }, *result = 0;
   static int error_once = 0;
   int typesize;
 
   switch (precision) {
-    case LIBXSMM_GEMM_PRECISION_F64: typesize = 8; break;
-    case LIBXSMM_GEMM_PRECISION_F32: typesize = 4; break;
+    case LIBXSMM_GEMM_PRECISION_F64: {
+      handle.alpha.d = (0 != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
+      handle.beta.d = (0 != beta ? *((const double*)beta) : LIBXSMM_BETA);
+      assert(LIBXSMM_FEQ(1, handle.alpha.d) && LIBXSMM_FEQ(1, handle.beta.d)/*TODO*/);
+      typesize = 8;
+    } break;
+    case LIBXSMM_GEMM_PRECISION_F32: {
+      handle.alpha.s = (0 != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
+      handle.beta.s = (0 != beta ? *((const double*)beta) : LIBXSMM_BETA);
+      assert(LIBXSMM_FEQ(1, handle.alpha.s) && LIBXSMM_FEQ(1, handle.beta.s)/*TODO*/);
+      typesize = 4;
+    } break;
     default: typesize = 0;
   }
-#if 0
-  if (!(LIBXSMM_FEQ(*beta, (real_type)1.0) && LIBXSMM_FEQ(*alpha, (real_type)1.0))) {
-    printf(" alpha and beta need to be 1.0\n" );
-  }
-#endif
+
   if (0 < typesize) {
     if (0 == (m % bm) && 0 == (n % bn) && 0 == (k % bk)) { /* check for valid block-size */
-      libxsmm_bgemm_handle handle = { 0 };
       handle.b_m1 = 1; handle.b_n1 = 1; handle.b_k1 = 1; handle.b_k2 = 1;
       assert(0 == (m % handle.b_m1) && 0 == (n % handle.b_n1) && 0 == (k % handle.b_k1));
       assert(0 == ((k / handle.b_k1 / handle.b_k2) % bk));
@@ -143,7 +145,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
       if (0 != result) {
         const int sm = m / handle.mb, sn = n / handle.nb, size = sm * sn;
         int i;
-        handle.precision = precision; handle.transa = transa; handle.transb = transb;
+        handle.precision = precision; handle.flags = (0 == gemm_flags ? LIBXSMM_FLAGS : *gemm_flags);
         handle.m = m; handle.n = n; handle.k = k; handle.bm = bm; handle.bn = bn; handle.bk = bk;
         handle.mb = m / bm; handle.nb = n / bn; handle.kb = k / bk;
         handle.buffer = libxsmm_aligned_malloc(LIBXSMM_BGEMM_MAX_NTHREADS * bm * bn * typesize, LIBXSMM_ALIGNMENT);
@@ -170,7 +172,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
   {
     fprintf(stderr, "LIBXSMM: BGEMM precision is not supported!\n");
   }
-  
+
   return result;
 }
 
@@ -231,7 +233,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* ha
         }
         result = EXIT_FAILURE;
       }
-    }    
+    }
   }
   else {
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -239,7 +241,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* ha
     {
       fprintf(stderr, "LIBXSMM: BGEMM-handle cannot be NULL!\n");
     }
-    result = EXIT_FAILURE;    
+    result = EXIT_FAILURE;
   }
   return result;
 }
@@ -300,7 +302,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* ha
     {
       fprintf(stderr, "LIBXSMM: BGEMM-handle cannot be NULL!\n");
     }
-    result = EXIT_FAILURE;    
+    result = EXIT_FAILURE;
   }
   return result;
 }
@@ -361,7 +363,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* ha
     {
       fprintf(stderr, "LIBXSMM: BGEMM-handle cannot be NULL!\n");
     }
-    result = EXIT_FAILURE;    
+    result = EXIT_FAILURE;
   }
   return result;
 }

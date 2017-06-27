@@ -63,12 +63,10 @@ typedef enum libxsmm_bgemm_order {
 typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle libxsmm_bgemm_handle;
 
 
-LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
-  libxsmm_gemm_precision precision, char transa, char transb,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  libxsmm_blasint bm, libxsmm_blasint bn, libxsmm_blasint bk,
+LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm_gemm_precision precision,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint bm, libxsmm_blasint bn, libxsmm_blasint bk,
   const void* alpha, const void* beta,
-  const libxsmm_bgemm_order* order);
+  const int* gemm_flags, const libxsmm_bgemm_order* order);
 
 LIBXSMM_API void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_handle* handle);
 

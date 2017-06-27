@@ -83,7 +83,8 @@ int main(int argc, char* argv[])
   const int nrepeat = LIBXSMM_DEFAULT(100, 8 < argc ? atoi(argv[8]) : 0);
   const libxsmm_blasint lda = m, ldb = k, ldc = m;
   const double gflops = 2.0 * m * n * k * 1E-9;
-  const char transa = 'N', transb = 'N';
+  const char transa = 'N', transb = 'N'; /* no transposes */
+  const int gemm_flags = LIBXSMM_GEMM_FLAGS(&transa, &transb);
   const REAL_TYPE alpha = 1, beta = 1;
   int result = EXIT_SUCCESS;
 
@@ -111,7 +112,7 @@ int main(int argc, char* argv[])
     const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
 #endif
     handle = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-      transa, transb, m, n, k, bm, bn, bk, &alpha, &beta, &order);
+      m, n, k, bm, bn, bk, &alpha, &beta, &gemm_flags, &order);
     init(42, agold, m, k, lda, 1.0);
     init(24, bgold, k, n, ldb, 1.0);
     init( 0, cgold, m, n, ldc, 1.0);
