@@ -283,7 +283,7 @@ int main(int argc, char* argv[])
         if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
           fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
           libxsmm_matdiff_reduce(&diff, &d);
-        }        
+        }
 #endif
       }
 
@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
         if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
           fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
           libxsmm_matdiff_reduce(&diff, &d);
-        }        
+        }
 #endif
       }
 
@@ -353,7 +353,7 @@ int main(int argc, char* argv[])
         if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
           fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
           libxsmm_matdiff_reduce(&diff, &d);
-        }        
+        }
 #endif
       }
 
@@ -393,7 +393,7 @@ int main(int argc, char* argv[])
         if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
           fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
           libxsmm_matdiff_reduce(&diff, &d);
-        }        
+        }
 #endif
       }
 
