@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_BGEMM_H
 #define LIBXSMM_BGEMM_H
 
-#include <libxsmm_typedefs.h>
+#include <libxsmm_frontend.h>
 #include <libxsmm_sync.h>
 
 
@@ -65,15 +65,16 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle libxsmm_bgemm_handle;
 
 LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
   libxsmm_gemm_precision precision, char transa, char transb,
-  int m, int n, int k, int bm, int bn, int bk,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_blasint bm, libxsmm_blasint bn, libxsmm_blasint bk,
   const void* alpha, const void* beta,
   const libxsmm_bgemm_order* order);
 
 LIBXSMM_API void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_handle* handle);
 
-LIBXSMM_API int libxsmm_bgemm_init_a(const libxsmm_bgemm_handle* handle, const void* colmaj_mat_src, void* libxsmm_mat_dst);
-LIBXSMM_API int libxsmm_bgemm_init_b(const libxsmm_bgemm_handle* handle, const void* colmaj_mat_src, void* libxsmm_mat_dst);
-LIBXSMM_API int libxsmm_bgemm_init_c(const libxsmm_bgemm_handle* handle, const void* colmaj_mat_src, void* libxsmm_mat_dst);
+LIBXSMM_API int libxsmm_bgemm_init_a(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
+LIBXSMM_API int libxsmm_bgemm_init_b(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
+LIBXSMM_API int libxsmm_bgemm_init_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 
 /**
  * Fine grain parallelized version(s) of BGEMM

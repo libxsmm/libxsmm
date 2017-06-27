@@ -90,7 +90,7 @@ _Pragma("omp parallel") \
 #endif
 
 
-typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
+struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
   union { char buffer[8]; void* pointer; } alpha, beta;
   libxsmm_xmmfunction _l_kernel;
 #if defined(LIBXSMM_BGEMM_PREFETCH)
@@ -107,7 +107,7 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
   int typesize;
   char transa;
   char transb;
-} libxsmm_bgemm_handle;
+};
 
 
 LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
@@ -184,139 +184,184 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_han
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_bgemm_init_a(const libxsmm_bgemm_handle* handle, const void* colmaj_mat_src, void* libxsmm_mat_dst)
+LIBXSMM_API_DEFINITION int libxsmm_bgemm_init_a(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
 {
   int result = EXIT_SUCCESS, mb, kb, bm, bk;
-  switch (handle->precision) {
-    case LIBXSMM_GEMM_PRECISION_F64: {
-      LIBXSMM_VLA_DECL(4, double, dst, libxsmm_mat_dst, handle->mb, handle->bk, handle->bm);
-      LIBXSMM_VLA_DECL(2, const double, src, colmaj_mat_src, handle->m);
-      for (kb = 0; kb < handle->kb; ++kb) {
-        for (mb = 0; mb < handle->mb; ++mb) {
-          for (bk = 0; bk < handle->bk; ++bk) {
-            for (bm = 0; bm < handle->bm; ++bm) {
-              LIBXSMM_VLA_ACCESS(4, dst, kb, mb, bk, bm, handle->mb, handle->bk, handle->bm) =
-              LIBXSMM_VLA_ACCESS(2, src, kb * handle->bk + bk, mb * handle->bm + bm, handle->m);
+  static int error_once = 0;
+
+  if (0 != handle) {
+    const libxsmm_blasint ild = (0 == ld ? handle->m : *ld);
+    /* TODO: support leading dimension for the source buffer */
+    assert(ild >= handle->m); LIBXSMM_UNUSED(ild);
+
+    switch (handle->precision) {
+      case LIBXSMM_GEMM_PRECISION_F64: {
+        LIBXSMM_VLA_DECL(4, double, real_dst, dst, handle->mb, handle->bk, handle->bm);
+        LIBXSMM_VLA_DECL(2, const double, real_src, src, handle->m);
+        for (kb = 0; kb < handle->kb; ++kb) {
+          for (mb = 0; mb < handle->mb; ++mb) {
+            for (bk = 0; bk < handle->bk; ++bk) {
+              for (bm = 0; bm < handle->bm; ++bm) {
+                LIBXSMM_VLA_ACCESS(4, real_dst, kb, mb, bk, bm, handle->mb, handle->bk, handle->bm) =
+                LIBXSMM_VLA_ACCESS(2, real_src, kb * handle->bk + bk, mb * handle->bm + bm, handle->m);
+              }
             }
           }
         }
-      }
-    } break;
-    case LIBXSMM_GEMM_PRECISION_F32: {
-      LIBXSMM_VLA_DECL(4, float, dst, libxsmm_mat_dst, handle->mb, handle->bk, handle->bm);
-      LIBXSMM_VLA_DECL(2, const float, src, colmaj_mat_src, handle->m);
-      for (kb = 0; kb < handle->kb; ++kb) {
-        for (mb = 0; mb < handle->mb; ++mb) {
-          for (bk = 0; bk < handle->bk; ++bk) {
-            for (bm = 0; bm < handle->bm; ++bm) {
-              LIBXSMM_VLA_ACCESS(4, dst, kb, mb, bk, bm, handle->mb, handle->bk, handle->bm) =
-              LIBXSMM_VLA_ACCESS(2, src, kb * handle->bk + bk, mb * handle->bm + bm, handle->m);
+      } break;
+      case LIBXSMM_GEMM_PRECISION_F32: {
+        LIBXSMM_VLA_DECL(4, float, real_dst, dst, handle->mb, handle->bk, handle->bm);
+        LIBXSMM_VLA_DECL(2, const float, real_src, src, handle->m);
+        for (kb = 0; kb < handle->kb; ++kb) {
+          for (mb = 0; mb < handle->mb; ++mb) {
+            for (bk = 0; bk < handle->bk; ++bk) {
+              for (bm = 0; bm < handle->bm; ++bm) {
+                LIBXSMM_VLA_ACCESS(4, real_dst, kb, mb, bk, bm, handle->mb, handle->bk, handle->bm) =
+                LIBXSMM_VLA_ACCESS(2, real_src, kb * handle->bk + bk, mb * handle->bm + bm, handle->m);
+              }
             }
           }
         }
+      } break;
+      default: {
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM: BGEMM precision of matrix A is not supported!\n");
+        }
+        result = EXIT_FAILURE;
       }
-    } break;
-    default: {
-      static int error_once = 0;
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
-       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM: BGEMM precision of matrix A is not supported!\n");
-      }
-      result = EXIT_FAILURE;
+    }    
+  }
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: BGEMM-handle cannot be NULL!\n");
     }
+    result = EXIT_FAILURE;    
   }
   return result;
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_bgemm_init_b(const libxsmm_bgemm_handle* handle, const void* colmaj_mat_src, void* libxsmm_mat_dst)
+LIBXSMM_API_DEFINITION int libxsmm_bgemm_init_b(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
 {
   int result = EXIT_SUCCESS, kb, nb, bk, bn;
-  switch (handle->precision) {
-    case LIBXSMM_GEMM_PRECISION_F64: {
-      LIBXSMM_VLA_DECL(4, double, dst, libxsmm_mat_dst, handle->kb, handle->bn, handle->bk);
-      LIBXSMM_VLA_DECL(2, const double, src, colmaj_mat_src, handle->k);
-      for (nb = 0; nb < handle->nb; ++nb) {
-        for (kb = 0; kb < handle->kb; ++kb) {
-          for (bn = 0; bn < handle->bn; ++bn) {
-            for (bk = 0; bk < handle->bk; ++bk) {
-              LIBXSMM_VLA_ACCESS(4, dst, nb, kb, bn, bk, handle->kb, handle->bn, handle->bk) =
-              LIBXSMM_VLA_ACCESS(2, src, nb * handle->bn + bn, kb * handle->bk + bk, handle->k);
+  static int error_once = 0;
+
+  if (0 != handle) {
+    const libxsmm_blasint ild = (0 == ld ? handle->k : *ld);
+    /* TODO: support leading dimension for the source buffer */
+    assert(ild >= handle->k); LIBXSMM_UNUSED(ild);
+
+    switch (handle->precision) {
+      case LIBXSMM_GEMM_PRECISION_F64: {
+        LIBXSMM_VLA_DECL(4, double, real_dst, dst, handle->kb, handle->bn, handle->bk);
+        LIBXSMM_VLA_DECL(2, const double, real_src, src, handle->k);
+        for (nb = 0; nb < handle->nb; ++nb) {
+          for (kb = 0; kb < handle->kb; ++kb) {
+            for (bn = 0; bn < handle->bn; ++bn) {
+              for (bk = 0; bk < handle->bk; ++bk) {
+                LIBXSMM_VLA_ACCESS(4, real_dst, nb, kb, bn, bk, handle->kb, handle->bn, handle->bk) =
+                LIBXSMM_VLA_ACCESS(2, real_src, nb * handle->bn + bn, kb * handle->bk + bk, handle->k);
+              }
             }
           }
         }
-      }
-    } break;
-    case LIBXSMM_GEMM_PRECISION_F32: {
-      LIBXSMM_VLA_DECL(4, float, dst, libxsmm_mat_dst, handle->kb, handle->bn, handle->bk);
-      LIBXSMM_VLA_DECL(2, const float, src, colmaj_mat_src, handle->k);
-      for (nb = 0; nb < handle->nb; ++nb) {
-        for (kb = 0; kb < handle->kb; ++kb) {
-          for (bn = 0; bn < handle->bn; ++bn) {
-            for (bk = 0; bk < handle->bk; ++bk) {
-              LIBXSMM_VLA_ACCESS(4, dst, nb, kb, bn, bk, handle->kb, handle->bn, handle->bk) =
-              LIBXSMM_VLA_ACCESS(2, src, nb * handle->bn + bn, kb * handle->bk + bk, handle->k);
+      } break;
+      case LIBXSMM_GEMM_PRECISION_F32: {
+        LIBXSMM_VLA_DECL(4, float, real_dst, dst, handle->kb, handle->bn, handle->bk);
+        LIBXSMM_VLA_DECL(2, const float, real_src, src, handle->k);
+        for (nb = 0; nb < handle->nb; ++nb) {
+          for (kb = 0; kb < handle->kb; ++kb) {
+            for (bn = 0; bn < handle->bn; ++bn) {
+              for (bk = 0; bk < handle->bk; ++bk) {
+                LIBXSMM_VLA_ACCESS(4, real_dst, nb, kb, bn, bk, handle->kb, handle->bn, handle->bk) =
+                LIBXSMM_VLA_ACCESS(2, real_src, nb * handle->bn + bn, kb * handle->bk + bk, handle->k);
+              }
             }
           }
         }
+      } break;
+      default: {
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM: BGEMM precision of matrix B is not supported!\n");
+        }
+        result = EXIT_FAILURE;
       }
-    } break;
-    default: {
-      static int error_once = 0;
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
-       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM: BGEMM precision of matrix B is not supported!\n");
-      }
-      result = EXIT_FAILURE;
     }
+  }
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: BGEMM-handle cannot be NULL!\n");
+    }
+    result = EXIT_FAILURE;    
   }
   return result;
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_bgemm_init_c(const libxsmm_bgemm_handle* handle, const void* colmaj_mat_src, void* libxsmm_mat_dst)
+LIBXSMM_API_DEFINITION int libxsmm_bgemm_init_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
 {
   int result = EXIT_SUCCESS, mb, nb, bm, bn;
-  switch (handle->precision) {
-    case LIBXSMM_GEMM_PRECISION_F64: {
-      LIBXSMM_VLA_DECL(4, double, dst, libxsmm_mat_dst, handle->mb, handle->bn, handle->bm);
-      LIBXSMM_VLA_DECL(2, const double, src, colmaj_mat_src, handle->m);
-      for (nb = 0; nb < handle->nb; ++nb) {
-        for (mb = 0; mb < handle->mb; ++mb) {
-          for (bn = 0; bn < handle->bn; ++bn) {
-            for (bm = 0; bm < handle->bm; ++bm) {
-              LIBXSMM_VLA_ACCESS(4, dst, nb, mb, bn, bm, handle->mb, handle->bn, handle->bm) =
-              LIBXSMM_VLA_ACCESS(2, src, nb * handle->bn + bn, mb * handle->bm + bm, handle->m);
+  static int error_once = 0;
+
+  if (0 != handle) {
+    const libxsmm_blasint ild = (0 == ld ? handle->m : *ld);
+    /* TODO: support leading dimension for the source buffer */
+    assert(ild >= handle->m); LIBXSMM_UNUSED(ild);
+
+    switch (handle->precision) {
+      case LIBXSMM_GEMM_PRECISION_F64: {
+        LIBXSMM_VLA_DECL(4, double, real_dst, dst, handle->mb, handle->bn, handle->bm);
+        LIBXSMM_VLA_DECL(2, const double, real_src, src, handle->m);
+        for (nb = 0; nb < handle->nb; ++nb) {
+          for (mb = 0; mb < handle->mb; ++mb) {
+            for (bn = 0; bn < handle->bn; ++bn) {
+              for (bm = 0; bm < handle->bm; ++bm) {
+                LIBXSMM_VLA_ACCESS(4, real_dst, nb, mb, bn, bm, handle->mb, handle->bn, handle->bm) =
+                LIBXSMM_VLA_ACCESS(2, real_src, nb * handle->bn + bn, mb * handle->bm + bm, handle->m);
+              }
             }
           }
         }
-      }
-    } break;
-    case LIBXSMM_GEMM_PRECISION_F32: {
-      LIBXSMM_VLA_DECL(4, double, dst, libxsmm_mat_dst, handle->mb, handle->bn, handle->bm);
-      LIBXSMM_VLA_DECL(2, const double, src, colmaj_mat_src, handle->m);
-      for (nb = 0; nb < handle->nb; ++nb) {
-        for (mb = 0; mb < handle->mb; ++mb) {
-          for (bn = 0; bn < handle->bn; ++bn) {
-            for (bm = 0; bm < handle->bm; ++bm) {
-              LIBXSMM_VLA_ACCESS(4, dst, nb, mb, bn, bm, handle->mb, handle->bn, handle->bm) =
-              LIBXSMM_VLA_ACCESS(2, src, nb * handle->bn + bn, mb * handle->bm + bm, handle->m);
+      } break;
+      case LIBXSMM_GEMM_PRECISION_F32: {
+        LIBXSMM_VLA_DECL(4, double, real_dst, dst, handle->mb, handle->bn, handle->bm);
+        LIBXSMM_VLA_DECL(2, const double, real_src, src, handle->m);
+        for (nb = 0; nb < handle->nb; ++nb) {
+          for (mb = 0; mb < handle->mb; ++mb) {
+            for (bn = 0; bn < handle->bn; ++bn) {
+              for (bm = 0; bm < handle->bm; ++bm) {
+                LIBXSMM_VLA_ACCESS(4, real_dst, nb, mb, bn, bm, handle->mb, handle->bn, handle->bm) =
+                LIBXSMM_VLA_ACCESS(2, real_src, nb * handle->bn + bn, mb * handle->bm + bm, handle->m);
+              }
             }
           }
         }
+      } break;
+      default: {
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM: BGEMM precision of matrix A is not supported!\n");
+        }
+        result = EXIT_FAILURE;
       }
-    } break;
-    default: {
-      static int error_once = 0;
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
-       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM: BGEMM precision of matrix A is not supported!\n");
-      }
-      result = EXIT_FAILURE;
     }
+  }
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: BGEMM-handle cannot be NULL!\n");
+    }
+    result = EXIT_FAILURE;    
   }
   return result;
 }
@@ -365,7 +410,7 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
 {
   LIBXSMM_VLA_DECL(2, LOCK_T, locks, handle->_wlock, handle->n / handle->bn);
   /* TODO: align thread-local buffer portion with the size of a cache-line in order to avoid "Ping-Pong" */
-  LIBXSMM_VLA_DECL(2, real_type, l_out, ((char*)handle->buffer) + tid * handle->bm * handle->bn * handle->typesize, handle->bm);
+  LIBXSMM_VLA_DECL(2, real_type, l_out, (real_type*)(((char*)handle->buffer) + tid * handle->bm * handle->bn * handle->typesize), handle->bm);
   LIBXSMM_VLA_DECL(4, const real_type, real_a, a, handle->m / handle->bm, handle->bk, handle->bm);
   LIBXSMM_VLA_DECL(4, const real_type, real_b, b, handle->k / handle->bk, handle->bn, handle->bk);
   LIBXSMM_VLA_DECL(4, real_type, real_c, c, handle->m / handle->bm, handle->bn, handle->bm);
@@ -400,7 +445,7 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
   for (ki = 0; ki < handle->bn; ki++) {
     LIBXSMM_PRAGMA_SIMD
     for (kj = 0; kj < handle->bm; kj++) {
-      l_out[ki][kj] = 0.f;
+      LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm) = 0;
     }
   }
 
@@ -429,14 +474,15 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
               for (ki = 0; ki < handle->bn; ki++) {
                 LIBXSMM_PRAGMA_SIMD
                 for (kj = 0; kj < handle->bm; kj++) {
-                  LIBXSMM_VLA_ACCESS(4, real_c, o_j2, o_i2, ki, kj, handle->m/handle->bm, handle->bn, handle->bm) += l_out[ki][kj];
+                  LIBXSMM_VLA_ACCESS(4, real_c, o_j2, o_i2, ki, kj, handle->m/handle->bm, handle->bn, handle->bm) +=
+                  LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm);
                 }
               }
               LOCK_UNSET(&LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->n/handle->bn));
               for (ki = 0; ki < handle->bn; ki++) {
                 LIBXSMM_PRAGMA_SIMD
                 for (kj = 0; kj < handle->bm; kj++) {
-                  l_out[ki][kj] = 0.0f;
+                  LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm) = 0;
                 }
               }
               o_i2 = i2;
@@ -446,24 +492,24 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
           for (_ki = 0, ki=B_K2*k2; _ki < B_K2 ; _ki++, ki++) {
 #if !defined(LIBXSMM_BGEMM_PREFETCH)
             l_kernel((const real_type*)&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->m/handle->bm, handle->bk, handle->bm),
-                     (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->k/handle->bk, handle->bn, handle->bk), (real_type*)l_out);
+                     (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->k/handle->bk, handle->bn, handle->bk), l_out);
 #else
             /* avoiding prefetch for untouched data */
             if (k2 < (K/handle->bk)-2) {
 #if defined(__AVX2__)
               l_kernel_pf((const real_type*)&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->m/handle->bm, handle->bk, handle->bm),
-                          (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->k/handle->bk, handle->bn, handle->bk), (real_type*)l_out,
+                          (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->k/handle->bk, handle->bn, handle->bk), l_out,
                           (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->k/handle->bk, handle->bn, handle->bk),
                           (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->m/handle->bm, handle->bk, handle->bm), NULL);
 #else
               l_kernel_pf((const real_type*)&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->m/handle->bm, handle->bk, handle->bm),
-                          (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->k/handle->bk, handle->bn, handle->bk), (real_type*)l_out,
+                          (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->k/handle->bk, handle->bn, handle->bk), l_out,
                           (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->m/handle->bm, handle->bk, handle->bm),
                           (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->k/handle->bk, handle->bn, handle->bk), NULL);
 #endif
             } else {
               l_kernel((const real_type*)&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->m/handle->bm, handle->bk, handle->bm),
-                       (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->k/handle->bk, handle->bn, handle->bk), (real_type*)l_out);
+                       (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->k/handle->bk, handle->bn, handle->bk), l_out);
             }
 #endif
           }
@@ -475,14 +521,15 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
             for (ki = 0; ki < handle->bn; ki++) {
               LIBXSMM_PRAGMA_SIMD
               for (kj = 0; kj < handle->bm; kj++) {
-                LIBXSMM_VLA_ACCESS(4, real_c, o_j2, o_i2, ki, kj, handle->m/handle->bm, handle->bn, handle->bm) += l_out[ki][kj];
+                LIBXSMM_VLA_ACCESS(4, real_c, o_j2, o_i2, ki, kj, handle->m/handle->bm, handle->bn, handle->bm) +=
+                LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm);
               }
             }
             LOCK_UNSET(&LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->n/handle->bn));
             for (ki = 0; ki < handle->bn; ki++) {
               LIBXSMM_PRAGMA_SIMD
               for (kj = 0; kj < handle->bm; kj++) {
-                l_out[ki][kj] = 0.0f;
+                LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm) = 0;
               }
             }
           }

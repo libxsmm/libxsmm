@@ -98,6 +98,7 @@ int main(int argc, char* argv[])
   {
     REAL_TYPE *const agold = (REAL_TYPE*)libxsmm_malloc(lda * k * sizeof(REAL_TYPE));
     REAL_TYPE *const bgold = (REAL_TYPE*)libxsmm_malloc(ldb * n * sizeof(REAL_TYPE));
+    REAL_TYPE *const cgold = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
     REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc(m * k * sizeof(REAL_TYPE));
     REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(k * n * sizeof(REAL_TYPE));
     REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
@@ -108,26 +109,22 @@ int main(int argc, char* argv[])
 #if !defined(__BLAS) || (0 != __BLAS)
     const char *const env_check = getenv("CHECK");
     const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
-    REAL_TYPE *cgold = 0;
-    if (!LIBXSMM_FEQ(0, check)) {
-      cgold = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
-      init(0, cgold, m, n, ldc, 1.0);
-    }
 #endif
     handle = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
       transa, transb, m, n, k, bm, bn, bk, &alpha, &beta, &order);
     init(42, agold, m, k, lda, 1.0);
     init(24, bgold, k, n, ldb, 1.0);
-    init(0, c, m * n, 1, m * n, 1.0);
-    libxsmm_bgemm_init_a(handle, agold, a);
-    libxsmm_bgemm_init_b(handle, bgold, b);
+    init( 0, cgold, m, n, ldc, 1.0);
+    libxsmm_bgemm_init_a(handle, agold, &lda, a);
+    libxsmm_bgemm_init_b(handle, bgold, &ldb, b);
+    libxsmm_bgemm_init_c(handle, cgold, &ldc, c);
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
     /* warmup OpenMP (populate thread pool) */
-    libxsmm_bgemm_omp(&handle, a, b, c);
+    libxsmm_bgemm_omp(handle, a, b, c);
 #if !defined(__BLAS) || (0 != __BLAS)
-    if (0 != cgold) {
+    if (!LIBXSMM_FEQ(0, check)) {
       LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, agold, &lda, bgold, &ldb, &beta, cgold, &ldc);
     }
 #endif
@@ -137,14 +134,14 @@ int main(int argc, char* argv[])
 
     start = libxsmm_timer_tick();
     for (i = 0; i < nrepeat; ++i) {
-      libxsmm_bgemm_omp(&handle, a, b, c);
+      libxsmm_bgemm_omp(handle, a, b, c);
     }
     duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
     if (0 < duration) {
       fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
     }
 #if !defined(__BLAS) || (0 != __BLAS)
-    if (0 != cgold) { /* validate result against LAPACK/BLAS xGEMM */
+    if (!LIBXSMM_FEQ(0, check)) { /* validate result against LAPACK/BLAS xGEMM */
       libxsmm_matdiff_info matdiff_info;
       int i; double duration;
       start = libxsmm_timer_tick();
@@ -161,11 +158,12 @@ int main(int argc, char* argv[])
         fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
         if (check_tolerance < matdiff_info.norm_l1_max) result = EXIT_FAILURE;
       }
-      libxsmm_free(cgold);
     }
 #endif
+    libxsmm_bgemm_handle_destroy(handle);
     libxsmm_free(agold);
     libxsmm_free(bgold);
+    libxsmm_free(cgold);
     libxsmm_free(a);
     libxsmm_free(b);
     libxsmm_free(c);
