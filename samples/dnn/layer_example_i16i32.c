@@ -737,7 +737,7 @@ int main(int argc, char* argv[])
     const char *const env_check_tolerance = getenv("CHECK_DNN_TOLERANCE");
     const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
     if (check_tolerance < norms_check.max_abs_err) {
-      fprintf(stderr, "\nFAILED with an error of L1=%f, L1rel=%f%% and L2sum=%f!\n\n",
+      fprintf(stderr, "\nFAILED with an error of L1=%f, L1rel=%f%% and L2=%f!\n\n",
         norms_check.max_abs_err, norms_check.max_rel_err, norms_check.l2_rel_err);
       exit(EXIT_FAILURE);
     }
