@@ -1324,11 +1324,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       /* if (flagBenchmark) printf("In benchmark\n"); */
 
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-        if (handle->desc.C % 4 == 0) {
+        if (handle->blocksifm % 4 == 0) {
           wino_desc_fp.ur_ifm = 4;
-        } else if (handle->desc.C % 3 == 0) {
+        } else if (handle->blocksifm % 3 == 0) {
           wino_desc_fp.ur_ifm = 3;
-        } else if (handle->desc.C % 2 == 0) {
+        } else if (handle->blocksifm % 2 == 0) {
           wino_desc_fp.ur_ifm = 2;
         } else {
           wino_desc_fp.ur_ifm = 1;
@@ -1544,11 +1544,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       }
 
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-        if (handle->desc.K % 4 == 0) {
+        if (handle->blocksofm % 4 == 0) {
           wino_desc_bp.ur_ifm = 4;
-        } else if (handle->desc.K % 3 == 0) {
+        } else if (handle->blocksofm % 3 == 0) {
           wino_desc_bp.ur_ifm = 3;
-        } else if (handle->desc.K % 2 == 0) {
+        } else if (handle->blocksofm % 2 == 0) {
           wino_desc_bp.ur_ifm = 2;
         } else {
           wino_desc_bp.ur_ifm = 1;
