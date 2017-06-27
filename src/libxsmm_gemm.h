@@ -352,13 +352,6 @@ LIBXSMM_API void libxsmm_gemm_finalize(void);
 LIBXSMM_API int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
 
-/** Structure to hold basic statistical information. */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_stat_info { double sum; } libxsmm_stat_info;
-
-/** Utility function to calculate basic statistical information. */
-LIBXSMM_API int libxsmm_gemm_stat(libxsmm_gemm_precision precision, const void* matrix,
-  libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ld, libxsmm_stat_info* stat);
-
 #if defined(LIBXSMM_GEMM_WRAP_STATIC)
 LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,

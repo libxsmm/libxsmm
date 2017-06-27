@@ -1705,6 +1705,82 @@ LIBXSMM_API_DEFINITION void libxsmm_release_kernel(const void* jit_code)
 }
 
 
+LIBXSMM_API_DEFINITION int libxsmm_matdiff(libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n,
+  const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
+  libxsmm_matdiff_info* info)
+{
+  int result = EXIT_SUCCESS;
+  if (0 != ref && 0 != tst && 0 != info) {
+    const libxsmm_blasint ildref = (0 == ldref ? m : *ldref), ildtst = (0 == ldtst ? m : *ldtst);
+    double comp_ref = 0, comp_tst = 0, comp_d = 0; /* Kahan compensations */
+    libxsmm_blasint i, j;
+    memset(info, 0, sizeof(*info)); /* nullify */
+    switch(precision) {
+      case LIBXSMM_GEMM_PRECISION_F64: {
+        const double *const real_ref = (const double*)ref, *const real_tst = (const double*)tst;
+        for (i = 0; i < n; ++i) {
+          for (j = 0; j < m; ++j) {
+            const double refi = real_ref[i*ildref+j], tsti = real_tst[i*ildtst+j];
+            const double refa = LIBXSMM_ABS(refi), di = LIBXSMM_ABS(refi - tsti);
+            double v0 = refi - comp_ref, v1 = info->sum_ref + v0;
+            if (info->norm_l1_max < di) info->norm_l1_max = di;
+            comp_ref = (v1 - info->sum_ref) - v0;
+            info->sum_ref = v1;
+            v0 = tsti - comp_tst, v1 = info->sum_tst + v0;
+            comp_tst = (v1 - info->sum_tst) - v0;
+            info->sum_tst = v1;
+            v0 = di * di - comp_d, v1 = info->norm_l2 + v0;
+            comp_d = (v1 - info->norm_l2) - v0;
+            info->norm_l2 = v1;
+            if (0 < refa) {
+              const double norm_l1_rel = di / refa;
+              if (info->norm_l1_rel < norm_l1_rel) info->norm_l1_rel = norm_l1_rel;
+            }
+          }
+        }
+      } break;
+      case LIBXSMM_GEMM_PRECISION_F32: {
+        const float *const real_ref = (const float*)ref, *const real_tst = (const float*)tst;
+        for (i = 0; i < n; ++i) {
+          for (j = 0; j < m; ++j) {
+            const double refi = real_ref[i*ildref+j], tsti = real_tst[i*ildtst+j];
+            const double refa = LIBXSMM_ABS(refi), di = LIBXSMM_ABS(refi - tsti);
+            double v0 = refi - comp_ref, v1 = info->sum_ref + v0;
+            if (info->norm_l1_max < di) info->norm_l1_max = di;
+            comp_ref = (v1 - info->sum_ref) - v0;
+            info->sum_ref = v1;
+            v0 = tsti - comp_tst, v1 = info->sum_tst + v0;
+            comp_tst = (v1 - info->sum_tst) - v0;
+            info->sum_tst = v1;
+            v0 = di * di - comp_d, v1 = info->norm_l2 + v0;
+            comp_d = (v1 - info->norm_l2) - v0;
+            info->norm_l2 = v1;
+            if (0 < refa) {
+              const double norm_l1_rel = di / refa;
+              if (info->norm_l1_rel < norm_l1_rel) info->norm_l1_rel = norm_l1_rel;
+            }
+          }
+        }
+      } break;
+      case LIBXSMM_GEMM_PRECISION_I16: {
+        result = EXIT_FAILURE;
+      } break;
+      default: {
+        result = EXIT_FAILURE;
+      }
+    }
+  }
+  else {
+    result = EXIT_FAILURE;
+  }
+  if (EXIT_SUCCESS == result && 0 < info->norm_l2) { /* square-root without libm dependency */
+    const double inv = 1.0 / info->norm_l2; int i; info->norm_l2 *= 0.5;
+    for (i = 0; i < 6; ++i) info->norm_l2 *= 0.5 * (3.0 - info->norm_l2 * info->norm_l2 * inv);
+  }
+  return result;
+}
+
+
 #if defined(LIBXSMM_BUILD)
 
 /* implementation provided for Fortran 77 compatibility */

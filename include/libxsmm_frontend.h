@@ -117,6 +117,9 @@
 # define LIBXSMM_BLASINT int
 #endif
 
+/** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
+typedef LIBXSMM_BLASINT libxsmm_blasint;
+
 /** MKL_DIRECT_CALL requires to include the MKL interface. */
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # if (0 != LIBXSMM_ILP64 && !defined(MKL_ILP64))
@@ -130,6 +133,7 @@
 #   include <mkl.h>
 # endif
 #endif
+
 /** Fallback prototype functions served by any compliant LAPACK/BLAS. */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(
   const char*, const char*, const LIBXSMM_BLASINT*, const LIBXSMM_BLASINT*, const LIBXSMM_BLASINT*,
@@ -372,5 +376,19 @@ LIBXSMM_API void libxsmm_gemm_print(void* ostream,
   const void* alpha, const void* a, const LIBXSMM_BLASINT* lda,
   const void* b, const LIBXSMM_BLASINT* ldb,
   const void* beta, void* c, const LIBXSMM_BLASINT* ldc);
+
+/** Structure to hold difference information. */
+typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
+  double norm_l1_max;
+  double norm_l1_rel;
+  double norm_l2;
+  double sum_ref;
+  double sum_tst;
+} libxsmm_matdiff_info;
+
+/** Utility function to calculate the difference between two matrices. */
+LIBXSMM_API int libxsmm_matdiff(libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n,
+  const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
+  libxsmm_matdiff_info* info);
 
 #endif /*LIBXSMM_FRONTEND_H*/

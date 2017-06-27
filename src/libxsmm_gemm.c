@@ -245,58 +245,6 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_gemm_stat(libxsmm_gemm_precision precision, const void* matrix,
-  libxsmm_blasint m, libxsmm_blasint n, const libxsmm_blasint* ld, libxsmm_stat_info* stat)
-{
-  int result = EXIT_SUCCESS;
-  if (0 != matrix && 0 != stat) {
-    const libxsmm_blasint ldx = (0 != ld ? *ld : m);
-    double sum_error = 0; /* Kahan's compensation */
-    libxsmm_blasint i, j;
-    switch(precision) {
-      case LIBXSMM_GEMM_PRECISION_F64: {
-        const double *const values = (const double*)matrix;
-        stat->sum = 0;
-        for (i = 0; i < n; ++i) {
-          for (j = 0; j < m; ++j) {
-            const double value = values[i*ldx+j];
-            const double v0 = value - sum_error;
-            const double v1 = stat->sum + v0;
-            sum_error = (v1 - stat->sum) - v0;
-            stat->sum = v1;
-          }
-        }
-      } break;
-      case LIBXSMM_GEMM_PRECISION_F32: {
-        const float *const values = (const float*)matrix;
-        stat->sum = 0;
-        for (i = 0; i < n; ++i) {
-          for (j = 0; j < m; ++j) {
-            const double value = values[i*ldx+j];
-            const double v0 = value - sum_error;
-            const double v1 = stat->sum + v0;
-            sum_error = (v1 - stat->sum) - v0;
-            stat->sum = v1;
-          }
-        }
-      } break;
-      case LIBXSMM_GEMM_PRECISION_I16: {
-        result = EXIT_FAILURE;
-      } break;
-#if !defined(NDEBUG)
-      default: {
-        result = EXIT_FAILURE;
-      }
-#endif
-    }
-  }
-  else {
-    result = EXIT_FAILURE;
-  }
-  return result;
-}
-
-
 LIBXSMM_API_DEFINITION void libxsmm_blas_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
@@ -358,16 +306,13 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
   LIBXSMM_SGEMM(flags, *m, *n, *k, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   if (0 != d) {
-    libxsmm_stat_info s1, s2;
-    if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_PRECISION_F32, c, *m, *n, ldc, &s1)) {
-      libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
-      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_PRECISION_F32, d, *m, *n, m, &s2)) {
-        LIBXSMM_FLOCK(stderr);
-        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F32, transa, transb,
-          m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-        fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
-        LIBXSMM_FUNLOCK(stderr);
-      }
+    libxsmm_matdiff_info matdiff_info;
+    libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
+    if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_GEMM_PRECISION_F32, *m, *n, d, c, m, ldc, &matdiff_info)) {
+      LIBXSMM_FLOCK(stderr);
+      libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F32, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+      fprintf(stderr, " L1max=%f, L1rel=%f%% and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
+      LIBXSMM_FUNLOCK(stderr);
     }
     free(d);
   }
@@ -404,16 +349,13 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
   LIBXSMM_DGEMM(flags, *m, *n, *k, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   if (0 != d) {
-    libxsmm_stat_info s1, s2;
-    if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_PRECISION_F64, c, *m, *n, ldc, &s1)) {
-      libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
-      if (EXIT_SUCCESS == libxsmm_gemm_stat(LIBXSMM_GEMM_PRECISION_F64, d, *m, *n, m, &s2)) {
-        LIBXSMM_FLOCK(stderr);
-        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F64, transa, transb,
-          m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-        fprintf(stderr, " sum1=%f sum2=%f\n", s1.sum, s2.sum);
-        LIBXSMM_FUNLOCK(stderr);
-      }
+    libxsmm_matdiff_info matdiff_info;
+    libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
+    if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_GEMM_PRECISION_F64, *m, *n, d, c, m, ldc, &matdiff_info)) {
+      LIBXSMM_FLOCK(stderr);
+      libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F64, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+      fprintf(stderr, " L1max=%f, L1rel=%f%% and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
+      LIBXSMM_FUNLOCK(stderr);
     }
     free(d);
   }
