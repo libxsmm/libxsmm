@@ -115,9 +115,9 @@ int main(int argc, char* argv[])
     init(42, agold, m, k, lda, 1.0);
     init(24, bgold, k, n, ldb, 1.0);
     init( 0, cgold, m, n, ldc, 1.0);
-    libxsmm_bgemm_init_a(handle, agold, &lda, a);
-    libxsmm_bgemm_init_b(handle, bgold, &ldb, b);
-    libxsmm_bgemm_init_c(handle, cgold, &ldc, c);
+    libxsmm_bgemm_copyin_a(handle, agold, &lda, a);
+    libxsmm_bgemm_copyin_b(handle, bgold, &ldb, b);
+    libxsmm_bgemm_copyin_c(handle, cgold, &ldc, c);
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
