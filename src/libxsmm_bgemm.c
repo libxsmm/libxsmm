@@ -30,7 +30,7 @@
    Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_bgemm.h>
-#include <libxsmm_sync.h>
+#include <libxsmm.h>
 #include "libxsmm_main.h"
 
 #include <assert.h>
@@ -68,10 +68,10 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
 
 struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
   union { double d; float s; } alpha, beta;
-  libxsmm_xmmfunction _l_kernel;
 #if defined(LIBXSMM_BGEMM_PREFETCH)
-  libxsmm_xmmfunction _l_kernel_pf;
+  libxsmm_xmmfunction kernel_pf;
 #endif
+  libxsmm_xmmfunction kernel;
   void* buffer;
   libxsmm_bgemm_lock* locks;
   libxsmm_gemm_precision precision;
@@ -89,26 +89,31 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
   const void* alpha, const void* beta, const int* gemm_flags, const libxsmm_bgemm_order* order)
 {
   libxsmm_bgemm_handle handle = { 0 }, *result = 0;
+  libxsmm_gemm_descriptor descriptor = { 0 };
   static int error_once = 0;
-  int typesize;
 
+  handle.flags = (0 == gemm_flags ? LIBXSMM_FLAGS : *gemm_flags);
   switch (precision) {
     case LIBXSMM_GEMM_PRECISION_F64: {
       handle.alpha.d = (0 != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
       handle.beta.d = (0 != beta ? *((const double*)beta) : LIBXSMM_BETA);
       assert(LIBXSMM_FEQ(1, handle.alpha.d) && LIBXSMM_FEQ(1, handle.beta.d)/*TODO*/);
-      typesize = 8;
+      LIBXSMM_GEMM_DESCRIPTOR(descriptor, precision, handle.flags, bm, bn, bk, bm/*lda*/, bk/*ldb*/, bm/*ldc*/,
+        handle.alpha.d, handle.beta.d, LIBXSMM_PREFETCH_NONE);
+      handle.typesize = 8;
     } break;
     case LIBXSMM_GEMM_PRECISION_F32: {
       handle.alpha.s = (0 != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
       handle.beta.s = (0 != beta ? *((const double*)beta) : LIBXSMM_BETA);
       assert(LIBXSMM_FEQ(1, handle.alpha.s) && LIBXSMM_FEQ(1, handle.beta.s)/*TODO*/);
-      typesize = 4;
+      LIBXSMM_GEMM_DESCRIPTOR(descriptor, precision, handle.flags, bm, bn, bk, bm/*lda*/, bk/*ldb*/, bm/*ldc*/,
+        handle.alpha.s, handle.beta.s, LIBXSMM_PREFETCH_NONE);
+      handle.typesize = 4;
     } break;
-    default: typesize = 0;
+    default: handle.typesize = 0;
   }
 
-  if (0 < typesize) {
+  if (0 < handle.typesize) {
     if (0 == (m % bm) && 0 == (n % bn) && 0 == (k % bk)) { /* check for valid block-size */
       handle.b_m1 = 1; handle.b_n1 = 1; handle.b_k1 = 1; handle.b_k2 = 1;
       assert(0 == (m % handle.b_m1) && 0 == (n % handle.b_n1) && 0 == (k % handle.b_k1));
@@ -119,14 +124,18 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
 
       if (0 != result) {
         const int sm = m / handle.mb, sn = n / handle.nb, size = sm * sn;
-        handle.precision = precision; handle.flags = (0 == gemm_flags ? LIBXSMM_FLAGS : *gemm_flags);
+        handle.precision = precision;
         handle.m = m; handle.n = n; handle.k = k; handle.bm = bm; handle.bn = bn; handle.bk = bk;
         handle.mb = m / bm; handle.nb = n / bn; handle.kb = k / bk;
-        handle.buffer = libxsmm_aligned_malloc(LIBXSMM_BGEMM_MAX_NTHREADS * bm * bn * typesize, LIBXSMM_ALIGNMENT);
+        handle.buffer = libxsmm_aligned_malloc(LIBXSMM_BGEMM_MAX_NTHREADS * bm * bn * handle.typesize, LIBXSMM_ALIGNMENT);
         handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size * sizeof(libxsmm_bgemm_lock), LIBXSMM_ALIGNMENT);
         memset(handle.locks, 0, size * sizeof(libxsmm_bgemm_lock));
         handle.order = (0 == order ? LIBXSMM_BGEMM_ORDER_JIK : *order);
-        handle.typesize = typesize;
+        handle.kernel = libxsmm_xmmdispatch(&descriptor);
+#ifdef _USE_LIBXSMM_PREFETCH
+        descriptor.prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
+        handle.kernel_pf = libxsmm_xmmdispatch(&descriptor);
+#endif
         *result = handle;
       }
     }
@@ -388,9 +397,9 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
   LIBXSMM_VLA_DECL(4, const real_type, real_b, b, handle->k / handle->bk, handle->bn, handle->bk);
   LIBXSMM_VLA_DECL(4, real_type, real_c, c, handle->m / handle->bm, handle->bn, handle->bm);
 
-  _KERNEL l_kernel = handle->_l_kernel.smm;
+  _KERNEL l_kernel = handle->kernel.smm;
 #if defined(LIBXSMM_BGEMM_PREFETCH)
-  _KERNEL l_kernel_pf = handle->_l_kernel_pf.smm;
+  _KERNEL l_kernel_pf = handle->kernel_pf.smm;
 #endif
 
   int B_M1 = handle->b_m1;
@@ -536,9 +545,9 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_dry_run(
                        const libxsmm_bgemm_handle* handle )
 {
 #if 0/*disabled*/
-  _KERNEL l_kernel = handle->_l_kernel.smm;
+  _KERNEL l_kernel = handle->kernel.smm;
 #if defined(LIBXSMM_BGEMM_PREFETCH)
-  _KERNEL l_kernel_pf = handle->_l_kernel_pf.smm;
+  _KERNEL l_kernel_pf = handle->kernel_pf.smm;
 #endif
 #endif
   LIBXSMM_VLA_DECL(2, libxsmm_bgemm_lock, locks, handle->locks, handle->n/handle->bn);
