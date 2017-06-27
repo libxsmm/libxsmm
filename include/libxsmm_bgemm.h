@@ -32,20 +32,6 @@
 #define LIBXSMM_BGEMM_H
 
 #include <libxsmm_frontend.h>
-#include <libxsmm_sync.h>
-
-
-#include <libxsmm_intrinsics_x86.h>
-typedef struct{ volatile int var[16]; } lock_var;
-#define LOCK_T lock_var
-#define LOCK_INIT(x) { (x)->var[0] = 0; }
-#define LOCK_SET(x) { do { \
-        while ((x)->var[0] ==1); \
-        _mm_pause(); \
-      } while(__sync_lock_test_and_set(&((x)->var[0]), 1) != 0); \
-}
-#define LOCK_CHECK(x) { while ((x)->var[0] ==0); _mm_pause(); }
-#define LOCK_UNSET(x) { __sync_lock_release(&((x)->var[0])); }
 
 
 /** Denotes the BGEMM data order. */
