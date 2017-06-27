@@ -1705,7 +1705,7 @@ LIBXSMM_API_DEFINITION void libxsmm_release_kernel(const void* jit_code)
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_matdiff(libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n,
+LIBXSMM_API_DEFINITION int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n,
   const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
   libxsmm_matdiff_info* info)
 {
@@ -1715,8 +1715,8 @@ LIBXSMM_API_DEFINITION int libxsmm_matdiff(libxsmm_gemm_precision precision, lib
     double comp_ref = 0, comp_tst = 0, comp_d = 0; /* Kahan compensations */
     libxsmm_blasint i, j;
     memset(info, 0, sizeof(*info)); /* nullify */
-    switch(precision) {
-      case LIBXSMM_GEMM_PRECISION_F64: {
+    switch(datatype) {
+      case LIBXSMM_DATATYPE_F64: {
         const double *const real_ref = (const double*)ref, *const real_tst = (const double*)tst;
         for (i = 0; i < n; ++i) {
           for (j = 0; j < m; ++j) {
@@ -1739,7 +1739,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matdiff(libxsmm_gemm_precision precision, lib
           }
         }
       } break;
-      case LIBXSMM_GEMM_PRECISION_F32: {
+      case LIBXSMM_DATATYPE_F32: {
         const float *const real_ref = (const float*)ref, *const real_tst = (const float*)tst;
         for (i = 0; i < n; ++i) {
           for (j = 0; j < m; ++j) {
@@ -1762,10 +1762,59 @@ LIBXSMM_API_DEFINITION int libxsmm_matdiff(libxsmm_gemm_precision precision, lib
           }
         }
       } break;
-      case LIBXSMM_GEMM_PRECISION_I16: {
-        result = EXIT_FAILURE;
+      case LIBXSMM_DATATYPE_I16: {
+        const short *const real_ref = (const short*)ref, *const real_tst = (const short*)tst;
+        for (i = 0; i < n; ++i) {
+          for (j = 0; j < m; ++j) {
+            const double refi = real_ref[i*ildref+j], tsti = real_tst[i*ildtst+j];
+            const double refa = LIBXSMM_ABS(refi), di = LIBXSMM_ABS(refi - tsti);
+            double v0 = refi - comp_ref, v1 = info->sum_ref + v0;
+            if (info->norm_l1_max < di) info->norm_l1_max = di;
+            comp_ref = (v1 - info->sum_ref) - v0;
+            info->sum_ref = v1;
+            v0 = tsti - comp_tst, v1 = info->sum_tst + v0;
+            comp_tst = (v1 - info->sum_tst) - v0;
+            info->sum_tst = v1;
+            v0 = di * di - comp_d, v1 = info->norm_l2 + v0;
+            comp_d = (v1 - info->norm_l2) - v0;
+            info->norm_l2 = v1;
+            if (0 < refa) {
+              const double norm_l1_rel = di / refa;
+              if (info->norm_l1_rel < norm_l1_rel) info->norm_l1_rel = norm_l1_rel;
+            }
+          }
+        }
+      } break;
+      case LIBXSMM_DATATYPE_I8: {
+        const signed char *const real_ref = (const signed char*)ref, *const real_tst = (const signed char*)tst;
+        for (i = 0; i < n; ++i) {
+          for (j = 0; j < m; ++j) {
+            const double refi = real_ref[i*ildref+j], tsti = real_tst[i*ildtst+j];
+            const double refa = LIBXSMM_ABS(refi), di = LIBXSMM_ABS(refi - tsti);
+            double v0 = refi - comp_ref, v1 = info->sum_ref + v0;
+            if (info->norm_l1_max < di) info->norm_l1_max = di;
+            comp_ref = (v1 - info->sum_ref) - v0;
+            info->sum_ref = v1;
+            v0 = tsti - comp_tst, v1 = info->sum_tst + v0;
+            comp_tst = (v1 - info->sum_tst) - v0;
+            info->sum_tst = v1;
+            v0 = di * di - comp_d, v1 = info->norm_l2 + v0;
+            comp_d = (v1 - info->norm_l2) - v0;
+            info->norm_l2 = v1;
+            if (0 < refa) {
+              const double norm_l1_rel = di / refa;
+              if (info->norm_l1_rel < norm_l1_rel) info->norm_l1_rel = norm_l1_rel;
+            }
+          }
+        }
       } break;
       default: {
+        static int error_once = 0;
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM: unsupported data-type requested for libxsmm_matdiff!\n");
+        }
         result = EXIT_FAILURE;
       }
     }

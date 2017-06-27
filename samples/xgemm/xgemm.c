@@ -97,10 +97,11 @@ int main(int argc, char* argv[])
     REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
 #if !defined(__BLAS) || (0 != __BLAS)
     const char *const env_check = getenv("CHECK");
+    const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
     REAL_TYPE* d = 0;
-    if (0 == env_check || 0 != atoi(env_check)) {
+    if (!LIBXSMM_FEQ(0, check)) {
       d = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
-      init( 0, d, m, n, ldc, 1.0);
+      init(0, d, m, n, ldc, 1.0);
     }
 #endif
     init( 0, c, m, n, ldc, 1.0);
@@ -147,29 +148,22 @@ int main(int argc, char* argv[])
       }
     }
 #if !defined(__BLAS) || (0 != __BLAS)
-    if (0 != d) { /* validate result */
-      { /* LAPACK/BLAS xGEMM */
-        int i; double duration;
-        unsigned long long start = libxsmm_timer_tick();
-        for (i = 0; i < nrepeat; ++i) {
-          LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
-        }
-        duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-        if (0 < duration) {
-          fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
-        }
+    if (0 != d) { /* validate result against LAPACK/BLAS xGEMM */
+      libxsmm_matdiff_info matdiff_info;
+      int i; double duration;
+      unsigned long long start = libxsmm_timer_tick();
+      for (i = 0; i < nrepeat; ++i) {
+        LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
       }
-      { /* validate with LAPACK/BLAS */
-        libxsmm_blasint i, j; double diff = 0;
-        for (i = 0; i < n; ++i) {
-          for (j = 0; j < m; ++j) {
-            const libxsmm_blasint h = i * ldc + j;
-            const double e = c[h] - d[h];
-            diff = LIBXSMM_MAX(diff, e * e);
-          }
-        }
-        fprintf(stdout, "\tdiff=%f\n", diff);
-        if (1.0 < diff) result = EXIT_FAILURE;
+      duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      if (0 < duration) {
+        fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
+      }
+      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_GEMM_PRECISION(REAL_TYPE), m, n, d, c, &ldc, &ldc, &matdiff_info)) {
+        const char *const env_check_tolerance = getenv("CHECK_TOLERANCE");
+        const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
+        fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
+        if (check_tolerance < matdiff_info.norm_l1_max) result = EXIT_FAILURE;
       }
       libxsmm_free(d);
     }

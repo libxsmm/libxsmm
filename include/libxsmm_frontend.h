@@ -164,6 +164,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(cons
 LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller);
 
 /** Construct symbol name from a given real type name (float, double and short). */
+#define LIBXSMM_DATATYPE(TYPE)          LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_DATATYPE_)
 #define LIBXSMM_GEMM_PRECISION(TYPE)    LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_GEMM_PRECISION_)
 #define LIBXSMM_ORIGINAL_GEMM(TYPE)     LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_BLAS_GEMM_SYMBOL(TYPE)  LIBXSMM_ORIGINAL_GEMM(TYPE)(LIBXSMM_CALLER)
@@ -387,8 +388,18 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
 } libxsmm_matdiff_info;
 
 /** Utility function to calculate the difference between two matrices. */
-LIBXSMM_API int libxsmm_matdiff(libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n,
+LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n,
   const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
   libxsmm_matdiff_info* info);
+
+LIBXSMM_API_INLINE void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input) {
+  assert(0 != output && 0 != input);
+  if (output->norm_l1_rel < input->norm_l1_rel) {
+    output->norm_l1_max = input->norm_l1_max;
+    output->norm_l1_rel = input->norm_l1_rel;
+    output->sum_ref = input->sum_ref;
+    output->sum_tst = input->sum_tst;
+  }
+}
 
 #endif /*LIBXSMM_FRONTEND_H*/
