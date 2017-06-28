@@ -508,6 +508,7 @@ LIBXSMM_API_INLINE void internal_init(void)
     { const char *const env = getenv("LIBXSMM_SYNC");
       libxsmm_sync = (0 == env || 0 == *env) ? 1/*default*/ : atoi(env);
     }
+#if !defined(LIBXSMM_NO_SYNC)
     { const char *const env = getenv("LIBXSMM_TRYLOCK");
       if (0 == env || 0 == *env) {
         internal_reglock_count = INTERNAL_REGLOCK_MAXN;
@@ -518,6 +519,7 @@ LIBXSMM_API_INLINE void internal_init(void)
       }
       assert(1 <= internal_reglock_count);
     }
+#endif
     /* clear internal counters/statistic */
     for (i = 0; i < 4/*sml/med/big/xxx*/; ++i) {
       memset(&internal_statistic[0/*DP*/][i], 0, sizeof(internal_statistic_type));
@@ -910,10 +912,14 @@ LIBXSMM_API_DEFINITION int libxsmm_get_dispatch_trylock(void)
 
 LIBXSMM_API_DEFINITION void libxsmm_set_dispatch_trylock(int trylock)
 {
+#if defined(LIBXSMM_NO_SYNC)
+  LIBXSMM_UNUSED(trylock);
+#else
   LIBXSMM_INIT
   if (0 == internal_dispatch_trylock_locked) { /* LIBXSMM_TRYLOCK environment takes precedence */
     LIBXSMM_ATOMIC_STORE(&internal_reglock_count, 0 != trylock ? 1 : INTERNAL_REGLOCK_MAXN, LIBXSMM_ATOMIC_RELAXED);
   }
+#endif
 }
 
 
