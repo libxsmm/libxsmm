@@ -44,7 +44,6 @@ typedef enum libxsmm_bgemm_order {
   LIBXSMM_BGEMM_ORDER_KIJ = 5
 } libxsmm_bgemm_order;
 
-
 /** Describes the Block-GEMM (BGEMM) operation. */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle libxsmm_bgemm_handle;
 
