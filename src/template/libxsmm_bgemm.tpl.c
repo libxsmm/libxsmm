@@ -77,7 +77,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
       nw_k /= b_k2; /* TODO: check */
 
       for (w_i = s; w_i < e; ++w_i) {
-        int i2 = 0, j2 = 0, k2 = 0;
+        libxsmm_blasint i2 = 0, j2 = 0, k2 = 0;
         internal_bgemm_order(handle->order, w_i, nw_i, nw_j, nw_k, &i2, &j2, &k2);
 
         i2 = m + i2;

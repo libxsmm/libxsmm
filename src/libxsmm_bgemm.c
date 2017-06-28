@@ -370,7 +370,7 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
 {
   static int error_once = 0;
 #if !defined(NDEBUG) /* intentionally no errror check in release build */
-  if (0 != handle && 0 != a && 0 != b && 0 != c && 0 <= tid && 0 < nthreads)
+  if (0 != handle && 0 != a && 0 != b && 0 != c && 0 <= tid && tid < nthreads)
 #endif
   {
     switch (handle->precision) {

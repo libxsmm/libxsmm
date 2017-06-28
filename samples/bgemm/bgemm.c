@@ -141,7 +141,7 @@ int main(int argc, char* argv[])
 #if !defined(__BLAS) || (0 != __BLAS)
     if (!LIBXSMM_FEQ(0, check)) { /* validate result against LAPACK/BLAS xGEMM */
       libxsmm_matdiff_info matdiff_info;
-      int i; double duration;
+      int i;
       start = libxsmm_timer_tick();
       for (i = 0; i < nrepeat; ++i) {
         LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, agold, &lda, bgold, &ldb, &beta, cgold, &ldc);
