@@ -124,27 +124,38 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
         assert(0 == ((k / handle.b_k1 / handle.b_k2) % bk));
         assert(0 == ((n / handle.b_n1) % bn));
         assert(0 == ((m / handle.b_m1) % bm));
-        result = (libxsmm_bgemm_handle*)malloc(sizeof(libxsmm_bgemm_handle));
-        handle.buffer = libxsmm_aligned_malloc(LIBXSMM_BGEMM_MAX_NTHREADS * bm * bn * handle.typesize, LIBXSMM_ALIGNMENT);
-        handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size * sizeof(libxsmm_bgemm_lock), LIBXSMM_ALIGNMENT);
-
-        if (0 != result && 0 != handle.buffer && 0 != handle.locks) {
-          handle.precision = precision;
-          handle.m = m; handle.n = n; handle.k = k; handle.bm = bm; handle.bn = bn; handle.bk = bk;
-          memset(handle.locks, 0, size * sizeof(libxsmm_bgemm_lock));
-          handle.order = (0 == order ? LIBXSMM_BGEMM_ORDER_JIK : *order);
-          handle.kernel = libxsmm_xmmdispatch(&descriptor);
+        handle.kernel = libxsmm_xmmdispatch(&descriptor);
 #if defined(LIBXSMM_BGEMM_PREFETCH)
-          descriptor.prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
-          handle.kernel_pf = libxsmm_xmmdispatch(&descriptor);
+        descriptor.prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
+        handle.kernel_pf = libxsmm_xmmdispatch(&descriptor);
 #endif
-          *result = handle;
+        if (0 != handle.kernel.smm
+#if defined(LIBXSMM_BGEMM_PREFETCH)
+         && 0 != handle.kernel_pf.smm
+#endif
+        ) { /* TODO: allow NULL-kernels and implement a BLAS fallback */
+          result = (libxsmm_bgemm_handle*)malloc(sizeof(libxsmm_bgemm_handle));
+          handle.buffer = libxsmm_aligned_malloc(LIBXSMM_BGEMM_MAX_NTHREADS * bm * bn * handle.typesize, LIBXSMM_ALIGNMENT);
+          handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size * sizeof(libxsmm_bgemm_lock), LIBXSMM_ALIGNMENT);
+
+          if (0 != result && 0 != handle.buffer && 0 != handle.locks) {
+            handle.precision = precision;
+            handle.m = m; handle.n = n; handle.k = k; handle.bm = bm; handle.bn = bn; handle.bk = bk;
+            memset(handle.locks, 0, size * sizeof(libxsmm_bgemm_lock));
+            handle.order = (0 == order ? LIBXSMM_BGEMM_ORDER_JIK : *order);
+            *result = handle;
+          }
+          else {
+            libxsmm_free(handle.buffer);
+            libxsmm_free(handle.locks);
+            free(result);
+            result = 0;
+          }
         }
-        else {
-          libxsmm_free(handle.buffer);
-          libxsmm_free(handle.locks);
-          free(result);
-          result = 0;
+        else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+              && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM: BGEMM kernel failed to generate!\n");
         }
       }
       else {
