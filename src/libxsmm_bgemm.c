@@ -52,8 +52,8 @@
 #endif
 
 
-typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
-  volatile int instance[16];
+typedef union LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
+  volatile int instance, pad[16];
 } libxsmm_bgemm_lock;
 
 struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
@@ -64,11 +64,11 @@ struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
   libxsmm_xmmfunction kernel;
   void* buffer;
   libxsmm_bgemm_lock* locks;
+  libxsmm_blasint m, n, k, bm, bn, bk;
+  libxsmm_blasint b_m1, b_n1, b_k1, b_k2;
+  libxsmm_blasint mb, nb, kb;
   libxsmm_gemm_precision precision;
   libxsmm_bgemm_order order;
-  int m, n, k, bm, bn, bk;
-  int b_m1, b_n1, b_k1, b_k2;
-  int mb, nb, kb;
   int typesize;
   int flags;
 };
@@ -122,7 +122,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
         memset(handle.locks, 0, size * sizeof(libxsmm_bgemm_lock));
         handle.order = (0 == order ? LIBXSMM_BGEMM_ORDER_JIK : *order);
         handle.kernel = libxsmm_xmmdispatch(&descriptor);
-#ifdef _USE_LIBXSMM_PREFETCH
+#if defined(LIBXSMM_BGEMM_PREFETCH)
         descriptor.prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
         handle.kernel_pf = libxsmm_xmmdispatch(&descriptor);
 #endif
@@ -158,10 +158,11 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_han
 
 LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
 {
-  int result = EXIT_SUCCESS, mb, kb, bm, bk;
+  int result = EXIT_SUCCESS;
   static int error_once = 0;
 
   if (0 != handle) {
+    libxsmm_blasint mb, kb, bm, bk;
     const libxsmm_blasint ild = (0 == ld ? handle->m : *ld);
     /* TODO: support leading dimension for the source buffer */
     assert(ild >= handle->m); LIBXSMM_UNUSED(ild);
@@ -219,10 +220,11 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* ha
 
 LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
 {
-  int result = EXIT_SUCCESS, kb, nb, bk, bn;
+  int result = EXIT_SUCCESS;
   static int error_once = 0;
 
   if (0 != handle) {
+    libxsmm_blasint kb, nb, bk, bn;
     const libxsmm_blasint ild = (0 == ld ? handle->k : *ld);
     /* TODO: support leading dimension for the source buffer */
     assert(ild >= handle->k); LIBXSMM_UNUSED(ild);
@@ -280,10 +282,11 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* ha
 
 LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
 {
-  int result = EXIT_SUCCESS, mb, nb, bm, bn;
+  int result = EXIT_SUCCESS;
   static int error_once = 0;
 
   if (0 != handle) {
+    libxsmm_blasint mb, nb, bm, bn;
     const libxsmm_blasint ild = (0 == ld ? handle->m : *ld);
     /* TODO: support leading dimension for the source buffer */
     assert(ild >= handle->m); LIBXSMM_UNUSED(ild);
@@ -339,38 +342,40 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* ha
 }
 
 
-LIBXSMM_API_INLINE void internal_bgemm_order(int w_i, int nw_i, int nw_j, int nw_k, libxsmm_bgemm_order order, int* i2, int* j2, int* k2)
+LIBXSMM_API_INLINE void internal_bgemm_order(libxsmm_bgemm_order order,
+  libxsmm_blasint w_i, libxsmm_blasint nw_i, libxsmm_blasint nw_j, libxsmm_blasint nw_k,
+  libxsmm_blasint* i2, libxsmm_blasint* j2, libxsmm_blasint* k2)
 {
   switch (order) {
     case LIBXSMM_BGEMM_ORDER_JIK: {
-      *j2 = (int)(w_i / (nw_i * nw_k));
-      *i2 = (int)((w_i - (*j2) * (nw_i * nw_k)) / nw_k);
-      *k2 = w_i % nw_k;
+      *j2 = (w_i / (nw_i * nw_k));
+      *i2 = (w_i - (*j2) * (nw_i * nw_k)) / nw_k;
+      *k2 = (w_i % nw_k);
     } break;
     case LIBXSMM_BGEMM_ORDER_IJK: {
-      *i2 = (int)(w_i / (nw_j * nw_k));
-      *j2 = (int)((w_i - (*i2) * (nw_j * nw_k)) / nw_k);
-      *k2 = w_i % nw_k;
+      *i2 = (w_i / (nw_j * nw_k));
+      *j2 = (w_i - (*i2) * (nw_j * nw_k)) / nw_k;
+      *k2 = (w_i % nw_k);
     } break;
     case LIBXSMM_BGEMM_ORDER_JKI: {
-      *j2 = (int)(w_i / (nw_k * nw_i));
-      *k2 = (int)((w_i - (*j2) * (nw_k * nw_i)) / nw_i);
-      *i2 = w_i % nw_i;
+      *j2 = (w_i / (nw_k * nw_i));
+      *k2 = (w_i - (*j2) * (nw_k * nw_i)) / nw_i;
+      *i2 = (w_i % nw_i);
     } break;
     case LIBXSMM_BGEMM_ORDER_IKJ: {
-      *i2 = (int)(w_i / (nw_k * nw_j));
-      *k2 = (int)((w_i - (*i2) * (nw_k * nw_j)) / nw_j);
-      *j2 = w_i % nw_j;
+      *i2 = (w_i / (nw_k * nw_j));
+      *k2 = (w_i - (*i2) * (nw_k * nw_j)) / nw_j;
+      *j2 = (w_i % nw_j);
     } break;
     case LIBXSMM_BGEMM_ORDER_KJI: {
-      *k2 = (int)(w_i / (nw_j * nw_i));
-      *j2 = (int)((w_i - (*k2) * (nw_j * nw_i)) / nw_i);
-      *i2 = w_i % nw_i;
+      *k2 = (w_i / (nw_j * nw_i));
+      *j2 = (w_i - (*k2) * (nw_j * nw_i)) / nw_i;
+      *i2 = (w_i % nw_i);
     } break;
     case LIBXSMM_BGEMM_ORDER_KIJ: {
-      *k2 = (int)(w_i / (nw_i * nw_j));
-      *i2 = (int)((w_i - (*k2) * (nw_i * nw_j)) / nw_j);
-      *j2 = w_i % nw_j;
+      *k2 = (w_i / (nw_i * nw_j));
+      *i2 = (w_i - (*k2) * (nw_i * nw_j)) / nw_j;
+      *j2 = (w_i % nw_j);
     } break;
     default: assert(0/*should never happen*/);
   }
@@ -399,68 +404,67 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
   _KERNEL l_kernel_pf = handle->kernel_pf.smm;
 #endif
 
-  int B_M1 = handle->b_m1;
-  int B_N1 = handle->b_n1;
-  int B_K1 = handle->b_k1;
-  int B_K2 = handle->b_k2;
-  int ORDER = handle->order;
+  const libxsmm_blasint b_m1 = handle->b_m1;
+  const libxsmm_blasint b_n1 = handle->b_n1;
+  const libxsmm_blasint b_k1 = handle->b_k1;
+  const libxsmm_blasint b_k2 = handle->b_k2;
 
-  int M = handle->m / B_M1;
-  int N = handle->n / B_N1;
-  int K = handle->k / B_K1;
+  const libxsmm_blasint mm = handle->m / b_m1;
+  const libxsmm_blasint nn = handle->n / b_n1;
+  const libxsmm_blasint kk = handle->k / b_k1;
 
-  int nw_i = (M / handle->bm);
-  int nw_j = (N / handle->bn);
-  int nw_k = (K / handle->bk);
-  int nw = nw_i * nw_j * nw_k;
+  const libxsmm_blasint nw_i = mm / handle->bm;
+  const libxsmm_blasint nw_j = nn / handle->bn;
+  libxsmm_blasint nw_k = kk / handle->bk; /* TODO: check */
+  const libxsmm_blasint nw = nw_i * nw_j * nw_k;
 
-  int _mb, _nb, _kb;
-  int _m, _n, _k;
-  int w_i, _ki;
-  int ki, kj;
+  libxsmm_blasint m, n, k, mb, nb, kb;
+  libxsmm_blasint ki, kj, w_i, _ki;
 
-  /* TODO: take transa and transb into account */
+  /* TODO: take transa and transb into account (flags) */
 
-  for (ki = 0; ki < handle->bn; ki++) {
+  for (ki = 0; ki < handle->bn; ++ki) {
     LIBXSMM_PRAGMA_SIMD
-    for (kj = 0; kj < handle->bm; kj++) {
+    for (kj = 0; kj < handle->bm; ++kj) {
       LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm) = 0;
     }
   }
 
-  for (_mb=0, _m=0; _mb < B_M1; _mb++, _m+=nw_i) {
-    for (_nb=0, _n=0; _nb < B_N1; _nb++, _n+=nw_j) {
-      for (_kb=0, _k=0; _kb < B_K1; _kb++, _k+=nw_k) {
+  for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
+    for (nb = 0, n = 0; nb < b_n1; ++nb, n += nw_j) {
+      for (kb = 0, k = 0; kb < b_k1; ++kb, k += nw_k) {
         int s = (tid * nw) / nthreads;
         int e = ((tid + 1) * nw) / nthreads;
         int o_i2 = 0, o_j2 = 0;
-        nw_k = (K / handle->bk) / B_K2;
+        nw_k /= b_k2; /* TODO: check */
 
-        for (w_i = s; w_i < e; w_i++) {
+        for (w_i = s; w_i < e; ++w_i) {
           int i2 = 0, j2 = 0, k2 = 0;
-          internal_bgemm_order(w_i, nw_i, nw_j, nw_k, ORDER, &i2, &j2, &k2);
+          internal_bgemm_order(handle->order, w_i, nw_i, nw_j, nw_k, &i2, &j2, &k2);
 
-          i2 = _m + i2;
-          j2 = _n + j2;
-          k2 = _k + k2;
+          i2 = m + i2;
+          j2 = n + j2;
+          k2 = k + k2;
 
           if (w_i == s) {
             o_i2 = i2;
             o_j2 = j2;
-          } else {
+          }
+          else {
             if ((o_i2 != i2) || (o_j2 != j2)) {
-              LIBXSMM_SYNC_SET(LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb).instance[0]);
-              for (ki = 0; ki < handle->bn; ki++) {
+              libxsmm_bgemm_lock *const lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
+              LIBXSMM_SYNC_SET(lock->instance);
+              for (ki = 0; ki < handle->bn; ++ki) {
                 LIBXSMM_PRAGMA_SIMD
-                for (kj = 0; kj < handle->bm; kj++) {
+                for (kj = 0; kj < handle->bm; ++kj) {
                   LIBXSMM_VLA_ACCESS(4, real_c, o_j2, o_i2, ki, kj, handle->mb, handle->bn, handle->bm) +=
                   LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm);
                 }
               }
-              LIBXSMM_SYNC_UNSET(LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb).instance[0]);
-              for (ki = 0; ki < handle->bn; ki++) {
+              LIBXSMM_SYNC_UNSET(lock->instance);
+              for (ki = 0; ki < handle->bn; ++ki) {
                 LIBXSMM_PRAGMA_SIMD
-                for (kj = 0; kj < handle->bm; kj++) {
+                for (kj = 0; kj < handle->bm; ++kj) {
                   LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm) = 0;
                 }
               }
@@ -468,47 +472,49 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
               o_j2 = j2;
             }
           }
-          for (_ki = 0, ki=B_K2*k2; _ki < B_K2 ; _ki++, ki++) {
+          for (_ki = 0, ki = (b_k2 * k2); _ki < b_k2 ; ++_ki, ++ki) {
 #if !defined(LIBXSMM_BGEMM_PREFETCH)
-            l_kernel((const real_type*)&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
-                     (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk), l_out);
+            l_kernel(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
+                     &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk), l_out);
 #else
-            /* avoiding prefetch for untouched data */
-            if (k2 < (K / handle->bk) - 2) {
+            if (k2 < (nw_k - 2)) { /* avoid prefetching of untouched data */
 #if defined(__AVX2__)
-              l_kernel_pf((const real_type*)&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
-                          (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk), l_out,
-                          (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->kb, handle->bn, handle->bk),
-                          (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->mb, handle->bk, handle->bm), NULL);
+              l_kernel_pf(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
+                          &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk), l_out,
+                          &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->kb, handle->bn, handle->bk),
+                          &LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->mb, handle->bk, handle->bm), NULL);
 #else
-              l_kernel_pf((const real_type*)&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
-                          (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk), l_out,
-                          (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->mb, handle->bk, handle->bm),
-                          (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->kb, handle->bn, handle->bk), NULL);
+              l_kernel_pf(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
+                          &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk), l_out,
+                          &LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->mb, handle->bk, handle->bm),
+                          &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->kb, handle->bn, handle->bk), NULL);
 #endif
-            } else {
-              l_kernel((const real_type*)&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
-                       (const real_type*)&LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk), l_out);
+            }
+            else {
+              l_kernel(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
+                       &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk), l_out);
             }
 #endif
           }
 
-          if (w_i == e-1) {
+          if (w_i == (e - 1)) {
+            libxsmm_bgemm_lock* lock;
             o_i2 = i2;
             o_j2 = j2;
 
-            LIBXSMM_SYNC_SET(LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb).instance[0]);
-            for (ki = 0; ki < handle->bn; ki++) {
+            lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
+            LIBXSMM_SYNC_SET(lock->instance);
+            for (ki = 0; ki < handle->bn; ++ki) {
               LIBXSMM_PRAGMA_SIMD
-              for (kj = 0; kj < handle->bm; kj++) {
+              for (kj = 0; kj < handle->bm; ++kj) {
                 LIBXSMM_VLA_ACCESS(4, real_c, o_j2, o_i2, ki, kj, handle->mb, handle->bn, handle->bm) +=
                 LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm);
               }
             }
-            LIBXSMM_SYNC_UNSET(LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb).instance[0]);
-            for (ki = 0; ki < handle->bn; ki++) {
+            LIBXSMM_SYNC_UNSET(lock->instance);
+            for (ki = 0; ki < handle->bn; ++ki) {
               LIBXSMM_PRAGMA_SIMD
-              for (kj = 0; kj < handle->bm; kj++) {
+              for (kj = 0; kj < handle->bm; ++kj) {
                 LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm) = 0;
               }
             }
