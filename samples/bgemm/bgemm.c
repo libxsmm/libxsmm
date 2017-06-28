@@ -45,7 +45,7 @@
 #endif
 
 #if !defined(REAL_TYPE)
-# define REAL_TYPE double
+# define REAL_TYPE float
 #endif
 
 
