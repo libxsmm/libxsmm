@@ -138,12 +138,15 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #if defined(_DEBUG)
 # define INTERNAL_DISPATCH_DEBUG(RESULT, TYPE, FLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA) \
   if (0 != libxsmm_verbosity && 0 != (RESULT).pmm) { \
-    const int internal_dispatch_debug_m_ = M, internal_dispatch_debug_n_ = N, internal_dispatch_debug_k_ = K; \
+    const libxsmm_blasint internal_dispatch_debug_m_ = M, internal_dispatch_debug_n_ = N, internal_dispatch_debug_k_ = K; \
+    const libxsmm_blasint internal_dispatch_debug_lda_ = (0 == (PLDA) ? M : *(PLDA)); \
+    const libxsmm_blasint internal_dispatch_debug_ldb_ = (0 == (PLDB) ? K : *(PLDB)); \
+    const libxsmm_blasint internal_dispatch_debug_ldc_ = (0 == (PLDC) ? M : *(PLDC)); \
     LIBXSMM_FLOCK(stderr); \
     fprintf(stderr, "LIBXSMM: "); \
     LIBXSMM_GEMM_PRINT(stderr, LIBXSMM_GEMM_PRECISION(TYPE), FLAGS, \
       &internal_dispatch_debug_m_, &internal_dispatch_debug_n_, &internal_dispatch_debug_k_, \
-      PALPHA, 0/*a*/, PLDA, 0/*b*/, PLDB, PBETA, 0/*c*/, PLDC); \
+      PALPHA, 0/*a*/, &internal_dispatch_debug_lda_, 0/*b*/, &internal_dispatch_debug_ldb_, PBETA, 0/*c*/, &internal_dispatch_debug_ldc_); \
     fprintf(stderr, " = %p\n", (RESULT).pmm); \
     LIBXSMM_FUNLOCK(stderr); \
   }

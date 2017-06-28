@@ -203,16 +203,18 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
   if (0 != typeprefix) {
     if (0 != ostream) { /* print information about GEMM call */
       if (0 != a && 0 != b && 0 != c) {
-        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/,\n"
-                                "  %s/*alpha*/, %p/*a*/, %i/*lda*/,\n"
-                                "              %p/*b*/, %i/*ldb*/,\n"
-                                "   %s/*beta*/, %p/*c*/, %i/*ldc*/)",
-          typeprefix, ctransa, ctransa, *m, nn, kk, string_a, a, ilda, b, ildb, string_b, c, ildc);
+        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %lli/*m*/, %lli/*n*/, %lli/*k*/,\n"
+                                "  %s/*alpha*/, %p/*a*/, %lli/*lda*/,\n"
+                                "              %p/*b*/, %lli/*ldb*/,\n"
+                                "   %s/*beta*/, %p/*c*/, %lli/*ldc*/)",
+          typeprefix, ctransa, ctransa, (long long)*m, (long long)nn, (long long)kk,
+          string_a, a, (long long)ilda, b, (long long)ildb, string_b, c, (long long)ildc);
       }
       else {
-        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %i/*m*/, %i/*n*/, %i/*k*/, "
-                                "%i/*lda*/, %i/*ldb*/, %i/*ldc*/, %s/*alpha*/, %s/*beta*/)",
-          typeprefix, ctransa, ctransa, *m, nn, kk, ilda, ildb, ildc, string_a, string_b);
+        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %lli/*m*/, %lli/*n*/, %lli/*k*/, "
+                                "%lli/*lda*/, %lli/*ldb*/, %lli/*ldc*/, %s/*alpha*/, %s/*beta*/)",
+          typeprefix, ctransa, ctransa, (long long)*m, (long long)nn, (long long)kk,
+          (long long)ilda, (long long)ildb, (long long)ildc, string_a, string_b);
       }
     }
     else { /* dump A, B, and C matrices into MHD files */

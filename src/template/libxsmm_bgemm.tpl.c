@@ -71,9 +71,9 @@ for (ki = 0; ki < handle->bn; ++ki) {
 for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
   for (nb = 0, n = 0; nb < b_n1; ++nb, n += nw_j) {
     for (kb = 0, k = 0; kb < b_k1; ++kb, k += nw_k) {
-      int s = (tid * nw) / nthreads;
-      int e = ((tid + 1) * nw) / nthreads;
-      int o_i2 = 0, o_j2 = 0;
+      const libxsmm_blasint s = (tid * nw) / nthreads;
+      const libxsmm_blasint e = ((tid + 1) * nw) / nthreads;
+      libxsmm_blasint o_i2 = 0, o_j2 = 0;
       nw_k /= b_k2; /* TODO: check */
 
       for (w_i = s; w_i < e; ++w_i) {

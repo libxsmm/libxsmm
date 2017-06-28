@@ -118,7 +118,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
       handle.mb = m / bm; handle.nb = n / bn; handle.kb = k / bk;
 
       if (0 == (m % bm) && 0 == (n % bn) && 0 == (k % bk)) { /* check for valid block-size */
-        const int sm = m / handle.mb, sn = n / handle.nb, size = sm * sn;
+        const libxsmm_blasint sm = m / handle.mb, sn = n / handle.nb, size = sm * sn;
         handle.b_m1 = 1; handle.b_n1 = 1; handle.b_k1 = 1; handle.b_k2 = 1;
         assert(0 == (m % handle.b_m1) && 0 == (n % handle.b_n1) && 0 == (k % handle.b_k1));
         assert(0 == ((k / handle.b_k1 / handle.b_k2) % bk));
