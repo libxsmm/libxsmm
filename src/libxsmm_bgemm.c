@@ -538,8 +538,8 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle
         nthreads = omp_get_num_threads();
       }
       /* make an informed guess about the number of threads per core */
-      if (128 < nthreads && (LIBXSMM_X86_AVX512_MIC <= libxsmm_target_archid &&
-                             LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid))
+      if (256 <= nthreads && (LIBXSMM_X86_AVX512_MIC <= libxsmm_target_archid &&
+                              LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid))
       {
         barrier = libxsmm_barrier_create(nthreads / 4, 4);
       }
