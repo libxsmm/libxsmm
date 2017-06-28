@@ -78,77 +78,93 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint bm, libxsmm_blasint bn, libxsmm_blasint bk,
   const void* alpha, const void* beta, const int* gemm_flags, const libxsmm_bgemm_order* order)
 {
-  libxsmm_bgemm_handle handle = { 0 }, *result = 0;
+  libxsmm_bgemm_handle handle, *result = 0;
   libxsmm_gemm_descriptor descriptor = { 0 };
   static int error_once = 0;
 
-  handle.flags = (0 == gemm_flags ? LIBXSMM_FLAGS : *gemm_flags);
-  switch (precision) {
-    case LIBXSMM_GEMM_PRECISION_F64: {
-      handle.alpha.d = (0 != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
-      handle.beta.d = (0 != beta ? *((const double*)beta) : LIBXSMM_BETA);
-      assert(LIBXSMM_FEQ(1, handle.alpha.d) && LIBXSMM_FEQ(1, handle.beta.d)/*TODO*/);
-      LIBXSMM_GEMM_DESCRIPTOR(descriptor, precision, handle.flags, bm, bn, bk, bm/*lda*/, bk/*ldb*/, bm/*ldc*/,
-        handle.alpha.d, handle.beta.d, LIBXSMM_PREFETCH_NONE);
-      handle.typesize = 8;
-    } break;
-    case LIBXSMM_GEMM_PRECISION_F32: {
-      handle.alpha.s = (0 != alpha ? *((const float*)alpha) : LIBXSMM_ALPHA);
-      handle.beta.s = (0 != beta ? *((const float*)beta) : LIBXSMM_BETA);
-      assert(LIBXSMM_FEQ(1, handle.alpha.s) && LIBXSMM_FEQ(1, handle.beta.s)/*TODO*/);
-      LIBXSMM_GEMM_DESCRIPTOR(descriptor, precision, handle.flags, bm, bn, bk, bm/*lda*/, bk/*ldb*/, bm/*ldc*/,
-        handle.alpha.s, handle.beta.s, LIBXSMM_PREFETCH_NONE);
-      handle.typesize = 4;
-    } break;
-    case LIBXSMM_GEMM_PRECISION_I16: {
-      handle.alpha.w = (0 != alpha ? *((const int*)alpha) : LIBXSMM_ALPHA);
-      handle.beta.w = (0 != beta ? *((const int*)beta) : LIBXSMM_BETA);
-      assert(LIBXSMM_FEQ(1, handle.alpha.w) && LIBXSMM_FEQ(1, handle.beta.w)/*TODO*/);
-      LIBXSMM_GEMM_DESCRIPTOR(descriptor, precision, handle.flags, bm, bn, bk, bm/*lda*/, bk/*ldb*/, bm/*ldc*/,
-        handle.alpha.w, handle.beta.w, LIBXSMM_PREFETCH_NONE);
-      handle.typesize = 2;
-    } break;
-    default: handle.typesize = 0;
-  }
+  if (0 < m && 0 < n && 0 < k && 0 < bm && 0 < bn && 0 < bk) {
+    memset(&handle, 0, sizeof(handle));
+    handle.flags = (0 == gemm_flags ? LIBXSMM_FLAGS : *gemm_flags);
 
-  if (0 < handle.typesize) {
-    if (0 == (m % bm) && 0 == (n % bn) && 0 == (k % bk)) { /* check for valid block-size */
-      handle.b_m1 = 1; handle.b_n1 = 1; handle.b_k1 = 1; handle.b_k2 = 1;
-      assert(0 == (m % handle.b_m1) && 0 == (n % handle.b_n1) && 0 == (k % handle.b_k1));
-      assert(0 == ((k / handle.b_k1 / handle.b_k2) % bk));
-      assert(0 == ((n / handle.b_n1) % bn));
-      assert(0 == ((m / handle.b_m1) % bm));
-      result = (libxsmm_bgemm_handle*)malloc(sizeof(libxsmm_bgemm_handle));
+    switch (precision) {
+      case LIBXSMM_GEMM_PRECISION_F64: {
+        handle.alpha.d = (0 != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
+        handle.beta.d = (0 != beta ? *((const double*)beta) : LIBXSMM_BETA);
+        assert(LIBXSMM_FEQ(1, handle.alpha.d) && LIBXSMM_FEQ(1, handle.beta.d)/*TODO*/);
+        LIBXSMM_GEMM_DESCRIPTOR(descriptor, precision, handle.flags, bm, bn, bk, bm/*lda*/, bk/*ldb*/, bm/*ldc*/,
+          handle.alpha.d, handle.beta.d, LIBXSMM_PREFETCH_NONE);
+        handle.typesize = 8;
+      } break;
+      case LIBXSMM_GEMM_PRECISION_F32: {
+        handle.alpha.s = (0 != alpha ? *((const float*)alpha) : LIBXSMM_ALPHA);
+        handle.beta.s = (0 != beta ? *((const float*)beta) : LIBXSMM_BETA);
+        assert(LIBXSMM_FEQ(1, handle.alpha.s) && LIBXSMM_FEQ(1, handle.beta.s)/*TODO*/);
+        LIBXSMM_GEMM_DESCRIPTOR(descriptor, precision, handle.flags, bm, bn, bk, bm/*lda*/, bk/*ldb*/, bm/*ldc*/,
+          handle.alpha.s, handle.beta.s, LIBXSMM_PREFETCH_NONE);
+        handle.typesize = 4;
+      } break;
+      case LIBXSMM_GEMM_PRECISION_I16: {
+        handle.alpha.w = (0 != alpha ? *((const int*)alpha) : LIBXSMM_ALPHA);
+        handle.beta.w = (0 != beta ? *((const int*)beta) : LIBXSMM_BETA);
+        assert(LIBXSMM_FEQ(1, handle.alpha.w) && LIBXSMM_FEQ(1, handle.beta.w)/*TODO*/);
+        LIBXSMM_GEMM_DESCRIPTOR(descriptor, precision, handle.flags, bm, bn, bk, bm/*lda*/, bk/*ldb*/, bm/*ldc*/,
+          handle.alpha.w, handle.beta.w, LIBXSMM_PREFETCH_NONE);
+        handle.typesize = 2;
+      } break;
+      default: ;
+    }
 
-      if (0 != result) {
+    if (0 < handle.typesize) {
+      handle.mb = m / bm; handle.nb = n / bn; handle.kb = k / bk;
+
+      if (0 == (m % bm) && 0 == (n % bn) && 0 == (k % bk)) { /* check for valid block-size */
         const int sm = m / handle.mb, sn = n / handle.nb, size = sm * sn;
-        handle.precision = precision;
-        handle.m = m; handle.n = n; handle.k = k; handle.bm = bm; handle.bn = bn; handle.bk = bk;
-        handle.mb = m / bm; handle.nb = n / bn; handle.kb = k / bk;
+        handle.b_m1 = 1; handle.b_n1 = 1; handle.b_k1 = 1; handle.b_k2 = 1;
+        assert(0 == (m % handle.b_m1) && 0 == (n % handle.b_n1) && 0 == (k % handle.b_k1));
+        assert(0 == ((k / handle.b_k1 / handle.b_k2) % bk));
+        assert(0 == ((n / handle.b_n1) % bn));
+        assert(0 == ((m / handle.b_m1) % bm));
+        result = (libxsmm_bgemm_handle*)malloc(sizeof(libxsmm_bgemm_handle));
         handle.buffer = libxsmm_aligned_malloc(LIBXSMM_BGEMM_MAX_NTHREADS * bm * bn * handle.typesize, LIBXSMM_ALIGNMENT);
         handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size * sizeof(libxsmm_bgemm_lock), LIBXSMM_ALIGNMENT);
-        memset(handle.locks, 0, size * sizeof(libxsmm_bgemm_lock));
-        handle.order = (0 == order ? LIBXSMM_BGEMM_ORDER_JIK : *order);
-        handle.kernel = libxsmm_xmmdispatch(&descriptor);
+
+        if (0 != result && 0 != handle.buffer && 0 != handle.locks) {
+          handle.precision = precision;
+          handle.m = m; handle.n = n; handle.k = k; handle.bm = bm; handle.bn = bn; handle.bk = bk;
+          memset(handle.locks, 0, size * sizeof(libxsmm_bgemm_lock));
+          handle.order = (0 == order ? LIBXSMM_BGEMM_ORDER_JIK : *order);
+          handle.kernel = libxsmm_xmmdispatch(&descriptor);
 #if defined(LIBXSMM_BGEMM_PREFETCH)
-        descriptor.prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
-        handle.kernel_pf = libxsmm_xmmdispatch(&descriptor);
+          descriptor.prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
+          handle.kernel_pf = libxsmm_xmmdispatch(&descriptor);
 #endif
-        *result = handle;
+          *result = handle;
+        }
+        else {
+          libxsmm_free(handle.buffer);
+          libxsmm_free(handle.locks);
+          free(result);
+          result = 0;
+        }
+      }
+      else {
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM: BGEMM block-size is invalid!\n");
+        }
       }
     }
-    else {
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
-       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM: BGEMM block-size is invalid!\n");
-      }
+    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: BGEMM precision is not supported!\n");
     }
   }
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
-    fprintf(stderr, "LIBXSMM: BGEMM precision is not supported!\n");
+    fprintf(stderr, "LIBXSMM: BGEMM arguments for libxsmm_bgemm_handle_create are invalid!\n");
   }
 
   return result;
@@ -158,7 +174,8 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
 LIBXSMM_API_DEFINITION void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_handle* handle)
 {
   if (0 != handle) {
-    /* TODO: release internal structures */
+    libxsmm_free(handle->buffer);
+    libxsmm_free(handle->locks);
     free((libxsmm_bgemm_handle*)handle);
   }
 }
