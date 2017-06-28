@@ -791,8 +791,10 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           REAL(C_FLOAT), INTENT(OUT), TARGET :: output(:,:)
           REAL(C_FLOAT), INTENT(IN), TARGET :: input(:,:)
-          CALL libxsmm_otrans(srealptr(input), srealptr(output),        &
-     &      4, m, n, UBOUND(input,1), UBOUND(output,1))
+          CALL libxsmm_otrans(                                          &
+     &      srealptr(input), srealptr(output), 4, m, n,                 &
+     &      UBOUND(input, 1, LIBXSMM_BLASINT_KIND),                     &
+     &      UBOUND(output,1, LIBXSMM_BLASINT_KIND))
         END SUBROUTINE
 
         ! Transpose a matrix (out-of-place form, double-precision).
@@ -802,8 +804,10 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           REAL(C_DOUBLE), INTENT(OUT), TARGET :: output(:,:)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: input(:,:)
-          CALL libxsmm_otrans(drealptr(input), drealptr(output),        &
-     &      8, m, n, UBOUND(input,1), UBOUND(output,1))
+          CALL libxsmm_otrans(                                          &
+     &      drealptr(input), drealptr(output), 8, m, n,                 &
+     &      UBOUND(input, 1, LIBXSMM_BLASINT_KIND),                     &
+     &      UBOUND(output,1, LIBXSMM_BLASINT_KIND))
         END SUBROUTINE
 
         ! Transpose a matrix (in-place form).
@@ -833,7 +837,7 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: matrix(:,:)
           CALL libxsmm_itrans(srealptr(matrix),                         &
-     &      4, m, n, UBOUND(matrix,1))
+     &      4, m, n, UBOUND(matrix, 1, LIBXSMM_BLASINT_KIND))
         END SUBROUTINE
 
         ! Transpose a matrix (in-place form, double-precision).
@@ -843,7 +847,7 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: matrix(:,:)
           CALL libxsmm_itrans(drealptr(matrix),                         &
-     &      8, m, n, UBOUND(matrix,1))
+     &      8, m, n, UBOUND(matrix, 1, LIBXSMM_BLASINT_KIND))
         END SUBROUTINE
       END MODULE
 
