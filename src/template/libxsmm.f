@@ -734,7 +734,7 @@
         ! Matrix-copy (2-dimensional copy) routine. If the input (optional)
         ! is not present, the routine is used to zero-fill the out-matrix.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy
-        PURE SUBROUTINE libxsmm_matcopy(output, input, typesize,        &
+        SUBROUTINE libxsmm_matcopy(output, input, typesize,             &
      &  m, n, ldi, ldo, prefetch)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
@@ -761,7 +761,7 @@
 
         ! Transpose a matrix (out-of-place form).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans
-        PURE SUBROUTINE libxsmm_otrans(output, input, typesize,         &
+        SUBROUTINE libxsmm_otrans(output, input, typesize,              &
      &  m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
@@ -811,7 +811,7 @@
 
         ! Transpose a matrix (in-place form).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans
-        PURE SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)
+        SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
      &                                   OPTIONAL, TARGET :: n, ld
