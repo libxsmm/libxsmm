@@ -1829,8 +1829,8 @@ LIBXSMM_API_DEFINITION int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_bl
     result = EXIT_FAILURE;
   }
   if (EXIT_SUCCESS == result && 0 < info->norm_l2) { /* square-root without libm dependency */
-    const double inv = 1.0 / info->norm_l2; int i; info->norm_l2 *= 0.5;
-    for (i = 0; i < 6; ++i) info->norm_l2 *= 0.5 * (3.0 - info->norm_l2 * info->norm_l2 * inv);
+    const double squared = info->norm_l2; int i; info->norm_l2 *= 0.5;
+    for (i = 0; i < 8; ++i) info->norm_l2 = 0.5 * (info->norm_l2 + squared / info->norm_l2);
   }
   return result;
 }
