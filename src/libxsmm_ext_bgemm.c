@@ -103,7 +103,7 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle
           && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM: BGEMM matrix operands cannot be NULL!\n");
-    }    
+    }
   }
   else if (0 > count && 0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
