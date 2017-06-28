@@ -283,9 +283,13 @@ OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB
 KRNOBJS_HST  = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 KRNOBJS_MIC  = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 EXTOBJS_HST  = $(BLDDIR)/intel64/libxsmm_ext.o \
-               $(BLDDIR)/intel64/libxsmm_ext_gemm.o $(BLDDIR)/intel64/libxsmm_ext_trans.o
+               $(BLDDIR)/intel64/libxsmm_ext_trans.o \
+               $(BLDDIR)/intel64/libxsmm_ext_bgemm.o \
+               $(BLDDIR)/intel64/libxsmm_ext_gemm.o
 EXTOBJS_MIC  = $(BLDDIR)/mic/libxsmm_ext.o \
-               $(BLDDIR)/mic/libxsmm_ext_gemm.o $(BLDDIR)/mic/libxsmm_ext_trans.o
+               $(BLDDIR)/mic/libxsmm_ext_trans.o \
+               $(BLDDIR)/mic/libxsmm_ext_bgemm.o \
+               $(BLDDIR)/mic/libxsmm_ext_gemm.o
 NOBLAS_HST   = $(BLDDIR)/intel64/libxsmm_noblas.o
 NOBLAS_MIC   = $(BLDDIR)/mic/libxsmm_noblas.o
 

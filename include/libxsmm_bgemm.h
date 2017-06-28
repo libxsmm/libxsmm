@@ -68,9 +68,10 @@ LIBXSMM_API void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
   const void* a, const void* b, void* c, int tid, int nthreads);
 
 /**
- * Implementation of libxsmm_bgemm, which is parallelized with OpenMP.
- * Allows for calling multiple GEMMs, specified by 'count' (RNNs).
- * Uses an OpenMP or custom barrier implementation.
+ * Implementation of libxsmm_bgemm, which is parallelized with OpenMP
+ * and uses an OpenMP or custom barrier implementation. The function
+ * allows to run multiple GEMMs, which is specified by 'count' (RNNs).
+ * This function requires to link against libxsmmext.
  */
 LIBXSMM_API void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
   const void* a, const void* b, void* c, /*unsigned*/int count);
