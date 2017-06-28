@@ -737,10 +737,9 @@
         PURE SUBROUTINE libxsmm_matcopy(output, input, typesize,        &
      &  m, n, ldi, ldo, prefetch)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: prefetch
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                                OPTIONAL, TARGET :: n, ldi, ldo
+          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
           INTEGER(C_INT), INTENT(IN) :: typesize
           TYPE(C_PTR), INTENT(IN), OPTIONAL :: input
           TYPE(C_PTR), INTENT(IN) :: output
@@ -749,15 +748,15 @@
             PURE SUBROUTINE internal_matcopy(output, input, typesize,   &
      &      m, n, ldi, ldo, prefetch) BIND(C, NAME="libxsmm_matcopy_")
               IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldi, ldo
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+              TYPE(C_PTR), INTENT(IN), VALUE :: n, ldi, ldo
               TYPE(C_PTR), INTENT(IN), VALUE :: output, input
+              TYPE(C_PTR), INTENT(IN), VALUE :: prefetch
               INTEGER(C_INT), INTENT(IN) :: typesize
-              INTEGER(C_INT), INTENT(IN) :: prefetch
             END SUBROUTINE
           END INTERFACE
           CALL internal_matcopy(output, input, typesize,                &
-     &      m, n, ldi, ldo, prefetch)
+     &      m, C_LOC(n), C_LOC(ldi), C_LOC(ldo), C_LOC(prefetch))
         END SUBROUTINE
 
         ! Transpose a matrix (out-of-place form).
@@ -765,9 +764,8 @@
         PURE SUBROUTINE libxsmm_otrans(output, input, typesize,         &
      &  m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                                   OPTIONAL, TARGET :: n, ldi, ldo
           TYPE(C_PTR), INTENT(IN) :: output, input
           INTEGER(C_INT), INTENT(IN) :: typesize
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_otrans
@@ -775,13 +773,14 @@
             PURE SUBROUTINE internal_otrans(output, input, typesize,    &
      &      m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_")
               IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldi, ldo
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+              TYPE(C_PTR), INTENT(IN), VALUE :: n, ldi, ldo
               TYPE(C_PTR), INTENT(IN), VALUE :: output, input
               INTEGER(C_INT), INTENT(IN) :: typesize
             END SUBROUTINE
           END INTERFACE
-          CALL internal_otrans(output, input, typesize, m, n, ldi, ldo)
+          CALL internal_otrans(output, input, typesize,                 &
+     &      m, C_LOC(n), C_LOC(ldi), C_LOC(ldo))
         END SUBROUTINE
 
         ! Transpose a matrix (out-of-place form, single-precision).
@@ -814,7 +813,8 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans
         PURE SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n, ld
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                                   OPTIONAL, TARGET :: n, ld
           TYPE(C_PTR), INTENT(IN) :: matrix
           INTEGER(C_INT), INTENT(IN) :: typesize
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_itrans
@@ -822,12 +822,12 @@
             PURE SUBROUTINE internal_itrans(matrix, typesize, m, n, ld) &
      &      BIND(C, NAME="libxsmm_itrans_")
               IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ld
-              TYPE(C_PTR), INTENT(IN), VALUE :: matrix
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+              TYPE(C_PTR), INTENT(IN), VALUE :: n, ld, matrix
               INTEGER(C_INT), INTENT(IN) :: typesize
             END SUBROUTINE
           END INTERFACE
-          CALL internal_itrans(matrix, typesize, m, n, ld)
+          CALL internal_itrans(matrix, typesize, m, C_LOC(n), C_LOC(ld))
         END SUBROUTINE
 
         ! Transpose a matrix (in-place form, single-precision).
