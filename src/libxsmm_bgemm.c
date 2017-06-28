@@ -523,52 +523,66 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
 
 
 LIBXSMM_API_DEFINITION void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
-  const void* a, const void* b, void* c)
+  const void* a, const void* b, void* c, /*unsigned*/int count)
 {
-  const int count = 1; /* count can be >1 for RNNs */
-  int nthreads = 1;
-#if defined(LIBXSMM_BGEMM_BARRIER)
-  libxsmm_barrier* barrier = 0;
-# if defined(_OPENMP)
-# pragma omp parallel
-  {
-    nthreads = omp_get_num_threads();
-  }
-  /* make an informed guess about the number of threads per core */
-  if (128 < nthreads && (LIBXSMM_X86_AVX512_MIC <= libxsmm_target_archid &&
-                         LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid))
-  {
-    barrier = libxsmm_barrier_create(nthreads / 4, 4);
-  }
-  else
-# endif
-  {
-    barrier = libxsmm_barrier_create(nthreads / 2, 2);
-  }
-#endif
+  static int error_once = 0;
 
-#if defined(_OPENMP)
-# pragma omp parallel
+  if (0 < count) {
+    if (0 != a && 0 != b && 0 != c) {
+      int nthreads = 1;
+#if defined(LIBXSMM_BGEMM_BARRIER)
+      libxsmm_barrier* barrier = 0;
+# if defined(_OPENMP)
+#     pragma omp parallel
+      {
+        nthreads = omp_get_num_threads();
+      }
+      /* make an informed guess about the number of threads per core */
+      if (128 < nthreads && (LIBXSMM_X86_AVX512_MIC <= libxsmm_target_archid &&
+                             LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid))
+      {
+        barrier = libxsmm_barrier_create(nthreads / 4, 4);
+      }
+      else
+# endif
+      {
+        barrier = libxsmm_barrier_create(nthreads / 2, 2);
+      }
 #endif
-  {
-    int tid = 0, i;
 #if defined(_OPENMP)
-    tid = omp_get_thread_num();
+#     pragma omp parallel
+#endif
+      {
+        int tid = 0, i;
+#if defined(_OPENMP)
+        tid = omp_get_thread_num();
 #endif
 #if defined(LIBXSMM_BGEMM_BARRIER)
-    libxsmm_barrier_init(barrier, tid);
+        libxsmm_barrier_init(barrier, tid);
 #endif
-    for (i = 0; i < count; ++i) {
-      libxsmm_bgemm(handle, a, b, c, tid, nthreads);
+        for (i = 0; i < count; ++i) {
+          libxsmm_bgemm(handle, a, b, c, tid, nthreads);
 #if defined(LIBXSMM_BGEMM_BARRIER)
-      libxsmm_barrier_wait(barrier, tid);
+          libxsmm_barrier_wait(barrier, tid);
 #elif defined(_OPENMP)
-#     pragma omp barrier
+#         pragma omp barrier
+#endif
+        }
+      }
+#if defined(LIBXSMM_BGEMM_BARRIER)
+      libxsmm_barrier_release(barrier);
 #endif
     }
+    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: BGEMM matrix operands cannot be NULL!\n");
+    }    
   }
-#if defined(LIBXSMM_BGEMM_BARRIER)
-  libxsmm_barrier_release(barrier);
-#endif
+  else if (0 > count && 0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM: BGEMM count cannot be negative!\n");
+  }
 }
 

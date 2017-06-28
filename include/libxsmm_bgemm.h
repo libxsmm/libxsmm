@@ -54,22 +54,26 @@ LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm_gemm_preci
 
 LIBXSMM_API void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_handle* handle);
 
+/** Copy-in functions for A, B, and C matrices. A leading dimension is optional and can be NULL. */
 LIBXSMM_API int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 LIBXSMM_API int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 LIBXSMM_API int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 
 /**
- * Fine grain parallelized version(s) of BGEMM
- * - Requires block structure layout for A,B matrices
- * - Parallelized across all three dims - M, N, K
- * - Uses fine-grain on-demand locks for write to C and fast barrier
- * - Allows for calling multiple GEMMs, specified by 'count'
+ * Fine grain parallelized block-GEMM (BGEMM), which uses a block structure
+ * layout for the A and B matrices. The implementation is parallelized
+ * among M, N, and K using fine-grained on-demand locks when writing C.
  */
 LIBXSMM_API void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
   const void* a, const void* b, void* c, int tid, int nthreads);
 
+/**
+ * Implementation of libxsmm_bgemm, which is parallelized with OpenMP.
+ * Allows for calling multiple GEMMs, specified by 'count' (RNNs).
+ * Uses an OpenMP or custom barrier implementation.
+ */
 LIBXSMM_API void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
-  const void* a, const void* b, void* c);
+  const void* a, const void* b, void* c, /*unsigned*/int count);
 
 #endif /*LIBXSMM_BGEMM_H*/
 
