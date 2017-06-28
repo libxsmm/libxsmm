@@ -56,13 +56,15 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle
   if (0 < count) {
     if (0 != a && 0 != b && 0 != c) {
       int nthreads = 1;
-#if defined(LIBXSMM_BGEMM_BARRIER)
+#if defined(_OPENMP)
+# if defined(LIBXSMM_BGEMM_BARRIER)
       libxsmm_barrier* barrier = 0;
-# if defined(_OPENMP)
+# endif /*defined(LIBXSMM_BGEMM_BARRIER)*/
 #     pragma omp parallel
       {
         nthreads = omp_get_num_threads();
       }
+# if defined(LIBXSMM_BGEMM_BARRIER)
       /* make an informed guess about the number of threads per core */
       if (256 <= nthreads && (LIBXSMM_X86_AVX512_MIC <= libxsmm_target_archid &&
                               LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid))
@@ -70,14 +72,12 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle
         barrier = libxsmm_barrier_create(nthreads / 4, 4);
       }
       else
-# endif
       {
         barrier = libxsmm_barrier_create(nthreads / 2, 2);
       }
-#endif
-#if defined(_OPENMP)
+# endif /*defined(LIBXSMM_BGEMM_BARRIER)*/
 #     pragma omp parallel
-#endif
+#endif /*defined(_OPENMP)*/
       {
         int tid = 0, i;
 #if defined(_OPENMP)
