@@ -106,7 +106,6 @@ int main(int argc, char* argv[])
     libxsmm_bgemm_handle* handle = 0;
     unsigned long long start;
     double duration;
-    int i;
 #if !defined(__BLAS) || (0 != __BLAS)
     const char *const env_check = getenv("CHECK");
     const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
@@ -123,7 +122,7 @@ int main(int argc, char* argv[])
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
     /* warmup OpenMP (populate thread pool) */
-    libxsmm_bgemm_omp(handle, a, b, c);
+    libxsmm_bgemm_omp(handle, a, b, c, 1);
 #if !defined(__BLAS) || (0 != __BLAS)
     if (!LIBXSMM_FEQ(0, check)) {
       LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, agold, &lda, bgold, &ldb, &beta, cgold, &ldc);
@@ -134,9 +133,7 @@ int main(int argc, char* argv[])
     fprintf(stdout, "\n\n");
 
     start = libxsmm_timer_tick();
-    for (i = 0; i < nrepeat; ++i) {
-      libxsmm_bgemm_omp(handle, a, b, c);
-    }
+    libxsmm_bgemm_omp(handle, a, b, c, nrepeat);
     duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
     if (0 < duration) {
       fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
