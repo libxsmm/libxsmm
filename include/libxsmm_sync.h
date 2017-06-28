@@ -105,34 +105,30 @@
 #   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_add_and_fetch(DST_PTR, VALUE)
 #   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_sub_and_fetch(DST_PTR, VALUE)
 # endif
-/* TODO: distinct implementation of LIBXSMM_SYNC_* wrt LIBXSMM_GCCATOMICS */
-# define LIBXSMM_SYNC_CHECK(LOCK) while (1 == (LOCK)); LIBXSMM_SYNC_PAUSE
-# define LIBXSMM_SYNC_SET(LOCK) do { LIBXSMM_SYNC_CHECK(LOCK); } while(0 != __sync_lock_test_and_set(&(LOCK), 1))
-# define LIBXSMM_SYNC_UNSET(LOCK) __sync_lock_release(&(LOCK))
+/* TODO: distinct implementation of LIBXSMM_ATIMIC_SYNC_* wrt LIBXSMM_GCCATOMICS */
+# define LIBXSMM_ATOMIC_SYNC_CHECK(LOCK) while (1 == (LOCK)); LIBXSMM_SYNC_PAUSE
+# define LIBXSMM_ATOMIC_SYNC_SET(LOCK) do { LIBXSMM_ATOMIC_SYNC_CHECK(LOCK); } while(0 != __sync_lock_test_and_set(&(LOCK), 1))
+# define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK) __sync_lock_release(&(LOCK))
 #elif defined(_REENTRANT) && defined(_WIN32) /*TODO*/
 # define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) (*(SRC_PTR))
 # define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) (*(DST_PTR) = VALUE)
 # define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) += VALUE)
 # define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) -= VALUE)
-# define LIBXSMM_SYNC_CHECK(LOCK) while (1 == (LOCK)); LIBXSMM_SYNC_PAUSE
-# define LIBXSMM_SYNC_SET(LOCK) { int libxsmm_sync_set_i_; \
-    do { LIBXSMM_SYNC_CHECK(LOCK); \
+# define LIBXSMM_ATOMIC_SYNC_CHECK(LOCK) while (1 == (LOCK)); LIBXSMM_SYNC_PAUSE
+# define LIBXSMM_ATOMIC_SYNC_SET(LOCK) { int libxsmm_sync_set_i_; \
+    do { LIBXSMM_ATOMIC_SYNC_CHECK(LOCK); \
       libxsmm_sync_set_i_ = LOCK; LOCK = 1; \
     } while(0 != libxsmm_sync_set_i_); \
   }
-# define LIBXSMM_SYNC_UNSET(LOCK) (LOCK) = 0
+# define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK) (LOCK) = 0
 #else
 # define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) (*(SRC_PTR))
 # define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) (*(DST_PTR) = VALUE)
 # define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) += VALUE)
 # define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) -= VALUE)
-# define LIBXSMM_SYNC_CHECK(LOCK) while (1 == (LOCK)); LIBXSMM_SYNC_PAUSE
-# define LIBXSMM_SYNC_SET(LOCK) { int libxsmm_sync_set_i_; \
-    do { LIBXSMM_SYNC_CHECK(LOCK); \
-      libxsmm_sync_set_i_ = LOCK; LOCK = 1; \
-    } while(0 != libxsmm_sync_set_i_); \
-  }
-# define LIBXSMM_SYNC_UNSET(LOCK) (LOCK) = 0
+# define LIBXSMM_ATOMIC_SYNC_CHECK(LOCK)
+# define LIBXSMM_ATOMIC_SYNC_SET(LOCK)
+# define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK)
 #endif
 #if !defined(LIBXSMM_ATOMIC_STORE_ZERO)
 # define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE(DST_PTR, 0, KIND)
