@@ -177,12 +177,12 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 
 /** Helper macro consolidating the applicable GEMM arguments into LIBXSMM's flags. */
 #define LIBXSMM_GEMM_FLAGS(PTRANSA, PTRANSB) ( \
-    (0 != ((const void*)(PTRANSA)) ? (('T' == *(PTRANSA) || 't' == *(PTRANSA)) \
+    (0 != ((const void*)(PTRANSA)) ? (('T' == *((const char*)(PTRANSA)) || 't' == *((const char*)(PTRANSA))) \
             ? (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_A) \
-            : (LIBXSMM_FLAGS | ~LIBXSMM_GEMM_FLAG_TRANS_A)) : LIBXSMM_FLAGS) \
-  & (0 != ((const void*)(PTRANSB)) ? (('T' == *(PTRANSB) || 't' == *(PTRANSB)) \
+            : (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_A)) : LIBXSMM_FLAGS) \
+  & (0 != ((const void*)(PTRANSB)) ? (('T' == *((const char*)(PTRANSB)) || 't' == *((const char*)(PTRANSB))) \
             ? (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_B) \
-            : (LIBXSMM_FLAGS | ~LIBXSMM_GEMM_FLAG_TRANS_B)) : LIBXSMM_FLAGS) \
+            : (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_B)) : LIBXSMM_FLAGS) \
 )
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (template). */
