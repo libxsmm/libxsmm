@@ -129,7 +129,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
             descriptor.prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
           }
           else { /* user-defined */
-            descriptor.prefetch = prefetch;
+            descriptor.prefetch = (unsigned short)prefetch;
           }
           handle.kernel_pf = libxsmm_xmmdispatch(&descriptor);
         }
