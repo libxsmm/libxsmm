@@ -106,6 +106,8 @@
 #define LIBXSMM_EQUAL(T1, T2) LIBXSMM_EQUAL_CHECK(LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(LIBXSMM_EQUAL_, T1), T2))
 #define LIBXSMM_EQUAL_floatfloat 1
 #define LIBXSMM_EQUAL_doubledouble 1
+#define LIBXSMM_EQUAL_floatdouble 0
+#define LIBXSMM_EQUAL_doublefloat 0
 
 /** Check ILP64 configuration for sanity. */
 #if !defined(LIBXSMM_ILP64) || (defined(MKL_ILP64) && 0 == LIBXSMM_ILP64)
