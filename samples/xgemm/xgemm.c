@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
       if (0 < duration) {
         fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
       }
-      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_GEMM_PRECISION(REAL_TYPE), m, n, d, c, &ldc, &ldc, &matdiff_info)) {
+      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, d, c, &ldc, &ldc, &matdiff_info)) {
         const char *const env_check_tolerance = getenv("CHECK_TOLERANCE");
         const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
         fprintf(stdout, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
