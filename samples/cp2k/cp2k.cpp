@@ -281,7 +281,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
         if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
-          fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
+          fprintf(stdout, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
           libxsmm_matdiff_reduce(&diff, &d);
         }
 #endif
@@ -316,7 +316,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
         if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
-          fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
+          fprintf(stdout, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
           libxsmm_matdiff_reduce(&diff, &d);
         }
 #endif
@@ -351,7 +351,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
         if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
-          fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
+          fprintf(stdout, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
           libxsmm_matdiff_reduce(&diff, &d);
         }
 #endif
@@ -391,7 +391,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
         if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
-          fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
+          fprintf(stdout, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
           libxsmm_matdiff_reduce(&diff, &d);
         }
 #endif
