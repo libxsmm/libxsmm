@@ -176,13 +176,13 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(TYPE), _omp)
 
 /** Helper macro consolidating the applicable GEMM arguments into LIBXSMM's flags. */
-#define LIBXSMM_GEMM_FLAGS(PTRANSA, PTRANSB) ( \
-    (0 != ((const void*)(PTRANSA)) ? (('T' == *((const char*)(PTRANSA)) || 't' == *((const char*)(PTRANSA))) \
-            ? (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_A) \
-            : (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_A)) : LIBXSMM_FLAGS) \
-  & (0 != ((const void*)(PTRANSB)) ? (('T' == *((const char*)(PTRANSB)) || 't' == *((const char*)(PTRANSB))) \
-            ? (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_B) \
-            : (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_B)) : LIBXSMM_FLAGS) \
+#define LIBXSMM_GEMM_FLAGS(PTRANSA, PTRANSB) ( /* check for N/n rather than T/t since C/c is also valid! */ \
+    (0 != ((const void*)(PTRANSA)) ? (('N' == *((const char*)(PTRANSA)) || 'n' == *((const char*)(PTRANSA))) \
+            ? (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_A) \
+            : (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_A)) : LIBXSMM_FLAGS) \
+  & (0 != ((const void*)(PTRANSB)) ? (('N' == *((const char*)(PTRANSB)) || 'n' == *((const char*)(PTRANSB))) \
+            ? (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_B) \
+            : (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_B)) : LIBXSMM_FLAGS) \
 )
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (template). */
