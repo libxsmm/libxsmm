@@ -110,8 +110,9 @@ int main(int argc, char* argv[])
     const char *const env_check = getenv("CHECK");
     const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
 #endif
+    const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
     handle = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-      m, n, k, bm, bn, bk, &alpha, &beta, &gemm_flags, &order);
+      m, n, k, bm, bn, bk, &alpha, &beta, &gemm_flags, &strategy, &order);
 
     if (0 != handle) {
       init(42, agold, m, k, lda, 1.0);

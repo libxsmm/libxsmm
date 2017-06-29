@@ -47,9 +47,6 @@
 #if !defined(LIBXSMM_BGEMM_MAX_NTHREADS)
 # define LIBXSMM_BGEMM_MAX_NTHREADS 512
 #endif
-#if !defined(LIBXSMM_BGEMM_PREFETCH)
-# define LIBXSMM_BGEMM_PREFETCH
-#endif
 
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
@@ -58,9 +55,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
 
 struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
   union { double d; float s; int w; } alpha, beta;
-#if defined(LIBXSMM_BGEMM_PREFETCH)
   libxsmm_xmmfunction kernel_pf;
-#endif
   libxsmm_xmmfunction kernel;
   void* buffer;
   libxsmm_bgemm_lock* locks;
@@ -76,7 +71,9 @@ struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
 
 LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm_gemm_precision precision,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint bm, libxsmm_blasint bn, libxsmm_blasint bk,
-  const void* alpha, const void* beta, const int* gemm_flags, const libxsmm_bgemm_order* order)
+  const void* alpha, const void* beta, const int* gemm_flags,
+  const libxsmm_gemm_prefetch_type* strategy,
+  const libxsmm_bgemm_order* order)
 {
   libxsmm_bgemm_handle handle, *result = 0;
   libxsmm_gemm_descriptor descriptor = { 0 };
@@ -118,6 +115,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
       handle.mb = m / bm; handle.nb = n / bn; handle.kb = k / bk;
 
       if (0 == (m % bm) && 0 == (n % bn) && 0 == (k % bk)) { /* check for valid block-size */
+        const libxsmm_gemm_prefetch_type prefetch = (0 == strategy ? LIBXSMM_PREFETCH : *strategy);
         const libxsmm_blasint sm = m / handle.mb, sn = n / handle.nb, size = sm * sn;
         handle.b_m1 = 1; handle.b_n1 = 1; handle.b_k1 = 1; handle.b_k2 = 1;
         assert(0 == (m % handle.b_m1) && 0 == (n % handle.b_n1) && 0 == (k % handle.b_k1));
@@ -125,15 +123,17 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
         assert(0 == ((n / handle.b_n1) % bn));
         assert(0 == ((m / handle.b_m1) % bm));
         handle.kernel = libxsmm_xmmdispatch(&descriptor);
-#if defined(LIBXSMM_BGEMM_PREFETCH)
-        descriptor.prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
-        handle.kernel_pf = libxsmm_xmmdispatch(&descriptor);
-#endif
-        if (0 != handle.kernel.smm
-#if defined(LIBXSMM_BGEMM_PREFETCH)
-         && 0 != handle.kernel_pf.smm
-#endif
-        ) { /* TODO: allow NULL-kernels and implement a BLAS fallback */
+        if (LIBXSMM_PREFETCH_NONE != prefetch && LIBXSMM_PREFETCH_SIGONLY != prefetch) {
+          if (LIBXSMM_PREFETCH_AUTO == prefetch) { /* automatically chosen */
+            /* TODO: more sophisticated strategy perhaps according to CPUID */
+            descriptor.prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
+          }
+          else { /* user-defined */
+            descriptor.prefetch = prefetch;
+          }
+          handle.kernel_pf = libxsmm_xmmdispatch(&descriptor);
+        }
+        if (0 != handle.kernel.smm && (LIBXSMM_PREFETCH_NONE == descriptor.prefetch || 0 != handle.kernel_pf.smm)) {
           result = (libxsmm_bgemm_handle*)malloc(sizeof(libxsmm_bgemm_handle));
           handle.buffer = libxsmm_aligned_malloc(LIBXSMM_BGEMM_MAX_NTHREADS * bm * bn * handle.typesize, LIBXSMM_ALIGNMENT);
           handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size * sizeof(libxsmm_bgemm_lock), LIBXSMM_ALIGNMENT);
@@ -146,6 +146,11 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
             *result = handle;
           }
           else {
+            if (0 != libxsmm_verbosity /* library code is expected to be mute */
+             && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+            {
+              fprintf(stderr, "LIBXSMM: BGEMM handle allocation failed!\n");
+            }
             libxsmm_free(handle.buffer);
             libxsmm_free(handle.locks);
             free(result);
