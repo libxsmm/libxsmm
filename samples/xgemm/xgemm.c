@@ -46,6 +46,12 @@
 # define REAL_TYPE double
 #endif
 
+#if !defined(CHECK) && \
+  (!defined(__BLAS) || (0 != __BLAS)) && /* BLAS evailable */ \
+  (LIBXSMM_EQUAL(ELEM_TYPE, float) || LIBXSMM_EQUAL(ELEM_TYPE, double))
+# define CHECK
+#endif
+
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
@@ -95,7 +101,7 @@ int main(int argc, char* argv[])
     REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc(lda * k * sizeof(REAL_TYPE));
     REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldb * n * sizeof(REAL_TYPE));
     REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
-#if !defined(__BLAS) || (0 != __BLAS)
+#if defined(CHECK)
     const char *const env_check = getenv("CHECK");
     const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
     REAL_TYPE* d = 0;
@@ -112,7 +118,7 @@ int main(int argc, char* argv[])
 #endif
     /* warmup OpenMP (populate thread pool) */
     LIBXSMM_YGEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
-#if !defined(__BLAS) || (0 != __BLAS)
+#if defined(CHECK)
     if (0 != d) {
       LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
     }
@@ -147,7 +153,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
       }
     }
-#if !defined(__BLAS) || (0 != __BLAS)
+#if defined(CHECK)
     if (0 != d) { /* validate result against LAPACK/BLAS xGEMM */
       libxsmm_matdiff_info matdiff_info;
       int i; double duration;
