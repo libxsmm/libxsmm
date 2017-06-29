@@ -48,7 +48,7 @@
 
 #if !defined(CHECK) && \
   (!defined(__BLAS) || (0 != __BLAS)) && /* BLAS evailable */ \
-  (LIBXSMM_EQUAL(ELEM_TYPE, float) || LIBXSMM_EQUAL(ELEM_TYPE, double))
+  (LIBXSMM_EQUAL(REAL_TYPE, float) || LIBXSMM_EQUAL(REAL_TYPE, double))
 # define CHECK
 #endif
 

@@ -123,7 +123,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
         assert(0 == ((n / handle.b_n1) % bn));
         assert(0 == ((m / handle.b_m1) % bm));
         handle.kernel = libxsmm_xmmdispatch(&descriptor);
-        if (LIBXSMM_PREFETCH_NONE != prefetch && LIBXSMM_PREFETCH_SIGONLY != prefetch) {
+        if (0 != handle.kernel.smm && LIBXSMM_PREFETCH_NONE != prefetch && LIBXSMM_PREFETCH_SIGONLY != prefetch) {
           if (LIBXSMM_PREFETCH_AUTO == prefetch) { /* automatically chosen */
             /* TODO: more sophisticated strategy perhaps according to CPUID */
             descriptor.prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
