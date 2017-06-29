@@ -184,6 +184,7 @@ int main(int argc, char* argv[])
       libxsmm_bgemm_handle_destroy(handle);
     }
     else {
+      fprintf(stderr, "FAILED to create BGEMM-handle! For details retry with LIBXSMM_VERBOSE=1.\n");
       result = EXIT_FAILURE;
     }
     libxsmm_free(agold);
