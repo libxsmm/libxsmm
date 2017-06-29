@@ -50,14 +50,25 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle libxsmm_bgemm_handle;
 
 LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm_gemm_precision precision,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint bm, libxsmm_blasint bn, libxsmm_blasint bk,
-  const void* alpha, const void* beta, const int* gemm_flags, const libxsmm_bgemm_order* order);
+  /** If alpha is not supplied (NULL), then LIBXSMM_ALPHA is used instead. */ const void* alpha,
+  /** If beta is not supplied (NULL), then LIBXSMM_BETA is used instead. */   const void*  beta,
+  /** See libxsmm_gemm_flags (LIBXSMM_FLAGS is used if NULL is given). */ const int* gemm_flags,
+  /**
+   * See libxsmm_gemm_prefetch_type (LIBXSMM_PREFETCH is used if NULL is given).
+   * In case of LIBXSMM_PREFETCH_AUTO, a strategy is chosen automatically.
+   */
+  const libxsmm_gemm_prefetch_type* strategy,
+  /** See libxsmm_bgemm_order; an order is chosen automatically if NULL is given. */
+  const libxsmm_bgemm_order* order);
 
 LIBXSMM_API void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_handle* handle);
 
-/** Copy-in functions for A, B, and C matrices. A leading dimension is optional and can be NULL. */
+/** Copy-in functions for A, B, and C matrices. A leading dimension for the source buffer is optional and can be NULL. */
 LIBXSMM_API int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 LIBXSMM_API int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 LIBXSMM_API int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
+/** Copy-out function for the C-matrix. A leading dimension for the destination buffer is optional and can be NULL. */
+LIBXSMM_API int libxsmm_bgemm_copyout_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 
 /**
  * Fine grain parallelized block-GEMM (BGEMM), which uses a block structure

@@ -38,9 +38,7 @@ LIBXSMM_VLA_DECL(4, const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB, real_b, (const LI
 LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C, real_c, (LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C*)c, handle->mb, handle->bn, handle->bm);
 
 const LIBXSMM_MMFUNCTION_TYPE(LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB) kernel = handle->kernel.LIBXSMM_TPREFIX(LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB, mm);
-#if defined(LIBXSMM_BGEMM_PREFETCH)
 const LIBXSMM_MMFUNCTION_TYPE(LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB) kernel_pf = handle->kernel_pf.LIBXSMM_TPREFIX(LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB, mm);
-#endif
 
 const libxsmm_blasint b_m1 = handle->b_m1;
 const libxsmm_blasint b_n1 = handle->b_n1;
@@ -110,34 +108,37 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
             o_j2 = j2;
           }
         }
-        for (_ki = 0, ki = (b_k2 * k2); _ki < b_k2 ; ++_ki, ++ki) {
-#if !defined(LIBXSMM_BGEMM_PREFETCH)
-          kernel(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
-                 &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
-                 &LIBXSMM_VLA_ACCESS(2, l_out, 0, 0, handle->bm));
-#else
-          if (k2 < (nw_k - 2)) { /* avoid prefetching of untouched data */
-            if (LIBXSMM_X86_AVX < libxsmm_target_archid) { /* TODO: check condition; though "__AVX2__" is included in AVX-512 */
-              kernel_pf(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
-                        &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
-                        &LIBXSMM_VLA_ACCESS(2, l_out, 0, 0, handle->bm),
-                        &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->kb, handle->bn, handle->bk),
-                        &LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->mb, handle->bk, handle->bm), NULL);
+        if (0 != kernel_pf) { /* prefetch */
+          for (_ki = 0, ki = (b_k2 * k2); _ki < b_k2 ; ++_ki, ++ki) {
+            if (k2 < (nw_k - 2)) { /* prefetch */
+              if (LIBXSMM_X86_AVX < libxsmm_target_archid) { /* TODO: check condition; though "__AVX2__" is included in AVX-512 */
+                kernel_pf(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
+                          &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
+                          &LIBXSMM_VLA_ACCESS(2, l_out, 0, 0, handle->bm),
+                          &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->kb, handle->bn, handle->bk),
+                          &LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->mb, handle->bk, handle->bm), NULL);
+              }
+              else {
+                kernel_pf(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
+                          &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
+                          &LIBXSMM_VLA_ACCESS(2, l_out, 0, 0, handle->bm),
+                          &LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->mb, handle->bk, handle->bm),
+                          &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->kb, handle->bn, handle->bk), NULL);
+              }
             }
-            else {
-              kernel_pf(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
-                        &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
-                        &LIBXSMM_VLA_ACCESS(2, l_out, 0, 0, handle->bm),
-                        &LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->mb, handle->bk, handle->bm),
-                        &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->kb, handle->bn, handle->bk), NULL);
+            else { /* avoid prefetching OOB */
+              kernel(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
+                     &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
+                     &LIBXSMM_VLA_ACCESS(2, l_out, 0, 0, handle->bm));
             }
           }
-          else {
+        }
+        else { /* no prefetch */
+          for (_ki = 0, ki = (b_k2 * k2); _ki < b_k2 ; ++_ki, ++ki) {
             kernel(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
                    &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
                    &LIBXSMM_VLA_ACCESS(2, l_out, 0, 0, handle->bm));
           }
-#endif
         }
 
         if (w_i == (e - 1)) {
