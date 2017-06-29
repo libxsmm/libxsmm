@@ -63,10 +63,12 @@ LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm_gemm_preci
 
 LIBXSMM_API void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_handle* handle);
 
-/** Copy-in functions for A, B, and C matrices. A leading dimension is optional and can be NULL. */
+/** Copy-in functions for A, B, and C matrices. A leading dimension for the source buffer is optional and can be NULL. */
 LIBXSMM_API int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 LIBXSMM_API int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 LIBXSMM_API int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
+/** Copy-out function for the C-matrix. A leading dimension for the destination buffer is optional and can be NULL. */
+LIBXSMM_API int libxsmm_bgemm_copyout_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 
 /**
  * Fine grain parallelized block-GEMM (BGEMM), which uses a block structure

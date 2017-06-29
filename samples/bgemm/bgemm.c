@@ -73,15 +73,17 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTR
 
 int main(int argc, char* argv[])
 {
-  const libxsmm_blasint m = LIBXSMM_DEFAULT(2048, 1 < argc ? atoi(argv[1]) : 0);
-  const libxsmm_blasint k = LIBXSMM_DEFAULT(m, 3 < argc ? atoi(argv[3]) : 0);
-  const libxsmm_blasint n = LIBXSMM_DEFAULT(k, 2 < argc ? atoi(argv[2]) : 0);
-  const libxsmm_blasint bm = LIBXSMM_DEFAULT(32, 4 < argc ? atoi(argv[4]) : 0);
-  const libxsmm_blasint bk = LIBXSMM_DEFAULT(bm, 6 < argc ? atoi(argv[6]) : 0);
-  const libxsmm_blasint bn = LIBXSMM_DEFAULT(bk, 5 < argc ? atoi(argv[5]) : 0);
-  const libxsmm_bgemm_order order = LIBXSMM_DEFAULT(0, 7 < argc ? atoi(argv[7]) : 0);
-  const int nrepeat = LIBXSMM_DEFAULT(100, 8 < argc ? atoi(argv[8]) : 0);
-  const libxsmm_blasint lda = m, ldb = k, ldc = m;
+  const libxsmm_blasint m = (1 < argc ? atoi(argv[1]) : 2048);
+  const libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
+  const libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
+  const libxsmm_blasint bm = (4 < argc ? atoi(argv[4]) : 32);
+  const libxsmm_blasint bk = (6 < argc ? atoi(argv[6]) : bm);
+  const libxsmm_blasint bn = (5 < argc ? atoi(argv[5]) : bk);
+  const libxsmm_bgemm_order order = (libxsmm_bgemm_order)(7 < argc ? atoi(argv[7]) : 0);
+  const int nrepeat = (8 < argc ? atoi(argv[8]) : 100);
+  const libxsmm_blasint lda = (9 < argc ? atoi(argv[9]) : m);
+  const libxsmm_blasint ldb = (10 < argc ? atoi(argv[10]) : k);
+  const libxsmm_blasint ldc = (11 < argc ? atoi(argv[11]) : m);
   const double gflops = 2.0 * m * n * k * 1E-9;
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(&transa, &transb);
@@ -97,12 +99,12 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    REAL_TYPE *const agold = (REAL_TYPE*)libxsmm_malloc(lda * k * sizeof(REAL_TYPE));
-    REAL_TYPE *const bgold = (REAL_TYPE*)libxsmm_malloc(ldb * n * sizeof(REAL_TYPE));
-    REAL_TYPE *const cgold = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
-    REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc(m * k * sizeof(REAL_TYPE));
-    REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(k * n * sizeof(REAL_TYPE));
-    REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
+    REAL_TYPE* agold = (REAL_TYPE*)libxsmm_malloc(lda * k * sizeof(REAL_TYPE));
+    REAL_TYPE* bgold = (REAL_TYPE*)libxsmm_malloc(ldb * n * sizeof(REAL_TYPE));
+    REAL_TYPE* cgold = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
+    REAL_TYPE* a = (REAL_TYPE*)libxsmm_malloc(m * k * sizeof(REAL_TYPE));
+    REAL_TYPE* b = (REAL_TYPE*)libxsmm_malloc(k * n * sizeof(REAL_TYPE));
+    REAL_TYPE* c = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
     libxsmm_bgemm_handle* handle = 0;
     unsigned long long start;
     double duration;
@@ -117,7 +119,7 @@ int main(int argc, char* argv[])
     if (0 != handle) {
       init(42, agold, m, k, lda, 1.0);
       init(24, bgold, k, n, ldb, 1.0);
-      init(0, cgold, m, n, ldc, 1.0);
+      init( 0, cgold, m, n, ldc, 1.0);
       libxsmm_bgemm_copyin_a(handle, agold, &lda, a);
       libxsmm_bgemm_copyin_b(handle, bgold, &ldb, b);
       libxsmm_bgemm_copyin_c(handle, cgold, &ldc, c);
@@ -144,6 +146,7 @@ int main(int argc, char* argv[])
 #if !defined(__BLAS) || (0 != __BLAS)
       if (!LIBXSMM_FEQ(0, check)) { /* validate result against LAPACK/BLAS xGEMM */
         libxsmm_matdiff_info matdiff_info;
+        REAL_TYPE* ctest = 0;
         int i;
         start = libxsmm_timer_tick();
         for (i = 0; i < nrepeat; ++i) {
@@ -153,11 +156,22 @@ int main(int argc, char* argv[])
         if (0 < duration) {
           fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
         }
-        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_GEMM_PRECISION(REAL_TYPE), m, n, cgold, c, 0/*ldref*/, &ldc, &matdiff_info)) {
-          const char *const env_check_tolerance = getenv("CHECK_TOLERANCE");
-          const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
-          fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
-          if (check_tolerance < matdiff_info.norm_l1_max) result = EXIT_FAILURE;
+        /* free memory not needed further; avoid double-free later on */
+        libxsmm_free(agold); agold = 0;
+        libxsmm_free(bgold); bgold = 0;
+        libxsmm_free(a); a = 0;
+        libxsmm_free(b); b = 0;
+        /* allocate C-matrix in regular format, and perform copy-out */
+        ctest = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
+        if (0 != ctest) {
+          libxsmm_bgemm_copyout_c(handle, c, &ldc, ctest);
+          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, cgold, ctest, &ldc, &ldc, &matdiff_info)) {
+            const char *const env_check_tolerance = getenv("CHECK_TOLERANCE");
+            const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
+            fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
+            if (check_tolerance < matdiff_info.norm_l1_max) result = EXIT_FAILURE;
+          }
+          libxsmm_free(ctest);
         }
       }
 #endif

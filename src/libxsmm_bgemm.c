@@ -115,7 +115,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
       handle.mb = m / bm; handle.nb = n / bn; handle.kb = k / bk;
 
       if (0 == (m % bm) && 0 == (n % bn) && 0 == (k % bk)) { /* check for valid block-size */
-        const libxsmm_gemm_prefetch_type prefetch = (0 == strategy ? LIBXSMM_PREFETCH : *strategy);
+        const libxsmm_gemm_prefetch_type prefetch = (0 == strategy ? ((libxsmm_gemm_prefetch_type)LIBXSMM_PREFETCH) : *strategy);
         const libxsmm_blasint sm = m / handle.mb, sn = n / handle.nb, size = sm * sn;
         handle.b_m1 = 1; handle.b_n1 = 1; handle.b_k1 = 1; handle.b_k2 = 1;
         assert(0 == (m % handle.b_m1) && 0 == (n % handle.b_n1) && 0 == (k % handle.b_k1));
@@ -317,6 +317,54 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* ha
       case LIBXSMM_GEMM_PRECISION_I16: {
 #       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE int
 #       include "template/libxsmm_bgemm_copyin_c.tpl.c"
+#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+      } break;
+      default: {
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM: BGEMM precision of matrix A is not supported!\n");
+        }
+        result = EXIT_FAILURE;
+      }
+    }
+  }
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM: BGEMM-handle cannot be NULL!\n");
+    }
+    result = EXIT_FAILURE;
+  }
+  return result;
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyout_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
+{
+  int result = EXIT_SUCCESS;
+  static int error_once = 0;
+
+  if (0 != handle) {
+    const libxsmm_blasint ild = (0 == ld ? handle->m : *ld);
+    /* TODO: support leading dimension for the source buffer */
+    assert(ild >= handle->m); LIBXSMM_UNUSED(ild);
+
+    switch (handle->precision) {
+      case LIBXSMM_GEMM_PRECISION_F64: {
+#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE double
+#       include "template/libxsmm_bgemm_copyout_c.tpl.c"
+#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+      } break;
+      case LIBXSMM_GEMM_PRECISION_F32: {
+#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE float
+#       include "template/libxsmm_bgemm_copyout_c.tpl.c"
+#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+      } break;
+      case LIBXSMM_GEMM_PRECISION_I16: {
+#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE int
+#       include "template/libxsmm_bgemm_copyout_c.tpl.c"
 #       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
       } break;
       default: {
