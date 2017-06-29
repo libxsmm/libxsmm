@@ -153,26 +153,6 @@ void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, int nrows, int 
 }
 
 
-template<typename T>
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE
-double norm_l2(const T *LIBXSMM_RESTRICT expect, const T *LIBXSMM_RESTRICT result, int nrows, int ncols, int ld = 0)
-{
-  const int ldx = 0 == ld ? ncols : ld;
-  double diff = 0;
-  for (int i = 0; i < nrows; ++i) {
-    for (int j = 0; j < ncols; ++j) {
-      const int k = i * ldx + j;
-      const double a = expect[k];
-      const double b = result[k];
-      const double d1 = a - b;
-      const double d2 = d1 * d1;
-      diff = std::max(diff, d2);
-    }
-  }
-  return diff;
-}
-
-
 int main(int argc, char* argv[])
 {
   int result = EXIT_SUCCESS;
@@ -244,7 +224,7 @@ int main(int argc, char* argv[])
       } expect_buffer(csize);
       T *const expect = expect_buffer.expect;
       std::fill_n(expect, csize, zero);
-      double diff = 0;
+      libxsmm_matdiff_info d, diff = { 0 };
 #else
       T *const expect = c;
 #endif
@@ -300,9 +280,10 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
-        const double d = norm_l2(expect, c, m, n);
-        fprintf(stdout, "\tdiff=%f\n", d);
-        diff = std::max(diff, d);
+        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
+          fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
+          libxsmm_matdiff_reduce(&diff, &d);
+        }
 #endif
       }
 
@@ -334,9 +315,10 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
-        const double d = norm_l2(expect, c, m, n);
-        fprintf(stdout, "\tdiff=%f\n", d);
-        diff = std::max(diff, d);
+        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
+          fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
+          libxsmm_matdiff_reduce(&diff, &d);
+        }
 #endif
       }
 
@@ -368,9 +350,10 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
-        const double d = norm_l2(expect, c, m, n);
-        fprintf(stdout, "\tdiff=%f\n", d);
-        diff = std::max(diff, d);
+        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
+          fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
+          libxsmm_matdiff_reduce(&diff, &d);
+        }
 #endif
       }
 
@@ -407,9 +390,10 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
-        const double d = norm_l2(expect, c, m, n);
-        fprintf(stdout, "\tdiff=%f\n", d);
-        diff = std::max(diff, d);
+        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
+          fprintf(stderr, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
+          libxsmm_matdiff_reduce(&diff, &d);
+        }
 #endif
       }
 
@@ -418,7 +402,9 @@ int main(int argc, char* argv[])
       fprintf(stdout, "Finished\n");
 
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
-      if (1.0 < diff) result = EXIT_FAILURE;
+      const char *const env_check_tolerance = getenv("CHECK_TOLERANCE");
+      const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
+      if (check_tolerance < diff.norm_l1_max) result = EXIT_FAILURE;
 #endif
     }
   }

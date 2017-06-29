@@ -117,6 +117,9 @@
 # define LIBXSMM_BLASINT int
 #endif
 
+/** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
+typedef LIBXSMM_BLASINT libxsmm_blasint;
+
 /** MKL_DIRECT_CALL requires to include the MKL interface. */
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # if (0 != LIBXSMM_ILP64 && !defined(MKL_ILP64))
@@ -130,6 +133,7 @@
 #   include <mkl.h>
 # endif
 #endif
+
 /** Fallback prototype functions served by any compliant LAPACK/BLAS. */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(
   const char*, const char*, const LIBXSMM_BLASINT*, const LIBXSMM_BLASINT*, const LIBXSMM_BLASINT*,
@@ -160,6 +164,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(cons
 LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller);
 
 /** Construct symbol name from a given real type name (float, double and short). */
+#define LIBXSMM_DATATYPE(TYPE)          LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_DATATYPE_)
 #define LIBXSMM_GEMM_PRECISION(TYPE)    LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_GEMM_PRECISION_)
 #define LIBXSMM_ORIGINAL_GEMM(TYPE)     LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_BLAS_GEMM_SYMBOL(TYPE)  LIBXSMM_ORIGINAL_GEMM(TYPE)(LIBXSMM_CALLER)
@@ -171,15 +176,14 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(TYPE), _omp)
 
 /** Helper macro consolidating the applicable GEMM arguments into LIBXSMM's flags. */
-#define LIBXSMM_GEMM_DECLARE_FLAGS(FLAGS, TRANSA, TRANSB) \
-  int FLAGS = (0 != (TRANSA) \
-    ? (('N' == *(TRANSA) || 'n' == *(TRANSA)) ? (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_A) \
-                                              : (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_A)) \
-    : LIBXSMM_FLAGS); \
-  FLAGS = (0 != (TRANSB) \
-    ? (('N' == *(TRANSB) || 'n' == *(TRANSB)) ? ((FLAGS) & ~LIBXSMM_GEMM_FLAG_TRANS_B) \
-                                              : ((FLAGS) |  LIBXSMM_GEMM_FLAG_TRANS_B)) \
-    : (FLAGS)); \
+#define LIBXSMM_GEMM_FLAGS(PTRANSA, PTRANSB) ( \
+    (0 != ((const void*)(PTRANSA)) ? (('T' == *((const char*)(PTRANSA)) || 't' == *((const char*)(PTRANSA))) \
+            ? (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_A) \
+            : (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_A)) : LIBXSMM_FLAGS) \
+  & (0 != ((const void*)(PTRANSB)) ? (('T' == *((const char*)(PTRANSB)) || 't' == *((const char*)(PTRANSB))) \
+            ? (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_B) \
+            : (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_B)) : LIBXSMM_FLAGS) \
+)
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (template). */
 #if !defined(__BLAS) || (0 != __BLAS)
@@ -205,7 +209,8 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
     LIBXSMM_UNUSED(LDA); LIBXSMM_UNUSED(LDB); LIBXSMM_UNUSED(LDC); \
     LIBXSMM_UNUSED(M); LIBXSMM_UNUSED(N); LIBXSMM_UNUSED(K); \
     LIBXSMM_UNUSED(A); LIBXSMM_UNUSED(B); LIBXSMM_UNUSED(C); \
-    LIBXSMM_UNUSED(ALPHA); LIBXSMM_UNUSED(BETA)
+    LIBXSMM_UNUSED(ALPHA); LIBXSMM_UNUSED(BETA); \
+    LIBXSMM_UNUSED(FLAGS)
 #endif
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (single-precision). */
@@ -219,7 +224,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
   if (sizeof(double) == sizeof(*(A)) /*always true:*/&& 0 != (LDC)) { \
     LIBXSMM_BLAS_DGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
-  else {\
+  else { \
     LIBXSMM_BLAS_SGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
 }
@@ -262,7 +267,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
   if (sizeof(double) == sizeof(*(A)) /*always true:*/&& 0 != (LDC)) { \
     LIBXSMM_INLINE_DGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
-  else {\
+  else { \
     LIBXSMM_INLINE_SGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
 }
@@ -347,9 +352,17 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
   if (sizeof(double) == sizeof(*(A)) /*always true:*/&& 0 != (LDC)) { \
     LIBXSMM_DGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
-  else {\
+  else { \
     LIBXSMM_SGEMM(FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
+}
+
+/** Call libxsmm_gemm_print using LIBXSMM's GEMM-flags. */
+#define LIBXSMM_GEMM_PRINT(OSTREAM, PRECISION, FLAGS, PM, PN, PK, PALPHA, A, PLDA, B, PLDB, PBETA, C, PLDC) { \
+  const char libxsmm_gemm_print_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T'); \
+  const char libxsmm_gemm_print_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'N' : 'T'); \
+  libxsmm_gemm_print(OSTREAM, PRECISION, &libxsmm_gemm_print_transa_, &libxsmm_gemm_print_transb_, \
+    PM, PN, PK, PALPHA, A, PLDA, B, PLDB, PBETA, C, PLDC); \
 }
 
 /**
@@ -364,5 +377,29 @@ LIBXSMM_API void libxsmm_gemm_print(void* ostream,
   const void* alpha, const void* a, const LIBXSMM_BLASINT* lda,
   const void* b, const LIBXSMM_BLASINT* ldb,
   const void* beta, void* c, const LIBXSMM_BLASINT* ldc);
+
+/** Structure to hold difference information. */
+typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
+  double norm_l1_max;
+  double norm_l1_rel;
+  double norm_l2;
+  double sum_ref;
+  double sum_tst;
+} libxsmm_matdiff_info;
+
+/** Utility function to calculate the difference between two matrices. */
+LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n,
+  const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
+  libxsmm_matdiff_info* info);
+
+LIBXSMM_API_INLINE void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input) {
+  assert(0 != output && 0 != input);
+  if (output->norm_l1_rel < input->norm_l1_rel) {
+    output->norm_l1_max = input->norm_l1_max;
+    output->norm_l1_rel = input->norm_l1_rel;
+    output->sum_ref = input->sum_ref;
+    output->sum_tst = input->sum_tst;
+  }
+}
 
 #endif /*LIBXSMM_FRONTEND_H*/

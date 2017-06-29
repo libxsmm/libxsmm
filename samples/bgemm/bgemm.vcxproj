@@ -27,17 +27,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="headeronly.c" />
-    <ClCompile Include="headeronly_aux.c" />
+    <ClCompile Include="bgemm.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
     <None Include="README.md" />
-    <None Include="test.sh" />
+    <None Include="bgemm.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>headeronly</ProjectName>
-    <ProjectGuid>{88C3F7F5-A3AA-4974-B928-5EE69BC17C31}</ProjectGuid>
+    <ProjectName>bgemm</ProjectName>
+    <ProjectGuid>{C8835447-1AEF-4B54-B8A6-F75D0020B997}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">
@@ -151,7 +150,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'">
     <ClCompile>
       <Optimization>Full</Optimization>
-      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\src;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -164,10 +163,9 @@
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <OpenMPSupport>true</OpenMPSupport>
-      <OpenMP>GenerateParallelCode</OpenMP>
       <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -178,6 +176,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(LIBXSMMROOT)\lib\ia32;$(MKLROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libxsmm.lib;libxsmmext.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -189,7 +189,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\src;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -202,11 +202,10 @@
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <OpenMPSupport>true</OpenMPSupport>
-      <OpenMP>GenerateParallelCode</OpenMP>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -217,6 +216,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(LIBXSMMROOT)\lib\ia32;$(MKLROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmext-$(Configuration).lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <ProjectReference />
@@ -232,7 +233,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Full</Optimization>
-      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\src;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -244,10 +245,9 @@
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <OpenMPSupport>true</OpenMPSupport>
-      <OpenMP>GenerateParallelCode</OpenMP>
       <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -257,6 +257,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(LIBXSMMROOT)\lib\intel64;$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libxsmm.lib;libxsmmext.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -271,7 +273,7 @@
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\src;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -283,11 +285,10 @@
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <OpenMPSupport>true</OpenMPSupport>
-      <OpenMP>GenerateParallelCode</OpenMP>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -297,6 +298,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(LIBXSMMROOT)\lib\intel64;$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmext-$(Configuration).lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <ProjectReference />
@@ -309,17 +312,16 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\src;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <OpenMPSupport>true</OpenMPSupport>
-      <OpenMP>GenerateParallelCode</OpenMP>
       <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -330,6 +332,8 @@
       <LargeAddressAware>true</LargeAddressAware>
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(LIBXSMMROOT)\lib\ia32;$(MKLROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmext-$(Configuration).lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
     <ProjectReference />
@@ -345,17 +349,16 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\src;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(LIBXSMMROOT)\include;$(MKLROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;__MKL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <OpenMPSupport>true</OpenMPSupport>
-      <OpenMP>GenerateParallelCode</OpenMP>
       <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -365,6 +368,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(LIBXSMMROOT)\lib\intel64;$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmext-$(Configuration).lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
     <ProjectReference />

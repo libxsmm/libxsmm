@@ -213,7 +213,15 @@ ifeq (1,$(AVX_STATIC))
 else ifeq (2,$(AVX_STATIC))
   GENTARGET = hsw
 else ifeq (3,$(AVX_STATIC))
-  GENTARGET = knl
+  ifneq (0,$(MIC))
+    ifeq (2,$(MIC))
+      GENTARGET = knm
+    else
+      GENTARGET = knl
+    endif
+  else
+    GENTARGET = skx
+  endif
 else ifneq (0,$(SSE))
   GENTARGET = wsm
 else
@@ -234,6 +242,7 @@ NINDICES = $(words $(INDICES))
 
 HEADERS = $(wildcard $(SRCDIR)/template/*.c) $(wildcard $(SRCDIR)/*.h) \
           $(SRCDIR)/libxsmm_hash.c $(SRCDIR)/libxsmm_gemm_diff.c \
+          $(ROOTDIR)/include/libxsmm_bgemm.h \
           $(ROOTDIR)/include/libxsmm_cpuid.h \
           $(ROOTDIR)/include/libxsmm_dnn.h \
           $(ROOTDIR)/include/libxsmm_frontend.h \
@@ -249,14 +258,14 @@ HEADERS = $(wildcard $(SRCDIR)/template/*.c) $(wildcard $(SRCDIR)/*.h) \
 SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_malloc.c \
           libxsmm_sync.c libxsmm_dump.c libxsmm_timer.c libxsmm_perf.c \
-          libxsmm_gemm.c libxsmm_trans.c libxsmm_spmdm.c libxsmm_fsspmdm.c \
+          libxsmm_gemm.c libxsmm_trans.c libxsmm_bgemm.c \
+          libxsmm_spmdm.c libxsmm_fsspmdm.c \
           libxsmm_dnn.c libxsmm_dnn_handle.c \
           libxsmm_dnn_convolution_forward.c \
           libxsmm_dnn_convolution_backward.c \
           libxsmm_dnn_convolution_weight_update.c \
           libxsmm_dnn_convolution_winograd_forward.c \
           libxsmm_dnn_convolution_winograd_backward.c \
-					libxsmm_blkgemm.c \
           libxsmm_dnn_convolution_winograd_weight_update.o )
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
@@ -274,9 +283,13 @@ OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB
 KRNOBJS_HST  = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 KRNOBJS_MIC  = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 EXTOBJS_HST  = $(BLDDIR)/intel64/libxsmm_ext.o \
-               $(BLDDIR)/intel64/libxsmm_ext_gemm.o $(BLDDIR)/intel64/libxsmm_ext_trans.o
+               $(BLDDIR)/intel64/libxsmm_ext_trans.o \
+               $(BLDDIR)/intel64/libxsmm_ext_bgemm.o \
+               $(BLDDIR)/intel64/libxsmm_ext_gemm.o
 EXTOBJS_MIC  = $(BLDDIR)/mic/libxsmm_ext.o \
-               $(BLDDIR)/mic/libxsmm_ext_gemm.o $(BLDDIR)/mic/libxsmm_ext_trans.o
+               $(BLDDIR)/mic/libxsmm_ext_trans.o \
+               $(BLDDIR)/mic/libxsmm_ext_bgemm.o \
+               $(BLDDIR)/mic/libxsmm_ext_gemm.o
 NOBLAS_HST   = $(BLDDIR)/intel64/libxsmm_noblas.o
 NOBLAS_MIC   = $(BLDDIR)/mic/libxsmm_noblas.o
 
@@ -440,6 +453,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
+	@cp $(ROOTDIR)/include/libxsmm_bgemm.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_dnn.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true

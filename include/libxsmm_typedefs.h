@@ -74,7 +74,7 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_ALIGN_C = 128
 } libxsmm_gemm_flags;
 
-/** Denotes the element/pixel type of an image/channel. */
+/** Denotes the precision/data type of GEMM. */
 typedef enum libxsmm_gemm_precision {
   LIBXSMM_GEMM_PRECISION_F64 = LIBXSMM_DATATYPE_F64,
   LIBXSMM_GEMM_PRECISION_F32 = LIBXSMM_DATATYPE_F32,

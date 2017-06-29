@@ -57,16 +57,15 @@
 #include "libxsmm_typedefs.h"
 #include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
+#include "libxsmm_bgemm.h"
+#include "libxsmm_fsspmdm.h"
 #include "libxsmm_malloc.h"
 #include "libxsmm_spmdm.h"
 #include "libxsmm_cpuid.h"
 #include "libxsmm_timer.h"
 #include "libxsmm_sync.h"
 #include "libxsmm_dnn.h"
-#include "libxsmm_fsspmdm.h"
 
-/** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
-typedef LIBXSMM_BLASINT libxsmm_blasint;
 
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_API void libxsmm_init(void);

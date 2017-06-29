@@ -94,7 +94,7 @@ int main(void)
     const libxsmm_blasint m = r[3*i+0] % max_shape + 1;
     const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
     const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
-    f[i].s = libxsmm_smmdispatch(m, n, k,
+    f[i].s = libxsmm_smmdispatch((int)m, (int)n, (int)k,
       NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
       &flags, &prefetch);
   }
@@ -125,7 +125,8 @@ int main(void)
                 || 0 != memcmp(generated_code.generated_code, f[i].p, generated_code.code_size)))
               {
 #if defined(_DEBUG) || defined(USE_VERBOSE)
-                fprintf(stderr, "Error: the %ix%ix%i-kernel does not match!\n", m, n, k);
+                fprintf(stderr, "Error: the %llix%llix%lli-kernel does not match!\n",
+                  (long long)m, (long long)n, (long long)k);
 #endif
 #if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
 # if (201107 <= _OPENMP)
@@ -138,17 +139,20 @@ int main(void)
               }
 #if defined(_DEBUG) /* warning or an info message is not part of USE_VERBOSE */
               else if (0 != registry_info.nstatic) {
-                fprintf(stderr, "Warning: the %ix%ix%i-kernel may not match!\n", m, n, k);
+                fprintf(stderr, "Warning: the %llix%llix%lli-kernel may not match!\n",
+                  (long long)m, (long long)n, (long long)k);
               }
               else {
-                fprintf(stderr, "(%ix%ix%i-kernel is duplicated)\n", m, n, k);
+                fprintf(stderr, "(%llix%llix%lli-kernel is duplicated)\n",
+                  (long long)m, (long long)n, (long long)k);
               }
 #endif
             }
           }
           else if (0 != LIBXSMM_JIT && 0 == libxsmm_get_dispatch_trylock()) {
 #if defined(_DEBUG) || defined(USE_VERBOSE)
-            fprintf(stderr, "Error: no code generated for %ix%ix%i-kernel!\n", m, n, k);
+            fprintf(stderr, "Error: no code generated for %llix%llix%lli-kernel!\n",
+              (long long)m, (long long)n, (long long)k);
 #endif
 #if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
 # if (201107 <= _OPENMP)
@@ -162,7 +166,8 @@ int main(void)
         }
         else if (0 != LIBXSMM_JIT && 0 == libxsmm_get_dispatch_trylock()) {
 #if defined(_DEBUG) || defined(USE_VERBOSE)
-          fprintf(stderr, "Error: cannot find %ix%ix%i-kernel!\n", m, n, k);
+          fprintf(stderr, "Error: cannot find %llix%llix%lli-kernel!\n",
+            (long long)m, (long long)n, (long long)k);
 #endif
 #if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
 # if (201107 <= _OPENMP)
