@@ -101,8 +101,14 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
         handle.typesize = 4;
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-        handle.alpha.w = (0 != alpha ? *((const int*)alpha) : LIBXSMM_ALPHA);
-        handle.beta.w = (0 != beta ? *((const int*)beta) : LIBXSMM_BETA);
+        /*
+         * Take alpha and beta as short data although wgemm takes full integers.
+         * However, alpha and beta are only JIT-supported for certain value,
+         * and the call-side may not distinct different input and output types
+         * (integer/short), hence it is safer to only read short data.
+         */
+        handle.alpha.w = (0 != alpha ? *((const short*)alpha) : LIBXSMM_ALPHA);
+        handle.beta.w = (0 != beta ? *((const short*)beta) : LIBXSMM_BETA);
         assert(LIBXSMM_FEQ(1, handle.alpha.w) && LIBXSMM_FEQ(1, handle.beta.w)/*TODO*/);
         LIBXSMM_GEMM_DESCRIPTOR(descriptor, precision, handle.flags, bm, bn, bk, bm/*lda*/, bk/*ldb*/, bm/*ldc*/,
           handle.alpha.w, handle.beta.w, LIBXSMM_PREFETCH_NONE);
