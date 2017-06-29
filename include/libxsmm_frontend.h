@@ -175,15 +175,16 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #define LIBXSMM_XGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(TYPE), _omp)
 
-/** Helper macro consolidating the applicable GEMM arguments into LIBXSMM's flags. */
-#define LIBXSMM_GEMM_FLAGS(PTRANSA, PTRANSB) ( /* check for N/n rather than T/t since C/c is also valid! */ \
-    (0 != ((const void*)(PTRANSA)) ? (('N' == *((const char*)(PTRANSA)) || 'n' == *((const char*)(PTRANSA))) \
-            ? (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_A) \
-            : (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_A)) : LIBXSMM_FLAGS) \
-  & (0 != ((const void*)(PTRANSB)) ? (('N' == *((const char*)(PTRANSB)) || 'n' == *((const char*)(PTRANSB))) \
-            ? (LIBXSMM_FLAGS & ~LIBXSMM_GEMM_FLAG_TRANS_B) \
-            : (LIBXSMM_FLAGS |  LIBXSMM_GEMM_FLAG_TRANS_B)) : LIBXSMM_FLAGS) \
-)
+/** Helper macro consolidating the transpose requests into a set of flags. */
+#define LIBXSMM_GEMM_FLAGS(TRANSA, TRANSB) /* check for N/n rather than T/t since C/c is also valid! */ \
+   ((('N' == (TRANSA) || 'n' == (TRANSA)) ? LIBXSMM_GEMM_FLAG_NONE : LIBXSMM_GEMM_FLAG_TRANS_A) \
+  | (('N' == (TRANSB) || 'n' == (TRANSB)) ? LIBXSMM_GEMM_FLAG_NONE : LIBXSMM_GEMM_FLAG_TRANS_B))
+
+/** Helper macro allowing NULL-requests (transposes) supplied by some default. */
+#define LIBXSMM_GEMM_PFLAGS(TRANSA, TRANSB, DEFAULT) LIBXSMM_GEMM_FLAGS( \
+  0 != ((const void*)(TRANSA)) ? *((const char*)(TRANSA)) : (0 == ((DEFAULT) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'), \
+  0 != ((const void*)(TRANSB)) ? *((const char*)(TRANSB)) : (0 == ((DEFAULT) & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T')) \
+  | ((DEFAULT) & ~(LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B))
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (template). */
 #if !defined(__BLAS) || (0 != __BLAS)

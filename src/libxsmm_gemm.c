@@ -258,7 +258,7 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_sgemm(const char* transa, const char* t
   const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
   const libxsmm_blasint ildb = *(ldb ? ldb : LIBXSMM_LD(k, n));
   const libxsmm_blasint ildc = *(ldc ? ldc : LIBXSMM_LD(m, n));
-  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
+  const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
   LIBXSMM_BLAS_SGEMM(flags, *m, *n, *k, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
 }
 
@@ -274,7 +274,7 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_dgemm(const char* transa, const char* t
   const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
   const libxsmm_blasint ildb = *(ldb ? ldb : LIBXSMM_LD(k, n));
   const libxsmm_blasint ildc = *(ldc ? ldc : LIBXSMM_LD(m, n));
-  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
+  const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
   LIBXSMM_BLAS_DGEMM(flags, *m, *n, *k, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
 }
 
@@ -290,7 +290,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
   const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
   const libxsmm_blasint ildb = *(ldb ? ldb : LIBXSMM_LD(k, n));
   const libxsmm_blasint ildc = *(ldc ? ldc : LIBXSMM_LD(m, n));
-  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
+  const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   const char *const check = getenv("LIBXSMM_CHECK");
   float *const d = (float*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
@@ -333,7 +333,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
   const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
   const libxsmm_blasint ildb = *(ldb ? ldb : LIBXSMM_LD(k, n));
   const libxsmm_blasint ildc = *(ldc ? ldc : LIBXSMM_LD(m, n));
-  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
+  const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   const char *const check = getenv("LIBXSMM_CHECK");
   double *const d = (double*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)

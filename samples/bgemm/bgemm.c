@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint ldc = (11 < argc ? atoi(argv[11]) : m);
   const double gflops = 2.0 * m * n * k * 1E-9;
   const char transa = 'N', transb = 'N'; /* no transposes */
-  const int gemm_flags = LIBXSMM_GEMM_FLAGS(&transa, &transb);
+  const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   const REAL_TYPE alpha = 1, beta = 1;
   int result = EXIT_SUCCESS;
 
