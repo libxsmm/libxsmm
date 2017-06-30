@@ -103,7 +103,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
     const char *const check = getenv("LIBXSMM_CHECK");
     float *const d = (float*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
         || 0 == check || 0 == *check || 0 == check[0]) ? 0
-      : malloc((*m) * (*n) * sizeof(float)));
+      : libxsmm_aligned_scratch((*m) * (*n) * sizeof(float), 0/*auto-aligned*/));
     if (0 != d) {
       libxsmm_matcopy(d, c, sizeof(float), *m, *n, ildc, *m, 0/*prefetch*/);
     }
@@ -139,7 +139,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
         fprintf(stderr, " L1max=%f, L1rel=%f%% and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
         LIBXSMM_FUNLOCK(stderr);
       }
-      free(d);
+      libxsmm_free(d);
     }
 #endif
   }
@@ -172,7 +172,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
     const char *const check = getenv("LIBXSMM_CHECK");
     double *const d = (double*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
         || 0 == check || 0 == *check || 0 == check[0]) ? 0
-      : malloc((*m) * (*n) * sizeof(double)));
+      : libxsmm_aligned_scratch((*m) * (*n) * sizeof(double), 0/*auto-aligned*/));
     if (0 != d) {
       libxsmm_matcopy(d, c, sizeof(double), *m, *n, ildc, *m, 0/*prefetch*/);
     }
@@ -208,7 +208,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
         fprintf(stderr, " L1max=%f, L1rel=%f%% and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
         LIBXSMM_FUNLOCK(stderr);
       }
-      free(d);
+      libxsmm_free(d);
     }
 #endif
   }
