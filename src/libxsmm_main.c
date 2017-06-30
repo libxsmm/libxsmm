@@ -1726,96 +1726,29 @@ LIBXSMM_API_DEFINITION int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_bl
     memset(info, 0, sizeof(*info)); /* nullify */
     switch(datatype) {
       case LIBXSMM_DATATYPE_F64: {
-        const double *const real_ref = (const double*)ref, *const real_tst = (const double*)tst;
-        for (i = 0; i < n; ++i) {
-          for (j = 0; j < m; ++j) {
-            const double refi = real_ref[i*ildref+j], tsti = real_tst[i*ildtst+j];
-            const double refa = LIBXSMM_ABS(refi), di = LIBXSMM_ABS(refi - tsti);
-            double v0 = refi - comp_ref, v1 = info->sum_ref + v0;
-            if (info->norm_l1_max < di) info->norm_l1_max = di;
-            comp_ref = (v1 - info->sum_ref) - v0;
-            info->sum_ref = v1;
-            v0 = tsti - comp_tst, v1 = info->sum_tst + v0;
-            comp_tst = (v1 - info->sum_tst) - v0;
-            info->sum_tst = v1;
-            v0 = di * di - comp_d, v1 = info->norm_l2 + v0;
-            comp_d = (v1 - info->norm_l2) - v0;
-            info->norm_l2 = v1;
-            if (0 < refa) {
-              const double norm_l1_rel = di / refa;
-              if (info->norm_l1_rel < norm_l1_rel) info->norm_l1_rel = norm_l1_rel;
-            }
-          }
-        }
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE double
+#       include "template/libxsmm_matdiff.tpl.c"
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
       } break;
       case LIBXSMM_DATATYPE_F32: {
-        const float *const real_ref = (const float*)ref, *const real_tst = (const float*)tst;
-        for (i = 0; i < n; ++i) {
-          for (j = 0; j < m; ++j) {
-            const double refi = real_ref[i*ildref+j], tsti = real_tst[i*ildtst+j];
-            const double refa = LIBXSMM_ABS(refi), di = LIBXSMM_ABS(refi - tsti);
-            double v0 = refi - comp_ref, v1 = info->sum_ref + v0;
-            if (info->norm_l1_max < di) info->norm_l1_max = di;
-            comp_ref = (v1 - info->sum_ref) - v0;
-            info->sum_ref = v1;
-            v0 = tsti - comp_tst, v1 = info->sum_tst + v0;
-            comp_tst = (v1 - info->sum_tst) - v0;
-            info->sum_tst = v1;
-            v0 = di * di - comp_d, v1 = info->norm_l2 + v0;
-            comp_d = (v1 - info->norm_l2) - v0;
-            info->norm_l2 = v1;
-            if (0 < refa) {
-              const double norm_l1_rel = di / refa;
-              if (info->norm_l1_rel < norm_l1_rel) info->norm_l1_rel = norm_l1_rel;
-            }
-          }
-        }
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE float
+#       include "template/libxsmm_matdiff.tpl.c"
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
+      } break;
+      case LIBXSMM_DATATYPE_I32: {
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE int
+#       include "template/libxsmm_matdiff.tpl.c"
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
       } break;
       case LIBXSMM_DATATYPE_I16: {
-        const short *const real_ref = (const short*)ref, *const real_tst = (const short*)tst;
-        for (i = 0; i < n; ++i) {
-          for (j = 0; j < m; ++j) {
-            const double refi = real_ref[i*ildref+j], tsti = real_tst[i*ildtst+j];
-            const double refa = LIBXSMM_ABS(refi), di = LIBXSMM_ABS(refi - tsti);
-            double v0 = refi - comp_ref, v1 = info->sum_ref + v0;
-            if (info->norm_l1_max < di) info->norm_l1_max = di;
-            comp_ref = (v1 - info->sum_ref) - v0;
-            info->sum_ref = v1;
-            v0 = tsti - comp_tst, v1 = info->sum_tst + v0;
-            comp_tst = (v1 - info->sum_tst) - v0;
-            info->sum_tst = v1;
-            v0 = di * di - comp_d, v1 = info->norm_l2 + v0;
-            comp_d = (v1 - info->norm_l2) - v0;
-            info->norm_l2 = v1;
-            if (0 < refa) {
-              const double norm_l1_rel = di / refa;
-              if (info->norm_l1_rel < norm_l1_rel) info->norm_l1_rel = norm_l1_rel;
-            }
-          }
-        }
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE short
+#       include "template/libxsmm_matdiff.tpl.c"
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
       } break;
       case LIBXSMM_DATATYPE_I8: {
-        const signed char *const real_ref = (const signed char*)ref, *const real_tst = (const signed char*)tst;
-        for (i = 0; i < n; ++i) {
-          for (j = 0; j < m; ++j) {
-            const double refi = real_ref[i*ildref+j], tsti = real_tst[i*ildtst+j];
-            const double refa = LIBXSMM_ABS(refi), di = LIBXSMM_ABS(refi - tsti);
-            double v0 = refi - comp_ref, v1 = info->sum_ref + v0;
-            if (info->norm_l1_max < di) info->norm_l1_max = di;
-            comp_ref = (v1 - info->sum_ref) - v0;
-            info->sum_ref = v1;
-            v0 = tsti - comp_tst, v1 = info->sum_tst + v0;
-            comp_tst = (v1 - info->sum_tst) - v0;
-            info->sum_tst = v1;
-            v0 = di * di - comp_d, v1 = info->norm_l2 + v0;
-            comp_d = (v1 - info->norm_l2) - v0;
-            info->norm_l2 = v1;
-            if (0 < refa) {
-              const double norm_l1_rel = di / refa;
-              if (info->norm_l1_rel < norm_l1_rel) info->norm_l1_rel = norm_l1_rel;
-            }
-          }
-        }
+#       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE signed char
+#       include "template/libxsmm_matdiff.tpl.c"
+#       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
       } break;
       default: {
         static int error_once = 0;
