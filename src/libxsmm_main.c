@@ -1871,7 +1871,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn, c
 #endif
   {
     const libxsmm_gemm_precision gemm_precision = (0 != precision ? *precision : LIBXSMM_GEMM_PRECISION_F64);
-    const int kk = *(0 != k ? k : m), nn = *(0 != n ? n : kk), ;
+    const int kk = *(0 != k ? k : m), nn = (0 != n ? *n : kk);
     switch (gemm_precision) {
       case LIBXSMM_GEMM_PRECISION_F64: {
         *fn = (intptr_t)libxsmm_dmmdispatch(*m, nn, kk, lda, ldb, ldc,
