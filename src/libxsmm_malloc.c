@@ -796,7 +796,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
       }
     }
 #if !defined(LIBXSMM_BUILD)
-    else if ((0 > libxsmm_verbosity || 1 < libxsmm_verbosity) /* library code is expected to be mute */
+    else if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM WARNING: attempt to release memory from non-matching implementation!\n");

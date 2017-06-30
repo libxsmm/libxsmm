@@ -430,9 +430,6 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
         fprintf(stderr, "\nLIBXSMM_VERSION=%s-%s", LIBXSMM_BRANCH, LIBXSMM_VERSION);
       }
-      else {
-        fprintf(stderr, "\n");
-      }
       linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && 0 != target_arch) {
         fprintf(stderr, "\nLIBXSMM_TARGET=%s", target_arch);
@@ -449,7 +446,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       }
       if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info) && 0 < scratch_info.size) {
         fprintf(stderr, "\nScratch: %.f MB", 1.0 * scratch_info.size / (1 << 20));
-        if (1 < libxsmm_verbosity) {
+        if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
           fprintf(stderr, " (mallocs=%lu, pools=%u)\n",
             (unsigned long int)scratch_info.nmallocs,
             scratch_info.npools);
