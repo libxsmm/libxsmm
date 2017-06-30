@@ -66,8 +66,12 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle
       }
 # if defined(LIBXSMM_BGEMM_BARRIER)
       /* make an informed guess about the number of threads per core */
-      if (256 <= nthreads && (LIBXSMM_X86_AVX512_MIC <= libxsmm_target_archid &&
-                              LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid))
+      if (224 <= nthreads
+#if !defined(__MIC__)
+        && LIBXSMM_X86_AVX512_MIC <= libxsmm_target_archid
+        && LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid
+#endif
+        )
       {
         barrier = libxsmm_barrier_create(nthreads / 4, 4);
       }
