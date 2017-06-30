@@ -68,7 +68,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* tran
 #if !defined(NDEBUG) /* library code is expected to be mute */
   static int error_once = 0;
   if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-    fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+    fprintf(stderr, "LIBXSMM ERROR: application must be linked against LAPACK/BLAS!\n");
   }
 #endif
   LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
@@ -89,7 +89,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char* tran
 #if !defined(NDEBUG) /* library code is expected to be mute */
   static int error_once = 0;
   if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-    fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n");
+    fprintf(stderr, "LIBXSMM ERROR: application must be linked against LAPACK/BLAS!\n");
   }
 #endif
   LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);

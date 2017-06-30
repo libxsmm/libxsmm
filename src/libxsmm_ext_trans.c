@@ -113,20 +113,20 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       if (0 == out) {
-        fprintf(stderr, "LIBXSMM: the matcopy input and/or output is NULL!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the matcopy input and/or output is NULL!\n");
       }
       else if (out == in) {
-        fprintf(stderr, "LIBXSMM: output and input of the matcopy must be different!\n");
+        fprintf(stderr, "LIBXSMM ERROR: output and input of the matcopy must be different!\n");
       }
       else if (0 == typesize) {
-        fprintf(stderr, "LIBXSMM: the typesize of the matcopy is zero!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the typesize of the matcopy is zero!\n");
       }
       else if (0 >= m || 0 >= n) {
-        fprintf(stderr, "LIBXSMM: the matrix extent(s) of the matcopy is/are zero or negative!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the matcopy is/are zero or negative!\n");
       }
       else {
         assert(ldi < m || ldo < n);
-        fprintf(stderr, "LIBXSMM: the leading dimension(s) of the matcopy is/are too small!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the leading dimension(s) of the matcopy is/are too small!\n");
       }
     }
     result = EXIT_FAILURE;
@@ -191,7 +191,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM: output and input of the transpose must be different!\n");
+        fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
       }
       result = EXIT_FAILURE;
     }
@@ -201,20 +201,20 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       if (0 == out || 0 == in) {
-        fprintf(stderr, "LIBXSMM: the transpose input and/or output is NULL!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the transpose input and/or output is NULL!\n");
       }
       else if (out == in) {
-        fprintf(stderr, "LIBXSMM: output and input of the transpose must be different!\n");
+        fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
       }
       else if (0 == typesize) {
-        fprintf(stderr, "LIBXSMM: the typesize of the transpose is zero!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the typesize of the transpose is zero!\n");
       }
       else if (0 >= m || 0 >= n) {
-        fprintf(stderr, "LIBXSMM: the matrix extent(s) of the transpose is/are zero or negative!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the transpose is/are zero or negative!\n");
       }
       else {
         assert(ldi < m || ldo < n);
-        fprintf(stderr, "LIBXSMM: the leading dimension(s) of the transpose is/are too small!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the leading dimension(s) of the transpose is/are too small!\n");
       }
     }
     result = EXIT_FAILURE;

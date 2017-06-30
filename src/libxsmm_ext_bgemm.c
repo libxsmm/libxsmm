@@ -106,13 +106,13 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */
           && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: BGEMM matrix operands cannot be NULL!\n");
+      fprintf(stderr, "LIBXSMM ERROR: BGEMM matrix-operands cannot be NULL!\n");
     }
   }
   else if (0 > count && 0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
-    fprintf(stderr, "LIBXSMM: BGEMM count cannot be negative!\n");
+    fprintf(stderr, "LIBXSMM ERROR: BGEMM count-argument cannot be negative!\n");
   }
 }
 

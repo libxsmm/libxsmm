@@ -247,7 +247,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE* loc
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM: allocator setup without malloc or free function!\n");
+        fprintf(stderr, "LIBXSMM ERROR: allocator setup without malloc or free function!\n");
       }
       /* keep any valid (previously instantiated) default allocator */
       if (0 == libxsmm_default_malloc_fn.function || 0 == libxsmm_default_free_fn.function) {
@@ -285,7 +285,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE* loc
   else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: invalid signature used to get the default memory allocator!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid signature used to get the default memory allocator!\n");
     }
     result = EXIT_FAILURE;
   }
@@ -319,7 +319,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE* loc
       && /*warning*/(1 < libxsmm_verbosity || 0 > libxsmm_verbosity)
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: scratch allocator setup without free function!\n");
+      fprintf(stderr, "LIBXSMM WARNING: scratch allocator setup without free function!\n");
     }
     libxsmm_scratch_allocator_context = context;
     libxsmm_scratch_malloc_fn = malloc_fn;
@@ -329,7 +329,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE* loc
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: invalid scratch allocator (default used)!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid scratch allocator (default used)!\n");
     }
     /* keep any valid (previously instantiated) scratch allocator */
     if (0 == libxsmm_scratch_malloc_fn.function) {
@@ -366,7 +366,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE* loc
   else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: invalid signature used to get the scratch memory allocator!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid signature used to get the scratch memory allocator!\n");
     }
     result = EXIT_FAILURE;
   }
@@ -436,7 +436,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_malloc_xinfo(const void* memory, size_t* 
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM: checksum error for memory buffer %p!\n", memory);
+          fprintf(stderr, "LIBXSMM ERROR: checksum error for memory buffer %p!\n", memory);
         }
 #endif
         result = EXIT_FAILURE;
@@ -451,7 +451,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_malloc_xinfo(const void* memory, size_t* 
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: attachment error for memory buffer %p!\n", memory);
+      fprintf(stderr, "LIBXSMM ERROR: attachment error for memory buffer %p!\n", memory);
     }
     result = EXIT_FAILURE;
   }
@@ -710,7 +710,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM: memory allocation error for size %llu with flags=%i!\n",
+          fprintf(stderr, "LIBXSMM ERROR: memory allocation error for size %llu with flags=%i!\n",
             (unsigned long long)alloc_size, flags);
         }
         result = EXIT_FAILURE;
@@ -720,7 +720,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
       if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM: zero-sized memory allocation detected!\n");
+        fprintf(stderr, "LIBXSMM WARNING: zero-sized memory allocation detected!\n");
       }
       *memory = 0;
     }
@@ -773,7 +773,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
              && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
             {
               const char *const error_message = strerror(errno);
-              fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%llu)!\n",
+              fprintf(stderr, "LIBXSMM ERROR: %s (munmap error #%i for range %p+%llu)!\n",
                 error_message, errno, buffer, (unsigned long long)alloc_size);
             }
             result = EXIT_FAILURE;
@@ -786,7 +786,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
              && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
             {
               const char *const error_message = strerror(errno);
-              fprintf(stderr, "LIBXSMM: %s (munmap error #%i for range %p+%llu)!\n",
+              fprintf(stderr, "LIBXSMM ERROR: %s (munmap error #%i for range %p+%llu)!\n",
                 error_message, errno, reloc, (unsigned long long)alloc_size);
             }
             result = EXIT_FAILURE;
@@ -799,7 +799,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
     else if ((0 > libxsmm_verbosity || 1 < libxsmm_verbosity) /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: attempt to release memory from non-matching implementation!\n");
+      fprintf(stderr, "LIBXSMM WARNING: attempt to release memory from non-matching implementation!\n");
     }
 #endif
   }
@@ -808,7 +808,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: checksum error for memory buffer %p!\n", memory);
+      fprintf(stderr, "LIBXSMM ERROR: checksum error for memory buffer %p!\n", memory);
     }
 #endif
     result = EXIT_FAILURE;
@@ -936,7 +936,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: libxsmm_malloc_attrib failed because NULL cannot be attributed!\n");
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_malloc_attrib failed because NULL cannot be attributed!\n");
     }
     result = EXIT_FAILURE;
   }
@@ -946,7 +946,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: checksum error for %s buffer %p!\n",
+      fprintf(stderr, "LIBXSMM ERROR: checksum error for %s buffer %p!\n",
         0 != (LIBXSMM_MALLOC_FLAG_X & flags) ? "executable" : "memory", *memory);
     }
 #endif
@@ -1059,7 +1059,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
             }
             else { /* fall-back to local allocation due to failed scratch memory allocation */
               if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-                fprintf(stderr, "LIBXSMM: failed to allocate scratch memory!\n");
+                fprintf(stderr, "LIBXSMM ERROR: failed to allocate scratch memory!\n");
               }
               local_size = size;
             }
@@ -1116,7 +1116,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
         /* library code is expected to be mute */0 != libxsmm_verbosity &&
         1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM: scratch memory fall-back failed!\n");
+        fprintf(stderr, "LIBXSMM ERROR: scratch memory fall-back failed!\n");
       }
       LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch_nmallocs, 1, LIBXSMM_ATOMIC_RELAXED);
     }
@@ -1208,7 +1208,7 @@ LIBXSMM_API_DEFINITION void libxsmm_release_scratch(void)
   if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
     libxsmm_scratch_info scratch_info;
     if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info) && 0 < scratch_info.npending) {
-      fprintf(stderr, "LIBXSMM: %lu pending scratch-memory allocations!\n",
+      fprintf(stderr, "LIBXSMM ERROR: %lu pending scratch-memory allocations!\n",
         (unsigned long int)scratch_info.npending);
     }
   }

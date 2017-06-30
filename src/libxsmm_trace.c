@@ -123,7 +123,7 @@ LIBXSMM_API_DEFINITION void internal_delete(void* value)
 #else /* library code is expected to be mute */
   if (0 != munmap(value, LIBXSMM_TRACE_SYMBOLSIZE)) {
     const int error = errno;
-    fprintf(stderr, "LIBXSMM: %s (munmap error #%i at %p)\n",
+    fprintf(stderr, "LIBXSMM ERROR: %s (munmap error #%i at %p)\n",
       strerror(error), error, value);
   }
 #endif
@@ -132,7 +132,7 @@ LIBXSMM_API_DEFINITION void internal_delete(void* value)
   }
 #if !defined(NDEBUG) /* library code is expected to be mute */
   else {
-    fprintf(stderr, "LIBXSMM: invalid file descriptor (%i)\n", fd);
+    fprintf(stderr, "LIBXSMM ERROR: invalid file descriptor (%i)\n", fd);
   }
 #endif
 }
@@ -325,7 +325,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
               }
 #   if !defined(NDEBUG) /* library code is expected to be mute */
               else {
-                fprintf(stderr, "LIBXSMM: failed to get buffer\n");
+                fprintf(stderr, "LIBXSMM ERROR: failed to get buffer\n");
               }
 #   endif
             }
@@ -362,7 +362,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                 }
                 else {
 #   if !defined(NDEBUG) /* library code is expected to be mute */
-                  fprintf(stderr, "LIBXSMM: failed to setup buffer\n");
+                  fprintf(stderr, "LIBXSMM ERROR: failed to setup buffer\n");
 #   endif
                   internal_delete(buffer);
                 }
@@ -370,14 +370,14 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 #   if !defined(NDEBUG)
               else {
                 const int error = errno;
-                fprintf(stderr, "LIBXSMM: %s (mmap allocation error #%i)\n",
+                fprintf(stderr, "LIBXSMM ERROR: %s (mmap allocation error #%i)\n",
                   strerror(error), error);
               }
 #   endif
             }
 #   if !defined(NDEBUG) /* library code is expected to be mute */
             else {
-              fprintf(stderr, "LIBXSMM: failed to setup file descriptor (%i)\n", fd);
+              fprintf(stderr, "LIBXSMM ERROR: failed to setup file descriptor (%i)\n", fd);
             }
 #   endif
           }

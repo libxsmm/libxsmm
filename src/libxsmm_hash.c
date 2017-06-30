@@ -371,7 +371,7 @@ unsigned int libxsmm_crc32_sse4(const void* data, size_t size, unsigned int seed
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: unable to access CRC32 instructions due to the compiler used!\n");
+      fprintf(stderr, "LIBXSMM WARNING: unable to access CRC32 instructions due to the compiler used!\n");
     }
   }
   return libxsmm_crc32_sw(data, size, seed);

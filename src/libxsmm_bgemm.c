@@ -155,7 +155,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
             if (0 != libxsmm_verbosity /* library code is expected to be mute */
              && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
             {
-              fprintf(stderr, "LIBXSMM: BGEMM handle allocation failed!\n");
+              fprintf(stderr, "LIBXSMM ERROR: BGEMM handle allocation failed!\n");
             }
             libxsmm_free(handle.buffer);
             libxsmm_free(handle.locks);
@@ -166,27 +166,27 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
         else if (0 != libxsmm_verbosity /* library code is expected to be mute */
               && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM: BGEMM kernel failed to generate!\n");
+          fprintf(stderr, "LIBXSMM ERROR: BGEMM kernel generation failed!\n");
         }
       }
       else {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM: BGEMM block-size is invalid!\n");
+          fprintf(stderr, "LIBXSMM ERROR: BGEMM block-size is invalid!\n");
         }
       }
     }
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */
           && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: BGEMM precision is not supported!\n");
+      fprintf(stderr, "LIBXSMM ERROR: BGEMM precision is not supported!\n");
     }
   }
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
-    fprintf(stderr, "LIBXSMM: BGEMM arguments for libxsmm_bgemm_handle_create are invalid!\n");
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_bgemm_handle_create!\n");
   }
 
   return result;
@@ -233,7 +233,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* ha
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM: BGEMM precision of matrix A is not supported!\n");
+          fprintf(stderr, "LIBXSMM ERROR: BGEMM precision of matrix A is not supported!\n");
         }
         result = EXIT_FAILURE;
       }
@@ -243,7 +243,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* ha
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: BGEMM-handle cannot be NULL!\n");
+      fprintf(stderr, "LIBXSMM ERROR: BGEMM-handle cannot be NULL!\n");
     }
     result = EXIT_FAILURE;
   }
@@ -281,7 +281,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* ha
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM: BGEMM precision of matrix B is not supported!\n");
+          fprintf(stderr, "LIBXSMM ERROR: BGEMM precision of matrix B is not supported!\n");
         }
         result = EXIT_FAILURE;
       }
@@ -291,7 +291,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* ha
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: BGEMM-handle cannot be NULL!\n");
+      fprintf(stderr, "LIBXSMM ERROR: BGEMM-handle cannot be NULL!\n");
     }
     result = EXIT_FAILURE;
   }
@@ -329,7 +329,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* ha
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM: BGEMM precision of matrix A is not supported!\n");
+          fprintf(stderr, "LIBXSMM ERROR: BGEMM precision of matrix A is not supported!\n");
         }
         result = EXIT_FAILURE;
       }
@@ -339,7 +339,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* ha
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: BGEMM-handle cannot be NULL!\n");
+      fprintf(stderr, "LIBXSMM ERROR: BGEMM-handle cannot be NULL!\n");
     }
     result = EXIT_FAILURE;
   }
@@ -377,7 +377,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyout_c(const libxsmm_bgemm_handle* h
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM: BGEMM precision of matrix A is not supported!\n");
+          fprintf(stderr, "LIBXSMM ERROR: BGEMM precision of matrix A is not supported!\n");
         }
         result = EXIT_FAILURE;
       }
@@ -387,7 +387,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyout_c(const libxsmm_bgemm_handle* h
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: BGEMM-handle cannot be NULL!\n");
+      fprintf(stderr, "LIBXSMM ERROR: BGEMM-handle cannot be NULL!\n");
     }
     result = EXIT_FAILURE;
   }
@@ -468,7 +468,7 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
       default: if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM: BGEMM precision is not supported!\n");
+        fprintf(stderr, "LIBXSMM ERROR: BGEMM precision is not supported!\n");
       }
     }
   }
@@ -476,7 +476,7 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
-    fprintf(stderr, "LIBXSMM: BGEMM arguments for libxsmm_bgemm are invalid!\n");
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_bgemm!\n");
   }
 #endif
 }
