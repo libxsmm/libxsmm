@@ -51,8 +51,7 @@ wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-intel.psmp
 wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-intel.sopt
 wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-intel.ssmp
 cd ../makefiles
-source /opt/intel/compilers_and_libraries_2017.1.132/linux/bin/compilervars.sh intel64
-source /opt/intel/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh intel64
+source /opt/intel/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64
 make ARCH=Linux-x86-64-intel VERSION=psmp AVX=2
 ```
 
@@ -68,7 +67,7 @@ Running the application may go beyond a single node, however for first example t
 
 ```
 mpirun -np 16 \
-  -genv I_MPI_PIN_DOMAIN=auto -genv I_MPI_PIN_ORDER=scatter \
+  -genv I_MPI_PIN_DOMAIN=auto \
   -genv KMP_AFFINITY=scatter,granularity=fine,1 \
   -genv OMP_NUM_THREADS=4 \
   cp2k/exe/Linux-x86-64-intel/cp2k.psmp workload.inp
@@ -120,7 +119,17 @@ If the library needs to be cross-compiled, one may add `--host=x86_64-unknown-li
 
 ### Eigenvalue SoLvers for Petaflop-Applications (ELPA)
 
-Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://github.com/hfp/xconfigure#xconfigure)), which helps to configure common HPC software (and [ELPA](https://github.com/hfp/xconfigure/tree/master/elpa#eigenvalue-solvers-for-petaflop-applications-elpa) in particular) for Intel software development tools. To actually make use of ELPA, the key `ELPAROOT=/path/to/elpa` needs to be supplied when using CP2K/intel's ARCH files (make).
+Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://github.com/hfp/xconfigure#xconfigure)), which helps to configure common HPC software (and [ELPA](https://github.com/hfp/xconfigure/tree/master/elpa#eigenvalue-solvers-for-petaflop-applications-elpa) in particular) for Intel software development tools. To actually make use of ELPA, the key `ELPAROOT=/path/to/elpa` needs to be supplied when using CP2K/intel's ARCH files (make). For the Intel-branch, ELPA-2017.05.001 is already supported:
+
+```
+make ARCH=Linux-x86-64-intel VERSION=psmp ELPA=201705 ELPAROOT=/path/to/elpa/default-arch
+```
+
+At runtime, a build of the Intel-branch supports an environment variable CP2K_ELPA:
+
+* **CP2K_ELPA=-1**: requests ELPA to be enabled, but does not request a particular kernel type (depends on ELPA build-time configuration).
+* **CP2K_ELPA=0**: ELPA is *not* enabled by defaul (only on request via input file); like the non-Intel branch.
+* **CP2K_ELPA=\<not-defined\>**: requests ELPA-kernel according to CPUID (default with the CP2K/Intel-branch).
 
 ### Memory Allocation Wrapper
 
