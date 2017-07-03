@@ -80,6 +80,8 @@ The CP2K/intel branch carries a number of "reconfigurations" and environment var
 * **CP2K_RECONFIGURE**: environment variable for reconfiguring CP2K (default depends on whether the ACCeleration layer is enabled or not). With the ACCeleration layer enabled, CP2K is reconfigured (as if CP2K_RECONFIGURE=1 is set) e.g. an increased number of entries per matrix stack is populated, and otherwise CP2K is not reconfigured. Further, setting CP2K_RECONFIGURE=0 is disabling the code specific to the [Intel branch of CP2K](https://github.com/cp2k/cp2k/tree/intel), and relies on the (optional) LIBXSMM integration into [CP2K 3.0](https://www.cp2k.org/version_history) (and later).
 * **CP2K_STACKSIZE**: environment variable which denotes the number of matrix multiplications which is collected into a single stack. Usually the internal default performs best across a variety of workloads, however depending on the workload a different value can be better. This variable is relatively impactful since the work distribution and balance is affected.
 * **CP2K_HUGEPAGES**: environment variable for disabling (0) huge page based memory allocation, which is enabled by default (if TBBROOT was present at build-time of the application).
+* **CP2K_RMA**: environment variable to enable (1) an experimental Remote Memory Access (RMA) based multiplication algorithm (requires MPI3).
+* **CP2K_SORT**: environment variable to enable (1) an indirect sorting of each multiplication stack according to the C-index (experimental).
 
 ## LIBINT and LIBXC Dependencies
 
@@ -127,9 +129,9 @@ make ARCH=Linux-x86-64-intel VERSION=psmp ELPA=201705 ELPAROOT=/path/to/elpa/def
 
 At runtime, a build of the Intel-branch supports an environment variable CP2K_ELPA:
 
-* **CP2K_ELPA=-1**: requests ELPA to be enabled, but does not request a particular kernel type (depends on ELPA build-time configuration).
-* **CP2K_ELPA=0**: ELPA is *not* enabled by defaul (only on request via input file); like the non-Intel branch.
-* **CP2K_ELPA=\<not-defined\>**: requests ELPA-kernel according to CPUID (default with the CP2K/Intel-branch).
+* **CP2K_ELPA=-1**: requests ELPA to be enabled; the actual kernel type depends on the ELPA configuration.
+* **CP2K_ELPA=0**: ELPA is not enabled by default (only on request via input file); same as non-Intel branch.
+* **CP2K_ELPA**=\<not-defined\>: requests ELPA-kernel according to CPUID (default with CP2K/Intel-branch).
 
 ### Memory Allocation Wrapper
 
