@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
   }
 
   /* defaults */
-  M  = 2048;
+  M = 2048;
   N = 2048;
   K = 2048;
   transA = 'N';

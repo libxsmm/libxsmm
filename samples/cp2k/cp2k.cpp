@@ -166,8 +166,8 @@ int main(int argc, char* argv[])
     const int t = 3 < argc ? (0 < std::atoi(argv[3]) ? std::atoi(argv[3]) : ('+' == *argv[3]
       ? ((CP2K_MIN_NLOCAL) << std::strlen(argv[3])) : ('-' == *argv[3]
       ? ((CP2K_MIN_NLOCAL) >> std::strlen(argv[3])) : -1))) : -1;
-    const int n = 4 < argc ? std::atoi(argv[4]) : m;
     const int k = 5 < argc ? std::atoi(argv[5]) : m;
+    const int n = 4 < argc ? std::atoi(argv[4]) : k;
 
     const int csize = m * n;
     if ((MAX_SIZE) < csize) {

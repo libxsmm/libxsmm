@@ -89,15 +89,15 @@ int main(int argc, char* argv[])
   try {
     typedef REAL_TYPE T;
     const int m = 1 < argc ? std::atoi(argv[1]) : 23;
-    const int n = 2 < argc ? std::atoi(argv[2]) : m;
     const int k = 3 < argc ? std::atoi(argv[3]) : m;
+    const int n = 2 < argc ? std::atoi(argv[2]) : k;
     const unsigned long size = LIBXSMM_DEFAULT(2048/*default: 2 GByte*/,
       4 < argc ? std::strtoul(argv[4], 0, 10) : 0) << 20;
 
     const int asize = m * k, bsize = k * n, csize = m * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
     const int s = LIBXSMM_MAX(size / ((asize + bsize + csize) * sizeof(T)), 1);
-    const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T); // batched
-    const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // streamed, skipping C since it is just in cache
+    const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T); // batched (A, B, and C)
+    const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // omit size of A, B, or C since it is held in cache
     const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0;
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)

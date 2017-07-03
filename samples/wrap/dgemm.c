@@ -68,8 +68,8 @@ int main(int argc, char* argv[])
 {
   int size = 2 == argc ? atoi(argv[1]) : 500;
   const BLASINT_TYPE m = 2 < argc ? atoi(argv[1]) : 23;
-  const BLASINT_TYPE n = 2 < argc ? atoi(argv[2]) : m;
   const BLASINT_TYPE k = 3 < argc ? atoi(argv[3]) : m;
+  const BLASINT_TYPE n = 2 < argc ? atoi(argv[2]) : k;
   const BLASINT_TYPE lda = 4 < argc ? atoi(argv[4]) : m;
   const BLASINT_TYPE ldb = 5 < argc ? atoi(argv[5]) : k;
   const BLASINT_TYPE ldc = 6 < argc ? atoi(argv[6]) : m;
