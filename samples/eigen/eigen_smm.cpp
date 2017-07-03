@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
               LIBXSMM_PREFETCH_A(ai + asize),
               LIBXSMM_PREFETCH_B(bi + bsize),
               LIBXSMM_PREFETCH_C(ci + csize));
-          }         
+          }
         }
         x = std::max(libxsmm_timer_xtick(), x) - x;
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
