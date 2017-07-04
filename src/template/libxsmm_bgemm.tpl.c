@@ -58,14 +58,6 @@ const libxsmm_blasint nw = nw_i * nw_j * nw_k2;
 libxsmm_blasint m, n, k, mb, nb, kb;
 libxsmm_blasint ki, kj, w_i, _ki;
 
-/*
-if (tid == 0) {
-  printf("m:%d n:%d k:%d bm:%d bn:%d bk:%d mb:%d nb:%d kb:%d b_m1:%d b_n1:%d b_k1:%d b_k2:%d\n",
-    handle->m, handle->n, handle->k, handle->bm, handle->bn, handle->bk, 
-    handle->mb, handle->nb, handle->kb, handle->b_m1, handle->b_n1, handle->b_k1, handle->b_k2);
-}
-*/
-
 /* TODO: take transa and transb into account (flags) */
 
 for (ki = 0; ki < handle->bn; ++ki) {
