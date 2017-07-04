@@ -63,7 +63,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original
 
 LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 {
-  /* setup tile sizes according to CPUID or environment (LIBXSMM_GEMM_M, LIBXSMM_GEMM_N, LIBXSMM_GEMM_K) */
+  /* setup tile sizes according to CPUID or environment (LIBXSMM_TGEMM_M, LIBXSMM_TGEMM_N, LIBXSMM_TGEMM_K) */
   const unsigned int tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/][8/*size-range*/] = {
     /* generic (hsw) */
     { { {  25,  50,  69, 169, 169, 169, 169, 169 }, {  37,  98,  78,  39,  39,  39,  39,  39 }, { 100,  81,  55,  37,  37,  37,  37,  37 } },   /* DP */
@@ -75,8 +75,8 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
     { { {  39,  52,  57, 201, 256, 201, 201, 201 }, {  26,  86, 115,  14,  27,  14,  14,  14 }, { 256, 101, 102,  53, 114,  53,  53,  53 } },   /* DP */
       { {  41, 119, 102, 106, 106, 106, 106, 106 }, {  32,  65, 108, 130, 130, 130, 130, 130 }, {  73,  90,  86,  89,  89,  89,  89,  89 } } }  /* SP */
   };
-  const char *const env_m = getenv("LIBXSMM_GEMM_M"), *const env_n = getenv("LIBXSMM_GEMM_N"), *const env_k = getenv("LIBXSMM_GEMM_K");
-  const char *const env_p = getenv("LIBXSMM_GEMM_TILED_PREFETCH"), *const env_w = getenv("LIBXSMM_GEMM_WRAP");
+  const char *const env_m = getenv("LIBXSMM_TGEMM_M"), *const env_n = getenv("LIBXSMM_TGEMM_N"), *const env_k = getenv("LIBXSMM_TGEMM_K");
+  const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH"), *const env_w = getenv("LIBXSMM_GEMM_WRAP");
   const int uid = ((0 == env_p || 0 == *env_p) ? 6/*LIBXSMM_PREFETCH_AL2_AHEAD*/ : atoi(env_p));
   const int gemm_m = ((0 == env_m || 0 == *env_m) ? -1 : atoi(env_m));
   const int gemm_n = ((0 == env_n || 0 == *env_n) ? -1 : atoi(env_n));
@@ -150,6 +150,7 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type 
 LIBXSMM_API_DEFINITION libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid)
 {
   switch (uid) {
+    case  1: return LIBXSMM_PREFETCH_NONE;                /* nopf */
     case  2: return LIBXSMM_PREFETCH_SIGONLY;             /* pfsigonly */
     case  3: return LIBXSMM_PREFETCH_BL2_VIA_C;           /* BL2viaC */
     case  4: return LIBXSMM_PREFETCH_AL2_AHEAD;           /* curAL2 */
@@ -166,7 +167,15 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int 
     case 14: return LIBXSMM_PREFETCH_BL1_CL1;
     case 15: return LIBXSMM_PREFETCH_AL1_CL1;
     case 16: return LIBXSMM_PREFETCH_AL1_BL1_CL1;
-    default: return LIBXSMM_PREFETCH_NONE;
+    default: {
+      if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+        static int error_once = 0;
+        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+          fprintf(stderr, "LIBXSMM WARNING: invalid prefetch strategy requested!\n");
+        }
+      }
+      return LIBXSMM_PREFETCH_NONE;
+    }
   }
 }
 
