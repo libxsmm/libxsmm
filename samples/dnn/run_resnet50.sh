@@ -37,13 +37,14 @@ if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
 fi
 
 if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ -e /proc/cpuinfo ]; then
-  export HT=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
-  export NT=$(${GREP} "physical id" /proc/cpuinfo | ${WC} -l)
+  export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
+  export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)))
+  export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l)
 fi
-if [ "" != "${NT}" ] && [ "" != "${HT}" ]; then
-  export NC=$((NT/HT))
+if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
+  export HT=$((NT/(NC)))
 else
-  export NT=1 HT=1 NC=1
+  export NS=1 NC=1 NT=1 HT=1
 fi
 
 if [[ -z "${OMP_NUM_THREADS}" ]]; then
