@@ -137,7 +137,7 @@ LIBXSMM_API_INLINE void internal_spmdm_allocate_csr_a(libxsmm_spmdm_handle* hand
     *libxsmm_output_csr = libxsmm_output_csr_a;
   }
   else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-    fprintf(stderr, "LIBXSMM: SPMDM CSR scratch memory allocation failed!\n");
+    fprintf(stderr, "LIBXSMM ERROR: SPMDM CSR scratch memory allocation failed!\n");
   }
 
   handle->base_ptr_scratch_A = memory_block;
@@ -159,7 +159,7 @@ LIBXSMM_API_INLINE void internal_spmdm_allocate_scratch(libxsmm_spmdm_handle* ha
   }
   else {
     if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-      fprintf(stderr, "LIBXSMM: SPMDM scratch memory allocation failed!\n");
+      fprintf(stderr, "LIBXSMM ERROR: SPMDM scratch memory allocation failed!\n");
     }
     handle->memory_for_scratch_per_thread = 0;
   }
@@ -549,7 +549,7 @@ LIBXSMM_API_INLINE void internal_spmdm_init_check(int archid)
   {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: missued to enter \"%s\" code path due to the compiler used!\n", libxsmm_get_target_arch());
+      fprintf(stderr, "LIBXSMM ERROR: missed to enter \"%s\" code path due to the compiler used!\n", libxsmm_get_target_arch());
     }
   }
 }
