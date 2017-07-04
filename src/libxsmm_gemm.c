@@ -262,13 +262,11 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_sgemm(const char* transa, const char* t
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
+  const libxsmm_blasint nn = *(n ? n : m), kk = *(k ? k : m), ilda = *(lda ? lda : m), ildb = (ldb ? *ldb : kk), ildc = *(ldc ? ldc : m);
   const float ralpha = (0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA));
   const float rbeta = (0 != beta ? *beta : ((float)LIBXSMM_BETA));
-  const libxsmm_blasint ilda = *(lda ? lda : m);
-  const libxsmm_blasint ildb = *(ldb ? ldb : k);
-  const libxsmm_blasint ildc = *(ldc ? ldc : m);
   const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
-  LIBXSMM_BLAS_SGEMM(flags, *m, *n, *k, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
+  LIBXSMM_BLAS_SGEMM(flags, *m, nn, kk, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
 }
 
 
@@ -278,13 +276,11 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_dgemm(const char* transa, const char* t
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
+  const libxsmm_blasint nn = *(n ? n : m), kk = *(k ? k : m), ilda = *(lda ? lda : m), ildb = (ldb ? *ldb : kk), ildc = *(ldc ? ldc : m);
   const double ralpha = (0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA));
   const double rbeta = (0 != beta ? *beta : ((double)LIBXSMM_BETA));
-  const libxsmm_blasint ilda = *(lda ? lda : m);
-  const libxsmm_blasint ildb = *(ldb ? ldb : k);
-  const libxsmm_blasint ildc = *(ldc ? ldc : m);
   const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
-  LIBXSMM_BLAS_DGEMM(flags, *m, *n, *k, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
+  LIBXSMM_BLAS_DGEMM(flags, *m, nn, kk, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
 }
 
 
@@ -294,32 +290,30 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
+  const libxsmm_blasint nn = *(n ? n : m), kk = *(k ? k : m), ilda = *(lda ? lda : m), ildb = (ldb ? *ldb : kk), ildc = *(ldc ? ldc : m);
   const float ralpha = (0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA));
   const float rbeta = (0 != beta ? *beta : ((float)LIBXSMM_BETA));
-  const libxsmm_blasint ilda = *(lda ? lda : m);
-  const libxsmm_blasint ildb = *(ldb ? ldb : k);
-  const libxsmm_blasint ildc = *(ldc ? ldc : m);
   const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   const char *const check = getenv("LIBXSMM_CHECK");
   float *const d = (float*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
       || 0 == check || 0 == *check || 0 == check[0]) ? 0
-    : libxsmm_aligned_scratch((*m) * (*n) * sizeof(float), 0/*auto-aligned*/));
+    : libxsmm_aligned_scratch((*m) * nn * sizeof(float), 0/*auto-aligned*/));
   if (0 != d) {
     libxsmm_blasint i, j;
-    for (i = 0; i < (*n); ++i) {
+    for (i = 0; i < nn; ++i) {
       for (j = 0; j < (*m); ++j) {
         d[i*(*m)+j] = c[i*ildc+j];
       }
     }
   }
 #endif
-  LIBXSMM_SGEMM(flags, *m, *n, *k, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
+  LIBXSMM_SGEMM(flags, *m, nn, kk, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   if (0 != d) {
     libxsmm_matdiff_info matdiff_info;
     libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
-    if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F32, *m, *n, d, c, m, ldc, &matdiff_info)) {
+    if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F32, *m, nn, d, c, m, ldc, &matdiff_info)) {
       LIBXSMM_FLOCK(stderr);
       libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F32, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
       fprintf(stderr, " L1max=%f, L1rel=%f%% and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
@@ -337,32 +331,30 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
+  const libxsmm_blasint nn = *(n ? n : m), kk = *(k ? k : m), ilda = *(lda ? lda : m), ildb = (ldb ? *ldb : kk), ildc = *(ldc ? ldc : m);
   const double ralpha = (0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA));
   const double rbeta = (0 != beta ? *beta : ((double)LIBXSMM_BETA));
-  const libxsmm_blasint ilda = *(lda ? lda : m);
-  const libxsmm_blasint ildb = *(ldb ? ldb : k);
-  const libxsmm_blasint ildc = *(ldc ? ldc : m);
   const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   const char *const check = getenv("LIBXSMM_CHECK");
   double *const d = (double*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
       || 0 == check || 0 == *check || 0 == check[0]) ? 0
-    : libxsmm_aligned_scratch((*m) * (*n) * sizeof(double), 0/*auto-aligned*/));
+    : libxsmm_aligned_scratch((*m) * nn * sizeof(double), 0/*auto-aligned*/));
   if (0 != d) {
     libxsmm_blasint i, j;
-    for (i = 0; i < (*n); ++i) {
+    for (i = 0; i < nn; ++i) {
       for (j = 0; j < (*m); ++j) {
         d[i*(*m)+j] = c[i*ildc+j];
       }
     }
   }
 #endif
-  LIBXSMM_DGEMM(flags, *m, *n, *k, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
+  LIBXSMM_DGEMM(flags, *m, nn, kk, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   if (0 != d) {
     libxsmm_matdiff_info matdiff_info;
     libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
-    if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F64, *m, *n, d, c, m, ldc, &matdiff_info)) {
+    if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F64, *m, nn, d, c, m, ldc, &matdiff_info)) {
       LIBXSMM_FLOCK(stderr);
       libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F64, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
       fprintf(stderr, " L1max=%f, L1rel=%f%% and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);

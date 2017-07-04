@@ -86,29 +86,28 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  const unsigned long long size = 1ULL * (*m) * (*n) * (*k);
+  const libxsmm_blasint nn = *(n ? n : m), kk = *(k ? k : m);
+  const unsigned long long size = 1ULL * (*m) * nn * kk;
   LIBXSMM_INIT
   if (LIBXSMM_MAX_MNK < size) {
     const int index = LIBXSMM_MIN(libxsmm_icbrt(size) >> 10, 7);
     const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][index], (unsigned int)*m);
-    const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][index], (unsigned int)*n);
-    const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][index], (unsigned int)*k);
+    const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][index], (unsigned int)nn);
+    const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][index], (unsigned int)kk);
     const float ralpha = (0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA));
     const float rbeta = (0 != beta ? *beta : ((float)LIBXSMM_BETA));
-    const libxsmm_blasint ilda = *(lda ? lda : m);
-    const libxsmm_blasint ildb = *(ldb ? ldb : k);
-    const libxsmm_blasint ildc = *(ldc ? ldc : m);
+    const libxsmm_blasint ilda = *(lda ? lda : m), ildb = (ldb ? *ldb : kk), ildc = *(ldc ? ldc : m);
     const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
     const char *const check = getenv("LIBXSMM_CHECK");
     float *const d = (float*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
         || 0 == check || 0 == *check || 0 == check[0]) ? 0
-      : libxsmm_aligned_scratch((*m) * (*n) * sizeof(float), 0/*auto-aligned*/));
+      : libxsmm_aligned_scratch((*m) * nn * sizeof(float), 0/*auto-aligned*/));
     if (0 != d) {
-      libxsmm_matcopy(d, c, sizeof(float), *m, *n, ildc, *m, 0/*prefetch*/);
+      libxsmm_matcopy(d, c, sizeof(float), *m, nn, ildc, *m, 0/*prefetch*/);
     }
 #endif
-    assert((0 < tm || 0 == *m) && (0 < tn || 0 == *n) && (0 < tk || 0 == *k) && 0 < libxsmm_nt);
+    assert((0 < tm || 0 == *m) && (0 < tn || 0 == nn) && (0 < tk || 0 == kk) && 0 < libxsmm_nt);
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
     if (0 == omp_get_active_level())
 #endif
@@ -116,7 +115,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        float, flags, tm, tn, tk, *m, *n, *k,
+        float, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
 #if defined(LIBXSMM_EXT_TASKS)
@@ -125,7 +124,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
         if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        float, flags, tm, tn, tk, *m, *n, *k,
+        float, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
 #endif
@@ -133,7 +132,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
     if (0 != d) {
       libxsmm_matdiff_info matdiff_info;
       libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
-      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F32, *m, *n, d, c, m, ldc, &matdiff_info)) {
+      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F32, *m, nn, d, c, m, ldc, &matdiff_info)) {
         LIBXSMM_FLOCK(stderr);
         libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F32, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
         fprintf(stderr, " L1max=%f, L1rel=%f%% and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
@@ -155,29 +154,28 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  const unsigned long long size = 1ULL * (*m) * (*n) * (*k);
+  const libxsmm_blasint nn = *(n ? n : m), kk = *(k ? k : m);
+  const unsigned long long size = 1ULL * (*m) * nn * kk;
   LIBXSMM_INIT
   if (LIBXSMM_MAX_MNK < size) {
     const int index = LIBXSMM_MIN(libxsmm_icbrt(size) >> 10, 7);
     const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][index], (unsigned int)*m);
-    const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][index], (unsigned int)*n);
-    const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][index], (unsigned int)*k);
+    const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][index], (unsigned int)nn);
+    const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][index], (unsigned int)kk);
     const double ralpha = (0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA));
     const double rbeta = (0 != beta ? *beta : ((double)LIBXSMM_BETA));
-    const libxsmm_blasint ilda = *(lda ? lda : m);
-    const libxsmm_blasint ildb = *(ldb ? ldb : k);
-    const libxsmm_blasint ildc = *(ldc ? ldc : m);
+    const libxsmm_blasint ilda = *(lda ? lda : m), ildb = (ldb ? *ldb : kk), ildc = *(ldc ? ldc : m);
     const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
     const char *const check = getenv("LIBXSMM_CHECK");
     double *const d = (double*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
         || 0 == check || 0 == *check || 0 == check[0]) ? 0
-      : libxsmm_aligned_scratch((*m) * (*n) * sizeof(double), 0/*auto-aligned*/));
+      : libxsmm_aligned_scratch((*m) * nn * sizeof(double), 0/*auto-aligned*/));
     if (0 != d) {
-      libxsmm_matcopy(d, c, sizeof(double), *m, *n, ildc, *m, 0/*prefetch*/);
+      libxsmm_matcopy(d, c, sizeof(double), *m, nn, ildc, *m, 0/*prefetch*/);
     }
 #endif
-    assert((0 < tm || 0 == *m) && (0 < tn || 0 == *n) && (0 < tk || 0 == *k) && 0 < libxsmm_nt);
+    assert((0 < tm || 0 == *m) && (0 < tn || 0 == nn) && (0 < tk || 0 == kk) && 0 < libxsmm_nt);
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
     if (0 == omp_get_active_level())
 #endif
@@ -185,7 +183,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        double, flags, tm, tn, tk, *m, *n, *k,
+        double, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
 #if defined(LIBXSMM_EXT_TASKS)
@@ -194,7 +192,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
         if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        double, flags, tm, tn, tk, *m, *n, *k,
+        double, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
 #endif
@@ -202,7 +200,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
     if (0 != d) {
       libxsmm_matdiff_info matdiff_info;
       libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
-      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F64, *m, *n, d, c, m, ldc, &matdiff_info)) {
+      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F64, *m, nn, d, c, m, ldc, &matdiff_info)) {
         LIBXSMM_FLOCK(stderr);
         libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F64, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
         fprintf(stderr, " L1max=%f, L1rel=%f%% and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
