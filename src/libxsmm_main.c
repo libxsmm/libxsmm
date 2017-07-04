@@ -156,9 +156,9 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 
 #define INTERNAL_DISPATCH(TYPE, DESC, PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH) { \
   const int internal_dispatch_flags_ = (0 == (PFLAGS) ? LIBXSMM_FLAGS : *(PFLAGS)); \
-  const int internal_dispatch_lda_ = (0 == LIBXSMM_LD(PLDA, PLDB) ? LIBXSMM_LD(M, N) : *LIBXSMM_LD(PLDA, PLDB)); \
-  const int internal_dispatch_ldb_ = (0 == LIBXSMM_LD(PLDB, PLDA) ? (K) : *LIBXSMM_LD(PLDB, PLDA)); \
-  const int internal_dispatch_ldc_ = (0 == (PLDC) ? LIBXSMM_LD(M, N) : *(PLDC)); \
+  const int internal_dispatch_lda_ = (0 == (PLDA) ? (M) : *(PLDA)); \
+  const int internal_dispatch_ldb_ = (0 == (PLDB) ? (K) : *(PLDB)); \
+  const int internal_dispatch_ldc_ = (0 == (PLDC) ? (M) : *(PLDC)); \
   const TYPE internal_dispatch_alpha_ = (TYPE)(0 == (PALPHA) ? (LIBXSMM_ALPHA) : *(PALPHA)); \
   const TYPE internal_dispatch_beta_ = (TYPE)(0 == (PBETA) ? (LIBXSMM_BETA) : *(PBETA)); \
   libxsmm_code_pointer internal_dispatch_result_; \
@@ -167,14 +167,14 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
     LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K)) \
   { \
     const int internal_dispatch_prefetch_ = (0 == (PREFETCH) ? libxsmm_gemm_auto_prefetch : *(PREFETCH)); \
-    LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESC, LIBXSMM_GEMM_PRECISION(TYPE), internal_dispatch_flags_, LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, \
+    LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESC, LIBXSMM_GEMM_PRECISION(TYPE), internal_dispatch_flags_, M, N, K, \
       internal_dispatch_lda_, internal_dispatch_ldb_, internal_dispatch_ldc_, internal_dispatch_alpha_, internal_dispatch_beta_, \
       (0 > internal_dispatch_prefetch_ ? internal_gemm_auto_prefetch : internal_dispatch_prefetch_)); \
     internal_dispatch_result_ = internal_find_code(&(DESC)); \
   } \
   else { /* bypass (not supported) */ \
     /* libxsmm_gemm_print is not suitable here since A, B, and C are unknown at this point */ \
-    libxsmm_update_mmstatistic(LIBXSMM_GEMM_PRECISION(TYPE), LIBXSMM_LD(M, N), LIBXSMM_LD(N, M), K, 1/*try*/, 0); \
+    libxsmm_update_mmstatistic(LIBXSMM_GEMM_PRECISION(TYPE), M, N, K, 1/*try*/, 0); \
     internal_dispatch_result_.pmm = 0; \
   } \
   INTERNAL_DISPATCH_DEBUG(internal_dispatch_result_, TYPE, internal_dispatch_flags_, \

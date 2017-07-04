@@ -297,13 +297,12 @@ public:
     return m_function;
   }
   void operator()(const float* a, const float* b, float* c) const {
-    m_function(LIBXSMM_LD(a, b), LIBXSMM_LD(b, a), c);
+    m_function(a, b, c);
   }
   void operator()(const float* a, const float* b, float* c,
     const float* pa, const float* pb, const float* pc) const
   {
-    m_function(LIBXSMM_LD(a, b), LIBXSMM_LD(b, a), c,
-      LIBXSMM_LD(pa, pb), LIBXSMM_LD(pb, pa), pc);
+    m_function(a, b, c, pa, pb, pc);
   }
 };
 

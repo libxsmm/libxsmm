@@ -264,9 +264,9 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_sgemm(const char* transa, const char* t
 {
   const float ralpha = (0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA));
   const float rbeta = (0 != beta ? *beta : ((float)LIBXSMM_BETA));
-  const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
-  const libxsmm_blasint ildb = *(ldb ? ldb : LIBXSMM_LD(k, n));
-  const libxsmm_blasint ildc = *(ldc ? ldc : LIBXSMM_LD(m, n));
+  const libxsmm_blasint ilda = *(lda ? lda : m);
+  const libxsmm_blasint ildb = *(ldb ? ldb : k);
+  const libxsmm_blasint ildc = *(ldc ? ldc : m);
   const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
   LIBXSMM_BLAS_SGEMM(flags, *m, *n, *k, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
 }
@@ -280,9 +280,9 @@ LIBXSMM_API_DEFINITION void libxsmm_blas_dgemm(const char* transa, const char* t
 {
   const double ralpha = (0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA));
   const double rbeta = (0 != beta ? *beta : ((double)LIBXSMM_BETA));
-  const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
-  const libxsmm_blasint ildb = *(ldb ? ldb : LIBXSMM_LD(k, n));
-  const libxsmm_blasint ildc = *(ldc ? ldc : LIBXSMM_LD(m, n));
+  const libxsmm_blasint ilda = *(lda ? lda : m);
+  const libxsmm_blasint ildb = *(ldb ? ldb : k);
+  const libxsmm_blasint ildc = *(ldc ? ldc : m);
   const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
   LIBXSMM_BLAS_DGEMM(flags, *m, *n, *k, ralpha, a, ilda, b, ildb, rbeta, c, ildc);
 }
@@ -296,9 +296,9 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
 {
   const float ralpha = (0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA));
   const float rbeta = (0 != beta ? *beta : ((float)LIBXSMM_BETA));
-  const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
-  const libxsmm_blasint ildb = *(ldb ? ldb : LIBXSMM_LD(k, n));
-  const libxsmm_blasint ildc = *(ldc ? ldc : LIBXSMM_LD(m, n));
+  const libxsmm_blasint ilda = *(lda ? lda : m);
+  const libxsmm_blasint ildb = *(ldb ? ldb : k);
+  const libxsmm_blasint ildc = *(ldc ? ldc : m);
   const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   const char *const check = getenv("LIBXSMM_CHECK");
@@ -339,9 +339,9 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 {
   const double ralpha = (0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA));
   const double rbeta = (0 != beta ? *beta : ((double)LIBXSMM_BETA));
-  const libxsmm_blasint ilda = *(lda ? lda : LIBXSMM_LD(m, k));
-  const libxsmm_blasint ildb = *(ldb ? ldb : LIBXSMM_LD(k, n));
-  const libxsmm_blasint ildc = *(ldc ? ldc : LIBXSMM_LD(m, n));
+  const libxsmm_blasint ilda = *(lda ? lda : m);
+  const libxsmm_blasint ildb = *(ldb ? ldb : k);
+  const libxsmm_blasint ildc = *(ldc ? ldc : m);
   const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   const char *const check = getenv("LIBXSMM_CHECK");

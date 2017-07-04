@@ -136,8 +136,8 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; ++i) {
           LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
-            LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
+            LIBXSMM_ALPHA, a + i * asize, m, b + i * bsize, k,
+            LIBXSMM_BETA, c + i * csize, m);
         }
         x = std::max(libxsmm_timer_xtick(), x) - x;
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -158,8 +158,8 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; ++i) {
           LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b, LIBXSMM_LD(k, n),
-            LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
+            LIBXSMM_ALPHA, a + i * asize, m, b, k,
+            LIBXSMM_BETA, c + i * csize, m);
         }
         x = std::max(libxsmm_timer_xtick(), x) - x;
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -180,8 +180,8 @@ int main(int argc, char* argv[])
 #endif
         for (int i = 0; i < s; ++i) {
           LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, a, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
-            LIBXSMM_BETA, c + i * csize, LIBXSMM_LD(m, n));
+            LIBXSMM_ALPHA, a, m, b + i * bsize, k,
+            LIBXSMM_BETA, c + i * csize, m);
         }
         x = std::max(libxsmm_timer_xtick(), x) - x;
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
@@ -205,8 +205,8 @@ int main(int argc, char* argv[])
             T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             // do nothing else with tmp; just a benchmark
             LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-              LIBXSMM_ALPHA, a + i * asize, LIBXSMM_LD(m, k), b + i * bsize, LIBXSMM_LD(k, n),
-              LIBXSMM_BETA, tmp, LIBXSMM_LD(m, n));
+              LIBXSMM_ALPHA, a + i * asize, m, b + i * bsize, k,
+              LIBXSMM_BETA, tmp, m);
             c[0] = tmp[0]; // prevents GCC from optimizing-away the entire benchmark
           }
           x = std::max(libxsmm_timer_xtick(), x) - x;
@@ -230,8 +230,8 @@ int main(int argc, char* argv[])
             T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             // do nothing else with tmp; just a benchmark
             LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-              LIBXSMM_ALPHA, a, LIBXSMM_LD(m, k), b, LIBXSMM_LD(k, n),
-              LIBXSMM_BETA, tmp, LIBXSMM_LD(m, n));
+              LIBXSMM_ALPHA, a, m, b, k,
+              LIBXSMM_BETA, tmp, m);
             c[0] = tmp[0]; // prevents GCC from optimizing-away the entire benchmark
           }
           x = std::max(libxsmm_timer_xtick(), x) - x;
