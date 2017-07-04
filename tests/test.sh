@@ -7,8 +7,9 @@ ENV=$(which env)
 
 # NOBLAS tests (which are header-only based) need additional adjustment on the link-line.
 # Currently header-only cases are not tested for not requiring BLAS (e.g., descriptor).
+# Test increases compilation time!
 #
-NOBLAS="diff malloc otrans threadsafety vla"
+#NOBLAS="diff gemmflags hash malloc matcopy otrans threadsafety vla"
 #DISABLED="headeronly"
 
 if [ "Windows_NT" = "${OS}" ]; then
@@ -71,13 +72,13 @@ for TEST in ${TESTS}; do
   NTEST=$((NTEST+1))
 done
 
-# Workaround for ICE in ipa-visibility.c (at least GCC 5.4.0/Cygwin)
-WORKAROUND="DBG=0"
-
 # selected build-only tests that do not run anything
 # below cases do not actually depend on LAPACK/BLAS
 #
 if [ "Windows_NT" != "${OS}" ]; then
+  # Workaround for ICE in ipa-visibility.c (at least GCC 5.4.0/Cygwin)
+  WORKAROUND="DBG=0"
+
   CWD=${PWD}
   cd ${HERE}/build
   for TEST in ${NOBLAS}; do

@@ -112,14 +112,14 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
   LIBXSMM_SNPRINTF(file_path, sizeof(file_path), "%s/.debug/", path_base);
   res = mkdir(file_path, S_IRWXU);
   if (res < 0 && errno != EEXIST) {
-    LIBXSMM_PERF_ERROR("LIBXSMM: failed to create .debug dir\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to create .debug dir\n");
     goto error;
   }
 
   LIBXSMM_SNPRINTF(file_path, sizeof(file_path), "%s/.debug/jit", path_base);
   res = mkdir(file_path, S_IRWXU);
   if (res < 0 && errno != EEXIST) {
-    LIBXSMM_PERF_ERROR("LIBXSMM: failed to create .debug/jit dir\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to create .debug/jit dir\n");
     goto error;
   }
 
@@ -129,7 +129,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
            "%s/.debug/jit/libxsmm-jit-%s.XXXXXX", path_base, date);
   path_base = mkdtemp(file_path);
   if (path_base == NULL) {
-    LIBXSMM_PERF_ERROR("LIBXSMM: failed to create temporary dir\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to create temporary dir\n");
     goto error;
   }
 
@@ -137,18 +137,18 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
 
   fd = open(file_name, O_CREAT|O_TRUNC|O_RDWR, 0600);
   if (fd < 0) {
-    LIBXSMM_PERF_ERROR("LIBXSMM: failed to open file\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to open file\n");
     goto error;
   }
 
   page_size = sysconf(_SC_PAGESIZE);
   if (page_size < 0) {
-    LIBXSMM_PERF_ERROR("LIBXSMM: failed to get page size\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to get page size\n");
     goto error;
   }
   marker_addr = mmap(NULL, page_size, PROT_READ|PROT_EXEC, MAP_PRIVATE, fd, 0);
   if (marker_addr == MAP_FAILED) {
-    LIBXSMM_PERF_ERROR("LIBXSMM: mmap failed.\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM ERROR: mmap failed.\n");
     goto error;
   }
 
@@ -157,7 +157,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
 
   fp = fdopen(fd, "wb+");
   if (fp == NULL) {
-    LIBXSMM_PERF_ERROR("LIBXSMM: fdopen failed.\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM ERROR: fdopen failed.\n");
     goto error;
   }
 
@@ -172,7 +172,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
 
   res = fwrite(&header, sizeof(header), 1, fp);
   if (res != 1) {
-    LIBXSMM_PERF_ERROR("LIBXSMM: failed to write header.\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to write header.\n");
     goto error;
   }
 
@@ -180,7 +180,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
   LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%u.map", pid);
   fp = fopen(file_name, "w+");
   if (fp == NULL) {
-    LIBXSMM_PERF_ERROR("LIBXSMM: failed to open map file\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to open map file\n");
     goto error;
   }
 #endif
@@ -203,7 +203,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_finalize(void)
   struct jitdump_record_header hdr;
 
   if (fp == NULL) {
-    LIBXSMM_PERF_ERROR("LIBXSMM: jit dump file not opened\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM ERROR: jit dump file not opened\n");
     goto error;
   }
 
@@ -214,13 +214,13 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_finalize(void)
   res = fwrite(&hdr, sizeof(hdr), 1, fp);
 
   if (res != 1) {
-    LIBXSMM_PERF_ERROR("LIBXSMM: failed to write JIT_CODE_CLOSE record\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to write JIT_CODE_CLOSE record\n");
     goto error;
   }
 
   page_size = sysconf(_SC_PAGESIZE);
   if (page_size < 0) {
-    LIBXSMM_PERF_ERROR("LIBXSMM: failed to get page_size\n");
+    LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to get page_size\n");
     goto error;
   }
   munmap(marker_addr, page_size);

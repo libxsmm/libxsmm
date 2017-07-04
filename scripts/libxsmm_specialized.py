@@ -77,17 +77,10 @@ if __name__ == "__main__":
                 print("  LIBXSMM_UNUSED(pa);"
                       " LIBXSMM_UNUSED(pb);"
                       " LIBXSMM_UNUSED(pc);")
-            print("  LIBXSMM_INLINE_XGEMM(float, "
-                  "int/*libxsmm_blasint not req.*/,\n"
-                  "    LIBXSMM_FLAGS, "
-                  "LIBXSMM_LD(" + str(m) + ", " + str(n) + "), "
-                  "LIBXSMM_LD(" + str(n) + ", " + str(m) + "), " +
-                  str(k) + ",\n"
-                  "    LIBXSMM_ALPHA, LIBXSMM_LD(a, b), "
-                  "LIBXSMM_LD(" + str(m) + ", " + str(n) + "), "
-                  "LIBXSMM_LD(b, a), " + str(k) + ",\n"
-                  "    LIBXSMM_BETA, c, "
-                  "LIBXSMM_LD(" + str(m) + ", " + str(n) + "));")
+            print("  LIBXSMM_INLINE_XGEMM(float, int, LIBXSMM_FLAGS,\n"
+                  "    " + str(m) + ", " + str(n) + ", " + str(k) + ",\n"
+                  "    LIBXSMM_ALPHA, a, " + str(m) + ", b, " + str(k) + ",\n"
+                  "     LIBXSMM_BETA, c, " + str(m) + ");")
             print("#endif")
             print("}")
         if (1 != precision):
@@ -124,17 +117,10 @@ if __name__ == "__main__":
                 print("  LIBXSMM_UNUSED(pa);"
                       " LIBXSMM_UNUSED(pb);"
                       " LIBXSMM_UNUSED(pc);")
-            print("  LIBXSMM_INLINE_XGEMM(double, "
-                  "int/*libxsmm_blasint not req.*/,\n"
-                  "    LIBXSMM_FLAGS, "
-                  "LIBXSMM_LD(" + str(m) + ", " + str(n) + "), "
-                  "LIBXSMM_LD(" + str(n) + ", " + str(m) + "), " +
-                  str(k) + ",\n"
-                  "    LIBXSMM_ALPHA, LIBXSMM_LD(a, b), "
-                  "LIBXSMM_LD(" + str(m) + ", " + str(n) + "), "
-                  "LIBXSMM_LD(b, a), " + str(k) + ",\n"
-                  "    LIBXSMM_BETA, c, "
-                  "LIBXSMM_LD(" + str(m) + ", " + str(n) + "));")
+            print("  LIBXSMM_INLINE_XGEMM(double, int, LIBXSMM_FLAGS,\n"
+                  "    " + str(m) + ", " + str(n) + ", " + str(k) + ",\n"
+                  "    LIBXSMM_ALPHA, a, " + str(m) + ", b, " + str(k) + ",\n"
+                  "     LIBXSMM_BETA, c, " + str(m) + ");")
             print("#endif")
             print("}")
     else:

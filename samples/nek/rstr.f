@@ -62,17 +62,17 @@
         ELSE
           m = 8
         END IF
-        IF (2 <= argc) THEN
-          CALL GET_COMMAND_ARGUMENT(2, argv)
-          READ(argv, "(I32)") n
-        ELSE
-          n = m
-        END IF
         IF (3 <= argc) THEN
           CALL GET_COMMAND_ARGUMENT(3, argv)
           READ(argv, "(I32)") k
         ELSE
           k = m
+        END IF
+        IF (2 <= argc) THEN
+          CALL GET_COMMAND_ARGUMENT(2, argv)
+          READ(argv, "(I32)") n
+        ELSE
+          n = k
         END IF
         mm = 0
         IF (4 <= argc) THEN

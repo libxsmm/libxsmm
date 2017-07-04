@@ -336,7 +336,7 @@
     if (0 == (ORIGINAL)) { \
       static int libxsmm_gemm_wrapper_error_once_ = 0; \
       if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_gemm_wrapper_error_once_, 1, LIBXSMM_ATOMIC_RELAXED)) { \
-        fprintf(stderr, "LIBXSMM: application must be linked against a LAPACK/BLAS implementation!\n"); \
+        fprintf(stderr, "LIBXSMM ERROR: application must be linked against LAPACK/BLAS!\n"); \
       } \
     } \
   }

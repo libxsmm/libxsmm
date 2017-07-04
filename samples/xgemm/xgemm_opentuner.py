@@ -86,9 +86,9 @@ class XgemmTuner(MeasurementInterface):
         cfg = desired_result.configuration.data
         run_cmd = (
             "CHECK=0"
-            " LIBXSMM_GEMM_M=" + str(self.granularity * cfg["M"]) +
-            " LIBXSMM_GEMM_N=" + str(self.granularity * cfg["N"]) +
-            " LIBXSMM_GEMM_K=" + str(self.granularity * cfg["K"]) +
+            " LIBXSMM_TGEMM_M=" + str(self.granularity * cfg["M"]) +
+            " LIBXSMM_TGEMM_N=" + str(self.granularity * cfg["N"]) +
+            " LIBXSMM_TGEMM_K=" + str(self.granularity * cfg["K"]) +
             " ./xgemm.sh")
 
         dimset = libxsmm_utilities.load_mnklist(self.args.mnk, 0, -1)

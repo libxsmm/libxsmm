@@ -166,8 +166,8 @@ int main(int argc, char* argv[])
     const int t = 3 < argc ? (0 < std::atoi(argv[3]) ? std::atoi(argv[3]) : ('+' == *argv[3]
       ? ((CP2K_MIN_NLOCAL) << std::strlen(argv[3])) : ('-' == *argv[3]
       ? ((CP2K_MIN_NLOCAL) >> std::strlen(argv[3])) : -1))) : -1;
-    const int n = 4 < argc ? std::atoi(argv[4]) : m;
     const int k = 5 < argc ? std::atoi(argv[5]) : m;
+    const int n = 4 < argc ? std::atoi(argv[4]) : k;
 
     const int csize = m * n;
     if ((MAX_SIZE) < csize) {
@@ -265,8 +265,8 @@ int main(int argc, char* argv[])
             const T *const aij = ai + asize, *const bij = bi + bsize;
             // alternatively libxsmm_blas_gemm can be called (see above)
             LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
-              LIBXSMM_ALPHA, ai, LIBXSMM_LD(m, k), bi, LIBXSMM_LD(k, n),
-              LIBXSMM_BETA, tmp, LIBXSMM_LD(m, n));
+              LIBXSMM_ALPHA, ai, m, bi, k,
+              LIBXSMM_BETA, tmp, m);
             ai = aij;
             bi = bij;
           }
@@ -300,8 +300,8 @@ int main(int argc, char* argv[])
           for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
             LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-              LIBXSMM_ALPHA, ai, LIBXSMM_LD(m, k), bi, LIBXSMM_LD(k, n),
-              LIBXSMM_BETA, tmp, LIBXSMM_LD(m, n));
+              LIBXSMM_ALPHA, ai, m, bi, k,
+              LIBXSMM_BETA, tmp, m);
             ai = aij;
             bi = bij;
           }

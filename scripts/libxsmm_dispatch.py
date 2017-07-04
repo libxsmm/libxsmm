@@ -50,10 +50,8 @@ if __name__ == "__main__":
         for mnk in mnklist:
             mstr, nstr, kstr, mnkstr = \
                 str(mnk[0]), str(mnk[1]), str(mnk[2]), "_".join(map(str, mnk))
-            mnksig = ("LIBXSMM_LD(" + mstr + ", " + nstr + "), " +
-                      "LIBXSMM_LD(" + nstr + ", " + mstr + "), " + kstr)
-            ldxsig = ("LIBXSMM_LD(" + mstr + ", " + nstr + "), " +
-                      kstr + ", " + "LIBXSMM_LD(" + mstr + ", " + nstr + ")")
+            mnksig = mstr + ", " + nstr + ", " + kstr
+            ldxsig = mstr + ", " + kstr + ", " + mstr
             # prefer registering double-precision kernels
             # when approaching an exhausted registry
             if (1 != precision):  # only double-precision
@@ -72,10 +70,8 @@ if __name__ == "__main__":
         for mnk in mnklist:
             mstr, nstr, kstr, mnkstr = \
                 str(mnk[0]), str(mnk[1]), str(mnk[2]), "_".join(map(str, mnk))
-            mnksig = ("LIBXSMM_LD(" + mstr + ", " + nstr + "), " +
-                      "LIBXSMM_LD(" + nstr + ", " + mstr + "), " + kstr)
-            ldxsig = ("LIBXSMM_LD(" + mstr + ", " + nstr + "), " +
-                      kstr + ", LIBXSMM_LD(" + mstr + ", " + nstr + ")")
+            mnksig = mstr + ", " + nstr + ", " + kstr
+            ldxsig = mstr + ", " + kstr + ", " + mstr
             # prefer registering double-precision kernels
             # when approaching an exhausted registry
             if (2 != precision):  # only single-precision

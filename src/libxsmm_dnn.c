@@ -2366,7 +2366,7 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_forward(
   else {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: invalid descriptor (forward convolution)!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
     }
   }
 #endif
@@ -2389,7 +2389,7 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_backward(
   else {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: invalid descriptor (backward convolution)!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
     }
   }
 #endif
@@ -2412,7 +2412,7 @@ LIBXSMM_API_DEFINITION libxsmm_sconvfunction libxsmm_create_sconv_update_weights
   else {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: invalid convolution descriptor (weight update)!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
     }
   }
 #endif
@@ -2434,7 +2434,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_forward(
   else {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: invalid descriptor (forward convolution)!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
     }
   }
 #endif
@@ -2457,7 +2457,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_backward(
   else {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: invalid descriptor (backward convolution)!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
     }
   }
 #endif
@@ -2480,7 +2480,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_update_weights(
   else {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: invalid convolution descriptor (weight update)!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
     }
   }
 #endif
@@ -2503,7 +2503,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_wino_forward(
   else {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: invalid descriptor (forward convolution)!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
     }
   }
 #endif
@@ -2526,7 +2526,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_wino_backward(
   else {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: invalid descriptor (backward convolution)!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
     }
   }
 #endif
@@ -2549,7 +2549,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_wino_update_weights(
   else {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: invalid convolution descriptor (weight update)!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
     }
   }
 #endif
