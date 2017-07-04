@@ -50,6 +50,7 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle libxsmm_bgemm_handle;
 
 LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm_gemm_precision precision,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint bm, libxsmm_blasint bn, libxsmm_blasint bk,
+  libxsmm_blasint b_m1, libxsmm_blasint b_n1, libxsmm_blasint b_k1, libxsmm_blasint b_k2,
   /** If alpha is not supplied (NULL), then LIBXSMM_ALPHA is used instead. */ const void* alpha,
   /** If beta is not supplied (NULL), then LIBXSMM_BETA is used instead. */   const void*  beta,
   /** See libxsmm_gemm_flags (LIBXSMM_FLAGS is used if NULL is given). */ const int* gemm_flags,

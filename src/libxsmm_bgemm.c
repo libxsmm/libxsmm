@@ -50,7 +50,7 @@
 
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
-  volatile int instance, pad[16];
+  volatile int instance, var[16], pad[16];
 } libxsmm_bgemm_lock;
 
 struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
@@ -71,6 +71,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
 
 LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm_gemm_precision precision,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint bm, libxsmm_blasint bn, libxsmm_blasint bk,
+  libxsmm_blasint b_m1, libxsmm_blasint b_n1, libxsmm_blasint b_k1, libxsmm_blasint b_k2,
   const void* alpha, const void* beta, const int* gemm_flags,
   const libxsmm_gemm_prefetch_type* strategy,
   const libxsmm_bgemm_order* order)
@@ -117,7 +118,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
       if (0 == (m % bm) && 0 == (n % bn) && 0 == (k % bk)) { /* check for valid block-size */
         const libxsmm_gemm_prefetch_type prefetch = (0 == strategy ? ((libxsmm_gemm_prefetch_type)LIBXSMM_PREFETCH) : *strategy);
         const libxsmm_blasint sm = m / handle.mb, sn = n / handle.nb, size = sm * sn;
-        handle.b_m1 = 1; handle.b_n1 = 1; handle.b_k1 = 1; handle.b_k2 = 1;
+        handle.b_m1 = b_m1; handle.b_n1 = b_n1; handle.b_k1 = b_k1; handle.b_k2 = b_k2;
         assert(0 == (m % handle.b_m1) && 0 == (n % handle.b_n1) && 0 == (k % handle.b_k1));
         assert(0 == ((k / handle.b_k1 / handle.b_k2) % bk));
         assert(0 == ((n / handle.b_n1) % bn));
@@ -428,7 +429,6 @@ LIBXSMM_API_INLINE void internal_bgemm_order(libxsmm_bgemm_order order,
   }
 }
 
-
 LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
   const void* a, const void* b, void* c, int tid, int nthreads)
 {
@@ -474,4 +474,3 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
   }
 #endif
 }
-

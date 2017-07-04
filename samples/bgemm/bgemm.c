@@ -79,7 +79,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTR
 
 int main(int argc, char* argv[])
 {
-  const libxsmm_blasint m = (1 < argc ? atoi(argv[1]) : 2048);
+  const libxsmm_blasint m = (1 < argc ? atoi(argv[1]) : 1024);
   const libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
   const libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
   const libxsmm_blasint bm = (4 < argc ? atoi(argv[4]) : 32);
@@ -87,9 +87,13 @@ int main(int argc, char* argv[])
   const libxsmm_blasint bn = (5 < argc ? atoi(argv[5]) : bk);
   const libxsmm_bgemm_order order = (libxsmm_bgemm_order)(7 < argc ? atoi(argv[7]) : 0);
   const int nrepeat = (8 < argc ? atoi(argv[8]) : 100);
-  const libxsmm_blasint lda = (9 < argc ? atoi(argv[9]) : m);
-  const libxsmm_blasint ldb = (10 < argc ? atoi(argv[10]) : k);
-  const libxsmm_blasint ldc = (11 < argc ? atoi(argv[11]) : m);
+  const libxsmm_blasint b_m1 = (9 < argc ? atoi(argv[9]) : 1);
+  const libxsmm_blasint b_n1  = (10 < argc ? atoi(argv[10]) : 1);
+  const libxsmm_blasint b_k1 = (11 < argc ? atoi(argv[11]) : 1);
+  const libxsmm_blasint b_k2 = (12 < argc ? atoi(argv[12]) : 1);
+  const libxsmm_blasint lda = (13 < argc ? atoi(argv[13]) : m);
+  const libxsmm_blasint ldb = (14 < argc ? atoi(argv[14]) : k);
+  const libxsmm_blasint ldc = (15 < argc ? atoi(argv[15]) : m);
   const double gflops = 2.0 * m * n * k * 1E-9;
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(&transa, &transb);
@@ -97,7 +101,7 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) { /* check command line */
-    printf("\nUsage: ./block_gemm [M] [N] [K] [bm] [bn] [bk] [order] [reps]\n\n");
+    printf("\nUsage: ./bgemm [M] [N] [K] [bm] [bn] [bk] [order] [reps] [b_m1] [b_n1] [b_k1] [b_k2]\n\n");
     return result;
   }
 
@@ -120,7 +124,7 @@ int main(int argc, char* argv[])
 #endif
     const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
     handle = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-      m, n, k, bm, bn, bk, &alpha, &beta, &gemm_flags, &strategy, &order);
+      m, n, k, bm, bn, bk, b_m1, b_n1, b_k1, b_k2, &alpha, &beta, &gemm_flags, &strategy, &order);
 
     if (0 != handle) {
       init(42, agold, m, k, lda, 1.0);

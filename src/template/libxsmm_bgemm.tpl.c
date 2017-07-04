@@ -51,11 +51,20 @@ const libxsmm_blasint kk = handle->k / b_k1;
 
 const libxsmm_blasint nw_i = mm / handle->bm;
 const libxsmm_blasint nw_j = nn / handle->bn;
-libxsmm_blasint nw_k = kk / handle->bk; /* TODO: check */
-const libxsmm_blasint nw = nw_i * nw_j * nw_k;
+const libxsmm_blasint nw_k = kk / handle->bk;
+const libxsmm_blasint nw_k2 = nw_k / handle->b_k2;
+const libxsmm_blasint nw = nw_i * nw_j * nw_k2;
 
 libxsmm_blasint m, n, k, mb, nb, kb;
 libxsmm_blasint ki, kj, w_i, _ki;
+
+/*
+if (tid == 0) {
+  printf("m:%d n:%d k:%d bm:%d bn:%d bk:%d mb:%d nb:%d kb:%d b_m1:%d b_n1:%d b_k1:%d b_k2:%d\n",
+    handle->m, handle->n, handle->k, handle->bm, handle->bn, handle->bk, 
+    handle->mb, handle->nb, handle->kb, handle->b_m1, handle->b_n1, handle->b_k1, handle->b_k2);
+}
+*/
 
 /* TODO: take transa and transb into account (flags) */
 
@@ -72,11 +81,10 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
       const libxsmm_blasint s = (tid * nw) / nthreads;
       const libxsmm_blasint e = ((tid + 1) * nw) / nthreads;
       libxsmm_blasint o_i2 = 0, o_j2 = 0;
-      nw_k /= b_k2; /* TODO: check */
 
       for (w_i = s; w_i < e; ++w_i) {
         libxsmm_blasint i2 = 0, j2 = 0, k2 = 0;
-        internal_bgemm_order(handle->order, w_i, nw_i, nw_j, nw_k, &i2, &j2, &k2);
+        internal_bgemm_order(handle->order, w_i, nw_i, nw_j, nw_k2, &i2, &j2, &k2);
 
         i2 = m + i2;
         j2 = n + j2;
@@ -89,7 +97,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
         else {
           if ((o_i2 != i2) || (o_j2 != j2)) {
             libxsmm_bgemm_lock *const lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
-            LIBXSMM_ATOMIC_SYNC_SET(lock->instance);
+            /*LIBXSMM_ATOMIC_SYNC_SET(lock->instance);*/
             for (ki = 0; ki < handle->bn; ++ki) {
               LIBXSMM_PRAGMA_SIMD
               for (kj = 0; kj < handle->bm; ++kj) {
@@ -97,7 +105,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
                 LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm);
               }
             }
-            LIBXSMM_ATOMIC_SYNC_UNSET(lock->instance);
+            /*LIBXSMM_ATOMIC_SYNC_UNSET(lock->instance);*/
             for (ki = 0; ki < handle->bn; ++ki) {
               LIBXSMM_PRAGMA_SIMD
               for (kj = 0; kj < handle->bm; ++kj) {
@@ -111,20 +119,11 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
         if (0 != kernel_pf) { /* prefetch */
           for (_ki = 0, ki = (b_k2 * k2); _ki < b_k2 ; ++_ki, ++ki) {
             if (k2 < (nw_k - 2)) { /* prefetch */
-              if (LIBXSMM_X86_AVX < libxsmm_target_archid) { /* TODO: check condition; though "__AVX2__" is included in AVX-512 */
-                kernel_pf(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
-                          &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
-                          &LIBXSMM_VLA_ACCESS(2, l_out, 0, 0, handle->bm),
-                          &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->kb, handle->bn, handle->bk),
-                          &LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->mb, handle->bk, handle->bm), NULL);
-              }
-              else {
-                kernel_pf(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
-                          &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
-                          &LIBXSMM_VLA_ACCESS(2, l_out, 0, 0, handle->bm),
-                          &LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->mb, handle->bk, handle->bm),
-                          &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->kb, handle->bn, handle->bk), NULL);
-              }
+              kernel_pf(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
+                        &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
+                        &LIBXSMM_VLA_ACCESS(2, l_out, 0, 0, handle->bm),
+                        &LIBXSMM_VLA_ACCESS(4, real_a, ki+1, i2, 0, 0, handle->mb, handle->bk, handle->bm),
+                        &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki+1, 0, 0, handle->kb, handle->bn, handle->bk), NULL);
             }
             else { /* avoid prefetching OOB */
               kernel(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
@@ -147,7 +146,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
           o_j2 = j2;
 
           lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
-          LIBXSMM_ATOMIC_SYNC_SET(lock->instance);
+          /*LIBXSMM_ATOMIC_SYNC_SET(lock->instance);*/
           for (ki = 0; ki < handle->bn; ++ki) {
             LIBXSMM_PRAGMA_SIMD
             for (kj = 0; kj < handle->bm; ++kj) {
@@ -155,7 +154,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
               LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm);
             }
           }
-          LIBXSMM_ATOMIC_SYNC_UNSET(lock->instance);
+          /*LIBXSMM_ATOMIC_SYNC_UNSET(lock->instance);*/
           for (ki = 0; ki < handle->bn; ++ki) {
             LIBXSMM_PRAGMA_SIMD
             for (kj = 0; kj < handle->bm; ++kj) {
