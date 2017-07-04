@@ -80,8 +80,8 @@ The CP2K/intel branch carries a number of "reconfigurations" and environment var
 * **CP2K_RECONFIGURE**: environment variable for reconfiguring CP2K (default depends on whether the ACCeleration layer is enabled or not). With the ACCeleration layer enabled, CP2K is reconfigured (as if CP2K_RECONFIGURE=1 is set) e.g. an increased number of entries per matrix stack is populated, and otherwise CP2K is not reconfigured. Further, setting CP2K_RECONFIGURE=0 is disabling the code specific to the [Intel branch of CP2K](https://github.com/cp2k/cp2k/tree/intel), and relies on the (optional) LIBXSMM integration into [CP2K 3.0](https://www.cp2k.org/version_history) (and later).
 * **CP2K_STACKSIZE**: environment variable which denotes the number of matrix multiplications which is collected into a single stack. Usually the internal default performs best across a variety of workloads, however depending on the workload a different value can be better. This variable is relatively impactful since the work distribution and balance is affected.
 * **CP2K_HUGEPAGES**: environment variable for disabling (0) huge page based memory allocation, which is enabled by default (if TBBROOT was present at build-time of the application).
-* **CP2K_RMA**: environment variable to enable (1) an experimental Remote Memory Access (RMA) based multiplication algorithm (requires MPI3).
-* **CP2K_SORT**: environment variable to enable (1) an indirect sorting of each multiplication stack according to the C-index (experimental).
+* **CP2K_RMA**: enables (1) an experimental Remote Memory Access (RMA) based multiplication algorithm (requires MPI3).
+* **CP2K_SORT**: enables (1) an indirect sorting of each multiplication stack according to the C-index (experimental).
 
 ## LIBINT and LIBXC Dependencies
 
