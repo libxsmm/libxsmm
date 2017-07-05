@@ -52,7 +52,7 @@ const libxsmm_blasint kk = handle->k / b_k1;
 const libxsmm_blasint nw_i = mm / handle->bm;
 const libxsmm_blasint nw_j = nn / handle->bn;
 const libxsmm_blasint nw_k = kk / handle->bk;
-const libxsmm_blasint nw = nw_i * nw_j * nw_k;
+const libxsmm_blasint nw = nw_i * nw_j;
 
 libxsmm_blasint m, n, k, mb, nb, kb;
 libxsmm_blasint ki, kj, w_i, ki2;
@@ -71,7 +71,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
   for (nb = 0, n = 0; nb < b_n1; ++nb, n += nw_j) {
     for (kb = 0, k = 0; kb < b_k1; ++kb, k += nw_k2) {
       const libxsmm_blasint nw_k3 = nw_k / b_k2;
-      const libxsmm_blasint nw2 = nw_i * nw_j * nw_k3;
+      const libxsmm_blasint nw2 = nw * nw_k3;
       const libxsmm_blasint s = (tid * nw2) / nthreads;
       const libxsmm_blasint e = ((tid + 1) * nw2) / nthreads;
       libxsmm_blasint o_i2 = 0, o_j2 = 0;
