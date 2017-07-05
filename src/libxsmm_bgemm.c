@@ -123,7 +123,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
 
       if (0 == (m % bm) && 0 == (n % bn) && 0 == (k % bk)) { /* check for valid block-size */
         const libxsmm_gemm_prefetch_type prefetch = (0 == strategy ? ((libxsmm_gemm_prefetch_type)LIBXSMM_PREFETCH) : *strategy);
-        const libxsmm_blasint sm = m / handle.mb, sn = n / handle.nb, size = sm * sn;
+        const libxsmm_blasint size = handle.mb * handle.nb;
         assert(0 == (m % b_m1) && 0 == (n % b_n1) && 0 == (k % b_k1));
         assert(0 == ((k / b_k1 / b_k2) % bk));
         assert(0 == ((n / b_n1) % bn));
