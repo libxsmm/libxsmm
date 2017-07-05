@@ -106,7 +106,7 @@ then
 fi
 
 echo "$_bin $_it $_M $_N $_K $_order $_mb $_nb $_kb $_mb1 $_nb1 $_kb1 $_kb2"
-$_bin $_it $_M $_N $_K $_order $_mb $_nb $_kb $_mb1 $_nb1 $_kb1 $_kb2 
+$_bin $_it $_M $_N $_K $_order $_mb $_nb $_kb $_mb1 $_nb1 $_kb1 $_kb2
 echo "--------------------------------------------------------------------------------------"
 }
 
@@ -117,7 +117,7 @@ cat $fn | while read line
 do
   if [ ! -z "$line" ]; then
     echo -n "($idx/$nc)  "
-    run_bsgemm $line 
+    run_bsgemm $line
   fi
   idx=$((idx+1))
 done

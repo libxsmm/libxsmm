@@ -151,4 +151,4 @@ ${NUMACTL}  ./layer_example_${BIN}  ${ITERS}  14  14  16  1024  512 1 1 0 2 ${TY
 ${NUMACTL}  ./layer_example_${BIN}  ${ITERS}  7 7 16  512 512 3 3 1 1 ${TYPE} ${FORMAT} ${PAD}  &&  \
 ${NUMACTL}  ./layer_example_${BIN}  ${ITERS}  7 7 16  512 2048  1 1 0 1 ${TYPE} ${FORMAT} ${PAD}  &&  \
 ${NUMACTL}  ./layer_example_${BIN}  ${ITERS}  14  14  16  1024  2048  1 1 0 2 ${TYPE} ${FORMAT} ${PAD}  &&  \
-${NUMACTL}  ./layer_example_${BIN}  ${ITERS}  7 7 16  2048  512 1 1 0 1 ${TYPE} ${FORMAT} ${PAD}    
+${NUMACTL}  ./layer_example_${BIN}  ${ITERS}  7 7 16  2048  512 1 1 0 1 ${TYPE} ${FORMAT} ${PAD}
