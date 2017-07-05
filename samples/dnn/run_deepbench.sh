@@ -1,5 +1,9 @@
 #!/bin/bash
 
+SORT=$(which sort 2> /dev/null)
+GREP=$(which grep 2> /dev/null)
+WC=$(which wc 2> /dev/null)
+
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
   if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=1000; fi
 else # check
@@ -25,18 +29,29 @@ else
 fi
 
 NUMACTL="${TOOL_COMMAND}"
-CPUFLAGS=$(if [ -e /proc/cpuinfo ]; then grep -m1 flags /proc/cpuinfo | cut -d: -f2-; fi)
-if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
-  if [ "0" != "$((NUMA < $(numactl -H | grep "node  " | tr -s " " | cut -d" " -f2- | wc -w)))" ]; then
+CPUFLAGS=$(if [ "" != "${GREP}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | cut -d: -f2-; fi)
+if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
+  if [ "0" != "$((NUMA < $(numactl -H | ${GREP} "node  " | tr -s " " | cut -d" " -f2- | wc -w)))" ]; then
     NUMACTL="numactl --membind=${NUMA} ${TOOL_COMMAND}"
   fi
+fi
+
+if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ -e /proc/cpuinfo ]; then
+  export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
+  export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)))
+  export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l)
+fi
+if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
+  export HT=$((NT/(NC)))
+else
+  export NS=1 NC=1 NT=1 HT=1
 fi
 
 if [[ -z "${OMP_NUM_THREADS}" ]]; then
   echo "using defaults for OMP settings!"
   export KMP_HW_SUBSET=1T
   export KMP_AFFINITY=compact,granularity=fine
-  export OMP_NUM_THREADS=64
+  export OMP_NUM_THREADS=${NC}
 else
   echo "using environment OMP settings!"
 fi
