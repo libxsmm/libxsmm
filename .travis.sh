@@ -107,7 +107,6 @@ then
   fi
 
   # setup batch execution
-  ERRORINDEX=0
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ]; then
     if [ "" != "${SRUN_CPUS_PER_TASK}" ]; then
       SRUN_CPUS_PER_TASK_FLAG="--cpus-per-task=${SRUN_CPUS_PER_TASK}"
@@ -116,11 +115,7 @@ then
     TESTSCRIPT=$(${MKTEMP} ${HERE}/.libxsmm_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 ${SRUN_FLAGS} ${SRUN_CPUS_PER_TASK_FLAG} \
-      --partition=\${PARTITION} --preserve-env --pty ${TESTSCRIPT}"
-    if [ "" != "${GREP}" ]; then
-      LAUNCH="${LAUNCH} 2\>\&1 \| ${GREP} -v \'srun: error:\'"
-    fi
-    ERRORINDEX=1
+      --partition=\${PARTITION} --preserve-env --pty ${TESTSCRIPT} 2\> /dev/null"
   else # avoid temporary script in case of non-batch execution
     LAUNCH=\${TEST}
   fi
@@ -160,7 +155,7 @@ then
           echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env" >> ${TESTSCRIPT}
         fi
         # record the actual test case
-        echo "${TEST}" >> ${TESTSCRIPT}
+        echo "${TEST} 2>&1" >> ${TESTSCRIPT}
       else # make execution environment locally available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
            [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env ]; \
@@ -172,8 +167,8 @@ then
       # run the prepared test case/script
       eval $(eval echo ${LAUNCH})
 
-      # capture test status (RESULT=$?)
-      RESULT=${PIPESTATUS[${ERRORINDEX}]}
+      # capture test status
+      RESULT=$?
 
       # exit the loop in case of an error
       if [ "0" = "${RESULT}" ]; then
