@@ -52,11 +52,11 @@ const libxsmm_blasint kk = handle->k / b_k1;
 const libxsmm_blasint nw_i = mm / handle->bm;
 const libxsmm_blasint nw_j = nn / handle->bn;
 const libxsmm_blasint nw_k = kk / handle->bk;
-const libxsmm_blasint nw_k2 = nw_k / handle->b_k2;
-const libxsmm_blasint nw = nw_i * nw_j * nw_k2;
+const libxsmm_blasint nw = nw_i * nw_j * nw_k;
 
 libxsmm_blasint m, n, k, mb, nb, kb;
-libxsmm_blasint ki, kj, w_i, _ki;
+libxsmm_blasint ki, kj, w_i, ki2;
+libxsmm_blasint nw_k2 = nw_k;
 
 /* TODO: take transa and transb into account (flags) */
 
@@ -69,25 +69,25 @@ for (ki = 0; ki < handle->bn; ++ki) {
 
 for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
   for (nb = 0, n = 0; nb < b_n1; ++nb, n += nw_j) {
-    for (kb = 0, k = 0; kb < b_k1; ++kb, k += nw_k) {
-      const libxsmm_blasint s = (tid * nw) / nthreads;
-      const libxsmm_blasint e = ((tid + 1) * nw) / nthreads;
+    for (kb = 0, k = 0; kb < b_k1; ++kb, k += nw_k2) {
+      const libxsmm_blasint nw_k3 = nw_k / b_k2;
+      const libxsmm_blasint nw2 = nw_i * nw_j * nw_k3;
+      const libxsmm_blasint s = (tid * nw2) / nthreads;
+      const libxsmm_blasint e = ((tid + 1) * nw2) / nthreads;
       libxsmm_blasint o_i2 = 0, o_j2 = 0;
+      nw_k2 = nw_k3;
 
       for (w_i = s; w_i < e; ++w_i) {
         libxsmm_blasint i2 = 0, j2 = 0, k2 = 0;
         internal_bgemm_order(handle->order, w_i, nw_i, nw_j, nw_k2, &i2, &j2, &k2);
-
-        i2 = m + i2;
-        j2 = n + j2;
-        k2 = k + k2;
+        i2 += m; j2 += n; k2 += k;
 
         if (w_i == s) {
           o_i2 = i2;
           o_j2 = j2;
         }
         else {
-          if ((o_i2 != i2) || (o_j2 != j2)) {
+          if (o_i2 != i2 || o_j2 != j2) {
             libxsmm_bgemm_lock *const lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
             LIBXSMM_ATOMIC_SYNC_SET(lock->instance);
             for (ki = 0; ki < handle->bn; ++ki) {
@@ -109,7 +109,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
           }
         }
         if (0 != kernel_pf) { /* prefetch */
-          for (_ki = 0, ki = (b_k2 * k2); _ki < b_k2 ; ++_ki, ++ki) {
+          for (ki2 = 0, ki = (b_k2 * k2); ki2 < b_k2 ; ++ki2, ++ki) {
             if (k2 < (nw_k - 2)) { /* prefetch */
               kernel_pf(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
                         &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
@@ -125,7 +125,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
           }
         }
         else { /* no prefetch */
-          for (_ki = 0, ki = (b_k2 * k2); _ki < b_k2 ; ++_ki, ++ki) {
+          for (ki2 = 0, ki = (b_k2 * k2); ki2 < b_k2 ; ++ki2, ++ki) {
             kernel(&LIBXSMM_VLA_ACCESS(4, real_a, ki, i2, 0, 0, handle->mb, handle->bk, handle->bm),
                    &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
                    &LIBXSMM_VLA_ACCESS(2, l_out, 0, 0, handle->bm));
