@@ -42,8 +42,8 @@ int oj;
 int oi;
 unsigned int i, j, k, l;
 
-LIBXSMM_VLA_DECL(5, float, input,  (float*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN);
-LIBXSMM_VLA_DECL(5, const float, output, (const float*)handle->reg_output->data, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN);
+LIBXSMM_VLA_DECL(5, float, input,  (float*)handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN);
+LIBXSMM_VLA_DECL(5, const float, output, (const float*)handle->grad_output->data, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN);
 LIBXSMM_VLA_DECL(6, float, weight, (float*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, TDVLEN, TDVLEN);
 /*LIBXSMM_VLA_DECL(2, float, bias, handle->bias->data, TDVLEN);*/
 
@@ -56,8 +56,8 @@ LIBXSMM_VLA_DECL(5, float, Owp, (float*)handle->scratchOw, handle->cwino_bwd.iti
 typedef libxsmm_sconvfunction libxsmm_convfunction;
 libxsmm_convfunction jitted_conv_bp = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
 #endif
-LIBXSMM_ASSUME_ALIGNED(handle->reg_input->data,  64);
-LIBXSMM_ASSUME_ALIGNED(handle->reg_output->data, 64);
+LIBXSMM_ASSUME_ALIGNED(handle->grad_input->data,  64);
+LIBXSMM_ASSUME_ALIGNED(handle->grad_output->data, 64);
 LIBXSMM_ASSUME_ALIGNED(handle->reg_filter->data, 64);
 LIBXSMM_ASSUME_ALIGNED(handle->scratch1, 64);
 LIBXSMM_ASSUME_ALIGNED(handle->scratch3, 64);
