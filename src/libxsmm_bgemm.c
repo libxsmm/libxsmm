@@ -50,7 +50,7 @@
 
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
-  volatile int instance, var[16], pad[16];
+  volatile int instance, pad[16];
 } libxsmm_bgemm_lock;
 
 struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
