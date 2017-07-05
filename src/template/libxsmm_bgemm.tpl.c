@@ -88,8 +88,8 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
         }
         else {
           if ((o_i2 != i2) || (o_j2 != j2)) {
-            /*libxsmm_bgemm_lock *const lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);*/
-            /*LIBXSMM_ATOMIC_SYNC_SET(lock->instance);*/
+            libxsmm_bgemm_lock *const lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
+            LIBXSMM_ATOMIC_SYNC_SET(lock->instance);
             for (ki = 0; ki < handle->bn; ++ki) {
               LIBXSMM_PRAGMA_SIMD
               for (kj = 0; kj < handle->bm; ++kj) {
@@ -97,7 +97,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
                 LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm);
               }
             }
-            /*LIBXSMM_ATOMIC_SYNC_UNSET(lock->instance);*/
+            LIBXSMM_ATOMIC_SYNC_UNSET(lock->instance);
             for (ki = 0; ki < handle->bn; ++ki) {
               LIBXSMM_PRAGMA_SIMD
               for (kj = 0; kj < handle->bm; ++kj) {
@@ -133,12 +133,12 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
         }
 
         if (w_i == (e - 1)) {
-          /*libxsmm_bgemm_lock* lock;*/
+          libxsmm_bgemm_lock* lock;
           o_i2 = i2;
           o_j2 = j2;
 
-          /*lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);*/
-          /*LIBXSMM_ATOMIC_SYNC_SET(lock->instance);*/
+          lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
+          LIBXSMM_ATOMIC_SYNC_SET(lock->instance);
           for (ki = 0; ki < handle->bn; ++ki) {
             LIBXSMM_PRAGMA_SIMD
             for (kj = 0; kj < handle->bm; ++kj) {
@@ -146,7 +146,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
               LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm);
             }
           }
-          /*LIBXSMM_ATOMIC_SYNC_UNSET(lock->instance);*/
+          LIBXSMM_ATOMIC_SYNC_UNSET(lock->instance);
           for (ki = 0; ki < handle->bn; ++ki) {
             LIBXSMM_PRAGMA_SIMD
             for (kj = 0; kj < handle->bm; ++kj) {
