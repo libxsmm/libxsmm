@@ -124,11 +124,11 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm
       if (0 == (m % bm) && 0 == (n % bn) && 0 == (k % bk)) { /* check for valid block-size */
         const libxsmm_gemm_prefetch_type prefetch = (0 == strategy ? ((libxsmm_gemm_prefetch_type)LIBXSMM_PREFETCH) : *strategy);
         const libxsmm_blasint sm = m / handle.mb, sn = n / handle.nb, size = sm * sn;
+        assert(0 == (m % b_m1) && 0 == (n % b_n1) && 0 == (k % b_k1));
+        assert(0 == ((k / b_k1 / b_k2) % bk));
+        assert(0 == ((n / b_n1) % bn));
+        assert(0 == ((m / b_m1) % bm));
         handle.b_m1 = b_m1; handle.b_n1 = b_n1; handle.b_k1 = b_k1; handle.b_k2 = b_k2;
-        assert(0 == (m % handle.b_m1) && 0 == (n % handle.b_n1) && 0 == (k % handle.b_k1));
-        assert(0 == ((k / handle.b_k1 / handle.b_k2) % bk));
-        assert(0 == ((n / handle.b_n1) % bn));
-        assert(0 == ((m / handle.b_m1) % bm));
         handle.kernel = libxsmm_xmmdispatch(&descriptor);
         if (0 != handle.kernel.smm && LIBXSMM_PREFETCH_NONE != prefetch && LIBXSMM_PREFETCH_SIGONLY != prefetch) {
           if (LIBXSMM_PREFETCH_AUTO == prefetch) { /* automatically chosen */
