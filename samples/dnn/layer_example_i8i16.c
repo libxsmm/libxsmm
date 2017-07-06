@@ -571,9 +571,9 @@ int main(int argc, char* argv[])
 
     /* compare */
     libxsmm_matdiff(LIBXSMM_DATATYPE_I8, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0, &norms_fwd);
-    printf("                        One-norm: %f\n", norms_fwd.norm1_abs);
-    printf("                   Infinity-norm: %f\n", norms_fwd.normi_abs);
-    printf("                 Froebenius-norm: %f\n", norms_fwd.normf_abs);
+    printf("           One-norm: %f  (%f%%)\n", norms_fwd.norm1_abs, 100.0 * norms_fwd.norm1_rel);
+    printf("      Infinity-norm: %f  (%f%%)\n", norms_fwd.normi_abs, 100.0 * norms_fwd.normi_rel);
+    printf("    Froebenius-norm: %f  (%f%%)\n", norms_fwd.normf_abs, 100.0 * norms_fwd.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_fwd);
   }
 
@@ -600,9 +600,9 @@ int main(int argc, char* argv[])
 
     /* compare */
     libxsmm_matdiff(LIBXSMM_DATATYPE_I8, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_libxsmm_input, 0, 0, &norms_bwd);
-    printf("                        One-norm: %f\n", norms_bwd.norm1_abs);
-    printf("                   Infinity-norm: %f\n", norms_bwd.normi_abs);
-    printf("                 Froebenius-norm: %f\n", norms_bwd.normf_abs);
+    printf("           One-norm: %f  (%f%%)\n", norms_bwd.norm1_abs, 100.0 * norms_bwd.norm1_rel);
+    printf("      Infinity-norm: %f  (%f%%)\n", norms_bwd.normi_abs, 100.0 * norms_bwd.normi_rel);
+    printf("    Froebenius-norm: %f  (%f%%)\n", norms_bwd.normf_abs, 100.0 * norms_bwd.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_bwd);
   }
 
@@ -695,14 +695,10 @@ int main(int argc, char* argv[])
   libxsmm_free(output_libxsmm);
   libxsmm_free(filter_libxsmm);
 
-  if (0 == LIBXSMM_FEQ(0, check) && check < diff.normf_rel) {
-    const char *const env_check_tolerance = getenv("CHECK_DNN_TOLERANCE");
-    const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
-    if (check_tolerance < diff.normi_abs) {
-      fprintf(stderr, "FAILED: L1abs=%f L1rel=%f L2abs=%f L2rel=%f!\n",
-        diff.normi_abs, diff.normi_rel, diff.normf_abs, diff.normf_rel);
-      exit(EXIT_FAILURE);
-    }
+  if (0 == LIBXSMM_FEQ(0, check) && check < 100.0 * diff.normf_rel) {
+    fprintf(stderr, "FAILED: L1abs=%f L1rel=%f L2abs=%f L2rel=%f!\n",
+      diff.normi_abs, diff.normi_rel, diff.normf_abs, diff.normf_rel);
+    exit(EXIT_FAILURE);
   }
 
   /* some empty lines at the end */
