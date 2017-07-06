@@ -281,7 +281,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
         if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
-          fprintf(stdout, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
+          fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", d.normf_abs, d.normf_rel);
           libxsmm_matdiff_reduce(&diff, &d);
         }
 #endif
@@ -316,7 +316,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
         if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
-          fprintf(stdout, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
+          fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", d.normf_abs, d.normf_rel);
           libxsmm_matdiff_reduce(&diff, &d);
         }
 #endif
@@ -351,7 +351,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
         if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
-          fprintf(stdout, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
+          fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", d.normf_abs, d.normf_rel);
           libxsmm_matdiff_reduce(&diff, &d);
         }
 #endif
@@ -391,7 +391,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
         if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
-          fprintf(stdout, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", d.norm_l1_max, d.norm_l1_rel, d.norm_l2);
+          fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", d.normf_abs, d.normf_rel);
           libxsmm_matdiff_reduce(&diff, &d);
         }
 #endif
@@ -404,7 +404,11 @@ int main(int argc, char* argv[])
 #if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
       const char *const env_check_tolerance = getenv("CHECK_TOLERANCE");
       const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
-      if (check_tolerance < diff.norm_l1_max) result = EXIT_FAILURE;
+      if (check_tolerance < diff.normi_abs) {
+        fprintf(stderr, "FAILED: L1abs=%f L1rel=%f L2abs=%f L2rel=%f!\n",
+          diff.normi_abs, diff.normi_rel, diff.normf_abs, diff.normf_rel);
+        result = EXIT_FAILURE;
+      }
 #endif
     }
   }

@@ -370,13 +370,15 @@ LIBXSMM_API void libxsmm_gemm_print(void* ostream,
   const void* b, const LIBXSMM_BLASINT* ldb,
   const void* beta, void* c, const LIBXSMM_BLASINT* ldc);
 
-/** Structure to hold difference information. */
+/**
+ * Structure of differences with matrix norms according to http://www.netlib.org/lapack/lug/node75.html).
+ * For symmetry and to provide a single relative value per norm, relative norms are calculated based on
+ * MAX(Norm-ref-matrix, Norm-test-matrix).
+ */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
-  double norm_l1_max;
-  double norm_l1_rel;
-  double norm_l2;
-  double sum_ref;
-  double sum_tst;
+  /** One-norm */         double norm1_abs, norm1_rel;
+  /** Infinity-norm */    double normi_abs, normi_rel;
+  /** Froebenius-norm */  double normf_abs, normf_rel;
 } libxsmm_matdiff_info;
 
 /** Utility function to calculate the difference between two matrices. */
@@ -386,11 +388,13 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
 
 LIBXSMM_API_INLINE void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input) {
   assert(0 != output && 0 != input);
-  if (output->norm_l1_rel < input->norm_l1_rel) {
-    output->norm_l1_max = input->norm_l1_max;
-    output->norm_l1_rel = input->norm_l1_rel;
-    output->sum_ref = input->sum_ref;
-    output->sum_tst = input->sum_tst;
+  if (output->normf_rel < input->normf_rel) {
+    output->norm1_abs = input->norm1_abs;
+    output->normf_abs = input->normf_abs;
+    output->normi_abs = input->normi_abs;
+    output->norm1_rel = input->norm1_rel;
+    output->normf_rel = input->normf_rel;
+    output->normi_rel = input->normi_rel;
   }
 }
 

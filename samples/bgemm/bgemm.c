@@ -156,7 +156,6 @@ int main(int argc, char* argv[])
       }
 #if defined(CHECK)
       if (!LIBXSMM_FEQ(0, check)) { /* validate result against LAPACK/BLAS xGEMM */
-        libxsmm_matdiff_info matdiff_info;
         REAL_TYPE* ctest = 0;
         int i;
         start = libxsmm_timer_tick();
@@ -175,12 +174,18 @@ int main(int argc, char* argv[])
         /* allocate C-matrix in regular format, and perform copy-out */
         ctest = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
         if (0 != ctest) {
+          libxsmm_matdiff_info diff;
           libxsmm_bgemm_copyout_c(handle, c, &ldc, ctest);
-          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, cgold, ctest, &ldc, &ldc, &matdiff_info)) {
+          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, cgold, ctest, &ldc, &ldc, &diff)) {
             const char *const env_check_tolerance = getenv("CHECK_TOLERANCE");
             const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
-            fprintf(stdout, "\tdiff: L1max=%f, L1rel=%f and L2=%f\n", matdiff_info.norm_l1_max, matdiff_info.norm_l1_rel, matdiff_info.norm_l2);
-            if (check_tolerance < matdiff_info.norm_l1_max) result = EXIT_FAILURE;
+            fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", diff.normf_abs, diff.normf_rel);
+            if (check_tolerance < diff.normi_abs) {
+              fprintf(stderr, "FAILED: L1abs=%f L1rel=%f L2abs=%f L2rel=%f!\n",
+                diff.normi_abs, diff.normi_rel, diff.normf_abs, diff.normf_rel);
+              result = EXIT_FAILURE;
+            }
+
           }
           libxsmm_free(ctest);
         }

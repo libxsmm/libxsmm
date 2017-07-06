@@ -31,25 +31,113 @@
 
 const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE *const real_ref = (const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE*)ref;
 const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE *const real_tst = (const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE*)tst;
+const libxsmm_blasint ildref = (0 == ldref ? m : *ldref), ildtst = (0 == ldtst ? m : *ldtst);
+double compf = 0, compfr = 0, compft = 0, normfr = 0, normft = 0, normr = 0, normc = 0;
+libxsmm_blasint i, j;
 
 for (i = 0; i < n; ++i) {
+  double comprj = 0, comptj = 0, compij = 0;
+  double normrj = 0, normtj = 0, normij = 0;
+
   for (j = 0; j < m; ++j) {
-    const double refi = real_ref[i*ildref+j], tsti = real_tst[i*ildtst+j];
-    const double refa = LIBXSMM_ABS(refi), di = LIBXSMM_ABS(refi - tsti);
-    double v0 = refi - comp_ref, v1 = info->sum_ref + v0;
-    if (info->norm_l1_max < di) info->norm_l1_max = di;
-    comp_ref = (v1 - info->sum_ref) - v0;
-    info->sum_ref = v1;
-    v0 = tsti - comp_tst, v1 = info->sum_tst + v0;
-    comp_tst = (v1 - info->sum_tst) - v0;
-    info->sum_tst = v1;
-    v0 = di * di - comp_d, v1 = info->norm_l2 + v0;
-    comp_d = (v1 - info->norm_l2) - v0;
-    info->norm_l2 = v1;
-    if (0 < refa) {
-      const double norm_l1_rel = di / refa;
-      if (info->norm_l1_rel < norm_l1_rel) info->norm_l1_rel = norm_l1_rel;
-    }
+    const double ri = real_ref[i*ildref+j], ti = real_tst[i*ildtst+j];
+    const double di = (ri < ti ? (ti - ri) : (ri - ti));
+    const double ra = LIBXSMM_ABS(ri);
+    const double ta = LIBXSMM_ABS(ti);
+
+    /* row-wise sum of reference values with Kahan compensation */
+    double v0 = ra - comprj, v1 = normrj + v0;
+    comprj = (v1 - normrj) - v0;
+    normrj = v1;
+
+    /* row-wise sum of test values with Kahan compensation */
+    v0 = ta - comptj; v1 = normtj + v0;
+    comptj = (v1 - normtj) - v0;
+    normtj = v1;
+
+    /* row-wise sum of differences with Kahan compensation */
+    v0 = di - compij; v1 = normij + v0;
+    compij = (v1 - normij) - v0;
+    normij = v1;
+
+    /* Froebenius-norm of reference matrix with Kahan compensation */
+    v0 = ri * ri - compfr; v1 = normfr + v0;
+    compfr = (v1 - normfr) - v0;
+    normfr = v1;
+
+    /* Froebenius-norm of test matrix with Kahan compensation */
+    v0 = ti * ti - compft; v1 = normft + v0;
+    compft = (v1 - normft) - v0;
+    normft = v1;
+
+    /* Froebenius-norm of differences with Kahan compensation */
+    v0 = di * di - compf; v1 = info->normf_abs + v0;
+    compf = (v1 - info->normf_abs) - v0;
+    info->normf_abs = v1;
   }
+
+  /* calculate Infinity-norm of differences */
+  if (info->normi_abs < normij) info->normi_abs = normij;
+  /* calculate Infinity-norm of reference/test values */
+  if (normr < normrj) normr = normrj;
+  if (normr < normtj) normr = normtj;
+}
+
+/* Infinity-norm relative to MAX(Infinity-norm-ref, Infinity-norm-test) */
+if (0 < normr) {
+  info->normi_rel = info->normi_abs / normr;
+}
+else { /* should not happen */
+  info->normi_rel = info->normi_abs;
+}
+
+/* Froebenius-norm relative to MAX(F-norm-ref, F-norm-test) */
+if (normfr < normft) normfr = normft;
+if (0 < normfr) {
+  info->normf_rel = info->normf_abs / normfr;
+}
+else { /* should not happen */
+  info->normf_rel = info->normf_abs;
+}
+
+for (j = 0; j < m; ++j) {
+  double compri = 0, compti = 0, comp1 = 0;
+  double normri = 0, normti = 0, norm1 = 0;
+
+  for (i = 0; i < n; ++i) {
+    const double ri = real_ref[i*ildref+j], ti = real_tst[i*ildtst+j];
+    const double di = (ri < ti ? (ti - ri) : (ri - ti));
+    const double ra = LIBXSMM_ABS(ri);
+    const double ta = LIBXSMM_ABS(ti);
+
+    /* column-wise sum of reference values with Kahan compensation */
+    double v0 = ra - compri, v1 = normri + v0;
+    compri = (v1 - normri) - v0;
+    normri = v1;
+
+    /* column-wise sum of test values with Kahan compensation */
+    v0 = ta - compti; v1 = normti + v0;
+    compti = (v1 - normti) - v0;
+    normti = v1;
+
+    /* column-wise sum of differences with Kahan compensation */
+    v0 = di - comp1; v1 = norm1 + v0;
+    comp1 = (v1 - norm1) - v0;
+    norm1 = v1;
+  }
+
+  /* calculate One-norm of differences */
+  if (info->norm1_abs < norm1) info->norm1_abs = norm1;
+  /* calculate One-norm of reference/test values */
+  if (normc < normri) normc = normri;
+  if (normc < normti) normc = normti;
+}
+
+/* One-norm relative to MAX(One-norm-ref, One-norm-test) */
+if (0 < normc) {
+  info->norm1_rel = info->norm1_abs / normc;
+}
+else { /* should not happen */
+  info->norm1_rel = info->norm1_abs;
 }
 
