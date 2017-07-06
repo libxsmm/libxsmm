@@ -32,8 +32,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <float.h>
-#include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
