@@ -315,8 +315,10 @@ int main(int argc, char* argv[])
   int pad = 2;            /* padding in output */
   int stride = 1;         /* stride when accessing inputs */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
-  const char *const env_check = getenv("CHECK");
+
+  const char *const env_check = getenv("CHECK")/*, *const env_winograd = getenv("WINOGRAD")*/;
   const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+  /*const int algo_winograd = (0 == env_winograd ? 0 : atoi(env_winograd));*/
 
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads();       /* number of threads */
