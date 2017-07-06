@@ -73,10 +73,6 @@
 #else
 # define CP2K_SCHEDULE
 #endif
-// enable result validation
-// sequential (1), parallel (2)
-// (2) enables proper warmup
-#define CP2K_CHECK 2
 
 
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (1 < (CP2K_SYNCHRONIZATION))
@@ -179,6 +175,8 @@ int main(int argc, char* argv[])
     const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
     const size_t bwsize = (s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T);
     const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0 / s;
+    const char *const env_check = getenv("CHECK");
+    const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
 
     LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
@@ -215,25 +213,21 @@ int main(int argc, char* argv[])
       fprintf(stdout, "m=%i n=%i k=%i size=%i memory=%.1f MB (%s)\n\n", m, n, k, s,
         1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
-      const T zero = 0;
-#if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
       LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
         T *expect;
-        explicit raii(int size): expect(new T[size]) {}
+        explicit raii(int size): expect(0 < size ? new T[size] : 0) {}
         ~raii() { delete[] expect; }
-      } expect_buffer(csize);
-      T *const expect = expect_buffer.expect;
-      std::fill_n(expect, csize, zero);
+      } expect_buffer(LIBXSMM_FEQ(0, check) ? 0 : csize);
+      T *const expect = (0 == expect_buffer.expect ? c : expect_buffer.expect);
       libxsmm_matdiff_info d, diff = { 0 };
-#else
-      T *const expect = c;
-#endif
+      const T zero = 0;
+
       // eventually JIT-compile the requested kernel
       const libxsmm_mmfunction<T> xmm(LIBXSMM_FLAGS, m, n, k, LIBXSMM_PREFETCH);
 
       { // LAPACK/BLAS3 (warmup BLAS Library)
         std::fill_n(expect, csize, zero);
-#if defined(_OPENMP) && (!defined(CP2K_CHECK) || 1 < (CP2K_CHECK))
+#if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
         for (int i = 0; i < s; i += u) {
@@ -279,12 +273,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-#if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
-        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
+        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
           fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", d.normf_abs, d.normf_rel);
           libxsmm_matdiff_reduce(&diff, &d);
         }
-#endif
       }
 
       { // inline an optimized implementation
@@ -314,12 +306,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-#if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
-        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
+        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
           fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", d.normf_abs, d.normf_rel);
           libxsmm_matdiff_reduce(&diff, &d);
         }
-#endif
       }
 
       { // auto-dispatched
@@ -349,12 +339,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-#if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
-        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
+        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
           fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", d.normf_abs, d.normf_rel);
           libxsmm_matdiff_reduce(&diff, &d);
         }
-#endif
       }
 
       if (xmm) { // specialized routine
@@ -389,27 +377,23 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-#if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
-        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
+        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
           fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", d.normf_abs, d.normf_rel);
           libxsmm_matdiff_reduce(&diff, &d);
         }
-#endif
       }
 
       // finalize LIBXSMM
       libxsmm_finalize();
       fprintf(stdout, "Finished\n");
 
-#if defined(CP2K_CHECK) && 0 < (CP2K_CHECK)
-      const char *const env_check_tolerance = getenv("CHECK_TOLERANCE");
-      const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
-      if (check_tolerance < diff.normi_abs) {
-        fprintf(stderr, "FAILED: L1abs=%f L1rel=%f L2abs=%f L2rel=%f!\n",
-          diff.normi_abs, diff.normi_rel, diff.normf_abs, diff.normf_rel);
-        result = EXIT_FAILURE;
+      if (!LIBXSMM_FEQ(0, check)) {
+        if (check < 100.0 * diff.normf_rel) {
+          fprintf(stderr, "FAILED: L1abs=%f L1rel=%f L2abs=%f L2rel=%f!\n",
+            diff.normi_abs, diff.normi_rel, diff.normf_abs, diff.normf_rel);
+          result = EXIT_FAILURE;
+        }
       }
-#endif
     }
   }
   catch(const std::exception& e) {
