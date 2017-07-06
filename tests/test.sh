@@ -9,7 +9,7 @@ ENV=$(which env)
 # Currently header-only cases are not tested for not requiring BLAS (e.g., descriptor).
 # Test increases compilation time!
 #
-#NOBLAS="diff gemmflags hash malloc matcopy otrans threadsafety vla"
+#NOBLAS="diff gemmflags hash malloc matcopy matdiff otrans threadsafety vla"
 #DISABLED="headeronly"
 
 if [ "Windows_NT" = "${OS}" ]; then
