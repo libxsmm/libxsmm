@@ -99,7 +99,10 @@ int main(int argc, char* argv[])
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   const REAL_TYPE alpha = 1, beta = 1;
   int result = EXIT_SUCCESS;
-
+#if defined(CHECK)
+  const char *const env_check = getenv("CHECK");
+  const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+#endif
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) { /* check command line */
     printf("\nUsage: ./bgemm [M] [N] [K] [bm] [bn] [bk] [order] [reps] [b_m1] [b_n1] [b_k1] [b_k2]\n\n");
     return result;
@@ -118,10 +121,6 @@ int main(int argc, char* argv[])
     libxsmm_bgemm_handle* handle = 0;
     unsigned long long start;
     double duration;
-#if defined(CHECK)
-    const char *const env_check = getenv("CHECK");
-    const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
-#endif
     const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
     handle = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
       m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
@@ -177,15 +176,12 @@ int main(int argc, char* argv[])
           libxsmm_matdiff_info diff;
           libxsmm_bgemm_copyout_c(handle, c, &ldc, ctest);
           if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, cgold, ctest, &ldc, &ldc, &diff)) {
-            const char *const env_check_tolerance = getenv("CHECK_TOLERANCE");
-            const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
             fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", diff.normf_abs, diff.normf_rel);
-            if (check_tolerance < diff.normi_abs) {
+            if (check < 100.0 * diff.normf_rel) {
               fprintf(stderr, "FAILED: L1abs=%f L1rel=%f L2abs=%f L2rel=%f!\n",
                 diff.normi_abs, diff.normi_rel, diff.normf_abs, diff.normf_rel);
               result = EXIT_FAILURE;
             }
-
           }
           libxsmm_free(ctest);
         }

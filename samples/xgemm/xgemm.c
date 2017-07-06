@@ -91,7 +91,10 @@ int main(int argc, char* argv[])
   const double gflops = 2.0 * m * n * k * 1E-9;
   const char transa = 'N', transb = 'N';
   int result = EXIT_SUCCESS;
-
+#if defined(CHECK)
+  const char *const env_check = getenv("CHECK");
+  const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
@@ -102,8 +105,6 @@ int main(int argc, char* argv[])
     REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldb * n * sizeof(REAL_TYPE));
     REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
 #if defined(CHECK)
-    const char *const env_check = getenv("CHECK");
-    const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
     REAL_TYPE* d = 0;
     if (!LIBXSMM_FEQ(0, check)) {
       d = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
@@ -166,10 +167,8 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
       }
       if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, d, c, &ldc, &ldc, &diff)) {
-        const char *const env_check_tolerance = getenv("CHECK_TOLERANCE");
-        const double check_tolerance = LIBXSMM_ABS(0 == env_check_tolerance ? 0.000001 : atof(env_check_tolerance));
         fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", diff.normf_abs, diff.normf_rel);
-        if (check_tolerance < diff.normi_abs) {
+        if (check < 100.0 * diff.normf_rel) {
           fprintf(stderr, "FAILED: L1abs=%f L1rel=%f L2abs=%f L2rel=%f!\n",
             diff.normi_abs, diff.normi_rel, diff.normf_abs, diff.normf_rel);
           result = EXIT_FAILURE;
