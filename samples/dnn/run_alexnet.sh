@@ -62,9 +62,9 @@ fi
 
 # ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type
 
-${NUMACTL} ./layer_example_${BIN} ${ITERS} 227 227  ${MB}    3   64 11 11 0 4 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  27  27  ${MB}   64  192  5  5 2 1 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  13  13  ${MB}  192  384  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
+#${NUMACTL} ./layer_example_${BIN} ${ITERS} 227 227  ${MB}    3   64 11 11 0 4 ${TYPE} ${FORMAT} ${PAD}    && \
+#${NUMACTL} ./layer_example_${BIN} ${ITERS}  27  27  ${MB}   64  192  5  5 2 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  13  13  ${MB}  192  384  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}   # && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}  13  13  ${MB}  384  256  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}  13  13  ${MB}  256  256  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}
 

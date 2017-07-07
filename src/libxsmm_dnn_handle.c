@@ -1601,7 +1601,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         flagBenchmark = 1;
       } else if ((27 == handle->ofw) && (27 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 1; /*8;*/
+<<<<<<< HEAD
         wino_desc_wu.ur = 1; /*2;*/
+=======
+        wino_desc_wu.ur = 1;
+>>>>>>> be65fcfc5cf7d92ce2b7bbb8328cf9fff6f56e85
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 8;
