@@ -550,9 +550,9 @@ int main(int argc, char* argv[])
 
     /* compare */
     libxsmm_matdiff(LIBXSMM_DATATYPE_I16, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0, &norms_fwd);
-    printf("           One-norm: %f  (%f%%)\n", norms_fwd.norm1_abs, 100.0 * norms_fwd.norm1_rel);
-    printf("      Infinity-norm: %f  (%f%%)\n", norms_fwd.normi_abs, 100.0 * norms_fwd.normi_rel);
-    printf("    Froebenius-norm: %f  (%f%%)\n", norms_fwd.normf_abs, 100.0 * norms_fwd.normf_rel);
+    printf("       One-norm: %.12f (%.5f%%)\n", norms_fwd.norm1_abs, 100.0 * norms_fwd.norm1_rel);
+    printf("  Infinity-norm: %.12f (%.5f%%)\n", norms_fwd.normi_abs, 100.0 * norms_fwd.normi_rel);
+    printf("Froebenius-norm: %.12f (%.5f%%)\n", norms_fwd.normf_abs, 100.0 * norms_fwd.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_fwd);
   }
 
@@ -579,9 +579,9 @@ int main(int argc, char* argv[])
 
     /* compare */
     libxsmm_matdiff(LIBXSMM_DATATYPE_I16, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_libxsmm_input, 0, 0, &norms_bwd);
-    printf("           One-norm: %f  (%f%%)\n", norms_bwd.norm1_abs, 100.0 * norms_bwd.norm1_rel);
-    printf("      Infinity-norm: %f  (%f%%)\n", norms_bwd.normi_abs, 100.0 * norms_bwd.normi_rel);
-    printf("    Froebenius-norm: %f  (%f%%)\n", norms_bwd.normf_abs, 100.0 * norms_bwd.normf_rel);
+    printf("       One-norm: %.12f (%.5f%%)\n", norms_bwd.norm1_abs, 100.0 * norms_bwd.norm1_rel);
+    printf("  Infinity-norm: %.12f (%.5f%%)\n", norms_bwd.normi_abs, 100.0 * norms_bwd.normi_rel);
+    printf("Froebenius-norm: %.12f (%.5f%%)\n", norms_bwd.normf_abs, 100.0 * norms_bwd.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_bwd);
   }
 
