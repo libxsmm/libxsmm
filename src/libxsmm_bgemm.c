@@ -128,7 +128,6 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
 
       if (0 == (m % mm) && 0 == (n % nn) && 0 == (k % kk)) { /* check for valid block-size */
         const libxsmm_gemm_prefetch_type prefetch = (0 == strategy ? ((libxsmm_gemm_prefetch_type)LIBXSMM_PREFETCH) : *strategy);
-        const libxsmm_blasint size = handle.mb * handle.nb;
         handle.b_m1 = (0 == b_m1 ? 1 : *b_m1); handle.b_n1 = (0 == b_n1 ? 1 : *b_n1);
         handle.b_k1 = (0 == b_k1 ? 1 : *b_k1); handle.b_k2 = (0 == b_k2 ? 1 : *b_k2);
         assert(0 == (m % handle.b_m1) && 0 == (n % handle.b_n1) && 0 == (k % handle.b_k1));
@@ -149,14 +148,16 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
           handle.kernel_pf = libxsmm_xmmdispatch(&descriptor);
         }
         if (0 != handle.kernel.smm && (LIBXSMM_PREFETCH_NONE == descriptor.prefetch || 0 != handle.kernel_pf.smm)) {
+          const size_t tls_size = ((mm * nn * handle.typesize + LIBXSMM_CACHELINE_SIZE - 1) & ~(LIBXSMM_CACHELINE_SIZE - 1)) * LIBXSMM_BGEMM_MAX_NTHREADS;
+          const libxsmm_blasint size_locks = handle.mb * handle.nb * sizeof(libxsmm_bgemm_lock);
+          handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size_locks, LIBXSMM_ALIGNMENT);
+          handle.buffer = libxsmm_aligned_malloc(tls_size, LIBXSMM_ALIGNMENT);
           result = (libxsmm_bgemm_handle*)malloc(sizeof(libxsmm_bgemm_handle));
-          handle.buffer = libxsmm_aligned_malloc(LIBXSMM_BGEMM_MAX_NTHREADS * mm * nn * handle.typesize, LIBXSMM_ALIGNMENT);
-          handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size * sizeof(libxsmm_bgemm_lock), LIBXSMM_ALIGNMENT);
 
           if (0 != result && 0 != handle.buffer && 0 != handle.locks) {
             handle.precision = precision;
             handle.m = m; handle.n = n; handle.k = k; handle.bm = mm; handle.bn = nn; handle.bk = kk;
-            memset(handle.locks, 0, size * sizeof(libxsmm_bgemm_lock));
+            memset(handle.locks, 0, size_locks);
             handle.order = (0 == order ? LIBXSMM_BGEMM_ORDER_JIK : *order);
             *result = handle;
           }
