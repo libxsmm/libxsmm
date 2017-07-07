@@ -82,7 +82,7 @@ for (i = 0; i < nn; ++i) {
   info->asum_ref = v1;
 
   /* summarize test values */
-  v0 = normrj - compt; v1 = info->asum_tst + v0;
+  v0 = normtj - compt; v1 = info->asum_tst + v0;
   compt = (v1 - info->asum_tst) - v0;
   info->asum_tst = v1;
 
