@@ -1283,7 +1283,7 @@ int main(int argc, char* argv[])
       naive_copy_NHWC_to_NCHW(output_nhwc, naive_output_nhwc, nImg, ofhp, ofwp, nOfm);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_output_nhwc, 0, 0, &norms_fwd);     
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_output_nhwc, 0, 0, &norms_fwd);
       printf("                        One-norm: %f\n", norms_fwd.norm1_abs);
       printf("                   Infinity-norm: %f\n", norms_fwd.normi_abs);
       printf("                 Froebenius-norm: %f\n", norms_fwd.normf_abs);
