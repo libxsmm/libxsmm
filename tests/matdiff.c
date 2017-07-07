@@ -88,6 +88,21 @@ int main(void)
     if (0.000000044 < LIBXSMM_ABS(diff.normf_rel - 0.0224405)) result = EXIT_FAILURE;
   }
 
+  result = libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), 3/*m*/, 1/*n*/,
+    x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/, &diff);
+
+  if (EXIT_SUCCESS == result) {
+    /* One-norm (~L1) */
+    if (0.000000044 < LIBXSMM_ABS(diff.norm1_abs - 3.1000000)) result = EXIT_FAILURE;
+    if (0.000000044 < LIBXSMM_ABS(diff.norm1_rel - 0.0279028)) result = EXIT_FAILURE;
+    /* Infinity-norm (~L1) */
+    if (0.000000044 < LIBXSMM_ABS(diff.normi_abs - 2.0000000)) result = EXIT_FAILURE;
+    if (0.000000044 < LIBXSMM_ABS(diff.normi_rel - 0.0200000)) result = EXIT_FAILURE;
+    /* Froebenius-norm (L2) */
+    if (0.000000044 < LIBXSMM_ABS(diff.normf_abs - 2.2383029)) result = EXIT_FAILURE;
+    if (0.000000044 < LIBXSMM_ABS(diff.normf_rel - 0.0224405)) result = EXIT_FAILURE;
+  }
+
   return result;
 }
 

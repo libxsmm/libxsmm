@@ -31,16 +31,15 @@
 
 const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE *const real_ref = (const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE*)ref;
 const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE *const real_tst = (const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE*)tst;
-const libxsmm_blasint ildref = (0 == ldref ? m : *ldref), ildtst = (0 == ldtst ? m : *ldtst);
 double compf = 0, compfr = 0, compft = 0, normfr = 0, normft = 0, normr = 0, normc = 0;
 libxsmm_blasint i, j;
 
-for (i = 0; i < n; ++i) {
+for (i = 0; i < nn; ++i) {
   double comprj = 0, comptj = 0, compij = 0;
   double normrj = 0, normtj = 0, normij = 0;
 
-  for (j = 0; j < m; ++j) {
-    const double ri = real_ref[i*ildref+j], ti = real_tst[i*ildtst+j];
+  for (j = 0; j < mm; ++j) {
+    const double ri = real_ref[i*ldr+j], ti = real_tst[i*ldt+j];
     const double di = (ri < ti ? (ti - ri) : (ri - ti));
     const double ra = LIBXSMM_ABS(ri);
     const double ta = LIBXSMM_ABS(ti);
@@ -100,12 +99,12 @@ else { /* should not happen */
   info->normf_rel = info->normf_abs;
 }
 
-for (j = 0; j < m; ++j) {
+for (j = 0; j < mm; ++j) {
   double compri = 0, compti = 0, comp1 = 0;
   double normri = 0, normti = 0, norm1 = 0;
 
-  for (i = 0; i < n; ++i) {
-    const double ri = real_ref[i*ildref+j], ti = real_tst[i*ildtst+j];
+  for (i = 0; i < nn; ++i) {
+    const double ri = real_ref[i*ldr+j], ti = real_tst[i*ldt+j];
     const double di = (ri < ti ? (ti - ri) : (ri - ti));
     const double ra = LIBXSMM_ABS(ri);
     const double ta = LIBXSMM_ABS(ti);
