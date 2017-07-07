@@ -509,10 +509,10 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
       for (oj = 0; oj < handle->ofh; oj+= handle->bwd_ofh_rb) {
         /* define ij */
-        ij = oj; /* * handle->desc.u; */
+        ij = oj * handle->desc.u;
         for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
           /* define ii */
-          ii = oi; /* * handle->desc.v;*/
+          ii = oi * handle->desc.v;
           for( kj = 0; kj < handle->desc.R; ++kj ) {
             LIBXSMM_JITTED_CONV_BP_NO_PF(input_to_use, img, ifm1lpblock, ij+kj, ii, 0,
                                          tr_wt, ofm1, ifm1lpblock, kj, 0, 0, 0,
