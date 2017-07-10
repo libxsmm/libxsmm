@@ -524,7 +524,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matzero_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype);
           matzero_descriptor.flags = LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE;
           handle->matcopy_fwd[1].xmatcopy = libxsmm_xmatcopydispatch(&matzero_descriptor);
-  
+
           if (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) {
             matzero_descriptor.m = handle->ofwp*handle->ofmblock;
             matzero_descriptor.ldi = handle->ofwp*handle->ofmblock;
@@ -770,27 +770,27 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
             descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT_L2;
             handle->code_bwd[3].pmm = libxsmm_create_xconv_backward(&descriptor);
 #endif
-      } else if (/*(*/libxsmm_target_archid == LIBXSMM_X86_AVX2/*) ||
-                   ((handle->filter_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) || (handle->buffer_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM))*/ ) {
-        /* we don't do prefetching and kh/kw unrolling (ignored in kernel generator) for AVX2 */
-        if (handle->padding_flag == 1) {
-          handle->matcopy_bwd[0].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
-          handle->matcopy_bwd[1].xmatcopy = libxsmm_xmatcopydispatch(&matcopyback_descriptor);
-        }
-        descriptor.unroll_kh = 0;
-        descriptor.unroll_kw = 0;
-        descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-        if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-          handle->code_bwd[0].smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-        } else {
-          handle->code_bwd[0].pmm = libxsmm_create_xconv_backward(&descriptor);
-        }
-        handle->code_bwd[1].pmm = handle->code_bwd[0].pmm;
-        handle->code_bwd[2].pmm = handle->code_bwd[0].pmm;
-        handle->code_bwd[3].pmm = handle->code_bwd[0].pmm;
-      } else {
-        assert(0/*should not happen*/);
-      }
+          } else if (/*(*/libxsmm_target_archid == LIBXSMM_X86_AVX2/*) ||
+                                                                     ((handle->filter_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) || (handle->buffer_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM))*/ ) {
+            /* we don't do prefetching and kh/kw unrolling (ignored in kernel generator) for AVX2 */
+            if (handle->padding_flag == 1) {
+              handle->matcopy_bwd[0].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
+              handle->matcopy_bwd[1].xmatcopy = libxsmm_xmatcopydispatch(&matcopyback_descriptor);
+            }
+            descriptor.unroll_kh = 0;
+            descriptor.unroll_kw = 0;
+            descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
+            if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
+              handle->code_bwd[0].smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+            } else {
+              handle->code_bwd[0].pmm = libxsmm_create_xconv_backward(&descriptor);
+            }
+            handle->code_bwd[1].pmm = handle->code_bwd[0].pmm;
+            handle->code_bwd[2].pmm = handle->code_bwd[0].pmm;
+            handle->code_bwd[3].pmm = handle->code_bwd[0].pmm;
+          } else {
+            assert(0/*should not happen*/);
+          }
 
       if ( handle->use_thread_private_jit ) {
         handle->n_entries_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
@@ -986,6 +986,32 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           } else {
             assert(0/*should not happen*/);
           }
+
+      if ( handle->use_thread_private_jit ) {
+        /* Determine if we will be using thread private filters  */
+        if ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads))) {
+          handle->use_thread_private_filter = 1;
+        } else {
+          handle->use_thread_private_filter = 0;
+        }
+        /* determine if we will transpose input  */
+        if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->desc.v == 1) && (handle->upd_ofw_rb%4 == 0) ) {
+          handle->trans_ofw_ifm = 1;
+        } else {
+          handle->trans_ofw_ifm = 0;
+        }
+        handle->n_entries_upd = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->compute_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+        handle->kernel_upd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
+        handle->n_upd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->upd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
+        handle->n_entries_init_upd = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->init_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+        handle->n_entries_copy_upd = (int*) malloc(handle->desc.threads * sizeof(int));
+        handle->copy_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+        /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
+        status = libxsmm_dnn_perform_upd_dryrun_direct(handle); 
+      }
     } /* end of weight-update handle */
     {
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);

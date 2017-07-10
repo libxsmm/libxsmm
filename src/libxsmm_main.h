@@ -248,6 +248,9 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   
   /* Data structures and metadata related to per-thread private JITing */
   int use_thread_private_jit;
+  int use_thread_private_filter;
+  int trans_ofw_ifm;
+
   int *n_entries_fwd;
   int **compute_fwd_indices_ptrs;
   char **kernel_fwd_variant_ptrs;
@@ -273,6 +276,16 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int **transpose_bwd_indices_ptrs;
   int *ofh_bwd_start;
   int *ofh_bwd_end;
+
+  int *n_entries_upd;
+  int **compute_upd_indices_ptrs;
+  char **kernel_upd_variant_ptrs;
+  int *n_upd_code_segments;
+  segment_t **upd_code_segments;
+  int *n_entries_init_upd;
+  int **init_upd_indices_ptrs;
+  int *n_entries_copy_upd;
+  int **copy_upd_indices_ptrs;
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
