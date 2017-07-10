@@ -379,6 +379,10 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
   /** One-norm */         double norm1_abs, norm1_rel;
   /** Infinity-norm */    double normi_abs, normi_rel;
   /** Froebenius-norm */  double normf_abs, normf_rel;
+  /** Sum of absolute values in the reference set. */
+  double asum_ref;
+  /** Sum of absolute values in the test set. */
+  double asum_tst;
 } libxsmm_matdiff_info;
 
 /** Utility function to calculate the difference between two matrices. */

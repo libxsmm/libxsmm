@@ -31,12 +31,13 @@
 
 const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE *const real_ref = (const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE*)ref;
 const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE *const real_tst = (const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE*)tst;
-double compf = 0, compfr = 0, compft = 0, normfr = 0, normft = 0, normr = 0, normc = 0;
+double compf = 0, compfr = 0, compft = 0, normfr = 0, normft = 0, normr = 0, normc = 0, compr = 0, compt = 0;
 libxsmm_blasint i, j;
 
 for (i = 0; i < nn; ++i) {
   double comprj = 0, comptj = 0, compij = 0;
   double normrj = 0, normtj = 0, normij = 0;
+  double v0, v1;
 
   for (j = 0; j < mm; ++j) {
     const double ri = real_ref[i*ldr+j], ti = real_tst[i*ldt+j];
@@ -45,7 +46,7 @@ for (i = 0; i < nn; ++i) {
     const double ta = LIBXSMM_ABS(ti);
 
     /* row-wise sum of reference values with Kahan compensation */
-    double v0 = ra - comprj, v1 = normrj + v0;
+    v0 = ra - comprj; v1 = normrj + v0;
     comprj = (v1 - normrj) - v0;
     normrj = v1;
 
@@ -74,6 +75,16 @@ for (i = 0; i < nn; ++i) {
     compf = (v1 - info->normf_abs) - v0;
     info->normf_abs = v1;
   }
+
+  /* summarize reference values */
+  v0 = normrj - compr; v1 = info->asum_ref + v0;
+  compr = (v1 - info->asum_ref) - v0;
+  info->asum_ref = v1;
+
+  /* summarize test values */
+  v0 = normtj - compt; v1 = info->asum_tst + v0;
+  compt = (v1 - info->asum_tst) - v0;
+  info->asum_tst = v1;
 
   /* calculate Infinity-norm of differences */
   if (info->normi_abs < normij) info->normi_abs = normij;

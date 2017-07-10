@@ -1764,11 +1764,11 @@ LIBXSMM_API_DEFINITION int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_bl
     int i;
     if (0 < info->normf_abs) {
       const double squared = info->normf_abs; info->normf_abs *= 0.5;
-      for (i = 0; i < 8; ++i) info->normf_abs = 0.5 * (info->normf_abs + squared / info->normf_abs);
+      for (i = 0; i < 16; ++i) info->normf_abs = 0.5 * (info->normf_abs + squared / info->normf_abs);
     }
     if (0 < info->normf_rel) {
       const double squared = info->normf_rel; info->normf_rel *= 0.5;
-      for (i = 0; i < 8; ++i) info->normf_rel = 0.5 * (info->normf_rel + squared / info->normf_rel);
+      for (i = 0; i < 16; ++i) info->normf_rel = 0.5 * (info->normf_rel + squared / info->normf_rel);
     }
   }
   return result;
