@@ -31,7 +31,8 @@
 
 const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE *const real_ref = (const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE*)ref;
 const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE *const real_tst = (const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE*)tst;
-double compf = 0, compfr = 0, compft = 0, normfr = 0, normft = 0, normr = 0, normc = 0, compr = 0, compt = 0;
+double compf = 0, compfr = 0, compft = 0, normfr = 0, normft = 0, normr = 0, normt = 0;
+double normrc = 0, normtc = 0, compr = 0, compt = 0;
 libxsmm_blasint i, j;
 
 for (i = 0; i < nn; ++i) {
@@ -44,6 +45,18 @@ for (i = 0; i < nn; ++i) {
     const double di = (ri < ti ? (ti - ri) : (ri - ti));
     const double ra = LIBXSMM_ABS(ri);
     const double ta = LIBXSMM_ABS(ti);
+
+    /* maximum absolute error and location */
+    if (info->max_diff_abs < di) {
+      info->max_diff_abs = di;
+      info->max_diff_m = j;
+      info->max_diff_n = i;
+    }
+
+    /* maximum error relative to current value */
+    if (0 < ra) { const double max_dr = di / ra;
+      if (info->max_diff_rel < max_dr) info->max_diff_rel = max_dr;
+    }
 
     /* row-wise sum of reference values with Kahan compensation */
     v0 = ra - comprj; v1 = normrj + v0;
@@ -90,24 +103,29 @@ for (i = 0; i < nn; ++i) {
   if (info->normi_abs < normij) info->normi_abs = normij;
   /* calculate Infinity-norm of reference/test values */
   if (normr < normrj) normr = normrj;
-  if (normr < normtj) normr = normtj;
+  if (normt < normtj) normt = normtj;
 }
 
-/* Infinity-norm relative to MAX(Infinity-norm-ref, Infinity-norm-test) */
+/* Infinity-norm relative to reference */
 if (0 < normr) {
   info->normi_rel = info->normi_abs / normr;
 }
+if (0 < normt) { /* relative to test */
+  info->normi_rel = info->normi_abs / normt;
+}
 else { /* should not happen */
-  info->normi_rel = info->normi_abs;
+  info->normi_rel = 0;
 }
 
-/* Froebenius-norm relative to MAX(F-norm-ref, F-norm-test) */
-if (normfr < normft) normfr = normft;
+/* Froebenius-norm relative to reference */
 if (0 < normfr) {
   info->normf_rel = info->normf_abs / normfr;
 }
+if (0 < normft) { /* relative to test */
+  info->normf_rel = info->normf_abs / normft;
+}
 else { /* should not happen */
-  info->normf_rel = info->normf_abs;
+  info->normf_rel = 0;
 }
 
 for (j = 0; j < mm; ++j) {
@@ -139,15 +157,18 @@ for (j = 0; j < mm; ++j) {
   /* calculate One-norm of differences */
   if (info->norm1_abs < norm1) info->norm1_abs = norm1;
   /* calculate One-norm of reference/test values */
-  if (normc < normri) normc = normri;
-  if (normc < normti) normc = normti;
+  if (normrc < normri) normrc = normri;
+  if (normtc < normti) normtc = normti;
 }
 
-/* One-norm relative to MAX(One-norm-ref, One-norm-test) */
-if (0 < normc) {
-  info->norm1_rel = info->norm1_abs / normc;
+/* One-norm relative to reference */
+if (0 < normrc) {
+  info->norm1_rel = info->norm1_abs / normrc;
+}
+if (0 < normtc) { /* relative to test */
+  info->norm1_rel = info->norm1_abs / normtc;
 }
 else { /* should not happen */
-  info->norm1_rel = info->norm1_abs;
+  info->norm1_rel = 0;
 }
 

@@ -1770,6 +1770,11 @@ LIBXSMM_API_DEFINITION int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_bl
       const double squared = info->normf_rel; info->normf_rel *= 0.5;
       for (i = 0; i < 16; ++i) info->normf_rel = 0.5 * (info->normf_rel + squared / info->normf_rel);
     }
+    if (1 == n) {
+      const libxsmm_blasint tmp = info->max_diff_m;
+      info->max_diff_m = info->max_diff_n;
+      info->max_diff_n = tmp;
+    }
   }
   return result;
 }

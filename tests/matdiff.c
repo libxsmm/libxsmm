@@ -64,13 +64,22 @@ int main(void)
   if (EXIT_SUCCESS == result) {
     /* One-norm (~L1) */
     if (0.0000003 < LIBXSMM_ABS(diff.norm1_abs - 1.8300000)) result = EXIT_FAILURE;
-    if (0.0000003 < LIBXSMM_ABS(diff.norm1_rel - 0.0963158)) result = EXIT_FAILURE;
+    if (0.0000003 < LIBXSMM_ABS(diff.norm1_rel - 0.0974960)) result = EXIT_FAILURE;
     /* Infinity-norm (~L1) */
     if (0.0000003 < LIBXSMM_ABS(diff.normi_abs - 2.4400000)) result = EXIT_FAILURE;
-    if (0.0000003 < LIBXSMM_ABS(diff.normi_rel - 0.0976000)) result = EXIT_FAILURE;
+    if (0.0000003 < LIBXSMM_ABS(diff.normi_rel - 0.1008264)) result = EXIT_FAILURE;
     /* Froebenius-norm (L2) */
     if (0.0000003 < LIBXSMM_ABS(diff.normf_abs - 1.8742465)) result = EXIT_FAILURE;
-    if (0.0000003 < LIBXSMM_ABS(diff.normf_rel - 0.1074954)) result = EXIT_FAILURE;
+    if (0.0000003 < LIBXSMM_ABS(diff.normf_rel - 0.1081785)) result = EXIT_FAILURE;
+    /* Maximum absolute error */
+    if (0.0000001 < LIBXSMM_ABS(diff.max_diff_abs - 0.9300000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.max_diff_rel - 0.5600000)) result = EXIT_FAILURE;
+    /** Sum of absolute values in reference/test set. */
+    if (0.0000001 < LIBXSMM_ABS(diff.asum_ref - 46.00)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.asum_tst - 45.66)) result = EXIT_FAILURE;
+    /* Location of maximum absolute error */
+    if (2 != diff.max_diff_m) result = EXIT_FAILURE;
+    if (2 != diff.max_diff_n) result = EXIT_FAILURE;
   }
 
   result = libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), 1/*m*/, 3/*n*/,
@@ -82,10 +91,19 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(diff.norm1_rel - 0.0279028)) result = EXIT_FAILURE;
     /* Infinity-norm (~L1) */
     if (0.0000001 < LIBXSMM_ABS(diff.normi_abs - 2.0000000)) result = EXIT_FAILURE;
-    if (0.0000001 < LIBXSMM_ABS(diff.normi_rel - 0.0200000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.normi_rel - 0.0202020)) result = EXIT_FAILURE;
     /* Froebenius-norm (L2) */
     if (0.0000001 < LIBXSMM_ABS(diff.normf_abs - 2.2383029)) result = EXIT_FAILURE;
-    if (0.0000001 < LIBXSMM_ABS(diff.normf_rel - 0.0222918)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.normf_rel - 0.0224695)) result = EXIT_FAILURE;
+    /* Maximum absolute error */
+    if (0.0000001 < LIBXSMM_ABS(diff.max_diff_abs - 2.0000000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.max_diff_rel - 0.2222222)) result = EXIT_FAILURE;
+    /** Sum of absolute values in reference/test set. */
+    if (0.0000001 < LIBXSMM_ABS(diff.asum_ref - 110.0)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.asum_tst - 111.1)) result = EXIT_FAILURE;
+    /* Location of maximum absolute error */
+    if (0 != diff.max_diff_m) result = EXIT_FAILURE;
+    if (2 != diff.max_diff_n) result = EXIT_FAILURE;
   }
 
   result = libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), 3/*m*/, 1/*n*/,
@@ -97,10 +115,19 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(diff.norm1_rel - 0.0279028)) result = EXIT_FAILURE;
     /* Infinity-norm (~L1) */
     if (0.0000001 < LIBXSMM_ABS(diff.normi_abs - 2.0000000)) result = EXIT_FAILURE;
-    if (0.0000001 < LIBXSMM_ABS(diff.normi_rel - 0.0200000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.normi_rel - 0.0202020)) result = EXIT_FAILURE;
     /* Froebenius-norm (L2) */
     if (0.0000001 < LIBXSMM_ABS(diff.normf_abs - 2.2383029)) result = EXIT_FAILURE;
-    if (0.0000001 < LIBXSMM_ABS(diff.normf_rel - 0.0222918)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.normf_rel - 0.0224695)) result = EXIT_FAILURE;
+    /* Maximum absolute error */
+    if (0.0000001 < LIBXSMM_ABS(diff.max_diff_abs - 2.0000000)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.max_diff_rel - 0.2222222)) result = EXIT_FAILURE;
+    /** Sum of absolute values in reference/test set. */
+    if (0.0000001 < LIBXSMM_ABS(diff.asum_ref - 110.0)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.asum_tst - 111.1)) result = EXIT_FAILURE;
+    /* Location of maximum absolute error */
+    if (2 != diff.max_diff_m) result = EXIT_FAILURE;
+    if (0 != diff.max_diff_n) result = EXIT_FAILURE;
   }
 
   return result;

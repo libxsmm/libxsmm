@@ -371,18 +371,19 @@ LIBXSMM_API void libxsmm_gemm_print(void* ostream,
   const void* beta, void* c, const LIBXSMM_BLASINT* ldc);
 
 /**
- * Structure of differences with matrix norms according to http://www.netlib.org/lapack/lug/node75.html).
- * For symmetry and to provide a single relative value per norm, relative norms are calculated based on
- * MAX(Norm-ref-matrix, Norm-test-matrix).
+ * Structure of differences with matrix norms according
+ * to http://www.netlib.org/lapack/lug/node75.html).
  */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
   /** One-norm */         double norm1_abs, norm1_rel;
   /** Infinity-norm */    double normi_abs, normi_rel;
   /** Froebenius-norm */  double normf_abs, normf_rel;
-  /** Sum of absolute values in the reference set. */
-  double asum_ref;
-  /** Sum of absolute values in the test set. */
-  double asum_tst;
+  /** Sum of absolute values in reference/test set. */
+  double asum_ref, asum_tst;
+  /** Maximum absolute and relative error. */
+  double max_diff_abs, max_diff_rel;
+  /** Location of maximum error (m, n). */
+  libxsmm_blasint max_diff_m, max_diff_n;
 } libxsmm_matdiff_info;
 
 /** Utility function to calculate the difference between two matrices. */
