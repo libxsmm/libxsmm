@@ -120,5 +120,18 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
       }
     }
   }
+  /* ReLU handling */
+  if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU) > 0) ) {
+    element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, 0, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
+
+    /* @TODO check these loops for physical output padding */
+    for (oj = 0; oj < handle->ofhp*handle->ofwp; ++oj) {
+      LIBXSMM_PRAGMA_SIMD
+      for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+        temp_ptr[ofm2] = (temp_ptr[ofm2] < 0.0f) ? 0.0 : temp_ptr[ofm2];
+      }
+      temp_ptr += handle->blocksofm*handle->ofmblock;
+    }
+  }
 }
 

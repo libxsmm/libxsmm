@@ -43,6 +43,14 @@
 #if 0
 #define USE_FUSED_BIAS
 #endif
+#if 0
+#define USE_FUSED_RELU
+#endif
+#if 0
+#define USE_FUSED_BIAS_RELU
+#define USE_FUSED_RELU
+#define USE_FUSED_BIAS
+#endif
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 /* note: later on, this leads to (correct but) different than expected norm-values */
@@ -260,6 +268,14 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
           }
         }
       }
+#if defined(USE_FUSED_RELU)
+      for (oj = 0; oj < ofh; ++oj) {
+        for (oi = 0; oi < ofw; ++oi) {
+          LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) = 
+           (LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) < 0.0f) ? 0.0f : LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
+        }
+      }
+#endif
     }
   }
 }
@@ -640,13 +656,17 @@ int main(int argc, char* argv[])
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
-#ifdef USE_OVERWRITE
+#if defined(USE_OVERWRITE)
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
 #else
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
 #endif
-#ifdef USE_FUSED_BIAS
+#if defined(USE_FUSED_BIAS)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS;
+#elif defined(USE_FUSED_RELU)
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU;
+#elif defined(USE_FUSED_BIAS_RELU)
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
 #else
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
@@ -955,8 +975,12 @@ int main(int argc, char* argv[])
 #else
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
 #endif
-#ifdef USE_FUSED_BIAS
+#if defined(USE_FUSED_BIAS)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS;
+#elif defined(USE_FUSED_RELU)
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU;
+#elif defined(USE_FUSED_BIAS_RELU)
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
 #else
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
@@ -1244,8 +1268,12 @@ int main(int argc, char* argv[])
 #else
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
 #endif
-#ifdef USE_FUSED_BIAS
+#if defined(USE_FUSED_BIAS)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS;
+#elif defined(USE_FUSED_RELU)
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU;
+#elif defined(USE_FUSED_BIAS_RELU)
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
 #else
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
