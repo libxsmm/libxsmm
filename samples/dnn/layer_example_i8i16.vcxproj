@@ -35,6 +35,7 @@
     <None Include="run_deepbench.sh" />
     <None Include="run_googlenetv1.sh" />
     <None Include="run_overfeat.sh" />
+    <None Include="run_resnet50.sh" />
     <None Include="run_vgga.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

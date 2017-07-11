@@ -361,6 +361,8 @@ int main(int argc, char* argv[])
   libxsmm_dnn_err_t status;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, diff;
+  memset(&norms_fwd, 0, sizeof(norms_fwd));
+  memset(&norms_bwd, 0, sizeof(norms_bwd));
   memset(&diff, 0, sizeof(diff));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
