@@ -1597,7 +1597,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
       } else if ((54 == handle->ofw) && (54 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 1;
-        wino_desc_wu.ur = 2;
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+          wino_desc_wu.ur = 1;
+        } else {
+          wino_desc_wu.ur = 2;
+        }
         flagBenchmark = 1;
       } else if ((27 == handle->ofw) && (27 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 1; /*8;*/
