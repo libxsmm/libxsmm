@@ -79,7 +79,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   const int copychunksize = (copywork % handle->desc.threads == 0) ? (copywork / handle->desc.threads) : (copywork / handle->desc.threads) + 1;
   const int copy_thr_begin = (ltid * copychunksize < copywork) ? (ltid * copychunksize) : copywork;
   const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) * copychunksize) : copywork;
-  
+
   int total_calls, aux;
   int n_code_segments = 0;
   int mark_ifm_init, mark_ifm_close, mark_img_init;
@@ -107,35 +107,37 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   stride_w = handle->desc.v;
   stride_h = handle->desc.u;
+  kh = handle->desc.R;
+  kw = handle->desc.S;
 
   /* Dryrun for copy/padding */
-  if (handle->padding_flag == 1) {
-    /* Initialize in parallel scratch5 to zero */
-    handle->n_entries_init_upd[ltid] = copy_thr_end - copy_thr_begin;
-    init_indices = (int*) libxsmm_aligned_malloc( (copy_thr_end - copy_thr_begin + 1) * sizeof(int), 2097152);
-    handle->init_upd_indices_ptrs[ltid] = init_indices;
-    aux = 0;    
-    for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
-      img = imgifm1/handle->blocksifm;
-      ifm1 = imgifm1%handle->blocksifm;
-      init_indices[aux] = ifm1 * (handle->ifmblock * padded_w * padded_h) + img * (handle->ifmblock * padded_w * padded_h * handle->blocksifm);
-      aux++;
-    }
+  /*
+     if (handle->padding_flag == 1) {
+     handle->n_entries_init_upd[ltid] = copy_thr_end - copy_thr_begin;
+     init_indices = (int*) libxsmm_aligned_malloc( (copy_thr_end - copy_thr_begin + 1) * sizeof(int), 2097152);
+     handle->init_upd_indices_ptrs[ltid] = init_indices;
+     aux = 0;    
+     for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
+     img = imgifm1/handle->blocksifm;
+     ifm1 = imgifm1%handle->blocksifm;
+     init_indices[aux] = ifm1 * (handle->ifmblock * padded_w * padded_h) + img * (handle->ifmblock * padded_w * padded_h * handle->blocksifm);
+     aux++;
+     }
 
-    if (handle->trans_ofw_ifm == 0) {
-      handle->n_entries_copy_upd[ltid] = copy_thr_end - copy_thr_begin;
-      copy_indices = (int*) libxsmm_aligned_malloc( 2 * (copy_thr_end - copy_thr_begin + 1) * sizeof(int), 2097152);
-      handle->copy_upd_indices_ptrs[ltid] = copy_indices;
-      aux = 0;    
-      for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
-        img = imgifm1/handle->blocksifm;
-        ifm1 = imgifm1%handle->blocksifm;
-        copy_indices[aux] = ifm1 * (handle->ifmblock * handle->ifhp *  handle->ifwp) + img * (handle->ifmblock * handle->ifhp *  handle->ifwp * handle->blocksifm);
-        copy_indices[aux+1] = handle->desc.pad_w * handle->ifmblock + handle->desc.pad_h * handle->ifmblock * padded_w + ifm1 * (handle->ifmblock * padded_w * padded_h) + img * (handle->ifmblock * padded_w * padded_h * handle->blocksifm);
-        aux +=2;
-      }
-    }
-  }
+     if (handle->trans_ofw_ifm == 0) {
+     handle->n_entries_copy_upd[ltid] = copy_thr_end - copy_thr_begin;
+     copy_indices = (int*) libxsmm_aligned_malloc( 2 * (copy_thr_end - copy_thr_begin + 1) * sizeof(int), 2097152);
+     handle->copy_upd_indices_ptrs[ltid] = copy_indices;
+     aux = 0;    
+     for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
+     img = imgifm1/handle->blocksifm;
+     ifm1 = imgifm1%handle->blocksifm;
+     copy_indices[aux] = ifm1 * (handle->ifmblock * handle->ifhp *  handle->ifwp) + img * (handle->ifmblock * handle->ifhp *  handle->ifwp * handle->blocksifm);
+     copy_indices[aux+1] = handle->desc.pad_w * handle->ifmblock + handle->desc.pad_h * handle->ifmblock * padded_w + ifm1 * (handle->ifmblock * padded_w * padded_h) + img * (handle->ifmblock * padded_w * padded_h * handle->blocksifm);
+     aux +=2;
+     }
+     }
+     }*/
 
   num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
   num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
@@ -195,15 +197,21 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->kernel_upd_variant_ptrs[ltid] = kernel_variant;
   handle->n_upd_code_segments[ltid] = n_code_segments;
   expanded_size = local_entries/3 + n_code_segments;
-  tmp_expanded_stream = (int*) malloc( expanded_size * sizeof(int) );
-  tmp_stream_index = 0;
-  if (n_code_segments) {
+
+  /*tmp_expanded_stream = (int*) malloc( expanded_size * sizeof(int) );
+    tmp_stream_index = 0;
+    if (n_code_segments) {
     encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 2097152);
     handle->upd_code_segments[ltid] = encoded_code_segments;
-  }
+    }*/
+
+
+  //printf("I am thread %d and I have %d local entries, trans is %d and per_thread is %d\n", ltid,  local_entries, handle->trans_ofw_ifm, handle->use_thread_private_filter );
+
   local_entries = 0;
 
   /* Second run to compute actual indices */
+
   if ( handle->use_thread_private_filter > 0 ) {
     for (ofm1ifm1img = img_parallel_thr_begin; ofm1ifm1img < img_parallel_thr_end; ++ofm1ifm1img) {
       ofm1 = ofm1ifm1img / (handle->blocksifm * handle->desc.N);
@@ -219,19 +227,15 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
           for (kj=0; kj < kh; ++kj) {
             if ( handle->ifmblock != 1  ) {
               for (ki=0; ki < kw; ++ki) {
-
                 compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + (ii_ + ki) ) *  handle->ifmblock;
                 compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock;
                 compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_ ) * handle->ofwp)  +  oi_ ) *  handle->ofmblock;
-
                 local_entries += 3;
               }
             } else {
-
               compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + ii_ ) *  handle->ifmblock;
               compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock;
               compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_ ) * handle->ofwp)  +  oi_ ) *  handle->ofmblock;
-
               local_entries += 3;
             }
           }
@@ -267,7 +271,10 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     }
   }
 
-  free(tmp_expanded_stream);
+
+
+
+  //free(tmp_expanded_stream);
 
   /* At the end of stream do not prefetch garbage */
   compute_indices[local_entries] = 0;

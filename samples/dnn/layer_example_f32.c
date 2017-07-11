@@ -905,20 +905,21 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       /* run LIBXSMM convolution for performance */
       l_start = libxsmm_timer_tick();
-      for (i = 0; i < iters; ++i) {
+
 #if defined(_OPENMP)
-#   pragma omp parallel
+#   pragma omp parallel private(i)
 #endif
-        {
+      {
 #if defined(_OPENMP)
-          const int tid = omp_get_thread_num();
+        const int tid = omp_get_thread_num();
 #else
-          const int tid = 0;
+        const int tid = 0;
 #endif
+        for (i = 0; i < iters; ++i) { 
           libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
-        }
-        if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
-          CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );
+          if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+            CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );
+          }
         }
       }
       l_end = libxsmm_timer_tick();
@@ -979,8 +980,8 @@ int main(int argc, char* argv[])
     conv_desc.pad_h_out = pad_h_out;
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
-    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
-    /*conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;*/
+    //conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
+    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NHWC;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_RSCK;
 #ifdef USE_OVERWRITE

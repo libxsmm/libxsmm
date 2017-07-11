@@ -988,17 +988,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           }
 
       if ( handle->use_thread_private_jit ) {
+        handle->trans_ofw_ifm = 0; 
         /* Determine if we will be using thread private filters  */
         if ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads))) {
           handle->use_thread_private_filter = 1;
         } else {
           handle->use_thread_private_filter = 0;
-        }
-        /* determine if we will transpose input  */
-        if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->desc.v == 1) && (handle->upd_ofw_rb%4 == 0) ) {
-          handle->trans_ofw_ifm = 1;
-        } else {
-          handle->trans_ofw_ifm = 0;
+          /* determine if we will transpose input  */
+          if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->desc.v == 1) && (handle->upd_ofw_rb%4 == 0) ) {
+            handle->trans_ofw_ifm = 1;
+          }     
         }
         handle->n_entries_upd = (int*) malloc(handle->desc.threads * sizeof(int));
         handle->compute_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
