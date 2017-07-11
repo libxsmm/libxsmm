@@ -1762,18 +1762,22 @@ LIBXSMM_API_DEFINITION int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_bl
   }
   if (EXIT_SUCCESS == result) { /* square-root without libm dependency */
     int i;
-    if (0 < info->normf_abs) {
-      const double squared = info->normf_abs; info->normf_abs *= 0.5;
-      for (i = 0; i < 16; ++i) info->normf_abs = 0.5 * (info->normf_abs + squared / info->normf_abs);
+    if (0 < info->l2_abs) {
+      const double squared = info->l2_abs; info->l2_abs *= 0.5;
+      for (i = 0; i < 16; ++i) info->l2_abs = 0.5 * (info->l2_abs + squared / info->l2_abs);
+    }
+    if (0 < info->l2_rel) {
+      const double squared = info->l2_rel; info->l2_rel *= 0.5;
+      for (i = 0; i < 16; ++i) info->l2_rel = 0.5 * (info->l2_rel + squared / info->l2_rel);
     }
     if (0 < info->normf_rel) {
       const double squared = info->normf_rel; info->normf_rel *= 0.5;
       for (i = 0; i < 16; ++i) info->normf_rel = 0.5 * (info->normf_rel + squared / info->normf_rel);
     }
     if (1 == n) {
-      const libxsmm_blasint tmp = info->max_diff_m;
-      info->max_diff_m = info->max_diff_n;
-      info->max_diff_n = tmp;
+      const libxsmm_blasint tmp = info->linf_abs_m;
+      info->linf_abs_m = info->linf_abs_n;
+      info->linf_abs_n = tmp;
     }
   }
   return result;

@@ -377,13 +377,13 @@ LIBXSMM_API void libxsmm_gemm_print(void* ostream,
 typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
   /** One-norm */         double norm1_abs, norm1_rel;
   /** Infinity-norm */    double normi_abs, normi_rel;
-  /** Froebenius-norm */  double normf_abs, normf_rel;
-  /** Sum of absolute values in reference/test set. */
-  double asum_ref, asum_tst;
+  /** Froebenius-norm */  double normf_rel;
+  /** L1-norm and L2-norm of differences. */
+  double l2_abs, l2_rel, l1_ref, l1_tst;
   /** Maximum absolute and relative error. */
-  double max_diff_abs, max_diff_rel;
+  double linf_abs, linf_rel;
   /** Location of maximum error (m, n). */
-  libxsmm_blasint max_diff_m, max_diff_n;
+  libxsmm_blasint linf_abs_m, linf_abs_n;
 } libxsmm_matdiff_info;
 
 /** Utility function to calculate the difference between two matrices. */
@@ -398,7 +398,7 @@ LIBXSMM_API_INLINE void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, con
     output->norm1_rel = input->norm1_rel;
     output->normi_abs = input->normi_abs;
     output->normi_rel = input->normi_rel;
-    output->normf_abs = input->normf_abs;
+    output->l2_abs = input->l2_abs;
     output->normf_rel = input->normf_rel;
   }
 }

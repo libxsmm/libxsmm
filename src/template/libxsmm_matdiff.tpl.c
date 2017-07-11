@@ -32,7 +32,7 @@
 const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE *const real_ref = (const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE*)ref;
 const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE *const real_tst = (const LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE*)tst;
 double compf = 0, compfr = 0, compft = 0, normfr = 0, normft = 0, normr = 0, normt = 0;
-double normrc = 0, normtc = 0, compr = 0, compt = 0;
+double normrc = 0, normtc = 0, compr = 0, compt = 0, compd = 0;
 libxsmm_blasint i, j;
 
 for (i = 0; i < nn; ++i) {
@@ -47,15 +47,19 @@ for (i = 0; i < nn; ++i) {
     const double ta = LIBXSMM_ABS(ti);
 
     /* maximum absolute error and location */
-    if (info->max_diff_abs < di) {
-      info->max_diff_abs = di;
-      info->max_diff_m = j;
-      info->max_diff_n = i;
+    if (info->linf_abs < di) {
+      info->linf_abs = di;
+      info->linf_abs_m = j;
+      info->linf_abs_n = i;
     }
 
     /* maximum error relative to current value */
-    if (0 < ra) { const double max_dr = di / ra;
-      if (info->max_diff_rel < max_dr) info->max_diff_rel = max_dr;
+    if (0 < ra) { const double dri = di / ra;
+      if (info->linf_rel < dri) info->linf_rel = dri;
+      /* sum of relative differences */
+      v0 = dri - compd; v1 = info->l2_rel + v0;
+      compd = (v1 - info->l2_rel) - v0;
+      info->l2_rel = v1;
     }
 
     /* row-wise sum of reference values with Kahan compensation */
@@ -84,20 +88,20 @@ for (i = 0; i < nn; ++i) {
     normft = v1;
 
     /* Froebenius-norm of differences with Kahan compensation */
-    v0 = di * di - compf; v1 = info->normf_abs + v0;
-    compf = (v1 - info->normf_abs) - v0;
-    info->normf_abs = v1;
+    v0 = di * di - compf; v1 = info->l2_abs + v0;
+    compf = (v1 - info->l2_abs) - v0;
+    info->l2_abs = v1;
   }
 
   /* summarize reference values */
-  v0 = normrj - compr; v1 = info->asum_ref + v0;
-  compr = (v1 - info->asum_ref) - v0;
-  info->asum_ref = v1;
+  v0 = normrj - compr; v1 = info->l1_ref + v0;
+  compr = (v1 - info->l1_ref) - v0;
+  info->l1_ref = v1;
 
   /* summarize test values */
-  v0 = normtj - compt; v1 = info->asum_tst + v0;
-  compt = (v1 - info->asum_tst) - v0;
-  info->asum_tst = v1;
+  v0 = normtj - compt; v1 = info->l1_tst + v0;
+  compt = (v1 - info->l1_tst) - v0;
+  info->l1_tst = v1;
 
   /* calculate Infinity-norm of differences */
   if (info->normi_abs < normij) info->normi_abs = normij;
@@ -119,10 +123,10 @@ else { /* should not happen */
 
 /* Froebenius-norm relative to reference */
 if (0 < normfr) {
-  info->normf_rel = info->normf_abs / normfr;
+  info->normf_rel = info->l2_abs / normfr;
 }
 if (0 < normft) { /* relative to test */
-  info->normf_rel = info->normf_abs / normft;
+  info->normf_rel = info->l2_abs / normft;
 }
 else { /* should not happen */
   info->normf_rel = 0;
