@@ -573,8 +573,8 @@ int main(int argc, char* argv[])
 
     /* compare */
     libxsmm_matdiff(LIBXSMM_DATATYPE_I8, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0, &norms_fwd);
-    printf("L1 reference  : %.24f\n", norms_fwd.l1_ref);
-    printf("L1 test       : %.24f\n", norms_fwd.l1_tst);
+    printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
+    printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
     printf("L2 rel.error  : %.24f\n", norms_fwd.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_fwd.linf_abs);
@@ -606,8 +606,8 @@ int main(int argc, char* argv[])
 
     /* compare */
     libxsmm_matdiff(LIBXSMM_DATATYPE_I8, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_libxsmm_input, 0, 0, &norms_bwd);
-    printf("L1 reference  : %.24f\n", norms_bwd.l1_ref);
-    printf("L1 test       : %.24f\n", norms_bwd.l1_tst);
+    printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+    printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
     printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
     printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
