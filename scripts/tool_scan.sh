@@ -33,8 +33,8 @@
 PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.sh *.py *.yml *.txt *.md Makefile"
 HERE=$(cd $(dirname $0); pwd -P)
 
-CODEFILE=${HERE}/.codefile
-KEYFILE=${HERE}/keywords.txt
+CODEFILE=${HERE}/../.codefile
+KEYFILE=${HERE}/../keywords.txt
 
 if [ -e ${CODEFILE} ]; then
   PATTERNS="$(cat ${CODEFILE})"

@@ -422,13 +422,10 @@
     <None Include="..\.gitattributes" />
     <None Include="..\.state.sh" />
     <None Include="..\LICENSE" />
-    <None Include="..\.scan.sh" />
     <None Include="..\src\template\libxsmm.f">
       <Filter>src\template</Filter>
     </None>
-    <None Include="..\.codecov.env" />
     <None Include="..\.codefile" />
-    <None Include="..\.travis.env" />
     <None Include="..\.travis.sh" />
     <None Include="..\scripts\tool_inspector.sh">
       <Filter>scripts</Filter>
@@ -436,8 +433,6 @@
     <None Include="..\scripts\libxsmm_config.py">
       <Filter>scripts</Filter>
     </None>
-    <None Include="..\.buildkite.env" />
-    <None Include="..\.analyze.sh" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />
