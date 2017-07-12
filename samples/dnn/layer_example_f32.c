@@ -570,7 +570,12 @@ int main(int argc, char* argv[])
   set_zeropad_nchw(naive_input, nImg, nIfm, ifhp, ifwp, pad_h_in, pad_w_in);
   copy_buf(naive_input, naive_input_save, nImg*nIfm*ifhp*ifwp);
   zero_buf(naive_output_save,    nImg*nOfm*ofhp*ofwp);
-  init_buf(naive_output,         nImg*nOfm*ofhp*ofwp, 0, 0);
+  if (algo_winograd) {
+    zero_buf(naive_output,       nImg*nOfm*ofhp*ofwp);
+  }
+  else {
+    init_buf(naive_output,       nImg*nOfm*ofhp*ofwp, 0, 0);
+  }
   copy_buf(naive_output, naive_output_save, nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_libxsmm_input,  nImg*nIfm*ifhp*ifwp);
