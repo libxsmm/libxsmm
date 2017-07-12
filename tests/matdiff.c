@@ -32,7 +32,7 @@
 #include <float.h>
 
 #if !defined(REAL_TYPE)
-# define REAL_TYPE double
+# define REAL_TYPE float
 #endif
 
 
@@ -72,7 +72,7 @@ int main(void)
     if (0.0000003 < LIBXSMM_ABS(diff.normf_rel - 0.1081785)) result = EXIT_FAILURE;
     /* L2-norm */
     if (0.0000003 < LIBXSMM_ABS(diff.l2_abs - 1.8742465)) result = EXIT_FAILURE;
-    if (0.0000003 < LIBXSMM_ABS(diff.l2_rel - 1.1991713)) result = EXIT_FAILURE;
+    if (0.0000003 < LIBXSMM_ABS(diff.l2_rel - 0.6726295)) result = EXIT_FAILURE;
     /** L1-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.l1_ref - 46.00)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.l1_tst - 45.66)) result = EXIT_FAILURE;
@@ -98,7 +98,7 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(diff.normf_rel - 0.0224695)) result = EXIT_FAILURE;
     /** L2-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.l2_abs - 2.2383029)) result = EXIT_FAILURE;
-    if (0.0000001 < LIBXSMM_ABS(diff.l2_rel - 0.5763872)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.l2_rel - 0.2438908)) result = EXIT_FAILURE;
     /** L1-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.l1_ref - 110.0)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.l1_tst - 111.1)) result = EXIT_FAILURE;
@@ -124,7 +124,7 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(diff.normf_rel - 0.0224695)) result = EXIT_FAILURE;
     /** L2-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.l2_abs - 2.2383029)) result = EXIT_FAILURE;
-    if (0.0000001 < LIBXSMM_ABS(diff.l2_rel - 0.5763872)) result = EXIT_FAILURE;
+    if (0.0000001 < LIBXSMM_ABS(diff.l2_rel - 0.2438908)) result = EXIT_FAILURE;
     /** L1-norm */
     if (0.0000001 < LIBXSMM_ABS(diff.l1_ref - 110.0)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.l1_tst - 111.1)) result = EXIT_FAILURE;

@@ -57,7 +57,7 @@ for (i = 0; i < nn; ++i) {
     if (0 < ra) { const double dri = di / ra;
       if (info->linf_rel < dri) info->linf_rel = dri;
       /* sum of relative differences */
-      v0 = dri - compd; v1 = info->l2_rel + v0;
+      v0 = dri * dri - compd; v1 = info->l2_rel + v0;
       compd = (v1 - info->l2_rel) - v0;
       info->l2_rel = v1;
     }
