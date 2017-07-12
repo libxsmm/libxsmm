@@ -103,6 +103,18 @@ void matrix_sigmoid(libxsmm_blasint size, REAL_TYPE *src, REAL_TYPE *dst)
   }
 }
 
+void matrix_relu(libxsmm_blasint size, REAL_TYPE *src, REAL_TYPE *dst)
+{
+  libxsmm_blasint i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  LIBXSMM_PRAGMA_SIMD
+  for (i = 0; i < size; i++) {
+    dst[i] = (src[i] >= 0) ? src[i] : -src[i];
+  }
+}
+
 int main(int argc, char* argv[])
 {
   const libxsmm_blasint m = (1 < argc ? atoi(argv[1]) : 1024);
@@ -124,7 +136,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint ldz = (17 < argc ? atoi(argv[17]) : m);
   const libxsmm_blasint ldu = (18 < argc ? atoi(argv[18]) : m);
   const libxsmm_blasint ldh = (19 < argc ? atoi(argv[19]) : m);
-  const double gflops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (m * n)) * t * 1E-9;
+  const double gflops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * t * 1E-9;
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   const REAL_TYPE alpha = 1, beta = 1;
@@ -143,19 +155,21 @@ int main(int argc, char* argv[])
 #endif
   {
     REAL_TYPE* wgold = (REAL_TYPE*)libxsmm_malloc(ldw * k * sizeof(REAL_TYPE));
-    REAL_TYPE* xgold = (REAL_TYPE*)libxsmm_malloc(ldx * n * sizeof(REAL_TYPE)); /* * nrepeat */
+    REAL_TYPE* xgoldt = (REAL_TYPE*)libxsmm_malloc(ldx * n * sizeof(REAL_TYPE) * t);
     REAL_TYPE* ugold = (REAL_TYPE*)libxsmm_malloc(ldu * m * sizeof(REAL_TYPE));
     REAL_TYPE* hgold = (REAL_TYPE*)libxsmm_malloc(ldh * n * sizeof(REAL_TYPE));
     REAL_TYPE* z1gold = (REAL_TYPE*)libxsmm_malloc(ldz * n * sizeof(REAL_TYPE));
     REAL_TYPE* z2gold = (REAL_TYPE*)libxsmm_malloc(ldz * n * sizeof(REAL_TYPE));
     REAL_TYPE* zgold = (REAL_TYPE*)libxsmm_malloc(ldz * n * sizeof(REAL_TYPE));
     REAL_TYPE* w = (REAL_TYPE*)libxsmm_malloc(m * k * sizeof(REAL_TYPE));
-    REAL_TYPE* x = (REAL_TYPE*)libxsmm_malloc(k * n * sizeof(REAL_TYPE));
+    REAL_TYPE* xt = (REAL_TYPE*)libxsmm_malloc(k * n * sizeof(REAL_TYPE) * t);
     REAL_TYPE* u = (REAL_TYPE*)libxsmm_malloc(m * m * sizeof(REAL_TYPE));
     REAL_TYPE* h = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
     REAL_TYPE* z1 = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
     REAL_TYPE* z2 = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
     REAL_TYPE* z = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
+    LIBXSMM_VLA_DECL(2, REAL_TYPE, xgold, xgoldt, ldx * n);
+    LIBXSMM_VLA_DECL(2, REAL_TYPE, x, xt, k * n);
     libxsmm_bgemm_handle* handlewx = 0;
     libxsmm_bgemm_handle* handleuh = 0;
     unsigned long long start;
@@ -174,14 +188,19 @@ int main(int argc, char* argv[])
 
     if (0 != handlewx && 0 != handleuh) {
       init(42, wgold, m, k, ldw, 1.0);
-      init(24, xgold, k, n, ldx, 1.0);
+      int it;
+      for (it = 0; it < t; ++it) {
+        init(24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, ldx * n), k, n, ldx, 1.0);
+      }
       init(42, ugold, m, m, ldu, 1.0);
       init(24, hgold, m, n, ldh, 1.0);
       init( 0, z1gold, m, n, ldz, 1.0);
       init( 0, z2gold, m, n, ldz, 1.0);
       init( 0, zgold, m, n, ldz, 1.0);
       libxsmm_bgemm_copyin_a(handlewx, wgold, &ldw, w);
-      libxsmm_bgemm_copyin_b(handlewx, xgold, &ldx, x);
+      for (it = 0; it < t; ++it) {
+        libxsmm_bgemm_copyin_b(handlewx, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, ldx * n), &ldx, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n));
+      }
       libxsmm_bgemm_copyin_a(handleuh, ugold, &ldu, u);
       libxsmm_bgemm_copyin_b(handleuh, hgold, &ldh, h);
       libxsmm_bgemm_copyin_c(handlewx, z1gold, &ldz, z1);
@@ -194,7 +213,7 @@ int main(int argc, char* argv[])
       libxsmm_bgemm_omp(handlewx, w, x, z1, 1);
 #if defined(CHECK)
       if (!LIBXSMM_FEQ(0, check)) {
-        LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, xgold, &ldx, &beta, z1gold, &ldz);
+        LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, &LIBXSMM_VLA_ACCESS(2, xgold, 0, 0, ldx * n), &ldx, &beta, z1gold, &ldz);
       }
 #endif
       libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
@@ -217,12 +236,12 @@ int main(int argc, char* argv[])
       for (s = 0; s < nrepeat; ++s) {
         /* The following loop may be absorbed into libxsmm_lstm_omp */
         for (i = 0; i < t-1; ++i) {
-          libxsmm_bgemm_omp(handlewx, w, x, z1, 1/*nrepeat*/);
+          libxsmm_bgemm_omp(handlewx, w, x[k * n * i], z1, 1/*nrepeat*/);
           libxsmm_bgemm_omp(handleuh, u, h, z2, 1/*nrepeat*/);
           matrix_add(m*n, z1, z2, z);
-          matrix_sigmoid(m*n, z, h);
+          matrix_relu(m*n, z, h);
         }
-        libxsmm_bgemm_omp(handlewx, w, x, z1, 1/*nrepeat*/);
+        libxsmm_bgemm_omp(handlewx, w, x[k * n * (t-1)], z1, 1/*nrepeat*/);
         libxsmm_bgemm_omp(handleuh, u, h, z2, 1/*nrepeat*/);
         matrix_add(m*n, z1, z2, z);
       }
@@ -237,12 +256,12 @@ int main(int argc, char* argv[])
         start = libxsmm_timer_tick();
         for (s = 0; s < nrepeat; ++s) {
           for (i = 0; i < t-1; ++i) {
-            LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, xgold, &ldx, &beta, z1gold, &ldz);
+            LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, xgold[k * n * i], &ldx, &beta, z1gold, &ldz);
             LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &m, &alpha, ugold, &ldu, hgold, &ldh, &beta, z2gold, &ldz);
             matrix_add(m*n, z1gold, z2gold, zgold);
-            matrix_sigmoid(m*n, zgold, hgold);
+            matrix_relu(m*n, zgold, hgold);
           }
-          LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, xgold, &ldx, &beta, z1gold, &ldz);
+          LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, xgold[k * n * (t-1)], &ldx, &beta, z1gold, &ldz);
           LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &m, &alpha, ugold, &ldu, hgold, &ldh, &beta, z2gold, &ldz);
           matrix_add(m*n, z1gold, z2gold, zgold);
         }
