@@ -114,7 +114,7 @@ for (i = 0; i < nn; ++i) {
 if (0 < normr) {
   info->normi_rel = info->normi_abs / normr;
 }
-if (0 < normt) { /* relative to test */
+else if (0 < normt) { /* relative to test */
   info->normi_rel = info->normi_abs / normt;
 }
 else { /* should not happen */
@@ -125,7 +125,7 @@ else { /* should not happen */
 if (0 < normfr) {
   info->normf_rel = info->l2_abs / normfr;
 }
-if (0 < normft) { /* relative to test */
+else if (0 < normft) { /* relative to test */
   info->normf_rel = info->l2_abs / normft;
 }
 else { /* should not happen */
@@ -169,7 +169,7 @@ for (j = 0; j < mm; ++j) {
 if (0 < normrc) {
   info->norm1_rel = info->norm1_abs / normrc;
 }
-if (0 < normtc) { /* relative to test */
+else if (0 < normtc) { /* relative to test */
   info->norm1_rel = info->norm1_abs / normtc;
 }
 else { /* should not happen */
