@@ -1,16 +1,14 @@
 #!/bin/bash
 
-if [ $# -ne 3 ]
+if [ $1 = "-h" ]
 then
   echo "Usage: $(basename $0) matrices.txt iters numa (1-mcdram/0-DDR)"
-  fn="deepbench_matrices.txt"
-  ITERS=100
-  NUMA=1
-else
-  fn=$1
-  ITERS=$2
-  NUMA=$3
+  exit
 fi
+
+fn=${1:-"deepbench_matrices.txt"}
+ITERS=${2:-100}
+NUMA=${3:-1}
 
 NUMACTL="${TOOL_COMMAND}"
 CPUFLAGS=$(if [ -e /proc/cpuinfo ]; then grep -m1 flags /proc/cpuinfo | cut -d: -f2-; fi)
@@ -24,7 +22,8 @@ if [[ -z "${OMP_NUM_THREADS}" ]]; then
   echo "using defaults for OMP settings!"
   export KMP_HW_SUBSET=1T
   export KMP_AFFINITY=compact,granularity=fine
-  export OMP_NUM_THREADS=64
+  export KMP_AFFINITY=proclist=[2-67],granularity=thread,explicit,norespect
+  export OMP_NUM_THREADS=66
 else
   echo "using environment OMP settings!"
 fi
@@ -33,26 +32,38 @@ fi
 # current bgemm only supports non-transpose GEMM, TODO: transpose support
 _bin="$NUMACTL ./bgemm"
 _it=$ITERS
+
 function run_bsgemm {
 _M=$1
 _N=$2
 _K=$3
 _AT=$4
 _BT=$5
+_mb=32
+_nb=32
+_kb=32
 _order=0
 _mb1=1
 _nb1=1
 _kb1=1
 _kb2=1
+
 if [[ $# -gt 5 ]]
 then
   _mb=$6
   _nb=$7
   _kb=$8
-else
-  _mb=32
-  _nb=32
-  _kb=32
+fi
+
+if [[ $# -gt 8 ]]
+then
+  _order=$9
+  _mb1=${10}
+  _nb1=${11}
+  _kb1=${12}
+  _kb2=${13}
+  st=${14}
+  _it=$((st*ITERS))
 fi
 
 if [[ "$_mb" -gt "_M" ]]
@@ -105,8 +116,8 @@ then
   _nb=$t_kb
 fi
 
-echo "$_bin $_it $_M $_N $_K $_order $_mb $_nb $_kb $_mb1 $_nb1 $_kb1 $_kb2"
-$_bin $_it $_M $_N $_K $_order $_mb $_nb $_kb $_mb1 $_nb1 $_kb1 $_kb2
+echo "$_bin $_M $_N $_K $_mb $_nb $_kb $_order $_it $_mb1 $_nb1 $_kb1 $_kb2"
+$_bin $_M $_N $_K $_mb $_nb $_kb $_order $_it $_mb1 $_nb1 $_kb1 $_kb2
 echo "--------------------------------------------------------------------------------------"
 }
 
