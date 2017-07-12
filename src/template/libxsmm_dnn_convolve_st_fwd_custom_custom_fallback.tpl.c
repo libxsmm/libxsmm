@@ -151,7 +151,7 @@ if (handle->datatype != handle->datatype_itm) {
       for (oj = 0; oj < handle->ofhp*handle->ofwp; ++oj) {
         LIBXSMM_PRAGMA_SIMD
         for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-          temp_ptr[ofm2] = (temp_ptr[ofm2] < 0 ? 0 : temp_ptr[ofm2]);
+          temp_ptr[ofm2] = (element_output_type)(temp_ptr[ofm2] < 0 ? 0 : temp_ptr[ofm2]);
         }
         temp_ptr += handle->ofmblock;
       }
