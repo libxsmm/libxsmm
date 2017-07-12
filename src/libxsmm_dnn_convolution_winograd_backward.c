@@ -42,6 +42,11 @@
 # pragma offload_attribute(pop)
 #endif
 
+/* Enable/disable specific code paths */
+#if defined(LIBXSMM_INTRINSICS_AVX512) && !defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_BACKWARD_AVX512)
+# define LIBXSMM_DNN_CONVOLUTION_WINOGRAD_BACKWARD_AVX512
+#endif
+
 
 LIBXSMM_API_INLINE void internal_bwd_input_transform_custom_custom(
                                            const float *inp,
@@ -52,7 +57,11 @@ LIBXSMM_API_INLINE void internal_bwd_input_transform_custom_custom(
   if (handle->cwino_bwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_BACKWARD_AVX512)
+# include "template/libxsmm_dnn_convolution_winograd_backward_custom_custom_input_trans_alpha6_avx512.tpl.c"
+#else
 # include "template/libxsmm_dnn_convolution_winograd_backward_custom_custom_input_trans_alpha6.tpl.c"
+#endif
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_bwd.alpha == 4) {
@@ -135,7 +144,11 @@ LIBXSMM_API_INLINE void internal_bwd_output_transform_custom_custom(
   if (handle->cwino_bwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_BACKWARD_AVX512)
+# include "template/libxsmm_dnn_convolution_winograd_backward_custom_custom_output_trans_alpha6_avx512.tpl.c"
+#else
 # include "template/libxsmm_dnn_convolution_winograd_backward_custom_custom_output_trans_alpha6.tpl.c"
+#endif
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_bwd.alpha == 4) {
