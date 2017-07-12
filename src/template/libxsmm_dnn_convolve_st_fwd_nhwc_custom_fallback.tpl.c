@@ -128,7 +128,7 @@ for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
     for (oj = 0; oj < handle->ofhp*handle->ofwp; ++oj) {
       LIBXSMM_PRAGMA_SIMD
       for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-        temp_ptr[ofm2] = (temp_ptr[ofm2] < 0.0f) ? 0.0 : temp_ptr[ofm2];
+        temp_ptr[ofm2] = (temp_ptr[ofm2] < 0 ? 0 : temp_ptr[ofm2]);
       }
       temp_ptr += handle->blocksofm*handle->ofmblock;
     }
