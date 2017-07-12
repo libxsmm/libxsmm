@@ -474,6 +474,8 @@ LIBXSMM_API_INLINE void internal_init(void)
 {
   libxsmm_code_pointer* result;
   int init_code = EXIT_FAILURE, i;
+  unsigned long long s0 = libxsmm_timer_tick(), s1, t0, t1; /* warmup */
+  s0 = libxsmm_timer_tick(); t0 = libxsmm_timer_xtick(); /* initial timings */
 #if !defined(LIBXSMM_NO_SYNC) /* setup the locks in a thread-safe fashion */
   for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock + i);
   LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
@@ -641,6 +643,10 @@ LIBXSMM_API_INLINE void internal_init(void)
   for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
   LIBXSMM_LOCK_RELEASE(&libxsmm_lock_global);
 #endif
+  s1 = libxsmm_timer_tick(); t1 = libxsmm_timer_xtick(); /* final timings */
+  if (s0 != s1 && t0 != t1) {
+    libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / (t0 < t1 ? (t1 - t0) : (t0 - t1));
+  }
 }
 
 
