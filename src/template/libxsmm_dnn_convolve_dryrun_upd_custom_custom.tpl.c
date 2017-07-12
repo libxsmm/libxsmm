@@ -206,8 +206,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     }*/
 
 
-  //printf("I am thread %d and I have %d local entries, trans is %d and per_thread is %d\n", ltid,  local_entries, handle->trans_ofw_ifm, handle->use_thread_private_filter );
-
   local_entries = 0;
 
   /* Second run to compute actual indices */
@@ -276,11 +274,12 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   //free(tmp_expanded_stream);
 
-  /* At the end of stream do not prefetch garbage */
   compute_indices[local_entries] = 0;
   compute_indices[local_entries+1] = 0;
   compute_indices[local_entries+2] = 0;
   total_calls = local_entries/3;
+
+  
 
 }
 
