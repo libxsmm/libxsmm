@@ -30,9 +30,8 @@
 ******************************************************************************/
 
 const int total_tiles = handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles;
-LIBXSMM_VLA_DECL(5, const float, input, toutp, ALPHA, handle->blocksofm*handle->cwino_fwd.bimg, total_tiles, TDVLEN);
+LIBXSMM_VLA_DECL(5, const float, input, toutp, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN);
 LIBXSMM_VLA_DECL(4, float, output, outp, handle->ofhp, handle->ofwp, TDVLEN);
-LIBXSMM_VLA_DECL(4, float, Ow, Owp, ALPHA, ALPHA, TDVLEN);
 __m512 O[(ALPHA)-2];
 unsigned int ti, tj;
 int i, j;
@@ -41,49 +40,31 @@ __m512 T[4][6]; /* FIXME: too big and causing spills */
 __m512 t0, t1, t2, t3;
 __m512 I0, I1, I2, I3, I4, I5;
 
-/* We have this separate loop to avoid long stride accesses */
-/* If we directly read from input in the loop below, we'd have blocksofm*bimg*total_tiles*64 Byte strides */
-/* In this loop, the stride is reduced to 64 */
-/* input has shape ALPHA*ALPHA*(blocksofm*cwino_fwd.bimg)*total_tiles*TDVLEN */
-/* typically, blocksofm = K/VLEN ofmblock = VLEN */
-/* the order of this loop is optimized for the source array which bigger */
-for (j = 0; j < (ALPHA); j++) {
-  for (i = 0; i < (ALPHA); i++) {
-    for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
-      for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
-        _mm512_store_ps(
-          &LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, j, i, 0, ALPHA, ALPHA, TDVLEN),
-          LIBXSMM_INTRINSICS_MM512_LOAD_PS(
-            &LIBXSMM_VLA_ACCESS(5, input, j, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->blocksofm*handle->cwino_fwd.bimg, total_tiles, TDVLEN)));
-      }
-    }
-  }
-}
-
 for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
   for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
     /*trans_O_4x4_3x3(ALPHA-2, TDVLEN, Ow[tj*handle->cwino_fwd.itiles + ti], O);*/
     /* inline code start */
+    LIBXSMM_PRAGMA_UNROLL_N(ALPHA)
+    for (i = 0; i < (ALPHA); i++) {
+      I0 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 0, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN));
+      I1 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 1, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN));
+      I2 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 2, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN));
+      I3 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 3, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN));
+      I4 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 4, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN));
+      I5 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 5, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN));
+
+      t0 = _mm512_add_ps(I1, I2);
+      t1 = _mm512_add_ps(I3, I4);
+      t2 = _mm512_sub_ps(I1, I2);
+      t3 = _mm512_sub_ps(I3, I4);
+
+      T[0][i] = _mm512_add_ps(_mm512_add_ps(t0, t1), I0);
+      T[1][i] = _mm512_fmadd_ps(_mm512_set1_ps(2.f), t3, t2);
+      T[2][i] = _mm512_fmadd_ps(_mm512_set1_ps(4.f), t1, t0);
+      T[3][i] = _mm512_add_ps(_mm512_fmadd_ps(_mm512_set1_ps(8.f), t3, t2), I5);
+    }
+
     if ((tj+1)*((ALPHA)-2) <= ((unsigned int)handle->ofh) && (ti+1)*((ALPHA)-2) <= ((unsigned int)handle->ofw)) { /* common case */
-      LIBXSMM_PRAGMA_UNROLL_N(ALPHA)
-      for (i = 0; i < (ALPHA); i++) {
-        I0 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 0, i, 0, ALPHA, ALPHA, TDVLEN));
-        I1 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 1, i, 0, ALPHA, ALPHA, TDVLEN));
-        I2 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 2, i, 0, ALPHA, ALPHA, TDVLEN));
-        I3 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 3, i, 0, ALPHA, ALPHA, TDVLEN));
-        I4 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 4, i, 0, ALPHA, ALPHA, TDVLEN));
-        I5 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 5, i, 0, ALPHA, ALPHA, TDVLEN));
-
-        t0 = _mm512_add_ps(I1, I2);
-        t1 = _mm512_add_ps(I3, I4);
-        t2 = _mm512_sub_ps(I1, I2);
-        t3 = _mm512_sub_ps(I3, I4);
-
-        T[0][i] = _mm512_add_ps(_mm512_add_ps(t0, t1), I0);
-        T[1][i] = _mm512_fmadd_ps(_mm512_set1_ps(2.f), t3, t2);
-        T[2][i] = _mm512_fmadd_ps(_mm512_set1_ps(4.f), t1, t0);
-        T[3][i] = _mm512_add_ps(_mm512_fmadd_ps(_mm512_set1_ps(8.f), t3, t2), I5);
-      }
 
       LIBXSMM_PRAGMA_UNROLL_N((ALPHA)-2)
       for (j = 0; j < ((ALPHA)-2); j++) {
@@ -117,26 +98,6 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
       }
     }
     else { /* corner case */
-      LIBXSMM_PRAGMA_UNROLL_N(ALPHA)
-      for (i = 0; i < (ALPHA); i++) {
-        I0 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 0, i, 0, ALPHA, ALPHA, TDVLEN));
-        I1 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 1, i, 0, ALPHA, ALPHA, TDVLEN));
-        I2 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 2, i, 0, ALPHA, ALPHA, TDVLEN));
-        I3 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 3, i, 0, ALPHA, ALPHA, TDVLEN));
-        I4 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 4, i, 0, ALPHA, ALPHA, TDVLEN));
-        I5 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, Ow, tj*handle->cwino_fwd.itiles + ti, 5, i, 0, ALPHA, ALPHA, TDVLEN));
-
-        t0 = _mm512_add_ps(I1, I2);
-        t1 = _mm512_add_ps(I3, I4);
-        t2 = _mm512_sub_ps(I1, I2);
-        t3 = _mm512_sub_ps(I3, I4);
-
-        T[0][i] = _mm512_add_ps(_mm512_add_ps(t0, t1), I0);
-        T[1][i] = _mm512_fmadd_ps(_mm512_set1_ps(2.f), t3, t2);
-        T[2][i] = _mm512_fmadd_ps(_mm512_set1_ps(4.f), t1, t0);
-        T[3][i] = _mm512_add_ps(_mm512_fmadd_ps(_mm512_set1_ps(8.f), t3, t2), I5);
-      }
-
       for (j = 0; j < LIBXSMM_MIN(handle->ofh - (int)tj*((ALPHA)-2), (ALPHA)-2); j++) {
         t0 = _mm512_add_ps(T[j][1], T[j][2]);
         t1 = _mm512_add_ps(T[j][3], T[j][4]);
