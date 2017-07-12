@@ -80,8 +80,8 @@ then
   fi
 
   # should be source'd after the above variables are set
-  source ${HERE}/.travis.env
-  source ${HERE}/.buildkite.env
+  source ${HERE}/.env/travis.env
+  source ${HERE}/.env/buildkite.env
 
   # setup PARTITIONS for multi-tests
   if [ "" = "${PARTITIONS}" ]; then

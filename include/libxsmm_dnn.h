@@ -167,13 +167,12 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor_datalayout {
 typedef enum libxsmm_dnn_conv_fuse_op {
   /* we fuse nothing into convolution */
   LIBXSMM_DNN_CONV_FUSE_NONE = 0,
-  /* we fuse fuse bias init into convolution */
-  LIBXSMM_DNN_CONV_FUSE_BIAS = 1
-#if 0
-  ,
-  /* we fase fase ReLU calculation into convolution Op */
-  LIBXSMM_DNN_CONV_FUSE_RELU = 2
-#endif
+  /* we fuse bias addition into convolution */
+  LIBXSMM_DNN_CONV_FUSE_BIAS = 1,
+  /* we fuse ReLU calculation into convolution op */
+  LIBXSMM_DNN_CONV_FUSE_RELU = 2,
+  /* we fuse bias addition and ReLU into convolution op */
+  LIBXSMM_DNN_CONV_FUSE_BIAS_RELU = LIBXSMM_DNN_CONV_FUSE_BIAS | LIBXSMM_DNN_CONV_FUSE_RELU
 } libxsmm_dnn_conv_fuse_op;
 
 /** Type of algorithm used for convolutions. */

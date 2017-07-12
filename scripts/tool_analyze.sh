@@ -30,6 +30,9 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
+HERE=$(cd $(dirname $0); pwd -P)
+
+cd ${HERE}/..
 make CXX=clang++ CC=clang DBG=1 ECFLAGS=--analyze $* 2> .analyze.log
 echo
 echo "================================================================================"
