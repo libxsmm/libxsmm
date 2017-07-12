@@ -6,7 +6,7 @@ then
   exit
 fi
 
-fn=${1:-"deepbench_matrices.txt"}
+fn=${1:-"deepbench_opt.txt"}
 ITERS=${2:-100}
 NUMA=${3:-1}
 
@@ -22,8 +22,8 @@ if [[ -z "${OMP_NUM_THREADS}" ]]; then
   echo "using defaults for OMP settings!"
   export KMP_HW_SUBSET=1T
   export KMP_AFFINITY=compact,granularity=fine
-  export KMP_AFFINITY=proclist=[2-67],granularity=thread,explicit,norespect
-  export OMP_NUM_THREADS=66
+  export KMP_AFFINITY=proclist=[1-67],granularity=thread,explicit,norespect
+  export OMP_NUM_THREADS=67
 else
   echo "using environment OMP settings!"
 fi
