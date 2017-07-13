@@ -50,6 +50,7 @@ LIBXSMM_VLA_DECL(6, float, weight, (float*)handle->reg_filter->data, handle->blo
 LIBXSMM_VLA_DECL(6, float, U,   (float*)handle->scratch1, ALPHA, handle->blocksofm, handle->blocksifm, TDVLEN, TDVLEN);
 LIBXSMM_VLA_DECL(8, float, V,   (float*)handle->scratch3, ALPHA, ALPHA, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, handle->blocksifm, TDVLEN);
 LIBXSMM_VLA_DECL(8, float, M,   (float*)handle->scratch4, handle->blocksofm, ALPHA, ALPHA, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, TDVLEN);
+LIBXSMM_VLA_DECL(5, float, Iwp, (float*)handle->scratchIw, handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles, ALPHA, ALPHA, TDVLEN);
 LIBXSMM_VLA_DECL(5, float, Owp, (float*)handle->scratchOw, handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles, ALPHA, ALPHA, TDVLEN);
 
 LIBXSMM_ASSUME_ALIGNED(handle->reg_input->data,  64);
@@ -104,7 +105,7 @@ for (job = thr_begin; job < thr_end; job++) {
   internal_fwd_input_transform_custom_custom(
     &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN),
     &LIBXSMM_VLA_ACCESS(8, V, img1, 0, 0, img2, 0, 0, ifm1, 0, ALPHA, ALPHA, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, handle->blocksifm, TDVLEN),
-    NULL, handle);
+    &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles, ALPHA, ALPHA, TDVLEN), handle);
 }
 #ifdef FTIME
 libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
