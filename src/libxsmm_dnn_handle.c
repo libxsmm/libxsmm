@@ -1339,7 +1339,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->code_fwd[0].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
         wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1;
         handle->code_fwd[1].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
-        wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2;
+        wino_desc_fp.prefetch = (libxsmm_convolution_prefetch_type)(LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2);
         handle->code_fwd[2].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
         /* wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT; */
         /* handle->code_fwd[3].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp); */
