@@ -1002,7 +1002,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       if ( handle->use_thread_private_jit ) {
         handle->trans_ofw_ifm = 0; 
         /* Determine if we will be using thread private filters  */
-        if ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads))) {
+        if ((handle->ifmblock == 1) || (handle->blocksifm * handle->blocksofm < handle->desc.threads) ) {
           handle->use_thread_private_filter = 1;
         } else {
           handle->use_thread_private_filter = 0;
