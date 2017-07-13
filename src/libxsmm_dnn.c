@@ -2562,7 +2562,7 @@ LIBXSMM_API void libxsmm_set_flag_reuseInput(libxsmm_dnn_layer* /*handle*/, char
 LIBXSMM_API_DEFINITION void libxsmm_set_flag_reuseInput(libxsmm_dnn_layer* handle, char type)
 {
   if (type == 'A') {
-    handle->flag_reuseInput = 0; //1;
+    handle->flag_reuseInput = 0/*1*/;
       /* for time being, disable reusing transformed input in weight update
          until weight update uses the new transformed input layout */
   } else {
