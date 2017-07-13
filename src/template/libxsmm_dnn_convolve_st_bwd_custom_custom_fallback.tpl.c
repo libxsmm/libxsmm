@@ -87,13 +87,35 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
 
     /* input padding copy */
 #if defined(INPUT_PADDING)
-    memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock), 0, padded_w * padded_h * sizeof(element_input_type));
-    for (ij = 0; ij < handle->ifhp; ij++) {
-      for (ii = 0; ii < handle->ifwp; ii++) {
-        for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-          LIBXSMM_VLA_ACCESS(3, input_buffer, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
-            LIBXSMM_VLA_ACCESS(5, del_input, img, (ifm1 * handle->fm_lp_block) + ifmlp, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
+    /* reset result buffer to zero when intent is to overwrite when first block
+       of input channels should be convoluted */
+    if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+      element_input_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock));
+      LIBXSMM_PRAGMA_SIMD
+      for (ij = 0; ij < padded_h*padded_w*handle->ifmblock; ij++) {
+        temp_ptr[ij] = (element_output_type)0;
+      }
+    } else {
+      if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+        for (ij = 0; ij < handle->ifhp; ij++) {
+          for (ii = 0; ii < handle->ifwp; ii++) {
+            LIBXSMM_PRAGMA_SIMD
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+              LIBXSMM_VLA_ACCESS(3, input_buffer, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
+                LIBXSMM_VLA_ACCESS(5, del_input, img, (ifm1 * handle->fm_lp_block) + ifmlp, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
+            }
+          }
         }
+      }
+    }
+#else
+    /* reset result buffer to zero when intent is to overwrite when first block
+       of input channels should be convoluted */
+    if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+      element_input_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock));
+      LIBXSMM_PRAGMA_SIMD
+      for (ij = 0; ij < handle->ifhp*handle->ifwp*handle->ifmblock*handle->fm_lp_block; ij++) {
+        temp_ptr[ij] = (element_output_type)0;
       }
     }
 #endif

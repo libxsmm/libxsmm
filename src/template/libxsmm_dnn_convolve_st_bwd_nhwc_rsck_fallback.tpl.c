@@ -58,12 +58,35 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
   ifm1 = imgifm1 % handle->blocksifm;
 
 #if defined(INPUT_PADDING)
-  for (oj = 0; oj < handle->ifhp; oj++) {
-    for (ij = 0; ij < handle->ifwp; ij++) {
-      for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-        LIBXSMM_VLA_ACCESS(3, input_buffer, oj + handle->desc.pad_h, ij + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
-          LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+  /* reset result buffer to zero when intent is to overwrite when first block
+     of input channels should be convoluted */
+  if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+    element_input_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock));
+    LIBXSMM_PRAGMA_SIMD
+    for (ij = 0; ij < padded_h*padded_w*handle->ifmblock; ij++) {
+      temp_ptr[ij] = (element_input_type)0;
+    }
+  } else {
+    for (oj = 0; oj < handle->ifhp; oj++) {
+      for (ij = 0; ij < handle->ifwp; ij++) {
+        for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+          LIBXSMM_VLA_ACCESS(3, input_buffer, oj + handle->desc.pad_h, ij + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
+            LIBXSMM_VLA_ACCESS(5, del_input, img, oj, ij, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+        }
       }
+    }
+  }
+#else
+  /* reset result buffer to zero when intent is to overwrite when first block
+     of input channels should be convoluted */
+  if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+    element_input_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock));
+    for (ij = 0; ij < handle->ifhp*handle->ifwp; ij++) {
+      LIBXSMM_PRAGMA_SIMD
+      for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+        temp_ptr[ifm2] = (element_input_type)0;
+      }
+      temp_ptr += handle->blocksifm*handle->ifmblock;
     }
   }
 #endif
