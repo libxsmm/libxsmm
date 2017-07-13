@@ -377,6 +377,8 @@ LIBXSMM_API_VARIABLE void* libxsmm_scratch_allocator_context;
 LIBXSMM_API_VARIABLE unsigned int libxsmm_scratch_pools;
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_API_VARIABLE double libxsmm_scratch_scale;
+/** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wallclock) */
+LIBXSMM_API_VARIABLE double libxsmm_timer_scale;
 /** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
 LIBXSMM_API_VARIABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
