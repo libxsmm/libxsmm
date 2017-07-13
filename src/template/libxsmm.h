@@ -57,16 +57,15 @@
 #include "libxsmm_typedefs.h"
 #include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
+#include "libxsmm_bgemm.h"
+#include "libxsmm_fsspmdm.h"
 #include "libxsmm_malloc.h"
 #include "libxsmm_spmdm.h"
 #include "libxsmm_cpuid.h"
 #include "libxsmm_timer.h"
 #include "libxsmm_sync.h"
 #include "libxsmm_dnn.h"
-#include "libxsmm_fsspmdm.h"
 
-/** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
-typedef LIBXSMM_BLASINT libxsmm_blasint;
 
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_API void libxsmm_init(void);
@@ -134,7 +133,7 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
   const int* lda, const int* ldb, const int* ldc,
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch);
-/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (double-precision). */
+/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (low/short-precision). */
 LIBXSMM_API libxsmm_wmmfunction libxsmm_wmmdispatch(int m, int n, int k,
   const int* lda, const int* ldb, const int* ldc,
   const int* alpha, const int* beta,
@@ -298,13 +297,12 @@ public:
     return m_function;
   }
   void operator()(const float* a, const float* b, float* c) const {
-    m_function(LIBXSMM_LD(a, b), LIBXSMM_LD(b, a), c);
+    m_function(a, b, c);
   }
   void operator()(const float* a, const float* b, float* c,
     const float* pa, const float* pb, const float* pc) const
   {
-    m_function(LIBXSMM_LD(a, b), LIBXSMM_LD(b, a), c,
-      LIBXSMM_LD(pa, pb), LIBXSMM_LD(pb, pa), pc);
+    m_function(a, b, c, pa, pb, pc);
   }
 };
 

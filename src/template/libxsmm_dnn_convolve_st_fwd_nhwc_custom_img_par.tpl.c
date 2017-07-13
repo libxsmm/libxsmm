@@ -30,7 +30,7 @@
  ******************************************************************************/
 
 if ( handle->use_thread_private_jit ) {
-#include "libxsmm_dnn_convolve_st_fwd_stream.tpl.c"
+#include "libxsmm_dnn_convolve_st_fwd_nhwc_custom_stream.tpl.c"
 } else {
   int ifm1, oj, ij, oi, ii, ofm2;
   /* calculate local thread ids */
@@ -90,6 +90,7 @@ if ( handle->use_thread_private_jit ) {
     copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, handle->desc.pad_h, handle->desc.pad_w, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
     jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, NULL);
 #endif
+
     /* handle fused bias addition */
     if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
       LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
@@ -101,7 +102,7 @@ if ( handle->use_thread_private_jit ) {
       __m512 vbias = LIBXSMM_INTRINSICS_MM512_LOAD_PS((void*)temp_ptr_2);
 #endif
       /* @TODO check these loops for physical output padding */
-      for (oj = 0; oj < (end_ofh-start_ofh); ++oj) {
+      for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp; ++oj) {
 #if defined(__AVX512F__)
         _mm512_store_ps((void*)temp_ptr, vbias);
 #else
@@ -124,6 +125,7 @@ if ( handle->use_thread_private_jit ) {
               for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
                 temp_ptr[ofm2] = (element_output_type)0;
               }
+            temp_ptr += handle->blocksofm*handle->ofmblock;
           }
         }
       }
@@ -193,6 +195,27 @@ if ( handle->use_thread_private_jit ) {
         }
       }
     }
+    /* ReLU handling */
+    if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU) > 0) ) {
+      element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, start_ofh, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
+
+      /* @TODO this is very hacky as it assumes ofmblock is VLEN */
+#if defined(__AVX512F__)
+      __m512 vzero = _mm512_setzero_ps();
+#endif
+      /* @TODO check these loops for physical output padding */
+      for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp; ++oj) {
+#if defined(__AVX512F__)
+        _mm512_store_ps((void*)temp_ptr, _mm512_max_ps(LIBXSMM_INTRINSICS_MM512_LOAD_PS((void*)temp_ptr), vzero));
+#else
+        LIBXSMM_PRAGMA_SIMD
+          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+            temp_ptr[ofm2] = (element_output_type)(temp_ptr[ofm2] < 0 ? 0 : temp_ptr[ofm2]);
+          }
+#endif
+        temp_ptr += handle->blocksofm*handle->ofmblock;
+      }
+    }
   } else if ( libxsmm_target_archid == LIBXSMM_X86_AVX2 ) {
     jitted_conv_fp_zero = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
     jitted_conv_fp_one = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
@@ -203,6 +226,7 @@ if ( handle->use_thread_private_jit ) {
     copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_buffer, handle->desc.pad_h, handle->desc.pad_w, 0, 0, 0, padded_w, handle->blocksifm, handle->ifmblock, handle->fm_lp_block);
     jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, NULL);
 #endif
+
     /* handle fused bias addition */
     if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
       LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
@@ -210,7 +234,7 @@ if ( handle->use_thread_private_jit ) {
       element_output_type* temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
 
       /* @TODO check these loops for physical output padding */
-      for (oj = 0; oj < (end_ofh-start_ofh); ++oj) {
+      for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp; ++oj) {
         LIBXSMM_PRAGMA_SIMD
           for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
             temp_ptr[ofm2] = temp_ptr_2[ofm2];
@@ -229,6 +253,7 @@ if ( handle->use_thread_private_jit ) {
               for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
                 temp_ptr[ofm2] = (element_output_type)0;
               }
+            temp_ptr += handle->blocksofm*handle->ofmblock;
           }
         }
       }
@@ -264,6 +289,19 @@ if ( handle->use_thread_private_jit ) {
               handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
           jitted_conv_fp_one(l_input, l_wt, l_output, NULL, NULL, NULL);
         }
+      }
+    }
+    /* ReLU handling */
+    if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU) > 0) ) {
+      element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, start_ofh, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
+
+      /* @TODO check these loops for physical output padding */
+      for (oj = 0; oj < (end_ofh-start_ofh)*handle->ofwp; ++oj) {
+        LIBXSMM_PRAGMA_SIMD
+          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+            temp_ptr[ofm2] = (element_output_type)(temp_ptr[ofm2] < 0 ? 0 : temp_ptr[ofm2]);
+          }
+        temp_ptr += handle->blocksofm*handle->ofmblock;
       }
     }
     /* should never happen, this is just an additional check */

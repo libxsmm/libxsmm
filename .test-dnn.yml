@@ -1,0 +1,16 @@
+script:
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} && 
+    env CHECK=1 ./run_alexnet.sh
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
+    env CHECK=1 ./run_deepbench.sh
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
+    env CHECK=1 ./run_googlenetv1.sh
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
+    env CHECK=1 ./run_googlenetv3.sh
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
+    env CHECK=1 ./run_overfeat.sh
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
+    env CHECK=1 ./run_resnet50.sh
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
+    env CHECK=1 ./run_vgga.sh
+

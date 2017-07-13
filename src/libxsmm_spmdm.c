@@ -73,7 +73,7 @@ LIBXSMM_API_VARIABLE __m256i* internal_spmdm_shufmasks_16;
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
 LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_init_shufmask_avx(void)
 {
 #if defined(LIBXSMM_SPMDM_AVX)
@@ -103,7 +103,7 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_init_shufmask_avx(void)
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_csr_a(libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice** libxsmm_output_csr)
+LIBXSMM_API_INLINE void internal_spmdm_allocate_csr_a(libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice** libxsmm_output_csr)
 {
   int kb, mb;
   int m_blocks = handle->mb;
@@ -137,14 +137,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_csr_a(libxsmm_s
     *libxsmm_output_csr = libxsmm_output_csr_a;
   }
   else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-    fprintf(stderr, "LIBXSMM: SPMDM CSR scratch memory allocation failed!\n");
+    fprintf(stderr, "LIBXSMM ERROR: SPMDM CSR scratch memory allocation failed!\n");
   }
 
   handle->base_ptr_scratch_A = memory_block;
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_scratch(libxsmm_spmdm_handle* handle, int max_threads)
+LIBXSMM_API_INLINE void internal_spmdm_allocate_scratch(libxsmm_spmdm_handle* handle, int max_threads)
 {
   size_t sz_memory_for_scratch_per_thread = ((handle->bm)*(handle->bn)*sizeof(float) + (handle->bk)*(handle->bn)*sizeof(float)), sz_total_memory;
   sz_memory_for_scratch_per_thread = LIBXSMM_UP2(sz_memory_for_scratch_per_thread, 4096);
@@ -159,14 +159,14 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_allocate_scratch(libxsmm
   }
   else {
     if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-      fprintf(stderr, "LIBXSMM: SPMDM scratch memory allocation failed!\n");
+      fprintf(stderr, "LIBXSMM ERROR: SPMDM scratch memory allocation failed!\n");
     }
     handle->memory_for_scratch_per_thread = 0;
   }
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_deallocate_csr_a(libxsmm_spmdm_handle* handle)
+LIBXSMM_API_INLINE void internal_spmdm_deallocate_csr_a(libxsmm_spmdm_handle* handle)
 {
   libxsmm_xfree(handle->base_ptr_scratch_A);
   handle->base_ptr_scratch_A= NULL;
@@ -193,7 +193,7 @@ LIBXSMM_API_DEFINITION int libxsmm_spmdm_get_num_compute_blocks(const libxsmm_sp
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+LIBXSMM_API_INLINE
 void internal_spmdm_createSparseSlice_fp32_thread_sw(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -208,7 +208,7 @@ void internal_spmdm_createSparseSlice_fp32_thread_sw(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
 LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_createSparseSlice_fp32_thread_avx2(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -227,7 +227,7 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_createSparseSlice_fp32_thread_avx2(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
 LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_createSparseSlice_fp32_thread_avx512_core(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -272,7 +272,7 @@ void libxsmm_spmdm_createSparseSlice_fp32_thread(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+LIBXSMM_API_INLINE
 void internal_spmdm_createSparseSlice_bfloat16_thread_sw(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -287,7 +287,7 @@ void internal_spmdm_createSparseSlice_bfloat16_thread_sw(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
 LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_createSparseSlice_bfloat16_thread_avx2(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -306,7 +306,7 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_createSparseSlice_bfloat16_thread_a
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
 LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_createSparseSlice_bfloat16_thread_avx512_core(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -351,7 +351,7 @@ void libxsmm_spmdm_createSparseSlice_bfloat16_thread(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+LIBXSMM_API_INLINE
 void internal_spmdm_compute_fp32_thread_sw(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -371,7 +371,7 @@ void internal_spmdm_compute_fp32_thread_sw(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
 LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_compute_fp32_thread_avx2(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -395,7 +395,7 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_compute_fp32_thread_avx2(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
 LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_compute_fp32_thread_avx512_core(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -443,7 +443,7 @@ void libxsmm_spmdm_compute_fp32_thread(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE
+LIBXSMM_API_INLINE
 void internal_spmdm_compute_bfloat16_thread_sw(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -463,7 +463,7 @@ void internal_spmdm_compute_bfloat16_thread_sw(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
 LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_compute_bfloat16_thread_avx2(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -487,7 +487,7 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_compute_bfloat16_thread_avx2(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
 LIBXSMM_ATTRIBUTE_UNUSED void internal_spmdm_compute_bfloat16_thread_avx512_core(
   const libxsmm_spmdm_handle* handle,
   char transA,
@@ -542,14 +542,14 @@ void libxsmm_spmdm_compute_bfloat16_thread(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_spmdm_init_check(int archid)
+LIBXSMM_API_INLINE void internal_spmdm_init_check(int archid)
 {
   if (archid < libxsmm_target_archid
     && 0 != libxsmm_verbosity) /* library code is expected to be mute */
   {
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM: missued to enter \"%s\" code path due to the compiler used!\n", libxsmm_get_target_arch());
+      fprintf(stderr, "LIBXSMM ERROR: missed to enter \"%s\" code path due to the compiler used!\n", libxsmm_get_target_arch());
     }
   }
 }

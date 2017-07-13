@@ -131,6 +131,13 @@ else
   LIBEXT ?= $(DLIBEXT)
 endif
 
+# Utilities
+MKTEMP = $(DEPDIR)/.mktmp.sh
+FLOCK = $(DEPDIR)/.flock.sh
+
+# In case it is not defined
+MAKE ?= make
+
 # Debugging and symbols (e.g., when profiling)
 SYM ?= 0
 DBG ?= 0
@@ -901,7 +908,7 @@ ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
     ifeq (3,$(AVX))
-    ifneq (0,$(shell echo "$$((0 == $(CLANG) || 30500 <= $(CC_VERSION) || 0 == $(CC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((0 == $(CLANG) || 30900 <= $(CC_VERSION) || 0 == $(CC_VERSION)))"))
     ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2> /dev/null > /dev/null; echo $$?))
       CTARGET = -mavx512f -mavx512cd
       # fix for Clang
@@ -955,7 +962,7 @@ ifneq (undefined,$(origin TARGET))
 endif
 
 # check target flags by feeding an ad-hoc C program into the compiler
-ifneq (0,$(shell CINFILE=$$(mktemp /tmp/.libxsmm_XXXXXX-c.c); \
+ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
   echo "int main(void) { return 0; }" > $${CINFILE}; \
   CTEST=$$($(CC) $(CTARGET) -c $${CINFILE} 2>&1); \
   if [ "" = "$${CTEST}" ]; then echo $$?; else echo 1; fi; \
@@ -965,7 +972,7 @@ ifneq (0,$(shell CINFILE=$$(mktemp /tmp/.libxsmm_XXXXXX-c.c); \
 endif
 
 ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
-ifeq (0,$(shell FINFILE=$$(mktemp /tmp/.libxsmm_XXXXXX-f.f); \
+ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-f.f); \
   echo "      PROGRAM test" > $${FINFILE}; \
   echo "      END PROGRAM" >> $${FINFILE}; \
   FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
@@ -981,12 +988,14 @@ ifneq (0,$(THREADS))
   ifeq (0,$(COMPATIBLE))
     CXXFLAGS += -pthread
     CFLAGS += -pthread
-    FLDFLAGS += -lpthread
-    ifneq (Windows_NT,$(UNAME))
-      ifneq (Darwin,$(UNAME))
-        CLDFLAGS += -pthread
-      else ifeq (0,$(CLANG))
-        CLDFLAGS += -pthread
+    ifneq (0,$(shell echo "$$((0==$(INTEL) || 0!=$(DEPSTATIC)))"))
+      FLDFLAGS += -lpthread
+      ifneq (Windows_NT,$(UNAME))
+        ifneq (Darwin,$(UNAME))
+          CLDFLAGS += -pthread
+        else ifeq (0,$(CLANG))
+          CLDFLAGS += -pthread
+        endif
       endif
     endif
   endif
@@ -1265,7 +1274,7 @@ objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG
 
 STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS \
+  $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL \
     $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE abslib soname extname objname,$V), \
     $V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(abspath .))

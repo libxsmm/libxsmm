@@ -1127,9 +1127,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
 
 /* This function finds the prime factors of a number */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors(
-    unsigned int num,
-    unsigned int num_factors[] )
+LIBXSMM_API_INLINE void internal_dnn_handle_factors(
+              unsigned int num,
+              unsigned int num_factors[] )
 {
   unsigned int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29};
   int i;
@@ -1152,10 +1152,10 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors(
  * The following loop may not give an optimal solution (knapsack problem)
  * Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2
  */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_dnn_handle_factors_all(
-    unsigned int  product,
-    unsigned int* ur,
-    unsigned int  max_acc)
+LIBXSMM_API_INLINE void internal_dnn_handle_factors_all(
+                  unsigned int  product,
+                  unsigned int* ur,
+                  unsigned int  max_acc)
 {
   unsigned int i;
   unsigned int fact[10];
@@ -1435,11 +1435,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       /* if (flagBenchmark) printf("In benchmark\n"); */
 
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-        if (handle->desc.C % 4 == 0) {
+        if (handle->blocksifm % 4 == 0) {
           wino_desc_fp.ur_ifm = 4;
-        } else if (handle->desc.C % 3 == 0) {
+        } else if (handle->blocksifm % 3 == 0) {
           wino_desc_fp.ur_ifm = 3;
-        } else if (handle->desc.C % 2 == 0) {
+        } else if (handle->blocksifm % 2 == 0) {
           wino_desc_fp.ur_ifm = 2;
         } else {
           wino_desc_fp.ur_ifm = 1;
@@ -1655,11 +1655,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       }
 
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-        if (handle->desc.K % 4 == 0) {
+        if (handle->blocksofm % 4 == 0) {
           wino_desc_bp.ur_ifm = 4;
-        } else if (handle->desc.K % 3 == 0) {
+        } else if (handle->blocksofm % 3 == 0) {
           wino_desc_bp.ur_ifm = 3;
-        } else if (handle->desc.K % 2 == 0) {
+        } else if (handle->blocksofm % 2 == 0) {
           wino_desc_bp.ur_ifm = 2;
         } else {
           wino_desc_bp.ur_ifm = 1;
@@ -1708,11 +1708,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
       } else if ((54 == handle->ofw) && (54 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 1;
-        wino_desc_wu.ur = 2;
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+          wino_desc_wu.ur = 1;
+        } else {
+          wino_desc_wu.ur = 2;
+        }
         flagBenchmark = 1;
       } else if ((27 == handle->ofw) && (27 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 1; /*8;*/
-        wino_desc_wu.ur = 2;
+        wino_desc_wu.ur = 1;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 8;
@@ -1728,7 +1732,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         flagBenchmark = 1;
       } else if ((56 == handle->ofw) && (56 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 1; /*2;*/
-        wino_desc_wu.ur = 2;
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+          wino_desc_wu.ur = 1;
+        } else {
+          wino_desc_wu.ur = 2;
+        }
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 2; /*4;*/
@@ -1748,7 +1756,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         flagBenchmark = 1;
       } else if ((56 == handle->ofw) && (56 == handle->ofh) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 1;
-        wino_desc_wu.ur = 2;
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+          wino_desc_wu.ur = 1;
+        } else {
+          wino_desc_wu.ur = 2;
+        }
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
         wino_desc_wu.bimg = 2; /*16;*/

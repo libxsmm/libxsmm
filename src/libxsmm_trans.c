@@ -102,16 +102,16 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
 
   assert(typesize <= 255);
   if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
-    const unsigned int uldi = ldi, uldo = ldo;
+    const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
     libxsmm_xmatcopyfunction xmatcopy = 0;
     LIBXSMM_INIT
     if (0 != (1 & libxsmm_trans_jit)) { /* JIT'ted matcopy permitted; use no tiling */
       libxsmm_matcopy_descriptor descriptor = { 0 };
       descriptor.prefetch = (unsigned char)((0 == prefetch || 0 == *prefetch) ? 0 : 1);
       descriptor.flags = (unsigned char)(0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
-      descriptor.ldi = ldi; descriptor.ldo = ldo; descriptor.unroll_level = 2;
+      descriptor.ldi = (unsigned int)ldi; descriptor.ldo = (unsigned int)ldo; descriptor.unroll_level = 2;
       descriptor.typesize = (unsigned char)typesize;
-      descriptor.m = m; descriptor.n = n;
+      descriptor.m = (unsigned int)m; descriptor.n = (unsigned int)n;
       xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
     }
     if (0 != xmatcopy) {
@@ -137,20 +137,20 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       if (0 == out) {
-        fprintf(stderr, "LIBXSMM: the matcopy input and/or output is NULL!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the matcopy input and/or output is NULL!\n");
       }
       else if (out == in) {
-        fprintf(stderr, "LIBXSMM: output and input of the matcopy must be different!\n");
+        fprintf(stderr, "LIBXSMM ERROR: output and input of the matcopy must be different!\n");
       }
       else if (0 == typesize) {
-        fprintf(stderr, "LIBXSMM: the typesize of the matcopy is zero!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the typesize of the matcopy is zero!\n");
       }
       else if (0 >= m || 0 >= n) {
-        fprintf(stderr, "LIBXSMM: the matrix extent(s) of the matcopy is/are zero or negative!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the matcopy is/are zero or negative!\n");
       }
       else {
         assert(ldi < m || ldo < n);
-        fprintf(stderr, "LIBXSMM: the leading dimension(s) of the matcopy is/are too small!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the leading dimension(s) of the matcopy is/are too small!\n");
       }
     }
     result = EXIT_FAILURE;
@@ -172,12 +172,12 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
     if (out != in) {
       libxsmm_xtransfunction xtrans = 0;
       libxsmm_transpose_descriptor descriptor = { 0 };
-      const unsigned int uldi = ldi, uldo = ldo;
-      const unsigned int size = 1U * m * n;
+      const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
+      const unsigned int size = (unsigned int)(1U * m * n);
       if (size <= (LIBXSMM_TRANS_THRESHOLD)) { /* no tiling */
         if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose permitted? */
           descriptor.typesize = (unsigned char)typesize;
-          descriptor.m = m; descriptor.n = n; descriptor.ldo = ldo;
+          descriptor.m = (unsigned int)m; descriptor.n = (unsigned int)n; descriptor.ldo = (unsigned int)ldo;
           xtrans = libxsmm_xtransdispatch(&descriptor);
         }
         if (0 != xtrans) { /* prefer JIT for small problems */
@@ -192,7 +192,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
         descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
         descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
         if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose permitted? */
-          descriptor.typesize = (unsigned char)typesize; descriptor.ldo = ldo;
+          descriptor.typesize = (unsigned char)typesize; descriptor.ldo = (unsigned int)ldo;
           descriptor.m = LIBXSMM_MIN(descriptor.m, LIBXSMM_MAX_M);
           descriptor.n = LIBXSMM_MIN(descriptor.n, LIBXSMM_MAX_N);
           xtrans = libxsmm_xtransdispatch(&descriptor);
@@ -210,7 +210,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM: output and input of the transpose must be different!\n");
+        fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
       }
       result = EXIT_FAILURE;
     }
@@ -220,20 +220,20 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       if (0 == out || 0 == in) {
-        fprintf(stderr, "LIBXSMM: the transpose input and/or output is NULL!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the transpose input and/or output is NULL!\n");
       }
       else if (out == in) {
-        fprintf(stderr, "LIBXSMM: output and input of the transpose must be different!\n");
+        fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
       }
       else if (0 == typesize) {
-        fprintf(stderr, "LIBXSMM: the typesize of the transpose is zero!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the typesize of the transpose is zero!\n");
       }
       else if (0 >= m || 0 >= n) {
-        fprintf(stderr, "LIBXSMM: the matrix extent(s) of the transpose is/are zero or negative!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the transpose is/are zero or negative!\n");
       }
       else {
         assert(ldi < m || ldo < n);
-        fprintf(stderr, "LIBXSMM: the leading dimension(s) of the transpose is/are too small!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the leading dimension(s) of the transpose is/are too small!\n");
       }
     }
     result = EXIT_FAILURE;
@@ -283,7 +283,7 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM: in-place transpose is not fully implemented!\n");
+        fprintf(stderr, "LIBXSMM ERROR: in-place transpose is not fully implemented!\n");
       }
       assert(0/*TODO: proper implementation is pending*/);
       result = EXIT_FAILURE;
@@ -291,14 +291,14 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
     if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: performance warning - in-place transpose is not fully implemented!\n");
+      fprintf(stderr, "LIBXSMM WARNING: in-place transpose is not fully implemented!\n");
     }
   }
   else {
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM: the transpose input/output is NULL!\n");
+      fprintf(stderr, "LIBXSMM ERROR: the transpose input/output cannot be NULL!\n");
     }
     result = EXIT_FAILURE;
   }

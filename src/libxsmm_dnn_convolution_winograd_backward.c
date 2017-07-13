@@ -43,7 +43,7 @@
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_input_transform_custom_custom(
+LIBXSMM_API_INLINE void internal_bwd_input_transform_custom_custom(
                                            const float *inp,
                                            float *tinp,
                                            float *Iwp,
@@ -71,7 +71,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_input_transform_custom_cus
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_input_transform_nhwc_custom(
+LIBXSMM_API_INLINE void internal_bwd_input_transform_nhwc_custom(
                                          const float *inp,
                                          float *tinp,
                                          float *Iwp,
@@ -99,7 +99,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_input_transform_nhwc_custo
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_weight_transform(
+LIBXSMM_API_INLINE void internal_bwd_weight_transform(
                               float *wp,
                               float *twp,
                               const libxsmm_dnn_layer* handle )
@@ -126,7 +126,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_weight_transform(
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_output_transform_custom_custom(
+LIBXSMM_API_INLINE void internal_bwd_output_transform_custom_custom(
                                             float *toutp,
                                             float *outp,
                                             float *Owp,
@@ -154,7 +154,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_output_transform_custom_cu
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_bwd_output_transform_nhwc_custom(
+LIBXSMM_API_INLINE void internal_bwd_output_transform_nhwc_custom(
                                           float *toutp,
                                           float *outp,
                                           float *Owp,
@@ -186,7 +186,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_cu
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check if we have input, output and filter */
-  if (handle->reg_input == 0 || handle->reg_output == 0 || handle->reg_filter == 0 || handle->scratch1 == 0 || handle->scratch3 == 0 || handle->scratch4 == 0 || handle->scratchIw == 0 || handle->scratchOw == 0) {
+  if (handle->grad_input == 0 || handle->grad_output == 0 || handle->reg_filter == 0 || handle->scratch1 == 0 || handle->scratch3 == 0 || handle->scratch4 == 0 || handle->scratchIw == 0 || handle->scratchOw == 0) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
   }
@@ -254,7 +254,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_nh
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check if we have input, output and filter */
-  if (handle->reg_input == 0 || handle->reg_output == 0 || handle->reg_filter == 0 || handle->scratch1 == 0 || handle->scratch3 == 0 || handle->scratch4 == 0 || handle->scratchIw == 0 || handle->scratchOw == 0) {
+  if (handle->grad_input == 0 || handle->grad_output == 0 || handle->reg_filter == 0 || handle->scratch1 == 0 || handle->scratch3 == 0 || handle->scratch4 == 0 || handle->scratchIw == 0 || handle->scratchOw == 0) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
   }

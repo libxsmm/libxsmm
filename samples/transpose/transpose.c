@@ -62,10 +62,10 @@
 # define ITRANS1 libxsmm_itrans
 #endif
 
-#if !defined(USE_SELF_VALIDATION) && !defined(__BLAS) || (0 != __BLAS)
-# if !LIBXSMM_EQUAL(ELEM_TYPE, float) && !LIBXSMM_EQUAL(ELEM_TYPE, double)
-#   define USE_SELF_VALIDATION
-# endif
+
+#if !defined(USE_SELF_VALIDATION) && \
+  ((!LIBXSMM_EQUAL(ELEM_TYPE, float) && !LIBXSMM_EQUAL(ELEM_TYPE, double)) || (0 == __BLAS))
+# define USE_SELF_VALIDATION
 #endif
 
 #if !defined(USE_SELF_VALIDATION)
@@ -155,7 +155,8 @@ int main(int argc, char* argv[])
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
-    fprintf(stdout, "m=%i n=%i ldi=%i ldo=%i size=%.fMB (%s, %s)\n", m, n, ldi, ldo,
+    fprintf(stdout, "m=%lli n=%lli ldi=%lli ldo=%lli size=%.fMB (%s, %s)\n",
+      (long long)m, (long long)n, (long long)ldi, (long long)ldo,
       1.0 * (m * n * sizeof(ELEM_TYPE)) / (1 << 20), LIBXSMM_STRINGIFY(ELEM_TYPE),
       ('o' == t || 'O' == t) ? "out-of-place" : "in-place");
 
@@ -276,7 +277,8 @@ int main(int argc, char* argv[])
 #if defined(USE_SELF_VALIDATION)
         "self-"
 #endif
-        "validation failed for m=%i, n=%i, ldi=%i, and ldo=%i!\n", km, kn, kldi, kldo);
+        "validation failed for m=%lli, n=%lli, ldi=%lli, and ldo=%lli!\n",
+          (long long)km, (long long)kn, (long long)kldi, (long long)kldo);
     }
 
     libxsmm_free(a);

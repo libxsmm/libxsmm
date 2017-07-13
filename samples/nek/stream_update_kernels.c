@@ -29,13 +29,12 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include <libxsmm_intrinsics_x86.h>
+
 #include <stddef.h>
 
-#if defined(__SSE3__)
-#include <immintrin.h>
-#endif
-
 /*#define DISABLE_NONTEMPORAL_STORES*/
+
 
 LIBXSMM_INLINE_ALWAYS LIBXSMM_RETARGETABLE
 void stream_init( int    i_length,
@@ -94,7 +93,7 @@ LIBXSMM_API_DEFINITION void stream_vector_copy(  const double* i_a,
 #ifdef DISABLE_NONTEMPORAL_STORES
       _mm512_store_pd(  &(io_c[l_n]),   _mm512_loadu_pd(&(i_a[l_n]))   );
 #else
-      _mm512_stream_pd( &(io_c[l_n]),   _mm512_loadu_pd(&(i_a[l_n]))   );
+      LIBXSMM_INTRINSICS_MM512_STREAM_PD( &(io_c[l_n]),   _mm512_loadu_pd(&(i_a[l_n]))   );
 #endif
     }
   }
@@ -147,7 +146,7 @@ void stream_vector_set( const double i_scalar,
 #ifdef DISABLE_NONTEMPORAL_STORES
       _mm512_store_pd(  &(io_c[l_n]), vec_scalar );
 #else
-      _mm512_stream_pd( &(io_c[l_n]), vec_scalar );
+      LIBXSMM_INTRINSICS_MM512_STREAM_PD( &(io_c[l_n]), vec_scalar );
 #endif
     }
   }
@@ -213,7 +212,7 @@ void stream_vector_compscale( const double* i_a,
 #ifdef DISABLE_NONTEMPORAL_STORES
       _mm512_store_pd(  &(io_c[l_n]), _mm512_mul_pd( vec_a, vec_b ) );
 #else
-      _mm512_stream_pd( &(io_c[l_n]), _mm512_mul_pd( vec_a, vec_b ) );
+      LIBXSMM_INTRINSICS_MM512_STREAM_PD( &(io_c[l_n]), _mm512_mul_pd( vec_a, vec_b ) );
 #endif
     }
   }
@@ -375,7 +374,7 @@ void stream_update_helmholtz( const double* i_g1,
 #ifdef DISABLE_NONTEMPORAL_STORES
       _mm512_store_pd(  &(io_c[l_n]), _mm512_add_pd( vec_g1, vec_a ) );
 #else
-      _mm512_stream_pd( &(io_c[l_n]), _mm512_add_pd( vec_g1, vec_a ) );
+      LIBXSMM_INTRINSICS_MM512_STREAM_PD( &(io_c[l_n]), _mm512_add_pd( vec_g1, vec_a ) );
 #endif
     }
   }
@@ -515,7 +514,7 @@ void stream_update_helmholtz_no_h2( const double* i_g1,
 #ifdef DISABLE_NONTEMPORAL_STORES
       _mm512_store_pd(  &(io_c[l_n]), _mm512_mul_pd(vec_g1, vec_h1) );
 #else
-      _mm512_stream_pd( &(io_c[l_n]), _mm512_mul_pd(vec_g1, vec_h1) );
+      LIBXSMM_INTRINSICS_MM512_STREAM_PD( &(io_c[l_n]), _mm512_mul_pd(vec_g1, vec_h1) );
 #endif
     }
   }
@@ -679,7 +678,7 @@ void stream_update_var_helmholtz( const double* i_g1,
 #ifdef DISABLE_NONTEMPORAL_STORES
       _mm512_store_pd(  &(io_c[l_n]), _mm512_add_pd( vec_g1, vec_a ) );
 #else
-      _mm512_stream_pd( &(io_c[l_n]), _mm512_add_pd( vec_g1, vec_a ) );
+      LIBXSMM_INTRINSICS_MM512_STREAM_PD( &(io_c[l_n]), _mm512_add_pd( vec_g1, vec_a ) );
 #endif
     }
   }
@@ -729,3 +728,4 @@ void stream_update_var_helmholtz( const double* i_g1,
 #endif
 */
 }
+

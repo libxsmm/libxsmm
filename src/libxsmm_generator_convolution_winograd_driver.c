@@ -111,7 +111,7 @@ int main(int argc, char* argv []) {
   char* l_routine_name;
   char* l_arch;
   char* l_precision;
-  char* l_pass = "fwd";
+  const char* l_pass = "fwd";
   int l_itiles = 0;
   int l_jtiles = 0;
   int l_bimg = 0;

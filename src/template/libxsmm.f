@@ -73,9 +73,7 @@
         ! Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_GEMM_FLAG_TRANS_A = 1,                                &
-     &    LIBXSMM_GEMM_FLAG_TRANS_B = 2,                                &
-     &    LIBXSMM_GEMM_FLAG_ALIGN_A = 4,                                &
-     &    LIBXSMM_GEMM_FLAG_ALIGN_C = 8
+     &    LIBXSMM_GEMM_FLAG_TRANS_B = 2
 
         ! Flag which denotes the value type (for weak-typed interface
         ! functions such as libxsmm_xmmdispatch).
@@ -305,9 +303,9 @@
             IMPORT :: C_INTPTR_T, C_PTR, C_INT
             INTEGER(C_INTPTR_T), INTENT(OUT) :: fn
             INTEGER(C_INT), INTENT(IN) :: precision, m, n, k
-            INTEGER(C_INT), INTENT(IN) :: lda, ldb, ldc
+            TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
-            INTEGER(C_INT), INTENT(IN) :: flags, prefetch
+            TYPE(C_PTR), INTENT(IN), VALUE :: flags, prefetch
           END SUBROUTINE
 
           ! Generic call routine (3-argument form).
@@ -394,23 +392,14 @@
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(OUT) :: fn
           INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          TYPE(C_PTR) :: calpha, cbeta
-          IF (PRESENT(alpha)) THEN
-            calpha = C_LOC(alpha)
-          ELSE
-            calpha = C_NULL_PTR
-          END IF
-          IF (PRESENT(beta)) THEN
-            cbeta = C_LOC(beta)
-          ELSE
-            cbeta = C_NULL_PTR
-          END IF
+          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: lda, ldb, ldc
+          REAL(C_FLOAT),  INTENT(IN), OPTIONAL, TARGET :: alpha, beta
+          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: flags
+          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
           CALL libxsmm_xmmdispatch(                                     &
      &      fn%handle, LIBXSMM_GEMM_PRECISION_F32,                      &
-     &      m, n, k, lda, ldb, ldc, calpha, cbeta, flags, prefetch)
+     &      m, n, k, C_LOC(lda), C_LOC(ldb), C_LOC(ldc),                &
+     &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmdispatch
@@ -418,23 +407,14 @@
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(OUT) :: fn
           INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: lda, ldb, ldc
+          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: flags, prefetch
-          TYPE(C_PTR) :: calpha, cbeta
-          IF (PRESENT(alpha)) THEN
-            calpha = C_LOC(alpha)
-          ELSE
-            calpha = C_NULL_PTR
-          END IF
-          IF (PRESENT(beta)) THEN
-            cbeta = C_LOC(beta)
-          ELSE
-            cbeta = C_NULL_PTR
-          END IF
+          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: flags
+          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
           CALL libxsmm_xmmdispatch(                                     &
      &      fn%handle, LIBXSMM_GEMM_PRECISION_F64,                      &
-     &      m, n, k, lda, ldb, ldc, calpha, cbeta, flags, prefetch)
+     &      m, n, k, C_LOC(lda), C_LOC(ldb), C_LOC(ldc),                &
+     &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmavailable
@@ -516,117 +496,117 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm
         SUBROUTINE libxsmm_sgemm(transa, transb, m, n, k,               &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                               OPTIONAL, TARGET :: lda, ldb, ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:), b(:,:)
+          REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_sgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_FLOAT
-              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-              REAL(C_FLOAT), INTENT(IN) :: alpha, beta
-              REAL(C_FLOAT), INTENT(IN) :: a(lda,*), b(ldb,*)
-              REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
+              TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
+              TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
             END SUBROUTINE
           END INTERFACE
-          CALL internal_gemm(transa, transb, m, n, k,                   &
-     &      alpha, a, lda, b, ldb, beta, c, ldc)
+          CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
+     &      C_LOC(alpha), srealptr(a), C_LOC(lda),                      &
+     &                    srealptr(b), C_LOC(ldb),                      &
+     &       C_LOC(beta), srealptr(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm
         SUBROUTINE libxsmm_dgemm(transa, transb, m, n, k,               &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
-          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
-          REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                                OPTIONAL, TARGET :: lda, ldb, ldc
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:), b(:,:)
+          REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_dgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_DOUBLE
-              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-              REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
-              REAL(C_DOUBLE), INTENT(IN) :: a(lda,*), b(ldb,*)
-              REAL(C_DOUBLE), INTENT(INOUT) :: c(ldc,*)
+              TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
+              TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
             END SUBROUTINE
           END INTERFACE
-          CALL internal_gemm(transa, transb, m, n, k,                   &
-     &      alpha, a, lda, b, ldb, beta, c, ldc)
+          CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
+     &      C_LOC(alpha), drealptr(a), C_LOC(lda),                      &
+     &                    drealptr(b), C_LOC(ldb),                      &
+     &       C_LOC(beta), drealptr(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm
         SUBROUTINE libxsmm_blas_sgemm(transa, transb, m, n, k,          &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_blas_gemm
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                               OPTIONAL, TARGET :: lda, ldb, ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:), b(:,:)
+          REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
-            SUBROUTINE internal_blas_gemm(transa, transb, m, n, k,      &
+            SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_sgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_FLOAT
-              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-              REAL(C_FLOAT), INTENT(IN) :: alpha, beta
-              REAL(C_FLOAT), INTENT(IN) :: a(lda,*), b(ldb,*)
-              REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
+              TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
+              TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
             END SUBROUTINE
           END INTERFACE
-          CALL internal_blas_gemm(transa, transb, m, n, k,              &
-     &      alpha, a, lda, b, ldb, beta, c, ldc)
+          CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
+     &      C_LOC(alpha), srealptr(a), C_LOC(lda),                      &
+     &                    srealptr(b), C_LOC(ldb),                      &
+     &       C_LOC(beta), srealptr(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm
         SUBROUTINE libxsmm_blas_dgemm(transa, transb, m, n, k,          &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
-          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
-          REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_blas_gemm
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                                OPTIONAL, TARGET :: lda, ldb, ldc
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:), b(:,:)
+          REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
-            SUBROUTINE internal_blas_gemm(transa, transb, m, n, k,      &
+            SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_dgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_DOUBLE
-              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-              REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
-              REAL(C_DOUBLE), INTENT(IN) :: a(lda,*), b(ldb,*)
-              REAL(C_DOUBLE), INTENT(INOUT) :: c(ldc,*)
+              TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
+              TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
             END SUBROUTINE
           END INTERFACE
-          CALL internal_blas_gemm(transa, transb, m, n, k,              &
-     &      alpha, a, lda, b, ldb, beta, c, ldc)
+          CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
+     &      C_LOC(alpha), drealptr(a), C_LOC(lda),                      &
+     &                    drealptr(b), C_LOC(ldb),                      &
+     &       C_LOC(beta), drealptr(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smatmul
@@ -752,13 +732,12 @@
         ! Matrix-copy (2-dimensional copy) routine. If the input (optional)
         ! is not present, the routine is used to zero-fill the out-matrix.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy
-        PURE SUBROUTINE libxsmm_matcopy(output, input, typesize,        &
+        SUBROUTINE libxsmm_matcopy(output, input, typesize,             &
      &  m, n, ldi, ldo, prefetch)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
-          INTEGER(C_INT), INTENT(IN), OPTIONAL :: prefetch
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                                OPTIONAL, TARGET :: n, ldi, ldo
+          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
           INTEGER(C_INT), INTENT(IN) :: typesize
           TYPE(C_PTR), INTENT(IN), OPTIONAL :: input
           TYPE(C_PTR), INTENT(IN) :: output
@@ -767,25 +746,24 @@
             PURE SUBROUTINE internal_matcopy(output, input, typesize,   &
      &      m, n, ldi, ldo, prefetch) BIND(C, NAME="libxsmm_matcopy_")
               IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldi, ldo
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+              TYPE(C_PTR), INTENT(IN), VALUE :: n, ldi, ldo
               TYPE(C_PTR), INTENT(IN), VALUE :: output, input
+              TYPE(C_PTR), INTENT(IN), VALUE :: prefetch
               INTEGER(C_INT), INTENT(IN) :: typesize
-              INTEGER(C_INT), INTENT(IN) :: prefetch
             END SUBROUTINE
           END INTERFACE
           CALL internal_matcopy(output, input, typesize,                &
-     &      m, n, ldi, ldo, prefetch)
+     &      m, C_LOC(n), C_LOC(ldi), C_LOC(ldo), C_LOC(prefetch))
         END SUBROUTINE
 
         ! Transpose a matrix (out-of-place form).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans
-        PURE SUBROUTINE libxsmm_otrans(output, input, typesize,         &
+        SUBROUTINE libxsmm_otrans(output, input, typesize,              &
      &  m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                                   OPTIONAL, TARGET :: n, ldi, ldo
           TYPE(C_PTR), INTENT(IN) :: output, input
           INTEGER(C_INT), INTENT(IN) :: typesize
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_otrans
@@ -793,13 +771,14 @@
             PURE SUBROUTINE internal_otrans(output, input, typesize,    &
      &      m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_")
               IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldi, ldo
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+              TYPE(C_PTR), INTENT(IN), VALUE :: n, ldi, ldo
               TYPE(C_PTR), INTENT(IN), VALUE :: output, input
               INTEGER(C_INT), INTENT(IN) :: typesize
             END SUBROUTINE
           END INTERFACE
-          CALL internal_otrans(output, input, typesize, m, n, ldi, ldo)
+          CALL internal_otrans(output, input, typesize,                 &
+     &      m, C_LOC(n), C_LOC(ldi), C_LOC(ldo))
         END SUBROUTINE
 
         ! Transpose a matrix (out-of-place form, single-precision).
@@ -809,8 +788,10 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           REAL(C_FLOAT), INTENT(OUT), TARGET :: output(:,:)
           REAL(C_FLOAT), INTENT(IN), TARGET :: input(:,:)
-          CALL libxsmm_otrans(srealptr(input), srealptr(output),        &
-     &      4, m, n, UBOUND(input,1), UBOUND(output,1))
+          CALL libxsmm_otrans(                                          &
+     &      srealptr(input), srealptr(output), 4, m, n,                 &
+     &      UBOUND(input, 1, LIBXSMM_BLASINT_KIND),                     &
+     &      UBOUND(output,1, LIBXSMM_BLASINT_KIND))
         END SUBROUTINE
 
         ! Transpose a matrix (out-of-place form, double-precision).
@@ -820,15 +801,18 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           REAL(C_DOUBLE), INTENT(OUT), TARGET :: output(:,:)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: input(:,:)
-          CALL libxsmm_otrans(drealptr(input), drealptr(output),        &
-     &      8, m, n, UBOUND(input,1), UBOUND(output,1))
+          CALL libxsmm_otrans(                                          &
+     &      drealptr(input), drealptr(output), 8, m, n,                 &
+     &      UBOUND(input, 1, LIBXSMM_BLASINT_KIND),                     &
+     &      UBOUND(output,1, LIBXSMM_BLASINT_KIND))
         END SUBROUTINE
 
         ! Transpose a matrix (in-place form).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans
-        PURE SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)
+        SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n, ld
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                                   OPTIONAL, TARGET :: n, ld
           TYPE(C_PTR), INTENT(IN) :: matrix
           INTEGER(C_INT), INTENT(IN) :: typesize
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_itrans
@@ -836,12 +820,12 @@
             PURE SUBROUTINE internal_itrans(matrix, typesize, m, n, ld) &
      &      BIND(C, NAME="libxsmm_itrans_")
               IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ld
-              TYPE(C_PTR), INTENT(IN), VALUE :: matrix
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+              TYPE(C_PTR), INTENT(IN), VALUE :: n, ld, matrix
               INTEGER(C_INT), INTENT(IN) :: typesize
             END SUBROUTINE
           END INTERFACE
-          CALL internal_itrans(matrix, typesize, m, n, ld)
+          CALL internal_itrans(matrix, typesize, m, C_LOC(n), C_LOC(ld))
         END SUBROUTINE
 
         ! Transpose a matrix (in-place form, single-precision).
@@ -851,7 +835,7 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: matrix(:,:)
           CALL libxsmm_itrans(srealptr(matrix),                         &
-     &      4, m, n, UBOUND(matrix,1))
+     &      4, m, n, UBOUND(matrix, 1, LIBXSMM_BLASINT_KIND))
         END SUBROUTINE
 
         ! Transpose a matrix (in-place form, double-precision).
@@ -861,7 +845,7 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: matrix(:,:)
           CALL libxsmm_itrans(drealptr(matrix),                         &
-     &      8, m, n, UBOUND(matrix,1))
+     &      8, m, n, UBOUND(matrix, 1, LIBXSMM_BLASINT_KIND))
         END SUBROUTINE
       END MODULE
 

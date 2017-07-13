@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include <libxsmm_timer.h>
 #include <libxsmm_intrinsics_x86.h>
+#include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -57,19 +58,29 @@
 
 LIBXSMM_API_DEFINITION unsigned long long libxsmm_timer_tick(void)
 {
-#if defined(_WIN32)
-  LARGE_INTEGER t;
-  QueryPerformanceCounter(&t);
-  return (unsigned long long)t.QuadPart;
-#elif defined(CLOCK_MONOTONIC)
-  struct timespec t;
-  clock_gettime(CLOCK_MONOTONIC, &t);
-  return 1000000000ULL * t.tv_sec + t.tv_nsec;
-#else
-  struct timeval t;
-  gettimeofday(&t, 0);
-  return 1000000ULL * t.tv_sec + t.tv_usec;
+  unsigned long long result;
+#if defined(LIBXSMM_TIMER_RDTSC)
+  if (0 < libxsmm_timer_scale) {
+    LIBXSMM_TIMER_RDTSC(result);
+  }
+  else
 #endif
+  {
+#if defined(_WIN32)
+    LARGE_INTEGER t;
+    QueryPerformanceCounter(&t);
+    result = (unsigned long long)t.QuadPart;
+#elif defined(CLOCK_MONOTONIC)
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    result = 1000000000ULL * t.tv_sec + t.tv_nsec;
+#else
+    struct timeval t;
+    gettimeofday(&t, 0);
+    result = 1000000ULL * t.tv_sec + t.tv_usec;
+#endif
+  }
+  return result;
 }
 
 
@@ -91,15 +102,24 @@ unsigned long long libxsmm_timer_xtick(void)
 
 LIBXSMM_API_DEFINITION double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1)
 {
-  const double d = (double)(LIBXSMM_MAX(tick1, tick0) - tick0);
-#if defined(_WIN32)
-  LARGE_INTEGER frequency;
-  QueryPerformanceFrequency(&frequency);
-  return d / (double)frequency.QuadPart;
-#elif defined(CLOCK_MONOTONIC)
-  return d * 1E-9;
-#else
-  return d * 1E-6;
+  double result = (double)(tick0 < tick1 ? (tick1 - tick0) : (tick0 - tick1));
+#if defined(LIBXSMM_TIMER_RDTSC)
+  if (0 < libxsmm_timer_scale) {
+    result *= libxsmm_timer_scale;
+  }
+  else
 #endif
+  {
+#if defined(_WIN32)
+    LARGE_INTEGER frequency;
+    QueryPerformanceFrequency(&frequency);
+    result /= (double)frequency.QuadPart;
+#elif defined(CLOCK_MONOTONIC)
+    result *= 1E-9;
+#else
+    result *= 1E-6;
+#endif
+  }
+  return result;
 }
 

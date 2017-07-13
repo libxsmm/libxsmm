@@ -54,7 +54,7 @@ LIBXSMM_API_VARIABLE void (*internal_fwd_input_transform_custom_custom_alpha6)(
   const float*, float*, float*, const libxsmm_dnn_layer*);
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_custom_alpha6_default(
+LIBXSMM_API_INLINE void internal_fwd_input_transform_custom_custom_alpha6_default(
   const float* inp, float* tinp, float* Iwp, const libxsmm_dnn_layer* handle)
 {
 #define ALPHA 6
@@ -65,7 +65,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_cus
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
 LIBXSMM_ATTRIBUTE_UNUSED void internal_fwd_input_transform_custom_custom_alpha6_avx512(
   const float* inp, float* tinp, float* Iwp, const libxsmm_dnn_layer* handle)
 {
@@ -81,7 +81,7 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_fwd_input_transform_custom_custom_alpha6_
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_custom(
+LIBXSMM_API_INLINE void internal_fwd_input_transform_custom_custom(
   const float* inp, float* tinp, float* Iwp, const libxsmm_dnn_layer* handle)
 {
   if (handle->cwino_fwd.alpha == 6) {
@@ -109,7 +109,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_custom_cus
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_nhwc_custom(
+LIBXSMM_API_INLINE void internal_fwd_input_transform_nhwc_custom(
                                          const float *inp,
                                          float *tinp,
                                          float *Iwp,
@@ -137,7 +137,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_input_transform_nhwc_custo
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_weight_transform( float *wp,
+LIBXSMM_API_INLINE void internal_fwd_weight_transform( float *wp,
                               float *twp,
                               const libxsmm_dnn_layer* handle )
 {
@@ -163,7 +163,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_weight_transform( float *w
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_custom_custom( float *toutp,
+LIBXSMM_API_INLINE void internal_fwd_output_transform_custom_custom( float *toutp,
                                             float *outp,
                                             float *Owp,
                                             float bias[/*vratio*/][16/*tdvlen*/],
@@ -196,7 +196,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_custom_cu
 }
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void internal_fwd_output_transform_nhwc_custom( float *toutp,
+LIBXSMM_API_INLINE void internal_fwd_output_transform_nhwc_custom( float *toutp,
                                           float *outp,
                                           float *Owp,
                                           float bias[/*vratio*/][16/*tdvlen*/],

@@ -31,6 +31,8 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
+#MKTEMP=$(which mktemp 2> /dev/null)
+MKTEMP=${HERE}/.mktmp.sh
 
 # output directory
 if [ "" != "$1" ]; then
@@ -41,7 +43,7 @@ else
 fi
 
 # temporary file
-TMPFILE=$(mktemp .libxsmm_XXXXXX.tex)
+TMPFILE=$(${MKTEMP} .libxsmm_XXXXXX.tex)
 
 # dump pandoc template for latex, and adjust the template
 pandoc -D latex \

@@ -33,7 +33,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
@@ -42,6 +41,14 @@
 #define USE_OVERWRITE
 #endif
 #if 0
+#define USE_FUSED_BIAS
+#endif
+#if 0
+#define USE_FUSED_RELU
+#endif
+#if 0
+#define USE_FUSED_BIAS_RELU
+#define USE_FUSED_RELU
 #define USE_FUSED_BIAS
 #endif
 
@@ -76,14 +83,6 @@ typedef struct {
   int stride_h;
   int stride_w;
 } naive_conv_t;
-
-typedef struct {
-  double max_rel_err;
-  double max_abs_err;
-  double l2_rel_err;
-  double one_norm_ref;
-  double one_norm_test;
-} correctness_t;
 
 LIBXSMM_INLINE void zero_buf(float* buf, long size) {
   int i;
@@ -123,45 +122,6 @@ LIBXSMM_INLINE void set_zeropad_nchw(float* nchw, int N, int C, int H, int W, in
       }
     }
   }
-}
-
-LIBXSMM_INLINE void compare_buf(float* ref, float* test, long size, correctness_t* norms)
-{
-  int i;
-  double diff, rel_err;
-
-  norms->max_rel_err = 0.;
-  norms->max_abs_err = 0.;
-  norms->l2_rel_err = 0.;
-  norms->one_norm_ref = 0.;
-  norms->one_norm_test = 0.;
-
-  for (i = 0; i < size; ++i) {
-    norms->one_norm_ref += (double)ref[i];
-    norms->one_norm_test += (double)test[i];
-    diff = fabs((double)ref[i] - (double)test[i]);
-    norms->l2_rel_err += (diff*diff);
-    rel_err = 0.0;
-    if (diff > 0.0 ) {
-      rel_err = diff/fabs((double)ref[i]);
-    }
-    if (rel_err > norms->max_rel_err) {
-      norms->max_rel_err = rel_err;
-#if 0
-      printf("MISMATCH@ %3d: A=%12.8g  B=%12.8g (E:%12.4e) (R:%12.4e)\n", i, ref[i], test[i], diff, rel_err);
-#endif
-    }
-    if (diff > norms->max_abs_err) {
-      norms->max_abs_err = diff;
-    }
-#if 0
-    if (diff > 1.0) {
-      printf("MISMATCH@ %3d: A=%12.8g  B=%12.8g (E:%12.4e)\n", i, ref[i], test[i], diff);
-    }
-#endif
-
-  }
-  norms->l2_rel_err = sqrt(norms->l2_rel_err);
 }
 
 
@@ -308,6 +268,14 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
           }
         }
       }
+#if defined(USE_FUSED_RELU)
+      for (oj = 0; oj < ofh; ++oj) {
+        for (oi = 0; oi < ofw; ++oi) {
+          LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) =
+           (LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) < 0.0f) ? 0.0f : LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
+        }
+      }
+#endif
     }
   }
 }
@@ -437,7 +405,6 @@ int main(int argc, char* argv[])
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   naive_conv_t naive_param;
-  correctness_t norms_fwd, norms_bwd, norms_upd;
   void* scratch;
 
   /* some parameters we can overwrite via cli,
@@ -455,7 +422,12 @@ int main(int argc, char* argv[])
   int padding_mode = 0;   /* padding mode */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'A';      /* 'A': ALL, 'L': LIBXSMM, 'T': Tensorflow, 'M', Mixed */
-#if defined(_OPENMP)
+
+  const char *const env_check = getenv("CHECK"), *const env_winograd = getenv("WINOGRAD");
+  const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+  const int algo_winograd = (0 == env_winograd ? 0 : atoi(env_winograd));
+
+  #if defined(_OPENMP)
   int nThreads = omp_get_max_threads();      /* number of threads */
 #else
   int nThreads = 1;       /* number of threads */
@@ -478,9 +450,11 @@ int main(int argc, char* argv[])
   libxsmm_dnn_bias* libxsmm_dbias;
   libxsmm_dnn_err_t status;
 
+  libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff;
   memset(&norms_fwd, 0, sizeof(norms_fwd));
   memset(&norms_bwd, 0, sizeof(norms_bwd));
   memset(&norms_upd, 0, sizeof(norms_upd));
+  memset(&diff, 0, sizeof(diff));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type format padding_mode\n", argv[0]);
@@ -514,12 +488,15 @@ int main(int argc, char* argv[])
   pad_h = pad;
   pad_w = pad;
 
-  if (padding_mode == 1) {
-    pad_h_in = pad_h;
-    pad_w_in = pad_w;
-  } else {
+  if (0 == padding_mode) {
     pad_h_in = 0;
     pad_w_in = 0;
+  }
+  else {
+    /* TODO: change "1" to "0" if "padding_mode = -1" is acknowledged */
+    if (1 < padding_mode) pad_w = padding_mode;
+    pad_h_in = pad_h;
+    pad_w_in = pad_w;
   }
 
   pad_h_out = 0;
@@ -561,7 +538,7 @@ int main(int argc, char* argv[])
   printf("#          Setting Up (Common)           #\n");
   printf("##########################################\n");
   printf("PARAMS: W:%d  H:%d  N:%d  C:%d  K:%d  R:%d  S:%d  P:%d  Q:%d  STRIDE:%d\n", ifw, ifh, nImg, nIfm, nOfm, kw, kh, ofh, ofw, stride);
-  printf("PARAMS: ITERS:%d  Threads:%d\n", iters, nThreads);
+  printf("PARAMS: ITERS:%d", iters); if (LIBXSMM_FEQ(0, check)) printf("  Threads:%d\n", nThreads); else printf("\n");
   printf(" InImg %dx%d Padded (%dx%d)\n", ifh, ifw, ifhp, ifwp);
   printf("OutImg %dx%d Padded (%dx%d)\n", ofh, ofw, ofhp, ofwp);
   printf("SIZE Input  (MB): %10.2f MiB\n", (double)(nImg*nIfm*ifhp*ifwp*sizeof(float))/(1024.0*1024.0) );
@@ -639,7 +616,9 @@ int main(int argc, char* argv[])
     naive_conv_fp(&naive_param, naive_input, naive_output, naive_filter, naive_bias);
   }
   if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
+#ifdef USE_OVERWRITE
     zero_buf(naive_input,         nImg*nIfm*ifhp*ifwp);
+#endif
     naive_conv_bp(&naive_param, naive_input, naive_output_bp, naive_filter);
   }
   if (type == 'A' || type == 'U') {
@@ -675,18 +654,21 @@ int main(int argc, char* argv[])
     conv_desc.pad_h_out = pad_h_out;
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
-    /*conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;*/
-    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
+    conv_desc.algo = (0 == algo_winograd ? LIBXSMM_DNN_CONV_ALGO_DIRECT : LIBXSMM_DNN_CONV_ALGO_AUTO);
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
-#ifdef USE_OVERWRITE
+#if defined(USE_OVERWRITE)
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
 #else
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
 #endif
-#ifdef USE_FUSED_BIAS
+#if defined(USE_FUSED_BIAS)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS;
+#elif defined(USE_FUSED_RELU)
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU;
+#elif defined(USE_FUSED_BIAS_RELU)
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
 #else
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
@@ -746,7 +728,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
-# pragma omp parallel
+#     pragma omp parallel
 #endif
       {
 #if defined(_OPENMP)
@@ -760,12 +742,15 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_buffer( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
       /* compare */
-      compare_buf(naive_output, naive_libxsmm_output, nImg*nOfm*ofhp*ofwp, &norms_fwd);
-      printf("             1-norm of reference: %f\n", norms_fwd.one_norm_ref);
-      printf("              1-norm of JIT-code: %f\n", norms_fwd.one_norm_test);
-      printf("       L2-error-norm of JIT-code: %f\n", norms_fwd.l2_rel_err);
-      printf("    inf-norm of comp. rel. error: %f\n", norms_fwd.max_rel_err);
-      printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0, &norms_fwd);
+      printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_fwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_fwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_fwd);
     }
 
     if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
@@ -774,10 +759,10 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       /* let's do some additional init such that we can run passes standalone */
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_doutput, (void*)naive_output_bp, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_buffer( libxsmm_dinput ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_dinput, (void*)naive_input_save, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
       /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
-# pragma omp parallel
+#     pragma omp parallel
 #endif
       {
 #if defined(_OPENMP)
@@ -791,12 +776,15 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_buffer( libxsmm_dinput, (void*)naive_libxsmm_input, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
       /* compare */
-      compare_buf(naive_input, naive_libxsmm_input, nImg*nIfm*ifhp*ifwp, &norms_bwd);
-      printf("             1-norm of reference: %f\n", norms_bwd.one_norm_ref);
-      printf("              1-norm of JIT-code: %f\n", norms_bwd.one_norm_test);
-      printf("       L2-error-norm of JIT-code: %f\n", norms_bwd.l2_rel_err);
-      printf("    inf-norm of comp. rel. error: %f\n", norms_bwd.max_rel_err);
-      printf("    inf-norm of comp. abs. error: %f\n", norms_bwd.max_abs_err);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_libxsmm_input, 0, 0, &norms_bwd);
+      printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_bwd);
     }
 
     if (type == 'A' || type == 'U') {
@@ -809,7 +797,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_filter( libxsmm_dfilter ) );
       /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
-# pragma omp parallel
+#     pragma omp parallel
 #endif
       {
 #if defined(_OPENMP)
@@ -826,15 +814,18 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_filter( libxsmm_dfilter, (void*)naive_libxsmm_filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
 
       /* compare */
-      compare_buf(naive_filter_wu, naive_libxsmm_filter, nOfm*nIfm*kh*kw, &norms_upd);
-      printf("             1-norm of reference: %f\n", norms_upd.one_norm_ref);
-      printf("              1-norm of JIT-code: %f\n", norms_upd.one_norm_test);
-      printf("       L2-error-norm of JIT-code: %f\n", norms_upd.l2_rel_err);
-      printf("    inf-norm of comp. rel. error: %f\n", norms_upd.max_rel_err);
-      printf("    inf-norm of comp. abs. error: %f\n", norms_upd.max_abs_err);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter, 0, 0, &norms_upd);
+      printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_upd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_upd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_upd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_upd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_upd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_upd);
     }
 
-    if (type == 'A' || type == 'F') {
+    if ((type == 'A' || type == 'F') && LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("#   Performance - FWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -861,12 +852,12 @@ int main(int argc, char* argv[])
       printf("fp time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
+      printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
+        norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
     }
 
-    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) && LIBXSMM_FEQ(0, check) ) {
       printf("##########################################\n");
       printf("#   Performance - BWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -894,12 +885,12 @@ int main(int argc, char* argv[])
       printf("bp time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-          norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
+      printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
+        norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
 
-    if (type == 'A' || type == 'U') {
+    if ((type == 'A' || type == 'U') && LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("#   Performance - UPD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -930,9 +921,9 @@ int main(int argc, char* argv[])
       printf("wu time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-          norms_upd.max_rel_err, norms_upd.max_abs_err, norms_upd.l2_rel_err, norms_upd.one_norm_ref, norms_upd.one_norm_test );
+      printf("PERFDUMP,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+        norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
     }
 
     /* clean-up */
@@ -980,8 +971,7 @@ int main(int argc, char* argv[])
     conv_desc.pad_h_out = pad_h_out;
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
-    //conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;
-    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
+    conv_desc.algo = (0 == algo_winograd ? LIBXSMM_DNN_CONV_ALGO_DIRECT : LIBXSMM_DNN_CONV_ALGO_AUTO);
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NHWC;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_RSCK;
 #ifdef USE_OVERWRITE
@@ -989,8 +979,12 @@ int main(int argc, char* argv[])
 #else
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
 #endif
-#ifdef USE_FUSED_BIAS
+#if defined(USE_FUSED_BIAS)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS;
+#elif defined(USE_FUSED_RELU)
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU;
+#elif defined(USE_FUSED_BIAS_RELU)
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
 #else
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
@@ -1034,7 +1028,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
-# pragma omp parallel
+#     pragma omp parallel
 #endif
       {
 #if defined(_OPENMP)
@@ -1048,12 +1042,15 @@ int main(int argc, char* argv[])
       naive_copy_NHWC_to_NCHW(output_nhwc, naive_output_nhwc, nImg, ofhp, ofwp, nOfm);
 
       /* compare */
-      compare_buf(naive_output, naive_output_nhwc, nImg*nOfm*ofhp*ofwp, &norms_fwd);
-      printf("             1-norm of reference: %f\n", norms_fwd.one_norm_ref);
-      printf("              1-norm of JIT-code: %f\n", norms_fwd.one_norm_test);
-      printf("       L2-error-norm of JIT-code: %f\n", norms_fwd.l2_rel_err);
-      printf("    inf-norm of comp. rel. error: %f\n", norms_fwd.max_rel_err);
-      printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_output_nhwc, 0, 0, &norms_fwd);
+      printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_fwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_fwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_fwd);
     }
 
     if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
@@ -1062,10 +1059,10 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       /* let's do some additional init such that we can run passes standalone */
       naive_copy_NCHW_to_NHWC(naive_output_bp, output_nhwc, nImg, ofhp, ofwp, nOfm);
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_buffer( libxsmm_input ) );
+      naive_copy_NCHW_to_NHWC(naive_input_save, input_nhwc, nImg, ifhp, ifwp, nIfm);
       /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
-# pragma omp parallel
+#     pragma omp parallel
 #endif
       {
 #if defined(_OPENMP)
@@ -1079,12 +1076,15 @@ int main(int argc, char* argv[])
       naive_copy_NHWC_to_NCHW(input_nhwc, naive_input_nhwc, nImg, ifhp, ifwp, nIfm);
 
       /* compare */
-      compare_buf(naive_input, naive_input_nhwc, nImg*nIfm*ifhp*ifwp, &norms_bwd);
-      printf("             1-norm of reference: %f\n", norms_bwd.one_norm_ref);
-      printf("              1-norm of JIT-code: %f\n", norms_bwd.one_norm_test);
-      printf("       L2-error-norm of JIT-code: %f\n", norms_bwd.l2_rel_err);
-      printf("    inf-norm of comp. rel. error: %f\n", norms_bwd.max_rel_err);
-      printf("    inf-norm of comp. abs. error: %f\n", norms_bwd.max_abs_err);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_input_nhwc, 0, 0, &norms_bwd);
+      printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_bwd);
     }
 
     if (type == 'A' || type == 'U') {
@@ -1097,7 +1097,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_filter( libxsmm_filter ) );
       /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
-# pragma omp parallel
+#     pragma omp parallel
 #endif
       {
 #if defined(_OPENMP)
@@ -1114,15 +1114,18 @@ int main(int argc, char* argv[])
       naive_copy_RSCK_to_KCRS(filter_rsck, naive_filter_kcrs, kh, kw, nIfm, nOfm);
 
       /* compare */
-      compare_buf(naive_filter_wu, naive_filter_kcrs, nOfm*nIfm*kh*kw, &norms_upd);
-      printf("             1-norm of reference: %f\n", norms_upd.one_norm_ref);
-      printf("              1-norm of JIT-code: %f\n", norms_upd.one_norm_test);
-      printf("       L2-error-norm of JIT-code: %f\n", norms_upd.l2_rel_err);
-      printf("    inf-norm of comp. rel. error: %f\n", norms_upd.max_rel_err);
-      printf("    inf-norm of comp. abs. error: %f\n", norms_upd.max_abs_err);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_filter_kcrs, 0, 0, &norms_upd);
+      printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_upd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_upd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_upd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_upd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_upd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_upd);
     }
 
-    if (type == 'A' || type == 'F') {
+    if ((type == 'A' || type == 'F') && LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("#  Performance - FWD (NHWC/RSCK-Storage) #\n");
       printf("##########################################\n");
@@ -1130,7 +1133,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
       for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
-#   pragma omp parallel
+#       pragma omp parallel
 #endif
         {
 #if defined(_OPENMP)
@@ -1149,12 +1152,12 @@ int main(int argc, char* argv[])
       printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP-NHWC-RSCK,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
+      printf("PERFDUMP-NHWC-RSCK,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
+        norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
     }
 
-    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) && LIBXSMM_FEQ(0, check) ) {
       printf("##########################################\n");
       printf("#  Performance - BWD (NHWC/RSCK-Storage) #\n");
       printf("##########################################\n");
@@ -1162,7 +1165,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
       for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
-#   pragma omp parallel
+#       pragma omp parallel
 #endif
         {
 #if defined(_OPENMP)
@@ -1181,12 +1184,12 @@ int main(int argc, char* argv[])
       printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP-NHWC-RSCK,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-          norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
+      printf("PERFDUMP-NHWC-RSCK,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
+        norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
 
-    if (type == 'A' || type == 'U') {
+    if ((type == 'A' || type == 'U') && LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("#  Performance - UPD (NHWC/RSCK-Storage) #\n");
       printf("##########################################\n");
@@ -1194,7 +1197,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
       for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
-#   pragma omp parallel
+#       pragma omp parallel
 #endif
         {
 #if defined(_OPENMP)
@@ -1216,9 +1219,9 @@ int main(int argc, char* argv[])
       printf("fp time (NHWC,RSCK) = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP-NHWC-RSCK,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-          norms_upd.max_rel_err, norms_upd.max_abs_err, norms_upd.l2_rel_err, norms_upd.one_norm_ref, norms_upd.one_norm_test );
+      printf("PERFDUMP-NHWC-RSCK,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+        norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
     }
 
     /* clean-up */
@@ -1261,8 +1264,7 @@ int main(int argc, char* argv[])
     conv_desc.pad_h_out = pad_h_out;
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
-    /*conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_AUTO;*/
-    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
+    conv_desc.algo = (0 == algo_winograd ? LIBXSMM_DNN_CONV_ALGO_DIRECT : LIBXSMM_DNN_CONV_ALGO_AUTO);
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NHWC;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
 #ifdef USE_OVERWRITE
@@ -1270,8 +1272,12 @@ int main(int argc, char* argv[])
 #else
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
 #endif
-#ifdef USE_FUSED_BIAS
+#if defined(USE_FUSED_BIAS)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS;
+#elif defined(USE_FUSED_RELU)
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU;
+#elif defined(USE_FUSED_BIAS_RELU)
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
 #else
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
@@ -1322,7 +1328,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
-# pragma omp parallel
+#     pragma omp parallel
 #endif
       {
 #if defined(_OPENMP)
@@ -1336,12 +1342,15 @@ int main(int argc, char* argv[])
       naive_copy_NHWC_to_NCHW(output_nhwc, naive_output_nhwc, nImg, ofhp, ofwp, nOfm);
 
       /* compare */
-      compare_buf(naive_output, naive_output_nhwc, nImg*nOfm*ofhp*ofwp, &norms_fwd);
-      printf("             1-norm of reference: %f\n", norms_fwd.one_norm_ref);
-      printf("              1-norm of JIT-code: %f\n", norms_fwd.one_norm_test);
-      printf("       L2-error-norm of JIT-code: %f\n", norms_fwd.l2_rel_err);
-      printf("    inf-norm of comp. rel. error: %f\n", norms_fwd.max_rel_err);
-      printf("    inf-norm of comp. abs. error: %f\n", norms_fwd.max_abs_err);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_output_nhwc, 0, 0, &norms_fwd);
+      printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_fwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_fwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_fwd);
     }
 
     if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
@@ -1350,10 +1359,10 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       /* let's do some additional init such that we can run passes standalone */
       naive_copy_NCHW_to_NHWC(naive_output_bp, output_nhwc, nImg, ofhp, ofwp, nOfm);
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_buffer( libxsmm_input ) );
+      naive_copy_NCHW_to_NHWC(naive_input_save, input_nhwc, nImg, ifhp, ifwp, nIfm);
       /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
-# pragma omp parallel
+#     pragma omp parallel
 #endif
       {
 #if defined(_OPENMP)
@@ -1367,12 +1376,15 @@ int main(int argc, char* argv[])
       naive_copy_NHWC_to_NCHW(input_nhwc, naive_input_nhwc, nImg, ifhp, ifwp, nIfm);
 
       /* compare */
-      compare_buf(naive_input, naive_input_nhwc, nImg*nIfm*ifhp*ifwp, &norms_bwd);
-      printf("             1-norm of reference: %f\n", norms_bwd.one_norm_ref);
-      printf("              1-norm of JIT-code: %f\n", norms_bwd.one_norm_test);
-      printf("       L2-error-norm of JIT-code: %f\n", norms_bwd.l2_rel_err);
-      printf("    inf-norm of comp. rel. error: %f\n", norms_bwd.max_rel_err);
-      printf("    inf-norm of comp. abs. error: %f\n", norms_bwd.max_abs_err);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_input_nhwc, 0, 0, &norms_bwd);
+      printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_bwd);
     }
 
     if (type == 'A' || type == 'U') {
@@ -1385,7 +1397,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_filter( libxsmm_filter ) );
       /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
-# pragma omp parallel
+#     pragma omp parallel
 #endif
       {
 #if defined(_OPENMP)
@@ -1402,15 +1414,18 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_filter( libxsmm_filter, (void*)naive_libxsmm_filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
 
       /* compare */
-      compare_buf(naive_filter_wu, naive_libxsmm_filter, nOfm*nIfm*kh*kw, &norms_upd);
-      printf("             1-norm of reference: %f\n", norms_upd.one_norm_ref);
-      printf("              1-norm of JIT-code: %f\n", norms_upd.one_norm_test);
-      printf("       L2-error-norm of JIT-code: %f\n", norms_upd.l2_rel_err);
-      printf("    inf-norm of comp. rel. error: %f\n", norms_upd.max_rel_err);
-      printf("    inf-norm of comp. abs. error: %f\n", norms_upd.max_abs_err);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter, 0, 0, &norms_upd);
+      printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_upd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_upd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_upd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_upd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_upd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_upd);
     }
 
-    if (type == 'A' || type == 'F') {
+    if ((type == 'A' || type == 'F') && LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("# Performance - FWD(NHWC/custom-Storage) #\n");
       printf("##########################################\n");
@@ -1418,7 +1433,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
       for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
-#   pragma omp parallel
+#       pragma omp parallel
 #endif
         {
 #if defined(_OPENMP)
@@ -1437,12 +1452,12 @@ int main(int argc, char* argv[])
       printf("fp time (NHWC,custom) = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP-NHWC-custom,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-          norms_fwd.max_rel_err, norms_fwd.max_abs_err, norms_fwd.l2_rel_err, norms_fwd.one_norm_ref, norms_fwd.one_norm_test );
+      printf("PERFDUMP-NHWC-custom,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
+        norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
     }
 
-    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) && LIBXSMM_FEQ(0, check) ) {
       printf("##########################################\n");
       printf("# Performance - BWD(NHWC/custom-Storage) #\n");
       printf("##########################################\n");
@@ -1450,7 +1465,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
       for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
-#   pragma omp parallel
+#       pragma omp parallel
 #endif
         {
 #if defined(_OPENMP)
@@ -1469,12 +1484,12 @@ int main(int argc, char* argv[])
       printf("fp time (NHWC,custom) = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP-NHWC-custom,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-          norms_bwd.max_rel_err, norms_bwd.max_abs_err, norms_bwd.l2_rel_err, norms_bwd.one_norm_ref, norms_bwd.one_norm_test );
+      printf("PERFDUMP-NHWC-custom,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
+        norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
 
-    if (type == 'A' || type == 'U') {
+    if ((type == 'A' || type == 'U') && LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("# Performance - UPD(NHWC/custom-Storage) #\n");
       printf("##########################################\n");
@@ -1482,7 +1497,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
       for (i = 0; i < iters; ++i) {
 #if defined(_OPENMP)
-#   pragma omp parallel
+#       pragma omp parallel
 #endif
         {
 #if defined(_OPENMP)
@@ -1504,9 +1519,9 @@ int main(int argc, char* argv[])
       printf("fp time (NHWC,custom) = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP-NHWC-custom,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-          ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total,
-          norms_upd.max_rel_err, norms_upd.max_abs_err, norms_upd.l2_rel_err, norms_upd.one_norm_ref, norms_upd.one_norm_test );
+      printf("PERFDUMP-NHWC-custom,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+        norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
     }
 
     /* clean-up */
@@ -1560,8 +1575,17 @@ int main(int argc, char* argv[])
   libxsmm_free(bias_libxsmm);
   libxsmm_free(dbias_libxsmm);
 
+  { const char *const env_check_scale = getenv("CHECK_SCALE");
+    const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 100.0 : atof(env_check_scale));
+    if (0 == LIBXSMM_FEQ(0, check) && check < 100.0 * check_scale * diff.normf_rel) {
+      fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
+      exit(EXIT_FAILURE);
+    }
+  }
+
   /* some empty lines at the end */
   printf("\n\n\n");
 
-  return 0;
+  return EXIT_SUCCESS;
 }
+

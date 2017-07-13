@@ -51,6 +51,13 @@
 #if !defined(LIBXSMM_MALLOC_SCRATCH_SCALE)
 # define LIBXSMM_MALLOC_SCRATCH_SCALE 1.4
 #endif
+#if !defined(LIBXSMM_MALLOC_SCRATCH_INTERNAL)
+# define LIBXSMM_MALLOC_SCRATCH_INTERNAL ((const void*)-1)
+#endif
+
+#if !defined(LIBXSMM_CACHELINE_SIZE)
+# define LIBXSMM_CACHELINE_SIZE 64
+#endif
 
 #if !defined(LIBXSMM_EXT_MIN_NTASKS)
 # define LIBXSMM_MIN_NTASKS(NT) 1
@@ -218,7 +225,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int padding_flag;           /* Flag that dictates if we should apply padding in the input */
   void* scratch6;
   size_t scratch6_size;
-  void* scratch7;         /* This scratch is used for low precision intermediate buffer for input in backward pass*/
+  void* scratch7;             /* This scratch is used for low precision intermediate buffer for input in backward pass */
   size_t scratch7_size;
   void* scratchIw;
   size_t scratchIw_size;
@@ -418,6 +425,8 @@ LIBXSMM_API_VARIABLE void* libxsmm_scratch_allocator_context;
 LIBXSMM_API_VARIABLE unsigned int libxsmm_scratch_pools;
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_API_VARIABLE double libxsmm_scratch_scale;
+/** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wallclock) */
+LIBXSMM_API_VARIABLE double libxsmm_timer_scale;
 /** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
 LIBXSMM_API_VARIABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */

@@ -51,8 +51,7 @@ wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-intel.psmp
 wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-intel.sopt
 wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-intel.ssmp
 cd ../makefiles
-source /opt/intel/compilers_and_libraries_2017.1.132/linux/bin/compilervars.sh intel64
-source /opt/intel/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh intel64
+source /opt/intel/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64
 make ARCH=Linux-x86-64-intel VERSION=psmp AVX=2
 ```
 
@@ -68,7 +67,7 @@ Running the application may go beyond a single node, however for first example t
 
 ```
 mpirun -np 16 \
-  -genv I_MPI_PIN_DOMAIN=auto -genv I_MPI_PIN_ORDER=scatter \
+  -genv I_MPI_PIN_DOMAIN=auto \
   -genv KMP_AFFINITY=scatter,granularity=fine,1 \
   -genv OMP_NUM_THREADS=4 \
   cp2k/exe/Linux-x86-64-intel/cp2k.psmp workload.inp
@@ -81,6 +80,8 @@ The CP2K/intel branch carries a number of "reconfigurations" and environment var
 * **CP2K_RECONFIGURE**: environment variable for reconfiguring CP2K (default depends on whether the ACCeleration layer is enabled or not). With the ACCeleration layer enabled, CP2K is reconfigured (as if CP2K_RECONFIGURE=1 is set) e.g. an increased number of entries per matrix stack is populated, and otherwise CP2K is not reconfigured. Further, setting CP2K_RECONFIGURE=0 is disabling the code specific to the [Intel branch of CP2K](https://github.com/cp2k/cp2k/tree/intel), and relies on the (optional) LIBXSMM integration into [CP2K 3.0](https://www.cp2k.org/version_history) (and later).
 * **CP2K_STACKSIZE**: environment variable which denotes the number of matrix multiplications which is collected into a single stack. Usually the internal default performs best across a variety of workloads, however depending on the workload a different value can be better. This variable is relatively impactful since the work distribution and balance is affected.
 * **CP2K_HUGEPAGES**: environment variable for disabling (0) huge page based memory allocation, which is enabled by default (if TBBROOT was present at build-time of the application).
+* **CP2K_RMA**: enables (1) an experimental Remote Memory Access (RMA) based multiplication algorithm (requires MPI3).
+* **CP2K_SORT**: enables (1) an indirect sorting of each multiplication stack according to the C-index (experimental).
 
 ## LIBINT and LIBXC Dependencies
 
@@ -120,7 +121,17 @@ If the library needs to be cross-compiled, one may add `--host=x86_64-unknown-li
 
 ### Eigenvalue SoLvers for Petaflop-Applications (ELPA)
 
-Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://github.com/hfp/xconfigure#xconfigure)), which helps to configure common HPC software (and [ELPA](https://github.com/hfp/xconfigure/tree/master/elpa#eigenvalue-solvers-for-petaflop-applications-elpa) in particular) for Intel software development tools. To actually make use of ELPA, the key `ELPAROOT=/path/to/elpa` needs to be supplied when using CP2K/intel's ARCH files (make).
+Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://github.com/hfp/xconfigure#xconfigure)), which helps to configure common HPC software (and [ELPA](https://github.com/hfp/xconfigure/tree/master/elpa#eigenvalue-solvers-for-petaflop-applications-elpa) in particular) for Intel software development tools. To actually make use of ELPA, the key `ELPAROOT=/path/to/elpa` needs to be supplied when using CP2K/intel's ARCH files (make). For the Intel-branch, ELPA-2017.05.001 is already supported:
+
+```
+make ARCH=Linux-x86-64-intel VERSION=psmp ELPA=201705 ELPAROOT=/path/to/elpa/default-arch
+```
+
+At runtime, a build of the Intel-branch supports an environment variable CP2K_ELPA:
+
+* **CP2K_ELPA=-1**: requests ELPA to be enabled; the actual kernel type depends on the ELPA configuration.
+* **CP2K_ELPA=0**: ELPA is not enabled by default (only on request via input file); same as non-Intel branch.
+* **CP2K_ELPA**=\<not-defined\>: requests ELPA-kernel according to CPUID (default with CP2K/Intel-branch).
 
 ### Memory Allocation Wrapper
 

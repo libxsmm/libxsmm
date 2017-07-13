@@ -143,12 +143,6 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
     return;
   }
 
-  /* check if we have  stride of 1 */
-  if ( i_conv_desc->stride_h != 1 || i_conv_desc->stride_w != 1 ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CONV_CONT_STRIDE );
-    return;
-  }
-
   /* initialize KW and OFW unrolling */
   if (i_conv_desc->unroll_kw != 0) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_INVALID_KW_UNROLL );
@@ -236,7 +230,7 @@ void libxsmm_generator_convolution_backward_avx2_ofwloop( libxsmm_generated_code
                                         i_gp_reg_mapping->gp_reg_input,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         (l_m * i_conv_kernel_config->vector_length_in * i_conv_kernel_config->datatype_size_in) +
-                                          (l_n * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in),
+                                          (l_n * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->stride_w * i_conv_kernel_config->datatype_size_in),
                                         i_conv_kernel_config->vector_name,
                                         l_vec_reg_acc_start + l_m + (l_n * l_ifm_blocking), 0, 0 );
     }
@@ -259,7 +253,7 @@ void libxsmm_generator_convolution_backward_avx2_ofwloop( libxsmm_generated_code
                                         i_gp_reg_mapping->gp_reg_input,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         (l_m * i_conv_kernel_config->vector_length_in * i_conv_kernel_config->datatype_size_in) +
-                                          (l_n * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in),
+                                          (l_n * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->stride_w * i_conv_kernel_config->datatype_size_in),
                                         i_conv_kernel_config->vector_name,
                                         l_vec_reg_acc_start + l_m + (l_n * l_ifm_blocking), 0, 1 );
     }
@@ -298,7 +292,7 @@ void libxsmm_generator_convolution_backward_avx2_ofwloop( libxsmm_generated_code
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_add_instruction,
                                      i_gp_reg_mapping->gp_reg_input,
-                                     i_ofw_rb * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in  );
+                                     i_ofw_rb * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->stride_w * i_conv_kernel_config->datatype_size_in  );
     /* advance output */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_add_instruction,

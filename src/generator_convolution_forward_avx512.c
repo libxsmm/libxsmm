@@ -457,7 +457,7 @@ void libxsmm_generator_convolution_forward_avx512_init_input_strides_two_rows( l
      helper 6: B+ifw_padded+9*ldb, additional base address */
   libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_input, i_gp_reg_mapping->gp_reg_help_5);
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                   i_gp_reg_mapping->gp_reg_help_5, i_conv_kernel_config->datatype_size_in * i_conv_desc->ifw_padded
+                                   i_gp_reg_mapping->gp_reg_help_5, i_conv_kernel_config->datatype_size_in * i_conv_desc->ifw_padded * i_conv_desc->stride_h
                                      * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block );
   if ( i_conv_desc->ofw_rb > 9 ) {
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_input, i_gp_reg_mapping->gp_reg_help_4);
@@ -466,7 +466,7 @@ void libxsmm_generator_convolution_forward_avx512_init_input_strides_two_rows( l
                                        * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block );
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_input, i_gp_reg_mapping->gp_reg_help_6);
     libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction,
-                                     i_gp_reg_mapping->gp_reg_help_6, (i_conv_kernel_config->datatype_size_in * i_conv_desc->ifw_padded
+                                     i_gp_reg_mapping->gp_reg_help_6, (i_conv_kernel_config->datatype_size_in * i_conv_desc->ifw_padded * i_conv_desc->stride_h
                                        * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block )
                                        + (9 * i_conv_kernel_config->datatype_size_in * i_conv_desc->stride_w
                                           * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block )    );

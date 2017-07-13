@@ -279,6 +279,27 @@ if (handle->datatype != handle->datatype_itm) {
             }
           }
         }
+        /* ReLU handling */
+        if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU) > 0) ) {
+          element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+
+/* @TODO this is very hacky as it assumes ofmblock is VLEN */
+#if defined(__AVX512F__)
+          __m512 vzero = _mm512_setzero_ps();
+#endif
+          /* @TODO check these loops for physical output padding */
+          for (oj = 0; oj < handle->ofhp*handle->ofwp; ++oj) {
+#if defined(__AVX512F__)
+            _mm512_store_ps((void*)temp_ptr, _mm512_max_ps(LIBXSMM_INTRINSICS_MM512_LOAD_PS((void*)temp_ptr), vzero));
+#else
+            LIBXSMM_PRAGMA_SIMD
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+              temp_ptr[ofm2] = (element_output_type)(temp_ptr[ofm2] < 0 ? 0 : temp_ptr[ofm2]);
+            }
+#endif
+            temp_ptr += handle->ofmblock;
+          }
+        }
         /* down-convert */
         if (handle->datatype != handle->datatype_itm) {
           for (oj = 0; oj < handle->ofh; ++oj) {
@@ -499,6 +520,27 @@ if (handle->datatype != handle->datatype_itm) {
             }
           }
         }
+        /* ReLU handling */
+        if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU) > 0) ) {
+          element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+
+/* @TODO this is very hacky as it assumes ofmblock is VLEN */
+#if defined(__AVX512F__)
+          __m512 vzero = _mm512_setzero_ps();
+#endif
+          /* @TODO check these loops for physical output padding */
+          for (oj = 0; oj < handle->ofhp*handle->ofwp; ++oj) {
+#if defined(__AVX512F__)
+            _mm512_store_ps((void*)temp_ptr, _mm512_max_ps(LIBXSMM_INTRINSICS_MM512_LOAD_PS((void*)temp_ptr), vzero));
+#else
+            LIBXSMM_PRAGMA_SIMD
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+              temp_ptr[ofm2] = (element_output_type)(temp_ptr[ofm2] < 0 ? 0 : temp_ptr[ofm2]);
+            }
+#endif
+            temp_ptr += handle->ofmblock;
+          }
+        }
         /* down-convert */
         if (handle->datatype != handle->datatype_itm) {
           for (oj = 0; oj < handle->ofh; ++oj) {
@@ -624,6 +666,19 @@ if (handle->datatype != handle->datatype_itm) {
                                            handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
             jitted_conv_fp_one(l_input, l_wt, l_output, NULL, NULL, NULL);
           }
+        }
+      }
+      /* ReLU handling */
+      if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU) > 0) ) {
+        element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+
+        /* @TODO check these loops for physical output padding */
+        for (oj = 0; oj < handle->ofhp*handle->ofwp; ++oj) {
+          LIBXSMM_PRAGMA_SIMD
+          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+            temp_ptr[ofm2] = (element_output_type)(temp_ptr[ofm2] < 0 ? 0 : temp_ptr[ofm2]);
+          }
+          temp_ptr += handle->ofmblock;
         }
       }
     }
