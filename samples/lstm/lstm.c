@@ -165,11 +165,12 @@ int main(int argc, char* argv[])
     REAL_TYPE* xt = (REAL_TYPE*)libxsmm_malloc(k * n * sizeof(REAL_TYPE) * t);
     REAL_TYPE* u = (REAL_TYPE*)libxsmm_malloc(m * m * sizeof(REAL_TYPE));
     REAL_TYPE* h = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
-    REAL_TYPE* z1 = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
+    REAL_TYPE* z1t = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE) * t);
     REAL_TYPE* z2 = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
     REAL_TYPE* z = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
     LIBXSMM_VLA_DECL(2, REAL_TYPE, xgold, xgoldt, ldx * n);
     LIBXSMM_VLA_DECL(2, REAL_TYPE, x, xt, k * n);
+    LIBXSMM_VLA_DECL(2, REAL_TYPE, z1, z1t, m * n);
     libxsmm_bgemm_handle* handlewx = 0;
     libxsmm_bgemm_handle* handleuh = 0;
     unsigned long long start;
@@ -180,7 +181,7 @@ int main(int argc, char* argv[])
 #endif
     const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
     handlewx = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-      m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2, 
+      m, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2, 
       &alpha, &beta, &gemm_flags, &strategy, &order);
     handleuh = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
       m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2, 
@@ -203,7 +204,9 @@ int main(int argc, char* argv[])
       }
       libxsmm_bgemm_copyin_a(handleuh, ugold, &ldu, u);
       libxsmm_bgemm_copyin_b(handleuh, hgold, &ldh, h);
-      libxsmm_bgemm_copyin_c(handlewx, z1gold, &ldz, z1);
+      for (it = 0; it < t; ++it) {
+        libxsmm_bgemm_copyin_c(handlewx, z1gold, &ldz, &LIBXSMM_VLA_ACCESS(2, z1, it, 0, m * n));
+      }
       libxsmm_bgemm_copyin_c(handleuh, z2gold, &ldz, z2);
       libxsmm_bgemm_copyin_c(handlewx, zgold, &ldz, z);
 #if defined(MKL_ENABLE_AVX512)
@@ -217,7 +220,7 @@ int main(int argc, char* argv[])
       }
 #endif
       libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-        &transa, &transb, &m, &n, &k, &alpha, w, &ldw, x, &ldx, &beta, z1, &ldz);
+        &transa, &transb, &m, &n, &k, &alpha, w, &ldw, x, &ldx, &beta, &LIBXSMM_VLA_ACCESS(2, z1, 0, 0, m * n), &ldz);
       fprintf(stdout, "\n\n");
       /* warmup OpenMP (populate thread pool) */
       libxsmm_bgemm_omp(handleuh, u, h, z2, 1);
@@ -235,15 +238,14 @@ int main(int argc, char* argv[])
       start = libxsmm_timer_tick();
       for (s = 0; s < nrepeat; ++s) {
         /* The following loop may be absorbed into libxsmm_lstm_omp */
+        libxsmm_bgemm_omp(handlewx, w, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, z1, 0, 0, m * n), 1/*nrepeat*/);
         for (i = 0; i < t-1; ++i) {
-          libxsmm_bgemm_omp(handlewx, w, x[k * n * i], z1, 1/*nrepeat*/);
           libxsmm_bgemm_omp(handleuh, u, h, z2, 1/*nrepeat*/);
-          matrix_add(m*n, z1, z2, z);
+          matrix_add(m*n, &LIBXSMM_VLA_ACCESS(2, z1, i, 0, m * n), z2, z);
           matrix_relu(m*n, z, h);
         }
-        libxsmm_bgemm_omp(handlewx, w, x[k * n * (t-1)], z1, 1/*nrepeat*/);
         libxsmm_bgemm_omp(handleuh, u, h, z2, 1/*nrepeat*/);
-        matrix_add(m*n, z1, z2, z);
+        matrix_add(m*n, &LIBXSMM_VLA_ACCESS(2, z1, t-1, 0, m * n), z2, z);
       }
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
       if (0 < duration) {
@@ -256,12 +258,12 @@ int main(int argc, char* argv[])
         start = libxsmm_timer_tick();
         for (s = 0; s < nrepeat; ++s) {
           for (i = 0; i < t-1; ++i) {
-            LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, xgold[k * n * i], &ldx, &beta, z1gold, &ldz);
+            LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, &LIBXSMM_VLA_ACCESS(2, xgold, i, 0, k * n), &ldx, &beta, z1gold, &ldz);
             LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &m, &alpha, ugold, &ldu, hgold, &ldh, &beta, z2gold, &ldz);
             matrix_add(m*n, z1gold, z2gold, zgold);
             matrix_relu(m*n, zgold, hgold);
           }
-          LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, xgold[k * n * (t-1)], &ldx, &beta, z1gold, &ldz);
+          LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, &LIBXSMM_VLA_ACCESS(2, xgold, t-1, 0, k * n), &ldx, &beta, z1gold, &ldz);
           LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &m, &alpha, ugold, &ldu, hgold, &ldh, &beta, z2gold, &ldz);
           matrix_add(m*n, z1gold, z2gold, zgold);
         }
