@@ -689,7 +689,7 @@ int main(int argc, char* argv[])
     if (0 == LIBXSMM_FEQ(0, check) && check < 100.0 * check_scale * diff.normf_rel) {
       fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
       exit(EXIT_FAILURE);
-    }    
+    }
   }
 
   /* some empty lines at the end */

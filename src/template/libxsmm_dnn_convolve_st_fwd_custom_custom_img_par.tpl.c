@@ -271,7 +271,7 @@ if (handle->datatype != handle->datatype_itm) {
 #endif
         temp_ptr += handle->ofmblock;
       }
-    }  
+    }
     /* down-convert */
     if (handle->datatype != handle->datatype_itm) {
       for (oj = start_ofh; oj < end_ofh; ++oj) {

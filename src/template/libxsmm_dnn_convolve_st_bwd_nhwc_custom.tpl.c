@@ -273,7 +273,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       }
 #else
       /* reset result buffer to zero when intent is to overwrite when first block
-         of input channels should be convoluted 
+         of input channels should be convoluted
          @TODO use matcopy */
       if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
         element_input_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm*handle->fm_lp_block, handle->ifmblock));
@@ -406,7 +406,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       }
 #else
       /* reset result buffer to zero when intent is to overwrite when first block
-         of input channels should be convoluted 
+         of input channels should be convoluted
          @TODO use matcopy */
       if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
         element_input_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm*handle->fm_lp_block, handle->ifmblock));
@@ -537,7 +537,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
      }
 #else
     /* reset result buffer to zero when intent is to overwrite when first block
-       of input channels should be convoluted 
+       of input channels should be convoluted
        @TODO use matcopy */
     if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
       element_input_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm*handle->fm_lp_block, handle->ifmblock));

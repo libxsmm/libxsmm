@@ -271,7 +271,7 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
 #if defined(USE_FUSED_RELU)
       for (oj = 0; oj < ofh; ++oj) {
         for (oi = 0; oi < ofw; ++oi) {
-          LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) = 
+          LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) =
            (LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) < 0.0f) ? 0.0f : LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
         }
       }
@@ -1578,7 +1578,7 @@ int main(int argc, char* argv[])
     if (0 == LIBXSMM_FEQ(0, check) && check < 100.0 * check_scale * diff.normf_rel) {
       fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
       exit(EXIT_FAILURE);
-    }    
+    }
   }
 
   /* some empty lines at the end */
