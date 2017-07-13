@@ -75,6 +75,9 @@ for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
         t2 = _mm512_sub_ps(T[j][1], T[j][2]);
         t3 = _mm512_sub_ps(T[j][3], T[j][4]);
 
+        /* Since we are using streaming store to save read BW and don't need HW prefetcher,
+         * the loop order doesn't need to make these writes accesses contiguous
+         */
         LIBXSMM_INTRINSICS_MM512_STREAM_PS(
             &LIBXSMM_VLA_ACCESS(4, output, 0, ydim, ti*((ALPHA)-2), 0, handle->ofhp, handle->ofwp, TDVLEN),
             _mm512_add_ps(_mm512_add_ps(t0, t1), T[j][0]));
@@ -103,6 +106,9 @@ for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
 
         ydim = tj*((ALPHA) - 2) + j;
 
+        /* Since we are using streaming store to save read BW and don't need HW prefetcher,
+         * the loop order doesn't need to make these writes accesses contiguous
+         */
         for (i = 0; i < LIBXSMM_MIN(handle->ofw - (int)ti*((ALPHA)-2), (ALPHA)-2); i++) {
           xdim = ti*((ALPHA) - 2) + i;
           LIBXSMM_INTRINSICS_MM512_STREAM_PS(

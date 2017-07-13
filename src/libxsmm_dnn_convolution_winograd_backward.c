@@ -114,6 +114,9 @@ LIBXSMM_API_INLINE void internal_bwd_weight_transform(
                               const libxsmm_dnn_layer* handle )
 {
   if (handle->cwino_bwd.alpha == 6) {
+    /* FIXME (JSP): add AVX512 intrinsic code for backward weight transformation.
+                    not critical though because weight transformation doesn't take much time anyway
+                    with a reasonably big batch size */
 #define ALPHA 6
 #define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_backward_weight_trans_alpha6.tpl.c"

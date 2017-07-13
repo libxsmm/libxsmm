@@ -48,7 +48,9 @@ LIBXSMM_VLA_DECL(6, float, weight, (float*)handle->reg_filter->data, handle->blo
 /*LIBXSMM_VLA_DECL(2, float, bias, handle->bias->data, TDVLEN);*/
 
 LIBXSMM_VLA_DECL(6, float, U,   (float*)handle->scratch1, ALPHA, handle->blocksofm, handle->blocksifm, TDVLEN, TDVLEN);
+/* JSP: the 2 fastest moving dimensions are input feature maps (k dimension in batch GEMMs) to make software prefetching manageable in batch GEMM */
 LIBXSMM_VLA_DECL(8, float, V,   (float*)handle->scratch3, ALPHA, ALPHA, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, handle->blocksifm, TDVLEN);
+/* JSP: img1 and blocksofm are 2 slowest moving dimensions to make read access in output transformation more or less sequential (those 2 are also used as the 2 outer-most loops).*/
 LIBXSMM_VLA_DECL(8, float, M,   (float*)handle->scratch4, handle->blocksofm, ALPHA, ALPHA, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, TDVLEN);
 LIBXSMM_VLA_DECL(5, float, Iwp, (float*)handle->scratchIw, handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles, ALPHA, ALPHA, TDVLEN);
 LIBXSMM_VLA_DECL(5, float, Owp, (float*)handle->scratchOw, handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles, ALPHA, ALPHA, TDVLEN);
@@ -148,12 +150,39 @@ t_start = __rdtsc();
 #endif
 for (img1 = 0; img1 < handle->desc.N/handle->cwino_fwd.bimg; img1++) {
   for (job = thr_begin; job < thr_end; job++) {
+    /* JSP: In coarse level, parallelize over ALPHA^2 (independent GEMM).
+     * The top-bin with 36 = ALPHA^2 tiles is an ideal case but 34 tiles also work fine.
+     * This method is better than parallelizing over images and/or output channels
+     * because of smaller working set.
+     * My analysis shows that the former method gives you ~60 F/B arithmetic intensity
+     * while the latter gives you only ~20 F/B.
+     * The latter method has an advantage of allowing fusion of batch GEMM with output
+     * transformation but there're 2 challenges (1: keeping the temp data btw batch GEMM
+     * and output transformation. We need to reduce nbImg to do this but doing so will
+     * make each GEMM smaller hence less efficient. 2: the latter method requires many
+     * cores reading the same filters and input feature maps, which is bad in Xeon Phi
+     * without shared cache).
+     * In Xeon with a large shared LLC, the latter method may give you a b
+     *
+     * In finer level, parallelize over ofm1 so that threads group for the same ALPHA^2
+     * will work on the same input image and input channels.
+     * This is typically better than parallelizing over img1.
+     * The former method typically gives you read sharing to input feature among threads in the same Xeon Phi tile.
+     * The latter method typically gives you read sharing to filter among threads in the same Xeon Phi tile.
+     * Since input features are typically bigger than filters (with a reasonably big batch size), we optimize for
+     * input feature map.
+     */
     oj = job / (ALPHA * handle->blocksofm);
     oi = (job % (ALPHA * handle->blocksofm)) / handle->blocksofm;
     ofm1 = job % handle->blocksofm;
 
 #if 1
     typedef libxsmm_sconvfunction libxsmm_convfunction;
+    /* JSP: when we are working on the last ofm1 in the current image, we L2$ prefetch next image
+     *      otherwise, we just L1$ prefetch next ur block.
+     * TODO: we need a different prefetch scheme when img1 = 0 because the current image is also not available in L2$.
+     * This will be especially important with a small batch size.
+     */
     libxsmm_convfunction jitted_conv_fp = (libxsmm_convfunction)handle->code_fwd[job == thr_end - 1 ? 2 : 1].xconv.sconv;
 #endif
 
@@ -196,6 +225,7 @@ for (img1 = 0; img1 < handle->desc.N/handle->cwino_fwd.bimg; img1++) {
       }
     }
     else {
+      /* when ur_ifm == blocksifm, we don't need to initialize M. Instead, we use streaming store to save read BW */
       jitted_conv_fp(
         &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ofm1, 0, 0, 0, ALPHA, handle->blocksofm, handle->blocksifm, TDVLEN, TDVLEN),
         &LIBXSMM_VLA_ACCESS(8, V, img1, oj, oi, 0, 0, 0, 0, 0, ALPHA, ALPHA, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, handle->blocksifm, TDVLEN),

@@ -125,6 +125,9 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
       t4 = _mm512_fnmadd_ps(_mm512_set1_ps(5.0f), T[j][2], T[j][4]);
       t5 = _mm512_fnmadd_ps(_mm512_set1_ps(5.0f), T[j][3], T[j][5]);
 
+      /* Since we are using streaming store to save read BW and don't need HW prefetcher,
+       * the loop order doesn't need to make these writes accesses contiguous
+       */
       LIBXSMM_INTRINSICS_MM512_STREAM_PS(
           &LIBXSMM_VLA_ACCESS(6, output, j, 0, 0, tj*handle->cwino_fwd.itiles + ti, 0, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, handle->blocksifm, TDVLEN),
           _mm512_fmadd_ps(_mm512_set1_ps(4.0f), T[j][0], t4));

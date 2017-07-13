@@ -72,6 +72,9 @@ for (ifm2 = 0; ifm2 < TDVLEN; ifm2++)
     t1 = _mm512_sub_ps(_mm512_setzero_ps(), _mm512_fmadd_ps(rcp6, T[j][0], t0));
     t2 = _mm512_fmadd_ps(rcp24, T[j][0], t0);
 
+    /* Since we are using streaming store to save read BW and don't need HW prefetcher,
+     * the loop order doesn't need to make these writes accesses contiguous
+     */
     LIBXSMM_INTRINSICS_MM512_STREAM_PS(
         &LIBXSMM_VLA_ACCESS(5, output, j, 0, 0, ifm2, 0, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN),
         _mm512_mul_ps(rcp4, T[j][0]));

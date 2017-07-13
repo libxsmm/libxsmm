@@ -149,6 +149,9 @@ t_start = __rdtsc();
 #endif
 for (img1 = 0; img1 < handle->desc.N/handle->cwino_bwd.bimg; img1++) {
   for (job = thr_begin; job < thr_end; job++) {
+    /* JSP: please see comments in libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined.tpl.c
+     * to see why we're using this parallelization and looping order.
+     */
     oj = job / (ALPHA * handle->blocksifm);
     oi = (job % (ALPHA * handle->blocksifm)) / handle->blocksifm;
     ifm1 = job % handle->blocksifm;
