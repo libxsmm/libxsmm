@@ -369,7 +369,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   }
 
   /* Check if padded needs to be applied in the input and allocate appropriate buffers */
-  if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && (handle->desc.pad_h > 0) && (handle->desc.pad_w > 0)) {
+  /* Anand: changing below check for pad to either/or pad_h or pad_w instead of and */ 
+  if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && ((handle->desc.pad_h > 0) || (handle->desc.pad_w > 0))) {
     handle->padding_flag = 1;
     handle->scratch5  = 0;
     handle->minibatch_scratch_size = handle->desc.N * handle->blocksifm * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_itm);
