@@ -42,6 +42,7 @@ int oj;
 int oi;
 unsigned int i, j, k, l;
 typedef libxsmm_sconvfunction libxsmm_convfunction;
+libxsmm_convfunction jitted_conv_fp;
 
 LIBXSMM_VLA_DECL(5, const float, input,  (const float*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN);
 LIBXSMM_VLA_DECL(5, float, output, (float*)handle->reg_output->data, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN);
@@ -183,7 +184,7 @@ for (img1 = 0; img1 < handle->desc.N/handle->cwino_fwd.bimg; img1++) {
      * TODO: we need a different prefetch scheme when img1 = 0 because the current image is also not available in L2$.
      * This will be especially important with a small batch size.
      */
-    libxsmm_convfunction jitted_conv_fp = (libxsmm_convfunction)handle->code_fwd[job == thr_end - 1 ? 2 : 1].xconv.sconv;
+    jitted_conv_fp = (libxsmm_convfunction)handle->code_fwd[job == thr_end - 1 ? 2 : 1].xconv.sconv;
 #endif
 
     if (handle->cwino_fwd.ur_ifm != handle->blocksifm) {
