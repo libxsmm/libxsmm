@@ -41,6 +41,7 @@ int ofm1;
 int oj;
 int oi;
 unsigned int i, j, k, l;
+typedef libxsmm_sconvfunction libxsmm_convfunction;
 
 LIBXSMM_VLA_DECL(5, const float, input,  (const float*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN);
 LIBXSMM_VLA_DECL(5, float, output, (float*)handle->reg_output->data, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN);
@@ -177,7 +178,6 @@ for (img1 = 0; img1 < handle->desc.N/handle->cwino_fwd.bimg; img1++) {
     ofm1 = job % handle->blocksofm;
 
 #if 1
-    typedef libxsmm_sconvfunction libxsmm_convfunction;
     /* JSP: when we are working on the last ofm1 in the current image, we L2$ prefetch next image
      *      otherwise, we just L1$ prefetch next ur block.
      * TODO: we need a different prefetch scheme when img1 = 0 because the current image is also not available in L2$.
