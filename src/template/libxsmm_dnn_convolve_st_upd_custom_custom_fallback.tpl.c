@@ -68,7 +68,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       temp_buf[ii] = (element_filter_type)0;
     }
   }
-  
+
   for (img = 0; img < handle->desc.N; ++img) {
 #if defined(INPUT_PADDING)
     for (oj = 0; oj < handle->ifhp; ++oj) {
