@@ -135,7 +135,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
       if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F32, *m, nn, d, c, m, ldc, &diff)) {
         LIBXSMM_FLOCK(stderr);
         libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F32, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-        fprintf(stderr, " L1abs=%f L1rel=%f L2abs=%f L2rel=%f\n", diff.normi_abs, diff.normi_rel, diff.normf_abs, diff.normf_rel);
+        fprintf(stderr, " L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
         LIBXSMM_FUNLOCK(stderr);
       }
       libxsmm_free(d);
@@ -203,7 +203,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
       if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F64, *m, nn, d, c, m, ldc, &diff)) {
         LIBXSMM_FLOCK(stderr);
         libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F64, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-        fprintf(stderr, " L1abs=%f L1rel=%f L2abs=%f L2rel=%f\n", diff.normi_abs, diff.normi_rel, diff.normf_abs, diff.normf_rel);
+        fprintf(stderr, " L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
         LIBXSMM_FUNLOCK(stderr);
       }
       libxsmm_free(d);
