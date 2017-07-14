@@ -149,7 +149,7 @@ thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 #ifdef BTIME
 t_start = __rdtsc();
 #endif
-for (img1 = 0; img1 < handle->desc.N/handle->cwino_bwd.bimg; img1++) {
+for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_bwd.bimg); img1++) {
   for (job = thr_begin; job < thr_end; job++) {
     /* JSP: please see comments in libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined.tpl.c
      * to see why we're using this parallelization and looping order.
@@ -162,7 +162,7 @@ for (img1 = 0; img1 < handle->desc.N/handle->cwino_bwd.bimg; img1++) {
     jitted_conv_bp = (libxsmm_convfunction)handle->code_bwd[job == thr_end - 1 ? 2 : 1].xconv.sconv;
 #endif
 
-    if (handle->cwino_bwd.ur_ifm != handle->blocksofm) {
+    if ((int)handle->cwino_bwd.ur_ifm != handle->blocksofm) {
       for (i = 0; i < handle->cwino_bwd.bimg; i++) {
         for (j = 0; j < handle->cwino_bwd.jtiles; j++) {
           for (k = 0; k < handle->cwino_bwd.itiles; k++) {
