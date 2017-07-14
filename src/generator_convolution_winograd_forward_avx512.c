@@ -66,7 +66,8 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
   unsigned int qindex = 0;
   int reg  = 0;
   int wreg = 0;
-  int nprefetches_per_group, is_epilogue, ur;
+  int nprefetches_per_group, is_epilogue;
+  unsigned int ur;
 
   /* define gp register mapping */
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
