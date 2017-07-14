@@ -150,7 +150,7 @@ thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 #ifdef FTIME
 t_start = __rdtsc();
 #endif
-for (img1 = 0; img1 < handle->desc.N/handle->cwino_fwd.bimg; img1++) {
+for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_fwd.bimg); img1++) {
   for (job = thr_begin; job < thr_end; job++) {
     /* JSP: In coarse level, parallelize over ALPHA^2 (independent GEMM).
      * The top-bin with 36 = ALPHA^2 tiles is an ideal case but 34 tiles also work fine.
@@ -187,7 +187,7 @@ for (img1 = 0; img1 < handle->desc.N/handle->cwino_fwd.bimg; img1++) {
     jitted_conv_fp = (libxsmm_convfunction)handle->code_fwd[job == thr_end - 1 ? 2 : 1].xconv.sconv;
 #endif
 
-    if (handle->cwino_fwd.ur_ifm != handle->blocksifm) {
+    if ((int)handle->cwino_fwd.ur_ifm != handle->blocksifm) {
       for (i = 0; i < handle->cwino_fwd.bimg; i++) {
         for (j = 0; j < handle->cwino_fwd.jtiles; j++) {
           for (k = 0; k < handle->cwino_fwd.itiles; k++) {
