@@ -467,9 +467,8 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
         }
 #endif
       } else { /* handle->ifmblock != 1 */
-
 #ifdef LIBXSMM_WU_TRANSPOSE_OFW_IFM
-        int ii, ij;
+        int ij;
         /* lazy barrier init */
         libxsmm_barrier_init(handle->barrier, ltid);
 

@@ -316,7 +316,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
   /* Initialize in parallel scratch5 to zero */
   for (imgifm1 = zero_thr_begin; imgifm1 < zero_thr_end; ++imgifm1) {
-    const int ii = imgifm1 % padded_h;
+    ii = imgifm1 % padded_h;
     img = imgifm1 / padded_h;
     copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii, 0, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
     jitted_matzero(NULL, NULL, copy_ptr, NULL, NULL);
@@ -327,7 +327,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   /* Copy the minibatch to a padded version only if no transpose is required -- otherwise we combine the transpose with the copying into the padded buffer */
 #ifndef LIBXSMM_WU_TRANSPOSE_OFW_IFM
   for (imgifm1 = copy_thr_end - 1; imgifm1 >= copy_thr_begin; imgifm1--) {
-    const int ii = imgifm1 % handle->ifhp;
+    ii = imgifm1 % handle->ifhp;
     img = imgifm1 / handle->ifhp;
     input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ii, 0, 0, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
     copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ii + handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->blocksifm, handle->ifmblock);
@@ -356,7 +356,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #if defined(INPUT_PADDING)
     /* Transpose IFW and IFM into the padded buffer!*/
     for (imgifhp = transpose_thr_begin; imgifhp < transpose_thr_end; ++imgifhp) {
-      int ij = imgifhp % handle->ifhp, ii;
+      const int ij = imgifhp % handle->ifhp;
       img = imgifhp / handle->ifhp;
       for (ii = 0; ii < handle->ifwp; ++ii) {
         for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
@@ -370,7 +370,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #else
     /* First transpose IFW and IFM */
     for (imgifhp = transpose_thr_begin; imgifhp < transpose_thr_end; ++imgifhp) {
-      int ij = imgifhp % handle->ifhp, ii;
+      const int ij = imgifhp % handle->ifhp;
       img = imgifhp / handle->ifhp;
       for (ii = 0; ii < handle->ifwp; ++ii) {
         for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
