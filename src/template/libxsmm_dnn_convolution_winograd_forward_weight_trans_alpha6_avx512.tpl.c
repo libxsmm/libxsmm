@@ -46,22 +46,22 @@ for (ifm2 = 0; ifm2 < TDVLEN; ifm2++)
   /*LIBXSMM_PRAGMA_UNROLL_N(3)*/
   for (i = 0; i < 3; i++)
   {
-    __m512 F[3];
-    F[0] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(6, input, 0, 0, 0, i, ifm2, 0, handle->blocksifm, 3, 3, TDVLEN, TDVLEN));
-    F[1] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(6, input, 0, 0, 1, i, ifm2, 0, handle->blocksifm, 3, 3, TDVLEN, TDVLEN));
-    F[2] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(6, input, 0, 0, 2, i, ifm2, 0, handle->blocksifm, 3, 3, TDVLEN, TDVLEN));
+    __m512 f0, f1, f2;
+    f0 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(6, input, 0, 0, 0, i, ifm2, 0, handle->blocksifm, 3, 3, TDVLEN, TDVLEN));
+    f1 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(6, input, 0, 0, 1, i, ifm2, 0, handle->blocksifm, 3, 3, TDVLEN, TDVLEN));
+    f2 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(6, input, 0, 0, 2, i, ifm2, 0, handle->blocksifm, 3, 3, TDVLEN, TDVLEN));
 
     __m512 t0, t1, t2;
-    t0 = _mm512_mul_ps(rcp6, F[2]);
-    t1 = _mm512_sub_ps(_mm512_setzero_ps(), _mm512_fmadd_ps(rcp6, F[0], t0));
-    t2 = _mm512_fmadd_ps(rcp24, F[0], t0);
+    t0 = _mm512_mul_ps(rcp6, f2);
+    t1 = _mm512_sub_ps(_mm512_setzero_ps(), _mm512_fmadd_ps(rcp6, f0, t0));
+    t2 = _mm512_fmadd_ps(rcp24, f0, t0);
 
-    T[0][i] = _mm512_mul_ps(rcp4, F[0]);
-    T[1][i] = _mm512_fnmadd_ps(rcp6, F[1], t1);
-    T[2][i] = _mm512_fmadd_ps(rcp6, F[1], t1);
-    T[3][i] = _mm512_fmadd_ps(rcp12, F[1], t2);
-    T[4][i] = _mm512_fnmadd_ps(rcp12, F[1], t2);
-    T[5][i] = F[2];
+    T[0][i] = _mm512_mul_ps(rcp4, f0);
+    T[1][i] = _mm512_fnmadd_ps(rcp6, f1, t1);
+    T[2][i] = _mm512_fmadd_ps(rcp6, f1, t1);
+    T[3][i] = _mm512_fmadd_ps(rcp12, f1, t2);
+    T[4][i] = _mm512_fnmadd_ps(rcp12, f1, t2);
+    T[5][i] = f2;
   }
 
   /*LIBXSMM_PRAGMA_UNROLL_N(ALPHA)*/

@@ -75,6 +75,7 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_fwd_input_transform_custom_custom_alpha6_
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6_avx512.tpl.c"
 # undef TDVLEN
 # undef ALPHA
+  LIBXSMM_UNUSED(Iwp);
 #else /* next lower/available code path (fallback chain) */
   internal_fwd_input_transform_custom_custom_alpha6_default(inp, tinp, Iwp, handle);
 #endif
