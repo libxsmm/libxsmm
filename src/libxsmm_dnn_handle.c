@@ -369,7 +369,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   }
 
   /* Check if padded needs to be applied in the input and allocate appropriate buffers */
-  /* Anand: changing below check for pad to either/or pad_h or pad_w instead of and */ 
+  /* Anand: changing below check for pad to either/or pad_h or pad_w instead of and */
   if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && ((handle->desc.pad_h > 0) || (handle->desc.pad_w > 0))) {
     handle->padding_flag = 1;
     handle->scratch5  = 0;
