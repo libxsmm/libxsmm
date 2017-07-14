@@ -178,7 +178,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
       }
     }
 
-    int ur = is_epilogue ? remainder : i_conv_desc->ur;
+    ur = is_epilogue ? remainder : i_conv_desc->ur;
 
     for ( index = 0; index < ur; index++ ) { /* load output */
       offset = m_dist*index;
