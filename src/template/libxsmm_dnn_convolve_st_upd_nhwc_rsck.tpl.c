@@ -355,7 +355,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #if defined(INPUT_PADDING)
     /* Transpose IFW and IFM into the padded buffer!*/
     for (imgifhp = transpose_thr_begin; imgifhp < transpose_thr_end; ++imgifhp) {
-      ij = imgifhp % handle->ifhp, ii;
+      ij = imgifhp % handle->ifhp;
       img = imgifhp / handle->ifhp;
       for (ii = 0; ii < handle->ifwp; ++ii) {
         for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
