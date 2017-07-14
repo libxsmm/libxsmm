@@ -29,7 +29,7 @@
 /* Rajkishore Barik, Ankush Mandal (Intel Corp.)
 ******************************************************************************/
 
-int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__, ii_, ij_, kh, kw, ofm1ifm1, ki, kj;
+int img, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__, ii_, ij_, kh, kw, ofm1ifm1, ki, kj, ii, ij;
 #if defined(LIBXSMM_WU_PER_THREAD_ALLOCATION) || defined(INPUT_PADDING)
 int imgifm1;
 #endif
@@ -386,6 +386,21 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       ofm1 = ofm1ifm1 / handle->blocksifm;
       ifm1 = ofm1ifm1 % handle->blocksifm;
+      /* reset result buffer to zero when intent is to overwrite */
+      if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+        for (kj = 0; kj < handle->desc.S; ++kj) {
+          for (ki = 0; ki < handle->desc.R; ++ki) {
+            element_filter_type* temp_buf = &LIBXSMM_VLA_ACCESS(6, weight, kj, ki, ifm1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+            for (ij = 0; ij < handle->ifmblock; ++ij) {
+              LIBXSMM_PRAGMA_SIMD
+              for (ii = 0; ii < handle->ofmblock; ++ii) {
+                temp_buf[ii] = (element_filter_type)0;
+              }
+              temp_buf += handle->blocksofm*handle->ofmblock;
+            }
+          }
+        }
+      }
       for (img = 0; img < handle->desc.N; ++img) {
         for (oi__ = 0; oi__ < num_ofw_strips; ++oi__) {
           for (oj__ = 0; oj__ < num_ofh_strips; ++oj__) {
@@ -510,6 +525,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #else /* TRANSPOSE_OFW_IFM */
     if ((handle->blocksifm * handle->blocksofm) < (2 * handle->desc.threads)) { /* special case for not enough parallelism */
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
+      LIBXSMM_PRAGMA_SIMD
       for (i = 0; i < handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
         per_thread_weight_ptr[i] = (element_filter_type)0;
       }
@@ -529,6 +545,21 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
         ofm1 = ofm1ifm1 / handle->blocksifm;
         ifm1 = ofm1ifm1 % handle->blocksifm;
+        /* reset result buffer to zero when intent is to overwrite */
+        if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+          for (kj = 0; kj < handle->desc.S; ++kj) {
+            for (ki = 0; ki < handle->desc.R; ++ki) {
+              element_filter_type* temp_buf = &LIBXSMM_VLA_ACCESS(6, opt_weight_ptr, kj, ki, ifm1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+              for (ij = 0; ij < handle->ifmblock; ++ij) {
+                LIBXSMM_PRAGMA_SIMD
+                for (ii = 0; ii < handle->ofmblock; ++ii) {
+                  temp_buf[ii] = (element_filter_type)0;
+                }
+                temp_buf += handle->blocksofm*handle->ofmblock;
+              }
+            }
+          }
+        }
         for (img = 0; img < handle->desc.N; img++) {
 #endif
           for (oi__ = 0; oi__ < num_ofw_strips; ++oi__) {
@@ -656,6 +687,12 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       /* TODO COMPLETE THIS USING ATOMIC INCREMENTS PLEASE */
       if (handle->upd_use_external_reduce == 0) {
         libxsmm_barrier_wait(handle->barrier, ltid);
+        /* reset result buffer to zero when intent is to overwrite */
+        if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+          for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
+            weight_ptr[j] = (element_filter_type)0;
+          }
+        }
         for (i = 0; i < handle->desc.threads; i++) {
           remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
           for (j = reduce_thr_begin; j < reduce_thr_end; j++) {
@@ -669,6 +706,21 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
         ofm1 = ofm1ifm1 / handle->blocksifm;
         ifm1 = ofm1ifm1 % handle->blocksifm;
+        /* reset result buffer to zero when intent is to overwrite */
+        if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+          for (kj = 0; kj < handle->desc.S; ++kj) {
+            for (ki = 0; ki < handle->desc.R; ++ki) {
+              element_filter_type* temp_buf = &LIBXSMM_VLA_ACCESS(6, weight, kj, ki, ifm1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+              for (ij = 0; ij < handle->ifmblock; ++ij) {
+                LIBXSMM_PRAGMA_SIMD
+                for (ii = 0; ii < handle->ofmblock; ++ii) {
+                  temp_buf[ii] = (element_filter_type)0;
+                }
+                temp_buf += handle->blocksofm*handle->ofmblock;
+              }
+            }
+          }
+        }
         for (img = 0; img < handle->desc.N; ++img) {
           for (oi__ = 0; oi__ < num_ofw_strips; ++oi__) {
             for (oj__ = 0; oj__ < num_ofh_strips; ++oj__) {
@@ -796,6 +848,7 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
   else if (libxsmm_target_archid == LIBXSMM_X86_AVX2) {
 
 #ifdef LIBXSMM_WU_PER_THREAD_ALLOCATION
+    LIBXSMM_PRAGMA_SIMD
     for (i = 0; i < handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
       per_thread_weight_ptr[i] = (element_filter_type)0;
     }
@@ -819,6 +872,12 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     }
     if (handle->upd_use_external_reduce == 0) {
       libxsmm_barrier_wait(handle->barrier, ltid);
+      /* reset result buffer to zero when intent is to overwrite */
+      if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+        for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
+          weight_ptr[j] = (element_filter_type)0;
+        }
+      }
       /* reduce weights */
       for (i = 0; i < handle->desc.threads; i++) {
         remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
@@ -831,6 +890,21 @@ if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
     for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       ofm1 = ofm1ifm1 / handle->blocksifm;
       ifm1 = ofm1ifm1 % handle->blocksifm;
+      /* reset result buffer to zero when intent is to overwrite */
+      if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+        for (kj = 0; kj < handle->desc.S; ++kj) {
+          for (ki = 0; ki < handle->desc.R; ++ki) {
+            element_filter_type* temp_buf = &LIBXSMM_VLA_ACCESS(6, weight, kj, ki, ifm1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+            for (ij = 0; ij < handle->ifmblock; ++ij) {
+              LIBXSMM_PRAGMA_SIMD
+              for (ii = 0; ii < handle->ofmblock; ++ii) {
+                temp_buf[ii] = (element_filter_type)0;
+              }
+              temp_buf += handle->blocksofm*handle->ofmblock;
+            }
+          }
+        }
+      }
       for (img = 0; img < handle->desc.N; ++img) {
         for (kj = 0; kj < handle->desc.R; ++kj) {
           for (ki = 0; ki < handle->desc.S; ++ki) {
