@@ -31,8 +31,6 @@
 
 LIBXSMM_VLA_DECL(6, float, input, wp, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
 LIBXSMM_VLA_DECL(5, float, output, twp, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN);
-float Fw[ALPHA][ALPHA][TDVLEN][TDVLEN];
-float F[3][3][TDVLEN][TDVLEN];
 unsigned int i, j;
 int ifm2;
 const __m512 rcp4  = _mm512_set1_ps(1.0f/4.0f);
