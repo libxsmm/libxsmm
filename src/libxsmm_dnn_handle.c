@@ -1549,7 +1549,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->code_bwd[0].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
         wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1;
         handle->code_bwd[1].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
-        wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2;
+        wino_desc_bp.prefetch = (libxsmm_convolution_prefetch_type)(LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2);
         handle->code_bwd[2].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
       } else {
         assert(0/*should not happen*/);
