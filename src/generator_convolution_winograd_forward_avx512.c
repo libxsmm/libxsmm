@@ -66,6 +66,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
   unsigned int qindex = 0;
   int reg  = 0;
   int wreg = 0;
+  int nprefetches_per_group, is_epilogue, ur;
 
   /* define gp register mapping */
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
@@ -163,7 +164,6 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
     }
   } /*end if helper registers*/
 
-  int is_epilogue;
   for ( is_epilogue = 0; is_epilogue < 2; ++is_epilogue ) {
     int remainder = (i_conv_desc->itiles*i_conv_desc->jtiles*i_conv_desc->bimg) % i_conv_desc->ur;
     if ( is_epilogue && 0 == remainder ) break;
@@ -274,10 +274,8 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
       }
 
       /* sprinkle prefetches to avoid having too many outstanding prefetches at the same time */
-      int nprefetches_per_group = (ur + l_micro_kernel_config.vector_length/qfac)/(l_micro_kernel_config.vector_length/qfac);
+      nprefetches_per_group = (ur + l_micro_kernel_config.vector_length/qfac)/(l_micro_kernel_config.vector_length/qfac);
       for ( index = ifm/qfac*nprefetches_per_group; index < LIBXSMM_MIN((ifm/qfac + 1)*nprefetches_per_group, ur); index++ ) {
-        int offset = m_dist*index;
-
         if ( i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2 ) {
           /* prefetch next input img when we're working on the last ofm block of the current image */
           libxsmm_x86_instruction_prefetch( io_generated_code,
