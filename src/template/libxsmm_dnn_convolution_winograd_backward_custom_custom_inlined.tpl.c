@@ -41,6 +41,7 @@ int ofm1;
 int oj;
 int oi;
 unsigned int i, j, k, l;
+typedef libxsmm_sconvfunction libxsmm_convfunction;
 
 LIBXSMM_VLA_DECL(5, float, input,  (float*)handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN);
 LIBXSMM_VLA_DECL(5, const float, output, (const float*)handle->grad_output->data, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN);
@@ -157,7 +158,6 @@ for (img1 = 0; img1 < handle->desc.N/handle->cwino_bwd.bimg; img1++) {
     ifm1 = job % handle->blocksifm;
 
 #if 1
-    typedef libxsmm_sconvfunction libxsmm_convfunction;
     libxsmm_convfunction jitted_conv_bp = (libxsmm_convfunction)handle->code_bwd[job == thr_end - 1 ? 2 : 1].xconv.sconv;
 #endif
 
