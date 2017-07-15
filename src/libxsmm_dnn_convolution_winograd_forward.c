@@ -138,9 +138,8 @@ LIBXSMM_API_INLINE void internal_fwd_input_transform_nhwc_custom(
 }
 
 
-LIBXSMM_API_INLINE void internal_fwd_weight_transform( float *wp,
-                              float *twp,
-                              const libxsmm_dnn_layer* handle )
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+void internal_fwd_weight_transform(float *wp, float *twp, const libxsmm_dnn_layer* handle)
 {
   if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
@@ -168,11 +167,11 @@ LIBXSMM_API_INLINE void internal_fwd_weight_transform( float *wp,
 }
 
 
-LIBXSMM_API_INLINE void internal_fwd_output_transform_custom_custom( float *toutp,
-                                            float *outp,
-                                            float *Owp,
-                                            float bias[/*vratio*/][16/*tdvlen*/],
-                                            const libxsmm_dnn_layer* handle )
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+void internal_fwd_output_transform_custom_custom(
+  float *toutp, float *outp, float *Owp,
+  float bias[/*vratio*/][16/*tdvlen*/],
+  const libxsmm_dnn_layer* handle)
 {
   LIBXSMM_UNUSED(bias); /* TODO: remove */
   if (handle->cwino_fwd.alpha == 6) {
