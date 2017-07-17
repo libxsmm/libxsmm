@@ -285,6 +285,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int *ofh_bwd_end;
 
   int *n_entries_upd;
+  int block_upd_ifm;
+  int block_upd_ofm;
   int **compute_upd_indices_ptrs;
   char **kernel_upd_variant_ptrs;
   int *n_upd_code_segments;

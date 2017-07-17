@@ -102,7 +102,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct_custom_custo
     status = LIBXSMM_DNN_WARN_FALLBACK;
   } else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-# include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom.tpl.c"
+# include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom_opt.tpl.c"
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;

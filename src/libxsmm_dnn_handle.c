@@ -1057,7 +1057,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype);
 
       /* minibatch parallel execution of weight update kernel */
-      if ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < handle->desc.threads)) {
+      if (1) { /* ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < handle->desc.threads)) { */
         handle->upd_use_thread_fil = 1;
         handle->scratch4 = 0;
         handle->scratch4_size = handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
