@@ -274,7 +274,7 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
-          fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", d.normf_abs, d.normf_rel);
+          fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
           libxsmm_matdiff_reduce(&diff, &d);
         }
       }
@@ -307,7 +307,7 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
-          fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", d.normf_abs, d.normf_rel);
+          fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
           libxsmm_matdiff_reduce(&diff, &d);
         }
       }
@@ -340,7 +340,7 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
-          fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", d.normf_abs, d.normf_rel);
+          fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
           libxsmm_matdiff_reduce(&diff, &d);
         }
       }
@@ -378,7 +378,7 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, expect, c, 0, 0, &d)) {
-          fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", d.normf_abs, d.normf_rel);
+          fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
           libxsmm_matdiff_reduce(&diff, &d);
         }
       }
@@ -389,8 +389,7 @@ int main(int argc, char* argv[])
 
       if (!LIBXSMM_FEQ(0, check)) {
         if (check < 100.0 * diff.normf_rel) {
-          fprintf(stderr, "FAILED: L1abs=%f L1rel=%f L2abs=%f L2rel=%f!\n",
-            diff.normi_abs, diff.normi_rel, diff.normf_abs, diff.normf_rel);
+          fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
           result = EXIT_FAILURE;
         }
       }

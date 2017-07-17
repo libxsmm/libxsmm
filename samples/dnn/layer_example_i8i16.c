@@ -361,6 +361,8 @@ int main(int argc, char* argv[])
   libxsmm_dnn_err_t status;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, diff;
+  memset(&norms_fwd, 0, sizeof(norms_fwd));
+  memset(&norms_bwd, 0, sizeof(norms_bwd));
   memset(&diff, 0, sizeof(diff));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
@@ -571,11 +573,13 @@ int main(int argc, char* argv[])
 
     /* compare */
     libxsmm_matdiff(LIBXSMM_DATATYPE_I8, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0, &norms_fwd);
-    printf("  Reference-sum: %.23g\n", norms_fwd.asum_ref);
-    printf("       Test-sum: %.23g\n", norms_fwd.asum_tst);
-    printf("       One-norm: %.12f (%.5f%%)\n", norms_fwd.norm1_abs, 100.0 * norms_fwd.norm1_rel);
-    printf("  Infinity-norm: %.12f (%.5f%%)\n", norms_fwd.normi_abs, 100.0 * norms_fwd.normi_rel);
-    printf("Froebenius-norm: %.12f (%.5f%%)\n", norms_fwd.normf_abs, 100.0 * norms_fwd.normf_rel);
+    printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
+    printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_fwd.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_fwd.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
+    printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_fwd);
   }
 
@@ -602,11 +606,13 @@ int main(int argc, char* argv[])
 
     /* compare */
     libxsmm_matdiff(LIBXSMM_DATATYPE_I8, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_libxsmm_input, 0, 0, &norms_bwd);
-    printf("  Reference-sum: %.23g\n", norms_bwd.asum_ref);
-    printf("       Test-sum: %.23g\n", norms_bwd.asum_tst);
-    printf("       One-norm: %.12f (%.5f%%)\n", norms_bwd.norm1_abs, 100.0 * norms_bwd.norm1_rel);
-    printf("  Infinity-norm: %.12f (%.5f%%)\n", norms_bwd.normi_abs, 100.0 * norms_bwd.normi_rel);
-    printf("Froebenius-norm: %.12f (%.5f%%)\n", norms_bwd.normf_abs, 100.0 * norms_bwd.normf_rel);
+    printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+    printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+    printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+    printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+    printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+    printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+    printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_bwd);
   }
 
@@ -637,9 +643,9 @@ int main(int argc, char* argv[])
     printf("fp time = %.5g\n", ((double)(l_total/iters)));
     printf("GOPS  = %.5g\n", (lpOps*1e-9)/l_total);
 
-    printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (lpOps*1e-9)/l_total, norms_fwd.asum_ref, norms_fwd.asum_tst,
-      norms_fwd.norm1_abs, norms_fwd.normf_abs, norms_fwd.normi_abs, norms_fwd.norm1_rel, norms_fwd.normf_rel, norms_fwd.normi_rel);
+    printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (lpOps*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
+      norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
   }
 
   if ((type == 'A' || type == 'B') && LIBXSMM_FEQ(0, check)) {
@@ -669,9 +675,9 @@ int main(int argc, char* argv[])
     printf("bp time = %.5g\n", ((double)(l_total/iters)));
     printf("GOPS  = %.5g\n", (lpOps*1e-9)/l_total);
 
-    printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (lpOps*1e-9)/l_total, norms_bwd.asum_ref, norms_bwd.asum_tst,
-      norms_bwd.norm1_abs, norms_bwd.normf_abs, norms_bwd.normi_abs, norms_bwd.norm1_rel, norms_bwd.normf_rel, norms_bwd.normi_rel);
+    printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+      ifw, ifh, kw, kh, stride, pad, ((double)(l_total/iters)), (lpOps*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
+      norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
   }
 
   /* clean-up */
@@ -699,10 +705,12 @@ int main(int argc, char* argv[])
   libxsmm_free(output_libxsmm);
   libxsmm_free(filter_libxsmm);
 
-  if (0 == LIBXSMM_FEQ(0, check) && check < 100.0 * diff.normf_rel) {
-    fprintf(stderr, "FAILED: L1abs=%f L1rel=%f L2abs=%f L2rel=%f\n",
-      diff.normi_abs, diff.normi_rel, diff.normf_abs, diff.normf_rel);
-    exit(EXIT_FAILURE);
+  { const char *const env_check_scale = getenv("CHECK_SCALE");
+    const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 100.0 : atof(env_check_scale));
+    if (0 == LIBXSMM_FEQ(0, check) && check < 100.0 * check_scale * diff.normf_rel) {
+      fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
+      exit(EXIT_FAILURE);
+    }    
   }
 
   /* some empty lines at the end */

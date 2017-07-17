@@ -908,7 +908,7 @@ ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
     ifeq (3,$(AVX))
-    ifneq (0,$(shell echo "$$((0 == $(CLANG) || 30500 <= $(CC_VERSION) || 0 == $(CC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((0 == $(CLANG) || 30900 <= $(CC_VERSION) || 0 == $(CC_VERSION)))"))
     ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2> /dev/null > /dev/null; echo $$?))
       CTARGET = -mavx512f -mavx512cd
       # fix for Clang

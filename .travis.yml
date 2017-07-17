@@ -49,10 +49,10 @@ after_success:
   - eval ${CODECOV}
 
 before_script:
-  - source .travis.env
+  - source .env/travis.env
 
 script:
-  - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
+  - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
     make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 TRACE=1 STATIC=0 ABSLIBS=1 ECFLAGS="-DREAL_TYPE=double" install-artifacts tests &&
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/blas 2> blas-trace-${COVID}.txt;
@@ -60,43 +60,43 @@ script:
     fi
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
-  - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
+  - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
     make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 TRACE=1 MNK="19 27, 23" ECFLAGS="-DLIBXSMM_MALLOC_MMAP" install-artifacts test-cp2k
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
-  - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
+  - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
     make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 MNK="4 8" STATIC=0 PREFETCH=0 CACHE=0 install-artifacts test-nek
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
-  - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
+  - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
     make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 STATIC=0 ECFLAGS="-DLIBXSMM_CAPACITY_REGISTRY=32" install-artifacts tests
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
-  - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
+  - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
     env TOOL_ENABLED=0 make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 MNK="9 3, 23" STATIC=0 install-artifacts test-smm
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
-  - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
+  - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
     make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 ECFLAGS="-DELEM_TYPE=char" install-artifacts tests
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
-  - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
+  - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
     make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 SSE=0 AVX=0 JIT=0 ECFLAGS="-DELEM_TYPE=short" install-artifacts tests
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV} && eval ${UPLOAD}
 
-  - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
+  - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
     make ${MAKEJ} -e PEDANTIC=1 VLA=0 WRAP=1 test-wrap
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
+  - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
     make ${MAKEJ} -e PEDANTIC=1 VLA=0 WRAP=1 STATIC=1 test-wrap
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
+  - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
     make ${MAKEJ} -e PEDANTIC=1 VLA=0 WRAP=1 STATIC=0 test-wrap
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
-  - source ${TRAVIS_BUILD_DIR}/.codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
+  - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
     make -e PEDANTIC=2 AVX=3 MIC=0 test-cpp && make -e PEDANTIC=2 AVX=2 test-cpp && make -e PEDANTIC=2 AVX=1 VLA=0 test-cpp
     2>&1) | tee .travis.log && eval ${POSTPROC}
 
