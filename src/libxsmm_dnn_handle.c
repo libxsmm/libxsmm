@@ -911,8 +911,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               descriptor.ofh_unroll = 0;
               descriptor.ofw_unroll = 0;
             }
+
             handle->upd_ofh_rb = descriptor.ofh_rb;
             handle->upd_ofw_rb = descriptor.ofw_rb;
+            
             descriptor.transpose_ofw_ifm = 0;
 #if !defined(NDEBUG)
             printf("DEBUG JIT of conv:\n  arch: %s\n  type: %s\n  ofm_block: %u\n  ifm_block: %u\n"
@@ -1004,6 +1006,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         /* Determine if we will be using thread private filters  */
         if ((handle->ifmblock == 1) || (handle->blocksifm * handle->blocksofm < handle->desc.threads) ) {
           handle->use_thread_private_filter = 1;
+          /* determine if we will transpose input  */
+          if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->desc.v == 1) && (handle->upd_ofw_rb%4 == 0) ) {
+            handle->trans_ofw_ifm = 1;
+          }      
         } else {
           handle->use_thread_private_filter = 0;
           /* determine if we will transpose input  */
@@ -1051,7 +1057,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype);
 
       /* minibatch parallel execution of weight update kernel */
-      if ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < (2*handle->desc.threads))) {
+      if ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < handle->desc.threads)) {
         handle->upd_use_thread_fil = 1;
         handle->scratch4 = 0;
         handle->scratch4_size = handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
@@ -1128,8 +1134,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
 /* This function finds the prime factors of a number */
 LIBXSMM_API_INLINE void internal_dnn_handle_factors(
-              unsigned int num,
-              unsigned int num_factors[] )
+    unsigned int num,
+    unsigned int num_factors[] )
 {
   unsigned int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29};
   int i;
@@ -1153,9 +1159,9 @@ LIBXSMM_API_INLINE void internal_dnn_handle_factors(
  * Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2
  */
 LIBXSMM_API_INLINE void internal_dnn_handle_factors_all(
-                  unsigned int  product,
-                  unsigned int* ur,
-                  unsigned int  max_acc)
+    unsigned int  product,
+    unsigned int* ur,
+    unsigned int  max_acc)
 {
   unsigned int i;
   unsigned int fact[10];
