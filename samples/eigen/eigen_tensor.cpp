@@ -97,6 +97,7 @@ int main(int argc, char* argv[])
 {
   int result = EXIT_SUCCESS;
   try {
+#if defined(__EIGEN_UNSUPPORTED)
     const libxsmm_blasint m = (1 < argc ? std::atoi(argv[1]) : 512);
     const libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
     const libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
@@ -104,7 +105,7 @@ int main(int argc, char* argv[])
     const double gflops = 2.0 * m * n * k * 1E-9;
     const char *const env_check = getenv("CHECK");
     const double check = 0 == env_check ? 1.0 : LIBXSMM_ABS(atof(env_check));
-
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
