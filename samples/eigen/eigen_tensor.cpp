@@ -65,32 +65,8 @@
 #endif
 
 #if !defined(REAL_TYPE)
-# define REAL_TYPE double
+# define REAL_TYPE float
 #endif
-
-
-template<typename T>
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE
-void init(int seed, T *LIBXSMM_RESTRICT dst,
-  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
-{
-  const double seed1 = scale * (seed + 1);
-  libxsmm_blasint i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < ncols; ++i) {
-    libxsmm_blasint j = 0;
-    for (; j < nrows; ++j) {
-      const libxsmm_blasint k = i * ld + j;
-      dst[k] = static_cast<T>(seed1 / (k + 1));
-    }
-    for (; j < ld; ++j) {
-      const libxsmm_blasint k = i * ld + j;
-      dst[k] = static_cast<T>(seed);
-    }
-  }
-}
 
 
 int main(int argc, char* argv[])
@@ -102,9 +78,9 @@ int main(int argc, char* argv[])
     const libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
     const libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
     const int nrepeat = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 13 / LIBXSMM_MAX(1, libxsmm_icbrt(1ULL * m * n * k) >> 10), 3);
-    const double gflops = 2.0 * m * n * k * 1E-9;
     const char *const env_check = getenv("CHECK");
     const double check = 0 == env_check ? 1.0 : LIBXSMM_ABS(atof(env_check));
+    const double gflops = 2.0 * m * n * k * 1E-9;
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload target(LIBXSMM_OFFLOAD_TARGET)
@@ -114,7 +90,7 @@ int main(int argc, char* argv[])
       mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
 #if defined(__EIGEN_UNSUPPORTED)
-      Eigen::Tensor<double,2> ta(m, k), tb(k, n), tc, td(m, n);
+      Eigen::Tensor<REAL_TYPE,2> ta(m, k), tb(k, n), tc, td(m, n);
       const char transa = 'N', transb = 'N';
       const REAL_TYPE alpha = 1, beta = 0;
       libxsmm_matdiff_info diff;
