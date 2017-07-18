@@ -34,12 +34,12 @@
 #endif
 
 #if defined(USE_LIBXSMM)
-#if !defined(EIGEN_VECTORIZE_AVX)
-# define EIGEN_VECTORIZE_AVX
-#endif
-#if !defined(EIGEN_USE_LIBXSMM)
-# define EIGEN_USE_LIBXSMM
-#endif
+# if !defined(EIGEN_VECTORIZE_AVX)
+#   define EIGEN_VECTORIZE_AVX
+# endif
+# if !defined(EIGEN_USE_LIBXSMM)
+#   define EIGEN_USE_LIBXSMM
+# endif
 #endif
 
 /** This sample uses LIBXSMM's header-only implementation. */
