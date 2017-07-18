@@ -45,7 +45,7 @@
 /** This sample uses LIBXSMM's header-only implementation. */
 #include <libxsmm_source.h>
 
-#if !defined(__EIGEN) && !defined(__EIGEN_UNSUPPORTED)
+#if !defined(__EIGEN) && !defined(__EIGEN_UNSUPPORTED) && 0
 # define __EIGEN_UNSUPPORTED
 # define __EIGEN
 #endif
