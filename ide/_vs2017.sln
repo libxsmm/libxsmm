@@ -138,6 +138,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gemmflags", "..\tests\gemmf
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "matdiff", "..\tests\matdiff.vcxproj", "{978B5AF3-4A2E-4DC9-BF7C-374403865240}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "eigen_tensor", "..\samples\eigen\eigen_tensor.vcxproj", "{315C606A-433F-43DB-8A26-A44AB66C99B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug|Win32 = debug|Win32
@@ -484,6 +486,18 @@ Global
 		{978B5AF3-4A2E-4DC9-BF7C-374403865240}.symbols|Win32.Build.0 = symbols|Win32
 		{978B5AF3-4A2E-4DC9-BF7C-374403865240}.symbols|x64.ActiveCfg = symbols|x64
 		{978B5AF3-4A2E-4DC9-BF7C-374403865240}.symbols|x64.Build.0 = symbols|x64
+		{315C606A-433F-43DB-8A26-A44AB66C99B1}.debug|Win32.ActiveCfg = debug|Win32
+		{315C606A-433F-43DB-8A26-A44AB66C99B1}.debug|Win32.Build.0 = debug|Win32
+		{315C606A-433F-43DB-8A26-A44AB66C99B1}.debug|x64.ActiveCfg = debug|x64
+		{315C606A-433F-43DB-8A26-A44AB66C99B1}.debug|x64.Build.0 = debug|x64
+		{315C606A-433F-43DB-8A26-A44AB66C99B1}.release|Win32.ActiveCfg = release|Win32
+		{315C606A-433F-43DB-8A26-A44AB66C99B1}.release|Win32.Build.0 = release|Win32
+		{315C606A-433F-43DB-8A26-A44AB66C99B1}.release|x64.ActiveCfg = release|x64
+		{315C606A-433F-43DB-8A26-A44AB66C99B1}.release|x64.Build.0 = release|x64
+		{315C606A-433F-43DB-8A26-A44AB66C99B1}.symbols|Win32.ActiveCfg = symbols|Win32
+		{315C606A-433F-43DB-8A26-A44AB66C99B1}.symbols|Win32.Build.0 = symbols|Win32
+		{315C606A-433F-43DB-8A26-A44AB66C99B1}.symbols|x64.ActiveCfg = symbols|x64
+		{315C606A-433F-43DB-8A26-A44AB66C99B1}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -518,5 +532,6 @@ Global
 		{C8835447-1AEF-4B54-B8A6-F75D0020B997} = {E0C8F9A7-ABF4-4366-B2A7-31F06F01E6B3}
 		{D54866A7-43B1-40AF-AE02-C96BD5B03B81} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{978B5AF3-4A2E-4DC9-BF7C-374403865240} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
+		{315C606A-433F-43DB-8A26-A44AB66C99B1} = {F41F38BC-64ED-478C-AF08-51D0BAEC263E}
 	EndGlobalSection
 EndGlobal

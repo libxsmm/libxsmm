@@ -55,10 +55,12 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)_smm
+XFILES := $(OUTDIR)/$(OUTNAME)_smm $(OUTDIR)/$(OUTNAME)_tensor
 
 ifeq (,$(strip $(EIGENROOT)))
-  ifneq (,$(wildcard $(HOME)/eigen/Eigen/Dense))
+  ifneq (,$(wildcard $(DEPDIR)/../eigen/Eigen/Dense))
+    EIGENROOT = $(DEPDIR)/../eigen
+  else ifneq (,$(wildcard $(HOME)/eigen/Eigen/Dense))
     EIGENROOT = $(HOME)/eigen
   else ifneq (,$(wildcard /usr/include/eigen3/Eigen/Dense))
     EIGENROOT = /usr/include/eigen3
@@ -73,6 +75,9 @@ ifneq (,$(EIGENROOT))
     DFLAGS += -DEIGEN_USE_MKL_ALL
   endif
   endif
+  ifneq (,$(wildcard $(EIGENROOT)/unsupported/Eigen/CXX11/Tensor))
+	DFLAGS += -D__EIGEN_UNSUPPORTED
+  endif
 else
   EIGEN := 0
 endif
@@ -83,13 +88,20 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME)_smm: $(OUTDIR)/.make $(OBJECTS) #$(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
+# no need to link against any of LIBXSMM's libraries since the sample code uses header-only LIBXSMM
+$(OUTDIR)/$(OUTNAME)_smm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_smm-cpp.o #$(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
 ifneq (0,$(BLAS))
-#$(LD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-	$(LD) -o $@ $(OBJECTS) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_smm-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 else
-#$(LD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(EXTLIB) $(call abslib, $(LIBNAME)noblas.$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-	$(LD) -o $@ $(OBJECTS) $(call abslib, $(LIBNAME)noblas.$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_smm-cpp.o $(call abslib, $(LIBNAME)noblas.$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+endif
+
+# no need to link against any of LIBXSMM's libraries since the sample code uses header-only LIBXSMM
+$(OUTDIR)/$(OUTNAME)_tensor: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_tensor-cpp.o #$(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
+ifneq (0,$(BLAS))
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_tensor-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+else
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_tensor-cpp.o $(call abslib, $(LIBNAME)noblas.$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 endif
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
