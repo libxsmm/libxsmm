@@ -167,7 +167,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
   static int error_once = 0;
 
   assert(typesize <= 255);
-  if (0 != out && 0 != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && m <= ldo) {
+  if (0 != out && 0 != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
     LIBXSMM_INIT
     if (out != in) {
       libxsmm_xtransfunction xtrans = 0;
