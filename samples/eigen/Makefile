@@ -57,6 +57,7 @@ MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basena
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/$(OUTNAME)_smm $(OUTDIR)/$(OUTNAME)_tensor
 
+ifneq (0,$(EIGEN))
 ifeq (,$(strip $(EIGENROOT)))
   ifneq (,$(wildcard $(DEPDIR)/../eigen/Eigen/Dense))
     EIGENROOT = $(DEPDIR)/../eigen
@@ -66,6 +67,8 @@ ifeq (,$(strip $(EIGENROOT)))
     EIGENROOT = /usr/include/eigen3
   endif
 endif
+endif
+
 ifneq (,$(EIGENROOT))
   DFLAGS += -D__EIGEN
   IFLAGS += -I$(EIGENROOT)
