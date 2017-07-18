@@ -49,7 +49,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
   static int error_once = 0;
 
   assert(typesize <= 255);
-  if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
+  if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && m <= ldo) {
     const unsigned int size = (unsigned int)(1U * m * n);
     if (size > (LIBXSMM_TRANS_THRESHOLD)) { /* consider problem-size (threshold) */
       const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
@@ -143,7 +143,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
   static int error_once = 0;
 
   assert(typesize <= 255);
-  if (0 != out && 0 != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
+  if (0 != out && 0 != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && m <= ldo) {
     LIBXSMM_INIT
     if (out != in) {
       const unsigned int size = (unsigned int)(1U * m * n);
