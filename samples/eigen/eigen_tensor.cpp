@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
       mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
 #if defined(__EIGEN_UNSUPPORTED)
-      Eigen::Tensor<REAL_TYPE,2> ta(m, k), tb(k, n), tc, td(m, n);
+      Eigen::Tensor<REAL_TYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc, td(m, n);
       const char transa = 'N', transb = 'N';
       const REAL_TYPE alpha = 1, beta = 0;
       libxsmm_matdiff_info diff;
@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
       if (0 < d1) {
         fprintf(stdout, "\tEigen"
 #if !defined(USE_LIBXSMM)
-          "+XSMM" 
+          "+XSMM"
 #endif
           ": %.1f GFLOPS/s\n", gflops * nrepeat / d1);
       }
