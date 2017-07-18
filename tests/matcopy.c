@@ -39,6 +39,35 @@
 # define ELEM_TYPE float
 #endif
 
+#if LIBXSMM_EQUAL(ELEM_TYPE, float) || LIBXSMM_EQUAL(ELEM_TYPE, double)
+# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#   include <mkl_trans.h>
+#   define MATCOPY_GOLD(M, N, A, LDI, B, LDO) \
+      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))('C', 'N', \
+        *(M), *(N), (ELEM_TYPE)1, A, *(LDI), B, *(LDO))
+# elif defined(__OPENBLAS)
+#   include <openblas/f77blas.h>
+#   define MATCOPY_GOLD(M, N, A, LDI, B, LDO) { \
+      /*const*/char matcopy_gold_tc_ = 'C', matcopy_gold_tt_ = 'N'; \
+      /*const*/ELEM_TYPE matcopy_gold_alpha_ = 1; \
+      LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))(&matcopy_gold_tc_, &matcopy_gold_tt_, \
+        (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), \
+        &matcopy_gold_alpha_, A, (libxsmm_blasint*)(LDI), \
+                              B, (libxsmm_blasint*)(LDO)); \
+    }
+# endif
+#endif
+
+#if !defined(CHECK_PARALLEL)
+# define CHECK_PARALLEL
+#endif
+
+#if defined(CHECK_PARALLEL)
+# define MATCOPY libxsmm_matcopy_omp
+#else
+# define MATCOPY libxsmm_matcopy
+#endif
+
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, ELEM_TYPE *LIBXSMM_RESTRICT dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
@@ -73,6 +102,9 @@ int main(void)
   libxsmm_blasint maxm = 0, maxn = 0, maxi = 0, maxo = 0;
   unsigned int nerrors = 0;
   ELEM_TYPE *a = 0, *b = 0;
+#if defined(MATCOPY_GOLD)
+  ELEM_TYPE *c = 0;
+#endif
   int test;
 
   for (test = start; test < ntests; ++test) {
@@ -88,27 +120,46 @@ int main(void)
 
   init(42, a, maxm, maxn, maxi, 1.0);
   init( 0, b, maxm, maxn, maxo, 1.0);
-
+#if defined(MATCOPY_GOLD)
+  c = (ELEM_TYPE*)libxsmm_malloc(maxo * maxn * sizeof(ELEM_TYPE));
+  assert(0 != c);
+  init(0, c, maxm, maxn, maxo, 1.0);
+#endif
   for (test = start; test < ntests; ++test) {
     unsigned int testerrors = (EXIT_SUCCESS == libxsmm_matcopy(
       b, a, sizeof(ELEM_TYPE), m[test], n[test],
       ldi[test], ldo[test], prefetch + test) ? 0u : 1u);
+    libxsmm_blasint i, j;
 
     if (0 == testerrors) {
-      libxsmm_blasint i, j;
       for (i = 0; i < n[test]; ++i) {
         for (j = 0; j < m[test]; ++j) {
-          const libxsmm_blasint u = i * ldi[test] + j;
-          const libxsmm_blasint v = i * ldo[test] + j;
-          testerrors += (LIBXSMM_FEQ(a[u], b[v]) ? 0u : 1u);
+          const ELEM_TYPE u = a[i*ldi[test]+j];
+          const ELEM_TYPE v = b[i*ldo[test]+j];
+          testerrors += (LIBXSMM_FEQ(u, v) ? 0u : 1u);
         }
       }
     }
+#if defined(MATCOPY_GOLD)
+    if (0 == testerrors) {
+      MATCOPY_GOLD(m + test, n + test, a, ldi + test, c, ldo + test);
+      for (i = 0; i < n[test]; ++i) {
+        for (j = 0; j < m[test]; ++j) {
+          const ELEM_TYPE u = b[i*ldo[test]+j];
+          const ELEM_TYPE v = c[i*ldo[test]+j];
+          testerrors += (LIBXSMM_FEQ(u, v) ? 0u : 1u);
+        }
+      }
+    }
+#endif
     nerrors = LIBXSMM_MAX(nerrors, testerrors);
   }
 
   libxsmm_free(a);
   libxsmm_free(b);
+#if defined(MATCOPY_GOLD)
+  libxsmm_free(c);
+#endif
 
   if (0 == nerrors) {
     return EXIT_SUCCESS;
