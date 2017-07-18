@@ -68,13 +68,11 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTR
     libxsmm_blasint j = 0;
     for (; j < nrows; ++j) {
       const libxsmm_blasint k = i * ld + j;
-      //dst[k] = (REAL_TYPE)(seed1 / (k + 1));
-      dst[k] = (REAL_TYPE)(1);
+      dst[k] = (REAL_TYPE)(seed1 / (k + 1));
     }
     for (; j < ld; ++j) {
       const libxsmm_blasint k = i * ld + j;
-      //dst[k] = (REAL_TYPE)seed;
-      dst[k] = (REAL_TYPE)1;
+      dst[k] = (REAL_TYPE)seed;
     }
   }
 }
@@ -83,7 +81,7 @@ void matrix_add(libxsmm_blasint size, REAL_TYPE *a, REAL_TYPE *b, REAL_TYPE *c)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
-# pragma omp parallel for private(i)
+# pragma omp parallel for private(i, size)
 #endif
   LIBXSMM_PRAGMA_SIMD
   for (i = 0; i < size; i++) {
@@ -96,7 +94,7 @@ void matrix_sigmoid(libxsmm_blasint size, REAL_TYPE *src, REAL_TYPE *dst)
   libxsmm_blasint i;
   REAL_TYPE exp_value;
 #if defined(_OPENMP)
-# pragma omp parallel for private(i)
+# pragma omp parallel for private(i, size)
 #endif
   LIBXSMM_PRAGMA_SIMD
   for (i = 0; i < size; i++) {
@@ -109,7 +107,7 @@ void matrix_relu(libxsmm_blasint size, REAL_TYPE *src, REAL_TYPE *dst)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
-# pragma omp parallel for private(i)
+# pragma omp parallel for private(i, size)
 #endif
   LIBXSMM_PRAGMA_SIMD
   for (i = 0; i < size; i++) {
@@ -148,7 +146,7 @@ int main(int argc, char* argv[])
   const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
 #endif
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) { /* check command line */
-    printf("\nUsage: ./bgemm [M] [N] [K] [time_steps] [bm] [bn] [bk] [order] [reps] [b_m1] [b_n1] [b_k1] [b_k2] [b_m2]\n\n");
+    printf("\nUsage: ./lstm [M] [N] [K] [time_steps] [bm] [bn] [bk] [order] [reps] [b_m1] [b_n1] [b_k1] [b_k2] [b_m2]\n\n");
     return result;
   }
 
@@ -167,11 +165,12 @@ int main(int argc, char* argv[])
     REAL_TYPE* xt = (REAL_TYPE*)libxsmm_malloc(k * n * sizeof(REAL_TYPE) * t);
     REAL_TYPE* u = (REAL_TYPE*)libxsmm_malloc(m * m * sizeof(REAL_TYPE));
     REAL_TYPE* h = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
-    REAL_TYPE* z1 = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
+    REAL_TYPE* z1t = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE) * t);
     REAL_TYPE* z2 = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
     REAL_TYPE* z = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
     LIBXSMM_VLA_DECL(2, REAL_TYPE, xgold, xgoldt, ldx * n);
     LIBXSMM_VLA_DECL(2, REAL_TYPE, x, xt, k * n);
+    LIBXSMM_VLA_DECL(2, REAL_TYPE, z1, z1t, m * n);
     libxsmm_bgemm_handle* handlewx = 0;
     libxsmm_bgemm_handle* handleuh = 0;
     libxsmm_bgemm_handle* handlett = 0;
@@ -209,21 +208,23 @@ int main(int argc, char* argv[])
       }
       libxsmm_bgemm_copyin_a(handleuh, ugold, &ldu, u);
       libxsmm_bgemm_copyin_b(handleuh, hgold, &ldh, h);
-      libxsmm_bgemm_copyin_c(handlewx, z1gold, &ldz, z1);
+      for (it = 0; it < t; ++it) {
+        libxsmm_bgemm_copyin_c(handlewx, z1gold, &ldz, &LIBXSMM_VLA_ACCESS(2, z1, it, 0, m * n));
+      }
       libxsmm_bgemm_copyin_c(handleuh, z2gold, &ldz, z2);
       libxsmm_bgemm_copyin_c(handlewx, zgold, &ldz, z);
 #if defined(MKL_ENABLE_AVX512)
       mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
       /* warmup OpenMP (populate thread pool) */
-      libxsmm_bgemm_omp(handlewx, w, x, z1, 1);
+      libxsmm_bgemm_omp(handlewx, w, x, &LIBXSMM_VLA_ACCESS(2, z1, 0, 0, m * n), 1);
 #if defined(CHECK)
       if (!LIBXSMM_FEQ(0, check)) {
         LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, &LIBXSMM_VLA_ACCESS(2, xgold, 0, 0, ldx * n), &ldx, &beta, z1gold, &ldz);
       }
 #endif
       libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-        &transa, &transb, &m, &n, &k, &alpha, w, &ldw, x, &ldx, &beta, z1, &ldz);
+        &transa, &transb, &m, &n, &k, &alpha, w, &ldw, x, &ldx, &beta, &LIBXSMM_VLA_ACCESS(2, z1, 0, 0, m * n), &ldz);
       fprintf(stdout, "\n\n");
       /* warmup OpenMP (populate thread pool) */
       libxsmm_bgemm_omp(handleuh, u, h, z2, 1);
@@ -241,15 +242,14 @@ int main(int argc, char* argv[])
       start = libxsmm_timer_tick();
       for (s = 0; s < nrepeat; ++s) {
         /* The following loop may be absorbed into libxsmm_lstm_omp */
+        libxsmm_bgemm_omp(handlett, w, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, z1, 0, 0, m * n), 1/*nrepeat*/);
         for (i = 0; i < t-1; ++i) {
-          libxsmm_bgemm_omp(handlewx, w, &LIBXSMM_VLA_ACCESS(2, x, i, 0, k * n), z1, 1/*nrepeat*/);
           libxsmm_bgemm_omp(handleuh, u, h, z2, 1/*nrepeat*/);
-          matrix_add(m*n, z1, z2, z);
+          matrix_add(m*n, &LIBXSMM_VLA_ACCESS(2, z1, i, 0, m * n), z2, z);
           matrix_relu(m*n, z, h);
         }
-        libxsmm_bgemm_omp(handlewx, w, &LIBXSMM_VLA_ACCESS(2, x, t-1, 0, k * n), z1, 1/*nrepeat*/);
         libxsmm_bgemm_omp(handleuh, u, h, z2, 1/*nrepeat*/);
-        matrix_add(m*n, z1, z2, z);
+        matrix_add(m*n, &LIBXSMM_VLA_ACCESS(2, z1, t-1, 0, m * n), z2, z);
       }
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
       if (0 < duration) {
@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
         libxsmm_free(xt); xt = 0;
         libxsmm_free(u); u = 0;
         libxsmm_free(h); h = 0; 
-        libxsmm_free(z1); z1 = 0;
+        libxsmm_free(z1t); z1t = 0;
         libxsmm_free(z2); z2 = 0;
         /* allocate C-matrix in regular format, and perform copy-out */
         ztest = (REAL_TYPE*)libxsmm_malloc(ldz * n * sizeof(REAL_TYPE));
@@ -294,7 +294,7 @@ int main(int argc, char* argv[])
           libxsmm_matdiff_info diff;
           libxsmm_bgemm_copyout_c(handleuh, z, &ldz, ztest);
           if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, zgold, ztest, &ldz, &ldz, &diff)) {
-            fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+            fprintf(stdout, "\tdiff: L2abs=%f L2rel=%f\n", diff.l2_abs, diff.linf_abs);
             if (check < 100.0 * diff.normf_rel) {
               fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
               result = EXIT_FAILURE;
@@ -306,6 +306,7 @@ int main(int argc, char* argv[])
 #endif
       libxsmm_bgemm_handle_destroy(handlewx);
       libxsmm_bgemm_handle_destroy(handleuh);
+      libxsmm_bgemm_handle_destroy(handlett);
     }
     else {
       fprintf(stderr, "FAILED to create BGEMM-handle! For details retry with LIBXSMM_VERBOSE=1.\n");
@@ -322,7 +323,7 @@ int main(int argc, char* argv[])
     libxsmm_free(xt);
     libxsmm_free(u);
     libxsmm_free(h);
-    libxsmm_free(z1);
+    libxsmm_free(z1t);
     libxsmm_free(z2);
     libxsmm_free(z);
   }

@@ -104,12 +104,12 @@ LIBXSMM_API_DEFINITION double libxsmm_timer_duration(unsigned long long tick0, u
 {
   double result = (double)(tick0 < tick1 ? (tick1 - tick0) : (tick0 - tick1));
 #if defined(LIBXSMM_TIMER_RDTSC)
-  if (0 < libxsmm_timer_scale) {   
+  if (0 < libxsmm_timer_scale) {
     result *= libxsmm_timer_scale;
   }
   else
 #endif
-  { 
+  {
 #if defined(_WIN32)
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);

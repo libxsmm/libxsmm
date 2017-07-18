@@ -60,11 +60,13 @@ else
   echo "using environment OMP settings!"
 fi
 
-${NUMACTL} ./layer_example_${BIN} ${ITERS} 224 224  ${MB}    3   64  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS} 112 112  ${MB}   64  128  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  128  256  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  256  256  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  256  512  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  512  512  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512  512  3  3 1 1 ${TYPE} ${FORMAT} ${PAD}
+# ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh padw padh stride type
+
+${NUMACTL} ./layer_example_${BIN} ${ITERS} 224 224  ${MB}    3   64  3  3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS} 112 112  ${MB}   64  128  3  3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  128  256  3  3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  256  256  3  3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  256  512  3  3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  512  512  3  3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512  512  3  3 1 1 1 ${TYPE} ${FORMAT} ${PAD}
 

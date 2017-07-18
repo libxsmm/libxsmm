@@ -369,7 +369,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   }
 
   /* Check if padded needs to be applied in the input and allocate appropriate buffers */
-  if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && (handle->desc.pad_h > 0) && (handle->desc.pad_w > 0)) {
+  /* Anand: changing below check for pad to either/or pad_h or pad_w instead of and */
+  if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && ((handle->desc.pad_h > 0) || (handle->desc.pad_w > 0))) {
     handle->padding_flag = 1;
     handle->scratch5  = 0;
     handle->minibatch_scratch_size = handle->desc.N * handle->blocksifm * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_itm);
@@ -1318,24 +1319,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           max_acc = 26;
         }
         internal_dnn_handle_factors_all( wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, &(wino_desc_fp.ur), max_acc );
+        /* ur should be at least 14 to hide qfma latency */
+        wino_desc_fp.ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_fp.ur, 14), wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg);
       }
 
       /* The following condition checks whether we have encountered an input which is listed in our benchmark LUT */
       /* if (flagBenchmark) printf("In benchmark\n"); */
-
-      if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-        if (handle->blocksifm % 4 == 0) {
-          wino_desc_fp.ur_ifm = 4;
-        } else if (handle->blocksifm % 3 == 0) {
-          wino_desc_fp.ur_ifm = 3;
-        } else if (handle->blocksifm % 2 == 0) {
-          wino_desc_fp.ur_ifm = 2;
-        } else {
-          wino_desc_fp.ur_ifm = 1;
-        }
-      } else {
-        wino_desc_fp.ur_ifm = 1;
-      }
+      /* ur_ifm = blocksifm so that we don't need to zero-initialize M and use streaming store */
+      wino_desc_fp.ur_ifm = handle->blocksifm;
+      wino_desc_fp.blocks_ifm = handle->blocksifm;
 
       handle->cwino_fwd = wino_desc_fp;
 
@@ -1346,10 +1338,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       {
         wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         handle->code_fwd[0].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
-        wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
+        wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1;
         handle->code_fwd[1].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
-        /* wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT; */
-        /* handle->code_fwd[2].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp); */
+        wino_desc_fp.prefetch = (libxsmm_convolution_prefetch_type)(LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2);
+        handle->code_fwd[2].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
         /* wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT; */
         /* handle->code_fwd[3].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp); */
       } else {
@@ -1541,21 +1533,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           max_acc = 26;
         }
         internal_dnn_handle_factors_all( wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, &(wino_desc_bp.ur), max_acc );
+        wino_desc_bp.ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_bp.ur, 14), wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg);
       }
 
-      if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-        if (handle->blocksofm % 4 == 0) {
-          wino_desc_bp.ur_ifm = 4;
-        } else if (handle->blocksofm % 3 == 0) {
-          wino_desc_bp.ur_ifm = 3;
-        } else if (handle->blocksofm % 2 == 0) {
-          wino_desc_bp.ur_ifm = 2;
-        } else {
-          wino_desc_bp.ur_ifm = 1;
-        }
-      } else {
-        wino_desc_bp.ur_ifm = 1;
-      }
+      wino_desc_bp.ur_ifm = handle->blocksofm;
+      wino_desc_bp.blocks_ifm = handle->blocksofm;
 
       handle->cwino_bwd = wino_desc_bp;
 
@@ -1564,12 +1546,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
       {
-        /* NONE */
         wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         handle->code_bwd[0].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
-        /* ALL */
-        wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
+        wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1;
         handle->code_bwd[1].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
+        wino_desc_bp.prefetch = (libxsmm_convolution_prefetch_type)(LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2);
+        handle->code_bwd[2].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
       } else {
         assert(0/*should not happen*/);
       }

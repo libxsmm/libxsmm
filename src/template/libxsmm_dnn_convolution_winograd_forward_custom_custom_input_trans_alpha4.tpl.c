@@ -31,7 +31,7 @@
 
 const int total_tiles = handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles;
 LIBXSMM_VLA_DECL(4, const float, input, inp, handle->ifhp, handle->ifwp, TDVLEN);
-LIBXSMM_VLA_DECL(5, float, output, tinp, ALPHA, handle->blocksifm*handle->cwino_fwd.bimg, total_tiles, TDVLEN);
+LIBXSMM_VLA_DECL(6, float, output, tinp, ALPHA, handle->cwino_fwd.bimg, total_tiles, handle->blocksifm, TDVLEN);
 LIBXSMM_VLA_DECL(4, float, Iw, Iwp, ALPHA, ALPHA, TDVLEN);
 float I[ALPHA][ALPHA][TDVLEN];
 unsigned int ti, tj;
@@ -130,7 +130,7 @@ for (j = 0; j < ALPHA; j++) {
       for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
         LIBXSMM_PRAGMA_SIMD
         for (k = 0; k < TDVLEN; k++) {
-          LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_fwd.itiles + ti, k, ALPHA, handle->blocksifm*handle->cwino_fwd.bimg, total_tiles, TDVLEN) =
+          LIBXSMM_VLA_ACCESS(6, output, j, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, k, ALPHA, handle->cwino_fwd.bimg, total_tiles, handle->blocksifm, TDVLEN) =
             LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, i, k, ALPHA, ALPHA, TDVLEN);
         }
       }

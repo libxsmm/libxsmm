@@ -10,8 +10,8 @@ if [[ -z "${OMP_NUM_THREADS}" ]]; then
   echo "using defaults for OMP settings!"
   export KMP_HW_SUBSET=1T
   export KMP_AFFINITY=compact,granularity=fine
-  export KMP_AFFINITY=proclist=[2-67],granularity=thread,explicit,norespect
-  export OMP_NUM_THREADS=66
+  export KMP_AFFINITY=proclist=[1-67],granularity=thread,explicit,norespect
+  export OMP_NUM_THREADS=67
 else
   echo "using environment OMP settings!"
 fi
@@ -30,9 +30,9 @@ if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
 fi
 
 #----bgemm parameters
-_MB_="16 32 64"
-_NB_="16 32 64"
-_KB_="16 32 "
+_MB_="16 24 32 64"
+_NB_="16 24 32 64"
+_KB_="16 32 24 48 64 96 128 192"
 #mb1="0.1 0.2 0.3 0.4 0.5 0.8 0.16 0.32 1 2 4 8 10 16"
 #nb1="0.1 0.2 0.3 0.4 0.5 0.8 0.16 0.32 1 2 4 8 10 16"
 #kb1="0.1 0.2 0.3 0.4 0.5 0.8 0.16 0.32 1 2 4 8 10 16"
@@ -40,16 +40,15 @@ _KB_="16 32 "
 MBT=4096
 NBT=4096
 KBT=4096
-mb11="0.1 0.2 0.4 0.8 0.16"
-nb11="0.1 0.2"
+mb11="0.1 0.2 0.4 0.8"
+nb11="0.1"
 kb11="0.1"
-mb12="0.1 0.2 0.4 0.8 0.16"
-nb12="0.1 0.2"
-kb12="0.1"
-kb2="0.1 0.2 0.4 0.5 0.8 0.10 0.16 0.32 0.64"
+mb12="0.1 0.2 0.4 0.8"
+nb12="0.1 0.2 0.4 0.8"
+kb12="0.1 0.2 0.4 0.8"
+kb2="0.1 0.2 0.4 0.5 0.8 0.16 0.32"
 order="0 1 2"
 perflog="perfSweep.log"
-ab=1
 
 function bgemm_test {
   echo "M=$M N=$N K=$K it=$it"
@@ -91,11 +90,10 @@ function bgemm_test {
                     else
                       _KB2=$(($K/$_kb2))
                     fi
-                    echo "$bin $M $N $K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2 $ab"
+                    echo "$bin $M $N $K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2"
                     echo "----------------------------------------------------------------------" >> $log
-                    echo "$bin $M $N $K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2 $ab" >> $log
-                    $bin $M $N $K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2 $ab
-                    $bin $M $N $K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2 $ab>> $log
+                    echo "$bin $M $N $K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2" >> $log
+                    $bin $M $N $K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2 >> $log
                     echo " " >> $log
                   done
                 done
@@ -105,8 +103,8 @@ function bgemm_test {
         done
       done
     done
-    best=$(grep LIBXSMM $log |  awk ' BEGIN { val = 0 } { if ($2 > val) { val = $2; line = $0} } END { print line }')
-    echo "$best" >> $perflog
+    best=$(grep LIBXSMM $log |  awk ' BEGIN { val = 0 } { if ($2 > val) val = $2 } END { print val }')
+    echo "$_b,$best" >> $perflog
 }
 
 
@@ -202,28 +200,13 @@ then
   nb=$t_kb
 fi
 
-nn=0
-if [[ "$M" -gt "2000" ]]; then
-  it=100
-fi
-if [[ "$N" -gt "2000" ]]; then
-  it=100
-fi
-if [[ "$K" -gt "2000" ]]; then
-  it=100
-fi
-
 if [[ "$M" -gt "4000" ]]; then
-  it=4
+  if [[ "$N" -gt "4000" ]]; then
+    if [[ "$K" -gt "4000" ]]; then
+      it=100
+    fi
+  fi
 fi
-if [[ "$N" -gt "4000" ]]; then
-  it=4
-fi
-if [[ "$K" -gt "4000" ]]; then
-  it=4
-fi
-
-
 
 bgemm_test
 echo "--------------------------------------------------------------------------------------"

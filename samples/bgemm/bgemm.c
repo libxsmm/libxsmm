@@ -110,12 +110,12 @@ int main(int argc, char* argv[])
     return result;
   }
 
-  MYASSERT(m % b_m1 == 0);            
-  MYASSERT(n % b_n1 == 0);            
-  MYASSERT(k % b_k1 == 0);            
-  MYASSERT(m/b_m1 % bm == 0);        
-  MYASSERT(n/b_n1 % bn == 0);        
-  MYASSERT(k/b_k1/b_k2 % bk == 0);   
+  MYASSERT(m % b_m1 == 0);
+  MYASSERT(n % b_n1 == 0);
+  MYASSERT(k % b_k1 == 0);
+  MYASSERT(m/b_m1 % bm == 0);
+  MYASSERT(n/b_n1 % bn == 0);
+  MYASSERT(k/b_k1/b_k2 % bk == 0);
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)

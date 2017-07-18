@@ -31,8 +31,7 @@
 
 const int total_tiles = handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles;
 LIBXSMM_VLA_DECL(4, const float, input, inp, handle->ifhp, handle->ifwp, TDVLEN);
-LIBXSMM_VLA_DECL(5, float, output, tinp, ALPHA, handle->blocksifm*handle->cwino_fwd.bimg, total_tiles, TDVLEN);
-LIBXSMM_VLA_DECL(4, float, Iw, Iwp, ALPHA, ALPHA, TDVLEN);
+LIBXSMM_VLA_DECL(6, float, output, tinp, ALPHA, handle->cwino_fwd.bimg, total_tiles, handle->blocksifm, TDVLEN);
 __m512 I[ALPHA];
 unsigned int ti, tj;
 int i, j;
@@ -74,37 +73,6 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
         T[4][i] = _mm512_fnmadd_ps(_mm512_set1_ps(2.0f), t3, t2);
         T[5][i] = _mm512_fmadd_ps(_mm512_set1_ps(4.0f), I[1], t5);
       }
-
-      /* right multiplication */
-      /* this unrolling didn't help performance much so we may want to remove later if code size becomes an issue */
-      LIBXSMM_PRAGMA_UNROLL_N(ALPHA)
-      for (j = 0; j < (ALPHA); j++) {
-        t0 = _mm512_fnmadd_ps(_mm512_set1_ps(4.0f), T[j][2], T[j][4]);
-        t1 = _mm512_fnmadd_ps(_mm512_set1_ps(4.0f), T[j][1], T[j][3]);
-        t2 = _mm512_sub_ps(T[j][4], T[j][2]);
-        t3 = _mm512_sub_ps(T[j][3], T[j][1]);
-        t4 = _mm512_fnmadd_ps(_mm512_set1_ps(5.0f), T[j][2], T[j][4]);
-        t5 = _mm512_fnmadd_ps(_mm512_set1_ps(5.0f), T[j][3], T[j][5]);
-
-        _mm512_store_ps(
-            &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, 0, 0, ALPHA, ALPHA, TDVLEN),
-            _mm512_fmadd_ps(_mm512_set1_ps(4.0f), T[j][0], t4));
-        _mm512_store_ps(
-            &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, 1, 0, ALPHA, ALPHA, TDVLEN),
-            _mm512_add_ps(t0, t1));
-        _mm512_store_ps(
-            &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, 2, 0, ALPHA, ALPHA, TDVLEN),
-            _mm512_sub_ps(t0, t1));
-        _mm512_store_ps(
-            &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, 3, 0, ALPHA, ALPHA, TDVLEN),
-            _mm512_fmadd_ps(_mm512_set1_ps(2.0f), t3, t2));
-        _mm512_store_ps(
-            &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, 4, 0, ALPHA, ALPHA, TDVLEN),
-            _mm512_fnmadd_ps(_mm512_set1_ps(2.0f), t3, t2));
-        _mm512_store_ps(
-            &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, 5, 0, ALPHA, ALPHA, TDVLEN),
-            _mm512_fmadd_ps(_mm512_set1_ps(4.0f), T[j][1], t5));
-      }
     }
     else { /* corner case */
       /* left multiplication */
@@ -144,64 +112,40 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
           T[5][i] = _mm512_fmadd_ps(_mm512_set1_ps(4.0f), I[1], t5);
         }
       }
+    } /* corner case */
 
-      /* right multiplication */
-      /* this unrolling didn't help performance much so we may want to remove later if code size becomes an issue */
-      LIBXSMM_PRAGMA_UNROLL_N(ALPHA)
-      for (j = 0; j < (ALPHA); j++) {
-        t0 = _mm512_fnmadd_ps(_mm512_set1_ps(4.0f), T[j][2], T[j][4]);
-        t1 = _mm512_fnmadd_ps(_mm512_set1_ps(4.0f), T[j][1], T[j][3]);
-        t2 = _mm512_sub_ps(T[j][4], T[j][2]);
-        t3 = _mm512_sub_ps(T[j][3], T[j][1]);
-        t4 = _mm512_fnmadd_ps(_mm512_set1_ps(5.0f), T[j][2], T[j][4]);
-        t5 = _mm512_fnmadd_ps(_mm512_set1_ps(5.0f), T[j][3], T[j][5]);
+    /* right multiplication */
+    /* this unrolling didn't help performance much so we may want to remove later if code size becomes an issue */
+    LIBXSMM_PRAGMA_UNROLL_N(ALPHA)
+    for (j = 0; j < (ALPHA); j++) {
+      t0 = _mm512_fnmadd_ps(_mm512_set1_ps(4.0f), T[j][2], T[j][4]);
+      t1 = _mm512_fnmadd_ps(_mm512_set1_ps(4.0f), T[j][1], T[j][3]);
+      t2 = _mm512_sub_ps(T[j][4], T[j][2]);
+      t3 = _mm512_sub_ps(T[j][3], T[j][1]);
+      t4 = _mm512_fnmadd_ps(_mm512_set1_ps(5.0f), T[j][2], T[j][4]);
+      t5 = _mm512_fnmadd_ps(_mm512_set1_ps(5.0f), T[j][3], T[j][5]);
 
-        _mm512_store_ps(
-            &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, 0, 0, ALPHA, ALPHA, TDVLEN),
-            _mm512_fmadd_ps(_mm512_set1_ps(4.0f), T[j][0], t4));
-        _mm512_store_ps(
-            &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, 1, 0, ALPHA, ALPHA, TDVLEN),
-            _mm512_add_ps(t0, t1));
-        _mm512_store_ps(
-            &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, 2, 0, ALPHA, ALPHA, TDVLEN),
-            _mm512_sub_ps(t0, t1));
-        _mm512_store_ps(
-            &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, 3, 0, ALPHA, ALPHA, TDVLEN),
-            _mm512_fmadd_ps(_mm512_set1_ps(2.0f), t3, t2));
-        _mm512_store_ps(
-            &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, 4, 0, ALPHA, ALPHA, TDVLEN),
-            _mm512_fnmadd_ps(_mm512_set1_ps(2.0f), t3, t2));
-        _mm512_store_ps(
-            &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, 5, 0, ALPHA, ALPHA, TDVLEN),
-            _mm512_fmadd_ps(_mm512_set1_ps(4.0f), T[j][1], t5));
-      }
+      /* Since we are using streaming store to save read BW and don't need HW prefetcher,
+       * the loop order doesn't need to make these writes accesses contiguous
+       */
+      LIBXSMM_INTRINSICS_MM512_STREAM_PS(
+          &LIBXSMM_VLA_ACCESS(6, output, j, 0, 0, tj*handle->cwino_fwd.itiles + ti, 0, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, handle->blocksifm, TDVLEN),
+          _mm512_fmadd_ps(_mm512_set1_ps(4.0f), T[j][0], t4));
+      LIBXSMM_INTRINSICS_MM512_STREAM_PS(
+          &LIBXSMM_VLA_ACCESS(6, output, j, 1, 0, tj*handle->cwino_fwd.itiles + ti, 0, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, handle->blocksifm, TDVLEN),
+          _mm512_add_ps(t0, t1));
+      LIBXSMM_INTRINSICS_MM512_STREAM_PS(
+          &LIBXSMM_VLA_ACCESS(6, output, j, 2, 0, tj*handle->cwino_fwd.itiles + ti, 0, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, handle->blocksifm, TDVLEN),
+          _mm512_sub_ps(t0, t1));
+      LIBXSMM_INTRINSICS_MM512_STREAM_PS(
+          &LIBXSMM_VLA_ACCESS(6, output, j, 3, 0, tj*handle->cwino_fwd.itiles + ti, 0, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, handle->blocksifm, TDVLEN),
+          _mm512_fmadd_ps(_mm512_set1_ps(2.0f), t3, t2));
+      LIBXSMM_INTRINSICS_MM512_STREAM_PS(
+          &LIBXSMM_VLA_ACCESS(6, output, j, 4, 0, tj*handle->cwino_fwd.itiles + ti, 0, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, handle->blocksifm, TDVLEN),
+          _mm512_fnmadd_ps(_mm512_set1_ps(2.0f), t3, t2));
+      LIBXSMM_INTRINSICS_MM512_STREAM_PS(
+          &LIBXSMM_VLA_ACCESS(6, output, j, 5, 0, tj*handle->cwino_fwd.itiles + ti, 0, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, handle->blocksifm, TDVLEN),
+          _mm512_fmadd_ps(_mm512_set1_ps(4.0f), T[j][1], t5));
     }
   } /* for each tile */
 }
-/* temporal buffer Iw has shape total_tiles*ALPHA*ALPHA*TDVLEN */
-/* We have this separate loop to avoid long stride accesses */
-/* If we directly write to output in the loop above, we'd have blocksifm*bimg*4*4*64 Byte strides */
-/* In this loop, the stride is reduced to 64 B */
-/* Since now we're using streaming stores long stride accesses might not be an issue but
- * moving streaming stores to the loop above slowed things down. */
-/* the order of this loop is optimized for the target array which bigger */
-for (j = 0; j < (ALPHA); j++) {
-  for (i = 0; i < (ALPHA); i++) {
-    for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
-      for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
-        /* this prefetch didn't help performance much so we may want to remove it later */
-        _mm_prefetch(
-            (const char *)&LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, i + 1, 0, ALPHA, ALPHA, TDVLEN),
-            _MM_HINT_T0);
-        /* using streaming store here may actually hurt performance if batch size is small
-         * so that the entire output fits in on-chip cache */
-        LIBXSMM_INTRINSICS_MM512_STREAM_PS(
-            &LIBXSMM_VLA_ACCESS(5, output, j, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->blocksifm*handle->cwino_fwd.bimg, total_tiles, TDVLEN),
-            LIBXSMM_INTRINSICS_MM512_LOAD_PS(
-                &LIBXSMM_VLA_ACCESS(4, Iw, tj*handle->cwino_fwd.itiles + ti, j, i, 0, ALPHA, ALPHA, TDVLEN)));
-      }
-    }
-  }
-}
-/* output buffer has shape ALPHA*ALPHA*(blocksifm*cwino_fwd.bimg)*total_tiles*TDVLEN */
-/* typically blocksifm = C/TDVLEN ifmblock = TDVLEN */
