@@ -168,4 +168,63 @@ bazel run -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --
   <line-of-target-flags-from-above> \
   //tensorflow/python/kernel_tests:conv_ops_test
 ```
+## Running Inception-V3 inference on the imagenet dataset
+ 
+Please follow the instructions at the following [link](https://github.com/tensorflow/models/blob/master/inception/README.md#getting-started) to download and preprocess the Inception-V3 dataset:
+The relevant part of the instructions are duplciate below for convenience.
+```
+# location of where to place the ImageNet data
+DATA_DIR=$HOME/imagenet-data
+ 
+# build the preprocessing script.
+cd tensorflow-models/inception
+bazel build //inception:download_and_preprocess_imagenet
+ 
+# run it
+bazel-bin/inception/download_and_preprocess_imagenet "${DATA_DIR}"
+```
+ 
+The final line of the output script should read something like this, note the number of images:
+ 
+```
+2016-02-17 14:30:17.287989: Finished writing all 1281167 images in data set.
+```
+ 
+Please download models/slim from this [link](https://github.com/tensorflow/models/tree/master/slim).
+Please download the pretrained weights for Inception-V3 frome [here](http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz)
+Please setup the environment variables as follows:
+ 
+```
+export CHECKPOINT_FILE= location of downloaded inception-v3 pretrained weights
+export DATASET_DIR=$DATA_DIR
+```
+Please modify the file eval_image_classifier.py in models/slim so that inter_op_parallelism_threads is set to 1 since TensorFlow/libxsmm
+does not support concurrent evaluations of subgraphs currently.
+ 
+```
+slim.evaluation.evaluate_once(
+        master=FLAGS.master,
+        checkpoint_path=checkpoint_path,
+        logdir=FLAGS.eval_dir,
+        num_evals=num_batches,
+        eval_op=list(names_to_updates.values()),
+        variables_to_restore=variables_to_restore,
+        session_config= tf.ConfigProto(inter_op_parallelism_threads=1))
+```
+Run inference on imagenet as follows:
+```
+python eval_image_classifier.py \
+    --alsologtostderr \
+    --checkpoint_path=${CHECKPOINT_FILE} \
+    --dataset_dir=${DATASET_DIR} \
+    --dataset_name=imagenet \
+    --dataset_split_name=validation \
+    --model_name=inception_v3
+```
+Please verify recall and accuracy as follows:
+ 
+```
+2017-07-13 21:21:27.438050: I tensorflow/core/kernels/logging_ops.cc:79] eval/Recall_5[0.93945813]
+2017-07-13 21:21:27.438104: I tensorflow/core/kernels/logging_ops.cc:79] eval/Accuracy[0.77981138]
+```
 
