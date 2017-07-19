@@ -44,10 +44,11 @@ const int transpose_work = handle->desc.N*handle->blocksifm;
 const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (transpose_work / handle->desc.threads) : (transpose_work / handle->desc.threads) + 1;
 const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;
 const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
-const int reduce_work = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
+
+const int reduce_work = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock;
 const int reduce_chunksize = (reduce_work % handle->desc.threads == 0) ? (reduce_work / handle->desc.threads) : (reduce_work / handle->desc.threads) + 1;
-const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
-const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
+const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize * handle->ofmblock) : reduce_work * handle->ofmblock;
+const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize * handle->ofmblock) : reduce_work * handle->ofmblock;
 const int copywork = handle->desc.N*handle->blocksifm;
 const int copychunksize = (copywork % handle->desc.threads == 0) ? (copywork / handle->desc.threads) : (copywork / handle->desc.threads) + 1;
 const int copy_thr_begin = (ltid * copychunksize < copywork) ? (ltid * copychunksize) : copywork;
@@ -117,10 +118,8 @@ if (handle->padding_flag == 1) {
   }
 }
 
-#if 0
 /* We DO USE private weights, initialize them to zero...  */
 jitted_matzero_weights(NULL, NULL, per_thread_weight_ptr, NULL, NULL);
-#endif
 
 /* Handle transpose of input  */
 if ( handle->trans_ofw_ifm > 0 ) {
@@ -190,14 +189,37 @@ for (pc = 0; pc < instr; pc++) {
 libxsmm_barrier_wait(handle->barrier, ltid);
 
 /* Perform reduction because we used thread private filters... */
+const int total_filter_size = reduce_work * handle->ofmblock;
 if (handle->upd_use_external_reduce == 0) {
   for ( i = 0; i < handle->desc.threads; i++ ) {
-    remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
-    for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
-      weight_ptr[j] += remote_weight_ptr[j];
+    remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*total_filter_size);
+    for ( j = reduce_thr_begin; j < reduce_thr_end; j+= handle->ofmblock) {
+#define __AVX512F__
+#if defined(__AVX512F__)
+      _mm512_store_ps((void*) &weight_ptr[j] , _mm512_add_ps( _mm512_load_ps((void*) &weight_ptr[j]) , _mm512_load_ps((void*) &remote_weight_ptr[j])) );
+#else
+      for (pc = 0; pc < handle->ofmblock; pc++) {
+        weight_ptr[j+pc] += remote_weight_ptr[j+pc];
+      }
+#endif
     }
   }
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
+#if 0
+/* Perform reduction because we used thread private filters... */
+__m512 accum;
+const int total_filter_size = reduce_work * handle->ofmblock;
+for ( j = reduce_thr_begin; j < reduce_thr_end; j+= handle->ofmblock) {
+  accum =  _mm512_setzero_ps();
+  for ( i = 0; i < handle->desc.threads; i++ ) {
+    remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*total_filter_size);
+    accum = _mm512_add_ps( accum  , _mm512_load_ps((void*) &remote_weight_ptr[j]));
+  }
+  _mm512_store_ps((void*) &weight_ptr[j], accum);
+}
+
+libxsmm_barrier_wait(handle->barrier, ltid);
+#endif
