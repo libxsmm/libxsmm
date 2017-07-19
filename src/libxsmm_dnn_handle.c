@@ -884,19 +884,33 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                                                                   ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM))*/ )
           {
             const unsigned int wu_each_iter_code_size = 10 * (descriptor.ifm_block == 1 ? descriptor.kw : descriptor.ifm_block);
-            const unsigned int wu_max_code_size = 20000;
+            const unsigned int wu_max_code_size = 8000;
             int upper_limit_ofw_rb = wu_max_code_size / wu_each_iter_code_size, upper_limit_ofh_rb = 0;
+            int chunk_size;
+
             descriptor.ifm_unroll = 1;
 
             for (i = LIBXSMM_MIN(upper_limit_ofw_rb, LIBXSMM_MIN(56,handle->ofw)); i >= 1; i--) {
               if (handle->ofw % i == 0) break;
             }
-            descriptor.ofw_rb =  i;
+            descriptor.ofw_rb = i;
+
             upper_limit_ofh_rb = wu_max_code_size / (descriptor.ofw_rb * wu_each_iter_code_size);
             for (i = LIBXSMM_MIN(upper_limit_ofh_rb, handle->ofh); i >= 1; i--) {
               if (handle->ofh % i == 0) break;
             }
             descriptor.ofh_rb =  i;
+
+            chunk_size = 6 * descriptor.ofw_rb *  descriptor.ofh_rb * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype);
+            while( chunk_size > 32000) {
+              for (i = descriptor.ofh_rb-1; i >= 1; i--) {
+                if (handle->ofh % i == 0) break;
+              }
+              if (i == 0) i = 1;
+              descriptor.ofh_rb =  i;
+              chunk_size = 6 * descriptor.ofw_rb *  descriptor.ofh_rb * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype);
+              if ( i == 1) break;
+            }
 
             if ( handle->ofh * handle->ofw * wu_each_iter_code_size <= wu_max_code_size) {
               descriptor.ofh_unroll = 1;
@@ -914,7 +928,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
             handle->upd_ofh_rb = descriptor.ofh_rb;
             handle->upd_ofw_rb = descriptor.ofw_rb;
-            
+
             descriptor.transpose_ofw_ifm = 0;
 #if !defined(NDEBUG)
             printf("DEBUG JIT of conv:\n  arch: %s\n  type: %s\n  ofm_block: %u\n  ifm_block: %u\n"
@@ -1035,6 +1049,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           handle->copy_upd_indices_ptrs[i] = NULL;
         }
 
+        matzero_descriptor.n = 1;
+        matzero_descriptor.m = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
+        matzero_descriptor.ldi = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
+        matzero_descriptor.ldo = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
+        matzero_descriptor.prefetch = 0;
+        matzero_descriptor.unroll_level = 6;
+        matzero_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype);
+        matzero_descriptor.flags = LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE;
+        handle->matcopy_upd[2].xmatcopy = libxsmm_xmatcopydispatch(&matzero_descriptor);
+
         /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
         status = libxsmm_dnn_perform_upd_dryrun_direct(handle); 
       }
@@ -1057,7 +1081,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype);
 
       /* minibatch parallel execution of weight update kernel */
-      if (1) { /* ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < handle->desc.threads)) { */
+      if (1) { /*  ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < handle->desc.threads)) { */
         handle->upd_use_thread_fil = 1;
         handle->scratch4 = 0;
         handle->scratch4_size = handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
@@ -1089,891 +1113,891 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         handle->scratch7 = 0;
         handle->scratch7_size = 0;
       }
+      }
     }
-  }
-  else {
-    handle->code_fwd[0].xconv.sconv = 0;
-    handle->code_fwd[1].xconv.sconv = 0;
-    handle->code_fwd[2].xconv.sconv = 0;
-    handle->code_fwd[3].xconv.sconv = 0;
-    /* Backward path */
-    handle->code_bwd[0].xconv.sconv = 0;
-    handle->code_bwd[1].xconv.sconv = 0;
-    handle->code_bwd[2].xconv.sconv = 0;
-    handle->code_bwd[3].xconv.sconv = 0;
-    /* weight update path */
-    handle->code_upd[0].xconv.sconv = 0;
-    handle->code_upd[1].xconv.sconv = 0;
-    handle->code_upd[2].xconv.sconv = 0;
-    handle->code_upd[3].xconv.sconv = 0;
-    handle->code_upd[4].xconv.sconv = 0;
-    handle->code_upd[5].xconv.sconv = 0;
+    else {
+      handle->code_fwd[0].xconv.sconv = 0;
+      handle->code_fwd[1].xconv.sconv = 0;
+      handle->code_fwd[2].xconv.sconv = 0;
+      handle->code_fwd[3].xconv.sconv = 0;
+      /* Backward path */
+      handle->code_bwd[0].xconv.sconv = 0;
+      handle->code_bwd[1].xconv.sconv = 0;
+      handle->code_bwd[2].xconv.sconv = 0;
+      handle->code_bwd[3].xconv.sconv = 0;
+      /* weight update path */
+      handle->code_upd[0].xconv.sconv = 0;
+      handle->code_upd[1].xconv.sconv = 0;
+      handle->code_upd[2].xconv.sconv = 0;
+      handle->code_upd[3].xconv.sconv = 0;
+      handle->code_upd[4].xconv.sconv = 0;
+      handle->code_upd[5].xconv.sconv = 0;
 
-    handle->barrier = 0;
+      handle->barrier = 0;
 
-    handle->scratch1 = 0;
-    handle->scratch1_size = 0;
-    handle->scratch3 = 0;
-    handle->scratch3_size = 0;
-    handle->scratch4 = 0;
-    handle->scratch4_size = 0;
-    /* low percision intermediate output buffer */
-    if ( handle->datatype != handle->datatype_itm ) {
-      handle->scratch6 = 0;
-      handle->scratch6_size = handle->desc.N * handle->blocksofm * handle->ofmblock * handle->ofhp * handle->ofwp * handle->fm_lp_block
-        * libxsmm_dnn_typesize(handle->datatype_itm);
-    } else {
-      handle->scratch6 = 0;
-      handle->scratch6_size = 0;
+      handle->scratch1 = 0;
+      handle->scratch1_size = 0;
+      handle->scratch3 = 0;
+      handle->scratch3_size = 0;
+      handle->scratch4 = 0;
+      handle->scratch4_size = 0;
+      /* low percision intermediate output buffer */
+      if ( handle->datatype != handle->datatype_itm ) {
+        handle->scratch6 = 0;
+        handle->scratch6_size = handle->desc.N * handle->blocksofm * handle->ofmblock * handle->ofhp * handle->ofwp * handle->fm_lp_block
+          * libxsmm_dnn_typesize(handle->datatype_itm);
+      } else {
+        handle->scratch6 = 0;
+        handle->scratch6_size = 0;
+      }
     }
+
+    return status;
   }
 
-  return status;
-}
 
-
-/* This function finds the prime factors of a number */
-LIBXSMM_API_INLINE void internal_dnn_handle_factors(
-    unsigned int num,
-    unsigned int num_factors[] )
-{
-  unsigned int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29};
-  int i;
-  unsigned int total_primes = 10;
-  unsigned int index = 0;
-
-  for ( i = total_primes-1; i >= 0; i-- ) {
-    while((num % primes[i]) == 0) {
-      num_factors[index] = primes[i];
-      index++;
-      num = num/primes[i];
-    }
-  }
-}
-
-
-/**
- * This function finds the unroll factor for (itiles*jtiles*bimg)
- * such that ur <= max_acc
- * The following loop may not give an optimal solution (knapsack problem)
- * Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2
- */
-LIBXSMM_API_INLINE void internal_dnn_handle_factors_all(
-    unsigned int  product,
-    unsigned int* ur,
-    unsigned int  max_acc)
-{
-  unsigned int i;
-  unsigned int fact[10];
-
-  for ( i = 0; i < 10; i++ ) {
-    fact[i] = 1;
-  }
-  internal_dnn_handle_factors(product, fact);
-
-  *ur = 1;
-  for ( i = 0; fact[i] != 1; i++ ) {
-    if ( (fact[i] * (*ur)) <= max_acc ) {
-      *ur = (*ur)*fact[i];
-    }
-  }
-}
-
-
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_winograd_check( libxsmm_dnn_layer* handle ) {
-  /* flag to test if we found an architecture which is supported */
-  int noarch = 1;
-  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
-  int internal_format_type;
-  if ( 0 == env || 0 == *env) {
-    /* Default internal format type */
-    handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
-  } else {
-    internal_format_type = atoi(env);
-    if (internal_format_type == 1) {
-      handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
-    } else if ( internal_format_type == 2) {
-      handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2;
-    } else {
-      status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
-      free(handle);
-      handle = 0;
-      return status;
-    }
-  }
-
-  /* now architecture specific */
-  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-        libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  ||
-        libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) &&
-      (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) &&
-      (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) &&
-      (0 == (handle->desc.C % 16) && 0 == (handle->desc.K % 16)) &&
-      (3 == handle->desc.R && 3 == handle->desc.S) &&
-      (1 == handle->desc.u && 1 == handle->desc.v))
+  /* This function finds the prime factors of a number */
+  LIBXSMM_API_INLINE void internal_dnn_handle_factors(
+      unsigned int num,
+      unsigned int num_factors[] )
   {
-    noarch = 0;
-    /* calculate blockings */
-    handle->ifmblock = 16;
-    handle->ofmblock = 16;
-    handle->blocksifm = handle->desc.C / 16;
-    handle->blocksofm = handle->desc.K / 16;
-    handle->fm_lp_block = 1;
+    unsigned int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29};
+    int i;
+    unsigned int total_primes = 10;
+    unsigned int index = 0;
 
-  } else {
-    status = LIBXSMM_DNN_WARN_FALLBACK;
+    for ( i = total_primes-1; i >= 0; i-- ) {
+      while((num % primes[i]) == 0) {
+        num_factors[index] = primes[i];
+        index++;
+        num = num/primes[i];
+      }
+    }
   }
 
-  if (noarch == 0) {
-    libxsmm_convolution_winograd_descriptor wino_desc_fp;
-    libxsmm_convolution_winograd_descriptor wino_desc_bp;
-    libxsmm_convolution_winograd_descriptor wino_desc_wu;
-    const int alpha = 6; /* The value of alpha can be either 4 or 6 */
-    const int tileSize = alpha - 2;
-    int allowed_unroll = 0;
-    int max_acc = 0;
-    int flagBenchmark = 0;
-    LIBXSMM_UNUSED(flagBenchmark/*TODO*/);
 
-    /* Forward path */
-    { wino_desc_fp.alpha = alpha;
-      wino_desc_fp.jtiles = (handle->ofh + tileSize - 1) / tileSize;
-      wino_desc_fp.itiles = (handle->ofw + tileSize - 1) / tileSize;
+  /**
+   * This function finds the unroll factor for (itiles*jtiles*bimg)
+   * such that ur <= max_acc
+   * The following loop may not give an optimal solution (knapsack problem)
+   * Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2
+   */
+  LIBXSMM_API_INLINE void internal_dnn_handle_factors_all(
+      unsigned int  product,
+      unsigned int* ur,
+      unsigned int  max_acc)
+  {
+    unsigned int i;
+    unsigned int fact[10];
 
-      /* LUT for DeepBench */
-      if ((240 == handle->ofw) && (24 == handle->ofh) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 6;
-        flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
-      } else if ((120 == handle->ofw) && (12 == handle->ofh) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 6;
-        flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
-      } else if ((60 == handle->ofw) && (6 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 6;
-        flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
-      } else if ((54 == handle->ofw) && (54 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 7;
-        flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
-      } else if ((27 == handle->ofw) && (27 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 7;
-        flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
-      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
-      } else if ((112 == handle->ofw) && (112 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
-      } else if ((112 == handle->ofw) && (112 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 2;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 16;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
+    for ( i = 0; i < 10; i++ ) {
+      fact[i] = 1;
+    }
+    internal_dnn_handle_factors(product, fact);
+
+    *ur = 1;
+    for ( i = 0; fact[i] != 1; i++ ) {
+      if ( (fact[i] * (*ur)) <= max_acc ) {
+        *ur = (*ur)*fact[i];
       }
+    }
+  }
 
-      /* LUT for AlexNet */
-      else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
+
+  LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_winograd_check( libxsmm_dnn_layer* handle ) {
+    /* flag to test if we found an architecture which is supported */
+    int noarch = 1;
+    libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+    const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
+    int internal_format_type;
+    if ( 0 == env || 0 == *env) {
+      /* Default internal format type */
+      handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
+    } else {
+      internal_format_type = atoi(env);
+      if (internal_format_type == 1) {
+        handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
+      } else if ( internal_format_type == 2) {
+        handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2;
+      } else {
+        status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
+        free(handle);
+        handle = 0;
+        return status;
       }
+    }
 
-      /* LUT for GoogLenetV1 */
-      else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 4;
-        flagBenchmark = 1;
-      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 4;
-        flagBenchmark = 1;
-      }
+    /* now architecture specific */
+    if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  ||
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) &&
+        (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) &&
+        (handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) &&
+        (0 == (handle->desc.C % 16) && 0 == (handle->desc.K % 16)) &&
+        (3 == handle->desc.R && 3 == handle->desc.S) &&
+        (1 == handle->desc.u && 1 == handle->desc.v))
+    {
+      noarch = 0;
+      /* calculate blockings */
+      handle->ifmblock = 16;
+      handle->ofmblock = 16;
+      handle->blocksifm = handle->desc.C / 16;
+      handle->blocksofm = handle->desc.K / 16;
+      handle->fm_lp_block = 1;
 
-      /* LUT for Overfeat */
-      else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 12;
-        flagBenchmark = 1;
-      } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 12;
-        flagBenchmark = 1;
-      } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 12;
-        flagBenchmark = 1;
-      }
+    } else {
+      status = LIBXSMM_DNN_WARN_FALLBACK;
+    }
 
-      /* LUT for VGGA */
-      else if ((112 == handle->ofw) && (112 == handle->ofh) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 1;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 4; /*2;*/
-        wino_desc_fp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 4;
-        flagBenchmark = 1;
-      }
+    if (noarch == 0) {
+      libxsmm_convolution_winograd_descriptor wino_desc_fp;
+      libxsmm_convolution_winograd_descriptor wino_desc_bp;
+      libxsmm_convolution_winograd_descriptor wino_desc_wu;
+      const int alpha = 6; /* The value of alpha can be either 4 or 6 */
+      const int tileSize = alpha - 2;
+      int allowed_unroll = 0;
+      int max_acc = 0;
+      int flagBenchmark = 0;
+      LIBXSMM_UNUSED(flagBenchmark/*TODO*/);
 
-      /* General scenario */
-      else {
-        if ((handle->desc.N % 4) == 0) {
-          wino_desc_fp.bimg = 4;
-        } else if ((handle->desc.N % 2) == 0) {
-          wino_desc_fp.bimg = 2;
-        } else {
+      /* Forward path */
+      { wino_desc_fp.alpha = alpha;
+        wino_desc_fp.jtiles = (handle->ofh + tileSize - 1) / tileSize;
+        wino_desc_fp.itiles = (handle->ofw + tileSize - 1) / tileSize;
+
+        /* LUT for DeepBench */
+        if ((240 == handle->ofw) && (24 == handle->ofh) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (6 == alpha)) {
           wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 6;
+          flagBenchmark = 1;
+          /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        } else if ((120 == handle->ofw) && (12 == handle->ofh) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 6;
+          flagBenchmark = 1;
+          /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        } else if ((60 == handle->ofw) && (6 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 6;
+          flagBenchmark = 1;
+          /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        } else if ((54 == handle->ofw) && (54 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 7;
+          flagBenchmark = 1;
+          /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        } else if ((27 == handle->ofw) && (27 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 7;
+          flagBenchmark = 1;
+          /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+          /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+          /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        } else if ((112 == handle->ofw) && (112 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((56 == handle->ofw) && (56 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((28 == handle->ofw) && (28 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 2;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+          /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        } else if ((112 == handle->ofw) && (112 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((56 == handle->ofw) && (56 == handle->ofh) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((28 == handle->ofw) && (28 == handle->ofh) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 2;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 4;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((7 == handle->ofw) && (7 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 16;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
         }
+
+        /* LUT for AlexNet */
+        else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+        }
+
+        /* LUT for GoogLenetV1 */
+        else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 4;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 4;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 4;
+          flagBenchmark = 1;
+        } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 4;
+          flagBenchmark = 1;
+        }
+
+        /* LUT for Overfeat */
+        else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 12;
+          flagBenchmark = 1;
+        } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 12;
+          flagBenchmark = 1;
+        } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 12;
+          flagBenchmark = 1;
+        }
+
+        /* LUT for VGGA */
+        else if ((112 == handle->ofw) && (112 == handle->ofh) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 1;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 4;
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 4; /*2;*/
+          wino_desc_fp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_fp.bimg = 8;
+          wino_desc_fp.ur = 4;
+          flagBenchmark = 1;
+        }
+
+        /* General scenario */
+        else {
+          if ((handle->desc.N % 4) == 0) {
+            wino_desc_fp.bimg = 4;
+          } else if ((handle->desc.N % 2) == 0) {
+            wino_desc_fp.bimg = 2;
+          } else {
+            wino_desc_fp.bimg = 1;
+          }
+          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+            max_acc = 24;
+          } else {
+            max_acc = 26;
+          }
+          internal_dnn_handle_factors_all( wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, &(wino_desc_fp.ur), max_acc );
+        }
+
+        /* The following condition checks whether we have encountered an input which is listed in our benchmark LUT */
+        /* if (flagBenchmark) printf("In benchmark\n"); */
+
         if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-          max_acc = 24;
-        } else {
-          max_acc = 26;
-        }
-        internal_dnn_handle_factors_all( wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, &(wino_desc_fp.ur), max_acc );
-      }
-
-      /* The following condition checks whether we have encountered an input which is listed in our benchmark LUT */
-      /* if (flagBenchmark) printf("In benchmark\n"); */
-
-      if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-        if (handle->blocksifm % 4 == 0) {
-          wino_desc_fp.ur_ifm = 4;
-        } else if (handle->blocksifm % 3 == 0) {
-          wino_desc_fp.ur_ifm = 3;
-        } else if (handle->blocksifm % 2 == 0) {
-          wino_desc_fp.ur_ifm = 2;
+          if (handle->blocksifm % 4 == 0) {
+            wino_desc_fp.ur_ifm = 4;
+          } else if (handle->blocksifm % 3 == 0) {
+            wino_desc_fp.ur_ifm = 3;
+          } else if (handle->blocksifm % 2 == 0) {
+            wino_desc_fp.ur_ifm = 2;
+          } else {
+            wino_desc_fp.ur_ifm = 1;
+          }
         } else {
           wino_desc_fp.ur_ifm = 1;
         }
-      } else {
-        wino_desc_fp.ur_ifm = 1;
-      }
 
-      handle->cwino_fwd = wino_desc_fp;
+        handle->cwino_fwd = wino_desc_fp;
 
-      /* TODO check JIT errors */
-      if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
-      {
-        wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-        handle->code_fwd[0].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
-        wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-        handle->code_fwd[1].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
-        /* wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT; */
-        /* handle->code_fwd[2].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp); */
-        /* wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT; */
-        /* handle->code_fwd[3].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp); */
-      } else {
-        assert(0/*should not happen*/);
-      }
-    }
-    /* Backward path */
-    { wino_desc_bp.alpha = alpha;
-      wino_desc_bp.jtiles = (handle->desc.H + tileSize - 1) / tileSize;
-      wino_desc_bp.itiles = (handle->desc.W + tileSize - 1) / tileSize;
-
-      /* LUT for DeepBench */
-      if ((240 == handle->desc.W) && (24 == handle->desc.H) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 6;
-        flagBenchmark = 1;
-      } else if ((120 == handle->desc.W) && (12 == handle->desc.H) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 6;
-        flagBenchmark = 1;
-      } else if ((60 == handle->desc.W) && (6 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 6;
-        flagBenchmark = 1;
-      } else if ((54 == handle->desc.W) && (54 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 7;
-        flagBenchmark = 1;
-      } else if ((27 == handle->desc.W) && (27 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 7;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 2;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 16;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      }
-
-      /* LUT for AlexNet */
-      else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      }
-
-      /* LUT for GoogLenetV1 */
-      else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 16;
-        flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 4;
-        flagBenchmark = 1;
-      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 4;
-        flagBenchmark = 1;
-      }
-
-      /* LUT for Overfeat */
-      else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 12;
-        flagBenchmark = 1;
-      } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 12;
-        flagBenchmark = 1;
-      } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 12;
-        flagBenchmark = 1;
-      }
-
-      /* LUT for VGGA */
-      else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 1;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur = 14;
-        flagBenchmark = 1;
-      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 4;
-        flagBenchmark = 1;
-      }
-
-      /* General scenario */
-      else {
-        wino_desc_bp.bimg = wino_desc_fp.bimg;
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-          max_acc = 24;
+        /* TODO check JIT errors */
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+            libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+            libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
+        {
+          wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
+          handle->code_fwd[0].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
+          wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
+          handle->code_fwd[1].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
+          /* wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT; */
+          /* handle->code_fwd[2].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp); */
+          /* wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT; */
+          /* handle->code_fwd[3].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp); */
         } else {
-          max_acc = 26;
+          assert(0/*should not happen*/);
         }
-        internal_dnn_handle_factors_all( wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, &(wino_desc_bp.ur), max_acc );
       }
+      /* Backward path */
+      { wino_desc_bp.alpha = alpha;
+        wino_desc_bp.jtiles = (handle->desc.H + tileSize - 1) / tileSize;
+        wino_desc_bp.itiles = (handle->desc.W + tileSize - 1) / tileSize;
 
-      if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-        if (handle->blocksofm % 4 == 0) {
-          wino_desc_bp.ur_ifm = 4;
-        } else if (handle->blocksofm % 3 == 0) {
-          wino_desc_bp.ur_ifm = 3;
-        } else if (handle->blocksofm % 2 == 0) {
-          wino_desc_bp.ur_ifm = 2;
+        /* LUT for DeepBench */
+        if ((240 == handle->desc.W) && (24 == handle->desc.H) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 6;
+          flagBenchmark = 1;
+        } else if ((120 == handle->desc.W) && (12 == handle->desc.H) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 6;
+          flagBenchmark = 1;
+        } else if ((60 == handle->desc.W) && (6 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 6;
+          flagBenchmark = 1;
+        } else if ((54 == handle->desc.W) && (54 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 7;
+          flagBenchmark = 1;
+        } else if ((27 == handle->desc.W) && (27 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 7;
+          flagBenchmark = 1;
+        } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 2;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 2;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 4;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 16;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        }
+
+        /* LUT for AlexNet */
+        else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        }
+
+        /* LUT for GoogLenetV1 */
+        else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 4;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 4;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 16;
+          flagBenchmark = 1;
+        } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 4;
+          flagBenchmark = 1;
+        } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 4;
+          flagBenchmark = 1;
+        }
+
+        /* LUT for Overfeat */
+        else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 12;
+          flagBenchmark = 1;
+        } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 12;
+          flagBenchmark = 1;
+        } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 12;
+          flagBenchmark = 1;
+        }
+
+        /* LUT for VGGA */
+        else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 1;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 4;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 4;
+          wino_desc_bp.ur = 14;
+          flagBenchmark = 1;
+        } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_bp.bimg = 8;
+          wino_desc_bp.ur = 4;
+          flagBenchmark = 1;
+        }
+
+        /* General scenario */
+        else {
+          wino_desc_bp.bimg = wino_desc_fp.bimg;
+          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+            max_acc = 24;
+          } else {
+            max_acc = 26;
+          }
+          internal_dnn_handle_factors_all( wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, &(wino_desc_bp.ur), max_acc );
+        }
+
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+          if (handle->blocksofm % 4 == 0) {
+            wino_desc_bp.ur_ifm = 4;
+          } else if (handle->blocksofm % 3 == 0) {
+            wino_desc_bp.ur_ifm = 3;
+          } else if (handle->blocksofm % 2 == 0) {
+            wino_desc_bp.ur_ifm = 2;
+          } else {
+            wino_desc_bp.ur_ifm = 1;
+          }
         } else {
           wino_desc_bp.ur_ifm = 1;
         }
-      } else {
-        wino_desc_bp.ur_ifm = 1;
-      }
 
-      handle->cwino_bwd = wino_desc_bp;
+        handle->cwino_bwd = wino_desc_bp;
 
-      /* TODO check JIT errors */
-      if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
-      {
-        /* NONE */
-        wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-        handle->code_bwd[0].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
-        /* ALL */
-        wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-        handle->code_bwd[1].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
-      } else {
-        assert(0/*should not happen*/);
-      }
-    } /* End of backward */
-    /* Weight update path */
-    { wino_desc_wu.alpha = alpha;
-      wino_desc_wu.jtiles = wino_desc_fp.jtiles;
-      wino_desc_wu.itiles = wino_desc_fp.itiles;
-
-      /* LUT for DeepBench */
-      if ((240 == handle->ofw) && (24 == handle->ofh) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1;
-        wino_desc_wu.ur = 1;
-        flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
-      } else if ((120 == handle->ofw) && (12 == handle->ofh) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1;
-        wino_desc_wu.ur = 1;
-        flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
-      } else if ((60 == handle->ofw) && (6 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1;
-        wino_desc_wu.ur = 1;
-        flagBenchmark = 1;
-        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
-      } else if ((54 == handle->ofw) && (54 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1;
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-          wino_desc_wu.ur = 1;
+        /* TODO check JIT errors */
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+            libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+            libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
+        {
+          /* NONE */
+          wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
+          handle->code_bwd[0].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
+          /* ALL */
+          wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
+          handle->code_bwd[1].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
         } else {
-          wino_desc_wu.ur = 2;
+          assert(0/*should not happen*/);
         }
-        flagBenchmark = 1;
-      } else if ((27 == handle->ofw) && (27 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1; /*8;*/
-        wino_desc_wu.ur = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8;
-        wino_desc_wu.ur = 4;
-        flagBenchmark = 1;
-      } else if ((112 == handle->ofw) && (112 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1;
-        wino_desc_wu.ur = 1;
-        flagBenchmark = 1;
-      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1; /*2;*/
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-          wino_desc_wu.ur = 1;
-        } else {
-          wino_desc_wu.ur = 2;
-        }
-        flagBenchmark = 1;
-      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 2; /*4;*/
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((112 == handle->ofw) && (112 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1;
-        wino_desc_wu.ur = 1;
-        flagBenchmark = 1;
-      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1;
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-          wino_desc_wu.ur = 1;
-        } else {
-          wino_desc_wu.ur = 2;
-        }
-        flagBenchmark = 1;
-      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 2; /*16;*/
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 4; /*16;*/
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 16;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      }
+      } /* End of backward */
+      /* Weight update path */
+      { wino_desc_wu.alpha = alpha;
+        wino_desc_wu.jtiles = wino_desc_fp.jtiles;
+        wino_desc_wu.itiles = wino_desc_fp.itiles;
 
-      /* LUT for AlexNet */
-      else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      }
-
-      /* LUT for GoogLenetV1 */
-      else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
-        wino_desc_wu.ur = 1;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 32;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 32;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      }
-
-      /* LUT for Overfeat */
-      else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 32;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 32;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 32;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      }
-
-      /* LUT for VGGA */
-      else if ((112 == handle->ofw) && (112 == handle->ofh) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 1;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
-        wino_desc_wu.ur = 2;
-        flagBenchmark = 1;
-      }
-
-      /* General scenario */
-      else {
-        if ((handle->desc.N % 4) == 0) {
-          wino_desc_wu.bimg = 4;
-        } else if ((handle->desc.N % 2) == 0) {
-          wino_desc_wu.bimg = 2;
-        } else {
+        /* LUT for DeepBench */
+        if ((240 == handle->ofw) && (24 == handle->ofh) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (6 == alpha)) {
           wino_desc_wu.bimg = 1;
+          wino_desc_wu.ur = 1;
+          flagBenchmark = 1;
+          /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        } else if ((120 == handle->ofw) && (12 == handle->ofh) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 1;
+          wino_desc_wu.ur = 1;
+          flagBenchmark = 1;
+          /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        } else if ((60 == handle->ofw) && (6 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 1;
+          wino_desc_wu.ur = 1;
+          flagBenchmark = 1;
+          /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+        } else if ((54 == handle->ofw) && (54 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 1;
+          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+            wino_desc_wu.ur = 1;
+          } else {
+            wino_desc_wu.ur = 2;
+          }
+          flagBenchmark = 1;
+        } else if ((27 == handle->ofw) && (27 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 1; /*8;*/
+          wino_desc_wu.ur = 1;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8;
+          wino_desc_wu.ur = 4;
+          flagBenchmark = 1;
+        } else if ((112 == handle->ofw) && (112 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 1;
+          wino_desc_wu.ur = 1;
+          flagBenchmark = 1;
+        } else if ((56 == handle->ofw) && (56 == handle->ofh) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 1; /*2;*/
+          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+            wino_desc_wu.ur = 1;
+          } else {
+            wino_desc_wu.ur = 2;
+          }
+          flagBenchmark = 1;
+        } else if ((28 == handle->ofw) && (28 == handle->ofh) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 2; /*4;*/
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((7 == handle->ofw) && (7 == handle->ofh) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((112 == handle->ofw) && (112 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 1;
+          wino_desc_wu.ur = 1;
+          flagBenchmark = 1;
+        } else if ((56 == handle->ofw) && (56 == handle->ofh) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 1;
+          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+            wino_desc_wu.ur = 1;
+          } else {
+            wino_desc_wu.ur = 2;
+          }
+          flagBenchmark = 1;
+        } else if ((28 == handle->ofw) && (28 == handle->ofh) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 2; /*16;*/
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 4; /*16;*/
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((7 == handle->ofw) && (7 == handle->ofh) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 16;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
         }
-        allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
-        allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg % 4) == 0) {
-          internal_dnn_handle_factors_all( wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg/4, &(wino_desc_wu.ur), allowed_unroll );
+
+        /* LUT for AlexNet */
+        else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8; /*16;*/
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8; /*16;*/
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8; /*16;*/
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        }
+
+        /* LUT for GoogLenetV1 */
+        else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 1;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 4;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 4;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8; /*16;*/
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8; /*16;*/
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8; /*16;*/
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8; /*16;*/
+          wino_desc_wu.ur = 1;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8; /*16;*/
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 32;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 32;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        }
+
+        /* LUT for Overfeat */
+        else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 32;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 32;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 32;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        }
+
+        /* LUT for VGGA */
+        else if ((112 == handle->ofw) && (112 == handle->ofh) && (64 <= handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 1;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 1;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((56 == handle->ofw) && (56 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 1;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 4;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 4;
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+          wino_desc_wu.bimg = 8; /*16;*/
+          wino_desc_wu.ur = 2;
+          flagBenchmark = 1;
+        }
+
+        /* General scenario */
+        else {
+          if ((handle->desc.N % 4) == 0) {
+            wino_desc_wu.bimg = 4;
+          } else if ((handle->desc.N % 2) == 0) {
+            wino_desc_wu.bimg = 2;
+          } else {
+            wino_desc_wu.bimg = 1;
+          }
+          allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
+          allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
+          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg % 4) == 0) {
+            internal_dnn_handle_factors_all( wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg/4, &(wino_desc_wu.ur), allowed_unroll );
+          } else {
+            internal_dnn_handle_factors_all( wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg,   &(wino_desc_wu.ur), allowed_unroll );
+          }
+        }
+
+        wino_desc_wu.ur_ifm = 1;
+
+        handle->cwino_upd = wino_desc_wu;
+        /* TODO check JIT errors */
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+            libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+            libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
+        {
+          /* NONE */
+          wino_desc_wu.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
+          handle->code_upd[0].pmm = libxsmm_create_xconv_wino_update_weights(&wino_desc_wu);
+          /* ALL */
+          wino_desc_wu.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
+          handle->code_upd[1].pmm = libxsmm_create_xconv_wino_update_weights(&wino_desc_wu);
         } else {
-          internal_dnn_handle_factors_all( wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg,   &(wino_desc_wu.ur), allowed_unroll );
+          assert(0/*should not happen*/);
         }
-      }
-
-      wino_desc_wu.ur_ifm = 1;
-
-      handle->cwino_upd = wino_desc_wu;
-      /* TODO check JIT errors */
-      if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
+      } /* end of weight-update handle */
       {
-        /* NONE */
-        wino_desc_wu.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-        handle->code_upd[0].pmm = libxsmm_create_xconv_wino_update_weights(&wino_desc_wu);
-        /* ALL */
-        wino_desc_wu.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-        handle->code_upd[1].pmm = libxsmm_create_xconv_wino_update_weights(&wino_desc_wu);
-      } else {
-        assert(0/*should not happen*/);
-      }
-    } /* end of weight-update handle */
-    {
-      /* Populating scratch registers for U V and M */
-      int ijtiles;
-      if (wino_desc_bp.itiles * wino_desc_bp.jtiles >= wino_desc_fp.itiles * wino_desc_fp.jtiles) {
-        ijtiles = wino_desc_bp.itiles * wino_desc_bp.jtiles;
-      } else {
-        ijtiles = wino_desc_fp.itiles * wino_desc_fp.jtiles;
-      }
+        /* Populating scratch registers for U V and M */
+        int ijtiles;
+        if (wino_desc_bp.itiles * wino_desc_bp.jtiles >= wino_desc_fp.itiles * wino_desc_fp.jtiles) {
+          ijtiles = wino_desc_bp.itiles * wino_desc_bp.jtiles;
+        } else {
+          ijtiles = wino_desc_fp.itiles * wino_desc_fp.jtiles;
+        }
 
+        handle->scratch1 = 0;
+        handle->scratch1_size = alpha*alpha*handle->desc.C*handle->desc.K*libxsmm_dnn_typesize(handle->datatype);
+        handle->scratch3 = 0;
+        handle->scratch3_size = alpha*alpha*ijtiles*handle->desc.N * handle->desc.C * libxsmm_dnn_typesize(handle->datatype);
+        handle->scratch4 = 0;
+        handle->scratch4_size = alpha*alpha*ijtiles*handle->desc.N * handle->desc.K * libxsmm_dnn_typesize(handle->datatype_itm);
+        handle->scratch6 = 0;
+        handle->scratch6_size = 0;
+        handle->scratchIw = 0;
+        handle->scratchIw_size = ijtiles*alpha*alpha*16*libxsmm_dnn_typesize(handle->datatype)*handle->desc.threads;
+        handle->scratchOw = 0;
+        handle->scratchOw_size = ijtiles*alpha*alpha*16*libxsmm_dnn_typesize(handle->datatype_itm)*handle->desc.threads;
+        handle->scratchVk = 0;
+        handle->scratchVk_size = handle->scratch3_size;
+        handle->scratchInput = 0;
+        handle->scratchInput_size = handle->scratch3_size;
+        handle->scratchTemp  = 0;
+        handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
+      }
+    } else {
+      handle->code_fwd[0].xconv.sconv = 0;
+      handle->code_fwd[1].xconv.sconv = 0;
+      handle->code_fwd[2].xconv.sconv = 0;
+      handle->code_fwd[3].xconv.sconv = 0;
+      /* Backward path */
+      handle->code_bwd[0].xconv.sconv = 0;
+      handle->code_bwd[1].xconv.sconv = 0;
+      handle->code_bwd[2].xconv.sconv = 0;
+      handle->code_bwd[3].xconv.sconv = 0;
+      /* weight update path */
+      handle->code_upd[0].xconv.sconv = 0;
+      handle->code_upd[1].xconv.sconv = 0;
+      handle->code_upd[2].xconv.sconv = 0;
+      handle->code_upd[3].xconv.sconv = 0;
+      handle->code_upd[4].xconv.sconv = 0;
+      handle->code_upd[5].xconv.sconv = 0;
+      handle->barrier  = 0;
       handle->scratch1 = 0;
-      handle->scratch1_size = alpha*alpha*handle->desc.C*handle->desc.K*libxsmm_dnn_typesize(handle->datatype);
+      handle->scratch1_size = 0;
       handle->scratch3 = 0;
-      handle->scratch3_size = alpha*alpha*ijtiles*handle->desc.N * handle->desc.C * libxsmm_dnn_typesize(handle->datatype);
+      handle->scratch3_size = 0;
       handle->scratch4 = 0;
-      handle->scratch4_size = alpha*alpha*ijtiles*handle->desc.N * handle->desc.K * libxsmm_dnn_typesize(handle->datatype_itm);
+      handle->scratch4_size = 0;
       handle->scratch6 = 0;
       handle->scratch6_size = 0;
-      handle->scratchIw = 0;
-      handle->scratchIw_size = ijtiles*alpha*alpha*16*libxsmm_dnn_typesize(handle->datatype)*handle->desc.threads;
-      handle->scratchOw = 0;
-      handle->scratchOw_size = ijtiles*alpha*alpha*16*libxsmm_dnn_typesize(handle->datatype_itm)*handle->desc.threads;
-      handle->scratchVk = 0;
-      handle->scratchVk_size = handle->scratch3_size;
-      handle->scratchInput = 0;
-      handle->scratchInput_size = handle->scratch3_size;
-      handle->scratchTemp  = 0;
-      handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
     }
-  } else {
-    handle->code_fwd[0].xconv.sconv = 0;
-    handle->code_fwd[1].xconv.sconv = 0;
-    handle->code_fwd[2].xconv.sconv = 0;
-    handle->code_fwd[3].xconv.sconv = 0;
-    /* Backward path */
-    handle->code_bwd[0].xconv.sconv = 0;
-    handle->code_bwd[1].xconv.sconv = 0;
-    handle->code_bwd[2].xconv.sconv = 0;
-    handle->code_bwd[3].xconv.sconv = 0;
-    /* weight update path */
-    handle->code_upd[0].xconv.sconv = 0;
-    handle->code_upd[1].xconv.sconv = 0;
-    handle->code_upd[2].xconv.sconv = 0;
-    handle->code_upd[3].xconv.sconv = 0;
-    handle->code_upd[4].xconv.sconv = 0;
-    handle->code_upd[5].xconv.sconv = 0;
-    handle->barrier  = 0;
-    handle->scratch1 = 0;
-    handle->scratch1_size = 0;
-    handle->scratch3 = 0;
-    handle->scratch3_size = 0;
-    handle->scratch4 = 0;
-    handle->scratch4_size = 0;
-    handle->scratch6 = 0;
-    handle->scratch6_size = 0;
-  }
 
-  return status;
-}
+    return status;
+  }
 

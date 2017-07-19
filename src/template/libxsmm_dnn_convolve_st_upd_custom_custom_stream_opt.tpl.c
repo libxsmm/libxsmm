@@ -87,6 +87,7 @@ element_output_type *output_base;
 /* Kernel related variables  */
 libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
 libxsmm_xmatcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
+libxsmm_xmatcopyfunction jitted_matzero_weights = handle->matcopy_upd[2].xmatcopy;
 libxsmm_convfunction kernel = (handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
 
 /* lazy barrier init */
@@ -116,10 +117,10 @@ if (handle->padding_flag == 1) {
   }
 }
 
+#if 0
 /* We DO USE private weights, initialize them to zero...  */
-for (i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
-  per_thread_weight_ptr[i] = (element_filter_type)0;
-}
+jitted_matzero_weights(NULL, NULL, per_thread_weight_ptr, NULL, NULL);
+#endif
 
 /* Handle transpose of input  */
 if ( handle->trans_ofw_ifm > 0 ) {

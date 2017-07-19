@@ -984,7 +984,7 @@ unroll_factor = i_conv_desc->ifm_block;
                                             i_gp_reg_mapping->gp_reg_input_pf,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
-                                            l_k_1 * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in +  l_k_2 * i_conv_desc->stride_w * i_conv_kernel_config->l_ld_ifm_act *  i_conv_kernel_config->datatype_size_in );
+                                            l_k_1 * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in +  l_k_2 * i_conv_desc->stride_w *  i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in );
         }
 
         if ( (l_n == 11) &&  ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) ) {
@@ -993,7 +993,7 @@ unroll_factor = i_conv_desc->ifm_block;
                                             i_gp_reg_mapping->gp_reg_input_pf,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
-                                            l_k_1 * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in +  (l_k_2+1) * i_conv_desc->stride_w * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in );
+                                            l_k_1 * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in +  (l_k_2+1) * i_conv_desc->stride_w *  i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in );
          }
 
      if ( (l_n == 13) &&  ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) ) {
@@ -1002,7 +1002,7 @@ unroll_factor = i_conv_desc->ifm_block;
                                             i_gp_reg_mapping->gp_reg_input_pf,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
-                                            l_k_1 * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in +  (l_k_2+2) * i_conv_desc->stride_w * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in );
+                                            l_k_1 * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in +  (l_k_2+2) * i_conv_desc->stride_w *  i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in );
        }
 
      if ( (l_n == 15) &&  ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) ) {
@@ -1011,7 +1011,7 @@ unroll_factor = i_conv_desc->ifm_block;
                                             i_gp_reg_mapping->gp_reg_input_pf,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
-                                            l_k_1 * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in +  (l_k_2+3) * i_conv_desc->stride_w * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in );
+                                            l_k_1 * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in +  (l_k_2+3) * i_conv_desc->stride_w  *  i_conv_kernel_config->l_ld_ifm_act  *i_conv_kernel_config->datatype_size_in );
                  }
 
         

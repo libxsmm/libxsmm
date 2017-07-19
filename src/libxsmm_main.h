@@ -251,7 +251,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
 
   libxsmm_code_pointer matcopy_fwd[4];
   libxsmm_code_pointer matcopy_bwd[2];
-  libxsmm_code_pointer matcopy_upd[2];
+  libxsmm_code_pointer matcopy_upd[3];
   
   /* Data structures and metadata related to per-thread private JITing */
   int use_thread_private_jit;
