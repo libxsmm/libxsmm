@@ -68,9 +68,9 @@
 #   define OTRANS_GOLD(M, N, A, LDI, B, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))('C', 'T', \
         *(M), *(N), (ELEM_TYPE)1, A, *(LDI), B, *(LDO))
-#   define ITRANS_GOLD(M, N, A, LDI, B, LDO) \
+#   define ITRANS_GOLD(M, N, A, LDI, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, imatcopy))('C', 'T', \
-        *(M), *(N), (ELEM_TYPE)1, A, *(LDI), B, *(LDO))
+        *(M), *(N), (ELEM_TYPE)1, A, *(LDI), *(LDO))
 # elif defined(__OPENBLAS)
 #   define OTRANS_GOLD(M, N, A, LDI, B, LDO) { \
       /*const*/char otrans_gold_tc_ = 'C', otrans_gold_tt_ = 'T'; \
@@ -84,7 +84,7 @@
       /*const*/ELEM_TYPE itrans_gold_alpha_ = 1; \
       LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEM_TYPE, imatcopy))(&itrans_gold_tc_, &itrans_gold_tt_, \
         (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), &itrans_gold_alpha_, A, \
-        (libxsmm_blasint*)(LDI), B, (libxsmm_blasint*)(LDO)); \
+        (libxsmm_blasint*)(LDI), (libxsmm_blasint*)(LDO)); \
     }
 # else
 #   define USE_SELF_VALIDATION
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
 #if !defined(USE_SELF_VALIDATION)
         if (0 != c) { /* check */
           start = libxsmm_timer_tick();
-          OTRANS_GOLD(&tc, &tt, &km, &kn, &alpha, a, &kldi, c, &kldo);
+          OTRANS_GOLD(&km, &kn, a, &kldi, c, &kldo);
           duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
 #endif
@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
         if (0 != c) { /* check */
           memcpy(c, a, kldi * kn * sizeof(ELEM_TYPE));
           start = libxsmm_timer_tick();
-          ITRANS_GOLD(&tc, &tt, &km, &kn, &alpha, c, &kldi, &kldo);
+          ITRANS_GOLD(&km, &kn, c, &kldi, &kldo);
           duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
 #endif
