@@ -51,9 +51,8 @@
       /*const*/char matcopy_gold_tc_ = 'C', matcopy_gold_tt_ = 'N'; \
       /*const*/ELEM_TYPE matcopy_gold_alpha_ = 1; \
       LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))(&matcopy_gold_tc_, &matcopy_gold_tt_, \
-        (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), \
-        &matcopy_gold_alpha_, A, (libxsmm_blasint*)(LDI), \
-                              B, (libxsmm_blasint*)(LDO)); \
+        (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), &matcopy_gold_alpha_, \
+        A, (libxsmm_blasint*)(LDI), B, (libxsmm_blasint*)(LDO)); \
     }
 # endif
 #endif
