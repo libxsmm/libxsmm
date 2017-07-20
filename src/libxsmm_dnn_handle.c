@@ -378,7 +378,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   }
 
   /* Check if padded needs to be applied in the input and allocate appropriate buffers */
-  if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && (handle->desc.pad_h > 0) && (handle->desc.pad_w > 0)) {
+  /* Anand: changing below check for pad to either/or pad_h or pad_w instead of and */
+  if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && ((handle->desc.pad_h > 0) || (handle->desc.pad_w > 0))) {
     handle->padding_flag = 1;
     handle->scratch5  = 0;
     handle->minibatch_scratch_size = handle->desc.N * handle->blocksifm * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_itm);
@@ -1460,42 +1461,110 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           }
           internal_dnn_handle_factors_all( wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, &(wino_desc_fp.ur), max_acc );
         }
+        internal_dnn_handle_factors_all( wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, &(wino_desc_fp.ur), max_acc );
+        /* ur should be at least 14 to hide qfma latency */
+        wino_desc_fp.ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_fp.ur, 14), wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg);
+      }
 
-        /* The following condition checks whether we have encountered an input which is listed in our benchmark LUT */
-        /* if (flagBenchmark) printf("In benchmark\n"); */
-
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-          if (handle->blocksifm % 4 == 0) {
-            wino_desc_fp.ur_ifm = 4;
-          } else if (handle->blocksifm % 3 == 0) {
-            wino_desc_fp.ur_ifm = 3;
-          } else if (handle->blocksifm % 2 == 0) {
-            wino_desc_fp.ur_ifm = 2;
-          } else {
-            wino_desc_fp.ur_ifm = 1;
-          }
-        } else {
-          wino_desc_fp.ur_ifm = 1;
-        }
+      /* The following condition checks whether we have encountered an input which is listed in our benchmark LUT */
+      /* if (flagBenchmark) printf("In benchmark\n"); */
+      /* ur_ifm = blocksifm so that we don't need to zero-initialize M and use streaming store */
+      wino_desc_fp.ur_ifm = handle->blocksifm;
+      wino_desc_fp.blocks_ifm = handle->blocksifm;
 
         handle->cwino_fwd = wino_desc_fp;
 
-        /* TODO check JIT errors */
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-            libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
-            libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
-        {
-          wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-          handle->code_fwd[0].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
-          wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-          handle->code_fwd[1].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
-          /* wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT; */
-          /* handle->code_fwd[2].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp); */
-          /* wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT; */
-          /* handle->code_fwd[3].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp); */
-        } else {
-          assert(0/*should not happen*/);
-        }
+      /* TODO check JIT errors */
+      if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
+      {
+        wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
+        handle->code_fwd[0].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
+        wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1;
+        handle->code_fwd[1].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
+        wino_desc_fp.prefetch = (libxsmm_convolution_prefetch_type)(LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2);
+        handle->code_fwd[2].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp);
+        /* wino_desc_fp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT; */
+        /* handle->code_fwd[3].pmm = libxsmm_create_xconv_wino_forward(&wino_desc_fp); */
+      } else {
+        assert(0/*should not happen*/);
+      }
+    }
+    /* Backward path */
+    { wino_desc_bp.alpha = alpha;
+      wino_desc_bp.jtiles = (handle->desc.H + tileSize - 1) / tileSize;
+      wino_desc_bp.itiles = (handle->desc.W + tileSize - 1) / tileSize;
+
+      /* LUT for DeepBench */
+      if ((240 == handle->desc.W) && (24 == handle->desc.H) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 6;
+        flagBenchmark = 1;
+      } else if ((120 == handle->desc.W) && (12 == handle->desc.H) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 6;
+        flagBenchmark = 1;
+      } else if ((60 == handle->desc.W) && (6 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 6;
+        flagBenchmark = 1;
+      } else if ((54 == handle->desc.W) && (54 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 7;
+        flagBenchmark = 1;
+      } else if ((27 == handle->desc.W) && (27 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 7;
+        flagBenchmark = 1;
+      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (8 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (8 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (8 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (8 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 8;
+        wino_desc_bp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((112 == handle->desc.W) && (112 == handle->desc.H) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((56 == handle->desc.W) && (56 == handle->desc.H) && (16 == handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 1;
+        wino_desc_bp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (16 == handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 2;
+        wino_desc_bp.ur = 14;
+        flagBenchmark = 1;
+      } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 4;
+        wino_desc_bp.ur = 16;
+        flagBenchmark = 1;
+      } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (16 == handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_bp.bimg = 16;
+        wino_desc_bp.ur = 16;
+        flagBenchmark = 1;
       }
       /* Backward path */
       { wino_desc_bp.alpha = alpha;
@@ -1683,34 +1752,56 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           }
           internal_dnn_handle_factors_all( wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, &(wino_desc_bp.ur), max_acc );
         }
+        internal_dnn_handle_factors_all( wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, &(wino_desc_bp.ur), max_acc );
+        wino_desc_bp.ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_bp.ur, 14), wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg);
+      }
 
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
-          if (handle->blocksofm % 4 == 0) {
-            wino_desc_bp.ur_ifm = 4;
-          } else if (handle->blocksofm % 3 == 0) {
-            wino_desc_bp.ur_ifm = 3;
-          } else if (handle->blocksofm % 2 == 0) {
-            wino_desc_bp.ur_ifm = 2;
-          } else {
-            wino_desc_bp.ur_ifm = 1;
-          }
-        } else {
-          wino_desc_bp.ur_ifm = 1;
-        }
+      wino_desc_bp.ur_ifm = handle->blocksofm;
+      wino_desc_bp.blocks_ifm = handle->blocksofm;
 
         handle->cwino_bwd = wino_desc_bp;
 
-        /* TODO check JIT errors */
-        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-            libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
-            libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
-        {
-          /* NONE */
-          wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-          handle->code_bwd[0].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
-          /* ALL */
-          wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-          handle->code_bwd[1].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
+
+      /* TODO check JIT errors */
+      if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
+      {
+        wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
+        handle->code_bwd[0].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
+        wino_desc_bp.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1;
+        handle->code_bwd[1].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
+        wino_desc_bp.prefetch = (libxsmm_convolution_prefetch_type)(LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2);
+        handle->code_bwd[2].pmm = libxsmm_create_xconv_wino_backward(&wino_desc_bp);
+      } else {
+        assert(0/*should not happen*/);
+      }
+    } /* End of backward */
+    /* Weight update path */
+    { wino_desc_wu.alpha = alpha;
+      wino_desc_wu.jtiles = wino_desc_fp.jtiles;
+      wino_desc_wu.itiles = wino_desc_fp.itiles;
+
+      /* LUT for DeepBench */
+      if ((240 == handle->ofw) && (24 == handle->ofh) && (16 == handle->desc.N) && (16 == handle->desc.C) && (32 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 1;
+        flagBenchmark = 1;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+      } else if ((120 == handle->ofw) && (12 == handle->ofh) && (16 == handle->desc.N) && (32 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 1;
+        flagBenchmark = 1;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+      } else if ((60 == handle->ofw) && (6 == handle->ofh) && (16 == handle->desc.N) && (64 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        wino_desc_wu.ur = 1;
+        flagBenchmark = 1;
+        /*status = LIBXSMM_DNN_WARN_FALLBACK;*/
+      } else if ((54 == handle->ofw) && (54 == handle->ofh) && (8 == handle->desc.N) && (64 == handle->desc.C) && (64 == handle->desc.K) && (6 == alpha)) {
+        wino_desc_wu.bimg = 1;
+        if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+          wino_desc_wu.ur = 1;
         } else {
           assert(0/*should not happen*/);
         }

@@ -101,7 +101,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
   static int error_once = 0;
 
   assert(typesize <= 255);
-  if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
+  if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && m <= ldo) {
     const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
     libxsmm_xmatcopyfunction xmatcopy = 0;
     LIBXSMM_INIT

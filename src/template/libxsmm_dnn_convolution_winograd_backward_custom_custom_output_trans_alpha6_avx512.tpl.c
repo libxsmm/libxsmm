@@ -29,9 +29,9 @@
 /* Kunal Banerjee (Intel Corp.), Jongsoo Park (Intel Corp.)
 ******************************************************************************/
 
-const int total_tiles = handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles;
-LIBXSMM_VLA_DECL(5, const float, input, toutp, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN);
-LIBXSMM_VLA_DECL(4, float, output, outp, handle->ofhp, handle->ofwp, TDVLEN);
+const int total_tiles = handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles;
+LIBXSMM_VLA_DECL(5, const float, input, toutp, ALPHA, handle->cwino_bwd.bimg, total_tiles, TDVLEN);
+LIBXSMM_VLA_DECL(4, float, output, outp, handle->ifhp, handle->ifwp, TDVLEN);
 __m512 O[(ALPHA)-2];
 unsigned int ti, tj;
 int i, j;
@@ -40,18 +40,18 @@ __m512 T[4][6]; /* FIXME: too big and causing spills */
 __m512 t0, t1, t2, t3;
 __m512 I0, I1, I2, I3, I4, I5;
 
-for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
-  for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
-    /*trans_O_4x4_3x3(ALPHA-2, TDVLEN, Ow[tj*handle->cwino_fwd.itiles + ti], O);*/
+for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
+  for (ti = 0; ti < handle->cwino_bwd.itiles; ti++) {
+    /*trans_O_4x4_3x3(ALPHA-2, TDVLEN, Ow[tj*handle->cwino_bwd.itiles + ti], O);*/
     /* inline code start */
     LIBXSMM_PRAGMA_UNROLL_N(ALPHA)
     for (i = 0; i < (ALPHA); i++) {
-      I0 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 0, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN));
-      I1 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 1, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN));
-      I2 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 2, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN));
-      I3 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 3, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN));
-      I4 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 4, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN));
-      I5 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 5, i, 0, tj*handle->cwino_fwd.itiles + ti, 0, ALPHA, handle->cwino_fwd.bimg, total_tiles, TDVLEN));
+      I0 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 0, i, 0, tj*handle->cwino_bwd.itiles + ti, 0, ALPHA, handle->cwino_bwd.bimg, total_tiles, TDVLEN));
+      I1 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 1, i, 0, tj*handle->cwino_bwd.itiles + ti, 0, ALPHA, handle->cwino_bwd.bimg, total_tiles, TDVLEN));
+      I2 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 2, i, 0, tj*handle->cwino_bwd.itiles + ti, 0, ALPHA, handle->cwino_bwd.bimg, total_tiles, TDVLEN));
+      I3 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 3, i, 0, tj*handle->cwino_bwd.itiles + ti, 0, ALPHA, handle->cwino_bwd.bimg, total_tiles, TDVLEN));
+      I4 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 4, i, 0, tj*handle->cwino_bwd.itiles + ti, 0, ALPHA, handle->cwino_bwd.bimg, total_tiles, TDVLEN));
+      I5 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(5, input, 5, i, 0, tj*handle->cwino_bwd.itiles + ti, 0, ALPHA, handle->cwino_bwd.bimg, total_tiles, TDVLEN));
 
       t0 = _mm512_add_ps(I1, I2);
       t1 = _mm512_add_ps(I3, I4);
@@ -64,7 +64,7 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
       T[3][i] = _mm512_add_ps(_mm512_fmadd_ps(_mm512_set1_ps(8.f), t3, t2), I5);
     }
 
-    if ((tj+1)*((ALPHA)-2) <= ((unsigned int)handle->ofh) && (ti+1)*((ALPHA)-2) <= ((unsigned int)handle->ofw)) { /* common case */
+    if (((tj + 1) * ((ALPHA) - 2)) <= (unsigned int)handle->desc.H && ((ti + 1) * ((ALPHA) - 2)) <= (unsigned int)handle->desc.W) { /* common case */
 
       LIBXSMM_PRAGMA_UNROLL_N((ALPHA)-2)
       for (j = 0; j < ((ALPHA)-2); j++) {

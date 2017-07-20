@@ -269,80 +269,170 @@ template<typename T> class LIBXSMM_RETARGETABLE libxsmm_mmfunction {};
 /** Construct and execute a specialized function (single-precision). */
 template<> class LIBXSMM_RETARGETABLE libxsmm_mmfunction<float> {
   mutable/*retargetable*/ libxsmm_smmfunction m_function;
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+  int m_flags, m_m, m_n, m_k, m_lda, m_ldb, m_ldc;
+  float m_alpha, m_beta;
+#endif
 public:
-  libxsmm_mmfunction(): m_function(0) {}
+  libxsmm_mmfunction(): m_function(0)
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(LIBXSMM_FLAGS), m_m(0), m_n(0), m_k(0), m_lda(0), m_ldb(0), m_ldc(0), m_alpha(LIBXSMM_ALPHA), m_beta(LIBXSMM_BETA)
+#endif
+  {}
   libxsmm_mmfunction(int m, int n, int k, int flags = LIBXSMM_FLAGS)
     : m_function(libxsmm_smmdispatch(m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, 0/*alpha*/, 0/*beta*/, &flags, 0/*prefetch*/))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(m), m_ldb(k), m_ldc(m), m_alpha(LIBXSMM_ALPHA), m_beta(LIBXSMM_BETA)
+#endif
   {}
   libxsmm_mmfunction(int flags, int m, int n, int k, int prefetch)
     : m_function(libxsmm_smmdispatch(m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, 0/*alpha*/, 0/*beta*/, &flags, &prefetch))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(m), m_ldb(k), m_ldc(m), m_alpha(LIBXSMM_ALPHA), m_beta(LIBXSMM_BETA)
+#endif
   {}
   libxsmm_mmfunction(int flags, int m, int n, int k, float alpha, float beta)
     : m_function(libxsmm_smmdispatch(m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, &alpha, &beta, &flags, 0/*prefetch*/))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(m), m_ldb(k), m_ldc(m), m_alpha(alpha), m_beta(beta)
+#endif
   {}
   libxsmm_mmfunction(int flags, int m, int n, int k, float alpha, float beta, int prefetch)
     : m_function(libxsmm_smmdispatch(m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, &alpha, &beta, &flags, &prefetch))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(m), m_ldb(k), m_ldc(m), m_alpha(alpha), m_beta(beta)
+#endif
   {}
   libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, int prefetch)
     : m_function(libxsmm_smmdispatch(m, n, k, &lda, &ldb, &ldc, 0/*alpha*/, 0/*beta*/, &flags, &prefetch))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(lda), m_ldb(ldb), m_ldc(ldc), m_alpha(LIBXSMM_ALPHA), m_beta(LIBXSMM_BETA)
+#endif
   {}
   libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta)
     : m_function(libxsmm_smmdispatch(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, 0/*prefetch*/))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(m), m_ldb(k), m_ldc(m), m_alpha(alpha), m_beta(beta)
+#endif
   {}
   libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta, int prefetch)
     : m_function(libxsmm_smmdispatch(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, &prefetch))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(m), m_ldb(k), m_ldc(m), m_alpha(alpha), m_beta(beta)
+#endif
   {}
 public:
   operator libxsmm_smmfunction() const {
     return m_function;
   }
   void operator()(const float* a, const float* b, float* c) const {
-    m_function(a, b, c);
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    if (0 == m_function) {
+      LIBXSMM_BLAS_XGEMM(float, m_flags, m_m, m_n, m_k, m_alpha, a, m_lda, b, m_ldb, m_beta, c, m_ldc);
+    }
+    else
+#endif
+    {
+      LIBXSMM_MMCALL_ABC(m_function, a, b, c);      
+    }
   }
   void operator()(const float* a, const float* b, float* c,
     const float* pa, const float* pb, const float* pc) const
   {
-    m_function(a, b, c, pa, pb, pc);
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    if (0 == m_function) {
+      LIBXSMM_BLAS_XGEMM(float, m_flags, m_m, m_n, m_k, m_alpha, a, m_lda, b, m_ldb, m_beta, c, m_ldc);
+    }
+    else
+#endif
+    {
+      LIBXSMM_MMCALL_PRF(m_function, a, b, c, pa, pb, pc);
+    }
   }
 };
 
 /** Construct and execute a specialized function (double-precision). */
 template<> class LIBXSMM_RETARGETABLE libxsmm_mmfunction<double> {
   mutable/*retargetable*/ libxsmm_dmmfunction m_function;
+#if defined(LIBXSMM_FALLBACK_DMMFUNCTION)
+  int m_flags, m_m, m_n, m_k, m_lda, m_ldb, m_ldc;
+  double m_alpha, m_beta;
+#endif
 public:
-  libxsmm_mmfunction(): m_function(0) {}
+  libxsmm_mmfunction(): m_function(0)
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(LIBXSMM_FLAGS), m_m(0), m_n(0), m_k(0), m_lda(0), m_ldb(0), m_ldc(0), m_alpha(LIBXSMM_ALPHA), m_beta(LIBXSMM_BETA)
+#endif
+  {}
   libxsmm_mmfunction(int m, int n, int k, int flags = LIBXSMM_FLAGS)
     : m_function(libxsmm_dmmdispatch(m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, 0/*alpha*/, 0/*beta*/, &flags, 0/*prefetch*/))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(m), m_ldb(k), m_ldc(m), m_alpha(LIBXSMM_ALPHA), m_beta(LIBXSMM_BETA)
+#endif
   {}
   libxsmm_mmfunction(int flags, int m, int n, int k, int prefetch)
     : m_function(libxsmm_dmmdispatch(m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, 0/*alpha*/, 0/*beta*/, &flags, &prefetch))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(m), m_ldb(k), m_ldc(m), m_alpha(LIBXSMM_ALPHA), m_beta(LIBXSMM_BETA)
+#endif
   {}
   libxsmm_mmfunction(int flags, int m, int n, int k, double alpha, double beta)
     : m_function(libxsmm_dmmdispatch(m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, &alpha, &beta, &flags, 0/*prefetch*/))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(m), m_ldb(k), m_ldc(m), m_alpha(alpha), m_beta(beta)
+#endif
   {}
   libxsmm_mmfunction(int flags, int m, int n, int k, double alpha, double beta, int prefetch)
     : m_function(libxsmm_dmmdispatch(m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, &alpha, &beta, &flags, &prefetch))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(m), m_ldb(k), m_ldc(m), m_alpha(alpha), m_beta(beta)
+#endif
   {}
   libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, int prefetch)
     : m_function(libxsmm_dmmdispatch(m, n, k, &lda, &ldb, &ldc, 0/*alpha*/, 0/*beta*/, &flags, &prefetch))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(lda), m_ldb(ldb), m_ldc(ldc), m_alpha(LIBXSMM_ALPHA), m_beta(LIBXSMM_BETA)
+#endif
   {}
   libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta)
     : m_function(libxsmm_dmmdispatch(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, 0/*prefetch*/))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(m), m_ldb(k), m_ldc(m), m_alpha(alpha), m_beta(beta)
+#endif
   {}
   libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta, int prefetch)
     : m_function(libxsmm_dmmdispatch(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, &prefetch))
+#if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+    , m_flags(flags), m_m(m), m_n(n), m_k(k), m_lda(m), m_ldb(k), m_ldc(m), m_alpha(alpha), m_beta(beta)
+#endif
   {}
 public:
   operator libxsmm_dmmfunction() const {
     return m_function;
   }
   void operator()(const double* a, const double* b, double* c) const {
-    LIBXSMM_MMCALL_ABC(m_function, a, b, c);
+#if defined(LIBXSMM_FALLBACK_DMMFUNCTION)
+    if (0 == m_function) {
+      LIBXSMM_BLAS_XGEMM(double, m_flags, m_m, m_n, m_k, m_alpha, a, m_lda, b, m_ldb, m_beta, c, m_ldc);
+    }
+    else
+#endif
+    {
+      LIBXSMM_MMCALL_ABC(m_function, a, b, c);
+    }
   }
   void operator()(const double* a, const double* b, double* c,
     const double* pa, const double* pb, const double* pc) const
   {
-    LIBXSMM_MMCALL_PRF(m_function, a, b, c, pa, pb, pc);
+#if defined(LIBXSMM_FALLBACK_DMMFUNCTION)
+    if (0 == m_function) {
+      LIBXSMM_BLAS_XGEMM(double, m_flags, m_m, m_n, m_k, m_alpha, a, m_lda, b, m_ldb, m_beta, c, m_ldc);
+    }
+    else
+#endif
+    {
+      LIBXSMM_MMCALL_PRF(m_function, a, b, c, pa, pb, pc);
+    }
   }
 };
 

@@ -387,7 +387,7 @@
 #elif defined(__GNUC__) && !defined(_CRAYC) && !defined(LIBXSMM_INTRINSICS_NONE)
 # define LIBXSMM_INTRINSICS_BITSCANFWD(N) (__builtin_ffs(N) - 1)
 #else /* fall-back implementation */
-  LIBXSMM_INLINE LIBXSMM_RETARGETABLE int libxsmm_bitscanfwd(int n) {
+  LIBXSMM_API_INLINE int libxsmm_bitscanfwd(int n) {
     int i, r = 0; for (i = 1; 0 == (n & i) ; i <<= 1) { ++r; } return r;
   }
 # define LIBXSMM_INTRINSICS_BITSCANFWD(N) libxsmm_bitscanfwd(N)

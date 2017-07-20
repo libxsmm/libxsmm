@@ -58,6 +58,17 @@ memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock)
 for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
   ofm1 = ofm1ifm1 / handle->blocksifm;
   ifm1 = ofm1ifm1 % handle->blocksifm;
+  /* reset result buffer to zero when intent is to overwrite when first block
+     of input channels should be convoluted */
+  if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+    element_filter_type* temp_buf = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+
+    LIBXSMM_PRAGMA_SIMD
+    for (ii = 0; ii < handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; ++ii) {
+      temp_buf[ii] = (element_filter_type)0;
+    }
+  }
+
   for (img = 0; img < handle->desc.N; ++img) {
 #if defined(INPUT_PADDING)
     for (oj = 0; oj < handle->ifhp; ++oj) {

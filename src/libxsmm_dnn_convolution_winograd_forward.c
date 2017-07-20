@@ -75,6 +75,7 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_fwd_input_transform_custom_custom_alpha6_
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6_avx512.tpl.c"
 # undef TDVLEN
 # undef ALPHA
+  LIBXSMM_UNUSED(Iwp);
 #else /* next lower/available code path (fallback chain) */
   internal_fwd_input_transform_custom_custom_alpha6_default(inp, tinp, Iwp, handle);
 #endif
@@ -86,7 +87,7 @@ LIBXSMM_API_INLINE void internal_fwd_input_transform_custom_custom(
 {
   if (handle->cwino_fwd.alpha == 6) {
     /* if highest implemented code path is statically present, no need for an indirect call (function pointer) */
-#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
     internal_fwd_input_transform_custom_custom_alpha6_avx512(inp, tinp, Iwp, handle);
 #else /* pointer based function call */
     assert(0 != internal_fwd_input_transform_custom_custom_alpha6);
@@ -137,14 +138,17 @@ LIBXSMM_API_INLINE void internal_fwd_input_transform_nhwc_custom(
 }
 
 
-LIBXSMM_API_INLINE void internal_fwd_weight_transform( float *wp,
-                              float *twp,
-                              const libxsmm_dnn_layer* handle )
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+void internal_fwd_weight_transform(float *wp, float *twp, const libxsmm_dnn_layer* handle)
 {
   if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
+# include "template/libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha6_avx512.tpl.c"
+#else
 # include "template/libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha6.tpl.c"
+#endif
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_fwd.alpha == 4) {
@@ -163,17 +167,17 @@ LIBXSMM_API_INLINE void internal_fwd_weight_transform( float *wp,
 }
 
 
-LIBXSMM_API_INLINE void internal_fwd_output_transform_custom_custom( float *toutp,
-                                            float *outp,
-                                            float *Owp,
-                                            float bias[/*vratio*/][16/*tdvlen*/],
-                                            const libxsmm_dnn_layer* handle )
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+void internal_fwd_output_transform_custom_custom(
+  float *toutp, float *outp, float *Owp,
+  float bias[/*vratio*/][16/*tdvlen*/],
+  const libxsmm_dnn_layer* handle)
 {
   LIBXSMM_UNUSED(bias); /* TODO: remove */
   if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
-#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6_avx512.tpl.c"
 #else
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6.tpl.c"
