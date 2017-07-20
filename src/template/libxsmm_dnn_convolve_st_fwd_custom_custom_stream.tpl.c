@@ -116,7 +116,7 @@ if (n_segments) {
     jitted_matcopy = handle->matcopy_fwd[2].xmatcopy;
     jitted_zero_overwrite = handle->matcopy_fwd[3].xmatcopy;
     input_h_start = LIBXSMM_MAX(0,  handle->ofh_fwd_start[ltid] - handle->desc.R + 1);
-    input_h_end = LIBXSMM_MIN( handle->ifhp, handle->ofh_fwd_end[ltid] + handle->desc.R -1 ) ;
+    input_h_end = LIBXSMM_MIN( handle->ifhp, (handle->ofh_fwd_end[ltid] + handle->desc.R -1) * handle->desc.u ) ;
     my_h_out = handle->ofh_fwd_end[ltid]-handle->ofh_fwd_start[ltid];
     for (pc = 0; pc < n_segments; pc++) {
       instr = code_stream[pc].segment_type;
