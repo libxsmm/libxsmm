@@ -168,7 +168,7 @@ bazel run -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --
   <line-of-target-flags-from-above> \
   //tensorflow/python/kernel_tests:conv_ops_test
 ```
-## Running Inception-V3 inference on the imagenet dataset
+## Running Inception-V3 inference on the ImageNet dataset
  
 Please follow the instructions at the following [link](https://github.com/tensorflow/models/blob/master/inception/README.md#getting-started) to download and preprocess the Inception-V3 dataset:
 The relevant part of the instructions are duplicated below for convenience.
@@ -211,7 +211,7 @@ slim.evaluation.evaluate_once(
         variables_to_restore=variables_to_restore,
         session_config= tf.ConfigProto(inter_op_parallelism_threads=1))
 ```
-Run inference on imagenet as follows:
+Run inference on ImageNet as follows:
 ```
 python eval_image_classifier.py \
     --alsologtostderr \
