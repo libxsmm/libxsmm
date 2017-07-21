@@ -51,17 +51,12 @@
 # define ELEM_TYPE float
 #endif
 
-#if !defined(OTRANS1)
-# if (defined(__BLAS) && 1 < (__BLAS))
-#   define OTRANS1 libxsmm_otrans_omp
-# else
-#   define OTRANS1 libxsmm_otrans
-# endif
+#if (defined(__BLAS) && 1 < (__BLAS))
+# define OTRANS libxsmm_otrans_omp
+#else
+# define OTRANS libxsmm_otrans
 #endif
-#if !defined(ITRANS1)
-# define ITRANS1 libxsmm_itrans
-#endif
-
+#define ITRANS libxsmm_itrans
 
 #if !defined(USE_SELF_VALIDATION) && \
   ((!LIBXSMM_EQUAL(ELEM_TYPE, float) && !LIBXSMM_EQUAL(ELEM_TYPE, double)) || (0 == __BLAS))
@@ -70,29 +65,27 @@
 
 #if !defined(USE_SELF_VALIDATION)
 # if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-#   if !defined(OTRANS2)
-#     define OTRANS2(TC, TT, M, N, ALPHA, A, LDI, B, LDO) \
-        LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy)) \
-        (*(TC), *(TT), *(M), *(N), (ELEM_TYPE)(*(ALPHA)), A, *(LDI), B, *(LDO))
-#   endif
-#   if !defined(ITRANS2)
-#     define ITRANS2(TC, TT, M, N, ALPHA, A, LDI, LDO) \
-        LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, imatcopy)) \
-        (*(TC), *(TT), *(M), *(N), (ELEM_TYPE)(*(ALPHA)), A, *(LDI), *(LDO))
-#   endif
+#   define OTRANS_GOLD(M, N, A, LDI, B, LDO) \
+      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))('C', 'T', \
+        *(M), *(N), (ELEM_TYPE)1, A, *(LDI), B, *(LDO))
+#   define ITRANS_GOLD(M, N, A, LDI, LDO) \
+      LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, imatcopy))('C', 'T', \
+        *(M), *(N), (ELEM_TYPE)1, A, *(LDI), *(LDO))
 # elif defined(__OPENBLAS)
-#   if !defined(OTRANS2)
-#     define OTRANS2(TC, TT, M, N, ALPHA, A, LDI, B, LDO) \
-        LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy)) \
-        ((char*)(TC), (char*)(TT), (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), \
-          (ELEM_TYPE*)(ALPHA), A, (libxsmm_blasint*)(LDI), B, (libxsmm_blasint*)(LDO))
-#   endif
-#   if !defined(ITRANS2)
-#     define ITRANS2(TC, TT, M, N, ALPHA, A, LDI, LDO) \
-        LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEM_TYPE, imatcopy)) \
-        ((char*)(TC), (char*)(TT), (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), \
-          (ELEM_TYPE*)(ALPHA), A, (libxsmm_blasint*)(LDI), (libxsmm_blasint*)(LDO))
-#   endif
+#   define OTRANS_GOLD(M, N, A, LDI, B, LDO) { \
+      /*const*/char otrans_gold_tc_ = 'C', otrans_gold_tt_ = 'T'; \
+      /*const*/ELEM_TYPE otrans_gold_alpha_ = 1; \
+      LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))(&otrans_gold_tc_, &otrans_gold_tt_, \
+        (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), &otrans_gold_alpha_, A, \
+        (libxsmm_blasint*)(LDI), B, (libxsmm_blasint*)(LDO)); \
+    }
+#   define ITRANS_GOLD(M, N, A, LDI, LDO) { \
+      /*const*/char itrans_gold_tc_ = 'C', itrans_gold_tt_ = 'T'; \
+      /*const*/ELEM_TYPE itrans_gold_alpha_ = 1; \
+      LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(ELEM_TYPE, imatcopy))(&itrans_gold_tc_, &itrans_gold_tt_, \
+        (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), &itrans_gold_alpha_, A, \
+        (libxsmm_blasint*)(LDI), (libxsmm_blasint*)(LDO)); \
+    }
 # else
 #   define USE_SELF_VALIDATION
 # endif
@@ -144,8 +137,6 @@ int main(int argc, char* argv[])
     ELEM_TYPE *const c = (ELEM_TYPE*)((0 == env_check || 0 != atoi(env_check))
       ? libxsmm_malloc(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE))
       : 0);
-    const char tc = 'C', tt = 'T';
-    const double alpha = 1;
     double duration2 = 0;
 #endif
     double duration = 0;
@@ -176,7 +167,7 @@ int main(int argc, char* argv[])
           kn = randstart(lower, n);
           kldo = LIBXSMM_MAX(rldo, kn);
           /* trigger JIT-generated code */
-          OTRANS1(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
         }
         else {
 #if 0 /* TODO: enable when in-place transpose is fully supported */
@@ -186,7 +177,7 @@ int main(int argc, char* argv[])
 #endif
           kldo = kldi;
           /* trigger JIT-generated code */
-          ITRANS1(b, sizeof(ELEM_TYPE), km, kn, kldi);
+          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
         }
       }
       size += km * kn * sizeof(ELEM_TYPE);
@@ -194,7 +185,7 @@ int main(int argc, char* argv[])
       if (('o' == t || 'O' == t)) {
         if (0 == tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
-          result = OTRANS1(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          result = OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
           duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
@@ -203,13 +194,13 @@ int main(int argc, char* argv[])
 #         pragma omp parallel
 #         pragma omp single nowait
 #endif
-          result = OTRANS1(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          result = OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
           duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
 #if !defined(USE_SELF_VALIDATION)
         if (0 != c) { /* check */
           start = libxsmm_timer_tick();
-          OTRANS2(&tc, &tt, &km, &kn, &alpha, a, &kldi, c, &kldo);
+          OTRANS_GOLD(&km, &kn, a, &kldi, c, &kldo);
           duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
 #endif
@@ -220,7 +211,7 @@ int main(int argc, char* argv[])
 
         if (2 > tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
-          result = ITRANS1(b, sizeof(ELEM_TYPE), km, kn, kldi);
+          result = ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
           duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
@@ -229,14 +220,14 @@ int main(int argc, char* argv[])
 #         pragma omp parallel
 #         pragma omp single
 #endif
-          result = ITRANS1(b, sizeof(ELEM_TYPE), km, kn, kldi);
+          result = ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
           duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
 #if !defined(USE_SELF_VALIDATION)
         if (0 != c) { /* check */
           memcpy(c, a, kldi * kn * sizeof(ELEM_TYPE));
           start = libxsmm_timer_tick();
-          ITRANS2(&tc, &tt, &km, &kn, &alpha, c, &kldi, &kldo);
+          ITRANS_GOLD(&km, &kn, c, &kldi, &kldo);
           duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
 #endif

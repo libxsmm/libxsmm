@@ -34,6 +34,9 @@
 #endif
 
 #if defined(USE_LIBXSMM)
+# if !defined(LIBXSMM_FALLBACK_MMFUNCTION) && 0
+#   define LIBXSMM_FALLBACK_MMFUNCTION
+# endif
 # if !defined(EIGEN_VECTORIZE_AVX)
 #   define EIGEN_VECTORIZE_AVX
 # endif
