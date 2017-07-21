@@ -333,7 +333,7 @@ public:
     else
 #endif
     {
-      LIBXSMM_MMCALL_ABC(m_function, a, b, c);      
+      LIBXSMM_MMCALL_ABC(m_function, a, b, c);
     }
   }
   void operator()(const float* a, const float* b, float* c,
