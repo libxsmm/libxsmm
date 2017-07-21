@@ -284,70 +284,91 @@ $MNK_INTERFACE_LIST
 #if defined(__cplusplus)
 
 template<typename T> struct libxsmm_gemm_precision_enum {};
-template<> struct libxsmm_gemm_precision_enum<double> { enum { value = LIBXSMM_GEMM_PRECISION_F64 }; };
-template<> struct libxsmm_gemm_precision_enum<float> { enum { value = LIBXSMM_GEMM_PRECISION_F32 }; };
-template<> struct libxsmm_gemm_precision_enum<signed short> { enum { value = LIBXSMM_GEMM_PRECISION_I16 }; };
+template<> struct libxsmm_gemm_precision_enum<double>         { enum { value = LIBXSMM_GEMM_PRECISION_F64 }; };
+template<> struct libxsmm_gemm_precision_enum<float>          { enum { value = LIBXSMM_GEMM_PRECISION_F32 }; };
+template<> struct libxsmm_gemm_precision_enum<signed short>   { enum { value = LIBXSMM_GEMM_PRECISION_I16 }; };
 template<> struct libxsmm_gemm_precision_enum<unsigned short> { enum { value = LIBXSMM_GEMM_PRECISION_I16 }; };
 
 /** Construct and execute a specialized function. */
 template<typename T> class LIBXSMM_RETARGETABLE libxsmm_mmfunction {
   mutable/*retargetable*/ libxsmm_xmmfunction m_function;
 public:
-  libxsmm_mmfunction(): m_function(0) {}
-  libxsmm_mmfunction(int m, int n, int k, int flags = LIBXSMM_FLAGS): m_function(0) {
+  libxsmm_mmfunction() { m_function.smm = 0; }
+  libxsmm_mmfunction(int m, int n, int k, int flags = LIBXSMM_FLAGS) {
     libxsmm_gemm_descriptor descriptor;
     if (EXIT_SUCCESS == libxsmm_gemm_descriptor_init(&descriptor, libxsmm_gemm_precision_enum<T>::value,
-      m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, 0/*alpha*/, 0/*beta*/, &flags, 0/*prefetch*/)
+      m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, 0/*alpha*/, 0/*beta*/, &flags, 0/*prefetch*/))
     {
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
+    else {
+      m_function.smm = 0;
+    }
   }
-  libxsmm_mmfunction(int flags, int m, int n, int k, int prefetch): m_function(0) {
+  libxsmm_mmfunction(int flags, int m, int n, int k, int prefetch) {
     libxsmm_gemm_descriptor descriptor;
     if (EXIT_SUCCESS == libxsmm_gemm_descriptor_init(&descriptor, libxsmm_gemm_precision_enum<T>::value,
-      m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, 0/*alpha*/, 0/*beta*/, &flags, &prefetch)
+      m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, 0/*alpha*/, 0/*beta*/, &flags, &prefetch))
     {
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
+    else {
+      m_function.smm = 0;
+    }
   }
-  libxsmm_mmfunction(int flags, int m, int n, int k, float alpha, float beta): m_function(0) {
+  libxsmm_mmfunction(int flags, int m, int n, int k, float alpha, float beta) {
     libxsmm_gemm_descriptor descriptor;
     if (EXIT_SUCCESS == libxsmm_gemm_descriptor_init(&descriptor, libxsmm_gemm_precision_enum<T>::value,
-      m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, &alpha, &beta, &flags, 0/*prefetch*/)
+      m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, &alpha, &beta, &flags, 0/*prefetch*/))
     {
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
+    else {
+      m_function.smm = 0;
+    }
   }
-  libxsmm_mmfunction(int flags, int m, int n, int k, float alpha, float beta, int prefetch): m_function(0) {
+  libxsmm_mmfunction(int flags, int m, int n, int k, float alpha, float beta, int prefetch) {
     libxsmm_gemm_descriptor descriptor;
     if (EXIT_SUCCESS == libxsmm_gemm_descriptor_init(&descriptor, libxsmm_gemm_precision_enum<T>::value,
-      m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, &alpha, &beta, &flags, &prefetch)
+      m, n, k, 0/*lda*/, 0/*ldb*/, 0/*ldc*/, &alpha, &beta, &flags, &prefetch))
     {
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
+    else {
+      m_function.smm = 0;
+    }
   }
-  libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, int prefetch): m_function(0) {
+  libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, int prefetch) {
     libxsmm_gemm_descriptor descriptor;
     if (EXIT_SUCCESS == libxsmm_gemm_descriptor_init(&descriptor, libxsmm_gemm_precision_enum<T>::value,
-      m, n, k, &lda, &ldb, &ldc, 0/*alpha*/, 0/*beta*/, &flags, &prefetch)
+      m, n, k, &lda, &ldb, &ldc, 0/*alpha*/, 0/*beta*/, &flags, &prefetch))
     {
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
+    else {
+      m_function.smm = 0;
+    }
   }
-  libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta): m_function(0) {
+  libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta) {
     libxsmm_gemm_descriptor descriptor;
     if (EXIT_SUCCESS == libxsmm_gemm_descriptor_init(&descriptor, libxsmm_gemm_precision_enum<T>::value,
-      m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, 0/*prefetch*/)
+      m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, 0/*prefetch*/))
     {
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
+    else {
+      m_function.smm = 0;
+    }
   }
-  libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta, int prefetch): m_function(0) {
+  libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta, int prefetch) {
     libxsmm_gemm_descriptor descriptor;
     if (EXIT_SUCCESS == libxsmm_gemm_descriptor_init(&descriptor, libxsmm_gemm_precision_enum<T>::value,
-      m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, &prefetch)
+      m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, &prefetch))
     {
       m_function = libxsmm_xmmdispatch(&descriptor);
+    }
+    else {
+      m_function.smm = 0;
     }
   }
 public:
