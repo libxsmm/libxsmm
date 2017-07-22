@@ -32,7 +32,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define ELEM_TYPE short
+#if !defined(ELEM_TYPE)
+# define ELEM_TYPE short
+#endif
 
 
 int main(/*int argc, char* argv[]*/)
