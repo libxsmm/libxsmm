@@ -41,6 +41,14 @@
 # pragma offload_attribute(pop)
 #endif
 
+#define LIBXSMM_TYPESIZE(ENUM) ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_F64 ? 8 : ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_F32 ? 4 : ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_I32 ? 4 : ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_I16 ? 2 : ( \
+  ((int)(ENUM)) == LIBXSMM_DATATYPE_I8  ? 1 : ( \
+  0/*invalid*/))))))
+
 
 /** Enumerates element/data types. */
 typedef enum libxsmm_datatype {
@@ -50,6 +58,13 @@ typedef enum libxsmm_datatype {
   LIBXSMM_DATATYPE_I16,
   LIBXSMM_DATATYPE_I8
 } libxsmm_datatype;
+
+/** Denotes the precision/data type of GEMM. */
+typedef enum libxsmm_gemm_precision {
+  LIBXSMM_GEMM_PRECISION_F64  = LIBXSMM_DATATYPE_F64,
+  LIBXSMM_GEMM_PRECISION_F32  = LIBXSMM_DATATYPE_F32,
+  LIBXSMM_GEMM_PRECISION_I16  = LIBXSMM_DATATYPE_I16
+} libxsmm_gemm_precision;
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
@@ -73,13 +88,6 @@ typedef enum libxsmm_gemm_flags {
   /** Aligned load/store instructions. */
   LIBXSMM_GEMM_FLAG_ALIGN_C = 128
 } libxsmm_gemm_flags;
-
-/** Denotes the precision/data type of GEMM. */
-typedef enum libxsmm_gemm_precision {
-  LIBXSMM_GEMM_PRECISION_F64 = LIBXSMM_DATATYPE_F64,
-  LIBXSMM_GEMM_PRECISION_F32 = LIBXSMM_DATATYPE_F32,
-  LIBXSMM_GEMM_PRECISION_I16 = LIBXSMM_DATATYPE_I16
-} libxsmm_gemm_precision;
 
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {
@@ -195,11 +203,11 @@ typedef enum libxsmm_dnn_internal_format {
 
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_dnn_datatype {
-  LIBXSMM_DNN_DATATYPE_F64 = LIBXSMM_DATATYPE_F64,
-  LIBXSMM_DNN_DATATYPE_F32 = LIBXSMM_DATATYPE_F32,
-  LIBXSMM_DNN_DATATYPE_I32 = LIBXSMM_DATATYPE_I32,
-  LIBXSMM_DNN_DATATYPE_I16 = LIBXSMM_DATATYPE_I16,
-  LIBXSMM_DNN_DATATYPE_I8 = LIBXSMM_DATATYPE_I8
+  LIBXSMM_DNN_DATATYPE_F64  = LIBXSMM_DATATYPE_F64,
+  LIBXSMM_DNN_DATATYPE_F32  = LIBXSMM_DATATYPE_F32,
+  LIBXSMM_DNN_DATATYPE_I32  = LIBXSMM_DATATYPE_I32,
+  LIBXSMM_DNN_DATATYPE_I16  = LIBXSMM_DATATYPE_I16,
+  LIBXSMM_DNN_DATATYPE_I8   = LIBXSMM_DATATYPE_I8
 } libxsmm_dnn_datatype;
 
 typedef enum libxsmm_dnn_conv_option {

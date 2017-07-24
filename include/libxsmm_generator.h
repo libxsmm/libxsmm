@@ -36,7 +36,10 @@
 
 /** Check if M, N, K, or LDx fits into the descriptor. */
 #if (0 != LIBXSMM_ILP64)
-# define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) (((unsigned int)(-1)) >= (M) && ((unsigned int)(-1)) >= (N) && ((unsigned int)(-1)) >= (K))
+# define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) ( \
+    ((unsigned int)(-1)) >= ((unsigned int)(M)) && \
+    ((unsigned int)(-1)) >= ((unsigned int)(N)) && \
+    ((unsigned int)(-1)) >= ((unsigned int)(K)))
 #else /* always fits */
 # define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) 1
 #endif

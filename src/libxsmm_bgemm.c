@@ -87,44 +87,14 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
 
   if (0 < m && 0 < n && 0 < k && 0 < mm && 0 < nn && 0 < kk) {
     memset(&handle, 0, sizeof(handle));
-    handle.flags = (0 == gemm_flags ? LIBXSMM_FLAGS : *gemm_flags);
 
-    switch (precision) {
-      case LIBXSMM_GEMM_PRECISION_F64: {
-        handle.alpha.d = (0 != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
-        handle.beta.d = (0 != beta ? *((const double*)beta) : LIBXSMM_BETA);
-        assert(LIBXSMM_FEQ(1, handle.alpha.d) && LIBXSMM_FEQ(1, handle.beta.d)/*TODO*/);
-        LIBXSMM_GEMM_DESCRIPTOR(descriptor, precision, handle.flags, mm, nn, kk, mm/*lda*/, kk/*ldb*/, mm/*ldc*/,
-          handle.alpha.d, handle.beta.d, LIBXSMM_PREFETCH_NONE);
-        handle.typesize = 8;
-      } break;
-      case LIBXSMM_GEMM_PRECISION_F32: {
-        handle.alpha.s = (0 != alpha ? *((const float*)alpha) : LIBXSMM_ALPHA);
-        handle.beta.s = (0 != beta ? *((const float*)beta) : LIBXSMM_BETA);
-        assert(LIBXSMM_FEQ(1, handle.alpha.s) && LIBXSMM_FEQ(1, handle.beta.s)/*TODO*/);
-        LIBXSMM_GEMM_DESCRIPTOR(descriptor, precision, handle.flags, mm, nn, kk, mm/*lda*/, kk/*ldb*/, mm/*ldc*/,
-          handle.alpha.s, handle.beta.s, LIBXSMM_PREFETCH_NONE);
-        handle.typesize = 4;
-      } break;
-      case LIBXSMM_GEMM_PRECISION_I16: {
-        /*
-         * Take alpha and beta as short data although wgemm takes full integers.
-         * However, alpha and beta are only JIT-supported for certain value,
-         * and the call-side may not distinct different input and output types
-         * (integer/short), hence it is safer to only read short data.
-         */
-        handle.alpha.w = (0 != alpha ? *((const short*)alpha) : LIBXSMM_ALPHA);
-        handle.beta.w = (0 != beta ? *((const short*)beta) : LIBXSMM_BETA);
-        assert(LIBXSMM_FEQ(1, handle.alpha.w) && LIBXSMM_FEQ(1, handle.beta.w)/*TODO*/);
-        LIBXSMM_GEMM_DESCRIPTOR(descriptor, precision, handle.flags, mm, nn, kk, mm/*lda*/, kk/*ldb*/, mm/*ldc*/,
-          handle.alpha.w, handle.beta.w, LIBXSMM_PREFETCH_NONE);
-        handle.typesize = 2;
-      } break;
-      default: ;
-    }
-
-    if (0 < handle.typesize) {
+    if (EXIT_SUCCESS == libxsmm_gemm_descriptor_init(&descriptor,
+      precision, mm, nn, kk, &mm/*lda*/, &kk/*ldb*/, &mm/*ldc*/,
+      alpha, beta, gemm_flags, 0/*prefetch*/))
+    {
+      handle.typesize = LIBXSMM_TYPESIZE(precision);
       handle.mb = m / mm; handle.nb = n / nn; handle.kb = k / kk;
+      assert(0 < handle.typesize);
 
       if (0 == (m % mm) && 0 == (n % nn) && 0 == (k % kk) &&
           0 == (m % *b_m1) && 0 == (n % *b_n1) && 0 == (k % *b_k1) &&
