@@ -207,36 +207,12 @@ LIBXSMM_API int libxsmm_matcopy_omp(void* out, const void* in, unsigned int type
 LIBXSMM_API int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
-/** Matrix transposition (out-of-place form, single-precision). */
-LIBXSMM_API int libxsmm_sotrans(float* out, const float* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
-
-/** Matrix transposition (out-of-place form, double-precision). */
-LIBXSMM_API int libxsmm_dotrans(double* out, const double* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
-
 /** Matrix transposition; MT via libxsmmext (out-of-place form). */
 LIBXSMM_API int libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
-/** Matrix transposition; MT via libxsmmext (out-of-place form, single-precision). */
-LIBXSMM_API int libxsmm_sotrans_omp(float* out, const float* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
-
-/** Matrix transposition; MT via libxsmmext (out-of-place form, double-precision). */
-LIBXSMM_API int libxsmm_dotrans_omp(double* out, const double* in,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
-
 /** Matrix transposition (in-place form). */
 LIBXSMM_API int libxsmm_itrans(void* inout, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
-
-/** Matrix transposition (in-place form, single-precision). */
-LIBXSMM_API int libxsmm_sitrans(float* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
-
-/** Matrix transposition (in-place form, double-precision). */
-LIBXSMM_API int libxsmm_ditrans(double* inout,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Dispatched general dense matrix multiplication (single-precision); can be called from F77 code. */

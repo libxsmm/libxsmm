@@ -781,32 +781,6 @@
      &      m, C_LOC(n), C_LOC(ldi), C_LOC(ldo))
         END SUBROUTINE
 
-        ! Transpose a matrix (out-of-place form, single-precision).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sotrans
-        SUBROUTINE libxsmm_sotrans(output, input, m, n)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
-          REAL(C_FLOAT), INTENT(OUT), TARGET :: output(:,:)
-          REAL(C_FLOAT), INTENT(IN), TARGET :: input(:,:)
-          CALL libxsmm_otrans(                                          &
-     &      srealptr(input), srealptr(output), 4, m, n,                 &
-     &      UBOUND(input, 1, LIBXSMM_BLASINT_KIND),                     &
-     &      UBOUND(output,1, LIBXSMM_BLASINT_KIND))
-        END SUBROUTINE
-
-        ! Transpose a matrix (out-of-place form, double-precision).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dotrans
-        SUBROUTINE libxsmm_dotrans(output, input, m, n)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
-          REAL(C_DOUBLE), INTENT(OUT), TARGET :: output(:,:)
-          REAL(C_DOUBLE), INTENT(IN), TARGET :: input(:,:)
-          CALL libxsmm_otrans(                                          &
-     &      drealptr(input), drealptr(output), 8, m, n,                 &
-     &      UBOUND(input, 1, LIBXSMM_BLASINT_KIND),                     &
-     &      UBOUND(output,1, LIBXSMM_BLASINT_KIND))
-        END SUBROUTINE
-
         ! Transpose a matrix (in-place form).
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans
         SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)
@@ -826,26 +800,6 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_itrans(matrix, typesize, m, C_LOC(n), C_LOC(ld))
-        END SUBROUTINE
-
-        ! Transpose a matrix (in-place form, single-precision).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sitrans
-        SUBROUTINE libxsmm_sitrans(matrix, m, n)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
-          REAL(C_FLOAT), INTENT(INOUT), TARGET :: matrix(:,:)
-          CALL libxsmm_itrans(srealptr(matrix),                         &
-     &      4, m, n, UBOUND(matrix, 1, LIBXSMM_BLASINT_KIND))
-        END SUBROUTINE
-
-        ! Transpose a matrix (in-place form, double-precision).
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ditrans
-        SUBROUTINE libxsmm_ditrans(matrix, m, n)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
-          REAL(C_DOUBLE), INTENT(INOUT), TARGET :: matrix(:,:)
-          CALL libxsmm_itrans(drealptr(matrix),                         &
-     &      8, m, n, UBOUND(matrix, 1, LIBXSMM_BLASINT_KIND))
         END SUBROUTINE
       END MODULE
 

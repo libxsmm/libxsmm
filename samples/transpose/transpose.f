@@ -95,17 +95,14 @@
         END DO
 
         IF (('o'.EQ.trans).OR.('O'.EQ.trans)) THEN
-          start = libxsmm_timer_tick();
+          start = libxsmm_timer_tick()
           CALL libxsmm_otrans(C_LOC(b), C_LOC(a), T, m, n, lda, ldb)
-          !CALL libxsmm_otrans(C_LOC(a), C_LOC(b), T, n, m, ldb, lda)
-          CALL libxsmm_dotrans(a, b, n, m)
-          duration = libxsmm_timer_duration(                            &
-     &                  start, libxsmm_timer_tick());
+          CALL libxsmm_otrans(C_LOC(a), C_LOC(b), T, n, m, ldb, lda)
+          duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
         ELSE ! in-place
-          start = libxsmm_timer_tick();
+          start = libxsmm_timer_tick()
           ! TODO: in-place
-          duration = libxsmm_timer_duration(                            &
-     &                  start, libxsmm_timer_tick());
+          duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
         END IF
 
         diff = 0
