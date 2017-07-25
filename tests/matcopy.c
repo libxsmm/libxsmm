@@ -125,7 +125,7 @@ int main(void)
   init(0, c, maxm, maxn, maxo, 1.0);
 #endif
   for (test = start; test < ntests; ++test) {
-    unsigned int testerrors = (EXIT_SUCCESS == libxsmm_matcopy(
+    unsigned int testerrors = (EXIT_SUCCESS == MATCOPY(
       b, a, sizeof(ELEM_TYPE), m[test], n[test],
       ldi[test], ldo[test], prefetch + test) ? 0u : 1u);
     libxsmm_blasint i, j;
