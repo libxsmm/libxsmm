@@ -51,7 +51,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
   assert(typesize <= 255);
   if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && m <= ldo) {
     const unsigned int size = (unsigned int)(1U * m * n);
-    if (size > (LIBXSMM_TRANS_THRESHOLD)) { /* consider problem-size (threshold) */
+    if ((LIBXSMM_TRANS_THRESHOLD) < size) { /* consider problem-size (threshold) */
       const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
       const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
       libxsmm_matcopy_descriptor descriptor = { 0 };
@@ -147,31 +147,29 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
     LIBXSMM_INIT
     if (out != in) {
       const unsigned int size = (unsigned int)(1U * m * n);
-      if (size > (LIBXSMM_TRANS_THRESHOLD)) { /* consider problem-size (threshold) */
-        const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
-        const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
-        libxsmm_transpose_descriptor descriptor = { 0 };
-        libxsmm_xtransfunction xtrans = 0;
-        descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
-        descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
-        if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose */
-          descriptor.typesize = (unsigned char)typesize; descriptor.ldo = (unsigned int)ldo;
-          descriptor.m = LIBXSMM_MIN(descriptor.m, LIBXSMM_MAX_M);
-          descriptor.n = LIBXSMM_MIN(descriptor.n, LIBXSMM_MAX_N);
-          xtrans = libxsmm_xtransdispatch(&descriptor);
-        }
+      if ((LIBXSMM_TRANS_THRESHOLD) < size) { /* consider problem-size (threshold) */
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         if (0 == omp_get_active_level())
 #endif
         { /* enable internal parallelization */
-          LIBXSMM_XCOPY(
-            LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
-            LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans,
-            out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
+          LIBXSMM_EXT_PARALLEL
+          libxsmm_otrans_thread(out, in, typesize, m, n, ldi, ldo, omp_get_thread_num(), omp_get_num_threads());
           /* implicit synchronization (barrier) */
         }
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         else { /* assume external parallelization */
+          const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
+          const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
+          libxsmm_transpose_descriptor descriptor = { 0 };
+          libxsmm_xtransfunction xtrans = 0;
+          descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
+          descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
+          if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose */
+            descriptor.typesize = (unsigned char)typesize; descriptor.ldo = (unsigned int)ldo;
+            descriptor.m = LIBXSMM_MIN(descriptor.m, LIBXSMM_MAX_M);
+            descriptor.n = LIBXSMM_MIN(descriptor.n, LIBXSMM_MAX_N);
+            xtrans = libxsmm_xtransdispatch(&descriptor);
+          }
           LIBXSMM_XCOPY(
             LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
             if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
