@@ -269,14 +269,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_thread(void* out, const void* in, unsi
 LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
-  const int ntasks = 1; /* TODO: tune outer block-size ("sequential threading") */
-  int result = EXIT_SUCCESS;
-  int task;
-  for (task = 0; task < ntasks; ++task) {
-    result = libxsmm_otrans_thread(out, in, typesize, m, n, ldi, ldo, task, ntasks);
-    if (EXIT_SUCCESS != result) break;
-  }
-  return result;
+  return libxsmm_otrans_thread(out, in, typesize, m, n, ldi, ldo, 0, 1);
 }
 
 
