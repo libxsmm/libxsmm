@@ -105,7 +105,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
 #endif
     }
     else { /* small problem-size (no MT) */
-      libxsmm_matcopy(out, in, typesize, m, n, ldi, ldo, prefetch);
+      result = libxsmm_matcopy(out, in, typesize, m, n, ldi, ldo, prefetch);
     }
   }
   else {
@@ -153,7 +153,14 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
 #endif
         { /* enable internal parallelization */
           LIBXSMM_EXT_PARALLEL
-          libxsmm_otrans_thread(out, in, typesize, m, n, ldi, ldo, omp_get_thread_num(), omp_get_num_threads());
+          {
+#if defined(_OPENMP)
+            const int tid = omp_get_thread_num(), nthreads = omp_get_num_threads();
+#else
+            const int tid = 0, nthreads = 1;
+#endif
+            libxsmm_otrans_thread(out, in, typesize, m, n, ldi, ldo, tid, nthreads);
+          }
           /* implicit synchronization (barrier) */
         }
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
@@ -179,7 +186,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
 #endif
       }
       else { /* small problem-size (no MT) */
-        libxsmm_otrans(out, in, typesize, m, n, ldi, ldo);
+        result = libxsmm_otrans(out, in, typesize, m, n, ldi, ldo);
       }
     }
     else if (ldi == ldo) {
