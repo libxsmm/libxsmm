@@ -75,9 +75,9 @@ test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
 	@$(OUTDIR)/test.sh $(TEST)
 
 TEST_NOBLASLIB = $(call abslib, $(LIBNAME)noblas.$(LIBEXT))
-ifneq (Darwin,$(UNAME))
+#ifneq (Darwin,$(UNAME))
   TEST_EXTLIB = $(EXTLIB)
-endif
+#endif
 
 define DEFINE_LINK_LD_RULE
 ifneq (,$(wildcard $(LIBNAME).$(LIBEXT)))
