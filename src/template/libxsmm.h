@@ -207,7 +207,12 @@ LIBXSMM_API int libxsmm_matcopy_omp(void* out, const void* in, unsigned int type
 LIBXSMM_API int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
-/** Matrix transposition; MT via libxsmmext (out-of-place form). */
+/** Matrix transposition (out-of-place form, per-thread form). */
+LIBXSMM_API int libxsmm_otrans_thread(void* out, const void* in, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
+  int tid, int nthreads);
+
+  /** Matrix transposition; MT via libxsmmext (out-of-place form). */
 LIBXSMM_API int libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 

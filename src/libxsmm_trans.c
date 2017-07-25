@@ -128,8 +128,8 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
       const libxsmm_blasint tn = LIBXSMM_MIN((libxsmm_blasint)libxsmm_trans_tile[tindex][1/*N*/][index], n);
       LIBXSMM_XCOPY(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
-        LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, xmatcopy,
-        out, in, typesize, uldi, uldo, tm, tn, 0, m, 0, n);
+        LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, xmatcopy, out, in,
+        typesize, uldi, uldo, tm, tn, 0, m, 0, n);
     }
   }
   else {
@@ -160,14 +160,18 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
+LIBXSMM_API_DEFINITION int libxsmm_otrans_thread(void* out, const void* in, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
+  int tid, int nthreads)
 {
   int result = EXIT_SUCCESS;
   static int error_once = 0;
 
   assert(typesize <= 255);
-  if (0 != out && 0 != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
+  if (0 != out && 0 != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo &&
+    /* use (signed) integer types, but check sanity of input */
+    0 <= tid && tid < nthreads)
+  {
     LIBXSMM_INIT
     if (out != in) {
       libxsmm_xtransfunction xtrans = 0;
@@ -189,6 +193,8 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
       }
       else { /* tiled transpose */
         const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
+        libxsmm_blasint m0 = 0, n0 = 0, m1 = m, n1 = n;
+        int mtasks;
         descriptor.m = LIBXSMM_MIN((unsigned int)m, libxsmm_trans_tile[tindex][0/*M*/][index]);
         descriptor.n = LIBXSMM_MIN((unsigned int)n, libxsmm_trans_tile[tindex][1/*N*/][index]);
         if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose permitted? */
@@ -197,10 +203,24 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
           descriptor.n = LIBXSMM_MIN(descriptor.n, LIBXSMM_MAX_N);
           xtrans = libxsmm_xtransdispatch(&descriptor);
         }
+        mtasks = ((1 < nthreads) ? ((int)((m + descriptor.m - 1) / descriptor.m)) : 1);
+        if (1 < mtasks && nthreads <= mtasks) { /* only parallelized over M */
+          const int mc = (mtasks + nthreads - 1) / nthreads * descriptor.m;
+          m0 = tid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
+        }
+        else if (1 < nthreads) {
+          const int ntasks = (int)((n + descriptor.n - 1) / descriptor.n);
+          const int mnc = (ntasks * mtasks + nthreads - 1) / nthreads;
+          const int mc = (mnc % mtasks) * descriptor.m;
+          const int nc = (mnc % ntasks) * descriptor.n;
+          const int mtid = tid % mtasks, ntid = tid / mtasks;
+          m0 = mtid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
+          n0 = ntid * nc; n1 = LIBXSMM_MIN(n0 + nc, n);
+        }
         LIBXSMM_XCOPY(
           LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
-          LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans,
-          out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
+          LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans, out, in,
+          typesize, uldi, uldo, descriptor.m, descriptor.n, m0, m1, n0, n1);
       }
     }
     else if (ldi == ldo) {
@@ -219,7 +239,10 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      if (0 == out || 0 == in) {
+      if (0 > tid || tid >= nthreads) {
+        fprintf(stderr, "LIBXSMM ERROR: the transpose thread-id or number of threads is incorrect!\n");
+      }
+      else if (0 == out || 0 == in) {
         fprintf(stderr, "LIBXSMM ERROR: the transpose input and/or output is NULL!\n");
       }
       else if (out == in) {
@@ -239,6 +262,20 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned in
     result = EXIT_FAILURE;
   }
 
+  return result;
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
+{
+  const int ntasks = 1; /* TODO: tune outer block-size ("sequential threading") */
+  int result = EXIT_SUCCESS;
+  int task;
+  for (task = 0; task < ntasks; ++task) {
+    result = libxsmm_otrans_thread(out, in, typesize, m, n, ldi, ldo, task, ntasks);
+    if (EXIT_SUCCESS != result) break;
+  }
   return result;
 }
 
