@@ -198,6 +198,11 @@ LIBXSMM_API int libxsmm_matcopy(void* out, const void* in, unsigned int typesize
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   const int* prefetch);
 
+/** Matrix copy function ("in" can be NULL to zero the destination, per-thread form). */
+LIBXSMM_API int libxsmm_matcopy_thread(void* out, const void* in, unsigned int typesize,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
+  const int* prefetch, int tid, int nthreads);
+
 /** Matrix copy function ("in" can be NULL to zero the destination); MT via libxsmmext. */
 LIBXSMM_API int libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
