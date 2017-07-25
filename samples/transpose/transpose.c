@@ -43,6 +43,9 @@
 #elif defined(__OPENBLAS)
 # include <openblas/f77blas.h>
 #endif
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -52,6 +55,9 @@
 #endif
 
 #if (defined(__BLAS) && 1 < (__BLAS))
+# if !defined(OTRANS_THREAD) && defined(_OPENMP) && 0
+#   define OTRANS_THREAD libxsmm_otrans_thread
+# endif
 # define OTRANS libxsmm_otrans_omp
 #else
 # define OTRANS libxsmm_otrans
@@ -185,7 +191,12 @@ int main(int argc, char* argv[])
       if (('o' == t || 'O' == t)) {
         if (0 == tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
+#if defined(OTRANS_THREAD)
+#         pragma omp parallel
+          OTRANS_THREAD(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo, omp_get_thread_num(), omp_get_num_threads());
+#else
           result = OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+#endif
           duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
