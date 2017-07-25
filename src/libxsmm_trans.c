@@ -74,6 +74,8 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
 #if !defined(LIBXSMM_BUILD) && defined(__clang__) && !defined(__INTEL_COMPILER) /* TODO: investigate Clang specific issue */
   /* determine if JIT-kernels are used (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
   libxsmm_trans_jit = ((0 == env_jit || 0 == *env_jit) ? 3 : atoi(env_jit));
+#else
+  LIBXSMM_UNUSED(env_jit);
 #endif
   for (i = 0; i < 8; ++i) {
     /* environment-defined tile sizes apply for DP and SP */
