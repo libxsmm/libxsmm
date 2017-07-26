@@ -51,3 +51,4 @@ rm -rf opentuner.db
 ```
 
 Above, the series of matrix multiplications from 192-8K is separately tuned in eight ranges. The tuning script uses the environment variables `LIBXSMM_GEMM_M`, `LIBXSMM_GEMM_N`, and `LIBXSMM_GEMM_K` which are internal to LIBXSMM. These variables are used to request a specific tiling-scheme within LIBXSMM's `libxsmm_?gemm_omp` routines.
+
