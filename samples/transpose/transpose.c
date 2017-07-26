@@ -51,7 +51,7 @@
 #endif
 
 #if !defined(ELEM_TYPE)
-# define ELEM_TYPE float
+# define ELEM_TYPE double
 #endif
 
 #if (defined(__BLAS) && 1 < (__BLAS))
