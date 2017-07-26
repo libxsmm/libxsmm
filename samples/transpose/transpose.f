@@ -37,9 +37,9 @@
 
         REAL(T), ALLOCATABLE, TARGET :: a(:,:), b(:,:)
         !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, b
-        INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, lda, ldb, i, j, size
+        INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, lda, ldb, i, j
         DOUBLE PRECISION :: duration
-        INTEGER(8) :: start
+        INTEGER(8) :: size, start
         REAL(T) :: diff
 
         CHARACTER(32) :: argv
