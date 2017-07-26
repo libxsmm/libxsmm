@@ -71,7 +71,7 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
   else {
     config = 0;
   }
-#if !defined(LIBXSMM_BUILD) && defined(__clang__) && !defined(__INTEL_COMPILER) /* TODO: investigate Clang specific issue */
+#if defined(__clang__) && !defined(__INTEL_COMPILER) /* TODO: investigate Clang specific issue */
   /* determine if JIT-kernels are used (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
   libxsmm_trans_jit = ((0 == env_jit || 0 == *env_jit) ? 3 : atoi(env_jit));
 #else
@@ -245,7 +245,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_thread(void* out, const void* in, unsi
         descriptor.m = LIBXSMM_MIN(libxsmm_trans_tile[tindex][0/*M*/][index], (unsigned int)m);
         descriptor.n = LIBXSMM_MIN(libxsmm_trans_tile[tindex][1/*N*/][index], (unsigned int)n);
         if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose permitted? */
-          descriptor.typesize = (unsigned char)typesize; descriptor.ldo = (unsigned int)ldo;
+          descriptor.typesize = (unsigned char)typesize; descriptor.ldo = uldo;
           /* limit the amount of (unrolled) code by limiting the shape of the kernel */
           if ((LIBXSMM_MAX_M) < descriptor.m) descriptor.m = LIBXSMM_MAX_M;
           if ((LIBXSMM_MAX_N) < descriptor.n) descriptor.n = LIBXSMM_MAX_N;
