@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
       Eigen::NonBlockingThreadPool threadpool(nthreads);
 # endif
       Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
-      Eigen::Tensor<REAL_TYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc/*(m, n)*/, td(m, n);
+      Eigen::Tensor<REAL_TYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n), td(m, n);
       const char transa = 'N', transb = 'N';
       const REAL_TYPE alpha = 1, beta = 0;
       libxsmm_matdiff_info diff;
