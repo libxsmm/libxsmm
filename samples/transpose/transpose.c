@@ -250,7 +250,7 @@ int main(int argc, char* argv[])
             const ELEM_TYPE u = b[i*kldo+j];
             const ELEM_TYPE v = a[j*kldi+i];
             if (0 == LIBXSMM_FEQ(u, v)) {
-              i = km; /* leave outer loop as well */
+              i += km; /* leave outer loop as well */
               result = EXIT_FAILURE;
               break;
             }
