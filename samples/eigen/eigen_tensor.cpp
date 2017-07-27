@@ -85,7 +85,10 @@ int main(int argc, char* argv[])
 {
   int result = EXIT_SUCCESS;
   try {
-#if defined(__EIGEN_UNSUPPORTED)
+#if !defined(__EIGEN_UNSUPPORTED)
+    LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
+    throw std::runtime_error("Eigen or Eigen/unsupported not found!");
+#else
     const libxsmm_blasint m = (1 < argc ? std::atoi(argv[1]) : 512);
     const libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
     const libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
@@ -94,15 +97,13 @@ int main(int argc, char* argv[])
     const double check = (0 == env_check ? 1.0 : LIBXSMM_ABS(atof(env_check)));
     const double gflops = 2.0 * m * n * k * 1E-9;
     const int nthreads = LIBXSMM_MAX(0 == env_nthreads ? 0 : atoi(env_nthreads), 1);
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
+# if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload target(LIBXSMM_OFFLOAD_TARGET)
-#endif
+# endif
     {
-#if defined(MKL_ENABLE_AVX512)
+# if defined(MKL_ENABLE_AVX512)
       mkl_enable_instructions(MKL_ENABLE_AVX512);
-#endif
-#if defined(__EIGEN_UNSUPPORTED)
+# endif
 # if defined(_OPENMP)
       Eigen::NonBlockingThreadPool threadpool(1 == nthreads ? omp_get_max_threads() : nthreads);
 # else
@@ -155,9 +156,9 @@ int main(int argc, char* argv[])
           result = EXIT_FAILURE;
         }
       }
-#endif /*defined(__EIGEN_UNSUPPORTED)*/
-      fprintf(stdout, "Finished\n");
     }
+    fprintf(stdout, "Finished\n");
+#endif /*defined(__EIGEN_UNSUPPORTED)*/
   }
   catch(const std::exception& e) {
     fprintf(stderr, "Error: %s\n", e.what());
