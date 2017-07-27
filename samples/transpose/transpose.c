@@ -243,29 +243,28 @@ int main(int argc, char* argv[])
         }
 #endif
       }
-
-      if ((0 == env_check || 0 != atoi(env_check))) { /* check */
+#if defined(USE_SELF_VALIDATION)
+      if (0 == env_check || 0 != atoi(env_check)) { /* check */
         for (i = 0; i < km; ++i) {
           for (j = 0; j < kn; ++j) {
             const ELEM_TYPE u = b[i*kldo+j];
-#if defined(USE_SELF_VALIDATION)
             const ELEM_TYPE v = a[j*kldi+i];
-#else /* check against an alternative/external implementation */
-            const ELEM_TYPE v = c[i*kldo+j];
-#endif
             if (0 == LIBXSMM_FEQ(u, v)) {
-              i += km; /* leave outer loop as well */
+              i = km; /* leave outer loop as well */
               result = EXIT_FAILURE;
               break;
             }
           }
         }
       }
+#endif
     }
 
     if (EXIT_SUCCESS == result) {
       if (0 < duration) {
-        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size / (duration * (1 << 30)));
+        /* out-of-place transpose bandwidth assumes RFO */
+        fprintf(stdout, "\tbandwidth: %.1f GB/s\n",
+          ((('o' == t || 'O' == t)) ? 3U : 2U) * size / (duration * (1 << 30)));
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
 #if !defined(USE_SELF_VALIDATION)
