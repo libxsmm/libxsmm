@@ -54,7 +54,7 @@
 # define ELEM_TYPE double
 #endif
 
-#if (defined(__BLAS) && 1 < (__BLAS))
+#if (defined(_OPENMP) || (defined(__BLAS) && 1 < (__BLAS)))
 # if !defined(OTRANS_THREAD) && defined(_OPENMP) && 0
 #   define OTRANS_THREAD libxsmm_otrans_thread
 # endif
@@ -146,9 +146,9 @@ int main(int argc, char* argv[])
     double duration2 = 0;
 #endif
     double duration = 0;
-    unsigned int size = 0;
     unsigned long long start;
     libxsmm_blasint i = 0, j;
+    size_t size = 0;
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
@@ -263,10 +263,11 @@ int main(int argc, char* argv[])
     if (EXIT_SUCCESS == result) {
       if (0 < duration) {
         /* out-of-place transpose bandwidth assumes RFO */
-        fprintf(stdout, "\tbandwidth: %.1f GB/s\n",
-          ((('o' == t || 'O' == t)) ? 3U : 2U) * size / (duration * (1 << 30)));
+        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size
+          * ((('o' == t || 'O' == t)) ? 3 : 2) / (duration * (1 << 30)));
       }
-      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      fprintf(stdout, "\tduration: %.0f ms\n",
+        1000.0 * duration / (0 == r ? (s + 1) : s));
 #if !defined(USE_SELF_VALIDATION)
       if (0 < duration2 && 0 != c) {
         fprintf(stdout, "\treference: %.1fx\n", duration / duration2);

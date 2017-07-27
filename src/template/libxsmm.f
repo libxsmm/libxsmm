@@ -202,6 +202,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_abc
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_prf
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
         INTERFACE
@@ -322,6 +323,14 @@
             IMPORT :: C_INTPTR_T, C_PTR
             INTEGER(C_INTPTR_T), INTENT(IN) :: fn
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
+          END SUBROUTINE
+
+          PURE SUBROUTINE libxsmm_otrans_omp(output, input, typesize,   &
+     &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_omp_")
+            IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
+            TYPE(C_PTR), INTENT(IN), VALUE :: output, input
+            INTEGER(C_INT), INTENT(IN) :: typesize
           END SUBROUTINE
 
           SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,         &

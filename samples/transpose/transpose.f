@@ -82,15 +82,16 @@
           CALL GET_COMMAND_ARGUMENT(6, argv)
           READ(argv, "(I32)") nrepeat
         ELSE
-          nrepeat = 13
+          nrepeat = 3
         END IF
 
-        size = m * n * T ! size in Byte
+        size = INT(m * n, 8) * T ! size in Byte
         WRITE(*, "(2(A,I0),2(A,I0),A,I0,A,2A,2A,1A)")                   &
      &    "m=", m, " n=", n, " ldi=", lda, " ldo=", ldb,                &
      &    " size=", (size / ISHFT(1, 20)),                              &
      &    "MB (", MERGE("DP", "SP", 8.EQ.T), ", ",                      &
-     &    TRIM(MERGE("out-of-place", "in-place    ", 'o'.EQ.trans)), ")"
+     &    TRIM(MERGE("out-of-place", "in-place    ",                    &
+     &      ('o'.EQ.trans).OR.('O'.EQ.trans))), ")"
 
         ALLOCATE(b1(ldb*MAX(m,n)))
         bn(1:ldb,1:n) => b1
@@ -106,7 +107,8 @@
           END DO
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
-            CALL libxsmm_otrans(C_LOC(b1), C_LOC(a1), T, m, n, lda, ldb)
+            CALL libxsmm_otrans_omp(C_LOC(b1), C_LOC(a1),               &
+     &              T, m, n, lda, ldb)
           END DO
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
           DEALLOCATE(a1)
@@ -136,8 +138,8 @@
           IF ((0.LT.duration).AND.(0.LT.nrepeat)) THEN
             ! out-of-place transpose bandwidth assumes RFO
             WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ",         &
-     &        MERGE(3 ,2, ('o'.EQ.trans).OR.('O'.EQ.trans)) * nrepeat   &
-     &          * size / (duration * ISHFT(1_8, 30)), " GB/s"
+     &        MERGE(3_8, 2_8, ('o'.EQ.trans).OR.('O'.EQ.trans))         &
+     &          * size * nrepeat / (duration * ISHFT(1_8, 30)), " GB/s"
             WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ",         &
      &        1D3 * duration / nrepeat, " ms"
           END IF
