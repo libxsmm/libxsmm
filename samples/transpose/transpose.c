@@ -266,8 +266,8 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size
           * ((('o' == t || 'O' == t)) ? 3 : 2) / (duration * (1 << 30)));
       }
-      fprintf(stdout, "\tduration: %.0f ms\n",
-        1000.0 * duration / (0 == r ? (s + 1) : s));
+      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0
+          * (0 == lower ? (duration / (0 == r ? (s + 1) : s)) : duration));
 #if !defined(USE_SELF_VALIDATION)
       if (0 < duration2 && 0 != c) {
         fprintf(stdout, "\treference: %.1fx\n", duration / duration2);
