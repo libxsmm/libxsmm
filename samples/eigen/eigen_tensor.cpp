@@ -66,6 +66,7 @@
 # include <unsupported/Eigen/CXX11/ThreadPool>
 #endif
 #include <algorithm>
+#include <stdexcept>
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
