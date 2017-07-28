@@ -30,12 +30,13 @@
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_winograd_backward.h"
 #include "libxsmm_main.h"
+#include <libxsmm_intrinsics_x86.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <assert.h>
 #if !defined(NDEBUG)
-# include <assert.h>
 # include <stdio.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -48,12 +49,44 @@
 #endif
 
 
+/* function pointer for the CPUID-dispatched implementation */
+LIBXSMM_API_VARIABLE void (*internal_bwd_input_transform_custom_custom_alpha6)(
+  const float*, float*, float*, const libxsmm_dnn_layer*);
+
+
+LIBXSMM_API_INLINE void internal_bwd_input_transform_custom_custom_alpha6_default(
+  const float* inp, float* tinp, float* Iwp, const libxsmm_dnn_layer* handle)
+{
+#define ALPHA 6
+#define TDVLEN 16
+#include "template/libxsmm_dnn_convolution_winograd_backward_custom_custom_input_trans_alpha6.tpl.c"
+#undef TDVLEN
+#undef ALPHA
+}
+
+
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+LIBXSMM_ATTRIBUTE_UNUSED void internal_bwd_input_transform_custom_custom_alpha6_avx512(
+  const float* inp, float* tinp, float* Iwp, const libxsmm_dnn_layer* handle)
+{
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_BACKWARD_AVX512)
+# define ALPHA 6
+# define TDVLEN 16
+# include "template/libxsmm_dnn_convolution_winograd_backward_custom_custom_input_trans_alpha6_avx512.tpl.c"
+# undef TDVLEN
+# undef ALPHA
+  LIBXSMM_UNUSED(Iwp);
+#else /* next lower/available code path (fallback chain) */
+  internal_bwd_input_transform_custom_custom_alpha6_default(inp, tinp, Iwp, handle);
+#endif
+}
+
+LIBXSMM_API_INLINE /*LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)*/
 void internal_bwd_input_transform_custom_custom(
-  const float *inp, float *tinp, float *Iwp,
-  const libxsmm_dnn_layer* handle)
+  const float *inp, float *tinp, float *Iwp, const libxsmm_dnn_layer* handle)
 {
   if (handle->cwino_bwd.alpha == 6) {
+  /*
 #define ALPHA 6
 #define TDVLEN 16
 #if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_BACKWARD_AVX512)
@@ -63,6 +96,14 @@ void internal_bwd_input_transform_custom_custom(
 #endif
 #undef TDVLEN
 #undef ALPHA
+  */
+    /* if highest implemented code path is statically present, no need for an indirect call (function pointer) */
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_BACKWARD_AVX512)
+    internal_bwd_input_transform_custom_custom_alpha6_avx512(inp, tinp, Iwp, handle);
+#else /* pointer based function call */
+    assert(0 != internal_bwd_input_transform_custom_custom_alpha6);
+    internal_bwd_input_transform_custom_custom_alpha6(inp, tinp, Iwp, handle);
+#endif
   } else if (handle->cwino_bwd.alpha == 4) {
 #define ALPHA 4
 #define TDVLEN 16
@@ -107,18 +148,21 @@ LIBXSMM_API_INLINE void internal_bwd_input_transform_nhwc_custom(
 }
 
 
-LIBXSMM_API_INLINE void internal_bwd_weight_transform(
-                              float *wp,
-                              float *twp,
-                              const libxsmm_dnn_layer* handle )
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+void internal_bwd_weight_transform(float *wp, float *twp, const libxsmm_dnn_layer* handle )
 {
   if (handle->cwino_bwd.alpha == 6) {
-    /* FIXME (JSP): add AVX512 intrinsic code for backward weight transformation.
-                    not critical though because weight transformation doesn't take much time anyway
-                    with a reasonably big batch size */
 #define ALPHA 6
 #define TDVLEN 16
+/*
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_BACKWARD_AVX512)
+# include "template/libxsmm_dnn_convolution_winograd_backward_weight_trans_alpha6_avx512.tpl.c"
+#else
+*/
 # include "template/libxsmm_dnn_convolution_winograd_backward_weight_trans_alpha6.tpl.c"
+/*
+#endif
+*/
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_bwd.alpha == 4) {
@@ -219,14 +263,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_cu
   }
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
-#if 0
-      typedef float element_input_type;
-      typedef float element_output_type;
-      typedef float element_filter_type;
-      typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_winograd_st_bwd_custom_custom.tpl.c"
-#endif
-
       if (handle->flag_reuseInput == 1) {
         if (handle->scratchInput == 0) {
           status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
@@ -287,14 +323,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_nh
   }
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
-#if 0
-      typedef float element_input_type;
-      typedef float element_output_type;
-      typedef float element_filter_type;
-      typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_winograd_st_bwd_nhwc_custom.tpl.c"
-#endif
-
       if (handle->flag_reuseInput == 1) {
         if (handle->scratchInput == 0) {
           status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
@@ -330,3 +358,21 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_nh
 
   return status;
 }
+
+
+LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve_winograd_init_bwd(int target_arch)
+{
+  if (LIBXSMM_X86_AVX512 <= target_arch) {
+    internal_bwd_input_transform_custom_custom_alpha6 = internal_bwd_input_transform_custom_custom_alpha6_avx512;
+  }
+  else {
+    internal_bwd_input_transform_custom_custom_alpha6 = internal_bwd_input_transform_custom_custom_alpha6_default;
+  }
+  assert(0 != internal_bwd_input_transform_custom_custom_alpha6);
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve_winograd_finalize_bwd(void)
+{
+}
+

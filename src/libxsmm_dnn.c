@@ -58,12 +58,14 @@
 LIBXSMM_API_DEFINITION void libxsmm_dnn_init(int target_arch)
 {
   libxsmm_dnn_convolve_winograd_init(target_arch);
+  libxsmm_dnn_convolve_winograd_init_bwd(target_arch);
 }
 
 
 LIBXSMM_API_DEFINITION void libxsmm_dnn_finalize(void)
 {
   libxsmm_dnn_convolve_winograd_finalize();
+  libxsmm_dnn_convolve_winograd_finalize_bwd();
 }
 
 

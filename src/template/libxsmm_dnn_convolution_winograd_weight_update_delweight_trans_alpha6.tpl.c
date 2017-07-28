@@ -93,8 +93,13 @@ for (j = 0; j < 3; j++) {
     for (k = 0; k < TDVLEN; k++) {
       LIBXSMM_PRAGMA_SIMD
       for (l = 0; l < TDVLEN; l++) {
-        LIBXSMM_VLA_ACCESS(6, output, 0, 0, j, i, k, l, handle->blocksifm, 3, 3, TDVLEN, TDVLEN) +=
-          F[j][i][k][l];
+        if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+          LIBXSMM_VLA_ACCESS(6, output, 0, 0, j, i, k, l, handle->blocksifm, 3, 3, TDVLEN, TDVLEN) =
+            F[j][i][k][l];
+        } else {
+          LIBXSMM_VLA_ACCESS(6, output, 0, 0, j, i, k, l, handle->blocksifm, 3, 3, TDVLEN, TDVLEN) +=
+            F[j][i][k][l];
+        }
       }
     }
   }

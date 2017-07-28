@@ -47,7 +47,6 @@ libxsmm_convfunction jitted_conv_bp;
 LIBXSMM_VLA_DECL(5, float, input,  (float*)handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN);
 LIBXSMM_VLA_DECL(5, const float, output, (const float*)handle->grad_output->data, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN);
 LIBXSMM_VLA_DECL(6, float, weight, (float*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, TDVLEN, TDVLEN);
-/*LIBXSMM_VLA_DECL(2, float, bias, handle->bias->data, TDVLEN);*/
 
 LIBXSMM_VLA_DECL(6, float, U,   (float*)handle->scratch1, ALPHA, handle->blocksifm, handle->blocksofm, TDVLEN, TDVLEN);
 LIBXSMM_VLA_DECL(8, float, V,   (float*)handle->scratch3, handle->blocksifm, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN);
@@ -55,7 +54,7 @@ LIBXSMM_VLA_DECL(8, float, M,   (float*)handle->scratch4, ALPHA, ALPHA, handle->
 LIBXSMM_VLA_DECL(5, float, Iwp, (float*)handle->scratchIw, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, TDVLEN);
 LIBXSMM_VLA_DECL(5, float, Owp, (float*)handle->scratchOw, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, TDVLEN);
 
-LIBXSMM_ASSUME_ALIGNED(handle->grad_input->data,  64);
+LIBXSMM_ASSUME_ALIGNED(handle->grad_input->data, 64);
 LIBXSMM_ASSUME_ALIGNED(handle->grad_output->data, 64);
 LIBXSMM_ASSUME_ALIGNED(handle->reg_filter->data, 64);
 LIBXSMM_ASSUME_ALIGNED(handle->scratch1, 64);
@@ -90,7 +89,7 @@ if (0 == tid) {
 #endif
 
 /* number of tasks that could be run in parallel */
-work = handle->desc.N*(handle->blocksofm);
+work = handle->desc.N*handle->blocksofm;
 /* compute chunck size */
 chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
@@ -175,7 +174,7 @@ for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_bwd.bimg); img1++) {
       }
 
       for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1+=handle->cwino_bwd.ur_ifm) {
-#if 1
+#if 1 
         jitted_conv_bp(
           &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ifm1, ofm1, 0, 0, ALPHA, handle->blocksifm, handle->blocksofm, TDVLEN, TDVLEN),
           &LIBXSMM_VLA_ACCESS(8, M, img1, oj, oi, 0, 0, 0, ofm1, 0, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, handle->blocksofm, TDVLEN),
@@ -183,15 +182,15 @@ for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_bwd.bimg); img1++) {
           0, 0, 0);
 #else
         int ti, tj;
-        int img1;
+        int img2;
         int ifm2, ofm2;
-        for (img1 = 0; img1 < handle->cwino_bwd.bimg; img1++) {
+        for (img2 = 0; img2 < handle->cwino_bwd.bimg; img2++) {
           for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
             for (ti = 0; ti < handle->cwino_bwd.itiles; ti++) {
               for (ofm2 = 0; ofm2 < TDVLEN; ofm2++) {
                 for (ifm2 = 0; ifm2 < TDVLEN; ifm2++) {
-                  LIBXSMM_VLA_ACCESS  (8, V, img1, ifm1, oj, oi, img1, tj, ti, ifm2, handle->blocksifm, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN) +=
-                    LIBXSMM_VLA_ACCESS(8, M, img1, oj, oi, img1, tj, ti, ofm1, ofm2, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, handle->blocksofm, TDVLEN)
+                  LIBXSMM_VLA_ACCESS  (8, V, img1, ifm1, oj, oi, img2, tj, ti, ifm2, handle->blocksifm, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN) +=
+                    LIBXSMM_VLA_ACCESS(8, M, img1, oj, oi, img2, tj, ti, ofm1, ofm2, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, handle->blocksofm, TDVLEN)
                   * LIBXSMM_VLA_ACCESS(6, U, oj, oi, ifm1, ofm1, ofm2, ifm2, ALPHA, handle->blocksifm, handle->blocksofm, TDVLEN, TDVLEN);
                 }
               }
@@ -202,11 +201,32 @@ for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_bwd.bimg); img1++) {
       }
     }
     else {
+#if 1 
       jitted_conv_bp(
         &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ifm1, 0, 0, 0, ALPHA, handle->blocksifm, handle->blocksofm, TDVLEN, TDVLEN),
         &LIBXSMM_VLA_ACCESS(8, M, img1, oj, oi, 0, 0, 0, 0, 0, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, handle->blocksofm, TDVLEN),
         &LIBXSMM_VLA_ACCESS(8, V, img1, ifm1, oj, oi, 0, 0, 0, 0, handle->blocksifm, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN),
         0, 0, 0);
+#else
+      int ti, tj;
+      int img2;
+      int ifm2, ofm2;
+      for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1++) {
+        for (img2 = 0; img2 < handle->cwino_bwd.bimg; img2++) {
+          for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
+            for (ti = 0; ti < handle->cwino_bwd.itiles; ti++) {
+              for (ofm2 = 0; ofm2 < TDVLEN; ofm2++) {
+                for (ifm2 = 0; ifm2 < TDVLEN; ifm2++) {
+                  LIBXSMM_VLA_ACCESS  (8, V, img1, ifm1, oj, oi, img2, tj, ti, ifm2, handle->blocksifm, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN) +=
+                    LIBXSMM_VLA_ACCESS(8, M, img1, oj, oi, img2, tj, ti, ofm1, ofm2, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, handle->blocksofm, TDVLEN)
+                  * LIBXSMM_VLA_ACCESS(6, U, oj, oi, ifm1, ofm1, ofm2, ifm2, ALPHA, handle->blocksifm, handle->blocksofm, TDVLEN, TDVLEN);
+                }
+              }
+            }
+          }
+        }
+      }
+#endif
     }
   }
 }
@@ -232,10 +252,9 @@ for (job = thr_begin; job < thr_end; job++) {
   img2 = job % handle->cwino_bwd.bimg;
   img  = img1*handle->cwino_bwd.bimg + img2;
   internal_bwd_output_transform_custom_custom(
-    &LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_bwd.bimg, ifm1, 0, 0, img%handle->cwino_bwd.bimg, 0, 0, 0, handle->blocksifm, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN),
+    &LIBXSMM_VLA_ACCESS(8, V, img1, ifm1, 0, 0, img2, 0, 0, 0, handle->blocksifm, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN),
     &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN),
-    &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, TDVLEN),
-    handle);
+    &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, TDVLEN), handle);
 }
 libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
 #ifdef BTIME
@@ -245,9 +264,9 @@ if (0 == tid) {
   if (BTIME_REPEAT + BTIME_WARMUP == btime_cnt) {
     int nOfm = handle->blocksofm*TDVLEN;
     int nIfm = handle->blocksifm*TDVLEN;
-    double b_input = 1.0*handle->desc.N*nIfm*(handle->ifhp*handle->ifwp + handle->cwino_bwd.jtiles*handle->cwino_bwd.itiles*ALPHA*ALPHA) * sizeof(float);
+    double b_input = 1.0*handle->desc.N*nOfm*(handle->ofhp*handle->ofwp + handle->cwino_bwd.jtiles*handle->cwino_bwd.itiles*ALPHA*ALPHA) * sizeof(float);
     double b_wt    = 1.0*nOfm*nIfm*(handle->desc.R*handle->desc.S + ALPHA*ALPHA) * sizeof(float);
-    double b_output= 1.0*handle->desc.N*nOfm*(handle->ofhp*handle->ofwp + handle->cwino_bwd.jtiles*handle->cwino_bwd.itiles*ALPHA*ALPHA) * sizeof(float);
+    double b_output= 1.0*handle->desc.N*nIfm*(handle->ifhp*handle->ifwp + handle->cwino_bwd.jtiles*handle->cwino_bwd.itiles*ALPHA*ALPHA) * sizeof(float);
     double f_gemm = 2.0*handle->desc.N*nOfm*nIfm*handle->cwino_bwd.jtiles*handle->cwino_bwd.itiles*ALPHA*ALPHA;
     printf("Time: i=%8.3f  w=%8.3f  o=%8.3f         g=%8.3f\n", t_input/1000.0/BTIME_REPEAT, t_wt/1000.0/BTIME_REPEAT, t_output/1000.0/BTIME_REPEAT, t_gemm/1000.0/BTIME_REPEAT);
     printf("BW:   i=%8.3f  w=%8.3f  o=%8.3f (b/c)   g=%8.3f (f/c)\n\n", b_output/t_input*BTIME_REPEAT, b_wt/t_wt*BTIME_REPEAT, b_input/t_output*BTIME_REPEAT, f_gemm/t_gemm*BTIME_REPEAT);
