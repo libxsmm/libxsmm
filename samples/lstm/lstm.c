@@ -182,13 +182,13 @@ int main(int argc, char* argv[])
 #endif
     const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
     handlewx = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-      m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2, 
+      m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
     handleuh = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-      m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2, 
+      m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
     handlett = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-      m, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2, 
+      m, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
 
     if (0 != handlewx && 0 != handleuh) {
@@ -276,16 +276,16 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
         }
         /* free memory not needed further; avoid double-free later on */
-        libxsmm_free(wgold); wgold = 0; 
-        libxsmm_free(xgoldt); xgoldt = 0; 
+        libxsmm_free(wgold); wgold = 0;
+        libxsmm_free(xgoldt); xgoldt = 0;
         libxsmm_free(ugold); ugold = 0;
         libxsmm_free(hgold); hgold = 0;
         libxsmm_free(z1gold); z1gold = 0;
         libxsmm_free(z2gold); z2gold = 0;
-        libxsmm_free(w); w = 0; 
+        libxsmm_free(w); w = 0;
         libxsmm_free(xt); xt = 0;
         libxsmm_free(u); u = 0;
-        libxsmm_free(h); h = 0; 
+        libxsmm_free(h); h = 0;
         libxsmm_free(z1t); z1t = 0;
         libxsmm_free(z2); z2 = 0;
         /* allocate C-matrix in regular format, and perform copy-out */

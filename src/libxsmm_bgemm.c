@@ -167,7 +167,6 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_bgemm_handle_create!\n");
   }
 
-  /*printf("%d %d %d %d %d %d %d %d %d %d\n", handle.m, handle.n, handle.k, handle.bm, handle.bn, handle.bk, handle.b_m1, handle.b_n1, handle.b_k1, handle.b_k2);*/
   return result;
 }
 

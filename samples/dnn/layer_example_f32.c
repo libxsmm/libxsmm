@@ -37,7 +37,7 @@
 # include <omp.h>
 #endif
 
-#if 0 
+#if 0
 #define USE_OVERWRITE
 #endif
 #if 0
@@ -624,7 +624,7 @@ int main(int argc, char* argv[])
   }
   if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
 #ifdef USE_OVERWRITE
-   zero_buf(naive_input,         nImg*nIfm*ifhp*ifwp);
+    zero_buf(naive_input,         nImg*nIfm*ifhp*ifwp);
 #endif
     if (algo_winograd) {
       zero_buf(naive_input,         nImg*nIfm*ifhp*ifwp);

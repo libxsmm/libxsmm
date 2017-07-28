@@ -83,20 +83,10 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_bwd_input_transform_custom_custom_alpha6_
 
 LIBXSMM_API_INLINE /*LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)*/
 void internal_bwd_input_transform_custom_custom(
-  const float *inp, float *tinp, float *Iwp, const libxsmm_dnn_layer* handle)
+  const float *inp, float *tinp, float *Iwp,
+  const libxsmm_dnn_layer* handle)
 {
   if (handle->cwino_bwd.alpha == 6) {
-  /*
-#define ALPHA 6
-#define TDVLEN 16
-#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_BACKWARD_AVX512)
-# include "template/libxsmm_dnn_convolution_winograd_backward_custom_custom_input_trans_alpha6_avx512.tpl.c"
-#else
-# include "template/libxsmm_dnn_convolution_winograd_backward_custom_custom_input_trans_alpha6.tpl.c"
-#endif
-#undef TDVLEN
-#undef ALPHA
-  */
     /* if highest implemented code path is statically present, no need for an indirect call (function pointer) */
 #if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_BACKWARD_AVX512)
     internal_bwd_input_transform_custom_custom_alpha6_avx512(inp, tinp, Iwp, handle);
