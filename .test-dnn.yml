@@ -1,5 +1,5 @@
 script:
-  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} && 
+  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
     env CHECK=1 ./run_alexnet.sh
   - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
     env CHECK=1 ./run_deepbench.sh
