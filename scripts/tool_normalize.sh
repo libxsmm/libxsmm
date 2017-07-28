@@ -56,10 +56,10 @@ if [ "" != "${ICONV}" ] && [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && [ "" != 
   set -f
   # Search the content of the diffs matching the given file types
   for PATTERN in ${PATTERNS}; do
-	for FILE in $("${GIT}" ls-files ${PATTERN}); do
+    for FILE in $("${GIT}" ls-files ${PATTERN}); do
       if [ "" != "$(${SED} -n /[${BANNED_CHARS}]/p ${FILE} 2> /dev/null)" ]; then
         ${ECHO} "Warning: ${FILE} contains banned characters!"
-	  fi
+      fi
       ${ICONV} -t ASCII ${FILE} | ${SED} -e "s/\s\s*$//" > ${TMPF}
       ${CP} ${TMPF} ${FILE}
     done
