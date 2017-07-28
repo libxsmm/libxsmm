@@ -96,14 +96,12 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
       handle.mb = m / mm; handle.nb = n / nn; handle.kb = k / kk;
       assert(0 < handle.typesize);
 
-      if (0 == (m % mm) && 0 == (n % nn) && 0 == (k % kk)) { /* check for valid block-size */
+      if (0 == (m % mm) && 0 == (n % nn) && 0 == (k % kk) &&
+          0 == (m % *b_m1) && 0 == (n % *b_n1) && 0 == (k % *b_k1) &&
+          0 == ((k / *b_k1 / *b_k2) % kk) && 0 == ((n / *b_n1) % nn) && 0 == ((m / *b_m1) % mm)) { /* check for valid block-size */
         const libxsmm_gemm_prefetch_type prefetch = (0 == strategy ? ((libxsmm_gemm_prefetch_type)LIBXSMM_PREFETCH) : *strategy);
-        handle.b_m1 = (0 == b_m1 ? 1 : *b_m1); handle.b_n1 = (0 == b_n1 ? 1 : *b_n1);
-        handle.b_k1 = (0 == b_k1 ? 1 : *b_k1); handle.b_k2 = (0 == b_k2 ? 1 : *b_k2);
-        assert(0 == (m % handle.b_m1) && 0 == (n % handle.b_n1) && 0 == (k % handle.b_k1));
-        assert(0 == ((k / handle.b_k1 / handle.b_k2) % kk));
-        assert(0 == ((n / handle.b_n1) % nn));
-        assert(0 == ((m / handle.b_m1) % mm));
+        handle.b_m1 = *b_m1; handle.b_n1 = *b_n1;
+        handle.b_k1 = *b_k1; handle.b_k2 = *b_k2;
         handle.kernel = libxsmm_xmmdispatch(&descriptor);
         if (0 != handle.kernel.smm && LIBXSMM_PREFETCH_NONE != prefetch && LIBXSMM_PREFETCH_SIGONLY != prefetch) {
           if (LIBXSMM_PREFETCH_AUTO == prefetch) { /* automatically chosen */
@@ -169,6 +167,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_bgemm_handle_create!\n");
   }
 
+  /*printf("%d %d %d %d %d %d %d %d %d %d\n", handle.m, handle.n, handle.k, handle.bm, handle.bn, handle.bk, handle.b_m1, handle.b_n1, handle.b_k1, handle.b_k2);*/
   return result;
 }
 

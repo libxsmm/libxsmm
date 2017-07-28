@@ -29,15 +29,15 @@
 /* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE, real_dst, (LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE*)dst, handle->mb, handle->bk, handle->bm);
+LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE, real_dst, (LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE*)dst, handle->kb, handle->bk, handle->bm);
 LIBXSMM_VLA_DECL(2, const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE, real_src, (const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE*)src, handle->m);
 libxsmm_blasint mb, kb, bm, bk;
 
-for (kb = 0; kb < handle->kb; ++kb) {
-  for (mb = 0; mb < handle->mb; ++mb) {
+for (mb = 0; mb < handle->mb; ++mb) {
+  for (kb = 0; kb < handle->kb; ++kb) {
     for (bk = 0; bk < handle->bk; ++bk) {
       for (bm = 0; bm < handle->bm; ++bm) {
-        LIBXSMM_VLA_ACCESS(4, real_dst, kb, mb, bk, bm, handle->mb, handle->bk, handle->bm) =
+        LIBXSMM_VLA_ACCESS(4, real_dst, mb, kb, bk, bm, handle->kb, handle->bk, handle->bm) =
         LIBXSMM_VLA_ACCESS(2, real_src, kb * handle->bk + bk, mb * handle->bm + bm, handle->m);
       }
     }

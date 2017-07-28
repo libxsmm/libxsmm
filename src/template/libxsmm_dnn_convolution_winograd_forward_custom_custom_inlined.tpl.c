@@ -69,6 +69,7 @@ LIBXSMM_ASSUME_ALIGNED(handle->scratchOw, 64);
 /* computing first logical thread */
 ltid = tid - start_thread;
 libxsmm_barrier_init((libxsmm_barrier*)handle->barrier, ltid);
+
 /* #define FTIME */
 #ifdef FTIME
 #define FTIME_REPEAT (64)
@@ -164,7 +165,7 @@ for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_fwd.bimg); img1++) {
      * make each GEMM smaller hence less efficient. 2: the latter method requires many
      * cores reading the same filters and input feature maps, which is bad in Xeon Phi
      * without shared cache).
-     * In Xeon with a large shared LLC, the latter method may give you a b
+     * In Xeon with a large shared LLC, the latter method may give you a benifit
      *
      * In finer level, parallelize over ofm1 so that threads group for the same ALPHA^2
      * will work on the same input image and input channels.
@@ -199,7 +200,7 @@ for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_fwd.bimg); img1++) {
         }
       }
       for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1+=handle->cwino_fwd.ur_ifm) {
-#if 1
+#if 1 
         jitted_conv_fp(
           &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ofm1, ifm1, 0, 0, ALPHA, handle->blocksofm, handle->blocksifm, TDVLEN, TDVLEN),
           &LIBXSMM_VLA_ACCESS(8, V, img1, oj, oi, 0, 0, 0, ifm1, 0, ALPHA, ALPHA, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, handle->blocksifm, TDVLEN),
@@ -207,15 +208,15 @@ for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_fwd.bimg); img1++) {
           0, 0, 0);
 #else
         int ti, tj;
-        int img1;
+        int img2;
         int ifm2, ofm2;
-        for (img1 = 0; img1 < handle->cwino_fwd.bimg; img1++) {
+        for (img2 = 0; img2 < handle->cwino_fwd.bimg; img2++) {
           for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
             for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
               for (ifm2 = 0; ifm2 < TDVLEN; ifm2++) {
                 for (ofm2 = 0; ofm2 < TDVLEN; ofm2++) {
-                  LIBXSMM_VLA_ACCESS  (8, M, img1, ofm1, oj, oi, img1, tj, ti, ofm2, handle->blocksofm, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN) +=
-                    LIBXSMM_VLA_ACCESS(8, V, img1, oj, oi, img1, tj, ti, ifm1, ifm2, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, handle->blocksifm, TDVLEN)
+                  LIBXSMM_VLA_ACCESS  (8, M, img1, ofm1, oj, oi, img2, tj, ti, ofm2, handle->blocksofm, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN) +=
+                    LIBXSMM_VLA_ACCESS(8, V, img1, oj, oi, img2, tj, ti, ifm1, ifm2, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, handle->blocksifm, TDVLEN)
                   * LIBXSMM_VLA_ACCESS(6, U, oj, oi, ofm1, ifm1, ifm2, ofm2, ALPHA, handle->blocksofm, handle->blocksifm, TDVLEN, TDVLEN);
                 }
               }
@@ -226,12 +227,33 @@ for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_fwd.bimg); img1++) {
       }
     }
     else {
+#if 1 
       /* when ur_ifm == blocksifm, we don't need to initialize M. Instead, we use streaming store to save read BW */
       jitted_conv_fp(
         &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ofm1, 0, 0, 0, ALPHA, handle->blocksofm, handle->blocksifm, TDVLEN, TDVLEN),
         &LIBXSMM_VLA_ACCESS(8, V, img1, oj, oi, 0, 0, 0, 0, 0, ALPHA, ALPHA, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, handle->blocksifm, TDVLEN),
         &LIBXSMM_VLA_ACCESS(8, M, img1, ofm1, oj, oi, 0, 0, 0, 0, handle->blocksofm, ALPHA, ALPHA, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, TDVLEN),
         0, 0, 0);
+#else
+      int ti, tj;
+      int img2;
+      int ifm2, ofm2;
+      for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
+        for (img2 = 0; img2 < handle->cwino_fwd.bimg; img2++) {
+          for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
+            for (ti = 0; ti < handle->cwino_fwd.itiles; ti++) {
+              for (ifm2 = 0; ifm2 < TDVLEN; ifm2++) {
+                for (ofm2 = 0; ofm2 < TDVLEN; ofm2++) {
+                  LIBXSMM_VLA_ACCESS  (8, M, img1, ofm1, oj, oi, img2, tj, ti, ofm2, handle->blocksofm, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN) +=
+                    LIBXSMM_VLA_ACCESS(8, V, img1, oj, oi, img2, tj, ti, ifm1, ifm2, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, handle->blocksifm, TDVLEN)
+                  * LIBXSMM_VLA_ACCESS(6, U, oj, oi, ofm1, ifm1, ifm2, ofm2, ALPHA, handle->blocksofm, handle->blocksifm, TDVLEN, TDVLEN);
+                }
+              }
+            }
+          }
+        }
+      }
+#endif
     }
   }
 }
@@ -259,7 +281,7 @@ for (job = thr_begin; job < thr_end; job++) {
   internal_fwd_output_transform_custom_custom(
     &LIBXSMM_VLA_ACCESS(8, M, img1, ofm1, 0, 0, img2, 0, 0, 0, handle->blocksofm, ALPHA, ALPHA, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, TDVLEN),
     &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, TDVLEN),
-    &LIBXSMM_VLA_ACCESS(5, Owp, tid, 0, 0, 0, 0, handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles, ALPHA, ALPHA, TDVLEN), /*TDVLEN,*/ 0 /*&bias[ofm1]*/, handle);
+    &LIBXSMM_VLA_ACCESS(5, Owp, tid, 0, 0, 0, 0, handle->cwino_fwd.itiles*handle->cwino_fwd.jtiles, ALPHA, ALPHA, TDVLEN), 0 /*&bias[ofm1]*/, handle);
 }
 libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
 #ifdef FTIME
