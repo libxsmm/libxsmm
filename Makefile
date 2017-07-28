@@ -251,13 +251,14 @@ HEADERS = $(wildcard $(SRCDIR)/template/*.c) $(wildcard $(SRCDIR)/*.h) \
           $(ROOTDIR)/include/libxsmm_intrinsics_x86.h \
           $(ROOTDIR)/include/libxsmm_macros.h \
           $(ROOTDIR)/include/libxsmm_malloc.h \
+          $(ROOTDIR)/include/libxsmm_mhd.h \
           $(ROOTDIR)/include/libxsmm_spmdm.h \
           $(ROOTDIR)/include/libxsmm_sync.h \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
 SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_malloc.c \
-          libxsmm_sync.c libxsmm_dump.c libxsmm_timer.c libxsmm_perf.c \
+          libxsmm_sync.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_trans.c libxsmm_bgemm.c \
           libxsmm_spmdm.c libxsmm_fsspmdm.c \
           libxsmm_dnn.c libxsmm_dnn_handle.c \
@@ -462,6 +463,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@cp $(ROOTDIR)/include/libxsmm_intrinsics_x86.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_malloc.h $(INCDIR) 2> /dev/null || true
+	@cp $(ROOTDIR)/include/libxsmm_mhd.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_spmdm.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true

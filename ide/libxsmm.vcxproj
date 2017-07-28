@@ -29,6 +29,7 @@
   <ItemGroup>
     <ClInclude Include="..\build\libxsmm_dispatch.h" />
     <ClInclude Include="..\include\libxsmm.h" />
+    <ClInclude Include="..\include\libxsmm_bgemm.h" />
     <ClInclude Include="..\include\libxsmm_config.h" />
     <ClInclude Include="..\include\libxsmm_cpuid.h" />
     <ClInclude Include="..\include\libxsmm_dnn.h" />
@@ -38,6 +39,7 @@
     <ClInclude Include="..\include\libxsmm_intrinsics_x86.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_malloc.h" />
+    <ClInclude Include="..\include\libxsmm_mhd.h" />
     <ClInclude Include="..\include\libxsmm_source.h" />
     <ClInclude Include="..\include\libxsmm_spmdm.h" />
     <ClInclude Include="..\include\libxsmm_sync.h" />
@@ -81,7 +83,6 @@
     <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_forward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.h" />
     <ClInclude Include="..\src\libxsmm_dnn_handle.h" />
-    <ClInclude Include="..\src\libxsmm_dump.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
     <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_gemm_diff.h" />
@@ -141,7 +142,6 @@
     <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_forward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.c" />
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
-    <ClCompile Include="..\src\libxsmm_dump.c" />
     <ClCompile Include="..\src\libxsmm_fsspmdm.c" />
     <ClCompile Include="..\src\libxsmm_hash.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
@@ -162,6 +162,7 @@
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_main.c" />
     <ClCompile Include="..\src\libxsmm_malloc.c" />
+    <ClCompile Include="..\src\libxsmm_mhd.c" />
     <ClCompile Include="..\src\libxsmm_perf.c" />
     <ClCompile Include="..\src\libxsmm_spmdm.c" />
     <ClCompile Include="..\src\libxsmm_sync.c" />
@@ -189,7 +190,10 @@
     <None Include="..\scripts\libxsmm_source.sh" />
     <None Include="..\scripts\libxsmm_specialized.py" />
     <None Include="..\scripts\libxsmm_utilities.py" />
+    <None Include="..\scripts\tool_analyze.sh" />
     <None Include="..\scripts\tool_inspector.sh" />
+    <None Include="..\scripts\tool_normalize.sh" />
+    <None Include="..\scripts\tool_scan.sh" />
     <None Include="..\src\template\libxsmm.f" />
   </ItemGroup>
   <ItemGroup>

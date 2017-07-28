@@ -138,9 +138,6 @@
     <ClInclude Include="..\src\libxsmm_perf.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dump.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\template\libxsmm.h">
       <Filter>src\template</Filter>
     </ClInclude>
@@ -209,6 +206,12 @@
     </ClInclude>
     <ClInclude Include="..\src\generator_transpose_avx_avx512.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_mhd.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_bgemm.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -329,9 +332,6 @@
     <ClCompile Include="..\src\libxsmm_perf.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dump.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_gemm_avx512_microkernel_nofsdbcst.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -392,6 +392,9 @@
     <ClCompile Include="..\src\libxsmm_bgemm.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\libxsmm_mhd.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">
@@ -431,6 +434,15 @@
       <Filter>scripts</Filter>
     </None>
     <None Include="..\scripts\libxsmm_config.py">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="..\scripts\tool_analyze.sh">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="..\scripts\tool_normalize.sh">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="..\scripts\tool_scan.sh">
       <Filter>scripts</Filter>
     </None>
   </ItemGroup>

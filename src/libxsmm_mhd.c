@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_dump.h"
+#include <libxsmm_mhd.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -40,7 +40,7 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION const char* libxsmm_meta_image_typeinfo(libxsmm_mhd_elemtype elemtype, size_t* elemsize)
+LIBXSMM_API_DEFINITION const char* libxsmm_mhd_typeinfo(libxsmm_mhd_elemtype elemtype, size_t* elemsize)
 {
   switch (elemtype) {
     case LIBXSMM_MHD_ELEMTYPE_CHAR: if (0 != elemsize) *elemsize = 1; return "MET_CHAR";
@@ -87,13 +87,13 @@ LIBXSMM_API_INLINE int internal_write(FILE* file, const void* data,
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_meta_image_write(const char* filename,
+LIBXSMM_API_DEFINITION int libxsmm_mhd_write(const char* filename,
   const size_t* data_size, const size_t* size, size_t ndims, size_t ncomponents,
   const void* data, libxsmm_mhd_elemtype elemtype, const double* spacing,
   const char* extension_header, const void* extension, size_t extension_size)
 {
   size_t elemsize = 0;
-  const char *const elemtype_name = libxsmm_meta_image_typeinfo(elemtype, &elemsize);
+  const char *const elemtype_name = libxsmm_mhd_typeinfo(elemtype, &elemsize);
   FILE *const file = (0 != filename && 0 != *filename &&
       0 != data_size && 0 != ndims && 0 != ncomponents &&
       0 != data && 0 != elemtype_name)
@@ -142,3 +142,4 @@ LIBXSMM_API_DEFINITION int libxsmm_meta_image_write(const char* filename,
 
   return result;
 }
+

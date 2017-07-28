@@ -28,8 +28,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_DUMP_H
-#define LIBXSMM_DUMP_H
+#ifndef LIBXSMM_MHD_H
+#define LIBXSMM_MHD_H
 
 #include <libxsmm.h>
 
@@ -51,15 +51,40 @@ typedef enum libxsmm_mhd_elemtype {
 
 
 /** Returns the name and size of the element type; result may be NULL/0 in case of an unknown type. */
-LIBXSMM_API const char* libxsmm_meta_image_typeinfo(libxsmm_mhd_elemtype elemtype, size_t* elemsize);
+LIBXSMM_API const char* libxsmm_mhd_typeinfo(libxsmm_mhd_elemtype elemtype, size_t* elemsize);
 
 
 /**
- * Save a file using an extended data format, which is compatible with
- * the Meta Image Format. The file is suitable for visual inspection
- * using e.g., ITK-SNAP or ParaView.
+ * Parse the header of an MHD-file. The header can be part of the data file (local),
+ * or separately stored (mha+mhd). Returns the element type of the data (typeinfo).
  */
-LIBXSMM_API int libxsmm_meta_image_write(const char* filename,
+LIBXSMM_API int libxsmm_mhd_read_header(
+  /* Filename referring to the header-file (may also contain the data). */
+  const char* header_filename,
+  /* Filename that contains the data (not necessarily the header-file). */
+  char* filename, size_t filename_max_length,
+  /* Image extents; size_max_dims yields the maximum number of dimensions,
+   * and the actual number of dimensions on output. */
+  size_t* size, size_t* size_max_dims,
+  /* Element-type of the image (pixel type). */
+  libxsmm_mhd_elemtype* elemtype,
+  /* Number of image components. */
+  size_t* ncomponents,
+  /* Size of the header in bytes; may be used to skip the header when
+   * reading content; can be a NULL-argument (optional). */
+  size_t* header_size,
+  /* Size (in Bytes) of an user-defined extended data record;
+   * can be a NULL-argument (optional). */
+  size_t* extension_size,
+  /* Image spacing (up to size_max_dims); can be NULL (optional). */
+  double* spacing);
+
+
+/**
+ * Save a file using an extended data format, which is compatible with the Meta Image Format (MHD).
+ * The file is suitable for visual inspection using e.g., ITK-SNAP or ParaView.
+ */
+LIBXSMM_API int libxsmm_mhd_write(const char* filename,
   /** Leading dimensions (buffer extents). */
   const size_t* data_size,
   /** Image dimensions; can be NULL/0 (data_size). */
@@ -81,4 +106,5 @@ LIBXSMM_API int libxsmm_meta_image_write(const char* filename,
   /** Extension data size; can be NULL. */
   size_t extension_size);
 
-#endif /*LIBXSMM_DUMP_H*/
+#endif /*LIBXSMM_MHD_H*/
+
