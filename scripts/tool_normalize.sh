@@ -30,13 +30,45 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd $(dirname $0); pwd -P)
+PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.sh *.py *.yml *.txt"
+BANNED_CHARS="\t"
 
-cd ${HERE}/..
-make CXX=clang++ CC=clang DBG=1 ECFLAGS=--analyze $* 2> .analyze.log
-echo
-echo "================================================================================"
-echo "Errors (warnings)"
-echo "================================================================================"
-grep -e "error:" -e "warning:" .analyze.log | grep -v "is never read"
+HERE=$(cd $(dirname $0); pwd -P)
+REPO=${HERE}/..
+CODEFILE=${REPO}/.codefile
+MKTEMP=${REPO}/.mktmp.sh
+
+ICONV=$(which iconv 2> /dev/null)
+ECHO=$(which echo 2> /dev/null)
+GIT=$(which git 2> /dev/null)
+SED=$(which sed 2> /dev/null)
+CP=$(which cp 2> /dev/null)
+RM=$(which rm 2> /dev/null)
+
+if [ -e ${CODEFILE} ]; then
+  PATTERNS="$(cat ${CODEFILE})"
+fi
+
+if [ "" != "${ICONV}" ] && [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && [ "" != "${CP}" ] && [ "" != "${RM}" ]; then
+  TMPF=$(${MKTEMP} .libxsmm_XXXXXX.txt)
+
+  # disable glob in Shell
+  set -f
+  # Search the content of the diffs matching the given file types
+  for PATTERN in ${PATTERNS}; do
+	for FILE in $("${GIT}" ls-files ${PATTERN}); do
+      if [ "" != "$(${SED} -n /[${BANNED_CHARS}]/p ${FILE} 2> /dev/null)" ]; then
+        ${ECHO} "Warning: ${FILE} contains banned characters!"
+	  fi
+      ${ICONV} -t ASCII ${FILE} | ${SED} -e "s/\s\s*$//" > ${TMPF}
+      ${CP} ${TMPF} ${FILE}
+    done
+  done
+
+  ${RM} ${TMPF}
+  ${ECHO} "Successfully Completed."
+else
+  ${ECHO} "Error: missing prerequisites!"
+  exit 1
+fi
 
