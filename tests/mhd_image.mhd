@@ -10,4 +10,4 @@ AnatomicalOrientation = RAI
 ElementSpacing = 1 1 1
 DimSize = 202 134 1
 ElementType = MET_SHORT
-ElementDataFile = mhd1.raw
+ElementDataFile = mhd_image.raw
