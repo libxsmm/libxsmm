@@ -36,6 +36,7 @@
 
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_mhd_elemtype {
+  LIBXSMM_MHD_ELEMTYPE_UNKNOWN,
   LIBXSMM_MHD_ELEMTYPE_CHAR,
   LIBXSMM_MHD_ELEMTYPE_I8,
   LIBXSMM_MHD_ELEMTYPE_U8,
@@ -51,7 +52,10 @@ typedef enum libxsmm_mhd_elemtype {
 
 
 /** Returns the name and size of the element type; result may be NULL/0 in case of an unknown type. */
-LIBXSMM_API const char* libxsmm_mhd_typeinfo(libxsmm_mhd_elemtype elemtype, size_t* elemsize);
+LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype elemtype, size_t* elemsize);
+
+/** Returns the type of the element for a given type-name. */
+LIBXSMM_API libxsmm_mhd_elemtype libxsmm_mhd_typeinfo(const char* elemname);
 
 
 /**
@@ -61,23 +65,25 @@ LIBXSMM_API const char* libxsmm_mhd_typeinfo(libxsmm_mhd_elemtype elemtype, size
 LIBXSMM_API int libxsmm_mhd_read_header(
   /* Filename referring to the header-file (may also contain the data). */
   const char* header_filename,
-  /* Filename that contains the data (not necessarily the header-file). */
-  char* filename, size_t filename_max_length,
-  /* Image extents; size_max_dims yields the maximum number of dimensions,
+  /* Maximum length of path/file name. */
+  size_t filename_max_length,
+  /* Filename containing the data (may be the same as the header-file). */
+  char* filename,
+  /* Yields the maximum/possible number of dimensions on input,
    * and the actual number of dimensions on output. */
-  size_t* size, size_t* size_max_dims,
-  /* Element-type of the image (pixel type). */
-  libxsmm_mhd_elemtype* elemtype,
-  /* Number of image components. */
+  size_t* ndims,
+  /* Image extents ("ndims" number of entries). */
+  size_t* size,
+  /* Type of the image elements (pixel type). */
+  libxsmm_mhd_elemtype* type,
+  /* Number of image components (channels). */
   size_t* ncomponents,
-  /* Size of the header in bytes; may be used to skip the header when
-   * reading content; can be a NULL-argument (optional). */
+  /* Size of the header in bytes; may be used to skip the header,
+   * when reading content; can be a NULL-argument (optional). */
   size_t* header_size,
   /* Size (in Bytes) of an user-defined extended data record;
    * can be a NULL-argument (optional). */
-  size_t* extension_size,
-  /* Image spacing (up to size_max_dims); can be NULL (optional). */
-  double* spacing);
+  size_t* extension_size);
 
 
 /**

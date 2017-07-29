@@ -140,6 +140,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "matdiff", "..\tests\matdiff
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "eigen_tensor", "..\samples\eigen\eigen_tensor.vcxproj", "{315C606A-433F-43DB-8A26-A44AB66C99B1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mhd", "..\tests\mhd.vcxproj", "{0F908964-721C-4952-99A8-EF5C988CCE58}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug|Win32 = debug|Win32
@@ -498,6 +503,18 @@ Global
 		{315C606A-433F-43DB-8A26-A44AB66C99B1}.symbols|Win32.Build.0 = symbols|Win32
 		{315C606A-433F-43DB-8A26-A44AB66C99B1}.symbols|x64.ActiveCfg = symbols|x64
 		{315C606A-433F-43DB-8A26-A44AB66C99B1}.symbols|x64.Build.0 = symbols|x64
+		{0F908964-721C-4952-99A8-EF5C988CCE58}.debug|Win32.ActiveCfg = debug|Win32
+		{0F908964-721C-4952-99A8-EF5C988CCE58}.debug|Win32.Build.0 = debug|Win32
+		{0F908964-721C-4952-99A8-EF5C988CCE58}.debug|x64.ActiveCfg = debug|x64
+		{0F908964-721C-4952-99A8-EF5C988CCE58}.debug|x64.Build.0 = debug|x64
+		{0F908964-721C-4952-99A8-EF5C988CCE58}.release|Win32.ActiveCfg = release|Win32
+		{0F908964-721C-4952-99A8-EF5C988CCE58}.release|Win32.Build.0 = release|Win32
+		{0F908964-721C-4952-99A8-EF5C988CCE58}.release|x64.ActiveCfg = release|x64
+		{0F908964-721C-4952-99A8-EF5C988CCE58}.release|x64.Build.0 = release|x64
+		{0F908964-721C-4952-99A8-EF5C988CCE58}.symbols|Win32.ActiveCfg = symbols|Win32
+		{0F908964-721C-4952-99A8-EF5C988CCE58}.symbols|Win32.Build.0 = symbols|Win32
+		{0F908964-721C-4952-99A8-EF5C988CCE58}.symbols|x64.ActiveCfg = symbols|x64
+		{0F908964-721C-4952-99A8-EF5C988CCE58}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -533,5 +550,6 @@ Global
 		{D54866A7-43B1-40AF-AE02-C96BD5B03B81} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{978B5AF3-4A2E-4DC9-BF7C-374403865240} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{315C606A-433F-43DB-8A26-A44AB66C99B1} = {F41F38BC-64ED-478C-AF08-51D0BAEC263E}
+		{0F908964-721C-4952-99A8-EF5C988CCE58} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 	EndGlobalSection
 EndGlobal
