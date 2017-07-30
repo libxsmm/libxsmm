@@ -154,7 +154,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char* header_filename, 
           && key_end == strlen("NDims"))
         {
           const int value = atoi(buffer + value_begin);
-          if (0 < value && value <= *ndims) {
+          if (0 < value && value <= ((int)*ndims)) {
             *ndims = value;
           }
         }
