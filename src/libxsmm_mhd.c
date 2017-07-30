@@ -39,22 +39,26 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_MHD_MAX_LINELENGTH)
+# define LIBXSMM_MHD_MAX_LINELENGTH 1024
+#endif
 
-LIBXSMM_API_DEFINITION const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype elemtype, size_t* elemsize)
+
+LIBXSMM_API_DEFINITION const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t* typesize)
 {
-  switch (elemtype) {
-    case LIBXSMM_MHD_ELEMTYPE_CHAR: if (0 != elemsize) *elemsize = 1; return "MET_CHAR";
-    case LIBXSMM_MHD_ELEMTYPE_I8:   if (0 != elemsize) *elemsize = 1; return "MET_CHAR";
-    case LIBXSMM_MHD_ELEMTYPE_U8:   if (0 != elemsize) *elemsize = 1; return "MET_UCHAR";
-    case LIBXSMM_MHD_ELEMTYPE_I16:  if (0 != elemsize) *elemsize = 2; return "MET_SHORT";
-    case LIBXSMM_MHD_ELEMTYPE_U16:  if (0 != elemsize) *elemsize = 2; return "MET_USHORT";
-    case LIBXSMM_MHD_ELEMTYPE_I32:  if (0 != elemsize) *elemsize = 4; return "MET_INT";
-    case LIBXSMM_MHD_ELEMTYPE_U32:  if (0 != elemsize) *elemsize = 4; return "MET_UINT";
-    case LIBXSMM_MHD_ELEMTYPE_I64:  if (0 != elemsize) *elemsize = 8; return "MET_LONG";
-    case LIBXSMM_MHD_ELEMTYPE_U64:  if (0 != elemsize) *elemsize = 8; return "MET_ULONG";
-    case LIBXSMM_MHD_ELEMTYPE_F32:  if (0 != elemsize) *elemsize = 4; return "MET_FLOAT";
-    case LIBXSMM_MHD_ELEMTYPE_F64:  if (0 != elemsize) *elemsize = 8; return "MET_DOUBLE";
-    default: if (0 != elemsize) *elemsize = 0; return 0;
+  switch (type) {
+    case LIBXSMM_MHD_ELEMTYPE_CHAR: if (0 != typesize) *typesize = 1; return "MET_CHAR";
+    case LIBXSMM_MHD_ELEMTYPE_I8:   if (0 != typesize) *typesize = 1; return "MET_CHAR";
+    case LIBXSMM_MHD_ELEMTYPE_U8:   if (0 != typesize) *typesize = 1; return "MET_UCHAR";
+    case LIBXSMM_MHD_ELEMTYPE_I16:  if (0 != typesize) *typesize = 2; return "MET_SHORT";
+    case LIBXSMM_MHD_ELEMTYPE_U16:  if (0 != typesize) *typesize = 2; return "MET_USHORT";
+    case LIBXSMM_MHD_ELEMTYPE_I32:  if (0 != typesize) *typesize = 4; return "MET_INT";
+    case LIBXSMM_MHD_ELEMTYPE_U32:  if (0 != typesize) *typesize = 4; return "MET_UINT";
+    case LIBXSMM_MHD_ELEMTYPE_I64:  if (0 != typesize) *typesize = 8; return "MET_LONG";
+    case LIBXSMM_MHD_ELEMTYPE_U64:  if (0 != typesize) *typesize = 8; return "MET_ULONG";
+    case LIBXSMM_MHD_ELEMTYPE_F32:  if (0 != typesize) *typesize = 4; return "MET_FLOAT";
+    case LIBXSMM_MHD_ELEMTYPE_F64:  if (0 != typesize) *typesize = 8; return "MET_DOUBLE";
+    default: if (0 != typesize) *typesize = 0; return 0;
   }
 }
 
@@ -98,7 +102,7 @@ LIBXSMM_API_DEFINITION libxsmm_mhd_elemtype libxsmm_mhd_typeinfo(const char* ele
   return result;
 }
 
-LIBXSMM_API_INLINE int internal_mhd_read(char* buffer, char split, size_t* key_end, size_t* value_begin)
+LIBXSMM_API_INLINE int internal_mhd_readline(char* buffer, char split, size_t* key_end, size_t* value_begin)
 {
   int result = EXIT_SUCCESS;
   char *const isplit = strchr(buffer, split);
@@ -126,11 +130,11 @@ LIBXSMM_API_INLINE int internal_mhd_read(char* buffer, char split, size_t* key_e
 
 
 LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char* header_filename, size_t filename_max_length,
-  char* filename, size_t* ndims, size_t* size, libxsmm_mhd_elemtype* type, size_t* ncomponents,
+  char* filename, size_t* ndims, size_t* size, size_t* ncomponents, libxsmm_mhd_elemtype* type,
   size_t* header_size, size_t* extension_size)
 {
   int result = EXIT_SUCCESS;
-  char buffer[1024];
+  char buffer[LIBXSMM_MHD_MAX_LINELENGTH];
   FILE *const file = fopen(header_filename, "rb");
 
   if (0 != file && 0 < filename_max_length && 0 != filename && 0 != ndims && 0 < *ndims && 0 != size && 0 != type && 0 != ncomponents) {
@@ -143,7 +147,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char* header_filename, 
 
     while (0 != fgets(buffer, sizeof(buffer), file) && EXIT_SUCCESS == result) {
       size_t key_end, value_begin;
-      if (EXIT_SUCCESS == internal_mhd_read(buffer, '=', &key_end, &value_begin)) {
+      if (EXIT_SUCCESS == internal_mhd_readline(buffer, '=', &key_end, &value_begin)) {
         if (0 == strncmp("NDims", buffer, key_end)
           && key_end == strlen("NDims"))
         {
@@ -189,14 +193,25 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char* header_filename, 
           const char *const value = buffer + value_begin;
           if (0 == strcmp("LOCAL", value) || 0 == strcmp(header_filename, value)) {
             if (header_size) {
-              *header_size = ftell(file);
-              strcpy(filename, header_filename);
-              /* last statement before raw data */
-              break;
+              const size_t len = strlen(header_filename);
+              if (len < filename_max_length) {
+                strncpy(filename, header_filename, len);
+                *header_size = ftell(file);
+              }
+              else {
+                result = EXIT_FAILURE;
+              }
+              break; /* ElementDataFile is just before the raw data */
             }
           }
           else {
-            strcpy(filename, value);
+            const size_t len = strlen(value);
+            if (len < filename_max_length) {
+              strncpy(filename, value, len);
+            }
+            else {
+              result = EXIT_FAILURE;
+            }
           }
         }
         else if (0 == strncmp("DimSize", buffer, key_end)
@@ -204,7 +219,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char* header_filename, 
         {
           char* value = buffer + value_begin;
           size_t n = 0;
-          while (EXIT_SUCCESS == internal_mhd_read(value, ' ', &key_end, &value_begin)) {
+          while (EXIT_SUCCESS == internal_mhd_readline(value, ' ', &key_end, &value_begin)) {
             const int ivalue = atoi(value);
             if (0 < ivalue) {
               *size = ivalue;
@@ -269,19 +284,107 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char* header_filename, 
         }
       }
     }
-#if 0
-    // prefix the path of the header file to actually find the data file
-    if (!filename.empty() // prevent creating only a path (without filename)
-                          // quick hint to pass this block
-      && (!header_size || 0 == *header_size))
-    {
-      const std::size_t pos = header_filename.find_last_of("/\\");
-      if (std::string::npos != pos) {
-        // include the path separator: pos + 1
-        std::string(header_filename.begin(), header_filename.begin() + pos + 1).append(filename).swap(filename);
+    /* prefix the path of the header file to make sure that the data file can be found */
+    if (EXIT_SUCCESS == result && (0 == header_size || 0 == *header_size)) {
+      const char* split = header_filename + strlen(header_filename) - 1;
+      while (header_filename != split && 0 == strchr("/\\", *split)) --split;
+      if (header_filename < split) {
+        const size_t len = strlen(filename), n = split - header_filename + 1;
+        if ((len+ n) <= filename_max_length) {
+          size_t i;
+          for (i = 1; i <= len; ++i) {
+            filename[len + n - i] = filename[len - i];
+          }
+          for (i = 0; i < n; ++i) {
+            filename[i] = header_filename[i];
+          }
+        }
       }
     }
-#endif
+  }
+  else {
+    result = EXIT_FAILURE;
+  }
+
+  return result;
+}
+
+
+LIBXSMM_API_INLINE int internal_mhd_read(FILE* file, void* data,
+  const size_t* data_size, const size_t* size, size_t typesize,
+  size_t ndims)
+{
+  int result = EXIT_SUCCESS;
+
+  assert(0 != data_size);
+  if (1 < ndims) {
+    if (0 == size || size[0] <= data_size[0]) {
+      const size_t d = ndims - 1;
+
+      if (EXIT_SUCCESS == result && (0 == size || size[d] <= data_size[d])) {
+        size_t sub_size = typesize * data_size[0], i;
+
+        for (i = 1; i < d; ++i) {
+          if (0 == size || size[i] <= data_size[i]) {
+            sub_size *= data_size[i];
+          }
+          else {
+            result = EXIT_FAILURE;
+            break;
+          }
+        }
+        for (i = 0; i < data_size[d]; ++i) {
+          result = internal_mhd_read(file, data, data_size, size, typesize, d);
+          if (EXIT_SUCCESS == result) {
+            data = (char*)data + sub_size;
+          }
+          else { /* error */
+            break;
+          }
+        }
+      }
+      else {
+        result = EXIT_FAILURE;
+      }
+    }
+    else {
+      result = EXIT_FAILURE;
+    }
+  }
+  else if (1 == ndims) {
+    const size_t n = *(0 != size ? size : data_size);
+    if (*data_size < n || n != fread(data, typesize, n, file)) {
+      result = EXIT_FAILURE;
+    }
+  }
+
+  return result;
+}
+
+
+LIBXSMM_API int libxsmm_mhd_read( const char* filename,
+  const size_t* data_size, const size_t* size, size_t ndims, size_t ncomponents, size_t header_size,
+  libxsmm_mhd_elemtype type_stored, const libxsmm_mhd_elemtype* type_data,
+  void* data, void handle_entry(void*, size_t, const void*),
+  char* extension, size_t extension_size)
+{
+  int result = EXIT_SUCCESS;
+  FILE *const file = (0 != filename && 0 != *filename &&
+    0 != data_size && 0 != ndims && 0 != ncomponents &&
+    LIBXSMM_MHD_ELEMTYPE_UNKNOWN != type_stored &&
+    (0 == type_data || LIBXSMM_MHD_ELEMTYPE_UNKNOWN != *type_data) &&
+    0 != data)
+    ? fopen(filename, "rb")
+    : NULL;
+
+  if (0 != file) {
+    size_t typesize;
+    if (0 != header_size) {
+      result = fseek(file, (long)header_size, SEEK_SET);
+    }
+    if (EXIT_SUCCESS == result && 0 != libxsmm_mhd_typename(type_stored, &typesize)) {
+      result = internal_mhd_read(file, data, data_size, size, ncomponents * typesize, ndims);
+    }
   }
   else {
     result = EXIT_FAILURE;
@@ -299,20 +402,44 @@ LIBXSMM_API_INLINE int internal_mhd_write(FILE* file, const void* data,
 
   assert(0 != data_size);
   if (1 < ndims) {
-    size_t d = ndims - 1, i;
-    size_t sub_size = LIBXSMM_MAX(data_size[0], 0 != size ? size[0] : 0);
-    for (i = 1; i < d; ++i) {
-      sub_size *= LIBXSMM_MAX(data_size[i], 0 != size ? size[i] : 0);
+    if (0 == size || size[0] <= data_size[0]) {
+      const size_t d = ndims - 1;
+
+      if (EXIT_SUCCESS == result && (0 == size || size[d] <= data_size[d])) {
+        size_t sub_size = typesize * data_size[0], i;
+
+        for (i = 1; i < d; ++i) {
+          if (0 == size || size[i] <= data_size[i]) {
+            sub_size *= data_size[i];
+          }
+          else {
+            result = EXIT_FAILURE;
+            break;
+          }
+        }
+        for (i = 0; i < data_size[d]; ++i) {
+          result = internal_mhd_write(file, data, data_size, size, typesize, d);
+          if (EXIT_SUCCESS == result) {
+            data = (const char*)data + sub_size;
+          }
+          else { /* error */
+            break;
+          }
+        }
+      }
+      else {
+        result = EXIT_FAILURE;
+      }
     }
-    for (i = 0; i < LIBXSMM_MAX(data_size[d], 0 != size ? size[d] : 0); ++i) {
-      result = LIBXSMM_MAX(internal_mhd_write(file, data, data_size, size, typesize, d), result);
-      data = (const char*)data + sub_size;
+    else {
+      result = EXIT_FAILURE;
     }
   }
-
-  if (EXIT_SUCCESS == result) {
-    const size_t nwrite = *((0 != size && 0 < *size) ? size : data_size);
-    result = (nwrite == fwrite(data, typesize, nwrite, file) ? EXIT_SUCCESS : EXIT_FAILURE);
+  else if (1 == ndims) {
+    const size_t n = *(0 != size ? size : data_size);
+    if (*data_size < n || n != fwrite(data, typesize, n, file)) {
+      result = EXIT_FAILURE;
+    }
   }
 
   return result;
@@ -320,53 +447,72 @@ LIBXSMM_API_INLINE int internal_mhd_write(FILE* file, const void* data,
 
 
 LIBXSMM_API_DEFINITION int libxsmm_mhd_write(const char* filename,
-  const size_t* data_size, const size_t* size, size_t ndims, size_t ncomponents,
-  const void* data, libxsmm_mhd_elemtype elemtype, const double* spacing,
+  const size_t* data_size, const size_t* size, size_t ndims,
+  size_t ncomponents, libxsmm_mhd_elemtype type, const void* data,
   const char* extension_header, const void* extension, size_t extension_size)
 {
-  size_t elemsize = 0;
-  const char *const elemtype_name = libxsmm_mhd_typename(elemtype, &elemsize);
+  size_t typesize = 0;
+  const char *const elemname = libxsmm_mhd_typename(type, &typesize);
   FILE *const file = (0 != filename && 0 != *filename &&
       0 != data_size && 0 != ndims && 0 != ncomponents &&
-      0 != data && 0 != elemtype_name)
+      0 != data && 0 != elemname)
     ? fopen(filename, "wb")
     : NULL;
   int result = EXIT_SUCCESS;
 
   if (0 != file) {
     size_t i;
-
-    fprintf(file, "NDims = %u\nElementNumberOfChannels = %u\nElementByteOrderMSB = False\nDimSize =",
-      (unsigned int)ndims, (unsigned int)ncomponents);
-    for (i = 0; i != ndims; ++i) {
-      fprintf(file, " %u", (unsigned int)((0 != size && 0 < size[i]) ? size[i] : data_size[i]));
+    if (0 < fprintf(file, "NDims = %u\nElementNumberOfChannels = %u\nElementByteOrderMSB = False\nDimSize =",
+      (unsigned int)ndims, (unsigned int)ncomponents))
+    {
+      for (i = 0; i != ndims; ++i) {
+        if (0 >= fprintf(file, " %u", (unsigned int)((0 != size && 0 < size[i]) ? size[i] : data_size[i]))) {
+          result = EXIT_FAILURE;
+          break;
+        }
+      }
     }
-
-    fprintf(file, "\nElementSpacing =");
-    for (i = 0; i != ndims; ++i) {
-      fprintf(file, " %f", (0 != spacing ? spacing[i] : 1.0));
+    else {
+      result = EXIT_FAILURE;
     }
-
-    if (0 != extension_header && 0 != *extension_header) {
-      fprintf(file, "\n%s", extension_header);
+    if (EXIT_SUCCESS == result && 0 < fprintf(file, "\nElementSpacing =")) {
+      for (i = 0; i != ndims; ++i) {
+        if (0 >= fprintf(file, " 1.0")) {
+          result = EXIT_FAILURE;
+          break;
+        }
+      }
     }
-
+    else {
+      result = EXIT_FAILURE;
+    }
+    if (EXIT_SUCCESS == result && 0 != extension_header && 0 != *extension_header) {
+      if (0 >= fprintf(file, "\n%s", extension_header)) {
+        result = EXIT_FAILURE;
+      }
+    }
     /* size of the data, which is silently appended after the regular data section */
-    if (0 < extension_size) {
-      fprintf(file, "\nExtensionDataSize = %u", (unsigned int)extension_size);
+    if (EXIT_SUCCESS == result && 0 < extension_size) {
+      if (0 >= fprintf(file, "\nExtensionDataSize = %u", (unsigned int)extension_size)) {
+        result = EXIT_FAILURE;
+      }
     }
-
     /* ElementDataFile must be the last entry before writing the data */
-    fprintf(file, "\nElementType = %s\nElementDataFile = LOCAL\n", elemtype_name);
-    internal_mhd_write(file, data, data_size, size, ncomponents * elemsize, ndims);
-
-    /* append the extension data behind the regular data section */
-    if (0 < extension_size) {
-      fwrite(extension, 1, extension_size, file);
+    if (EXIT_SUCCESS == result && 0 < fprintf(file, "\nElementType = %s\nElementDataFile = LOCAL\n", elemname)) {
+      result = internal_mhd_write(file, data, data_size, size, ncomponents * typesize, ndims);
     }
 
-    /* release file handle */
-    fclose(file);
+    /* append the extension data after the regular data section */
+    if (EXIT_SUCCESS == result && 0 < extension_size) {
+      if (extension_size != fwrite(extension, 1, extension_size, file)) {
+        result = EXIT_FAILURE;
+      }
+    }
+    if (EXIT_SUCCESS == result) { /* release file handle */
+      if (0 != fclose(file)) {
+        result = EXIT_FAILURE;
+      }
+    }
   }
   else {
     result = EXIT_FAILURE;
