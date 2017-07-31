@@ -81,6 +81,141 @@ iconv -t utf-8 README.md \
   -o ${DOCDIR}/libxsmm.docx
 
 # cleanup markup and pipe into pandoc using the template
+# LIBXSMM/AUX documentation
+iconv -t utf-8 ${DOCDIR}/libxsmm_aux.md \
+| sed \
+  -e 's/\[\[..*\](..*)\]//g' \
+  -e 's/\[!\[..*\](..*)\](..*)//g' \
+  -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+  -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+  -e 's/----*//g' \
+| tee >( pandoc \
+  --latex-engine=xelatex --template=${TMPFILE} --listings \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -V documentclass=scrartcl \
+  -V title-meta="LIBXSMM Documentation (AUX)" \
+  -V author-meta="Hans Pabst" \
+  -V classoption=DIV=45 \
+  -V linkcolor=black \
+  -V citecolor=black \
+  -V urlcolor=black \
+  -o ${DOCDIR}/libxsmm_aux.pdf) \
+| tee >( pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/libxsmm_aux.html) \
+| pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/libxsmm_aux.docx
+
+# cleanup markup and pipe into pandoc using the template
+# LIBXSMM/BE documentation
+iconv -t utf-8 ${DOCDIR}/libxsmm_be.md \
+| sed \
+  -e 's/\[\[..*\](..*)\]//g' \
+  -e 's/\[!\[..*\](..*)\](..*)//g' \
+  -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+  -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+  -e 's/----*//g' \
+| tee >( pandoc \
+  --latex-engine=xelatex --template=${TMPFILE} --listings \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -V documentclass=scrartcl \
+  -V title-meta="LIBXSMM Documentation (BE)" \
+  -V author-meta="Alexander Heinecke, Hans Pabst" \
+  -V classoption=DIV=45 \
+  -V linkcolor=black \
+  -V citecolor=black \
+  -V urlcolor=black \
+  -o ${DOCDIR}/libxsmm_be.pdf) \
+| tee >( pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/libxsmm_be.html) \
+| pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/libxsmm_be.docx
+
+# cleanup markup and pipe into pandoc using the template
+# LIBXSMM/DNN documentation
+iconv -t utf-8 ${DOCDIR}/libxsmm_dnn.md \
+| sed \
+  -e 's/\[\[..*\](..*)\]//g' \
+  -e 's/\[!\[..*\](..*)\](..*)//g' \
+  -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+  -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+  -e 's/----*//g' \
+| tee >( pandoc \
+  --latex-engine=xelatex --template=${TMPFILE} --listings \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -V documentclass=scrartcl \
+  -V title-meta="LIBXSMM Documentation (DNN)" \
+  -V author-meta="Alexander Heinecke, Hans Pabst" \
+  -V classoption=DIV=45 \
+  -V linkcolor=black \
+  -V citecolor=black \
+  -V urlcolor=black \
+  -o ${DOCDIR}/libxsmm_dnn.pdf) \
+| tee >( pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/libxsmm_dnn.html) \
+| pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/libxsmm_dnn.docx
+
+# cleanup markup and pipe into pandoc using the template
+# LIBXSMM/MM documentation
+iconv -t utf-8 ${DOCDIR}/libxsmm_mm.md \
+| sed \
+  -e 's/\[\[..*\](..*)\]//g' \
+  -e 's/\[!\[..*\](..*)\](..*)//g' \
+  -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+  -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+  -e 's/----*//g' \
+| tee >( pandoc \
+  --latex-engine=xelatex --template=${TMPFILE} --listings \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -V documentclass=scrartcl \
+  -V title-meta="LIBXSMM Documentation (MM)" \
+  -V author-meta="Hans Pabst" \
+  -V classoption=DIV=45 \
+  -V linkcolor=black \
+  -V citecolor=black \
+  -V urlcolor=black \
+  -o ${DOCDIR}/libxsmm_mm.pdf) \
+| tee >( pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/libxsmm_mm.html) \
+| pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/libxsmm_mm.docx
+
+# cleanup markup and pipe into pandoc using the template
+# LIBXSMM/PERF documentation
+iconv -t utf-8 ${DOCDIR}/libxsmm_perf.md \
+| sed \
+  -e 's/\[\[..*\](..*)\]//g' \
+  -e 's/\[!\[..*\](..*)\](..*)//g' \
+  -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+  -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+  -e 's/----*//g' \
+| tee >( pandoc \
+  --latex-engine=xelatex --template=${TMPFILE} --listings \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -V documentclass=scrartcl \
+  -V title-meta="LIBXSMM Documentation (PERF)" \
+  -V author-meta="Hans Pabst" \
+  -V classoption=DIV=45 \
+  -V linkcolor=black \
+  -V citecolor=black \
+  -V urlcolor=black \
+  -o ${DOCDIR}/libxsmm_perf.pdf) \
+| tee >( pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/libxsmm_perf.html) \
+| pandoc \
+  -f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+  -o ${DOCDIR}/libxsmm_perf.docx
+
+# cleanup markup and pipe into pandoc using the template
 # CP2K recipe
 iconv -t utf-8 ${HERE}/documentation/cp2k.md \
 | sed \

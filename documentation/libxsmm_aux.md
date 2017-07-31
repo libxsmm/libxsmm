@@ -30,6 +30,11 @@ unsigned long long libxsmm_timer_xtick(void);
 double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1);
 ```
 
+## Meta Image File I/O
+Loading and storing data (I/O) is normally out of LIBXSMM's scope. However, comparing results (correctness) or writing files for visual inspection is clearly desired. This is particularly useful with images when processed by the DNN domain. The MHD function domain provides support for the Meta Image File format (MHD). Tools such as ITK-SNAP or ParaView can be used to inspect, compare, and modify images even beyond two-dimensional images.
+
+Writing an image is per `libxsmm_mhd_write`, and loading an image split in two stages: (1)&#160;`libxsmm_mhd_read_header`, and (2)&#160;`libxsmm_mhd_read`. The latter allows to allocate a properly sized buffer, which is then used to take the data per `libxsmm_mhd_read`. When reading data, an on-the-fly type conversion is supported. Moreover, data already in memory can be compared against file-data without allocating memory or reading the file into memory.
+
 ## Memory Allocation
 The C interface ('libxsmm_malloc.h') provides functions for aligned memory one of which allows to specify the alignment (or to request an automatically selected alignment). The automatic alignment is also available with a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
 **NOTE**: Only `libxsmm_free` is supported to deallocate the memory.

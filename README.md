@@ -7,7 +7,15 @@ LIBXSMM is a library for small dense and small sparse matrix-matrix multiplicati
 
 **<a name="what-is-a-small-convolution"></a>What is a small convolution?** In the last years, new workloads such as deep learning and more specifically convolutional neural networks (CNN) emerged, and are pushing the limits of today's hardware. One of the expensive kernels is a small convolution with certain kernel sizes (3, 5, or 7) such that calculations in the frequency space is not the most efficient method when compared with direct convolutions. LIBXSMM's current support for convolutions aims for an easy to use invocation of small (direct) convolutions, which are intended for CNN training and classification. The [Interface](#interface-for-convolutions) is currently ramping up, and the functionality increases quickly towards a broader set of use cases.
 
-For more questions and answers, please have a look at [https://github.com/hfp/libxsmm/wiki/Q&A](https://github.com/hfp/libxsmm/wiki/Q&A).
+For more questions and answers, please have a look at https://github.com/hfp/libxsmm/wiki/Q&A.
+
+Documented functionality and available domains:
+
+* MM: [Interface for Matrix Multiplication](#interface-for-matrix-multiplication)
+* DNN: [Interface for Convolutions](#interface-for-convolutions)
+* AUX: [Service Functions](#service-functions)
+
+For additional functionality, please have a look at https://github.com/hfp/libxsmm/tree/master/include.
 
 ## Build Instructions
 ### Classic Library (ABI)
@@ -138,6 +146,7 @@ The service function domain (AUX) contains routines for:
 
 * Getting and setting the target architecture
 * Measuring time (timer facility)
+* Loading and storing data (I/O)
 * Allocating memory
 
 The details can be found in a separate [document](https://github.com/hfp/libxsmm/blob/master/documentation/libxsmm_aux.md).
