@@ -112,10 +112,10 @@ LIBXSMM_API_INLINE int internal_mhd_readline(char* buffer, char split, size_t* k
   if (0 != isplit) {
     char* i = isplit;
     assert(0 != key_end && 0 != value_begin);
-    while (buffer != i && isspace(*--i));
+    while (buffer != i && 0 != isspace((int)(*--i)));
     *key_end = i - buffer + 1;
     i = isplit;
-    while (isspace(*++i) && '\n' != *i);
+    while (0 != isspace((int)(*++i)) && '\n' != *i);
     *value_begin = i - buffer;
     while ('\n' != *i && 0 != *i) ++i;
     if ('\n' == *i) *i = 0; /* fix-up */
@@ -140,6 +140,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char* header_filename, 
   FILE *const file = fopen(header_filename, "rb");
 
   if (0 != file && 0 < filename_max_length && 0 != filename && 0 != ndims && 0 < *ndims && 0 != size && 0 != type && 0 != ncomponents) {
+    size_t key_end, value_begin;
     if (0 != extension_size) *extension_size = 0;
     if (0 != header_size) *header_size = 0;
     memset(size, 0, *ndims * sizeof(*size));
@@ -147,129 +148,128 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char* header_filename, 
     *ncomponents = 1;
     *filename = 0;
 
-    while (0 != fgets(buffer, sizeof(buffer), file) && EXIT_SUCCESS == result) {
-      size_t key_end, value_begin;
-      if (EXIT_SUCCESS == internal_mhd_readline(buffer, '=', &key_end, &value_begin)) {
-        if (0 == strncmp("NDims", buffer, key_end)
-          && key_end == strlen("NDims"))
-        {
-          const int value = atoi(buffer + value_begin);
-          if (0 < value && value <= ((int)*ndims)) {
-            *ndims = value;
-          }
+    while (0 != fgets(buffer, sizeof(buffer), file) && EXIT_SUCCESS == result &&
+      EXIT_SUCCESS == internal_mhd_readline(buffer, '=', &key_end, &value_begin))
+    {
+      if (0 == strncmp("NDims", buffer, key_end)
+        && key_end == strlen("NDims"))
+      {
+        const int value = atoi(buffer + value_begin);
+        if (0 < value && value <= ((int)*ndims)) {
+          *ndims = value;
         }
-        else if (0 == strncmp("ElementNumberOfChannels", buffer, key_end)
-         && key_end == strlen("ElementNumberOfChannels"))
-        {
-          const int value = atoi(buffer + value_begin);
-          if (0 < value) {
-            *ncomponents = value;
-          }
-          else {
-            result = EXIT_FAILURE;
-          }
+      }
+      else if (0 == strncmp("ElementNumberOfChannels", buffer, key_end)
+       && key_end == strlen("ElementNumberOfChannels"))
+      {
+        const int value = atoi(buffer + value_begin);
+        if (0 < value) {
+          *ncomponents = value;
         }
-        else if (0 != extension_size
-          && 0 == strncmp("ExtensionDataSize", buffer, key_end)
-          && key_end == strlen("ExtensionDataSize"))
-        {
-          const int value = atoi(buffer + value_begin);
-          if (0 <= value) {
-            *extension_size = value;
-          }
-          else {
-            result = EXIT_FAILURE;
-          }
+        else {
+          result = EXIT_FAILURE;
         }
-        else if (0 == strncmp("ElementType", buffer, key_end)
-         && key_end == strlen("ElementType"))
-        {
-          const libxsmm_mhd_elemtype value = libxsmm_mhd_typeinfo(buffer + value_begin);
-          if (LIBXSMM_MHD_ELEMTYPE_UNKNOWN != value) {
-            *type = value;
-          }
+      }
+      else if (0 != extension_size
+        && 0 == strncmp("ExtensionDataSize", buffer, key_end)
+        && key_end == strlen("ExtensionDataSize"))
+      {
+        const int value = atoi(buffer + value_begin);
+        if (0 <= value) {
+          *extension_size = value;
         }
-        else if (0 == strncmp("ElementDataFile", buffer, key_end)
-         && key_end == strlen("ElementDataFile"))
-        {
-          const char *const value = buffer + value_begin;
-          if (0 == strcmp("LOCAL", value) || 0 == strcmp(header_filename, value)) {
-            if (header_size) {
-              const size_t len = strlen(header_filename);
-              if (len < filename_max_length) {
-                strncpy(filename, header_filename, len);
-                *header_size = ftell(file);
-              }
-              else {
-                result = EXIT_FAILURE;
-              }
-              break; /* ElementDataFile is just before the raw data */
-            }
-          }
-          else {
-            const size_t len = strlen(value);
+        else {
+          result = EXIT_FAILURE;
+        }
+      }
+      else if (0 == strncmp("ElementType", buffer, key_end)
+       && key_end == strlen("ElementType"))
+      {
+        const libxsmm_mhd_elemtype value = libxsmm_mhd_typeinfo(buffer + value_begin);
+        if (LIBXSMM_MHD_ELEMTYPE_UNKNOWN != value) {
+          *type = value;
+        }
+      }
+      else if (0 == strncmp("ElementDataFile", buffer, key_end)
+       && key_end == strlen("ElementDataFile"))
+      {
+        const char *const value = buffer + value_begin;
+        if (0 == strcmp("LOCAL", value) || 0 == strcmp(header_filename, value)) {
+          if (header_size) {
+            const size_t len = strlen(header_filename);
             if (len < filename_max_length) {
-              strncpy(filename, value, len);
+              strncpy(filename, header_filename, len);
+              *header_size = ftell(file);
             }
             else {
               result = EXIT_FAILURE;
             }
+            break; /* ElementDataFile is just before the raw data */
           }
         }
-        else if (0 == strncmp("DimSize", buffer, key_end)
-         && key_end == strlen("DimSize"))
-        {
-          char* value = buffer + value_begin;
-          size_t n = 0;
-          while (EXIT_SUCCESS == internal_mhd_readline(value, ' ', &key_end, &value_begin)) {
-            const int ivalue = atoi(value);
-            if (0 < ivalue) {
-              *size = ivalue;
-            }
-            else {
-              result = EXIT_FAILURE;
-            }
-            value += key_end + 1;
-            ++size;
-            ++n;
+        else {
+          const size_t len = strlen(value);
+          if (len < filename_max_length) {
+            strncpy(filename, value, len);
           }
-          if (EXIT_SUCCESS == result && 0 != *value) {
-            const int ivalue = atoi(value);
-            if (0 < ivalue) {
-              *size = ivalue;
-            }
-            else {
-              result = EXIT_FAILURE;
-            }
-            ++n;
-          }
-          if (*ndims < n) {
+          else {
             result = EXIT_FAILURE;
           }
         }
-        else if (0 == strncmp("BinaryData", buffer, key_end)
-         && key_end == strlen("BinaryData"))
-        {
-          const char *const value = buffer + value_begin;
-          if (0 == strcmp("False", value) || 0 != strcmp("True", value)) {
+      }
+      else if (0 == strncmp("DimSize", buffer, key_end)
+       && key_end == strlen("DimSize"))
+      {
+        char* value = buffer + value_begin;
+        size_t *isize = size, n = 0;
+        while (EXIT_SUCCESS == internal_mhd_readline(value, ' ', &key_end, &value_begin)) {
+          const int ivalue = atoi(value);
+          if (0 < ivalue) {
+            *isize = ivalue;
+          }
+          else {
             result = EXIT_FAILURE;
           }
+          value += key_end + 1;
+          ++isize;
+          ++n;
         }
-        else if (0 == strncmp("CompressedData", buffer, key_end)
-         && key_end == strlen("CompressedData"))
-        {
-          const char *const value = buffer + value_begin;
-          if (0 == strcmp("True", value) || 0 != strcmp("False", value)) {
+        if (EXIT_SUCCESS == result && 0 != *value) {
+          const int ivalue = atoi(value);
+          if (0 < ivalue) {
+            *isize = ivalue;
+          }
+          else {
             result = EXIT_FAILURE;
           }
+          ++n;
         }
-        else if ((0 == strncmp("BinaryDataByteOrderMSB", buffer, key_end) && key_end == strlen("BinaryDataByteOrderMSB"))
-              || (0 == strncmp("ElementByteOrderMSB",    buffer, key_end) && key_end == strlen("ElementByteOrderMSB")))
-        {
-          const char *const value = buffer + value_begin;
-          if (0 == strcmp("True", value) || 0 != strcmp("False", value)) {
-            result = EXIT_FAILURE;
-          }
+        if (*ndims < n) {
+          result = EXIT_FAILURE;
+        }
+      }
+      else if (0 == strncmp("BinaryData", buffer, key_end)
+       && key_end == strlen("BinaryData"))
+      {
+        const char *const value = buffer + value_begin;
+        if (0 == strcmp("False", value) || 0 != strcmp("True", value)) {
+          result = EXIT_FAILURE;
+        }
+      }
+      else if (0 == strncmp("CompressedData", buffer, key_end)
+       && key_end == strlen("CompressedData"))
+      {
+        const char *const value = buffer + value_begin;
+        if (0 == strcmp("True", value) || 0 != strcmp("False", value)) {
+          result = EXIT_FAILURE;
+        }
+      }
+      else if ((0 == strncmp("BinaryDataByteOrderMSB", buffer, key_end) && key_end == strlen("BinaryDataByteOrderMSB"))
+            || (0 == strncmp("ElementByteOrderMSB",    buffer, key_end) && key_end == strlen("ElementByteOrderMSB")))
+      {
+        const char *const value = buffer + value_begin;
+        if (0 == strcmp("True", value) || 0 != strcmp("False", value)) {
+          result = EXIT_FAILURE;
         }
       }
     }
