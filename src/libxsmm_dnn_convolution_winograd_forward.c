@@ -119,7 +119,11 @@ LIBXSMM_API_INLINE void internal_fwd_input_transform_nhwc_custom(
   if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
+# include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha6_avx512.tpl.c"
+#else
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha6.tpl.c"
+#endif
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_fwd.alpha == 4) {
@@ -210,7 +214,11 @@ LIBXSMM_API_INLINE void internal_fwd_output_transform_nhwc_custom( float *toutp,
   if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
+# include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha6_avx512.tpl.c"
+#else
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha6.tpl.c"
+#endif
 #undef TDVLEN
 #undef ALPHA
   } else if (handle->cwino_fwd.alpha == 4) {
@@ -256,7 +264,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_cu
       if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
+# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined_avx512.tpl.c"
+#else
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined.tpl.c"
+#endif
 #undef TDVLEN
 #undef ALPHA
       } else if (handle->cwino_fwd.alpha == 4) {
@@ -309,7 +321,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_nh
       if (handle->cwino_fwd.alpha == 6) {
 #define ALPHA 6
 #define TDVLEN 16
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
+# include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_inlined_avx512.tpl.c"
+#else
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_inlined.tpl.c"
+#endif
 #undef TDVLEN
 #undef ALPHA
       } else if (handle->cwino_fwd.alpha == 4) {
