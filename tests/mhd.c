@@ -34,9 +34,9 @@
 int main(int argc, char* argv[])
 {
   const char *const filename = (1 < argc ? argv[1] : "mhd_image.mhd");
-  char data_filename[1024];
-  libxsmm_mhd_elemtype type;
   size_t ndims = 3, size[3], ncomponents, header_size, extension_size;
+  libxsmm_mhd_elemtype type;
+  char data_filename[1024];
   void* data = 0;
   int result;
 
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  /* Read the data according to the header into the allocate buffer. */
+  /* Read the data according to the header into the allocated buffer. */
   if (EXIT_SUCCESS == result) {
     result = libxsmm_mhd_read(data_filename,
       size, size, ndims, ncomponents, header_size,
