@@ -37,7 +37,7 @@
 # include <omp.h>
 #endif
 
-#if 1 
+#if 1
 #define USE_OVERWRITE
 #endif
 #if 0

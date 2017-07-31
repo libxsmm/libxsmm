@@ -171,7 +171,7 @@ for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_fwd.bimg); img1++) {
         }
       }
       for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1+=handle->cwino_fwd.ur_ifm) {
-#if 1 
+#if 1
         jitted_conv_fp(
           &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ofm1, ifm1, 0, 0, ALPHA, handle->blocksofm, handle->blocksifm, TDVLEN, TDVLEN),
           &LIBXSMM_VLA_ACCESS(8, V, img1, oj, oi, 0, 0, 0, ifm1, 0, ALPHA, ALPHA, handle->cwino_fwd.bimg, handle->cwino_fwd.jtiles, handle->cwino_fwd.itiles, handle->blocksifm, TDVLEN),
@@ -198,7 +198,7 @@ for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_fwd.bimg); img1++) {
       }
     }
     else {
-#if 1 
+#if 1
       /* when ur_ifm == blocksifm, we don't need to initialize M. Instead, we use streaming store to save read BW */
       jitted_conv_fp(
         &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ofm1, 0, 0, 0, ALPHA, handle->blocksofm, handle->blocksifm, TDVLEN, TDVLEN),

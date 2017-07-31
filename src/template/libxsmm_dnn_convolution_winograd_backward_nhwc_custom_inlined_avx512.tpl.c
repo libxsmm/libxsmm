@@ -171,7 +171,7 @@ for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_bwd.bimg); img1++) {
       }
 
       for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1+=handle->cwino_bwd.ur_ifm) {
-#if 1 
+#if 1
         jitted_conv_bp(
           &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ifm1, ofm1, 0, 0, ALPHA, handle->blocksifm, handle->blocksofm, TDVLEN, TDVLEN),
           &LIBXSMM_VLA_ACCESS(8, M, img1, oj, oi, 0, 0, 0, ofm1, 0, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, handle->blocksofm, TDVLEN),
@@ -198,7 +198,7 @@ for (img1 = 0; img1 < (int)(handle->desc.N/handle->cwino_bwd.bimg); img1++) {
       }
     }
     else {
-#if 1 
+#if 1
       jitted_conv_bp(
         &LIBXSMM_VLA_ACCESS(6, U, oj, oi, ifm1, 0, 0, 0, ALPHA, handle->blocksifm, handle->blocksofm, TDVLEN, TDVLEN),
         &LIBXSMM_VLA_ACCESS(8, M, img1, oj, oi, 0, 0, 0, 0, 0, ALPHA, ALPHA, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, handle->blocksofm, TDVLEN),
