@@ -651,7 +651,7 @@ void libxsmm_generator_convolution_backward_avx512_load_input( libxsmm_generated
     } else { /* If not first iteration */
     /* load one VLEN input */
       if ((i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM && i_conv_desc->ofw_rb <= 14 && i_conv_desc->ofh_rb == 1) || (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1)) {
-        /*Use extra accumlators to hide FMA latencies when ofw_rb is too small */
+        /*Use extra accumulators to hide FMA latencies when ofw_rb is too small */
         for (k = 0; k < (l_accs-1); k--) {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                    i_conv_kernel_config->instruction_set,
