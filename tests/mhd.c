@@ -48,18 +48,20 @@ int main(int argc, char* argv[])
   /* Allocate data according to the header information. */
   if (EXIT_SUCCESS == result) {
     size_t typesize;
-    const char *const elemname = libxsmm_mhd_typename(type, &typesize);
-    const size_t size1 = size[0] * (1 < ndims ? (size[1] * (2 < ndims ? size[2] : 1)) : 1);
-    data = malloc(typesize * size1);
-    LIBXSMM_UNUSED(elemname);
-    assert(0 != elemname);
+    if (0 != libxsmm_mhd_typename(type, &typesize)) {
+      const size_t nelements = size[0] * (1 < ndims ? (size[1] * (2 < ndims ? size[2] : 1)) : 1);
+      data = malloc(ncomponents * typesize * nelements);
+    }
+    else {
+      result = EXIT_FAILURE;
+    }
   }
 
   /* Read the data according to the header into the allocate buffer. */
   if (EXIT_SUCCESS == result) {
     result = libxsmm_mhd_read(data_filename,
       size, size, ndims, ncomponents, header_size,
-      type, 0/*type_data*/, data, 0/*handle_entry*/,
+      type, 0/*type_data*/, data, 0/*handle_element*/,
       0/*extension*/, 0/*extension_size*/);
   }
 
@@ -71,15 +73,22 @@ int main(int argc, char* argv[])
       0/*extension*/,
       0/*extension_size*/);
   }
-#if 0
-  /* Re-read and check the data without allocating a buffer. */
+
+  /* Read header information of newly written file. */
   if (EXIT_SUCCESS == result) {
-    result = libxsmm_mhd_read("mhd_test.mhd",
+    result = libxsmm_mhd_read_header("mhd_test.mhd", sizeof(data_filename),
+      data_filename, &ndims, size, &ncomponents, &type,
+      &header_size, &extension_size);
+  }
+
+  /* Check the written data against the buffer. */
+  if (EXIT_SUCCESS == result) {
+    result = libxsmm_mhd_read(data_filename,
       size, size, ndims, ncomponents, header_size,
-      type, 0/*type_data*/, data, 0/*handle_entry*/,
+      type, 0/*type_data*/, data, libxsmm_mhd_element_comparison,
       0/*extension*/, 0/*extension_size*/);
   }
-#endif
+
   /* Deallocate the buffer. */
   free(data);
 

@@ -51,6 +51,15 @@ typedef enum libxsmm_mhd_elemtype {
 } libxsmm_mhd_elemtype;
 
 
+/** Function type used for custom data-handler or element conversion. */
+typedef LIBXSMM_RETARGETABLE int (*libxsmm_mhd_element_handler)(
+  void* dst, libxsmm_mhd_elemtype dst_type,
+  const void* src, libxsmm_mhd_elemtype src_type);
+
+/** Predefined function to check a buffer against file content. */
+LIBXSMM_API int libxsmm_mhd_element_comparison(void* dst, libxsmm_mhd_elemtype dst_type, const void* src, libxsmm_mhd_elemtype src_type);
+
+
 /** Returns the name and size of the element type; result may be NULL/0 in case of an unknown type. */
 LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t* typesize);
 
@@ -116,7 +125,7 @@ LIBXSMM_API int libxsmm_mhd_read(
    * allows to only compare with present data. Can be used to
    * avoid allocating an actual destination.
    */
-  void handle_entry(void*, size_t, const void*),
+  libxsmm_mhd_element_handler handle_element,
   /* Post-content data (extension, optional). */
   char* extension,
   /* Size of the extension; can be zero. */
