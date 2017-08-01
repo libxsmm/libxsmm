@@ -351,10 +351,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const li
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_layer*)handle);
   }
+#if 0 /* releasing a NULL-handle should be not an error (similar to freeing a NULL pointer) */
   else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
   }
-
+#endif
   return status;
 }
 
