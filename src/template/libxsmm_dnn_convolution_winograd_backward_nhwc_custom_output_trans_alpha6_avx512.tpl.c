@@ -64,7 +64,7 @@ for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
       T[3][i] = _mm512_add_ps(_mm512_fmadd_ps(_mm512_set1_ps(8.f), t3, t2), I5);
     }
 
-    if (((tj + 1) * ((ALPHA) - 2)) <= handle->desc.H && ((ti + 1) * ((ALPHA) - 2)) <= handle->desc.W) { /* common case */
+    if (((tj + 1) * ((ALPHA) - 2)) <= (unsigned int)handle->desc.H && ((ti + 1) * ((ALPHA) - 2)) <= (unsigned int)handle->desc.W) { /* common case */
 
       LIBXSMM_PRAGMA_UNROLL_N((ALPHA)-2)
       for (j = 0; j < ((ALPHA)-2); j++) {
