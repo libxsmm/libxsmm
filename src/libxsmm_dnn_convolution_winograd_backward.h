@@ -33,8 +33,8 @@
 
 #include "libxsmm_dnn.h"
 
-LIBXSMM_API void libxsmm_dnn_convolve_winograd_init_bwd(int target_arch);
-LIBXSMM_API void libxsmm_dnn_convolve_winograd_finalize_bwd(void);
+LIBXSMM_API void libxsmm_dnn_convolve_winograd_bwd_init(int target_arch);
+LIBXSMM_API void libxsmm_dnn_convolve_winograd_bwd_finalize(void);
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_nhwc_custom  (libxsmm_dnn_layer* handle, int start_thread, int tid);
