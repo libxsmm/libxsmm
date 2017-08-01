@@ -213,7 +213,6 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_bwd_output_transform_custom_custom_alpha6
 # include "template/libxsmm_dnn_convolution_winograd_backward_custom_custom_output_trans_alpha6_avx512.tpl.c"
 # undef TDVLEN
 # undef ALPHA
-  LIBXSMM_UNUSED(Iwp);
 #else /* next lower/available code path (fall-back chain) */
   internal_bwd_output_transform_custom_custom_alpha6_default(toutp, outp, Owp, handle);
 #endif
@@ -268,7 +267,6 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_bwd_output_transform_nhwc_custom_alpha6_a
 # include "template/libxsmm_dnn_convolution_winograd_backward_nhwc_custom_output_trans_alpha6_avx512.tpl.c"
 # undef TDVLEN
 # undef ALPHA
-  LIBXSMM_UNUSED(Iwp);
 #else /* next lower/available code path (fall-back chain) */
   internal_bwd_output_transform_nhwc_custom_alpha6_default(toutp, outp, Owp, handle);
 #endif
