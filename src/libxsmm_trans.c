@@ -385,20 +385,6 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_sitrans(float* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
-{
-  return libxsmm_itrans(inout, sizeof(float), m, n, ld);
-}
-
-
-LIBXSMM_API_DEFINITION int libxsmm_ditrans(double* inout,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
-{
-  return libxsmm_itrans(inout, sizeof(double), m, n, ld);
-}
-
-
 #if defined(LIBXSMM_BUILD)
 
 /* implementation provided for Fortran 77 compatibility */
