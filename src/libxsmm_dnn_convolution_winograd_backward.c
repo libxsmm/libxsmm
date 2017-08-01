@@ -424,7 +424,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_nh
       if (handle->cwino_bwd.alpha == 6) {
         /* if highest implemented code path is statically present, no need for an indirect call (function pointer) */
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
-        internal_dnn_convolve_winograd_st_bwd_nhwc_custom_alpha6_avx512(toutp, outp, Owp, handle);
+        internal_dnn_convolve_winograd_st_bwd_nhwc_custom_alpha6_avx512(handle, start_thread, tid);
 #else /* pointer based function call */
         assert(0 != internal_dnn_convolve_winograd_st_bwd_nhwc_custom_alpha6);
         internal_dnn_convolve_winograd_st_bwd_nhwc_custom_alpha6(handle, start_thread, tid);
