@@ -143,10 +143,10 @@ LIBXSMM_API_INLINE int internal_mhd_readline(char* buffer, char split, size_t* k
   if (0 != isplit) {
     char* i = isplit;
     assert(0 != key_end && 0 != value_begin);
-    while (buffer != i && 0 != isspace((int)(*--i)));
+    while (buffer != i) { --i;  if (0 == isspace((int)(*i))) break; }
     *key_end = i - buffer + 1;
     i = isplit;
-    while (0 != isspace((int)(*++i)) && '\n' != *i);
+    while ('\n' != *++i) if (0 == isspace((int)(*i))) break;
     *value_begin = i - buffer;
     while (0 != *i && 0 != isprint((int)(*i))) ++i;
     if (0 == isprint((int)(*i))) *i = 0; /* fix-up */
