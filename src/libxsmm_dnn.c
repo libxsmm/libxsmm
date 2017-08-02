@@ -655,10 +655,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_buffer(const libxsm
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_buffer*)buffer);
   }
+#if 0 /* releasing a NULL-buffer should be not an error (similar to freeing a NULL pointer) */
   else {
     status = LIBXSMM_DNN_ERR_INVALID_BUFFER;
   }
-
+#endif
   return status;
 }
 
