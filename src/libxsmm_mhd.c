@@ -50,22 +50,14 @@
 #endif
 
 #define LIBXSMM_MHD_ASSIGN_VALUE(DST_TYPE, DST, SRC, SRC_ELEMTYPE, LO, HI) { const double h = (0.5 - (DST_TYPE)0.5); \
-       if (LIBXSMM_MHD_ELEMTYPE_I8  == (SRC_ELEMTYPE)) { const double d = *(const signed char*)(SRC); \
-                                                    *((DST_TYPE*)(DST)) = (DST_TYPE)(0 <= d ? (d * (HI) / 127.0 + h) : (d * (LO) / -128.0) - h); } \
-  else if (LIBXSMM_MHD_ELEMTYPE_U8  == (SRC_ELEMTYPE)) { const double d = *(const unsigned char*)(SRC); \
-                                                    *((DST_TYPE*)(DST)) = (DST_TYPE)(d * (HI) / 255.0 + h); } \
-  else if (LIBXSMM_MHD_ELEMTYPE_I16 == (SRC_ELEMTYPE)) { const double d = *(const short*)(SRC); \
-                                                    *((DST_TYPE*)(DST)) = (DST_TYPE)(0 <= d ? (d * (HI) / 32767.0 + h) : (d * (LO) / -32768.0 - h)); } \
-  else if (LIBXSMM_MHD_ELEMTYPE_U16 == (SRC_ELEMTYPE)) { const double d = *(const unsigned short*)(SRC); \
-                                                    *((DST_TYPE*)(DST)) = (DST_TYPE)(d * (HI) / 65535.0 + h); } \
-  else if (LIBXSMM_MHD_ELEMTYPE_I32 == (SRC_ELEMTYPE)) { const double d = *(const int*)(SRC); \
-                                                    *((DST_TYPE*)(DST)) = (DST_TYPE)(0 <= d ? (d * (HI) / 2147483647.0 + h) : (d * (LO) / -2147483648.0 - h)); } \
-  else if (LIBXSMM_MHD_ELEMTYPE_U32 == (SRC_ELEMTYPE)) { const double d = *(const unsigned int*)(SRC); \
-                                                    *((DST_TYPE*)(DST)) = (DST_TYPE)(d * (HI) / 4294967295.0 + h); } \
-  else if (LIBXSMM_MHD_ELEMTYPE_I64 == (SRC_ELEMTYPE)) { const double d = (double)*(const long long*)(SRC); \
-                                                    *((DST_TYPE*)(DST)) = (DST_TYPE)(0 <= d ? (d * (HI) / 9223372036854775807.0 + h) : (d * (LO) / -9223372036854775808.0 - h)); } \
-  else if (LIBXSMM_MHD_ELEMTYPE_U64 == (SRC_ELEMTYPE)) { const double d = (double)*(const unsigned long long*)(SRC); \
-                                                    *((DST_TYPE*)(DST)) = (DST_TYPE)(d * (HI) / 18446744073709551615.0 + h); } \
+       if (LIBXSMM_MHD_ELEMTYPE_I8  == (SRC_ELEMTYPE)) { *((DST_TYPE*)(DST)) = (DST_TYPE)*(const signed char*)(SRC); } \
+  else if (LIBXSMM_MHD_ELEMTYPE_U8  == (SRC_ELEMTYPE)) { *((DST_TYPE*)(DST)) = (DST_TYPE)*(const unsigned char*)(SRC); } \
+  else if (LIBXSMM_MHD_ELEMTYPE_I16 == (SRC_ELEMTYPE)) { *((DST_TYPE*)(DST)) = (DST_TYPE)*(const short*)(SRC); } \
+  else if (LIBXSMM_MHD_ELEMTYPE_U16 == (SRC_ELEMTYPE)) { *((DST_TYPE*)(DST)) = (DST_TYPE)*(const unsigned short*)(SRC); } \
+  else if (LIBXSMM_MHD_ELEMTYPE_I32 == (SRC_ELEMTYPE)) { *((DST_TYPE*)(DST)) = (DST_TYPE)*(const int*)(SRC); } \
+  else if (LIBXSMM_MHD_ELEMTYPE_U32 == (SRC_ELEMTYPE)) { *((DST_TYPE*)(DST)) = (DST_TYPE)*(const unsigned int*)(SRC); } \
+  else if (LIBXSMM_MHD_ELEMTYPE_I64 == (SRC_ELEMTYPE)) { *((DST_TYPE*)(DST)) = (DST_TYPE)*(const long long*)(SRC); } \
+  else if (LIBXSMM_MHD_ELEMTYPE_U64 == (SRC_ELEMTYPE)) { *((DST_TYPE*)(DST)) = (DST_TYPE)*(const unsigned long long*)(SRC); } \
   else if (LIBXSMM_MHD_ELEMTYPE_F32 == (SRC_ELEMTYPE)) { const double d = *(const float*)(SRC); \
                                                     *((DST_TYPE*)(DST)) = (DST_TYPE)(0 <= d ? (d * (HI) + h) : (-d * (LO) - h)); } \
   else if (LIBXSMM_MHD_ELEMTYPE_F64 == (SRC_ELEMTYPE)) { const double d = *(const double*)(SRC); \
