@@ -145,6 +145,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mhd", "..\tests\mhd.vcxproj
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "convolution", "..\samples\convolution\convolution.vcxproj", "{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug|Win32 = debug|Win32
@@ -515,6 +520,18 @@ Global
 		{0F908964-721C-4952-99A8-EF5C988CCE58}.symbols|Win32.Build.0 = symbols|Win32
 		{0F908964-721C-4952-99A8-EF5C988CCE58}.symbols|x64.ActiveCfg = symbols|x64
 		{0F908964-721C-4952-99A8-EF5C988CCE58}.symbols|x64.Build.0 = symbols|x64
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}.debug|Win32.ActiveCfg = debug|Win32
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}.debug|Win32.Build.0 = debug|Win32
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}.debug|x64.ActiveCfg = debug|x64
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}.debug|x64.Build.0 = debug|x64
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}.release|Win32.ActiveCfg = release|Win32
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}.release|Win32.Build.0 = release|Win32
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}.release|x64.ActiveCfg = release|x64
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}.release|x64.Build.0 = release|x64
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}.symbols|Win32.ActiveCfg = symbols|Win32
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}.symbols|Win32.Build.0 = symbols|Win32
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}.symbols|x64.ActiveCfg = symbols|x64
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -551,5 +568,6 @@ Global
 		{978B5AF3-4A2E-4DC9-BF7C-374403865240} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{315C606A-433F-43DB-8A26-A44AB66C99B1} = {F41F38BC-64ED-478C-AF08-51D0BAEC263E}
 		{0F908964-721C-4952-99A8-EF5C988CCE58} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
+		{6F673A10-16D0-4023-BD2A-686DF4DA2DD9} = {E0C8F9A7-ABF4-4366-B2A7-31F06F01E6B3}
 	EndGlobalSection
 EndGlobal
