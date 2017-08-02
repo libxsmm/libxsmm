@@ -33,11 +33,11 @@ const int total_tiles = handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles;
 LIBXSMM_VLA_DECL(4, const float, input, inp, handle->ofhp, handle->ofwp, TDVLEN);
 LIBXSMM_VLA_DECL(6, float, output, tinp, ALPHA, handle->cwino_bwd.bimg, total_tiles, handle->blocksofm, TDVLEN);
 __m512 I[ALPHA];
-unsigned int ti, tj;
+int ti, tj;
 int i, j;
 int xdim, ydim;
-const unsigned int l_pad = (handle->desc.W - handle->ofw)/2 + 1;
-const unsigned int t_pad = (handle->desc.H - handle->ofh)/2 + 1;
+const int l_pad = (handle->desc.W - handle->ofw)/2 + 1;
+const int t_pad = (handle->desc.H - handle->ofh)/2 + 1;
 __m512 T[ALPHA][ALPHA]; /* FIXME: too big and causing spills */
 __m512 t0, t1, t2, t3, t4, t5;
 
@@ -88,10 +88,10 @@ for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
           T[4][i] = _mm512_setzero_ps();
           T[5][i] = _mm512_setzero_ps();
         } else {
-          for (j = 0; j < (int)LIBXSMM_MIN(t_pad - tj*((ALPHA) - 2), ALPHA); j++) {
+          for (j = 0; j < LIBXSMM_MIN(t_pad - tj*((ALPHA) - 2), ALPHA); j++) {
             I[j] = _mm512_setzero_ps();
           }
-          for ( ; j < (int)LIBXSMM_MIN(handle->ofh + t_pad - tj*((ALPHA) - 2), ALPHA); j++) {
+          for ( ; j < LIBXSMM_MIN(handle->ofh + t_pad - tj*((ALPHA) - 2), ALPHA); j++) {
             ydim = tj*((ALPHA) - 2) - t_pad + j;
             I[j] = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, input, 0, ydim, xdim, 0, handle->ofhp, handle->ofwp, TDVLEN));
           }
