@@ -79,8 +79,8 @@ LIBXSMM_VLA_DECL(7, element_filter_type, tr_wt, (element_filter_type*)handle->sc
 libxsmm_convfunction jitted_conv_bp_no_pf, jitted_conv_bp_noweight_pf, jitted_conv_bp_pf;
 
 #if defined(INPUT_PADDING)
-element_output_type (* __restrict input_ptr);
-element_output_type (* __restrict copy_ptr);
+element_output_type (* LIBXSMM_RESTRICT input_ptr);
+element_output_type (* LIBXSMM_RESTRICT copy_ptr);
 element_output_type *prefetch_ptr;
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
