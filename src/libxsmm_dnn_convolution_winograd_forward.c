@@ -368,7 +368,6 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_dnn_convolve_winograd_st_fwd_custom_custo
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined_avx512.tpl.c"
 # undef TDVLEN
 # undef ALPHA
-  LIBXSMM_UNUSED(Iwp);
 #else /* next lower/available code path (fall-back chain) */
   internal_dnn_convolve_winograd_st_fwd_custom_custom_alpha6_default(handle, start_thread, tid);
 #endif
@@ -449,7 +448,6 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_dnn_convolve_winograd_st_fwd_nhwc_custom_
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_inlined_avx512.tpl.c"
 # undef TDVLEN
 # undef ALPHA
-  LIBXSMM_UNUSED(Iwp);
 #else /* next lower/available code path (fall-back chain) */
   internal_dnn_convolve_winograd_st_fwd_nhwc_custom_alpha6_default(handle, start_thread, tid);
 #endif

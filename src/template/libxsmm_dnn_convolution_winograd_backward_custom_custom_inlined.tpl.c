@@ -51,7 +51,6 @@ LIBXSMM_VLA_DECL(6, float, U,   (float*)handle->scratch1, ALPHA, handle->blocksi
 LIBXSMM_VLA_DECL(8, float, V,   (float*)handle->scratch3, ALPHA, ALPHA, handle->blocksifm, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN);
 LIBXSMM_VLA_DECL(8, float, M,   (float*)handle->scratch4, ALPHA, ALPHA, handle->blocksofm, handle->cwino_bwd.bimg, handle->cwino_bwd.jtiles, handle->cwino_bwd.itiles, TDVLEN);
 LIBXSMM_VLA_DECL(5, float, Iwp, (float*)handle->scratchIw, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, TDVLEN);
-LIBXSMM_VLA_DECL(5, float, Owp, (float*)handle->scratchOw, handle->cwino_bwd.itiles*handle->cwino_bwd.jtiles, ALPHA, ALPHA, TDVLEN);
 #if 1
 typedef libxsmm_sconvfunction libxsmm_convfunction;
 libxsmm_convfunction jitted_conv_bp = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
@@ -79,7 +78,7 @@ unsigned long long t_start  = 0;
 #endif
 
 /* number of tasks that could be run in parallel */
-work = handle->desc.N*handle->blocksofm;
+work = handle->desc.N * handle->blocksofm;
 /* compute chunck size */
 chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */

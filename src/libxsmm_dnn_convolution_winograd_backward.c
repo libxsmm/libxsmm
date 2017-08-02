@@ -54,7 +54,6 @@ LIBXSMM_API_VARIABLE void (*internal_bwd_input_transform_custom_custom_alpha6)(c
 LIBXSMM_API_VARIABLE void (*internal_bwd_input_transform_nhwc_custom_alpha6)(const float*, float*, float*, const libxsmm_dnn_layer*);
 LIBXSMM_API_VARIABLE void (*internal_bwd_output_transform_custom_custom_alpha6)(float*, float*, float*, const libxsmm_dnn_layer*);
 LIBXSMM_API_VARIABLE void (*internal_bwd_output_transform_nhwc_custom_alpha6)(float*, float*, float*, const libxsmm_dnn_layer*);
-LIBXSMM_API_VARIABLE void (*internal_dnn_convolve_winograd_st_bwd_nhwc_custom_alpha6)(libxsmm_dnn_layer*, int, int);
 LIBXSMM_API_VARIABLE void (*internal_dnn_convolve_winograd_st_bwd_custom_custom_alpha6)(libxsmm_dnn_layer*, int, int);
 LIBXSMM_API_VARIABLE void (*internal_dnn_convolve_winograd_st_bwd_nhwc_custom_alpha6)(libxsmm_dnn_layer*, int, int);
 
@@ -321,7 +320,6 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_dnn_convolve_winograd_st_bwd_custom_custo
 # include "template/libxsmm_dnn_convolution_winograd_backward_custom_custom_inlined_avx512.tpl.c"
 # undef TDVLEN
 # undef ALPHA
-  LIBXSMM_UNUSED(Iwp);
 #else /* next lower/available code path (fall-back chain) */
   internal_dnn_convolve_winograd_st_bwd_custom_custom_alpha6_default(handle, start_thread, tid);
 #endif
@@ -411,7 +409,6 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_dnn_convolve_winograd_st_bwd_nhwc_custom_
 # include "template/libxsmm_dnn_convolution_winograd_backward_nhwc_custom_inlined_avx512.tpl.c"
 # undef TDVLEN
 # undef ALPHA
-  LIBXSMM_UNUSED(Iwp);
 #else /* next lower/available code path (fall-back chain) */
   internal_dnn_convolve_winograd_st_bwd_nhwc_custom_alpha6_default(handle, start_thread, tid);
 #endif
