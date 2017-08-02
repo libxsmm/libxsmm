@@ -149,14 +149,14 @@ int main(int argc, char* argv[])
     descriptor.K = descriptor.C; /* no reduction */
     descriptor.u = 1; /* H-stride */
     descriptor.v = 1; /* W-stride */
-    descriptor.pad_h = 19; /* H-pad */
-    descriptor.pad_w = 19; /* W-pad */
+    descriptor.pad_h = 0; /* H-pad */
+    descriptor.pad_w = 0; /* W-pad */
     descriptor.pad_h_in = 0;
     descriptor.pad_w_in = 0;
     descriptor.pad_h_out = 0;
     descriptor.pad_w_out = 0;
-    descriptor.H = (int)((size[1] + 2 * descriptor.pad_h - descriptor.R) / descriptor.u + 1);
-    descriptor.W = (int)((size[0] + 2 * descriptor.pad_w - descriptor.S) / descriptor.v + 1);
+    descriptor.H = (int)size[1];
+    descriptor.W = (int)size[0];
     descriptor.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT/*LIBXSMM_DNN_CONV_ALGO_AUTO*/;
     descriptor.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     descriptor.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
@@ -184,7 +184,7 @@ int main(int argc, char* argv[])
     status = libxsmm_dnn_copyin_buffer(conv_input, image, LIBXSMM_DNN_TENSOR_FORMAT_NCHW);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
     /* Filter buffer */
-    conv_filter_buffer = MALLOC(descriptor.K + descriptor.C * descriptor.R + descriptor.S * typesize);
+    conv_filter_buffer = MALLOC(descriptor.K * descriptor.C * descriptor.R * descriptor.S * typesize);
     if (0 == conv_filter_buffer) result = EXIT_FAILURE;
     conv_filter = libxsmm_dnn_link_filter(handle, LIBXSMM_DNN_FILTER, conv_filter_buffer, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
@@ -212,12 +212,17 @@ int main(int argc, char* argv[])
 #else
       const int tid = 0;
 #endif
-      const libxsmm_dnn_err_t r = libxsmm_dnn_execute_st(handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
+#if !defined(NDEBUG)
+      const libxsmm_dnn_err_t r =
+#endif
+      libxsmm_dnn_execute_st(handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
+#if !defined(NDEBUG)
       if (LIBXSMM_DNN_SUCCESS != r && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
         const char *const error_message = libxsmm_dnn_get_error(r);
         fprintf(stderr, "%s\n", error_message);
         result = EXIT_FAILURE;
       }
+#endif
     }
   }
 
