@@ -295,6 +295,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
       /* Probably input padding copy here */
 #if defined(INPUT_PADDING)
+      input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
       /* reset result buffer to zero when intent is to overwrite when first block
          of input channels should be convoluted
          @TODO use matcopy */
@@ -305,7 +306,6 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
           tmp_buffer[ij] = (element_input_type)0;
         }
       } else {
-        input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
         if (ifm1lpblock+1 != handle->blocksifm * handle->fm_lp_block) {
           /* Prefetch next ifm1lpblock, same image */
           prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock+1, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
@@ -418,6 +418,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
       /* Probably input padding copy here */
 #if defined(INPUT_PADDING)
+      input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
       /* reset result buffer to zero when intent is to overwrite when first block
          of input channels should be convoluted
          @TODO use matcopy */
@@ -428,7 +429,6 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
           tmp_buffer[ij] = (element_input_type)0;
         }
       } else {
-        input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
         if (ifm1lpblock+1 != handle->blocksifm * handle->fm_lp_block) {
           /* Prefetch next ifm1lpblock, same image */
           prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock+1, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
@@ -540,6 +540,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 
   /* Probably input padding copy here */
 #if defined(INPUT_PADDING)
+    input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
     /* reset result buffer to zero when intent is to overwrite when first block
        of input channels should be convoluted
        @TODO use matcopy */
@@ -550,7 +551,6 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
         tmp_buffer[ij] = (element_input_type)0;
       }
     } else {
-      input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
       if (ifm1lpblock+1 != handle->blocksifm * handle->fm_lp_block) {
         /* Prefetch next ifm1lpblock, same image */
         prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1lpblock+1, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
