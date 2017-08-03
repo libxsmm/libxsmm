@@ -27,16 +27,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="convolution.c" />
+    <ClCompile Include="iconv.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="convolution_in.mhd" />
+    <None Include="iconv_in.mhd" />
+    <None Include="iconv_out.mhd" />
     <None Include="Makefile" />
-    <None Include="convolution.sh" />
+    <None Include="iconv.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>convolution</ProjectName>
-    <ProjectGuid>{6F673A10-16D0-4023-BD2A-686DF4DA2DD9}</ProjectGuid>
+    <ProjectName>iconv</ProjectName>
+    <ProjectGuid>{54F8CC52-A93E-41BA-9AED-AFC609542A10}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

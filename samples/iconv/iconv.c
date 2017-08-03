@@ -51,21 +51,15 @@
 # define FREE(POINTER) free(POINTER)
 #endif
 
-
-#if 0
-void convolution(
-  const float* in_x, int in_xpitch,
-  const float* in_y, int in_ypitch,
-  int n, float* out)
-{
-}
+#if !defined(USE_OVERWRITE)
+/*# define USE_OVERWRITE*/
 #endif
 
 
 int main(int argc, char* argv[])
 {
-  const char *const filename_in   = (1 < argc ? argv[1] : "convolution_in.mhd");
-  const char *const filename_out  = (2 < argc ? argv[2] : "convolution_out.mhd");
+  const char *const filename_in   = (1 < argc ? argv[1] : "iconv_in.mhd");
+  const char *const filename_out  = (2 < argc ? argv[2] : "iconv_out.mhd");
   const int kh = (3 < argc ? atoi(argv[3]) : 39);
   const int kw = (4 < argc ? atoi(argv[4]) : kh);
   int result = 0 != strcmp(filename_in, filename_out) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -79,6 +73,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_layer* handle = 0;
   libxsmm_dnn_err_t status;
   size_t size1 = 0, typesize = 0;
+  size_t conv_output_size1 = 0;
   static int error_once = 0;
   char filename_data[1024];
   void *filter = 0;
@@ -149,19 +144,23 @@ int main(int argc, char* argv[])
     descriptor.K = descriptor.C; /* no reduction */
     descriptor.u = 1; /* H-stride */
     descriptor.v = 1; /* W-stride */
-    descriptor.pad_h = 0; /* H-pad */
-    descriptor.pad_w = 0; /* W-pad */
-    descriptor.pad_h_in = 0;
-    descriptor.pad_w_in = 0;
-    descriptor.pad_h_out = 0;
-    descriptor.pad_w_out = 0;
     descriptor.H = (int)size[1];
     descriptor.W = (int)size[0];
+    descriptor.pad_h_out = ((descriptor.u - 1) * descriptor.H + descriptor.R - descriptor.u) / 2;
+    descriptor.pad_w_out = ((descriptor.v - 1) * descriptor.W + descriptor.S - descriptor.v) / 2;
+    descriptor.pad_h_in = 0;
+    descriptor.pad_w_in = 0;
+    descriptor.pad_h = 0; /* H-pad */
+    descriptor.pad_w = 0; /* W-pad */
     descriptor.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT/*LIBXSMM_DNN_CONV_ALGO_AUTO*/;
     descriptor.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     descriptor.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     descriptor.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
+#if defined(USE_OVERWRITE)
     descriptor.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
+#else
+    descriptor.options = LIBXSMM_DNN_CONV_OPTION_NONE;
+#endif
     descriptor.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
     descriptor.datatype = LIBXSMM_DNN_DATATYPE_F32;
     handle = libxsmm_dnn_create_conv_layer(descriptor, &status);
@@ -193,7 +192,8 @@ int main(int argc, char* argv[])
     status = libxsmm_dnn_copyin_filter(conv_filter, filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
     /* Output buffer */
-    conv_output_buffer = MALLOC(descriptor.N * descriptor.K * (descriptor.H + 2 * descriptor.pad_h_out) * (descriptor.W + 2 * descriptor.pad_w_out) * typesize);
+    conv_output_size1 = descriptor.N * descriptor.K * (descriptor.H + 2 * descriptor.pad_h_out) * (descriptor.W + 2 * descriptor.pad_w_out);
+    conv_output_buffer = MALLOC(conv_output_size1 * typesize);
     if (0 == conv_output_buffer) result = EXIT_FAILURE;
     conv_output = libxsmm_dnn_link_buffer(handle, LIBXSMM_DNN_OUTPUT, conv_output_buffer, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
@@ -203,6 +203,9 @@ int main(int argc, char* argv[])
 
   /* Attempt to run the convolution. */
   if (EXIT_SUCCESS == result) {
+#if !defined(USE_OVERWRITE)
+    memset(conv_output_buffer, 0, conv_output_size1 * typesize);
+#endif
 #if defined(_OPENMP)
 #   pragma omp parallel
 #endif
@@ -243,10 +246,10 @@ int main(int argc, char* argv[])
   }
 
   /* Release resources. */
-  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_conv_layer(handle)) result = EXIT_FAILURE;
-  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_buffer(conv_input)) result = EXIT_FAILURE;
-  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_buffer(conv_output)) result = EXIT_FAILURE;
   if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_filter(conv_filter)) result = EXIT_FAILURE;
+  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_buffer(conv_output)) result = EXIT_FAILURE;
+  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_buffer(conv_input)) result = EXIT_FAILURE;
+  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_conv_layer(handle)) result = EXIT_FAILURE;
   FREE(conv_output_buffer);
   FREE(conv_filter_buffer);
   FREE(conv_input_buffer);
