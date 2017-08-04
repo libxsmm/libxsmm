@@ -59,10 +59,10 @@ LIBXSMM_API int libxsmm_mhd_element_comparison(void* dst, libxsmm_mhd_elemtype d
 
 
 /** Returns the name and size of the element type; result may be NULL/0 in case of an unknown type. */
-LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t* typesize);
+LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t typesize[], const char** ctypename);
 
 /** Returns the type of the element for a given type-name. */
-LIBXSMM_API libxsmm_mhd_elemtype libxsmm_mhd_typeinfo(const char* elemname);
+LIBXSMM_API libxsmm_mhd_elemtype libxsmm_mhd_typeinfo(const char elemname[]);
 
 
 /**
@@ -71,16 +71,16 @@ LIBXSMM_API libxsmm_mhd_elemtype libxsmm_mhd_typeinfo(const char* elemname);
  */
 LIBXSMM_API int libxsmm_mhd_read_header(
   /* Filename referring to the header-file (may also contain the data). */
-  const char* header_filename,
+  const char header_filename[],
   /* Maximum length of path/file name. */
   size_t filename_max_length,
   /* Filename containing the data (may be the same as the header-file). */
-  char* filename,
+  char filename[],
   /* Yields the maximum/possible number of dimensions on input,
    * and the actual number of dimensions on output. */
   size_t* ndims,
   /* Image extents ("ndims" number of entries). */
-  size_t* size,
+  size_t size[],
   /* Number of image components (channels). */
   size_t* ncomponents,
   /* Type of the image elements (pixel type). */
@@ -100,11 +100,11 @@ LIBXSMM_API int libxsmm_mhd_read_header(
 */
 LIBXSMM_API int libxsmm_mhd_read(
   /* Filename referring to the data. */
-  const char* filename,
+  const char filename[],
   /** Image dimensions (extents). */
-  const size_t* size,
+  const size_t size[],
   /** Leading dimensions (cNULL/0: size). */
-  const size_t* pitch,
+  const size_t pitch[],
   /* Dimensionality (number of entries in size). */
   size_t ndims,
   /* Number of image components (channels). */
@@ -125,7 +125,7 @@ LIBXSMM_API int libxsmm_mhd_read(
    */
   libxsmm_mhd_element_handler handle_element,
   /* Post-content data (extension, optional). */
-  char* extension,
+  char extension[],
   /* Size of the extension; can be zero. */
   size_t extension_size);
 
@@ -134,11 +134,11 @@ LIBXSMM_API int libxsmm_mhd_read(
  * Save a file using an extended data format, which is compatible with the Meta Image Format (MHD).
  * The file is suitable for visual inspection using e.g., ITK-SNAP or ParaView.
  */
-LIBXSMM_API int libxsmm_mhd_write(const char* filename,
+LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   /** Image dimensions (extents). */
-  const size_t* size,
+  const size_t size[],
   /** Leading dimensions (cNULL/0: size). */
-  const size_t* pitch,
+  const size_t pitch[],
   /** Dimensionality i.e., number of entries in data_size/size. */
   size_t ndims,
   /** Number of pixel components. */
@@ -148,7 +148,7 @@ LIBXSMM_API int libxsmm_mhd_write(const char* filename,
   /** Raw data to be saved. */
   const void* data,
   /** Extension header data; can be NULL. */
-  const char* extension_header,
+  const char extension_header[],
   /** Extension data stream; can be NULL. */
   const void* extension,
   /** Extension data size; can be NULL. */

@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
   /* Allocate data according to the header information. */
   if (EXIT_SUCCESS == result) {
     size_t typesize;
-    if (0 != libxsmm_mhd_typename(type, &typesize)) {
+    if (0 != libxsmm_mhd_typename(type, &typesize, 0/*ctypename*/)) {
       const size_t nelements = size[0] * (1 < ndims ? (size[1] * (2 < ndims ? size[2] : 1)) : 1);
       data = malloc(ncomponents * typesize * nelements);
     }
