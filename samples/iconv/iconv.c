@@ -36,6 +36,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#if defined(_WIN32)
+# include <io.h>
+# if !defined(F_OK)
+#   define F_OK 0
+# endif
+# define FEXIST(FILENAME) _access(FILENAME, F_OK)
+#else
+# include <unistd.h>
+# define FEXIST(FILENAME) access(FILENAME, F_OK)
+#endif
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
@@ -58,12 +68,13 @@
 
 int main(int argc, char* argv[])
 {
-  const char *const filename_in   = (1 < argc ? argv[1] : "iconv_in.mhd");
-  const char *const filename_out  = (2 < argc ? argv[2] : "iconv_out.mhd");
-  const int kh = (3 < argc ? atoi(argv[3]) : 39);
-  const int kw = (4 < argc ? atoi(argv[4]) : kh);
+  const char* filename_in = (1 < argc ? argv[1] : "iconv_in.mhd");
+  const size_t nrepeat = (size_t)LIBXSMM_MAX(2 < argc ? strtoul(argv[2], 0, 10) : 1, 1);
+  const int kw = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 39, 1);
+  const int kh = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : kw, 1);
+  const char *const filename_out = (5 < argc ? argv[5] : "iconv_out.mhd");
   int result = 0 != strcmp(filename_in, filename_out) ? EXIT_SUCCESS : EXIT_FAILURE;
-  size_t ndims = 3, size[3], pitch[2], ncomponents = 0, header_size = 0, extension_size;
+  size_t ndims = 3, size[3], pitch[2], ncomponents = 1, header_size = 0, extension_size;
   void *conv_input_buffer = 0, *conv_filter_buffer = 0, *conv_output_buffer = 0;
   libxsmm_dnn_buffer *conv_input = 0, *conv_output = 0;
   libxsmm_dnn_filter *conv_filter = 0;
@@ -72,23 +83,52 @@ int main(int argc, char* argv[])
   libxsmm_dnn_conv_desc descriptor = { 0 };
   libxsmm_dnn_layer* handle = 0;
   libxsmm_dnn_err_t status;
-  size_t size1 = 0, typesize = 0;
+  size_t size1 = 0, typesize = 0, i, j;
   size_t conv_output_size1 = 0;
   static int error_once = 0;
-  char filename_data[1024];
+  unsigned long long start;
+  char filename[1024];
+  double duration = 0;
   void *filter = 0;
   void *image = 0;
 
+  /* Generate an input file if a pseudo filename (resolution) is given. */
+  if (0 != FEXIST(filename_in) && 0 < atoi(filename_in)) {
+    const char* split = strchr(filename_in, 'x');
+    if (0 == split) split = strchr(filename_in, 'X');
+    size[0] = atoi(filename_in);
+    size[1] = (0 != split ? atoi(split + 1) : 0);
+    if (0 == size[1]) size[1] = size[0];
+    image = MALLOC(size[0] * size[1]);
+    if (0 < sprintf(filename, "%s.mhd", filename_in) && 0 != image) {
+      const unsigned char c0 = 0, c1 = (unsigned char)255;
+      const int r = LIBXSMM_MAX(kw, kh);
+      for (i = 0; i < size[1]; ++i) {
+        for (j = 0; j < size[0]; ++j) {
+          ((unsigned char*)image)[i*size[0]+j] = (0 == (i + j) % r ? c1 : c0);
+        }
+      }
+      result = libxsmm_mhd_write(filename, size, size,
+        2/*ndims*/, 1/*ncomponents*/, LIBXSMM_MHD_ELEMTYPE_U8, image,
+        0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
+      if (EXIT_SUCCESS == result) filename_in = filename;
+    }
+    else {
+      result = EXIT_FAILURE;
+    }
+    FREE(image);
+  }
+
   /* Read MHD-header information; function includes various sanity checks. */
   if (EXIT_SUCCESS == result) {
-    result = libxsmm_mhd_read_header(filename_in, sizeof(filename_data),
-      filename_data, &ndims, size, &ncomponents, &type_in,
+    result = libxsmm_mhd_read_header(filename_in, sizeof(filename),
+      filename, &ndims, size, &ncomponents, &type_in,
       &header_size, &extension_size);
   }
 
   /* Only accept 2-d images or a single slice of a 3d-image. */
   if (2 == ndims || (3 == ndims && 1 == size[2])) {
-    size1 = size[0] * size[1];
+    size1 = size[0] * size[1] * ncomponents;
     pitch[0] = size[0];
     pitch[1] = size[1];
   }
@@ -98,14 +138,18 @@ int main(int argc, char* argv[])
 
   /* Allocate image data according to the MHD-header information. */
   if (EXIT_SUCCESS == result) {
+    const char* ctypename;
     /* DNN type: assume that MHD I/O provides a super-set of types */
-    if (0 != libxsmm_mhd_typename((libxsmm_mhd_elemtype)type_out, &typesize)) {
+    if (0 != libxsmm_mhd_typename((libxsmm_mhd_elemtype)type_out, &typesize, &ctypename)) {
       const size_t filter_size = ncomponents * kh * kw;
-      image = MALLOC(size1 * ncomponents * typesize);
+      /* print some information about the workload */
+      fprintf(stdout, "filename=%s kernel=%ix%i size=%.fMB nrepeat=%u (%s)\n",
+        filename, kw, kh, 1.0 * (size1 * typesize) / (1 << 20),
+        (unsigned int)nrepeat, ctypename);
+      image = MALLOC(size1 * typesize);
       if (0 == image) result = EXIT_FAILURE;
       filter = MALLOC(filter_size * typesize);
       if (0 != filter) {
-        size_t i;
         switch (type_out) {
           case LIBXSMM_DNN_DATATYPE_F32: {
             float *const f = (float*)filter;
@@ -127,7 +171,7 @@ int main(int argc, char* argv[])
 
   /* Read the image data according to the header into the allocated buffer. */
   if (EXIT_SUCCESS == result) {
-    result = libxsmm_mhd_read(filename_data,
+    result = libxsmm_mhd_read(filename,
       size, pitch, ndims, ncomponents, header_size, type_in,
       /* eventually perform a type-conversion (type_in != type_out) */
       (const libxsmm_mhd_elemtype*)&type_out, image,
@@ -136,7 +180,11 @@ int main(int argc, char* argv[])
 
   /* Setup convolution descriptor. */
   if (EXIT_SUCCESS == result) {
+#if defined(_OPENMP)
+    descriptor.threads = omp_get_max_threads();
+#else
     descriptor.threads = 1;
+#endif
     descriptor.N = 1; /* number of images */
     descriptor.R = kh; /* kernel height */
     descriptor.S = kw; /* kernel width */
@@ -202,32 +250,34 @@ int main(int argc, char* argv[])
   }
 
   /* Attempt to run the convolution. */
-  if (EXIT_SUCCESS == result) {
+  start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+# pragma omp parallel /* this is NOT a "parallel for"-loop! */
+#endif
+  for (i = 0; i < nrepeat && EXIT_SUCCESS == result; ++i) {
+#if defined(_OPENMP)
+    const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif
 #if !defined(USE_OVERWRITE)
     memset(conv_output_buffer, 0, conv_output_size1 * typesize);
 #endif
-#if defined(_OPENMP)
-#   pragma omp parallel
-#endif
-    {
-#if defined(_OPENMP)
-      const int tid = omp_get_thread_num();
+#if defined(NDEBUG)
+    libxsmm_dnn_execute_st(handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
 #else
-      const int tid = 0;
-#endif
-#if !defined(NDEBUG)
-      const libxsmm_dnn_err_t r =
-#endif
-      libxsmm_dnn_execute_st(handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
-#if !defined(NDEBUG)
-      if (LIBXSMM_DNN_SUCCESS != r && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        const char *const error_message = libxsmm_dnn_get_error(r);
-        fprintf(stderr, "%s\n", error_message);
-        result = EXIT_FAILURE;
-      }
-#endif
+    const libxsmm_dnn_err_t r = libxsmm_dnn_execute_st(handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid);
+    if (LIBXSMM_DNN_SUCCESS != r && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      const char *const error_message = libxsmm_dnn_get_error(r);
+      fprintf(stderr, "%s\n", error_message);
+      result = EXIT_FAILURE;
     }
+#endif
+#if defined(_OPENMP)
+#   pragma omp barrier
+#endif
   }
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
   /* Copy-out image into original format. */
   if (EXIT_SUCCESS == result) {
@@ -237,7 +287,7 @@ int main(int argc, char* argv[])
 
   /* Write the image into a different file. */
   if (EXIT_SUCCESS == result) {
-    result = libxsmm_mhd_write(filename_out, size, pitch, 2, ncomponents,
+    result = libxsmm_mhd_write(filename_out, size, pitch, 2/*ndims*/, ncomponents,
       /* DNN type: assume that MHD I/O provides a super-set of types */
       (libxsmm_mhd_elemtype)type_out, image,
       0/*extension_header*/,
@@ -255,6 +305,18 @@ int main(int argc, char* argv[])
   FREE(conv_input_buffer);
   FREE(filter);
   FREE(image);
+
+  if (EXIT_SUCCESS == result) {
+    if (0 < duration) {
+      fprintf(stdout, "\tfrequency: %.1f Hz\n", nrepeat / duration);
+    }
+    assert(0 != nrepeat);
+    fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration / nrepeat);
+    fprintf(stdout, "Finished.\n");
+  }
+  else {
+    fprintf(stdout, "FAILED.\n");
+  }
 
   return result;
 }
