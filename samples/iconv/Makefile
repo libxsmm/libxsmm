@@ -26,9 +26,9 @@ DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
 # Fortran code here does not allow for PEDANTIC=2
-override PEDANTIC = 1
-BLAS = 2
-OMP = 1
+#override PEDANTIC = 1
+BLAS = 0
+OMP = 0
 SYM = 1
 
 # include common Makefile artifacts
