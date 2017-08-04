@@ -284,7 +284,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
           }
           else {
             abs_tid = LIBXSMM_ATOMIC_ADD_FETCH(&internal_trace_initialized, 1, LIBXSMM_ATOMIC_RELAXED);
-            /* use sign bit to flag enabled fallback for symbol resolution */
+            /* use sign bit to flag enabled fall-back for symbol resolution */
             tid = -abs_tid;
           }
 
@@ -293,11 +293,11 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
             if (FALSE != SymFromAddr(GetCurrentProcess(), (DWORD64)*symbol, NULL, value)
               && 0 < value->NameLen)
             {
-              /* disable fallback allowing unresolved symbol names */
+              /* disable fall-back allowing unresolved symbol names */
               tid = abs_tid; /* make unsigned */
               fname = value->Name;
             }
-            else if (0 > tid) { /* fallback allowing unresolved symbol names */
+            else if (0 > tid) { /* fall-back allowing unresolved symbol names */
               sprintf(buffer, "0x%llx", (unsigned long long)*symbol);
               fname = buffer;
             }
@@ -353,7 +353,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                 {
                   abs_tid = LIBXSMM_ATOMIC_ADD_FETCH(&internal_trace_initialized, 1, LIBXSMM_ATOMIC_RELAXED);
                   assert(0 < abs_tid);
-                  /* use sign bit to flag enabled fallback for symbol resolution */
+                  /* use sign bit to flag enabled fall-back for symbol resolution */
                   ivalue[1] = -abs_tid;
 
                   if (0 > filter || filter == abs_tid - 1) {
@@ -390,14 +390,14 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
               char* c;
               for (c = value; '+' != *c && *c; ++c);
               if ('+' == *c) {
-                /* disable fallback allowing unresolved symbol names */
+                /* disable fall-back allowing unresolved symbol names */
                 ivalue[1] = abs_tid; /* make unsigned */
                 fname = value;
                 *c = 0;
               }
             }
 
-            /* fallback to symbol address */
+            /* fall-back to symbol address */
             if (0 > ivalue[1] && 0 == fname) {
               sprintf(value, "0x%llx", (unsigned long long)*symbol);
               fname = value;
