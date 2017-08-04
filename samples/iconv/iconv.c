@@ -101,11 +101,10 @@ int main(int argc, char* argv[])
     if (0 == size[1]) size[1] = size[0];
     image = MALLOC(size[0] * size[1]);
     if (0 < sprintf(filename, "%s.mhd", filename_in) && 0 != image) {
-      const unsigned char c0 = 0, c1 = (unsigned char)255;
-      const int r = LIBXSMM_MAX(kw, kh);
+      const int c0 = 0, c1 = 255, r = LIBXSMM_MAX(kw, kh);
       for (i = 0; i < size[1]; ++i) {
         for (j = 0; j < size[0]; ++j) {
-          ((unsigned char*)image)[i*size[0]+j] = (0 == (i + j) % r ? c1 : c0);
+          ((unsigned char*)image)[i*size[0]+j] = (unsigned char)(0 == (i + j) % r ? c1 : c0);
         }
       }
       result = libxsmm_mhd_write(filename, size, size,
