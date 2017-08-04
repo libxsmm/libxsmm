@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
           } break;
           default: result = EXIT_FAILURE;
         }
-        if (0 != fclose(file)) result = EXIT_FAILURE;
+        if (0 != file && 0 != fclose(file)) result = EXIT_FAILURE;
       }
       else {
         result = EXIT_FAILURE;
