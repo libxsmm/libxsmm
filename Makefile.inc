@@ -1213,6 +1213,11 @@ else ifneq (0,$(BLAS)) # generic
       BLAS_LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
       # OpenBLAS also carries the CBLAS bits
       BLAS_DFLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
+      ifneq (,$(wildcard /usr/include/openblas/f77blas.h))
+        BLAS_DFLAGS += -D__OPENBLAS77
+      else ifneq (,$(wildcard $(BLASDIR)/../include/openblas/f77blas.h))
+        BLAS_DFLAGS += -D__OPENBLAS77
+      endif
     else
       BLAS_DFLAGS += -D__BLAS
       ifneq (Windows_NT,$(UNAME))

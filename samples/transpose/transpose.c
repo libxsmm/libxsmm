@@ -40,7 +40,7 @@
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_trans.h>
 # include <mkl_service.h>
-#elif defined(__OPENBLAS)
+#elif defined(__OPENBLAS77)
 # include <openblas/f77blas.h>
 #endif
 #if defined(_OPENMP)
