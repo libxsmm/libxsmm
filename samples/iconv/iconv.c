@@ -85,13 +85,14 @@ int main(int argc, char* argv[])
   libxsmm_dnn_err_t status;
   size_t size1 = 0, typesize = 0, i, j;
   size_t conv_output_size1 = 0;
-  static int error_once = 0;
   unsigned long long start;
   char filename[1024];
   double duration = 0;
   void *filter = 0;
   void *image = 0;
-
+#if !defined(NDEBUG)
+  static int error_once = 0;
+#endif
   /* Generate an input file if a pseudo filename (resolution) is given. */
   if (0 != FEXIST(filename_in) && 0 < atoi(filename_in)) {
     const char* split = strchr(filename_in, 'x');
