@@ -99,7 +99,7 @@ ifneq ($(abspath $(BLDDIR)),$(abspath .))
 endif
 endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
-	@rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat *.mhd
+	@rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat
 	@rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
 	@rm -f .make .state
