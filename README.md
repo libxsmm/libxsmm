@@ -144,10 +144,11 @@ For convenient operation of the library and to ease integration, a few service r
 
 The service function domain (AUX) contains routines for:
 
-* Getting and setting the target architecture
-* Measuring time (timer facility)
-* Loading and storing data (I/O)
-* Allocating memory
+* [Getting and setting the target architecture](https://github.com/hfp/libxsmm/blob/master/documentation/libxsmm_aux.md#getting-and-setting-the-target-architecture)
+* [Getting and setting the verbosity](https://github.com/hfp/libxsmm/blob/master/documentation/libxsmm_aux.md#getting-and-setting-the-verbosity)
+* [Measuring time durations (timer)](https://github.com/hfp/libxsmm/blob/master/documentation/libxsmm_aux.md#timer-facility)
+* [Loading and storing data (I/O)](https://github.com/hfp/libxsmm/blob/master/documentation/libxsmm_aux.md#meta-image-file-io)
+* [Allocating memory](https://github.com/hfp/libxsmm/blob/master/documentation/libxsmm_aux.md#memory-allocation)
 
 The details can be found in a separate [document](https://github.com/hfp/libxsmm/blob/master/documentation/libxsmm_aux.md).
 
