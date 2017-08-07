@@ -1,18 +1,34 @@
 #!/bin/sh
 
-ROOTDIR=$(cd ${GIT_DIR}/..; pwd -P)
 LOCKFILE=${GIT_DIR}/.commit
-GIT=$(which git)
-RM=$(which rm)
+DOCDIR=documentation
 
-if [ -e ${LOCKFILE} ] && \
+GREP=$(which grep 2> /dev/null)
+GIT=$(which git 2> /dev/null)
+RM=$(which rm 2> /dev/null)
+CP=$(which cp 2> /dev/null)
+
+if [ -e ${LOCKFILE}-version ] && \
    [ "" != "${RM}" ]; \
 then
   # lock file must be deleted *prior* to below commit
-  ${RM} ${LOCKFILE}
+  ${RM} ${LOCKFILE}-version
   # update the version file
-  ${ROOTDIR}/.hooks/version.sh > ${ROOTDIR}/version.txt
+  .hooks/version.sh > version.txt
   ${GIT} add version.txt
   # quietly amend the previous commit
   ${GIT} commit --amend -C HEAD --no-verify > /dev/null
 fi
+
+if [ -e ${LOCKFILE}-readme ] && \
+   [ "" != "${RM}" ] && [ "" != "${CP}" ]; \
+then
+  # lock file must be deleted *prior* to below commit
+  ${RM} ${LOCKFILE}-readme
+  # update the README file
+  ${CP} README.md ${DOCDIR}/index.md
+  ${GIT} add ${DOCDIR}/index.md
+  # quietly amend the previous commit
+  ${GIT} commit --amend -C HEAD --no-verify > /dev/null
+fi
+
