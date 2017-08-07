@@ -1,7 +1,7 @@
 # Interface for Convolutions
-To achieve best performance with small convolutions for CNN on SIMD architectures, a specific data layout must be used. As this layout depends on several architectural parameters, the goal of the LIBXSMM's interface is to hide this complexity from the user by providing copy-in and copy-out routines. This happens using opaque data types which themselves are later bound to a convolution operation. The interface is available for C.
+To achieve best performance with small convolutions for CNN on SIMD architectures, a specific data layout must be used. As this layout depends on several architectural parameters, the goal of the LIBXSMM's interface is to hide this complexity from the user by providing copy-in and copy-out routines. This happens using opaque data types which themselves are later bound to a convolution operation.
 
-The concept of the interface is circled around a few handle types: `libxsmm_dnn_layer`, `libxsmm_dnn_buffer`, `libxsmm_dnn_bias`, and `libxsmm_dnn_filter`. A handle is setup by calling a create-function:
+The interface is available for C. There is a collection ([samples/dnn](https://github.com/hfp/libxsmm/tree/master/samples/dnn)) of benchmarks-style code samples with focus on Convolutional Neural Networks (CNNs). Further, an [example](https://github.com/hfp/libxsmm/tree/master/samples/iconv#image-convolution) performing an image convolution is provided as well. The general concept of the interface is circled around a few handle types: `libxsmm_dnn_layer`, `libxsmm_dnn_buffer`, `libxsmm_dnn_bias`, and `libxsmm_dnn_filter`. A handle is setup by calling a create-function:
 
 ```C
 /** Simplified LIBXSMM types which are needed to create a handle. */

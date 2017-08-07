@@ -61,8 +61,8 @@
 # define FREE(POINTER) free(POINTER)
 #endif
 
-#if !defined(USE_OVERWRITE)
-/*# define USE_OVERWRITE*/
+#if !defined(USE_OVERWRITE) && 0
+# define USE_OVERWRITE
 #endif
 
 

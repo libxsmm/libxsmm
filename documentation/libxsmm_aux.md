@@ -35,6 +35,18 @@ Loading and storing data (I/O) is normally out of LIBXSMM's scope. However, comp
 
 Writing an image is per `libxsmm_mhd_write`, and loading an image is split in two stages: (1)&#160;`libxsmm_mhd_read_header`, and (2)&#160;`libxsmm_mhd_read`. The first step allows to allocate a properly sized buffer, which is then used to obtain the data per `libxsmm_mhd_read`. When reading data, an on-the-fly type conversion is supported. Further, data that is already in memory can be compared against file-data without allocating memory or reading this file into memory.
 
+To load an image from a common format (JPG, PNG, etc.), one may save the raw data using for instance [IrfanView](http://www.irfanview.com/) and rely on a "header-only" MHD-file (plain text). This may look like:
+
+```
+NDims = 2
+DimSize = 202 134
+ElementType = MET_UCHAR
+ElementNumberOfChannels = 1
+ElementDataFile = mhd_image.raw
+```
+
+In the above case, a single channel (gray-scale) 202x134-image is described (actual pixel data is stored in `mhd_image.raw`). The pixel type is according to the `libxsmm_mhd_elemtype` ([libxsmm_mhd.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_mhd.h#L38).
+
 ## Memory Allocation
 The C interface ('libxsmm_malloc.h') provides functions for aligned memory one of which allows to specify the alignment (or to request an automatically selected alignment). The automatic alignment is also available with a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
 **NOTE**: Only `libxsmm_free` is supported to deallocate the memory.
