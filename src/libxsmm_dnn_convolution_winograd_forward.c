@@ -536,6 +536,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_convolve_winograd_fwd_init(int target_ar
   assert(0 != internal_fwd_output_transform_nhwc_custom_alpha6);
   assert(0 != internal_dnn_convolve_winograd_st_fwd_custom_custom_alpha6);
   assert(0 != internal_dnn_convolve_winograd_st_fwd_nhwc_custom_alpha6);
+  printf("Here\n");
 }
 
 
