@@ -43,16 +43,23 @@
 # pragma offload_attribute(pop)
 #endif
 
+/* Enable/disable specific code paths */
+#if defined(LIBXSMM_INTRINSICS_AVX512) && !defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
+# define LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512
+#endif
 
-LIBXSMM_API_INLINE void internal_fwd_input_transform_custom_custom(
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+LIBXSMM_ATTRIBUTE_UNUSED void internal_fwd_input_transform_custom_custom(
   const float* inp, float* tinp, const libxsmm_dnn_layer* handle)
 {
   if (handle->cwino_fwd.alpha == 6) {
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
 # define ALPHA 6
 # define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6.tpl.c"
 # undef TDVLEN
 # undef ALPHA
+#endif
   }
 #if !defined(NDEBUG)
   else {
@@ -63,15 +70,18 @@ LIBXSMM_API_INLINE void internal_fwd_input_transform_custom_custom(
 }
 
 
-LIBXSMM_API_INLINE void internal_fwd_input_transform_nhwc_custom(
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+LIBXSMM_ATTRIBUTE_UNUSED void internal_fwd_input_transform_nhwc_custom(
   const float *inp, float *tinp, const libxsmm_dnn_layer* handle )
 {
   if (handle->cwino_fwd.alpha == 6) {
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
 # define ALPHA 6
 # define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha6.tpl.c"
 # undef TDVLEN
 # undef ALPHA
+#endif
   }
 #if !defined(NDEBUG)
   else {
@@ -82,15 +92,18 @@ LIBXSMM_API_INLINE void internal_fwd_input_transform_nhwc_custom(
 }
 
 
-LIBXSMM_API_INLINE void internal_fwd_weight_transform(
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+LIBXSMM_ATTRIBUTE_UNUSED void internal_fwd_weight_transform(
   const float *wp, float *twp, const libxsmm_dnn_layer* handle)
 {
   if (handle->cwino_fwd.alpha == 6) {
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
 # define ALPHA 6
 # define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha6.tpl.c"
 # undef TDVLEN
 # undef ALPHA
+#endif
   }
 #if !defined(NDEBUG)
   else {
@@ -101,12 +114,14 @@ LIBXSMM_API_INLINE void internal_fwd_weight_transform(
 }
 
 
-LIBXSMM_API_INLINE void internal_fwd_output_transform_custom_custom(
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+LIBXSMM_ATTRIBUTE_UNUSED void internal_fwd_output_transform_custom_custom(
   float *toutp, float *outp, float bias[/*vratio*/][16/*tdvlen*/], const libxsmm_dnn_layer* handle)
 {
   LIBXSMM_UNUSED(bias); /* TODO: remove */
   if (handle->cwino_fwd.alpha == 6) {
     if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
 # define USE_OVERWRITE
 # define ALPHA 6
 # define TDVLEN 16
@@ -114,12 +129,15 @@ LIBXSMM_API_INLINE void internal_fwd_output_transform_custom_custom(
 # undef TDVLEN
 # undef ALPHA
 # undef USE_OVERWRITE
+#endif
     } else {
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
 # define ALPHA 6
 # define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6.tpl.c"
 # undef TDVLEN
 # undef ALPHA
+#endif
     }
   }
 #if !defined(NDEBUG)
@@ -131,12 +149,14 @@ LIBXSMM_API_INLINE void internal_fwd_output_transform_custom_custom(
 }
 
 
-LIBXSMM_API_INLINE void internal_fwd_output_transform_nhwc_custom(
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+LIBXSMM_ATTRIBUTE_UNUSED void internal_fwd_output_transform_nhwc_custom(
   float *toutp, float *outp, float bias[/*vratio*/][16/*tdvlen*/], const libxsmm_dnn_layer* handle)
 {
   LIBXSMM_UNUSED(bias); /* TODO: remove */
   if (handle->cwino_fwd.alpha == 6) {
     if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
 # define USE_OVERWRITE
 # define ALPHA 6
 # define TDVLEN 16
@@ -144,12 +164,15 @@ LIBXSMM_API_INLINE void internal_fwd_output_transform_nhwc_custom(
 # undef TDVLEN
 # undef ALPHA
 # undef USE_OVERWRITE
+#endif
     } else {
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
 # define ALPHA 6
 # define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha6.tpl.c"
 # undef TDVLEN
 # undef ALPHA
+#endif
     }
   }
 #if !defined(NDEBUG)
@@ -186,11 +209,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_cu
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
       if (handle->cwino_fwd.alpha == 6) {
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
 # define ALPHA 6
 # define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined.tpl.c"
 # undef TDVLEN
 # undef ALPHA
+#endif
       }
 #if !defined(NDEBUG)
       else {
@@ -233,11 +258,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_nh
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
       if (handle->cwino_fwd.alpha == 6) {
+#if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
 # define ALPHA 6
 # define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_inlined.tpl.c"
 # undef TDVLEN
 # undef ALPHA
+#endif
       }
 #if !defined(NDEBUG)
       else {
