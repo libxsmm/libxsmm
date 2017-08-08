@@ -482,9 +482,10 @@ LIBXSMM_API_INLINE void internal_init(void)
         libxsmm_scratch_pools = LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS;
       }
       else {
-        libxsmm_scratch_pools = LIBXSMM_MAX(0, atoi(env));
+        libxsmm_scratch_pools = LIBXSMM_CLMP(atoi(env), 0, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
         /*libxsmm_scratch_pools_locked = 1;*/
       }
+      assert(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
     }
     { const char *const env = getenv("LIBXSMM_SCRATCH_LIMIT");
       if (0 == env || 0 == *env) {
