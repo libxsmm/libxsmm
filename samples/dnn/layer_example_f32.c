@@ -37,7 +37,7 @@
 # include <omp.h>
 #endif
 
-#if !defined(USE_OVERWRITE) && 1 
+#if !defined(USE_OVERWRITE) && 0 
 # define USE_OVERWRITE
 #endif
 #if !defined(USE_FUSED_BIAS) && 0
