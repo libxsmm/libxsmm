@@ -1,6 +1,5 @@
 site_name: LIBXSMM
 docs_dir: documentation 
-theme: readthedocs
 pages:
 - Home: index.md
 - LIBXSMM Domains:
