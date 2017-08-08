@@ -1113,7 +1113,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     libxsmm_convolution_winograd_descriptor wino_desc_fp;
     libxsmm_convolution_winograd_descriptor wino_desc_bp;
     libxsmm_convolution_winograd_descriptor wino_desc_wu;
-    const int alpha = 6; /* The value of alpha can be either 4 or 6 */
+    const int alpha = 6; 
     const int tileSize = alpha - 2;
     int allowed_unroll = 0;
     int max_acc = 0;
@@ -1806,9 +1806,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->scratchOw_size = ijtiles*alpha*alpha*16*libxsmm_dnn_typesize(handle->datatype_itm)*handle->desc.threads;
       handle->scratchVk = 0;
       handle->scratchVk_size = handle->scratch3_size;
-      handle->scratchInput = 0;
-      handle->scratchInput_size = handle->scratch3_size;
-      handle->scratchTemp  = 0;
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
     }
   } else {

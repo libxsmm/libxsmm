@@ -226,10 +226,6 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t scratchOw_size;
   void* scratchVk;
   size_t scratchVk_size;
-  void* scratchInput;
-  size_t scratchInput_size;
-  void* scratchTemp;
-  int flag_reuseInput;        /* This flag is set to 1 when we want to reuse the input in Winograd domain between forward pass and weight update */
 
   /* JIT-generated convolution code */
   /*
@@ -356,9 +352,6 @@ LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned reg
 
 /** Updates counters of the statistic, which is shown at program termination. */
 LIBXSMM_API unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int k, unsigned int ntry, unsigned int ncol);
-
-LIBXSMM_API void libxsmm_dnn_init(int target_arch);
-LIBXSMM_API void libxsmm_dnn_finalize(void);
 
 LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE libxsmm_lock_global;
 /** Function used to allocate default memory. */

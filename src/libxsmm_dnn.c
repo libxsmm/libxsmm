@@ -54,21 +54,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-
-LIBXSMM_API_DEFINITION void libxsmm_dnn_init(int target_arch)
-{
-  libxsmm_dnn_convolve_winograd_fwd_init(target_arch);
-  libxsmm_dnn_convolve_winograd_bwd_init(target_arch);
-}
-
-
-LIBXSMM_API_DEFINITION void libxsmm_dnn_finalize(void)
-{
-  libxsmm_dnn_convolve_winograd_fwd_finalize();
-  libxsmm_dnn_convolve_winograd_bwd_finalize();
-}
-
-
 LIBXSMM_API_DEFINITION const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
 {
   switch (code) {
@@ -1627,7 +1612,6 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
         l_scratch_size += handle->scratchVk_size + 64;
       }
-      l_scratch_size += handle->scratchInput_size + 64;
     } else {
       switch (kind) {
         case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -1758,14 +1742,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
         }
         address += handle->scratchVk_size + 64;
       }
-      if (address % 64 == 0) {
-        handle->scratchInput = (void*)address;
-      } else {
-        offset = (64 - address % 64);
-        handle->scratchInput = (void*)(address+offset);
-      }
-      handle->scratchTemp = handle->scratch3;
-      address += handle->scratchInput_size + 64;
     } else {
       switch (kind) {
         case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -1936,8 +1912,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn
       handle->scratchIw = 0;
       handle->scratchOw = 0;
       handle->scratchVk = 0;
-      handle->scratchInput = 0;
-      handle->scratchTemp  = 0;
     } else {
       switch (kind) {
         case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -2558,20 +2532,6 @@ LIBXSMM_API_DEFINITION void* libxsmm_create_xconv_wino_update_weights(
   }
 #endif
   return code.pmm;
-}
-
-
-/* TODO: fix this hack and provide a proper API */
-LIBXSMM_API void libxsmm_set_flag_reuseInput(libxsmm_dnn_layer* /*handle*/, char /*type*/);
-LIBXSMM_API_DEFINITION void libxsmm_set_flag_reuseInput(libxsmm_dnn_layer* handle, char type)
-{
-  if (type == 'A') {
-    handle->flag_reuseInput = 0/*1*/;
-      /* for time being, disable reusing transformed input in weight update
-         until weight update uses the new transformed input layout */
-  } else {
-    handle->flag_reuseInput = 0;
-  }
 }
 
 #endif /*defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)*/
