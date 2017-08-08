@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 #if defined(MKL_ENABLE_AVX512)
       mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
-      /* warmup OpenMP (populate thread pool) */
+      /* warm-up OpenMP (populate thread pool) */
       libxsmm_bgemm_omp(handle, a, b, c, 1);
 #if defined(CHECK)
       if (!LIBXSMM_FEQ(0, check)) {
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
       if (0 < duration) {
         if (ab) {
-          fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s | %d,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i\n",
+          fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s | %i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i\n",
             gflops * nrepeat / duration, m, n, k, bm, bn, bk, order, b_m1, b_n1, b_k1, b_k2);
         } else {
           fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
