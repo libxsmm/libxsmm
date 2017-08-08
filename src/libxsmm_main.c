@@ -486,6 +486,15 @@ LIBXSMM_API_INLINE void internal_init(void)
         /*libxsmm_scratch_pools_locked = 1;*/
       }
     }
+    { const char *const env = getenv("LIBXSMM_SCRATCH_LIMIT");
+      if (0 == env || 0 == *env) {
+        libxsmm_scratch_limit = (size_t)LIBXSMM_MALLOC_SCRATCH_LIMIT;
+      }
+      else {
+        libxsmm_scratch_limit = (size_t)strtoul(env, 0, 10);
+        /*libxsmm_scratch_limit_locked = 1;*/
+      }
+    }
     { const char *const env = getenv("LIBXSMM_SCRATCH_SCALE");
       if (0 == env || 0 == *env) {
         libxsmm_scratch_scale = LIBXSMM_MALLOC_SCRATCH_SCALE;

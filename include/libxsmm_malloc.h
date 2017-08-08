@@ -148,6 +148,15 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
 /** Retrieve information about the scratch memory domain. */
 LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info);
 
+/**
+ * Limit the total size (Bytes) of the scratch memory.
+ * The environment variable LIBXSMM_SCRATCH_LIMIT takes
+ * the following units: none (Bytes), k/K, m/M, and g/G.
+ */
+LIBXSMM_API void libxsmm_set_scratch_limit(size_t limit);
+/** Get the maximum size of the scratch memory domain. */
+LIBXSMM_API size_t libxsmm_get_scratch_limit(void);
+
 /** Calculate a hash value for a given buffer. */
 LIBXSMM_API unsigned int libxsmm_hash(const void* data, size_t size, unsigned int seed);
 

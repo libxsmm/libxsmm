@@ -1262,54 +1262,64 @@ LIBXSMM_API_DEFINITION int libxsmm_get_malloc_info(const void* memory, libxsmm_m
 }
 
 
+LIBXSMM_API_INLINE size_t internal_get_scratch_size(void)
+{
+  size_t result = 0;
+#if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+  unsigned int max_npools, i;
+  if (
+#if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+    (LIBXSMM_MALLOC_SCRATCH_INTERNAL) != internal_malloc_scratch_pool[0].site &&
+#endif
+    (0 == internal_malloc_scratch_pool[0].buffer || EXIT_SUCCESS != libxsmm_get_malloc_xinfo(
+          internal_malloc_scratch_pool[0].buffer, &result, 0/*flags*/, 0/*extra*/)))
+  {
+    result = internal_malloc_scratch_pool[0].minsize;
+  }
+#if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+  max_npools = LIBXSMM_MIN(libxsmm_scratch_pools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
+  if (0 != internal_malloc_scratch_pool[0].buffer) {
+    for (i = 1; i < max_npools; ++i) {
+      if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != internal_malloc_scratch_pool[i].site) {
+        size_t size;
+        if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(
+          internal_malloc_scratch_pool[i].buffer, &size, 0/*flags*/, 0/*extra*/))
+        {
+          result += size;
+        }
+      }
+    }
+  }
+  else { /* approximate memory consumption by using minsize */
+    for (i = 1; i < max_npools; ++i) {
+      if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != internal_malloc_scratch_pool[i].site) {
+        result += internal_malloc_scratch_pool[i].minsize;
+      }
+    }
+  }
+#endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
+#endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
+  return result;
+}
+
+
 LIBXSMM_API_DEFINITION int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
 {
   int result = EXIT_SUCCESS;
   if (0 != info) {
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-    unsigned int i;
+    unsigned int max_npools, i;
     memset(info, 0, sizeof(libxsmm_scratch_info));
     info->npending = internal_malloc_scratch_pool[0].counter;
     info->nmallocs = internal_malloc_scratch_nmallocs;
     info->npools = LIBXSMM_MIN(1, libxsmm_scratch_pools);
-
-    if (
+    info->size = internal_get_scratch_size();
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-      (LIBXSMM_MALLOC_SCRATCH_INTERNAL) != internal_malloc_scratch_pool[0].site &&
-#endif
-      (0 == internal_malloc_scratch_pool[0].buffer || EXIT_SUCCESS != libxsmm_get_malloc_xinfo(
-            internal_malloc_scratch_pool[0].buffer, &info->size, 0/*flags*/, 0/*extra*/)))
-    {
-      info->size = internal_malloc_scratch_pool[0].minsize;
-    }
-
-#if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-    {
-      const unsigned max_npools = LIBXSMM_MIN(libxsmm_scratch_pools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
-      for (i = 1; i < max_npools; ++i) {
-        if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != internal_malloc_scratch_pool[i].site) {
-          info->npools += (unsigned int)LIBXSMM_MIN(internal_malloc_scratch_pool[i].minsize, 1);
-          info->npending += internal_malloc_scratch_pool[i].counter;
-        }
-      }
-      if (0 != internal_malloc_scratch_pool[0].buffer) {
-        for (i = 1; i < max_npools; ++i) {
-          if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != internal_malloc_scratch_pool[i].site) {
-            size_t size;
-            if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(
-              internal_malloc_scratch_pool[i].buffer, &size, 0/*flags*/, 0/*extra*/))
-            {
-              info->size += size;
-            }
-          }
-        }
-      }
-      else { /* approximate memory consumption by using minsize */
-        for (i = 1; i < max_npools; ++i) {
-          if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != internal_malloc_scratch_pool[i].site) {
-            info->size += internal_malloc_scratch_pool[i].minsize;
-          }
-        }
+    max_npools = LIBXSMM_MIN(libxsmm_scratch_pools, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
+    for (i = 1; i < max_npools; ++i) {
+      if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != internal_malloc_scratch_pool[i].site) {
+        info->npools += (unsigned int)LIBXSMM_MIN(internal_malloc_scratch_pool[i].minsize, 1);
+        info->npending += internal_malloc_scratch_pool[i].counter;
       }
     }
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
@@ -1321,6 +1331,20 @@ LIBXSMM_API_DEFINITION int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
     result = EXIT_FAILURE;
   }
   return result;
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_set_scratch_limit(size_t limit)
+{
+  LIBXSMM_INIT
+  libxsmm_scratch_limit = limit;
+}
+
+
+LIBXSMM_API_DEFINITION size_t libxsmm_get_scratch_limit(void)
+{
+  LIBXSMM_INIT
+  return libxsmm_scratch_limit;
 }
 
 
