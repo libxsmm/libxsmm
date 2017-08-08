@@ -46,6 +46,9 @@
 # include <errno.h>
 # include <time.h>
 #endif
+#if defined(__linux__)
+# include <syscall.h>
+#endif
 #if defined(_WIN32)
 # include <windows.h>
 # define LIBXSMM_MAX_PATH MAX_PATH

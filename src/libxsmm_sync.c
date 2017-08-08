@@ -38,9 +38,6 @@
 #include <assert.h>
 #include <stdint.h>
 #include <math.h>
-#if defined(__linux__)
-# include <syscall.h>
-#endif
 #if defined(_WIN32)
 # include <process.h>
 #else
