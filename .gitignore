@@ -1,4 +1,3 @@
-.hooks/.commit
 My Amplifier*
 opentuner.db
 bin/libxsmm_generator
@@ -11,9 +10,11 @@ build/mm_*_*_*.c
 build/*/*/*.xml
 lib/libxsmm*
 ide/_vs*-*.bat
+ide/.vs
 ide/build
 ide/r*ah
 samples2
+site
 tmp
 .state
 .make

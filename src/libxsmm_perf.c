@@ -46,6 +46,9 @@
 # include <errno.h>
 # include <time.h>
 #endif
+#if defined(__linux__)
+# include <syscall.h>
+#endif
 #if defined(_WIN32)
 # include <windows.h>
 # define LIBXSMM_MAX_PATH MAX_PATH
@@ -235,6 +238,17 @@ error:
 }
 
 
+/** Utility function to receive the OS-specific thread ID. */
+LIBXSMM_API_INLINE unsigned int internal_perf_get_tid(void)
+{
+#if defined(__linux__)
+  return (unsigned int)syscall(__NR_gettid);
+#else /* fallback */
+  return libxsmm_get_tid();
+#endif
+}
+
+
 LIBXSMM_API_DEFINITION void libxsmm_perf_dump_code(const void* memory, size_t size, const char* name)
 {
   assert(fp != NULL);
@@ -258,7 +272,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_dump_code(const void* memory, size_t si
     rec.vma = (uintptr_t) memory;
     rec.code_addr = (uintptr_t) memory;
     rec.pid = (uint32_t) libxsmm_get_pid();
-    rec.tid = (uint32_t) libxsmm_get_tid_os();
+    rec.tid = (uint32_t) internal_perf_get_tid();
 
 #if !defined(LIBXSMM_NO_SYNC)
     flockfile(fp);
