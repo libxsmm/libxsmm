@@ -202,10 +202,12 @@ LIBXSMM_API void libxsmm_barrier_release(const libxsmm_barrier* barrier);
 
 /** Utility function to receive the process ID of the calling process. */
 LIBXSMM_API unsigned int libxsmm_get_pid(void);
-/** Utility function to receive the thread ID of the calling thread. */
+/**
+ * Utility function to receive a Thread-ID (TID) for the calling thread.
+ * The TID is not related to a specific threading runtime. TID=0 may not
+ * represent the main thread. TIDs are zero-based and consecutive numbers.
+ */
 LIBXSMM_API unsigned int libxsmm_get_tid(void);
-/** Utility function to receive the OS-specific thread ID. */
-LIBXSMM_API unsigned int libxsmm_get_tid_os(void);
 
 #endif /*LIBXSMM_SYNC_H*/
 

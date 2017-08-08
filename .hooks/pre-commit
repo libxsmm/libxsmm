@@ -1,16 +1,15 @@
 #!/bin/sh
 
-ROOTDIR=$(cd ${GIT_DIR}/..; pwd -P 2> /dev/null)
 LOCKFILE=${GIT_DIR}/.commit
-TOUCH=$(which touch)
-ECHO=$(which echo)
-GREP=$(which grep)
-GIT=$(which git)
-#SED=$(which sed)
-RM=$(which rm)
-
-CODEFILE=${ROOTDIR}/.codefile
+CODEFILE=.codefile
 BANNED_CHARS="\t"
+
+TOUCH=$(which touch 2> /dev/null)
+ECHO=$(which echo 2> /dev/null)
+GREP=$(which grep 2> /dev/null)
+GIT=$(which git 2> /dev/null)
+#SED=$(which sed 2> /dev/null)
+RM=$(which rm 2> /dev/null)
 
 if [ "" != "${GIT}" ]; then
   if [ "" != "${ECHO}" ] && [ "" != "${SED}" ] && [ "" != "${GREP}" ] && \
@@ -65,12 +64,18 @@ EOD
   fi
 
   if [ "" != "${TOUCH}" ] && [ "" != "${GREP}" ] && [ "" != "${RM}" ]; then
-    ${GIT} diff --cached --name-status | ${GREP} -q version.txt
-    if [ "0" != "$?" ]; then
+    if [ "0" != "$(${GIT} diff --cached --name-status | ${GREP} version.txt)" ]; then
       # trigger updating the version file
-      ${TOUCH} ${LOCKFILE}
+      ${TOUCH} ${LOCKFILE}-version
     else # cleanup
-      ${RM} -f ${LOCKFILE}
+      ${RM} -f ${LOCKFILE}-version
+    fi
+
+    if [ "0" != "$(${GIT} diff --cached --name-status | ${GREP} README.md)" ]; then
+      # trigger updating the README file
+      ${TOUCH} ${LOCKFILE}-readme
+    else # cleanup
+      ${RM} -f ${LOCKFILE}-readme
     fi
   fi
 fi

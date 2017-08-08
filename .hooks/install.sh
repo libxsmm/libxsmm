@@ -16,5 +16,6 @@ then
   ${CP} ${HERE}/post-commit ${GIT_DIR}/hooks
   ${CP} ${HERE}/pre-commit ${GIT_DIR}/hooks
   ${CP} ${HERE}/prepare-commit-msg ${GIT_DIR}/hooks
-  ${RM} -f ${LOCKFILE}
+  ${RM} -f ${LOCKFILE}-version
+  ${RM} -f ${LOCKFILE}-readme
 fi

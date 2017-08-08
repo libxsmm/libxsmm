@@ -162,7 +162,8 @@ int main(int argc, char* argv[])
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
       if (0 < duration) {
         if (ab) {
-          fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s | %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d \n", gflops * nrepeat / duration, m, n, k, bm, bn, bk, order, b_m1, b_n1, b_k1, b_k2);
+          fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s | %d,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i\n",
+            gflops * nrepeat / duration, m, n, k, bm, bn, bk, order, b_m1, b_n1, b_k1, b_k2);
         } else {
           fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
         }
