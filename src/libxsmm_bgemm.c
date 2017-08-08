@@ -147,12 +147,10 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
           fprintf(stderr, "LIBXSMM ERROR: BGEMM kernel generation failed!\n");
         }
       }
-      else {
-        if (0 != libxsmm_verbosity /* library code is expected to be mute */
-         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-        {
-          fprintf(stderr, "LIBXSMM ERROR: BGEMM block-size is invalid!\n");
-        }
+      else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+            && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM ERROR: BGEMM block-size is invalid!\n");
       }
     }
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -449,7 +447,7 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
       }
     }
   }
-#if !defined(NDEBUG) /* intentionally no errror check in release build */
+#if !defined(NDEBUG) /* intentionally no error check in release build */
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {

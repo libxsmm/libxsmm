@@ -253,7 +253,7 @@
             INTEGER(C_INT), INTENT(IN), VALUE :: id
           END SUBROUTINE
 
-          ! Set target architecture (arch="0|sse|snb|hsw|knl|skx", "0": CPUID)
+          ! Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx", "0": CPUID)
           ! for subsequent code generation (JIT).
           SUBROUTINE libxsmm_set_target_arch(arch) BIND(C)
             IMPORT :: C_CHAR
