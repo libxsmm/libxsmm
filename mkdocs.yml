@@ -1,5 +1,5 @@
 site_name: LIBXSMM
-docs_dir: documentation 
+docs_dir: documentation
 pages:
 - Home: index.md
 - LIBXSMM Domains:
