@@ -261,7 +261,7 @@ SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
           libxsmm_sync.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_trans.c libxsmm_bgemm.c \
           libxsmm_spmdm.c libxsmm_fsspmdm.c \
-          libxsmm_dnn.c libxsmm_dnn_handle.c \
+          libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_handle.c \
           libxsmm_dnn_convolution_forward.c \
           libxsmm_dnn_convolution_backward.c \
           libxsmm_dnn_convolution_weight_update.c \

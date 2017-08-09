@@ -155,6 +155,13 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
   char exp;                         /* fix point exponent for this tensor */
 };
 
+/* Structure to record segment in stream of code  */
+typedef struct LIBXSMM_RETARGETABLE segment_t {
+  int segment_type;
+  int n_convs;
+  int aux_index;
+} segment_t;
+
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_datatype datatype;
   libxsmm_dnn_datatype datatype_itm;
@@ -247,9 +254,52 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_code_pointer code_bwd[4];
   libxsmm_code_pointer code_upd[6];
 
-  libxsmm_code_pointer matcopy_fwd[1];
+  libxsmm_code_pointer matcopy_fwd[4];
   libxsmm_code_pointer matcopy_bwd[2];
-  libxsmm_code_pointer matcopy_upd[2];
+  libxsmm_code_pointer matcopy_upd[3];
+  
+  /* Data structures and metadata related to per-thread private JITing */
+  int use_thread_private_jit;
+  int use_thread_private_filter;
+  int trans_ofw_ifm;
+
+  int *n_entries_fwd;
+  int **compute_fwd_indices_ptrs;
+  char **kernel_fwd_variant_ptrs;
+  int block_fwd_oj;
+  int block_fwd_oi;
+  int block_fwd_ifm;
+  int block_fwd_ofm;
+  int *n_fwd_code_segments;
+  segment_t **fwd_code_segments;
+  int *ofh_fwd_start;
+  int *ofh_fwd_end;
+
+  int *n_entries_bwd;
+  int **compute_bwd_indices_ptrs;
+  char **kernel_bwd_variant_ptrs;
+  int block_bwd_oj;
+  int block_bwd_oi;
+  int block_bwd_ifm;
+  int block_bwd_ofm;
+  int *n_bwd_code_segments;
+  segment_t **bwd_code_segments;
+  int *n_entries_trans_bwd;
+  int **transpose_bwd_indices_ptrs;
+  int *ofh_bwd_start;
+  int *ofh_bwd_end;
+
+  int *n_entries_upd;
+  int block_upd_ifm;
+  int block_upd_ofm;
+  int **compute_upd_indices_ptrs;
+  char **kernel_upd_variant_ptrs;
+  int *n_upd_code_segments;
+  segment_t **upd_code_segments;
+  int *n_entries_init_upd;
+  int **init_upd_indices_ptrs;
+  int *n_entries_copy_upd;
+  int **copy_upd_indices_ptrs;
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {

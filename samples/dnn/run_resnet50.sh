@@ -19,7 +19,7 @@ then
   ITERS=${CHECK_DNN_ITERS}
   NUMA=1
   BIN=f32
-  TYPE="A"
+  TYPE="F"
   FORMAT="L"
   PAD=0
 else

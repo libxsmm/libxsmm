@@ -26,17 +26,21 @@
  ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
  ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
  ******************************************************************************/
-/* Alexander Heinecke, Evangelos Georganas, Hans Pabst (Intel Corp.)
+/* Evangelos Georganas (Intel Corp.)
  ******************************************************************************/
-if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
-  if ( handle->use_thread_private_jit ) {
-#include "libxsmm_dnn_convolve_st_fwd_custom_custom_stream.tpl.c"
-  } else {
-#include "libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
-  }
-} else if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-#include "libxsmm_dnn_convolve_st_fwd_custom_custom_2.tpl.c"
-}
-else {
-  /* New custom format code here */
+
+/* Apply bias if requested  */
+LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
+element_output_type* temp_ptr;
+element_output_type* temp_ptr_2;
+ofm1 = code_stream[pc].aux_index;
+temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
+temp_ptr =  output_base + stream[i+2];
+/* @TODO check these loops for physical output padding */
+for (oj = 0; oj <my_h_out*handle->ofwp; ++oj) {
+  LIBXSMM_PRAGMA_SIMD
+    for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+      temp_ptr[ofm2] = temp_ptr_2[ofm2];
+    }
+  temp_ptr += handle->ofmblock;
 }
