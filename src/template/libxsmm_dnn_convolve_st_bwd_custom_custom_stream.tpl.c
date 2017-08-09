@@ -129,7 +129,6 @@ if (handle->datatype != handle->datatype_itm) {
   libxsmm_barrier_wait(handle->barrier, ltid);
 
   if (1) {
-    //if (handle->desc.N*handle->blocksifm*handle->fm_lp_block >= handle->desc.threads) {
     for (pc = 0; pc < n_segments; pc++) {
       instr = code_stream[pc].segment_type;
       n_convs = code_stream[pc].n_convs;

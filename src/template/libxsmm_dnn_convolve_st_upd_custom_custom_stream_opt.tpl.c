@@ -196,7 +196,13 @@ if (handle->upd_use_external_reduce == 0) {
     for ( j = reduce_thr_begin; j < reduce_thr_end; j+= handle->ofmblock) {
 #define __AVX512F__
 #if defined(__AVX512F__)
-      _mm512_store_ps((void*) &weight_ptr[j] , _mm512_add_ps( _mm512_load_ps((void*) &weight_ptr[j]) , _mm512_load_ps((void*) &remote_weight_ptr[j])) );
+  __m512 remote_weight;
+  __m512 reduction_weight;
+  __m512 sum_weight;
+  remote_weight = _mm512_load_ps((void*) &remote_weight_ptr[j]);
+  reduction_weight = _mm512_load_ps((void*) &weight_ptr[j]);
+  sum_weight =  _mm512_add_ps( remote_weight, reduction_weight);
+  _mm512_store_ps((void*) &weight_ptr[j] , sum_weight);
 #else
       for (pc = 0; pc < handle->ofmblock; pc++) {
         weight_ptr[j+pc] += remote_weight_ptr[j+pc];
@@ -208,18 +214,3 @@ if (handle->upd_use_external_reduce == 0) {
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-#if 0
-/* Perform reduction because we used thread private filters... */
-__m512 accum;
-const int total_filter_size = reduce_work * handle->ofmblock;
-for ( j = reduce_thr_begin; j < reduce_thr_end; j+= handle->ofmblock) {
-  accum =  _mm512_setzero_ps();
-  for ( i = 0; i < handle->desc.threads; i++ ) {
-    remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*total_filter_size);
-    accum = _mm512_add_ps( accum  , _mm512_load_ps((void*) &remote_weight_ptr[j]));
-  }
-  _mm512_store_ps((void*) &weight_ptr[j], accum);
-}
-
-libxsmm_barrier_wait(handle->barrier, ltid);
-#endif

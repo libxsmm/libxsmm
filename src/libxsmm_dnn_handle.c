@@ -91,7 +91,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->use_thread_private_jit = 0;
     }
     /* If we use any options/fuse ops, disable kernel streams */
-    if ( (handle->desc.fuse_ops != LIBXSMM_DNN_CONV_OPTION_NONE) || (handle->desc.options != LIBXSMM_DNN_CONV_OPTION_NONE) ) {
+    if ( (handle->desc.fuse_ops != LIBXSMM_DNN_CONV_FUSE_NONE) || (handle->desc.options != LIBXSMM_DNN_CONV_OPTION_NONE) ) {
       handle->use_thread_private_jit = 0;
     }
     /* If we do not run on custom/custom format, disable kernel streams */

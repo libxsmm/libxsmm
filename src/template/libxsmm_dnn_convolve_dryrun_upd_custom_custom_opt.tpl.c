@@ -56,7 +56,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #if defined(_OPENMP)
   int ltid = omp_get_thread_num();
 #endif
-  int img, imgb, ifmb, ofmb, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__,ii_, ij_, kh, kw, KW, ofm1ifm1, ki, kj, imgifm1, local_entries, stride_w, stride_h ;
+  int img, imgb, ifmb, ofmb, ofm1, ifm1, num_ofw_strips, oi_, oj_, oi__, oj__,ii_, ij_, kh, kw, KW, ofm1ifm1, ki, kj, imgifm1, local_entries, stride_w, stride_h ;
   int i, j, ofm1ifm1img, ojb;
 
   /* Here we assume that N % Threads == 0 */
@@ -72,12 +72,11 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
   const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
 
-  int total_calls, aux;
+  int aux;
   int n_code_segments = 0;
   int mark_ifm_init, mark_ifm_close, mark_img_init;
   int *tmp_expanded_stream, tmp_stream_index;
   segment_t *encoded_code_segments;
-  int expanded_size;
   int stretch_of_convs;
   int encoded_stream_index;
   int lookahead_index;
@@ -102,7 +101,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   kh = handle->desc.R;
   kw = handle->desc.S;
   num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
-  num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
   local_entries = 0;
   if ( handle->ifmblock != 1  ) {
     KW = kw;
@@ -122,7 +120,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                   for (kj=0; kj < kh; ++kj) {
                     for (ki=0; ki < KW; ++ki) {
                       oi_=oi__*handle->upd_ofw_rb;
-                      //oj_=oj__*handle->upd_ofh_rb;
                       ii_ = oi_*stride_w;
                       ij_ = oj_*stride_h;
                       local_entries += 3;
@@ -145,7 +142,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152); 
   handle->kernel_upd_variant_ptrs[ltid] = kernel_variant;
   handle->n_upd_code_segments[ltid] = n_code_segments;
-  expanded_size = local_entries/3 + n_code_segments;
 
   /* Second run to compute actual indices */
   local_entries = 0;
@@ -161,7 +157,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                   for (kj=0; kj < kh; ++kj) {
                     for (ki=0; ki < KW; ++ki) {
                       oi_=oi__*handle->upd_ofw_rb;
-                      //oj_=oj__*handle->upd_ofh_rb;
                       ii_ = oi_*stride_w;
                       ij_ = oj_*stride_h;
                       if (handle->trans_ofw_ifm == 1 ) {
@@ -186,7 +181,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   compute_indices[local_entries] = 0;
   compute_indices[local_entries+1] = 0;
   compute_indices[local_entries+2] = 0;
-  total_calls = local_entries/3;
 
 }
 

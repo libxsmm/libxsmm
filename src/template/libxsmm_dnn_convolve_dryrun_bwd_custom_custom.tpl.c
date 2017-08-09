@@ -60,7 +60,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int ltid = omp_get_thread_num();
 #endif
   int img, ofm1, ifm1, oj, oi, ij, ii, local_entries = 0, ojb, ifmb, ofmb;
-  int cur_wt, next_wt, cur_out, next_out, padded_h, padded_w;
+  int cur_wt, next_wt, cur_out, next_out, padded_w;
   int fmlpb = handle->fm_lp_block;
   int comp, kj, ki, aux;
 
@@ -97,7 +97,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   char *kernel_variant;
 
   if (handle->padding_flag == 1) {
-    padded_h = handle->ifhp + 2 * handle->desc.pad_h;
     padded_w = handle->ifwp + 2 * handle->desc.pad_w;
   }
 
