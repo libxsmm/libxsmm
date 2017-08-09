@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
 
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#   pragma omp parallel for default(none) private(i)
+#   pragma omp parallel for default(none) private(i) shared(r)
 #endif
     for (i = 0; i < ncycles; ++i) {
       const int count = LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % nalloc, 1);
