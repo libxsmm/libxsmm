@@ -225,6 +225,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       return status;
     }
 
+    /* if we have 1x1 let's bring some ifms into the kernel for forward to increase accumulation chain length on AVX512 */
+    if ( (handle->ifmblock%16 == 0) && (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*4) == 0) && (handle->desc.R == 1) && (handle->desc.S == 1) ) {
+      handle->blocksifm_blocking = 4;
+    } else if ( (handle->ifmblock%16 == 0) && (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*2) == 0) && (handle->desc.R == 1) && (handle->desc.S == 1) ) {
+      handle->blocksifm_blocking = 2;
+    } else {
+      handle->blocksifm_blocking = 1;
+    }
+
     /* Adjust blocking factors if custom_2 format is requested */
     if ((handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2)) {
       if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32) {
@@ -457,6 +466,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.stride_w = handle->desc.v;
       descriptor.blocks_ofm = handle->blocksofm*handle->fm_lp_block;
       descriptor.blocks_ifm = handle->blocksifm;
+      descriptor.blocks_ifm_blocking = handle->blocksifm_blocking;
       descriptor.ofm_block = handle->ofmblock;
       descriptor.ifm_block = handle->ifmblock;
       descriptor.ofh_padded = handle->ofhp;

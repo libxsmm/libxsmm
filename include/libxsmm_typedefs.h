@@ -236,6 +236,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int unroll_kw;                       /* kernel width, unrolled */
   unsigned int blocks_ofm;
   unsigned int blocks_ifm;
+  unsigned int blocks_ifm_blocking;
   unsigned int ofm_block;                       /* should be VLEN */
   unsigned int ifm_block;                       /* should be VLEN */
   unsigned int ofh_padded;                      /* this we need for 2D register block */
