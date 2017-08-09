@@ -33,18 +33,13 @@
 const int ltid = tid-start_thread;
 
 /* Auxiliary integer variables   */
-int img, ofm1, ifm1, ifm2, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__,ii_, ij_, kh, kw, ofm1ifm1, ki, kj, imgifm1,ii, ij, i, j, ofm1ifm1img;
+int img, ifm1, ifm2, imgifm1,ii, ij, i, j;
 
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
 int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
 int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
 
 /* traspose, copy and reduce work-related variables  */
-const int transpose_work = handle->desc.N*handle->blocksifm;
-const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (transpose_work / handle->desc.threads) : (transpose_work / handle->desc.threads) + 1;
-const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;
-const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
-
 const int reduce_work = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock;
 const int reduce_chunksize = (reduce_work % handle->desc.threads == 0) ? (reduce_work / handle->desc.threads) : (reduce_work / handle->desc.threads) + 1;
 const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize * handle->ofmblock) : reduce_work * handle->ofmblock;
@@ -57,14 +52,12 @@ const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) *
 /* Pointer related variables for output and weight */
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->grad_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 element_filter_type* remote_weight_ptr = 0;
 element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->data;
 element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4) + (ltid*handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
 LIBXSMM_VLA_DECL(6, element_filter_type, per_thread_weight, per_thread_weight_ptr, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 /* Declare both variables for weights (private and global)  */
 LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr_per_thread, per_thread_weight, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
-LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr, weight, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 /* Pointer related variables for input */
 element_input_type (* LIBXSMM_RESTRICT input_ptr);
 element_input_type (* LIBXSMM_RESTRICT copy_ptr);
@@ -189,20 +182,19 @@ for (pc = 0; pc < instr; pc++) {
 libxsmm_barrier_wait(handle->barrier, ltid);
 
 /* Perform reduction because we used thread private filters... */
-const int total_filter_size = reduce_work * handle->ofmblock;
 if (handle->upd_use_external_reduce == 0) {
+  const int total_filter_size = reduce_work * handle->ofmblock;
   for ( i = 0; i < handle->desc.threads; i++ ) {
     remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*total_filter_size);
     for ( j = reduce_thr_begin; j < reduce_thr_end; j+= handle->ofmblock) {
-#define __AVX512F__
 #if defined(__AVX512F__)
-  __m512 remote_weight;
-  __m512 reduction_weight;
-  __m512 sum_weight;
-  remote_weight = _mm512_load_ps((void*) &remote_weight_ptr[j]);
-  reduction_weight = _mm512_load_ps((void*) &weight_ptr[j]);
-  sum_weight =  _mm512_add_ps( remote_weight, reduction_weight);
-  _mm512_store_ps((void*) &weight_ptr[j] , sum_weight);
+      __m512 remote_weight;
+      __m512 reduction_weight;
+      __m512 sum_weight;
+      remote_weight = _mm512_load_ps((void*) &remote_weight_ptr[j]);
+      reduction_weight = _mm512_load_ps((void*) &weight_ptr[j]);
+      sum_weight =  _mm512_add_ps( remote_weight, reduction_weight);
+      _mm512_store_ps((void*) &weight_ptr[j] , sum_weight);
 #else
       for (pc = 0; pc < handle->ofmblock; pc++) {
         weight_ptr[j+pc] += remote_weight_ptr[j+pc];

@@ -31,10 +31,10 @@
 #if !defined(_OPENMP)
 int ltid;
 #endif
+int block_j = 14;
 
 handle->block_upd_ofm = 8;
 handle->block_upd_ifm = 8;
-int block_j = 14;
 
 if ( (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
   block_j = 4;
@@ -56,36 +56,18 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #if defined(_OPENMP)
   int ltid = omp_get_thread_num();
 #endif
-  int img, imgb, ifmb, ofmb, ofm1, ifm1, num_ofw_strips, oi_, oj_, oi__, oj__,ii_, ij_, kh, kw, KW, ofm1ifm1, ki, kj, imgifm1, local_entries, stride_w, stride_h ;
-  int i, j, ofm1ifm1img, ojb;
+  int img, ifmb, ofmb, ofm1, ifm1, num_ofw_strips, oi_, oj_, oi__, ii_, ij_, kh, kw, KW, ki, kj, local_entries, stride_w, stride_h ;
+  int ojb;
 
   /* Here we assume that N % Threads == 0 */
   int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
   int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
   int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
-
-  /* We always have to reduce in this case... */
-  const int reduce_work = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
-  /* compute chunck size */
-  const int reduce_chunksize = (reduce_work % handle->desc.threads == 0) ? (reduce_work / handle->desc.threads) : (reduce_work / handle->desc.threads) + 1;
-  /* compute thr_begin and thr_end */
-  const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
-  const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
-
-  int aux;
   int n_code_segments = 0;
-  int mark_ifm_init, mark_ifm_close, mark_img_init;
-  int *tmp_expanded_stream, tmp_stream_index;
-  segment_t *encoded_code_segments;
-  int stretch_of_convs;
-  int encoded_stream_index;
-  int lookahead_index;
 
   /* Arrays of stream indices */
   int *compute_indices;
-  int *trans_indices;
   char *kernel_variant;
-  int *init_indices, *copy_indices;
 
   int padded_w, padded_h;
   if (handle->padding_flag == 1) {

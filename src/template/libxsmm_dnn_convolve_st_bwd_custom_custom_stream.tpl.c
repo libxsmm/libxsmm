@@ -50,19 +50,14 @@ LIBXSMM_VLA_DECL(3, element_input_type, input_buffer, ((element_input_type*)hand
 /* Input tensor declaration */
 /* regular/high precision */
 element_input_type* del_in = 0;
-/* low precision */
-element_output_type* del_in_lp = 0;
 /* select pointer based on precision */
 if (handle->datatype != handle->datatype_itm) {
   del_in = ((element_input_type*)handle->scratch7); /* + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock); */
-  del_in_lp = ((element_output_type*)handle->grad_input->data); /* + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock * handle->fm_lp_block); */
 } else {
   del_in = ((element_input_type*)handle->grad_input->data); /* + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock); */
-  del_in_lp = 0;
 }
 { /* open new scope for additional variable declarations (C89) */
   LIBXSMM_VLA_DECL(5, element_input_type, del_input, del_in, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
-  LIBXSMM_VLA_DECL(6, element_output_type, del_input_lp, del_in_lp, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
   /* Ouput tensor declaration */
   element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block;
   LIBXSMM_VLA_DECL(6, element_output_type, del_out, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
@@ -71,16 +66,14 @@ if (handle->datatype != handle->datatype_itm) {
   LIBXSMM_VLA_DECL(7, element_filter_type, wt, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
   LIBXSMM_VLA_DECL(7, element_filter_type, tr_wt, (element_filter_type*)handle->scratch1, handle->blocksifm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
 
-  LIBXSMM_VLA_DECL(6, element_filter_type, temp_wt, (element_filter_type*)handle->scratch1 + (handle->blocksofm * handle->fm_lp_block * handle->blocksifm * handle->fm_lp_block * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock), handle->blocksifm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
-
   /* Auxiliary integer variables   */
-  int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i, ih, n_convs, conv_i, ifm1, ofm1, ofm2, oj, img, input_h_start, input_h_end, my_h_out, ifm1ofm1, ki, kj, ifm2, ij, ii, ifm1lpblock ;
-  int ti, tj, trans_i, n_trans_tasks, trans_offset, pf_offset;
+  int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i,  n_convs, conv_i, ifm1, img = 0, ifm2, ij, ii, ifm1lpblock ;
+  int ti, tj, trans_i, n_trans_tasks, trans_offset;
   /* Stream related variables  */
   segment_t *code_stream;
   int *stream = handle->compute_bwd_indices_ptrs[ltid];
   int *trans_indices =  handle->transpose_bwd_indices_ptrs[ltid];
-  char *kernel_stream = handle->kernel_bwd_variant_ptrs[ltid];
+  element_filter_type  *mat, *matT;
   /* Kernel related variables  */
   libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_bwd[2].xconv.sconv;
   libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
@@ -95,6 +88,7 @@ if (handle->datatype != handle->datatype_itm) {
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(5, del_input, 0, 0, 0, 0, 0,
         handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
+    copy_ptr = NULL;
   }
   weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt, 0, 0, 0, 0, 0, 0, 0,
       handle->blocksifm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
@@ -105,7 +99,6 @@ if (handle->datatype != handle->datatype_itm) {
   wt_base = &LIBXSMM_VLA_ACCESS(7, wt, 0, 0, 0, 0, 0, 0, 0,
       handle->blocksifm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
 
-  element_filter_type *mat, *matT, *pmat, *pmatT;
   instr = handle->n_entries_bwd[ltid];
   n_segments = handle->n_bwd_code_segments[ltid];
   i = 0;

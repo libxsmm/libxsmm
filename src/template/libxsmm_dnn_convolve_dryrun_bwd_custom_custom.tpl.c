@@ -59,10 +59,10 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #if defined(_OPENMP)
   int ltid = omp_get_thread_num();
 #endif
-  int img, ofm1, ifm1, oj, oi, ij, ii, local_entries = 0, ojb, ifmb, ofmb;
-  int cur_wt, next_wt, cur_out, next_out, padded_w;
+  int img, ofm1 = 0, ifm1 = 0, oj, oi, ij, ii, local_entries = 0, ojb, ifmb, ofmb;
+  int cur_wt, next_wt, cur_out, next_out, padded_w = 0;
   int fmlpb = handle->fm_lp_block;
-  int comp, kj, ki, aux;
+  int comp, kj = 0, ki = 0, aux;
 
   /* number of tasks for transpose that could be run in parallel */
   int transpose_work = handle->blocksofm * (handle->blocksifm * handle->fm_lp_block) * handle->desc.R * handle->desc.S;
@@ -85,7 +85,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int n_code_segments;
   int mark_ifm_init, mark_ifm_close, mark_img_init;
   int *tmp_expanded_stream, tmp_stream_index;
-  segment_t *encoded_code_segments;
+  segment_t *encoded_code_segments = NULL;
   int expanded_size;
   int stretch_of_convs;
   int encoded_stream_index;
@@ -180,6 +180,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   if (n_code_segments) {
     encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 2097152);
     handle->bwd_code_segments[ltid] = encoded_code_segments;
+  } else {
+   encoded_code_segments = NULL;
   }
   local_entries = 0;
 

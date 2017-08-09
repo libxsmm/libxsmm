@@ -59,7 +59,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int ltid = omp_get_thread_num();
 #endif
   int img, ofm1, ifm1, oj, oi, ij, ii, local_entries = 0, ojb, ifmb, ofmb;
-  int cur_wt, next_wt, cur_out, next_out, padded_h, padded_w;
+  int cur_wt, next_wt, cur_out, next_out, padded_h = 0, padded_w = 0;
 
   /* Threading related variables */
   int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -74,7 +74,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int n_code_segments;
   int mark_ofm_init, mark_ofm_close;
   int *tmp_expanded_stream, tmp_stream_index;
-  segment_t *encoded_code_segments;
+  segment_t *encoded_code_segments = NULL;
   int expanded_size;
   int stretch_of_convs;
   int encoded_stream_index;

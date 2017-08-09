@@ -48,7 +48,6 @@ int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i, ih, n_co
 /* Stream related variables  */
 segment_t *code_stream;
 int *stream = handle->compute_fwd_indices_ptrs[ltid];
-char *kernel_stream = handle->kernel_fwd_variant_ptrs[ltid];
 /* Padding related variables */
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
