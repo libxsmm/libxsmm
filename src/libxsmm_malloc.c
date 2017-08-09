@@ -1034,6 +1034,7 @@ LIBXSMM_API_INLINE unsigned int internal_malloc_site(
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)
     *npools = LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS;
 #else
+    LIBXSMM_UNUSED(pools);
     *npools = 0;
 #endif
     *site = 0;
@@ -1084,6 +1085,8 @@ LIBXSMM_API_INLINE size_t internal_get_scratch_size(unsigned int exclude)
     }
   }
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
+#else
+  LIBXSMM_UNUSED(exclude);
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
   return result;
 }
@@ -1199,33 +1202,30 @@ LIBXSMM_API_DEFINITION void* libxsmm_malloc(size_t size)
 }
 
 
-LIBXSMM_API_INLINE int internal_scratch_free(const void* memory, unsigned int pool)
+LIBXSMM_API_INLINE int internal_scratch_free(const void* memory, internal_malloc_pool_type* pool)
 {
   int released = 0;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-  if (pool < libxsmm_scratch_pools) { /* do not consider libxsmm_scratch_limit (pending free) */
-    internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)((uintptr_t)(internal_malloc_pool_buffer + (LIBXSMM_CACHELINE_SIZE)-1) & ~((LIBXSMM_CACHELINE_SIZE)-1));
-    char *const scratch = pools[pool].instance.buffer;
-    const char *const buffer = (const char*)memory;
-    size_t total_size;
+  char *const scratch = pool->instance.buffer;
+  const char *const buffer = (const char*)memory;
+  size_t total_size;
 
-    if (0 != scratch &&
-      EXIT_SUCCESS == libxsmm_get_malloc_xinfo(scratch, &total_size, 0/*flags*/, 0/*extra*/) &&
-      /* check if memory belongs to scratch domain or local domain */
-      scratch <= buffer && buffer < (scratch + total_size))
-    {
-      --pools[pool].instance.counter;
-      if (0 < pools[pool].instance.counter || pools[pool].instance.minsize <= total_size) { /* reuse scratch domain */
-        /* TODO: document/check that allocation/deallocation must follow the linear/scoped allocator policy */
-        pools[pool].instance.head = scratch;
-      }
-      else { /* reallocate scratch domain */
-        pools[pool].instance.buffer = 0;
-        pools[pool].instance.head = 0;
-        libxsmm_xfree(scratch);
-      }
-      released = 1;
+  if (0 != scratch &&
+    EXIT_SUCCESS == libxsmm_get_malloc_xinfo(scratch, &total_size, 0/*flags*/, 0/*extra*/) &&
+    /* check if memory belongs to scratch domain or local domain */
+    scratch <= buffer && buffer < (scratch + total_size))
+  {
+    --pool->instance.counter;
+    if (0 < pool->instance.counter || pool->instance.minsize <= total_size) { /* reuse scratch domain */
+      /* TODO: document/check that allocation/deallocation must follow the linear/scoped allocator policy */
+      pool->instance.head = scratch;
     }
+    else { /* reallocate scratch domain */
+      pool->instance.buffer = 0;
+      pool->instance.head = 0;
+      libxsmm_xfree(scratch);
+    }
+    released = 1;
   }
 #else
   LIBXSMM_UNUSED(memory);
@@ -1239,10 +1239,11 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 {
   unsigned int npools = 0, i = 0;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+  internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)((uintptr_t)(internal_malloc_pool_buffer + (LIBXSMM_CACHELINE_SIZE)-1) & ~((LIBXSMM_CACHELINE_SIZE)-1));
   assert(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
   npools = libxsmm_scratch_pools;
   for (; i < npools; ++i) {
-    if (0 != internal_scratch_free(memory, i)) {
+    if (0 != internal_scratch_free(memory, pools + i)) {
       i = npools + 1; /* break */
     }
   }
