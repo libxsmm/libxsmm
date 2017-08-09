@@ -69,7 +69,6 @@ int main(int argc, char* argv[])
   const int ncycles = LIBXSMM_DEFAULT(1000000, 1 < argc ? atoi(argv[1]) : 0);
   const int nalloc = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 4, 1, MAX_MALLOC_N);
   const int nthreads = LIBXSMM_DEFAULT(1, 3 < argc ? atoi(argv[3]) : 0);
-  static void* p[MAX_MALLOC_N];
   unsigned long long start;
   unsigned int ncalls = 0;
   double dcall, dalloc;
@@ -77,7 +76,6 @@ int main(int argc, char* argv[])
   int i;
 
 #if defined(_OPENMP)
-# pragma omp threadprivate(p)
   if (0 < nthreads) omp_set_num_threads(nthreads);
 #endif
 
@@ -117,7 +115,9 @@ int main(int argc, char* argv[])
 #endif
     for (i = 0; i < ncycles; ++i) {
       const int count = LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % nalloc, 1);
+      void* p[MAX_MALLOC_N];
       int j;
+      assert(count <= MAX_MALLOC_N);
       for (j = 0; j < count; ++j) {
         const size_t nbytes = (r[j%(MAX_MALLOC_N)] % (MAX_MALLOC_MB) + 1) << 20;
         p[j] = MALLOC(nbytes);
