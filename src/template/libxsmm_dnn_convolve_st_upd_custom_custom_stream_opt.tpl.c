@@ -191,8 +191,8 @@ if (handle->upd_use_external_reduce == 0) {
       __m512 remote_weight;
       __m512 reduction_weight;
       __m512 sum_weight;
-      remote_weight = _mm512_load_ps((void*) &remote_weight_ptr[j]);
-      reduction_weight = _mm512_load_ps((void*) &weight_ptr[j]);
+      remote_weight = LIBXSMM_INTRINSICS_MM512_LOAD_PS(remote_weight_ptr + j);
+      reduction_weight = LIBXSMM_INTRINSICS_MM512_LOAD_PS(weight_ptr + j);
       sum_weight =  _mm512_add_ps( remote_weight, reduction_weight);
       _mm512_store_ps((void*) &weight_ptr[j] , sum_weight);
 #else
