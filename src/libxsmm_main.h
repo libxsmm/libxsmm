@@ -376,6 +376,8 @@ LIBXSMM_API_VARIABLE libxsmm_free_function libxsmm_scratch_free_fn;
 LIBXSMM_API_VARIABLE void* libxsmm_default_allocator_context;
 /** If non-NULL, this context used for the context-form of the malloc/free function. */
 LIBXSMM_API_VARIABLE void* libxsmm_scratch_allocator_context;
+/** Number of discovered threads (per libxsmm_get_tid) */
+LIBXSMM_API_VARIABLE unsigned int libxsmm_threads_count;
 /** Number of scratch memory pools used; clamped against internal maximum. */
 LIBXSMM_API_VARIABLE unsigned int libxsmm_scratch_pools;
 /** Maximum total size of the scratch memory domain. */
