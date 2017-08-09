@@ -22,3 +22,4 @@ Restriction operator transforms elements from one size to another. This occurs i
 ```
 
 The input elements are m-by-n-by-k and the output elements are mm-by-nn-by-kk. When m=mm, n=nn, k=kk, this half of a Schwarz solve.
+

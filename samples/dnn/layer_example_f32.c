@@ -37,19 +37,23 @@
 # include <omp.h>
 #endif
 
-#if 0
-#define USE_OVERWRITE
+#if !defined(USE_OVERWRITE) && 0
+# define USE_OVERWRITE
 #endif
-#if 0
-#define USE_FUSED_BIAS
+#if !defined(USE_FUSED_BIAS) && 0
+# define USE_FUSED_BIAS
 #endif
-#if 0
-#define USE_FUSED_RELU
+#if !defined(USE_FUSED_RELU) && 0
+# define USE_FUSED_RELU
 #endif
-#if 0
-#define USE_FUSED_BIAS_RELU
-#define USE_FUSED_RELU
-#define USE_FUSED_BIAS
+
+#if !defined(USE_FUSED) && 0
+# define USE_FUSED
+#endif
+#if defined(USE_FUSED)
+# define USE_FUSED_BIAS_RELU
+# define USE_FUSED_RELU
+# define USE_FUSED_BIAS
 #endif
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -626,6 +630,9 @@ int main(int argc, char* argv[])
 #ifdef USE_OVERWRITE
     zero_buf(naive_input,         nImg*nIfm*ifhp*ifwp);
 #endif
+    if (algo_winograd) {
+      zero_buf(naive_input,         nImg*nIfm*ifhp*ifwp);
+    }
     naive_conv_bp(&naive_param, naive_input, naive_output_bp, naive_filter);
   }
   if (type == 'A' || type == 'U') {

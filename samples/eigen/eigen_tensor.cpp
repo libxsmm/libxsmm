@@ -29,14 +29,18 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
+#if !defined(LIBXSMM_FALLBACK_MMFUNCTION) && 0
+# define LIBXSMM_FALLBACK_MMFUNCTION
+#endif
+
+/** This sample uses LIBXSMM's header-only implementation. */
+#include <libxsmm_source.h>
+
 #if !defined(USE_LIBXSMM)
 # define USE_LIBXSMM
 #endif
 
 #if defined(USE_LIBXSMM)
-# if !defined(LIBXSMM_FALLBACK_MMFUNCTION) && 0
-#   define LIBXSMM_FALLBACK_MMFUNCTION
-# endif
 # if !defined(EIGEN_VECTORIZE_AVX)
 #   define EIGEN_VECTORIZE_AVX
 # endif
@@ -45,12 +49,13 @@
 # endif
 #endif
 
-/** This sample uses LIBXSMM's header-only implementation. */
-#include <libxsmm_source.h>
-
 #if !defined(__EIGEN) && !defined(__EIGEN_UNSUPPORTED) && 0
 # define __EIGEN_UNSUPPORTED
 # define __EIGEN
+#endif
+
+#if !defined(EIGEN_USE_THREADS) && defined(__EIGEN) && (defined(_OPENMP) || (defined(__BLAS) && 1 < (__BLAS)))
+# define EIGEN_USE_THREADS
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -58,11 +63,16 @@
 #endif
 #if defined(__EIGEN_UNSUPPORTED)
 # include <unsupported/Eigen/CXX11/Tensor>
+# include <unsupported/Eigen/CXX11/ThreadPool>
 #endif
 #include <algorithm>
+#include <stdexcept>
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -76,24 +86,32 @@ int main(int argc, char* argv[])
 {
   int result = EXIT_SUCCESS;
   try {
-#if defined(__EIGEN_UNSUPPORTED)
+#if !defined(__EIGEN_UNSUPPORTED)
+    LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
+    throw std::runtime_error("Eigen or Eigen/unsupported not found!");
+#else
     const libxsmm_blasint m = (1 < argc ? std::atoi(argv[1]) : 512);
     const libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
     const libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
     const int nrepeat = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 13 / LIBXSMM_MAX(1, libxsmm_icbrt(1ULL * m * n * k) >> 10), 3);
-    const char *const env_check = getenv("CHECK");
-    const double check = 0 == env_check ? 1.0 : LIBXSMM_ABS(atof(env_check));
+    const char *const env_check = getenv("CHECK"), *const env_nthreads = getenv("NTHREADS");
+    const double check = (0 == env_check ? 1.0 : LIBXSMM_ABS(atof(env_check)));
     const double gflops = 2.0 * m * n * k * 1E-9;
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
+    const int nthreads = LIBXSMM_MAX(0 == env_nthreads ? 0 : atoi(env_nthreads), 1);
+# if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload target(LIBXSMM_OFFLOAD_TARGET)
-#endif
+# endif
     {
-#if defined(MKL_ENABLE_AVX512)
+# if defined(MKL_ENABLE_AVX512)
       mkl_enable_instructions(MKL_ENABLE_AVX512);
-#endif
-#if defined(__EIGEN_UNSUPPORTED)
-      Eigen::Tensor<REAL_TYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc, td(m, n);
+# endif
+# if defined(_OPENMP)
+      Eigen::NonBlockingThreadPool threadpool(1 == nthreads ? omp_get_max_threads() : nthreads);
+# else
+      Eigen::NonBlockingThreadPool threadpool(nthreads);
+# endif
+      Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
+      Eigen::Tensor<REAL_TYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n), td(m, n);
       const char transa = 'N', transb = 'N';
       const REAL_TYPE alpha = 1, beta = 0;
       libxsmm_matdiff_info diff;
@@ -106,7 +124,7 @@ int main(int argc, char* argv[])
         ta.setRandom(); tb.setRandom();
         start = libxsmm_timer_tick();
         for (int i = 0; i < nrepeat; ++i) {
-          tc = ta.contract(tb, product_dims);
+          tc.device(device) = ta.contract(tb, product_dims);
         }
         d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       }
@@ -139,9 +157,9 @@ int main(int argc, char* argv[])
           result = EXIT_FAILURE;
         }
       }
-#endif /*defined(__EIGEN_UNSUPPORTED)*/
-      fprintf(stdout, "Finished\n");
     }
+    fprintf(stdout, "Finished\n");
+#endif /*defined(__EIGEN_UNSUPPORTED)*/
   }
   catch(const std::exception& e) {
     fprintf(stderr, "Error: %s\n", e.what());

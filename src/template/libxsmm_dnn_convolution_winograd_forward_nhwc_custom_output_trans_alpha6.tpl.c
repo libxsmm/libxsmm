@@ -100,8 +100,13 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
           if (xdim < handle->ofw) {
             LIBXSMM_PRAGMA_SIMD
             for (k = 0; k < TDVLEN; k++) {
-              LIBXSMM_VLA_ACCESS(4, output, ydim, xdim, 0, k, handle->ofwp, handle->blocksofm, TDVLEN) +=
-                O[j][i][k]; /* + bias[0][k]; */
+              if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+                LIBXSMM_VLA_ACCESS(4, output, ydim, xdim, 0, k, handle->ofwp, handle->blocksofm, TDVLEN) =
+                  O[j][i][k]; /* + bias[0][k]; */
+              } else {
+                LIBXSMM_VLA_ACCESS(4, output, ydim, xdim, 0, k, handle->ofwp, handle->blocksofm, TDVLEN) +=
+                  O[j][i][k]; /* + bias[0][k]; */
+              }
             }
           }
         }

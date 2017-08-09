@@ -220,7 +220,7 @@ do
   if [ ! -z "$line" ]; then
     echo -n "($idx/$nc)"
     it=$_it
-    run_bsgemm $line 
+    run_bsgemm $line
   fi
   idx=$((idx+1))
 done

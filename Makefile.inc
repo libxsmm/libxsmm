@@ -214,8 +214,8 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
 EXTLIB = $(call abslib,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
-  # provides a libxsmmext as a dummy library which satisfies BLAS symbols
-  BLASLIB = $(EXTLIB)
+  # provides libxsmmnoblas to satisfy BLAS symbols
+  BLASLIB = $(call abslib,$(LIBNAME)noblas.$(LIBEXT))
 else
   BLASLIB ?= $(NULL)
 endif
@@ -908,7 +908,7 @@ ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
     ifeq (3,$(AVX))
-    ifneq (0,$(shell echo "$$((0 == $(CLANG) || 30900 <= $(CC_VERSION) || 0 == $(CC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((0 == $(CLANG) || 40000 <= $(CC_VERSION) || 0 == $(CC_VERSION)))"))
     ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2> /dev/null > /dev/null; echo $$?))
       CTARGET = -mavx512f -mavx512cd
       # fix for Clang
@@ -1052,6 +1052,10 @@ ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo
   endif
 else
   OMPLIB = $(NULL)
+endif
+
+ifneq (0,$(OMP))
+  EXTLIB += $(OMPLIB)
 endif
 
 ifeq (Darwin,$(UNAME))
@@ -1209,6 +1213,11 @@ else ifneq (0,$(BLAS)) # generic
       BLAS_LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
       # OpenBLAS also carries the CBLAS bits
       BLAS_DFLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
+      ifneq (,$(wildcard /usr/include/openblas/f77blas.h))
+        BLAS_DFLAGS += -D__OPENBLAS77
+      else ifneq (,$(wildcard $(BLASDIR)/../include/openblas/f77blas.h))
+        BLAS_DFLAGS += -D__OPENBLAS77
+      endif
     else
       BLAS_DFLAGS += -D__BLAS
       ifneq (Windows_NT,$(UNAME))

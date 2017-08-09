@@ -67,8 +67,7 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
           } else {
             LIBXSMM_PRAGMA_SIMD
             for (k = 0; k < TDVLEN; k++) {
-              I[j][i][k] =
-                LIBXSMM_VLA_ACCESS(4, input, 0, ydim + handle->desc.pad_h_in, xdim + handle->desc.pad_w_in, k, handle->ifhp, handle->ifwp, TDVLEN);
+              I[j][i][k] = LIBXSMM_VLA_ACCESS(4, input, 0, ydim + handle->desc.pad_h_in, xdim + handle->desc.pad_w_in, k, handle->ifhp, handle->ifwp, TDVLEN);
             }
           }
         }

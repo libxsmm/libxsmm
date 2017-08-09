@@ -75,9 +75,9 @@ test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
 	@$(OUTDIR)/test.sh $(TEST)
 
 TEST_NOBLASLIB = $(call abslib, $(LIBNAME)noblas.$(LIBEXT))
-ifneq (Darwin,$(UNAME))
+#ifneq (Darwin,$(UNAME))
   TEST_EXTLIB = $(EXTLIB)
-endif
+#endif
 
 define DEFINE_LINK_LD_RULE
 ifneq (,$(wildcard $(LIBNAME).$(LIBEXT)))
@@ -158,7 +158,7 @@ ifneq ($(abspath $(BLDDIR)),$(abspath .))
 endif
 endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
-	@rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat *.mhd
+	@rm -f $(OBJECTS) $(OBJECTX) $(FTNOBJS) $(FTNOBJX) *__genmod.* fit.log *.dat
 	@rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
 	@rm -f .make .state

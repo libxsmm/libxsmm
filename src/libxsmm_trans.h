@@ -35,7 +35,7 @@
 
 #if !defined(LIBXSMM_TRANS_COLLAPSE)
 # if !defined(_CRAYC)
-#   define LIBXSMM_TRANS_COLLAPSE 2
+#   define LIBXSMM_TRANS_COLLAPSE 1/*2*/
 # else
 #   define LIBXSMM_TRANS_COLLAPSE 1
 # endif

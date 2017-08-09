@@ -40,18 +40,24 @@
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_trans.h>
 # include <mkl_service.h>
-#elif defined(__OPENBLAS)
+#elif defined(__OPENBLAS77)
 # include <openblas/f77blas.h>
+#endif
+#if defined(_OPENMP)
+# include <omp.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 
 #if !defined(ELEM_TYPE)
-# define ELEM_TYPE float
+# define ELEM_TYPE double
 #endif
 
-#if (defined(__BLAS) && 1 < (__BLAS))
+#if (defined(_OPENMP) || (defined(__BLAS) && 1 < (__BLAS)))
+# if !defined(OTRANS_THREAD) && defined(_OPENMP) && 0
+#   define OTRANS_THREAD libxsmm_otrans_thread
+# endif
 # define OTRANS libxsmm_otrans_omp
 #else
 # define OTRANS libxsmm_otrans
@@ -140,9 +146,9 @@ int main(int argc, char* argv[])
     double duration2 = 0;
 #endif
     double duration = 0;
-    unsigned int size = 0;
     unsigned long long start;
     libxsmm_blasint i = 0, j;
+    size_t size = 0;
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
@@ -185,7 +191,12 @@ int main(int argc, char* argv[])
       if (('o' == t || 'O' == t)) {
         if (0 == tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
+#if defined(OTRANS_THREAD)
+#         pragma omp parallel
+          OTRANS_THREAD(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo, omp_get_thread_num(), omp_get_num_threads());
+#else
           result = OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+#endif
           duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
@@ -232,16 +243,12 @@ int main(int argc, char* argv[])
         }
 #endif
       }
-
-      if ((0 == env_check || 0 != atoi(env_check))) { /* check */
+#if defined(USE_SELF_VALIDATION)
+      if (0 == env_check || 0 != atoi(env_check)) { /* check */
         for (i = 0; i < km; ++i) {
           for (j = 0; j < kn; ++j) {
             const ELEM_TYPE u = b[i*kldo+j];
-#if defined(USE_SELF_VALIDATION)
             const ELEM_TYPE v = a[j*kldi+i];
-#else /* check against an alternative/external implementation */
-            const ELEM_TYPE v = c[i*kldo+j];
-#endif
             if (0 == LIBXSMM_FEQ(u, v)) {
               i += km; /* leave outer loop as well */
               result = EXIT_FAILURE;
@@ -250,13 +257,17 @@ int main(int argc, char* argv[])
           }
         }
       }
+#endif
     }
 
     if (EXIT_SUCCESS == result) {
       if (0 < duration) {
-        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size / (duration * (1 << 30)));
+        /* out-of-place transpose bandwidth assumes RFO */
+        fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size
+          * ((('o' == t || 'O' == t)) ? 3 : 2) / (duration * (1 << 30)));
       }
-      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0
+          * (0 == lower ? (duration / (0 == r ? (s + 1) : s)) : duration));
 #if !defined(USE_SELF_VALIDATION)
       if (0 < duration2 && 0 != c) {
         fprintf(stdout, "\treference: %.1fx\n", duration / duration2);

@@ -35,11 +35,13 @@
 
         INTEGER, PARAMETER :: T = KIND(0D0)
 
-        REAL(T), ALLOCATABLE, TARGET :: a(:,:), b(:,:)
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, b
-        INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, lda, ldb, i, j, size
+        REAL(T), ALLOCATABLE, TARGET :: a1(:), b1(:)
+        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a1, b1
+        INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, lda, ldb, i, j, k
+        REAL(T), POINTER :: an(:,:), bn(:,:), bt(:,:)
         DOUBLE PRECISION :: duration
-        INTEGER(8) :: start
+        INTEGER(8) :: size, start
+        INTEGER :: nrepeat
         REAL(T) :: diff
 
         CHARACTER(32) :: argv
@@ -76,66 +78,80 @@
         ELSE
           ldb = n
         END IF
+        IF (6 <= argc) THEN
+          CALL GET_COMMAND_ARGUMENT(6, argv)
+          READ(argv, "(I32)") nrepeat
+        ELSE
+          nrepeat = 3
+        END IF
 
-        size = m * n * T ! size in Byte
+        size = INT(m * n, 8) * T ! size in Byte
         WRITE(*, "(2(A,I0),2(A,I0),A,I0,A,2A,2A,1A)")                   &
-     &    "m=", m, " n=", n, " lda=", lda, " ldb=", ldb,                &
+     &    "m=", m, " n=", n, " ldi=", lda, " ldo=", ldb,                &
      &    " size=", (size / ISHFT(1, 20)),                              &
      &    "MB (", MERGE("DP", "SP", 8.EQ.T), ", ",                      &
-     &    TRIM(MERGE("out-of-place", "in-place    ", 'o'.EQ.trans)), ")"
+     &    TRIM(MERGE("out-of-place", "in-place    ",                    &
+     &      ('o'.EQ.trans).OR.('O'.EQ.trans))), ")"
 
-        ! Allocate matrices
-        ALLOCATE(a(lda,MERGE(n,lda,('o'.EQ.trans).OR.('O'.EQ.trans))))
-        ALLOCATE(b(ldb,MERGE(m,ldb,('o'.EQ.trans).OR.('O'.EQ.trans))))
-
-        DO j = 1, n
-          DO i = 1, m
-            a(i,j) = initial_value(i - 1, j - 1, m)
-          END DO
-        END DO
+        ALLOCATE(b1(ldb*MAX(m,n)))
+        bn(1:ldb,1:n) => b1
+        bt(1:ldb,1:m) => b1
 
         IF (('o'.EQ.trans).OR.('O'.EQ.trans)) THEN
-          start = libxsmm_timer_tick();
-          CALL libxsmm_otrans(C_LOC(b), C_LOC(a), T, m, n, lda, ldb)
-          !CALL libxsmm_otrans(C_LOC(a), C_LOC(b), T, n, m, ldb, lda)
-          CALL libxsmm_dotrans(a, b, n, m)
-          duration = libxsmm_timer_duration(                            &
-     &                  start, libxsmm_timer_tick());
+          ALLOCATE(a1(lda*n))
+          an(1:lda,1:n) => a1
+          DO j = 1, n
+            DO i = 1, m
+              an(i,j) = initial_value(i - 1, j - 1, m)
+            END DO
+          END DO
+          start = libxsmm_timer_tick()
+          DO k = 1, nrepeat
+            CALL libxsmm_otrans_omp(C_LOC(b1), C_LOC(a1),               &
+     &              T, m, n, lda, ldb)
+          END DO
+          duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
+          DEALLOCATE(a1)
         ELSE ! in-place
-          start = libxsmm_timer_tick();
-          ! TODO: in-place
-          duration = libxsmm_timer_duration(                            &
-     &                  start, libxsmm_timer_tick());
+          DO j = 1, n
+            DO i = 1, m
+              bn(i,j) = initial_value(i - 1, j - 1, m)
+            END DO
+          END DO
+          start = libxsmm_timer_tick()
+          DO k = 1, nrepeat
+            CALL libxsmm_itrans(C_LOC(b1), T, m, n, ldb)
+          END DO
+          duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
         END IF
 
         diff = 0
         DO j = 1, n
           DO i = 1, m
             diff = MAX(diff,                                            &
-     &                ABS(a(i,j) - initial_value(i - 1, j - 1, m)))
+     &                ABS(bt(j,i) - initial_value(i - 1, j - 1, m)))
           END DO
         END DO
-
-        ! Deallocate matrices
-        DEALLOCATE(a)
-        DEALLOCATE(b)
+        DEALLOCATE(b1)
 
         IF (0.EQ.diff) THEN
-          IF (0.LT.duration) THEN
+          IF ((0.LT.duration).AND.(0.LT.nrepeat)) THEN
+            ! out-of-place transpose bandwidth assumes RFO
             WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ",         &
-     &        size / (duration * ISHFT(1_8, 30)), " GB/s"
+     &        MERGE(3_8, 2_8, ('o'.EQ.trans).OR.('O'.EQ.trans))         &
+     &          * size * nrepeat / (duration * ISHFT(1_8, 30)), " GB/s"
+            WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ",         &
+     &        1D3 * duration / nrepeat, " ms"
           END IF
-          WRITE(*, "(1A,A,F10.1,A)") CHAR(9),                           &
-     &        "duration:   ", 1D3 * duration, " ms"
         ELSE
           WRITE(*,*) "Validation failed!"
           STOP 1
         END IF
 
       CONTAINS
-        PURE REAL(T) FUNCTION initial_value(i, j, ld)
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: i, j, ld
-          initial_value = j * ld + i
+        PURE REAL(T) FUNCTION initial_value(i, j, m)
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: i, j, m
+          initial_value = j * m + i
         END FUNCTION
       END PROGRAM
 

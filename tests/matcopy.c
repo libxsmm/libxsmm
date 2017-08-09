@@ -45,7 +45,7 @@
 #   define MATCOPY_GOLD(M, N, A, LDI, B, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))('C', 'N', \
         *(M), *(N), (ELEM_TYPE)1, A, *(LDI), B, *(LDO))
-# elif defined(__OPENBLAS)
+# elif defined(__OPENBLAS77)
 #   include <openblas/f77blas.h>
 #   define MATCOPY_GOLD(M, N, A, LDI, B, LDO) { \
       /*const*/char matcopy_gold_tc_ = 'C', matcopy_gold_tt_ = 'N'; \
@@ -125,7 +125,7 @@ int main(void)
   init(0, c, maxm, maxn, maxo, 1.0);
 #endif
   for (test = start; test < ntests; ++test) {
-    unsigned int testerrors = (EXIT_SUCCESS == libxsmm_matcopy(
+    unsigned int testerrors = (EXIT_SUCCESS == MATCOPY(
       b, a, sizeof(ELEM_TYPE), m[test], n[test],
       ldi[test], ldo[test], prefetch + test) ? 0u : 1u);
     libxsmm_blasint i, j;

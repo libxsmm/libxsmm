@@ -216,6 +216,23 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
 }
 
 
+LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precision, const int* flags,
+  const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
+  const void* alpha, const void* beta)
+{
+  LIBXSMM_UNUSED(precision); LIBXSMM_UNUSED(flags);
+  LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
+  LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(ldb); LIBXSMM_UNUSED(ldc);
+  LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(beta);
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch_end(/*TODO: signature*/)
+{
+  return EXIT_FAILURE;
+}
+
+
 #if defined(LIBXSMM_BUILD)
 
 /* implementation provided for Fortran 77 compatibility */

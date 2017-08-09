@@ -92,7 +92,7 @@
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     include <immintrin.h>
-#   elif defined(_MSC_VER)
+#   elif defined(_MSC_VER) && !defined(__clang__)
       /* TODO: compiler version check for LIBXSMM_MAX_STATIC_TARGET_ARCH */
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/

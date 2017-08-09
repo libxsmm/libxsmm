@@ -30,8 +30,9 @@
 ******************************************************************************/
 #include "libxsmm_gemm.h"
 #include <libxsmm_intrinsics_x86.h>
+#include <libxsmm_mhd.h>
 #include "libxsmm_main.h"
-#include "libxsmm_dump.h"
+
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -234,22 +235,22 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
         LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "TRANS = %c\nALPHA = %s", ctransa, string_a);
         LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "libxsmm_a_%p.mhd", a);
         data_size[0] = ilda; data_size[1] = kk; size[0] = *m; size[1] = kk;
-        libxsmm_meta_image_write(string_a, data_size, size, 2/*ndims*/, 1/*ncomponents*/, a,
-          mhd_elemtype, 0/*spacing*/, extension_header, 0/*extension*/, 0/*extension_size*/);
+        libxsmm_mhd_write(string_a, data_size, size, 2/*ndims*/, 1/*ncomponents*/,
+          mhd_elemtype, a, extension_header, 0/*extension*/, 0/*extension_size*/);
       }
       if (0 != b) {
         LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "\nTRANS = %c", ctransb);
         LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "libxsmm_b_%p.mhd", b);
         data_size[0] = ildb; data_size[1] = nn; size[0] = kk; size[1] = nn;
-        libxsmm_meta_image_write(string_a, data_size, size, 2/*ndims*/, 1/*ncomponents*/, b,
-          mhd_elemtype, 0/*spacing*/, extension_header, 0/*extension*/, 0/*extension_size*/);
+        libxsmm_mhd_write(string_a, data_size, size, 2/*ndims*/, 1/*ncomponents*/,
+          mhd_elemtype, b, extension_header, 0/*extension*/, 0/*extension_size*/);
       }
       if (0 != c) {
         LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "BETA = %s", string_b);
         LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "libxsmm_c_%p.mhd", c);
         data_size[0] = ildc; data_size[1] = nn; size[0] = *m; size[1] = nn;
-        libxsmm_meta_image_write(string_a, data_size, size, 2/*ndims*/, 1/*ncomponents*/, c,
-          mhd_elemtype, 0/*spacing*/, extension_header, 0/*extension*/, 0/*extension_size*/);
+        libxsmm_mhd_write(string_a, data_size, size, 2/*ndims*/, 1/*ncomponents*/,
+          mhd_elemtype, c, extension_header, 0/*extension*/, 0/*extension_size*/);
       }
     }
   }

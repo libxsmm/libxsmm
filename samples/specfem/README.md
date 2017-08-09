@@ -198,3 +198,4 @@ average over           15 repetitions
  timing with LIBXSMM static   =   0.0149 / speedup =     9.22 %
 ===============================================================
 ```
+
