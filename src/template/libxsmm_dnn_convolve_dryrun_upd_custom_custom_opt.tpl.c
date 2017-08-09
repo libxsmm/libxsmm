@@ -32,10 +32,6 @@
 int ltid;
 #endif
 
-
-//handle->block_upd_ofm = atoi(getenv("OFM"));
-//handle->block_upd_ifm = atoi(getenv("IFM"));
-
 handle->block_upd_ofm = 8;
 handle->block_upd_ifm = 8;
 int block_j = 14;
@@ -114,13 +110,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     KW = 1;
   }
 
-  if (ltid == 0) {
-    printf("W_RB is %d and H_RB is %d\n", handle->upd_ofw_rb, handle->upd_ofh_rb);
-    printf("IFB is %d and OFB is %d\n", handle->block_upd_ifm, handle->block_upd_ofm);
-    printf("Size of Input chunk is %d KBytes\n", handle->upd_ofw_rb * handle->upd_ofh_rb * handle->block_upd_ifm * 16 * 4 / 1024);
-    printf("Size of Output chunk is %d KBytes\n", handle->upd_ofw_rb * handle->upd_ofh_rb * handle->block_upd_ofm * 16 * 4 / 1024);
-  }
-
   /* Perform a dryrun to compute the memory requirements of the stream of indices */
   for (img = my_img_start; img < my_img_end; img++) {
     for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
@@ -160,15 +149,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   /* Second run to compute actual indices */
   local_entries = 0;
-  /*for (img = my_img_start; img < my_img_end; img++) {
-    for (oj__=0; oj__<num_ofh_strips; ++oj__) {
-    for (kj=0; kj < kh; ++kj) {
-    for (oi__=0; oi__<num_ofw_strips; ++oi__) {
-    for (ki=0; ki < KW; ++ki) { 
-    for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
-    for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) {
-    for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1++ ) {
-    for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {*/
 
   for (img = my_img_start; img < my_img_end; img++) {
     for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {

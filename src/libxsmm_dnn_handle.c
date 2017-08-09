@@ -80,6 +80,24 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     handle->use_thread_private_jit = 0;
   } else {
     handle->use_thread_private_jit = 1;
+    /* If we do not have AVX512 arch disable kernel streams  */
+    if (libxsmm_target_archid != LIBXSMM_X86_AVX512_MIC  &&
+        libxsmm_target_archid != LIBXSMM_X86_AVX512_CORE &&
+        libxsmm_target_archid != LIBXSMM_X86_AVX512_KNM ) {
+      handle->use_thread_private_jit = 0;
+    }
+    /* If we do not follow FP32 path disable kernel streams  */
+    if ( (handle->datatype != LIBXSMM_DNN_DATATYPE_F32) || (handle->datatype_itm != LIBXSMM_DNN_DATATYPE_F32) ) {
+      handle->use_thread_private_jit = 0;
+    }
+    /* If we use any options/fuse ops, disable kernel streams */
+    if ( (handle->desc.fuse_ops != LIBXSMM_DNN_CONV_OPTION_NONE) || (handle->desc.options != LIBXSMM_DNN_CONV_OPTION_NONE) ) {
+      handle->use_thread_private_jit = 0;
+    }
+    /* If we do not run on custom/custom format, disable kernel streams */
+    if (handle->buffer_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM || handle->filter_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) {
+      handle->use_thread_private_jit = 0; 
+    }
   }
 
   /* now architecture specific */
