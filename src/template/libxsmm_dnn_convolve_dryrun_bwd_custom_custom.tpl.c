@@ -175,7 +175,11 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->kernel_bwd_variant_ptrs[ltid] = kernel_variant;
   handle->n_bwd_code_segments[ltid] = n_code_segments;
   expanded_size = local_entries/3 + n_code_segments;
-  tmp_expanded_stream = (int*) malloc( expanded_size * sizeof(int) );
+  tmp_expanded_stream = (int*)(0 < expanded_size ? malloc(expanded_size * sizeof(int)) : 0);
+  assert(0 != tmp_expanded_stream); /* TODO: should never happen */
+#if !defined(NDEBUG)
+  memset(tmp_expanded_stream, IMG_LOOP_INIT, expanded_size * sizeof(int));
+#endif
   tmp_stream_index = 0;
   if (n_code_segments) {
     encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 2097152);
