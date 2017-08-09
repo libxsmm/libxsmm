@@ -155,7 +155,7 @@ if (handle->datatype != handle->datatype_itm) {
             }
           }
         }
-        for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+        for ( ifm1 = 0; ifm1 < handle->blocksifm; ifm1 += handle->blocksifm_blocking ) {
           /* reset result buffer to zero when intent is to overwrite when first block
              of input channels should be convoluted */
           if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
@@ -228,7 +228,7 @@ if (handle->datatype != handle->datatype_itm) {
                                                        handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
               }
               else {
-                if ((ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm)) {
+                if ((ofm1+1 == handle->blocksofm) &&  (ifm1+handle->blocksifm_blocking == handle->blocksifm)) {
                   jitted_conv_fp_two(l_input, l_wt, l_output,
 #if defined(INPUT_PADDING)
                                      &LIBXSMM_VLA_ACCESS(5, input_buffer, 0, 0, 0, 0, 0,
@@ -243,7 +243,7 @@ if (handle->datatype != handle->datatype_itm) {
                                                          handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
                 }
                 else {
-                  if ((ifm1+1 == handle->blocksifm)) {
+                  if ((ifm1+handle->blocksifm_blocking == handle->blocksifm)) {
                     jitted_conv_fp_two(l_input, l_wt, l_output,
 #if defined(INPUT_PADDING)
                                        &LIBXSMM_VLA_ACCESS(5, input_buffer, 0, 0, 0, 0, 0,
@@ -260,13 +260,13 @@ if (handle->datatype != handle->datatype_itm) {
                   else {
                     jitted_conv_fp_two(l_input, l_wt, l_output,
 #if defined(INPUT_PADDING)
-                                       &LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1 + 1, 0, 0, 0, 0,
+                                       &LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1 + handle->blocksifm_blocking, 0, 0, 0, 0,
                                                            padded_h, padded_w, handle->ifmblock, handle->fm_lp_block),
 #else
-                                       &LIBXSMM_VLA_ACCESS(6, input, img, ifm1 + 1, 0, 0, 0, 0,
+                                       &LIBXSMM_VLA_ACCESS(6, input, img, ifm1 + handle->blocksifm_blocking, 0, 0, 0, 0,
                                                            handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block),
 #endif
-                                       &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1 + 1, 0, 0, 0, 0, 0,
+                                       &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1 + handle->blocksifm_blocking, 0, 0, 0, 0, 0,
                                                            handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
                                        &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
                                                            handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
@@ -368,7 +368,7 @@ if (handle->datatype != handle->datatype_itm) {
             }
           }
         }
-        for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
+        for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1 += handle->blocksifm_blocking) {
           /* reset result buffer to zero when intent is to overwrite when first block
              of input channels should be convoluted */
           if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
@@ -469,7 +469,7 @@ if (handle->datatype != handle->datatype_itm) {
                                    &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj + handle->fwd_ofh_rb, 0, 0,
                                                        handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
               } else {
-                if ((ofm1+1 == handle->blocksofm) &&  (ifm1+1 == handle->blocksifm)) {
+                if ((ofm1+1 == handle->blocksofm) &&  (ifm1+handle->blocksifm_blocking == handle->blocksifm)) {
                   jitted_conv_fp_two(l_input, l_wt, l_output,
 #if defined(INPUT_PADDING)
                                      &LIBXSMM_VLA_ACCESS(5, input_buffer, 0, 0, 0, 0, 0,
@@ -484,7 +484,7 @@ if (handle->datatype != handle->datatype_itm) {
                                                          handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
                 }
                 else {
-                  if ((ifm1+1 == handle->blocksifm)) {
+                  if ((ifm1+handle->blocksifm_blocking == handle->blocksifm)) {
                     jitted_conv_fp_two(l_input, l_wt, l_output,
 #if defined(INPUT_PADDING)
                                        &LIBXSMM_VLA_ACCESS(5, input_buffer, 0, 0, 0, 0, 0,
@@ -501,13 +501,13 @@ if (handle->datatype != handle->datatype_itm) {
                   else {
                     jitted_conv_fp_two(l_input, l_wt, l_output,
 #if defined(INPUT_PADDING)
-                                       &LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1 + 1, 0, 0, 0, 0,
+                                       &LIBXSMM_VLA_ACCESS(5, input_buffer, ifm1 + handle->blocksifm_blocking, 0, 0, 0, 0,
                                                            padded_h, padded_w, handle->ifmblock, handle->fm_lp_block),
 #else
-                                       &LIBXSMM_VLA_ACCESS(6, input, img, ifm1 + 1, 0, 0, 0, 0,
+                                       &LIBXSMM_VLA_ACCESS(6, input, img, ifm1 + handle->blocksifm_blocking, 0, 0, 0, 0,
                                                            handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block),
 #endif
-                                       &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1 + 1, 0, 0, 0, 0, 0,
+                                       &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1 + handle->blocksifm_blocking, 0, 0, 0, 0, 0,
                                                            handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block),
                                        &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
                                                            handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock));
