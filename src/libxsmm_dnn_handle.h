@@ -32,7 +32,7 @@
 #define LIBXSMM_DNN_HANDLE_H
 
 #include <libxsmm_dnn.h>
-#include <libxsmm_dnn_dryruns.h>  
+
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( libxsmm_dnn_layer* handle );
 

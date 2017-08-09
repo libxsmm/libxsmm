@@ -77,9 +77,9 @@ if (handle->datatype != handle->datatype_itm) {
   /* Kernel related variables  */
   libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_bwd[2].xconv.sconv;
   libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
-  libxsmm_xmatcopyfunction jitted_matcopyback = handle->matcopy_bwd[1].xmatcopy; 
+  libxsmm_xmatcopyfunction jitted_matcopyback = handle->matcopy_bwd[1].xmatcopy;
   /* Initialize base pointers */
-  if ( handle->padding_flag == 1  ) { 
+  if ( handle->padding_flag == 1  ) {
     input_base = &LIBXSMM_VLA_ACCESS(3, input_buffer , 0, 0, 0,
         padded_w, handle->ifmblock);
     copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(3, input_buffer, handle->desc.pad_h, handle->desc.pad_w, 0, padded_w, handle->ifmblock);
@@ -131,13 +131,13 @@ if (handle->datatype != handle->datatype_itm) {
         ifm1 = code_stream[pc].aux_index;
         ifm1lpblock = ifm1;
         if ( handle->padding_flag == 1 ) {
-         input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);   
+         input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
           jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
         } else {
 #include "libxsmm_dnn_zero_rim_st_input_custom.tpl.c"
         }
       } else if ( instr == IFM_LOOP_INIT )  {
-        ifm1 = code_stream[pc].aux_index; 
+        ifm1 = code_stream[pc].aux_index;
         input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
         if (ifm1+1 != handle->blocksifm * handle->fm_lp_block) {
           /* Prefetch next ifm1, same image */
@@ -165,6 +165,6 @@ if (handle->datatype != handle->datatype_itm) {
   } else {
     /* Code for *par_img* version goes here ... */
 
-  } 
+  }
   libxsmm_barrier_wait(handle->barrier, ltid);
   }

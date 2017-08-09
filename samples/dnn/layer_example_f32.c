@@ -738,7 +738,7 @@ int main(int argc, char* argv[])
     scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status ), 2097152);
     CHKERR_LIBXSMM_DNN( status );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
-    
+
     if (type == 'A' || type == 'F') {
       printf("##########################################\n");
       printf("#   Correctness - FWD (custom-Storage)   #\n");
@@ -923,7 +923,7 @@ int main(int argc, char* argv[])
 #else
         const int tid = 0;
 #endif
-        for (i = 0; i < iters; ++i) { 
+        for (i = 0; i < iters; ++i) {
           libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
           if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
             CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );

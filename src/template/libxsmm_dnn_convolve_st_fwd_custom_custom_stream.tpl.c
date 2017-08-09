@@ -93,7 +93,7 @@ if (n_segments) {
         }
         /* Overwrite output with zeros if requested */
         if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
-          jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);     
+          jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
         }
       } else {
         /* Placeholder for downconvert */
@@ -131,9 +131,9 @@ if (n_segments) {
         /* Overwrite output with zeros if requested */
         if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
           for ( ih = 0; ih < my_h_out * handle->ofmblock * handle->ofwp; ih += handle->ofmblock * handle->ofwp) {
-            jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2] + ih, NULL, NULL);     
+            jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2] + ih, NULL, NULL);
           }
-        }      
+        }
       } else {
         /* Placeholder for downconvert */
       }

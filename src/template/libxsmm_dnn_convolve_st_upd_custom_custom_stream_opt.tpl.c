@@ -119,7 +119,7 @@ if ( handle->trans_ofw_ifm > 0 ) {
   if (handle->padding_flag == 1) {
     /* Transpose IFW and IFM into the padded buffer!*/
     for (img = my_img_start; img < my_img_end; img++) {
-      for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) { 
+      for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
         for (ij=0; ij < handle->ifhp; ++ij) {
           for (ii=0; ii < handle->ifwp; ++ii) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
@@ -133,7 +133,7 @@ if ( handle->trans_ofw_ifm > 0 ) {
   } else {
     /* Transpose IFW and IFM */
     for (img = my_img_start; img < my_img_end; img++) {
-      for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) { 
+      for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
         for (ij=0; ij < handle->ifhp; ++ij) {
           for (ii=0; ii < handle->ifwp; ++ii) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
@@ -156,7 +156,7 @@ if (handle->padding_flag == 1) {
   }
 } else {
   if (handle->trans_ofw_ifm > 0) {
-    input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp); 
+    input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp);
     /* input_base = &LIBXSMM_VLA_ACCESS(5, input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock); */
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(5, input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);

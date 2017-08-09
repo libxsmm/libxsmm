@@ -213,6 +213,9 @@
     <ClInclude Include="..\include\libxsmm_bgemm.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_dryruns.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -393,6 +396,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_mhd.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_dryruns.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

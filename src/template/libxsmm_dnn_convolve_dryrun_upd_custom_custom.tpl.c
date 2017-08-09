@@ -117,7 +117,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
      handle->n_entries_init_upd[ltid] = copy_thr_end - copy_thr_begin;
      init_indices = (int*) libxsmm_aligned_malloc( (copy_thr_end - copy_thr_begin + 1) * sizeof(int), 2097152);
      handle->init_upd_indices_ptrs[ltid] = init_indices;
-     aux = 0;    
+     aux = 0;
      for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
      img = imgifm1/handle->blocksifm;
      ifm1 = imgifm1%handle->blocksifm;
@@ -129,7 +129,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
      handle->n_entries_copy_upd[ltid] = copy_thr_end - copy_thr_begin;
      copy_indices = (int*) libxsmm_aligned_malloc( 2 * (copy_thr_end - copy_thr_begin + 1) * sizeof(int), 2097152);
      handle->copy_upd_indices_ptrs[ltid] = copy_indices;
-     aux = 0;    
+     aux = 0;
      for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
      img = imgifm1/handle->blocksifm;
      ifm1 = imgifm1%handle->blocksifm;
@@ -167,7 +167,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
           }
         }
       }
-    } 
+    }
   } else {
     for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
       ofm1 = ofm1ifm1/handle->blocksifm;
@@ -192,9 +192,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   /* Alocate auxiliary data structures for index jitting  */
   handle->n_entries_upd[ltid] = local_entries/3;
-  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152); 
+  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152);
   handle->compute_upd_indices_ptrs[ltid] = compute_indices;
-  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152); 
+  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152);
   handle->kernel_upd_variant_ptrs[ltid] = kernel_variant;
   handle->n_upd_code_segments[ltid] = n_code_segments;
   expanded_size = local_entries/3 + n_code_segments;
@@ -229,7 +229,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                 if (handle->trans_ofw_ifm == 1 ) {
                   compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * handle->ifmblock) ) * padded_w  + (ii_ + ki);
                 } else {
-                  compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + (ii_ + ki) ) *  handle->ifmblock;   
+                  compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + (ii_ + ki) ) *  handle->ifmblock;
                 }
                 compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock;
                 compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_ ) * handle->ofwp)  +  oi_ ) *  handle->ofmblock;
@@ -237,7 +237,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
               }
             } else {
               if (handle->trans_ofw_ifm == 1 ) {
-                compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * handle->ifmblock) ) * padded_w  + ii_; 
+                compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * handle->ifmblock) ) * padded_w  + ii_;
               } else {
                 compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + ii_ ) *  handle->ifmblock;
               }
@@ -248,7 +248,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
           }
         }
       }
-    } 
+    }
   } else {
     for (imgb = 0; imgb < handle->desc.N; imgb += block_img) {
       for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {

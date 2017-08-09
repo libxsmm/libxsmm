@@ -100,7 +100,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       h_chunk_size = (handle->ofh+3)/4;
       while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
         h_chunk_size++;
-      }      
+      }
       my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
       my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
     } else if (handle->blocksofm == 4) {
@@ -133,7 +133,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       h_chunk_size = (handle->ofh+1)/2;
       while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
         h_chunk_size++;
-      }  
+      }
       my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
       my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
     } else {
@@ -144,14 +144,14 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       }
       my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
       my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
-    } 
+    }
 
-  } else if (threads_per_image == 2 ) { 
+  } else if (threads_per_image == 2 ) {
     myHId = ltid % 2;
     h_chunk_size = (handle->ofh+1)/2;
     while ( h_chunk_size % handle->fwd_ofh_rb != 0 ) {
       h_chunk_size++;
-    }  
+    }
     my_h_start = LIBXSMM_MIN(myHId * h_chunk_size, handle->ofh);
     my_h_end = LIBXSMM_MIN((myHId + 1) * h_chunk_size, handle->ofh);
 
@@ -162,7 +162,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */
   for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
-    for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) { 
+    for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
       for (ojb = my_h_start; ojb < my_h_end; ojb += handle->block_fwd_oj) {
         for (img = my_img_start; img < my_img_end; img++) {
           for ( ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
@@ -181,16 +181,16 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   handle->n_entries_fwd[ltid] = local_entries/3;
   /* Alocate auxiliary data structures for index jitting  */
-  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152); 
+  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152);
   handle->compute_fwd_indices_ptrs[ltid] = compute_indices;
-  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152); 
+  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152);
   handle->kernel_fwd_variant_ptrs[ltid] = kernel_variant;
   local_entries = 0;
 
   /* Second run to compute actual indices */
   for (img = my_img_start; img < my_img_end; img++) {
     for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
-      for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) { 
+      for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
         for (ojb = my_h_start; ojb < my_h_end; ojb += handle->block_fwd_oj) {
           for ( ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
             for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
@@ -204,7 +204,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
                   /* FIXME: Select correct kernel variant  */
                   kernel_variant[local_entries/3] = 2;
-                  local_entries += 3;   
+                  local_entries += 3;
                 }
               }
             }

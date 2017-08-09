@@ -93,7 +93,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   /* Perform a dryrun to compute the memory requirements of the stream of indices */
   for (img = my_img_start; img < my_img_end; img++) {
     for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
-      for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) { 
+      for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) {
         for (ojb = 0; ojb < handle->ofh; ojb += block_j) {
           for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1++ ) {
             for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {
@@ -119,9 +119,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   /* Alocate auxiliary data structures for index jitting  */
   handle->n_entries_upd[ltid] = local_entries/3;
-  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152); 
+  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152);
   handle->compute_upd_indices_ptrs[ltid] = compute_indices;
-  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152); 
+  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152);
   handle->kernel_upd_variant_ptrs[ltid] = kernel_variant;
   handle->n_upd_code_segments[ltid] = n_code_segments;
 

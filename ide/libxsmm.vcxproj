@@ -82,6 +82,7 @@
     <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_backward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_forward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_dryruns.h" />
     <ClInclude Include="..\src\libxsmm_dnn_handle.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
     <ClInclude Include="..\src\libxsmm_gemm.h" />
@@ -141,6 +142,7 @@
     <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_backward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_forward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_dryruns.c" />
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
     <ClCompile Include="..\src\libxsmm_fsspmdm.c" />
     <ClCompile Include="..\src\libxsmm_hash.c">

@@ -36,7 +36,7 @@ element_output_type *output_base;
 int offset_i, offset_o, offset_w, pi, po, pw, pc, i = 0;
 int *stream = handle->compute_fwd_indices_ptrs[ltid];
 libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
-int instr; 
+int instr;
 char *kernel_stream = handle->kernel_fwd_variant_ptrs[ltid];
 #if 0
 libxsmm_convfunction kernel_pool[4];
@@ -79,7 +79,7 @@ for (seg = 0; seg < n_segments; seg++) {
     po = stream[i+5];
     kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
     i+=3;
-#if 0 
+#if 0
     kernel_pool[kernel_stream[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
 #endif
   }

@@ -1014,7 +1014,7 @@ unroll_factor = i_conv_desc->ifm_block;
                                             l_k_1 * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in +  (l_k_2+3) * i_conv_desc->stride_w  *  i_conv_kernel_config->l_ld_ifm_act  *i_conv_kernel_config->datatype_size_in );
                  }
 
-        
+
         if ( (l_n == 1) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2) ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
                                             i_conv_kernel_config->prefetch_instruction,
