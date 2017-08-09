@@ -50,7 +50,8 @@
 
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
-  volatile int instance, pad[16];
+  char pad[LIBXSMM_CACHELINE_SIZE];
+  volatile int instance;
 } libxsmm_bgemm_lock;
 
 struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
@@ -118,8 +119,8 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
         if (0 != handle.kernel.smm && (LIBXSMM_PREFETCH_NONE == descriptor.prefetch || 0 != handle.kernel_pf.smm)) {
           const size_t tls_size = ((mm * nn * handle.typesize + LIBXSMM_CACHELINE_SIZE - 1) & ~(LIBXSMM_CACHELINE_SIZE - 1)) * LIBXSMM_BGEMM_MAX_NTHREADS;
           const libxsmm_blasint size_locks = handle.mb * handle.nb * sizeof(libxsmm_bgemm_lock);
-          handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size_locks, LIBXSMM_ALIGNMENT);
-          handle.buffer = libxsmm_aligned_malloc(tls_size, LIBXSMM_ALIGNMENT);
+          handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size_locks, LIBXSMM_CACHELINE_SIZE);
+          handle.buffer = libxsmm_aligned_malloc(tls_size, LIBXSMM_CACHELINE_SIZE);
           result = (libxsmm_bgemm_handle*)malloc(sizeof(libxsmm_bgemm_handle));
 
           if (0 != result && 0 != handle.buffer && 0 != handle.locks) {

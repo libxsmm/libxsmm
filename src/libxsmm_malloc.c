@@ -139,10 +139,6 @@ typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_ALIGNFCT 8
 #endif
 
-#if !defined(LIBXSMM_MALLOC_SCRATCH_XFREE)
-# define LIBXSMM_MALLOC_SCRATCH_XFREE
-#endif
-
 /* perform low-level allocation even for small non-executable buffers */
 #if !defined(LIBXSMM_MALLOC_MMAP)
 /*# define LIBXSMM_MALLOC_MMAP*/
@@ -162,18 +158,26 @@ typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
 #endif
 } internal_malloc_info_type;
 
-typedef struct LIBXSMM_RETARGETABLE internal_malloc_pool_type {
-  char *buffer, *head;
+typedef union LIBXSMM_RETARGETABLE internal_malloc_pool_type {
+  char pad[LIBXSMM_CACHELINE_SIZE];
+  struct {
+    char *buffer, *head;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-  const void* site;
+    const void* site;
+# if !defined(LIBXSMM_NO_SYNC)
+    size_t tid;
+# endif
 #endif
-  size_t minsize;
-  size_t counter;
+    size_t minsize;
+    size_t counter;
+  } instance;
 } internal_malloc_pool_type;
+
 
 /** Scratch pool, which supports up to MAX_NSCRATCH allocation sites. */
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-LIBXSMM_API_VARIABLE internal_malloc_pool_type internal_malloc_scratch_pool[LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS];
+/* LIBXSMM_ALIGNED appears to contradict LIBXSMM_API_VARIABLE, and causes multiple defined symbols (if below is seen in multiple translation units) */
+LIBXSMM_API_VARIABLE char internal_malloc_pool_buffer[(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)*sizeof(internal_malloc_pool_type)+(LIBXSMM_CACHELINE_SIZE)-1];
 #endif
 LIBXSMM_API_VARIABLE size_t internal_malloc_scratch_nmallocs;
 
@@ -749,6 +753,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
       assert(0 != buffer || 0 == info->size);
       if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & info->flags)) {
         if (0 != info->free.function) {
+#if 0 /* prevent double-delete */
+          info->pointer = 0; info->size = 0;
+#endif
           if (0 == info->context) {
             info->free.function(buffer);
           }
@@ -968,7 +975,9 @@ LIBXSMM_API_DEFINITION void* libxsmm_aligned_malloc(size_t size, size_t alignmen
 }
 
 
-LIBXSMM_API_INLINE unsigned int internal_malloc_site(unsigned int* npools, unsigned int* hit, const void** site)
+LIBXSMM_API_INLINE unsigned int internal_malloc_site(
+  const internal_malloc_pool_type* pools, unsigned int* npools,
+  unsigned int* hit, const void** site)
 {
   assert(0 != npools && 0 != hit && 0 != site);
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
@@ -978,7 +987,11 @@ LIBXSMM_API_INLINE unsigned int internal_malloc_site(unsigned int* npools, unsig
     if (0 != *site) {
       unsigned int i;
       for (i = 0; i < *npools; ++i) {
-        if (*site == internal_malloc_scratch_pool[i].site) {
+        if (*site == pools[i].instance.site
+#if !defined(LIBXSMM_NO_SYNC)
+          && pools[i].instance.tid == libxsmm_get_tid()
+#endif
+        ) {
           *hit = 1; return i;
         }
       }
@@ -999,7 +1012,11 @@ LIBXSMM_API_INLINE unsigned int internal_malloc_site(unsigned int* npools, unsig
         unsigned int i;
         *site = stacktrace[size-1];
         for (i = 0; i < *npools; ++i) {
-          if (*site == internal_malloc_scratch_pool[i].site) {
+          if (*site == pools[i].instance.site
+#if !defined(LIBXSMM_NO_SYNC)
+            && pools[i].instance.tid == libxsmm_get_tid()
+#endif
+          ) {
             *hit = 1; return i;
           }
         }
@@ -1030,26 +1047,27 @@ LIBXSMM_API_INLINE size_t internal_get_scratch_size(unsigned int exclude)
 {
   size_t result = 0;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+  const internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)((uintptr_t)(internal_malloc_pool_buffer + (LIBXSMM_CACHELINE_SIZE)-1) & ~((LIBXSMM_CACHELINE_SIZE)-1));
   unsigned int i;
   if (0 != exclude &&
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-    (LIBXSMM_MALLOC_SCRATCH_INTERNAL) != internal_malloc_scratch_pool[0].site &&
+    (LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pools[0].instance.site &&
 #endif
-    (0 == internal_malloc_scratch_pool[0].buffer || EXIT_SUCCESS != libxsmm_get_malloc_xinfo(
-      internal_malloc_scratch_pool[0].buffer, &result, 0/*flags*/, 0/*extra*/)))
+    (0 == pools[0].instance.buffer || EXIT_SUCCESS != libxsmm_get_malloc_xinfo(
+      pools[0].instance.buffer, &result, 0/*flags*/, 0/*extra*/)))
   {
-    result = internal_malloc_scratch_pool[0].minsize;
+    result = pools[0].instance.minsize;
   }
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
   assert(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
-  if (0 != internal_malloc_scratch_pool[0].buffer) {
+  if (0 != pools[0].instance.buffer) {
     for (i = 1; i < libxsmm_scratch_pools; ++i) {
       if (i != exclude &&
-        (LIBXSMM_MALLOC_SCRATCH_INTERNAL) != internal_malloc_scratch_pool[i].site)
+        (LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pools[i].instance.site)
       {
         size_t size;
         if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(
-          internal_malloc_scratch_pool[i].buffer, &size, 0/*flags*/, 0/*extra*/))
+          pools[i].instance.buffer, &size, 0/*flags*/, 0/*extra*/))
         {
           result += size;
         }
@@ -1059,9 +1077,9 @@ LIBXSMM_API_INLINE size_t internal_get_scratch_size(unsigned int exclude)
   else { /* approximate memory consumption by using minsize */
     for (i = 1; i < libxsmm_scratch_pools; ++i) {
       if (i != exclude &&
-        (LIBXSMM_MALLOC_SCRATCH_INTERNAL) != internal_malloc_scratch_pool[i].site)
+        (LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pools[i].instance.site)
       {
-        result += internal_malloc_scratch_pool[i].minsize;
+        result += pools[i].instance.minsize;
       }
     }
   }
@@ -1081,54 +1099,50 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
 #else
   if (0 < libxsmm_scratch_pools && 0 < libxsmm_scratch_limit) {
     unsigned int npools = 0, hit = 0, i;
-    const unsigned int pool = internal_malloc_site(&npools, &hit, &caller);
+    internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)((uintptr_t)(internal_malloc_pool_buffer + (LIBXSMM_CACHELINE_SIZE)-1) & ~((LIBXSMM_CACHELINE_SIZE)-1));
+    const unsigned int pool = internal_malloc_site(pools, &npools, &hit, &caller);
     const size_t align_size = (0 == alignment ? libxsmm_alignment(size, alignment) : alignment);
     const size_t alloc_size = size + align_size - 1;
     size_t total_size = 0, local_size = 0, req_size = 0;
 
     for (i = pool; i < npools; ++i) {
-      const size_t inuse_size = internal_malloc_scratch_pool[i].head - internal_malloc_scratch_pool[i].buffer;
+      const size_t inuse_size = pools[i].instance.head - pools[i].instance.buffer;
       size_t info_size;
       /* memory information for scratch memory is documented to be unsupported; no extra/info size */
-      if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(internal_malloc_scratch_pool[i].buffer, &info_size, 0/*flags*/, 0/*extra*/)) {
+      if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(pools[i].instance.buffer, &info_size, 0/*flags*/, 0/*extra*/)) {
         total_size = info_size;
       }
       req_size = inuse_size + alloc_size;
 
       if (total_size < req_size) {
-        const size_t minsize = (size_t)(libxsmm_scratch_scale * LIBXSMM_MAX(internal_malloc_scratch_pool[i].minsize, req_size));
-        if (0 == internal_malloc_scratch_pool[i].buffer && (internal_get_scratch_size(i) + minsize) <= libxsmm_scratch_limit) {
-          LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
-          if (0 == internal_malloc_scratch_pool[i].buffer) {
-            assert(0 == internal_malloc_scratch_pool[i].head/*sanity check*/);
-            if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&internal_malloc_scratch_pool[i].buffer, minsize, 0/*auto*/,
-              LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/))
-            {
-              /* atomic update needed since modifications will also happen outside of this region */
-              LIBXSMM_ATOMIC_STORE(&internal_malloc_scratch_pool[i].head,
-                internal_malloc_scratch_pool[i].buffer, LIBXSMM_ATOMIC_SEQ_CST);
+        const size_t minsize = (size_t)(libxsmm_scratch_scale * LIBXSMM_MAX(pools[i].instance.minsize, req_size));
+        if (0 == pools[i].instance.buffer && (internal_get_scratch_size(i) + minsize) <= libxsmm_scratch_limit) {
+          assert(0 == pools[i].instance.head/*sanity check*/);
+          if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&pools[i].instance.buffer, minsize, 0/*auto*/,
+            LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/))
+          {
+            /* atomic update needed since modifications will also happen outside of this region */
+            pools[i].instance.head = pools[i].instance.buffer;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-              internal_malloc_scratch_pool[i].site = caller;
+            pools[i].instance.site = caller;
+# if !defined(LIBXSMM_NO_SYNC)
+            pools[i].instance.tid = libxsmm_get_tid();
+# endif
 #endif
-              if (internal_malloc_scratch_pool[i].minsize < minsize) {
-                LIBXSMM_ATOMIC_STORE(&internal_malloc_scratch_pool[i].minsize, minsize, LIBXSMM_ATOMIC_RELAXED);
-              }
-              if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != caller) {
-                LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch_nmallocs, 1, LIBXSMM_ATOMIC_RELAXED);
-              }
-              total_size = minsize;
+            if (pools[i].instance.minsize < minsize) {
+              pools[i].instance.minsize = minsize;
             }
-            else { /* fall-back to local allocation due to failed scratch memory allocation */
-              if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-                fprintf(stderr, "LIBXSMM ERROR: failed to allocate scratch memory!\n");
-              }
-              local_size = size;
+            if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != caller) {
+              LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch_nmallocs, 1, LIBXSMM_ATOMIC_RELAXED);
             }
+            total_size = minsize;
           }
-          else { /* fall-back to local memory allocation due to lock-contention */
+          else { /* fall-back to local allocation due to failed scratch memory allocation */
+            if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+              fprintf(stderr, "LIBXSMM ERROR: failed to allocate scratch memory!\n");
+            }
             local_size = size;
           }
-          LIBXSMM_LOCK_RELEASE(&libxsmm_lock_global);
           break;
         }
         else { /* check for next pool */
@@ -1145,24 +1159,13 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
 
     assert(0 != local_size || i < npools);
     if (0 == local_size) { /* draw from buffer */
-      char *const next = (char*)LIBXSMM_ATOMIC_ADD_FETCH(
-        (uintptr_t*)&internal_malloc_scratch_pool[i].head,
-        alloc_size, LIBXSMM_ATOMIC_SEQ_CST);
-      if (next <= (internal_malloc_scratch_pool[i].buffer + total_size)) {
-        char *const aligned = LIBXSMM_ALIGN(next - alloc_size, align_size);
-        LIBXSMM_ATOMIC_ADD_FETCH(
-          &internal_malloc_scratch_pool[i].counter,
-          1, LIBXSMM_ATOMIC_SEQ_CST);
-        result = aligned;
-      }
-      else { /* scratch memory recently exhausted */
-        local_size = size;
-      }
+      pools[i].instance.head += alloc_size;
+      ++pools[i].instance.counter;
+      result = LIBXSMM_ALIGN(pools[i].instance.head - alloc_size, align_size);
     }
-
-    if (0 != local_size) { /* fall-back to local memory allocation */
-      if (i < npools && internal_malloc_scratch_pool[i].minsize < req_size) {
-        LIBXSMM_ATOMIC_STORE(&internal_malloc_scratch_pool[i].minsize, req_size, LIBXSMM_ATOMIC_RELAXED);
+    else { /* local memory allocation */
+      if (i < npools && pools[i].instance.minsize < req_size) {
+        pools[i].instance.minsize = req_size;
       }
       if (EXIT_SUCCESS != libxsmm_xmalloc(&result, local_size, alignment,
         LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/) &&
@@ -1200,30 +1203,28 @@ LIBXSMM_API_INLINE int internal_scratch_free(const void* memory, unsigned int po
 {
   int released = 0;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-  if (0 < libxsmm_scratch_pools) { /* do not consider libxsmm_scratch_limit (pending free) */
-    const char *const scratch = internal_malloc_scratch_pool[pool].buffer;
-    if (0 != scratch) { /* check if memory belongs to scratch domain or local domain */
-      const char *const buffer = (const char*)memory;
-      size_t total_size;
+  if (pool < libxsmm_scratch_pools) { /* do not consider libxsmm_scratch_limit (pending free) */
+    internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)((uintptr_t)(internal_malloc_pool_buffer + (LIBXSMM_CACHELINE_SIZE)-1) & ~((LIBXSMM_CACHELINE_SIZE)-1));
+    char *const scratch = pools[pool].instance.buffer;
+    const char *const buffer = (const char*)memory;
+    size_t total_size;
 
-      if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(scratch, &total_size, 0/*flags*/, 0/*extra*/) &&
-        scratch <= buffer && buffer < (scratch + total_size))
-      {
-        if (0 < LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_scratch_pool[pool].counter, 1, LIBXSMM_ATOMIC_SEQ_CST)
-          || internal_malloc_scratch_pool[pool].minsize <= total_size) /* reuse scratch domain */
-        {
-          /* TODO: document/check that allocation/deallocation adheres to linear/scoped allocator policy */
-          LIBXSMM_ATOMIC_STORE(&internal_malloc_scratch_pool[pool].head,
-            internal_malloc_scratch_pool[pool].buffer, LIBXSMM_ATOMIC_SEQ_CST);
-        }
-        else { /* reallocate scratch domain, TODO: ensure thread-safety */
-          const char *const current = internal_malloc_scratch_pool[pool].buffer; /* current scratch */
-          LIBXSMM_ATOMIC_STORE_ZERO(&internal_malloc_scratch_pool[pool].buffer, LIBXSMM_ATOMIC_SEQ_CST);
-          LIBXSMM_ATOMIC_STORE_ZERO(&internal_malloc_scratch_pool[pool].head, LIBXSMM_ATOMIC_SEQ_CST);
-          libxsmm_xfree(current);
-        }
-        released = 1;
+    if (0 != scratch &&
+      EXIT_SUCCESS == libxsmm_get_malloc_xinfo(scratch, &total_size, 0/*flags*/, 0/*extra*/) &&
+      /* check if memory belongs to scratch domain or local domain */
+      scratch <= buffer && buffer < (scratch + total_size))
+    {
+      --pools[pool].instance.counter;
+      if (0 < pools[pool].instance.counter || pools[pool].instance.minsize <= total_size) { /* reuse scratch domain */
+        /* TODO: document/check that allocation/deallocation must follow the linear/scoped allocator policy */
+        pools[pool].instance.head = scratch;
       }
+      else { /* reallocate scratch domain */
+        pools[pool].instance.buffer = 0;
+        pools[pool].instance.head = 0;
+        libxsmm_xfree(scratch);
+      }
+      released = 1;
     }
   }
 #else
@@ -1236,26 +1237,13 @@ LIBXSMM_API_INLINE int internal_scratch_free(const void* memory, unsigned int po
 
 LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 {
-  unsigned int npools, pool = 0, i = 0;
+  unsigned int npools = 0, i = 0;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-  int hit = 0;
-# if !defined(LIBXSMM_MALLOC_SCRATCH_XFREE)
-  const void* site = 0;
-  pool = internal_malloc_site(&npools, &hit, &site);
-# endif
-  if (0 != hit)
-#endif
-  {
-    npools = internal_scratch_free(memory, pool);
-  }
-#if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-  else { /* find scratch memory pool */
-    assert(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
-    npools = libxsmm_scratch_pools;
-    for (; i < npools; ++i) {
-      if (0 != internal_scratch_free(memory, i)) {
-        i = npools + 1; /* break */
-      }
+  assert(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
+  npools = libxsmm_scratch_pools;
+  for (; i < npools; ++i) {
+    if (0 != internal_scratch_free(memory, i)) {
+      i = npools + 1; /* break */
     }
   }
 #endif
@@ -1268,13 +1256,14 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 LIBXSMM_API_DEFINITION void libxsmm_release_scratch(void)
 {
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+  internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)((uintptr_t)(internal_malloc_pool_buffer + (LIBXSMM_CACHELINE_SIZE)-1) & ~((LIBXSMM_CACHELINE_SIZE)-1));
   unsigned int i;
   assert(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
   for (i = 0; i < libxsmm_scratch_pools; ++i) { /* TODO: thread-safety */
-    libxsmm_xfree(internal_malloc_scratch_pool[i].buffer);
-    internal_malloc_scratch_pool[i].counter = 0;
-    internal_malloc_scratch_pool[i].buffer = 0;
-    internal_malloc_scratch_pool[i].head = 0;
+    libxsmm_xfree(pools[i].instance.buffer);
+    pools[i].instance.counter = 0;
+    pools[i].instance.buffer = 0;
+    pools[i].instance.head = 0;
   }
   if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
     libxsmm_scratch_info scratch_info;
@@ -1310,18 +1299,19 @@ LIBXSMM_API_DEFINITION int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
   int result = EXIT_SUCCESS;
   if (0 != info) {
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+    const internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)((uintptr_t)(internal_malloc_pool_buffer + (LIBXSMM_CACHELINE_SIZE)-1) & ~((LIBXSMM_CACHELINE_SIZE)-1));
     unsigned int i;
     memset(info, 0, sizeof(libxsmm_scratch_info));
-    info->npending = internal_malloc_scratch_pool[0].counter;
+    info->npending = pools[0].instance.counter;
     info->nmallocs = internal_malloc_scratch_nmallocs;
     info->npools = LIBXSMM_MIN(1, libxsmm_scratch_pools);
     info->size = internal_get_scratch_size((unsigned int)-1/*none*/);
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
     assert(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
     for (i = 1; i < libxsmm_scratch_pools; ++i) {
-      if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != internal_malloc_scratch_pool[i].site) {
-        info->npools += (unsigned int)LIBXSMM_MIN(internal_malloc_scratch_pool[i].minsize, 1);
-        info->npending += internal_malloc_scratch_pool[i].counter;
+      if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pools[i].instance.site) {
+        info->npools += (unsigned int)LIBXSMM_MIN(pools[i].instance.minsize, 1);
+        info->npending += pools[i].instance.counter;
       }
     }
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/

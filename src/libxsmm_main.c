@@ -437,9 +437,19 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info) && 0 < scratch_info.size) {
         fprintf(stderr, "\nScratch: %.f MB", 1.0 * scratch_info.size / (1 << 20));
         if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
-          fprintf(stderr, " (mallocs=%lu, pools=%u)\n",
-            (unsigned long int)scratch_info.nmallocs,
-            scratch_info.npools);
+#if !defined(LIBXSMM_NO_SYNC)
+          if (1 < libxsmm_threads_count) {
+            fprintf(stderr, " (mallocs=%lu, pools=%u, threads=%u)\n",
+              (unsigned long int)scratch_info.nmallocs,
+              scratch_info.npools, libxsmm_threads_count);
+          }
+          else
+#endif
+          {
+            fprintf(stderr, " (mallocs=%lu, pools=%u)\n",
+              (unsigned long int)scratch_info.nmallocs,
+              scratch_info.npools);
+          }
         }
         else {
           fprintf(stderr, "\n");
