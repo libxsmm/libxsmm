@@ -207,12 +207,23 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_bwd_output_transform_custom_custom_alpha6
   float *toutp, float *outp, float *Owp, const libxsmm_dnn_layer* handle)
 {
 #if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_BACKWARD_AVX512)
+  if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+# define USE_OVERWRITE
 # define ALPHA 6
 # define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_backward_custom_custom_output_trans_alpha6_avx512.tpl.c"
 # undef TDVLEN
 # undef ALPHA
-  LIBXSMM_UNUSED(Owp);
+# undef USE_OVERWRITE
+    LIBXSMM_UNUSED(Owp);
+  } else {
+# define ALPHA 6
+# define TDVLEN 16
+# include "template/libxsmm_dnn_convolution_winograd_backward_custom_custom_output_trans_alpha6_avx512.tpl.c"
+# undef TDVLEN
+# undef ALPHA
+    LIBXSMM_UNUSED(Owp);
+  }
 #else /* next lower/available code path (fall-back chain) */
   internal_bwd_output_transform_custom_custom_alpha6_default(toutp, outp, Owp, handle);
 #endif
@@ -262,12 +273,23 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_bwd_output_transform_nhwc_custom_alpha6_a
   float *toutp, float *outp, float *Owp, const libxsmm_dnn_layer* handle)
 {
 #if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_BACKWARD_AVX512)
+  if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+# define USE_OVERWRITE
 # define ALPHA 6
 # define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_backward_nhwc_custom_output_trans_alpha6_avx512.tpl.c"
 # undef TDVLEN
 # undef ALPHA
-  LIBXSMM_UNUSED(Owp);
+# undef USE_OVERWRITE
+    LIBXSMM_UNUSED(Owp);
+  } else {
+# define ALPHA 6
+# define TDVLEN 16
+# include "template/libxsmm_dnn_convolution_winograd_backward_nhwc_custom_output_trans_alpha6_avx512.tpl.c"
+# undef TDVLEN
+# undef ALPHA
+    LIBXSMM_UNUSED(Owp);
+  }
 #else /* next lower/available code path (fall-back chain) */
   internal_bwd_output_transform_nhwc_custom_alpha6_default(toutp, outp, Owp, handle);
 #endif
@@ -350,14 +372,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_cu
   }
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
-      if (handle->flag_reuseInput == 1) {
-        if (handle->scratchInput == 0) {
-          status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-          return status;
-        } else {
-        handle->scratch3 = handle->scratchInput;
-        }
-      }
       if (handle->cwino_bwd.alpha == 6) {
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
         internal_dnn_convolve_winograd_st_bwd_custom_custom_alpha6_avx512(handle, start_thread, tid);
@@ -439,14 +453,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_nh
   }
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
-      if (handle->flag_reuseInput == 1) {
-        if (handle->scratchInput == 0) {
-          status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-          return status;
-        } else {
-        handle->scratch3 = handle->scratchInput;
-        }
-      }
       if (handle->cwino_bwd.alpha == 6) {
         /* if highest implemented code path is statically present, no need for an indirect call (function pointer) */
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)

@@ -76,31 +76,29 @@ unsigned long long t_gemm   = 0;
 unsigned long long t_start  = 0;
 #endif
 
-if (handle->flag_reuseInput != 1 || handle->cwino_upd.alpha != 6 || handle->cwino_fwd.bimg != handle->cwino_upd.bimg) {
-  /* number of tasks that could be run in parallel */
-  work = handle->desc.N*handle->blocksifm;
-  /* compute chunck size */
-  chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
-  /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
-  thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+/* number of tasks that could be run in parallel */
+work = handle->desc.N*handle->blocksifm;
+/* compute chunck size */
+chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
+/* compute thr_begin and thr_end */
+thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 #ifdef WTIME
-  t_start = __rdtsc();
+t_start = __rdtsc();
 #endif
-  for (job = thr_begin; job < thr_end; job++) {
-    img  = job / handle->blocksifm;
-    ifm1 = job % handle->blocksifm;
-    internal_upd_input_transform_nhwc_custom(
-      &LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, TDVLEN),
-      &LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_upd.bimg, 0, 0, ifm1, img%handle->cwino_upd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, TDVLEN),
-      &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_upd.itiles*handle->cwino_upd.jtiles, ALPHA, ALPHA, TDVLEN), handle);
-  }
+for (job = thr_begin; job < thr_end; job++) {
+  img  = job / handle->blocksifm;
+  ifm1 = job % handle->blocksifm;
+  internal_upd_input_transform_nhwc_custom(
+    &LIBXSMM_VLA_ACCESS(5, input, img, 0, 0, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, TDVLEN),
+    &LIBXSMM_VLA_ACCESS(8, V, img/handle->cwino_upd.bimg, 0, 0, ifm1, img%handle->cwino_upd.bimg, 0, 0, 0, ALPHA, ALPHA, handle->blocksifm, handle->cwino_upd.bimg, handle->cwino_upd.jtiles, handle->cwino_upd.itiles, TDVLEN),
+    &LIBXSMM_VLA_ACCESS(5, Iwp, tid, 0, 0, 0, 0, handle->cwino_upd.itiles*handle->cwino_upd.jtiles, ALPHA, ALPHA, TDVLEN), handle);
+}
 #ifdef WTIME
-  libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
-  t_input = __rdtsc() - t_start;
+libxsmm_barrier_wait((libxsmm_barrier*)handle->barrier, ltid);
+t_input = __rdtsc() - t_start;
 #endif
-} /*end flag_reuseInput*/
 
 /* number of tasks that could be run in parallel */
 work = handle->desc.N*handle->blocksofm;
