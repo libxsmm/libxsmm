@@ -55,18 +55,14 @@ void* malloc_offsite(size_t size);
 
 int main(int argc, char* argv[])
 {
-  const int ncycles = LIBXSMM_DEFAULT(1000000, 1 < argc ? atoi(argv[1]) : 0);
+  const int ncycles = LIBXSMM_MAX(1 < argc ? atoi(argv[1]) : 1000000, 1);
   const int nalloc = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 4, 1, MAX_MALLOC_N);
-  const int nthreads = LIBXSMM_DEFAULT(1, 3 < argc ? atoi(argv[3]) : 0);
+  const int nthreads = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 1, 1);
   unsigned long long start;
   unsigned int ncalls = 0;
   double dcall, dalloc;
   int r[MAX_MALLOC_N];
   int i;
-
-#if defined(_OPENMP)
-  if (0 < nthreads) omp_set_num_threads(nthreads);
-#endif
 
   /* generate set of random number for parallel region */
   for (i = 0; i < (MAX_MALLOC_N); ++i) r[i] = rand();
@@ -91,7 +87,7 @@ int main(int argc, char* argv[])
     /* run non-inline function to measure call overhead of an "empty" function */
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#   pragma omp parallel for default(none) private(i)
+#   pragma omp parallel for num_threads(nthreads) private(i) default(none)
 #endif
     for (i = 0; i < (ncycles * (MAX_MALLOC_N)); ++i) {
       libxsmm_init(); /* subsequent calls are not doing any work */
@@ -100,7 +96,7 @@ int main(int argc, char* argv[])
 
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#   pragma omp parallel for default(none) private(i) shared(r)
+#   pragma omp parallel for num_threads(nthreads) private(i) default(none) shared(r)
 #endif
     for (i = 0; i < ncycles; ++i) {
       const int count = LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % nalloc, 1);
