@@ -1,1 +1,1 @@
-master-1.8-1025
+winograd_with_default-1.7.1-1572
