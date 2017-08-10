@@ -242,13 +242,25 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_fwd_output_transform_custom_custom_alpha6
   const libxsmm_dnn_layer* handle)
 {
 #if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
+  if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+# define USE_OVERWRITE
 # define ALPHA 6
 # define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6_avx512.tpl.c"
 # undef TDVLEN
 # undef ALPHA
-  LIBXSMM_UNUSED(Owp);
-  LIBXSMM_UNUSED(bias);
+# undef USE_OVERWRITE
+    LIBXSMM_UNUSED(Owp);
+    LIBXSMM_UNUSED(bias);
+  } else {
+# define ALPHA 6
+# define TDVLEN 16
+# include "template/libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6_avx512.tpl.c"
+# undef TDVLEN
+# undef ALPHA
+    LIBXSMM_UNUSED(Owp);
+    LIBXSMM_UNUSED(bias);
+  }
 #else /* next lower/available code path (fall-back chain) */
   internal_fwd_output_transform_custom_custom_alpha6_default(toutp, outp, Owp, bias, handle);
 #endif
@@ -306,13 +318,25 @@ LIBXSMM_ATTRIBUTE_UNUSED void internal_fwd_output_transform_nhwc_custom_alpha6_a
   const libxsmm_dnn_layer* handle)
 {
 #if defined(LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_AVX512)
+  if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+# define USE_OVERWRITE
 # define ALPHA 6
 # define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha6_avx512.tpl.c"
 # undef TDVLEN
 # undef ALPHA
-  LIBXSMM_UNUSED(Owp);
-  LIBXSMM_UNUSED(bias);
+# undef USE_OVERWRITE
+    LIBXSMM_UNUSED(Owp);
+    LIBXSMM_UNUSED(bias);
+  } else {
+# define ALPHA 6
+# define TDVLEN 16
+# include "template/libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha6_avx512.tpl.c"
+# undef TDVLEN
+# undef ALPHA
+    LIBXSMM_UNUSED(Owp);
+    LIBXSMM_UNUSED(bias);
+  }
 #else /* next lower/available code path (fall-back chain) */
   internal_fwd_output_transform_nhwc_custom_alpha6_default(toutp, outp, Owp, bias, handle);
 #endif
