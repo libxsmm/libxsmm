@@ -68,6 +68,9 @@ for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
 
       LIBXSMM_PRAGMA_UNROLL_N((ALPHA)-2)
       for (j = 0; j < ((ALPHA)-2); j++) {
+#if !defined(USE_OVERWRITE)
+        __m512 temp;
+#endif
         ydim = tj*((ALPHA) - 2) + j;
 
         t0 = _mm512_add_ps(T[j][1], T[j][2]);
@@ -92,7 +95,6 @@ for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
             &LIBXSMM_VLA_ACCESS(4, output, 0, ydim + handle->desc.pad_h_in, ti*((ALPHA)-2) + 3 + handle->desc.pad_w_in, 0, handle->ifhp, handle->ifwp, TDVLEN),
             _mm512_add_ps(_mm512_fmadd_ps(_mm512_set1_ps(8.f), t3, t2), T[j][5]));
 #else
-        __m512 temp;
         temp = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, output, 0, ydim + handle->desc.pad_h_in, ti*((ALPHA)-2) + handle->desc.pad_w_in, 0, handle->ifhp, handle->ifwp, TDVLEN));
         temp = _mm512_add_ps(_mm512_add_ps(_mm512_add_ps(t0, t1), T[j][0]), temp);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS(&LIBXSMM_VLA_ACCESS(4, output, 0, ydim + handle->desc.pad_h_in, ti*((ALPHA)-2) + handle->desc.pad_w_in, 0, handle->ifhp, handle->ifwp, TDVLEN), temp);
@@ -126,13 +128,15 @@ for (tj = 0; tj < handle->cwino_bwd.jtiles; tj++) {
          * the loop order doesn't need to make these writes accesses contiguous
          */
         for (i = 0; i < LIBXSMM_MIN(handle->desc.W - (int)ti*((ALPHA)-2), (ALPHA)-2); i++) {
+#if !defined(USE_OVERWRITE)
+          __m512 temp;
+#endif
           xdim = ti*((ALPHA) - 2) + i;
 #if defined(USE_OVERWRITE)
           LIBXSMM_INTRINSICS_MM512_STREAM_PS(
               &LIBXSMM_VLA_ACCESS(4, output, 0, ydim + handle->desc.pad_h_in, xdim + handle->desc.pad_w_in, 0, handle->ifhp, handle->ifwp, TDVLEN),
               O[i]);
 #else
-          __m512 temp;
           temp = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, output, 0, ydim + handle->desc.pad_h_in, xdim + handle->desc.pad_w_in, 0, handle->ifhp, handle->ifwp, TDVLEN));
           temp = _mm512_add_ps(O[i], temp);
           LIBXSMM_INTRINSICS_MM512_STREAM_PS(&LIBXSMM_VLA_ACCESS(4, output, 0, ydim + handle->desc.pad_h_in, xdim + handle->desc.pad_w_in, 0, handle->ifhp, handle->ifwp, TDVLEN), temp);
