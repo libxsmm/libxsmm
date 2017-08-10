@@ -42,17 +42,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(USE_SCRATCH_MALLOC)
-# define USE_SCRATCH_MALLOC
-#endif
-#if defined(USE_SCRATCH_MALLOC)
-# define MALLOC(SIZE) libxsmm_aligned_scratch(SIZE, 0/*auto*/)
-# define FREE(POINTER) libxsmm_free(POINTER)
-#else
-# define MALLOC(SIZE) malloc(SIZE)
-# define FREE(POINTER) free(POINTER)
-#endif
-
 #if !defined(MAX_MALLOC_MB)
 # define MAX_MALLOC_MB 100
 #endif
@@ -120,14 +109,14 @@ int main(int argc, char* argv[])
       assert(count <= MAX_MALLOC_N);
       for (j = 0; j < count; ++j) {
         const size_t nbytes = (r[j%(MAX_MALLOC_N)] % (MAX_MALLOC_MB) + 1) << 20;
-        p[j] = MALLOC(nbytes);
+        p[j] = libxsmm_aligned_scratch(nbytes, 0/*auto*/);
       }
       for (j = 0; j < count; ++j) {
-        FREE(p[j]);
+        libxsmm_free(p[j]);
       }
     }
     dalloc = libxsmm_timer_duration(start, libxsmm_timer_tick());
-    FREE(longlife);
+    libxsmm_free(longlife);
   }
 
   if (0 < dcall && 0 < dalloc && 0 < ncalls) {
@@ -143,5 +132,5 @@ int main(int argc, char* argv[])
 }
 
 
-void* malloc_offsite(size_t size) { return MALLOC(size); }
+void* malloc_offsite(size_t size) { return libxsmm_aligned_scratch(size, 0/*auto*/); }
 
