@@ -1,1 +1,1 @@
-winograd_with_default-1.7.1-1571
+winograd_with_default-1.7.1-1572
