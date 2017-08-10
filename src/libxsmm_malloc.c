@@ -1148,14 +1148,14 @@ LIBXSMM_API_INLINE int internal_scratch_free(const void* memory, internal_malloc
   char* pool_buffer = pool->instance.buffer;
   const internal_malloc_info_type* info = internal_malloc_info(pool_buffer);
   /* check if memory belongs to scratch domain or local domain */
-  int result = (pool_buffer <= buffer && buffer < (pool_buffer + info->size) ? EXIT_SUCCESS : EXIT_FAILURE);
+  int result = ((0 != info && pool_buffer <= buffer && buffer < (pool_buffer + info->size)) ? EXIT_SUCCESS : EXIT_FAILURE);
 
   if (EXIT_SUCCESS == result) {
 #if defined(LIBXSMM_MALLOC_SCRATCH_LOCKED_FREE)
     LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
     pool_buffer = pool->instance.buffer; /* update */
     info = internal_malloc_info(pool_buffer);
-    result = (pool->instance.buffer <= buffer && buffer < (pool_buffer + info->size) ? EXIT_SUCCESS : EXIT_FAILURE);
+    result = ((/*0 != info &&*/ pool_buffer <= buffer && buffer < (pool_buffer + info->size)) ? EXIT_SUCCESS : EXIT_FAILURE);
     if (EXIT_SUCCESS == result)
 #endif
     {
