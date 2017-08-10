@@ -68,7 +68,7 @@
 #elif !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY)
 # define LIBXSMM_SYNC_PAUSE _mm_pause()
 #else
-# define LIBXSMM_SYNC_PAUSE
+# define LIBXSMM_SYNC_PAUSE LIBXSMM_FLOCK(stdout); LIBXSMM_FUNLOCK(stdout)
 #endif
 
 #if defined(__GNUC__)
