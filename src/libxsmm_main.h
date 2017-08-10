@@ -202,6 +202,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int nbImg;
   int blocksifm_blocking;
   int blocksofm_blocking;
+  int use_nts_fwd;
+  int use_nts_bwd;  
 
   /* internal data representation */
   libxsmm_dnn_buffer* reg_input;
