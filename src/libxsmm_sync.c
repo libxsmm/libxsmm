@@ -37,6 +37,7 @@
 #endif
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <math.h>
 #if defined(_WIN32)
 # include <process.h>
