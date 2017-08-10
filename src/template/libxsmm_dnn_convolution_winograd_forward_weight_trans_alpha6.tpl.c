@@ -26,84 +26,70 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee (Intel Corp.)
+/* Kunal Banerjee (Intel Corp.), Jongsoo Park (Intel Corp.)
 ******************************************************************************/
 
-LIBXSMM_VLA_DECL(6, const float, input, wp, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
+LIBXSMM_VLA_DECL(6, float, input, wp, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
 LIBXSMM_VLA_DECL(5, float, output, twp, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN);
-float Fw[ALPHA][ALPHA][TDVLEN][TDVLEN];
-float F[3][3][TDVLEN][TDVLEN];
 unsigned int i, j;
-int k, l, v;
-const float rcp4  = 1.0f/4.0f;
-const float rcp6  = 1.0f/6.0f;
-const float rcp12 = 1.0f/12.0f;
-const float rcp24 = 1.0f/24.0f;
-float T[6][3][TDVLEN];
-float Fw_[6][TDVLEN];
-float t0[TDVLEN];
-float t1[TDVLEN];
-float t2[TDVLEN];
+int ifm2;
+const __m512 rcp4  = _mm512_set1_ps(1.0f/4.0f);
+const __m512 rcp6  = _mm512_set1_ps(1.0f/6.0f);
+const __m512 rcp12 = _mm512_set1_ps(1.0f/12.0f);
+const __m512 rcp24 = _mm512_set1_ps(1.0f/24.0f);
+__m512 T[ALPHA][3];
 
-for (j = 0; j < 3; j++) {
-  for (i = 0; i < 3; i++) {
-    for (k = 0; k < TDVLEN; k++) {
-      LIBXSMM_PRAGMA_SIMD
-      for (l = 0; l < TDVLEN; l++) {
-        F[j][i][k][l] =
-          LIBXSMM_VLA_ACCESS(6, input, 0, 0, j, i, k, l, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
-      }
-    }
+for (ifm2 = 0; ifm2 < TDVLEN; ifm2++)
+{
+  /*LIBXSMM_PRAGMA_UNROLL_N(3)*/
+  for (i = 0; i < 3; i++)
+  {
+    __m512 f0, f1, f2, t0, t1, t2, tt;
+    f0 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(6, input, 0, 0, 0, i, ifm2, 0, handle->blocksifm, 3, 3, TDVLEN, TDVLEN));
+    f1 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(6, input, 0, 0, 1, i, ifm2, 0, handle->blocksifm, 3, 3, TDVLEN, TDVLEN));
+    f2 = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(6, input, 0, 0, 2, i, ifm2, 0, handle->blocksifm, 3, 3, TDVLEN, TDVLEN));
+    t0 = _mm512_mul_ps(rcp6, f2);
+    tt = _mm512_fmadd_ps(rcp6, f0, t0);
+    t1 = _mm512_sub_ps(_mm512_setzero_ps(), tt);
+    t2 = _mm512_fmadd_ps(rcp24, f0, t0);
+
+    T[0][i] = _mm512_mul_ps(rcp4, f0);
+    T[1][i] = _mm512_fnmadd_ps(rcp6, f1, t1);
+    T[2][i] = _mm512_fmadd_ps(rcp6, f1, t1);
+    T[3][i] = _mm512_fmadd_ps(rcp12, f1, t2);
+    T[4][i] = _mm512_fnmadd_ps(rcp12, f1, t2);
+    T[5][i] = f2;
+  }
+
+  /*LIBXSMM_PRAGMA_UNROLL_N(ALPHA)*/
+  for (j = 0; j < ALPHA; j++)
+  {
+    __m512 t0, t1, t2, tt;
+    t0 = _mm512_mul_ps(rcp6, T[j][2]);
+    tt = _mm512_fmadd_ps(rcp6, T[j][0], t0);
+    t1 = _mm512_sub_ps(_mm512_setzero_ps(), tt);
+    t2 = _mm512_fmadd_ps(rcp24, T[j][0], t0);
+
+    /* Since we are using streaming store to save read BW and don't need HW prefetcher,
+     * the loop order doesn't need to make these writes accesses contiguous
+     */
+    LIBXSMM_INTRINSICS_MM512_STREAM_PS(
+        &LIBXSMM_VLA_ACCESS(5, output, j, 0, 0, ifm2, 0, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN),
+        _mm512_mul_ps(rcp4, T[j][0]));
+    LIBXSMM_INTRINSICS_MM512_STREAM_PS(
+        &LIBXSMM_VLA_ACCESS(5, output, j, 1, 0, ifm2, 0, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN),
+        _mm512_fnmadd_ps(rcp6, T[j][1], t1));
+    LIBXSMM_INTRINSICS_MM512_STREAM_PS(
+        &LIBXSMM_VLA_ACCESS(5, output, j, 2, 0, ifm2, 0, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN),
+        _mm512_fmadd_ps(rcp6, T[j][1], t1));
+    LIBXSMM_INTRINSICS_MM512_STREAM_PS(
+        &LIBXSMM_VLA_ACCESS(5, output, j, 3, 0, ifm2, 0, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN),
+        _mm512_fmadd_ps(rcp12, T[j][1], t2));
+    LIBXSMM_INTRINSICS_MM512_STREAM_PS(
+        &LIBXSMM_VLA_ACCESS(5, output, j, 4, 0, ifm2, 0, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN),
+        _mm512_fnmadd_ps(rcp12, T[j][1], t2));
+    LIBXSMM_INTRINSICS_MM512_STREAM_PS(
+        &LIBXSMM_VLA_ACCESS(5, output, j, 5, 0, ifm2, 0, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN),
+        T[j][2]);
   }
 }
-/*trans_F_4x4_3x3(TDVLEN, Fw, F);*/
-
-/* inline code start */
-for (j = 0; j < TDVLEN; j++) {
-  for (i = 0; i < 3; i++) {
-    LIBXSMM_PRAGMA_SIMD
-    for (k = 0; k < TDVLEN; k++) {
-      t0[k] = rcp6 * F[2][i][j][k];
-      t1[k] = -t0[k] - rcp6*F[0][i][j][k];
-      t2[k] = t0[k] + rcp24*F[0][i][j][k];
-      T[0][i][k] = rcp4 * F[0][i][j][k];
-      T[1][i][k] = t1[k] - rcp6*F[1][i][j][k];
-      T[2][i][k] = t1[k] + rcp6*F[1][i][j][k];
-      T[3][i][k] = t2[k] + rcp12*F[1][i][j][k];
-      T[4][i][k] = t2[k] - rcp12*F[1][i][j][k];
-      T[5][i][k] = F[2][i][j][k];
-    }
-  }
-  for (i = 0; i < 6; i++) {
-    LIBXSMM_PRAGMA_SIMD
-    for (k = 0; k < TDVLEN; k++) {
-      t0[k] = rcp6 * T[i][2][k];
-      t1[k] = -t0[k] - rcp6*T[i][0][k];
-      t2[k] = t0[k] + rcp24*T[i][0][k];
-      Fw_[0][k] = rcp4 * T[i][0][k];
-      Fw_[1][k] = t1[k] - rcp6*T[i][1][k];
-      Fw_[2][k] = t1[k] + rcp6*T[i][1][k];
-      Fw_[3][k] = t2[k] + rcp12*T[i][1][k];
-      Fw_[4][k] = t2[k] - rcp12*T[i][1][k];
-      Fw_[5][k] = T[i][2][k];
-
-      for (l = 0; l < 6; l++) {
-        Fw[i][l][j][k] = Fw_[l][k];
-      }
-    }
-  }
-}
-/* inline code end */
-
-for (j = 0; j < ALPHA; j++) {
-  for (i = 0; i < ALPHA; i++) {
-    for (v = 0; v < TDVLEN; v++) {
-      LIBXSMM_PRAGMA_SIMD
-      for (k = 0; k < TDVLEN; k++) {
-        LIBXSMM_VLA_ACCESS(5, output, j, i, 0, v, k, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN) =
-          Fw[j][i][v][k];
-      }
-    }
-  }
-}
-

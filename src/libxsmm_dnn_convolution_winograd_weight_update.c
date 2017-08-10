@@ -46,10 +46,7 @@
 
 
 LIBXSMM_API_INLINE void internal_upd_input_transform_custom_custom(
-                                           float *inp,
-                                           float *tinp,
-                                           float *Iwp,
-                                           const libxsmm_dnn_layer* handle )
+  float *inp, float *tinp, float *Iwp, const libxsmm_dnn_layer* handle )
 {
   if (handle->cwino_upd.alpha == 6) {
 #define ALPHA 6
@@ -57,12 +54,6 @@ LIBXSMM_API_INLINE void internal_upd_input_transform_custom_custom(
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_input_trans_alpha6.tpl.c"
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.alpha == 4) {
-#define ALPHA 4
-#define TDVLEN 16
-# include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_input_trans_alpha4.tpl.c"
-#undef TDVLEN
-#undef ALPHA
   }
 #if !defined(NDEBUG)
   else {
@@ -72,11 +63,9 @@ LIBXSMM_API_INLINE void internal_upd_input_transform_custom_custom(
 #endif
 }
 
+
 LIBXSMM_API_INLINE void internal_upd_input_transform_nhwc_custom(
-                                         float *inp,
-                                         float *tinp,
-                                         float *Iwp,
-                                         const libxsmm_dnn_layer* handle )
+  float *inp, float *tinp, float *Iwp, const libxsmm_dnn_layer* handle )
 {
   if (handle->cwino_upd.alpha == 6) {
 #define ALPHA 6
@@ -84,12 +73,6 @@ LIBXSMM_API_INLINE void internal_upd_input_transform_nhwc_custom(
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_input_trans_alpha6.tpl.c"
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.alpha == 4) {
-#define ALPHA 4
-#define TDVLEN 16
-# include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_input_trans_alpha4.tpl.c"
-#undef TDVLEN
-#undef ALPHA
   }
 #if !defined(NDEBUG)
   else {
@@ -99,11 +82,9 @@ LIBXSMM_API_INLINE void internal_upd_input_transform_nhwc_custom(
 #endif
 }
 
+
 LIBXSMM_API_INLINE void internal_upd_deloutput_transform_custom_custom(
-                                               float *inp,
-                                               float *tinp,
-                                               float *Owp,
-                                               const libxsmm_dnn_layer* handle )
+  float *inp, float *tinp, float *Owp, const libxsmm_dnn_layer* handle )
 {
   if (handle->cwino_upd.alpha == 6) {
 #define ALPHA 6
@@ -111,12 +92,6 @@ LIBXSMM_API_INLINE void internal_upd_deloutput_transform_custom_custom(
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_deloutput_trans_alpha6.tpl.c"
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.alpha == 4) {
-#define ALPHA 4
-#define TDVLEN 16
-# include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_deloutput_trans_alpha4.tpl.c"
-#undef TDVLEN
-#undef ALPHA
   }
 #if !defined(NDEBUG)
   else {
@@ -126,11 +101,9 @@ LIBXSMM_API_INLINE void internal_upd_deloutput_transform_custom_custom(
 #endif
 }
 
+
 LIBXSMM_API_INLINE void internal_upd_deloutput_transform_nhwc_custom(
-                                             float *inp,
-                                             float *tinp,
-                                             float *Owp,
-                                             const libxsmm_dnn_layer* handle )
+  float *inp, float *tinp, float *Owp, const libxsmm_dnn_layer* handle )
 {
   if (handle->cwino_upd.alpha == 6) {
 #define ALPHA 6
@@ -138,10 +111,23 @@ LIBXSMM_API_INLINE void internal_upd_deloutput_transform_nhwc_custom(
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_deloutput_trans_alpha6.tpl.c"
 #undef TDVLEN
 #undef ALPHA
-  } else if (handle->cwino_upd.alpha == 4) {
-#define ALPHA 4
+  }
+#if !defined(NDEBUG)
+  else {
+    fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_upd.alpha);
+    assert(0);
+  }
+#endif
+}
+
+
+LIBXSMM_API_INLINE void internal_upd_delweight_transform(
+  float *wp, float *twp, const libxsmm_dnn_layer* handle )
+{
+  if (handle->cwino_upd.alpha == 6) {
+#define ALPHA 6
 #define TDVLEN 16
-# include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_deloutput_trans_alpha4.tpl.c"
+# include "template/libxsmm_dnn_convolution_winograd_weight_update_delweight_trans_alpha6.tpl.c"
 #undef TDVLEN
 #undef ALPHA
   }
@@ -153,31 +139,6 @@ LIBXSMM_API_INLINE void internal_upd_deloutput_transform_nhwc_custom(
 #endif
 }
 
-LIBXSMM_API_INLINE void internal_upd_delweight_transform(
-                                 float *wp,
-                                 float *twp,
-                                 const libxsmm_dnn_layer* handle )
-{
-  if (handle->cwino_upd.alpha == 6) {
-#define ALPHA 6
-#define TDVLEN 16
-# include "template/libxsmm_dnn_convolution_winograd_weight_update_delweight_trans_alpha6.tpl.c"
-#undef TDVLEN
-#undef ALPHA
-  } else if (handle->cwino_upd.alpha == 4) {
-#define ALPHA 4
-#define TDVLEN 16
-# include "template/libxsmm_dnn_convolution_winograd_weight_update_delweight_trans_alpha4.tpl.c"
-#undef TDVLEN
-#undef ALPHA
-  }
-#if !defined(NDEBUG)
-  else {
-    fprintf(stderr, "LIBXSMM error: Unsupported alpha %u\n", handle->cwino_upd.alpha);
-    assert(0);
-  }
-#endif
-}
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
@@ -203,39 +164,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_cu
   }
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
-#if 0
-      typedef float element_input_type;
-      typedef float element_output_type;
-      typedef float element_filter_type;
-      typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_winograd_st_upd_custom_custom.tpl.c"
-#endif
-
-      if (handle->flag_reuseInput == 1) {
-        if (handle->scratchTemp == 0) {
-          status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-          return status;
-        } else {
-        handle->scratch3 = handle->scratchTemp;
-        }
-      }
-      if (handle->cwino_upd.alpha == 6  && libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (handle->cwino_upd.itiles*handle->cwino_upd.jtiles*handle->cwino_upd.bimg % 4) == 0) {
+      if (handle->cwino_upd.alpha == 6 && libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (handle->cwino_upd.itiles*handle->cwino_upd.jtiles*handle->cwino_upd.bimg % 4) == 0) {
         if (handle->scratchVk == 0) {
           status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
           return status;
         } else {
 #define ALPHA 6
-#define TDVLEN 16
-# include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_inlined_knm.tpl.c"
-#undef TDVLEN
-#undef ALPHA
-        }
-      } else if (handle->cwino_upd.alpha == 4  && libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (handle->cwino_upd.itiles*handle->cwino_upd.jtiles*handle->cwino_upd.bimg % 4) == 0) {
-        if (handle->scratchVk == 0) {
-          status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-          return status;
-        } else {
-#define ALPHA 4
 #define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_inlined_knm.tpl.c"
 #undef TDVLEN
@@ -243,12 +177,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_cu
         }
       } else if (handle->cwino_upd.alpha == 6) {
 #define ALPHA 6
-#define TDVLEN 16
-# include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_inlined.tpl.c"
-#undef TDVLEN
-#undef ALPHA
-      } else if (handle->cwino_upd.alpha == 4) {
-#define ALPHA 4
 #define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_custom_custom_inlined.tpl.c"
 #undef TDVLEN
@@ -293,22 +221,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_nh
   }
   else {
     if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
-#if 0
-      typedef float element_input_type;
-      typedef float element_output_type;
-      typedef float element_filter_type;
-      typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_winograd_st_upd_nhwc_custom.tpl.c"
-#endif
-
-      if (handle->flag_reuseInput == 1) {
-        if (handle->scratchTemp == 0) {
-          status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-          return status;
-        } else {
-        handle->scratch3 = handle->scratchTemp;
-        }
-      }
       if (handle->cwino_upd.alpha == 6 && libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (handle->cwino_upd.itiles*handle->cwino_upd.jtiles*handle->cwino_upd.bimg % 4) == 0) {
         if (handle->scratchVk == 0) {
           status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
@@ -320,25 +232,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_nh
 #undef TDVLEN
 #undef ALPHA
         }
-      } else if (handle->cwino_upd.alpha == 4 && libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (handle->cwino_upd.itiles*handle->cwino_upd.jtiles*handle->cwino_upd.bimg % 4) == 0) {
-        if (handle->scratchVk == 0) {
-          status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-          return status;
-        } else {
-#define ALPHA 4
-#define TDVLEN 16
-# include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_inlined_knm.tpl.c"
-#undef TDVLEN
-#undef ALPHA
-        }
       } else if (handle->cwino_upd.alpha == 6) {
 #define ALPHA 6
-#define TDVLEN 16
-# include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_inlined.tpl.c"
-#undef TDVLEN
-#undef ALPHA
-      } else if (handle->cwino_upd.alpha == 4) {
-#define ALPHA 4
 #define TDVLEN 16
 # include "template/libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_inlined.tpl.c"
 #undef TDVLEN

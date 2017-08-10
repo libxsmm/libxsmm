@@ -594,7 +594,6 @@ LIBXSMM_API_INLINE void internal_init(void)
       libxsmm_gemm_diff_init(libxsmm_target_archid);
       libxsmm_trans_init(libxsmm_target_archid);
       libxsmm_hash_init(libxsmm_target_archid);
-      libxsmm_dnn_init(libxsmm_target_archid);
 #if defined(LIBXSMM_PERF)
       libxsmm_perf_init();
 #endif
@@ -725,7 +724,6 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       libxsmm_gemm_diff_finalize();
       libxsmm_trans_finalize();
       libxsmm_hash_finalize();
-      libxsmm_dnn_finalize();
 #if defined(LIBXSMM_PERF)
       libxsmm_perf_finalize();
 #endif
