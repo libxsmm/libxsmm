@@ -683,7 +683,8 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     }
     else {
       while (0 == memcmp(&global_lock, &libxsmm_lock_global, sizeof(LIBXSMM_LOCK_TYPE))) {
-        if  (0 != memcmp(&global_lock, &libxsmm_lock_global, sizeof(LIBXSMM_LOCK_TYPE))) break;
+        const void *const a = &global_lock, *const b = &libxsmm_lock_global;
+        if (0 != memcmp(a, b, sizeof(LIBXSMM_LOCK_TYPE))) break; else LIBXSMM_SYNC_PAUSE;
       }
     }
 #endif

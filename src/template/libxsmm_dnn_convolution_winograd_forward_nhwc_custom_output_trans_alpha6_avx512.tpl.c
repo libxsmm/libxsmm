@@ -68,6 +68,9 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
 
       LIBXSMM_PRAGMA_UNROLL_N((ALPHA)-2)
       for (j = 0; j < ((ALPHA)-2); j++) {
+#if !defined(USE_OVERWRITE)
+        __m512 temp;
+#endif
         ydim = tj*((ALPHA) - 2) + j;
 
         t0 = _mm512_add_ps(T[j][1], T[j][2]);
@@ -75,6 +78,7 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
         t2 = _mm512_sub_ps(T[j][1], T[j][2]);
         t3 = _mm512_sub_ps(T[j][3], T[j][4]);
 
+#if defined(USE_OVERWRITE)
         /* Since we are using streaming store to save read BW and don't need HW prefetcher,
          * the loop order doesn't need to make these writes accesses contiguous
          */
@@ -90,6 +94,20 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
         LIBXSMM_INTRINSICS_MM512_STREAM_PS(
             &LIBXSMM_VLA_ACCESS(4, output, ydim, ti*((ALPHA)-2) + 3, 0, 0, handle->ofwp, handle->blocksofm, TDVLEN),
             _mm512_add_ps(_mm512_fmadd_ps(_mm512_set1_ps(8.f), t3, t2), T[j][5]));
+#else
+        temp = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, output, ydim, ti*((ALPHA)-2), 0, 0, handle->ofwp, handle->blocksofm, TDVLEN));
+        temp = _mm512_add_ps(_mm512_add_ps(_mm512_add_ps(t0, t1), T[j][0]), temp);
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS(&LIBXSMM_VLA_ACCESS(4, output, ydim, ti*((ALPHA)-2), 0, 0, handle->ofwp, handle->blocksofm, TDVLEN), temp);
+        temp = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, output, ydim, ti*((ALPHA)-2) + 1, 0, 0, handle->ofwp, handle->blocksofm, TDVLEN));
+        temp = _mm512_add_ps(_mm512_fmadd_ps(_mm512_set1_ps(2.f), t3, t2), temp);
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS(&LIBXSMM_VLA_ACCESS(4, output, ydim, ti*((ALPHA)-2) + 1, 0, 0, handle->ofwp, handle->blocksofm, TDVLEN), temp);
+        temp = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, output, ydim, ti*((ALPHA)-2) + 2, 0, 0, handle->ofwp, handle->blocksofm, TDVLEN));
+        temp = _mm512_add_ps(_mm512_fmadd_ps(_mm512_set1_ps(4.f), t1, t0), temp);
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS(&LIBXSMM_VLA_ACCESS(4, output, ydim, ti*((ALPHA)-2) + 2, 0, 0, handle->ofwp, handle->blocksofm, TDVLEN), temp);
+        temp = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, output, ydim, ti*((ALPHA)-2) + 3, 0, 0, handle->ofwp, handle->blocksofm, TDVLEN));
+        temp = _mm512_add_ps(_mm512_add_ps(_mm512_fmadd_ps(_mm512_set1_ps(8.f), t3, t2), T[j][5]), temp);
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS(&LIBXSMM_VLA_ACCESS(4, output, ydim, ti*((ALPHA)-2) + 3, 0, 0, handle->ofwp, handle->blocksofm, TDVLEN), temp);
+#endif
       }
     }
     else { /* corner case */
@@ -110,10 +128,19 @@ for (tj = 0; tj < handle->cwino_fwd.jtiles; tj++) {
          * the loop order doesn't need to make these writes accesses contiguous
          */
         for (i = 0; i < LIBXSMM_MIN(handle->ofw - (int)ti*((ALPHA)-2), (ALPHA)-2); i++) {
+#if !defined(USE_OVERWRITE)
+          __m512 temp;
+#endif
           xdim = ti*((ALPHA) - 2) + i;
+#if defined(USE_OVERWRITE)
           LIBXSMM_INTRINSICS_MM512_STREAM_PS(
               &LIBXSMM_VLA_ACCESS(4, output, ydim, xdim, 0, 0, handle->ofwp, handle->blocksofm, TDVLEN),
               O[i]);
+#else
+          temp = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, output, ydim, xdim, 0, 0, handle->ofwp, handle->blocksofm, TDVLEN));
+          temp = _mm512_add_ps(O[i], temp);
+          LIBXSMM_INTRINSICS_MM512_STREAM_PS(&LIBXSMM_VLA_ACCESS(4, output, ydim, xdim, 0, 0, handle->ofwp, handle->blocksofm, TDVLEN), temp);
+#endif
         }
       }
     }

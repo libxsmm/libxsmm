@@ -158,7 +158,7 @@ if (handle->datatype != handle->datatype_itm) {
         for ( ifm1 = 0; ifm1 < handle->blocksifm; ifm1 += handle->blocksifm_blocking ) {
           /* reset result buffer to zero when intent is to overwrite when first block
              of input channels should be convoluted */
-          if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
+          if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) && (handle->use_nts_fwd == 0)) {
             element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
             LIBXSMM_PRAGMA_SIMD
             for (oj = 0; oj < handle->ofhp*handle->ofwp*handle->ofmblock; oj++) {
@@ -371,7 +371,7 @@ if (handle->datatype != handle->datatype_itm) {
         for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1 += handle->blocksifm_blocking) {
           /* reset result buffer to zero when intent is to overwrite when first block
              of input channels should be convoluted */
-          if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
+          if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) && (handle->use_nts_fwd == 0) ) {
             element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
             LIBXSMM_PRAGMA_SIMD
             for (oj = 0; oj < handle->ofhp*handle->ofwp*handle->ofmblock; oj++) {
@@ -598,7 +598,7 @@ if (handle->datatype != handle->datatype_itm) {
       for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
         /* reset result buffer to zero when intent is to overwrite when first block
            of input channels should be convoluted */
-        if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
+        if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) && (handle->use_nts_fwd == 0) ) {
           element_output_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
           LIBXSMM_PRAGMA_SIMD
           for (oj = 0; oj < handle->ofhp*handle->ofwp*handle->ofmblock; oj++) {
