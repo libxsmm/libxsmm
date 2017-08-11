@@ -38,7 +38,7 @@ const int k_block_size = handle->bk;
 int mb = block_id / handle->nb;
 int nb = block_id % handle->nb;
 
-#define num_regs (6)
+#define LIBXSMM_SPMDM_COMPUTE_NREGS (6)
 int m_overall_start = mb*m_block_size;
 int m_overall_end   = (mb + 1)*m_block_size;
 int num_m;
@@ -63,7 +63,7 @@ LIBXSMM_UNUSED(beta);
 LIBXSMM_UNUSED(tid);
 
 /* really is twice this */
-assert(n_block_size == num_regs*SIMD_WIDTH_FP32);
+assert(n_block_size == LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32);
 
 if (m_overall_end > handle->m) m_overall_end = handle->m;
 num_m = (m_overall_end - m_overall_start);
@@ -86,21 +86,21 @@ ptr_result = C + m_overall_start*handle->n + n_overall_start;
 if (LIBXSMM_FEQ(0.f, *beta)) {
   if (!last_block_n) {
     for (m = 0; m < num_m; m++) {
-      _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
-      _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
-      _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
-      _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
-      _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
-      _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
+      _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
+      _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
+      _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
+      _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
+      _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
+      _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
     }
   } else {
     for (m = 0; m < num_m; m++) {
       for (n = 0; n < num_full_regs; n += 2) {
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_SETZERO_FP32());
       }
       for (n = last_n_start; n < num_n; n++) {
-        scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = 0;
+        scratch_C[m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n] = 0;
       }
     }
   }
@@ -134,22 +134,22 @@ else if (LIBXSMM_FEQ(1.f, *beta)) {
   else {
     if (!last_block_n) {
       for (m = 0; m < num_m; m++) {
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32));
       }
     }
     else {
       for (m = 0; m < num_m; m++) {
         for (n = 0; n < num_full_regs; n += 2) {
-          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32));
-          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32));
         }
         for (n = last_n_start; n < num_n; n++) {
-          scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = ptr_result[m*handle->n + n];
+          scratch_C[m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n] = ptr_result[m*handle->n + n];
         }
       }
     }
@@ -194,22 +194,22 @@ else {
   else {
     if (!last_block_n) {
       for (m = 0; m < num_m; m++) {
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32)));
       }
     }
     else {
       for (m = 0; m < num_m; m++) {
         for (n = 0; n < num_full_regs; n += 2) {
-          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32)));
-          _MM_STORE_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32)));
         }
         for (n = last_n_start; n < num_n; n++) {
-          scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n] = (*beta)*ptr_result[m*handle->n + n];
+          scratch_C[m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n] = (*beta)*ptr_result[m*handle->n + n];
         }
       }
     }
@@ -259,21 +259,21 @@ for (kb = 0; kb < k_blocks; kb++) {
     ptr_dense = B + k_overall_start*handle->n + n_overall_start;
     if (!last_block_n) {
       for (k = 0; k < num_k; k++) {
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + 0*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + 1*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + 2*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + 3*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + 4*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + 5*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_B + k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + 0*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_B + k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + 1*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_B + k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + 2*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_B + k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + 3*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_B + k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + 4*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_B + k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + 5*SIMD_WIDTH_FP32));
       }
     } else {
       for (k = 0; k < num_k; k++) {
         for (n = 0; n < num_full_regs; n += 2) {
-          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + n*SIMD_WIDTH_FP32));
-          _MM_STORE_FP32(scratch_B + k*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + (n+1)*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_B + k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + n*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_B + k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + k*handle->n + (n+1)*SIMD_WIDTH_FP32));
         }
         for (n = last_n_start; n < num_n; n++) {
-          scratch_B[k*num_regs*SIMD_WIDTH_FP32 + n] = ptr_dense[k*handle->n + n];
+          scratch_B[k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n] = ptr_dense[k*handle->n + n];
         }
       }
     }
@@ -285,8 +285,8 @@ for (kb = 0; kb < k_blocks; kb++) {
   }
   printf("\n");
 #endif
-  scratch_C_base = scratch_C - m_overall_start*num_regs*SIMD_WIDTH_FP32;
-  scratch_B_base = scratch_B; /* - k_overall_start*num_regs*SIMD_WIDTH_FP32;*/
+  scratch_C_base = scratch_C - m_overall_start*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
+  scratch_B_base = scratch_B; /* - k_overall_start*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;*/
 
   for (m = m_overall_start; m < m_overall_start + num_m_aligned; m += 2, m_local += 2) {
     int start_j, end_j, end_j_2, num_j, num_j_2;
@@ -296,57 +296,59 @@ for (kb = 0; kb < k_blocks; kb++) {
     const float* LIBXSMM_RESTRICT sp_v_ptr_base_2;
     float* LIBXSMM_RESTRICT result_m_index;
     float* LIBXSMM_RESTRICT result_m_index_2;
+    const uint16_t* rowidx;
 
     if (m_local >= m_block_size) { block_A++; slice = A_sparse[block_A]; m_local = 0; }
 
-    start_j =  slice.rowidx[m_local];
-    end_j   =  slice.rowidx[m_local + 1];
-    end_j_2 =  slice.rowidx[m_local + 2];
+    rowidx  = slice.rowidx;
+    start_j = rowidx[m_local];
+    end_j   = rowidx[m_local+1];
+    end_j_2 = rowidx[m_local+2];
     num_j   = (end_j - start_j);
-    num_j_2   = (end_j_2 - end_j);
+    num_j_2 = (end_j_2 - end_j);
     sp_c_ptr_base = slice.colidx + start_j;
     sp_c_ptr_base_2 = slice.colidx + end_j;
     sp_v_ptr_base = (float *)(slice.values) + start_j;
     sp_v_ptr_base_2 = (float *)(slice.values) + end_j;
-    result_m_index = scratch_C_base + (m)*num_regs*SIMD_WIDTH_FP32;
-    result_m_index_2 = scratch_C_base + (m+1)*num_regs*SIMD_WIDTH_FP32;
+    result_m_index = scratch_C_base + (m)*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
+    result_m_index_2 = scratch_C_base + (m+1)*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
 
     if (!last_block_n)
     {
       int64_t j = 0, j2 = 0;
-      SIMDTYPE_FP32 sum[2*num_regs];
+      SIMDTYPE_FP32 sum[2*LIBXSMM_SPMDM_COMPUTE_NREGS];
       sum[0] = _MM_LOAD_FP32(result_m_index + 0*SIMD_WIDTH_FP32);
-      sum[0+num_regs] = _MM_LOAD_FP32(result_m_index_2 + 0*SIMD_WIDTH_FP32);
+      sum[0+LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_LOAD_FP32(result_m_index_2 + 0*SIMD_WIDTH_FP32);
       sum[1] = _MM_LOAD_FP32(result_m_index + 1*SIMD_WIDTH_FP32);
-      sum[1+num_regs] = _MM_LOAD_FP32(result_m_index_2 + 1*SIMD_WIDTH_FP32);
+      sum[1+LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_LOAD_FP32(result_m_index_2 + 1*SIMD_WIDTH_FP32);
       sum[2] = _MM_LOAD_FP32(result_m_index + 2*SIMD_WIDTH_FP32);
-      sum[2+num_regs] = _MM_LOAD_FP32(result_m_index_2 + 2*SIMD_WIDTH_FP32);
+      sum[2+LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_LOAD_FP32(result_m_index_2 + 2*SIMD_WIDTH_FP32);
       sum[3] = _MM_LOAD_FP32(result_m_index + 3*SIMD_WIDTH_FP32);
-      sum[3+num_regs] = _MM_LOAD_FP32(result_m_index_2 + 3*SIMD_WIDTH_FP32);
+      sum[3+LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_LOAD_FP32(result_m_index_2 + 3*SIMD_WIDTH_FP32);
       sum[4] = _MM_LOAD_FP32(result_m_index + 4*SIMD_WIDTH_FP32);
-      sum[4+num_regs] = _MM_LOAD_FP32(result_m_index_2 + 4*SIMD_WIDTH_FP32);
+      sum[4+LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_LOAD_FP32(result_m_index_2 + 4*SIMD_WIDTH_FP32);
       sum[5] = _MM_LOAD_FP32(result_m_index + 5*SIMD_WIDTH_FP32);
-      sum[5+num_regs] = _MM_LOAD_FP32(result_m_index_2 + 5*SIMD_WIDTH_FP32);
+      sum[5+LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_LOAD_FP32(result_m_index_2 + 5*SIMD_WIDTH_FP32);
       for (; j < num_j && j2 < num_j_2; j++, j2++) {
-        const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  (unsigned int)sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
-        const float* const LIBXSMM_RESTRICT sp_col_dense_index_2 = scratch_B_base + (unsigned int)sp_c_ptr_base_2[j2]*num_regs*SIMD_WIDTH_FP32;
+        const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  (unsigned int)sp_c_ptr_base[j]*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
+        const float* const LIBXSMM_RESTRICT sp_col_dense_index_2 = scratch_B_base + (unsigned int)sp_c_ptr_base_2[j2]*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
         SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
         SIMDTYPE_FP32 v_v_2 = _MM_SET1_FP32(sp_v_ptr_base_2[j2]);
         sum[0] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 0*SIMD_WIDTH_FP32), sum[0]);
-        sum[0 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 0*SIMD_WIDTH_FP32), sum[0+num_regs]);
+        sum[0 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 0*SIMD_WIDTH_FP32), sum[0+LIBXSMM_SPMDM_COMPUTE_NREGS]);
         sum[1] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 1*SIMD_WIDTH_FP32), sum[1]);
-        sum[1 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 1*SIMD_WIDTH_FP32), sum[1+num_regs]);
+        sum[1 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 1*SIMD_WIDTH_FP32), sum[1+LIBXSMM_SPMDM_COMPUTE_NREGS]);
         sum[2] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 2*SIMD_WIDTH_FP32), sum[2]);
-        sum[2 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 2*SIMD_WIDTH_FP32), sum[2+num_regs]);
+        sum[2 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 2*SIMD_WIDTH_FP32), sum[2+LIBXSMM_SPMDM_COMPUTE_NREGS]);
         sum[3] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 3*SIMD_WIDTH_FP32), sum[3]);
-        sum[3 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 3*SIMD_WIDTH_FP32), sum[3+num_regs]);
+        sum[3 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 3*SIMD_WIDTH_FP32), sum[3+LIBXSMM_SPMDM_COMPUTE_NREGS]);
         sum[4] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 4*SIMD_WIDTH_FP32), sum[4]);
-        sum[4 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 4*SIMD_WIDTH_FP32), sum[4+num_regs]);
+        sum[4 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 4*SIMD_WIDTH_FP32), sum[4+LIBXSMM_SPMDM_COMPUTE_NREGS]);
         sum[5] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 5*SIMD_WIDTH_FP32), sum[5]);
-        sum[5 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 5*SIMD_WIDTH_FP32), sum[5+num_regs]);
+        sum[5 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 5*SIMD_WIDTH_FP32), sum[5+LIBXSMM_SPMDM_COMPUTE_NREGS]);
       }
       for (; j < num_j; j++) {
-        const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  (unsigned int)sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
+        const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  (unsigned int)sp_c_ptr_base[j]*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
         SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
         sum[0] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 0*SIMD_WIDTH_FP32), sum[0]);
         sum[1] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 1*SIMD_WIDTH_FP32), sum[1]);
@@ -356,47 +358,47 @@ for (kb = 0; kb < k_blocks; kb++) {
         sum[5] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 5*SIMD_WIDTH_FP32), sum[5]);
       }
       for (; j2 < num_j_2; j2++) {
-        const float* const LIBXSMM_RESTRICT sp_col_dense_index_2 = scratch_B_base + (unsigned int)sp_c_ptr_base_2[j2]*num_regs*SIMD_WIDTH_FP32;
+        const float* const LIBXSMM_RESTRICT sp_col_dense_index_2 = scratch_B_base + (unsigned int)sp_c_ptr_base_2[j2]*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
         SIMDTYPE_FP32 v_v_2 = _MM_SET1_FP32(sp_v_ptr_base_2[j2]);
-        sum[0 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 0*SIMD_WIDTH_FP32), sum[0+num_regs]);
-        sum[1 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 1*SIMD_WIDTH_FP32), sum[1+num_regs]);
-        sum[2 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 2*SIMD_WIDTH_FP32), sum[2+num_regs]);
-        sum[3 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 3*SIMD_WIDTH_FP32), sum[3+num_regs]);
-        sum[4 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 4*SIMD_WIDTH_FP32), sum[4+num_regs]);
-        sum[5 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 5*SIMD_WIDTH_FP32), sum[5+num_regs]);
+        sum[0 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 0*SIMD_WIDTH_FP32), sum[0+LIBXSMM_SPMDM_COMPUTE_NREGS]);
+        sum[1 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 1*SIMD_WIDTH_FP32), sum[1+LIBXSMM_SPMDM_COMPUTE_NREGS]);
+        sum[2 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 2*SIMD_WIDTH_FP32), sum[2+LIBXSMM_SPMDM_COMPUTE_NREGS]);
+        sum[3 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 3*SIMD_WIDTH_FP32), sum[3+LIBXSMM_SPMDM_COMPUTE_NREGS]);
+        sum[4 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 4*SIMD_WIDTH_FP32), sum[4+LIBXSMM_SPMDM_COMPUTE_NREGS]);
+        sum[5 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + 5*SIMD_WIDTH_FP32), sum[5+LIBXSMM_SPMDM_COMPUTE_NREGS]);
       }
       _MM_STORE_FP32(result_m_index + 0*SIMD_WIDTH_FP32, sum[0]);
-      _MM_STORE_FP32(result_m_index_2 + 0*SIMD_WIDTH_FP32, sum[0+num_regs]);
+      _MM_STORE_FP32(result_m_index_2 + 0*SIMD_WIDTH_FP32, sum[0+LIBXSMM_SPMDM_COMPUTE_NREGS]);
       _MM_STORE_FP32(result_m_index + 1*SIMD_WIDTH_FP32, sum[1]);
-      _MM_STORE_FP32(result_m_index_2 + 1*SIMD_WIDTH_FP32, sum[1+num_regs]);
+      _MM_STORE_FP32(result_m_index_2 + 1*SIMD_WIDTH_FP32, sum[1+LIBXSMM_SPMDM_COMPUTE_NREGS]);
       _MM_STORE_FP32(result_m_index + 2*SIMD_WIDTH_FP32, sum[2]);
-      _MM_STORE_FP32(result_m_index_2 + 2*SIMD_WIDTH_FP32, sum[2+num_regs]);
+      _MM_STORE_FP32(result_m_index_2 + 2*SIMD_WIDTH_FP32, sum[2+LIBXSMM_SPMDM_COMPUTE_NREGS]);
       _MM_STORE_FP32(result_m_index + 3*SIMD_WIDTH_FP32, sum[3]);
-      _MM_STORE_FP32(result_m_index_2 + 3*SIMD_WIDTH_FP32, sum[3+num_regs]);
+      _MM_STORE_FP32(result_m_index_2 + 3*SIMD_WIDTH_FP32, sum[3+LIBXSMM_SPMDM_COMPUTE_NREGS]);
       _MM_STORE_FP32(result_m_index + 4*SIMD_WIDTH_FP32, sum[4]);
-      _MM_STORE_FP32(result_m_index_2 + 4*SIMD_WIDTH_FP32, sum[4+num_regs]);
+      _MM_STORE_FP32(result_m_index_2 + 4*SIMD_WIDTH_FP32, sum[4+LIBXSMM_SPMDM_COMPUTE_NREGS]);
       _MM_STORE_FP32(result_m_index + 5*SIMD_WIDTH_FP32, sum[5]);
-      _MM_STORE_FP32(result_m_index_2 + 5*SIMD_WIDTH_FP32, sum[5+num_regs]);
+      _MM_STORE_FP32(result_m_index_2 + 5*SIMD_WIDTH_FP32, sum[5+LIBXSMM_SPMDM_COMPUTE_NREGS]);
     }
     else {
       int64_t j = 0, j2 = 0;
-      SIMDTYPE_FP32 sum[2*num_regs];
+      SIMDTYPE_FP32 sum[2*LIBXSMM_SPMDM_COMPUTE_NREGS];
       for (n = 0; n < num_full_regs; n += 2) {
         sum[n] = _MM_SETZERO_FP32();
-        sum[n+num_regs] = _MM_SETZERO_FP32();
+        sum[n+LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_SETZERO_FP32();
         sum[n+1] = _MM_SETZERO_FP32();
-        sum[n+1+num_regs] = _MM_SETZERO_FP32();
+        sum[n+1+LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_SETZERO_FP32();
       }
       for (; j < num_j && j2 < num_j_2; j++, j2++) {
-        const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  (unsigned int)sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
-        const float* const LIBXSMM_RESTRICT sp_col_dense_index_2 = scratch_B_base + (unsigned int)sp_c_ptr_base_2[j2]*num_regs*SIMD_WIDTH_FP32;
+        const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  (unsigned int)sp_c_ptr_base[j]*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
+        const float* const LIBXSMM_RESTRICT sp_col_dense_index_2 = scratch_B_base + (unsigned int)sp_c_ptr_base_2[j2]*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
         SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
         SIMDTYPE_FP32 v_v_2 = _MM_SET1_FP32(sp_v_ptr_base_2[j2]);
         for (n = 0; n < num_full_regs; n += 2) {
           sum[n] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + n*SIMD_WIDTH_FP32), sum[n]);
-          sum[n + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + n*SIMD_WIDTH_FP32), sum[n+num_regs]);
+          sum[n + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + n*SIMD_WIDTH_FP32), sum[n+LIBXSMM_SPMDM_COMPUTE_NREGS]);
           sum[n+1] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + (n+1)*SIMD_WIDTH_FP32), sum[n+1]);
-          sum[n+1 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + (n+1)*SIMD_WIDTH_FP32), sum[n+1+num_regs]);
+          sum[n+1 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + (n+1)*SIMD_WIDTH_FP32), sum[n+1+LIBXSMM_SPMDM_COMPUTE_NREGS]);
         }
         {
           float v_v_f = sp_v_ptr_base[j];
@@ -408,7 +410,7 @@ for (kb = 0; kb < k_blocks; kb++) {
         }
       }
       for (; j < num_j; j++) {
-        const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  (unsigned int)sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
+        const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  (unsigned int)sp_c_ptr_base[j]*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
         SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
         for (n = 0; n < num_full_regs; n += 2) {
           sum[n] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + n*SIMD_WIDTH_FP32), sum[n]);
@@ -422,11 +424,11 @@ for (kb = 0; kb < k_blocks; kb++) {
         }
       }
       for (; j2 < num_j_2; j2++) {
-        const float* const LIBXSMM_RESTRICT sp_col_dense_index_2 = scratch_B_base + (unsigned int)sp_c_ptr_base_2[j2]*num_regs*SIMD_WIDTH_FP32;
+        const float* const LIBXSMM_RESTRICT sp_col_dense_index_2 = scratch_B_base + (unsigned int)sp_c_ptr_base_2[j2]*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
         SIMDTYPE_FP32 v_v_2 = _MM_SET1_FP32(sp_v_ptr_base_2[j2]);
         for (n = 0; n < num_full_regs; n += 2) {
-          sum[n + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + n*SIMD_WIDTH_FP32), sum[n+num_regs]);
-          sum[n+1 + num_regs] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + (n+1)*SIMD_WIDTH_FP32), sum[n+1+num_regs]);
+          sum[n + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + n*SIMD_WIDTH_FP32), sum[n+LIBXSMM_SPMDM_COMPUTE_NREGS]);
+          sum[n+1 + LIBXSMM_SPMDM_COMPUTE_NREGS] = _MM_FMADD_FP32(v_v_2, _MM_LOAD_FP32(sp_col_dense_index_2 + (n+1)*SIMD_WIDTH_FP32), sum[n+1+LIBXSMM_SPMDM_COMPUTE_NREGS]);
         }
         {
           float v_v_f_2 = sp_v_ptr_base_2[j2];
@@ -437,9 +439,9 @@ for (kb = 0; kb < k_blocks; kb++) {
       }
       for (n = 0; n < num_full_regs; n += 2) {
         _MM_STORE_FP32(result_m_index + n*SIMD_WIDTH_FP32,  _MM_ADD_FP32(sum[n], _MM_LOAD_FP32(result_m_index + n*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(result_m_index_2 + n*SIMD_WIDTH_FP32,  _MM_ADD_FP32(sum[n+num_regs], _MM_LOAD_FP32(result_m_index_2 + n*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(result_m_index_2 + n*SIMD_WIDTH_FP32,  _MM_ADD_FP32(sum[n+LIBXSMM_SPMDM_COMPUTE_NREGS], _MM_LOAD_FP32(result_m_index_2 + n*SIMD_WIDTH_FP32)));
         _MM_STORE_FP32(result_m_index + (n+1)*SIMD_WIDTH_FP32,  _MM_ADD_FP32(sum[n+1], _MM_LOAD_FP32(result_m_index + (n+1)*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(result_m_index_2 + (n+1)*SIMD_WIDTH_FP32,  _MM_ADD_FP32(sum[n+1+num_regs], _MM_LOAD_FP32(result_m_index_2 + (n+1)*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(result_m_index_2 + (n+1)*SIMD_WIDTH_FP32,  _MM_ADD_FP32(sum[n+1+LIBXSMM_SPMDM_COMPUTE_NREGS], _MM_LOAD_FP32(result_m_index_2 + (n+1)*SIMD_WIDTH_FP32)));
       }
     }
   }
@@ -448,19 +450,21 @@ for (kb = 0; kb < k_blocks; kb++) {
     const uint16_t*  LIBXSMM_RESTRICT sp_c_ptr_base;
     const float* LIBXSMM_RESTRICT sp_v_ptr_base;
     float* LIBXSMM_RESTRICT result_m_index;
+    const uint16_t* rowidx;
 
     if (m_local >= m_block_size) { block_A++; slice = A_sparse[block_A]; m_local = 0; }
 
-    start_j =  slice.rowidx[m_local];
-    end_j   =  slice.rowidx[m_local + 1];
+    rowidx  = slice.rowidx;
+    start_j = rowidx[m_local];
+    end_j   = rowidx[m_local+1];
     num_j   = (end_j - start_j);
     sp_c_ptr_base = slice.colidx + start_j;
     sp_v_ptr_base = slice.values + start_j;
-    result_m_index = scratch_C_base + (m)*num_regs*SIMD_WIDTH_FP32;
+    result_m_index = scratch_C_base + (m)*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
 
     if (!last_block_n) {
       int64_t j = 0;
-      SIMDTYPE_FP32 sum[2*num_regs];
+      SIMDTYPE_FP32 sum[2*LIBXSMM_SPMDM_COMPUTE_NREGS];
       sum[0] = _MM_LOAD_FP32(result_m_index + 0*SIMD_WIDTH_FP32);
       sum[1] = _MM_LOAD_FP32(result_m_index + 1*SIMD_WIDTH_FP32);
       sum[2] = _MM_LOAD_FP32(result_m_index + 2*SIMD_WIDTH_FP32);
@@ -468,7 +472,7 @@ for (kb = 0; kb < k_blocks; kb++) {
       sum[4] = _MM_LOAD_FP32(result_m_index + 4*SIMD_WIDTH_FP32);
       sum[5] = _MM_LOAD_FP32(result_m_index + 5*SIMD_WIDTH_FP32);
       for (; j < num_j; j++) {
-        const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  (unsigned int)sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
+        const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  (unsigned int)sp_c_ptr_base[j]*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
         SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
         sum[0] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 0*SIMD_WIDTH_FP32), sum[0]);
         sum[1] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + 1*SIMD_WIDTH_FP32), sum[1]);
@@ -485,14 +489,14 @@ for (kb = 0; kb < k_blocks; kb++) {
       _MM_STORE_FP32(result_m_index + 5*SIMD_WIDTH_FP32, sum[5]);
     }
     else {
-      SIMDTYPE_FP32 sum[2*num_regs];
+      SIMDTYPE_FP32 sum[2*LIBXSMM_SPMDM_COMPUTE_NREGS];
       int64_t j = 0;
       for (n = 0; n < num_full_regs; n += 2) {
         sum[n] = _MM_SETZERO_FP32();
         sum[n+1] = _MM_SETZERO_FP32();
       }
       for (; j < num_j; j++) {
-        const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  (unsigned int)sp_c_ptr_base[j]*num_regs*SIMD_WIDTH_FP32;
+        const float* const LIBXSMM_RESTRICT sp_col_dense_index = scratch_B_base +  (unsigned int)sp_c_ptr_base[j]*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
         SIMDTYPE_FP32 v_v = _MM_SET1_FP32(sp_v_ptr_base[j]);
         for (n = 0; n < num_full_regs; n += 2) {
           sum[n] = _MM_FMADD_FP32(v_v, _MM_LOAD_FP32(sp_col_dense_index + n*SIMD_WIDTH_FP32), sum[n]);
@@ -515,7 +519,7 @@ for (kb = 0; kb < k_blocks; kb++) {
 #if 0
 for (m = 0; m < 3; m++) {
   for (n = 0; n < num_n; n++) {
-    printf("%f ", scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n]);
+    printf("%f ", scratch_C[m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n]);
   }
   printf("\n");
 }
@@ -548,24 +552,25 @@ if ('T' == transC || 't' == transC) {
 else {
   if (!last_block_n) {
     for (m = 0; m < num_m; m++) {
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32));
+      _MM_STOREU_FP32(ptr_result + m*handle->n + 0*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32));
+      _MM_STOREU_FP32(ptr_result + m*handle->n + 1*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32));
+      _MM_STOREU_FP32(ptr_result + m*handle->n + 2*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32));
+      _MM_STOREU_FP32(ptr_result + m*handle->n + 3*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32));
+      _MM_STOREU_FP32(ptr_result + m*handle->n + 4*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32));
+      _MM_STOREU_FP32(ptr_result + m*handle->n + 5*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32));
     }
   }
   else {
     for (m = 0; m < num_m; m++) {
       for (n = 0; n < num_full_regs; n += 2) {
-        _MM_STOREU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32));
-        _MM_STOREU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*num_regs*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32));
+        _MM_STOREU_FP32(ptr_result + m*handle->n + n*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n*SIMD_WIDTH_FP32));
+        _MM_STOREU_FP32(ptr_result + m*handle->n + (n+1)*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + (n+1)*SIMD_WIDTH_FP32));
       }
       for (n = last_n_start; n < num_n; n++) {
-        ptr_result[m*handle->n + n] = scratch_C[m*num_regs*SIMD_WIDTH_FP32 + n];
+        ptr_result[m*handle->n + n] = scratch_C[m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n];
       }
     }
   }
 }
 
+#undef LIBXSMM_SPMDM_COMPUTE_NREGS
