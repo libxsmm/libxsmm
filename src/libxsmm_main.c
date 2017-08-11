@@ -887,7 +887,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     else if (0 == strcmp("wsm", arch) || 0 == strcmp("nhm", arch) || 0 == strcmp("sse4", arch) || 0 == strcmp("sse4_2", arch) || 0 == strcmp("sse4.2", arch)) {
       target_archid = LIBXSMM_X86_SSE4;
     }
-    else if (0 == strcmp("sse3", arch) || 0 == strcmp("sse", arch)) {
+    else if (0 == strcmp("sse", arch) || 0 == strcmp("sse3", arch)) {
       target_archid = LIBXSMM_X86_SSE3;
     }
     else if (0 == strcmp("x86", arch) || 0 == strcmp("sse2", arch)) {
