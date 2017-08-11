@@ -1259,7 +1259,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
     const internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)((uintptr_t)(internal_malloc_pool_buffer + (LIBXSMM_CACHELINE_SIZE)-1) & ~((LIBXSMM_CACHELINE_SIZE)-1));
     unsigned int i;
     memset(info, 0, sizeof(libxsmm_scratch_info));
-    info->npending = LIBXSMM_MAX(pools[0].instance.counter, 0);
+    info->npending = pools[0].instance.counter;
     info->nmallocs = internal_malloc_scratch_nmallocs;
     info->npools = LIBXSMM_MIN(1, libxsmm_scratch_pools);
     info->size = internal_get_scratch_size();
