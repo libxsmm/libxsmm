@@ -81,7 +81,7 @@ ifneq (,$(EIGENROOT))
   ifneq (0,$(shell echo "$$((2 <= $(BLAS) || 0 != $(OMP) || 1 < $(EIGEN)))"))
     DFLAGS += -DEIGEN_USE_THREADS
   endif
-  ifneq (,$(wildcard $(EIGENROOT)/unsupported/Eigen/CXX11/Tensor))
+  ifneq (,$(wildcard $(EIGENROOT)/unsupported/Eigen/CXX11/ThreadPool))
     DFLAGS += -D__EIGEN_UNSUPPORTED
   endif
 else
