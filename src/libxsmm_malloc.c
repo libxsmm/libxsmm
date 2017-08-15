@@ -1283,10 +1283,10 @@ LIBXSMM_API_DEFINITION int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_set_scratch_limit(size_t limit)
+LIBXSMM_API_DEFINITION void libxsmm_set_scratch_limit(size_t nbytes)
 {
   LIBXSMM_INIT
-  libxsmm_scratch_limit = limit;
+  libxsmm_scratch_limit = nbytes;
 }
 
 
