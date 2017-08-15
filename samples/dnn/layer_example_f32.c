@@ -48,12 +48,7 @@
 #endif
 
 #if !defined(USE_FUSED) && 0
-# define USE_FUSED
-#endif
-#if defined(USE_FUSED)
 # define USE_FUSED_BIAS_RELU
-# define USE_FUSED_RELU
-# define USE_FUSED_BIAS
 #endif
 
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -235,7 +230,7 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
   LIBXSMM_VLA_DECL(4, const float,  input_t,  input + (pad_w_in * ifwp + pad_h_in), nIfm, ifhp, ifwp);
   LIBXSMM_VLA_DECL(4, const float, filter_t, filter, nIfm, kh, kw);
 
-#if defined(USE_FUSED_BIAS)
+#if defined(USE_FUSED_BIAS) || defined(USE_FUSED_BIAS_RELU)
 #if defined(_OPENMP)
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
 #endif
@@ -272,7 +267,7 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
           }
         }
       }
-#if defined(USE_FUSED_RELU)
+#if defined(USE_FUSED_RELU) || defined(USE_FUSED_BIAS_RELU)
       for (oj = 0; oj < ofh; ++oj) {
         for (oi = 0; oi < ofw; ++oi) {
           LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) =
