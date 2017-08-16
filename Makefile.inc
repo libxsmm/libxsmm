@@ -215,7 +215,7 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 EXTLIB = $(call abslib,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides libxsmmnoblas to satisfy BLAS symbols
-  BLASLIB = $(call abslib,$(LIBNAME)noblas.$(LIBEXT))
+  BLASLIB ?= $(call abslib,$(LIBNAME)noblas.$(LIBEXT))
 else
   BLASLIB ?= $(NULL)
 endif
@@ -701,10 +701,6 @@ else # GCC assumed
     CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
   endif
-  ifeq (0,$(COMPATIBLE))
-    CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
-    CFLAGS += -Wall -Wno-unused-function -Wno-attributes
-  endif
   ifneq (Windows_NT,$(UNAME))
     CXXFLAGS += -f$(PIC)
     CFLAGS += -f$(PIC)
@@ -712,6 +708,11 @@ else # GCC assumed
     LDFLAGS += -f$(PIC)
   endif
   ifeq (0,$(COMPATIBLE))
+    ifneq (0,$(shell echo "$$((40700 <= $(GXX_VERSION)))"))
+      CXXFLAGS += -std=c++11
+    endif
+    CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
+    CFLAGS += -Wall -Wno-unused-function -Wno-attributes
     FSTD = -std=f2003
     CPEDANTIC += -pedantic -Wno-overlength-strings -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wunused-variable \
@@ -724,8 +725,6 @@ else # GCC assumed
                    -Wrealloc-lhs -Wrealloc-lhs-all
     endif
     FPEDANTIC += $(FWARNEXTRA)
-  endif
-  ifeq (0,$(COMPATIBLE))
     ifeq (1,$(PEDANTIC))
       CSTD = -std=c99
       CXXFLAGS += $(CPEDANTIC) -Wno-long-long

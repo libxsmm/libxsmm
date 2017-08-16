@@ -5,12 +5,12 @@ ECHO=$(which echo)
 GREP=$(which grep)
 ENV=$(which env)
 
-# NOBLAS tests (which are header-only based) need additional adjustment on the link-line.
+# TESTS_NOBLAS (which are header-only based) need additional adjustment on the link-line.
 # Currently header-only cases are not tested for not requiring BLAS (e.g., descriptor).
 # Test increases compilation time!
 #
-#NOBLAS="diff gemmflags hash malloc matcopy matdiff otrans threadsafety vla"
-#DISABLED="headeronly"
+#TESTS_NOBLAS="diff gemmflags hash malloc matcopy matdiff otrans threadsafety vla"
+#TESTS_DISABLED="headeronly"
 
 if [ "Windows_NT" = "${OS}" ]; then
   # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
@@ -42,7 +42,7 @@ NMAX=$(${ECHO} "${TESTS}" | wc -w)
 for TEST in ${TESTS}; do
   NAME=$(basename ${TEST} .c)
   ${ECHO} -n "${NTEST} of ${NMAX} (${NAME})... "
-  if [ "0" != "$(echo ${DISABLED} | grep -q ${NAME}; echo $?)" ]; then
+  if [ "0" != "$(echo ${TESTS_DISABLED} | grep -q ${NAME}; echo $?)" ]; then
     ERROR=$({
     if [ "" != "$(${LDD} ${HERE}/${NAME} 2> /dev/null | ${GREP} libiomp5\.)" ]; then
       ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
@@ -81,7 +81,7 @@ if [ "Windows_NT" != "${OS}" ]; then
 
   CWD=${PWD}
   cd ${HERE}/build
-  for TEST in ${NOBLAS}; do
+  for TEST in ${TESTS_NOBLAS}; do
     if [ -e ${HERE}/../lib/libxsmm.a ] && [ -e ${HERE}/../lib/libxsmmext.a ]; then
       make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=1 ${TEST}
     fi

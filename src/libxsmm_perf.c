@@ -170,7 +170,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
   header.elf_mach   = 62;  /* EM_X86_64 */
   header.total_size = sizeof(header);
   header.pid        = pid;
-  header.timestamp  = libxsmm_timer_xtick();
+  header.timestamp  = libxsmm_timer_tick_rdtsc();
   header.flags      = JITDUMP_FLAGS_ARCH_TIMESTAMP;
 
   res = fwrite(&header, sizeof(header), 1, fp);
@@ -213,7 +213,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_finalize(void)
   memset(&hdr, 0, sizeof(hdr));
   hdr.id = JITDUMP_CODE_CLOSE;
   hdr.total_size = sizeof(hdr);
-  hdr.timestamp = libxsmm_timer_xtick();
+  hdr.timestamp = libxsmm_timer_tick_rdtsc();
   res = fwrite(&hdr, sizeof(hdr), 1, fp);
 
   if (res != 1) {
@@ -266,7 +266,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_dump_code(const void* memory, size_t si
 
     hdr.id = JITDUMP_CODE_LOAD;
     hdr.total_size = sizeof(hdr) + sizeof(rec) + name_len + size;
-    hdr.timestamp = libxsmm_timer_xtick();
+    hdr.timestamp = libxsmm_timer_tick_rdtsc();
 
     rec.code_size = size;
     rec.vma = (uintptr_t) memory;

@@ -475,7 +475,7 @@ LIBXSMM_API_INLINE void internal_init(void)
   libxsmm_code_pointer* result;
   int init_code = EXIT_FAILURE, i;
   unsigned long long s0 = libxsmm_timer_tick(), s1, t0, t1; /* warmup */
-  s0 = libxsmm_timer_tick(); t0 = libxsmm_timer_xtick(); /* initial timings */
+  s0 = libxsmm_timer_tick(); t0 = libxsmm_timer_tick_rdtsc(); /* initial timings */
 #if !defined(LIBXSMM_NO_SYNC) /* setup the locks in a thread-safe fashion */
   for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock + i);
   LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
@@ -660,7 +660,7 @@ LIBXSMM_API_INLINE void internal_init(void)
   for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
   LIBXSMM_LOCK_RELEASE(&libxsmm_lock_global);
 #endif
-  s1 = libxsmm_timer_tick(); t1 = libxsmm_timer_xtick(); /* final timings */
+  s1 = libxsmm_timer_tick(); t1 = libxsmm_timer_tick_rdtsc(); /* final timings */
   if (s0 != s1 && t0 != t1) {
     libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / (t0 < t1 ? (t1 - t0) : (t0 - t1));
   }
@@ -887,7 +887,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     else if (0 == strcmp("wsm", arch) || 0 == strcmp("nhm", arch) || 0 == strcmp("sse4", arch) || 0 == strcmp("sse4_2", arch) || 0 == strcmp("sse4.2", arch)) {
       target_archid = LIBXSMM_X86_SSE4;
     }
-    else if (0 == strcmp("sse3", arch) || 0 == strcmp("sse", arch)) {
+    else if (0 == strcmp("sse", arch) || 0 == strcmp("sse3", arch)) {
       target_archid = LIBXSMM_X86_SSE3;
     }
     else if (0 == strcmp("x86", arch) || 0 == strcmp("sse2", arch)) {
