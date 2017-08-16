@@ -84,6 +84,7 @@ if (n_segments) {
       instr = code_stream[pc].segment_type;
       n_convs = code_stream[pc].n_convs;
       if (instr == IMG_LOOP_INIT) {
+        img = code_stream[pc].aux_index;
         /* Apply padding  */
 #include "libxsmm_dnn_fwd_custom_custom_padding.tpl.c"
       } else if ( instr == OFM_LOOP_INIT ) {

@@ -156,8 +156,8 @@ if (handle->padding_flag == 1) {
   }
 } else {
   if (handle->trans_ofw_ifm > 0) {
-    input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp);
-    /* input_base = &LIBXSMM_VLA_ACCESS(5, input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock); */
+     input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp);
+    /*input_base = &LIBXSMM_VLA_ACCESS(5, input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock); */
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(5, input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
   }
@@ -180,7 +180,6 @@ for (pc = 0; pc < instr; pc++) {
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
-
 /* Perform reduction because we used thread private filters... */
 if (handle->upd_use_external_reduce == 0) {
   const int total_filter_size = reduce_work * handle->ofmblock;
@@ -203,6 +202,5 @@ if (handle->upd_use_external_reduce == 0) {
     }
   }
 }
-
 libxsmm_barrier_wait(handle->barrier, ltid);
 

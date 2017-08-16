@@ -78,7 +78,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int nOfmBlocks;
   int total_calls;
   int n_code_segments;
-  int mark_ofm_init, mark_ofm_close;
+  int mark_ofm_init, mark_ofm_close, mark_img_init;
   int *tmp_expanded_stream, tmp_stream_index;
   segment_t *encoded_code_segments = NULL;
   int expanded_size;
@@ -107,12 +107,13 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     my_ofm_end = LIBXSMM_MIN((myOfmId+1) * nOfmBlocks, handle->blocksofm);
   }
 
-  mark_ofm_init = ( ( (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) || ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) ? 1 : 0;
+  mark_ofm_init = ( ( (  (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_fwd == 0) ) || ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) ? 1 : 0;
   mark_ofm_close = (handle->datatype != handle->datatype_itm) ? 1 : 0;
+  mark_img_init = (  (handle->padding_flag == 1) || (mark_ofm_close == 1)) ? 1 : 0;
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */
   for (img = my_img_start; img < my_img_end; img++) {
-    if (handle->padding_flag == 1) {
+    if (mark_img_init== 1) {
       n_code_segments++;
     }
     for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
@@ -131,7 +132,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                   }
 
                   if (mark_ofm_close == 1) {
-                    if (ifm1 == handle->blocksifm-1  && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                    if (ifm1 == handle->blocksifm-handle->blocksifm_blocking  && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
                       n_code_segments++;
                     }
                   }
@@ -164,7 +165,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   /* Second run to compute actual indices */
   for (img = my_img_start; img < my_img_end; img++) {
-    if (handle->padding_flag == 1) {
+    if (mark_img_init== 1) {
       tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
       tmp_stream_index++;
     }
@@ -201,7 +202,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                   tmp_stream_index++;
 
                   if (mark_ofm_close == 1) {
-                    if (ifm1 == handle->blocksifm-1  && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                    if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
                       tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
                       tmp_stream_index++;
                     }
@@ -246,7 +247,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     /* Final pass over the segments to fill-in auxiliary indices...  */
     encoded_stream_index = 0;
     for (img = my_img_start; img < my_img_end; img++) {
-      if (handle->padding_flag == 1) {
+      if (mark_img_init== 1) {
         encoded_code_segments[encoded_stream_index].aux_index = img;
         encoded_stream_index++;
       }
@@ -268,7 +269,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     }
 
                     if (mark_ofm_close == 1) {
-                      if (ifm1 == handle->blocksifm-1  && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                      if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
                         encoded_code_segments[encoded_stream_index].aux_index = ofm1;
                         encoded_stream_index++;
                       }
