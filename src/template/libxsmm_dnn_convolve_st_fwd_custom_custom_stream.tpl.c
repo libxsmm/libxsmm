@@ -93,7 +93,7 @@ if (n_segments) {
 #include "libxsmm_dnn_fwd_custom_custom_bias.tpl.c"
         }
         /* Overwrite output with zeros if requested */
-        if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+        if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_fwd != 1) ) {
           jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
         }
       } else {
