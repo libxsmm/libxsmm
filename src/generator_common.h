@@ -218,6 +218,8 @@
 #define LIBXSMM_X86_INSTR_MOVSLQ         30012
 #define LIBXSMM_X86_INSTR_SALQ           30013
 #define LIBXSMM_X86_INSTR_IMUL           30014
+#define LIBXSMM_X86_INSTR_CMOVZ          30015
+#define LIBXSMM_X86_INSTR_CMOVNZ         30016
 
 /* Mask move instructions */
 #define LIBXSMM_X86_INSTR_KMOV           40000
