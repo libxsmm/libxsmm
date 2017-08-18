@@ -33,17 +33,37 @@
 #define OFM_LOOP_CLOSE 2
 #define CONVOLUTION_KERNEL 3
 
+#define MIXED 0
+#define KHWC 1
+#define HWKC 2
+#define CHWK 3
+#define HWCK 4
+
 int block_j = 14;
 int blockifm = 8;
 #if !defined(_OPENMP)
 int ltid;
 #endif
 
+int loop_order = MIXED;
+/*
+const char *const env_order = getenv("LOOP_ORDER");
+if ( 0 == env_order || 0 == *env_order) {
+  loop_order = MIXED;
+} else {
+  loop_order = atoi(getenv("LOOP_ORDER"));
+}
+*/
+
+if (handle->desc.H >= 28 && handle->desc.R == 1) {
+  loop_order = HWKC;
+}
+
 while (blockifm % handle->blocksifm_blocking != 0) {
   blockifm++;
 }
 
-handle->block_fwd_ofm = 8;
+handle->block_fwd_ofm = 16;
 handle->block_fwd_ifm = blockifm;
 
 if ( (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
@@ -86,7 +106,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int encoded_stream_index;
   int lookahead_index;
 
-   /* Arrays of stream indices */
+  /* Arrays of stream indices */
   int *compute_indices;
   char *kernel_variant;
 
@@ -164,50 +184,279 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   local_entries = 0;
 
   /* Second run to compute actual indices */
-  for (img = my_img_start; img < my_img_end; img++) {
-    if (mark_img_init== 1) {
-      tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
-      tmp_stream_index++;
+
+  if (loop_order == MIXED) {
+    for (img = my_img_start; img < my_img_end; img++) {
+      if (mark_img_init== 1) {
+        tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
+        tmp_stream_index++;
+      }
+      for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+        for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+              for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
+                for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+                  for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+                    ij = oj * handle->desc.u;
+                    ii = oi * handle->desc.v;
+
+                    if (mark_ofm_init == 1) {
+                      if (ifm1 == 0 && oj == 0 && oi == 0) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
+                        tmp_stream_index++;
+                      }
+                    }
+
+                    if (handle->padding_flag == 1) {
+                      compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij) * padded_w)  +  ii) *  handle->ifmblock * handle->fm_lp_block;
+                    } else {
+                      compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block;
+                    }
+                    compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
+                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
+
+                    /* Initialize kernel variant with the one that prefetches everything */
+                    kernel_variant[local_entries/3] = 2;
+                    local_entries += 3;
+
+                    tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                    tmp_stream_index++;
+
+                    if (mark_ofm_close == 1) {
+                      if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
+                        tmp_stream_index++;
+                      }
+                    }
+
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
-    for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
-      for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+  }
+
+  if (loop_order == KHWC) {
+    for (img = my_img_start; img < my_img_end; img++) {
+      if (mark_img_init== 1) {
+        tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
+        tmp_stream_index++;
+      }
+      for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+        for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+            for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+              for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+                for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+                  for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
+
+
+                    ij = oj * handle->desc.u;
+                    ii = oi * handle->desc.v;
+
+                    if (mark_ofm_init == 1) {
+                      if (ifm1 == 0 && oj == 0 && oi == 0) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
+                        tmp_stream_index++;
+                      }
+                    }
+
+                    if (handle->padding_flag == 1) {
+                      compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij) * padded_w)  +  ii) *  handle->ifmblock * handle->fm_lp_block;
+                    } else {
+                      compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block;
+                    }
+                    compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
+                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
+
+                    /* Initialize kernel variant with the one that prefetches everything */
+                    kernel_variant[local_entries/3] = 2;
+                    local_entries += 3;
+
+                    tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                    tmp_stream_index++;
+
+                    if (mark_ofm_close == 1) {
+                      if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
+                        tmp_stream_index++;
+                      }
+                    }
+
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (loop_order == HWKC) {
+    for (img = my_img_start; img < my_img_end; img++) {
+      if (mark_img_init== 1) {
+        tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
+        tmp_stream_index++;
+      }
+
+      for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
         for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
-          for ( ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
-              for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
-                for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
-                  ij = oj * handle->desc.u;
-                  ii = oi * handle->desc.v;
+          for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+            for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+                for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+                  for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
 
-                  if (mark_ofm_init == 1) {
-                    if (ifm1 == 0 && oj == 0 && oi == 0) {
-                      tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
-                      tmp_stream_index++;
+                    ij = oj * handle->desc.u;
+                    ii = oi * handle->desc.v;
+
+                    if (mark_ofm_init == 1) {
+                      if (ifm1 == 0 && oj == 0 && oi == 0) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
+                        tmp_stream_index++;
+                      }
                     }
-                  }
 
-                  if (handle->padding_flag == 1) {
-                    compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij) * padded_w)  +  ii) *  handle->ifmblock * handle->fm_lp_block;
-                  } else {
-                    compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block;
-                  }
-                  compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
-                  compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
-
-                  /* Initialize kernel variant with the one that prefetches everything */
-                  kernel_variant[local_entries/3] = 2;
-                  local_entries += 3;
-
-                  tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
-                  tmp_stream_index++;
-
-                  if (mark_ofm_close == 1) {
-                    if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
-                      tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
-                      tmp_stream_index++;
+                    if (handle->padding_flag == 1) {
+                      compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij) * padded_w)  +  ii) *  handle->ifmblock * handle->fm_lp_block;
+                    } else {
+                      compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block;
                     }
-                  }
+                    compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
+                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
 
+                    /* Initialize kernel variant with the one that prefetches everything */
+                    kernel_variant[local_entries/3] = 2;
+                    local_entries += 3;
+
+                    tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                    tmp_stream_index++;
+
+                    if (mark_ofm_close == 1) {
+                      if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
+                        tmp_stream_index++;
+                      }
+                    }
+
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (loop_order == CHWK) {
+    for (img = my_img_start; img < my_img_end; img++) {
+      if (mark_img_init== 1) {
+        tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
+        tmp_stream_index++;
+      }
+      for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+        for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
+          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+            for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+              for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+                for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+                  for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+
+                    ij = oj * handle->desc.u;
+                    ii = oi * handle->desc.v;
+
+                    if (mark_ofm_init == 1) {
+                      if (ifm1 == 0 && oj == 0 && oi == 0) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
+                        tmp_stream_index++;
+                      }
+                    }
+
+                    if (handle->padding_flag == 1) {
+                      compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij) * padded_w)  +  ii) *  handle->ifmblock * handle->fm_lp_block;
+                    } else {
+                      compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block;
+                    }
+                    compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
+                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
+
+                    /* Initialize kernel variant with the one that prefetches everything */
+                    kernel_variant[local_entries/3] = 2;
+                    local_entries += 3;
+
+                    tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                    tmp_stream_index++;
+
+                    if (mark_ofm_close == 1) {
+                      if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
+                        tmp_stream_index++;
+                      }
+                    }
+
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (loop_order == HWCK) {
+    for (img = my_img_start; img < my_img_end; img++) {
+      if (mark_img_init== 1) {
+        tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
+        tmp_stream_index++;
+      }
+      for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+        for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+          for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+            for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+              for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
+                for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+                  for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+
+                    ij = oj * handle->desc.u;
+                    ii = oi * handle->desc.v;
+
+                    if (mark_ofm_init == 1) {
+                      if (ifm1 == 0 && oj == 0 && oi == 0) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
+                        tmp_stream_index++;
+                      }
+                    }
+
+                    if (handle->padding_flag == 1) {
+                      compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij) * padded_w)  +  ii) *  handle->ifmblock * handle->fm_lp_block;
+                    } else {
+                      compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block;
+                    }
+                    compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
+                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
+
+                    /* Initialize kernel variant with the one that prefetches everything */
+                    kernel_variant[local_entries/3] = 2;
+                    local_entries += 3;
+
+                    tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                    tmp_stream_index++;
+
+                    if (mark_ofm_close == 1) {
+                      if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj == handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
+                        tmp_stream_index++;
+                      }
+                    }
+
+                  }
                 }
               }
             }
