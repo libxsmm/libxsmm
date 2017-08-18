@@ -19,6 +19,7 @@ pyfr/pyfr_driver_asp_reg
 pyfr/pyfr_gemm_cm
 pyfr/pyfr_gemm_rm
 scratch/scratch
+specfem/specfem
 spmdm/spmdm
 transpose/transpose
 transpose/transposef

@@ -283,7 +283,7 @@
 
 ! 3 different arrays for x/y/z-components, 2-dimensional arrays (25,5)/(5,25), same B matrix for all 3 component arrays
 
-#ifdef XSMM
+#if defined(XSMM) && defined(LIBXSMM_SMM_5_25_5)
   use my_libxsmm,only: libxsmm_smm_5_25_5
 #endif
 
@@ -297,7 +297,7 @@
   ! local parameters
   integer :: i,j
 
-#ifdef XSMM
+#if defined(XSMM) && defined(LIBXSMM_SMM_5_25_5)
   ! matrix-matrix multiplication C = alpha A * B + beta C
   ! with A(n1,n2) 5x5-matrix, B(n2,n3) 5x25-matrix and C(n1,n3) 5x25-matrix
   ! static version using MNK="5 25, 5" ALPHA=1 BETA=0
@@ -340,7 +340,7 @@
 
 ! 3 different arrays for x/y/z-components, 2-dimensional arrays (25,5)/(5,25), same B matrix for all 3 component arrays
 
-#ifdef XSMM
+#if defined(XSMM) && defined(LIBXSMM_SMM_25_5_5)
   use my_libxsmm,only: libxsmm_smm_25_5_5
 #endif
 
@@ -354,7 +354,7 @@
   ! local parameters
   integer :: i,j
 
-#ifdef XSMM
+#if defined(XSMM) && defined(LIBXSMM_SMM_25_5_5)
   ! matrix-matrix multiplication C = alpha A * B + beta C
   ! with A(n1,n2) 25x5-matrix, B(n2,n3) 5x5-matrix and C(n1,n3) 25x5-matrix
   ! static version
@@ -399,7 +399,7 @@
 
 ! note: on CPUs like Haswell or Sandy Bridge, the following will slow down computations
 !       however, on Intel Phi (KNC) it is still helpful (speedup +3%)
-#if defined(XSMM_FORCE_EVEN_IF_SLOWER) || ( defined(XSMM) && defined(__MIC__) )
+#if defined(XSMM_FORCE_EVEN_IF_SLOWER) || ( defined(XSMM) && defined(LIBXSMM_SMM_25_5_5) && defined(__MIC__) )
   use my_libxsmm,only: libxsmm_smm_5_5_5
 #endif
 
@@ -413,7 +413,7 @@
   ! local parameters
   integer :: i,j,k
 
-#if defined(XSMM_FORCE_EVEN_IF_SLOWER) || ( defined(XSMM) && defined(__MIC__) )
+#if defined(XSMM_FORCE_EVEN_IF_SLOWER) || ( defined(XSMM) && defined(LIBXSMM_SMM_25_5_5) && defined(__MIC__) )
   ! matrix-matrix multiplication C = alpha A * B + beta C
   ! with A(n1,n2,n4) 5x5x5-matrix, B(n2,n3) 5x5-matrix and C(n1,n3,n4) 5x5x5-matrix
   ! static version
