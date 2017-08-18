@@ -469,7 +469,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_config.py $(SRCDIR)/template/libxsmm_config.h \
-		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) > $@
@@ -536,7 +536,7 @@ $(INCDIR)/libxsmm.f: $(SCRDIR)/libxsmm_interface.py \
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.f \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) | \
 	$(PYTHON) $(SCRDIR)/libxsmm_config.py /dev/stdin \
-		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) | \
