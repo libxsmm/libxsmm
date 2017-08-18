@@ -135,7 +135,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
   }
   l_conv_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
   l_conv_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
-  l_conv_kernel_config.prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT2;
+  l_conv_kernel_config.prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT0;
   /*l_conv_kernel_config.alu_mul_instruction = LIBXSMM_X86_INSTR_IMULQ;*/
   l_conv_kernel_config.alu_add_instruction = LIBXSMM_X86_INSTR_ADDQ;
   l_conv_kernel_config.alu_sub_instruction = LIBXSMM_X86_INSTR_SUBQ;
@@ -1063,7 +1063,10 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( libxsmm_generate
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_sub_instruction,
                                      i_gp_reg_mapping->gp_reg_input, 128 * l_k_updates * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
-  }
+
+    libxsmm_x86_instruction_alu_imm( io_generated_code,
+                                     i_conv_kernel_config->alu_sub_instruction,
+                                     i_gp_reg_mapping->gp_reg_input_pf, 128 * l_k_updates * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );  }
 }
 
 LIBXSMM_INTERNAL_API_DEFINITION
@@ -1292,6 +1295,10 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( libxsmm
 
   /* we have to make sure that we are reseting the pointer to its original value in case a full unroll */
   if ( l_k_updates > 0 ) {
+    libxsmm_x86_instruction_alu_imm( io_generated_code,
+                                     i_conv_kernel_config->alu_sub_instruction,
+                                     i_gp_reg_mapping->gp_reg_input, 128 * l_k_updates * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
+
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_sub_instruction,
                                      i_gp_reg_mapping->gp_reg_input, 128 * l_k_updates * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block );
