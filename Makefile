@@ -942,7 +942,7 @@ endif
 
 .PHONY: samples
 samples: cp2k nek smm wrap
-	@find $(SPLDIR) -type f -name Makefile | grep -v /specfem/ | grep -v /pyfr/ \
+	@find $(SPLDIR) -type f -name Makefile | grep -v /specfem/ | grep -v /pyfr/ | grep -v /lstm/ \
 		$(patsubst %, | grep -v /%/,$^) | xargs -I {} dirname {} | xargs -I {} $(FLOCK) {} \
 		"cd {}; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) DEPSTATIC=$(STATIC) \
 		SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
