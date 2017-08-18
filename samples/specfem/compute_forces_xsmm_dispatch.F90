@@ -310,9 +310,9 @@
   ! matrix-matrix multiplication C = alpha A * B + beta C
   ! with A(n1,n2) 5x5-matrix, B(n2,n3) 5x25-matrix and C(n1,n3) 5x25-matrix
   if (USE_XSMM_FUNCTION) then
-    call libxsmm_mmcall(xmm1, A, B1, C1)
-    call libxsmm_mmcall(xmm1, A, B2, C2)
-    call libxsmm_mmcall(xmm1, A, B3, C3)
+    call libxsmm_mmcall(xmm1, c_loc(A), c_loc(B1), c_loc(C1))
+    call libxsmm_mmcall(xmm1, c_loc(A), c_loc(B2), c_loc(C2))
+    call libxsmm_mmcall(xmm1, c_loc(A), c_loc(B3), c_loc(C3))
 
     ! debug timing
     !duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -381,9 +381,9 @@
   ! matrix-matrix multiplication C = alpha A * B + beta C
   ! with A(n1,n2) 25x5-matrix, B(n2,n3) 5x5-matrix and C(n1,n3) 25x5-matrix
   if (USE_XSMM_FUNCTION) then
-    call libxsmm_mmcall(xmm2, A1, B, C1)
-    call libxsmm_mmcall(xmm2, A2, B, C2)
-    call libxsmm_mmcall(xmm2, A3, B, C3)
+    call libxsmm_mmcall(xmm2, c_loc(A1), c_loc(B), c_loc(C1))
+    call libxsmm_mmcall(xmm2, c_loc(A2), c_loc(B), c_loc(C2))
+    call libxsmm_mmcall(xmm2, c_loc(A3), c_loc(B), c_loc(C3))
     return
   endif
 #endif
@@ -440,9 +440,9 @@
   ! with A(n1,n2,n4) 5x5x5-matrix, B(n2,n3) 5x5-matrix and C(n1,n3,n4) 5x5x5-matrix
   if (USE_XSMM_FUNCTION) then
     do k = 1,5
-      call libxsmm_mmcall(xmm3, A1(:,:,k), B, C1(:,:,k))
-      call libxsmm_mmcall(xmm3, A2(:,:,k), B, C2(:,:,k))
-      call libxsmm_mmcall(xmm3, A3(:,:,k), B, C3(:,:,k))
+      call libxsmm_mmcall(xmm3, c_loc(A1(1,1,k)), c_loc(B), c_loc(C1(1,1,k)))
+      call libxsmm_mmcall(xmm3, c_loc(A2(1,1,k)), c_loc(B), c_loc(C2(1,1,k)))
+      call libxsmm_mmcall(xmm3, c_loc(A3(1,1,k)), c_loc(B), c_loc(C3(1,1,k)))
     enddo
     return
   endif
