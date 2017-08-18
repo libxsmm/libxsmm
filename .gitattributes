@@ -5,9 +5,7 @@
 .gitconfig export-ignore
 .gitignore export-ignore
 .travis.sh export-ignore
-.travis.yml export-ignore
-_config.yml
-mkdocs.yml
+*.yml export-ignore
 README.sh export-ignore
 documentation/*.pptx export-ignore
 scripts/tool_*.sh export-ignore
