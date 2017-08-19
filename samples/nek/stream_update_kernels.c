@@ -36,11 +36,9 @@
 /*#define DISABLE_NONTEMPORAL_STORES*/
 
 
-LIBXSMM_INLINE_ALWAYS LIBXSMM_RETARGETABLE
-void stream_init( int    i_length,
-                  size_t i_start_address,
-                  int*   o_trip_prolog,
-                  int*   o_trip_stream ) {
+LIBXSMM_API_INLINE
+void stream_init(int i_length, size_t i_start_address, int* o_trip_prolog, int* o_trip_stream)
+{
   /* let's calculate the prolog until C is cachline aligned */
   /* @TODO we need to add shifts */
   if ( (i_start_address % 64) != 0 ) {
@@ -56,11 +54,11 @@ void stream_init( int    i_length,
   *o_trip_stream = ((*o_trip_stream) > i_length) ? (*o_trip_prolog) : (*o_trip_stream);
 }
 
+
 /* avoid warning about external function definition with no prior declaration */
-LIBXSMM_API void stream_vector_copy(const double* i_a, double* io_c, const int i_length);
-LIBXSMM_API_DEFINITION void stream_vector_copy(  const double* i_a,
-                                      double*       io_c,
-                                      const int     i_length) {
+LIBXSMM_API void stream_vector_copy(const double* /*i_a*/, double* /*io_c*/, int /*i_length*/);
+LIBXSMM_API_DEFINITION void stream_vector_copy(const double* i_a, double* io_c, int i_length)
+{
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
@@ -69,7 +67,7 @@ LIBXSMM_API_DEFINITION void stream_vector_copy(  const double* i_a,
   stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
 
   /* run the prologue */
-  for ( ; l_n < l_trip_prolog;  l_n++ ) {
+  for (; l_n < l_trip_prolog; l_n++) {
     io_c[l_n] = i_a[l_n];
   }
   /* run the bulk, hopefully using streaming stores */
@@ -98,20 +96,20 @@ LIBXSMM_API_DEFINITION void stream_vector_copy(  const double* i_a,
     }
   }
 #else
-  for ( ; l_n < l_trip_stream;  l_n++ ) {
+  for (; l_n < l_trip_stream; l_n++) {
     io_c[l_n] = i_a[l_n];
   }
 #endif
   /* run the epilogue */
-  for ( ; l_n < i_length;  l_n++ ) {
+  for (; l_n < i_length; l_n++) {
     io_c[l_n] = i_a[l_n];
   }
 }
 
-LIBXSMM_API
-void stream_vector_set( const double i_scalar,
-                        double*       io_c,
-                        const int     i_length) {
+
+LIBXSMM_API void stream_vector_set(double /*i_scalar*/, double* /*io_c*/, int /*i_length*/);
+LIBXSMM_API_DEFINITION void stream_vector_set(double i_scalar, double* io_c, int i_length)
+{
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
@@ -120,7 +118,7 @@ void stream_vector_set( const double i_scalar,
   stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
 
   /* run the prologue */
-  for ( ; l_n < l_trip_prolog;  l_n++ ) {
+  for (; l_n < l_trip_prolog; l_n++) {
     io_c[l_n] = i_scalar;
   }
   /* run the bulk, hopefully using streaming stores */
@@ -151,22 +149,20 @@ void stream_vector_set( const double i_scalar,
     }
   }
 #else
-  for ( ; l_n < l_trip_stream;  l_n++ ) {
+  for (; l_n < l_trip_stream; l_n++) {
     io_c[l_n] = i_scalar;
   }
 #endif
   /* run the epilogue */
-  for ( ; l_n < i_length;  l_n++ ) {
+  for (; l_n < i_length; l_n++) {
     io_c[l_n] = i_scalar;
   }
 }
 
 
-LIBXSMM_API
-void stream_vector_compscale( const double* i_a,
-                              const double* i_b,
-                              double*       io_c,
-                              const int     i_length) {
+LIBXSMM_API void stream_vector_compscale(const double* /*i_a*/, const double* /*i_b*/, double* /*io_c*/, int /*i_length*/);
+LIBXSMM_API_DEFINITION void stream_vector_compscale(const double* i_a, const double* i_b, double* io_c, int i_length)
+{
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
@@ -175,7 +171,7 @@ void stream_vector_compscale( const double* i_a,
   stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
 
   /* run the prologue */
-  for ( ; l_n < l_trip_prolog;  l_n++ ) {
+  for (; l_n < l_trip_prolog; l_n++) {
     io_c[l_n] = i_a[l_n]*i_b[l_n];
   }
   /* run the bulk, hopefully using streaming stores */
@@ -217,29 +213,29 @@ void stream_vector_compscale( const double* i_a,
     }
   }
 #else
-  for ( ; l_n < l_trip_stream;  l_n++ ) {
+  for (; l_n < l_trip_stream; l_n++) {
     io_c[l_n] = i_a[l_n]*i_b[l_n];
   }
 #endif
   /* run the epilogue */
-  for ( ; l_n < i_length;  l_n++ ) {
+  for (; l_n < i_length; l_n++) {
     io_c[l_n] = i_a[l_n]*i_b[l_n];
   }
 }
 
-LIBXSMM_API
-void stream_update_helmholtz( const double* i_g1,
-                              const double* i_g2,
-                              const double* i_g3,
-                              const double* i_tm1,
-                              const double* i_tm2,
-                              const double* i_tm3,
-                              const double* i_a,
-                              const double* i_b,
-                              double*       io_c,
-                              const double  i_h1,
-                              const double  i_h2,
-                              const int     i_length) {
+
+LIBXSMM_API void stream_update_helmholtz(
+  const double* i_g1, const double* i_g2, const double* i_g3,
+  const double* i_tm1, const double* i_tm2, const double* i_tm3,
+  const double* i_a, const double* i_b, double* io_c,
+  double i_h1, double i_h2, int i_length);
+
+LIBXSMM_API_DEFINITION void stream_update_helmholtz(
+  const double* i_g1, const double* i_g2, const double* i_g3,
+  const double* i_tm1, const double* i_tm2, const double* i_tm3,
+  const double* i_a, const double* i_b, double* io_c,
+  double i_h1, double i_h2, int i_length)
+{
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
@@ -252,7 +248,7 @@ void stream_update_helmholtz( const double* i_g1,
 #if !defined(__SSE3__)
 */
   {
-    for ( ; l_n < l_trip_prolog;  l_n++ ) {
+    for (; l_n < l_trip_prolog; l_n++) {
       io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n])
                   + i_h2*(i_b[l_n]*i_a[l_n]);
     }
@@ -263,7 +259,7 @@ void stream_update_helmholtz( const double* i_g1,
     const __m128d vec_h1 = _mm_loaddup_pd(&i_h1);
     const __m128d vec_h2 = _mm_loaddup_pd(&i_h2);
     const __m128i mask   = _mm_set_epi32(0,0,-1,-1);
-    for ( ; l_n < l_trip_prolog;  l_n++ ) {
+    for (; l_n < l_trip_prolog; l_n++) {
       __m128d vec_g1, vec_g2, vec_g3, vec_tm1, vec_tm2, vec_tm3, vec_a, vec_b;
       vec_g1 = _mm_load_sd(&(i_g1[l_n]));
       vec_tm1 = _mm_load_sd(&(i_tm1[l_n]));
@@ -379,7 +375,7 @@ void stream_update_helmholtz( const double* i_g1,
     }
   }
 #else
-  for ( ; l_n < l_trip_stream;  l_n++ ) {
+  for (; l_n < l_trip_stream; l_n++) {
     io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n])
                 + i_h2*(i_b[l_n]*i_a[l_n]);
   }
@@ -389,7 +385,7 @@ void stream_update_helmholtz( const double* i_g1,
 #if !defined(__SSE3__)
 */
   {
-    for ( ; l_n < i_length;  l_n++ ) {
+    for (; l_n < i_length; l_n++) {
       io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n])
                   + i_h2*(i_b[l_n]*i_a[l_n]);
     }
@@ -400,7 +396,7 @@ void stream_update_helmholtz( const double* i_g1,
     const __m128d vec_h1 = _mm_loaddup_pd(&i_h1);
     const __m128d vec_h2 = _mm_loaddup_pd(&i_h2);
     const __m128i mask   = _mm_set_epi32(0,0,-1,-1);
-    for ( ; l_n < i_length;  l_n++ ) {
+    for (; l_n < i_length; l_n++) {
       __m128d vec_g1, vec_g2, vec_g3, vec_tm1, vec_tm2, vec_tm3, vec_a, vec_b;
       vec_g1 = _mm_load_sd(&(i_g1[l_n]));
       vec_tm1 = _mm_load_sd(&(i_tm1[l_n]));
@@ -425,16 +421,17 @@ void stream_update_helmholtz( const double* i_g1,
 */
 }
 
-LIBXSMM_API
-void stream_update_helmholtz_no_h2( const double* i_g1,
-                                    const double* i_g2,
-                                    const double* i_g3,
-                                    const double* i_tm1,
-                                    const double* i_tm2,
-                                    const double* i_tm3,
-                                    double*       io_c,
-                                    const double  i_h1,
-                                    const int     i_length) {
+
+LIBXSMM_API void stream_update_helmholtz_no_h2(
+  const double* i_g1, const double* i_g2, const double* i_g3,
+  const double* i_tm1, const double* i_tm2, const double* i_tm3,
+  double* io_c, double i_h1, int i_length);
+
+LIBXSMM_API_DEFINITION void stream_update_helmholtz_no_h2(
+  const double* i_g1, const double* i_g2, const double* i_g3,
+  const double* i_tm1, const double* i_tm2, const double* i_tm3,
+  double* io_c, double i_h1, int i_length)
+{
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
@@ -443,7 +440,7 @@ void stream_update_helmholtz_no_h2( const double* i_g1,
   stream_init( i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
 
   /* run the prologue */
-  for ( ; l_n < l_trip_prolog;  l_n++ ) {
+  for (; l_n < l_trip_prolog; l_n++) {
     io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]);
   }
   /* run the bulk, hopefully using streaming stores */
@@ -519,29 +516,29 @@ void stream_update_helmholtz_no_h2( const double* i_g1,
     }
   }
 #else
-  for ( ; l_n < l_trip_stream;  l_n++ ) {
+  for (; l_n < l_trip_stream; l_n++) {
     io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]);
   }
 #endif
   /* run the epilogue */
-  for ( ; l_n < i_length;  l_n++ ) {
+  for (; l_n < i_length; l_n++) {
     io_c[l_n] =   i_h1*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]);
   }
 }
 
-LIBXSMM_API
-void stream_update_var_helmholtz( const double* i_g1,
-                                  const double* i_g2,
-                                  const double* i_g3,
-                                  const double* i_tm1,
-                                  const double* i_tm2,
-                                  const double* i_tm3,
-                                  const double* i_a,
-                                  const double* i_b,
-                                  double*       io_c,
-                                  const double* i_h1,
-                                  const double* i_h2,
-                                  const int     i_length) {
+
+LIBXSMM_API void stream_update_var_helmholtz(
+  const double* i_g1, const double* i_g2, const double* i_g3,
+  const double* i_tm1, const double* i_tm2, const double* i_tm3,
+  const double* i_a, const double* i_b, double* io_c,
+  const double* i_h1, const double* i_h2, int i_length);
+
+  LIBXSMM_API_DEFINITION void stream_update_var_helmholtz(
+  const double* i_g1, const double* i_g2, const double* i_g3,
+  const double* i_tm1, const double* i_tm2, const double* i_tm3,
+  const double* i_a, const double* i_b, double* io_c,
+  const double* i_h1, const double* i_h2, int i_length)
+{
   int l_n = 0;
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
@@ -554,7 +551,7 @@ void stream_update_var_helmholtz( const double* i_g1,
 #if !defined(__SSE3__)
 */
   {
-    for ( ; l_n < l_trip_prolog;  l_n++ ) {
+    for (; l_n < l_trip_prolog; l_n++) {
       io_c[l_n] =   i_h1[l_n]*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n])
                   + i_h2[l_n]*(i_b[l_n]*i_a[l_n]);
     }
@@ -563,7 +560,7 @@ void stream_update_var_helmholtz( const double* i_g1,
 #else
   {
     const __m128i mask   = _mm_set_epi32(0,0,-1,-1);
-    for ( ; l_n < l_trip_prolog;  l_n++ ) {
+    for (; l_n < l_trip_prolog; l_n++) {
       __m128d vec_g1, vec_g2, vec_g3, vec_tm1, vec_tm2, vec_tm3, vec_a, vec_b, vec_h1, vec_h2;
       vec_g1 = _mm_load_sd(&(i_g1[l_n]));
       vec_tm1 = _mm_load_sd(&(i_tm1[l_n]));
@@ -683,7 +680,7 @@ void stream_update_var_helmholtz( const double* i_g1,
     }
   }
 #else
-  for ( ; l_n < l_trip_stream;  l_n++ ) {
+  for (; l_n < l_trip_stream; l_n++) {
     io_c[l_n] =   i_h1[l_n]*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n])
                 + i_h2[l_n]*(i_b[l_n]*i_a[l_n]);
   }
@@ -693,7 +690,7 @@ void stream_update_var_helmholtz( const double* i_g1,
 #if !defined(__SSE3__)
 */
   {
-    for ( ; l_n < i_length;  l_n++ ) {
+    for (; l_n < i_length; l_n++) {
       io_c[l_n] =   i_h1[l_n]*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n])
                   + i_h2[l_n]*(i_b[l_n]*i_a[l_n]);
     }
@@ -702,7 +699,7 @@ void stream_update_var_helmholtz( const double* i_g1,
 #else
   {
     const __m128i mask   = _mm_set_epi32(0,0,-1,-1);
-    for ( ; l_n < i_length;  l_n++ ) {
+    for (; l_n < i_length; l_n++) {
       __m128d vec_g1, vec_g2, vec_g3, vec_tm1, vec_tm2, vec_tm3, vec_a, vec_b;
       vec_g1 = _mm_load_sd(&(i_g1[l_n]));
       vec_tm1 = _mm_load_sd(&(i_tm1[l_n]));
