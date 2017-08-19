@@ -292,9 +292,9 @@
   implicit none
 
   integer,intent(in) :: n1,n3
-  real(kind=CUSTOM_REAL),dimension(n1,5),intent(in) :: A
-  real(kind=CUSTOM_REAL),dimension(5,n3),intent(in) :: B1,B2,B3
-  real(kind=CUSTOM_REAL),dimension(n1,n3),intent(out) :: C1,C2,C3
+  real(kind=CUSTOM_REAL),dimension(n1,5),intent(in),target :: A
+  real(kind=CUSTOM_REAL),dimension(5,n3),intent(in),target :: B1,B2,B3
+  real(kind=CUSTOM_REAL),dimension(n1,n3),intent(out),target :: C1,C2,C3
 
   ! local parameters
   integer :: i,j
@@ -370,9 +370,9 @@
   implicit none
 
   integer,intent(in) :: n1,n3
-  real(kind=CUSTOM_REAL),dimension(n1,5),intent(in) :: A1,A2,A3
-  real(kind=CUSTOM_REAL),dimension(5,n3),intent(in) :: B
-  real(kind=CUSTOM_REAL),dimension(n1,n3),intent(out) :: C1,C2,C3
+  real(kind=CUSTOM_REAL),dimension(n1,5),intent(in),target :: A1,A2,A3
+  real(kind=CUSTOM_REAL),dimension(5,n3),intent(in),target :: B
+  real(kind=CUSTOM_REAL),dimension(n1,n3),intent(out),target :: C1,C2,C3
 
   ! local parameters
   integer :: i,j
@@ -428,9 +428,9 @@
   implicit none
 
   integer,intent(in) :: n1,n2,n3
-  real(kind=CUSTOM_REAL),dimension(n1,5,n3),intent(in) :: A1,A2,A3
-  real(kind=CUSTOM_REAL),dimension(5,n2),intent(in) :: B
-  real(kind=CUSTOM_REAL),dimension(n1,n2,n3),intent(out) :: C1,C2,C3
+  real(kind=CUSTOM_REAL),dimension(n1,5,n3),intent(in),target :: A1,A2,A3
+  real(kind=CUSTOM_REAL),dimension(5,n2),intent(in),target :: B
+  real(kind=CUSTOM_REAL),dimension(n1,n2,n3),intent(out),target :: C1,C2,C3
 
   ! local parameters
   integer :: i,j,k

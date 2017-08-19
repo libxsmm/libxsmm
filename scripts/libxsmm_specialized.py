@@ -40,9 +40,10 @@ if __name__ == "__main__":
         prefetch = int(sys.argv[5])
 
         mnkstr = str(m) + "_" + str(n) + "_" + str(k)
-        signature = ["a, b, c, pa, pb, pc", "a, b, c"][0 >= prefetch]
+        optional = ["", ", ..."][0 > prefetch]
+        signature = ["a, b, c", "a, b, c, pa, pb, pc"][0 < prefetch]
         if (2 != precision):
-            pfsig = [")",
+            pfsig = [optional + ")",
                      ", const float* pa"
                      ", const float* pb"
                      ", const float* pc)"][0 < prefetch]
@@ -84,7 +85,7 @@ if __name__ == "__main__":
             print("#endif")
             print("}")
         if (1 != precision):
-            pfsig = [")",
+            pfsig = [optional + ")",
                      ", const double* pa"
                      ", const double* pb"
                      ", const double* pc)"][0 < prefetch]

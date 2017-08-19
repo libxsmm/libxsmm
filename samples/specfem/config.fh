@@ -4,6 +4,9 @@
 !
 !-------------------------------------------------------------------
 
+! predefined symbols (preprocessor)
+#include "libxsmm_config.h"
+
 ! LIBXSMM for this test
 #define XSMM
 
