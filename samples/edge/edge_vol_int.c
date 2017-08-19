@@ -41,8 +41,7 @@
 
 #include <edge_proxy_common.h>
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-/* note: later on, this leads to (correct but) different than expected norm-values */
+#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
 # define drand48() ((double)rand() / RAND_MAX)
 # define srand48 srand
 #endif
@@ -74,7 +73,7 @@ int main(int argc, char* argv[])
   libxsmm_dmmfunction st_kernel;
 
   size_t num_elems;
-  size_t num_modes;
+  size_t num_modes = 9;
   size_t num_quants = 9;
   size_t num_cfr = 8;
   size_t num_reps;
