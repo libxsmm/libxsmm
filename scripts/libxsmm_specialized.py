@@ -84,6 +84,15 @@ if __name__ == "__main__":
                   "     LIBXSMM_BETA, c, " + str(m) + ");")
             print("#endif")
             print("}")
+            print
+            print
+            print("LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_smm_" + mnkstr + ")(")
+            print("  const float* a, const float* b, float* c" + pfsig + ";")
+            print("LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smm_" + mnkstr + ")(")
+            print("  const float* a, const float* b, float* c" + pfsig)
+            print("{")
+            print("  libxsmm_smm_" + mnkstr + "(" + signature + ");")
+            print("}")
         if (1 != precision):
             pfsig = [optional + ")",
                      ", const double* pa"
@@ -123,6 +132,15 @@ if __name__ == "__main__":
                   "    LIBXSMM_ALPHA, a, " + str(m) + ", b, " + str(k) + ",\n"
                   "     LIBXSMM_BETA, c, " + str(m) + ");")
             print("#endif")
+            print("}")
+            print
+            print
+            print("LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dmm_" + mnkstr + ")(")
+            print("  const double* a, const double* b, double* c" + pfsig + ";")
+            print("LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dmm_" + mnkstr + ")(")
+            print("  const double* a, const double* b, double* c" + pfsig)
+            print("{")
+            print("  libxsmm_dmm_" + mnkstr + "(" + signature + ");")
             print("}")
     else:
         sys.tracebacklimit = 0

@@ -98,7 +98,6 @@ if __name__ == "__main__":
                 "MNK_INTERFACE_LIST": ""
             }
             if (mnklist):
-                optional = [", OPTIONAL", ""][0 < prefetch]
                 substitute["MNK_INTERFACE_LIST"] += "\n"
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
@@ -118,13 +117,15 @@ if __name__ == "__main__":
                             "!DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_" +
                             mnkstr)
                 substitute["MNK_INTERFACE_LIST"] += "\n        INTERFACE"
+                optional = [", OPTIONAL", ""][0 < prefetch]
+                bindc = ["", "BIND(C)"][0 < prefetch]
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
                     if (2 != precision):
                         pfsiga = [") BIND(C)\n",
                                   "," + "&".rjust(26 - len(mnkstr)) +
-                                  "\n     &    pa, pb, pc) "
-                                  "BIND(C)\n"][0 != prefetch]
+                                  "\n     &    pa, pb, pc) " +
+                                  bindc + "\n"][0 != prefetch]
                         pfsigb = ["",
                                   "            REAL(C_FLOAT), "
                                   "INTENT(IN)" + optional + " :: "
@@ -145,8 +146,8 @@ if __name__ == "__main__":
                     if (1 != precision):
                         pfsiga = [") BIND(C)\n",
                                   "," + "&".rjust(26 - len(mnkstr)) +
-                                  "\n     &    pa, pb, pc) "
-                                  "BIND(C)\n"][0 != prefetch]
+                                  "\n     &    pa, pb, pc) " +
+                                  bindc + "\n"][0 != prefetch]
                         pfsigb = ["",
                                   "            REAL(C_DOUBLE), "
                                   "INTENT(IN)" + optional + " :: "
