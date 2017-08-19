@@ -89,6 +89,7 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
+ifneq (,$(strip $(FC)))
 $(OUTDIR)/specfem: $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME).$(LIBEXT)
 ifneq (0,$(KNC))
 ifneq (0,$(MPSS))
@@ -105,6 +106,9 @@ ifeq (0,$(MPSS))
 	@echo ""
 	$(FLD) -o $@ $(FTNOBJS) $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(call abslib,$(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 endif
+endif
+else
+.PHONY: $(OUTDIR)/specfem
 endif
 
 .PHONY: clean
@@ -132,8 +136,6 @@ ifneq (,$(wildcard $(OUTDIR))) # still exists
 	@rm -f $(XFILES) $(MODULES)
 endif
 
-
-
 ##
 ## dependencies
 ##
@@ -143,10 +145,10 @@ $(BLDDIR)/compute_forces_xsmm_dispatch-f90.o: $(BLDDIR)/specfem-f90.o
 $(BLDDIR)/compute_forces_xsmm_prefetch-f90.o: $(BLDDIR)/specfem-f90.o
 $(BLDDIR)/compute_forces_xsmm_static-f90.o: $(BLDDIR)/specfem-f90.o
 
-
 ##
 ## rules
 ##
+ifneq (,$(strip $(FC)))
 ifneq (0,$(KNC))
 ifneq (0,$(MPSS))
 $(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
@@ -163,5 +165,6 @@ $(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(
 
 $(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
+endif
 endif
 endif
