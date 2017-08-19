@@ -43,14 +43,14 @@ if __name__ == "__main__":
         optional = ["", ", ..."][0 > prefetch]
         signature = ["a, b, c", "a, b, c, pa, pb, pc"][0 < prefetch]
         if (2 != precision):
-            pfsig = [optional + ")",
+            pfsig = [optional + ")", "\n"
                      ", const float* pa"
                      ", const float* pb"
                      ", const float* pc)"][0 < prefetch]
             print
             print
-            print("LIBXSMM_API_DEFINITION void libxsmm_smm_" + mnkstr + "(")
-            print("  const float* a, const float* b, float* c" + pfsig)
+            print("LIBXSMM_API_DEFINITION void libxsmm_smm_" + mnkstr +
+                  "(const float* a, const float* b, float* c" + pfsig)
             print("{")
             print("#if defined(__AVX512F__) && "
                   "defined(LIBXSMM_GENTARGET_knl_sp)")
@@ -78,30 +78,32 @@ if __name__ == "__main__":
                 print("  LIBXSMM_UNUSED(pa);"
                       " LIBXSMM_UNUSED(pb);"
                       " LIBXSMM_UNUSED(pc);")
-            print("  LIBXSMM_INLINE_XGEMM(float, int, LIBXSMM_FLAGS,\n"
-                  "    " + str(m) + ", " + str(n) + ", " + str(k) + ",\n"
-                  "    LIBXSMM_ALPHA, a, " + str(m) + ", b, " + str(k) + ",\n"
-                  "     LIBXSMM_BETA, c, " + str(m) + ");")
+            print("  LIBXSMM_INLINE_XGEMM(float, int, LIBXSMM_FLAGS, " +
+                  str(m) + ", " + str(n) + ", " + str(k) +
+                  ", LIBXSMM_ALPHA, a, " + str(m) + ", b, " + str(k) +
+                  ", LIBXSMM_BETA, c, " + str(m) + ");")
             print("#endif")
             print("}")
             print
             print
-            print("LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_smm_" + mnkstr + ")(")
-            print("  const float* a, const float* b, float* c" + pfsig + ";")
-            print("LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smm_" + mnkstr + ")(")
-            print("  const float* a, const float* b, float* c" + pfsig)
+            print("LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_smm_" + mnkstr +
+                  ")(const float* a, const float* b, float* c" +
+                  pfsig + ";")
+            print("LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smm_" +
+                  mnkstr + ")(const float* a, const float* b, float* c" +
+                  pfsig)
             print("{")
             print("  libxsmm_smm_" + mnkstr + "(" + signature + ");")
             print("}")
         if (1 != precision):
-            pfsig = [optional + ")",
+            pfsig = [optional + ")", "\n"
                      ", const double* pa"
                      ", const double* pb"
                      ", const double* pc)"][0 < prefetch]
             print
             print
-            print("LIBXSMM_API_DEFINITION void libxsmm_dmm_" + mnkstr + "(")
-            print("  const double* a, const double* b, double* c" + pfsig)
+            print("LIBXSMM_API_DEFINITION void libxsmm_dmm_" + mnkstr +
+                  "(const double* a, const double* b, double* c" + pfsig)
             print("{")
             print("#if defined(__AVX512F__) && "
                   "defined(LIBXSMM_GENTARGET_knl_dp)")
@@ -127,18 +129,20 @@ if __name__ == "__main__":
                 print("  LIBXSMM_UNUSED(pa);"
                       " LIBXSMM_UNUSED(pb);"
                       " LIBXSMM_UNUSED(pc);")
-            print("  LIBXSMM_INLINE_XGEMM(double, int, LIBXSMM_FLAGS,\n"
-                  "    " + str(m) + ", " + str(n) + ", " + str(k) + ",\n"
-                  "    LIBXSMM_ALPHA, a, " + str(m) + ", b, " + str(k) + ",\n"
-                  "     LIBXSMM_BETA, c, " + str(m) + ");")
+            print("  LIBXSMM_INLINE_XGEMM(double, int, LIBXSMM_FLAGS, " +
+                  str(m) + ", " + str(n) + ", " + str(k) +
+                  ", LIBXSMM_ALPHA, a, " + str(m) + ", b, " + str(k) +
+                  ", LIBXSMM_BETA, c, " + str(m) + ");")
             print("#endif")
             print("}")
             print
             print
-            print("LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dmm_" + mnkstr + ")(")
-            print("  const double* a, const double* b, double* c" + pfsig + ";")
-            print("LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dmm_" + mnkstr + ")(")
-            print("  const double* a, const double* b, double* c" + pfsig)
+            print("LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dmm_" + mnkstr +
+                  ")(const double* a, const double* b, double* c" +
+                  pfsig + ";")
+            print("LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dmm_" +
+                  mnkstr + ")(const double* a, const double* b, double* c" +
+                  pfsig)
             print("{")
             print("  libxsmm_dmm_" + mnkstr + "(" + signature + ");")
             print("}")
