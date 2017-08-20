@@ -6,8 +6,8 @@ pages:
   - "MM: Matrix Multiplication": libxsmm_mm.md
   - "DNN: Deep Neural Networks": libxsmm_dnn.md
   - "AUX: Service Functions": libxsmm_aux.md
-  - "PROF: Performance": libxsmm_prof.md
-  - "TUNE: Performance": libxsmm_tune.md
+  - "PROF: Perf. Analysis": libxsmm_prof.md
+  - "TUNE: Customization": libxsmm_tune.md
   - "BE: Backend": libxsmm_be.md
 - Applications:
   - CP2K: cp2k.md
