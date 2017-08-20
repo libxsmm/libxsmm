@@ -142,7 +142,7 @@ At runtime, a build of the Intel-branch supports an environment variable CP2K_EL
 
 * **CP2K_ELPA=-1**: requests ELPA to be enabled; the actual kernel type depends on the ELPA configuration.
 * **CP2K_ELPA=0**: ELPA is not enabled by default (only on request via input file); same as non-Intel branch.
-* **CP2K_ELPA**=\<not-defined\>: requests ELPA-kernel according to CPUID (default with CP2K/Intel-branch).
+* **CP2K_ELPA**=&lt;not-defined&gt;: requests ELPA-kernel according to CPUID (default with CP2K/Intel-branch).
 
 ### Memory Allocation Wrapper
 
