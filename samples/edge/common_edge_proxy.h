@@ -50,10 +50,10 @@ static double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
 }
 
-void libxsmm_sparse_csr_reader( const char*             i_csr_file_in,
+static void libxsmm_sparse_csr_reader( const char*    i_csr_file_in,
                                 unsigned int**        o_row_idx,
                                 unsigned int**        o_column_idx,
-                                REALTYPE**              o_values,
+                                REALTYPE**            o_values,
                                 unsigned int*         o_row_count,
                                 unsigned int*         o_column_count,
                                 unsigned int*         o_element_count ) {

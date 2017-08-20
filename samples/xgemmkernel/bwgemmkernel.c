@@ -118,9 +118,8 @@ void run_gold_short( const short*                   i_a,
                      const short*                   i_b,
                      int*                           o_c,
                      const libxsmm_gemm_descriptor* i_xgemm_desc ) {
-  unsigned int l_m, l_n, l_k, l_k2, l_t, l_k_block;
-  double l_runtime = 0.0;
-  l_k_block = 2;
+  unsigned int l_m, l_n, l_k, l_k2, l_t, l_k_block = 2;
+  double l_runtime;
 
   const unsigned long long l_start = libxsmm_timer_tick();
 
@@ -147,9 +146,8 @@ void run_gold_byte( const unsigned char*          i_a,
                     const char*                   i_b,
                     int*                          o_c,
                     const libxsmm_gemm_descriptor* i_xgemm_desc ) {
-  unsigned int l_m, l_n, l_k, l_k2, l_t, l_k_block;
-  double l_runtime = 0.0;
-  l_k_block = 4;
+  unsigned int l_m, l_n, l_k, l_k2, l_t, l_k_block = 4;
+  double l_runtime;
 
   const unsigned long long l_start = libxsmm_timer_tick();
 
@@ -290,11 +288,11 @@ void max_error( const int*                     i_c,
 
   for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->m; l_i++) {
     for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++) {
+      const double error = LIBXSMM_ABS( i_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] - i_c[(l_j * i_xgemm_desc->ldc) + l_i]);
 #if 0
       printf("Entries in row %i, column %i, gold: %f, jit: %f\n", l_i+1, l_j+1, i_c_gold[(l_j*i_xgemm_desc->ldc)+l_i], i_c[(l_j*i_xgemm_desc->ldc)+l_i]);
 #endif
-      if (l_max_error < fabs( i_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] - i_c[(l_j * i_xgemm_desc->ldc) + l_i]))
-        l_max_error = fabs( i_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] - i_c[(l_j * i_xgemm_desc->ldc) + l_i]);
+      if (l_max_error < error) l_max_error = error;
     }
   }
 
@@ -325,8 +323,8 @@ int main(int argc, char* argv []) {
   int* l_c_w;
   int* l_c_gold_b = 0;
   unsigned char* l_a_b = 0;
-  char* l_b_b;
-  int* l_c_b;
+  char* l_b_b = 0;
+  int* l_c_b = 0;
 
   /* check argument count for a valid range */
   if ( argc != 14 ) {
@@ -439,7 +437,7 @@ int main(int argc, char* argv []) {
 
   /* print some output... */
   printf("------------------------------------------------\n");
-  printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i)", l_xgemm_desc.m, l_xgemm_desc.k, l_xgemm_desc.k, l_xgemm_desc.n, l_xgemm_desc.m, l_xgemm_desc.n);
+  printf("RUNNING (%ux%u) X (%ux%u) = (%ux%u)", l_xgemm_desc.m, l_xgemm_desc.k, l_xgemm_desc.k, l_xgemm_desc.n, l_xgemm_desc.m, l_xgemm_desc.n);
   if ( l_short_precision == 1 ) {
     printf(", int16\n");
   } else {
