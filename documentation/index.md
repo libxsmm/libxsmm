@@ -216,12 +216,12 @@ Although the `ltrace` (Linux utility) provides similar insight, the trace facili
 <a name="profiling"></a>Profiling an application, which uses LIBXSMM's JIT-code is well-supported. The library supports Intel&#160;VTune&#160;Amplifier and Linux&#160;perf. Details are given on how to include profiler support, and how to run the application.
 
 * [Profiling using Intel&#160;VTune&#160;Amplifier](libxsmm_prof.md#intelvtuneamplifier)
-* [Profiling using Linux&#160;perf](libxsmm_prof.md#linux-perf)
+* [Profiling using Linux&#160;perf](libxsmm_prof.md#linuxperf)
 
 <a name="tuning"></a>At build time, a variety of options exist to customize LIBXSMM. The library is setup for a broad range of use cases, which include sophisticated defaults for general use.
 
-* [Customize performance](libxsmm_tune.md#tuning)
-* <a name="Tuning auto-dispatch"></a>[Auto-dispatch](libxsmm_tune.md#auto-dispatch)
+* [Customizing performance](libxsmm_tune.md#tuning)
+* <a name="auto-dispatch"></a>[Tuning auto-dispatch](libxsmm_tune.md#auto-dispatch)
 
 <a name="results"></a>To find performance results of applications or performance reproducers, the repository provides an orphaned branch "results" which collects collateral material such as measured performance results along with explanatory figures. The results can be found at [https://github.com/hfp/libxsmm/tree/results#libxsmm-results](https://github.com/hfp/libxsmm/tree/results#libxsmm-results), or the results can be cloned as shown below.
 

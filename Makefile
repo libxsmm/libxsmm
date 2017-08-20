@@ -1349,7 +1349,7 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
 		-V author-meta="Hans Pabst, Alexander Heinecke" \
@@ -1377,7 +1377,7 @@ $(DOCDIR)/libxsmm_mm.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/libxsmm_mm.md
 		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation (MM)" \
 		-V author-meta="Hans Pabst" \
@@ -1405,7 +1405,7 @@ $(DOCDIR)/libxsmm_dnn.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/libxsmm_dnn.
 		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation (DNN)" \
 		-V author-meta="Alexander Heinecke, Hans Pabst" \
@@ -1433,7 +1433,7 @@ $(DOCDIR)/libxsmm_aux.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/libxsmm_aux.
 		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation (AUX)" \
 		-V author-meta="Hans Pabst" \
@@ -1461,7 +1461,7 @@ $(DOCDIR)/libxsmm_prof.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/libxsmm_pro
 		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation (PROF)" \
 		-V author-meta="Hans Pabst" \
@@ -1489,7 +1489,7 @@ $(DOCDIR)/libxsmm_tune.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/libxsmm_tun
 		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation (TUNE)" \
 		-V author-meta="Hans Pabst" \
@@ -1517,7 +1517,7 @@ $(DOCDIR)/libxsmm_be.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/libxsmm_be.md
 		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation (BE)" \
 		-V author-meta="Alexander Heinecke, Hans Pabst" \
@@ -1545,7 +1545,7 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="CP2K with LIBXSMM" \
 		-V author-meta="Hans Pabst" \
@@ -1573,7 +1573,7 @@ $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
 		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="TensorFlow with LIBXSMM" \
 		-V author-meta="Hans Pabst" \
@@ -1601,7 +1601,7 @@ $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
 		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Sample Code Summary" \
 		-V classoption=DIV=45 \

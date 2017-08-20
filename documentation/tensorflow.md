@@ -178,7 +178,7 @@ bazel run -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --
 
 ## Running Inception-v3 inference on the ImageNet dataset
 
-Please follow the instructions at the following [link](https://github.com/tensorflow/models/blob/master/inception/README.md#getting-started) to download and preprocess the Inception-V3 dataset:
+Please follow the instructions at the following [link](https://github.com/tensorflow/models/blob/master/inception/README.md#getting-started) to download and preprocess the Inception-v3 dataset:
 The relevant part of the instructions are duplicated below for convenience.
 
 ```bash
@@ -200,7 +200,7 @@ The final line of the output script should read something like this, note the nu
 ```
 
 Please download models/slim from this [link](https://github.com/tensorflow/models/tree/master/slim).
-Please download the pretrained weights for Inception-V3 from [here](http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz).
+Please download the pretrained weights for Inception-v3 from [here](http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz).
 Please setup the environment variables as follows:
 
 ```bash
