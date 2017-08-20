@@ -4,7 +4,7 @@
 
 LIBXSMM is a library for small dense and small sparse matrix-matrix multiplications as well as for deep learning primitives such as small convolutions targeting Intel Architecture. Small matrix multiplication kernels are generated for the following instruction set extensions: Intel&#160;SSE, Intel&#160;AVX, Intel&#160;AVX2, IMCI (KNCni) for Intel&#160;Xeon&#160;Phi coprocessors ("KNC"), and Intel&#160;AVX&#8209;512 as found in the Intel&#160;Xeon&#160;Phi processor family&#160;(Knights Landing "KNL", Knights Mill "KNM") and Intel&#160;Xeon processors (Skylake-SP "SKX"). Historically small matrix multiplications were only optimized for the Intel&#160;Many Integrated Core Architecture "MIC") using intrinsic functions, meanwhile optimized assembly code is targeting all afore mentioned instruction set extensions (static code generation), and Just&#8209;In&#8209;Time (JIT) code generation is targeting Intel&#160;AVX and beyond. Optimized code for small convolutions is JIT-generated for Intel&#160;AVX2 and Intel&#160;AVX&#8209;512.
 
-**<a name="what-is-a-small-matrix-multiplication"></a>What is a small matrix multiplication?** When characterizing the problem-size using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within *(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;128* (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library is typically used to generate code up to the specified [threshold](libxsmm_perf.md#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M or K dimension), but also miss to implement a tiling scheme to effectively utilize the cache hierarchy. For auto-dispatched problem-sizes above the configurable threshold (explicitly JIT'ted code is **not** subject to the threshold), LIBXSMM is falling back to BLAS. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, *TransA := 'N'*, and *TransB = 'N'*.
+**<a name="what-is-a-small-matrix-multiplication"></a>What is a small matrix multiplication?** When characterizing the problem-size using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within *(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;128* (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library is typically used to generate code up to the specified [threshold](libxsmm_tune.md#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M or K dimension), but also miss to implement a tiling scheme to effectively utilize the cache hierarchy. For auto-dispatched problem-sizes above the configurable threshold (explicitly JIT'ted code is **not** subject to the threshold), LIBXSMM is falling back to BLAS. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, *TransA := 'N'*, and *TransB = 'N'*.
 
 **<a name="what-is-a-small-convolution"></a>What is a small convolution?** In the last years, new workloads such as deep learning and more specifically convolutional neural networks (CNN) emerged, and are pushing the limits of today's hardware. One of the expensive kernels is a small convolution with certain kernel sizes (3, 5, or 7) such that calculations in the frequency space is not the most efficient method when compared with direct convolutions. LIBXSMM's current support for convolutions aims for an easy to use invocation of small (direct) convolutions, which are intended for CNN training and classification. The [Interface](#interface-for-convolutions) is currently ramping up, and the functionality increases quickly towards a broader set of use cases.
 
@@ -13,7 +13,7 @@ For more questions and answers, please have a look at [https://github.com/hfp/li
 Documented functionality and available domains:
 
 * MM: [Matrix Multiplication](#interface-for-matrix-multiplication)
-* DNN: [Convolutional Deep Neural Networks](#interface-for-convolutions)
+* DNN: [Deep Neural Networks](#interface-for-convolutions)
 * AUX: [Service Functions](#service-functions)
 * PERF: [Performance](#performance)
 * BE: [Backend](#jit-backend)
@@ -187,7 +187,7 @@ Since explicitly JIT-generated code (`libxsmm_?mmdispatch`) does not fall under 
 Registry: 20 MB (gemm=0 mcopy=14 tcopy=0)
 ```
 
-**NOTE**: Setting LIBXSMM_VERBOSE to a negative value will binary-dump each generated JIT kernel to a file with each file being named like the function name shown in [Intel&#160;VTune](libxsmm_perf.md#intelvtuneamplifier). Disassembly of the raw binary files can be accomplished by:
+**NOTE**: Setting LIBXSMM_VERBOSE to a negative value will binary-dump each generated JIT kernel to a file with each file being named like the function name shown in [Intel&#160;VTune](libxsmm_prof.md#intelvtuneamplifier). Disassembly of the raw binary files can be accomplished by:
 
 ```bash
 objdump -D -b binary -m i386 -M x86-64 [JIT-dump-file]
@@ -213,9 +213,23 @@ Although the `ltrace` (Linux utility) provides similar insight, the trace facili
 
 ## Performance
 
-<a name="profiling"></a>Profiling an application using LIBXSMM is well-supported using [Intel&#160;VTune&#160;Amplifier](libxsmm_perf.md#intelvtuneamplifier). Performance analysis using [Linux perf](libxsmm_perf.md#linux-perf) is supported as well. Both references give details on how to include profiler support in LIBXSMM and how to run the application. At build time, a variety of options exist for <a name="tuning"></a>tuning the library for specific needs. LIBXSMM is setup for a broad range of use cases with sophisticated defaults for general use. Details about customizing LIBXSMM can be found in a separate [document](libxsmm_perf.md#tuning), which also includes build settings that impact the <a name="auto-dispatch"></a>[auto-dispatch](libxsmm_perf.md#auto-dispatch) behavior.
+<a name="profiling"></a>Profiling an application, which uses LIBXSMM's JIT-code is well-supported. The library supports Intel&#160;VTune&#160;Amplifier and Linux&#160;perf. Details are given on how to include profiler support, and how to run the application.
 
-<a name="results"></a>To find performance results of applications or performance reproducers, the repository provides an orphaned branch "results" which collects collateral material such as measured performance results along with explanatory figures. The results can be found at [https://github.com/hfp/libxsmm/tree/results#libxsmm-results](https://github.com/hfp/libxsmm/tree/results#libxsmm-results). Please note that comparing performance results depends on whether the operands of the matrix multiplication are streamed or not. For example, running a matrix multiplication code many time with all operands covered by the L1 cache may have an emphasis towards an implementation which perhaps performs worse for the real workload (if this real workload needs to stream some or all operands from the main memory). Most of the [code samples](https://github.com/hfp/libxsmm/tree/master/samples) are aimed to reproduce performance results, and it is encouraged to model the exact case or to look at real [applications](#applications).
+* [Profiling using Intel&#160;VTune&#160;Amplifier](libxsmm_prof.md#intelvtuneamplifier)
+* [Profiling using Linux&#160;perf](libxsmm_prof.md#linux-perf)
+
+<a name="tuning"></a>At build time, a variety of options exist to customize LIBXSMM. The library is setup for a broad range of use cases, which include sophisticated defaults for general use.
+
+* [Customize performance](libxsmm_tune.md#tuning)
+* <a name="Tuning auto-dispatch"></a>[Auto-dispatch](libxsmm_tune.md#auto-dispatch)
+
+<a name="results"></a>To find performance results of applications or performance reproducers, the repository provides an orphaned branch "results" which collects collateral material such as measured performance results along with explanatory figures. The results can be found at [https://github.com/hfp/libxsmm/tree/results#libxsmm-results](https://github.com/hfp/libxsmm/tree/results#libxsmm-results), or the results can be cloned as shown below.
+
+```bash
+git clone --branch results https://github.com/hfp/libxsmm.git libxsmm-results
+```
+
+Please note that comparing performance results depends on whether the operands of the matrix multiplication are streamed or not. For example, running a matrix multiplication code many time with all operands covered by the L1 cache may have an emphasis towards an implementation which perhaps performs worse for the real workload (if this real workload needs to stream some or all operands from the main memory). Most of the [code samples](https://github.com/hfp/libxsmm/tree/master/samples) are aimed to reproduce performance results, and it is encouraged to model the exact case or to look at real [applications](#applications).
 
 ## JIT Backend
 
