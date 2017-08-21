@@ -551,7 +551,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(stream_update_var_helmholtz)(
   int l_trip_prolog = 0;
   int l_trip_stream = 0;
   assert(0 != i_length);
-  
+
   /* init the trip counts */
   stream_init( *i_length, (size_t)io_c, &l_trip_prolog, &l_trip_stream );
 
