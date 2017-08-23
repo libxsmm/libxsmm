@@ -2,7 +2,7 @@ site_name: LIBXSMM
 docs_dir: documentation
 pages:
 - index.md
-- LIBXSMM Domains:
+- Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md
   - "DNN: Deep Neural Networks": libxsmm_dnn.md
   - "AUX: Service Functions": libxsmm_aux.md
