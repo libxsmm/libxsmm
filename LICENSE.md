@@ -1,4 +1,4 @@
-BSD 3-Clause License
+# BSD 3-Clause License
 
 Copyright (c) 2009-2017, Intel Corporation
 All rights reserved.

@@ -430,7 +430,7 @@
     <None Include="..\.gitconfig" />
     <None Include="..\.gitattributes" />
     <None Include="..\.state.sh" />
-    <None Include="..\LICENSE" />
+    <None Include="..\LICENSE.md" />
     <None Include="..\src\template\libxsmm.f">
       <Filter>src\template</Filter>
     </None>

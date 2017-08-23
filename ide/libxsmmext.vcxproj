@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\LICENSE" />
+    <None Include="..\LICENSE.md" />
     <None Include="..\Makefile" />
     <None Include="..\Makefile.inc" />
     <None Include="..\README.md" />
