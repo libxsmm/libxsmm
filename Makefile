@@ -1332,7 +1332,9 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 	@$(FLOCK) $(SPLDIR)/nek "$(SPLDIR)/nek/rstr-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))"
 endif
 
-$(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/index.md
+$(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md \
+$(ROOTDIR)/documentation/libxsmm_mm.md $(ROOTDIR)/documentation/libxsmm_dnn.md $(ROOTDIR)/documentation/libxsmm_aux.md \
+$(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
@@ -1340,7 +1342,9 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/index.md
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		> $(TMPFILE)
-	@cd $(ROOTDIR)/documentation && iconv -t utf-8 index.md libxsmm_mm.md libxsmm_dnn.md libxsmm_aux.md libxsmm_prof.md libxsmm_tune.md libxsmm_be.md \
+	@cd $(ROOTDIR)/documentation && iconv -t utf-8 index.md \
+		libxsmm_mm.md libxsmm_dnn.md libxsmm_aux.md \
+		libxsmm_prof.md libxsmm_tune.md libxsmm_be.md \
 	| sed \
 		-e 's/\[\[..*\](..*)\]//g' \
 		-e 's/\[!\[..*\](..*)\](..*)//g' \

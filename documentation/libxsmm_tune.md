@@ -1,6 +1,6 @@
-# Customize Performance
+# Customization
 
-<a name="tuning"></a>## Tuning for Specific Targets
+## Tuning for Specific Targets<a name="tuning"></a>
 
 Specifying a code path is not really necessary if the JIT backend is not disabled. However, disabling JIT compilation, statically generating a collection of kernels, and targeting a specific instruction set extension for the entire library looks like:
 
@@ -47,7 +47,7 @@ To minimize the probability of key collisions (code cache), the preferred precis
 make PRECISION=2
 ```
 
-The default preference is to generate and register both single and double-precision code, and therefore no space in the dispatch table is saved (PRECISION=0). Specifying PRECISION=1\|2 is only generating and registering either single-precision or double-precision code.
+The default preference is to generate and register both single and double-precision code, and therefore no space in the dispatch table is saved (PRECISION=0). Specifying PRECISION=1&#124;2 is only generating and registering either single-precision or double-precision code.
 
 The automatic dispatch is highly convenient because existing GEMM calls can serve specialized kernels (even in a binary compatible fashion), however there is (and always will be) an overhead associated with looking up the code-registry and checking whether the code determined by the GEMM call is already JIT'ted or not. This lookup has been optimized using various techniques such as using specialized CPU instructions to calculate CRC32 checksums, to avoid costly synchronization (needed for thread-safety) until it is ultimately known that the requested kernel is not yet JIT'ted, and by implementing a small thread-local cache of recently dispatched kernels. The latter of which can be adjusted in size (only power-of-two sizes) but also disabled:
 

@@ -1,4 +1,4 @@
-# Profiling
+# Performance Analysis
 
 ## Intel&#160;VTune&#160;Amplifier
 

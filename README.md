@@ -110,25 +110,25 @@ At the expense of a limited set of functionality (`libxsmm_?gemm[_omp]`, `libxsm
 
 The library is agnostic with respect to the threading-runtime, and therefore an application is free to use any threading runtime (e.g., OpenMP). The library is also thread-safe, and multiple application threads can call LIBXSMM's routines concurrently. Forcing OpenMP (OMP=1) for the entire build of LIBXSMM is not supported and untested ('libxsmmext' is automatically built with OpenMP enabled).
 
-Similarly, an application is free to choose any BLAS or LAPACK library (if the link model available on the OS supports this), and therefore linking GEMM routines when linking LIBXSMM itself (by supplying BLAS=1\|2) may prevent a user from making this decision at the time of linking the actual application.
+Similarly, an application is free to choose any BLAS or LAPACK library (if the link model available on the OS supports this), and therefore linking GEMM routines when linking LIBXSMM itself (by supplying BLAS=1&#124;2) may prevent a user from making this decision at the time of linking the actual application.
 
 **NOTE**: LIBXSMM does not support to dynamically link 'libxsmm' or 'libxsmmext' ("so"), when BLAS is linked statically ("a"). If BLAS is linked statically, the static version of LIBXSMM must be used!
 
 ### Header-Only
 
-ersion&#160;1.4.4 introduced support for "header-only" usage in C and C++. By only including 'libxsmm_source.h' allows to get around building the library. However, this gives up on a clearly defined application binary interface (ABI). An ABI may allow for hot-fixes after deploying an application (when relying on the shared library form), and ensures to only rely on the public interface of LIBXSMM. In contrast, the header-only form not only exposes the internal implementation of LIBXSMM but may also reduce the turnaround time during development of an application (due to longer compilation times). The header file is intentionally named "libxsmm_**source**.h" since it relies on the [src](https://github.com/hfp/libxsmm/tree/master/src) folder (with the implications as noted earlier).
+Version&#160;1.4.4 introduced support for "header-only" usage in C and C++. By only including 'libxsmm_source.h' allows to get around building the library. However, this gives up on a clearly defined application binary interface (ABI). An ABI may allow for hot-fixes after deploying an application (when relying on the shared library form), and it may also ensure to only rely on the public interface of LIBXSMM. In contrast, the header-only form not only exposes the internal implementation of LIBXSMM but it can also reduce the turnaround time during development of an application (due to longer compilation times). The header file is intentionally named "libxsmm_**source**.h" since this header file relies on the [src](https://github.com/hfp/libxsmm/tree/master/src) directory (with the implications as noted earlier).
 
-To use the header-only form, 'libxsmm_source.h' needs to be generated. The build target shown below ('header-only') has been introduced in LIBXSMM&#160;1.6.2, but `make cheader` can be used alternatively (or instead with earlier versions). Generating the C interface is necessary since LIBXSMM should be configured (see [configuration](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h) template).
+To use the header-only form, 'libxsmm_source.h' needs to be *generated*. The build target shown below ('header-only') has been introduced in LIBXSMM&#160;1.6.2, but `make cheader` can be used alternatively (or must be used instead in case of earlier versions). Generating the C interface is necessary since the library must be configured (see [configuration](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h) template).
 
 ```bash
 make header-only
 ```
 
-**NOTE**: Differences between C and C++ makes a header-only implementation (which is portable between both languages) considerably "techy". Mixing C and C++ translation units (which rely on the header-only form of the library) is not supported. Also, remember that building an application now shares the same build settings with LIBXSMM. The latter is important for instance with respect to debug code (`-DNDEBUG`).
+**NOTE**: Differences between C and C++ makes a header-only implementation (which is portable between both languages) considerably "techy". Mixing C and C++ translation units (which rely on the header-only form of the library) is **not** supported. Also remember: to build an application now shares the same build settings with LIBXSMM! This is important; for instance to omit debug code inside of LIBXSMM (use `-DNDEBUG`).
 
 ## Installation
 
-Installing LIBXSMM makes possibly the most sense when combining the JIT backend ([enabled by default](documentation/libxsmm_be.md)) with a collection of statically generated SSE kernels (by specifying M, N, K, or MNK). If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags at runtime are not supporting a more specific instruction set extension (code path). Since the JIT backend does not support or generate SSE code by itself, the library is compiled by selecting SSE code generation if not specified otherwise (AVX=1\|2\|3, or with SSE=0 falling back to an "arch-native" approach). Limiting the static code path to SSE4.2 allows to practically target any deployed system, however using SSE=0 and AVX=0 together is falling back to generic code, and any static kernels are not specialized using the assembly code generator.
+Installing LIBXSMM makes possibly the most sense when combining the JIT backend ([enabled by default](documentation/libxsmm_be.md)) with a collection of statically generated SSE kernels (by specifying M, N, K, or MNK). If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags at runtime are not supporting a more specific instruction set extension (code path). Since the JIT backend does not support or generate SSE code by itself, the library is compiled by selecting SSE code generation if not specified otherwise (AVX=1&#124;2&#124;3, or with SSE=0 falling back to an "arch-native" approach). Limiting the static code path to SSE4.2 allows to practically target any deployed system, however using SSE=0 and AVX=0 together is falling back to generic code, and any static kernels are not specialized using the assembly code generator.
 
 There are two main mechanisms to install LIBXSMM (both mechanisms can be combined): (1)&#160;building the library in an out&#8209;of&#8209;tree fashion, and (2)&#160;installing into a certain location. Building in an out&#8209;of&#8209;tree fashion looks like:
 
@@ -161,17 +161,17 @@ void libxsmm_init(void);
 void libxsmm_finalize(void);
 ```
 
-## Matrix Multiplication
+## Matrix Multiplication<a name="interface-for-matrix-multiplication"></a>
 
-<a name="interface-for-matrix-multiplication"></a>The function domain for dense Matrix Multiplications (MM) provides special support for Small Matrix Multiplications (SMM) as well as the industry-standard interface for GEneral Matrix Matrix multiplication (GEMM). All details can be found in a separate [document](documentation/libxsmm_mm.md).
+This domain (MM) supports Small Matrix Multiplications (SMM), batches of multiple multiplications as well as the industry-standard interface for GEneral Matrix Matrix multiplication (GEMM). The details are covered in a separate [document](documentation/libxsmm_mm.md).
 
-## Deep Neural Networks
+## Deep Neural Networks<a name="interface-for-convolutions"></a>
 
-<a name="interface-for-convolutions"></a>The function domain for Deep Neural Networks (DNN) is detailed by a separate [document](documentation/libxsmm_dnn.md). Please also note the separate guide for [Getting Started using TensorFlow&trade; and LIBXSMM](documentation/tensorflow.md).
+This domain (DNN) is detailed by a separate [document](documentation/libxsmm_dnn.md). Please also note on how to [Get Started with TensorFlow&trade; using LIBXSMM](documentation/tensorflow.md).
 
 ## Service Functions
 
-For convenient operation of the library and to ease integration, a few service routines are available. They do not exactly belong to the core functionality of LIBXSMM (SMM or DNN domain), but users are encouraged to rely on these routines of the API. There are two categories: (1)&#160;routines which are available for C and Fortran, and (2)&#160;routines which are only available with the C interface.
+For convenient operation of the library and to ease integration, some service routines are available. These routines may not belong to the core functionality of LIBXSMM (SMM or DNN domain), but users are encouraged to use this domain (AUX). There are two categories: (1)&#160;routines which are available for C and Fortran, and (2)&#160;routines thats are only available per C interface.
 
 The [service function domain (AUX)](documentation/libxsmm_aux.md) contains routines for:
 
@@ -181,7 +181,7 @@ The [service function domain (AUX)](documentation/libxsmm_aux.md) contains routi
 * [Loading and storing data (I/O)](documentation/libxsmm_aux.md#meta-image-file-io)
 * [Allocating memory](documentation/libxsmm_aux.md#memory-allocation)
 
-## Running
+## Runtime Control<a name="running"></a>
 
 ### Verbose Mode
 
@@ -251,9 +251,9 @@ git clone --branch results https://github.com/hfp/libxsmm.git libxsmm-results
 
 Please note that comparing performance results depends on whether the operands of the matrix multiplication are streamed or not. For example, running a matrix multiplication code many time with all operands covered by the L1 cache may have an emphasis towards an implementation which perhaps performs worse for the real workload (if this real workload needs to stream some or all operands from the main memory). Most of the [code samples](https://github.com/hfp/libxsmm/tree/master/samples) are aimed to reproduce performance results, and it is encouraged to model the exact case or to look at real [applications](#applications).
 
-## JIT Backend
+## Backend<a name="jit-backend"></a>
 
-<a name="backend"></a>More information about the JIT backend and the code generator can be found in a separate [document](documentation/libxsmm_be.md), which also includes information about LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](documentation/libxsmm_be.md#generator-driver) programs.
+More information about the JIT-backend and the code generator can be found in a separate [document](documentation/libxsmm_be.md), which also includes information about LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](documentation/libxsmm_be.md#generator-driver) programs.
 
 ## Applications
 
