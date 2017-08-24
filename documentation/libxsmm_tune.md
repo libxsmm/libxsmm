@@ -1,6 +1,6 @@
 # Customize Performance
 
-## Tuning
+<a name="tuning"></a>## Tuning for Specific Targets
 
 Specifying a code path is not really necessary if the JIT backend is not disabled. However, disabling JIT compilation, statically generating a collection of kernels, and targeting a specific instruction set extension for the entire library looks like:
 

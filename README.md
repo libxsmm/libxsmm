@@ -6,14 +6,14 @@ LIBXSMM is a library for small dense and small sparse matrix-matrix multiplicati
 
 **<a name="what-is-a-small-matrix-multiplication"></a>What is a small matrix multiplication?** When characterizing the problem-size using the M, N, and K parameters, a problem-size suitable for LIBXSMM falls approximately within *(M&#160;N&#160;K)<sup>1/3</sup>&#160;&lt;=&#160;128* (which illustrates that non-square matrices or even "tall and skinny" shapes are covered as well). The library is typically used to generate code up to the specified [threshold](documentation/libxsmm_tune.md#auto-dispatch). Raising the threshold may not only generate excessive amounts of code (due to unrolling in M or K dimension), but also miss to implement a tiling scheme to effectively utilize the cache hierarchy. For auto-dispatched problem-sizes above the configurable threshold (explicitly JIT'ted code is **not** subject to the threshold), LIBXSMM is falling back to BLAS. In terms of GEMM, the supported kernels are limited to *Alpha := 1*, *Beta := \{ 1, 0 \}*, *TransA := 'N'*, and *TransB = 'N'*.
 
-**<a name="what-is-a-small-convolution"></a>What is a small convolution?** In the last years, new workloads such as deep learning and more specifically convolutional neural networks (CNN) emerged, and are pushing the limits of today's hardware. One of the expensive kernels is a small convolution with certain kernel sizes (3, 5, or 7) such that calculations in the frequency space is not the most efficient method when compared with direct convolutions. LIBXSMM's current support for convolutions aims for an easy to use invocation of small (direct) convolutions, which are intended for CNN training and classification. The [Interface](#interface-for-convolutions) is currently ramping up, and the functionality increases quickly towards a broader set of use cases.
+**<a name="what-is-a-small-convolution"></a>What is a small convolution?** In the last years, new workloads such as deep learning and more specifically convolutional neural networks (CNN) emerged, and are pushing the limits of today's hardware. One of the expensive kernels is a small convolution with certain kernel sizes (3, 5, or 7) such that calculations in the frequency space is not the most efficient method when compared with direct convolutions. LIBXSMM's current support for convolutions aims for an easy to use invocation of small (direct) convolutions, which are intended for CNN training and classification.
 
 For more questions and answers, please have a look at [https://github.com/hfp/libxsmm/wiki/Q&A](https://github.com/hfp/libxsmm/wiki/Q&A).
 
 Documented functionality and available domains:
 
-* MM: [Matrix Multiplication](#interface-for-matrix-multiplication)
-* DNN: [Deep Neural Networks](#interface-for-convolutions)
+* MM: [Matrix Multiplication](#matrix-multiplication)
+* DNN: [Deep Neural Networks](#deep-neural-networks)
 * AUX: [Service Functions](#service-functions)
 * PERF: [Performance](#performance)
 * BE: [Backend](#jit-backend)
@@ -21,6 +21,15 @@ Documented functionality and available domains:
 For additional functionality, please have a look at [https://github.com/hfp/libxsmm/tree/master/include](https://github.com/hfp/libxsmm/tree/master/include).
 
 ## Build Instructions
+
+## Overview
+
+The main interface file is *generated*, and it is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.h) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f). The main interface consists of the [general interface](#general-interface) as well as the [matrix multiplication](#matrix-multiplication) interface.
+
+There are two ways to incorporate LIBXSMM into an application:
+
+* [Classic Library (ABI)](#classic-library-abi) and [Link Instructions](#link-instructions)
+* [Header-Only](#header-only)
 
 ### Classic Library (ABI)
 
@@ -141,13 +150,24 @@ make PREFIX=/path/to/libxsmm-install STATIC=0 install
 make PREFIX=/path/to/libxsmm-install install
 ```
 
-## Interface for Matrix Multiplication
+## General Interface
 
-The function domain for dense Matrix Multiplications (MM) provides special support for Small Matrix Multiplications (SMM) as well as the industry-standard interface for GEneral Matrix Matrix multiplication (GEMM). All details can be found in a separate [document](documentation/libxsmm_mm.md).
+To initialize the dispatch-table or other internal resources, an explicit initialization routine helps to avoid lazy initialization overhead when calling LIBXSMM for the first time. The library deallocates internal resources at program exit, but also provides a companion to the afore mentioned initialization (finalize).
 
-## Interface for Convolutions
+```C
+/** Initialize the library; pay for setup cost at a specific point. */
+void libxsmm_init(void);
+/** De-initialize the library and free internal memory (optional). */
+void libxsmm_finalize(void);
+```
 
-The function domain for Deep Neural Networks (DNN) is detailed by a separate [document](documentation/libxsmm_dnn.md). Please also note the separate guide for [Getting Started using TensorFlow&trade; and LIBXSMM](documentation/tensorflow.md).
+## Matrix Multiplication
+
+<a name="interface-for-matrix-multiplication"></a>The function domain for dense Matrix Multiplications (MM) provides special support for Small Matrix Multiplications (SMM) as well as the industry-standard interface for GEneral Matrix Matrix multiplication (GEMM). All details can be found in a separate [document](documentation/libxsmm_mm.md).
+
+## Deep Neural Networks
+
+<a name="interface-for-convolutions"></a>The function domain for Deep Neural Networks (DNN) is detailed by a separate [document](documentation/libxsmm_dnn.md). Please also note the separate guide for [Getting Started using TensorFlow&trade; and LIBXSMM](documentation/tensorflow.md).
 
 ## Service Functions
 

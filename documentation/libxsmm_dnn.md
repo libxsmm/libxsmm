@@ -1,8 +1,8 @@
-# Interface for Convolutions
+# Deep Neural Networks
 
-To achieve best performance with small convolutions for CNN on SIMD architectures, a specific data layout must be used. As this layout depends on several architectural parameters, the goal of the LIBXSMM's interface is to hide this complexity from the user by providing copy-in and copy-out routines. This happens using opaque data types which themselves are later bound to a convolution operation.
+To achieve best performance with small convolutions for CNN on SIMD architectures, a specific data layout must be used. As this layout depends on several architectural parameters, the goal of LIBXSMM's interface is to hide this complexity from the user by providing copy-in and copy-out routines. This happens using opaque data types, which themselves are later bound to a convolution operation.
 
-The interface is available for C. There is a collection ([samples/dnn](https://github.com/hfp/libxsmm/tree/master/samples/dnn)) of benchmarks-style code samples with focus on Convolutional Neural Networks (CNNs). Further, an [example](https://github.com/hfp/libxsmm/tree/master/samples/iconv/README.md#image-convolution) performing an image convolution is provided as well. The general concept of the interface is circled around a few handle types: `libxsmm_dnn_layer`, `libxsmm_dnn_buffer`, `libxsmm_dnn_bias`, and `libxsmm_dnn_filter`. A handle is setup by calling a create-function:
+The interface is available for C. There is a collection of benchmark-style code samples ([samples/dnn](https://github.com/hfp/libxsmm/tree/master/samples/dnn)) with focus on Convolutional Deep Neural Networks (DNNs). Further, an [example](https://github.com/hfp/libxsmm/tree/master/samples/iconv/README.md#image-convolution) performing a single image convolution is provided as well. The general concept of the interface is circled around a few types: `libxsmm_dnn_layer`, `libxsmm_dnn_buffer`, `libxsmm_dnn_bias`, and `libxsmm_dnn_filter`. A handle of such a type is always setup by calling a create-function.
 
 ```C
 /** Simplified LIBXSMM types which are needed to create a handle. */

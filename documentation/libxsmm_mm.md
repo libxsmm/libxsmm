@@ -1,17 +1,4 @@
-# Interface for Matrix Multiplication
-
-## Overview
-
-The interface of the library is *generated* per the [Build Instructions](index.md#build-instructions), and it is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.h) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f).
-
-To initialize the dispatch-table or other internal resources, an explicit initialization routine helps to avoid lazy initialization overhead when calling LIBXSMM for the first time. The library deallocates internal resources at program exit, but also provides a companion to the afore mentioned initialization (finalize).
-
-```C
-/** Initialize the library; pay for setup cost at a specific point. */
-void libxsmm_init(void);
-/** De-initialize the library and free internal memory (optional). */
-void libxsmm_finalize(void);
-```
+# Matrix Multiplication
 
 ## Small Matrix Multiplication (SMM)
 
