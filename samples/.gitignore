@@ -21,8 +21,6 @@ pyfr/pyfr_gemm_rm
 scratch/scratch
 specfem/specfem
 spmdm/spmdm
-transpose/transpose
-transpose/transposef
 wrap/dgemm-blas
 wrap/dgemm-wrap
 xgemm/xgemm
