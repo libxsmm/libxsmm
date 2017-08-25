@@ -1,6 +1,6 @@
-# Service Functions
+## Service Functions
 
-## Getting and Setting the Target Architecture
+### Getting and Setting the Target Architecture
 
 This functionality is available for the C and Fortran interface. There are [ID based](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_cpuid.h#L47) (same for C and Fortran) and string based functions to query the code path (as determined by the CPUID), or to set the code path regardless of the presented CPUID features. The latter may degrade performance (if a lower set of instruction set extensions is requested), which can be still useful for studying the performance impact of different instruction set extensions.  
 **NOTE**: There is no additional check performed if an unsupported instruction set extension is requested, and incompatible JIT-generated code may be executed (unknown instruction signalled).
@@ -28,7 +28,7 @@ Available code paths (IDs and corresponding strings):
 
 The **bold** names are returned by `libxsmm_get_target_arch` whereas `libxsmm_set_target_arch` accepts all of the above strings (similar to the environment variable LIBXSMM_TARGET).
 
-## Getting and Setting the Verbosity
+### Getting and Setting the Verbosity
 
 The [verbose mode](index.md#verbose-mode) (level of verbosity) can be controlled using the C or Fortran API, and there is an environment variable which corresponds to `libxsmm_set_verbosity` (LIBXSMM_VERBOSE).
 
@@ -37,7 +37,7 @@ int libxsmm_get_verbosity(void);
 void libxsmm_set_verbosity(int level);
 ```
 
-## Timer Facility
+### Timer Facility
 
 Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface ([libxsmm_timer.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_timer.h) and [libxsmm.f](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f)). The timer is used in many of the [code samples](https://github.com/hfp/libxsmm/tree/master/samples) to measure the duration of executing various code regions. The timer is based on monotonic clock tick, which uses a platform-specific resolution. The counter may rely on the time stamp counter instruction (RDTSC), but this is not necessarily counting CPU cycles due to varying CPU clock speed (Turbo Boost), different clock domains (e.g., depending on the instructions executed), and other reasons (which are out of scope in this context).
 
@@ -46,7 +46,7 @@ unsigned long long libxsmm_timer_tick(void);
 double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1);
 ```
 
-## Meta Image File I/O
+### Meta Image File I/O
 
 Loading and storing data (I/O) is normally out of LIBXSMM's scope. However, comparing results (correctness) or writing files for visual inspection is clearly desired. This is particularly useful for the DNN domain. The MHD library domain provides support for the Meta Image File format (MHD). Tools such as [ITK-SNAP](http://itksnap.org/) or [ParaView](https://www.paraview.org/) can be used to inspect, compare, and modify images (even beyond two-dimensional images).
 
@@ -64,7 +64,7 @@ ElementDataFile = mhd_image.raw
 
 In the above case, a single channel (gray-scale) 202x134-image is described with pixel data stored separately (`mhd_image.raw`). Multi-channel images are expected to interleave the pixel data. The pixel type is per `libxsmm_mhd_elemtype` ([libxsmm_mhd.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_mhd.h#L38)).
 
-## Memory Allocation
+### Memory Allocation
 
 The C interface ([libxsmm_malloc.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_malloc.h)) provides functions for aligned memory one of which allows to specify the alignment (or to request an automatically selected alignment). The automatic alignment is also available with a `malloc` compatible signature. The size of the automatic alignment depends on a heuristic, which uses the size of the requested buffer.  
 **NOTE**: Only `libxsmm_free` is supported to deallocate the memory.

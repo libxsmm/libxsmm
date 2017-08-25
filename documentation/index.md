@@ -171,7 +171,7 @@ This domain (DNN) is detailed by a separate [document](libxsmm_dnn.md). Please a
 
 ## Service Functions
 
-For convenient operation of the library and to ease integration, some service routines are available. These routines may not belong to the core functionality of LIBXSMM (SMM or DNN domain), but users are encouraged to use this domain (AUX). There are two categories: (1)&#160;routines which are available for C and Fortran, and (2)&#160;routines thats are only available per C interface.
+For convenient operation of the library and to ease integration, some service routines are available. These routines may not belong to the core functionality of LIBXSMM (SMM or DNN domain), but users are encouraged to use this domain (AUX). There are two categories: (1)&#160;routines which are available for C and Fortran, and (2)&#160;routines that are only available per C interface.
 
 The [service function domain (AUX)](libxsmm_aux.md) contains routines for:
 

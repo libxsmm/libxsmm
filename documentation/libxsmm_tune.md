@@ -1,6 +1,6 @@
-# Customization
+## Customization
 
-## Tuning for Specific Targets<a name="tuning"></a>
+### Tuning for Specific Targets<a name="tuning"></a>
 
 Specifying a code path is not really necessary if the JIT backend is not disabled. However, disabling JIT compilation, statically generating a collection of kernels, and targeting a specific instruction set extension for the entire library looks like:
 
@@ -24,7 +24,7 @@ The prefetch interface is extending the signature of all kernels by three argume
 
 Further, the generated configuration ([template](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h)) of the library encodes the parameters for which the library was built for (static information). This helps optimizing client code related to the library's functionality. For example, the LIBXSMM_MAX_* and LIBXSMM_AVG_* information can be used with the LIBXSMM_PRAGMA_LOOP_COUNT macro to hint loop trip counts when handling matrices related to the problem domain of LIBXSMM.
 
-## Auto-dispatch
+### Auto-dispatch
 
 The function `libxsmm_?mmdispatch` helps amortizing the cost of the dispatch when multiple calls with the same M, N, and K are needed. The automatic code dispatch is orchestrating two levels:
 

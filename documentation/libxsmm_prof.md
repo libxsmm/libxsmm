@@ -1,6 +1,6 @@
-# Performance Analysis
+## Performance Analysis
 
-## Intel&#160;VTune&#160;Amplifier
+### Intel&#160;VTune&#160;Amplifier
 
 To analyze which kind of kernels have been called, and from where these kernels have been invoked (call stack), the library allows profiling its JIT code using Intel&#160;VTune&#160;Amplifier. To enable this support, VTune's root directory needs to be set at build-time of the library. Enabling symbols (SYM=1 or DBG=1) incorporates VTune's JIT Profiling API:
 
@@ -32,7 +32,7 @@ Intel&#160;VTune&#160;Amplifier presents invoked JIT code like functions, which 
 
 An application that cannot rely on LIBXSMM's build system can apply `-DLIBXSMM_VTUNE=2` during compilation, and link against `${VTUNE_AMPLIFIER_XE_2017_DIR}/lib64/libjitprofiling.a`. For example TensorFlow with LIBXSMM and Intel&#160;VTune&#160;Amplifier may use this way to gain insight into LIBXSMM's JIT-code (see [here](tensorflow.md#performance-profiling)).
 
-## Linux&#160;perf
+### Linux&#160;perf
 
 With LIBXSMM, there is both basic (`perf map`) and extended support (`jitdump`) when profiling an application. To enable perf support at runtime, the environment LIBXSMM_VERBOSE needs to be set to a negative value.
 

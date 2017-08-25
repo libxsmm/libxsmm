@@ -1332,7 +1332,7 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 	@$(FLOCK) $(SPLDIR)/nek "$(SPLDIR)/nek/rstr-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))"
 endif
 
-$(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md \
+$(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md \
 $(ROOTDIR)/documentation/libxsmm_mm.md $(ROOTDIR)/documentation/libxsmm_dnn.md $(ROOTDIR)/documentation/libxsmm_aux.md \
 $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
@@ -1346,6 +1346,7 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		libxsmm_mm.md libxsmm_dnn.md libxsmm_aux.md \
 		libxsmm_prof.md libxsmm_tune.md libxsmm_be.md \
 	| sed \
+		-e 's/## Matrix Multiplication$$/# LIBXSMM Domains\n## Matrix Multiplication/' \
 		-e 's/\[\[..*\](..*)\]//g' \
 		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
@@ -1364,7 +1365,7 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		-o $(notdir $@)
 	@rm $(TMPFILE)
 
-$(DOCDIR)/libxsmm_samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
+$(DOCDIR)/libxsmm_samples.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(SPLDIR)/*/README.md
 	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
@@ -1391,7 +1392,7 @@ $(DOCDIR)/libxsmm_samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
 		-o $@
 	@rm $(TMPFILE)
 
-$(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
+$(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/cp2k.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
@@ -1419,7 +1420,7 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
 		-o $(notdir $@)
 	@rm $(TMPFILE)
 
-$(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
+$(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/tensorflow.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \

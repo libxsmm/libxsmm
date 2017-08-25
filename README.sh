@@ -58,6 +58,7 @@ pandoc -D latex \
 cd ${DOCDIR}
 iconv -t utf-8 index.md libxsmm_mm.md libxsmm_dnn.md libxsmm_aux.md libxsmm_prof.md libxsmm_tune.md libxsmm_be.md \
 | sed \
+  -e 's/## Matrix Multiplication$/# LIBXSMM Domains\n## Matrix Multiplication/' \
   -e 's/\[\[..*\](..*)\]//g' \
   -e 's/\[!\[..*\](..*)\](..*)//g' \
   -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \

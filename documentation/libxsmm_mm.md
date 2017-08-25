@@ -1,6 +1,6 @@
-# Matrix Multiplication
+## Matrix Multiplication
 
-## Small Matrix Multiplication (SMM)
+### Small Matrix Multiplication (SMM)
 
 To perform the dense matrix-matrix multiplication *C<sub>m&#8239;x&#8239;n</sub> = alpha &middot; A<sub>m&#8239;x&#8239;k</sub> &middot; B<sub>k&#8239;x&#8239;n</sub> + beta &middot; C<sub>m&#8239;x&#8239;n</sub>*, the full-blown GEMM interface can be treated with "default arguments" (which is deviating from the BLAS standard, however without compromising the binary compatibility).
 
@@ -42,7 +42,7 @@ A more recently added variant of matrix multiplication is parallelized based on 
 libxsmm_?gemm_omp(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 ```
 
-## Manual Code Dispatch and Batched Matrix Multiplication
+### Manual Code Dispatch and Batched Matrix Multiplication
 
 Successively calling a kernel (i.e., multiple times) allows for amortizing the cost of the code dispatch. Moreover, to customize the dispatch mechanism, one can rely on the following interface. Overloaded function signatures are provided and allow to omit arguments (C++ and FORTRAN), which are then derived from the [configurable defaults](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h).
 
@@ -96,7 +96,7 @@ xmm = libxsmm_dmmdispatch(23/*m*/, 23/*n*/, 23/*k*/,
 
 Above, pointer-arguments of `libxsmm_dmmdispatch` can be NULL (or OPTIONAL in FORTRAN): for LDx this means a "tight" leading dimension, alpha, beta, and flags are given by a [default value](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h) (which is selected at compile-time), and for the prefetch strategy a NULL-argument refers to "no prefetch" (which is equivalent to an explicit `LIBXSMM_PREFETCH_NONE`).
 
-## Call Wrapper
+### Call Wrapper
 
 Since the library is binary compatible with existing GEMM calls (BLAS), these calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original BLAS library. There are two cases to consider:
 
