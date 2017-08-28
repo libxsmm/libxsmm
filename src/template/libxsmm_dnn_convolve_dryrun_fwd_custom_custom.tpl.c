@@ -63,12 +63,13 @@ while (blockifm % handle->blocksifm_blocking != 0) {
   blockifm++;
 }
 
-handle->block_fwd_ofm = 16;
+handle->block_fwd_ofm = 8;
 handle->block_fwd_ifm = blockifm;
 
-if ( (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
+if ((handle->ofh == 7 && handle->desc.u == 2) || (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
   block_j = 4;
 }
+
 while ( block_j % handle->fwd_ofh_rb != 0 ) {
   block_j--;
 }
@@ -216,8 +217,17 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
                     compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
 
+
+                    /*if (ltid == 0) {
+                      printf("Input Offset is %d\n", compute_indices[local_entries] );
+                      }*/
+
                     /* Initialize kernel variant with the one that prefetches everything */
-                    kernel_variant[local_entries/3] = 2;
+                    if (oj == 0 ) {
+                      kernel_variant[local_entries/3] = 0;
+                    } else {
+                      kernel_variant[local_entries/3] = 1;
+                    }
                     local_entries += 3;
 
                     tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
@@ -541,6 +551,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   compute_indices[local_entries+2] = 0;
   total_calls = local_entries/3;
 
+#if 0
   /* Adjust the kernel variant  */
   for (ii = 0; ii < total_calls-1; ii++) {
     cur_wt = compute_indices[ii*3+1];
@@ -553,5 +564,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       kernel_variant[ii] = 3;
     }
   }
+#endif
 }
 

@@ -56,6 +56,13 @@ LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)hand
 libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
 libxsmm_xmatcopyfunction jitted_zero_overwrite = handle->matcopy_fwd[1].xmatcopy;
 libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
+libxsmm_convfunction kernel2 = (libxsmm_convfunction)handle->code_fwd[3].xconv.sconv;
+libxsmm_convfunction kernel_pool[2];
+kernel_pool[0] = kernel;
+kernel_pool[1] = kernel2;
+char *variant = handle->kernel_fwd_variant_ptrs[ltid];
+int pool_index = 0;
+
 /* Initialize base pointers */
 if (handle->padding_flag == 1) {
   input_base = &LIBXSMM_VLA_ACCESS(5, input_buffer, 0, 0, 0, 0, 0,
@@ -80,7 +87,44 @@ if (n_segments) {
   code_stream = handle->fwd_code_segments[ltid];
   /* If we are in the img_par execution then avoid fine-grained copy in case of padding...  */
   if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-    for (pc = 0; pc < n_segments; pc++) {
+
+
+  if (handle->ofwp == 7) {
+     for (pc = 0; pc < n_segments; pc++) {
+      instr = code_stream[pc].segment_type;
+      n_convs = code_stream[pc].n_convs;
+      if (instr == IMG_LOOP_INIT) {
+        img = code_stream[pc].aux_index;
+        /* Apply padding  */
+#include "libxsmm_dnn_fwd_custom_custom_padding.tpl.c"
+      } else if ( instr == OFM_LOOP_INIT ) {
+        /* Apply bias if requested  */
+        if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
+#include "libxsmm_dnn_fwd_custom_custom_bias.tpl.c"
+        }
+        /* Overwrite output with zeros if requested */
+        if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_fwd != 1) ) {
+          jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
+        }
+      } else {
+        /* Placeholder for downconvert */
+      }
+      /* Run the stream of convolutions for this segment */
+      for (conv_i = 0; conv_i < n_convs; conv_i++) {
+        offset_i = stream[i];
+        offset_w = stream[i+1];
+        offset_o = stream[i+2];
+        pi = stream[i+3];
+        pw = stream[i+4];
+        po = stream[i+5];
+        kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+        pool_index++;
+        i+=3;
+      }
+    }
+  } else {
+  
+      for (pc = 0; pc < n_segments; pc++) {
       instr = code_stream[pc].segment_type;
       n_convs = code_stream[pc].n_convs;
       if (instr == IMG_LOOP_INIT) {
@@ -111,6 +155,8 @@ if (n_segments) {
         i+=3;
       }
     }
+  }
+
   } else {
     /* Use fine-grained operations since we are in the img_par path, so update relevant kernel pointers... */
     jitted_matcopy = handle->matcopy_fwd[2].xmatcopy;
@@ -152,16 +198,29 @@ if (n_segments) {
     }
   }
 } else {
-  /* Run the stream of convolutions, no extra operations are required...  */
-  for (pc = 0; pc < instr; pc++) {
-    offset_i = stream[i];
-    offset_w = stream[i+1];
-    offset_o = stream[i+2];
-    pi = stream[i+3];
-    pw = stream[i+4];
-    po = stream[i+5];
-    kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
-    i+=3;
+  /* Run the stream of convolutions, no extra operations are required... */
+  if (handle->ofwp == 7) {
+    for (pc = 0; pc < instr; pc+=1) {
+      offset_i = stream[i];
+      offset_w = stream[i+1]; 
+      offset_o = stream[i+2];
+      pi = stream[i+3];
+      pw = stream[i+4];
+      po = stream[i+5];
+      kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+      i+=3;  
+    }
+  } else { 
+    for (pc = 0; pc < instr; pc++) {
+      offset_i = stream[i];
+      offset_w = stream[i+1];
+      offset_o = stream[i+2];
+      pi = stream[i+3];
+      pw = stream[i+4];
+      po = stream[i+5];
+      kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+      i+=3;
+    }
   }
 }
 
