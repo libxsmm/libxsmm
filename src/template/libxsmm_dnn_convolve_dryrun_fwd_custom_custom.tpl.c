@@ -63,7 +63,7 @@ while (blockifm % handle->blocksifm_blocking != 0) {
   blockifm++;
 }
 
-handle->block_fwd_ofm = 8;
+handle->block_fwd_ofm = 16;
 handle->block_fwd_ifm = blockifm;
 
 if ((handle->ofh == 7 && handle->desc.u == 2) || (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
