@@ -566,7 +566,7 @@ int main(int argc, char* argv[])
   naive_input_nhwc      = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   filter_rsck           = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
   input_libxsmm         = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  filter_libxsmm        = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  filter_libxsmm        = (float*)libxsmm_aligned_malloc( 72 * nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
   output_libxsmm        = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   dinput_libxsmm        = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   dfilter_libxsmm       = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
@@ -701,6 +701,9 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_input,  (void*)naive_input_save,  LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_buffer( libxsmm_output, (void*)naive_output_save, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_filter( libxsmm_filter, (void*)naive_filter,      LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+
+
+
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_bias  ( libxsmm_bias,   (void*)naive_bias,        LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
     /* bind buffers and filter to handle */
@@ -712,6 +715,13 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_filter( libxsmm_handle, libxsmm_dfilter, LIBXSMM_DNN_GRADIENT_FILTER ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_bias  ( libxsmm_handle, libxsmm_bias,    LIBXSMM_DNN_REGULAR_BIAS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_bias  ( libxsmm_handle, libxsmm_dbias,   LIBXSMM_DNN_GRADIENT_BIAS ) );
+
+
+    int cpyloop;
+    for (cpyloop = 1; cpyloop < 72; cpyloop++) {
+       memcpy(filter_libxsmm + cpyloop*(nOfm*nIfm*kh*kw), filter_libxsmm, nOfm*nIfm*kh*kw*sizeof(float));
+    }
+
 
     /* let's allocate and bind scratch */
     scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status ), 2097152);
