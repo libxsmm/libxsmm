@@ -268,9 +268,46 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->blocksifm_blocking = 1;
     }
 
-    if (disable_ifm_in == 1) {   
-       handle->blocksifm_blocking = 1;
+    /* Logic for L2 tiling  */
+    unsigned int input_block_size = 28 * handle->blocksifm_blocking * 64;
+    unsigned int output_block_size = 28 * 64;
+    unsigned int weight_ofm_block = LIBXSMM_MIN(16, handle->blocksofm);
+    unsigned int weight_block_size = (handle->blocksifm_blocking * 64) * 64/2; /*  (weight_ofm_block * 64)/2; */
+    unsigned int total_size = input_block_size + output_block_size + weight_block_size;
+
+    if ( handle->blocksifm_blocking != 1 ) {
+      while (total_size > 450000 ) {
+        handle->blocksifm_blocking =  handle->blocksifm_blocking / 2;
+        input_block_size = 28 * handle->blocksifm_blocking * 64;
+        weight_block_size =  (handle->blocksifm_blocking * 64) * 64/2;   /*  (weight_ofm_block * 64)/2; */
+        total_size = input_block_size + output_block_size + weight_block_size;
+        if (handle->blocksifm_blocking == 1 ) {
+          break;
+        }
+      }
+      input_block_size = 28 * handle->blocksifm_blocking * 64;
+      weight_block_size =  (handle->blocksifm_blocking * 64) * 64/2; /*  ((weight_ofm_block+2) * 64/2);*/
+      total_size = input_block_size + output_block_size + weight_block_size;
+
+      /* Maximize reuse by bringing more ofms inside */
+#if 0
+      while ( total_size < 450000 ) {
+         weight_ofm_block += 2;
+         input_block_size = 28 * handle->blocksifm_blocking * 64;
+         weight_block_size =  (handle->blocksifm_blocking * 64) * ((weight_ofm_block+2) * 64)/2; 
+         total_size = input_block_size + output_block_size + weight_block_size;
+      }
+#endif
+      handle->block_fwd_ofm = weight_ofm_block;
+
+      printf("Picked IFM blocking equal to %d and OFM blocking equal to %d (total_size is %d)\n", handle->blocksifm_blocking, weight_ofm_block, total_size/1024);
     }
+
+    handle->block_fwd_ofm = weight_ofm_block;
+
+    /*if (disable_ifm_in == 1) {   
+       handle->blocksifm_blocking = 1;
+    }*/
 
     /* when we chose overwrite and we loop over all ifms, then let's use streaming stores */
     if (    ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) 

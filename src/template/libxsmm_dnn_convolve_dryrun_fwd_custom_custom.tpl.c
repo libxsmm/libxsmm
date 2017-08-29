@@ -58,12 +58,15 @@ if ( 0 == env_order || 0 == *env_order) {
 if (handle->desc.H >= 28 && handle->desc.R == 1) {
   loop_order = HWKC;
 }
+loop_order = HWKC;
 
 while (blockifm % handle->blocksifm_blocking != 0) {
   blockifm++;
 }
 
-handle->block_fwd_ofm = 16;
+blockifm = handle->blocksifm_blocking;
+
+/*handle->block_fwd_ofm = 16;*/
 handle->block_fwd_ifm = blockifm;
 
 if ((handle->ofh == 7 && handle->desc.u == 2) || (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
@@ -316,10 +319,10 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
       for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
         for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
-          for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
-            for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
-              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-                for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+          for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {     
+            for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+              for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+                for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {       
                   for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
 
                     ij = oj * handle->desc.u;
@@ -341,7 +344,13 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
 
                     /* Initialize kernel variant with the one that prefetches everything */
-                    kernel_variant[local_entries/3] = 2;
+                    /*kernel_variant[local_entries/3] = 2;*/
+                    if (oj == 0 ) {
+                      kernel_variant[local_entries/3] = 0;
+                    } else {
+                      kernel_variant[local_entries/3] = 1;
+                    }
+
                     local_entries += 3;
 
                     tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
