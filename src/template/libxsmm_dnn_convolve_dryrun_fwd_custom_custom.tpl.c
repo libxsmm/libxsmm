@@ -58,13 +58,13 @@ if ( 0 == env_order || 0 == *env_order) {
 if (handle->desc.H >= 28 && handle->desc.R == 1) {
   loop_order = HWKC;
 }
-loop_order = HWKC;
+/*loop_order = HWKC;*/
 
 while (blockifm % handle->blocksifm_blocking != 0) {
   blockifm++;
 }
 
-blockifm = handle->blocksifm_blocking;
+/*blockifm = handle->blocksifm_blocking;*/
 
 /*handle->block_fwd_ofm = 16;*/
 handle->block_fwd_ifm = blockifm;

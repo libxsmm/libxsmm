@@ -34,7 +34,7 @@
 #define CONVOLUTION_KERNEL 3
 
 const int ltid = tid-start_thread;
-int gs = 2; /*atoi(getenv("GSIZE"));*/
+int gs = 72; /*atoi(getenv("GSIZE"));*/
 const int tile_id = ltid/gs;
 /* Pointer variables  */
 const element_input_type *input_base, *input_ptr;
