@@ -183,6 +183,13 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 /* Perform reduction because we used thread private filters... */
 if (handle->upd_use_external_reduce == 0) {
   const int total_filter_size = reduce_work * handle->ofmblock;
+
+  if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+    for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
+        weight_ptr[j] = (element_filter_type)0;
+    }
+  }
+
   for ( i = 0; i < handle->desc.threads; i++ ) {
     remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*total_filter_size);
     for ( j = reduce_thr_begin; j < reduce_thr_end; j+= handle->ofmblock) {
