@@ -29,7 +29,7 @@
 /* Alexander Heinecke, Evangelos Georganas, Hans Pabst (Intel Corp.)
  ******************************************************************************/
 if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
-  if ( handle->use_thread_private_jit ) {
+  if (0) { /* ( handle->use_thread_private_jit ) {*/
 #include "libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt.tpl.c"
   } else {
 #include "libxsmm_dnn_convolve_st_upd_custom_custom_1.tpl.c"
