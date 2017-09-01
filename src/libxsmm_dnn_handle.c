@@ -275,6 +275,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     unsigned int weight_block_size = (handle->blocksifm_blocking * 64) * 64/2; /*  (weight_ofm_block * 64)/2; */
     unsigned int total_size = input_block_size + output_block_size + weight_block_size;
 
+#if 0
     if ( handle->blocksifm_blocking != 1 ) {
       while (total_size > 450000 ) {
         handle->blocksifm_blocking =  handle->blocksifm_blocking / 2;
@@ -302,6 +303,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
       /*printf("Picked IFM blocking equal to %d and OFM blocking equal to %d (total_size is %d)\n", handle->blocksifm_blocking, weight_ofm_block, total_size/1024);*/
     }
+
+#endif
 
     handle->block_fwd_ofm = weight_ofm_block;
 

@@ -143,7 +143,22 @@ if (handle->datatype != handle->datatype_itm) {
 
       if ( instr == IFM_LOOP_INIT )  {
         ifm1 = code_stream[pc].aux_index;
-        if ( handle->padding_flag == 1 ) {
+        if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+          element_input_type* temp_ptr;
+          if ( handle->padding_flag == 1 ) {
+            temp_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock);
+            LIBXSMM_PRAGMA_SIMD
+              for (ij = 0; ij < padded_h * padded_w * handle->ifmblock; ij++) {
+                temp_ptr[ij] = (element_output_type)0;
+              }   
+          } else {
+            temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock));
+            LIBXSMM_PRAGMA_SIMD
+              for (ij = 0; ij < handle->ifhp*handle->ifwp*handle->ifmblock*handle->fm_lp_block; ij++) {
+                temp_ptr[ij] = (element_output_type)0;
+              }
+          }
+        } else if ( handle->padding_flag == 1 ) {
           input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
           if (ifm1+1 != handle->blocksifm * handle->fm_lp_block) {
             /* Prefetch next ifm1, same image */
@@ -153,14 +168,6 @@ if (handle->datatype != handle->datatype_itm) {
             prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
           }
           jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
-        }
-
-        if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
-          element_input_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock));
-          LIBXSMM_PRAGMA_SIMD
-            for (ij = 0; ij < handle->ifhp*handle->ifwp*handle->ifmblock*handle->fm_lp_block; ij++) {
-              temp_ptr[ij] = (element_output_type)0;
-            }
         }
       }
 

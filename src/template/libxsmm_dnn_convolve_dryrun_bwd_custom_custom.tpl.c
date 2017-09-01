@@ -37,7 +37,12 @@ int block_j = 1;
 #if !defined(_OPENMP)
 int ltid;
 #endif
-handle->block_bwd_ofm = 8;
+
+if (handle->padding_flag == 1) {
+  handle->block_bwd_ofm = handle->blocksofm;
+} else {
+  handle->block_bwd_ofm = 8;
+}
 handle->block_bwd_ifm = 8;
 
 if ( (handle->ifhp == 14 && handle->desc.R != 3 ) ||  handle->ifhp == 27 || (handle->ifhp == 28 && handle->desc.R == 1) || handle->ifhp == 48 || handle->ifhp == 54 || handle->ifhp == 56 || handle->ifhp == 112 ) {
