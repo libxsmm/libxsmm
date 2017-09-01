@@ -112,7 +112,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     my_ifm_end = LIBXSMM_MIN((myIfmId+1) * nIfmBlocks, handle->blocksifm * fmlpb);
   }
 
-  mark_ifm_init = ((fmlpb != 1) || (handle->padding_flag == 1)) ? 1 : 0;
+  mark_ifm_init = ((handle->padding_flag == 1) || ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) ? 1 : 0;
   mark_ifm_close = 1;
   mark_img_init = 1;
 
@@ -138,21 +138,21 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     }
     for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
       for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
-        for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
-          for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
-            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ++ofm1) {
+        for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
+          for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1++) {
+            for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
               for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
                 for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
                   local_entries += 3;
 
                   if (mark_ifm_init == 1) {
-                    if (ofm1 == 0 && oj == 0 && oi == 0) {
+                    if ( (ofm1 == 0) && (oj == 0) && (oi == 0) ) {
                       n_code_segments++;
                     }
                   }
 
                   if (mark_ifm_close == 1) {
-                    if (ofm1 == handle->blocksofm-1  && oj >=  handle->ofh - handle->bwd_ofh_rb && oi >=  handle->ofw - handle->bwd_ofw_rb) {
+                    if ( (ofm1 == handle->blocksofm-1)  && (oj >=  handle->ofh - handle->bwd_ofh_rb)  && (oi >=  handle->ofw - handle->bwd_ofw_rb) ) {
                       n_code_segments++;
                     }
                   }
@@ -185,7 +185,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 2097152);
     handle->bwd_code_segments[ltid] = encoded_code_segments;
   } else {
-   encoded_code_segments = NULL;
+    encoded_code_segments = NULL;
   }
   local_entries = 0;
 
@@ -197,16 +197,16 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     }
     for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
       for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
-        for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
-          for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
-            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ++ofm1) {
+        for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
+          for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1++) {
+            for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
               for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
                 for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
                   ij = oj * handle->desc.u;
                   ii = oi * handle->desc.v;
 
                   if (mark_ifm_init == 1) {
-                    if (ofm1 == 0 && oj == 0 && oi == 0) {
+                    if ( (ofm1 == 0) && (oj == 0) && (oi == 0) ) {
                       tmp_expanded_stream[tmp_stream_index] = IFM_LOOP_INIT;
                       tmp_stream_index++;
                     }
@@ -228,7 +228,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                   tmp_stream_index++;
 
                   if (mark_ifm_close == 1) {
-                    if (ofm1 == handle->blocksofm-1  && oj >=  handle->ofh - handle->bwd_ofh_rb && oi >=  handle->ofw - handle->bwd_ofw_rb) {
+                    if ( (ofm1 == handle->blocksofm-1)  && (oj >=  handle->ofh - handle->bwd_ofh_rb) && (oi >=  handle->ofw - handle->bwd_ofw_rb) ) {
                       tmp_expanded_stream[tmp_stream_index] = IFM_LOOP_CLOSE;
                       tmp_stream_index++;
                     }
@@ -279,22 +279,22 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       }
       for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
         for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
-          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
-            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
-              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ++ofm1) {
+          for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
+            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1++) {
+              for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
                 for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
                   for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
                     ij = oj * handle->desc.u;
                     ii = oi * handle->desc.v;
                     if (mark_ifm_init == 1) {
-                      if (ofm1 == 0 && oj == 0 && oi == 0) {
+                      if ( (ofm1 == 0) && (oj == 0) && (oi == 0) ) {
                         encoded_code_segments[encoded_stream_index].aux_index = ifm1;
                         encoded_stream_index++;
                       }
                     }
 
                     if (mark_ifm_close == 1) {
-                      if (ofm1 == handle->blocksofm-1  && oj >=  handle->ofh - handle->bwd_ofh_rb && oi >=  handle->ofw - handle->bwd_ofw_rb) {
+                      if ( (ofm1 == handle->blocksofm-1)  && (oj >=  handle->ofh - handle->bwd_ofh_rb)  && (oi >=  handle->ofw - handle->bwd_ofw_rb)) {
                         encoded_code_segments[encoded_stream_index].aux_index = ifm1;
                         encoded_stream_index++;
                       }
