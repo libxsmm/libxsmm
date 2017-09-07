@@ -32,18 +32,20 @@
 #define IFM_LOOP_INIT 1
 #define IFM_LOOP_CLOSE 2
 #define CONVOLUTION_KERNEL 3
+#define MIXED 0
+#define HWKC 1
 
 int block_j = 1;
 #if !defined(_OPENMP)
 int ltid;
 #endif
+int blockofm = 8;
 
 if (handle->padding_flag == 1) {
   handle->block_bwd_ofm = handle->blocksofm;
 } else {
   handle->block_bwd_ofm = 8;
 }
-handle->block_bwd_ifm = 8;
 
 if ( (handle->ifhp == 14 && handle->desc.R != 3 ) ||  handle->ifhp == 27 || (handle->ifhp == 28 && handle->desc.R == 1) || handle->ifhp == 48 || handle->ifhp == 54 || handle->ifhp == 56 || handle->ifhp == 112 ) {
   block_j = 4;
@@ -54,6 +56,31 @@ while ( block_j % handle->bwd_ofh_rb != 0 ) {
 
 block_j = handle->bwd_ofh_rb;
 handle->block_bwd_oj = block_j;
+int loop_order = MIXED;
+
+/* Logic to use FWD generated convolution code ...  */
+if ( handle->desc.R == 1 && handle->desc.S == 1 && handle->use_nts_bwd ==1 ) {
+  block_j = 14;
+  handle->block_bwd_ofm = handle->blocksofm_blocking;
+  if (handle->desc.H >= 28 && handle->desc.R == 1) {
+    loop_order = HWKC;
+  }
+
+  while (blockofm % handle->blocksofm_blocking != 0) {
+    blockofm++;
+  }
+  handle->block_fwd_ofm = blockofm;
+
+  if ((handle->ofh == 7 && handle->desc.u == 2) || (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
+    block_j = 4;
+  }
+
+  while ( block_j % handle->bwd_ofh_rb != 0 ) {
+    block_j--;
+  }
+  handle->block_bwd_oj = block_j;
+}
+
 
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
@@ -121,124 +148,78 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   mark_ifm_close = 1;
   mark_img_init = 1;
 
+  if ( handle->desc.R == 1 && handle->desc.S == 1 && handle->use_nts_bwd == 1 ) {
+    mark_ifm_init = 0;
+    mark_ifm_close = 0;
+    mark_img_init = 0;
+  }
+
+
   /* Dryrun for transpose stream */
-  handle->n_entries_trans_bwd[ltid] = transpose_thr_end - transpose_thr_begin;
-  trans_indices = (int*) libxsmm_aligned_malloc( (transpose_thr_end - transpose_thr_begin + 1) * sizeof(int), 2097152);
-  handle->transpose_bwd_indices_ptrs[ltid] = trans_indices;
-  aux = 0;
-  for (comp = transpose_thr_begin; comp < transpose_thr_end; ++comp) {
-    ofm1 = comp / (handle->blocksifm * handle->desc.R * handle->desc.S);
-    ifm1 = (comp % (handle->blocksifm * handle->desc.R * handle->desc.S)) / (handle->desc.R * handle->desc.S);
-    kj = ((comp % (handle->blocksifm * handle->desc.R * handle->desc.S)) % (handle->desc.R * handle->desc.S)) / handle->desc.S;
-    ki = ((comp % (handle->blocksifm * handle->desc.R * handle->desc.S)) % (handle->desc.R * handle->desc.S)) % handle->desc.S;
+  if ( handle->desc.R == 1 && handle->desc.S == 1 && handle->use_nts_bwd == 1 ) {
+    handle->n_entries_trans_bwd[ltid] = 2* (transpose_thr_end - transpose_thr_begin);
+    trans_indices = (int*) libxsmm_aligned_malloc( 2 * (transpose_thr_end - transpose_thr_begin + 1) * sizeof(int), 2097152);
+    handle->transpose_bwd_indices_ptrs[ltid] = trans_indices;
+    aux = 0;
+    for (comp = transpose_thr_begin; comp < transpose_thr_end; ++comp) {
+      ofm1 = comp / (handle->blocksifm * handle->desc.R * handle->desc.S);
+      ifm1 = (comp % (handle->blocksifm * handle->desc.R * handle->desc.S)) / (handle->desc.R * handle->desc.S);
+      kj = ((comp % (handle->blocksifm * handle->desc.R * handle->desc.S)) % (handle->desc.R * handle->desc.S)) / handle->desc.S;
+      ki = ((comp % (handle->blocksifm * handle->desc.R * handle->desc.S)) % (handle->desc.R * handle->desc.S)) % handle->desc.S;
+      trans_indices[aux] = ( ( ( ( ( ( ofm1 * handle->blocksifm) + ifm1) * handle->desc.R) + kj) * handle->desc.S) +  ki) * handle->ofmblock * handle->ifmblock * handle->fm_lp_block;
+      trans_indices[aux+1] = ( ( ( ( ( ( ifm1 * handle->blocksofm) + ofm1) * handle->desc.R) + kj) * handle->desc.S) +  ki) * handle->ofmblock * handle->ifmblock * handle->fm_lp_block;
+      aux += 2;
+    }
     trans_indices[aux] = ( ( ( ( ( ( ofm1 * handle->blocksifm) + ifm1) * handle->desc.R) + kj) * handle->desc.S) +  ki) * handle->ofmblock * handle->ifmblock * handle->fm_lp_block;
-    aux++;
-  }
-  trans_indices[aux] = ( ( ( ( ( ( ofm1 * handle->blocksifm) + ifm1) * handle->desc.R) + kj) * handle->desc.S) +  ki) * handle->ofmblock * handle->ifmblock * handle->fm_lp_block;
-
-  /* Perform a dryrun to compute the memory requirements of the stream of indices */
-  for (img = my_img_start; img < my_img_end; img++) {
-    if (mark_img_init == 1) {
-      n_code_segments++;
-    }
-    for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
-      for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
-        for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
-          for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1++) {
-            for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
-              for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
-                for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
-                  local_entries += 3;
-
-                  if (mark_ifm_init == 1) {
-                    if ( (ofm1 == 0) && (oj == 0) && (oi == 0) ) {
-                      n_code_segments++;
-                    }
-                  }
-
-                  if (mark_ifm_close == 1) {
-                    if ( (ofm1 == handle->blocksofm-1)  && (oj >=  handle->ofh - handle->bwd_ofh_rb)  && (oi >=  handle->ofw - handle->bwd_ofw_rb) ) {
-                      n_code_segments++;
-                    }
-                  }
-
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  handle->n_entries_bwd[ltid] = local_entries/3;
-
-  /* Alocate auxiliary data structures for index jitting  */
-  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152);
-  handle->compute_bwd_indices_ptrs[ltid] = compute_indices;
-  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152);
-  handle->kernel_bwd_variant_ptrs[ltid] = kernel_variant;
-  handle->n_bwd_code_segments[ltid] = n_code_segments;
-  expanded_size = local_entries/3 + n_code_segments;
-  tmp_expanded_stream = (int*)(0 < expanded_size ? malloc(expanded_size * sizeof(int)) : 0);
-  assert(0 != tmp_expanded_stream); /* TODO: should never happen */
-#if !defined(NDEBUG)
-  memset(tmp_expanded_stream, IMG_LOOP_INIT, expanded_size * sizeof(int));
-#endif
-  tmp_stream_index = 0;
-  if (n_code_segments) {
-    encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 2097152);
-    handle->bwd_code_segments[ltid] = encoded_code_segments;
   } else {
-    encoded_code_segments = NULL;
-  }
-  local_entries = 0;
-
-  /* Second run to compute actual indices */
-  for (img = my_img_start; img < my_img_end; img++) {
-    if (mark_img_init == 1) {
-      tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
-      tmp_stream_index++;
+    handle->n_entries_trans_bwd[ltid] = transpose_thr_end - transpose_thr_begin;
+    trans_indices = (int*) libxsmm_aligned_malloc( (transpose_thr_end - transpose_thr_begin + 1) * sizeof(int), 2097152);
+    handle->transpose_bwd_indices_ptrs[ltid] = trans_indices;
+    aux = 0;
+    for (comp = transpose_thr_begin; comp < transpose_thr_end; ++comp) {
+      ofm1 = comp / (handle->blocksifm * handle->desc.R * handle->desc.S);
+      ifm1 = (comp % (handle->blocksifm * handle->desc.R * handle->desc.S)) / (handle->desc.R * handle->desc.S);
+      kj = ((comp % (handle->blocksifm * handle->desc.R * handle->desc.S)) % (handle->desc.R * handle->desc.S)) / handle->desc.S;
+      ki = ((comp % (handle->blocksifm * handle->desc.R * handle->desc.S)) % (handle->desc.R * handle->desc.S)) % handle->desc.S;
+      trans_indices[aux] = ( ( ( ( ( ( ofm1 * handle->blocksifm) + ifm1) * handle->desc.R) + kj) * handle->desc.S) +  ki) * handle->ofmblock * handle->ifmblock * handle->fm_lp_block;
+      aux++;
     }
-    for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
-      for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
-        for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
-          for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1++) {
+    trans_indices[aux] = ( ( ( ( ( ( ofm1 * handle->blocksifm) + ifm1) * handle->desc.R) + kj) * handle->desc.S) +  ki) * handle->ofmblock * handle->ifmblock * handle->fm_lp_block;
+  }
+
+
+  if ( handle->desc.R == 1 && handle->desc.S == 1 && handle->use_nts_bwd == 1 ) {
+
+    if (loop_order == MIXED) {
+      for (img = my_img_start; img < my_img_end; img++) {
+        for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
+          for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
             for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
+              for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
+                for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1 += handle->block_bwd_ofm) {
+                  for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
+                    for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {     
+                      local_entries += 3;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } else {
+      for (img = my_img_start; img < my_img_end; img++) {
+        for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
+          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
+            for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
               for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
-                for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
-                  ij = oj * handle->desc.u;
-                  ii = oi * handle->desc.v;
-
-                  if (mark_ifm_init == 1) {
-                    if ( (ofm1 == 0) && (oj == 0) && (oi == 0) ) {
-                      tmp_expanded_stream[tmp_stream_index] = IFM_LOOP_INIT;
-                      tmp_stream_index++;
+                for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {    
+                  for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
+                    for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1 += handle->block_bwd_ofm) {
+                      local_entries += 3;
                     }
                   }
-
-                  if ( handle->padding_flag == 1  ) {
-                    compute_indices[local_entries] =  ij * padded_w * handle->ifmblock + ii * handle->ifmblock;
-                  } else {
-                    compute_indices[local_entries] =  ( ( ( ( ( (img * handle->blocksifm *  handle->fm_lp_block ) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock;
-                  }
-                  compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm * handle->fm_lp_block)  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ofmblock *  handle->ifmblock *  handle->fm_lp_block;
-                  compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock * handle->fm_lp_block;
-
-                  /* Initialize kernel variant with the one that prefetches everything */
-                  kernel_variant[local_entries/3] = 2;
-                  local_entries += 3;
-
-                  tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
-                  tmp_stream_index++;
-
-                  if (mark_ifm_close == 1) {
-                    if ( (ofm1 == handle->blocksofm-1)  && (oj >=  handle->ofh - handle->bwd_ofh_rb) && (oi >=  handle->ofw - handle->bwd_ofw_rb) ) {
-                      tmp_expanded_stream[tmp_stream_index] = IFM_LOOP_CLOSE;
-                      tmp_stream_index++;
-                    }
-                  }
-
                 }
               }
             }
@@ -246,6 +227,208 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
         }
       }
     }
+
+    handle->n_entries_bwd[ltid] = local_entries/3;
+
+    /* Alocate auxiliary data structures for index jitting  */
+    compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152);
+    handle->compute_bwd_indices_ptrs[ltid] = compute_indices;
+    kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152);
+    handle->kernel_bwd_variant_ptrs[ltid] = kernel_variant;
+    handle->n_bwd_code_segments[ltid] = n_code_segments;
+    expanded_size = local_entries/3 + n_code_segments;
+    tmp_expanded_stream = (int*)(0 < expanded_size ? malloc(expanded_size * sizeof(int)) : 0);
+    assert(0 != tmp_expanded_stream); /* TODO: should never happen */
+#if !defined(NDEBUG)
+    memset(tmp_expanded_stream, IMG_LOOP_INIT, expanded_size * sizeof(int));
+#endif
+    tmp_stream_index = 0;
+    encoded_code_segments = NULL;
+    local_entries = 0;
+
+
+    if (loop_order == MIXED) {
+      for (img = my_img_start; img < my_img_end; img++) {
+        for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
+          for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
+            for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
+              for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
+                for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1 += handle->block_bwd_ofm) {
+                  for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
+                    for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
+
+                      ij = oj * handle->desc.u;
+                      ii = oi * handle->desc.v;
+
+                      compute_indices[local_entries+2] =  ( ( ( ( ( (img * handle->blocksifm *  handle->fm_lp_block ) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock;
+                      compute_indices[local_entries+1] = ( (ifm1 *  handle->blocksofm * handle->fm_lp_block)  +  ofm1 ) * handle->desc.R * handle->desc.S *  handle->ofmblock *  handle->ifmblock *  handle->fm_lp_block;
+                      compute_indices[local_entries] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock * handle->fm_lp_block;
+
+                      if (oj == 0 ) {
+                        kernel_variant[local_entries/3] = 0;
+                      } else {
+                        kernel_variant[local_entries/3] = 1;
+                      }
+                      local_entries += 3;
+
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } else {
+      for (img = my_img_start; img < my_img_end; img++) {
+        for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
+          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
+            for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
+              for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
+                for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {    
+                  for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
+                    for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1 += handle->block_bwd_ofm) {
+
+                      ij = oj * handle->desc.u;
+                      ii = oi * handle->desc.v;
+
+                      compute_indices[local_entries+2] =  ( ( ( ( ( (img * handle->blocksifm *  handle->fm_lp_block ) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock;
+                      compute_indices[local_entries+1] = ( (ifm1 *  handle->blocksofm * handle->fm_lp_block)  +  ofm1 ) * handle->desc.R * handle->desc.S *  handle->ofmblock *  handle->ifmblock *  handle->fm_lp_block;
+                      compute_indices[local_entries] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock * handle->fm_lp_block;
+
+                      if (oj == 0 ) {
+                        kernel_variant[local_entries/3] = 0;
+                      } else {
+                        kernel_variant[local_entries/3] = 1;
+                      }
+                      local_entries += 3;
+
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+  } else {
+
+    /* Perform a dryrun to compute the memory requirements of the stream of indices */
+
+    for (img = my_img_start; img < my_img_end; img++) {
+      if (mark_img_init == 1) {
+        n_code_segments++;
+      }
+      for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
+        for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
+          for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
+            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1++) {
+              for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
+                for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
+                  for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {     
+                    local_entries += 3;
+
+                    if (mark_ifm_init == 1) {
+                      if ( (ofm1 == 0) && (oj == 0) && (oi == 0) ) {
+                        n_code_segments++;
+                      }
+                    }
+
+                    if (mark_ifm_close == 1) {
+                      if ( (ofm1 == handle->blocksofm-1)  && (oj >=  handle->ofh - handle->bwd_ofh_rb)  && (oi >=  handle->ofw - handle->bwd_ofw_rb) ) {
+                        n_code_segments++;
+                      }
+                    }
+
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    handle->n_entries_bwd[ltid] = local_entries/3;
+
+    /* Alocate auxiliary data structures for index jitting  */
+    compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152);
+    handle->compute_bwd_indices_ptrs[ltid] = compute_indices;
+    kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152);
+    handle->kernel_bwd_variant_ptrs[ltid] = kernel_variant;
+    handle->n_bwd_code_segments[ltid] = n_code_segments;
+    expanded_size = local_entries/3 + n_code_segments;
+    tmp_expanded_stream = (int*)(0 < expanded_size ? malloc(expanded_size * sizeof(int)) : 0);
+    assert(0 != tmp_expanded_stream); /* TODO: should never happen */
+#if !defined(NDEBUG)
+    memset(tmp_expanded_stream, IMG_LOOP_INIT, expanded_size * sizeof(int));
+#endif
+    tmp_stream_index = 0;
+    if (n_code_segments) {
+      encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 2097152);
+      handle->bwd_code_segments[ltid] = encoded_code_segments;
+    } else {
+      encoded_code_segments = NULL;
+    }
+    local_entries = 0;
+
+    /* Second run to compute actual indices */
+    for (img = my_img_start; img < my_img_end; img++) {
+      if (mark_img_init == 1) {
+        tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
+        tmp_stream_index++;
+      }
+      for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
+        for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
+          for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
+            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1++) {
+              for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
+                for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
+                  for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {  
+
+                    ij = oj * handle->desc.u;
+                    ii = oi * handle->desc.v;
+
+                    if (mark_ifm_init == 1) {
+                      if ( (ofm1 == 0) && (oj == 0) && (oi == 0) ) {
+                        tmp_expanded_stream[tmp_stream_index] = IFM_LOOP_INIT;
+                        tmp_stream_index++;
+                      }
+                    }
+
+                    if ( handle->padding_flag == 1  ) {
+                      compute_indices[local_entries] =  ij * padded_w * handle->ifmblock + ii * handle->ifmblock;
+                    } else {
+                      compute_indices[local_entries] =  ( ( ( ( ( (img * handle->blocksifm *  handle->fm_lp_block ) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock;
+                    }
+                    compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm * handle->fm_lp_block)  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ofmblock *  handle->ifmblock *  handle->fm_lp_block;
+                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock * handle->fm_lp_block;
+
+                    /* Initialize kernel variant with the one that prefetches everything */
+                    kernel_variant[local_entries/3] = 2;
+                    local_entries += 3;
+
+                    tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                    tmp_stream_index++;
+
+                    if (mark_ifm_close == 1) {
+                      if ( (ofm1 == handle->blocksofm-1)  && (oj >=  handle->ofh - handle->bwd_ofh_rb) && (oi >=  handle->ofw - handle->bwd_ofw_rb) ) {
+                        tmp_expanded_stream[tmp_stream_index] = IFM_LOOP_CLOSE;
+                        tmp_stream_index++;
+                      }
+                    }
+
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
   }
 
   /* Process the expanded stream and encode the segments via run length encoding */
@@ -288,7 +471,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
             for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1++) {
               for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
                 for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
-                  for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
+                  for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {         
+
                     ij = oj * handle->desc.u;
                     ii = oi * handle->desc.v;
                     if (mark_ifm_init == 1) {
@@ -323,6 +507,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   total_calls = local_entries/3;
 
   /* Adjust the kernel variant  */
+#if 0
   for (ii = 0; ii < total_calls-1; ii++) {
     cur_wt = compute_indices[ii*3+1];
     next_wt = compute_indices[(ii+1)*3+1];
@@ -334,5 +519,10 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       kernel_variant[ii] = 3;
     }
   }
+#endif
+
 }
+
+#undef MIXED
+#undef HWKC
 

@@ -29,13 +29,13 @@ for ( l_kh = 0; l_kh < l_kh_trips; l_kh++) {
     libxsmm_x86_instruction_alu_imm(  io_generated_code,
         l_conv_kernel_config.alu_add_instruction,
         l_gp_reg_mapping.gp_reg_weight,
-        l_conv_kernel_config.l_ld_ifm_fil * i_conv_desc->fm_lp_block * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt );
+        i_conv_desc->weight_stride * l_conv_kernel_config.l_ld_ifm_fil * i_conv_desc->fm_lp_block * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt );
 
     if ( (i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 ) {
       libxsmm_x86_instruction_alu_imm(  io_generated_code,
           l_conv_kernel_config.alu_add_instruction,
           l_gp_reg_mapping.gp_reg_weight_pf,
-          l_conv_kernel_config.l_ld_ifm_fil * i_conv_desc->fm_lp_block * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt );
+          i_conv_desc->weight_stride * l_conv_kernel_config.l_ld_ifm_fil * i_conv_desc->fm_lp_block * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt );
     }
 
     /* adjust input pointer */
@@ -89,13 +89,13 @@ for ( l_kh = 0; l_kh < l_kh_trips; l_kh++) {
     libxsmm_x86_instruction_alu_imm(  io_generated_code,
         l_conv_kernel_config.alu_add_instruction,
         l_gp_reg_mapping.gp_reg_weight,
-        i_conv_desc->kw * l_conv_kernel_config.l_ld_ifm_fil * i_conv_desc->fm_lp_block * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt );
+        i_conv_desc->weight_stride *  i_conv_desc->kw * l_conv_kernel_config.l_ld_ifm_fil * i_conv_desc->fm_lp_block * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt );
 
     if ( (i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 ) {
       libxsmm_x86_instruction_alu_imm(  io_generated_code,
           l_conv_kernel_config.alu_add_instruction,
           l_gp_reg_mapping.gp_reg_weight_pf,
-          i_conv_desc->kw * l_conv_kernel_config.l_ld_ifm_fil * i_conv_desc->fm_lp_block * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt );
+          i_conv_desc->weight_stride * i_conv_desc->kw * l_conv_kernel_config.l_ld_ifm_fil * i_conv_desc->fm_lp_block * l_conv_kernel_config.l_ld_ofm_fil * l_conv_kernel_config.datatype_size_wt );
     }
   }
 
