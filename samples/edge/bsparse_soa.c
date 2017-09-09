@@ -192,8 +192,8 @@ int main(int argc, char* argv[]) {
       for ( l_k = 0; l_k < N_CRUNS; l_k++ ) {
         if (fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
                     - LIBXSMM_VLA_ACCESS(3, l_p_c, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) ) > l_max_error ) {
-          l_max_error = fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
-                                - LIBXSMM_VLA_ACCESS(3, l_p_c, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) );
+          l_max_error = (REALTYPE)fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
+                                      - LIBXSMM_VLA_ACCESS(3, l_p_c, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) );
         }
       }
     }
@@ -207,8 +207,8 @@ int main(int argc, char* argv[]) {
       for ( l_k = 0; l_k < N_CRUNS; l_k++ ) {
         if (fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
                     - LIBXSMM_VLA_ACCESS(3, l_p_c_asm, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) ) > l_max_error ) {
-          l_max_error = fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
-                                -LIBXSMM_VLA_ACCESS(3, l_p_c_asm, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) );
+          l_max_error = (REALTYPE)fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
+                                       -LIBXSMM_VLA_ACCESS(3, l_p_c_asm, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) );
         }
       }
     }

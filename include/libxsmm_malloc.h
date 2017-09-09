@@ -98,7 +98,8 @@ LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
 
 /**
  * Allocate aligned scratch memory. It is not supported
- * to query properties (libxsmm_get_malloc_info).
+ * to query properties per libxsmm_get_malloc_info, but
+ * libxsmm_get_scratch_info can used instead.
  */
 LIBXSMM_API void* libxsmm_scratch_malloc(size_t size,
   /**
@@ -112,6 +113,11 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size,
    */
   const void* caller);
 
+/**
+ * Binary form of libxsmm_scratch_malloc, which
+ * expands the call-context automatically. This
+ * macro is intentionlly lower case.
+ */
 #define libxsmm_aligned_scratch(size, alignment) \
   libxsmm_scratch_malloc(size, alignment, LIBXSMM_CALLER)
 

@@ -469,7 +469,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
 	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_config.py $(SRCDIR)/template/libxsmm_config.h \
-		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) > $@
@@ -536,7 +536,7 @@ $(INCDIR)/libxsmm.f: $(SCRDIR)/libxsmm_interface.py \
 	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.f \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) | \
 	$(PYTHON) $(SCRDIR)/libxsmm_config.py /dev/stdin \
-		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PREFETCH_TYPE) \
+		$(MAKE_ILP64) $(OFFLOAD) $(ALIGNMENT) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) | \
@@ -942,7 +942,7 @@ endif
 
 .PHONY: samples
 samples: cp2k nek smm wrap
-	@find $(SPLDIR) -type f -name Makefile | grep -v /specfem/ | grep -v /pyfr/ \
+	@find $(SPLDIR) -type f -name Makefile | grep -v /pyfr/ | grep -v /lstm/ \
 		$(patsubst %, | grep -v /%/,$^) | xargs -I {} dirname {} | xargs -I {} $(FLOCK) {} \
 		"cd {}; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) DEPSTATIC=$(STATIC) \
 		SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
@@ -1332,16 +1332,21 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 	@$(FLOCK) $(SPLDIR)/nek "$(SPLDIR)/nek/rstr-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))"
 endif
 
-$(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
-	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
+$(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md \
+$(ROOTDIR)/documentation/libxsmm_mm.md $(ROOTDIR)/documentation/libxsmm_dnn.md $(ROOTDIR)/documentation/libxsmm_aux.md \
+$(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md
+	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
 		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		> $(TMPFILE)
-	@iconv -t utf-8 $(ROOTDIR)/README.md \
+	@cd $(ROOTDIR)/documentation && iconv -t utf-8 index.md \
+		libxsmm_mm.md libxsmm_dnn.md libxsmm_aux.md \
+		libxsmm_prof.md libxsmm_tune.md libxsmm_be.md \
 	| sed \
+		-e 's/## Matrix Multiplication$$/# LIBXSMM Domains\n## Matrix Multiplication/' \
 		-e 's/\[\[..*\](..*)\]//g' \
 		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
@@ -1349,7 +1354,7 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
 		-V author-meta="Hans Pabst, Alexander Heinecke" \
@@ -1357,206 +1362,10 @@ $(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/README.md
 		-V linkcolor=black \
 		-V citecolor=black \
 		-V urlcolor=black \
-		-o $@
+		-o $(notdir $@)
 	@rm $(TMPFILE)
 
-$(DOCDIR)/libxsmm_aux.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/libxsmm_aux.md
-	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
-	@pandoc -D latex \
-	| sed \
-		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE)
-	@iconv -t utf-8 $(ROOTDIR)/documentation/libxsmm_aux.md \
-	| sed \
-		-e 's/\[\[..*\](..*)\]//g' \
-		-e 's/\[!\[..*\](..*)\](..*)//g' \
-		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
-		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		-e 's/----*//g' \
-	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
-		-V documentclass=scrartcl \
-		-V title-meta="LIBXSMM Documentation (AUX)" \
-		-V author-meta="Hans Pabst" \
-		-V classoption=DIV=45 \
-		-V linkcolor=black \
-		-V citecolor=black \
-		-V urlcolor=black \
-		-o $@
-	@rm $(TMPFILE)
-
-$(DOCDIR)/libxsmm_be.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/libxsmm_be.md
-	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
-	@pandoc -D latex \
-	| sed \
-		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE)
-	@iconv -t utf-8 $(ROOTDIR)/documentation/libxsmm_be.md \
-	| sed \
-		-e 's/\[\[..*\](..*)\]//g' \
-		-e 's/\[!\[..*\](..*)\](..*)//g' \
-		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
-		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		-e 's/----*//g' \
-	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
-		-V documentclass=scrartcl \
-		-V title-meta="LIBXSMM Documentation (BE)" \
-		-V author-meta="Alexander Heinecke, Hans Pabst" \
-		-V classoption=DIV=45 \
-		-V linkcolor=black \
-		-V citecolor=black \
-		-V urlcolor=black \
-		-o $@
-	@rm $(TMPFILE)
-
-$(DOCDIR)/libxsmm_dnn.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/libxsmm_dnn.md
-	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
-	@pandoc -D latex \
-	| sed \
-		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE)
-	@iconv -t utf-8 $(ROOTDIR)/documentation/libxsmm_dnn.md \
-	| sed \
-		-e 's/\[\[..*\](..*)\]//g' \
-		-e 's/\[!\[..*\](..*)\](..*)//g' \
-		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
-		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		-e 's/----*//g' \
-	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
-		-V documentclass=scrartcl \
-		-V title-meta="LIBXSMM Documentation (DNN)" \
-		-V author-meta="Alexander Heinecke, Hans Pabst" \
-		-V classoption=DIV=45 \
-		-V linkcolor=black \
-		-V citecolor=black \
-		-V urlcolor=black \
-		-o $@
-	@rm $(TMPFILE)
-
-$(DOCDIR)/libxsmm_mm.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/libxsmm_mm.md
-	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
-	@pandoc -D latex \
-	| sed \
-		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE)
-	@iconv -t utf-8 $(ROOTDIR)/documentation/libxsmm_mm.md \
-	| sed \
-		-e 's/\[\[..*\](..*)\]//g' \
-		-e 's/\[!\[..*\](..*)\](..*)//g' \
-		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
-		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		-e 's/----*//g' \
-	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
-		-V documentclass=scrartcl \
-		-V title-meta="LIBXSMM Documentation (MM)" \
-		-V author-meta="Hans Pabst" \
-		-V classoption=DIV=45 \
-		-V linkcolor=black \
-		-V citecolor=black \
-		-V urlcolor=black \
-		-o $@
-	@rm $(TMPFILE)
-
-$(DOCDIR)/libxsmm_perf.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/libxsmm_perf.md
-	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
-	@pandoc -D latex \
-	| sed \
-		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE)
-	@iconv -t utf-8 $(ROOTDIR)/documentation/libxsmm_perf.md \
-	| sed \
-		-e 's/\[\[..*\](..*)\]//g' \
-		-e 's/\[!\[..*\](..*)\](..*)//g' \
-		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
-		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		-e 's/----*//g' \
-	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
-		-V documentclass=scrartcl \
-		-V title-meta="LIBXSMM Documentation (PERF)" \
-		-V author-meta="Hans Pabst" \
-		-V classoption=DIV=45 \
-		-V linkcolor=black \
-		-V citecolor=black \
-		-V urlcolor=black \
-		-o $@
-	@rm $(TMPFILE)
-
-$(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/cp2k.md
-	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
-	@pandoc -D latex \
-	| sed \
-		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE)
-	@iconv -t utf-8 $(ROOTDIR)/documentation/cp2k.md \
-	| sed \
-		-e 's/\[\[..*\](..*)\]//g' \
-		-e 's/\[!\[..*\](..*)\](..*)//g' \
-		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
-		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		-e 's/----*//g' \
-	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
-		-V documentclass=scrartcl \
-		-V title-meta="CP2K with LIBXSMM" \
-		-V author-meta="Hans Pabst" \
-		-V classoption=DIV=45 \
-		-V linkcolor=black \
-		-V citecolor=black \
-		-V urlcolor=black \
-		-o $@
-	@rm $(TMPFILE)
-
-$(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/documentation/tensorflow.md
-	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
-	@pandoc -D latex \
-	| sed \
-		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE)
-	@iconv -t utf-8 $(ROOTDIR)/documentation/tensorflow.md \
-	| sed \
-		-e 's/\[\[..*\](..*)\]//g' \
-		-e 's/\[!\[..*\](..*)\](..*)//g' \
-		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
-		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		-e 's/----*//g' \
-	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
-		-V documentclass=scrartcl \
-		-V title-meta="TensorFlow with LIBXSMM" \
-		-V author-meta="Hans Pabst" \
-		-V classoption=DIV=45 \
-		-V linkcolor=black \
-		-V citecolor=black \
-		-V urlcolor=black \
-		-o $@
-	@rm $(TMPFILE)
-
-$(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
+$(DOCDIR)/libxsmm_samples.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(SPLDIR)/*/README.md
 	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
@@ -1573,7 +1382,7 @@ $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
 		-e 's/----*//g' \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
-		-f markdown_github+implicit_figures+all_symbols_escapable+subscript+superscript \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Sample Code Summary" \
 		-V classoption=DIV=45 \
@@ -1583,17 +1392,68 @@ $(DOCDIR)/samples.pdf: $(DOCDIR)/.make $(SPLDIR)/*/README.md
 		-o $@
 	@rm $(TMPFILE)
 
+$(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/cp2k.md
+	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
+	@pandoc -D latex \
+	| sed \
+		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
+		> $(TMPFILE)
+	@cd $(ROOTDIR)/documentation && iconv -t utf-8 cp2k.md \
+	| sed \
+		-e 's/\[\[..*\](..*)\]//g' \
+		-e 's/\[!\[..*\](..*)\](..*)//g' \
+		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+		-e 's/----*//g' \
+	| pandoc \
+		--latex-engine=xelatex --template=$(TMPFILE) --listings \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
+		-V documentclass=scrartcl \
+		-V title-meta="CP2K with LIBXSMM" \
+		-V author-meta="Hans Pabst" \
+		-V classoption=DIV=45 \
+		-V linkcolor=black \
+		-V citecolor=black \
+		-V urlcolor=black \
+		-o $(notdir $@)
+	@rm $(TMPFILE)
+
+$(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/tensorflow.md
+	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
+	@pandoc -D latex \
+	| sed \
+		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
+		> $(TMPFILE)
+	@cd $(ROOTDIR)/documentation && iconv -t utf-8 tensorflow.md \
+	| sed \
+		-e 's/\[\[..*\](..*)\]//g' \
+		-e 's/\[!\[..*\](..*)\](..*)//g' \
+		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+		-e 's/----*//g' \
+	| pandoc \
+		--latex-engine=xelatex --template=$(TMPFILE) --listings \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
+		-V documentclass=scrartcl \
+		-V title-meta="TensorFlow with LIBXSMM" \
+		-V author-meta="Hans Pabst" \
+		-V classoption=DIV=45 \
+		-V linkcolor=black \
+		-V citecolor=black \
+		-V urlcolor=black \
+		-o $(notdir $@)
+	@rm $(TMPFILE)
+
 .PHONY: documentation
 documentation: \
 	$(DOCDIR)/libxsmm.pdf \
-	$(DOCDIR)/libxsmm_aux.pdf \
-	$(DOCDIR)/libxsmm_be.pdf \
-	$(DOCDIR)/libxsmm_dnn.pdf \
-	$(DOCDIR)/libxsmm_mm.pdf \
-	$(DOCDIR)/libxsmm_perf.pdf \
+	$(DOCDIR)/libxsmm_samples.pdf \
 	$(DOCDIR)/cp2k.pdf \
-	$(DOCDIR)/tensorflow.pdf \
-	$(DOCDIR)/samples.pdf
+	$(DOCDIR)/tensorflow.pdf
 
 .PHONY: clean
 clean:
@@ -1729,8 +1589,9 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@cp -v $(ROOTDIR)/$(DOCDIR)/*.pdf $(INSTALL_ROOT)/$(PDOCDIR)
 	@cp -v $(ROOTDIR)/$(DOCDIR)/*.md $(INSTALL_ROOT)/$(PDOCDIR)
 	@cp -v $(ROOTDIR)/version.txt $(INSTALL_ROOT)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/*.md $(INSTALL_ROOT)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/LICENSE $(INSTALL_ROOT)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/CODE_OF_CONDUCT.md $(INSTALL_ROOT)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/CONTRIBUTING.md $(INSTALL_ROOT)/$(PDOCDIR)
+	@cp -v $(ROOTDIR)/LICENSE.md $(INSTALL_ROOT)/$(PDOCDIR)
 endif
 
 .PHONY: install-all

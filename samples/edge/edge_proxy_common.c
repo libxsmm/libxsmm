@@ -149,7 +149,7 @@ void edge_sparse_csr_reader_float( const char*           i_csr_file_in,
                                    unsigned int*         o_column_count,
                                    unsigned int*         o_element_count ) {
   double* l_values;
-  int i;
+  unsigned int i;
 
   /* read using double */
   edge_sparse_csr_reader_double( i_csr_file_in, o_row_idx, o_column_idx, &l_values,

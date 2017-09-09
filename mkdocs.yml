@@ -1,13 +1,17 @@
 site_name: LIBXSMM
 docs_dir: documentation
 pages:
-- Home: index.md
-- LIBXSMM Domains:
+- index.md
+- Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md
   - "DNN: Deep Neural Networks": libxsmm_dnn.md
   - "AUX: Service Functions": libxsmm_aux.md
-  - "PERF: Performance": libxsmm_perf.md
+  - "PROF: Perf. Profiling": libxsmm_prof.md
+  - "TUNE: Customization": libxsmm_tune.md
   - "BE: Backend": libxsmm_be.md
 - Applications:
   - CP2K: cp2k.md
   - TensorFlow: tensorflow.md
+- About:
+  - Contributing: CONTRIBUTING.md
+  - License: LICENSE.md
