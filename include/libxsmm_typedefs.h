@@ -250,6 +250,9 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int fm_lp_block;                     /* additional blocking for low precision datatypes of ifm */
   unsigned int use_nts;                         /* non-zero if intent is to overwrite the output buffer using streaming stores */
   unsigned int weight_stride;
+  unsigned int use_fwd_generator_for_bwd;
+  unsigned int stride_h_store;
+  unsigned int stride_w_store; 
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;

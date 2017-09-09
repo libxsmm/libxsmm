@@ -138,11 +138,14 @@ if (handle->datatype != handle->datatype_itm) {
       trans_offset_dst = trans_indices[trans_i+1];
       mat = wt_base + trans_offset;
       matT = wt_trans_base + trans_offset_dst;
+#include "transpose.tpl.c"
+      /*
       for (ti = 0; ti < handle->ofmblock; ti++) {
         for (tj = 0; tj < handle->ifmblock; tj++) {
           matT[ti+handle->ifmblock*tj] = mat[tj+handle->ofmblock*ti];
         }
       }
+      */
     }
 #if 0
     int ifm1ofm1, kj, ki, ofm1, ifm1, ifm2, ofm2;
@@ -168,13 +171,18 @@ if (handle->datatype != handle->datatype_itm) {
       trans_offset = trans_indices[trans_i];
       mat = wt_base + trans_offset;
       matT = wt_trans_base + trans_offset;
+#include "transpose.tpl.c"
+      /*
       for (ti = 0; ti < handle->ofmblock; ti++) {
         for (tj = 0; tj < handle->ifmblock; tj++) {
           matT[ti+handle->ifmblock*tj] = mat[tj+handle->ofmblock*ti];
         }
       }
+      */
     }
   }
+
+  
   libxsmm_barrier_wait(handle->barrier, ltid);
 
   if ( handle->desc.R == 1 && handle->desc.S == 1 && handle->use_nts_bwd == 1 ) {
