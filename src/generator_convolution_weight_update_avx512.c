@@ -163,17 +163,49 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
   l_ofw_trips = 1;
   }
 
+  if (1) {
 
-  if (i_conv_desc->transpose_ofw_ifm == 1) {
-  l_ofh_trips = 1;
-  l_ofw_trips = 1;
-  libxsmm_generator_convolution_weight_update_load_weight( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
-  libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop(  io_generated_code,
+     /* New clean kernel for convolution...  */
+     libxsmm_generator_convolution_weight_update_load_weight( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
+
+
+
+     /* Assembly loop start for ofh_blocks  */
+     libxsmm_generator_convolution_header_h_block_loop( io_generated_code, &l_loop_label_tracker,
+                                                         &l_conv_kernel_config, l_gp_reg_mapping.gp_reg_help_0 );
+
+     
+  
+     libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_qfma_all_pixels_inside(  io_generated_code,
+                                                            &l_gp_reg_mapping,
+                                                            &l_conv_kernel_config,
+                                                            i_conv_desc);
+     /* Assembly loop end for ofh_blocks */
+     /* Advance input register */
+     libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
+                                     l_gp_reg_mapping.gp_reg_input, i_conv_desc->ofh_rb *  i_conv_desc->ofw_rb * l_conv_kernel_config.l_ld_ifm_act * l_conv_kernel_config.datatype_size_in  );
+
+     /* Advance output register */
+     libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
+                                     l_gp_reg_mapping.gp_reg_output, i_conv_desc->ofw_rb * i_conv_desc->ofh_rb * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out  );
+
+     libxsmm_generator_convolution_footer_h_block_loop( io_generated_code, &l_loop_label_tracker,
+                                                        &l_conv_kernel_config, l_gp_reg_mapping.gp_reg_help_0, i_conv_desc->blocks_h );
+
+     libxsmm_generator_convolution_weight_update_store_weight( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
+
+
+  } else if (i_conv_desc->transpose_ofw_ifm == 1) {
+
+    l_ofh_trips = 1;
+    l_ofw_trips = 1;
+    libxsmm_generator_convolution_weight_update_load_weight( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
+    libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop(  io_generated_code,
                                                             &l_gp_reg_mapping,
                                                             &l_conv_kernel_config,
                                                              i_conv_desc,
                                                              i_conv_desc->ofh_rb, 0, 0/*false*/);
-  libxsmm_generator_convolution_weight_update_store_weight( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
+    libxsmm_generator_convolution_weight_update_store_weight( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
 
   } else { /* no transpose of ofw and ifm */
 
@@ -1080,3 +1112,63 @@ unroll_factor = i_conv_desc->ifm_block;
 
   } /* l_k_1 */
 }
+
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_qfma_all_pixels_inside( libxsmm_generated_code*               io_generated_code,
+                                                                                const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
+                                                                                const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
+                                                                                const libxsmm_convolution_weight_update_descriptor*     i_conv_desc) {
+  unsigned int l_n = 0;
+  unsigned int l_k_1 = 0, l_k_2 = 0;
+  unsigned int l_input_reg;
+  unsigned int l_disp;
+  unsigned int l_w;
+  unsigned int output_counter = 0;
+  unsigned int unroll_factor = i_conv_desc->ifm_block;
+  l_input_reg = i_gp_reg_mapping->gp_reg_input;
+
+  /* apply k blocking */
+  for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb; l_k_1++) {
+    for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb; l_k_2+=4 ) {
+      /* for quad, we need to load outputs in groups of 4 as this is the source block for qmadd */
+      for ( l_w = 0; l_w < 4; l_w++ ) {
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+                                          i_conv_kernel_config->instruction_set,
+                                          i_conv_kernel_config->vmove_instruction,
+                                          i_gp_reg_mapping->gp_reg_output,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          ((output_counter+l_w)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out) )
+                                          + ((l_k_1) * i_conv_desc->ofw_padded*i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out  ),
+                                          i_conv_kernel_config->vector_name, l_w,
+                                          0, 0 );
+      }
+      output_counter += 4;
+
+      if (output_counter == i_conv_desc->ofw_rb ) {
+        output_counter = 0;
+      }
+
+      /* compute vectorwidth (A) * column broadcast (B) */
+      for ( l_n = 0; l_n < unroll_factor; l_n++) {        
+        /* set displacement */
+        l_disp =   l_k_1 * (i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in)
+                 + l_k_2 *  i_conv_kernel_config->datatype_size_in  
+                 + l_n * ( i_conv_desc->ifw_padded *  i_conv_kernel_config->datatype_size_in);  
+
+        libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
+                                                  i_conv_kernel_config->instruction_set,
+                                                  LIBXSMM_X86_INSTR_V4FMADDPS,
+                                                  l_input_reg,
+                                                  LIBXSMM_X86_GP_REG_UNDEF,
+                                                  LIBXSMM_X86_GP_REG_UNDEF,
+                                                  l_disp,
+                                                  i_conv_kernel_config->vector_name,
+                                                  0,
+                                                  i_conv_kernel_config->vector_reg_count - unroll_factor + l_n );
+      }
+    } /* l_k_2 */
+  } /* l_k_1 */
+
+}
+

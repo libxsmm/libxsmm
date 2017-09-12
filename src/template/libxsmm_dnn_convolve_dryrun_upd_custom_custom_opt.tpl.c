@@ -47,6 +47,33 @@ if (block_j < handle->upd_ofh_rb ) {
   block_j = handle->upd_ofh_rb ;
 }
 
+block_j = handle->desc.H ;
+
+if ( handle->ofhp == 56 ) {
+  /* Pixel block is 196 Kbytes */
+ handle->block_upd_ofm = handle->blocksofm;
+ handle->block_upd_ifm = 1;
+
+}
+
+if ( handle->ofhp == 28 ) {
+  /* Pixel block is 49 Kbytes */
+ handle->block_upd_ofm = 3;
+ handle->block_upd_ifm = 3;
+}
+
+if ( handle->ofhp == 14 ) {
+  /* Pixel block is 12.25 Kbytes */
+ handle->block_upd_ofm = 4;
+ handle->block_upd_ifm = 8;
+}
+
+if ( handle->ofhp == 7 ) {
+  /* Pixel block is 3.06 Kbytes */
+ handle->block_upd_ofm = 8;
+ handle->block_upd_ifm = 16;
+}
+
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
 #else
@@ -94,10 +121,10 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   for (img = my_img_start; img < my_img_end; img++) {
     for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) {
-        for (ojb = 0; ojb < handle->ofh; ojb += block_j) {
-          for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1++ ) {
-            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {
-              for (oi__=0; oi__<num_ofw_strips; ++oi__) {
+        for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1++ ) {
+          for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {
+            for (oi__=0; oi__<num_ofw_strips; ++oi__) {
+              for (ojb = 0; ojb < handle->ofh; ojb += block_j) {
                 for (oj_ = ojb; oj_ < LIBXSMM_MIN(ojb+block_j,handle->ofh); oj_ += handle->upd_ofh_rb) {
                   for (kj=0; kj < kh; ++kj) {
                     for (ki=0; ki < KW; ++ki) {
@@ -131,9 +158,12 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   for (img = my_img_start; img < my_img_end; img++) {
     for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) {
-        for (ojb = 0; ojb < handle->ofh; ojb += block_j) {
-          for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1++ ) {
-            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {
+        for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1++ ) {
+          for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {
+
+
+
+            for (ojb = 0; ojb < handle->ofh; ojb += block_j) {
               for (oj_ = ojb; oj_ < LIBXSMM_MIN(ojb+block_j,handle->ofh); oj_ += handle->upd_ofh_rb) {
                 for (oi__=0; oi__<num_ofw_strips; ++oi__) {
                   for (kj=0; kj < kh; ++kj) {

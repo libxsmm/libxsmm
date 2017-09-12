@@ -218,6 +218,29 @@ void libxsmm_generator_convolution_footer_ifmOuter_loop( libxsmm_generated_code*
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_header_h_block_loop( libxsmm_generated_code*                   io_generated_code,
+                                                         libxsmm_loop_label_tracker*               io_loop_label_tracker,
+                                                         const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
+                                                         const unsigned int                        i_gp_reg_h_block_loop ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_h_block_loop, 0);
+  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_h_block_loop, 1);
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_footer_h_block_loop( libxsmm_generated_code*                       io_generated_code,
+                                                         libxsmm_loop_label_tracker*                   io_loop_label_tracker,
+                                                         const libxsmm_convolution_kernel_config*      i_conv_kernel_config,
+                                                         const unsigned int                            i_gp_reg_h_block_loop,
+                                                         const unsigned int                            i_h_blocking ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_cmp_instruction, i_gp_reg_h_block_loop, i_h_blocking );
+  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
+}
+
+
+
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_convolution_header_ifm_loop( libxsmm_generated_code*                   io_generated_code,
                                                     libxsmm_loop_label_tracker*               io_loop_label_tracker,
@@ -742,6 +765,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
   }
 
   /* adding to C, so let's load C */
+  if ( i_conv_desc->use_nts == 0  ) {
     for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -761,6 +785,19 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
         }
       }
     }
+  } else {
+    for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
+      for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vxor_instruction,
+                                                 i_conv_kernel_config->vector_name,
+                                                 l_vec_reg_acc_start + reg_count,
+                                                 l_vec_reg_acc_start + reg_count,
+                                                 l_vec_reg_acc_start + reg_count);
+      }
+    }
+  }
 }
 
 LIBXSMM_INTERNAL_API_DEFINITION
@@ -820,7 +857,8 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
     }
   }
 
-  /* adding to C, so let's load C */
+   if ( i_conv_desc->use_nts == 0  ) {
+    /* adding to C, so let's load C */
     for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -833,6 +871,20 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
                                     l_vec_reg_acc_start + reg_count , 0, 1 );
       }
     }
+  } else {
+    for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
+      for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                                    i_conv_kernel_config->instruction_set,
+                                    LIBXSMM_X86_INSTR_VMOVNTPS,
+                                    i_gp_reg_mapping->gp_reg_weight,
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                    (reg_count)*offset * i_conv_kernel_config->datatype_size_wt,
+                                    i_conv_kernel_config->vector_name,
+                                    l_vec_reg_acc_start + reg_count , 0, 1 );
+      }
+    } 
+  }
 }
 
 LIBXSMM_INTERNAL_API_DEFINITION

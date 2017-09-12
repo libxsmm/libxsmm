@@ -310,7 +310,8 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
   unsigned int ofh_unroll;                      /* this we use to unroll ofh loop */
   unsigned int ofw;                             /* upper bound of oi loop */
   unsigned int ofw_unroll;                      /* this we use to unroll ofw loop */
-
+  unsigned int blocks_h;
+  unsigned int use_nts;
   unsigned int transpose_ofw_ifm;               /* transpose ofw and ifm */
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
