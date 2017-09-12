@@ -1177,6 +1177,20 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
             handle->upd_ofh_rb = descriptor.ofh_rb * descriptor.blocks_h;
             handle->upd_ofw_rb = descriptor.ofw_rb;
 
+            if ( handle->ofhp == 28) {
+               descriptor.use_nts = 0;
+               descriptor.ofh_rb = 7;
+               descriptor.blocks_h = 1;
+               handle->upd_ofh_rb = 7;
+            }
+             
+            if ( handle->ofhp == 56 ) {
+               descriptor.use_nts = 0;
+               descriptor.ofh_rb = 4;
+               descriptor.blocks_h = 1;
+               handle->upd_ofh_rb = 4;
+            }
+
             descriptor.transpose_ofw_ifm = 0;
 #if !defined(NDEBUG)
             printf("DEBUG JIT of conv:\n  arch: %s\n  type: %s\n  ofm_block: %u\n  ifm_block: %u\n"
