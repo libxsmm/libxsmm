@@ -81,7 +81,6 @@ if ( handle->ofhp == 28 || handle->ofhp == 56 ) {
  handle->block_upd_ifm = 16;
 }
 
-
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
 #else

@@ -87,7 +87,6 @@ libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 || handle->ifmblock =
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-#if 0
 /* If padding is requested, copy the entire minibatch upfront (only if trnaspose is not requested, otherwise we combine trnaspose with padding) */
 if (handle->padding_flag == 1) {
   /* Initialize in parallel scratch5 to zero */
@@ -147,7 +146,6 @@ if ( handle->trans_ofw_ifm > 0 ) {
     }
   }
 }
-#endif
 
 /* Initialize base pointers */
 if (handle->padding_flag == 1) {
@@ -183,7 +181,6 @@ for (pc = 0; pc < instr; pc++) {
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-#if 0
 /* Perform reduction because we used thread private filters... */
 if (handle->upd_use_external_reduce == 0) {
   const int total_filter_size = reduce_work * handle->ofmblock;
@@ -214,5 +211,4 @@ if (handle->upd_use_external_reduce == 0) {
   }
 }
 libxsmm_barrier_wait(handle->barrier, ltid);
-#endif
 
