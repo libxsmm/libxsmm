@@ -171,8 +171,10 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
 
 
      /* Assembly loop start for ofh_blocks  */
-     libxsmm_generator_convolution_header_h_block_loop( io_generated_code, &l_loop_label_tracker,
+     if ( i_conv_desc->blocks_h >  1 ) {
+       libxsmm_generator_convolution_header_h_block_loop( io_generated_code, &l_loop_label_tracker,
                                                          &l_conv_kernel_config, l_gp_reg_mapping.gp_reg_help_0 );
+     }
 
      
   
@@ -180,17 +182,20 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
                                                             &l_gp_reg_mapping,
                                                             &l_conv_kernel_config,
                                                             i_conv_desc);
+
      /* Assembly loop end for ofh_blocks */
-     /* Advance input register */
-     libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
+     if ( i_conv_desc->blocks_h >  1 ) {
+       /* Advance input register */
+       libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_input, i_conv_desc->ofh_rb *  i_conv_desc->ofw_rb * l_conv_kernel_config.l_ld_ifm_act * l_conv_kernel_config.datatype_size_in  );
 
-     /* Advance output register */
-     libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
+       /* Advance output register */
+       libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_output, i_conv_desc->ofw_rb * i_conv_desc->ofh_rb * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out  );
 
-     libxsmm_generator_convolution_footer_h_block_loop( io_generated_code, &l_loop_label_tracker,
+       libxsmm_generator_convolution_footer_h_block_loop( io_generated_code, &l_loop_label_tracker,
                                                         &l_conv_kernel_config, l_gp_reg_mapping.gp_reg_help_0, i_conv_desc->blocks_h );
+     }
 
      libxsmm_generator_convolution_weight_update_store_weight( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
 
