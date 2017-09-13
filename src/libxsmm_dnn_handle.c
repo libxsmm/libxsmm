@@ -1190,6 +1190,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                  handle->upd_ofh_rb = 1;
                  descriptor.ofh_rb = 1;
                }
+
+               if ( handle->desc.R == 3 && handle->desc.S == 3 ) {
+                 handle->upd_ofh_rb = 7;
+                 descriptor.ofh_rb = 7;
+               }
             }
              
             if ( handle->ofhp == 56 ) {
@@ -1197,6 +1202,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                descriptor.ofh_rb = 1;
                descriptor.blocks_h = 1;
                handle->upd_ofh_rb = 1;
+               if ( handle->desc.R == 3 && handle->desc.S == 3 ) {
+                 handle->upd_ofh_rb = 2;
+                 descriptor.ofh_rb = 2;
+               }
             }
 
             descriptor.transpose_ofw_ifm = 0;
