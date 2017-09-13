@@ -890,10 +890,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_tensor(const libxsm
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != tensor) { /* it is not an error attempting to destroy a NULL-handle */
-    /* deallocate data components; not an error to deallocate a NULL-pointer, just deallocate if it's LIBXSMM private data */
-    if ( (tensor->layout->format & LIBXSMM_DNN_TENSOR_FORMAT_PTR) == 0 ) {
-      libxsmm_free(tensor->data);
-    }
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_tensor*)tensor);
   }
