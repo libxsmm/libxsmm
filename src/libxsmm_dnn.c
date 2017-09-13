@@ -208,6 +208,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
     handle->ifwp = conv_desc.W + 2*conv_desc.pad_w_in;
     handle->ofh = (conv_desc.H + 2*conv_desc.pad_h - conv_desc.R) / conv_desc.u + 1;
     handle->ofw = (conv_desc.W + 2*conv_desc.pad_w - conv_desc.S) / conv_desc.v + 1;
+    /* @FIXME, for now we error out on physical output padding */
+    if ( conv_desc.pad_w_out != 0 || conv_desc.pad_w_out != 0 ) {
+      *status = LIBXSMM_DNN_ERR_INVALID_PADDING;
+      free(handle);
+      handle = 0;
+      return 0;
+    }
     handle->ofhp = handle->ofh + 2*conv_desc.pad_h_out;
     handle->ofwp = handle->ofw + 2*conv_desc.pad_w_out;
     handle->avx512avx2fallback = 0;
