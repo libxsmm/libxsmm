@@ -738,7 +738,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_duplicate_tens
   dst_layout = 0;
 
   if (layout != 0 && layout->num_dims != 0) {
-    int i;
+    unsigned int dim = 0;
 
     dst_layout = (libxsmm_dnn_tensor_datalayout*) malloc(sizeof(libxsmm_dnn_tensor_datalayout));
     memset(dst_layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
@@ -749,9 +749,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_duplicate_tens
     dst_layout->custom_format = layout->custom_format;
     dst_layout->datatype = layout->datatype;
 
-    for ( i = 0; i < layout->num_dims; ++i ) {
-      dst_layout->dim_type[i] = layout->dim_type[i];
-      dst_layout->dim_size[i] = layout->dim_size[i];
+    for ( dim = 0; dim < layout->num_dims; ++dim ) {
+      dst_layout->dim_type[dim] = layout->dim_type[dim];
+      dst_layout->dim_size[dim] = layout->dim_size[dim];
     }
   } else {
     *status = LIBXSMM_DNN_ERR_INVALID_LAYOUT;
@@ -766,7 +766,7 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_dnn_compare_tensor_datalayout(const 
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (layout_a != 0 && layout_b != 0) {
-    int i = 0;
+    unsigned int dim = 0;
 
     if (layout_a->num_dims      != layout_b->num_dims)      { result = 1; }
     if (layout_a->format        != layout_b->format)        { result = 1; }
@@ -774,9 +774,9 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_dnn_compare_tensor_datalayout(const 
     if (layout_a->datatype      != layout_b->datatype)      { result = 1; }
 
     if (result == 0) {
-      for ( i = 0; i < layout_a->num_dims; ++i ) {
-        if ( layout_a->dim_type[i] != layout_b->dim_type[i] ) { result = 1; }
-        if ( layout_a->dim_size[i] != layout_b->dim_size[i] ) { result = 1; }
+      for ( dim = 0; dim < layout_a->num_dims; ++dim ) {
+        if ( layout_a->dim_type[dim] != layout_b->dim_type[dim] ) { result = 1; }
+        if ( layout_a->dim_size[dim] != layout_b->dim_size[dim] ) { result = 1; }
       }
     }
   } else {
@@ -809,7 +809,7 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_dnn_get_tensor_size(const libxsmm_dn
   *status = LIBXSMM_DNN_SUCCESS;
    
   if (0 != layout) {
-    int dim = 0;
+    unsigned int dim = 0;
     size = libxsmm_dnn_typesize(layout->datatype);
     for ( dim = 0; dim < layout->num_dims; ++dim ) {
       size *= layout->dim_size[dim];
@@ -827,7 +827,7 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_dnn_get_tensor_elements(const libxsm
   *status = LIBXSMM_DNN_SUCCESS;
    
   if (0 != layout) {
-    int dim = 0;
+    unsigned int dim = 0;
     for ( dim = 0; dim < layout->num_dims; ++dim ) {
       elements *= layout->dim_size[dim];
     }
