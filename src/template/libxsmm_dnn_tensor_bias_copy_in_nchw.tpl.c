@@ -26,53 +26,28 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Evangelos Georganas, Hans Pabst (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-/* @TODO: use for-loops to potentially leverage NUMA in the future */
-int i1, i2, i3, i4, i5, i6, i7;
-int ifmb = filter->ifmb;
-int bifm = filter->bifm;
-int ofmb = filter->ofmb;
-int bofm = filter->bofm;
-int R = filter->R;
-int S = filter->S;
-int lpb = filter->lpb;
-int C = ifmb * bifm * lpb;
-LIBXSMM_VLA_DECL(7, element_type, handle_data_1, (element_type*)filter->data, ifmb, R, S, bifm, bofm, lpb);
-LIBXSMM_VLA_DECL(6, element_type, handle_data_2, (element_type*)filter->data, ifmb, R, S, bifm, bofm);
-LIBXSMM_VLA_DECL(4, const element_type, user_data, (const element_type*)data, ifmb * bifm * lpb, R, S);
+/* use for-loops to potentially leverage NUMA in the future */
+int i1, i2, i3;
+#if defined(LIBXSMM_DNN_COPY_LOW_PRECISION)
+int lpb = tensor->layout->dim_size[0];
+int bfm = tensor->layout->dim_size[1];
+int fmb = tensor->layout->dim_size[2];
+#else
+int lpb = 1;
+int bfm = tensor->layout->dim_size[0];
+int fmb = tensor->layout->dim_size[1];
+#endif
 
-if (filter->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
-  for (i1 = 0; i1 < ofmb; ++i1) {
-    for (i2 = 0; i2 < ifmb; ++i2) {
-      for (i3 = 0; i3 < R; ++i3) {
-        for (i4 = 0; i4 < S; ++i4) {
-          for (i5 = 0; i5 < bifm; ++i5) {
-            for (i6 = 0; i6 < bofm; ++i6) {
-              for (i7 = 0; i7 < lpb; ++i7) {
-                LIBXSMM_VLA_ACCESS(7, handle_data_1, i1, i2, i3, i4, i5, i6, i7, ifmb, R, S, bifm, bofm, lpb) =
-                LIBXSMM_VLA_ACCESS(4, user_data, i1 * bofm + i6, (i2*bifm*lpb) + (i5*lpb) + i7, i3, i4, ifmb * bifm * lpb, R, S);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-} else if (filter->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-  for ( i1 = 0; i1 < ofmb; i1++ ) {
-    for ( i2 = 0; i2 < ifmb; i2++ ) {
-      for ( i3 = 0; i3 < R; i3++ ) {
-        for ( i4 = 0; i4 < S; i4++ ) {
-          for ( i5 = 0; i5 < bifm; i5++ ) {
-            for ( i6 = 0; i6 < bofm; i6++ ) {
-              LIBXSMM_VLA_ACCESS(6, handle_data_2, i1, i2, i3, i4, i5, i6, ifmb, R, S, bifm, bofm) =
-              LIBXSMM_VLA_ACCESS(4, user_data, (i1*bofm)+i6, (i2*bifm)+i5, i3, i4, C, R, S);
-            }
-          }
-        }
-      }
+const element_type* user_data = (const element_type*)data;
+LIBXSMM_VLA_DECL(3, element_type, handle_data, (element_type*)tensor->data, bfm, lpb);
+
+for (i1 = 0; i1 < fmb; ++i1) {
+  for (i2 = 0; i2 < bfm; ++i2) {
+    for (i3 = 0; i3 < lpb; ++i3) {
+      LIBXSMM_VLA_ACCESS(3, handle_data, i1, i2, i3, bfm, lpb) = user_data[(i1*bfm*lpb) + (i2*lpb) + i3];
     }
   }
 }

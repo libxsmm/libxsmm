@@ -31,18 +31,30 @@
 
 /* use for-loops to potentially leverage NUMA in the future */
 int i1, i2, i3, i4, i5, i6;
-int N = buffer->N;
-int fmb = buffer->fmb;
-int bfm = buffer->bfm;
-int bimg = buffer->bimg;
-int H = buffer->H;
-int W = buffer->W;
-int lpb = buffer->lpb;
-int C = fmb * bfm * lpb;
-LIBXSMM_VLA_DECL(4, const element_type, user_data, (const element_type*)data, fmb * bfm * lpb, H, W);
 
-if (buffer->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
-  LIBXSMM_VLA_DECL(6, element_type, handle_data_1, (element_type*)buffer->data, fmb, H, W, bfm, lpb);
+if (tensor->layout->custom_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
+#if defined(LIBXSMM_DNN_COPY_LOW_PRECISION)
+  int bimg = 1;
+  int lpb = tensor->layout->dim_size[0];
+  int bfm = tensor->layout->dim_size[1];
+  int W = tensor->layout->dim_size[2];
+  int H = tensor->layout->dim_size[3];
+  int fmb = tensor->layout->dim_size[4];
+  int N = tensor->layout->dim_size[5];
+#else
+  int bimg = 1;
+  int lpb = 1;
+  int bfm = tensor->layout->dim_size[0];
+  int W = tensor->layout->dim_size[1];
+  int H = tensor->layout->dim_size[2];
+  int fmb = tensor->layout->dim_size[3];
+  int N = tensor->layout->dim_size[4];
+#endif
+  int C = fmb * bfm * lpb;
+
+  LIBXSMM_VLA_DECL(6, element_type, handle_data_1, (element_type*)tensor->data, fmb, H, W, bfm, lpb);
+  LIBXSMM_VLA_DECL(4, const element_type, user_data, (const element_type*)data, fmb * bfm * lpb, H, W);
+
   for (i1 = 0; i1 < N; ++i1) {
     for (i2 = 0; i2 < fmb; ++i2) {
       for (i3 = 0; i3 < H; ++i3) {
@@ -57,8 +69,19 @@ if (buffer->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
       }
     }
   }
-} else if (buffer->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-  LIBXSMM_VLA_DECL(6, element_type, handle_data_2, (element_type*)buffer->data, N/bimg, H, W, bimg, bfm);
+} else if (tensor->layout->custom_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
+  int lpb = 1;
+  int bfm = tensor->layout->dim_size[0];
+  int bimg = tensor->layout->dim_size[1];
+  int W = tensor->layout->dim_size[2];
+  int H = tensor->layout->dim_size[3];
+  int N = tensor->layout->dim_size[4]*tensor->layout->dim_size[1];
+  int fmb = tensor->layout->dim_size[5];
+  int C = fmb * bfm * lpb;
+
+  LIBXSMM_VLA_DECL(6, element_type, handle_data_2, (element_type*)tensor->data, N/bimg, H, W, bimg, bfm);
+  LIBXSMM_VLA_DECL(4, const element_type, user_data, (const element_type*)data, fmb * bfm * lpb, H, W);
+
   for (i1  = 0; i1 < N/bimg; i1++ ) {
     for ( i2 = 0; i2 < fmb; i2++ ) {
       for ( i3 = 0; i3 < H; i3++ ) {
