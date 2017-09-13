@@ -776,7 +776,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
                                     (reg_count)*offset * i_conv_kernel_config->datatype_size_wt,
                                     i_conv_kernel_config->vector_name,
                                     l_vec_reg_acc_start + reg_count , 0, 0);
-        if ( (i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 ) {
+          if ( (i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
                                             LIBXSMM_X86_INSTR_PREFETCHT0 ,
                                             i_gp_reg_mapping->gp_reg_weight_pf,

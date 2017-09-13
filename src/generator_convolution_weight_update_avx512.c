@@ -49,6 +49,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
   libxsmm_loop_label_tracker l_loop_label_tracker;
   unsigned int l_ofh_trips=0, l_ofw_trips=0;
   unsigned int oj=0, oi=0;
+  unsigned int is_last_call;
   /* define gp register mapping */
   /* NOTE: do not use RSP, RBP,
      do not use don't use R12 and R13 for addresses will add 4 bytes to the instructions as they are in the same line as rsp and rbp */
@@ -180,9 +181,11 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
                                      l_gp_reg_mapping.gp_reg_help_1, i_conv_desc->ofh_rb *  i_conv_desc->ofw_rb * l_conv_kernel_config.l_ld_ifm_act * l_conv_kernel_config.datatype_size_in  );
        libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_help_2, i_conv_desc->ofw_rb * i_conv_desc->ofh_rb * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out  );
+       is_last_call = 0;
      } else {
         libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_input_pf, l_gp_reg_mapping.gp_reg_help_1);
         libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_output_pf, l_gp_reg_mapping.gp_reg_help_2);
+        is_last_call = 1;
      }
 
      
@@ -190,7 +193,8 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
      libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_qfma_all_pixels_inside(  io_generated_code,
                                                             &l_gp_reg_mapping,
                                                             &l_conv_kernel_config,
-                                                            i_conv_desc);
+                                                            i_conv_desc,
+                                                            is_last_call);
 
      /* Assembly loop end for ofh_blocks */
      if ( i_conv_desc->blocks_h >  1 ) {
@@ -212,11 +216,13 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
 
         libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_input_pf, l_gp_reg_mapping.gp_reg_help_1);
         libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_output_pf, l_gp_reg_mapping.gp_reg_help_2);
+        is_last_call = 1;
 
         libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_qfma_all_pixels_inside(  io_generated_code,
                                                             &l_gp_reg_mapping,
                                                             &l_conv_kernel_config,
-                                                            i_conv_desc);
+                                                            i_conv_desc,
+                                                            is_last_call);
      }
 
      libxsmm_generator_convolution_weight_update_store_weight( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
@@ -1144,7 +1150,8 @@ LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_qfma_all_pixels_inside( libxsmm_generated_code*               io_generated_code,
                                                                                 const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                                                 const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
-                                                                                const libxsmm_convolution_weight_update_descriptor*     i_conv_desc) {
+                                                                                const libxsmm_convolution_weight_update_descriptor*     i_conv_desc,
+                                                                                unsigned int                                            is_last_call) {
   unsigned int l_n = 0;
   unsigned int l_k_1 = 0, l_k_2 = 0;
   unsigned int l_disp;
@@ -1158,6 +1165,8 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_qfma_a
   unsigned int cache_line_offset = 0;
   unsigned int prefetch_type_input = LIBXSMM_X86_INSTR_PREFETCHT0; 
   unsigned int prefetch_type_output = LIBXSMM_X86_INSTR_PREFETCHT0;
+  unsigned int prefetch_type_weight = LIBXSMM_X86_INSTR_PREFETCHT0;
+  unsigned int weight_pf_offset = 0;
 
   /* apply k blocking */
   for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb; l_k_1++) {
@@ -1288,6 +1297,17 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_qfma_a
                                           LIBXSMM_X86_GP_REG_UNDEF,
                                           0,
                                           output_pf_init_offset + cache_line_offset + 192);      
+        }
+
+        int before = 0; /*atoi(getenv("BEFORE"));*/
+        if ( (is_last_call == 1) && (i_conv_desc->use_nts == 0) && (l_k_2 ==  i_conv_desc->ofw_rb - before) && (l_k_1 == i_conv_desc->ofh_rb - 1)   ) {
+           libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          prefetch_type_weight,
+                                          i_gp_reg_mapping->gp_reg_weight_pf,
+                                          LIBXSMM_X86_GP_REG_UNDEF,
+                                          0,
+                                          weight_pf_offset);
+           weight_pf_offset += 64;         
         }
 
       }
