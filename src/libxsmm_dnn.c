@@ -411,7 +411,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor* libxsmm_dnn_link_qtensor(const libxsm
     tensor->exp = exp;
     /* when layout copy failed, free layout */
     if (*status != LIBXSMM_DNN_SUCCESS) {
-      libxsmm_dnn_destroy_datalayout(tensor->layout);
+      libxsmm_dnn_destroy_tensor_datalayout(tensor->layout);
     }
   } else {
     *status = LIBXSMM_DNN_ERR_CREATE_TENSOR;
@@ -755,8 +755,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_duplicate_tens
 
 
 LIBXSMM_API_DEFINITION unsigned int libxsmm_dnn_compare_tensor_datalayout(const libxsmm_dnn_tensor_datalayout* layout_a, const libxsmm_dnn_tensor_datalayout* layout_b, libxsmm_dnn_err_t* status) {
-  *status = LIBXSMM_DNN_SUCCESS;
   unsigned int result = 0;
+  *status = LIBXSMM_DNN_SUCCESS;
 
   if (layout_a != 0 && layout_b != 0) {
     int i = 0;
