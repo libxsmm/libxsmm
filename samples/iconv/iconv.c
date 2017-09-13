@@ -76,12 +76,13 @@ int main(int argc, char* argv[])
   int result = 0 != strcmp(filename_in, filename_out) ? EXIT_SUCCESS : EXIT_FAILURE;
   size_t ndims = 3, size[3], pitch[2], ncomponents = 1, header_size = 0, extension_size;
   void *conv_input_buffer = 0, *conv_filter_buffer = 0, *conv_output_buffer = 0;
-  libxsmm_dnn_buffer *conv_input = 0, *conv_output = 0;
-  libxsmm_dnn_filter *conv_filter = 0;
+  libxsmm_dnn_tensor *conv_input = 0, *conv_output = 0;
+  libxsmm_dnn_tensor *conv_filter = 0;
   libxsmm_dnn_datatype type_out = LIBXSMM_DNN_DATATYPE_F32;
   libxsmm_mhd_elemtype type_in = LIBXSMM_MHD_ELEMTYPE_UNKNOWN;
   libxsmm_dnn_conv_desc descriptor = { 0 };
   libxsmm_dnn_layer* handle = 0;
+  libxsmm_dnn_tensor_datalayout* layout = 0;
   libxsmm_dnn_err_t status;
   size_t size1 = 0, typesize = 0, i, j;
   size_t conv_output_size1 = 0;
@@ -228,28 +229,42 @@ int main(int argc, char* argv[])
     /* Input buffer */
     conv_input_buffer = MALLOC(descriptor.N * descriptor.C * (descriptor.H + 2 * descriptor.pad_h_in) * (descriptor.W + 2 * descriptor.pad_w_in) * typesize);
     if (0 == conv_input_buffer) result = EXIT_FAILURE;
-    conv_input = libxsmm_dnn_link_buffer(handle, LIBXSMM_DNN_INPUT, conv_input_buffer, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status);
+    layout = libxsmm_dnn_create_tensor_datalayout( handle, LIBXSMM_DNN_INPUT, &status ); 
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
-    status = libxsmm_dnn_bind_buffer(handle, conv_input, LIBXSMM_DNN_REGULAR_INPUT);
+    conv_input  = libxsmm_dnn_link_tensor( layout, conv_input_buffer, &status );
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
-    status = libxsmm_dnn_copyin_buffer(conv_input, image, LIBXSMM_DNN_TENSOR_FORMAT_NCHW);
+    status = libxsmm_dnn_destroy_tensor_datalayout( layout );
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
+    status = libxsmm_dnn_bind_tensor(handle, conv_input, LIBXSMM_DNN_REGULAR_INPUT);
+    if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
+    status = libxsmm_dnn_copyin_tensor(conv_input, image, LIBXSMM_DNN_TENSOR_FORMAT_NCHW);
+    if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
+
     /* Filter buffer */
     conv_filter_buffer = MALLOC(descriptor.K * descriptor.C * descriptor.R * descriptor.S * typesize);
     if (0 == conv_filter_buffer) result = EXIT_FAILURE;
-    conv_filter = libxsmm_dnn_link_filter(handle, LIBXSMM_DNN_FILTER, conv_filter_buffer, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status);
+    layout = libxsmm_dnn_create_tensor_datalayout( handle, LIBXSMM_DNN_FILTER, &status ); 
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
-    status = libxsmm_dnn_bind_filter(handle, conv_filter, LIBXSMM_DNN_REGULAR_FILTER);
+    conv_filter = libxsmm_dnn_link_tensor(layout, conv_filter_buffer, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
-    status = libxsmm_dnn_copyin_filter(conv_filter, filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS);
+    status = libxsmm_dnn_destroy_tensor_datalayout( layout );
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
+    status = libxsmm_dnn_bind_tensor(handle, conv_filter, LIBXSMM_DNN_REGULAR_FILTER);
+    if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
+    status = libxsmm_dnn_copyin_tensor(conv_filter, filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS);
+    if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
+
     /* Output buffer */
     conv_output_size1 = descriptor.N * descriptor.K * (descriptor.H + 2 * descriptor.pad_h_out) * (descriptor.W + 2 * descriptor.pad_w_out);
     conv_output_buffer = MALLOC(conv_output_size1 * typesize);
     if (0 == conv_output_buffer) result = EXIT_FAILURE;
-    conv_output = libxsmm_dnn_link_buffer(handle, LIBXSMM_DNN_OUTPUT, conv_output_buffer, LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR, &status);
+    layout = libxsmm_dnn_create_tensor_datalayout( handle, LIBXSMM_DNN_OUTPUT, &status ); 
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
-    status = libxsmm_dnn_bind_buffer(handle, conv_output, LIBXSMM_DNN_REGULAR_OUTPUT);
+    conv_output = libxsmm_dnn_link_tensor(layout, conv_output_buffer, &status);
+    if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
+    status = libxsmm_dnn_destroy_tensor_datalayout( layout );
+    if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
+    status = libxsmm_dnn_bind_tensor(handle, conv_output, LIBXSMM_DNN_REGULAR_OUTPUT);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
   }
 
@@ -287,7 +302,7 @@ int main(int argc, char* argv[])
 
   /* Copy-out image into original format. */
   if (EXIT_SUCCESS == result) {
-    status = libxsmm_dnn_copyout_buffer(conv_output, image, LIBXSMM_DNN_TENSOR_FORMAT_NCHW);
+    status = libxsmm_dnn_copyout_tensor(conv_output, image, LIBXSMM_DNN_TENSOR_FORMAT_NCHW);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
   }
 
@@ -302,9 +317,9 @@ int main(int argc, char* argv[])
   }
 
   /* Release resources. */
-  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_filter(conv_filter)) result = EXIT_FAILURE;
-  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_buffer(conv_output)) result = EXIT_FAILURE;
-  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_buffer(conv_input)) result = EXIT_FAILURE;
+  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_tensor(conv_filter)) result = EXIT_FAILURE;
+  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_tensor(conv_output)) result = EXIT_FAILURE;
+  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_tensor(conv_input)) result = EXIT_FAILURE;
   if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_conv_layer(handle)) result = EXIT_FAILURE;
   FREE(conv_output_buffer);
   FREE(conv_filter_buffer);
