@@ -441,15 +441,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
 
   if (handle != 0) {
     layout = (libxsmm_dnn_tensor_datalayout*) malloc(sizeof(libxsmm_dnn_tensor_datalayout));
-    layout->datatype = handle->datatype;
-    layout->custom_format = handle->custom_format_type;   
-
+  
     if (layout != 0) {
       memset(layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
+      layout->datatype = handle->datatype;
+      layout->custom_format = handle->custom_format_type; 
       if ( (type == LIBXSMM_DNN_REGULAR_INPUT)  || (type == LIBXSMM_DNN_GRADIENT_INPUT)  || (type == LIBXSMM_DNN_INPUT)  || 
            (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT)    ) {
         layout->format = handle->buffer_format;
-        layout->tensor_type = LIBXMSM_DNN_ACTIVATION;
+        layout->tensor_type = LIBXSMM_DNN_ACTIVATION;
      
         if ((handle->buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) {
           if ( handle->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -612,7 +612,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
               layout->dim_size[1] = handle->ifmblock;
               layout->dim_size[2] = handle->desc.S;
               layout->dim_size[3] = handle->desc.R;
-              layout->dim_size[4] = handle->blocksofm;
+              layout->dim_size[4] = handle->blocksifm;
               layout->dim_size[5] = handle->blocksofm;
             }
           } else if ( (handle->datatype == LIBXSMM_DNN_DATATYPE_I16) ||
@@ -633,7 +633,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
               layout->dim_size[2] = handle->ifmblock;
               layout->dim_size[3] = handle->desc.S;
               layout->dim_size[4] = handle->desc.R;
-              layout->dim_size[5] = handle->blocksofm;
+              layout->dim_size[5] = handle->blocksifm;
               layout->dim_size[6] = handle->blocksofm*handle->fm_lp_block;
             }
           } else {
@@ -651,7 +651,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
             layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_S;
             layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_R;
             layout->dim_size[0] = handle->ofmblock * handle->blocksofm;
-            layout->dim_size[1] = handle->ofmblock * handle->blocksofm;
+            layout->dim_size[1] = handle->ifmblock * handle->blocksifm;
             layout->dim_size[2] = handle->desc.S;
             layout->dim_size[3] = handle->desc.K;
           }
@@ -748,6 +748,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_duplicate_tens
     dst_layout->format = layout->format;
     dst_layout->custom_format = layout->custom_format;
     dst_layout->datatype = layout->datatype;
+    dst_layout->tensor_type = layout->tensor_type;
 
     for ( dim = 0; dim < layout->num_dims; ++dim ) {
       dst_layout->dim_type[dim] = layout->dim_type[dim];
@@ -910,7 +911,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_tensor(const libxsmm
 
   if (0 != tensor) {
     switch (tensor->layout->tensor_type) {
-      case LIBXMSM_DNN_ACTIVATION: {
+      case LIBXSMM_DNN_REGULAR_INPUT:
+      case LIBXSMM_DNN_GRADIENT_INPUT:
+      case LIBXSMM_DNN_REGULAR_OUTPUT:
+      case LIBXSMM_DNN_GRADIENT_OUTPUT:
+      case LIBXSMM_DNN_INPUT:
+      case LIBXSMM_DNN_OUTPUT:
+      case LIBXSMM_DNN_ACTIVATION: {
         switch (in_format) {
           case LIBXSMM_DNN_TENSOR_FORMAT_NCHW: {
             if ( (tensor->layout->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
@@ -948,6 +955,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_tensor(const libxsmm
           }
         }
       } break;
+      case LIBXSMM_DNN_REGULAR_FILTER:
+      case LIBXSMM_DNN_GRADIENT_FILTER:
       case LIBXSMM_DNN_FILTER: {
         switch (in_format) {
           case LIBXSMM_DNN_TENSOR_FORMAT_KCRS: {
@@ -981,7 +990,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_tensor(const libxsmm
             status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
           }
         }
-      }
+      } break;
+      case LIBXSMM_DNN_REGULAR_BIAS:
+      case LIBXSMM_DNN_GRADIENT_BIAS:
       case LIBXSMM_DNN_BIAS: {
         switch (in_format) {
           case LIBXSMM_DNN_TENSOR_FORMAT_NCHW: {
@@ -1015,7 +1026,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_tensor(const libxsmm
             status = LIBXSMM_DNN_ERR_UNSUPPORTED_SRC_FORMAT;
           }
         }
-      }
+      } break;
       default: {
         status = LIBXSMM_DNN_ERR_INVALID_TENSOR;
       }
@@ -1075,7 +1086,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsm
 
   if (0 != tensor) {
     switch (tensor->layout->tensor_type) {
-      case LIBXMSM_DNN_ACTIVATION: {
+      case LIBXSMM_DNN_REGULAR_INPUT:
+      case LIBXSMM_DNN_GRADIENT_INPUT:
+      case LIBXSMM_DNN_REGULAR_OUTPUT:
+      case LIBXSMM_DNN_GRADIENT_OUTPUT:
+      case LIBXSMM_DNN_INPUT:
+      case LIBXSMM_DNN_OUTPUT:
+      case LIBXSMM_DNN_ACTIVATION: {
         switch (out_format) {
           case LIBXSMM_DNN_TENSOR_FORMAT_NCHW: {
             if ( (tensor->layout->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
@@ -1113,6 +1130,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsm
           }
         }
       } break;
+      case LIBXSMM_DNN_REGULAR_FILTER:
+      case LIBXSMM_DNN_GRADIENT_FILTER:
       case LIBXSMM_DNN_FILTER: {
         switch (out_format) {
           case LIBXSMM_DNN_TENSOR_FORMAT_KCRS: {
@@ -1146,7 +1165,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsm
             status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
           }
         }
-      }
+      } break;
+      case LIBXSMM_DNN_REGULAR_BIAS:
+      case LIBXSMM_DNN_GRADIENT_BIAS:
       case LIBXSMM_DNN_BIAS: {
         switch (out_format) {
           case LIBXSMM_DNN_TENSOR_FORMAT_NCHW: {
@@ -1180,7 +1201,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsm
             status = LIBXSMM_DNN_ERR_UNSUPPORTED_DST_FORMAT;
           }
         }
-      }
+      } break;
       default: {
         status = LIBXSMM_DNN_ERR_INVALID_TENSOR;
       }

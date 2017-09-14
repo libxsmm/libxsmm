@@ -50,6 +50,10 @@ int ofmb = tensor->layout->dim_size[5];
 #endif
 int C = ifmb * bifm * lpb;
 
+#if 0
+printf(" layout fil %i %i %i %i %i %i %i \n", ofmb, ifmb, R, S, bifm, bofm, lpb);
+#endif
+
 LIBXSMM_VLA_DECL(7, element_type, handle_data_1, (element_type*)tensor->data, ifmb, R, S, bifm, bofm, lpb);
 LIBXSMM_VLA_DECL(6, element_type, handle_data_2, (element_type*)tensor->data, ifmb, R, S, bifm, bofm);
 LIBXSMM_VLA_DECL(4, const element_type, user_data, (const element_type*)data, ifmb * bifm * lpb, R, S);

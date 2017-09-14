@@ -126,7 +126,7 @@ typedef enum libxsmm_dnn_tensor_type {
   /** general output type */
   LIBXSMM_DNN_OUTPUT,
   /** general activation type */
-  LIBXMSM_DNN_ACTIVATION,
+  LIBXSMM_DNN_ACTIVATION,
   /* regular filter */
   LIBXSMM_DNN_REGULAR_FILTER,
   /* gradient filter */
