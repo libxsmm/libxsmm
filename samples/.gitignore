@@ -26,3 +26,4 @@ wrap/dgemm-wrap
 xgemm/xgemm
 xgemmkernel/bwgemmkernel
 xgemmkernel/sdgemmkernel
+*.txt
