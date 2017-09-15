@@ -811,11 +811,12 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_dnn_get_tensor_size(const libxsmm_dn
    
   if (0 != layout) {
     unsigned int dim = 0;
-    size = libxsmm_dnn_typesize(layout->datatype);
-    for ( dim = 0; dim < layout->num_dims; ++dim ) {
+    size = (unsigned int)libxsmm_dnn_typesize(layout->datatype);
+    for (dim = 0; dim < layout->num_dims; ++dim) {
       size *= layout->dim_size[dim];
     }
-  } else {
+  }
+  else {
     *status = LIBXSMM_DNN_ERR_INVALID_LAYOUT;
   }
 
