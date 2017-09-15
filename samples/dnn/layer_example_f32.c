@@ -702,7 +702,7 @@ int main(int argc, char* argv[])
     libxsmm_bias  = libxsmm_dnn_link_tensor( libxsmm_layout,  bias_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dbias = libxsmm_dnn_link_tensor( libxsmm_layout, dbias_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-   
+
     /* copy in data to LIBXSMM format */
     /* we can also use the layout functions and set the data on our
        own external to the library, @TODO, we plan to add an example here */

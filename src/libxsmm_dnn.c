@@ -441,16 +441,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
 
   if (handle != 0) {
     layout = (libxsmm_dnn_tensor_datalayout*) malloc(sizeof(libxsmm_dnn_tensor_datalayout));
-  
+
     if (layout != 0) {
       memset(layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
       layout->datatype = handle->datatype;
-      layout->custom_format = handle->custom_format_type; 
-      if ( (type == LIBXSMM_DNN_REGULAR_INPUT)  || (type == LIBXSMM_DNN_GRADIENT_INPUT)  || (type == LIBXSMM_DNN_INPUT)  || 
+      layout->custom_format = handle->custom_format_type;
+      if ( (type == LIBXSMM_DNN_REGULAR_INPUT)  || (type == LIBXSMM_DNN_GRADIENT_INPUT)  || (type == LIBXSMM_DNN_INPUT)  ||
            (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT)    ) {
         layout->format = handle->buffer_format;
         layout->tensor_type = LIBXSMM_DNN_ACTIVATION;
-     
+
         if ((handle->buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) {
           if ( handle->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
             if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
@@ -688,7 +688,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
               layout->dim_size[0] = handle->fm_lp_block;
               layout->dim_size[1] = handle->ofmblock;
               layout->dim_size[2] = handle->blocksofm;
-            } 
+            }
           } else {
             free(layout);
             layout = 0; /* make sure a NULL is returned */
@@ -808,7 +808,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_tensor_datalayout(l
 LIBXSMM_API_DEFINITION unsigned int libxsmm_dnn_get_tensor_size(const libxsmm_dnn_tensor_datalayout* layout, libxsmm_dnn_err_t* status) {
   unsigned int size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
-   
+
   if (0 != layout) {
     unsigned int dim = 0;
     size = (unsigned int)libxsmm_dnn_typesize(layout->datatype);
@@ -827,7 +827,7 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_dnn_get_tensor_size(const libxsmm_dn
 LIBXSMM_API_DEFINITION unsigned int libxsmm_dnn_get_tensor_elements(const libxsmm_dnn_tensor_datalayout* layout, libxsmm_dnn_err_t* status) {
   unsigned int elements = 1;
   *status = LIBXSMM_DNN_SUCCESS;
-   
+
   if (0 != layout) {
     unsigned int dim = 0;
     for ( dim = 0; dim < layout->num_dims; ++dim ) {

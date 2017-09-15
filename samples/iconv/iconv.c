@@ -199,8 +199,10 @@ int main(int argc, char* argv[])
     descriptor.v = 1; /* W-stride */
     descriptor.H = (int)size[1];
     descriptor.W = (int)size[0];
+#if 0
     descriptor.pad_h_out = ((descriptor.u - 1) * descriptor.H + descriptor.R - descriptor.u) / 2;
     descriptor.pad_w_out = ((descriptor.v - 1) * descriptor.W + descriptor.S - descriptor.v) / 2;
+#endif
     descriptor.pad_h_in = 0;
     descriptor.pad_w_in = 0;
     descriptor.pad_h = 0; /* H-pad */
@@ -229,11 +231,11 @@ int main(int argc, char* argv[])
     /* Input buffer */
     conv_input_buffer = MALLOC(descriptor.N * descriptor.C * (descriptor.H + 2 * descriptor.pad_h_in) * (descriptor.W + 2 * descriptor.pad_w_in) * typesize);
     if (0 == conv_input_buffer) result = EXIT_FAILURE;
-    layout = libxsmm_dnn_create_tensor_datalayout( handle, LIBXSMM_DNN_INPUT, &status ); 
+    layout = libxsmm_dnn_create_tensor_datalayout(handle, LIBXSMM_DNN_INPUT, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
-    conv_input  = libxsmm_dnn_link_tensor( layout, conv_input_buffer, &status );
+    conv_input  = libxsmm_dnn_link_tensor(layout, conv_input_buffer, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
-    status = libxsmm_dnn_destroy_tensor_datalayout( layout );
+    status = libxsmm_dnn_destroy_tensor_datalayout(layout);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
     status = libxsmm_dnn_bind_tensor(handle, conv_input, LIBXSMM_DNN_REGULAR_INPUT);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
@@ -243,11 +245,11 @@ int main(int argc, char* argv[])
     /* Filter buffer */
     conv_filter_buffer = MALLOC(descriptor.K * descriptor.C * descriptor.R * descriptor.S * typesize);
     if (0 == conv_filter_buffer) result = EXIT_FAILURE;
-    layout = libxsmm_dnn_create_tensor_datalayout( handle, LIBXSMM_DNN_FILTER, &status ); 
+    layout = libxsmm_dnn_create_tensor_datalayout(handle, LIBXSMM_DNN_FILTER, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
     conv_filter = libxsmm_dnn_link_tensor(layout, conv_filter_buffer, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
-    status = libxsmm_dnn_destroy_tensor_datalayout( layout );
+    status = libxsmm_dnn_destroy_tensor_datalayout(layout);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
     status = libxsmm_dnn_bind_tensor(handle, conv_filter, LIBXSMM_DNN_REGULAR_FILTER);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
@@ -258,11 +260,11 @@ int main(int argc, char* argv[])
     conv_output_size1 = descriptor.N * descriptor.K * (descriptor.H + 2 * descriptor.pad_h_out) * (descriptor.W + 2 * descriptor.pad_w_out);
     conv_output_buffer = MALLOC(conv_output_size1 * typesize);
     if (0 == conv_output_buffer) result = EXIT_FAILURE;
-    layout = libxsmm_dnn_create_tensor_datalayout( handle, LIBXSMM_DNN_OUTPUT, &status ); 
+    layout = libxsmm_dnn_create_tensor_datalayout(handle, LIBXSMM_DNN_OUTPUT, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
     conv_output = libxsmm_dnn_link_tensor(layout, conv_output_buffer, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
-    status = libxsmm_dnn_destroy_tensor_datalayout( layout );
+    status = libxsmm_dnn_destroy_tensor_datalayout(layout);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
     status = libxsmm_dnn_bind_tensor(handle, conv_output, LIBXSMM_DNN_REGULAR_OUTPUT);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
