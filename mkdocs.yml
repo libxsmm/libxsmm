@@ -1,5 +1,13 @@
-site_name: LIBXSMM
 docs_dir: documentation
+theme: readthedocs
+theme_dir: .theme
+
+site_name: LIBXSMM
+site_author: Hans Pabst
+copyright:  <a href="LICENSE">BSD 3-Clause License</a>
+site_description: Library targeting Intel Architecture for small, dense or sparse matrix multiplications, and small convolutions.
+repo_url: https://github.com/hfp/libxsmm.git
+
 pages:
 - index.md
 - Domains:
