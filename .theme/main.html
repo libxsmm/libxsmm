@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{%- block site_meta %}
+  <meta name="google-site-verification" content="7G4Pmpl7BnEm6uQ_D8AqlhgPdu-H-MFo64tDR-A-n6c">
+  {{ super() }}
+{%- endblock %}
+
+{% block footer %}
+  <hr>
+  {%- if config.copyright %}
+    <p>{{ config.copyright }}</p>
+  {%- endif %}
+{% endblock %}
