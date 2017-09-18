@@ -47,35 +47,35 @@ if (block_j < handle->upd_ofh_rb ) {
   block_j = handle->upd_ofh_rb ;
 }
 
-block_j = handle->desc.H ;
+block_j = handle->ofh ;
 
-if ( handle->ofhp == 56 ) {
+if ( handle->ofh == 56 ) {
   /* Pixel block is 196 Kbytes */
  handle->block_upd_ofm = handle->blocksofm;
  handle->block_upd_ifm = 1;
 
 }
 
-if ( handle->ofhp == 28 ) {
+if ( handle->ofh == 28 ) {
   /* Pixel block is 49 Kbytes */
  handle->block_upd_ofm = 3;
  handle->block_upd_ifm = 3;
 }
 
-if ( handle->ofhp == 14 || handle->ofhp == 28 || handle->ofhp == 56 ) {
+if ( handle->ofh == 14 || handle->ofh == 28 || handle->ofh == 56 ) {
   /* Pixel block is 12.25 Kbytes */
  handle->block_upd_ofm = 8;
  handle->block_upd_ifm = 16;
 }
 
-if ( handle->ofhp == 7 ) {
+if ( handle->ofh == 7 ) {
   /* Pixel block is 3.06 Kbytes */
  handle->block_upd_ofm = 8;
  handle->block_upd_ifm = 16;
 }
 
 
-if ( handle->ofhp == 28 || handle->ofhp == 56 ) {
+if ( handle->ofh == 28 || handle->ofh == 56 ) {
   /* Pixel block is 12.25 Kbytes */
  handle->block_upd_ofm = 32;
  handle->block_upd_ifm = 16;
