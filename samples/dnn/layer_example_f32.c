@@ -483,19 +483,25 @@ int main(int argc, char* argv[])
   pad_w = padw;
   pad_h = padh;
 
+    pad_h_in = 0;
+    pad_w_in = 0;
+    pad_h_out = 0;
+    pad_w_out = 0;
+
   if (0 == padding_mode) {
     pad_h_in = 0;
     pad_w_in = 0;
+    pad_h_out = 0;
+    pad_w_out = 0;
   }
   else {
     /* TODO: change "1" to "0" if "padding_mode = -1" is acknowledged */
     if (1 < padding_mode) pad_w = padding_mode;
     pad_h_in = pad_h;
     pad_w_in = pad_w;
+    pad_h_out = pad_h;
+    pad_w_out = pad_w;
   }
-
-  pad_h_out = 0;
-  pad_w_out = 0;
 
   /* deriving some values for naive code */
   ofh = (ifh + 2 * pad_h - kh) / stride_h + 1;
@@ -582,9 +588,14 @@ int main(int argc, char* argv[])
   init_buf(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
   init_buf(naive_output_wu,      nImg*nOfm*ofhp*ofwp, 0, 0);
   set_zeropad_nchw(naive_input, nImg, nIfm, ifhp, ifwp, pad_h_in, pad_w_in);
+  set_zeropad_nchw(naive_output_bp, nImg, nOfm, ofhp, ofwp, pad_h_out, pad_w_out);
+  set_zeropad_nchw(naive_output_wu, nImg, nOfm, ofhp, ofwp, pad_h_out, pad_w_out);
+
   copy_buf(naive_input, naive_input_save, nImg*nIfm*ifhp*ifwp);
   zero_buf(naive_output_save,    nImg*nOfm*ofhp*ofwp);
   init_buf(naive_output,       nImg*nOfm*ofhp*ofwp, 0, 0);
+  set_zeropad_nchw(naive_output, nImg, nOfm, ofhp, ofwp, pad_h_out, pad_w_out);
+
   copy_buf(naive_output, naive_output_save, nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
   zero_buf(naive_libxsmm_input,  nImg*nIfm*ifhp*ifwp);

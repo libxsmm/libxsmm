@@ -91,7 +91,7 @@ if (n_segments) {
   code_stream = handle->fwd_code_segments[ltid];
   /* If we are in the img_par execution then avoid fine-grained copy in case of padding...  */
   if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
-    if (handle->ofwp == 7) {
+    if (handle->ofw == 7) {
       for (pc = 0; pc < n_segments; pc++) {
         instr = code_stream[pc].segment_type;
         n_convs = code_stream[pc].n_convs;
@@ -208,7 +208,7 @@ if (n_segments) {
   }
 } else {
   /* Run the stream of convolutions, no extra operations are required... */
-  if (handle->ofwp == 7) {
+  if (handle->ofw == 7) {
     for (pc = 0; pc < instr; pc+=1) {
       offset_i = stream[i];
       offset_w = stream[i+1]; 
