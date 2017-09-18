@@ -173,16 +173,16 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->n_entries_fwd[ltid] = local_entries/3;
 
   /* Alocate auxiliary data structures for index jitting  */
-  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152);
+  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 65536);
   handle->compute_fwd_indices_ptrs[ltid] = compute_indices;
-  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152);
+  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 65536);
   handle->kernel_fwd_variant_ptrs[ltid] = kernel_variant;
   handle->n_fwd_code_segments[ltid] = n_code_segments;
   expanded_size = local_entries/3 + n_code_segments;
   tmp_expanded_stream = (int*) malloc( expanded_size * sizeof(int) );
   tmp_stream_index = 0;
   if (n_code_segments) {
-    encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 2097152);
+    encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 65536);
     handle->fwd_code_segments[ltid] = encoded_code_segments;
   }
   local_entries = 0;
