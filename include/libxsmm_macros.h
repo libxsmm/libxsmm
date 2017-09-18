@@ -169,7 +169,17 @@
 #endif
 
 #if !defined(LIBXSMM_OPENMP_SIMD) && (defined(_OPENMP) && (201307 <= _OPENMP)) /*OpenMP 4.0*/
-# define LIBXSMM_OPENMP_SIMD
+# if defined(__INTEL_COMPILER)
+#   if (1500 <= __INTEL_COMPILER)
+#     define LIBXSMM_OPENMP_SIMD
+#   endif
+# elif defined(__GNUC__)
+#   if LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
+#     define LIBXSMM_OPENMP_SIMD
+#   endif
+# else
+#   define LIBXSMM_OPENMP_SIMD
+# endif
 #endif
 
 #if defined(LIBXSMM_OPENMP_SIMD)

@@ -679,10 +679,12 @@ ifneq (0,$(INTEL))
     LDFLAGS += $(OMPFLAG)
   endif
   ifneq (0,$(SIMD))
+  ifneq (0,$(shell echo "$$((150000 <= $(CXX_VERSION)))"))
     DFLAGS += -DLIBXSMM_OPENMP_SIMD
     CXXFLAGS += -qopenmp-simd
     CFLAGS += -qopenmp-simd
     FCFLAGS += -qopenmp-simd
+  endif
   endif
   ifeq (1,$(STATIC))
     SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
