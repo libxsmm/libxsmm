@@ -43,7 +43,7 @@ else
 fi
 
 # temporary file
-TMPFILE=$(${MKTEMP} ${HERE}/.libxsmm_XXXXXX.tex)
+TMPFILE=$(${MKTEMP} ${DOCDIR}/.libxsmm_XXXXXX.tex)
 
 # dump pandoc template for latex, and adjust the template
 pandoc -D latex \
@@ -59,13 +59,11 @@ cd ${DOCDIR}
 iconv -t utf-8 index.md libxsmm_mm.md libxsmm_dnn.md libxsmm_aux.md libxsmm_prof.md libxsmm_tune.md libxsmm_be.md \
 | sed \
   -e 's/## Matrix Multiplication$/# LIBXSMM Domains\n## Matrix Multiplication/' \
-  -e 's/\[\[..*\](..*)\]//g' \
-  -e 's/\[!\[..*\](..*)\](..*)//g' \
   -e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
   -e 's/----*//g' \
 | tee >( pandoc \
-  --latex-engine=xelatex --template=${TMPFILE} --listings \
+  --latex-engine=xelatex --template=$(basename ${TMPFILE}) --listings \
   -f markdown_github+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
   -V title-meta="LIBXSMM Documentation" \
@@ -82,7 +80,8 @@ cd ${HERE}
 
 # cleanup markup and pipe into pandoc using the template
 # LIBXSMM Sample Code Summary
-iconv -t utf-8 samples/*/README.md \
+cd ${DOCDIR}
+iconv -t utf-8 ${HERE}/samples/*/README.md \
 | sed \
   -e 's/\[\[..*\](..*)\]//g' \
   -e 's/\[!\[..*\](..*)\](..*)//g' \
@@ -90,7 +89,7 @@ iconv -t utf-8 samples/*/README.md \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
   -e 's/----*//g' \
 | tee >( pandoc \
-  --latex-engine=xelatex --template=${TMPFILE} --listings \
+  --latex-engine=xelatex --template=$(basename ${TMPFILE}) --listings \
   -f markdown_github+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
   -V title-meta="LIBXSMM Sample Code Summary" \
@@ -98,10 +97,11 @@ iconv -t utf-8 samples/*/README.md \
   -V linkcolor=black \
   -V citecolor=black \
   -V urlcolor=black \
-  -o ${DOCDIR}/libxsmm_samples.pdf) \
+  -o libxsmm_samples.pdf) \
 | pandoc \
   -f markdown_github+all_symbols_escapable+subscript+superscript \
-  -o ${DOCDIR}/libxsmm_samples.docx
+  -o libxsmm_samples.docx
+cd ${HERE}
 
 # cleanup markup and pipe into pandoc using the template
 # CP2K recipe
@@ -114,7 +114,7 @@ iconv -t utf-8 cp2k.md \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
   -e 's/----*//g' \
 | tee >( pandoc \
-  --latex-engine=xelatex --template=${TMPFILE} --listings \
+  --latex-engine=xelatex --template=$(basename ${TMPFILE}) --listings \
   -f markdown_github+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
   -V title-meta="CP2K with LIBXSMM" \
@@ -140,7 +140,7 @@ iconv -t utf-8 tensorflow.md \
   -e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
   -e 's/----*//g' \
 | tee >( pandoc \
-  --latex-engine=xelatex --template=${TMPFILE} --listings \
+  --latex-engine=xelatex --template=$(basename ${TMPFILE}) --listings \
   -f markdown_github+all_symbols_escapable+subscript+superscript \
   -V documentclass=scrartcl \
   -V title-meta="TensorFlow with LIBXSMM" \
