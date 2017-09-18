@@ -478,11 +478,12 @@ ifeq (0,$(SSE))
     else # SKX
       MIC ?= 0
     endif
-  else ifeq (2,$(words $(filter avx2 fma,$(CPUFLAGS))))
-    AVX ?= 2
-    SSE = 0
   else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS))))
-    AVX ?= 1
+    ifeq (1,$(words $(filter fma,$(CPUFLAGS))))
+      AVX ?= 2
+    else
+      AVX ?= 1
+    endif
     SSE = 0
   endif
 else ifeq (1,$(SSE))
