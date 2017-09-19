@@ -147,6 +147,8 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   libxsmm_mhd_elemtype type,
   /** Raw data to be saved. */
   const void* data,
+  /** Size of the header; can be a NULL-argument (optional). */
+  size_t* header_size,
   /** Extension header data; can be NULL. */
   const char extension_header[],
   /** Extension data stream; can be NULL. */

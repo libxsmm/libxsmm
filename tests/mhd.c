@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
   /* Write the data into a different file. */
   if (EXIT_SUCCESS == result) {
     result = libxsmm_mhd_write("mhd_test.mhd", size, size,
-      ndims, ncomponents, type, data,
+      ndims, ncomponents, type, data, 0/*header_size*/,
       0/*extension_header*/,
       0/*extension*/,
       0/*extension_size*/);

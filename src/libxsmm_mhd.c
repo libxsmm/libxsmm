@@ -589,8 +589,8 @@ LIBXSMM_API_INLINE int internal_mhd_write(FILE* file, const void* data,
 
 
 LIBXSMM_API_DEFINITION int libxsmm_mhd_write(const char filename[],
-  const size_t size[], const size_t pitch[], size_t ndims,
-  size_t ncomponents, libxsmm_mhd_elemtype type, const void* data,
+  const size_t size[], const size_t pitch[], size_t ndims, size_t ncomponents,
+  libxsmm_mhd_elemtype type, const void* data, size_t* header_size,
   const char extension_header[], const void* extension, size_t extension_size)
 {
   size_t typesize = 0;
@@ -641,6 +641,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_write(const char filename[],
     }
     /* ElementDataFile must be the last entry before writing the data */
     if (EXIT_SUCCESS == result && 0 < fprintf(file, "\nElementType = %s\nElementDataFile = LOCAL\n", elemname)) {
+      if (0 != header_size) *header_size = ftell(file); /* determine the header size */
       result = internal_mhd_write(file, data, size, pitch, ncomponents * typesize, ndims);
     }
     /* append the extension data after the regular data section */
