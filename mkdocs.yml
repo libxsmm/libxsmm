@@ -4,6 +4,10 @@ theme_dir: .theme
 markdown_extensions:
 - toc:
     permalink: True
+extra_javascript:
+- search.js
+extra_css:
+- style.css
 
 site_name: LIBXSMM
 site_author: Hans Pabst
