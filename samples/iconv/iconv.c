@@ -61,6 +61,10 @@
 # define FREE(POINTER) free(POINTER)
 #endif
 
+#if !defined(USE_OUTPUT_TYPE)
+# define USE_OUTPUT_TYPE
+#endif
+
 #if !defined(USE_OVERWRITE) && 0
 # define USE_OVERWRITE
 #endif
@@ -82,7 +86,6 @@ int main(int argc, char* argv[])
   libxsmm_mhd_elemtype type_in = LIBXSMM_MHD_ELEMTYPE_UNKNOWN;
   libxsmm_dnn_conv_desc descriptor = { 0 };
   libxsmm_dnn_layer* handle = 0;
-  libxsmm_dnn_tensor_datalayout* layout = 0;
   libxsmm_dnn_err_t status;
   size_t size1 = 0, typesize = 0, i, j;
   size_t conv_output_size1 = 0;
@@ -111,7 +114,7 @@ int main(int argc, char* argv[])
       }
       result = libxsmm_mhd_write(filename, size, size,
         2/*ndims*/, 1/*ncomponents*/, LIBXSMM_MHD_ELEMTYPE_U8, image,
-        0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
+        0/*header_size*/, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
       if (EXIT_SUCCESS == result) filename_in = filename;
     }
     else {
@@ -153,12 +156,36 @@ int main(int argc, char* argv[])
       filter = MALLOC(filter_size * typesize);
       if (0 != filter) {
         FILE *const file = fopen("iconv_in.txt", "r");
+        double weight;
         switch (type_out) {
-          case LIBXSMM_DNN_DATATYPE_F32: {
-            float *const f = (float*)filter, s;
+          case LIBXSMM_DNN_DATATYPE_F64: {
             for (i = 0; i < filter_size; ++i) {
-              f[i] = (float)((0 == file || 1 > fscanf(file, "%f", &s)) ?
-                        (0.05 - ((double)rand() / RAND_MAX) * 0.1) : s);
+              ((double*)filter)[i] = (double)((0 == file || 1 > fscanf(file, "%lf", &weight)) ?
+                (0.05 - ((double)rand() / RAND_MAX) * 0.1) : weight);
+            }
+          } break;
+          case LIBXSMM_DNN_DATATYPE_F32: {
+            for (i = 0; i < filter_size; ++i) {
+              ((float*)filter)[i] = (float)((0 == file || 1 > fscanf(file, "%lf", &weight)) ?
+                (0.05 - ((double)rand() / RAND_MAX) * 0.1) : weight);
+            }
+          } break;
+          case LIBXSMM_DNN_DATATYPE_I32: {
+            for (i = 0; i < filter_size; ++i) {
+              ((int*)filter)[i] = (int)((0 == file || 1 > fscanf(file, "%lf", &weight)) ?
+                (255 * (0.05 - ((double)rand() / RAND_MAX) * 0.1)) : weight);
+            }
+          } break;
+          case LIBXSMM_DNN_DATATYPE_I16: {
+            for (i = 0; i < filter_size; ++i) {
+              ((short*)filter)[i] = (short)((0 == file || 1 > fscanf(file, "%lf", &weight)) ?
+                (255 * (0.05 - ((double)rand() / RAND_MAX) * 0.1)) : weight);
+            }
+          } break;
+          case LIBXSMM_DNN_DATATYPE_I8: {
+            for (i = 0; i < filter_size; ++i) {
+              ((unsigned char*)filter)[i] = (unsigned char)((0 == file || 1 > fscanf(file, "%lf", &weight)) ?
+                (255 * (0.05 - ((double)rand() / RAND_MAX) * 0.1)) : weight);
             }
           } break;
           default: result = EXIT_FAILURE;
@@ -228,12 +255,14 @@ int main(int argc, char* argv[])
 
   /* Link buffers and convert NCHW-image and KCRS-filter to internal format. */
   if (EXIT_SUCCESS == result) {
+    libxsmm_dnn_tensor_datalayout* layout;
+
     /* Input buffer */
     conv_input_buffer = MALLOC(descriptor.N * descriptor.C * (descriptor.H + 2 * descriptor.pad_h_in) * (descriptor.W + 2 * descriptor.pad_w_in) * typesize);
     if (0 == conv_input_buffer) result = EXIT_FAILURE;
     layout = libxsmm_dnn_create_tensor_datalayout(handle, LIBXSMM_DNN_INPUT, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
-    conv_input  = libxsmm_dnn_link_tensor(layout, conv_input_buffer, &status);
+    conv_input = libxsmm_dnn_link_tensor(layout, conv_input_buffer, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
     status = libxsmm_dnn_destroy_tensor_datalayout(layout);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
@@ -311,14 +340,36 @@ int main(int argc, char* argv[])
   /* Write the image into a different file. */
   if (EXIT_SUCCESS == result) {
     result = libxsmm_mhd_write(filename_out, size, pitch, 2/*ndims*/, ncomponents,
-      /* DNN type: assume that MHD I/O provides a super-set of types */
-      (libxsmm_mhd_elemtype)type_out, image,
-      0/*extension_header*/,
-      0/*extension*/,
-      0/*extension_size*/);
+      (libxsmm_mhd_elemtype)type_out/* assume MHD I/O provides a super-set of DNN types */,
+      image, &header_size, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
+#if !defined(USE_OUTPUT_TYPE) /* convert into input pixel-type */
+    if (EXIT_SUCCESS == result && 0 != libxsmm_mhd_typename(type_in, &typesize, 0/*ctypename*/)) {
+      void *const converted = MALLOC(size1 * typesize);
+      if (0 != converted) {
+        result = libxsmm_mhd_read(filename_out,
+          size, pitch, 2/*ndims*/, ncomponents, header_size,
+          (libxsmm_mhd_elemtype)type_out, &type_in, /* conversion requested */
+          converted, 0/*handle_element*/, 0/*extension*/, 0/*extension_size*/);
+        if (EXIT_SUCCESS == result) {
+          result = libxsmm_mhd_write(filename_out, size, pitch, 2/*ndims*/, ncomponents, type_in, converted,
+            0/*header_size*/, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
+        }
+        FREE(converted);
+      }
+      else {
+        result = EXIT_FAILURE;
+      }
+    }
+    else {
+      result = EXIT_FAILURE;
+    }
+#endif
   }
 
   /* Release resources. */
+  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_release_tensor(handle, LIBXSMM_DNN_REGULAR_INPUT)) result = EXIT_FAILURE;
+  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_release_tensor(handle, LIBXSMM_DNN_REGULAR_FILTER)) result = EXIT_FAILURE;
+  if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_release_tensor(handle, LIBXSMM_DNN_REGULAR_OUTPUT)) result = EXIT_FAILURE;
   if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_tensor(conv_filter)) result = EXIT_FAILURE;
   if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_tensor(conv_output)) result = EXIT_FAILURE;
   if (LIBXSMM_DNN_SUCCESS != libxsmm_dnn_destroy_tensor(conv_input)) result = EXIT_FAILURE;
