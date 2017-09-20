@@ -103,7 +103,7 @@ LIBXSMM_API int libxsmm_mhd_read(
   const char filename[],
   /** Image dimensions (extents). */
   const size_t size[],
-  /** Leading dimensions (cNULL/0: size). */
+  /** Leading buffer dimensions (NULL: same as size). */
   const size_t pitch[],
   /* Dimensionality (number of entries in size). */
   size_t ndims,
@@ -137,7 +137,7 @@ LIBXSMM_API int libxsmm_mhd_read(
 LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   /** Image dimensions (extents). */
   const size_t size[],
-  /** Leading dimensions (cNULL/0: size). */
+  /** Leading buffer dimensions (NULL: same as size). */
   const size_t pitch[],
   /** Dimensionality i.e., number of entries in data_size/size. */
   size_t ndims,
