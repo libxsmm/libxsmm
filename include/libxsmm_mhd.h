@@ -105,6 +105,8 @@ LIBXSMM_API int libxsmm_mhd_read(
   const size_t size[],
   /** Leading buffer dimensions (NULL: same as size). */
   const size_t pitch[],
+  /** Offset within pitched buffer (NULL: no offset). */
+  const size_t offset[],
   /* Dimensionality (number of entries in size). */
   size_t ndims,
   /* Number of image components (channels). */

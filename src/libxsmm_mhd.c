@@ -502,11 +502,10 @@ LIBXSMM_API_INLINE int internal_mhd_read(FILE* file, void* data,
 }
 
 
-LIBXSMM_API int libxsmm_mhd_read( const char filename[],
-  const size_t size[], const size_t pitch[], size_t ndims, size_t ncomponents, size_t header_size,
-  libxsmm_mhd_elemtype type_stored, const libxsmm_mhd_elemtype* type_data,
-  void* data, libxsmm_mhd_element_handler handle_element,
-  char extension[], size_t extension_size)
+LIBXSMM_API int libxsmm_mhd_read(const char filename[],
+  const size_t size[], const size_t pitch[], const size_t offset[], size_t ndims, size_t ncomponents,
+  size_t header_size, libxsmm_mhd_elemtype type_stored, const libxsmm_mhd_elemtype* type_data,
+  void* data, libxsmm_mhd_element_handler handle_element, char extension[], size_t extension_size)
 {
   int result = EXIT_SUCCESS;
   FILE *const file = (0 != filename && 0 != *filename &&
@@ -520,7 +519,7 @@ LIBXSMM_API int libxsmm_mhd_read( const char filename[],
   if (0 != file) {
     const libxsmm_mhd_elemtype datatype = (type_data ? *type_data : type_stored);
     const size_t *const extent = (0 != pitch ? pitch : size);
-    size_t typesize = 0, i;
+    size_t offset1 = offset[0], typesize = 0, i;
 
     /* set file position to begin of data section */
     if (0 != header_size) {
@@ -538,15 +537,16 @@ LIBXSMM_API int libxsmm_mhd_read( const char filename[],
     /* zeroing buffer if pitch is larger than size */
     if (EXIT_SUCCESS == result) {
       if (0 != libxsmm_mhd_typename(datatype, &typesize, 0/*ctypename*/)) {
-        if (size != extent && libxsmm_mhd_element_comparison != handle_element) {
-          size_t size1 = size[0], pitch1 = extent[0];
-          for (i = 1; i < ndims; ++i) {
-            pitch1 *= extent[i];
-            size1 *= size[i];
-          }
+        size_t size1 = size[0], pitch1 = extent[0];
+        for (i = 1; i < ndims; ++i) {
+          offset1 += offset[i] * pitch1;
+          pitch1 *= extent[i];
+          size1 *= size[i];
+        }
+        if (0 == handle_element) {
           assert(size1 <= pitch1);
           if (size1 != pitch1) {
-            memset(data, 0, pitch1 * typesize);
+            memset(data, 0, pitch1 * ncomponents * typesize);
           }
         }
       }
@@ -555,8 +555,8 @@ LIBXSMM_API int libxsmm_mhd_read( const char filename[],
       }
     }
     if (EXIT_SUCCESS == result) {
-      result = internal_mhd_read(file, data, size, extent, ndims,
-        ncomponents, type_stored, datatype, typesize, handle_element);
+      result = internal_mhd_read(file, ((char*)data) + offset1 * ncomponents * typesize,
+        size, extent, ndims, ncomponents, type_stored, datatype, typesize, handle_element);
     }
     if (0 != extension && 0 < extension_size) {
       if (extension_size != fread(extension, 1, extension_size, file)) {

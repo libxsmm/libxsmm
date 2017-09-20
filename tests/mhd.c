@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
   /* take some block-sizes, which are used to test leading dimensions */
   const int bw = LIBXSMM_MAX(2 < argc ? atoi(argv[2]) : 64, 1);
   const int bh = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 64, 1);
-  size_t ndims = 3, size[3], pitch[3], ncomponents, header_size, extension_size;
+  size_t ndims = 3, size[3], pitch[3], offset[3], ncomponents, header_size, extension_size;
   libxsmm_mhd_elemtype type;
   char data_filename[1024];
   void* data = 0;
@@ -54,9 +54,13 @@ int main(int argc, char* argv[])
     pitch[0] = (size[0] + bw - 1) / bw * bw;
     pitch[1] = (size[1] + bh - 1) / bh * bh;
     pitch[2] = size[2];
+    /* center the image inside of the (pitched) buffer */
+    offset[0] = (pitch[0] - size[0]) / 2;
+    offset[1] = (pitch[1] - size[1]) / 2;
+    offset[2] = 0;
     if (0 != libxsmm_mhd_typename(type, &typesize, 0/*ctypename*/)) {
       const size_t nelements = pitch[0] * (1 < ndims ? (pitch[1] * (2 < ndims ? pitch[2] : 1)) : 1);
-      data = malloc(ncomponents * typesize * nelements);
+      data = malloc(ncomponents * nelements * typesize);
     }
     else {
       result = EXIT_FAILURE;
@@ -66,9 +70,8 @@ int main(int argc, char* argv[])
   /* Read the data according to the header into the allocated buffer. */
   if (EXIT_SUCCESS == result) {
     result = libxsmm_mhd_read(data_filename,
-      size, pitch, ndims, ncomponents, header_size,
-      type, 0/*type_data*/, data, 0/*handle_element*/,
-      0/*extension*/, 0/*extension_size*/);
+      size, pitch, offset, ndims, ncomponents, header_size, type, 0/*type_data*/, data,
+      0/*handle_element*/, 0/*extension*/, 0/*extension_size*/);
   }
 
   /* Write the data into a new file; update header_size. */
@@ -83,7 +86,7 @@ int main(int argc, char* argv[])
   /* Check the written data against the buffer. */
   if (EXIT_SUCCESS == result) {
     result = libxsmm_mhd_read(data_filename,
-      size, pitch, ndims, ncomponents, 0/*header_size*/,
+      size, pitch, offset, ndims, ncomponents, 0/*header_size*/,
       type, 0/*type_data*/, data, libxsmm_mhd_element_comparison,
       0/*extension*/, 0/*extension_size*/);
   }
