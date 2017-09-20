@@ -437,6 +437,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       libxsmm_matcopy_descriptor matzero_descriptor;
       if ( handle->use_nts_fwd != 0 ) {
         descriptor.use_nts = 1;
+      } else {
+        descriptor.use_nts = 0;
       }
       if (handle->desc.R == 1 && handle->desc.S == 1) {
         descriptor.unroll_kh = 1;
