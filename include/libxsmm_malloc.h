@@ -116,7 +116,7 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size,
 /**
  * Binary form of libxsmm_scratch_malloc, which
  * expands the call-context automatically. This
- * macro is intentionlly lower case.
+ * macro is intentionally lower case.
  */
 #define libxsmm_aligned_scratch(size, alignment) \
   libxsmm_scratch_malloc(size, alignment, LIBXSMM_CALLER)
@@ -165,6 +165,12 @@ LIBXSMM_API size_t libxsmm_get_scratch_limit(void);
 
 /** Calculate a hash value for a given buffer. */
 LIBXSMM_API unsigned int libxsmm_hash(const void* data, size_t size, unsigned int seed);
+
+/**
+ * Calculate the linear offset of the n-dimensional (ndims) offset (can be NULL),
+ * and the (optional) linear size of the corresponding shape.
+ */
+LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size);
 
 
 #if defined(__cplusplus)
