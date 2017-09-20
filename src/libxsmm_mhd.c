@@ -253,7 +253,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char header_filename[],
       {
         char* value = buffer + value_begin;
         size_t *isize = size, n = 0;
-        while (EXIT_SUCCESS == internal_mhd_readline(value, ' ', &key_end, &value_begin)) {
+        while (EXIT_SUCCESS == internal_mhd_readline(value, ' ', &key_end, &value_begin) && n < *ndims) {
           const int ivalue = atoi(value);
           if (0 < ivalue) {
             *isize = ivalue;
@@ -265,7 +265,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char header_filename[],
           ++isize;
           ++n;
         }
-        if (EXIT_SUCCESS == result && 0 != *value) {
+        if (EXIT_SUCCESS == result && 0 != *value && n < *ndims) {
           const int ivalue = atoi(value);
           if (0 < ivalue) {
             *isize = ivalue;
@@ -274,9 +274,6 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char header_filename[],
             result = EXIT_FAILURE;
           }
           ++n;
-        }
-        if (*ndims < n) {
-          result = EXIT_FAILURE;
         }
       }
       else if (0 == strncmp("BinaryData", buffer, key_end)
@@ -519,7 +516,7 @@ LIBXSMM_API int libxsmm_mhd_read(const char filename[],
   if (0 != file) {
     const libxsmm_mhd_elemtype datatype = (type_data ? *type_data : type_stored);
     const size_t *const extent = (0 != pitch ? pitch : size);
-    size_t offset1 = offset[0], typesize = 0, i;
+    size_t offset1 = (0 != offset ? offset[0] : 0), typesize = 0, i;
 
     /* set file position to begin of data section */
     if (0 != header_size) {
@@ -539,15 +536,13 @@ LIBXSMM_API int libxsmm_mhd_read(const char filename[],
       if (0 != libxsmm_mhd_typename(datatype, &typesize, 0/*ctypename*/)) {
         size_t size1 = size[0], pitch1 = extent[0];
         for (i = 1; i < ndims; ++i) {
-          offset1 += offset[i] * pitch1;
+          offset1 += (0 != offset ? offset[i] : 0) * pitch1;
           pitch1 *= extent[i];
           size1 *= size[i];
         }
-        if (0 == handle_element) {
-          assert(size1 <= pitch1);
-          if (size1 != pitch1) {
-            memset(data, 0, pitch1 * ncomponents * typesize);
-          }
+        assert(size1 <= pitch1);
+        if (size1 != pitch1 && 0 == handle_element) {
+          memset(data, 0, pitch1 * ncomponents * typesize);
         }
       }
       else {
