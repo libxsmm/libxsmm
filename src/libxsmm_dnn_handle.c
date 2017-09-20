@@ -547,9 +547,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     { libxsmm_convolution_forward_descriptor descriptor;
       libxsmm_matcopy_descriptor matcopy_descriptor;
       libxsmm_matcopy_descriptor matzero_descriptor;
-      if ( handle->use_nts_fwd != 0 ) {
-        descriptor.use_nts = 1;
-      }
+      descriptor.use_nts =  handle->use_nts_fwd;
+
       if (handle->desc.R == 1 && handle->desc.S == 1) {
         descriptor.unroll_kh = 1;
         descriptor.unroll_kw = 1;
@@ -1100,7 +1099,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matzero_descriptor_overwrite.unroll_level = 2;
           matzero_descriptor_overwrite.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype);
           matzero_descriptor_overwrite.flags = LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE;
-          handle->matcopy_bwd[1].xmatcopy =  handle->matcopy_fwd[1].xmatcopy; /* libxsmm_xmatcopydispatch(&matzero_descriptor_overwrite);*/
+          handle->matcopy_bwd[1].xmatcopy = libxsmm_xmatcopydispatch(&matzero_descriptor_overwrite);
         }
 
         /*int *compute_indices =   mirror_handle->compute_fwd_indices_ptrs[0];      
