@@ -308,12 +308,19 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char header_filename[],
     if (EXIT_SUCCESS == result && (0 == *filename || LIBXSMM_MHD_ELEMTYPE_UNKNOWN == *type)) {
       result = EXIT_FAILURE;
     }
+    /* check size, and eventually trim dimensionality */
     if (EXIT_SUCCESS == result) {
-      size_t i;
-      for (i = 0; i < *ndims; ++i) {
-        if (0 == size[i]) {
+      size_t i, d = 1;
+      for (i = *ndims; 0 < i; --i) {
+        if (0 != d && 1 == size[i-1]) {
+          --*ndims;
+        }
+        else if (0 == size[i-1]) {
           result = EXIT_FAILURE;
           break;
+        }
+        else {
+          d = 0;
         }
       }
     }
@@ -416,29 +423,24 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_element_comparison(void* dst, libxsmm_mhd
 
 LIBXSMM_API_INLINE int internal_mhd_read(FILE* file, void* data,
   const size_t size[], const size_t pitch[], size_t ndims, size_t ncomponents,
-  libxsmm_mhd_elemtype type_stored, const libxsmm_mhd_elemtype* type_data,
-  libxsmm_mhd_element_handler handle_element)
+  libxsmm_mhd_elemtype type_stored, libxsmm_mhd_elemtype type_data,
+  size_t typesize, libxsmm_mhd_element_handler handle_element)
 {
-  const libxsmm_mhd_elemtype datatype = (type_data ? *type_data : type_stored);
-  size_t typesize_stored, typesize_data;
   int result = EXIT_SUCCESS;
+  size_t typesize_stored;
 
-  if (0 != libxsmm_mhd_typename(type_stored, &typesize_stored, 0/*ctypename*/) &&
-      0 != libxsmm_mhd_typename(datatype, &typesize_data, 0/*ctypename*/))
-  {
-    const size_t *const extent = (0 != pitch ? pitch : size);
-    assert(0 != extent);
-
+  assert(0 != pitch && 0 != typesize);
+  if (0 != libxsmm_mhd_typename(type_stored, &typesize_stored, 0/*ctypename*/)) {
     if (1 < ndims) {
-      if (size[0] <= extent[0]) {
+      if (size[0] <= pitch[0]) {
         const size_t d = ndims - 1;
 
-        if (EXIT_SUCCESS == result && size[d] <= extent[d]) {
-          size_t sub_size = ncomponents * typesize_data * extent[0], i;
+        if (EXIT_SUCCESS == result && size[d] <= pitch[d]) {
+          size_t sub_size = ncomponents * typesize * pitch[0], i;
 
           for (i = 1; i < d; ++i) {
-            if (size[i] <= extent[i]) {
-              sub_size *= extent[i];
+            if (size[i] <= pitch[i]) {
+              sub_size *= pitch[i];
             }
             else {
               result = EXIT_FAILURE;
@@ -446,8 +448,8 @@ LIBXSMM_API_INLINE int internal_mhd_read(FILE* file, void* data,
             }
           }
           for (i = 0; i < size[d]; ++i) {
-            result = internal_mhd_read(file, data, size, pitch, d,
-              ncomponents, type_stored, type_data, handle_element);
+            result = internal_mhd_read(file, data, size, pitch, d, ncomponents,
+              type_stored, type_data, typesize, handle_element);
             if (EXIT_SUCCESS == result) {
               data = ((char*)data) + sub_size;
             }
@@ -465,8 +467,8 @@ LIBXSMM_API_INLINE int internal_mhd_read(FILE* file, void* data,
       }
     }
     else if (1 == ndims) {
-      if (type_stored == datatype && 0 == handle_element) {
-        if (extent[0] < size[0] || size[0] != fread(data, ncomponents * typesize_stored, size[0], file)) {
+      if (type_stored == type_data && 0 == handle_element) {
+        if (pitch[0] < size[0] || size[0] != fread(data, ncomponents * typesize_stored, size[0], file)) {
           result = EXIT_FAILURE;
         }
       }
@@ -478,9 +480,9 @@ LIBXSMM_API_INLINE int internal_mhd_read(FILE* file, void* data,
         for (i = 0; i < size[0]; ++i) {
           for (j = 0; j < ncomponents; ++j) {
             if (1 == fread(element, typesize_stored, 1, file) &&
-              EXIT_SUCCESS == handler(data, datatype, element, type_stored))
+              EXIT_SUCCESS == handler(data, type_data, element, type_stored))
             {
-              data = ((char*)data) + typesize_data;
+              data = ((char*)data) + typesize;
             }
             else {
               result = EXIT_FAILURE;
@@ -516,12 +518,45 @@ LIBXSMM_API int libxsmm_mhd_read( const char filename[],
     : NULL;
 
   if (0 != file) {
+    const libxsmm_mhd_elemtype datatype = (type_data ? *type_data : type_stored);
+    const size_t *const extent = (0 != pitch ? pitch : size);
+    size_t typesize = 0, i;
+
+    /* set file position to begin of data section */
     if (0 != header_size) {
       result = fseek(file, (long)header_size, SEEK_SET);
     }
+    /* check that size is less-equal than pitch */
     if (EXIT_SUCCESS == result) {
-      result = internal_mhd_read(file, data, size, pitch, ndims,
-        ncomponents, type_stored, type_data, handle_element);
+      for (i = 0; i < ndims; ++i) {
+        if (size[i] > extent[i]) {
+          result = EXIT_FAILURE;
+          break;
+        }
+      }
+    }
+    /* zeroing buffer if pitch is larger than size */
+    if (EXIT_SUCCESS == result) {
+      if (0 != libxsmm_mhd_typename(datatype, &typesize, 0/*ctypename*/)) {
+        if (size != extent && libxsmm_mhd_element_comparison != handle_element) {
+          size_t size1 = size[0], pitch1 = extent[0];
+          for (i = 1; i < ndims; ++i) {
+            pitch1 *= extent[i];
+            size1 *= size[i];
+          }
+          assert(size1 <= pitch1);
+          if (size1 != pitch1) {
+            memset(data, 0, pitch1 * typesize);
+          }
+        }
+      }
+      else {
+        result = EXIT_FAILURE;
+      }
+    }
+    if (EXIT_SUCCESS == result) {
+      result = internal_mhd_read(file, data, size, extent, ndims,
+        ncomponents, type_stored, datatype, typesize, handle_element);
     }
     if (0 != extension && 0 < extension_size) {
       if (extension_size != fread(extension, 1, extension_size, file)) {
