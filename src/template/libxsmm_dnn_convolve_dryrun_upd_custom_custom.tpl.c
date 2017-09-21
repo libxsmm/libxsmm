@@ -115,7 +115,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   /*
      if (handle->padding_flag == 1) {
      handle->n_entries_init_upd[ltid] = copy_thr_end - copy_thr_begin;
-     init_indices = (int*) libxsmm_aligned_malloc( (copy_thr_end - copy_thr_begin + 1) * sizeof(int), 65536);
+     init_indices = (int*) libxsmm_aligned_malloc( (copy_thr_end - copy_thr_begin + 1) * sizeof(int), 64);
      handle->init_upd_indices_ptrs[ltid] = init_indices;
      aux = 0;
      for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
@@ -127,7 +127,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
      if (handle->trans_ofw_ifm == 0) {
      handle->n_entries_copy_upd[ltid] = copy_thr_end - copy_thr_begin;
-     copy_indices = (int*) libxsmm_aligned_malloc( 2 * (copy_thr_end - copy_thr_begin + 1) * sizeof(int), 65536);
+     copy_indices = (int*) libxsmm_aligned_malloc( 2 * (copy_thr_end - copy_thr_begin + 1) * sizeof(int), 64);
      handle->copy_upd_indices_ptrs[ltid] = copy_indices;
      aux = 0;
      for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
@@ -192,9 +192,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   /* Alocate auxiliary data structures for index jitting  */
   handle->n_entries_upd[ltid] = local_entries/3;
-  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 65536);
+  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
   handle->compute_upd_indices_ptrs[ltid] = compute_indices;
-  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 65536);
+  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 64);
   handle->kernel_upd_variant_ptrs[ltid] = kernel_variant;
   handle->n_upd_code_segments[ltid] = n_code_segments;
   expanded_size = local_entries/3 + n_code_segments;
@@ -202,7 +202,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   /*tmp_expanded_stream = (int*) malloc( expanded_size * sizeof(int) );
     tmp_stream_index = 0;
     if (n_code_segments) {
-    encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 65536);
+    encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 64);
     handle->upd_code_segments[ltid] = encoded_code_segments;
     }*/
 
