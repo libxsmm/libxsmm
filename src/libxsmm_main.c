@@ -1618,6 +1618,12 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_descriptor_init(libxsmm_gemm_descriptor*
     free(result);
     result = 0;
   }
+  if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM WARNING: create_dgemm_descriptor is deprecated, use libxsmm_gemm_descriptor_init instead!\n");
+    }
+  }
   return result;
 }
 
@@ -1625,6 +1631,12 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_descriptor_init(libxsmm_gemm_descriptor*
 /*DEPRECATED*/LIBXSMM_API_DEFINITION void libxsmm_release_gemm_descriptor(const libxsmm_gemm_descriptor* descriptor)
 {
   free((void*)descriptor);
+  if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM WARNING: release_gemm_descriptor is deprecated, libxsmm_gemm_descriptor_init makes it superfluous!\n");
+    }
+  }
 }
 
 
