@@ -209,7 +209,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
     handle->ofh = (conv_desc.H + 2*conv_desc.pad_h - conv_desc.R) / conv_desc.u + 1;
     handle->ofw = (conv_desc.W + 2*conv_desc.pad_w - conv_desc.S) / conv_desc.v + 1;
     /* @FIXME, for now we error out on physical output padding */
-    if ( conv_desc.pad_w_out != 0 || conv_desc.pad_w_out != 0 ) {
+    if ( conv_desc.pad_h_out != 0 || conv_desc.pad_w_out != 0 ) {
       *status = LIBXSMM_DNN_ERR_INVALID_PADDING;
       free(handle);
       handle = 0;
@@ -409,10 +409,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor* libxsmm_dnn_link_tensor(const libxsmm
 LIBXSMM_API_DEFINITION libxsmm_dnn_tensor* libxsmm_dnn_link_qtensor(const libxsmm_dnn_tensor_datalayout* layout, const void* data, const char exp, libxsmm_dnn_err_t* status)
 {
   libxsmm_dnn_tensor* tensor = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
-  memset(tensor, 0, sizeof(libxsmm_dnn_tensor));
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (layout != 0 && tensor != 0 && data != 0) {
+    memset(tensor, 0, sizeof(libxsmm_dnn_tensor));
     tensor->layout = libxsmm_dnn_duplicate_tensor_datalayout(layout, status);
     tensor->data = (void*)data;
     tensor->exp = exp;
@@ -741,18 +741,22 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_duplicate_tens
     unsigned int dim = 0;
 
     dst_layout = (libxsmm_dnn_tensor_datalayout*) malloc(sizeof(libxsmm_dnn_tensor_datalayout));
-    memset(dst_layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
-    dst_layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(layout->num_dims*sizeof(libxsmm_dnn_tensor_dimtype));
-    dst_layout->dim_size = (unsigned int*) malloc(layout->num_dims*sizeof(unsigned int));
-    dst_layout->num_dims = layout->num_dims;
-    dst_layout->format = layout->format;
-    dst_layout->custom_format = layout->custom_format;
-    dst_layout->datatype = layout->datatype;
-    dst_layout->tensor_type = layout->tensor_type;
+    if (0 != dst_layout) {
+      memset(dst_layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
+      dst_layout->dim_type = (libxsmm_dnn_tensor_dimtype*)malloc(layout->num_dims * sizeof(libxsmm_dnn_tensor_dimtype));
+      dst_layout->dim_size = (unsigned int*)malloc(layout->num_dims * sizeof(unsigned int));
+      dst_layout->num_dims = layout->num_dims;
+      dst_layout->format = layout->format;
+      dst_layout->custom_format = layout->custom_format;
+      dst_layout->datatype = layout->datatype;
+      dst_layout->tensor_type = layout->tensor_type;
 
-    for ( dim = 0; dim < layout->num_dims; ++dim ) {
-      dst_layout->dim_type[dim] = layout->dim_type[dim];
-      dst_layout->dim_size[dim] = layout->dim_size[dim];
+      for (dim = 0; dim < layout->num_dims; ++dim) {
+        dst_layout->dim_type[dim] = layout->dim_type[dim];
+        dst_layout->dim_size[dim] = layout->dim_size[dim];
+      }
+    } else {
+      *status = LIBXSMM_DNN_ERR_CREATE_LAYOUT;
     }
   } else {
     *status = LIBXSMM_DNN_ERR_INVALID_LAYOUT;
