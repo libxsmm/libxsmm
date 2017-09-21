@@ -158,7 +158,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   /* Dryrun for transpose stream */
   if ( handle->desc.R == 1 && handle->desc.S == 1 && handle->use_nts_bwd == 1 ) {
     handle->n_entries_trans_bwd[ltid] = 2* (transpose_thr_end - transpose_thr_begin);
-    trans_indices = (int*) libxsmm_aligned_malloc( 2 * (transpose_thr_end - transpose_thr_begin + 1) * sizeof(int), 65536);
+    trans_indices = (int*) libxsmm_aligned_malloc( 2 * (transpose_thr_end - transpose_thr_begin + 1) * sizeof(int), 64);
     handle->transpose_bwd_indices_ptrs[ltid] = trans_indices;
     aux = 0;
     for (comp = transpose_thr_begin; comp < transpose_thr_end; ++comp) {
@@ -173,7 +173,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     trans_indices[aux] = ( ( ( ( ( ( ofm1 * handle->blocksifm) + ifm1) * handle->desc.R) + kj) * handle->desc.S) +  ki) * handle->ofmblock * handle->ifmblock * handle->fm_lp_block;
   } else {
     handle->n_entries_trans_bwd[ltid] = transpose_thr_end - transpose_thr_begin;
-    trans_indices = (int*) libxsmm_aligned_malloc( (transpose_thr_end - transpose_thr_begin + 1) * sizeof(int), 65536);
+    trans_indices = (int*) libxsmm_aligned_malloc( (transpose_thr_end - transpose_thr_begin + 1) * sizeof(int), 64);
     handle->transpose_bwd_indices_ptrs[ltid] = trans_indices;
     aux = 0;
     for (comp = transpose_thr_begin; comp < transpose_thr_end; ++comp) {
@@ -231,9 +231,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     handle->n_entries_bwd[ltid] = local_entries/3;
 
     /* Alocate auxiliary data structures for index jitting  */
-    compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 65536);
+    compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
     handle->compute_bwd_indices_ptrs[ltid] = compute_indices;
-    kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 65536);
+    kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 64);
     handle->kernel_bwd_variant_ptrs[ltid] = kernel_variant;
     handle->n_bwd_code_segments[ltid] = n_code_segments;
     expanded_size = local_entries/3 + n_code_segments;
@@ -354,9 +354,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     handle->n_entries_bwd[ltid] = local_entries/3;
 
     /* Alocate auxiliary data structures for index jitting  */
-    compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 65536);
+    compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
     handle->compute_bwd_indices_ptrs[ltid] = compute_indices;
-    kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 65536);
+    kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 64);
     handle->kernel_bwd_variant_ptrs[ltid] = kernel_variant;
     handle->n_bwd_code_segments[ltid] = n_code_segments;
     expanded_size = local_entries/3 + n_code_segments;
@@ -367,7 +367,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #endif
     tmp_stream_index = 0;
     if (n_code_segments) {
-      encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 65536);
+      encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 64);
       handle->bwd_code_segments[ltid] = encoded_code_segments;
     } else {
       encoded_code_segments = NULL;
