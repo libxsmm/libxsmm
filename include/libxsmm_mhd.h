@@ -101,12 +101,12 @@ LIBXSMM_API int libxsmm_mhd_read_header(
 LIBXSMM_API int libxsmm_mhd_read(
   /* Filename referring to the data. */
   const char filename[],
+  /** Offset within pitched buffer (NULL: no offset). */
+  const size_t offset[],
   /** Image dimensions (extents). */
   const size_t size[],
   /** Leading buffer dimensions (NULL: same as size). */
   const size_t pitch[],
-  /** Offset within pitched buffer (NULL: no offset). */
-  const size_t offset[],
   /* Dimensionality (number of entries in size). */
   size_t ndims,
   /* Number of image components (channels). */
@@ -137,6 +137,8 @@ LIBXSMM_API int libxsmm_mhd_read(
  * The file is suitable for visual inspection using e.g., ITK-SNAP or ParaView.
  */
 LIBXSMM_API int libxsmm_mhd_write(const char filename[],
+  /** Offset within pitched buffer (NULL: no offset). */
+  const size_t offset[],
   /** Image dimensions (extents). */
   const size_t size[],
   /** Leading buffer dimensions (NULL: same as size). */

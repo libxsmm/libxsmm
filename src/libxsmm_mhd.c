@@ -500,7 +500,7 @@ LIBXSMM_API_INLINE int internal_mhd_read(FILE* file, void* data,
 
 
 LIBXSMM_API int libxsmm_mhd_read(const char filename[],
-  const size_t size[], const size_t pitch[], const size_t offset[], size_t ndims, size_t ncomponents,
+  const size_t offset[], const size_t size[], const size_t pitch[], size_t ndims, size_t ncomponents,
   size_t header_size, libxsmm_mhd_elemtype type_stored, const libxsmm_mhd_elemtype* type_data,
   void* data, libxsmm_mhd_element_handler handle_element, char extension[], size_t extension_size)
 {
@@ -515,7 +515,7 @@ LIBXSMM_API int libxsmm_mhd_read(const char filename[],
 
   if (0 != file) {
     const libxsmm_mhd_elemtype datatype = (type_data ? *type_data : type_stored);
-    const size_t *const extent = (0 != pitch ? pitch : size);
+    const size_t *const shape = (0 != pitch ? pitch : size);
     size_t offset1 = (0 != offset ? offset[0] : 0), typesize = 0, i;
 
     /* set file position to begin of data section */
@@ -525,7 +525,7 @@ LIBXSMM_API int libxsmm_mhd_read(const char filename[],
     /* check that size is less-equal than pitch */
     if (EXIT_SUCCESS == result) {
       for (i = 0; i < ndims; ++i) {
-        if (size[i] > extent[i]) {
+        if (size[i] > shape[i]) {
           result = EXIT_FAILURE;
           break;
         }
@@ -534,10 +534,10 @@ LIBXSMM_API int libxsmm_mhd_read(const char filename[],
     /* zeroing buffer if pitch is larger than size */
     if (EXIT_SUCCESS == result) {
       if (0 != libxsmm_mhd_typename(datatype, &typesize, 0/*ctypename*/)) {
-        size_t size1 = size[0], pitch1 = extent[0];
+        size_t size1 = size[0], pitch1 = shape[0];
         for (i = 1; i < ndims; ++i) {
           offset1 += (0 != offset ? offset[i] : 0) * pitch1;
-          pitch1 *= extent[i];
+          pitch1 *= shape[i];
           size1 *= size[i];
         }
         assert(size1 <= pitch1);
@@ -551,7 +551,7 @@ LIBXSMM_API int libxsmm_mhd_read(const char filename[],
     }
     if (EXIT_SUCCESS == result) {
       result = internal_mhd_read(file, ((char*)data) + offset1 * ncomponents * typesize,
-        size, extent, ndims, ncomponents, type_stored, datatype, typesize, handle_element);
+        size, shape, ndims, ncomponents, type_stored, datatype, typesize, handle_element);
     }
     if (0 != extension && 0 < extension_size) {
       if (extension_size != fread(extension, 1, extension_size, file)) {
@@ -573,19 +573,18 @@ LIBXSMM_API_INLINE int internal_mhd_write(FILE* file, const void* data,
   const size_t size[], const size_t pitch[], size_t typesize, size_t ndims)
 {
   int result = EXIT_SUCCESS;
-  const size_t *const extent = (0 != pitch ? pitch : size);
 
-  assert(0 != extent);
+  assert(0 != pitch);
   if (1 < ndims) {
-    if (size[0] <= extent[0]) {
+    if (size[0] <= pitch[0]) {
       const size_t d = ndims - 1;
 
-      if (EXIT_SUCCESS == result && size[d] <= extent[d]) {
-        size_t sub_size = typesize * extent[0], i;
+      if (EXIT_SUCCESS == result && size[d] <= pitch[d]) {
+        size_t sub_size = typesize * pitch[0], i;
 
         for (i = 1; i < d; ++i) {
-          if (size[i] <= extent[i]) {
-            sub_size *= extent[i];
+          if (size[i] <= pitch[i]) {
+            sub_size *= pitch[i];
           }
           else {
             result = EXIT_FAILURE;
@@ -611,7 +610,7 @@ LIBXSMM_API_INLINE int internal_mhd_write(FILE* file, const void* data,
     }
   }
   else if (1 == ndims) {
-    if (extent[0] < size[0] || size[0] != fwrite(data, typesize, size[0], file)) {
+    if (pitch[0] < size[0] || size[0] != fwrite(data, typesize, size[0], file)) {
       result = EXIT_FAILURE;
     }
   }
@@ -621,8 +620,8 @@ LIBXSMM_API_INLINE int internal_mhd_write(FILE* file, const void* data,
 
 
 LIBXSMM_API_DEFINITION int libxsmm_mhd_write(const char filename[],
-  const size_t size[], const size_t pitch[], size_t ndims, size_t ncomponents,
-  libxsmm_mhd_elemtype type, const void* data, size_t* header_size,
+  const size_t offset[], const size_t size[], const size_t pitch[], size_t ndims,
+  size_t ncomponents, libxsmm_mhd_elemtype type, const void* data, size_t* header_size,
   const char extension_header[], const void* extension, size_t extension_size)
 {
   size_t typesize = 0;
@@ -673,8 +672,11 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_write(const char filename[],
     }
     /* ElementDataFile must be the last entry before writing the data */
     if (EXIT_SUCCESS == result && 0 < fprintf(file, "\nElementType = %s\nElementDataFile = LOCAL\n", elemname)) {
+      const size_t *const shape = (0 != pitch ? pitch : size), ntypesize = ncomponents * typesize;
       if (0 != header_size) *header_size = ftell(file); /* determine the header size */
-      result = internal_mhd_write(file, data, size, pitch, ncomponents * typesize, ndims);
+      result = internal_mhd_write(file,
+        ((const char*)data) + libxsmm_offset(offset, shape, ndims, 0/*size*/) * ntypesize,
+        size, pitch, ntypesize, ndims);
     }
     /* append the extension data after the regular data section */
     if (EXIT_SUCCESS == result && 0 < extension_size) {

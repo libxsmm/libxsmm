@@ -70,13 +70,13 @@ int main(int argc, char* argv[])
   /* Read the data according to the header into the allocated buffer. */
   if (EXIT_SUCCESS == result) {
     result = libxsmm_mhd_read(data_filename,
-      size, pitch, offset, ndims, ncomponents, header_size, type, 0/*type_data*/, data,
+      offset, size, pitch, ndims, ncomponents, header_size, type, 0/*type_data*/, data,
       0/*handle_element*/, 0/*extension*/, 0/*extension_size*/);
   }
 
   /* Write the data into a new file; update header_size. */
   if (EXIT_SUCCESS == result) {
-    result = libxsmm_mhd_write("mhd_test.mhd", pitch, pitch,
+    result = libxsmm_mhd_write("mhd_test.mhd", 0/*offset*/, pitch, pitch,
       ndims, ncomponents, type, data, &header_size,
       0/*extension_header*/,
       0/*extension*/,
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
   /* Check the written data against the buffer. */
   if (EXIT_SUCCESS == result) {
     result = libxsmm_mhd_read(data_filename,
-      size, pitch, offset, ndims, ncomponents, 0/*header_size*/,
+      offset, size, pitch, ndims, ncomponents, 0/*header_size*/,
       type, 0/*type_data*/, data, libxsmm_mhd_element_comparison,
       0/*extension*/, 0/*extension_size*/);
   }
