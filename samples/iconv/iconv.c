@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
   const int kh = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : kw, 1);
   const char *const filename_out = (5 < argc ? argv[5] : "iconv_out.mhd");
   int result = 0 != strcmp(filename_in, filename_out) ? EXIT_SUCCESS : EXIT_FAILURE;
-  size_t ndims = 2, size_in[2], size_out[2], pitch[2], offset[2], ncomponents = 1, header_size = 0, extension_size;
+  size_t ndims = 2, size_in[2] = { 0 }, size_out[2], pitch[2], offset[2], ncomponents = 1, header_size = 0, extension_size;
   void *conv_input_buffer = 0, *conv_filter_buffer = 0, *conv_output_buffer = 0;
   libxsmm_dnn_tensor *conv_input = 0, *conv_output = 0, *conv_filter = 0;
   libxsmm_mhd_elemtype type_in = LIBXSMM_MHD_ELEMTYPE_UNKNOWN;
@@ -377,7 +377,7 @@ int main(int argc, char* argv[])
   }
 
   /* convert into input pixel-type, and re-write result image. */
-  if (EXIT_SUCCESS == result && 0 == orig && type_in != type_dnn) {
+  if (EXIT_SUCCESS == result && 0 == orig && (((int)type_in) != ((int)type_dnn))) {
     size_t typesize_in;
     if (0 != libxsmm_mhd_typename(type_in, &typesize_in, 0/*ctypename*/)) {
       /* we do not want to convert to a larger type (typesize can be equal, but type may be different) */
