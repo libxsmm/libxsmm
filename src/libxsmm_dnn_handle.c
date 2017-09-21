@@ -90,6 +90,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
   }
 
+  handle->use_fwd_for_bwd = 0;
   if ( 0 == env_jit || 0 == *env_jit) {
     /* By default do not do any thread private jitting */
     handle->use_thread_private_jit = 0;
@@ -845,7 +846,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         fwd_equivalent_descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
         fwd_equivalent_descriptor.blocks_ifm_blocking = handle->blocksofm_blocking;
         fwd_equivalent_descriptor.weight_stride = 1; 
-        fwd_equivalent_descriptor.use_fwd_generator_for_bwd = 0;
+        fwd_equivalent_descriptor.use_fwd_generator_for_bwd = 1;
         fwd_equivalent_descriptor.stride_h_store = handle->desc.u;
         fwd_equivalent_descriptor.stride_w_store = handle->desc.v;
         fwd_equivalent_descriptor.use_nts = handle->use_nts_bwd;
@@ -1099,6 +1100,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         libxsmm_dnn_layer *mirror_handle = (libxsmm_dnn_layer*)  malloc(sizeof(libxsmm_dnn_layer));
 
         memcpy( mirror_handle, handle ,sizeof(libxsmm_dnn_layer));
+        mirror_handle->use_fwd_for_bwd = 1;
         mirror_handle->blocksifm_blocking = handle->blocksofm_blocking;
         mirror_handle->fwd_ofh_rb = handle->bwd_ofh_rb;
         mirror_handle->fwd_ofw_rb = handle->bwd_ofw_rb;
@@ -1110,8 +1112,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         mirror_handle->use_nts_fwd = handle->use_nts_bwd;
         mirror_handle->block_fwd_ofm = handle->block_fwd_ifm;
         mirror_handle->blocksifm = handle->blocksofm;
-        mirror_handle->ofh = handle->desc.H;
-        mirror_handle->ofw = handle->desc.W;
+        mirror_handle->ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.S) / handle->desc.v + 1;
+        mirror_handle->ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.R) / handle->desc.u + 1;
         mirror_handle->ifmblock = handle->ofmblock;
         mirror_handle->ofmblock = handle->ifmblock;
         mirror_handle->compute_fwd_indices_ptrs =  handle->compute_bwd_indices_ptrs;

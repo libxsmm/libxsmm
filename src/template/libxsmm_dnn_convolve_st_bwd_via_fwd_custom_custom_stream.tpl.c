@@ -153,7 +153,7 @@ if (handle->datatype != handle->datatype_itm) {
     /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
     code_stream = handle->bwd_code_segments[ltid];
 
-    if (handle->desc.W == 7) {
+    if (handle->ofw == 7) {
       for (pc = 0; pc < n_segments; pc++) {
         instr = code_stream[pc].segment_type;
         n_convs = code_stream[pc].n_convs;
@@ -228,7 +228,7 @@ if (handle->datatype != handle->datatype_itm) {
     }
   } else {
     /* Run the stream of convolutions, no extra operations are required... */
-    if (handle->desc.W == 7) {
+    if (handle->ofw == 7) {
       for (pc = 0; pc < instr; pc+=1) {
         offset_i = stream[i];
         offset_w = stream[i+1]; 

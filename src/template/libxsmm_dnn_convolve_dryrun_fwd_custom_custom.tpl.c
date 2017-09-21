@@ -90,6 +90,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #endif
   int img, ofm1, ifm1, oj, oi, ij, ii, local_entries = 0, ojb, ifmb, ofmb;
   int cur_wt, next_wt, cur_out, next_out, padded_h = 0, padded_w = 0;
+  int ii_use, ij_use, oi_use, oj_use;
 
   /* Threading related variables */
   int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -202,8 +203,18 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
               for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
                 for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
                   for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
-                    ij = oj * handle->desc.u;
-                    ii = oi * handle->desc.v;
+
+                    if ( handle->use_fwd_for_bwd == 0 ) {
+                      ij_use = oj * handle->desc.u;
+                      ii_use = oi * handle->desc.v;
+                      oi_use = oi;
+                      oj_use = oj;
+                    } else {
+                      ij_use = oj;
+                      ii_use = oi;
+                      oi_use = oi * handle->desc.u;
+                      oj_use = oj * handle->desc.v;                    
+                    }
 
                     if (mark_ofm_init == 1) {
                       if (ifm1 == 0 && oj == 0 && oi == 0) {
@@ -213,12 +224,12 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     }
 
                     if (handle->padding_flag == 1) {
-                      compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij) * padded_w)  +  ii) *  handle->ifmblock * handle->fm_lp_block;
+                      compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij_use) * padded_w)  +  ii_use) *  handle->ifmblock * handle->fm_lp_block;
                     } else {
-                      compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block;
+                      compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij_use) * handle->ifwp)  +  ii_use  ) *  handle->ifmblock * handle->fm_lp_block;
                     }
                     compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
-                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
+                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj_use) * handle->ofwp)  +  oi_use) *  handle->ofmblock;
 
 
                     /*if (ltid == 0) {
@@ -253,6 +264,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     }
   }
 
+#if 0
   if (loop_order == KHWC) {
     for (img = my_img_start; img < my_img_end; img++) {
       if (mark_img_init== 1) {
@@ -309,6 +321,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       }
     }
   }
+#endif
 
   if (loop_order == HWKC) {
     for (img = my_img_start; img < my_img_end; img++) {
@@ -325,8 +338,17 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                 for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {       
                   for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
 
-                    ij = oj * handle->desc.u;
-                    ii = oi * handle->desc.v;
+                    if ( handle->use_fwd_for_bwd == 0 ) {
+                      ij_use = oj * handle->desc.u;
+                      ii_use = oi * handle->desc.v;
+                      oi_use = oi;
+                      oj_use = oj;
+                    } else {
+                      ij_use = oj;
+                      ii_use = oi;
+                      oi_use = oi * handle->desc.u;
+                      oj_use = oj * handle->desc.v;                    
+                    }
 
                     if (mark_ofm_init == 1) {
                       if (ifm1 == 0 && oj == 0 && oi == 0) {
@@ -336,12 +358,12 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     }
 
                     if (handle->padding_flag == 1) {
-                      compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij) * padded_w)  +  ii) *  handle->ifmblock * handle->fm_lp_block;
+                      compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij_use) * padded_w)  +  ii_use) *  handle->ifmblock * handle->fm_lp_block;
                     } else {
-                      compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block;
+                      compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij_use) * handle->ifwp)  +  ii_use  ) *  handle->ifmblock * handle->fm_lp_block;
                     }
                     compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
-                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
+                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj_use) * handle->ofwp)  +  oi_use  ) *  handle->ofmblock;
 
                     /* Initialize kernel variant with the one that prefetches everything */
                     /*kernel_variant[local_entries/3] = 2;*/
@@ -373,6 +395,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     }
   }
 
+#if 0
   if (loop_order == CHWK) {
     for (img = my_img_start; img < my_img_end; img++) {
       if (mark_img_init== 1) {
@@ -484,6 +507,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       }
     }
   }
+#endif
 
   /* Process the expanded stream and encode the segments via run length encoding */
   if (n_code_segments) {
