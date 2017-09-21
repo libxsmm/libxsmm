@@ -65,10 +65,6 @@
 # define USE_OUTPUT_PADDING
 #endif
 
-#if !defined(USE_OUTPUT_TYPE) && 0
-# define USE_OUTPUT_TYPE
-#endif
-
 #if !defined(USE_OVERWRITE)
 # define USE_OVERWRITE
 #endif
@@ -85,13 +81,13 @@ int main(int argc, char* argv[])
   size_t ndims = 2, size_in[2], size_out[2], pitch[2], offset[2], ncomponents = 1, header_size = 0, extension_size;
   void *conv_input_buffer = 0, *conv_filter_buffer = 0, *conv_output_buffer = 0;
   libxsmm_dnn_tensor *conv_input = 0, *conv_output = 0, *conv_filter = 0;
-  libxsmm_dnn_datatype type_out = LIBXSMM_DNN_DATATYPE_F32;
   libxsmm_mhd_elemtype type_in = LIBXSMM_MHD_ELEMTYPE_UNKNOWN;
+  libxsmm_dnn_datatype type_dnn = LIBXSMM_DNN_DATATYPE_F32;
   libxsmm_dnn_conv_desc descriptor = { 0 };
   libxsmm_dnn_layer* handle = 0;
   libxsmm_dnn_err_t status;
-  size_t size1 = 0, typesize = 0, i, j;
-  size_t conv_output_size1 = 0;
+  size_t size1 = 0, typesize_dnn = 0;
+  size_t conv_output_size1 = 0, i, j;
   unsigned long long start;
   char filename[1024];
   double duration = 0;
@@ -100,6 +96,13 @@ int main(int argc, char* argv[])
 #if !defined(NDEBUG)
   static int error_once = 0;
 #endif
+
+  const char *const env_mult = getenv("MULT"), *const env_orig = getenv("ORIG");
+  /* extents of result image become multiples of block-size */
+  const size_t mult = ((0 == env_mult || 0 == *env_mult) ? 64/*default*/ : LIBXSMM_MAX(atoi(env_mult), 0));
+  /* save result image with original compute-type (type_dnn), and not with pixel-type of input (type_in) */
+  const int orig = ((0 == env_orig || 0 == *env_orig) ? 0/*disabled*/ : atoi(env_orig));
+
   /* Generate an input file if a pseudo filename (resolution) is given. */
   if (0 != FEXIST(filename_in) && 0 < atoi(filename_in)) {
     const char* split = strchr(filename_in, 'x');
@@ -115,7 +118,7 @@ int main(int argc, char* argv[])
           ((unsigned char*)image)[i*size_in[0]+j] = (unsigned char)(0 == (i + j) % r ? c1 : c0);
         }
       }
-      result = libxsmm_mhd_write(filename, size_in, size_in,
+      result = libxsmm_mhd_write(filename, 0/*offset*/, size_in, size_in,
         2/*ndims*/, 1/*ncomponents*/, LIBXSMM_MHD_ELEMTYPE_U8, image,
         0/*header_size*/, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
       if (EXIT_SUCCESS == result) filename_in = filename;
@@ -133,11 +136,11 @@ int main(int argc, char* argv[])
       &header_size, &extension_size);
   }
 
-  /* Only accept 2-d images (maybe a slice of a 3d-image). */
+  /* Only accept 2d-images (maybe a slice of a 3d-image). */
   if (2 == ndims) {
-    const size_t blocksize = 64; /* extents of result image become multiples of block-size */
-    offset[0] = ((size_in[0] + kw + blocksize - 1) / blocksize * blocksize - size_in[0] + kw) / 2;
-    offset[1] = ((size_in[1] + kh + blocksize - 1) / blocksize * blocksize - size_in[1] + kh) / 2;
+    const size_t m = LIBXSMM_MAX(mult, 1);
+    offset[0] = ((size_in[0] + LIBXSMM_MAX(kw, m) - 1) / m * m - size_in[0] + kw) / 2;
+    offset[1] = ((size_in[1] + LIBXSMM_MAX(kh, m) - 1) / m * m - size_in[1] + kh) / 2;
     /* center image inside of (pitched) buffer */
     size_out[0] = size_in[0] + 2 * offset[0];
     size_out[1] = size_in[1] + 2 * offset[1];
@@ -162,19 +165,19 @@ int main(int argc, char* argv[])
   if (EXIT_SUCCESS == result) {
     const char* ctypename;
     /* DNN type: assume that MHD I/O provides a super-set of types */
-    if (0 != libxsmm_mhd_typename((libxsmm_mhd_elemtype)type_out, &typesize, &ctypename)) {
+    if (0 != libxsmm_mhd_typename((libxsmm_mhd_elemtype)type_dnn, &typesize_dnn, &ctypename)) {
       const size_t filter_size = ncomponents * kh * kw;
       /* print some information about the workload */
       fprintf(stdout, "filename=%s resolution=%ux%u kernel=%ix%i size_in=%.fMB nrepeat=%u (%s)\n",
         filename, (unsigned int)size_in[0], (unsigned int)size_in[1], kw, kh,
-        1.0 * (size1 * typesize) / (1 << 20),
+        1.0 * (size1 * typesize_dnn) / (1 << 20),
         (unsigned int)nrepeat, ctypename);
-      image = MALLOC(size1 * typesize);
-      filter = MALLOC(filter_size * typesize);
+      image = MALLOC(size1 * typesize_dnn);
+      filter = MALLOC(filter_size * typesize_dnn);
       if (0 != image && 0 != filter) {
         FILE *const file = fopen("iconv_in.txt", "r"); /* convolution-matrix (kh x kw) */
         double weight;
-        switch (type_out) {
+        switch (type_dnn) {
           case LIBXSMM_DNN_DATATYPE_F64: {
             for (i = 0; i < filter_size; ++i) {
               ((double*)filter)[i] = (double)((0 == file || 1 > fscanf(file, "%lf", &weight)) ?
@@ -221,9 +224,9 @@ int main(int argc, char* argv[])
   /* Read the image data according to the header into the allocated buffer. */
   if (EXIT_SUCCESS == result) {
     result = libxsmm_mhd_read(filename,
-      size_in, pitch, offset, ndims, ncomponents, header_size, type_in,
-      /* eventually perform a type-conversion (type_in != type_out) */
-      (const libxsmm_mhd_elemtype*)&type_out, image,
+      offset, size_in, pitch, ndims, ncomponents, header_size, type_in,
+      /* eventually perform a type-conversion (type_in != type_dnn) */
+      (const libxsmm_mhd_elemtype*)&type_dnn, image,
       0/*handle_element*/, 0/*extension*/, 0/*extension_size*/);
   }
 
@@ -278,7 +281,7 @@ int main(int argc, char* argv[])
     libxsmm_dnn_tensor_datalayout* layout;
 
     /* Input buffer */
-    conv_input_buffer = MALLOC(descriptor.N * descriptor.C * (descriptor.H + 2 * descriptor.pad_h_in) * (descriptor.W + 2 * descriptor.pad_w_in) * typesize);
+    conv_input_buffer = MALLOC(descriptor.N * descriptor.C * (descriptor.H + 2 * descriptor.pad_h_in) * (descriptor.W + 2 * descriptor.pad_w_in) * typesize_dnn);
     if (0 == conv_input_buffer) result = EXIT_FAILURE;
     layout = libxsmm_dnn_create_tensor_datalayout(handle, LIBXSMM_DNN_INPUT, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
@@ -292,7 +295,7 @@ int main(int argc, char* argv[])
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
 
     /* Filter buffer */
-    conv_filter_buffer = MALLOC(descriptor.K * descriptor.C * descriptor.R * descriptor.S * typesize);
+    conv_filter_buffer = MALLOC(descriptor.K * descriptor.C * descriptor.R * descriptor.S * typesize_dnn);
     if (0 == conv_filter_buffer) result = EXIT_FAILURE;
     layout = libxsmm_dnn_create_tensor_datalayout(handle, LIBXSMM_DNN_FILTER, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
@@ -307,7 +310,7 @@ int main(int argc, char* argv[])
 
     /* Output buffer */
     conv_output_size1 = descriptor.N * descriptor.K * (descriptor.H + 2 * descriptor.pad_h_out) * (descriptor.W + 2 * descriptor.pad_w_out);
-    conv_output_buffer = MALLOC(conv_output_size1 * typesize);
+    conv_output_buffer = MALLOC(conv_output_size1 * typesize_dnn);
     if (0 == conv_output_buffer) result = EXIT_FAILURE;
     layout = libxsmm_dnn_create_tensor_datalayout(handle, LIBXSMM_DNN_OUTPUT, &status);
     if (LIBXSMM_DNN_SUCCESS != status) result = EXIT_FAILURE;
@@ -332,7 +335,7 @@ int main(int argc, char* argv[])
       const int tid = 0;
 #endif
 #if !defined(USE_OVERWRITE)
-      memset(conv_output_buffer, 0, conv_output_size1 * typesize);
+      memset(conv_output_buffer, 0, conv_output_size1 * typesize_dnn);
 #endif
       {
 #if !defined(NDEBUG)
@@ -359,31 +362,40 @@ int main(int argc, char* argv[])
 
   /* Write the image into a different file. */
   if (EXIT_SUCCESS == result) {
-    result = libxsmm_mhd_write(filename_out, size_out, size_out, 2/*ndims*/, ncomponents,
-      (libxsmm_mhd_elemtype)type_out/* assume MHD I/O provides a super-set of DNN types */,
+    if (0 == mult) {
+      offset[0] = (size_out[0] - size_in[0]) / 2;
+      offset[1] = (size_out[1] - size_in[1]) / 2;
+    }
+    else {
+      offset[0] = offset[1] = 0;
+      size_in[0] = size_out[0];
+      size_in[1] = size_out[1];
+    }
+    result = libxsmm_mhd_write(filename_out, offset, size_in, size_out, 2/*ndims*/, ncomponents,
+      (libxsmm_mhd_elemtype)type_dnn/* assume MHD I/O provides a super-set of DNN types */,
       image, &header_size, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
-#if !defined(USE_OUTPUT_TYPE) /* convert into input pixel-type */
-    if (EXIT_SUCCESS == result && 0 != libxsmm_mhd_typename(type_in, &typesize, 0/*ctypename*/)) {
-      void *const converted = MALLOC(size1 * typesize);
-      if (0 != converted) {
+  }
+
+  /* convert into input pixel-type, and re-write result image. */
+  if (EXIT_SUCCESS == result && 0 == orig && type_in != type_dnn) {
+    size_t typesize_in;
+    if (0 != libxsmm_mhd_typename(type_in, &typesize_in, 0/*ctypename*/)) {
+      /* we do not want to convert to a larger type (typesize can be equal, but type may be different) */
+      if (typesize_in <= typesize_dnn) { /* make sure we can reuse image buffer */
         result = libxsmm_mhd_read(filename_out,
-          size_out, size_out, 0/*offset*/, 2/*ndims*/, ncomponents, header_size,
-          (libxsmm_mhd_elemtype)type_out, &type_in, /* conversion requested */
-          converted, 0/*handle_element*/, 0/*extension*/, 0/*extension_size*/);
+          0/*offset*/, size_in, size_in, 2/*ndims*/, ncomponents, header_size,
+          (libxsmm_mhd_elemtype)type_dnn, &type_in, /* conversion requested */
+          image, 0/*handle_element*/, 0/*extension*/, 0/*extension_size*/);
         if (EXIT_SUCCESS == result) {
-          result = libxsmm_mhd_write(filename_out, size_out, size_out, 2/*ndims*/, ncomponents, type_in, converted,
+          result = libxsmm_mhd_write(filename_out,
+            0/*offset*/, size_in, size_in, 2/*ndims*/, ncomponents, type_in, image,
             0/*header_size*/, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
         }
-        FREE(converted);
-      }
-      else {
-        result = EXIT_FAILURE;
       }
     }
     else {
       result = EXIT_FAILURE;
     }
-#endif
   }
 
   /* Release resources. */
