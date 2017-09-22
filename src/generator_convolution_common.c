@@ -764,6 +764,11 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
   /* choosing offset according to format */
   /* for filter in custom format it's vector length */
   unsigned int offset = i_conv_kernel_config->vector_length_wt;
+  /* for filter in custom reduction format it's vector length * ncopies */
+  if (i_conv_desc->use_nts == 1) {
+    offset *= i_conv_desc->ncopies;
+  }
+
   /* for filter in RSCK format it's active ofm leading dimension */
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0 ) {
     offset = i_conv_kernel_config->l_ld_ofm_act;
@@ -771,6 +776,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
       offset *= i_conv_kernel_config->l_ld_ifm_act;
     }
   }
+  /* TODO support reductions in RSCK format */
 
   /* adding to C, so let's load C */
   if ( i_conv_desc->use_nts == 0  ) {
@@ -857,6 +863,11 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
   /* choosing offset according to format */
   /* for filter in custom format it's vector length */
   unsigned int offset = i_conv_kernel_config->vector_length_wt;
+  /* for filter in custom reduction format it's vector length * ncopies */
+  if (i_conv_desc->use_nts == 1) {
+    offset *= i_conv_desc->ncopies;
+  }
+
   /* for filter in RSCK format it's active ofm leading dimension */
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0 ) {
     offset = i_conv_kernel_config->l_ld_ofm_act;
@@ -864,6 +875,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
       offset *= i_conv_kernel_config->l_ld_ifm_act;
     }
   }
+  /* TODO support reductions in RSCK format */
 
    if ( i_conv_desc->use_nts == 0  ) {
     /* adding to C, so let's load C */
@@ -891,7 +903,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
                                     i_conv_kernel_config->vector_name,
                                     l_vec_reg_acc_start + reg_count , 0, 1 );
       }
-    } 
+    }
   }
 }
 

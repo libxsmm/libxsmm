@@ -245,7 +245,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int weight_stride;
   unsigned int use_fwd_generator_for_bwd;
   unsigned int stride_h_store;
-  unsigned int stride_w_store; 
+  unsigned int stride_w_store;
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;
@@ -307,6 +307,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
   unsigned int use_nts;
   unsigned int transpose_ofw_ifm;               /* transpose ofw and ifm */
   unsigned int ofw_fake_pixels;
+  unsigned int ncopies;                         /* number of reduction copies, probably nthreads */
 
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
@@ -356,4 +357,3 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(const void* in, cons
 typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info { size_t capacity, size, nbytes, nstatic, ncache; } libxsmm_registry_info;
 
 #endif /*LIBXSMM_TYPEDEFS_H*/
-

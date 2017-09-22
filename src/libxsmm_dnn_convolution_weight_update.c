@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Rajkishore Barik, Alexander Heinecke, Ankush Mandal (Intel Corp.)
+/* Rajkishore Barik, Alexander Heinecke, Ankush Mandal, Jason Sewall (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_weight_update.h"
 #include <libxsmm_intrinsics_x86.h>
@@ -40,6 +40,30 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if defined(__AVX512F__)
+inline void block_gather_transpose_ps(int M, int N, float *__restrict__ dst, const int ldD, const float *__restrict__ src, const int ldS) {
+  const __m512i vindex_base = _mm512_set_epi32(15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0);
+  const __m512i vindex = _mm512_mullo_epi32(_mm512_set1_epi32(ldS), vindex_base);
+
+  const int whole16s = N/16;
+  const int remainder = N-whole16s*16;
+  const __mmask16 Nmask = (1<<remainder)-1;
+  __m512 res;
+  int i,j;
+  #pragma unroll(2)
+  for(i = 0; i < M; ++i) {
+    #pragma unroll(4)
+    for(j = 0; j < whole16s; ++j) {
+      res = _mm512_i32gather_ps(vindex, src+i+j*16*ldS, 4);
+      _mm512_store_ps(dst + ldD*i+j*16, res);
+    }
+    if(remainder) {
+      res = _mm512_mask_i32gather_ps(_mm512_undefined(), Nmask, vindex, src+i+j*16*ldS, 4);
+      _mm512_mask_store_ps(dst + ldD*i+j*16, Nmask, res);
+    }
+  }
+}
+#endif
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
