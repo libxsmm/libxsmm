@@ -1,11 +1,12 @@
 .env export-ignore
 .hooks export-ignore
+.theme export-ignore
 .codefile export-ignore
 .gitattributes export-ignore
 .gitconfig export-ignore
 .gitignore export-ignore
 .travis.sh export-ignore
-.*.json export-ignore
+*.json export-ignore
 *.yml export-ignore
 README.sh export-ignore
 documentation/*.pptx export-ignore

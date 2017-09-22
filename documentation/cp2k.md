@@ -130,7 +130,7 @@ If the library needs to be cross-compiled, one may add `--host=x86_64-unknown-li
 
 ### Eigenvalue SoLvers for Petaflop-Applications (ELPA)
 
-Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://github.com/hfp/xconfigure#xconfigure)), which helps to configure common HPC software (and [ELPA](https://github.com/hfp/xconfigure/tree/master/elpa#eigenvalue-solvers-for-petaflop-applications-elpa) in particular) for Intel software development tools.
+Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://github.com/hfp/xconfigure)), which helps to configure common HPC software (and [ELPA](http://xconfigure.readthedocs.io/elpa/README/) in particular) for Intel software development tools.
 
 To incorporate ELPA, the key `ELPAROOT=/path/to/elpa` needs to be supplied when using CP2K/intel's ARCH files (make). For the Intel-branch, ELPA-2017.05.001 is already supported:
 

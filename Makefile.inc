@@ -148,6 +148,9 @@ OMP ?= 0
 # THREADS refers to foundational TRT (and not necessarily Posix Threads)
 THREADS ?= 1
 
+# SIMD code generation
+SIMD ?= 1
+
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
 
@@ -478,11 +481,12 @@ ifeq (0,$(SSE))
     else # SKX
       MIC ?= 0
     endif
-  else ifeq (2,$(words $(filter avx2 fma,$(CPUFLAGS))))
-    AVX ?= 2
-    SSE = 0
   else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS))))
-    AVX ?= 1
+    ifeq (1,$(words $(filter fma,$(CPUFLAGS))))
+      AVX ?= 2
+    else
+      AVX ?= 1
+    endif
     SSE = 0
   endif
 else ifeq (1,$(SSE))
@@ -526,8 +530,8 @@ ifneq (0,$(INTEL))
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  CXXFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,10006,10010,10411,13003
-  CFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,10006,10010,10411,13003
+  CXXFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  CFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
   LDFLAGS += -f$(PIC) -diag-disable 1879,3415,10006,10010,10411
   FCFLAGS += -f$(PIC) -diag-disable 10006,10010,10411,13003
   ifneq (0,$(THREADS))
@@ -674,6 +678,14 @@ ifneq (0,$(INTEL))
     FCFLAGS += $(OMPFLAG)
     LDFLAGS += $(OMPFLAG)
   endif
+  ifneq (0,$(SIMD))
+  ifneq (0,$(shell echo "$$((150000 <= $(CXX_VERSION)))"))
+    DFLAGS += -DLIBXSMM_OPENMP_SIMD
+    CXXFLAGS += -qopenmp-simd
+    CFLAGS += -qopenmp-simd
+    FCFLAGS += -qopenmp-simd
+  endif
+  endif
   ifeq (1,$(STATIC))
     SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
     DFLAGS += -D__STATIC=1
@@ -773,11 +785,13 @@ else # GCC assumed
         CXXFLAGS += -ffast-math
         CFLAGS += -ffast-math
         FCFLAGS += -ffast-math
+        ifneq (0,$(SIMD))
         ifneq (0,$(shell echo "$$((40900 <= $(GXX_VERSION)))"))
           DFLAGS += -DLIBXSMM_OPENMP_SIMD
           CXXFLAGS += -fopenmp-simd
           CFLAGS += -fopenmp-simd
           FCFLAGS += -fopenmp-simd
+        endif
         endif
       else ifneq (3,$(AVX))
         CXXFLAGS += -ffast-math

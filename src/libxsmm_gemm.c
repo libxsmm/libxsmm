@@ -78,7 +78,9 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   };
   const char *const env_m = getenv("LIBXSMM_TGEMM_M"), *const env_n = getenv("LIBXSMM_TGEMM_N"), *const env_k = getenv("LIBXSMM_TGEMM_K");
   const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH"), *const env_w = getenv("LIBXSMM_GEMM_WRAP");
+  const char *const env_s = getenv("LIBXSMM_GEMM_BATCHSIZE"), *const env_c = getenv("LIBXSMM_GEMM_BATCHCHECK");
   const int uid = ((0 == env_p || 0 == *env_p) ? 6/*LIBXSMM_PREFETCH_AL2_AHEAD*/ : atoi(env_p));
+  const int batchsize = ((0 == env_s || 0 == *env_s) ? -1 : atoi(env_s));
   const int gemm_m = ((0 == env_m || 0 == *env_m) ? -1 : atoi(env_m));
   const int gemm_n = ((0 == env_n || 0 == *env_n) ? -1 : atoi(env_n));
   const int gemm_k = ((0 == env_k || 0 == *env_k) ? -1 : atoi(env_k));
@@ -100,6 +102,11 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled). */
   libxsmm_gemm_wrap = ((0 == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
 
+  if (3 <= libxsmm_gemm_wrap || 0 > libxsmm_gemm_wrap) { /* batch-recording enabled */
+    libxsmm_gemm_batch = (libxsmm_gemm_batch_item*)libxsmm_malloc((0 > batchsize ? 1024/*default*/ : batchsize) * sizeof(libxsmm_gemm_batch_item));
+    libxsmm_gemm_batch_check = ((0 == env_c || 0 == *env_c) ? 0 : atoi(env_c));
+  }
+
   for (i = 0; i < 8; ++i) {
     /* environment-defined tile sizes apply for DP and SP */
     libxsmm_gemm_tile[0/*DP*/][0/*M*/][i] = libxsmm_gemm_tile[1/*SP*/][0/*M*/][i] = (unsigned int)LIBXSMM_MAX(gemm_m, 0);
@@ -118,6 +125,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 
 LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 {
+  libxsmm_free(libxsmm_gemm_batch);
 }
 
 
@@ -235,22 +243,22 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
         LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "TRANS = %c\nALPHA = %s", ctransa, string_a);
         LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "libxsmm_a_%p.mhd", a);
         data_size[0] = ilda; data_size[1] = kk; size[0] = *m; size[1] = kk;
-        libxsmm_mhd_write(string_a, data_size, size, 2/*ndims*/, 1/*ncomponents*/,
-          mhd_elemtype, a, extension_header, 0/*extension*/, 0/*extension_size*/);
+        libxsmm_mhd_write(string_a, 0/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype, a,
+          0/*header_size*/, extension_header, 0/*extension*/, 0/*extension_size*/);
       }
       if (0 != b) {
         LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "\nTRANS = %c", ctransb);
         LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "libxsmm_b_%p.mhd", b);
         data_size[0] = ildb; data_size[1] = nn; size[0] = kk; size[1] = nn;
-        libxsmm_mhd_write(string_a, data_size, size, 2/*ndims*/, 1/*ncomponents*/,
-          mhd_elemtype, b, extension_header, 0/*extension*/, 0/*extension_size*/);
+        libxsmm_mhd_write(string_a, 0/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype, b,
+          0/*header_size*/, extension_header, 0/*extension*/, 0/*extension_size*/);
       }
       if (0 != c) {
         LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "BETA = %s", string_b);
         LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "libxsmm_c_%p.mhd", c);
         data_size[0] = ildc; data_size[1] = nn; size[0] = *m; size[1] = nn;
-        libxsmm_mhd_write(string_a, data_size, size, 2/*ndims*/, 1/*ncomponents*/,
-          mhd_elemtype, c, extension_header, 0/*extension*/, 0/*extension_size*/);
+        libxsmm_mhd_write(string_a, 0/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype, c,
+          0/*header_size*/, extension_header, 0/*extension*/, 0/*extension_size*/);
       }
     }
   }

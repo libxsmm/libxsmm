@@ -112,47 +112,11 @@ typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor
   const void* values;
 } libxsmm_csr_reg_descriptor;
 
-/** Structure which describes an activation layer. */
-struct LIBXSMM_RETARGETABLE libxsmm_dnn_buffer {
-  int N;                            /* number of images in mini-batch */
-  int fmb;                          /* number of feature map blocks */
-  int bfm;                          /* sized of blocked feature maps, in a block */
-  int H;                            /* height of image */
-  int W;                            /* width of image */
-  int lpb;                          /* low precision blocking factor */
-  int bimg;                         /* size of blocked images */
-  libxsmm_dnn_tensor_format format; /* format of activation buffer */
-  libxsmm_dnn_internal_format custom_format_type;
-  libxsmm_dnn_datatype datatype;    /* data type */
-  void* data;                       /* pointer to data */
-  char exp;                         /* fix point exponent for this tensor */
-};
-
-/** Structure which describes a bias. */
-struct LIBXSMM_RETARGETABLE libxsmm_dnn_bias {
-  int fmb;                          /* number of feature map blocks */
-  int bfm;                          /* sized of blocked feature maps, in a block */
-  int lpb;                          /* low precision blocking factor */
-  libxsmm_dnn_tensor_format format; /* format of activation buffer */
-  libxsmm_dnn_datatype datatype;    /* data type */
-  void* data;                       /* pointer to data */
-  char exp;                         /* fix point exponent for this tensor */
-};
-
-/** Structure which describes a filter */
-struct LIBXSMM_RETARGETABLE libxsmm_dnn_filter {
-  int ifmb;                         /* number of feature map blocks */
-  int bifm;                         /* sized of blocked feature maps, in a block */
-  int ofmb;                         /* number of feature map blocks */
-  int bofm;                         /* sized of blocked feature maps, in a block */
-  int R;                            /* height of filter kernel */
-  int S;                            /* width of filter kernel */
-  int lpb;                          /* low precision blocking factor */
-  libxsmm_dnn_tensor_format format; /* format of filter buffer */
-  libxsmm_dnn_internal_format custom_format_type;
-  libxsmm_dnn_datatype datatype;    /* data type */
-  void* data;                       /* pointer to data */
-  char exp;                         /* fix point exponent for this tensor */
+/** Structure which describes all tensors in LIBXSMM's DNN module */
+struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor {
+  libxsmm_dnn_tensor_datalayout* layout;           /* datalayout descriptor */
+  void* data;                                      /* pointer to data */
+  char exp;                                        /* fix point exponent for this tensor */
 };
 
 /* Structure to record segment in stream of code  */
@@ -176,7 +140,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_convolution_winograd_descriptor cwino_upd;
   libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
-  /* additional size for iternal data types */
+  /* additional size for internal data types */
   int ifhp;
   int ifwp;
   int ofh;
@@ -208,14 +172,14 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int exploit_duality;
 
   /* internal data representation */
-  libxsmm_dnn_buffer* reg_input;
-  libxsmm_dnn_buffer* reg_output;
-  libxsmm_dnn_filter* reg_filter;
-  libxsmm_dnn_buffer* grad_input;
-  libxsmm_dnn_buffer* grad_output;
-  libxsmm_dnn_filter* grad_filter;
-  libxsmm_dnn_bias* reg_bias;
-  libxsmm_dnn_bias* grad_bias;
+  libxsmm_dnn_tensor* reg_input;
+  libxsmm_dnn_tensor* reg_output;
+  libxsmm_dnn_tensor* reg_filter;
+  libxsmm_dnn_tensor* grad_input;
+  libxsmm_dnn_tensor* grad_output;
+  libxsmm_dnn_tensor* grad_filter;
+  libxsmm_dnn_tensor* reg_bias;
+  libxsmm_dnn_tensor* grad_bias;
 
   /* barrier */
   libxsmm_barrier* barrier;
