@@ -1892,16 +1892,16 @@ LIBXSMM_API_DEFINITION int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_bl
 #if defined(LIBXSMM_BUILD)
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_init)(void);
-LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_init)(void)
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_init)(void);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_init)(void)
 {
   libxsmm_init();
 }
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_finalize)(void);
-LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void LIBXSMM_FSYMBOL(libxsmm_finalize)(void)
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_finalize)(void);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_finalize)(void)
 {
   libxsmm_finalize();
 }
