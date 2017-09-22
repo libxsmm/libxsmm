@@ -94,6 +94,20 @@ libxsmm_xmatcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
 libxsmm_xmatcopyfunction jitted_matzero_weights = handle->matcopy_upd[2].xmatcopy;
 libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 || handle->ifmblock == 1 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
 
+transposer tp_func;
+if ( handle->trans_ofw_ifm > 0 ) {
+  if (handle->padding_flag == 1) {
+    tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
+  }
+  else
+    tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
+}
+
+if(tp_func == 0) {
+  fprintf(stderr, "Couldn't find transposer to match %d %d %d %d", handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
+  exit(1);
+}
+
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
@@ -167,15 +181,7 @@ if (n_segments) {
             for (ij=0; ij < handle->ifhp; ++ij) {
               float *dst = &(LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij + handle->desc.pad_h, 0, 0 + handle->desc.pad_w, handle->blocksifm, padded_h, handle->ifmblock, ifwp_extended));
               const float *src = &(LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock));
-              #if defined(__AVX512F__)
-              block_gather_transpose_ps(handle->ifmblock, handle->ifwp, dst, ifwp_extended, src, handle->ifmblock);
-              #else
-              for (ii=0; ii < handle->ifwp; ++ii) {
-                for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                  dst[ifm2*ifwp_extended + ii] = src[ii*handle->ifmblock + ifm2];
-                }
-              }
-              #endif //defined(__AVX512F__)
+              tp_func(handle->ifmblock, handle->ifwp, dst, ifwp_extended, src, handle->ifmblock);
             }
           }
         } else {
@@ -184,15 +190,7 @@ if (n_segments) {
             for (ij=0; ij < handle->ifhp; ++ij) {
               float *dst = &(LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifmblock, ifwp_extended));
               const float *src = &(LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, ij, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock));
-              #if defined(__AVX512F__)
-              block_gather_transpose_ps(handle->ifmblock, handle->ifwp, dst, ifwp_extended, src, handle->ifmblock);
-              #else
-              for (ii=0; ii < handle->ifwp; ++ii) {
-                for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                  dst[ifm2*ifwp_extended + ii] = src[ii*handle->ifmblock + ifm2];
-                }
-              }
-              #endif //defined(__AVX512F__)
+              tp_func(handle->ifmblock, handle->ifwp, dst, ifwp_extended, src, handle->ifmblock);
             }
           }
         }

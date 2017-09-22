@@ -31,6 +31,7 @@
 #include "libxsmm_dnn_convolution_weight_update.h"
 #include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
+#include "stdio.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -41,29 +42,179 @@
 #endif
 
 #if defined(__AVX512F__)
-inline void block_gather_transpose_ps(int M, int N, float *__restrict__ dst, const int ldD, const float *__restrict__ src, const int ldS) {
+void gather_transpose_ps_16_56_56_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x00FF;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n;
+    #pragma unroll(3)
+    for(n = 0; n < 3; ++n) {
+      const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
+      _mm512_store_ps((void*)(dst+m*56+n*16),tmp);
+    }
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*56+n*16),Nremmask,tmprem);
+  }
+}
+
+void gather_transpose_ps_16_58_60_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x03FF;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n;
+    #pragma unroll(3)
+    for(n = 0; n < 3; ++n) {
+      const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
+      _mm512_store_ps((void*)(dst+m*60+n*16),tmp);
+    }
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*60+n*16),Nremmask,tmprem);
+  }
+}
+
+void gather_transpose_ps_16_28_28_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x0FFF;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n = 0;
+    const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
+    _mm512_store_ps((void*)(dst+m*28+n*16),tmp);
+    n = 1;
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*28+n*16),Nremmask,tmprem);
+  }
+}
+
+void gather_transpose_ps_16_30_32_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x3FFF;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n = 0;
+    const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
+    _mm512_store_ps((void*)(dst+m*32+n*16),tmp);
+    n = 1;
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*32+n*16),Nremmask,tmprem);
+  }
+}
+
+void gather_transpose_ps_16_16_16_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n = 0;
+    const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
+    _mm512_store_ps((void*)(dst+m*16+n*16),tmp);
+  }
+}
+
+void gather_transpose_ps_16_14_16_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x3FFF;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n = 0;
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*16+n*16),Nremmask,tmprem);
+  }
+}
+
+void gather_transpose_ps_16_7_8_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(0, 97, 81, 65, 49, 33, 17,  1,
+                                          0, 96, 80, 64, 48, 32, 16,  0);
+  const __mmask16 Nremmask = 0x7F7F;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 8; ++m) {
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m*2, 4);
+    _mm512_mask_store_ps((void*)(dst+m*8*2),Nremmask,tmprem);
+  }
+}
+
+void gather_transpose_ps_16_9_12_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x01FF;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n = 0;
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*12+n*16),Nremmask,tmprem);
+  }
+}
+
+void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
   const __m512i vindex_base = _mm512_set_epi32(15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0);
   const __m512i vindex = _mm512_mullo_epi32(_mm512_set1_epi32(ldS), vindex_base);
 
   const int whole16s = N/16;
   const int remainder = N-whole16s*16;
   const __mmask16 Nmask = (1<<remainder)-1;
-  __m512 res;
-  int i,j;
-  #pragma unroll(2)
-  for(i = 0; i < M; ++i) {
+  #pragma unroll_and_jam(2)
+  for(int i = 0; i < M; ++i) {
+    int j;
     #pragma unroll(4)
     for(j = 0; j < whole16s; ++j) {
-      res = _mm512_i32gather_ps(vindex, src+i+j*16*ldS, 4);
+      const __m512 res = _mm512_i32gather_ps(vindex, src+i+j*16*ldS, 4);
       _mm512_store_ps(dst + ldD*i+j*16, res);
     }
     if(remainder) {
-      res = _mm512_mask_i32gather_ps(_mm512_undefined(), Nmask, vindex, src+i+j*16*ldS, 4);
+      const __m512 res = _mm512_mask_i32gather_ps(_mm512_undefined(), Nmask, vindex, src+i+j*16*ldS, 4);
       _mm512_mask_store_ps(dst + ldD*i+j*16, Nmask, res);
     }
   }
 }
-#endif
+#else
+void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  int n, m;
+  for (n = 0; n < N; ++n) {
+    for (m = 0; m < M; ++m) {
+      dst[m*ldD + n] = src[n*ldS + m];
+    }
+  }
+}
+#endif //defined(__AVX512F__)
+
+typedef void (*transposer)(int M, int N, float *dst, int ldD, const float *src, int ldS);
+
+transposer get_transposer(int M, int N, int ldD, int ldS) {
+  if(M == 16 && N == 7 && ldD == 8 && ldS == 16) {
+    return gather_transpose_ps_16_7_8_16;
+  }
+  if(M == 16 && N == 9 && ldD == 12 && ldS == 16) {
+    return gather_transpose_ps_16_9_12_16;
+  }
+  if(M == 16 && N == 14 && ldD == 16 && ldS == 16) {
+    return gather_transpose_ps_16_14_16_16;
+  }
+  if(M == 16 && N == 16 && ldD == 16 && ldS == 16) {
+    return gather_transpose_ps_16_16_16_16;
+  }
+  if(M == 16 && N == 28 && ldD == 28 && ldS == 16) {
+    return gather_transpose_ps_16_28_28_16;
+  }
+  if(M == 16 && N == 30 && ldD == 32 && ldS == 16) {
+    return gather_transpose_ps_16_30_32_16;
+  }
+  if(M == 16 && N == 56 && ldD == 56 && ldS == 16) {
+    return gather_transpose_ps_16_56_56_16;
+  }
+  if(M == 16 && N == 58 && ldD == 60 && ldS == 16) {
+    return gather_transpose_ps_16_58_60_16;
+  }
+
+  return transpose_fallback;
+}
 
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
@@ -88,11 +239,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
       typedef float element_output_type;
       typedef float element_filter_type;
       if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_fallback.tpl.c"
-#undef INPUT_PADDING
-    } else {
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_fallback.tpl.c"
+        #define INPUT_PADDING
+        # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_fallback.tpl.c"
+        #undef INPUT_PADDING
+      } else {
+        # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_fallback.tpl.c"
       }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -108,18 +259,18 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
         typedef libxsmm_sconvfunction libxsmm_convfunction;
         typedef libxsmm_smmfunction libxsmm_mmfunction;
         if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-#define LIBXSMM_WU_PER_THREAD_ALLOCATION
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
-#undef LIBXSMM_WU_PER_THREAD_ALLOCATION
-#undef INPUT_PADDING
+          #define INPUT_PADDING
+          #define LIBXSMM_WU_PER_THREAD_ALLOCATION
+          # include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+          #undef LIBXSMM_WU_PER_THREAD_ALLOCATION
+          #undef INPUT_PADDING
         } else {
-#define LIBXSMM_WU_PER_THREAD_ALLOCATION
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
-#undef LIBXSMM_WU_PER_THREAD_ALLOCATION
+          #define LIBXSMM_WU_PER_THREAD_ALLOCATION
+          # include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+          #undef LIBXSMM_WU_PER_THREAD_ALLOCATION
         }
       }
-#if 1
+      #if 1
       else {
         typedef float element_input_type;
         typedef float element_output_type;
@@ -127,30 +278,30 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
         typedef libxsmm_sconvfunction libxsmm_convfunction;
         typedef libxsmm_smmfunction libxsmm_mmfunction;
         if (handle->padding_flag == 1) {
-#define INPUT_PADDING
+          #define INPUT_PADDING
           if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM)
-            && (handle->desc.v == 1) && (handle->upd_ofw_rb%4 == 0) )
+               && (handle->desc.v == 1) && (handle->upd_ofw_rb%4 == 0) )
           {
-#define LIBXSMM_WU_TRANSPOSE_OFW_IFM
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
-#undef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+            #define LIBXSMM_WU_TRANSPOSE_OFW_IFM
+            # include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+            #undef LIBXSMM_WU_TRANSPOSE_OFW_IFM
           } else {
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+            # include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
           }
-#undef INPUT_PADDING
+          #undef INPUT_PADDING
         } else {
           if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM)
-            && (handle->desc.v == 1) && (handle->upd_ofw_rb%4 == 0) )
+               && (handle->desc.v == 1) && (handle->upd_ofw_rb%4 == 0) )
           {
-#define LIBXSMM_WU_TRANSPOSE_OFW_IFM
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
-#undef LIBXSMM_WU_TRANSPOSE_OFW_IFM
+            #define LIBXSMM_WU_TRANSPOSE_OFW_IFM
+            # include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+            #undef LIBXSMM_WU_TRANSPOSE_OFW_IFM
           } else {
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+            # include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
           }
         }
       }
-#endif
+      #endif
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
@@ -339,4 +490,3 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom
 
   return status;
 }
-
