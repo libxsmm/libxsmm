@@ -726,6 +726,16 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VADDPD:
           l_fpadj = -1;
           break;
+       case LIBXSMM_X86_INSTR_VDIVPD:
+          l_fpadj = 5;
+          break;
+       case LIBXSMM_X86_INSTR_VDIVPS:
+          if ( (i_vector_name!='z') && (l_vreg0 <=15) &&
+               (l_vreg1<=15) && (l_vreg2<=15) )
+               l_fpadj2 = -1;
+          else l_fpadj2 = -0x81;
+          l_fpadj = 5;
+          break;
        case LIBXSMM_X86_INSTR_VCVTDQ2PS:
           l_fpadj2 -= 0x81;
           l_fpadj += 0x02;
