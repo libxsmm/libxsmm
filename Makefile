@@ -1347,13 +1347,11 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		libxsmm_prof.md libxsmm_tune.md libxsmm_be.md \
 	| sed \
 		-e 's/## Matrix Multiplication$$/# LIBXSMM Domains\n## Matrix Multiplication/' \
-		-e 's/\[\[..*\](..*)\]//g' \
-		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE) --listings \
+		--latex-engine=xelatex --template=$(notdir $(TMPFILE)) --listings \
 		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
@@ -1375,8 +1373,6 @@ $(DOCDIR)/libxsmm_samples.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(SPLDIR)/*/R
 		> $(TMPFILE)
 	@iconv -t utf-8 $(SPLDIR)/*/README.md \
 	| sed \
-		-e 's/\[\[..*\](..*)\]//g' \
-		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
@@ -1402,13 +1398,11 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation
 		> $(TMPFILE)
 	@cd $(ROOTDIR)/documentation && iconv -t utf-8 cp2k.md \
 	| sed \
-		-e 's/\[\[..*\](..*)\]//g' \
-		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE) --listings \
+		--latex-engine=xelatex --template=$(notdir $(TMPFILE)) --listings \
 		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="CP2K with LIBXSMM" \
@@ -1430,13 +1424,11 @@ $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documen
 		> $(TMPFILE)
 	@cd $(ROOTDIR)/documentation && iconv -t utf-8 tensorflow.md \
 	| sed \
-		-e 's/\[\[..*\](..*)\]//g' \
-		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE) --listings \
+		--latex-engine=xelatex --template=$(notdir $(TMPFILE)) --listings \
 		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="TensorFlow with LIBXSMM" \

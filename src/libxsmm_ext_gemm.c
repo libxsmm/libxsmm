@@ -220,10 +220,20 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
   const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
   const void* alpha, const void* beta)
 {
+#if 1 /* TODO: remove */
   LIBXSMM_UNUSED(precision); LIBXSMM_UNUSED(flags);
   LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
   LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(ldb); LIBXSMM_UNUSED(ldc);
   LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(beta);
+#endif
+  if (0 != libxsmm_gemm_batch) { /* lazy batch/recording enabled */
+    if ((4 <= libxsmm_gemm_wrap && 0 == (libxsmm_gemm_wrap % 2)) || 0 > libxsmm_gemm_wrap) { /* parallelized batch */
+      /* TODO */
+    }
+    else if (3 <= libxsmm_gemm_wrap && 0 != (libxsmm_gemm_wrap % 2)) { /* sequential lazy batch/recording */
+      /* TODO */
+    }
+  }
 }
 
 

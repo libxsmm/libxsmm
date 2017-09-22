@@ -101,9 +101,11 @@ LIBXSMM_API int libxsmm_mhd_read_header(
 LIBXSMM_API int libxsmm_mhd_read(
   /* Filename referring to the data. */
   const char filename[],
+  /** Offset within pitched buffer (NULL: no offset). */
+  const size_t offset[],
   /** Image dimensions (extents). */
   const size_t size[],
-  /** Leading dimensions (cNULL/0: size). */
+  /** Leading buffer dimensions (NULL: same as size). */
   const size_t pitch[],
   /* Dimensionality (number of entries in size). */
   size_t ndims,
@@ -135,9 +137,11 @@ LIBXSMM_API int libxsmm_mhd_read(
  * The file is suitable for visual inspection using e.g., ITK-SNAP or ParaView.
  */
 LIBXSMM_API int libxsmm_mhd_write(const char filename[],
+  /** Offset within pitched buffer (NULL: no offset). */
+  const size_t offset[],
   /** Image dimensions (extents). */
   const size_t size[],
-  /** Leading dimensions (cNULL/0: size). */
+  /** Leading buffer dimensions (NULL: same as size). */
   const size_t pitch[],
   /** Dimensionality i.e., number of entries in data_size/size. */
   size_t ndims,
@@ -147,6 +151,8 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   libxsmm_mhd_elemtype type,
   /** Raw data to be saved. */
   const void* data,
+  /** Size of the header; can be a NULL-argument (optional). */
+  size_t* header_size,
   /** Extension header data; can be NULL. */
   const char extension_header[],
   /** Extension data stream; can be NULL. */
