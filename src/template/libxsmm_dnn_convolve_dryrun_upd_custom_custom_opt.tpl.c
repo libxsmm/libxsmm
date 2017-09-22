@@ -106,17 +106,17 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int padded_w, padded_h;
   if (handle->padding_flag == 1) {
     padded_h = handle->ifhp + 2 * handle->desc.pad_h;
-    padded_w = handle->ifwp + 2 * handle->desc.pad_w;
+    padded_w = handle->ifwp + 2 * handle->desc.pad_w + handle->qfma_input_pad;
   } else {
     padded_h = handle->ifhp;
-    padded_w = handle->ifwp;
+    padded_w = handle->ifwp + handle->qfma_input_pad;
   }
 
   stride_w = handle->desc.v;
   stride_h = handle->desc.u;
   kh = handle->desc.R;
   kw = handle->desc.S;
-  num_ofw_strips = handle->ofwp/ handle->upd_ofw_rb;
+  num_ofw_strips = 1; /* Internally always fully unroll W */
   local_entries = 0;
   if ( handle->ifmblock != 1  ) {
     KW = kw;
@@ -129,11 +129,11 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) {
 
-        for (ojb = 0; ojb < handle->ofhp; ojb += handle->upd_ofh_rb) {
+        for (ojb = 0; ojb < handle->ofh; ojb += handle->upd_ofh_rb) {
           for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1++ ) {
             for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {
 
-              for (oj_ = ojb; oj_ < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofhp); oj_ += handle->upd_ofh_rb) {
+              for (oj_ = ojb; oj_ < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj_ += handle->upd_ofh_rb) {
                 for (oi__=0; oi__<num_ofw_strips; ++oi__) {
 
                   for (kj=0; kj < kh; ++kj) {

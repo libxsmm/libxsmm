@@ -64,10 +64,12 @@ element_input_type (* LIBXSMM_RESTRICT copy_ptr);
 element_input_type *prefetch_ptr;
 int padded_h = (handle->padding_flag == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
 int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
+int ifwp_extended = padded_w + handle->qfma_input_pad;
+
 LIBXSMM_VLA_DECL(5, const element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-LIBXSMM_VLA_DECL(5, element_input_type, tr_input_padded, (element_input_type*)handle->scratch5, handle->blocksifm, padded_h, handle->ifmblock, padded_w);
+LIBXSMM_VLA_DECL(5, element_input_type, tr_input_padded, (element_input_type*)handle->scratch5, handle->blocksifm, padded_h, handle->ifmblock, ifwp_extended);
 LIBXSMM_VLA_DECL(5, element_input_type, input_padded, (element_input_type*)handle->scratch5, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp);
+LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, handle->blocksifm, handle->ifhp, handle->ifmblock, ifwp_extended);
 
 /* Stream related variables  */
 int *stream = handle->compute_upd_indices_ptrs[ltid];
@@ -87,6 +89,7 @@ libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 || handle->ifmblock =
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
+#if 0
 /* If padding is requested, copy the entire minibatch upfront (only if trnaspose is not requested, otherwise we combine trnaspose with padding) */
 if (handle->padding_flag == 1) {
   /* Initialize in parallel scratch5 to zero */
@@ -110,6 +113,7 @@ if (handle->padding_flag == 1) {
     libxsmm_barrier_wait(handle->barrier, ltid);
   }
 }
+#endif
 
 /* We DO USE private weights, initialize them to zero...  */
 jitted_matzero_weights(NULL, NULL, per_thread_weight_ptr, NULL, NULL);
@@ -123,10 +127,16 @@ if ( handle->trans_ofw_ifm > 0 ) {
         for (ij=0; ij < handle->ifhp; ++ij) {
           for (ii=0; ii < handle->ifwp; ++ii) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij + handle->desc.pad_h, ifm2, ii + handle->desc.pad_w, handle->blocksifm, padded_h, handle->ifmblock, padded_w)
+              LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij + handle->desc.pad_h, ifm2, ii + handle->desc.pad_w, handle->blocksifm, padded_h, handle->ifmblock, ifwp_extended)
                 =  LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
             }
           }
+          /*for (ii=0; ii < handle->qfma_input_pad; ++ii) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij + handle->desc.pad_h, ifm2, ii + 2*handle->desc.pad_w + handle->ifwp, handle->blocksifm, padded_h, handle->ifmblock, ifwp_extended)
+                = (element_input_type)0;
+            }
+          }*/
         }
       }
     }
@@ -137,10 +147,16 @@ if ( handle->trans_ofw_ifm > 0 ) {
         for (ij=0; ij < handle->ifhp; ++ij) {
           for (ii=0; ii < handle->ifwp; ++ii) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, ifm2, ii, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp)
+              LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, ifm2, ii, handle->blocksifm, handle->ifhp, handle->ifmblock, ifwp_extended)
                 =  LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
             }
           }
+          /*for (ii=0; ii < handle->qfma_input_pad; ii++) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, ifm2, ii+handle->ifwp, handle->blocksifm, handle->ifhp, handle->ifmblock, ifwp_extended)
+                = (element_input_type)0;
+            }
+          }*/
         }
       }
     }
@@ -156,7 +172,7 @@ if (handle->padding_flag == 1) {
   }
 } else {
   if (handle->trans_ofw_ifm > 0) {
-     input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifmblock, handle->ifwp);
+    input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifmblock, ifwp_extended);
     /*input_base = &LIBXSMM_VLA_ACCESS(5, input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock); */
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(5, input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
@@ -187,7 +203,7 @@ if (handle->upd_use_external_reduce == 0) {
 
   if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
     for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
-        weight_ptr[j] = (element_filter_type)0;
+      weight_ptr[j] = (element_filter_type)0;
     }
   }
 

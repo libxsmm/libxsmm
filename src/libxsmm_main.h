@@ -170,6 +170,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int use_nts_bwd;
   int use_fwd_for_bwd;
   int exploit_duality;
+  int qfma_input_pad;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;

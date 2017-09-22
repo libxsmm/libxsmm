@@ -540,7 +540,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && (handle->desc.pad_h_out == 0) && (handle->desc.pad_w_out == 0) && ((handle->desc.pad_h > 0) || (handle->desc.pad_w > 0))) {
     handle->padding_flag = 1;
     handle->scratch5  = 0;
-    handle->minibatch_scratch_size = LIBXSMM_MAX(handle->desc.N * handle->blocksifm * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_itm), handle->desc.N * handle->blocksofm * handle->ofmblock * handle->fm_lp_block * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_itm));
+    handle->minibatch_scratch_size = LIBXSMM_MAX(handle->desc.N * handle->blocksifm * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w+4) * libxsmm_dnn_typesize(handle->datatype_itm), handle->desc.N * handle->blocksofm * handle->ofmblock * handle->fm_lp_block * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_itm));
     handle->fwdbwd_scratch_size = handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_itm);
     handle->max_scratch5_size = (handle->minibatch_scratch_size > handle->fwdbwd_scratch_size) ? handle->minibatch_scratch_size : handle->fwdbwd_scratch_size;
   } else {
@@ -919,7 +919,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               descriptor.ofw_rb = handle->fwd_ofw_rb;
               handle->bwd_ofw_rb = handle->fwd_ofw_rb;
             }
-#if !defined(NDEBUG)
+#if 0
+            !defined(NDEBUG)
             printf("DEBUG JIT of conv (NON-PEELED):\n  arch: %s\n  type: %s\n  kw: %u\n  unroll_kw: %u\n  kh: %u\n  unroll_kh: %u\n  ofm_block: %u\n  ifm_block: %u\n"
                 "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
                 "  stride_h: %u\n  stride_w: %u\n",
@@ -1275,23 +1276,50 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 descriptor.ofw_unroll = 0;
               }
 
-              descriptor.ofw_rb = handle->ofwp;  
-              descriptor.ofh_rb = handle->ofhp;
+              /* Here starts logic for calculating RB factors for UPD when KS are enabled  */
+              int ifw_padded, qfma_padding, kernel_ifw_padded, kernel_ofw_padded;
+              int kernel_ofw_compute;
+              int kernel_ofw_fake_pixels;
+              int kernel_ofw;
+
+              ifw_padded = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
+              qfma_padding = (ifw_padded % 4 == 0) ? 0 : 4 - ifw_padded % 4;
+              kernel_ifw_padded = ifw_padded + qfma_padding;
+              handle->qfma_input_pad = qfma_padding;
+              descriptor.ifw_padded = kernel_ifw_padded;
+              descriptor.ofw_padded = handle->ofwp;
+              descriptor.ofh_padded = handle->ofhp;
+
+              if (handle->desc.R == 1 && handle->desc.S == 1) {
+                kernel_ofw_compute = handle->ofwp;
+              } else {
+                if (handle->padding_flag == 1) {
+                  kernel_ofw_compute = handle->ofwp;
+                } else {
+                  kernel_ofw_compute = handle->ofw;
+                }
+              }
+              kernel_ofw_fake_pixels = (kernel_ofw_compute % 4 == 0) ? 0 : 4 - kernel_ofw_compute % 4;
+              kernel_ofw = kernel_ofw_compute + kernel_ofw_fake_pixels;
+              /*printf("Compute pixels are: %d , fake pixels are %d, ofw is %d and ofw_padded is %d, ofw_rb is %d\n",kernel_ofw_compute, kernel_ofw_fake_pixels, handle->ofw, descriptor.ofw_padded, kernel_ofw ); */
+              descriptor.ofw_fake_pixels = kernel_ofw_fake_pixels;
+              descriptor.ofw_rb = kernel_ofw;  
+              descriptor.ofh_rb = handle->ofh;
 
               while (   descriptor.ofw_rb  *  descriptor.ofh_rb > 196 ) {
                 descriptor.ofh_rb = descriptor.ofh_rb / 2;
               }
 
-              while (  handle->ofhp % descriptor.ofh_rb != 0 ) {
+              while (  handle->ofh % descriptor.ofh_rb != 0 ) {
                 descriptor.ofh_rb--;
               }
 
               descriptor.use_nts = 1;
-              descriptor.blocks_h = handle->ofhp / descriptor.ofh_rb;
+              descriptor.blocks_h = handle->ofh / descriptor.ofh_rb;
               handle->upd_ofh_rb = descriptor.ofh_rb * descriptor.blocks_h;
-              handle->upd_ofw_rb = descriptor.ofw_rb;
+              handle->upd_ofw_rb = kernel_ofw;
 
-              if ( handle->ofhp == 28) {
+              if ( handle->ofh == 28) {
                 descriptor.use_nts = 0;
                 descriptor.blocks_h = 1;
                 handle->upd_ofh_rb = 2;
@@ -1311,7 +1339,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 }
               }
 
-              if ( handle->ofhp == 56 ) {
+              if ( handle->ofh == 56 ) {
                 descriptor.use_nts = 0;
                 descriptor.ofh_rb = 1;
                 descriptor.blocks_h = 1;
@@ -1323,31 +1351,32 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               }
 
               descriptor.transpose_ofw_ifm = 0;
-#if !defined(NDEBUG)
-              printf("DEBUG JIT of conv:\n  arch: %s\n  type: %s\n  ofm_block: %u\n  ifm_block: %u\n"
-                  "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
-                  "  stride_h: %u\n  stride_w: %u\n  ifm_unroll: %u\n  ofh: %u\n  ofh_unroll: %u\n  ofw: %u\n  ofw_unroll: %u\n  kw:%u\n  unroll_kw=%u\n  kh: %u\n  transpose: %u\n",
-                  libxsmm_get_target_arch(),
-                  "weight-update",        /* type */
-                  descriptor.ofm_block,  /* should be VLEN */
-                  descriptor.ifm_block,  /* should be VLEN */
-                  descriptor.ofh_padded, /* this we need for 2D register block */
-                  descriptor.ofw_padded, /* this we use for 1D and 2D register block */
-                  descriptor.ofh_rb,     /* UR, register block of ofh */
-                  descriptor.ofw_rb,     /* UR, register block of ofw */
-                  descriptor.ifh_padded,
-                  descriptor.ifw_padded,
-                  descriptor.stride_h,   /* this we use for offsets in the input */
-                  descriptor.stride_w,   /* this we use for offsets in the input */
-                  descriptor.ifm_unroll, /*should unroll ifm loop -- yes or no */
-                  descriptor.ofh,        /*ofh */
-                  descriptor.ofh_unroll,        /*ofh_unroll */
-                  descriptor.ofw,        /*ofw */
-                  descriptor.ofw_unroll,        /*ofw_unroll */
-                  descriptor.kw, /*kw unroll */
-                  descriptor.unroll_kw, /* unroll factor of kw */
-                  descriptor.kh, /*kh unroll */
-                  descriptor.transpose_ofw_ifm /*transpose */);
+#if 0
+              !defined(NDEBUG)
+                printf("DEBUG JIT of conv:\n  arch: %s\n  type: %s\n  ofm_block: %u\n  ifm_block: %u\n"
+                    "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
+                    "  stride_h: %u\n  stride_w: %u\n  ifm_unroll: %u\n  ofh: %u\n  ofh_unroll: %u\n  ofw: %u\n  ofw_unroll: %u\n  kw:%u\n  unroll_kw=%u\n  kh: %u\n  transpose: %u\n",
+                    libxsmm_get_target_arch(),
+                    "weight-update",        /* type */
+                    descriptor.ofm_block,  /* should be VLEN */
+                    descriptor.ifm_block,  /* should be VLEN */
+                    descriptor.ofh_padded, /* this we need for 2D register block */
+                    descriptor.ofw_padded, /* this we use for 1D and 2D register block */
+                    descriptor.ofh_rb,     /* UR, register block of ofh */
+                    descriptor.ofw_rb,     /* UR, register block of ofw */
+                    descriptor.ifh_padded,
+                    descriptor.ifw_padded,
+                    descriptor.stride_h,   /* this we use for offsets in the input */
+                    descriptor.stride_w,   /* this we use for offsets in the input */
+                    descriptor.ifm_unroll, /*should unroll ifm loop -- yes or no */
+                    descriptor.ofh,        /*ofh */
+                    descriptor.ofh_unroll,        /*ofh_unroll */
+                    descriptor.ofw,        /*ofw */
+                    descriptor.ofw_unroll,        /*ofw_unroll */
+                    descriptor.kw, /*kw unroll */
+                    descriptor.unroll_kw, /* unroll factor of kw */
+                    descriptor.kh, /*kh unroll */
+                    descriptor.transpose_ofw_ifm /*transpose */);
 #endif
               /* NONE */
               if (handle->padding_flag == 1) {
@@ -1489,7 +1518,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
         /* weight update transpose of minibatch */
         handle->scratch3 = 0;
-        handle->scratch3_size = handle->desc.N * handle->blocksifm * handle->ifmblock * handle->ifhp * handle->ifwp
+        handle->scratch3_size = handle->desc.N * handle->blocksifm * handle->ifmblock * handle->ifhp * (handle->ifwp+4)
           * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype);
 
         /* minibatch parallel execution of weight update kernel */
