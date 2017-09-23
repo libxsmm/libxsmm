@@ -288,13 +288,13 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
 #define LIBXSMM_MMCALL_ABC(FN, A, B, C) \
-  LIBXSMM_ASSERT(0 != (FN)); \
+  LIBXSMM_ASSERT(FN); \
   FN(A, B, C)
 #define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) { \
   LIBXSMM_NOPREFETCH_A(LIBXSMM_UNUSED(PA)); \
   LIBXSMM_NOPREFETCH_B(LIBXSMM_UNUSED(PB)); \
   LIBXSMM_NOPREFETCH_C(LIBXSMM_UNUSED(PC)); \
-  LIBXSMM_ASSERT(0 != (FN)); \
+  LIBXSMM_ASSERT(FN); \
   FN(A, B, C, \
     LIBXSMM_PREFETCH_A(PA), \
     LIBXSMM_PREFETCH_B(PB), \
