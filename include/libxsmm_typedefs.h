@@ -307,6 +307,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
   unsigned int use_nts;
   unsigned int transpose_ofw_ifm;               /* transpose ofw and ifm */
   unsigned int ofw_fake_pixels;
+  unsigned int use_fastpath;
   unsigned int ncopies;                         /* number of reduction copies, probably nthreads */
 
   libxsmm_dnn_tensor_format format;

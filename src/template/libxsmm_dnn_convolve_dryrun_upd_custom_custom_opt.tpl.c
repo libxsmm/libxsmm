@@ -117,16 +117,24 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   char *kernel_variant;
 
   int padded_w, padded_h;
+  stride_w = handle->desc.u;
+  stride_h = handle->desc.v;
+
   if (handle->padding_flag == 1) {
     padded_h = handle->ifhp + 2 * handle->desc.pad_h;
     padded_w = handle->ifwp + 2 * handle->desc.pad_w + handle->qfma_input_pad;
   } else {
-    padded_h = handle->ifhp;
-    padded_w = handle->ifwp + handle->qfma_input_pad;
+    if (handle->resize_input == 1) {
+      padded_h = handle->ifhp_resized;
+      padded_w = handle->ifwp_resized + handle->qfma_input_pad;
+      stride_w = 1;
+      stride_h = 1;
+    } else {
+      padded_h = handle->ifhp;
+      padded_w = handle->ifwp + handle->qfma_input_pad;
+    }
   }
 
-  stride_w = handle->desc.v;
-  stride_h = handle->desc.u;
   kh = handle->desc.R;
   kw = handle->desc.S;
   num_ofw_strips = 1; /* Internally always fully unroll W */
@@ -246,14 +254,16 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + (ii_ + ki) ) *  handle->ifmblock;
                       }
 
+               
                       /* use different weights format if we can skip init and copy */
                       if (mark_weight_init == 1 && mark_weight_copy == 1) {
-                          compute_indices[local_entries+1] = ( ( (ofm1-ofmb) * handle->block_upd_ifm ) + (ifm1-ifmb) ) * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock;
+                        compute_indices[local_entries+1] = ( ( (ofm1-ofmb) * handle->block_upd_ifm ) + (ifm1-ifmb) ) * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock;
                       } else {
-                          compute_indices[local_entries+1] = ( ( (ofm1 *  handle->blocksifm ) + ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock ) * handle->desc.threads;
+                        compute_indices[local_entries+1] = ( ( (ofm1 *  handle->blocksifm ) + ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock ) * handle->desc.threads;
                       }
 
                       compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_ ) * handle->ofwp)  +  oi_ ) *  handle->ofmblock;
+
                       local_entries += 3;
 
                       tmp_expanded_stream[tmp_stream_index] = UPDATE_KERNEL;

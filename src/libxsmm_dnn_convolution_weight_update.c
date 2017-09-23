@@ -41,7 +41,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if defined(__AVX512F__)
+#if 1
 void gather_transpose_ps_16_56_56_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
   const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
   const __mmask16 Nremmask = 0x00FF;
@@ -160,8 +160,9 @@ void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, cons
   const int whole16s = N/16;
   const int remainder = N-whole16s*16;
   const __mmask16 Nmask = (1<<remainder)-1;
+  int i;
   #pragma unroll_and_jam(2)
-  for(int i = 0; i < M; ++i) {
+  for(i = 0; i < M; ++i) {
     int j;
     #pragma unroll(4)
     for(j = 0; j < whole16s; ++j) {

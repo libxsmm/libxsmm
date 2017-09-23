@@ -164,7 +164,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
   l_ofw_trips = 1;
   }
 
-  if (1) {
+  if (i_conv_desc->use_fastpath) {
 
      /* New clean kernel for convolution...  */
      libxsmm_generator_convolution_weight_update_load_weight( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
