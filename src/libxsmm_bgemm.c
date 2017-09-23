@@ -30,6 +30,7 @@
    Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_bgemm.h>
+#include <libxsmm.h>
 #include "libxsmm_gemm.h"
 #include "libxsmm_main.h"
 

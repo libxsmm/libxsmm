@@ -31,16 +31,7 @@
 #ifndef LIBXSMM_FRONTEND_H
 #define LIBXSMM_FRONTEND_H
 
-#include "libxsmm_macros.h"
-
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <assert.h> /* intentionally here */
-#include "libxsmm_generator.h"
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
+#include "libxsmm_typedefs.h"
 
 /** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
 #if 0 != ((LIBXSMM_PREFETCH) & 2/*AL2*/) \
@@ -190,7 +181,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
     const LIBXSMM_BLASINT libxsmm_blas_xgemm_m_ = (LIBXSMM_BLASINT)(MM); \
     const LIBXSMM_BLASINT libxsmm_blas_xgemm_n_ = (LIBXSMM_BLASINT)(NN); \
     const LIBXSMM_BLASINT libxsmm_blas_xgemm_k_ = (LIBXSMM_BLASINT)(KK); \
-    assert(0 != ((uintptr_t)LIBXSMM_BLAS_GEMM_SYMBOL(TYPE))); \
+    LIBXSMM_ASSERT(0 != ((uintptr_t)LIBXSMM_BLAS_GEMM_SYMBOL(TYPE))); \
     LIBXSMM_BLAS_GEMM_SYMBOL(TYPE)(&libxsmm_blas_xgemm_transa_, &libxsmm_blas_xgemm_transb_, \
       &libxsmm_blas_xgemm_m_, &libxsmm_blas_xgemm_n_, &libxsmm_blas_xgemm_k_, \
       &libxsmm_blas_xgemm_alpha_, (const TYPE*)(A), &libxsmm_blas_xgemm_lda_, \
@@ -230,9 +221,9 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 # define LIBXSMM_INLINE_XGEMM(TYPE, INT, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
   const TYPE libxsmm_inline_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_inline_xgemm_beta_ = (TYPE)(BETA); \
   INT libxsmm_inline_xgemm_i_, libxsmm_inline_xgemm_j_, libxsmm_inline_xgemm_k_; \
-  assert(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) && 0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS))/*not supported*/); \
+  LIBXSMM_ASSERT(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) && 0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS))/*not supported*/); \
   /* TODO: remove/adjust precondition if anything other than NN is supported */ \
-  assert((M) <= (LDA) && (K) <= (LDB) && (M) <= (LDC)); \
+  LIBXSMM_ASSERT((M) <= (LDA) && (K) <= (LDB) && (M) <= (LDC)); \
   LIBXSMM_PRAGMA_SIMD \
   for (libxsmm_inline_xgemm_j_ = 0; libxsmm_inline_xgemm_j_ < ((INT)(M)); ++libxsmm_inline_xgemm_j_) { \
     LIBXSMM_PRAGMA_LOOP_COUNT(1, LIBXSMM_MAX_K, LIBXSMM_AVG_K) \
@@ -284,26 +275,31 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
     LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #endif
 
+#if defined(__cplusplus) /** Fallback in libxsmm_mmfunction (C++). */
+# if defined(LIBXSMM_FALLBACK_MMFUNCTION)
+#   if !defined(LIBXSMM_FALLBACK_SMMFUNCTION)
+#     define LIBXSMM_FALLBACK_SMMFUNCTION
+#   endif
+#   if !defined(LIBXSMM_FALLBACK_DMMFUNCTION)
+#     define LIBXSMM_FALLBACK_DMMFUNCTION
+#   endif
+# endif
+#endif
+
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
-#define LIBXSMM_MMCALL_ABC(FN, A, B, C) FN(A, B, C)
+#define LIBXSMM_MMCALL_ABC(FN, A, B, C) \
+  LIBXSMM_ASSERT(0 != (FN)); \
+  FN(A, B, C)
 #define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) { \
   LIBXSMM_NOPREFETCH_A(LIBXSMM_UNUSED(PA)); \
   LIBXSMM_NOPREFETCH_B(LIBXSMM_UNUSED(PB)); \
   LIBXSMM_NOPREFETCH_C(LIBXSMM_UNUSED(PC)); \
+  LIBXSMM_ASSERT(0 != (FN)); \
   FN(A, B, C, \
     LIBXSMM_PREFETCH_A(PA), \
     LIBXSMM_PREFETCH_B(PB), \
     LIBXSMM_PREFETCH_C(PC)); \
 }
-
-#if defined(LIBXSMM_FALLBACK_MMFUNCTION)
-# if !defined(LIBXSMM_FALLBACK_SMMFUNCTION)
-#   define LIBXSMM_FALLBACK_SMMFUNCTION
-#endif
-# if !defined(LIBXSMM_FALLBACK_DMMFUNCTION)
-#   define LIBXSMM_FALLBACK_DMMFUNCTION
-#endif
-#endif
 
 #if (0/*LIBXSMM_PREFETCH_NONE*/ == LIBXSMM_PREFETCH)
 # define LIBXSMM_MMCALL_LDX(FN, A, B, C, M, N, K, LDA, LDB, LDC) \
@@ -401,7 +397,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
   libxsmm_matdiff_info* info);
 
 LIBXSMM_API_INLINE void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input) {
-  assert(0 != output && 0 != input);
+  LIBXSMM_ASSERT(0 != output && 0 != input);
   if (output->normf_rel < input->normf_rel) {
     output->norm1_abs = input->norm1_abs;
     output->norm1_rel = input->norm1_rel;

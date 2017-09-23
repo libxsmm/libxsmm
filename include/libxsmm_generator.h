@@ -32,7 +32,6 @@
 #define LIBXSMM_GENERATOR_H
 
 #include "libxsmm_typedefs.h"
-#include "libxsmm_macros.h"
 
 /** Check if M, N, K, or LDx fits into the descriptor. */
 #if (0 != LIBXSMM_ILP64)
@@ -44,8 +43,8 @@
 # define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) 1
 #endif
 
-#if defined(LIBXSMM_FRONTEND_H) /* assert available */
-# define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K) assert(LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K))
+#if defined(LIBXSMM_ASSERT) /* assert available */
+# define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K) LIBXSMM_ASSERT(LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K))
 #else
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K)
 #endif

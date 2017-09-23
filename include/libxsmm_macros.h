@@ -495,10 +495,15 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#if !defined(LIBXSMM_ASSERT)
+# include <assert.h>
+# define LIBXSMM_ASSERT(EXPR) assert(EXPR)
+#endif
 #include <stdint.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
+
 
 /* Implementation is taken from an anonymous GiHub Gist. */
 LIBXSMM_API_INLINE unsigned int libxsmm_icbrt(unsigned long long n) {

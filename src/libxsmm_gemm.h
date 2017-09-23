@@ -31,7 +31,8 @@
 #ifndef LIBXSMM_GEMM_H
 #define LIBXSMM_GEMM_H
 
-#include <libxsmm.h>
+#include <libxsmm_generator.h>
+#include <libxsmm_frontend.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))

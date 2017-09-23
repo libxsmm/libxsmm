@@ -1541,8 +1541,8 @@ LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(libxsmm_registry_info* info
 LIBXSMM_API_INLINE int internal_dgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
   int m, int n, int k, int lda, int ldb, int ldc, const void* alpha, const void* beta, int flags, int prefetch)
 {
-  const double ralpha = (0 != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
-  const double rbeta = (0 != beta ? *((const double*)beta) : LIBXSMM_BETA);
+  const double ralpha = (0 != alpha ? *((const double*)alpha) : (LIBXSMM_ALPHA));
+  const double rbeta = (0 != beta ? *((const double*)beta) : (LIBXSMM_BETA));
   int result;
 
   if (LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta) && 0 != descriptor) {
@@ -1559,8 +1559,8 @@ LIBXSMM_API_INLINE int internal_dgemm_descriptor_init(libxsmm_gemm_descriptor* d
 LIBXSMM_API_INLINE int internal_sgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
   int m, int n, int k, int lda, int ldb, int ldc, const void* alpha, const void* beta, int flags, int prefetch)
 {
-  const float ralpha = (0 != alpha ? *((const float*)alpha) : LIBXSMM_ALPHA);
-  const float rbeta = (0 != beta ? *((const float*)beta) : LIBXSMM_BETA);
+  const float ralpha = (0 != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
+  const float rbeta = (0 != beta ? *((const float*)beta) : (LIBXSMM_BETA));
   int result;
 
   if (LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta) && 0 != descriptor) {
@@ -1583,8 +1583,8 @@ LIBXSMM_API_INLINE int internal_wgemm_descriptor_init(libxsmm_gemm_descriptor* d
    * and the call-side may not distinct different input and output types
    * (integer/short), hence it is safer to only read short data.
    */
-  const short ralpha = (0 != alpha ? *((const short*)alpha) : LIBXSMM_ALPHA);
-  const short rbeta = (0 != beta ? *((const short*)beta) : LIBXSMM_BETA);
+  const short ralpha = (short)(0 != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA));
+  const short rbeta = (short)(0 != beta ? *((const short*)beta) : (LIBXSMM_BETA));
   int result;
 
   if (LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta) && 0 != descriptor) {
