@@ -1459,10 +1459,15 @@ $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/d
 
 .PHONY: documentation
 documentation: \
-	$(DOCDIR)/libxsmm.$(DOCEXT) \
-	$(DOCDIR)/libxsmm_samples.$(DOCEXT) \
-	$(DOCDIR)/cp2k.$(DOCEXT) \
-	$(DOCDIR)/tensorflow.$(DOCEXT)
+$(DOCDIR)/libxsmm.$(DOCEXT) \
+$(DOCDIR)/libxsmm_samples.$(DOCEXT) \
+$(DOCDIR)/cp2k.$(DOCEXT) \
+$(DOCDIR)/tensorflow.$(DOCEXT)
+
+.PHONY: mkdocs
+mkdocs: $(ROOTDIR)/documentation/index.md $(ROOTDIR)/documentation/libxsmm_samples.md
+	@mkdocs build --clean
+	@mkdocs serve
 
 .PHONY: clean
 clean:
