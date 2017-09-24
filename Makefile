@@ -13,7 +13,8 @@ ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 endif
 endif
 
-ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+#ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+ROOTDIR = $(dir $(firstword $(MAKEFILE_LIST)))
 SPLDIR = $(ROOTDIR)/samples
 SCRDIR = $(ROOTDIR)/scripts
 TSTDIR = $(ROOTDIR)/tests
