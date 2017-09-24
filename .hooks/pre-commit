@@ -70,13 +70,6 @@ EOD
     else # cleanup
       ${RM} -f ${LOCKFILE}-version
     fi
-
-    if [ "0" != "$(${GIT} diff --cached --name-status | ${GREP} README.md)" ]; then
-      # trigger updating the README file
-      ${TOUCH} ${LOCKFILE}-readme
-    else # cleanup
-      ${RM} -f ${LOCKFILE}-readme
-    fi
   fi
 fi
 

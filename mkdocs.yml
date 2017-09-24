@@ -4,6 +4,7 @@ theme_dir: .theme
 markdown_extensions:
 - toc:
     permalink: True
+    title: None
 extra_javascript:
 - search.js
 extra_css:
@@ -24,6 +25,7 @@ pages:
   - "PROF: Perf. Profiling": libxsmm_prof.md
   - "TUNE: Customization": libxsmm_tune.md
   - "BE: Backend": libxsmm_be.md
+- Samples: libxsmm_samples.md
 - Applications:
   - CP2K: cp2k.md
   - TensorFlow: tensorflow.md

@@ -420,7 +420,6 @@
     </None>
     <None Include="..\Makefile" />
     <None Include="..\README.md" />
-    <None Include="..\README.sh" />
     <None Include="..\.travis.yml" />
     <None Include="..\.gitignore" />
     <None Include="..\Makefile.inc" />

@@ -1,1 +1,6 @@
 div.injected { display: none; }
+
+li.toctree-l1 > ul:nth-child(2) > ul {
+  display: none;
+}
+
