@@ -1342,7 +1342,7 @@ $(DOCDIR)/index.md: $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
 		-e "s/](${DOCDIR}\//](/g" \
 		> $@
 
-$(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/index.md \
+$(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/documentation/index.md \
 $(ROOTDIR)/documentation/libxsmm_mm.md $(ROOTDIR)/documentation/libxsmm_dnn.md $(ROOTDIR)/documentation/libxsmm_aux.md \
 $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
@@ -1383,7 +1383,7 @@ $(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(SPLDIR)/*/README.md
 		-e '1s/^/# LIBXSMM Samples\n\n/' \
 		> $@
 
-$(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/libxsmm_samples.md
+$(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/documentation/libxsmm_samples.md
 	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
@@ -1391,7 +1391,7 @@ $(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/libxsmm_samples.md
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		> $(TMPFILE)
-	@iconv -t utf-8 $(DOCDIR)/libxsmm_samples.md \
+	@iconv -t utf-8 $(ROOTDIR)/documentation/libxsmm_samples.md \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
 		-f markdown_github+all_symbols_escapable+subscript+superscript \
