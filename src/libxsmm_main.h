@@ -174,6 +174,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int resize_input;
   int ifhp_resized;
   int ifwp_resized;
+  int use_fastpath;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;
