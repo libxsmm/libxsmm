@@ -31,8 +31,6 @@
 #include <libxsmm.h>
 #include <libxsmm_intrinsics_x86.h>
 
-#include <stddef.h>
-
 /*#define DISABLE_NONTEMPORAL_STORES*/
 
 

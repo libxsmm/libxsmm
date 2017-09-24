@@ -40,15 +40,6 @@
 # define PERF_JITDUMP_GLOBAL_VARIABLE(VARIABLE, INIT) VARIABLE
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stddef.h>
-#include <stdint.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 
 typedef struct LIBXSMM_RETARGETABLE jitdump_file_header {
   uint32_t magic;

@@ -37,9 +37,6 @@
 #include <libxsmm_sync.h>
 #include <libxsmm_dnn.h>
 
-#include <stddef.h>
-#include <stdint.h>
-
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
 # define LIBXSMM_CAPACITY_REGISTRY 524288 /* 524287: Mersenne Prime number (2^19-1) */

@@ -29,7 +29,7 @@ For additional functionality, please have a look at [https://github.com/hfp/libx
 
 ## Overview
 
-The main interface file is *generated*, and it is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.h) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f). The main interface consists of the [general interface](#general-interface) as well as the [matrix multiplication](#matrix-multiplication) interface.
+The main interface file is *generated*, and it is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.h#L36) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f#L32). The main interface consists of the [general interface](#general-interface) as well as the [matrix multiplication](#matrix-multiplication) interface.
 
 There are two ways to incorporate LIBXSMM into an application:
 

@@ -33,14 +33,6 @@
 
 #include "libxsmm_macros.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stddef.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 #define LIBXSMM_TYPESIZE(ENUM) ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F64 ? 8 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F32 ? 4 : ( \
