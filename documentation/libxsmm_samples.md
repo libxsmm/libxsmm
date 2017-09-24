@@ -1,4 +1,4 @@
-# LIBXSMM Samples
+# [LIBXSMM Samples](https://github.com/hfp/libxsmm/raw/master/documentation/libxsmm_samples.pdf)
 
 ## CP2K Artificial Benchmark
 

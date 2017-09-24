@@ -1381,7 +1381,7 @@ $(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(SPLDIR)/*/README.md
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
-		-e '1s/^/# LIBXSMM Samples\n\n/' \
+		-e '1s/^/# [LIBXSMM Samples](https:\/\/github.com\/hfp\/libxsmm\/raw\/master\/documentation\/libxsmm_samples.pdf)\n\n/' \
 		> $@
 
 $(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/documentation/libxsmm_samples.md
