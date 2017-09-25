@@ -335,28 +335,28 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop( libxsmm_generated_cod
                                                            const unsigned int                                i_kw_unroll )
 {
   if (i_conv_desc->ofh_rb == 2) {
-    /* setup input strides */
-    libxsmm_generator_convolution_forward_avx512_init_input_strides_two_rows( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc );
-
     /* select architecture */
     if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM ) {
       libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_two_rows( io_generated_code, i_gp_reg_mapping,
                                                                           i_conv_kernel_config, i_conv_desc, i_kw_unroll );
     } else if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
                 i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {
+      /* @TODO check position of this call in the grand scheme of thing, setup input strides */
+      libxsmm_generator_convolution_forward_avx512_init_input_strides_two_rows( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc );
+
       libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( io_generated_code, i_gp_reg_mapping,
                                                                           i_conv_kernel_config, i_conv_desc, i_kw_unroll );
     }
   } else {
-    /* setup input strides */
-    libxsmm_generator_convolution_forward_avx512_init_input_strides( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc );
-
     /* select architecture */
     if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM ) {
       libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( io_generated_code, i_gp_reg_mapping,
                                                                  i_conv_kernel_config, i_conv_desc, i_kw_unroll );
     } else if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
                 i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {
+      /* @TODO check position of this call in the grand scheme of things, setup input strides */
+      libxsmm_generator_convolution_forward_avx512_init_input_strides( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc );
+
       libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( io_generated_code, i_gp_reg_mapping,
                                                                  i_conv_kernel_config, i_conv_desc, i_kw_unroll );
     }
@@ -1112,6 +1112,9 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generate
    }
   /* do some last minute safety check if we can fully unroll kw loop internally */
   if ( (i_conv_desc->ifm_block*i_kw_unroll < 4) || (i_conv_desc->ifm_block*i_kw_unroll % 4 != 0) ) {
+    /* @TODO check position of this call in the grand scheme of things, setup input strides */
+    libxsmm_generator_convolution_forward_avx512_init_input_strides( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc );
+
     libxsmm_generator_convolution_forward_avx512_ifmloop_sfma( io_generated_code, i_gp_reg_mapping,
                                                                  i_conv_kernel_config, i_conv_desc, i_kw_unroll );
     return;
@@ -1127,6 +1130,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generate
       }
     }
 
+#if 0
     /* advance b pointer if needed */
     if ( l_displacement_k >= 128 ) {
       l_input_offset = 0;
@@ -1139,6 +1143,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generate
       libxsmm_generator_convolution_forward_avx512_advance_input_strides( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config,
                                                                             i_conv_desc, l_input_offset );
     }
+#endif
 
     /* load the four source registers, we cannot perform a pipeline as in case of sfma */
     for ( l_w = 0; l_w < 4; l_w++ ) {
@@ -1165,10 +1170,19 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generate
 
     /* compute vectorwidth (A) * column broadcast (B) */
     for ( l_n = 0; l_n < i_conv_desc->ofw_rb; l_n++) {
+#if 0
       /* determining base, idx and scale values */
       libxsmm_generator_convolution_forward_avx512_calc_sib_input_strides( i_gp_reg_mapping, l_n, &l_input_reg, &l_input_idx, &l_scale );
       /* set displacement */
       l_disp = l_displacement_k * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block;
+#else
+      /* @TODO, we need to fix for non-LIBXSMM format */
+      l_input_reg = i_gp_reg_mapping->gp_reg_input;
+      l_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
+      l_scale = 0;
+      l_disp = (l_k * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block)
+                   + (l_n * i_conv_kernel_config->datatype_size_in * i_conv_desc->stride_w * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block);
+#endif
 
       /* depending on datatype emit the needed FMA(-sequence) */
       if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -1238,6 +1252,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generate
     l_displacement_k+=4;
   }
 
+#if 0
   /* we have to make sure that we are reseting the pointer to its original value in case a full unroll */
   if ( l_k_updates > 0 ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code,
@@ -1246,6 +1261,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generate
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_sub_instruction,
                                      i_gp_reg_mapping->gp_reg_input_pf, 128 * l_k_updates * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block  );  }
+#endif
 }
 
 
@@ -1272,12 +1288,15 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_two_rows( libxsmm
   unsigned int prefetch_type_input = LIBXSMM_X86_INSTR_PREFETCHT0; 
   unsigned int prefetch_type_weight = LIBXSMM_X86_INSTR_PREFETCHT0;
 
-    if ( i_conv_desc->kw != 1) {
-     prefetch_type_weight = LIBXSMM_X86_INSTR_PREFETCHT1;
-   }  
+  if ( i_conv_desc->kw != 1) {
+    prefetch_type_weight = LIBXSMM_X86_INSTR_PREFETCHT1;
+  }  
 
   /* do some last minute safety check if we can fully unroll kw loop internally */
   if ( (i_conv_desc->ifm_block*i_kw_unroll < 4) || (i_conv_desc->ifm_block*i_kw_unroll % 4 != 0) ) {
+    /* @ TODO check position of this call in the grand scheme, setup input strides */
+    libxsmm_generator_convolution_forward_avx512_init_input_strides_two_rows( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc );
+
     libxsmm_generator_convolution_forward_avx512_ifmloop_sfma_two_rows( io_generated_code, i_gp_reg_mapping,
                                                                           i_conv_kernel_config, i_conv_desc, i_kw_unroll );
     return;
@@ -1293,6 +1312,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_two_rows( libxsmm
       }
     }
 
+#if 0
     /* advance b pointer if needed */
     if ( l_displacement_k >= 128 ) {
       l_input_offset = 0;
@@ -1301,10 +1321,10 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_two_rows( libxsmm
         l_displacement_k -= 128;
         l_k_updates++;
       }
-
       libxsmm_generator_convolution_forward_avx512_advance_input_strides_two_rows( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config,
                                                                                      i_conv_desc, l_input_offset );
     }
+#endif
 
     /* load the four source registers, we cannot perform a pipeline as in case of sfma */
     for ( l_w = 0; l_w < 4; l_w++ ) {
@@ -1326,10 +1346,20 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_two_rows( libxsmm
     for ( l_m = 0; l_m < i_conv_desc->ofh_rb; l_m++) {
       l_prefetch_input_index_w = 0;
       for ( l_n = 0; l_n < i_conv_desc->ofw_rb; l_n++) {
+#if 0
         /* determining base, idx and scale values */
         libxsmm_generator_convolution_forward_avx512_calc_sib_input_strides_two_rows( i_gp_reg_mapping, l_m, l_n, &l_input_reg, &l_input_idx, &l_scale );
         /* set displacement */
         l_disp = l_displacement_k * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block;
+#else
+        /* @TODO, we need to fix for non-LIBXSMM format */
+        l_input_reg = i_gp_reg_mapping->gp_reg_input;
+        l_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
+        l_scale = 0;
+        l_disp = (l_k*i_conv_kernel_config->datatype_size_in*i_conv_desc->fm_lp_block)
+                   + (l_n * i_conv_kernel_config->datatype_size_in * i_conv_desc->stride_w * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block)
+                   + (l_m * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block * i_conv_kernel_config->datatype_size_in);
+#endif
 
         /* depending on datatype emit the needed FMA(-sequence) */
         if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -1402,6 +1432,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_two_rows( libxsmm
   }
 
   /* we have to make sure that we are reseting the pointer to its original value in case a full unroll */
+#if 0
   if ( l_k_updates > 0 ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_conv_kernel_config->alu_sub_instruction,
@@ -1413,6 +1444,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_two_rows( libxsmm
                                      i_gp_reg_mapping->gp_reg_input_pf, 128 * l_k_updates * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block  );
     }  
   }
+#endif
 }
 
 
