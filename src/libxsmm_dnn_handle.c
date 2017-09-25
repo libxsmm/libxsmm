@@ -1286,6 +1286,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 handle->use_fastpath = 1;
               }
 
+             descriptor.ofw_rb = 14;
+             descriptor.ofh_rb = 4;
              handle->upd_ofh_rb = descriptor.ofh_rb;
              handle->upd_ofw_rb = descriptor.ofw_rb;
              descriptor.transpose_ofw_ifm = 0;
