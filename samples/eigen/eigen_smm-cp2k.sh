@@ -3,7 +3,7 @@
 HERE=$(cd $(dirname $0); pwd -P)
 ECHO=$(which echo)
 SCRT=${HERE}/../../scripts/libxsmm_utilities.py
-FILE=cp2k-perf.txt
+FILE=eigen_smm.txt
 
 RUNS0=$(${SCRT} -1 $((64*64*64-0)) 19   23, 6, 14 16 29, 5 16 13 24 26, 9 16 22, 32, 64, 78, 16 29 55                                                         0 0)
 RUNS1=$(${SCRT} -1 $((64*64*64-0)) 19   23, 6, 14 16 29, 5 32 13 24 26, 9 32 22, 32, 64, 78, 16 29 55                                                         0 0)
@@ -44,7 +44,7 @@ for RUN in ${!RUNS} ; do
   NVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f2)
   KVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f3)
   >&2 ${ECHO} -n "${NRUN} of ${NMAX} (M=${MVALUE} N=${NVALUE} K=${KVALUE})... "
-  ERROR=$({ CHECK=1 ${HERE}/cp2k.sh ${MVALUE} ${SIZE} 0 ${NVALUE} ${KVALUE} >> ${FILE}; } 2>&1)
+  ERROR=$({ ${HERE}/eigen_smm.sh ${MVALUE} ${NVALUE} ${KVALUE} ${SIZE} >> ${FILE}; } 2>&1)
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
     ${ECHO} "FAILED(${RESULT}) ${ERROR}"
