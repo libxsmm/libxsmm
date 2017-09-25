@@ -2586,7 +2586,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
     /* int i = *loc; */
-    unsigned int l_maxsize = io_generated_code->buffer_size;
+    /* unsigned int l_maxsize = io_generated_code->buffer_size;*/
     /* unsigned int l_maxsize = 1024; */
     
     int l_first = 0;
