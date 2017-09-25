@@ -53,10 +53,8 @@
 #define LIBXSMM_VERSION_UPDATE LIBXSMM_CONFIG_VERSION_UPDATE
 #define LIBXSMM_VERSION_PATCH  LIBXSMM_CONFIG_VERSION_PATCH
 
-#include "libxsmm_macros.h"
-#include "libxsmm_typedefs.h"
-#include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
+#include "libxsmm_generator.h"
 #include "libxsmm_bgemm.h"
 #include "libxsmm_fsspmdm.h"
 #include "libxsmm_malloc.h"

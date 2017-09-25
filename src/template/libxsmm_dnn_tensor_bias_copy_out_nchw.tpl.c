@@ -31,16 +31,23 @@
 
 /* use for-loops to potentially leverage NUMA in the future */
 int i1, i2, i3;
-int fmb = bias->fmb;
-int bfm = bias->bfm;
-int lpb = bias->lpb;
-const element_type* user_data = (const element_type*)data;
-LIBXSMM_VLA_DECL(3, element_type, handle_data, (element_type*)bias->data, bfm, lpb);
+#if defined(LIBXSMM_DNN_COPY_LOW_PRECISION)
+int lpb = tensor->layout->dim_size[0];
+int bfm = tensor->layout->dim_size[1];
+int fmb = tensor->layout->dim_size[2];
+#else
+int lpb = 1;
+int bfm = tensor->layout->dim_size[0];
+int fmb = tensor->layout->dim_size[1];
+#endif
+
+element_type* user_data = (element_type*)data;
+LIBXSMM_VLA_DECL(3, const element_type, handle_data, (const element_type*)tensor->data, bfm, lpb);
 
 for (i1 = 0; i1 < fmb; ++i1) {
   for (i2 = 0; i2 < bfm; ++i2) {
     for (i3 = 0; i3 < lpb; ++i3) {
-      LIBXSMM_VLA_ACCESS(3, handle_data, i1, i2, i3, bfm, lpb) = user_data[(i1*bfm*lpb) + (i2*lpb) + i3];
+      user_data[(i1*bfm*lpb) + (i2*lpb) + i3] = LIBXSMM_VLA_ACCESS(3, handle_data, i1, i2, i3, bfm, lpb);
     }
   }
 }

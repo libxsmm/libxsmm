@@ -1,0 +1,11 @@
+{
+    "default": true,
+    "no-hard-tabs": true,
+    "MD002": false,
+    "MD009": { "br_spaces": 2 },
+    "MD012": { "maximum": 2 },
+    "MD013": false,
+    "MD029": { "style": "ordered" },
+    "MD033": { "allowed_elements": ["a", "sub", "sup"] },
+    "MD041": false
+}

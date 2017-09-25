@@ -20,8 +20,7 @@ IF "%VS_COMNTOOLS%" == "" (
 )
 IF EXIST '%VS_COMNTOOLS%..\IDE\devenv.exe' (
   SET VS_IDE=%VS_COMNTOOLS%..\IDE\devenv.exe
-)
-ELSE (
+) ELSE (
   SET VS_IDE=devenv
 )
 

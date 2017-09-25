@@ -1085,7 +1085,7 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       break;
     case LIBXSMM_ERR_CONV_OFM_VEC:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "forward conv/weight updated vectorization failed, OFM blocking is not divisible by VLEN (error #%u)!", i_error_code );
+        "forward conv. or weight upd. vect. failed, OFM blocking is not divisible by VLEN (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_CONV_IFM_VEC:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,

@@ -148,6 +148,9 @@ OMP ?= 0
 # THREADS refers to foundational TRT (and not necessarily Posix Threads)
 THREADS ?= 1
 
+# SIMD code generation
+SIMD ?= 1
+
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
 
@@ -215,10 +218,11 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 EXTLIB = $(call abslib,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides libxsmmnoblas to satisfy BLAS symbols
-  BLASLIB = $(call abslib,$(LIBNAME)noblas.$(LIBEXT))
+  NOBLASLIB = $(call abslib,$(LIBNAME)noblas.$(LIBEXT))
 else
-  BLASLIB ?= $(NULL)
+  NOBLASLIB = $(NULL)
 endif
+BLASLIB ?= $(NOBLASLIB)
 
 # Embedd soname into shared library
 ifneq (Darwin,$(UNAME))
@@ -477,11 +481,12 @@ ifeq (0,$(SSE))
     else # SKX
       MIC ?= 0
     endif
-  else ifeq (2,$(words $(filter avx2 fma,$(CPUFLAGS))))
-    AVX ?= 2
-    SSE = 0
   else ifeq (1,$(words $(filter avx avx1.0,$(CPUFLAGS))))
-    AVX ?= 1
+    ifeq (1,$(words $(filter fma,$(CPUFLAGS))))
+      AVX ?= 2
+    else
+      AVX ?= 1
+    endif
     SSE = 0
   endif
 else ifeq (1,$(SSE))
@@ -525,8 +530,8 @@ ifneq (0,$(INTEL))
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  CXXFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,10006,10010,10411,13003
-  CFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,10006,10010,10411,13003
+  CXXFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  CFLAGS += -f$(PIC) -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
   LDFLAGS += -f$(PIC) -diag-disable 1879,3415,10006,10010,10411
   FCFLAGS += -f$(PIC) -diag-disable 10006,10010,10411,13003
   ifneq (0,$(THREADS))
@@ -673,6 +678,14 @@ ifneq (0,$(INTEL))
     FCFLAGS += $(OMPFLAG)
     LDFLAGS += $(OMPFLAG)
   endif
+  ifneq (0,$(SIMD))
+  ifneq (0,$(shell echo "$$((150000 <= $(CXX_VERSION)))"))
+    DFLAGS += -DLIBXSMM_OPENMP_SIMD
+    CXXFLAGS += -qopenmp-simd
+    CFLAGS += -qopenmp-simd
+    FCFLAGS += -qopenmp-simd
+  endif
+  endif
   ifeq (1,$(STATIC))
     SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
     DFLAGS += -D__STATIC=1
@@ -701,10 +714,6 @@ else # GCC assumed
     CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
   endif
-  ifeq (0,$(COMPATIBLE))
-    CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
-    CFLAGS += -Wall -Wno-unused-function -Wno-attributes
-  endif
   ifneq (Windows_NT,$(UNAME))
     CXXFLAGS += -f$(PIC)
     CFLAGS += -f$(PIC)
@@ -712,6 +721,11 @@ else # GCC assumed
     LDFLAGS += -f$(PIC)
   endif
   ifeq (0,$(COMPATIBLE))
+    ifneq (0,$(shell echo "$$((40700 <= $(GXX_VERSION)))"))
+      CXXFLAGS += -std=c++11
+    endif
+    CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
+    CFLAGS += -Wall -Wno-unused-function -Wno-attributes
     FSTD = -std=f2003
     CPEDANTIC += -pedantic -Wno-overlength-strings -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wunused-variable \
@@ -724,8 +738,6 @@ else # GCC assumed
                    -Wrealloc-lhs -Wrealloc-lhs-all
     endif
     FPEDANTIC += $(FWARNEXTRA)
-  endif
-  ifeq (0,$(COMPATIBLE))
     ifeq (1,$(PEDANTIC))
       CSTD = -std=c99
       CXXFLAGS += $(CPEDANTIC) -Wno-long-long
@@ -773,11 +785,13 @@ else # GCC assumed
         CXXFLAGS += -ffast-math
         CFLAGS += -ffast-math
         FCFLAGS += -ffast-math
+        ifneq (0,$(SIMD))
         ifneq (0,$(shell echo "$$((40900 <= $(GXX_VERSION)))"))
           DFLAGS += -DLIBXSMM_OPENMP_SIMD
           CXXFLAGS += -fopenmp-simd
           CFLAGS += -fopenmp-simd
           FCFLAGS += -fopenmp-simd
+        endif
         endif
       else ifneq (3,$(AVX))
         CXXFLAGS += -ffast-math

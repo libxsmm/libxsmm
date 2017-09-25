@@ -1,13 +1,34 @@
-site_name: LIBXSMM
 docs_dir: documentation
+theme: readthedocs
+theme_dir: .theme
+markdown_extensions:
+- toc:
+    permalink: True
+    title: None
+extra_javascript:
+- search.js
+extra_css:
+- style.css
+
+site_name: LIBXSMM
+site_author: Hans Pabst
+copyright: Copyright (c) 2009-2017, LIBXSMM <a href="http://libxsmm.readthedocs.io/LICENSE/">Contributors</a>.
+site_description: Library targeting Intel Architecture for small, dense or sparse matrix multiplications, and small convolutions.
+repo_url: https://github.com/hfp/libxsmm.git
+
 pages:
-- Home: index.md
-- LIBXSMM Domains:
+- index.md
+- Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md
   - "DNN: Deep Neural Networks": libxsmm_dnn.md
   - "AUX: Service Functions": libxsmm_aux.md
-  - "PERF: Performance": libxsmm_perf.md
+  - "PROF: Performance Profiling": libxsmm_prof.md
+  - "TUNE: Customization": libxsmm_tune.md
   - "BE: Backend": libxsmm_be.md
+- Samples: libxsmm_samples.md
 - Applications:
   - CP2K: cp2k.md
   - TensorFlow: tensorflow.md
+- About:
+  - Contributing: CONTRIBUTING.md
+  - License: LICENSE.md

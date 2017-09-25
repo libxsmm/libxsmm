@@ -168,19 +168,36 @@
 # define LIBXSMM_MESSAGE(MSG)
 #endif
 
-#if defined(__INTEL_COMPILER)
+#if !defined(LIBXSMM_OPENMP_SIMD) && (defined(_OPENMP) && (201307 <= _OPENMP)) /*OpenMP 4.0*/
+# if defined(__INTEL_COMPILER)
+#   if (1500 <= __INTEL_COMPILER)
+#     define LIBXSMM_OPENMP_SIMD
+#   endif
+# elif defined(__GNUC__)
+#   if LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
+#     define LIBXSMM_OPENMP_SIMD
+#   endif
+# else
+#   define LIBXSMM_OPENMP_SIMD
+# endif
+#endif
+
+#if defined(LIBXSMM_OPENMP_SIMD)
+# define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(omp simd reduction(EXPRESSION))
+# define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(omp simd collapse(N))
+# define LIBXSMM_PRAGMA_SIMD_PRIVATE(...) LIBXSMM_PRAGMA(omp simd private(__VA_ARGS__))
+# define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(omp simd)
+# if defined(__INTEL_COMPILER)
+#   define LIBXSMM_PRAGMA_NOVECTOR LIBXSMM_PRAGMA(novector)
+# else
+#   define LIBXSMM_PRAGMA_NOVECTOR
+# endif
+#elif defined(__INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(simd reduction(EXPRESSION))
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(simd collapse(N))
 # define LIBXSMM_PRAGMA_SIMD_PRIVATE(...) LIBXSMM_PRAGMA(simd private(__VA_ARGS__))
 # define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(simd)
 # define LIBXSMM_PRAGMA_NOVECTOR LIBXSMM_PRAGMA(novector)
-#elif (defined(_OPENMP) && (201307 <= _OPENMP)) /*OpenMP 4.0*/ || (defined(LIBXSMM_OPENMP_SIMD) \
-  && LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
-# define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(omp simd reduction(EXPRESSION))
-# define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(omp simd collapse(N))
-# define LIBXSMM_PRAGMA_SIMD_PRIVATE(...) LIBXSMM_PRAGMA(omp simd private(__VA_ARGS__))
-# define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(omp simd)
-# define LIBXSMM_PRAGMA_NOVECTOR
 #else
 # define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION)
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N)
@@ -478,13 +495,19 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#if !defined(LIBXSMM_ASSERT)
+# include <assert.h>
+# define LIBXSMM_ASSERT(EXPR) assert(EXPR)
+#endif
+#include <stddef.h>
 #include <stdint.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 
+
 /* Implementation is taken from an anonymous GiHub Gist. */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_icbrt(unsigned long long n) {
+LIBXSMM_API_INLINE unsigned int libxsmm_icbrt(unsigned long long n) {
   unsigned long long b; unsigned int y = 0; int s;
   for (s = 63; s >= 0; s -= 3) {
     y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
@@ -494,7 +517,7 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE unsigned int libxsmm_icbrt(unsigned long lon
 }
 
 /** Similar to LIBXSMM_UNUSED, this helper "sinks" multiple arguments. */
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE int libxsmm_sink(int rvalue, ...) { return rvalue; }
+LIBXSMM_API_INLINE int libxsmm_sink(int rvalue, ...) { return rvalue; }
 
 #endif /*LIBXSMM_MACROS_H*/
 

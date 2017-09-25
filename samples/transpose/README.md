@@ -5,9 +5,10 @@ This code sample aims to benchmark the performance of matrix transposes. The C/C
 
 The available command line options of the sample code may be reviewed by looking into the source code. Generally, the idea is to support the following:
 
-> transpose[f]   \<m\>  [\<n\>  [\<ldi\>  [\<ldo\>]]]
+> transpose  [&lt;kind&gt;  [&lt;m&gt;  [&lt;n&gt;  [&lt;ldi&gt;  [&lt;ldo&gt;]]]]]  
+transposef                [&lt;m&gt;  [&lt;n&gt;  [&lt;ldi&gt;  [&lt;ldo&gt;]]]]
 
-Above, `m` and `n` specify the matrix shape, and `ldi` the leading dimension of the matrix. The argument `ldo` allows to specify an output dimension, which may differ from `ldi`.
+Above, `m` and `n` specify the matrix shape, and `ldi` the leading dimension of the matrix. The argument `ldo` allows to specify an output dimension, which may differ from `ldi`. The transpose kind shall be either out-of-place (`o`) or in-place (`i`).
 
 Running the C sample code may look like:
 
@@ -36,7 +37,7 @@ In the above case one can see from the verbose output (`LIBXSMM_VERBOSE=2`) that
 To tune the tile sizes ("block sizes") internal to LIBXSMM's transpose routine, the [OpenTuner](http://opentuner.org/) extensible framework for program autotuning can be used. A tuning script (`transpose_opentuner.py`) is provided, which accepts a range of matrix sizes as command line arguments.
 
 ```
-./transpose_opentuner.py \<begin\> \<end\> \<nruns\>
+./transpose_opentuner.py &lt;begin&gt; &lt;end&gt; &lt;nruns&gt;
 ```
 
 To start a tuning experiment for a new set of arguments, it is highly recommended to start from scratch. Otherwise the population of previously generated tuning results is fetched from a database and used to tune an eventually unrelated range of matrix shapes.

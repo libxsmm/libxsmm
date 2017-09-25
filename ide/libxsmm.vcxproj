@@ -181,11 +181,10 @@
     <None Include="..\.travis.sh" />
     <None Include="..\.travis.yml" />
     <None Include="..\include\libxsmm.f" />
-    <None Include="..\LICENSE" />
+    <None Include="..\LICENSE.md" />
     <None Include="..\Makefile" />
     <None Include="..\Makefile.inc" />
     <None Include="..\README.md" />
-    <None Include="..\README.sh" />
     <None Include="..\scripts\libxsmm_config.py" />
     <None Include="..\scripts\libxsmm_dispatch.py" />
     <None Include="..\scripts\libxsmm_interface.py" />

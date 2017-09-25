@@ -33,14 +33,6 @@
 
 #include "libxsmm_macros.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stddef.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 
 /** Function types accepted for memory allocation (see libxsmm_*_allocator). */
 typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_ctx)(void* /*context*/, size_t /*size*/);
@@ -98,7 +90,8 @@ LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
 
 /**
  * Allocate aligned scratch memory. It is not supported
- * to query properties (libxsmm_get_malloc_info).
+ * to query properties per libxsmm_get_malloc_info, but
+ * libxsmm_get_scratch_info can used instead.
  */
 LIBXSMM_API void* libxsmm_scratch_malloc(size_t size,
   /**
@@ -112,6 +105,11 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size,
    */
   const void* caller);
 
+/**
+ * Binary form of libxsmm_scratch_malloc, which
+ * expands the call-context automatically. This
+ * macro is intentionally lower case.
+ */
 #define libxsmm_aligned_scratch(size, alignment) \
   libxsmm_scratch_malloc(size, alignment, LIBXSMM_CALLER)
 
@@ -153,12 +151,18 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info);
  * The environment variable LIBXSMM_SCRATCH_LIMIT takes
  * the following units: none (Bytes), k/K, m/M, and g/G.
  */
-LIBXSMM_API void libxsmm_set_scratch_limit(size_t limit);
+LIBXSMM_API void libxsmm_set_scratch_limit(size_t nbytes);
 /** Get the maximum size of the scratch memory domain. */
 LIBXSMM_API size_t libxsmm_get_scratch_limit(void);
 
 /** Calculate a hash value for a given buffer. */
 LIBXSMM_API unsigned int libxsmm_hash(const void* data, size_t size, unsigned int seed);
+
+/**
+ * Calculate the linear offset of the n-dimensional (ndims) offset (can be NULL),
+ * and the (optional) linear size of the corresponding shape.
+ */
+LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size);
 
 
 #if defined(__cplusplus)

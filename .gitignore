@@ -14,10 +14,18 @@ ide/.vs
 ide/build
 ide/r*ah
 samples2
+samples/*/bin
+samples/*/*.sln
+samples/*/*.dat
+samples/*/*.pdf
+samples/*/*.png
 site
+bin
 tmp
+.vscode
 .state
 .make
+threadsafety-*.txt
 codecov-*.txt
 keywords.txt
 notes.txt
@@ -68,3 +76,4 @@ _*.txt
 *.i
 *.s
 *.*~
+

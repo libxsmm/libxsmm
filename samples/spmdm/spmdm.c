@@ -38,8 +38,8 @@
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
-#if defined(_WIN32) || defined(__CYGWIN__)
-/* note: this does not reproduce 48-bit RNG quality */
+
+#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
 # define drand48() ((double)rand() / RAND_MAX)
 # define srand48 srand
 #endif

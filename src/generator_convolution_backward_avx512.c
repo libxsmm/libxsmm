@@ -596,7 +596,7 @@ void libxsmm_generator_convolution_backward_avx512_load_input( libxsmm_generated
     if (l_k_2 == 0) {
       /* load ofw_rb VLEN inputs in the beginning*/
       if ((i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM && i_conv_desc->ofw_rb <= 14 && i_conv_desc->ofh_rb == 1) || (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 )) {
-        /*Use extra accumlators to hide FMA latencies when ofw_rb is too small */
+        /* Use extra accumulators to hide FMA latencies when ofw_rb is too small */
         for ( j = 0; j < i_conv_desc->ofw_rb; j++ ) {
           for (k = l_accs; k > 1; k--) {
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -651,8 +651,8 @@ void libxsmm_generator_convolution_backward_avx512_load_input( libxsmm_generated
     } else { /* If not first iteration */
     /* load one VLEN input */
       if ((i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM && i_conv_desc->ofw_rb <= 14 && i_conv_desc->ofh_rb == 1) || (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1)) {
-        /*Use extra accumulators to hide FMA latencies when ofw_rb is too small */
-        for (k = 0; k < (l_accs-1); k--) {
+        /* Use extra accumulators to hide FMA latencies when ofw_rb is too small */
+        for (k = l_accs; k > 1; k--) {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                    i_conv_kernel_config->instruction_set,
                                                    i_conv_kernel_config->vxor_instruction,
@@ -711,7 +711,7 @@ void libxsmm_generator_convolution_backward_avx512_load_input( libxsmm_generated
   } else { /* If stride_w != 1 */
     /* load ofw_rb VLEN inputs in each iteration*/
     if ( ((i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM && i_conv_desc->ofw_rb <= 14 && i_conv_desc->ofh_rb == 1) || (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1)) ) {
-      /*Use extra accumlators to hide FMA latencies when ofw_rb is too small */
+      /* Use extra accumulators to hide FMA latencies when ofw_rb is too small */
       for ( j = 0; j < i_conv_desc->ofw_rb; j++ ) {
         for (k = l_accs; k > 1; k--) {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,

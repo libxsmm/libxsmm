@@ -439,7 +439,7 @@ int main(int argc, char* argv []) {
 
   /* print some output... */
   printf("------------------------------------------------\n");
-  printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i)", l_xgemm_desc.m, l_xgemm_desc.k, l_xgemm_desc.k, l_xgemm_desc.n, l_xgemm_desc.m, l_xgemm_desc.n);
+  printf("RUNNING (%ux%u) X (%ux%u) = (%ux%u)", l_xgemm_desc.m, l_xgemm_desc.k, l_xgemm_desc.k, l_xgemm_desc.n, l_xgemm_desc.m, l_xgemm_desc.n);
   if ( l_single_precision == 0 ) {
     printf(", DP\n");
   } else {

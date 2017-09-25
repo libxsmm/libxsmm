@@ -33,14 +33,6 @@
 
 #include "libxsmm_macros.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stddef.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 #define LIBXSMM_TYPESIZE(ENUM) ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F64 ? 8 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F32 ? 4 : ( \
@@ -182,14 +174,7 @@ typedef enum libxsmm_dnn_tensor_format{
   /* use RSCK format internally, this allows no-copy operations  */
   LIBXSMM_DNN_TENSOR_FORMAT_RSCK = 8,
   /* use KCRS format internally, this will include shadow copies, not preferred */
-  LIBXSMM_DNN_TENSOR_FORMAT_KCRS = 16,
-  /* use pointer copy when copying in -> no copy takes place, this is just an additional option */
-  LIBXSMM_DNN_TENSOR_FORMAT_PTR = 32,
-  /* now some combined types */
-  LIBXSMM_DNN_TENSOR_FORMAT_NHWC_PTR = LIBXSMM_DNN_TENSOR_FORMAT_NHWC | LIBXSMM_DNN_TENSOR_FORMAT_PTR,
-  LIBXSMM_DNN_TENSOR_FORMAT_RSCK_PTR = LIBXSMM_DNN_TENSOR_FORMAT_RSCK | LIBXSMM_DNN_TENSOR_FORMAT_PTR,
-  LIBXSMM_DNN_TENSOR_FORMAT_NHWC_RSCK = LIBXSMM_DNN_TENSOR_FORMAT_NHWC | LIBXSMM_DNN_TENSOR_FORMAT_RSCK,
-  LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_PTR = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM | LIBXSMM_DNN_TENSOR_FORMAT_PTR
+  LIBXSMM_DNN_TENSOR_FORMAT_KCRS = 16
 } libxsmm_dnn_tensor_format;
 
 typedef enum libxsmm_dnn_internal_format {

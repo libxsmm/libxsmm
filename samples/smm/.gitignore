@@ -10,3 +10,4 @@ smm-inlined.txt
 smmf-perf.sh
 smmf-perf.txt
 smm-test.txt
+*.dot

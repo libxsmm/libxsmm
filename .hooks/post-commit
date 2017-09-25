@@ -20,15 +20,3 @@ then
   ${GIT} commit --amend -C HEAD --no-verify > /dev/null
 fi
 
-if [ -e ${LOCKFILE}-readme ] && \
-   [ "" != "${RM}" ] && [ "" != "${SED}" ]; \
-then
-  # lock file must be deleted *prior* to below commit
-  ${RM} ${LOCKFILE}-readme
-  # update the README file
-  ${SED} -e "s/](${DOCDIR}\//](/g" README.md > ${DOCDIR}/index.md
-  # quietly amend the previous commit
-  ${GIT} add ${DOCDIR}/index.md
-  ${GIT} commit --amend -C HEAD --no-verify > /dev/null
-fi
-

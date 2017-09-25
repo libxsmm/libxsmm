@@ -221,6 +221,23 @@ LIBXSMM_API_DEFINITION size_t libxsmm_alignment(size_t size, size_t alignment)
 }
 
 
+LIBXSMM_API_DEFINITION size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size)
+{
+  size_t result = 0, size1 = 0;
+  if (0 != ndims && 0 != shape) {
+    size_t i;
+    result = (0 != offset ? offset[0] : 0);
+    size1 = shape[0];
+    for (i = 1; i < ndims; ++i) {
+      result += (0 != offset ? offset[i] : 0) * size1;
+      size1 *= shape[i];
+    }
+  }
+  if (0 != size) *size = size1;
+  return result;
+}
+
+
 LIBXSMM_API_DEFINITION int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE* lock,
   void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
 {
@@ -1283,10 +1300,10 @@ LIBXSMM_API_DEFINITION int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_set_scratch_limit(size_t limit)
+LIBXSMM_API_DEFINITION void libxsmm_set_scratch_limit(size_t nbytes)
 {
   LIBXSMM_INIT
-  libxsmm_scratch_limit = limit;
+  libxsmm_scratch_limit = nbytes;
 }
 
 

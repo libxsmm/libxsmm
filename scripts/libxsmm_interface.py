@@ -56,11 +56,12 @@ if __name__ == "__main__":
 
         template = Template(open(filename, "r").read())
         if (fnmatch.fnmatch(filename, "*.h*")):
+            optional = [", ...", ""][0 <= prefetch]
             substitute = {"MNK_INTERFACE_LIST": ""}
             for mnk in mnklist:
                 mnkstr = "_".join(map(str, mnk))
                 if (2 != precision):
-                    pfsig = [");", ",\n  "
+                    pfsig = [optional + ");", ",\n  "
                              "const float* pa, "
                              "const float* pb, "
                              "const float* pc);"][0 < prefetch]
@@ -69,7 +70,7 @@ if __name__ == "__main__":
                         "(const float* a, const float* b, float* c" +
                         pfsig)
                 if (1 != precision):
-                    pfsig = [");", ",\n  "
+                    pfsig = [optional + ");", ",\n  "
                              "const double* pa, "
                              "const double* pb, "
                              "const double* pc);"][0 < prefetch]
@@ -116,19 +117,21 @@ if __name__ == "__main__":
                             "!DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmm_" +
                             mnkstr)
                 substitute["MNK_INTERFACE_LIST"] += "\n        INTERFACE"
+                optional = [", OPTIONAL", ""][0 < prefetch]
+                bindc = ["", "BIND(C)"][0 < prefetch]
                 for mnk in mnklist:
                     mnkstr = "_".join(map(str, mnk))
                     if (2 != precision):
                         pfsiga = [") BIND(C)\n",
                                   "," + "&".rjust(26 - len(mnkstr)) +
-                                  "\n     &    pa, pb, pc) "
-                                  "BIND(C)\n"][0 < prefetch]
+                                  "\n     &    pa, pb, pc) " +
+                                  bindc + "\n"][0 != prefetch]
                         pfsigb = ["",
                                   "            REAL(C_FLOAT), "
-                                  "INTENT(IN) :: "
+                                  "INTENT(IN)" + optional + " :: "
                                   "pa(*), "
                                   "pb(*), "
-                                  "pc(*)\n"][0 < prefetch]
+                                  "pc(*)\n"][0 != prefetch]
                         substitute["MNK_INTERFACE_LIST"] += (
                             "\n          "
                             "PURE SUBROUTINE libxsmm_smm_" + mnkstr +
@@ -143,14 +146,14 @@ if __name__ == "__main__":
                     if (1 != precision):
                         pfsiga = [") BIND(C)\n",
                                   "," + "&".rjust(26 - len(mnkstr)) +
-                                  "\n     &    pa, pb, pc) "
-                                  "BIND(C)\n"][0 < prefetch]
+                                  "\n     &    pa, pb, pc) " +
+                                  bindc + "\n"][0 != prefetch]
                         pfsigb = ["",
                                   "            REAL(C_DOUBLE), "
-                                  "INTENT(IN) :: "
+                                  "INTENT(IN)" + optional + " :: "
                                   "pa(*), "
                                   "pb(*), "
-                                  "pc(*)\n"][0 < prefetch]
+                                  "pc(*)\n"][0 != prefetch]
                         substitute["MNK_INTERFACE_LIST"] += (
                             "\n          "
                             "PURE SUBROUTINE libxsmm_dmm_" + mnkstr +
