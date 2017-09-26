@@ -74,7 +74,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
   l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_X86_GP_REG_R11;
   l_gp_reg_mapping.gp_reg_help_4 = LIBXSMM_X86_GP_REG_R13;
   l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_X86_GP_REG_R14;
-  /*l_gp_reg_mapping.gp_reg_help_6 = LIBXSMM_X86_GP_REG_R15;*/
+  l_gp_reg_mapping.gp_reg_help_6 = LIBXSMM_X86_GP_REG_R15;
 
   /* define convolution kernel config */
   libxsmm_generator_init_convolution_kernel_config( &l_conv_kernel_config );
