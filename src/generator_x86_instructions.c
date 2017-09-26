@@ -708,7 +708,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           break;
        case LIBXSMM_X86_INSTR_VUNPCKLPS:
           l_fpadj = -0x45;
-          if ( (i_vector_name!='z') && (l_vreg0<=15) && (l_vreg1<=15) && 
+          if ( (i_vector_name!='z') && (l_vreg0<=15) && (l_vreg1<=15) &&
                (l_vreg2<=15) )
                l_fpadj2 = -1;
           else l_fpadj2 = -0x81;
@@ -718,7 +718,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           break;
        case LIBXSMM_X86_INSTR_VUNPCKHPS:
           l_fpadj = -0x44;
-          if ( (i_vector_name!='z') && (l_vreg0<=15) && (l_vreg1<=15) && 
+          if ( (i_vector_name!='z') && (l_vreg0<=15) && (l_vreg1<=15) &&
                (l_vreg2<=15) )
                l_fpadj2 = -1;
           else l_fpadj2 = -0x81;
@@ -2588,7 +2588,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     /* int i = *loc; */
     /* unsigned int l_maxsize = io_generated_code->buffer_size;*/
     /* unsigned int l_maxsize = 1024; */
-    
+
     int l_first = 0;
     int l_second = 0;
     int l_third = 0;
