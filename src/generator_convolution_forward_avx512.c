@@ -66,7 +66,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
   l_gp_reg_mapping.gp_reg_kw_loop = LIBXSMM_X86_GP_REG_R15;
   l_gp_reg_mapping.gp_reg_kh_loop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_ifmInner_loop = LIBXSMM_X86_GP_REG_UNDEF;
-  l_gp_reg_mapping.gp_reg_ifmOuter_loop = LIBXSMM_X86_GP_REG_RBP;
+  l_gp_reg_mapping.gp_reg_ifmOuter_loop = LIBXSMM_X86_GP_REG_R15;
   /*l_gp_reg_mapping.gp_reg_ifmInner_loop = LIBXSMM_X86_GP_REG_RDX;*/  /* this is reuse of the output pointer GPR */
   l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_RAX;
   l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_X86_GP_REG_RBX;
@@ -74,7 +74,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
   l_gp_reg_mapping.gp_reg_help_3 = LIBXSMM_X86_GP_REG_R11;
   l_gp_reg_mapping.gp_reg_help_4 = LIBXSMM_X86_GP_REG_R13;
   l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_X86_GP_REG_R14;
-  l_gp_reg_mapping.gp_reg_help_6 = LIBXSMM_X86_GP_REG_R15;
+  /*l_gp_reg_mapping.gp_reg_help_6 = LIBXSMM_X86_GP_REG_R15;*/
 
   /* define convolution kernel config */
   libxsmm_generator_init_convolution_kernel_config( &l_conv_kernel_config );
@@ -205,56 +205,17 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
                                       LIBXSMM_X86_GP_REG_RSP ,
                                       LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
                                       l_conv_kernel_config.vector_name, 6, 0, 0 );
-/*
-    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                             l_conv_kernel_config.instruction_set,
-                                             l_conv_kernel_config.vxor_instruction,
-                                             l_conv_kernel_config.vector_name,
-                                             6,
-                                             6,
-                                             6 );
-*/
 
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0 );
   }
 
-  /* oj loop */
-  /*libxsmm_generator_convolution_header_oj_loop(  io_generated_code, &l_loop_label_tracker,
-                                                  &l_gp_reg_mapping,  &l_conv_kernel_config, i_conv_desc );*/
-
-  /* oi loop */
-  /*libxsmm_generator_convolution_header_oi_loop(  io_generated_code, &l_loop_label_tracker,
-                                                  &l_gp_reg_mapping,  &l_conv_kernel_config, i_conv_desc );*/
-
-  /* load outputs */
-  /* @TODO we just go with 1D blocking */
-#if 1
   libxsmm_generator_convolution_forward_load_output( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
-#endif
 
   /* loop over ifm1 blocks, begin */
   if ( i_conv_desc->blocks_ifm_blocking > 1 ) {
-
     libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_input_pf );
     libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_weight_pf );
-    libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_output_pf );
 
-    /* @TODO we are going to use RBP, so let's save it, check if we can automate this  */
-    libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_ifmOuter_loop );
-
-    /* open ifm1 block loop */
-    libxsmm_generator_convolution_header_ifmOuter_loop(  io_generated_code, &l_loop_label_tracker,
-                                                         &l_conv_kernel_config, l_gp_reg_mapping.gp_reg_ifmOuter_loop );
-
-    /* we save all registers for easily handling. @TODO optimize this later */
-    libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_input );
-    libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_weight );
-    libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_input_pf );
-    libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_output_pf );
-    libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_weight_pf );
-
- if ( i_conv_desc->kw == 1   ) {
-    libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_input_pf, l_gp_reg_mapping.gp_reg_output_pf);
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_input, l_gp_reg_mapping.gp_reg_input_pf);
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_input_pf, i_conv_desc->ifw_padded * i_conv_desc->ifh_padded  * l_conv_kernel_config.datatype_size_in * l_conv_kernel_config.l_ld_ifm_act * i_conv_desc->fm_lp_block);
@@ -262,25 +223,18 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_weight, l_gp_reg_mapping.gp_reg_weight_pf);
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_weight_pf, i_conv_desc->weight_stride * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_in * l_conv_kernel_config.l_ld_ifm_act * i_conv_desc->fm_lp_block);
-   } 
+    
+    /* open ifm1 block loop */    
+    libxsmm_generator_convolution_header_ifmOuter_loop(  io_generated_code, &l_loop_label_tracker,
+                                                         &l_conv_kernel_config, l_gp_reg_mapping.gp_reg_ifmOuter_loop );  
   }
-
 
 #include "kernel_repeat.tpl.c"
 
   /* loop over ifm1 blocks, end */
   if ( i_conv_desc->blocks_ifm_blocking > 1 ) {
 
-
-    /* we save all registers for easily handling. @TODO optimize this later */
-    libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_weight_pf );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_output_pf );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_input_pf );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_weight );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_input );
-
     /* adjust addresses, by moving to next ifm1 block */
-    /* @TODO make this work for NHWC/RSCK format */
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_input, i_conv_desc->ifw_padded*i_conv_desc->ifh_padded*
                                      l_conv_kernel_config.l_ld_ifm_act*i_conv_desc->fm_lp_block* l_conv_kernel_config.datatype_size_in );
@@ -297,31 +251,13 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     /* close ifm1 block loop */
     libxsmm_generator_convolution_footer_ifmOuter_loop(  io_generated_code, &l_loop_label_tracker,
                                                          &l_conv_kernel_config, l_gp_reg_mapping.gp_reg_ifmOuter_loop, i_conv_desc->blocks_ifm_blocking -1 );
-
-
-    /* @TODO as we used RBP, so let's restore it, check if we can automate this */
-    libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_ifmOuter_loop );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_output_pf );
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_weight_pf );
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_input_pf );
+    #include "kernel_repeat.tpl.c"
   }
 
-if ( i_conv_desc->blocks_ifm_blocking > 1 ) {
-  #include "kernel_repeat.tpl.c"
-}
-
-    /* store outputs */
-  /* @TODO we just go with 1D blocking */
-#if 1
+  /* store outputs */
   libxsmm_generator_convolution_forward_store_output( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
-#endif
-  /* oi loop */
-  /*libxsmm_generator_convolution_footer_oi_loop(  io_generated_code, &l_loop_label_tracker,
-                                                  &l_gp_reg_mapping,  &l_conv_kernel_config, i_conv_desc );*/
-
-  /* oj loop */
-  /*libxsmm_generator_convolution_footer_oj_loop(  io_generated_code, &l_loop_label_tracker,
-                                                  &l_gp_reg_mapping,  &l_conv_kernel_config, i_conv_desc );*/
 
   /* close asm */
   libxsmm_x86_instruction_close_stream_convolution( io_generated_code, i_arch );
