@@ -45,7 +45,7 @@ for RUN in ${!RUNS} ; do
   NVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f2)
   KVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f3)
   >&2 ${ECHO} -n "${NRUN} of ${NMAX} (M=${MVALUE} N=${NVALUE} K=${KVALUE})... "
-  ERROR=$({ CHECK=1 ${HERE}/cp2k.sh ${MVALUE} ${SIZE} 0 ${NVALUE} ${KVALUE} >> ${FILE}; } 2>&1)
+  ERROR=$({ CHECK=1 ${HERE}/cp2k ${MVALUE} ${SIZE} 0 ${NVALUE} ${KVALUE} >> ${FILE}; } 2>&1)
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
     ${ECHO} "FAILED(${RESULT}) ${ERROR}"

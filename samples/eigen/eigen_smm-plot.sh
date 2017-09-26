@@ -12,11 +12,6 @@ RM=$(which rm)
 
 VARIANT="LIBXSMM streamed (A,B)"
 
-if [ "" != "$1" ]; then
-  VARIANT=$1
-  shift
-fi
-
 HERE=$(cd $(dirname $0); pwd -P)
 FILE=${HERE}/eigen_smm-cp2k.txt
 
