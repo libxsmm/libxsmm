@@ -208,7 +208,7 @@ set grid x y2 linecolor "grey"
 set key left #spacing 0.5
 set ytics format ""
 set y2tics nomirror
-set y2label "GFLOPS/s"
+set y2label "GFLOP/s"
 set xlabel "Problem Size (MNK^{1/3})\n\n{/=9 Min.: ".sprintf(FORMAT(MINFLOPS), MINFLOPS)." GFLOP/s   Geo.: ".sprintf(FORMAT(GEOFLOPS), GEOFLOPS)." GFLOP/s   Med.: ".sprintf(FORMAT(MEDFLOPS), MEDFLOPS)." GFLOP/s   Avg.: ".sprintf(FORMAT(AVGFLOPS), AVGFLOPS)." GFLOP/s   Max.: ".sprintf(FORMAT(MAXFLOPS), MAXFLOPS)." GFLOP/s}"
 set yrange [0:*]
 set autoscale fix
