@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
 
   /* Only accept 2d-images (maybe a slice of a 3d-image). */
   if (2 == ndims) {
-    const size_t m = LIBXSMM_MAX(mult, 1);
+    const int m = LIBXSMM_MAX(mult, 1);
     offset[0] = ((size_in[0] + LIBXSMM_MAX(kw, m) - 1) / m * m - size_in[0] + kw) / 2;
     offset[1] = ((size_in[1] + LIBXSMM_MAX(kh, m) - 1) / m * m - size_in[1] + kh) / 2;
     /* center image inside of (pitched) buffer */
