@@ -52,16 +52,16 @@ IX(I1, J1, NJ) = int(MAX(I1 - 1, 0) * NJ + MAX(J1 - 1, 0))
 I1(IX, NJ) = int(IX / NJ) + 1
 J1(IX, NJ) = int(IX) % NJ + 1
 
-set table BASENAME."-perf-avg.dat"
+set table BASENAME."-plot-avg.dat"
 plot BASENAME."-perf.dat" using (IX(column(MPARM), column(NPARM), XN)):FLOPS smooth unique
 unset table
-set table BASENAME."-perf-mbw.dat"
+set table BASENAME."-plot-mbw.dat"
 plot BASENAME."-perf.dat" using (BW(MPARM,NPARM,KPARM,FLOPS,8)):(1.0) smooth cumulative
 unset table
-set table BASENAME."-perf-cdf.dat"
+set table BASENAME."-plot-cdf.dat"
 plot BASENAME."-perf.dat" using FLOPS:(1.0) smooth cumulative
 unset table
-stats BASENAME."-perf-cdf.dat" using (("".strcol(3)."" eq "i")?($2):(1/0)) nooutput; FREQSUM = STATS_max; FREQN = STATS_records
+stats BASENAME."-plot-cdf.dat" using (("".strcol(3)."" eq "i")?($2):(1/0)) nooutput; FREQSUM = STATS_max; FREQN = STATS_records
 
 if (MULTI==1) {
   set output FILENAME
@@ -108,7 +108,7 @@ set ylabel "N" offset -1.5
 set cblabel "GFLOP/s" offset 0.5
 set format x "%g"; set format y "%g"; set format cb "%g"
 set mxtics 2
-splot BASENAME."-perf-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
+splot BASENAME."-plot-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
@@ -136,7 +136,7 @@ set label sprintf("{/=9 (".FORMAT(BIN3_MEMBW)." GB/s)}", BIN3_MEMBW) at 2.0, BIN
 set label sprintf("{/=9 N=%u}", BIN1_NSAMPLES) at 0.0, 0.0 centre offset 0, 0.5 front
 set label sprintf("{/=9 N=%u}", BIN2_NSAMPLES) at 1.0, 0.0 centre offset 0, 0.5 front
 set label sprintf("{/=9 N=%u}", BIN3_NSAMPLES) at 2.0, 0.0 centre offset 0, 0.5 front
-plot  BASENAME."-perf.dat" \
+plot BASENAME."-perf.dat" \
       using (0.0):(BIN1_FLOPS) notitle smooth unique with boxes linetype 1 linecolor "grey", \
   ""  using (1.0):(BIN2_FLOPS) notitle smooth unique with boxes linetype 1 linecolor "grey", \
   ""  using (2.0):(BIN3_FLOPS) notitle smooth unique with boxes linetype 1 linecolor "grey"
@@ -158,19 +158,19 @@ set yrange [0:*]
 set y2range [0:*]
 set fit quiet
 f(x) = b * x + a
-fit f(x) BASENAME."-perf-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via a, b
+fit f(x) BASENAME."-plot-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via a, b
 g(x) = (x - a) / b
 x50 = 0.5 * (100 + MAX(0, g(0)))
 h(x) = d * x + c
 dx = 100 / FREQN
-fit [x50-2.0*dx:x50+2.0*dx] h(x) BASENAME."-perf-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
+fit [x50-2.0*dx:x50+2.0*dx] h(x) BASENAME."-plot-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
 set arrow from x50, second h(x50) to x50, second 0 front
 set arrow from x50, second h(x50) to 100, second h(x50) front
 set label sprintf("%.0f%%", x50) at x50, second 0.5 * h(x50) left offset 1 front
 set label sprintf(FORMAT(h(x50))." GFLOP/s", h(x50)) at 0.5 * (x50 + 100.0), second h(x50) centre offset 0, -1 front
 set key left invert
-plot  BASENAME."-perf-mbw.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y1 title "Memory Bandwidth" with lines linecolor "grey", \
-      BASENAME."-perf-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y2 title "Compute Performance" with lines linewidth 2
+plot BASENAME."-plot-mbw.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y1 title "Memory Bandwidth" with lines linecolor "grey", \
+     BASENAME."-plot-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y2 title "Compute Performance" with lines linewidth 2
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
@@ -184,8 +184,8 @@ set y2label "GFLOP/s"
 set xlabel "FLOPS/Byte   (Min.: ".sprintf("%.1f", MINAI)."   Geo.: ".sprintf("%.1f", GEOAI)."   Med.: ".sprintf("%.1f", MEDAI)."   Avg.: ".sprintf("%.1f", AVGAI)."   Max.: ".sprintf("%.1f", MAXAI).")"
 set yrange [0:*]
 set autoscale fix
-plot  BASENAME."-perf.dat" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth sbezier with lines linecolor "grey", \
-                        "" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth unique with points pointtype 7 pointsize 0.2
+plot BASENAME."-perf.dat" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth sbezier with lines linecolor "grey" linewidth 2, \
+                       "" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth unique with points pointtype 7 pointsize 0.1
 
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
@@ -198,27 +198,37 @@ set y2label "GB/s"
 set xlabel "Problem Size (MNK^{1/3})\n\n{/=9 Min.: ".sprintf("%.0f GB/s", MINMEMBW)."   Geo.: ".sprintf("%.0f GB/s", GEOMEMBW)."   Med.: ".sprintf("%.0f GB/s", MEDMEMBW)."   Avg.: ".sprintf("%.0f GB/s", AVGMEMBW)."   Max.: ".sprintf("%.0f GB/s", MAXMEMBW)."}"
 set yrange [0:*]
 set autoscale fix
-plot  BASENAME."-perf.dat" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):(BW(MPARM,NPARM,KPARM,FLOPS,8)) notitle smooth sbezier with lines linecolor "grey", \
-                        "" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):(BW(MPARM,NPARM,KPARM,FLOPS,8)) notitle smooth unique with points pointtype 7 pointsize 0.2
+plot BASENAME."-perf.dat" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):(BW(MPARM,NPARM,KPARM,FLOPS,8)) notitle smooth sbezier with lines linecolor "grey" linewidth 2, \
+                       "" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):(BW(MPARM,NPARM,KPARM,FLOPS,8)) notitle with points pointtype 7 pointsize 0.1
 
-if (NSAMPLES<=24) {
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
-if (MULTI>-1) { set title "Selected Problem Instances" }
+if (MULTI>-1) { set title "Compute Consumption (".sprintf("%u Kernels", NSAMPLES).")" }
+set grid x y2 linecolor "grey"
+set key left #spacing 0.5
+set ytics format ""
+set y2tics nomirror
+set y2label "GFLOPS/s"
+set xlabel "Problem Size (MNK^{1/3})\n\n{/=9 Min.: ".sprintf(FORMAT(MINFLOPS), MINFLOPS)." GFLOP/s   Geo.: ".sprintf(FORMAT(GEOFLOPS), GEOFLOPS)." GFLOP/s   Med.: ".sprintf(FORMAT(MEDFLOPS), MEDFLOPS)." GFLOP/s   Avg.: ".sprintf(FORMAT(AVGFLOPS), AVGFLOPS)." GFLOP/s   Max.: ".sprintf(FORMAT(MAXFLOPS), MAXFLOPS)." GFLOP/s}"
+set yrange [0:*]
+set autoscale fix
+plot BASENAME."-perf.dat" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):FLOPS notitle smooth sbezier with lines linecolor "grey" linewidth 2, \
+                       "" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):FLOPS notitle with points pointtype 7 pointsize 0.1
+
+if (0!=system("sh -c \"if [[ -e cp2k-plot-join.dat ]]; then echo 1; else echo 0; fi\"")) {
+reset
+if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
+if (MULTI>-1) { set title "Performance (Selected Kernels)" }
 set style fill solid 0.4 border -1
 set style data histograms
 set style histogram cluster #gap 2
 #set boxwidth 0.5 relative
 set grid y2tics lc "grey"
-set key left invert #spacing 0.5
+set key left #spacing 0.5
 set xtics rotate by -45 scale 0; set bmargin 6
-set ytics nomirror
+set ytics format ""
 set y2tics nomirror
-set ylabel "GB/s"
 set y2label "GFLOP/s"
 set yrange [0:*]
-set y2range [0:*]
-set autoscale fix
-plot  BASENAME."-perf.dat" using (BW(MPARM,NPARM,KPARM,FLOPS,8)):xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") axes x1y1 title "Memory Bandwidth" smooth sbezier with lines linecolor "grey", \
-                        "" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") axes x1y2 title "Compute Performance"
+plot "cp2k-plot-join.dat" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") notitle
 }
