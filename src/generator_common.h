@@ -374,7 +374,9 @@ typedef struct libxsmm_convolution_forward_gp_reg_mapping_struct {
   unsigned int gp_reg_weight;
   unsigned int gp_reg_output;
   unsigned int gp_reg_input_pf;
+  unsigned int gp_reg_input_pf_L2;
   unsigned int gp_reg_weight_pf;
+  unsigned int gp_reg_weight_pf_L2;
   unsigned int gp_reg_output_pf;
   unsigned int gp_reg_kw_loop;
   unsigned int gp_reg_kh_loop;
