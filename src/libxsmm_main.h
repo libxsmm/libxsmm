@@ -365,8 +365,15 @@ LIBXSMM_API int libxsmm_malloc_attrib(void** memory, int flags,
   /** If a name is given, an executable buffer will be dumped into a file. */
   const char* name);
 
+LIBXSMM_API int libxsmm_dgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
+  int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta, int flags, int prefetch);
+LIBXSMM_API int libxsmm_sgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
+  int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta, int flags, int prefetch);
+LIBXSMM_API int libxsmm_wgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
+  int m, int n, int k, int lda, int ldb, int ldc, int alpha, int beta, int flags, int prefetch);
+
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
-LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned regindex, libxsmm_code_pointer* code);
+LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
 /** Updates counters of the statistic, which is shown at program termination. */
 LIBXSMM_API unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int k, unsigned int ntry, unsigned int ncol);
