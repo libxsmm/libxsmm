@@ -39,6 +39,7 @@ const int tile_id = ltid/gs;
 /* Pointer variables  */
 const element_input_type *input_base, *input_ptr;
 const element_filter_type *weight_base;
+element_input_type *input_zero;
 element_output_type *output_base;
 element_input_type *copy_ptr, *prefetch_ptr;
 element_output_type *out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->ofmblock);
@@ -71,6 +72,11 @@ int pool_index = 0;
 if (handle->padding_flag == 1) {
   input_base = &LIBXSMM_VLA_ACCESS(5, input_buffer, 0, 0, 0, 0, 0,
       padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
+  input_zero = &LIBXSMM_VLA_ACCESS(5, input_buffer, 0, 0, 0, 0, 0,
+      padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
+  /* we need to set the scratch to zero */
+  /* @TODO: we need to find a better/faster code here */
+  memset( input_zero, 0, handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block * sizeof(element_input_type) );
 } else {
   input_base = &LIBXSMM_VLA_ACCESS(6, input, 0, 0, 0, 0, 0, 0,
       handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);

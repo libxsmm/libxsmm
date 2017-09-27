@@ -93,6 +93,7 @@ int instr, n_segments, n_convs, conv_i, offset_i, offset_t, offset_o, offset_w, 
 
 /* Base pointers  */
 const element_input_type *input_base;
+element_input_type *input_zero;
 element_filter_type *weight_base;
 element_output_type *output_base;
 
@@ -150,9 +151,14 @@ if (handle->padding_flag == 1) {
 if (handle->padding_flag == 1) {
   if (handle->trans_ofw_ifm > 0) {
     input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, 0, 0, 0, 0, 0, handle->blocksifm, padded_h, handle->ifmblock, padded_w);
+    input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, 0, 0, 0, 0, 0, handle->blocksifm, padded_h, handle->ifmblock, padded_w);
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(5, input_padded, 0, 0, 0, 0, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
+    input_zero = &LIBXSMM_VLA_ACCESS(5, input_padded, 0, 0, 0, 0, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
   }
+  /* we need to set the scratch to zero */
+  /* @TODO: we need to find a better/faster code here */
+  memset( input_zero, 0, handle->blocksifm * padded_h * padded_w * handle->ifmblock * sizeof(element_input_type) );
 } else {
   if (handle->trans_ofw_ifm > 0) {
     input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, dst_ifhp, handle->ifmblock, ifwp_extended);

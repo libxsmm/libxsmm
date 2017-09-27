@@ -103,6 +103,9 @@ if (handle->datatype != handle->datatype_itm) {
   if ( handle->padding_flag == 1  ) {
     input_base = &LIBXSMM_VLA_ACCESS(5, output_buffer, 0, 0, 0, 0, 0,
         padded_h, padded_w, handle->ofmblock, handle->fm_lp_block);
+    /* we need to set the scratch to zero */
+    /* @TODO: we need to find a better/faster code here, e.g. just setting the rim */
+    memset( input_base, 0, handle->blocksofm * padded_h * padded_w * handle->ofmblock * handle->fm_lp_block * sizeof(element_output_type) );
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(6, del_out, 0, 0, 0, 0, 0, 0,
       handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);

@@ -324,6 +324,7 @@ int main(int argc, char* argv[])
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   naive_conv_t naive_param;
   void* scratch;
+  size_t scratch_size;
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
@@ -568,9 +569,13 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_dfilter, LIBXSMM_DNN_GRADIENT_FILTER ) );
 
   /* let's allocate and bind scratch */
-  scratch = (void*)libxsmm_aligned_malloc( libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status ), 2097152);
+  scratch_size = libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
+  CHKERR_LIBXSMM_DNN( status );
+  scratch = (void*)libxsmm_aligned_malloc( scratch_size, 2097152 );
   CHKERR_LIBXSMM_DNN( status );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
+  /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
+  init_buf_int8( (char*)scratch, scratch_size, 0, 0 );
 
   if (type == 'A' || type == 'F') {
     printf("##############################################\n");
