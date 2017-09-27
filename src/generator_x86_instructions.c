@@ -1105,7 +1105,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           if ( i_vector_name=='y' ) l_fourth -= 0x20;
        }
        if ( l_vreg0 >= 24 ) { l_second -= 0x20; }
-       if ( l_reg1 >= 16 )
+       if ( l_vreg1 >= 16 )
        {
           l_third += 0x40;
           l_fourth -= 0x08;
