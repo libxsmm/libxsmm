@@ -555,6 +555,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       libxsmm_matcopy_descriptor matcopy_descriptor;
       libxsmm_matcopy_descriptor matzero_descriptor;
 
+      descriptor.input_L2_prefetching = 0;
       if (handle->desc.R != 1 || handle->desc.S != 1) {
         descriptor.extra_L2_prefetching = 0;
       } else {
@@ -768,6 +769,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       libxsmm_convolution_forward_descriptor fwd_equivalent_descriptor;
       libxsmm_matcopy_descriptor matzero_descriptor_overwrite;
     
+      fwd_equivalent_descriptor.input_L2_prefetching = 0;
       if (handle->desc.R != 1 || handle->desc.S != 1) {
         fwd_equivalent_descriptor.extra_L2_prefetching = 0;
       } else {
