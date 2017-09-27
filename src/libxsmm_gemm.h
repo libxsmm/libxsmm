@@ -387,7 +387,8 @@ LIBXSMM_API_EXTERN void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char*, LIBXSMM
   LIBXSMM_GEMM_CONST double*, double*, LIBXSMM_GEMM_CONST libxsmm_blasint*);
 
 typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batch_item {
-  libxsmm_gemm_descriptor desc;
+  const void *a, *b;
+  void *c;
 } libxsmm_gemm_batch_item;
 
 /** Configuration table containing the tile sizes separate for DP and SP. */

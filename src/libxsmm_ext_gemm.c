@@ -35,6 +35,11 @@
 
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 
+LIBXSMM_API_VARIABLE libxsmm_gemm_descriptor internal_ext_gemm_batchdesc;
+LIBXSMM_API_VARIABLE unsigned int internal_ext_gemm_batchsize;
+LIBXSMM_API_VARIABLE unsigned int internal_ext_gemm_batch;
+
+
 #if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
 LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK
 libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller)
@@ -64,6 +69,28 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
+  assert(0 != lda && 0 != ldb && 0 != ldc && 0 != m && 0 != n && 0 != k);
+  assert(0 != alpha && 0 != beta && 0 != libxsmm_gemm_batch);
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+  if (0 == internal_ext_gemm_batch /* batch-recording disabled */
+    || LIBXSMM_GEMM_PRECISION_F32 != internal_ext_gemm_batchdesc.datatype
+    || LIBXSMM_GEMM_FLAGS(*transa, *transb) != internal_ext_gemm_batchdesc.flags
+    || ((unsigned int)*lda) != internal_ext_gemm_batchdesc.lda
+    || ((unsigned int)*ldb) != internal_ext_gemm_batchdesc.ldb
+    || ((unsigned int)*ldc) != internal_ext_gemm_batchdesc.ldc
+    || ((unsigned int)*m) != internal_ext_gemm_batchdesc.m
+    || ((unsigned int)*n) != internal_ext_gemm_batchdesc.n
+    || ((unsigned int)*k) != internal_ext_gemm_batchdesc.k
+    || 0 == LIBXSMM_FEQ(*alpha, internal_ext_gemm_batchdesc.alpha)
+    || 0 == LIBXSMM_FEQ(*beta, internal_ext_gemm_batchdesc.beta))
+  {
+    const unsigned int i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchsize, 1, LIBXSMM_ATOMIC_RELAXED);
+    libxsmm_gemm_batch_item item;
+    item.a = a; item.b = b; item.c = c;
+    libxsmm_gemm_batch[i] = item;
+  }
+  else
+#endif
   if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
     libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
@@ -80,6 +107,28 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
+  assert(0 != lda && 0 != ldb && 0 != ldc && 0 != m && 0 != n && 0 != k);
+  assert(0 != alpha && 0 != beta && 0 != libxsmm_gemm_batch);
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+  if (0 == internal_ext_gemm_batch /* batch-recording disabled */
+    || LIBXSMM_GEMM_PRECISION_F64 != internal_ext_gemm_batchdesc.datatype
+    || LIBXSMM_GEMM_FLAGS(*transa, *transb) != internal_ext_gemm_batchdesc.flags
+    || ((unsigned int)*lda) != internal_ext_gemm_batchdesc.lda
+    || ((unsigned int)*ldb) != internal_ext_gemm_batchdesc.ldb
+    || ((unsigned int)*ldc) != internal_ext_gemm_batchdesc.ldc
+    || ((unsigned int)*m) != internal_ext_gemm_batchdesc.m
+    || ((unsigned int)*n) != internal_ext_gemm_batchdesc.n
+    || ((unsigned int)*k) != internal_ext_gemm_batchdesc.k
+    || 0 == LIBXSMM_FEQ(*alpha, internal_ext_gemm_batchdesc.alpha)
+    || 0 == LIBXSMM_FEQ(*beta, internal_ext_gemm_batchdesc.beta))
+  {
+    const unsigned int i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchsize, 1, LIBXSMM_ATOMIC_RELAXED);
+    libxsmm_gemm_batch_item item;
+    item.a = a; item.b = b; item.c = c;
+    libxsmm_gemm_batch[i] = item;
+  }
+  else
+#endif
   if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
     libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
@@ -231,13 +280,39 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
   const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
   const void* alpha, const void* beta)
 {
-#if 1 /* TODO: remove */
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+  /* batch-recording enabled, and not yet running */
+  if (0 != libxsmm_gemm_batch
+    /* currently, batch recording is only enabled if all values are present (no complex filtering) */
+    && 0 != flags && 0 != alpha && 0 != beta
+    && 0 != lda && 0 != ldb && 0 != ldc
+    && 0 != m && 0 != n && 0 != k
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batch, 1, LIBXSMM_ATOMIC_SEQ_CST))
+  {
+    static int error_once = 0;
+    const int prefetch = LIBXSMM_PREFETCH_AUTO;
+    const int result = libxsmm_gemm_descriptor_init(&internal_ext_gemm_batchdesc,
+      precision, *m, *n, *k, lda, ldb, ldc, alpha, beta, flags, &prefetch);
+    if (EXIT_SUCCESS != result
+      && 0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: GEMM batch recording failed to enable!\n");
+    }
+  }
+#else
   LIBXSMM_UNUSED(precision); LIBXSMM_UNUSED(flags);
   LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
   LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(ldb); LIBXSMM_UNUSED(ldc);
   LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(beta);
 #endif
-  if (0 != libxsmm_gemm_batch) { /* lazy batch/recording enabled */
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch_end(/*TODO: signature*/)
+{
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && 1 /* TODO: remove */
+  if (0 != internal_ext_gemm_batch && 0 == LIBXSMM_ATOMIC_SUB_FETCH(&internal_ext_gemm_batch, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
     if ((4 <= libxsmm_gemm_wrap && 0 == (libxsmm_gemm_wrap % 2)) || 0 > libxsmm_gemm_wrap) { /* parallelized batch */
       /* TODO */
     }
@@ -245,12 +320,10 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
       /* TODO */
     }
   }
-}
-
-
-LIBXSMM_API_DEFINITION int libxsmm_mmbatch_end(/*TODO: signature*/)
-{
-  return EXIT_FAILURE;
+  return EXIT_FAILURE; /* TODO */
+#else
+  return EXIT_SUCCESS;
+#endif
 }
 
 
