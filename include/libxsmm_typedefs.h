@@ -247,6 +247,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int stride_h_store;
   unsigned int stride_w_store;
   unsigned int extra_L2_prefetching;
+  unsigned int lookahead;
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;
