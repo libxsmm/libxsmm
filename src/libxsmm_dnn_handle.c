@@ -554,6 +554,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     { libxsmm_convolution_forward_descriptor descriptor;
       libxsmm_matcopy_descriptor matcopy_descriptor;
       libxsmm_matcopy_descriptor matzero_descriptor;
+
+      if (handle->desc.R != 1 || handle->desc.S != 1) {
+        descriptor.extra_L2_prefetching = 0;
+      } else {
+        descriptor.extra_L2_prefetching = 1;
+        descriptor.lookahead = 4;
+      }
+
       descriptor.use_nts =  handle->use_nts_fwd;
 
       if (handle->desc.R == 1 && handle->desc.S == 1) {
@@ -759,6 +767,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       libxsmm_matcopy_descriptor matcopyback_descriptor;
       libxsmm_convolution_forward_descriptor fwd_equivalent_descriptor;
       libxsmm_matcopy_descriptor matzero_descriptor_overwrite;
+    
+      if (handle->desc.R != 1 || handle->desc.S != 1) {
+        fwd_equivalent_descriptor.extra_L2_prefetching = 0;
+      } else {
+        fwd_equivalent_descriptor.extra_L2_prefetching = 1;
+        fwd_equivalent_descriptor.lookahead = 4;
+      }
 
       if (handle->padding_flag == 1) {
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
@@ -1286,6 +1301,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 handle->use_fastpath = 1;
               }
 
+             descriptor.ofw_rb = 14;
+             descriptor.ofh_rb = 4;
              handle->upd_ofh_rb = descriptor.ofh_rb;
              handle->upd_ofw_rb = descriptor.ofw_rb;
              descriptor.transpose_ofw_ifm = 0;

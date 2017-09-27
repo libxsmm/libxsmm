@@ -47,6 +47,8 @@ if (block_j < handle->upd_ofh_rb ) {
   block_j = handle->upd_ofh_rb ;
 }
 
+block_j = handle->upd_ofh_rb ;
+
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
 #else
