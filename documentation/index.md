@@ -131,7 +131,7 @@ make header-only
 
 **NOTE**: Differences between C and C++ makes a header-only implementation (which is portable between both languages) considerably "techy". Mixing C and C++ translation units (which rely on the header-only form of the library) is **not** supported. Also remember: to build an application now shares the same build settings with LIBXSMM! This is important not only to omit debug code inside of LIBXSMM (use `-DNDEBUG`).
 
-## Installation
+### Installation
 
 Installing LIBXSMM makes possibly the most sense when combining the JIT backend ([enabled by default](libxsmm_be.md)) with a collection of statically generated SSE kernels (by specifying M, N, K, or MNK). If the JIT backend is not disabled, statically generated kernels are only registered for dispatch if the CPUID flags at runtime are not supporting a more specific instruction set extension (code path). Since the JIT backend does not support or generate SSE code by itself, the library is compiled by selecting SSE code generation if not specified otherwise (AVX=1&#124;2&#124;3, or with SSE=0 falling back to an "arch-native" approach). Limiting the static code path to SSE4.2 allows to practically target any deployed system, however using SSE=0 and AVX=0 together is falling back to generic code, and any static kernels are not specialized using the assembly code generator.
 
@@ -155,7 +155,9 @@ make PREFIX=/path/to/libxsmm-install STATIC=0 install
 make PREFIX=/path/to/libxsmm-install install
 ```
 
-## General Interface
+## Interfaces
+
+### General Interface
 
 To initialize the dispatch-table or other internal resources, an explicit initialization routine helps to avoid lazy initialization overhead when calling LIBXSMM for the first time. The library deallocates internal resources at program exit, but also provides a companion to the afore mentioned initialization (finalize).
 
@@ -166,15 +168,15 @@ void libxsmm_init(void);
 void libxsmm_finalize(void);
 ```
 
-## Matrix Multiplication<a name="interface-for-matrix-multiplication"></a>
+### Matrix Multiplication<a name="interface-for-matrix-multiplication"></a>
 
 This domain (MM) supports Small Matrix Multiplications (SMM), batches of multiple multiplications as well as the industry-standard interface for GEneral Matrix Matrix multiplication (GEMM). The details are covered in a separate [document](libxsmm_mm.md).
 
-## Deep Neural Networks<a name="interface-for-convolutions"></a>
+### Deep Neural Networks<a name="interface-for-convolutions"></a>
 
 This domain (DNN) is detailed by a separate [document](libxsmm_dnn.md). Please also note on how to [Get Started with TensorFlow&trade; using LIBXSMM](tensorflow.md).
 
-## Service Functions
+### Service Functions
 
 For convenient operation of the library and to ease integration, some service routines are available. These routines may not belong to the core functionality of LIBXSMM (SMM or DNN domain), but users are encouraged to use this domain (AUX). There are two categories: (1)&#160;routines which are available for C and Fortran, and (2)&#160;routines that are only available per C interface.
 
@@ -185,6 +187,10 @@ The [service function domain (AUX)](libxsmm_aux.md) contains routines for:
 * [Measuring time durations (timer)](libxsmm_aux.md#timer-facility)
 * [Loading and storing data (I/O)](libxsmm_aux.md#meta-image-file-io)
 * [Allocating memory](libxsmm_aux.md#memory-allocation)
+
+### Backend<a name="jit-backend"></a>
+
+More information about the JIT-backend and the code generator can be found in a separate [document](libxsmm_be.md), which also includes information about LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](libxsmm_be.md#generator-driver) programs.
 
 ## Runtime Control<a name="running"></a>
 
@@ -255,10 +261,6 @@ git clone --branch results https://github.com/hfp/libxsmm.git libxsmm-results
 ```
 
 Please note that comparing performance results depends on whether the operands of the matrix multiplication are streamed or not. For example, multiplying with all matrices covered by the L1 cache may have an emphasis towards an implementation which perhaps performs worse for the real workload (if this real workload needs to stream some or all matrices from the main memory). Most of the [code samples](https://github.com/hfp/libxsmm/tree/master/samples) are aimed to reproduce performance results, and it is encouraged to model the exact case or to look at real [applications](#applications).
-
-## Backend<a name="jit-backend"></a>
-
-More information about the JIT-backend and the code generator can be found in a separate [document](libxsmm_be.md), which also includes information about LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](libxsmm_be.md#generator-driver) programs.
 
 ## Applications
 
