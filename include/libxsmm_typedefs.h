@@ -112,7 +112,7 @@ typedef enum libxsmm_gemm_prefetch_type {
   LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C    = LIBXSMM_PREFETCH_AL2BL2_VIA_C
 } libxsmm_gemm_prefetch_type;
 
-/** Provided for compatibility with older codes. */
+/** DEPRECATED: provided for compatibility with older codes. */
 typedef libxsmm_gemm_prefetch_type libxsmm_prefetch_type;
 
 /** Flag enumeration which can be binary ORed. */
@@ -329,7 +329,10 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const 
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmmfunction)(const short* a, const short* b, int* c, ...);
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction { libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; libxsmm_wmmfunction wmm; } libxsmm_xmmfunction;
+typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
+  void (*xmm)(const void* a, const void* b, void* c, ...);
+  libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; libxsmm_wmmfunction wmm;
+} libxsmm_xmmfunction;
 
 /** Specialized function for matrix-copy (weak-typed). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmatcopyfunction)(const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);

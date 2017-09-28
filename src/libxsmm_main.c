@@ -968,6 +968,19 @@ LIBXSMM_API_DEFINITION void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch
 }
 
 
+LIBXSMM_API_DEFINITION unsigned char libxsmm_typesize(libxsmm_datatype datatype)
+{
+  switch (datatype) {
+    case LIBXSMM_DATATYPE_F64: return 8;
+    case LIBXSMM_DATATYPE_F32: return 4;
+    case LIBXSMM_DATATYPE_I32: return 4;
+    case LIBXSMM_DATATYPE_I16: return 2;
+    case LIBXSMM_DATATYPE_I8:  return 1;
+  }
+  return 0;
+}
+
+
 LIBXSMM_API const char* internal_get_typename(int /*datatype*/);
 LIBXSMM_API_DEFINITION const char* internal_get_typename(int datatype)
 {
@@ -977,8 +990,8 @@ LIBXSMM_API_DEFINITION const char* internal_get_typename(int datatype)
     case LIBXSMM_DATATYPE_I32: return "i32";
     case LIBXSMM_DATATYPE_I16: return "i16";
     case LIBXSMM_DATATYPE_I8:  return "i8";
-    default: return "void";
   }
+  return "void";
 }
 
 
@@ -1541,51 +1554,6 @@ LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(libxsmm_registry_info* info
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_dgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
-  int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta, int flags, int prefetch)
-{
-  int result;
-  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor) {
-    LIBXSMM_GEMM_DESCRIPTOR(*descriptor, LIBXSMM_GEMM_PRECISION(double), flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
-    result = EXIT_SUCCESS;
-  }
-  else { /* unsupported */
-    result = EXIT_FAILURE;
-  }
-  return result;
-}
-
-
-LIBXSMM_API_DEFINITION int libxsmm_sgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
-  int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta, int flags, int prefetch)
-{
-  int result;
-  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor) {
-    LIBXSMM_GEMM_DESCRIPTOR(*descriptor, LIBXSMM_GEMM_PRECISION(float), flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
-    result = EXIT_SUCCESS;
-  }
-  else { /* unsupported */
-    result = EXIT_FAILURE;
-  }
-  return result;
-}
-
-
-LIBXSMM_API_DEFINITION int libxsmm_wgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
-  int m, int n, int k, int lda, int ldb, int ldc, int alpha, int beta, int flags, int prefetch)
-{
-  int result;
-  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor) {
-    LIBXSMM_GEMM_DESCRIPTOR(*descriptor, LIBXSMM_GEMM_PRECISION(short), flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
-    result = EXIT_SUCCESS;
-  }
-  else { /* unsupported */
-    result = EXIT_FAILURE;
-  }
-  return result;
-}
-
-
 LIBXSMM_API_DEFINITION int libxsmm_gemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
   libxsmm_gemm_precision precision, int m, int n, int k, const int* lda, const int* ldb, const int* ldc,
   const void* alpha, const void* beta, const int* flags, const int* prefetch)
@@ -1613,11 +1581,11 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_descriptor_init(libxsmm_gemm_descriptor*
     } break;
     case LIBXSMM_GEMM_PRECISION_I16: {
       /**
-      * Take alpha and beta as short data although wgemm works on integers.
-      * However, alpha and beta are only JIT-supported for certain values,
-      * and the call-side may not distinct different input and output types
-      * (integer/short), hence it is safer to only read short data.
-      */
+       * Take alpha and beta as short data although wgemm works on integers.
+       * However, alpha and beta are only JIT-supported for certain values,
+       * and the call-side may not distinct different input and output types
+       * (integer/short), hence it is safer to only read short data.
+       */
       result = libxsmm_wgemm_descriptor_init(descriptor, m, n, k, ilda, ildb, ildc,
         0 != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA),
         0 != beta ? *((const short*)beta) : (LIBXSMM_BETA),
@@ -1635,39 +1603,6 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_descriptor_init(libxsmm_gemm_descriptor*
   }
 
   return result;
-}
-
-
-/*DEPRECATED*/LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_create_dgemm_descriptor(char transa, char transb,
-  int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta,
-  libxsmm_gemm_prefetch_type strategy)
-{
-  libxsmm_gemm_descriptor* result = (libxsmm_gemm_descriptor*)malloc(sizeof(libxsmm_gemm_descriptor));
-  if (EXIT_SUCCESS != libxsmm_dgemm_descriptor_init(result, m, n, k, lda, ldb, ldc,
-    alpha, beta, LIBXSMM_GEMM_FLAGS(transa, transb), strategy))
-  {
-    free(result);
-    result = 0;
-  }
-  if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
-    static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM WARNING: create_dgemm_descriptor is deprecated, use libxsmm_gemm_descriptor_init instead!\n");
-    }
-  }
-  return result;
-}
-
-
-/*DEPRECATED*/LIBXSMM_API_DEFINITION void libxsmm_release_gemm_descriptor(const libxsmm_gemm_descriptor* descriptor)
-{
-  free((void*)descriptor);
-  if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
-    static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM WARNING: release_gemm_descriptor is deprecated, libxsmm_gemm_descriptor_init makes it superfluous!\n");
-    }
-  }
 }
 
 
