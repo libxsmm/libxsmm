@@ -102,15 +102,18 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
   libxsmm_gemm_wrap = ((0 == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
 
-  if (0 == env_b || 0 == *env_b) { /* even/negative: parallelized, odd: sequential */
+  if (0 != env_b && 0 != *env_b) { /* even/negative: parallelized, odd: sequential */
     libxsmm_gemm_batchmode = atoi(env_b);
   }
 
   if (0 != libxsmm_gemm_wrap) { /* batch-recording available */
     /* use libxsmm_malloc to draw memory from the default memory allocation domain */
-    libxsmm_gemm_batcharray = (libxsmm_gemm_batchitem*)libxsmm_malloc(
-      (0 > batchsize ? 1024/*default*/ : batchsize) * sizeof(libxsmm_gemm_batchitem));
-    if (0 != libxsmm_gemm_batcharray) libxsmm_gemm_batchsize = batchsize;
+    if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&libxsmm_gemm_batcharray,
+      sizeof(libxsmm_gemm_batchitem) * (0 > batchsize ? 1024/*default*/ : batchsize),
+      0, LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/))
+    {
+      libxsmm_gemm_batchsize = batchsize;
+    }
   }
 
   for (i = 0; i < 8; ++i) {
