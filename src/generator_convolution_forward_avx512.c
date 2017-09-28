@@ -52,6 +52,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
   unsigned int l_kh = 0;
   unsigned int l_found_act_format = 0;
   unsigned int l_found_fil_format = 0;
+  unsigned int i_out_pf, j_out_pf;
 #if 0
   unsigned int l_kw = 0;
 #endif
@@ -283,13 +284,80 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
 
     /* BLOCK 2: Run (n_peeling-1) iters to prefetch for extra L2 from pf* pointers if it is requested */
     unsigned int peel_index;
+    
+    unsigned int out_reg_L2 = 0; /*atoi(getenv("REG_L2"));*/
+    unsigned int out_reg_L1 = -1; /*atoi(getenv("REG_L1"));*/
+    unsigned int out_pf_L2 = 1; /*atoi(getenv("PF_L2"));*/
+    unsigned int out_pf_L1 = -1; /*atoi(getenv("PF_L1"));*/
+
     if (n_peeling-1 > 0) {
       if ( i_conv_desc->input_L2_prefetching == 1 ) {
         libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_input_pf_L2);
       }
       libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_weight_pf_L2);
+
+      peel_index = 0;
       for (peel_index = 0; peel_index < n_peeling-1; peel_index++) {
-         #include "kernel_repeat.tpl.c"
+
+        /* Prefetch current output block to be loaded soon...  */
+        if ( (i_conv_desc->use_nts == 0) && (peel_index == out_reg_L2) ) {
+          for ( i_out_pf = 0; i_out_pf < i_conv_desc->ofh_rb; i_out_pf++ ) {
+            for ( j_out_pf = 0; j_out_pf < i_conv_desc->ofw_rb; j_out_pf++ ) {
+              libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT1,
+                                          l_gp_reg_mapping.gp_reg_output,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                               (i_out_pf * i_conv_desc->ofw_padded *  i_conv_desc->stride_h_store * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out) +
+                               (j_out_pf * i_conv_desc->stride_w_store * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out ) );
+        
+            }
+          }
+        }
+
+        if ( (i_conv_desc->use_nts == 0) && (peel_index == out_reg_L1) ) {
+          for ( i_out_pf = 0; i_out_pf < i_conv_desc->ofh_rb; i_out_pf++ ) {
+            for ( j_out_pf = 0; j_out_pf < i_conv_desc->ofw_rb; j_out_pf++ ) {
+              libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT0,
+                                          l_gp_reg_mapping.gp_reg_output,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                               (i_out_pf * i_conv_desc->ofw_padded *  i_conv_desc->stride_h_store * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out) +
+                               (j_out_pf * i_conv_desc->stride_w_store * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out ) );
+        
+            }
+          }
+        }
+
+        if ( (i_conv_desc->use_nts == 0) && (peel_index == out_pf_L2) ) {
+          for ( i_out_pf = 0; i_out_pf < i_conv_desc->ofh_rb; i_out_pf++ ) {
+            for ( j_out_pf = 0; j_out_pf < i_conv_desc->ofw_rb; j_out_pf++ ) {
+              libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT1,
+                                          l_gp_reg_mapping.gp_reg_output_pf,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                               (i_out_pf * i_conv_desc->ofw_padded *  i_conv_desc->stride_h_store * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out) +
+                               (j_out_pf * i_conv_desc->stride_w_store * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out ) );
+        
+            }
+          }
+        }
+
+        if ( (i_conv_desc->use_nts == 0) && (peel_index == out_pf_L1) ) {
+          for ( i_out_pf = 0; i_out_pf < i_conv_desc->ofh_rb; i_out_pf++ ) {
+            for ( j_out_pf = 0; j_out_pf < i_conv_desc->ofw_rb; j_out_pf++ ) {
+              libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT0,
+                                          l_gp_reg_mapping.gp_reg_output_pf,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                               (i_out_pf * i_conv_desc->ofw_padded *  i_conv_desc->stride_h_store * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out) +
+                               (j_out_pf * i_conv_desc->stride_w_store * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out ) );
+        
+            }
+          }
+        }
+      
+
+          #include "kernel_repeat.tpl.c"
 
          /* adjust addresses, by moving to next ifm1 block */
          libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
@@ -316,11 +384,28 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
       }
     }
 
+    
+
     /* BLOCK 3: Last peeled iteration  */
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_input_pf);
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_weight_pf);
-    #include "kernel_repeat.tpl.c"
 
+    /* Prefetch output block to be loaded after the last microkernel call...  */
+    if ( (i_conv_desc->use_nts == 0) && (peel_index == out_pf_L1) ) {
+      for ( i_out_pf = 0; i_out_pf < i_conv_desc->ofh_rb; i_out_pf++ ) {
+        for ( j_out_pf = 0; j_out_pf < i_conv_desc->ofw_rb; j_out_pf++ ) {
+          libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT0,
+                                          l_gp_reg_mapping.gp_reg_output_pf,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                               (i_out_pf * i_conv_desc->ofw_padded *  i_conv_desc->stride_h_store * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out) +
+                               (j_out_pf * i_conv_desc->stride_w_store * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out ) );
+        
+        }
+      }
+    }
+
+    #include "kernel_repeat.tpl.c"
   } else {
     #include "kernel_repeat.tpl.c"
   }
