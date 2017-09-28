@@ -56,7 +56,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   int i = 0;
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
-  const char *const env_jit = getenv("LIBXSMM_DNN_THREAD_PRIVATE_JIT");
+  int env_jit = 1;
   /* const char *const env_ifm = getenv("DISABLE_IFM");*/
   int disable_ifm_in = 0;
 
@@ -91,9 +91,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   }
 
   handle->use_fwd_for_bwd = 0;
-  if ( 0 == env_jit || 0 == *env_jit) {
+  if ( 0 == env_jit ) {
     /* By default do not do any thread private jitting */
     handle->use_thread_private_jit = 0;
+    /* @TODO this is a crazy hack, let's clean up later */
+    printf("no kernel streams is not supported in this version of LIBXSMM\n");
+    exit("-1");
   } else {
     handle->use_thread_private_jit = 1;
     /* If we do not have AVX512 arch disable kernel streams  */
