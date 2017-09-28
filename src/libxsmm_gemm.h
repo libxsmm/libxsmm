@@ -31,7 +31,8 @@
 #ifndef LIBXSMM_GEMM_H
 #define LIBXSMM_GEMM_H
 
-#include <libxsmm.h>
+#include <libxsmm_generator.h>
+#include <libxsmm_frontend.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -349,8 +350,17 @@ LIBXSMM_API void libxsmm_gemm_init(int archid, int prefetch/*default prefetch st
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API void libxsmm_gemm_finalize(void);
 
+LIBXSMM_API unsigned char libxsmm_gemm_typesize(libxsmm_gemm_precision precision);
+
 LIBXSMM_API int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
+
+LIBXSMM_API int libxsmm_dgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
+  int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta, int flags, int prefetch);
+LIBXSMM_API int libxsmm_sgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
+  int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta, int flags, int prefetch);
+LIBXSMM_API int libxsmm_wgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
+  int m, int n, int k, int lda, int ldb, int ldc, int alpha, int beta, int flags, int prefetch);
 
 #if defined(LIBXSMM_GEMM_WRAP_STATIC)
 LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(
@@ -385,18 +395,20 @@ LIBXSMM_API_EXTERN void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char*, LIBXSMM
   LIBXSMM_GEMM_CONST double*, LIBXSMM_GEMM_CONST libxsmm_blasint*,
   LIBXSMM_GEMM_CONST double*, double*, LIBXSMM_GEMM_CONST libxsmm_blasint*);
 
-typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batch_item {
-  libxsmm_gemm_descriptor desc;
-} libxsmm_gemm_batch_item;
+typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
+  const void *a, *b;
+  void *c;
+  /* TODO: consider padding */
+} libxsmm_gemm_batchitem;
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][8/*size-range*/];
+/** Batch mode: even (or negative) -> parallelized, odd -> sequential. */
+LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_batchmode;
 /** Records a batch of SMMs. */
-LIBXSMM_API_VARIABLE libxsmm_gemm_batch_item* libxsmm_gemm_batch;
-/** Size of the recorded batch. */
-LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_batch_size;
-/** Performs sanity checks for the recorded batch. */
-LIBXSMM_API_VARIABLE int libxsmm_gemm_batch_check;
+LIBXSMM_API_VARIABLE libxsmm_gemm_batchitem* libxsmm_gemm_batcharray;
+/** Maximum size of the recorded batch. */
+LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_batchsize;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_API_VARIABLE int libxsmm_gemm_auto_prefetch;
 /** Prefetch strategy for tiled GEMM. */
@@ -406,8 +418,6 @@ LIBXSMM_API_VARIABLE int libxsmm_gemm_tiled_prefetch;
  * - odd: sequential and non-tiled
  * - even (or negative): parallelized
  * - 0: lazy batch/recording disabled
- * - odd (>=3): lazy batch/recording sequential
- * - even (>=4, negative): parallelized batch
  */
 LIBXSMM_API_VARIABLE int libxsmm_gemm_wrap;
 

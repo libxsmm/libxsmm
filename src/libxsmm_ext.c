@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_ext.h"
 #include "libxsmm_gemm.h"
+#include <libxsmm.h>
 
 
 #if defined(LIBXSMM_BUILD)
@@ -41,7 +42,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* tran
   LIBXSMM_GEMM_CONST float* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,
   LIBXSMM_GEMM_CONST float* beta, float* c, LIBXSMM_GEMM_CONST libxsmm_blasint* ldc)
 {
-  libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  LIBXSMM_FSYMBOL(__wrap_sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
@@ -51,7 +52,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char* tran
   LIBXSMM_GEMM_CONST double* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,
   LIBXSMM_GEMM_CONST double* beta, double* c, LIBXSMM_GEMM_CONST libxsmm_blasint* ldc)
 {
-  libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  LIBXSMM_FSYMBOL(__wrap_dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 #elif (1 == LIBXSMM_NO_BLAS)

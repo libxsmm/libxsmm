@@ -30,6 +30,7 @@
    Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_bgemm.h>
+#include <libxsmm.h>
 #include "libxsmm_gemm.h"
 #include "libxsmm_main.h"
 
@@ -104,7 +105,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
         handle.b_m1 = *b_m1; handle.b_n1 = *b_n1;
         handle.b_k1 = *b_k1; handle.b_k2 = *b_k2;
         handle.kernel = libxsmm_xmmdispatch(&descriptor);
-        if (0 != handle.kernel.smm && LIBXSMM_PREFETCH_NONE != prefetch && LIBXSMM_PREFETCH_SIGONLY != prefetch) {
+        if (0 != handle.kernel.xmm && LIBXSMM_PREFETCH_NONE != prefetch && LIBXSMM_PREFETCH_SIGONLY != prefetch) {
           if (LIBXSMM_PREFETCH_AUTO == prefetch) { /* automatically chosen */
             /* TODO: more sophisticated strategy perhaps according to CPUID */
             const char *const env_p = getenv("LIBXSMM_BGEMM_PREFETCH");

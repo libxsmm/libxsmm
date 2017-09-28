@@ -78,7 +78,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   };
   const char *const env_m = getenv("LIBXSMM_TGEMM_M"), *const env_n = getenv("LIBXSMM_TGEMM_N"), *const env_k = getenv("LIBXSMM_TGEMM_K");
   const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH"), *const env_w = getenv("LIBXSMM_GEMM_WRAP");
-  const char *const env_s = getenv("LIBXSMM_GEMM_BATCHSIZE"), *const env_c = getenv("LIBXSMM_GEMM_BATCHCHECK");
+  const char *const env_s = getenv("LIBXSMM_GEMM_BATCHSIZE"), *const env_b = getenv("LIBXSMM_GEMM_BATCH");
   const int uid = ((0 == env_p || 0 == *env_p) ? 6/*LIBXSMM_PREFETCH_AL2_AHEAD*/ : atoi(env_p));
   const int batchsize = ((0 == env_s || 0 == *env_s) ? -1 : atoi(env_s));
   const int gemm_m = ((0 == env_m || 0 == *env_m) ? -1 : atoi(env_m));
@@ -99,12 +99,21 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   /* setup prefetch strategy for tiled GEMMs */
   libxsmm_gemm_tiled_prefetch = (0 <= uid ? libxsmm_gemm_uid2prefetch(uid) : prefetch);
 
-  /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled). */
+  /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
   libxsmm_gemm_wrap = ((0 == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
 
-  if (3 <= libxsmm_gemm_wrap || 0 > libxsmm_gemm_wrap) { /* batch-recording enabled */
-    libxsmm_gemm_batch = (libxsmm_gemm_batch_item*)libxsmm_malloc((0 > batchsize ? 1024/*default*/ : batchsize) * sizeof(libxsmm_gemm_batch_item));
-    libxsmm_gemm_batch_check = ((0 == env_c || 0 == *env_c) ? 0 : atoi(env_c));
+  if (0 != env_b && 0 != *env_b) { /* even/negative: parallelized, odd: sequential */
+    libxsmm_gemm_batchmode = atoi(env_b);
+  }
+
+  if (0 != libxsmm_gemm_wrap) { /* batch-recording available */
+    /* use libxsmm_malloc to draw memory from the default memory allocation domain */
+    if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&libxsmm_gemm_batcharray,
+      sizeof(libxsmm_gemm_batchitem) * (0 > batchsize ? 1024/*default*/ : batchsize),
+      0, LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/))
+    {
+      libxsmm_gemm_batchsize = batchsize;
+    }
   }
 
   for (i = 0; i < 8; ++i) {
@@ -125,7 +134,13 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 
 LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 {
-  libxsmm_free(libxsmm_gemm_batch);
+  libxsmm_free(libxsmm_gemm_batcharray);
+}
+
+
+LIBXSMM_API_DEFINITION unsigned char libxsmm_gemm_typesize(libxsmm_gemm_precision precision)
+{
+  return libxsmm_typesize((libxsmm_datatype)precision);
 }
 
 
@@ -184,6 +199,84 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int 
         }
       }
       return LIBXSMM_PREFETCH_NONE;
+    }
+  }
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_dgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
+  int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta, int flags, int prefetch)
+{
+  int result;
+  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor) {
+    LIBXSMM_GEMM_DESCRIPTOR(*descriptor, LIBXSMM_GEMM_PRECISION(double), flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+    result = EXIT_SUCCESS;
+  }
+  else { /* unsupported */
+    result = EXIT_FAILURE;
+  }
+  return result;
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_sgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
+  int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta, int flags, int prefetch)
+{
+  int result;
+  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor) {
+    LIBXSMM_GEMM_DESCRIPTOR(*descriptor, LIBXSMM_GEMM_PRECISION(float), flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+    result = EXIT_SUCCESS;
+  }
+  else { /* unsupported */
+    result = EXIT_FAILURE;
+  }
+  return result;
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_wgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
+  int m, int n, int k, int lda, int ldb, int ldc, int alpha, int beta, int flags, int prefetch)
+{
+  int result;
+  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor) {
+    LIBXSMM_GEMM_DESCRIPTOR(*descriptor, LIBXSMM_GEMM_PRECISION(short), flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+    result = EXIT_SUCCESS;
+  }
+  else { /* unsupported */
+    result = EXIT_FAILURE;
+  }
+  return result;
+}
+
+
+/*DEPRECATED*/LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_create_dgemm_descriptor(char transa, char transb,
+  int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta,
+  libxsmm_gemm_prefetch_type strategy)
+{
+  libxsmm_gemm_descriptor* result = (libxsmm_gemm_descriptor*)malloc(sizeof(libxsmm_gemm_descriptor));
+  if (EXIT_SUCCESS != libxsmm_dgemm_descriptor_init(result, m, n, k, lda, ldb, ldc,
+    alpha, beta, LIBXSMM_GEMM_FLAGS(transa, transb), strategy))
+  {
+    free(result);
+    result = 0;
+  }
+  if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM WARNING: create_dgemm_descriptor is deprecated, use libxsmm_gemm_descriptor_init instead!\n");
+    }
+  }
+  return result;
+}
+
+
+/*DEPRECATED*/LIBXSMM_API_DEFINITION void libxsmm_release_gemm_descriptor(const libxsmm_gemm_descriptor* descriptor)
+{
+  free((void*)descriptor);
+  if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM WARNING: release_gemm_descriptor is deprecated, libxsmm_gemm_descriptor_init makes it superfluous!\n");
     }
   }
 }
@@ -372,6 +465,51 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
     libxsmm_free(d);
   }
 #endif
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel, const void* a_matrix, const void* b_matrix, void* c_matrix,
+  const int a_stride[], const int b_stride[], const int c_stride[], unsigned int nstrides, unsigned int batchsize,
+  int tid, int nthreads)
+{
+  int result;
+  if (0 != kernel.xmm && 0 != a_matrix && 0 != b_matrix && 0 != c_matrix && nstrides <= batchsize &&
+     (0 != nstrides || (0 == a_stride && 0 == b_stride && 0 == c_stride)))
+  {
+    LIBXSMM_UNUSED(tid); LIBXSMM_UNUSED(nthreads); /* TODO */
+    if (1 == nstrides) { /* given strides are measured in Bytes */
+      const char *ai = (const char*)a_matrix, *bi = (const char*)b_matrix;
+      char *ci = (char*)c_matrix;
+      const int da = (0 != a_stride ? *a_stride : 0);
+      const int db = (0 != b_stride ? *b_stride : 0);
+      const int dc = (0 != c_stride ? *c_stride : 0);
+      unsigned int i;
+      if (1 < batchsize) {
+        const char *an = ai + da, *bn = bi + db;
+        char *cn = ci + dc;
+        for (i = 0; i < (batchsize - 1); ++i, an += da, bn += db, cn += dc) {
+          kernel.xmm(ai, bi, ci, an, bn, cn);
+          ai = an; bi = bn; ci = cn;
+        }
+        kernel.xmm(ai, bi, ci, ai, bi, ci); /* pseudo-prefetch */
+      }
+    }
+    else { /* TODO */
+    }
+    result = EXIT_SUCCESS;
+  }
+  else {
+    result = EXIT_FAILURE;
+  }
+  return result;
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch(const libxsmm_gemm_descriptor* descriptor, const void* a_matrix, const void* b_matrix, void* c_matrix,
+  const int a_stride[], const int b_stride[], const int c_stride[], unsigned int nstrides, unsigned int batchsize)
+{
+  return libxsmm_mmbatch_thread(libxsmm_xmmdispatch(descriptor), a_matrix, b_matrix, c_matrix,
+    a_stride, b_stride, c_stride, nstrides, batchsize, 0/*tid*/, 1/*nthreads*/);
 }
 
 

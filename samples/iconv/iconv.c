@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
 
   const char *const env_mult = getenv("MULT"), *const env_orig = getenv("ORIG");
   /* extents of result image become multiples of block-size */
-  const size_t mult = ((0 == env_mult || 0 == *env_mult) ? 64/*default*/ : LIBXSMM_MAX(atoi(env_mult), 0));
+  const int mult = ((0 == env_mult || 0 == *env_mult) ? 64/*default*/ : LIBXSMM_MAX(atoi(env_mult), 0));
   /* save result image with original compute-type (type_dnn), and not with pixel-type of input (type_in) */
   const int orig = ((0 == env_orig || 0 == *env_orig) ? 0/*disabled*/ : atoi(env_orig));
 
@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
 
   /* Only accept 2d-images (maybe a slice of a 3d-image). */
   if (2 == ndims) {
-    const size_t m = LIBXSMM_MAX(mult, 1);
+    const int m = LIBXSMM_MAX(mult, 1);
     offset[0] = ((size_in[0] + LIBXSMM_MAX(kw, m) - 1) / m * m - size_in[0] + kw) / 2;
     offset[1] = ((size_in[1] + LIBXSMM_MAX(kh, m) - 1) / m * m - size_in[1] + kh) / 2;
     /* center image inside of (pitched) buffer */

@@ -13,7 +13,8 @@ ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 endif
 endif
 
-ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+#ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+ROOTDIR = $(dir $(firstword $(MAKEFILE_LIST)))
 SPLDIR = $(ROOTDIR)/samples
 SCRDIR = $(ROOTDIR)/scripts
 TSTDIR = $(ROOTDIR)/tests
@@ -193,6 +194,9 @@ endif
 ifeq (0,$(INIT))
   DFLAGS += -DLIBXSMM_CTOR
 endif
+
+# Kind of documentation (internal key)
+DOCEXT = pdf
 
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE = BLAS_WARNING PREFIX
@@ -1332,7 +1336,14 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 	@$(FLOCK) $(SPLDIR)/nek "$(SPLDIR)/nek/rstr-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))"
 endif
 
-$(DOCDIR)/libxsmm.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md \
+$(DOCDIR)/index.md: $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
+	@sed $(ROOTDIR)/README.md \
+		-e 's/\[!\[..*\](..*)\](..*)//g' \
+		-e 's/\[\[..*\](..*)\]//g' \
+		-e "s/](${DOCDIR}\//](/g" \
+		> $@
+
+$(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/documentation/index.md \
 $(ROOTDIR)/documentation/libxsmm_mm.md $(ROOTDIR)/documentation/libxsmm_dnn.md $(ROOTDIR)/documentation/libxsmm_aux.md \
 $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
@@ -1363,7 +1374,17 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		-o $(notdir $@)
 	@rm $(TMPFILE)
 
-$(DOCDIR)/libxsmm_samples.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(SPLDIR)/*/README.md
+$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(SPLDIR)/*/README.md
+	@cat $(SPLDIR)/*/README.md \
+	| sed \
+		-e 's/^#/##/' \
+		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+		-e 's/----*//g' \
+		-e '1s/^/# [LIBXSMM Samples](https:\/\/github.com\/hfp\/libxsmm\/raw\/master\/documentation\/libxsmm_samples.pdf)\n\n/' \
+		> $@
+
+$(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/documentation/libxsmm_samples.md
 	$(eval TMPFILE = $(shell $(MKTEMP) .libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
@@ -1371,11 +1392,7 @@ $(DOCDIR)/libxsmm_samples.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(SPLDIR)/*/R
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		> $(TMPFILE)
-	@iconv -t utf-8 $(SPLDIR)/*/README.md \
-	| sed \
-		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
-		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		-e 's/----*//g' \
+	@iconv -t utf-8 $(ROOTDIR)/documentation/libxsmm_samples.md \
 	| pandoc \
 		--latex-engine=xelatex --template=$(TMPFILE) --listings \
 		-f markdown_github+all_symbols_escapable+subscript+superscript \
@@ -1388,7 +1405,7 @@ $(DOCDIR)/libxsmm_samples.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(SPLDIR)/*/R
 		-o $@
 	@rm $(TMPFILE)
 
-$(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/cp2k.md
+$(DOCDIR)/cp2k.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/cp2k.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
@@ -1414,7 +1431,7 @@ $(DOCDIR)/cp2k.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation
 		-o $(notdir $@)
 	@rm $(TMPFILE)
 
-$(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/tensorflow.md
+$(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/tensorflow.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
 	| sed \
@@ -1442,10 +1459,15 @@ $(DOCDIR)/tensorflow.pdf: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documen
 
 .PHONY: documentation
 documentation: \
-	$(DOCDIR)/libxsmm.pdf \
-	$(DOCDIR)/libxsmm_samples.pdf \
-	$(DOCDIR)/cp2k.pdf \
-	$(DOCDIR)/tensorflow.pdf
+$(DOCDIR)/libxsmm.$(DOCEXT) \
+$(DOCDIR)/libxsmm_samples.$(DOCEXT) \
+$(DOCDIR)/cp2k.$(DOCEXT) \
+$(DOCDIR)/tensorflow.$(DOCEXT)
+
+.PHONY: mkdocs
+mkdocs: $(ROOTDIR)/documentation/index.md $(ROOTDIR)/documentation/libxsmm_samples.md
+	@mkdocs build --clean
+	@mkdocs serve
 
 .PHONY: clean
 clean:

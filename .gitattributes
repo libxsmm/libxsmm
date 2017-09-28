@@ -8,7 +8,6 @@
 .travis.sh export-ignore
 *.json export-ignore
 *.yml export-ignore
-README.sh export-ignore
 documentation/*.pptx export-ignore
 scripts/tool_*.sh export-ignore
 samples/seissol/*.bound export-ignore
