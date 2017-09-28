@@ -381,10 +381,10 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
                                               ( l_k * i_conv_kernel_config->vector_length_out * i_conv_kernel_config->datatype_size_out ),
                                               i_conv_kernel_config->vector_name,
                                               l_vec_reg_acc_start + l_k + (l_j * l_reg_per_block) + (i_conv_desc->ofw_rb * l_reg_per_block * l_i), 0, 0 );
-#if 1
+#if 0
             if ( (i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 ) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
-                                                LIBXSMM_X86_INSTR_PREFETCHT0 /*i_conv_kernel_config->prefetch_instruction*/,
+                                                LIBXSMM_X86_INSTR_PREFETCHT1 /*i_conv_kernel_config->prefetch_instruction*/,
                                                 i_gp_reg_mapping->gp_reg_output_pf,
                                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                                                 ( l_i * i_conv_desc->ofw_padded *  i_conv_desc->stride_h_store * l_lead_dim * i_conv_kernel_config->datatype_size_out) +
