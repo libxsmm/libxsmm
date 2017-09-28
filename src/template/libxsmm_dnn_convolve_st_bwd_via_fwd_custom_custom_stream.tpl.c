@@ -46,7 +46,6 @@ const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work
 element_input_type *input_base;
 element_output_type *input_ptr;
 element_filter_type *weight_base;
-element_filter_type *wt_trans_base, *wt_base;
 element_output_type *output_base;
 element_output_type *copy_ptr;
 element_output_type *prefetch_ptr;
@@ -81,7 +80,6 @@ if (handle->datatype != handle->datatype_itm) {
 
   /* Weight and transpose_weight tensor declaration */
   LIBXSMM_VLA_DECL(7, element_filter_type, wt, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
-  LIBXSMM_VLA_DECL(7, element_filter_type, tr_wt, (element_filter_type*)handle->scratch1, handle->blocksifm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
   LIBXSMM_VLA_DECL(7, element_filter_type, tr_wt2, (element_filter_type*)handle->scratch1, handle->blocksofm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
 
 
@@ -94,6 +92,7 @@ if (handle->datatype != handle->datatype_itm) {
   int *trans_indices =  handle->transpose_bwd_indices_ptrs[ltid];
   int pool_index;
   element_filter_type  *mat, *matT;
+  int ifm1ofm1, kj, ki, ofm2, ofm1;
   /* Kernel related variables  */
   libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_bwd[4].xconv.sconv;
   libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
@@ -115,10 +114,6 @@ if (handle->datatype != handle->datatype_itm) {
         handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
   weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt2, 0, 0, 0, 0, 0, 0, 0,
       handle->blocksofm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
-  wt_trans_base = &LIBXSMM_VLA_ACCESS(7, tr_wt, 0, 0, 0, 0, 0, 0, 0,
-      handle->blocksifm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
-  wt_base = &LIBXSMM_VLA_ACCESS(7, wt, 0, 0, 0, 0, 0, 0, 0,
-      handle->blocksifm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
 
   instr = handle->n_entries_bwd[ltid];
   n_segments = handle->n_bwd_code_segments[ltid];
@@ -129,26 +124,32 @@ if (handle->datatype != handle->datatype_itm) {
   /* lazy barrier init */
   libxsmm_barrier_init(handle->barrier, ltid);
 
-  int ifm1ofm1, kj, ki, ofm2, ofm1;
-  for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-    ofm1 = ifm1ofm1 / handle->blocksifm;
-    ifm1 = ifm1ofm1 % handle->blocksifm;
-    for (kj=0; kj < handle->desc.R; kj++) {
-      for (ki=0; ki < handle->desc.S; ki++) {
-        /* TODO: enable this later */
-        /*transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);*/
-        for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-            LIBXSMM_VLA_ACCESS(7, tr_wt2, ifm1, ofm1, handle->desc.R-1-kj , handle->desc.S-1-ki, ofm2, ifm2, 0, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block) =
-              LIBXSMM_VLA_ACCESS(7, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+  if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) {
+    weight_base = (element_filter_type*)handle->reg_filter_tr->data;
+  } else {
+    for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+      ofm1 = ifm1ofm1 / handle->blocksifm;
+      ifm1 = ifm1ofm1 % handle->blocksifm;
+      for (kj=0; kj < handle->desc.R; kj++) {
+        for (ki=0; ki < handle->desc.S; ki++) {
+          /* TODO: enable this later */
+          /*transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);*/
+          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(7, tr_wt2, ifm1, ofm1, handle->desc.R-1-kj , handle->desc.S-1-ki, ofm2, ifm2, 0, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block) =
+                LIBXSMM_VLA_ACCESS(7, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+            }
           }
         }
       }
     }
+
+    weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt2, 0, 0, 0, 0, 0, 0, 0,
+    handle->blocksofm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
+
+    libxsmm_barrier_wait(handle->barrier, ltid);
   }
 
-
-  libxsmm_barrier_wait(handle->barrier, ltid);
   pool_index = 0;
   i = 0;
 
