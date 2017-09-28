@@ -686,7 +686,7 @@ int main(int argc, char* argv[])
 #else
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
-    /*conv_desc.options = LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE;*/
+    /*conv_desc.options = LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE;*/
     conv_desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
 
     libxsmm_handle = libxsmm_dnn_create_conv_layer( conv_desc, &status );
@@ -827,7 +827,7 @@ int main(int argc, char* argv[])
 #endif
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid ) );
       }
-      if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+      if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE) {
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );
       }
       /* copy out data */
@@ -928,7 +928,7 @@ int main(int argc, char* argv[])
 #endif
         for (i = 0; i < iters; ++i) {
           libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
-          if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+          if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE) {
             CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );
           }
         }
@@ -1008,7 +1008,7 @@ int main(int argc, char* argv[])
 #else
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
-    /*conv_desc.options = LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE;*/
+    /*conv_desc.options = LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE;*/
     conv_desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
 
     libxsmm_handle = libxsmm_dnn_create_conv_layer( conv_desc, &status );
@@ -1142,7 +1142,7 @@ int main(int argc, char* argv[])
 #endif
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid ) );
       }
-      if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+      if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE) {
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );
       }
       /* copy input data into KCRS storage in user code */
@@ -1242,7 +1242,7 @@ int main(int argc, char* argv[])
 #endif
           libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
         }
-        if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+        if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE) {
           CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );
         }
       }
@@ -1321,7 +1321,7 @@ int main(int argc, char* argv[])
 #else
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
-    /*conv_desc.options = LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE;*/
+    /*conv_desc.options = LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE;*/
     conv_desc.datatype = LIBXSMM_DNN_DATATYPE_F32;
 
     libxsmm_handle = libxsmm_dnn_create_conv_layer( conv_desc, &status );
@@ -1458,7 +1458,7 @@ int main(int argc, char* argv[])
 #endif
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid ) );
       }
-      if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+      if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE) {
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );
       }
       /* copy out data */
@@ -1558,7 +1558,7 @@ int main(int argc, char* argv[])
 #endif
           libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
         }
-        if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE) {
+        if (conv_desc.options == LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE) {
           CHKERR_LIBXSMM_DNN( libxsmm_dnn_reduce_wu_filters( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );
         }
       }

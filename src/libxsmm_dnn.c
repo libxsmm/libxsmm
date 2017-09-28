@@ -193,9 +193,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
       handle->datatype_itm = conv_desc.datatype;
     } else if ( (conv_desc.datatype == LIBXSMM_DNN_DATATYPE_I16) || (conv_desc.datatype == LIBXSMM_DNN_DATATYPE_I8) ) {
       handle->datatype_itm = LIBXSMM_DNN_DATATYPE_I32;
-      if ( (conv_desc.datatype == LIBXSMM_DNN_DATATYPE_I8) && ((conv_desc.options & LIBXSMM_DNN_CONV_OPTION_16BIT_ACC) > 0) ) {
-        handle->datatype_itm = LIBXSMM_DNN_DATATYPE_I16;
-      }
     } else {
       /* error */
     }

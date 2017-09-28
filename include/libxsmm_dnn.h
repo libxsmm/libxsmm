@@ -115,6 +115,8 @@ typedef enum libxsmm_dnn_tensor_dimtype {
 typedef enum libxsmm_dnn_tensor_type {
   /** regular input buffer */
   LIBXSMM_DNN_REGULAR_INPUT,
+  /** regular input buffer, transpose */
+  LIBXSMM_DNN_REGULAR_INPUT_TRANS,
   /** gradient input buffer */
   LIBXSMM_DNN_GRADIENT_INPUT,
   /** regular output buffer */
@@ -129,6 +131,8 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_ACTIVATION,
   /* regular filter */
   LIBXSMM_DNN_REGULAR_FILTER,
+  /* regular filter */
+  LIBXSMM_DNN_REGULAR_FILTER_TRANS,
   /* gradient filter */
   LIBXSMM_DNN_GRADIENT_FILTER,
   /** general filter type */
