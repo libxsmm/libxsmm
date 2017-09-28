@@ -36,10 +36,14 @@ if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
 #include "libxsmm_dnn_convolve_st_bwd_custom_custom_stream.tpl.c"
     }
   } else {
+#if 0
 #include "libxsmm_dnn_convolve_st_bwd_custom_custom_1.tpl.c"
+#endif
   }
 } else if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
+#if 0
 #include "libxsmm_dnn_convolve_st_bwd_custom_custom_2.tpl.c"
+#endif
 }
 else {
   /* New custom format code here */

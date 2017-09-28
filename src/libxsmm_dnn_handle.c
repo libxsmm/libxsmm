@@ -96,7 +96,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     handle->use_thread_private_jit = 0;
     /* @TODO this is a crazy hack, let's clean up later */
     printf("no kernel streams is not supported in this version of LIBXSMM\n");
-    exit("-1");
+    exit(-1);
   } else {
     handle->use_thread_private_jit = 1;
     /* If we do not have AVX512 arch disable kernel streams  */

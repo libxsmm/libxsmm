@@ -32,6 +32,7 @@
 if ( handle->use_thread_private_jit ) {
 #include "libxsmm_dnn_convolve_st_fwd_custom_custom_stream.tpl.c"
 } else {
+#if 0
   int ifm1, oj, oi, ofm2;
 #if !defined(LIBXSMM_DNN_CONV_FWD_INTERNAL_STRIDE_ONE)
   int ij, ii;
@@ -398,4 +399,5 @@ if ( handle->use_thread_private_jit ) {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
     }
   }
+#endif
 }
