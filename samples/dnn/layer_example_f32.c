@@ -680,10 +680,10 @@ int main(int argc, char* argv[])
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
-#if defined(USE_OVERWRITE)
-    conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
-#elif defined(USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE)
+#if defined(USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE)
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE_OVERWRITE;
+#elif defined(USE_OVERWRITE)
+    conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
 #else
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_NONE;
 #endif
