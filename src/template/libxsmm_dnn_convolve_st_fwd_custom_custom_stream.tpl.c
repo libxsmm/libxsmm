@@ -239,4 +239,26 @@ if (n_segments) {
   }
 }
 
+if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0 ) {
+  LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data, handle->desc.N, handle->blocksofm, handle->ofmblock);
+
+  for ( ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1 ) {
+    int oi = 0;
+    element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, ltid, ofm1, 0, 0, 0,
+      handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock); 
+    __m512 bsum  = _mm512_setzero_ps();
+    __m512 bsum2 = _mm512_setzero_ps();
+    for ( oi = 0; oi < handle->ofhp*handle->ofwp*handle->ofmblock; oi+=16 ) {
+      __m512 btmp = _mm512_load_ps( red+oi );
+      bsum = _mm512_add_ps( bsum, btmp );
+      bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
+    }
+    _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ltid, ofm1, 0,
+      handle->desc.N, handle->blocksofm, handle->ofmblock), bsum );
+    _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ltid, ofm1, 0,
+      handle->desc.N, handle->blocksofm, handle->ofmblock), bsum2 );
+  } 
+}
+
 libxsmm_barrier_wait(handle->barrier, ltid);
+

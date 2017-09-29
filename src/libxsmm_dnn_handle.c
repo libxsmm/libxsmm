@@ -104,18 +104,27 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         libxsmm_target_archid != LIBXSMM_X86_AVX512_CORE &&
         libxsmm_target_archid != LIBXSMM_X86_AVX512_KNM ) {
       handle->use_thread_private_jit = 0;
+      printf("no kernel streams is not supported in this version of LIBXSMM\n");
+      exit(-1);
     }
     /* If we do not follow FP32 path disable kernel streams  */
     if ( (handle->datatype != LIBXSMM_DNN_DATATYPE_F32) || (handle->datatype_itm != LIBXSMM_DNN_DATATYPE_F32) ) {
       handle->use_thread_private_jit = 0;
+      printf("no kernel streams is not supported in this version of LIBXSMM\n");
+      exit(-1);
     }
     /* If we use any options/fuse ops, disable kernel streams */
-    if ( (handle->desc.fuse_ops != LIBXSMM_DNN_CONV_FUSE_NONE) ) {
+    if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ||
+         ((handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU) > 0)    ) {
       handle->use_thread_private_jit = 0;
+      printf("no kernel streams is not supported in this version of LIBXSMM\n");
+      exit(-1);
     }
     /* If we do not run on custom/custom format, disable kernel streams */
     if (handle->buffer_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM || handle->filter_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) {
       handle->use_thread_private_jit = 0;
+      printf("no kernel streams is not supported in this version of LIBXSMM\n");
+      exit(-1);
     }
   }
 

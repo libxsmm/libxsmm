@@ -108,7 +108,9 @@ typedef enum libxsmm_dnn_tensor_dimtype {
   /** kernel height */
   LIBXSMM_DNN_TENSOR_DIMTYPE_R,
   /** kernel width */
-  LIBXSMM_DNN_TENSOR_DIMTYPE_S
+  LIBXSMM_DNN_TENSOR_DIMTYPE_S,
+  /** general counter */
+  LIBXSMM_DNN_TENSOR_DIMTYPE_X
 } libxsmm_dnn_tensor_dimtype;
 
 /** types of different buffers */
@@ -143,6 +145,8 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_GRADIENT_BIAS,
   /** general bias type */
   LIBXSMM_DNN_BIAS,
+  /** batch stats */
+  LIBXSMM_DNN_BATCH_STATS,
   /** general type, if needed might cause API issues in copy in/out API */
   LIBXSMM_DNN_TENSOR
 } libxsmm_dnn_tensor_type;
@@ -166,6 +170,8 @@ typedef enum libxsmm_dnn_conv_fuse_op {
   LIBXSMM_DNN_CONV_FUSE_BIAS = 1,
   /* we fuse ReLU calculation into convolution op */
   LIBXSMM_DNN_CONV_FUSE_RELU = 2,
+  /* we fuse batch stats */
+  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS = 4,
   /* we fuse bias addition and ReLU into convolution op */
   LIBXSMM_DNN_CONV_FUSE_BIAS_RELU = LIBXSMM_DNN_CONV_FUSE_BIAS | LIBXSMM_DNN_CONV_FUSE_RELU
 } libxsmm_dnn_conv_fuse_op;
