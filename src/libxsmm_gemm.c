@@ -603,5 +603,35 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_blas_dgemm)(const char* tran
   libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
+
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smmbatch_thread)(
+  libxsmm_xmmfunction kernel, const float* a_matrix, const float* b_matrix, float* c_matrix,
+  const int a_stride[], const int b_stride[], const int c_stride[], const unsigned int* nstrides,
+  const unsigned int* batchsize, const int* tid, const int* nthreads)
+{
+  assert(0 != a_matrix && 0 != b_matrix && 0 != c_matrix);
+  assert(0 != nstrides && 0 != batchsize);
+  assert(0 != tid && 0 != nthreads);
+  libxsmm_mmbatch_thread(kernel,
+    sizeof(float), a_matrix, b_matrix, c_matrix,
+    -1/*base_stride*/, a_stride, b_stride, c_stride,
+    *nstrides, *batchsize, *tid, *nthreads);
+}
+
+
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dmmbatch_thread)(
+  libxsmm_xmmfunction kernel, const double* a_matrix, const double* b_matrix, double* c_matrix,
+  const int a_stride[], const int b_stride[], const int c_stride[], const unsigned int* nstrides,
+  const unsigned int* batchsize, const int* tid, const int* nthreads)
+{
+  assert(0 != a_matrix && 0 != b_matrix && 0 != c_matrix);
+  assert(0 != nstrides && 0 != batchsize);
+  assert(0 != tid && 0 != nthreads);
+  libxsmm_mmbatch_thread(kernel,
+    sizeof(double), a_matrix, b_matrix, c_matrix,
+    -1/*base_stride*/, a_stride, b_stride, c_stride,
+    *nstrides, *batchsize, *tid, *nthreads);
+}
+
 #endif /*defined(LIBXSMM_BUILD)*/
 
