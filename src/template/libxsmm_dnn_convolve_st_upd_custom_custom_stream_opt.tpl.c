@@ -60,9 +60,9 @@ const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) *
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->data;
-element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4) + (ltid*handle->block_upd_ofm*handle->block_upd_ifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
+element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4) + (ltid*LIBXSMM_MIN(handle->block_upd_ofm,handle->blocksofm)*LIBXSMM_MIN(handle->block_upd_ifm,handle->blocksifm)*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
 LIBXSMM_VLA_DECL(2, element_filter_type, per_thread_weight, per_thread_weight_ptr, handle->ofmblock);
-element_filter_type* reduction_weight_ptr = ((element_filter_type*)handle->scratch4) + (handle->desc.threads*handle->block_upd_ofm*handle->block_upd_ifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
+element_filter_type* reduction_weight_ptr = ((element_filter_type*)handle->scratch4) + (handle->desc.threads*LIBXSMM_MIN(handle->block_upd_ofm,handle->blocksofm)*LIBXSMM_MIN(handle->block_upd_ifm,handle->blocksifm)*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
 LIBXSMM_VLA_DECL(3, element_filter_type, reduction_weight, reduction_weight_ptr, handle->desc.threads, handle->ofmblock);
 
 /* Pointer related variables for input */
