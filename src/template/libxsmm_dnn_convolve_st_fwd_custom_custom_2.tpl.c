@@ -40,7 +40,7 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 LIBXSMM_VLA_DECL(6, element_output_type, output_t, ((element_output_type*) handle->reg_output->data) + (handle->desc.pad_w_out * handle->ofwp + handle->desc.pad_h_out), nBImg, ofhp, ofwp, nbImg, ofmblock);
 LIBXSMM_VLA_DECL(6, const element_input_type,  input_t, ((const element_input_type*) handle->reg_input->data) + (handle->desc.pad_w_in * handle->ifwp + handle->desc.pad_h_in), nBImg, ifhp, ifwp, nbImg, ifmblock);
 LIBXSMM_VLA_DECL(6, const element_filter_type, filter_t, (const element_filter_type*) handle->reg_filter->data, blocksifm, R, S, ifmblock, ofmblock);
-libxsmm_mmfunction sixteen = (libxsmm_mmfunction) handle->code_fwd[0].smm;
+const libxsmm_xmmfunction sixteen = handle->code_fwd[0].xgemm;
 
 for (i = thr_begin; i < thr_end; ++i) {
   img1 = i/blocksofm;
@@ -54,9 +54,9 @@ for (i = thr_begin; i < thr_end; ++i) {
           if(ij+kj < 0 || ij+kj >= ifh) continue;
           for (ki = 0; ki < S; ++ki) {
             if(ii+ki < 0 || ii+ki >= ifw) continue;
-            sixteen( &LIBXSMM_VLA_ACCESS(6, filter_t, ofm1, ifm1, kj,      ki,      0, 0, blocksifm, R, S, ifmblock, ofmblock) ,
-                    &LIBXSMM_VLA_ACCESS(6,  input_t, ifm1, img1, ij + kj, ii + ki, 0, 0, nBImg, ifhp, ifwp, nbImg, ifmblock) ,
-                    &LIBXSMM_VLA_ACCESS(6, output_t, ofm1, img1, oj,      oi,      0, 0, nBImg, ofhp, ofwp, nbImg, ofmblock) );
+            sixteen.xmm(&LIBXSMM_VLA_ACCESS(6, filter_t, ofm1, ifm1, kj,      ki,      0, 0, blocksifm, R, S, ifmblock, ofmblock) ,
+                        &LIBXSMM_VLA_ACCESS(6,  input_t, ifm1, img1, ij + kj, ii + ki, 0, 0, nBImg, ifhp, ifwp, nbImg, ifmblock) ,
+                        &LIBXSMM_VLA_ACCESS(6, output_t, ofm1, img1, oj,      oi,      0, 0, nBImg, ofhp, ofwp, nbImg, ofmblock) );
           }
         }
       }
