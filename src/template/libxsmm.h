@@ -146,6 +146,8 @@ LIBXSMM_API libxsmm_wmmfunction libxsmm_wmmdispatch(int m, int n, int k,
 
 /** Process a series of matrix multiplications. */
 LIBXSMM_API int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel, const void* a_matrix, const void* b_matrix, void* c_matrix,
+  /** Determines index-base (usually 0, 1-based indexes: base_offset=-1); uses the same unit as the strides. */
+  int base_offset,
   /**
    * nstrides==1: a_stride, b_stride, and c_stride are measured in Bytes, nstrides!=1: a_stride, b_stride, and c_stride are arrays of indexes.
    * A stride of zero (value or pointer) is valid, and will not advance the corresponding matrix-operand (given should match).
@@ -159,10 +161,10 @@ LIBXSMM_API int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel, const void* a
   /*unsigned*/int tid, /*unsigned*/int nthreads);
 /** Process a series of matrix multiplications; MT via libxsmmext. */
 LIBXSMM_API int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* descriptor, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  const int a_stride[], const int b_stride[], const int c_stride[], unsigned int nstrides, unsigned int batchsize);
+  int base_offset, const int a_stride[], const int b_stride[], const int c_stride[], unsigned int nstrides, unsigned int batchsize);
 /** Process a series of matrix multiplications; sequential. */
 LIBXSMM_API int libxsmm_mmbatch(const libxsmm_gemm_descriptor* descriptor, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  const int a_stride[], const int b_stride[], const int c_stride[], unsigned int nstrides, unsigned int batchsize);
+  int base_offset, const int a_stride[], const int b_stride[], const int c_stride[], unsigned int nstrides, unsigned int batchsize);
 
 /**
  * This function is a no-op unless LIBXSMM is built to intercept GEMM calls.
