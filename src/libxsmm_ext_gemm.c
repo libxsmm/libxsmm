@@ -70,9 +70,9 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   assert(0 != lda && 0 != ldb && 0 != ldc && 0 != m && 0 != n && 0 != k);
-  assert(0 != alpha && 0 != beta && 0 != libxsmm_gemm_batcharray);
+  assert(0 != alpha && 0 != beta);
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
-  if (0 == internal_ext_gemm_batch /* batch-recording disabled */
+  if (0 == internal_ext_gemm_batch || 0 == libxsmm_gemm_batcharray
     || LIBXSMM_GEMM_PRECISION_F32 != internal_ext_gemm_batchdesc.datatype
     || LIBXSMM_GEMM_FLAGS(*transa, *transb) != internal_ext_gemm_batchdesc.flags
     || ((unsigned int)*lda) != internal_ext_gemm_batchdesc.lda
@@ -83,20 +83,23 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
     || ((unsigned int)*k) != internal_ext_gemm_batchdesc.k
     || 0 == LIBXSMM_FEQ(*alpha, internal_ext_gemm_batchdesc.alpha)
     || 0 == LIBXSMM_FEQ(*beta, internal_ext_gemm_batchdesc.beta))
+#endif
   {
+    if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
+      libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    }
+    else { /* small problem size */
+      libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    }
+  }
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+  else {
     const unsigned int i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchsize, 1, LIBXSMM_ATOMIC_RELAXED);
     libxsmm_gemm_batchitem item;
     item.a = a; item.b = b; item.c = c;
     libxsmm_gemm_batcharray[i] = item;
   }
-  else
 #endif
-  if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
-    libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  }
-  else { /* small problem size */
-    libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  }
 }
 
 
@@ -108,9 +111,9 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   assert(0 != lda && 0 != ldb && 0 != ldc && 0 != m && 0 != n && 0 != k);
-  assert(0 != alpha && 0 != beta && 0 != libxsmm_gemm_batcharray);
+  assert(0 != alpha && 0 != beta);
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
-  if (0 == internal_ext_gemm_batch /* batch-recording disabled */
+  if (0 == internal_ext_gemm_batch || 0 == libxsmm_gemm_batcharray
     || LIBXSMM_GEMM_PRECISION_F64 != internal_ext_gemm_batchdesc.datatype
     || LIBXSMM_GEMM_FLAGS(*transa, *transb) != internal_ext_gemm_batchdesc.flags
     || ((unsigned int)*lda) != internal_ext_gemm_batchdesc.lda
@@ -121,20 +124,23 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
     || ((unsigned int)*k) != internal_ext_gemm_batchdesc.k
     || 0 == LIBXSMM_FEQ(*alpha, internal_ext_gemm_batchdesc.alpha)
     || 0 == LIBXSMM_FEQ(*beta, internal_ext_gemm_batchdesc.beta))
+#endif
   {
+    if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
+      libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    }
+    else { /* small problem size */
+      libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    }
+  }
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+  else {
     const unsigned int i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchsize, 1, LIBXSMM_ATOMIC_RELAXED);
     libxsmm_gemm_batchitem item;
     item.a = a; item.b = b; item.c = c;
     libxsmm_gemm_batcharray[i] = item;
   }
-  else
 #endif
-  if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
-    libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  }
-  else { /* small problem size */
-    libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  }
 }
 
 #endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)*/
@@ -289,6 +295,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
   const void* alpha, const void* beta)
 {
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+  LIBXSMM_INIT
   if (0 != libxsmm_gemm_batcharray /* batch-recording available, but not yet running */
     /* currently, batch recording is only enabled if all values are present (no complex filtering) */
     && 0 != flags && 0 != alpha && 0 != beta
