@@ -282,11 +282,10 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* descriptor, const void* a_matrix, const void* b_matrix, void* c_matrix,
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
   int base_offset, const int a_stride[], const int b_stride[], const int c_stride[], unsigned int nstrides, unsigned int batchsize)
 {
-  return libxsmm_mmbatch_thread(libxsmm_xmmdispatch(descriptor), a_matrix, b_matrix, c_matrix,
-    base_offset, a_stride, b_stride, c_stride, nstrides, batchsize, 0/*tid*/, 1/*nthreads*/);
+  return libxsmm_mmbatch_thread(kernel, typesize, a_matrix, b_matrix, c_matrix, base_offset, a_stride, b_stride, c_stride, nstrides, batchsize, 0/*tid*/, 1/*nthreads*/);
 }
 
 
