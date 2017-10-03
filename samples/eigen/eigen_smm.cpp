@@ -128,8 +128,8 @@ int main(int argc, char* argv[])
     const int asize = m * k, bsize = k * n, csize = m * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
     const int q = (4 < argc ? std::atoi(argv[4]) : 0/*auto*/);
     const int r = (5 < argc ? std::atoi(argv[5]) : (0 >= q ? 13 : 1)); // number of repetitions
-    const int s = (0 < q ? q : ((2ULL << 30/*2 GB*/) / ((asize + bsize + csize) * sizeof(T))));
-
+    const int max_size = ((2ULL << 30/*2 GB*/) / ((asize + bsize + csize) * sizeof(T)));
+    const int s = LIBXSMM_MIN(0 < q ? q : max_size, max_size);
     const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T); // batched (A, B, and C)
     const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // omit size of A, B, or C since it is held in cache
     const double gflops = 2.0 * r * s * m * n * k * 1E-9, scale = 1.0 / s;

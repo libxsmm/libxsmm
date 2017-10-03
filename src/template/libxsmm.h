@@ -144,18 +144,44 @@ LIBXSMM_API libxsmm_wmmfunction libxsmm_wmmdispatch(int m, int n, int k,
   const int* alpha, const int* beta,
   const int* flags, const int* prefetch);
 
+/** Process a series of matrix multiplications. */
+LIBXSMM_API int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
+  /** Determines index-base (usually 0, 1 for one-based indexes); uses the same unit as the strides. */
+  int index_base,
+  /** Common stride (in Bytes, usually sizeof(unsigned int)) used to walk a_stride, b_stride, and c_stride. */
+  int index_stride,
+  /**
+   * index_stride==0: a single value measured in Bytes for a_stride, b_stride, and c_stride is expected,
+   * index_stride!=1: a_stride, b_stride, and c_stride are arrays of indexes; array size equals batchsize.
+   * A stride of zero (value or pointer) is valid, and will not advance the corresponding matrix-operand.
+   * Note: if the C-stride is zero, the kernel should correspond (Beta=1) and accesses to c_matrix will
+   * be internally synchronized.
+   */
+  const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[],
+  /** Number of matrix multiplications. */
+  unsigned int batchsize,
+  /** Thread-ID (TID), and number of threads. */
+  /*unsigned*/int tid, /*unsigned*/int nthreads);
+
+/** Process a series of matrix multiplications; MT via libxsmmext. */
+LIBXSMM_API int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
+  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize);
+/** Process a series of matrix multiplications; sequential. */
+LIBXSMM_API int libxsmm_mmbatch(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
+  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize);
+
 /**
  * This function is a no-op unless LIBXSMM is built to intercept GEMM calls.
  * Pointer arguments are used to prefilter intercepted GEMM calls such that
  * non-NULL values match. Otherwise (NULL) the respective argument is
- * considered a "free value" i.e., every value can match.
+ * considered a "free value" i.e., every value can match; libxsmmext required.
  */
 LIBXSMM_API void libxsmm_mmbatch_begin(libxsmm_gemm_precision precision, const int* flags,
   const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
   const void* alpha, const void* beta);
 
-/** Processes the batch of previously recorded matrix multiplications (libxsmm_mmbatch_begin). */
-LIBXSMM_API int libxsmm_mmbatch_end(/*TODO: signature*/);
+/** Processes the batch of previously recorded matrix multiplications (libxsmm_mmbatch_begin); libxsmmext required. */
+LIBXSMM_API void libxsmm_mmbatch_end(/*TODO: signature*/);
 
 /** Code generation routine for JIT matcopy using a descriptor. */
 LIBXSMM_API libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor);
@@ -277,7 +303,7 @@ template<> struct libxsmm_gemm_precision_enum<unsigned short> { static libxsmm_g
 template<typename T> class LIBXSMM_RETARGETABLE libxsmm_mmfunction {
   mutable/*retargetable*/ libxsmm_xmmfunction m_function;
 public:
-  libxsmm_mmfunction() { m_function.smm = 0; }
+  libxsmm_mmfunction() { m_function.xmm = 0; }
   libxsmm_mmfunction(int m, int n, int k, int flags = LIBXSMM_FLAGS) {
     libxsmm_gemm_descriptor descriptor;
     if (EXIT_SUCCESS == libxsmm_gemm_descriptor_init(&descriptor, libxsmm_gemm_precision_enum<T>::value(),
@@ -286,7 +312,7 @@ public:
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
     else {
-      m_function.smm = 0;
+      m_function.xmm = 0;
     }
   }
   libxsmm_mmfunction(int flags, int m, int n, int k, int prefetch) {
@@ -297,7 +323,7 @@ public:
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
     else {
-      m_function.smm = 0;
+      m_function.xmm = 0;
     }
   }
   libxsmm_mmfunction(int flags, int m, int n, int k, float alpha, float beta) {
@@ -308,7 +334,7 @@ public:
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
     else {
-      m_function.smm = 0;
+      m_function.xmm = 0;
     }
   }
   libxsmm_mmfunction(int flags, int m, int n, int k, float alpha, float beta, int prefetch) {
@@ -319,7 +345,7 @@ public:
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
     else {
-      m_function.smm = 0;
+      m_function.xmm = 0;
     }
   }
   libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, int prefetch) {
@@ -330,7 +356,7 @@ public:
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
     else {
-      m_function.smm = 0;
+      m_function.xmm = 0;
     }
   }
   libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta) {
@@ -341,7 +367,7 @@ public:
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
     else {
-      m_function.smm = 0;
+      m_function.xmm = 0;
     }
   }
   libxsmm_mmfunction(int flags, int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta, int prefetch) {
@@ -352,18 +378,21 @@ public:
       m_function = libxsmm_xmmdispatch(&descriptor);
     }
     else {
-      m_function.smm = 0;
+      m_function.xmm = 0;
     }
   }
 public:
+  const libxsmm_xmmfunction& kernel() const {
+    return m_function;
+  }
   operator const void*() const {
-    return 0 != m_function.smm ? this : 0;
+    return 0 != m_function.xmm ? this : 0;
   }
   void operator()(const T* a, const T* b, void* c) const {
-    LIBXSMM_MMCALL_ABC(m_function, a, b, c);
+    LIBXSMM_MMCALL_ABC(m_function.xmm, a, b, c);
   }
   void operator()(const T* a, const T* b, void* c, const T* pa, const T* pb, const void* pc) const {
-    LIBXSMM_MMCALL_PRF(m_function, a, b, c, pa, pb, pc);
+    LIBXSMM_MMCALL_PRF(m_function.xmm, a, b, c, pa, pb, pc);
   }
 };
 
@@ -423,6 +452,11 @@ public:
 #endif
   {}
 public:
+  libxsmm_xmmfunction kernel() const {
+    libxsmm_xmmfunction result;
+    result.smm = m_function;
+    return result;
+  }
   operator const void*() const {
 #if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
     return this;
@@ -510,6 +544,11 @@ public:
 #endif
   {}
 public:
+  libxsmm_xmmfunction kernel() const {
+    libxsmm_xmmfunction result;
+    result.dmm = m_function;
+    return result;
+  }
   operator const void*() const {
 #if defined(LIBXSMM_FALLBACK_DMMFUNCTION)
     return this;

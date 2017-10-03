@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
 
   const char *const env_mult = getenv("MULT"), *const env_orig = getenv("ORIG");
   /* extents of result image become multiples of block-size */
-  const size_t mult = ((0 == env_mult || 0 == *env_mult) ? 64/*default*/ : LIBXSMM_MAX(atoi(env_mult), 0));
+  const int mult = ((0 == env_mult || 0 == *env_mult) ? 64/*default*/ : LIBXSMM_MAX(atoi(env_mult), 0));
   /* save result image with original compute-type (type_dnn), and not with pixel-type of input (type_in) */
   const int orig = ((0 == env_orig || 0 == *env_orig) ? 0/*disabled*/ : atoi(env_orig));
 

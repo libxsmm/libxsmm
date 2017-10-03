@@ -82,7 +82,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
-        typedef libxsmm_smmfunction libxsmm_mmfunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
 #define LIBXSMM_WU_PER_THREAD_ALLOCATION
@@ -101,7 +100,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
         typedef float element_output_type;
         typedef float element_filter_type;
         typedef libxsmm_sconvfunction libxsmm_convfunction;
-        typedef libxsmm_smmfunction libxsmm_mmfunction;
         if (handle->padding_flag == 1) {
 #define INPUT_PADDING
           if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM)
