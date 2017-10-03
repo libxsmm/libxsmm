@@ -62,6 +62,33 @@ libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller)
 #endif
 
 
+LIBXSMM_API_INLINE int internal_mmbatch_flush(void)
+{
+  int result = EXIT_SUCCESS;
+  if (0 != internal_ext_gemm_batchsize) { /* recorded/lazy multiplications */
+    const unsigned int itemsize = sizeof(libxsmm_gemm_batchitem);
+    if (0 == (internal_ext_gemm_batchdesc.flags & LIBXSMM_MMBATCH_FLAG_SEQUENTIAL)) {
+      result = libxsmm_mmbatch_omp(&internal_ext_gemm_batchdesc,
+        libxsmm_gemm_batcharray                                         /*a_matrix*/,
+        (const void**)libxsmm_gemm_batcharray + sizeof(void*)           /*b_matrix*/,
+        (void**)libxsmm_gemm_batcharray + sizeof(void*) + sizeof(void*) /*c_matrix*/,
+        0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize,
+        internal_ext_gemm_batchsize);
+    }
+    else { /* sequential */
+      result = libxsmm_mmbatch(&internal_ext_gemm_batchdesc,
+        libxsmm_gemm_batcharray                                         /*a_matrix*/,
+        (const void**)libxsmm_gemm_batcharray + sizeof(void*)           /*b_matrix*/,
+        (void**)libxsmm_gemm_batcharray + sizeof(void*) + sizeof(void*) /*c_matrix*/,
+        0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize,
+        internal_ext_gemm_batchsize);
+    }
+    internal_ext_gemm_batchsize = 0;
+  }
+  return result;
+}
+
+
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -70,32 +97,38 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
   assert(0 != lda && 0 != ldb && 0 != ldc && 0 != m && 0 != n && 0 != k);
-  assert(0 != alpha && 0 != beta && 0 != libxsmm_gemm_batcharray);
-#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
-  if (0 == internal_ext_gemm_batch /* batch-recording disabled */
-    || LIBXSMM_GEMM_PRECISION_F32 != internal_ext_gemm_batchdesc.datatype
-    || LIBXSMM_GEMM_FLAGS(*transa, *transb) != internal_ext_gemm_batchdesc.flags
-    || ((unsigned int)*lda) != internal_ext_gemm_batchdesc.lda
-    || ((unsigned int)*ldb) != internal_ext_gemm_batchdesc.ldb
-    || ((unsigned int)*ldc) != internal_ext_gemm_batchdesc.ldc
-    || ((unsigned int)*m) != internal_ext_gemm_batchdesc.m
-    || ((unsigned int)*n) != internal_ext_gemm_batchdesc.n
-    || ((unsigned int)*k) != internal_ext_gemm_batchdesc.k
-    || 0 == LIBXSMM_FEQ(*alpha, internal_ext_gemm_batchdesc.alpha)
-    || 0 == LIBXSMM_FEQ(*beta, internal_ext_gemm_batchdesc.beta))
+  assert(0 != transa && 0 != transb && 0 != alpha && 0 != beta);
   {
-    const unsigned int i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchsize, 1, LIBXSMM_ATOMIC_RELAXED);
-    libxsmm_gemm_batchitem item;
-    item.a = a; item.b = b; item.c = c;
-    libxsmm_gemm_batcharray[i] = item;
-  }
-  else
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+    const int flags = LIBXSMM_GEMM_FLAGS(*transa, *transb);
+    if (0 == internal_ext_gemm_batch || 0 == libxsmm_gemm_batcharray
+      || LIBXSMM_GEMM_PRECISION_F32 != internal_ext_gemm_batchdesc.datatype
+      || flags != (flags & internal_ext_gemm_batchdesc.flags)
+      || ((unsigned int)*lda) != internal_ext_gemm_batchdesc.lda
+      || ((unsigned int)*ldb) != internal_ext_gemm_batchdesc.ldb
+      || ((unsigned int)*ldc) != internal_ext_gemm_batchdesc.ldc
+      || ((unsigned int)*m) != internal_ext_gemm_batchdesc.m
+      || ((unsigned int)*n) != internal_ext_gemm_batchdesc.n
+      || ((unsigned int)*k) != internal_ext_gemm_batchdesc.k
+      || 0 == LIBXSMM_FEQ(*alpha, internal_ext_gemm_batchdesc.alpha)
+      || 0 == LIBXSMM_FEQ(*beta, internal_ext_gemm_batchdesc.beta))
 #endif
-  if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
-    libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  }
-  else { /* small problem size */
-    libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    {
+      if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
+        libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+      }
+      else { /* small problem size */
+        libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+      }
+    }
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+    else {
+      const unsigned int i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchsize, 1, LIBXSMM_ATOMIC_RELAXED);
+      libxsmm_gemm_batchitem item;
+      item.a = a; item.b = b; item.c = c;
+      libxsmm_gemm_batcharray[i] = item;
+    }
+#endif
   }
 }
 
@@ -108,32 +141,38 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   assert(0 != lda && 0 != ldb && 0 != ldc && 0 != m && 0 != n && 0 != k);
-  assert(0 != alpha && 0 != beta && 0 != libxsmm_gemm_batcharray);
-#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
-  if (0 == internal_ext_gemm_batch /* batch-recording disabled */
-    || LIBXSMM_GEMM_PRECISION_F64 != internal_ext_gemm_batchdesc.datatype
-    || LIBXSMM_GEMM_FLAGS(*transa, *transb) != internal_ext_gemm_batchdesc.flags
-    || ((unsigned int)*lda) != internal_ext_gemm_batchdesc.lda
-    || ((unsigned int)*ldb) != internal_ext_gemm_batchdesc.ldb
-    || ((unsigned int)*ldc) != internal_ext_gemm_batchdesc.ldc
-    || ((unsigned int)*m) != internal_ext_gemm_batchdesc.m
-    || ((unsigned int)*n) != internal_ext_gemm_batchdesc.n
-    || ((unsigned int)*k) != internal_ext_gemm_batchdesc.k
-    || 0 == LIBXSMM_FEQ(*alpha, internal_ext_gemm_batchdesc.alpha)
-    || 0 == LIBXSMM_FEQ(*beta, internal_ext_gemm_batchdesc.beta))
+  assert(0 != transa && 0 != transb && 0 != alpha && 0 != beta);
   {
-    const unsigned int i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchsize, 1, LIBXSMM_ATOMIC_RELAXED);
-    libxsmm_gemm_batchitem item;
-    item.a = a; item.b = b; item.c = c;
-    libxsmm_gemm_batcharray[i] = item;
-  }
-  else
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+    const int flags = LIBXSMM_GEMM_FLAGS(*transa, *transb);
+    if (0 == internal_ext_gemm_batch || 0 == libxsmm_gemm_batcharray
+      || LIBXSMM_GEMM_PRECISION_F64 != internal_ext_gemm_batchdesc.datatype
+      || flags != (flags & internal_ext_gemm_batchdesc.flags)
+      || ((unsigned int)*lda) != internal_ext_gemm_batchdesc.lda
+      || ((unsigned int)*ldb) != internal_ext_gemm_batchdesc.ldb
+      || ((unsigned int)*ldc) != internal_ext_gemm_batchdesc.ldc
+      || ((unsigned int)*m) != internal_ext_gemm_batchdesc.m
+      || ((unsigned int)*n) != internal_ext_gemm_batchdesc.n
+      || ((unsigned int)*k) != internal_ext_gemm_batchdesc.k
+      || 0 == LIBXSMM_FEQ(*alpha, internal_ext_gemm_batchdesc.alpha)
+      || 0 == LIBXSMM_FEQ(*beta, internal_ext_gemm_batchdesc.beta))
 #endif
-  if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
-    libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-  }
-  else { /* small problem size */
-    libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    {
+      if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
+        libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+      }
+      else { /* small problem size */
+        libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+      }
+    }
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+    else {
+      const unsigned int i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchsize, 1, LIBXSMM_ATOMIC_RELAXED);
+      libxsmm_gemm_batchitem item;
+      item.a = a; item.b = b; item.c = c;
+      libxsmm_gemm_batcharray[i] = item;
+    }
+#endif
   }
 }
 
@@ -277,10 +316,20 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
 
 
 LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* descriptor, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  const int a_stride[], const int b_stride[], const int c_stride[], unsigned int nstrides, unsigned int batchsize)
+  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize)
 {
-  return libxsmm_mmbatch_thread(libxsmm_xmmdispatch(descriptor), a_matrix, b_matrix, c_matrix,
-    a_stride, b_stride, c_stride, nstrides, batchsize, 0/*tid*/, 1/*nthreads*/);
+  int result;
+  if (0 != descriptor) {
+    const unsigned int typesize = libxsmm_gemm_typesize((libxsmm_gemm_precision)descriptor->datatype);
+    const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(descriptor);
+    result = libxsmm_mmbatch_internal(kernel, typesize, a_matrix, b_matrix, c_matrix,
+      index_base, index_stride, a_stride, b_stride, c_stride, batchsize,
+      0/*tid*/, 1/*nthreads*/, descriptor);
+  }
+  else {
+    result = EXIT_FAILURE;
+  }
+  return result;
 }
 
 
@@ -289,6 +338,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
   const void* alpha, const void* beta)
 {
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+  LIBXSMM_INIT
   if (0 != libxsmm_gemm_batcharray /* batch-recording available, but not yet running */
     /* currently, batch recording is only enabled if all values are present (no complex filtering) */
     && 0 != flags && 0 != alpha && 0 != beta
@@ -296,29 +346,15 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
     && 0 != m && 0 != n && 0 != k)
   {
     static int error_once = 0;
-    libxsmm_gemm_descriptor descriptor_new;
+    libxsmm_gemm_descriptor descriptor;
     const int prefetch = LIBXSMM_PREFETCH_AUTO;
-    const int result = libxsmm_gemm_descriptor_init(&descriptor_new,
+    const int result = libxsmm_gemm_descriptor_init(&descriptor,
       precision, *m, *n, *k, lda, ldb, ldc, alpha, beta, flags, &prefetch);
 
     if (EXIT_SUCCESS == result) {
       if (0 < LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batch, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
-        const libxsmm_gemm_descriptor descriptor = internal_ext_gemm_batchdesc;
-        const unsigned int size0 = internal_ext_gemm_batchsize;
-        unsigned int size1;
-
-        if (1 < internal_ext_gemm_batch) { /* flush */
-#if 0
-          libxsmm_mmbatch(&descriptor, libxsmm_gemm_batcharray, size0);
-#endif
-        }
-        internal_ext_gemm_batchdesc = descriptor; /* update descriptor */
-        size1 = internal_ext_gemm_batchsize;
-        if (size0 < size1) { /* flush remainder */
-#if 0
-          libxsmm_mmbatch(&descriptor, libxsmm_gemm_batcharray + size0, size1 - size0);
-#endif
-        }
+        internal_mmbatch_flush();
+        internal_ext_gemm_batchdesc = descriptor;
       }
     }
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -336,17 +372,15 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_mmbatch_end(/*TODO: signature*/)
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch_end(void)
 {
+  int result = EXIT_SUCCESS;
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
-  if (0 != internal_ext_gemm_batch && 0 == LIBXSMM_ATOMIC_SUB_FETCH(&internal_ext_gemm_batch, 1, LIBXSMM_ATOMIC_SEQ_CST)
-   && 0 != internal_ext_gemm_batchsize) /* recorded/lazy multiplications */
-  {
-#if 0
-    libxsmm_mmbatch(&internal_ext_gemm_batchdesc);
-#endif
+  if (0 != internal_ext_gemm_batch && 0 == LIBXSMM_ATOMIC_SUB_FETCH(&internal_ext_gemm_batch, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
+    result = internal_mmbatch_flush();
   }
 #endif
+  return result;
 }
 
 
