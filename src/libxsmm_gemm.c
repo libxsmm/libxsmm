@@ -468,15 +468,13 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel,
-  unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  int base_stride, const int a_stride[], const int b_stride[], const int c_stride[],
-  unsigned int nstrides, unsigned int batchsize, int tid, int nthreads)
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
+  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize,
+  int tid, int nthreads)
 {
   int result = EXIT_SUCCESS;
 
   if (0 != kernel.xmm && 0 != typesize && 0 != a_matrix && 0 != b_matrix && 0 != c_matrix &&
-     (1 == nstrides || nstrides == batchsize) &&
       /* use (signed) integer types, but check sanity of input */
       0 <= tid && tid < nthreads)
   {
@@ -485,26 +483,28 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel,
     const unsigned int end = LIBXSMM_MIN(begin + tasksize, batchsize);
 
     if (begin < end) {
-      const int da = (0 != a_stride ? (*a_stride + base_stride) : base_stride);
-      const int db = (0 != b_stride ? (*b_stride + base_stride) : base_stride);
-      const int dc = (0 != c_stride ? (*c_stride + base_stride) : base_stride);
+      const unsigned int da = (0 != a_stride ? (*a_stride - index_base) : index_base);
+      const unsigned int db = (0 != b_stride ? (*b_stride - index_base) : index_base);
+      const unsigned int dc = (0 != c_stride ? (*c_stride - index_base) : index_base);
       const char *a = (const char*)a_matrix, *b = (const char*)b_matrix, *ai, *bi;
       char *c = (char*)c_matrix, *ci;
       unsigned int n;
 
-      if (1 < nstrides) { /* stride arrays contain indexes */
+      assert(0 != dc || 1 == nthreads); /* TODO: implement synchronization */
+      if (0 != index_stride) { /* stride arrays contain indexes */
+        const char *const ia = (const char*)a_stride, *const ib = (const char*)b_stride, *const ic = (const char*)c_stride;
         ai = a + da * typesize; bi = b + db * typesize; ci = c + dc * typesize;
         for (n = begin; n < (end - 1); ++n) {
-          const char *const an = a + (0 != a_stride ? (a_stride[n + 1] + base_stride) : base_stride) * typesize;
-          const char *const bn = b + (0 != b_stride ? (b_stride[n + 1] + base_stride) : base_stride) * typesize;
-          char *const cn = c + (0 != c_stride ? (c_stride[n + 1] + base_stride) : base_stride) * typesize;
+          const char *const an = a + (0 != ia ? (*((const unsigned int*)(ia + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
+          const char *const bn = b + (0 != ib ? (*((const unsigned int*)(ib + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
+          char *const cn = c + (0 != ic ? (*((const unsigned int*)(ic + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
           kernel.xmm(ai, bi, ci, an, bn, cn); /* prefetch */
           ai = an; bi = bn; ci = cn;
         }
         /* last multiplication with pseudo-prefetch */
         kernel.xmm(ai, bi, ci, ai, bi, ci);
       }
-      else if (((int)typesize <= da) && ((int)typesize <= db) && ((int)typesize <= dc)) { /* strides are measured in Bytes */
+      else if (typesize <= da && typesize <= db && typesize <= dc) { /* strides are measured in Bytes */
         ai = a; bi = b; ci = c;
         for (n = begin; n < (end - 1); ++n) {
           const char *const an = ai + da;
@@ -532,9 +532,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel,
 
 
 LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  int base_offset, const int a_stride[], const int b_stride[], const int c_stride[], unsigned int nstrides, unsigned int batchsize)
+  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize)
 {
-  return libxsmm_mmbatch_thread(kernel, typesize, a_matrix, b_matrix, c_matrix, base_offset, a_stride, b_stride, c_stride, nstrides, batchsize, 0/*tid*/, 1/*nthreads*/);
+  return libxsmm_mmbatch_thread(kernel, typesize, a_matrix, b_matrix, c_matrix, index_base, index_stride, a_stride, b_stride, c_stride, batchsize, 0/*tid*/, 1/*nthreads*/);
 }
 
 
@@ -604,33 +604,31 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_blas_dgemm)(const char* tran
 }
 
 
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smmbatch_thread)(
-  libxsmm_xmmfunction kernel, const float* a_matrix, const float* b_matrix, float* c_matrix,
-  const int a_stride[], const int b_stride[], const int c_stride[], const unsigned int* nstrides,
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smmbatch_thread)(libxsmm_xmmfunction kernel,
+  const float a_matrix[], const float b_matrix[], float c_matrix[], const int* index_stride,
+  const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[],
   const unsigned int* batchsize, const int* tid, const int* nthreads)
 {
   assert(0 != a_matrix && 0 != b_matrix && 0 != c_matrix);
-  assert(0 != nstrides && 0 != batchsize);
+  assert(0 != index_stride && 0 != batchsize);
   assert(0 != tid && 0 != nthreads);
-  libxsmm_mmbatch_thread(kernel,
-    sizeof(float), a_matrix, b_matrix, c_matrix,
-    -1/*base_stride*/, a_stride, b_stride, c_stride,
-    *nstrides, *batchsize, *tid, *nthreads);
+  libxsmm_mmbatch_thread(kernel, sizeof(float), a_matrix, b_matrix, c_matrix,
+    1/*index_base*/, *index_stride, a_stride, b_stride, c_stride, *batchsize,
+    *tid, *nthreads);
 }
 
 
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dmmbatch_thread)(
-  libxsmm_xmmfunction kernel, const double* a_matrix, const double* b_matrix, double* c_matrix,
-  const int a_stride[], const int b_stride[], const int c_stride[], const unsigned int* nstrides,
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dmmbatch_thread)(libxsmm_xmmfunction kernel,
+  const float a_matrix[], const float b_matrix[], float c_matrix[], const int* index_stride,
+  const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[],
   const unsigned int* batchsize, const int* tid, const int* nthreads)
 {
   assert(0 != a_matrix && 0 != b_matrix && 0 != c_matrix);
-  assert(0 != nstrides && 0 != batchsize);
+  assert(0 != index_stride && 0 != batchsize);
   assert(0 != tid && 0 != nthreads);
-  libxsmm_mmbatch_thread(kernel,
-    sizeof(double), a_matrix, b_matrix, c_matrix,
-    -1/*base_stride*/, a_stride, b_stride, c_stride,
-    *nstrides, *batchsize, *tid, *nthreads);
+  libxsmm_mmbatch_thread(kernel, sizeof(double), a_matrix, b_matrix, c_matrix,
+    1/*index_base*/, *index_stride, a_stride, b_stride, c_stride, *batchsize,
+    *tid, *nthreads);
 }
 
 #endif /*defined(LIBXSMM_BUILD)*/

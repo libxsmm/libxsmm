@@ -146,25 +146,29 @@ LIBXSMM_API libxsmm_wmmfunction libxsmm_wmmdispatch(int m, int n, int k,
 
 /** Process a series of matrix multiplications. */
 LIBXSMM_API int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  /** Determines index-base (usually 0, 1-based indexes: base_offset=-1); uses the same unit as the strides. */
-  int base_offset,
+  /** Determines index-base (usually 0, 1 for one-based indexes); uses the same unit as the strides. */
+  int index_base,
+  /** Common stride (in Bytes, usually sizeof(unsigned int)) used to walk a_stride, b_stride, and c_stride. */
+  int index_stride,
   /**
-   * nstrides==1: a_stride, b_stride, and c_stride are measured in Bytes, nstrides!=1: a_stride, b_stride, and c_stride are arrays of indexes.
-   * A stride of zero (value or pointer) is valid, and will not advance the corresponding matrix-operand (given should match).
+   * index_stride==0: a single value measured in Bytes for a_stride, b_stride, and c_stride is expected,
+   * index_stride!=1: a_stride, b_stride, and c_stride are arrays of indexes; array size equals batchsize.
+   * A stride of zero (value or pointer) is valid, and will not advance the corresponding matrix-operand.
+   * Note: if the C-stride is zero, the kernel should correspond (Beta=1) and accesses to c_matrix will
+   * be internally synchronized.
    */
-  const int a_stride[], const int b_stride[], const int c_stride[],
-  /** Number of strides at stride-location (a_stride, b_stride, c_stride). */
-  unsigned int nstrides,
+  const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[],
   /** Number of matrix multiplications. */
   unsigned int batchsize,
   /** Thread-ID (TID), and number of threads. */
   /*unsigned*/int tid, /*unsigned*/int nthreads);
+
 /** Process a series of matrix multiplications; MT via libxsmmext. */
 LIBXSMM_API int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  int base_offset, const int a_stride[], const int b_stride[], const int c_stride[], unsigned int nstrides, unsigned int batchsize);
+  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize);
 /** Process a series of matrix multiplications; sequential. */
 LIBXSMM_API int libxsmm_mmbatch(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  int base_offset, const int a_stride[], const int b_stride[], const int c_stride[], unsigned int nstrides, unsigned int batchsize);
+  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize);
 
 /**
  * This function is a no-op unless LIBXSMM is built to intercept GEMM calls.
@@ -378,6 +382,9 @@ public:
     }
   }
 public:
+  const libxsmm_xmmfunction& kernel() const {
+    return m_function;
+  }
   operator const void*() const {
     return 0 != m_function.xmm ? this : 0;
   }
@@ -445,6 +452,11 @@ public:
 #endif
   {}
 public:
+  libxsmm_xmmfunction kernel() const {
+    libxsmm_xmmfunction result;
+    result.smm = m_function;
+    return result;
+  }
   operator const void*() const {
 #if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
     return this;
@@ -532,6 +544,11 @@ public:
 #endif
   {}
 public:
+  libxsmm_xmmfunction kernel() const {
+    libxsmm_xmmfunction result;
+    result.dmm = m_function;
+    return result;
+  }
   operator const void*() const {
 #if defined(LIBXSMM_FALLBACK_DMMFUNCTION)
     return this;
