@@ -1600,7 +1600,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           handle->scratch4 = 0;
           handle->scratch4_size = handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
             * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype);
-          handle->scratch4_size += handle->desc.threads * handle->block_upd_ofm * handle->block_upd_ifm * handle->desc.R
+          handle->scratch4_size += handle->desc.threads * LIBXSMM_MIN(handle->block_upd_ofm, handle->blocksofm) * LIBXSMM_MIN(handle->block_upd_ifm, handle->blocksifm) * handle->desc.R
             * handle->desc.S * handle->ifmblock * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype);
 
           /* enable external reduce of filter scratch */
