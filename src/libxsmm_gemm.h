@@ -82,6 +82,10 @@
 # endif
 #endif
 
+#if !defined(LIBXSMM_GEMM_BATCHSIZE)
+# define LIBXSMM_GEMM_BATCHSIZE 1024
+#endif
+
 #define LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA) ( \
   0 == ((FLAGS) & (LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B)) && \
         (LIBXSMM_FEQ(1, ALPHA) /*|| LIBXSMM_FEQ(-1, ALPHA)*/) && \

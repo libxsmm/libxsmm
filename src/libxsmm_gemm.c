@@ -109,7 +109,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   if (0 != libxsmm_gemm_wrap) { /* batch-recording available */
     /* use libxsmm_malloc to draw memory from the default memory allocation domain */
     if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&libxsmm_gemm_batcharray,
-      sizeof(libxsmm_gemm_batchitem) * (0 > batchsize ? 1024/*default*/ : batchsize),
+      sizeof(libxsmm_gemm_batchitem) * (0 > batchsize ? (LIBXSMM_GEMM_BATCHSIZE) : batchsize),
       0, LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/))
     {
       libxsmm_gemm_batchsize = batchsize;
