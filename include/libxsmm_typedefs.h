@@ -78,7 +78,9 @@ typedef enum libxsmm_gemm_flags {
   /** Generate aligned load instructions. */
   LIBXSMM_GEMM_FLAG_ALIGN_A = 64,
   /** Aligned load/store instructions. */
-  LIBXSMM_GEMM_FLAG_ALIGN_C = 128
+  LIBXSMM_GEMM_FLAG_ALIGN_C = 128,
+  /** Marker flag; do not use. */
+  LIBXSMM_GEMM_FLAG_INVALID = 256
 } libxsmm_gemm_flags;
 
 /** Enumeration of the available prefetch strategies. */

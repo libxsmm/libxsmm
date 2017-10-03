@@ -468,13 +468,15 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch_internal(
+  libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
   int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize,
-  int tid, int nthreads)
+  int tid, int nthreads, const libxsmm_gemm_descriptor* kernel_desc)
 {
   int result = EXIT_SUCCESS;
 
-  if (0 != kernel.xmm && 0 != typesize && 0 != a_matrix && 0 != b_matrix && 0 != c_matrix &&
+  if (0 != typesize && 0 != a_matrix && 0 != b_matrix && 0 != c_matrix &&
+     (0 != kernel.xmm || 0 != kernel_desc) /* fast-path or fall-back */ &&
       /* use (signed) integer types, but check sanity of input */
       0 <= tid && tid < nthreads)
   {
@@ -494,34 +496,81 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel, un
       if (0 != index_stride) { /* stride arrays contain indexes */
         const char *const ia = (const char*)a_stride, *const ib = (const char*)b_stride, *const ic = (const char*)c_stride;
         ai = a + da * typesize; bi = b + db * typesize; ci = c + dc * typesize;
-        for (n = begin; n < (end - 1); ++n) {
-          const char *const an = a + (0 != ia ? (*((const unsigned int*)(ia + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
-          const char *const bn = b + (0 != ib ? (*((const unsigned int*)(ib + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
-          char *const cn = c + (0 != ic ? (*((const unsigned int*)(ic + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
-          kernel.xmm(ai, bi, ci, an, bn, cn); /* prefetch */
-          ai = an; bi = bn; ci = cn;
+        if (0 != kernel.xmm) {
+          for (n = begin; n < (end - 1); ++n) {
+            const char *const an = a + (0 != ia ? (*((const unsigned int*)(ia + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
+            const char *const bn = b + (0 != ib ? (*((const unsigned int*)(ib + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
+            char *const cn = c + (0 != ic ? (*((const unsigned int*)(ic + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
+            kernel.xmm(ai, bi, ci, an, bn, cn); /* prefetch */
+            ai = an; bi = bn; ci = cn;
+          }
+          /* last multiplication with pseudo-prefetch */
+          kernel.xmm(ai, bi, ci, ai, bi, ci);
         }
-        /* last multiplication with pseudo-prefetch */
-        kernel.xmm(ai, bi, ci, ai, bi, ci);
+        else if (LIBXSMM_GEMM_PRECISION_F64 == kernel_desc->datatype) { /* fall-back (DP) */
+          for (n = begin; n < end; ++n) {
+            const char *const an = a + (0 != ia ? (*((const unsigned int*)(ia + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
+            const char *const bn = b + (0 != ib ? (*((const unsigned int*)(ib + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
+            char *const cn = c + (0 != ic ? (*((const unsigned int*)(ic + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
+            LIBXSMM_BLAS_XGEMM(double, kernel_desc->flags, kernel_desc->m, kernel_desc->n, kernel_desc->k,
+              kernel_desc->alpha, ai, kernel_desc->lda, bi, kernel_desc->ldb, kernel_desc->beta, ci, kernel_desc->ldc);
+            ai = an; bi = bn; ci = cn;
+          }
+        }
+        else if (LIBXSMM_GEMM_PRECISION_F32 == kernel_desc->datatype) { /* fall-back (SP) */
+          for (n = begin; n < end; ++n) {
+            const char *const an = a + (0 != ia ? (*((const unsigned int*)(ia + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
+            const char *const bn = b + (0 != ib ? (*((const unsigned int*)(ib + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
+            char *const cn = c + (0 != ic ? (*((const unsigned int*)(ic + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
+            LIBXSMM_BLAS_XGEMM(float, kernel_desc->flags, kernel_desc->m, kernel_desc->n, kernel_desc->k,
+              kernel_desc->alpha, ai, kernel_desc->lda, bi, kernel_desc->ldb, kernel_desc->beta, ci, kernel_desc->ldc);
+            ai = an; bi = bn; ci = cn;
+          }
+        }
+        else {
+          result = EXIT_FAILURE;
+        }
       }
       else if (typesize <= da && typesize <= db && typesize <= dc) { /* strides are measured in Bytes */
         ai = a; bi = b; ci = c;
-        for (n = begin; n < (end - 1); ++n) {
-          const char *const an = ai + da;
-          const char *const bn = bi + db;
-          char *const cn = ci + dc;
-          kernel.xmm(ai, bi, ci, an, bn, cn); /* prefetch */
-          ai = an; bi = bn; ci = cn; /* next */
+        if (0 != kernel.xmm) {
+          for (n = begin; n < (end - 1); ++n) {
+            const char *const an = ai + da;
+            const char *const bn = bi + db;
+            char *const cn = ci + dc;
+            kernel.xmm(ai, bi, ci, an, bn, cn); /* prefetch */
+            ai = an; bi = bn; ci = cn; /* next */
+          }
+          /* last multiplication with pseudo-prefetch */
+          kernel.xmm(ai, bi, ci, ai, bi, ci);
         }
-        /* last multiplication with pseudo-prefetch */
-        kernel.xmm(ai, bi, ci, ai, bi, ci);
+        else if (LIBXSMM_GEMM_PRECISION_F64 == kernel_desc->datatype) { /* fall-back (DP) */
+          for (n = begin; n < end; ++n) {
+            const char *const an = ai + da;
+            const char *const bn = bi + db;
+            char *const cn = ci + dc;
+            LIBXSMM_BLAS_XGEMM(double, kernel_desc->flags, kernel_desc->m, kernel_desc->n, kernel_desc->k,
+              kernel_desc->alpha, ai, kernel_desc->lda, bi, kernel_desc->ldb, kernel_desc->beta, ci, kernel_desc->ldc);
+            ai = an; bi = bn; ci = cn; /* next */
+          }
+        }
+        else if (LIBXSMM_GEMM_PRECISION_F32 == kernel_desc->datatype) { /* fall-back (SP) */
+          for (n = begin; n < end; ++n) {
+            const char *const an = ai + da;
+            const char *const bn = bi + db;
+            char *const cn = ci + dc;
+            LIBXSMM_BLAS_XGEMM(float, kernel_desc->flags, kernel_desc->m, kernel_desc->n, kernel_desc->k,
+              kernel_desc->alpha, ai, kernel_desc->lda, bi, kernel_desc->ldb, kernel_desc->beta, ci, kernel_desc->ldc);
+            ai = an; bi = bn; ci = cn; /* next */
+          }
+        }
+        else {
+          result = EXIT_FAILURE;
+        }
       }
       else { /* incorrect argument(s) */
         result = EXIT_FAILURE;
       }
-    }
-    else { /* nothing to do */
-      result = EXIT_SUCCESS;
     }
   }
   else { /* incorrect argument(s) */
@@ -531,10 +580,31 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel, un
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
+  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize,
+  int tid, int nthreads)
+{
+  return libxsmm_mmbatch_internal(kernel, typesize, a_matrix, b_matrix, c_matrix,
+    index_base, index_stride, a_stride, b_stride, c_stride, batchsize,
+    tid, nthreads, 0/*descriptor*/);
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch(const libxsmm_gemm_descriptor* descriptor, const void* a_matrix, const void* b_matrix, void* c_matrix,
   int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize)
 {
-  return libxsmm_mmbatch_thread(kernel, typesize, a_matrix, b_matrix, c_matrix, index_base, index_stride, a_stride, b_stride, c_stride, batchsize, 0/*tid*/, 1/*nthreads*/);
+  int result;
+  if (0 != descriptor) {
+    const unsigned int typesize = libxsmm_gemm_typesize((libxsmm_gemm_precision)descriptor->datatype);
+    const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(descriptor);
+    result = libxsmm_mmbatch_internal(kernel, typesize, a_matrix, b_matrix, c_matrix,
+      index_base, index_stride, a_stride, b_stride, c_stride, batchsize,
+      0/*tid*/, 1/*nthreads*/, descriptor);
+  }
+  else {
+    result = EXIT_FAILURE;
+  }
+  return result;
 }
 
 
