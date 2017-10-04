@@ -119,13 +119,16 @@ THREADS ?= 1
 STATIC ?= 1
 
 # Determines if the library can act as a wrapper-library (GEMM)
-# 1: enables wrapping SGEMM and DGEMM
-# 2: enables wrapping DGEMM only
+# 1: enables wrapping SGEMM/DGEMM, and GEMV (depends on "GEMM")
+# 2: enables wrapping DGEMM only (DGEMV-wrap depends on "GEMM")
 WRAP ?= 0
 
 # Determines kind routine called for intercepted GEMMs
 # 1: sequential and non-tiled (small problem sizes only)
-# 2: parallelized and tiled
+# 2: parallelized and tiled (all problem sizes)
+# 3: GEMV is intercepted; small problem sizes
+# 4: GEMV is intercepted; all problem sizes
+# 0: lazy batch/recording disabled
 GEMM ?= 1
 
 # JIT backend is enabled by default
