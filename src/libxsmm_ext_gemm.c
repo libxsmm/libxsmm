@@ -319,15 +319,31 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* de
   int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize)
 {
   int result;
-  if (0 != descriptor) {
+  /* check if internal parallelization should be used */
+#if defined(_OPENMP)
+  if (0 != descriptor
+    && ((unsigned int)omp_get_max_threads()) < batchsize
+# if defined(LIBXSMM_EXT_TASKS)
+    && 0 == omp_get_active_level()
+# endif
+    )
+  {
     const unsigned int typesize = libxsmm_gemm_typesize((libxsmm_gemm_precision)descriptor->datatype);
     const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(descriptor);
-    result = libxsmm_mmbatch_internal(kernel, typesize, a_matrix, b_matrix, c_matrix,
+#   pragma omp parallel
+    {
+      const int tid = omp_get_thread_num(), nthreads = omp_get_num_threads();
+      libxsmm_mmbatch_internal(kernel, typesize, a_matrix, b_matrix, c_matrix,
       index_base, index_stride, a_stride, b_stride, c_stride, batchsize,
-      0/*tid*/, 1/*nthreads*/, descriptor);
+      tid, nthreads, descriptor);
+    } /* implicit synchronization (barrier) */
+    result = EXIT_SUCCESS;
   }
-  else {
-    result = EXIT_FAILURE;
+  else
+#endif
+  {
+    result = libxsmm_mmbatch(descriptor, a_matrix, b_matrix, c_matrix,
+      index_base, index_stride, a_stride, b_stride, c_stride, batchsize);
   }
   return result;
 }
