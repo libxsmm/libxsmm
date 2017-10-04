@@ -42,7 +42,7 @@ A more recently added variant of matrix multiplication is parallelized based on 
 libxsmm_?gemm_omp(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 ```
 
-### Manual Code Dispatch and Batched Matrix Multiplication
+### Manual Code Dispatch
 
 Successively calling a kernel (i.e., multiple times) allows for amortizing the cost of the code dispatch. Moreover, to customize the dispatch mechanism, one can rely on the following interface. Overloaded function signatures are provided and allow to omit arguments (C++ and FORTRAN), which are then derived from the [configurable defaults](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h).
 
@@ -70,7 +70,7 @@ if (xmm) { /* JIT'ted code */
 }
 ```
 
-Similarly in FORTRAN (see [samples/smm/smm.f](https://github.com/hfp/libxsmm/blob/master/samples/smm/smm.f)), a generic interface (`libxsmm_mmdispatch`) can be used to dispatch a `LIBXSMM_?MMFUNCTION`, and the encapsulated PROCEDURE POINTER can be called via `libxsmm_call`. Beside of dispatching code, one can also call any statically generated kernels (e.g., `libxsmm_dmm_4_4_4`) using the prototype functions included with the FORTRAN and C/C++ interface.
+Similarly in FORTRAN (see [samples/smm/smm.f](https://github.com/hfp/libxsmm/blob/master/samples/smm/smm.f)), a generic interface (`libxsmm_mmdispatch`) can be used to dispatch a `LIBXSMM_?MMFUNCTION`, and the encapsulated handle can be called via `libxsmm_call`. Beside of dispatching code, one can also call any statically generated kernels (e.g., `libxsmm_dmm_4_4_4`) using the prototype functions included with the FORTRAN and C/C++ interface.
 
 ```FORTRAN
 TYPE(LIBXSMM_DMMFUNCTION) :: xmm
@@ -82,7 +82,9 @@ IF (libxsmm_available(xmm)) THEN
 END IF
 ```
 
-In case of batched SMMs, it can be beneficial to supply "next locations" such that the upcoming operands are prefetched ahead of time. The "prefetch strategy" is requested at dispatch-time of a kernel. A [strategy](libxsmm_be.md#prefetch-strategy) other than `LIBXSMM_PREFETCH_NONE` turns the signature of a JIT'ted kernel into a function with six arguments (`a,b,c, pa,pb,pc` instead of `a,b,c`). To defer the decision about the strategy to a CPUID-based mechanism, one can choose `LIBXSMM_PREFETCH_AUTO`.
+### Batched Matrix Multiplication
+
+In case of batched SMMs, it can be beneficial to supply "next locations" such that the upcoming operands are prefetched ahead of time. Such a location would be the address of the next matrix to be multiplied (and not any of the floating-point elements within the "current" matrix-operand). The "prefetch strategy" is requested at dispatch-time of a kernel. A [strategy](libxsmm_be.md#prefetch-strategy) other than `LIBXSMM_PREFETCH_NONE` turns the signature of a JIT'ted kernel into a function with six arguments (`a,b,c, pa,pb,pc` instead of `a,b,c`). To defer the decision about the strategy to a CPUID-based mechanism, one can choose `LIBXSMM_PREFETCH_AUTO`.
 
 ```C
 int prefetch = LIBXSMM_PREFETCH_AUTO;
@@ -95,6 +97,17 @@ xmm = libxsmm_dmmdispatch(23/*m*/, 23/*n*/, 23/*k*/,
 ```
 
 Above, pointer-arguments of `libxsmm_dmmdispatch` can be NULL (or OPTIONAL in FORTRAN): for LDx this means a "tight" leading dimension, alpha, beta, and flags are given by a [default value](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h) (which is selected at compile-time), and for the prefetch strategy a NULL-argument refers to "no prefetch" (which is equivalent to an explicit `LIBXSMM_PREFETCH_NONE`).
+
+```C
+/** Process a series of matrix multiplications (explicit data representation). */
+int libxsmm_mmbatch(const libxsmm_gemm_descriptor* descriptor,
+  const void* a_matrix, const void* b_matrix, void* c_matrix,
+  int index_base, int index_stride, const unsigned int a_stride[],
+  const unsigned int b_stride[], const unsigned int c_stride[],
+  unsigned int batchsize);
+```
+
+To further simplify the multiplication of matrices in a batch, the above interface can help if an explicit data representation is available. A lower level form (`libxsmm_mmbatch_thread`) can employ a user-defined threading runtime, which is already the case for OpenMP (`libxsmm_mmbatch_omp`) and hosted by the extension library (libxsmmext). Please note that an explicit data presentation is not necessary to prefetch a series of matrix multiplications. A "chain" of multiplications can be programmatically described without the need to build arrays of operands or indexes.
 
 ### Call Wrapper
 
