@@ -497,15 +497,17 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_internal(
         const char *const ia = (const char*)a_stride, *const ib = (const char*)b_stride, *const ic = (const char*)c_stride;
         ai = a + da * typesize; bi = b + db * typesize; ci = c + dc * typesize;
         if (0 != kernel.xmm) {
-          for (n = begin; n < (end - 1); ++n) {
+          const unsigned int end1 = (end != batchsize ? end : (end - 1));
+          for (n = begin; n < end1; ++n) {
             const char *const an = a + (0 != ia ? (*((const unsigned int*)(ia + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
             const char *const bn = b + (0 != ib ? (*((const unsigned int*)(ib + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
             char *const cn = c + (0 != ic ? (*((const unsigned int*)(ic + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
             kernel.xmm(ai, bi, ci, an, bn, cn); /* prefetch */
             ai = an; bi = bn; ci = cn;
           }
-          /* last multiplication with pseudo-prefetch */
-          kernel.xmm(ai, bi, ci, ai, bi, ci);
+          if (end != end1) { /* remainder multiplication */
+            kernel.xmm(ai, bi, ci, ai, bi, ci); /* pseudo-prefetch */
+          }
         }
         else if (LIBXSMM_GEMM_PRECISION_F64 == kernel_desc->datatype) { /* fall-back (DP) */
           for (n = begin; n < end; ++n) {
@@ -534,15 +536,17 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_internal(
       else if (typesize <= da && typesize <= db && typesize <= dc) { /* strides are measured in Bytes */
         ai = a; bi = b; ci = c;
         if (0 != kernel.xmm) {
-          for (n = begin; n < (end - 1); ++n) {
+          const unsigned int end1 = (end != batchsize ? end : (end - 1));
+          for (n = begin; n < end1; ++n) {
             const char *const an = ai + da;
             const char *const bn = bi + db;
             char *const cn = ci + dc;
             kernel.xmm(ai, bi, ci, an, bn, cn); /* prefetch */
             ai = an; bi = bn; ci = cn; /* next */
           }
-          /* last multiplication with pseudo-prefetch */
-          kernel.xmm(ai, bi, ci, ai, bi, ci);
+          if (end != end1) { /* remainder multiplication */
+            kernel.xmm(ai, bi, ci, ai, bi, ci); /* pseudo-prefetch */
+          }
         }
         else if (LIBXSMM_GEMM_PRECISION_F64 == kernel_desc->datatype) { /* fall-back (DP) */
           for (n = begin; n < end; ++n) {
