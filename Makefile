@@ -126,7 +126,7 @@ WRAP ?= 0
 # Determines kind routine called for intercepted GEMMs
 # 1: sequential and non-tiled (small problem sizes only)
 # 2: parallelized and tiled
-GEMM ?= 2
+GEMM ?= 1
 
 # JIT backend is enabled by default
 JIT ?= 1
