@@ -115,81 +115,6 @@ tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-/* If padding is requested, copy the entire minibatch upfront (only if trnaspose is not requested, otherwise we combine trnaspose with padding) */
-#if 0
-if (handle->padding_flag == 1) {
-  /* Initialize in parallel scratch5 to zero */
-  for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
-    img = imgifm1/handle->blocksifm;
-    ifm1 = imgifm1%handle->blocksifm;
-    copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, 0, 0, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-    jitted_matzero(NULL, NULL, copy_ptr, NULL, NULL);
-  }
-  libxsmm_barrier_wait(handle->barrier, ltid);
-
-  if ( handle->trans_ofw_ifm == 0 ) {
-    for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
-      img = imgifm1/handle->blocksifm;
-      ifm1 = imgifm1%handle->blocksifm;
-      input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-      copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, handle->blocksifm, padded_h, padded_w, handle->ifmblock);
-      prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, (imgifm1-1)/handle->blocksifm, (imgifm1-1)%handle->blocksifm, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-      jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
-    }
-    libxsmm_barrier_wait(handle->barrier, ltid);
-  }
-}
-#endif
-
-#if 0
-/* If we use private weights, initialize them to zero...  */
-if ( handle->use_thread_private_filter > 0 ) {
-  if (ltid == 0)
-    printf("Start zeroing the filter!!!!\n");
-  if (ltid % 2 == 0) {
-    for (i=0; i<handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; i++) {
-      per_thread_weight_ptr[i] = (element_filter_type)0;
-    }
-  }
-}
-libxsmm_barrier_wait(handle->barrier, ltid);
-#endif
-
-/* Handle transpose of input  */
-#if 0
-if ( handle->trans_ofw_ifm > 0 ) {
-  if (handle->padding_flag == 1) {
-    /* Transpose IFW and IFM into the padded buffer!*/
-    for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
-      img = imgifm1/handle->blocksifm;
-      ifm1 = imgifm1%handle->blocksifm;
-      for (ij=0; ij < handle->ifhp; ++ij) {
-        for (ii=0; ii < handle->ifwp; ++ii) {
-          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-            LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij + handle->desc.pad_h, ifm2, ii + handle->desc.pad_w, handle->blocksifm, padded_h, handle->ifmblock, padded_w)
-              =  LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-          }
-        }
-      }
-    }
-  } else {
-    /* Transpose IFW and IFM */
-    for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
-      img = imgifm1/handle->blocksifm;
-      ifm1 = imgifm1%handle->blocksifm;
-      for (ij=0; ij < handle->ifhp; ++ij) {
-        for (ii=0; ii < handle->ifwp; ++ii) {
-          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-            LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, ifm2, ii, handle->blocksifm, dst_ifhp, handle->ifmblock, ifwp_extended)
-              =  LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-          }
-        }
-      }
-    }
-  }
-}
-#endif
-
 if (handle->padding_flag == 1) {
   input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, ltid, 0, 0, 0, 0, handle->blocksifm, padded_h, handle->ifmblock, ifwp_extended);
   memset( input_zero, 0, handle->blocksifm * padded_h * ifwp_extended * handle->ifmblock * sizeof(element_input_type) );
@@ -241,41 +166,11 @@ if (handle->padding_flag == 1) {
   input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, handle->blocksifm, dst_ifhp, handle->ifmblock, ifwp_extended);
 }
 
-#if 0
-if ( handle->use_thread_private_filter > 0) {
-  weight_base = &LIBXSMM_VLA_ACCESS(6, opt_weight_ptr_per_thread, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
-} else {
-  weight_base = &LIBXSMM_VLA_ACCESS(6, opt_weight_ptr, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
-}
-#endif
-
-/*weight_base = &LIBXSMM_VLA_ACCESS(6, opt_weight_ptr_per_thread, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);*/
-
 weight_base = &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid/(handle->desc.threads/handle->weight_copies), 0, handle->weight_copies, handle->ofmblock); 
 output_base = &LIBXSMM_VLA_ACCESS(5, output, 0, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 
 i = 0;
 instr = handle->n_entries_upd[ltid];
-
-#if 0
-/* Run the stream of convolutions, no extra operations are required...  */
-int index;
-for (index = thr_begin; index < thr_end; ++index) {
-  ofm1 = index/handle->blocksifm;
-  ifm1 = index%handle->blocksifm;
-  int i1, i2, i3, i4;
-  for (i1 = 0; i1 < handle->desc.R; i1++  ) {
-    for (i2 = 0; i2 < handle->desc.S; i2++  ) {
-      for (i3 = 0; i3 < handle->ifmblock; i3++  ) {
-        for (i4 = 0; i4 < handle->ofmblock; i4++  ) {
-          LIBXSMM_VLA_ACCESS(6, opt_weight_ptr, ofm1, ifm1, i1, i2, i3, i4, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) = (element_filter_type)0 ;
-        }
-      }
-    }
-  }
-}
-libxsmm_barrier_wait(handle->barrier, ltid);
-#endif
 
 for (pc = 0; pc < instr; pc++) {
   offset_i = stream[i];
@@ -313,22 +208,3 @@ for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 }
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-
-#if 0
-/* Perform reduction if we used thread private filters... */
-for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
-  weight_ptr[j] = (element_filter_type)0;
-}
-
-libxsmm_barrier_wait(handle->barrier, ltid);
-
-
-for ( i = 0; i < handle->desc.threads/IMG_PER_TILE; i++ ) {
-  remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*reduce_work);
-  for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
-    weight_ptr[j] += remote_weight_ptr[j];
-  }
-}
-
-libxsmm_barrier_wait(handle->barrier, ltid);
-#endif

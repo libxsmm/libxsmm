@@ -38,18 +38,6 @@ int block_j = 14;
 handle->block_upd_ofm = 8;
 handle->block_upd_ifm = 8;
 
-/*
-if ( (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
-  block_j = 4;
-}
-while ( block_j % handle->upd_ofh_rb != 0 ) {
-  block_j--;
-}
-
-if (block_j < handle->upd_ofh_rb ) {
-  block_j = handle->upd_ofh_rb ;
-}*/
-
 block_j = handle->ofh ;
 
 if ( handle->ofh == 56 ) {
@@ -185,67 +173,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int my_ifm_start;
   int my_ifm_end;
   int ifmpt, ofmpt;
-
-  /*
-  if (handle->blocksifm >= handle->desc.threads ) {
-    ifmpt = (handle->blocksifm + handle->desc.threads - 1)/handle->desc.threads;
-    my_ifm_start = LIBXSMM_MIN( ltid * ifmpt , handle->blocksifm );
-    my_ifm_end = LIBXSMM_MIN( (ltid+1) * ifmpt , handle->blocksifm );
-    my_ofm_start = 0;
-    my_ofm_end = handle->blocksofm;
-  } else if (handle->blocksofm >= handle->desc.threads ) {
-    ofmpt = (handle->blocksofm + handle->desc.threads - 1)/handle->desc.threads;
-    my_ofm_start = LIBXSMM_MIN( ltid * ofmpt , handle->blocksofm );
-    my_ofm_end = LIBXSMM_MIN( (ltid+1) * ofmpt , handle->blocksofm );
-    my_ifm_start = 0;
-    my_ifm_end = handle->blocksifm;
-  } else if ( handle->blocksifm == 32 && handle->blocksofm == 32 ) {
-    ifmpt = 1;
-    int tltid = ltid/2;
-    my_ifm_start = LIBXSMM_MIN( tltid * ifmpt , handle->blocksifm );
-    my_ifm_end = LIBXSMM_MIN( (tltid+1) * ifmpt , handle->blocksifm );
-    int bltid = ltid%2;
-    ofmpt = 16;
-    my_ofm_start = LIBXSMM_MIN( bltid * ofmpt , handle->blocksofm );
-    my_ofm_end = LIBXSMM_MIN( (bltid+1) * ofmpt , handle->blocksofm );
-  } else if ( handle->blocksifm == 32 && handle->blocksofm == 16 ) {
-    ifmpt = 1;
-    int tltid = ltid/2;
-    my_ifm_start = LIBXSMM_MIN( tltid * ifmpt , handle->blocksifm );
-    my_ifm_end = LIBXSMM_MIN( (tltid+1) * ifmpt , handle->blocksifm );
-    int bltid = ltid%2;
-    ofmpt = 8;
-    my_ofm_start = LIBXSMM_MIN( bltid * ofmpt , handle->blocksofm );
-    my_ofm_end = LIBXSMM_MIN( (bltid+1) * ofmpt , handle->blocksofm );
-  } else if ( handle->blocksifm == 16 && handle->blocksofm == 16 ) {
-    ifmpt = 1;
-    int tltid = ltid/4;
-    my_ifm_start = LIBXSMM_MIN( tltid * ifmpt , handle->blocksifm );
-    my_ifm_end = LIBXSMM_MIN( (tltid+1) * ifmpt , handle->blocksifm );
-    int bltid = ltid%4;
-    ofmpt = 4;
-    my_ofm_start = LIBXSMM_MIN( bltid * ofmpt , handle->blocksofm );
-    my_ofm_end = LIBXSMM_MIN( (bltid+1) * ofmpt , handle->blocksofm );
-  }
-
-  */
-
-#if 0
-  int group_size = handle->desc.threads/handle->weight_copies;
-  int tile_id = ltid/group_size;
-  int tiles = handle->weight_copies;
-  int img_per_tile = handle->desc.N/tiles;
-  int my_img_start = LIBXSMM_MIN( tile_id * img_per_tile, handle->desc.N);
-  int my_img_end = LIBXSMM_MIN( (tile_id+1) * img_per_tile, handle->desc.N);
-
-
-  int my_in_tile_id = ltid % group_size;
-  int ofms_per_thread = handle->blocksofm/group_size;
-  my_ifm_start = 0;
-  my_ifm_end = handle->blocksifm;
-  my_ofm_start = LIBXSMM_MIN( my_in_tile_id * ofms_per_thread, handle->blocksofm  );
-  my_ofm_end = LIBXSMM_MIN( (my_in_tile_id+1) * ofms_per_thread, handle->blocksofm  );
-#else
   int group_size = handle->desc.threads/handle->weight_copies;
   int tile_id = ltid/group_size;
   int tiles = handle->weight_copies;
@@ -259,38 +186,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   my_ifm_end = LIBXSMM_MIN( (my_in_tile_id+1) * ifms_per_thread, handle->blocksifm  );
   my_ofm_start = 0;
   my_ofm_end = handle->blocksofm;
-#endif
-
-
-#if 0 
-  int tile_id = ltid/8;
-  int tiles = handle->desc.threads/8;
-  int img_per_tile = handle->desc.N/tiles;
-  int my_img_start = LIBXSMM_MIN( tile_id * img_per_tile, handle->desc.N);
-  int my_img_end = LIBXSMM_MIN( (tile_id+1) * img_per_tile, handle->desc.N);
-
-
-  int my_in_tile_id = ltid % 8;
-  int ofms_per_thread = handle->blocksofm/8;
-  my_ifm_start = 0;
-  my_ifm_end = handle->blocksifm;
-  my_ofm_start = LIBXSMM_MIN( my_in_tile_id * ofms_per_thread, handle->blocksofm  );
-  my_ofm_end = LIBXSMM_MIN( (my_in_tile_id+1) * ofms_per_thread, handle->blocksofm  );
-#endif
-
-  /*
-     for (img = my_img_start; img < my_img_end; img++) {
-     for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
-     for (ofm1 = my_ofm_start; ofm1 < my_ofm_end; ofm1++) {
-     for (oi__=0; oi__<num_ofw_strips; ++oi__) {
-     for (oj__=0; oj__<num_ofh_strips; ++oj__) {
-
-*/
-
 
   int block_ofm = handle->block_upd_ofm; 
   int block_ifm = handle->block_upd_ifm;
-
 
   for (img = my_img_start; img < my_img_end; img += handle->blocksimg_blocking) {
     for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {
