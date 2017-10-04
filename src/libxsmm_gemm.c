@@ -46,7 +46,7 @@
 
 LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller)
 {
-  static LIBXSMM_TLS libxsmm_sgemm_function original = 0;
+  static libxsmm_sgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(float, original, caller);
   assert(0 != original);
   return original;
@@ -55,7 +55,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original
 
 LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller)
 {
-  static LIBXSMM_TLS libxsmm_dgemm_function original = 0;
+  static libxsmm_dgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(double, original, caller);
   assert(0 != original);
   return original;

@@ -294,7 +294,9 @@
         LIBXSMM_GEMM_CONST double*, double*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*); \
     } libxsmm_gemm_wrapper_blas_; \
     libxsmm_gemm_wrapper_blas_.LIBXSMM_TPREFIX(TYPE,f) = (SYMBOL); \
-    if (libxsmm_gemm_wrapper_blas_.pv != (CALLER)) ORIGINAL = libxsmm_gemm_wrapper_blas_.pf; \
+    if (libxsmm_gemm_wrapper_blas_.pv != (CALLER)) { \
+      LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_gemm_wrapper_blas_.pf, LIBXSMM_ATOMIC_RELAXED); \
+    } \
   }
 #else
 # define LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER, SYMBOL) LIBXSMM_UNUSED(CALLER)
@@ -321,7 +323,9 @@
       union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } libxsmm_gemm_wrapper_dynamic_ = { 0 }; \
       dlerror(); /* clear an eventual error status */ \
       libxsmm_gemm_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)))); \
-      if (libxsmm_gemm_wrapper_dynamic_.pv != (CALLER)) ORIGINAL = libxsmm_gemm_wrapper_dynamic_.pf; \
+      if (libxsmm_gemm_wrapper_dynamic_.pv != (CALLER)) { \
+        LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_gemm_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED); \
+      } \
       LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER, LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm))); \
     }
 #else
