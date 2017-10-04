@@ -646,13 +646,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.datatype_itm = handle->datatype_itm;
       descriptor.option = handle->desc.options;
       descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
+      descriptor.compute_batch_stats = 0;
       /* TODO check JIT errors */
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM )
       {
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-          handle->code_fwd[0].smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+          handle->code_fwd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
           handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
@@ -672,7 +673,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.unroll_kw = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-          handle->code_fwd[0].smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+          handle->code_fwd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
           handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
         }
@@ -896,6 +897,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         fwd_equivalent_descriptor.stride_h_store = handle->desc.u;
         fwd_equivalent_descriptor.stride_w_store = handle->desc.v;
         fwd_equivalent_descriptor.use_nts = handle->use_nts_bwd;
+        fwd_equivalent_descriptor.compute_batch_stats = 0;
         if (handle->padding_flag == 1) {
           matcopy_descriptor.n = handle->ofhp;
           matcopy_descriptor.m = handle->ofwp * handle->ofmblock * handle->fm_lp_block;
@@ -990,7 +992,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
             /*descriptor.prefetch_output_ahead = 0;*/
             descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
             if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-              handle->code_bwd[0].smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+              handle->code_bwd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
             } else {
               handle->code_bwd[0].pmm = libxsmm_create_xconv_backward(&descriptor);
             }
@@ -1111,7 +1113,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
             descriptor.unroll_kw = 0;
             descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
             if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-              handle->code_bwd[0].smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+              handle->code_bwd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
             } else {
               handle->code_bwd[0].pmm = libxsmm_create_xconv_backward(&descriptor);
             }
@@ -1470,7 +1472,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               descriptor.transpose_ofw_ifm = 0;
               descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
               if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-                handle->code_upd[0].smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+                handle->code_upd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
               } else {
                 handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
               }
@@ -1507,7 +1509,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               }
 
               if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
-                handle->code_upd[0].smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+                handle->code_upd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
               } else {
                 handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
               }
@@ -1613,7 +1615,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           handle->scratch4 = 0;
           handle->scratch4_size = handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
             * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype);
-          handle->scratch4_size += handle->desc.threads * handle->block_upd_ofm * handle->block_upd_ifm * handle->desc.R
+          handle->scratch4_size += handle->desc.threads * LIBXSMM_MIN(handle->block_upd_ofm, handle->blocksofm) * LIBXSMM_MIN(handle->block_upd_ifm, handle->blocksifm) * handle->desc.R
             * handle->desc.S * handle->ifmblock * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype);
 
           /* enable external reduce of filter scratch */

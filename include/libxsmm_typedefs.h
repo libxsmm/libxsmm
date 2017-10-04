@@ -78,7 +78,9 @@ typedef enum libxsmm_gemm_flags {
   /** Generate aligned load instructions. */
   LIBXSMM_GEMM_FLAG_ALIGN_A = 64,
   /** Aligned load/store instructions. */
-  LIBXSMM_GEMM_FLAG_ALIGN_C = 128
+  LIBXSMM_GEMM_FLAG_ALIGN_C = 128,
+  /** Marker flag; do not use. */
+  LIBXSMM_GEMM_FLAG_INVALID = 256
 } libxsmm_gemm_flags;
 
 /** Enumeration of the available prefetch strategies. */
@@ -245,6 +247,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int extra_L2_prefetching;
   unsigned int input_L2_prefetching;
   unsigned int lookahead;
+  unsigned int compute_batch_stats;
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;

@@ -240,7 +240,7 @@ if (n_segments) {
 }
 
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0 ) {
-  LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data, handle->desc.N, handle->blocksofm, handle->ofmblock);
+  LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  handle->blocksofm, handle->desc.N, handle->ofmblock);
 
   for ( ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1 ) {
     int oi = 0;
@@ -253,11 +253,11 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0 ) {
       bsum = _mm512_add_ps( bsum, btmp );
       bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
     }
-    _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ltid, ofm1, 0,
+    _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, ltid, 0,
       handle->desc.N, handle->blocksofm, handle->ofmblock), bsum );
-    _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ltid, ofm1, 0,
+    _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, ltid, 0,
       handle->desc.N, handle->blocksofm, handle->ofmblock), bsum2 );
-  } 
+  }
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);

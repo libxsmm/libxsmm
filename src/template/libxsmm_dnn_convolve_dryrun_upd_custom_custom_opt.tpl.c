@@ -257,7 +257,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                
                       /* use different weights format if we can skip init and copy */
                       if (mark_weight_init == 1 && mark_weight_copy == 1) {
-                        compute_indices[local_entries+1] = ( ( (ofm1-ofmb) * handle->block_upd_ifm ) + (ifm1-ifmb) ) * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock;
+                        compute_indices[local_entries+1] = ( ( (ofm1-ofmb) * LIBXSMM_MIN(handle->block_upd_ifm, handle->blocksifm) ) + (ifm1-ifmb) ) * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock;
                       } else {
                         compute_indices[local_entries+1] = ( ( (ofm1 *  handle->blocksifm ) + ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock ) * handle->desc.threads;
                       }
@@ -342,7 +342,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
                         if (mark_weight_init == 1) {
                           if ( (ki == 0) && (kj == 0) && (oi__ == 0) && (oj_ == ojb) && (ojb == 0) ) {
-                            encoded_code_segments[encoded_stream_index].aux_index = ( ( (ofm1-ofmb) * handle->block_upd_ifm ) + (ifm1-ifmb) ) * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
+                            encoded_code_segments[encoded_stream_index].aux_index = ( ( (ofm1-ofmb) * LIBXSMM_MIN(handle->block_upd_ifm, handle->blocksifm) ) + (ifm1-ifmb) ) * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
                             encoded_stream_index++;
                           }
                         }
