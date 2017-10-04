@@ -678,6 +678,10 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_blas_dgemm)(const char* tran
 }
 
 
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_smmbatch_thread)(libxsmm_xmmfunction /*kernel*/,
+  const float /*a_matrix*/[], const float /*b_matrix*/[], float /*c_matrix*/[], const int* /*index_stride*/,
+  const unsigned int /*a_stride*/[], const unsigned int /*b_stride*/[], const unsigned int /*c_stride*/[],
+  const unsigned int* /*batchsize*/, const int* /*tid*/, const int* /*nthreads*/);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smmbatch_thread)(libxsmm_xmmfunction kernel,
   const float a_matrix[], const float b_matrix[], float c_matrix[], const int* index_stride,
   const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[],
@@ -692,8 +696,12 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smmbatch_thread)(libxsmm_xmm
 }
 
 
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dmmbatch_thread)(libxsmm_xmmfunction /*kernel*/,
+  const double /*a_matrix*/[], const double /*b_matrix*/[], double /*c_matrix*/[], const int* /*index_stride*/,
+  const unsigned int /*a_stride*/[], const unsigned int /*b_stride*/[], const unsigned int /*c_stride*/[],
+  const unsigned int* /*batchsize*/, const int* /*tid*/, const int* /*nthreads*/);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dmmbatch_thread)(libxsmm_xmmfunction kernel,
-  const float a_matrix[], const float b_matrix[], float c_matrix[], const int* index_stride,
+  const double a_matrix[], const double b_matrix[], double c_matrix[], const int* index_stride,
   const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[],
   const unsigned int* batchsize, const int* tid, const int* nthreads)
 {
