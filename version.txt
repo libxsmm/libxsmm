@@ -1,1 +1,1 @@
-master-1.8.1-1050
+upd-reduction-intrinsics-1.8.1-1051
