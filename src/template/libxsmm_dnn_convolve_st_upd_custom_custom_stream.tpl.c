@@ -186,6 +186,14 @@ for (pc = 0; pc < instr; pc++) {
 libxsmm_barrier_wait(handle->barrier, ltid);
 
 for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
+#define __AVX512F__
+#ifdef __AVX512F__
+  __m512 weight_sum = _mm512_setzero_ps();
+  for ( i = 0; i < handle->weight_copies; i++ ) {
+    weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
+  }
+  _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
+#else
   element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
   LIBXSMM_PRAGMA_VALIGNED
     LIBXSMM_PRAGMA_SIMD
@@ -205,6 +213,8 @@ for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
     for ( k = 0; k < 16; k++ ) {
       weight_ptr[j*16 + k] = weight_sum[k];
     }
+#endif
+#undef __AVX512F__
 }
 libxsmm_barrier_wait(handle->barrier, ltid);
 
