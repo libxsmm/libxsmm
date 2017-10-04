@@ -163,6 +163,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int nbImg;
   int blocksifm_blocking;
   int blocksofm_blocking;
+  int blocksimg_blocking;
   int use_nts_fwd;
   int use_nts_bwd;
   int use_fwd_for_bwd;
@@ -172,6 +173,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int ifhp_resized;
   int ifwp_resized;
   int use_fastpath;
+  int use_hybrid_wu_parallelism;
+  int weight_copies;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;

@@ -1265,8 +1265,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.datatype_itm = handle->datatype_itm;
         descriptor.option = handle->desc.options;
         descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
-        descriptor.ncopies = handle->desc.threads;
         descriptor.use_nts = 0;
+        descriptor.blocks_img = 1;
+        descriptor.ncopies = handle->desc.threads;  
 
         /* TODO check JIT errors */
         if ( /*(*/libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
@@ -1330,9 +1331,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
              handle->upd_ofh_rb = descriptor.ofh_rb;
              handle->upd_ofw_rb = descriptor.ofw_rb;
              descriptor.transpose_ofw_ifm = 0;
+             handle->use_hybrid_wu_parallelism = 0;
 
              if (handle->use_fastpath == 1) {
-
               /* Here starts logic for calculating RB factors for UPD when KS are enabled  */
               int ifw_padded, qfma_padding, kernel_ifw_padded, kernel_ofw_padded;
               int kernel_ofw_compute;
@@ -1342,6 +1343,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 handle->resize_input = 1;
                 handle->ifwp_resized = handle->ifwp/handle->desc.u;
                 handle->ifhp_resized = handle->ifhp/handle->desc.v;
+                descriptor.ifh_padded = handle->ifhp_resized;
               } else {
                 handle->resize_input = 0;
               }
@@ -1416,9 +1418,22 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   descriptor.ofh_rb = 2;
                 }
               }
-             }
 
-              descriptor.transpose_ofw_ifm = 0;
+              if (handle->ofh == 28 || handle->ofh == 56 || ( handle->ofh == 14 && ( handle->desc.C == 512 && (handle->desc.K == 1024 || handle->desc.K == 256) ))) {
+                handle->use_hybrid_wu_parallelism = 0;
+                handle->weight_copies = handle->desc.threads;
+                handle->blocksimg_blocking = 1;
+                descriptor.blocks_img = 1;
+              } else {
+                int spread_out = 2;
+                handle->use_hybrid_wu_parallelism = 1;
+                handle->weight_copies = handle->desc.threads/spread_out;
+                descriptor.ncopies = handle->weight_copies;  
+                handle->blocksimg_blocking = spread_out;
+                descriptor.blocks_img = handle->blocksimg_blocking;
+             }
+           }
+
 #if 0
               !defined(NDEBUG)
                 printf("DEBUG JIT of conv:\n  arch: %s\n  type: %s\n  ofm_block: %u\n  ifm_block: %u\n"

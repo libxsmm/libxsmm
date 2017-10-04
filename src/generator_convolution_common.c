@@ -239,6 +239,25 @@ void libxsmm_generator_convolution_footer_h_block_loop( libxsmm_generated_code* 
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_header_image_block_loop( libxsmm_generated_code*                   io_generated_code,
+                                                         libxsmm_loop_label_tracker*               io_loop_label_tracker,
+                                                         const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
+                                                         const unsigned int                        i_gp_reg_img_block_loop ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_img_block_loop, 0);
+  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_img_block_loop, 1);
+}
+
+LIBXSMM_INTERNAL_API_DEFINITION
+void libxsmm_generator_convolution_footer_image_block_loop( libxsmm_generated_code*                       io_generated_code,
+                                                         libxsmm_loop_label_tracker*                   io_loop_label_tracker,
+                                                         const libxsmm_convolution_kernel_config*      i_conv_kernel_config,
+                                                         const unsigned int                            i_gp_reg_img_block_loop,
+                                                         const unsigned int                            i_img_blocking ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_cmp_instruction, i_gp_reg_img_block_loop, i_img_blocking );
+  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
+}
 
 
 LIBXSMM_INTERNAL_API_DEFINITION
