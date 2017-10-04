@@ -49,7 +49,7 @@ LIBXSMM_VLA_DECL(6, const element_input_type, input, (element_input_type*)handle
 LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data + tile_id * handle->blocksifm * handle->blocksofm * handle->ifmblock * handle->ofmblock * handle->fm_lp_block *  handle->desc.R * handle->desc.S, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
 
 /* Auxiliary integer variables   */
-int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i, ih, n_convs, conv_i, ifm1, ofm1, ofm2, oj, img, input_h_start, input_h_end, my_h_out;
+int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i, ih, n_convs, conv_i, ifm1, ofm1, ofm2, oj, img, input_h_start, input_h_end, my_h_out, oi;
 /* Stream related variables  */
 segment_t *code_stream;
 int *stream = handle->compute_fwd_indices_ptrs[ltid];
@@ -109,7 +109,7 @@ if (n_segments) {
 #include "libxsmm_dnn_fwd_custom_custom_padding.tpl.c"
           }
         }
-        
+
         if ( instr == OFM_LOOP_INIT ) {
           /* Apply bias if requested  */
           if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
@@ -120,6 +120,25 @@ if (n_segments) {
             jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
           }
         } 
+
+        if ( instr == OFM_LOOP_CLOSE ) {
+          /* Compute batch norm statistics... */
+          ofm1 =  code_stream[pc].aux_index;
+          LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  handle->blocksofm, handle->desc.N, handle->ofmblock);
+          element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+              handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock); 
+          __m512 bsum  = _mm512_setzero_ps();
+          __m512 bsum2 = _mm512_setzero_ps();
+          for ( oi = 0; oi < handle->ofhp*handle->ofwp*handle->ofmblock; oi+=16 ) {
+            __m512 btmp = _mm512_load_ps( red+oi );
+            bsum = _mm512_add_ps( bsum, btmp );
+            bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
+          }
+          _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
+                handle->desc.N, handle->blocksofm, handle->ofmblock), bsum );
+          _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
+                handle->desc.N, handle->blocksofm, handle->ofmblock), bsum2 );          
+        }
 
         /* Run the stream of convolutions for this segment */
         for (conv_i = 0; conv_i < n_convs; conv_i++) {
@@ -155,6 +174,25 @@ if (n_segments) {
           if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_fwd != 1) ) {
             jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
           }
+        }
+
+        if ( instr == OFM_LOOP_CLOSE ) {
+          /* Compute batch norm statistics... */
+          ofm1 =  code_stream[pc].aux_index;
+          LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  handle->blocksofm, handle->desc.N, handle->ofmblock);
+          element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+              handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock); 
+          __m512 bsum  = _mm512_setzero_ps();
+          __m512 bsum2 = _mm512_setzero_ps();
+          for ( oi = 0; oi < handle->ofhp*handle->ofwp*handle->ofmblock; oi+=16 ) {
+            __m512 btmp = _mm512_load_ps( red+oi );
+            bsum = _mm512_add_ps( bsum, btmp );
+            bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
+          }
+          _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
+                handle->desc.N, handle->blocksofm, handle->ofmblock), bsum );
+          _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
+                handle->desc.N, handle->blocksofm, handle->ofmblock), bsum2 );          
         }
 
         /* Run the stream of convolutions for this segment */
@@ -236,27 +274,6 @@ if (n_segments) {
       kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
       i+=3;
     }
-  }
-}
-
-if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0 ) {
-  LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  handle->blocksofm, handle->desc.N, handle->ofmblock);
-
-  for ( ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1 ) {
-    int oi = 0;
-    element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, ltid, ofm1, 0, 0, 0,
-      handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock); 
-    __m512 bsum  = _mm512_setzero_ps();
-    __m512 bsum2 = _mm512_setzero_ps();
-    for ( oi = 0; oi < handle->ofhp*handle->ofwp*handle->ofmblock; oi+=16 ) {
-      __m512 btmp = _mm512_load_ps( red+oi );
-      bsum = _mm512_add_ps( bsum, btmp );
-      bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
-    }
-    _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, ltid, 0,
-      handle->desc.N, handle->blocksofm, handle->ofmblock), bsum );
-    _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, ltid, 0,
-      handle->desc.N, handle->blocksofm, handle->ofmblock), bsum2 );
   }
 }
 
