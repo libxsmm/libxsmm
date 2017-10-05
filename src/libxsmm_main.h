@@ -121,8 +121,8 @@ typedef struct LIBXSMM_RETARGETABLE segment_t {
 } segment_t;
 
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
-  libxsmm_dnn_datatype datatype;
-  libxsmm_dnn_datatype datatype_itm;
+  libxsmm_dnn_datatype datatype_in;
+  libxsmm_dnn_datatype datatype_out;
   libxsmm_dnn_conv_desc desc;
   libxsmm_dnn_conv_algo algo;
   libxsmm_dnn_tensor_format buffer_format;
@@ -200,10 +200,6 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t fwdbwd_scratch_size;
   size_t max_scratch5_size;
   int padding_flag;           /* Flag that dictates if we should apply padding in the input */
-  void* scratch6;
-  size_t scratch6_size;
-  void* scratch7;             /* This scratch is used for low precision intermediate buffer for input in backward pass */
-  size_t scratch7_size;
   void* scratchIw;
   size_t scratchIw_size;
   void* scratchOw;

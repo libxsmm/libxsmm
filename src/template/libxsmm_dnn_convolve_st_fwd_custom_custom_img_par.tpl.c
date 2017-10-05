@@ -73,7 +73,7 @@ if ( handle->use_thread_private_jit ) {
 #endif
 
   /* select pointer based on precision */
-  if (handle->datatype != handle->datatype_itm) {
+  if (handle->datatype_in != handle->datatype_out) {
     out = ((element_output_type*)handle->scratch6) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->ofmblock);
     out_lp = ((element_input_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->ofmblock * handle->fm_lp_block);
   } else {
@@ -136,7 +136,7 @@ if ( handle->use_thread_private_jit ) {
         }
       }
       /* up-convert */
-      if (handle->datatype != handle->datatype_itm) {
+      if (handle->datatype_in != handle->datatype_out) {
         for (oj = start_ofh; oj < end_ofh; ++oj) {
           for (oi = 0; oi < handle->ofw; ++oi) {
             for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
@@ -277,7 +277,7 @@ if ( handle->use_thread_private_jit ) {
         }
       }
       /* down-convert */
-      if (handle->datatype != handle->datatype_itm) {
+      if (handle->datatype_in != handle->datatype_out) {
         for (oj = start_ofh; oj < end_ofh; ++oj) {
           for (oi = 0; oi < handle->ofw; ++oi) {
             for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {

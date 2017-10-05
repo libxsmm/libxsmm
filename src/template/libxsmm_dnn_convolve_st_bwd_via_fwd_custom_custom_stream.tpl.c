@@ -67,9 +67,11 @@ char *variant = handle->kernel_bwd_variant_ptrs[ltid];
 /* regular/high precision */
 element_input_type* del_in = 0;
 /* select pointer based on precision */
-if (handle->datatype != handle->datatype_itm) {
+if (handle->datatype_in != handle->datatype_out) {
+#if 0
   del_in = ((element_input_type*)handle->scratch7); /* + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock); */
 } else {
+#endif
   del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock);
 }
 { /* open new scope for additional variable declarations (C89) */

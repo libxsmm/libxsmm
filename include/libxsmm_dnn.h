@@ -209,7 +209,8 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   int pad_w_out;                            /* width of zero-padding in output buffer */
   int threads;                              /* number of threads to use when running
                                                convolution */
-  libxsmm_dnn_datatype datatype;            /* datatypes use for all input and outputs */
+  libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
+  libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for buffer buffers */
   libxsmm_dnn_tensor_format filter_format;  /* format which is for filter buffers */
   libxsmm_dnn_conv_algo algo;               /* convolution algorithm used */

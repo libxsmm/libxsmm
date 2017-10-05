@@ -102,7 +102,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct_custom_custo
     /* In these case we run fallback code so we do not support thread private jitting */
     status = LIBXSMM_DNN_WARN_FALLBACK;
   } else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       if (handle->use_fastpath) {
 #include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom_opt.tpl.c"
       } else {
@@ -127,7 +127,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct_custom_custo
     /* In these case we run fallback code so we do not support thread private jitting */
     status = LIBXSMM_DNN_WARN_FALLBACK;
   } else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       if (handle->desc.N*handle->blocksifm*handle->fm_lp_block >= handle->desc.threads) {
 # include "template/libxsmm_dnn_convolve_dryrun_bwd_custom_custom.tpl.c"
       } else {
@@ -152,7 +152,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
     /* In these case we run fallback code so we do not support thread private jitting */
     status = LIBXSMM_DNN_WARN_FALLBACK;
   } else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
       } else {
@@ -178,7 +178,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_custom(
     status = LIBXSMM_DNN_WARN_FALLBACK;
   }
   else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
         if (handle->padding_flag == 1) {
           /* FIXME: For now support only physical padding  */
@@ -214,7 +214,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_rsck( l
     status = LIBXSMM_DNN_WARN_FALLBACK;
   }
   else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
         if (handle->padding_flag == 1) {
           /* FIXME: For now support only physical padding  */

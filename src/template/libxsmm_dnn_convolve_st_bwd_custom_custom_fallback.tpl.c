@@ -46,10 +46,12 @@ element_input_type* del_in = 0;
 /* low precision */
 element_output_type* del_in_lp = 0;
 /* select pointer based on precision */
-if (handle->datatype != handle->datatype_itm) {
+if (handle->datatype_in != handle->datatype_out) {
+#if 0
   del_in = ((element_input_type*)handle->scratch7);
   del_in_lp = ((element_output_type*)handle->grad_input->data);
 } else {
+#endif
   del_in = ((element_input_type*)handle->grad_input->data);
   del_in_lp = 0;
 }
@@ -75,7 +77,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
 
   for (ifmlp = 0; ifmlp < handle->fm_lp_block; ++ifmlp) {
     /* upconvert for low precision */
-    if (handle->datatype != handle->datatype_itm) {
+    if (handle->datatype_in != handle->datatype_out) {
       for (ij = 0; ij < handle->ifhp; ++ij) {
         for (ii = 0; ii < handle->ifwp; ++ii) {
           for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
@@ -160,7 +162,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
 #endif
 
     /* down-convert for low precision */
-    if (handle->datatype != handle->datatype_itm) {
+    if (handle->datatype_in != handle->datatype_out) {
       for (ij = 0; ij < handle->ifhp; ++ij) {
         for (ii = 0; ii < handle->ifwp; ++ii) {
           for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {

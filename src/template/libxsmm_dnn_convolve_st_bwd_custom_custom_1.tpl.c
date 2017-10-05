@@ -56,10 +56,12 @@ element_input_type* del_in = 0;
 /* low precision */
 element_output_type* del_in_lp = 0;
 /* select pointer based on precision */
-if (handle->datatype != handle->datatype_itm) {
+if (handle->datatype_in != handle->datatype_out) {
+#if 0
 del_in = ((element_input_type*)handle->scratch7); /* + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock); */
 del_in_lp = ((element_output_type*)handle->grad_input->data); /* + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock * handle->fm_lp_block); */
 } else {
+#endif
 del_in = ((element_input_type*)handle->grad_input->data); /* + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock); */
 del_in_lp = 0;
 }
@@ -283,7 +285,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       ifm1 = ifm1lpblock / handle->fm_lp_block;
       lp = ifm1lpblock % handle->fm_lp_block;
       /* First upconvert for low precision */
-      if (handle->datatype != handle->datatype_itm) {
+      if (handle->datatype_in != handle->datatype_out) {
         for (ij = 0; ij < handle->ifhp; ++ij) {
           for (ii = 0; ii < handle->ifwp; ++ii) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
@@ -388,7 +390,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #include "libxsmm_dnn_zero_rim_st_input_custom.tpl.c"
 #endif
       /* down-convert for low precision*/
-      if (handle->datatype != handle->datatype_itm) {
+      if (handle->datatype_in != handle->datatype_out) {
         for (ij = 0; ij < handle->ifhp; ++ij) {
           for (ii = 0; ii < handle->ifwp; ++ii) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
@@ -406,7 +408,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
       ifm1 = ifm1lpblock / handle->fm_lp_block;
       lp = ifm1lpblock % handle->fm_lp_block;
       /* First upconvert for low precision */
-      if (handle->datatype != handle->datatype_itm) {
+      if (handle->datatype_in != handle->datatype_out) {
         for (ij = 0; ij < handle->ifhp; ++ij) {
           for (ii = 0; ii < handle->ifwp; ++ii) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
@@ -519,7 +521,7 @@ if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
 #include "libxsmm_dnn_zero_rim_st_input_custom.tpl.c"
 #endif
       /* down-convert for low precision*/
-      if (handle->datatype != handle->datatype_itm) {
+      if (handle->datatype_in != handle->datatype_out) {
         for (ij = 0; ij < handle->ifhp; ++ij) {
           for (ii = 0; ii < handle->ifwp; ++ii) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
