@@ -18,13 +18,13 @@ source /opt/intel/compilers_and_libraries_2017.3.191/linux/bin/compilervars.sh i
 source /opt/intel/compilers_and_libraries_2017.0.098/linux/mkl/bin/mklvars.sh intel64
 ```
 
-Since Update&#160;4 of the Compiler and Libraries 2017 suite, one can source the compiler and libraries as shown below:
+Since Update&#160;4 of the 2017-suite, the compiler and libraries can be used right away:
 
 ```bash
 source /opt/intel/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64
 ```
 
-LIBXSMM is built when building CP2K if CP2K/intel is used. LIBXSMM is built in an out-of-tree fashion (LIBXSMMROOT path needs to be detected or supplied). A recipe targeting "Haswell" (HSW) may look like below.
+LIBXSMM is automatically built in an out-of-tree fashion when building CP2K/intel branch. The only prerequisite is that the LIBXSMMROOT path needs to be detected (or supplied on the `make` command line). A recipe targeting "Haswell" (HSW) may look like below.
 
 ```bash
 git clone https://github.com/hfp/libxsmm.git
@@ -65,7 +65,7 @@ To further adjust CP2K at build time of the application, additional key-value pa
 * **SYM**: set `SYM=1` to include debug symbols into the executable e.g., helpful with performance profiling.
 * **DBG**: set `DBG=1` to include debug symbols, and to generate non-optimized code.
 
-## Running the Application
+## Run Instructions<a name="running-the-application"></a>
 
 Running the application may go beyond a single node, however for first example the pinning scheme and thread affinization is introduced.
 As a rule of thumb, a high rank-count for single-node computation (perhaps according to the number of physical CPU cores) may be preferred. In contrast (communication bound), a lower rank count for multi-node computations may be desired. In general, CP2K prefers the total rank-count to be a square-number (two-dimensional communication pattern) rather than a Power-of-Two (POT) number.
@@ -90,7 +90,7 @@ The CP2K/intel branch carries several "reconfigurations" and environment variabl
 * **CP2K_RMA**: enables (1) an experimental Remote Memory Access (RMA) based multiplication algorithm (requires MPI3).
 * **CP2K_SORT**: enables (1) an indirect sorting of each multiplication stack according to the C-index (experimental).
 
-## LIBINT and LIBXC Dependencies
+## LIBINT and LIBXC<a name="libint-and-libxc-dependencies"></a>
 
 Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://github.com/hfp/xconfigure)), which helps to configure common HPC software for Intel software development tools. The XCONFIGURE project provides recipes for LIBINT, LIBXC, and ELPA.
 
@@ -126,16 +126,14 @@ make clean
 
 If the library needs to be cross-compiled, one may add `--host=x86_64-unknown-linux-gnu` to the command line arguments of the configure script.
 
-## Tuning
-
-### Eigenvalue SoLvers for Petaflop-Applications (ELPA)
+## ELPA<a name="eigenvalue-solvers-for-petaflop-applications-elpa"></a>
 
 Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://github.com/hfp/xconfigure)), which helps to configure common HPC software (and [ELPA](http://xconfigure.readthedocs.io/elpa/README/) in particular) for Intel software development tools.
 
-To incorporate ELPA, the key `ELPAROOT=/path/to/elpa` needs to be supplied when using CP2K/intel's ARCH files (make). For the Intel-branch, ELPA-2017.05.001 is already supported:
+To incorporate the Eigenvalue SoLvers for Petaflop-Applications (ELPA), the key `ELPAROOT=/path/to/elpa` needs to be supplied when using CP2K/intel's ARCH files (make). The Intel-branch defaults to ELPA-2017.05 (earlier versions can be rely on the ELPA key-value pair e.g., `ELPA=201611`).
 
 ```bash
-make ARCH=Linux-x86-64-intel VERSION=psmp ELPA=201705 ELPAROOT=/path/to/elpa/default-arch
+make ARCH=Linux-x86-64-intel VERSION=psmp ELPAROOT=/path/to/elpa/default-arch
 ```
 
 At runtime, a build of the Intel-branch supports an environment variable CP2K_ELPA:
@@ -144,7 +142,9 @@ At runtime, a build of the Intel-branch supports an environment variable CP2K_EL
 * **CP2K_ELPA=0**: ELPA is not enabled by default (only on request via input file); same as non-Intel branch.
 * **CP2K_ELPA**=&lt;not-defined&gt;: requests ELPA-kernel according to CPUID (default with CP2K/Intel-branch).
 
-### Memory Allocation Wrapper
+## Memory Allocation
 
-Dynamic allocation of heap memory usually requires global book keeping eventually incurring overhead in shared-memory parallel regions of an application. For this case, specialized allocation strategies are available. To use the malloc-proxy of Intel Threading Building Blocks (Intel TBB), use the `TBBMALLOC=1` key-value pair at build time of CP2K. Usually, Intel TBB is just available due to sourcing the Intel development tools (see TBBROOT environment variable). To use TCMALLOC as an alternative, set `TCMALLOCROOT` at build time of CP2K by pointing to TCMALLOC's installation path (configured per `./configure --enable-minimal --prefix=<TCMALLOCROOT>`).
+Dynamic allocation of heap memory usually requires global book keeping eventually incurring overhead in shared-memory parallel regions of an application. For this case, specialized allocation strategies are available. To use such a strategy, memory allocation wrappers can be used to replace the default memory allocation at build-time or at runtime of an application.
+
+To use the malloc-proxy of the Intel Threading Building Blocks (Intel TBB), rely on the `TBBMALLOC=1` key-value pair at build-time of CP2K. Usually, Intel TBB is already available when sourcing the Intel development tools (one can check the TBBROOT environment variable). To use TCMALLOC as an alternative, set `TCMALLOCROOT` at build-time of CP2K by pointing to TCMALLOC's installation path (configured per `./configure --enable-minimal --prefix=<TCMALLOCROOT>`).
 
