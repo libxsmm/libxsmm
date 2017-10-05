@@ -2462,6 +2462,10 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
          }
          buf[i++] = (unsigned char)(0x63 + l_inst);
          buf[i++] = (unsigned char)(l_sca + l_regbas0 + l_regnum * 0x08);
+         if ( l_regbas0 == 4 ) // rsp or r12
+         {
+            buf[i++] = 0x24;
+         }
      } else {
          int l_regidx  = i_gp_reg_idx  % 8;
          int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
