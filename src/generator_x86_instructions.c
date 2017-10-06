@@ -2256,7 +2256,6 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     int l_place=0;
     int l_bytes=4;
     int l_forced_offset=0;
-    int l_sizereg=64;
 
     if ( l_maxsize - i < 20 )
     {
@@ -2269,11 +2268,6 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
          ((int)i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) )
     {
        fprintf(stderr, "libxsmm_instruction_prefetch: i_gp_reg_base error in libxsmm_instruction_prefetch\n");
-       exit(-1);
-    }
-    if ( (int)i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF )
-    {
-       fprintf(stderr, "libxsmm_instruction_prefetch: i_gp_reg_idx error in libxsmm_instruction_prefetch\n");
        exit(-1);
     }
     switch ( i_prefetch_instr ) {
@@ -2301,76 +2295,48 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
           exit(-1);
           break;
     }
-    if ( (i_gp_reg_base < LIBXSMM_X86_GP_REG_R8) &&
-         (i_gp_reg_idx==LIBXSMM_X86_GP_REG_UNDEF) )
+
+    int l_regbas0 = i_gp_reg_base % 8;
+    int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
+    int l_regidx  = i_gp_reg_idx  % 8;
+    int l_ix8     = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
+    int l_sca=0;
+    int l_sse_preamble = 64;
+    int l_place1 = i + 2;
+
+    if (i_scale==2) l_sca=0x40;
+    else if (i_scale==4) l_sca=0x80;
+    else if (i_scale==8) l_sca=0xc0;
+
+    if ( l_gp8 || l_ix8 )
     {
-       /* prefetcht1 (%rax) */
-       buf[i++] = 0x0f;
-       buf[i++] = 0x18;
-       buf[i++] = (unsigned char)(0x10 + l_instype + i_gp_reg_base);
-       l_place = i-1;
-       if ( i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP )
-       {
-          buf[i++] = 0x24;
-       }
-    } else if (i_gp_reg_idx==LIBXSMM_X86_GP_REG_UNDEF) {
-       /* prefetcht1 (%r8) */
-       buf[i++] = 0x41;
-       buf[i++] = 0x0f;
-       buf[i++] = 0x18;
-       buf[i++] = (unsigned char)(0x10 + l_instype + i_gp_reg_base - 8);
-       l_place = i-1;
-       if ( i_gp_reg_base == LIBXSMM_X86_GP_REG_R12 )
-       {
-          buf[i++] = 0x24;
-       }
-    } else { /* two GP regs are being used */
-       l_last = 0;
-       if ( i_scale == 2 ) l_last = 0x40;
-       else if ( i_scale == 4 ) l_last = 0x80;
-       else if ( i_scale == 8 ) l_last = 0xc0;
-       l_bytes = 4;
-       l_first = 0;
-       if ( i_gp_reg_base < 8 )
-       {
-          l_last += i_gp_reg_base;
-          if ( i_gp_reg_idx >= 8 )
-          {
-             l_first = 1;
-             l_bytes = 5;
-             l_last += 8*(i_gp_reg_idx - 8);
-          } else {
-             l_last += 8*(i_gp_reg_idx);
-          }
-       } else {
-          l_last += i_gp_reg_base-8;
-          l_bytes = 5;
-          if ( i_gp_reg_idx >= 8 )
-          {
-             l_first = 2;
-             l_last += 8*(i_gp_reg_idx - 8);
-          } else {
-             l_last += 8*(i_gp_reg_idx);
-          }
-       }
-       if ( l_bytes == 5 )
-       {
-          buf[i++] = (unsigned char)(0x41 + l_first);
-       }
-       buf[i++] = 0x0f;
-       buf[i++] = 0x18;
-       buf[i++] = (unsigned char)(0x14 + l_instype);
-       l_place = i - 1;
-       buf[i++] = (unsigned char)(0x00 + l_last);
+        if (l_gp8) l_sse_preamble += 1;
+        if (l_ix8) l_sse_preamble += 2;
+        buf[i++] = (unsigned char) l_sse_preamble;
+        ++l_place1;
     }
-    l_sizereg = 1;
-    if ( ( (i_gp_reg_base%8) == 5) && (i_displacement==0) )
+
+    if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
+    {
+        buf[i++] = 0x0f;
+        buf[i++] = 0x18;
+        buf[i++] = (unsigned char)(0x10 + l_instype + l_regbas0);
+        if ( l_regbas0 == 4 ) buf[i++]=0x24;
+    } else {
+        buf[i++] = 0x0f;
+        buf[i++] = 0x18;
+        buf[i++] = (unsigned char)(0x14 + l_instype);
+        buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
+    }
+
+    if ( ( l_regbas0 == 5) && (i_displacement==0) )
     {
        /* Registers like rbp/r13 when you have a displacement of 0, we need
-          force the single byte of zero to appear. */
+ *           force the single byte of zero to appear. */
        l_forced_offset = 1;
     }
-    i += internal_x86_instructions_add_offset( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
+
+    i += internal_x86_instructions_add_offset( l_place1, i, i_displacement, l_forced_offset, 1, buf );
 
     io_generated_code->code_size = i;
     /* *loc = i; */
