@@ -90,6 +90,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
   }
 
+  handle->compute_batch_stats_in_kernel = 0;
   handle->use_fwd_for_bwd = 0;
   if ( 0 == env_jit ) {
     /* By default do not do any thread private jitting */
@@ -646,7 +647,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.datatype_itm = handle->datatype_itm;
       descriptor.option = handle->desc.options;
       descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
+
+     if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_nts_fwd == 1) && (handle->use_fwd_for_bwd == 0) ) {
+      descriptor.compute_batch_stats = 1;
+      handle->compute_batch_stats_in_kernel = 1;
+     } else {
       descriptor.compute_batch_stats = 0;
+      handle->compute_batch_stats_in_kernel = 0;
+     }
       /* TODO check JIT errors */
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
@@ -699,6 +707,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         memset( handle->n_entries_fwd, 0, handle->desc.threads * sizeof(int) );
         handle->compute_fwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
         memset( handle->compute_fwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
+        handle->bn_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+        memset( handle->bn_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
         handle->kernel_fwd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
         memset( handle->kernel_fwd_variant_ptrs, 0, handle->desc.threads * sizeof(char*) );
         handle->n_fwd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));

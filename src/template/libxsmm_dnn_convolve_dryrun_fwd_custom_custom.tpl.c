@@ -112,7 +112,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int lookahead_index;
 
   /* Arrays of stream indices */
-  int *compute_indices;
+  int *compute_indices, *bn_indices;
   char *kernel_variant;
 
   if (handle->padding_flag == 1) {
@@ -133,7 +133,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   }
 
   mark_ofm_init = ( ( (  (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_fwd == 0) ) || ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) ? 1 : 0;
-  mark_ofm_close = ( (handle->datatype != handle->datatype_itm) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0 ) ) ? 1 : 0;
+  mark_ofm_close = ( (handle->datatype != handle->datatype_itm) || (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 0) )) ? 1 : 0;
   mark_img_init = (  (handle->padding_flag == 1) || (mark_ofm_close == 1)) ? 1 : 0;
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */
@@ -176,6 +176,13 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   /* Alocate auxiliary data structures for index jitting  */
   compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
   handle->compute_fwd_indices_ptrs[ltid] = compute_indices;
+
+  /* BN offsets...  */
+  if  (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
+    bn_indices = (int*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(int), 64);
+    handle->bn_indices_ptrs[ltid] = bn_indices;
+  }
+
   kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 64);
   handle->kernel_fwd_variant_ptrs[ltid] = kernel_variant;
   handle->n_fwd_code_segments[ltid] = n_code_segments;
@@ -231,13 +238,17 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
                     compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj_use) * handle->ofwp)  +  oi_use) *  handle->ofmblock;
 
-
                     /* Initialize kernel variant with the one that prefetches everything */
                     if (oj == 0 ) {
                       kernel_variant[local_entries/3] = 0;
                     } else {
                       kernel_variant[local_entries/3] = 1;
                     }
+
+                    if (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
+                      bn_indices[local_entries/3] =  img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
+                    }
+
                     local_entries += 3;
 
                     tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
@@ -308,6 +319,10 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       kernel_variant[local_entries/3] = 0;
                     } else {
                       kernel_variant[local_entries/3] = 1;
+                    }
+
+                    if (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
+                      bn_indices[local_entries/3] = img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
                     }
 
                     local_entries += 3;

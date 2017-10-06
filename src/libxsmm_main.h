@@ -172,6 +172,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int use_fastpath;
   int use_hybrid_wu_parallelism;
   int weight_copies;
+  int compute_batch_stats_in_kernel;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;
@@ -236,6 +237,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
 
   int *n_entries_fwd;
   int **compute_fwd_indices_ptrs;
+  int **bn_indices_ptrs;
   char **kernel_fwd_variant_ptrs;
   int block_fwd_oj;
   int block_fwd_oi;

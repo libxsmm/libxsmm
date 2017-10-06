@@ -197,6 +197,24 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
                                                    l_gp_reg_mapping.gp_reg_input_pf, l_gp_reg_mapping.gp_reg_weight_pf,
                                                    l_gp_reg_mapping.gp_reg_output_pf, i_arch );
 
+  if ( i_conv_desc->compute_batch_stats > 0 && i_conv_desc->ifm_block != 3 ) {
+    libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, l_gp_reg_mapping.gp_reg_help_0);
+    libxsmm_x86_instruction_alu_mem( io_generated_code,
+                                         l_conv_kernel_config.alu_mov_instruction,
+                                         l_gp_reg_mapping.gp_reg_help_0,
+                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                         48,
+                                         l_gp_reg_mapping.gp_reg_help_2,
+                                         0 );
+    libxsmm_x86_instruction_alu_mem( io_generated_code,
+                                         l_conv_kernel_config.alu_mov_instruction,
+                                         l_gp_reg_mapping.gp_reg_help_0,
+                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                         56,
+                                         l_gp_reg_mapping.gp_reg_help_3,
+                                         0 );
+  }
+
   /* load an additional temp register with 32 16bit 1s */
   if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, 65537 );
@@ -212,8 +230,8 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0 );
   }
 
-  libxsmm_generator_convolution_forward_load_output( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
 
+  libxsmm_generator_convolution_forward_load_output( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
 
   /* loop over ifm1 blocks, begin */
   if ( i_conv_desc->blocks_ifm_blocking > 1 ) {
@@ -356,6 +374,20 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
           }
         }
       
+        if ( (i_conv_desc->compute_batch_stats > 0) && (peel_index == 2) ) {
+          libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT1, 
+                                          l_gp_reg_mapping.gp_reg_help_2,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          0);
+
+         libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT1, 
+                                          l_gp_reg_mapping.gp_reg_help_3,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          0);      
+        }
+
 
           #include "kernel_repeat.tpl.c"
 
