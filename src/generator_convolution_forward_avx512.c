@@ -1235,7 +1235,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generate
      prefetch_type_weight = LIBXSMM_X86_INSTR_PREFETCHT1;
    }
   /* do some last minute safety check if we can fully unroll kw loop internally */
-  if ( (i_conv_desc->ifm_block*i_kw_unroll < 4) || (i_conv_desc->ifm_block*i_kw_unroll % 4 != 0) ) {
+  if ( ((i_conv_desc->ifm_block*i_kw_unroll < 4) || (i_conv_desc->ifm_block*i_kw_unroll % 4 != 0)) && (i_conv_desc->ifm_block != 3)  ) {
     /* @TODO check position of this call in the grand scheme of things, setup input strides */
     libxsmm_generator_convolution_forward_avx512_init_input_strides( io_generated_code, i_gp_reg_mapping, i_conv_kernel_config, i_conv_desc );
 
@@ -1245,7 +1245,14 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generate
   }
 
   /* apply k blocking */
-  for ( l_k = 0; l_k < i_conv_desc->ifm_block*i_kw_unroll; l_k+=4 ) {
+  int step_size;
+  if (i_conv_desc->ifm_block != 3) {
+    step_size = 4;
+  } else {
+    step_size = 3;
+  }
+
+  for ( l_k = 0; l_k < i_conv_desc->ifm_block*i_kw_unroll; l_k+=step_size ) {
     /* if we are not in LIBXSMM storage format, there are jumps */
     if ( (l_k > 0) && (l_k % i_conv_desc->ifm_block == 0) ) {
       /* input pointer advance */
@@ -1270,11 +1277,13 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generate
 #endif
 
     /* load the four source registers, we cannot perform a pipeline as in case of sfma */
-    for ( l_w = 0; l_w < 4; l_w++ ) {
-      if (((l_k+l_w)%i_conv_desc->ifm_block == 0) && (l_k > 0) ) {
-        l_filter_pos += (i_conv_kernel_config->l_ld_ifm_fil-i_conv_desc->ifm_block) * i_conv_desc->fm_lp_block;
-      }
-      libxsmm_x86_instruction_vec_move( io_generated_code,
+
+    if (  (i_conv_desc->ifm_block != 3) ) {
+      for ( l_w = 0; l_w < 4; l_w++ ) {
+        if (((l_k+l_w)%i_conv_desc->ifm_block == 0) && (l_k > 0) ) {
+          l_filter_pos += (i_conv_kernel_config->l_ld_ifm_fil-i_conv_desc->ifm_block) * i_conv_desc->fm_lp_block;
+        }
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                         i_conv_kernel_config->instruction_set,
                                         i_conv_kernel_config->vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_weight,
@@ -1282,7 +1291,28 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generate
                                         l_filter_pos * i_conv_kernel_config->l_ld_ofm_fil * i_conv_kernel_config->datatype_size_wt * i_conv_desc->fm_lp_block,
                                         i_conv_kernel_config->vector_name, l_w,
                                         0, 0 );
-      l_filter_pos++;
+        l_filter_pos++;
+      }
+    } else {
+       for ( l_w = 0; l_w < 3; l_w++ ) {
+        if (((l_k+l_w)%i_conv_desc->ifm_block == 0) && (l_k > 0) ) {
+          l_filter_pos += (i_conv_kernel_config->l_ld_ifm_fil-i_conv_desc->ifm_block) * i_conv_desc->fm_lp_block;
+        }
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+                                        i_conv_kernel_config->instruction_set,
+                                        i_conv_kernel_config->vmove_instruction,
+                                        i_gp_reg_mapping->gp_reg_weight,
+                                        LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                        l_filter_pos * i_conv_kernel_config->l_ld_ofm_fil * i_conv_kernel_config->datatype_size_wt * i_conv_desc->fm_lp_block,
+                                        i_conv_kernel_config->vector_name, l_w,
+                                        0, 0 );
+        l_filter_pos++;
+      }
+       
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vxor_instruction,
+                                                 i_conv_kernel_config->vector_name, 3, 3, 3);    
     }
 
     /* apply additional register block to hide FMA latencies */
