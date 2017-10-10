@@ -2251,10 +2251,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     /* int i = *loc; */
     unsigned int l_maxsize = io_generated_code->buffer_size;
     /* unsigned int l_maxsize = 1024; */
-    int l_last = 0, l_first=0;
     int l_instype = 0;
-    int l_place=0;
-    int l_bytes=4;
     int l_forced_offset=0;
 
     if ( l_maxsize - i < 20 )
