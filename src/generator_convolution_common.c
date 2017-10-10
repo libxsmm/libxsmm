@@ -920,24 +920,32 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
   }
   /* TODO support reductions in RSCK format */
 
+  int eq_index;
+  int unrolled_ofms = ( i_conv_desc->ifm_block != 3 ) ? 1 : 4;
+  
   /* adding to C, so let's load C */
   if ( i_conv_desc->use_nts == 0  ) {
     for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
+        for (eq_index = 0; eq_index < unrolled_ofms; eq_index++) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_conv_kernel_config->instruction_set,
                                     i_conv_kernel_config->vmove_instruction,
                                     i_gp_reg_mapping->gp_reg_weight,
                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                    (reg_count)*offset * i_conv_kernel_config->datatype_size_wt,
+                                    (reg_count)*offset * i_conv_kernel_config->datatype_size_wt + 
+                                    eq_index * i_conv_desc->kw * i_conv_desc->kh *  i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->l_ld_ifm_act *  i_conv_kernel_config->datatype_size_wt ,
                                     i_conv_kernel_config->vector_name,
-                                    l_vec_reg_acc_start + reg_count , 0, 0);
-          if ( (i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 ) {
-          libxsmm_x86_instruction_prefetch( io_generated_code,
-                                            LIBXSMM_X86_INSTR_PREFETCHT0 ,
+                                    l_vec_reg_acc_start + reg_count - eq_index * 3 , 0, 0);
+
+            if ( (i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 ) {
+              libxsmm_x86_instruction_prefetch( io_generated_code,
+                                            LIBXSMM_X86_INSTR_PREFETCHT1 ,
                                             i_gp_reg_mapping->gp_reg_weight_pf,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                    (reg_count)*offset * i_conv_kernel_config->datatype_size_wt);
+                                            (reg_count)*offset * i_conv_kernel_config->datatype_size_wt  +
+                                            eq_index * i_conv_desc->kw * i_conv_desc->kh *  i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->l_ld_ifm_act *  i_conv_kernel_config->datatype_size_wt  );
+          }
         }
       }
     }
@@ -1018,19 +1026,24 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
     }
   }
   /* TODO support reductions in RSCK format */
+  int eq_index;
+  int unrolled_ofms = ( i_conv_desc->ifm_block != 3 ) ? 1 : 4; 
 
    if ( i_conv_desc->use_nts == 0  ) {
     /* adding to C, so let's load C */
     for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
+        for (eq_index = 0; eq_index < unrolled_ofms; eq_index++) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_conv_kernel_config->instruction_set,
                                     i_conv_kernel_config->vmove_instruction,
                                     i_gp_reg_mapping->gp_reg_weight,
                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                    (reg_count)*offset * i_conv_kernel_config->datatype_size_wt,
+                                    (reg_count)*offset * i_conv_kernel_config->datatype_size_wt +
+                                     eq_index * i_conv_desc->kw * i_conv_desc->kh *  i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->l_ld_ifm_act *  i_conv_kernel_config->datatype_size_wt,
                                     i_conv_kernel_config->vector_name,
-                                    l_vec_reg_acc_start + reg_count , 0, 1 );
+                                    l_vec_reg_acc_start + reg_count - eq_index * 3 , 0, 1 );
+        }
       }
     }
   } else {

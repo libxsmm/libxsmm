@@ -1559,6 +1559,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
             }
           }
 
+          if (handle->use_fastpath == 0) {
+            handle->trans_ofw_ifm = 0;
+          }
+
           handle->n_entries_upd = (int*) malloc(handle->desc.threads * sizeof(int));
           memset( handle->n_entries_upd, 0, handle->desc.threads * sizeof(int) );
           handle->compute_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
