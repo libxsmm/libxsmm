@@ -78,7 +78,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   };
   const char *const env_m = getenv("LIBXSMM_TGEMM_M"), *const env_n = getenv("LIBXSMM_TGEMM_N"), *const env_k = getenv("LIBXSMM_TGEMM_K");
   const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH"), *const env_w = getenv("LIBXSMM_GEMM_WRAP");
-  const char *const env_s = getenv("LIBXSMM_GEMM_BATCHSIZE"), *const env_b = getenv("LIBXSMM_GEMM_BATCH");
+  const char *const env_s = getenv("LIBXSMM_GEMM_BATCHSIZE");
   const int uid = ((0 == env_p || 0 == *env_p) ? 6/*LIBXSMM_PREFETCH_AL2_AHEAD*/ : atoi(env_p));
   const int batchsize = ((0 == env_s || 0 == *env_s) ? -1 : atoi(env_s));
   const int gemm_m = ((0 == env_m || 0 == *env_m) ? -1 : atoi(env_m));
@@ -101,10 +101,6 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 
   /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
   libxsmm_gemm_wrap = ((0 == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
-
-  if (0 != env_b && 0 != *env_b) { /* even/negative: parallelized, odd: sequential */
-    libxsmm_gemm_batchmode = atoi(env_b);
-  }
 
   if (0 != libxsmm_gemm_wrap) { /* batch-recording available */
     /* use libxsmm_malloc to draw memory from the default memory allocation domain */

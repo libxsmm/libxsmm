@@ -170,10 +170,14 @@ LIBXSMM_API int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* descriptor, c
 LIBXSMM_API int libxsmm_mmbatch(const libxsmm_gemm_descriptor* descriptor, const void* a_matrix, const void* b_matrix, void* c_matrix,
   int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize);
 
-/** Auto-batch flags, which can be binary ORed. */
+/** Auto-batch flags (can be ORed) applicable to mmbatch_begin/mmbatch_end. */
 typedef enum libxsmm_mmbatch_flags {
-  LIBXSMM_MMBATCH_FLAG_DEFAULT    = LIBXSMM_GEMM_FLAG_INVALID * 1,
-  LIBXSMM_MMBATCH_FLAG_SEQUENTIAL = LIBXSMM_GEMM_FLAG_INVALID * 2
+  /** Handle recorded batch in parallel. */
+  LIBXSMM_MMBATCH_FLAG_DEFAULT = LIBXSMM_GEMM_FLAG_INVALID * 1,
+  /** Handle recorded batch sequentially. */
+  LIBXSMM_MMBATCH_FLAG_SEQUENTIAL = LIBXSMM_GEMM_FLAG_INVALID * 2,
+  /** Only record a statistic of potential SMMs. */
+  LIBXSMM_MMBATCH_FLAG_STATISTIC = LIBXSMM_GEMM_FLAG_INVALID * 4
 } libxsmm_mmbatch_flags;
 
 /**

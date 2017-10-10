@@ -451,8 +451,6 @@ LIBXSMM_API int libxsmm_mmbatch_internal(
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][8/*size-range*/];
-/** Batch mode: even (or negative) -> parallelized, odd -> sequential. */
-LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_batchmode;
 /** Records a batch of SMMs. */
 LIBXSMM_API_VARIABLE libxsmm_gemm_batchitem* libxsmm_gemm_batcharray;
 /** Maximum size of the recorded batch. */
