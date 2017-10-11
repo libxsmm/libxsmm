@@ -32,6 +32,10 @@
 #include "libxsmm_gemm.h"
 #include "libxsmm_ext.h"
 
+#if !defined(LIBXSMM_GEMM_EXT_MMBATCH) && defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && \
+    (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC))
+# define LIBXSMM_GEMM_EXT_MMBATCH
+#endif
 
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 
@@ -75,9 +79,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(void)
     const unsigned int itemsize = sizeof(libxsmm_gemm_batchitem);
     if (0 == (LIBXSMM_MMBATCH_FLAG_STATISTIC & internal_ext_gemm_batchdesc.flags)) {
       result = libxsmm_mmbatch_omp(&internal_ext_gemm_batchdesc,
-        libxsmm_gemm_batcharray                                         /*a_matrix*/,
-        (const void**)libxsmm_gemm_batcharray + sizeof(void*)           /*b_matrix*/,
-        (void**)libxsmm_gemm_batcharray + sizeof(void*) + sizeof(void*) /*c_matrix*/,
+        &libxsmm_gemm_batcharray->a, &libxsmm_gemm_batcharray->b, &libxsmm_gemm_batcharray->c,
         0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize,
         internal_ext_gemm_batchsize);
       internal_ext_gemm_batchsize = 0;
@@ -100,7 +102,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   assert(0 != lda && 0 != ldb && 0 != ldc && 0 != m && 0 != n && 0 != k);
   assert(0 != transa && 0 != transb && 0 != alpha && 0 != beta);
   {
-#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
+#if defined(LIBXSMM_GEMM_EXT_MMBATCH)
     int flags = -1;
     if (0 == internal_ext_gemm_batch || 0 == libxsmm_gemm_batcharray
       || LIBXSMM_GEMM_PRECISION_F32 != internal_ext_gemm_batchdesc.datatype
@@ -122,18 +124,18 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       else { /* small problem size */
         libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
       }
-#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
+#if defined(LIBXSMM_GEMM_EXT_MMBATCH)
       if (0 != (LIBXSMM_MMBATCH_FLAG_STATISTIC & internal_ext_gemm_batchdesc.flags)) {
         assert(0/*TODO*/);
       }
 #endif
     }
-#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
+#if defined(LIBXSMM_GEMM_EXT_MMBATCH)
     else {
       const unsigned int i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchsize, 1, LIBXSMM_ATOMIC_RELAXED);
       libxsmm_gemm_batchitem item;
       item.a = a; item.b = b; item.c = c;
-      libxsmm_gemm_batcharray[i] = item;
+      libxsmm_gemm_batcharray[i-1] = item;
     }
     assert(0 <= flags);
 #endif
@@ -151,7 +153,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   assert(0 != lda && 0 != ldb && 0 != ldc && 0 != m && 0 != n && 0 != k);
   assert(0 != transa && 0 != transb && 0 != alpha && 0 != beta);
   {
-#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
+#if defined(LIBXSMM_GEMM_EXT_MMBATCH)
     int flags = -1;
     if (0 == internal_ext_gemm_batch || 0 == libxsmm_gemm_batcharray
       || LIBXSMM_GEMM_PRECISION_F64 != internal_ext_gemm_batchdesc.datatype
@@ -173,18 +175,18 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       else { /* small problem size */
         libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
       }
-#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
+#if defined(LIBXSMM_GEMM_EXT_MMBATCH)
       if (0 != (LIBXSMM_MMBATCH_FLAG_STATISTIC & internal_ext_gemm_batchdesc.flags)) {
         assert(0/*TODO*/);
       }
 #endif
     }
-#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
+#if defined(LIBXSMM_GEMM_EXT_MMBATCH)
     else {
       const unsigned int i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchsize, 1, LIBXSMM_ATOMIC_RELAXED);
       libxsmm_gemm_batchitem item;
       item.a = a; item.b = b; item.c = c;
-      libxsmm_gemm_batcharray[i] = item;
+      libxsmm_gemm_batcharray[i-1] = item;
     }
     assert(0 <= flags);
 #endif
@@ -384,7 +386,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
   const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
   const void* alpha, const void* beta)
 {
-#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
+#if defined(LIBXSMM_GEMM_EXT_MMBATCH)
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_batcharray /* batch-recording available, but not yet running */
     /* currently, batch recording is only enabled if all values are present (no complex filtering) */
@@ -422,7 +424,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
 LIBXSMM_API_DEFINITION int libxsmm_mmbatch_end(void)
 {
   int result = EXIT_SUCCESS;
-#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
+#if defined(LIBXSMM_GEMM_EXT_MMBATCH)
   if (0 != internal_ext_gemm_batch && 0 == LIBXSMM_ATOMIC_SUB_FETCH(&internal_ext_gemm_batch, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
     result = internal_mmbatch_flush();
   }
