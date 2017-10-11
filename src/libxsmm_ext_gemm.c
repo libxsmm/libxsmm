@@ -74,22 +74,12 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(void)
   if (0 != internal_ext_gemm_batchsize) { /* recorded/lazy multiplications */
     const unsigned int itemsize = sizeof(libxsmm_gemm_batchitem);
     if (0 == (LIBXSMM_MMBATCH_FLAG_STATISTIC & internal_ext_gemm_batchdesc.flags)) {
-      if (0 == (LIBXSMM_MMBATCH_FLAG_SEQUENTIAL & internal_ext_gemm_batchdesc.flags)) {
-        result = libxsmm_mmbatch_omp(&internal_ext_gemm_batchdesc,
-          libxsmm_gemm_batcharray                                         /*a_matrix*/,
-          (const void**)libxsmm_gemm_batcharray + sizeof(void*)           /*b_matrix*/,
-          (void**)libxsmm_gemm_batcharray + sizeof(void*) + sizeof(void*) /*c_matrix*/,
-          0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize,
-          internal_ext_gemm_batchsize);
-      }
-      else { /* sequential */
-        result = libxsmm_mmbatch(&internal_ext_gemm_batchdesc,
-          libxsmm_gemm_batcharray                                         /*a_matrix*/,
-          (const void**)libxsmm_gemm_batcharray + sizeof(void*)           /*b_matrix*/,
-          (void**)libxsmm_gemm_batcharray + sizeof(void*) + sizeof(void*) /*c_matrix*/,
-          0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize,
-          internal_ext_gemm_batchsize);
-      }
+      result = libxsmm_mmbatch_omp(&internal_ext_gemm_batchdesc,
+        libxsmm_gemm_batcharray                                         /*a_matrix*/,
+        (const void**)libxsmm_gemm_batcharray + sizeof(void*)           /*b_matrix*/,
+        (void**)libxsmm_gemm_batcharray + sizeof(void*) + sizeof(void*) /*c_matrix*/,
+        0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize,
+        internal_ext_gemm_batchsize);
       internal_ext_gemm_batchsize = 0;
     }
     else { /* print and clear statistic */
@@ -344,29 +334,45 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* de
   int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize)
 {
   int result;
-  /* check if internal parallelization should be used */
 #if defined(_OPENMP)
-  if (0 != descriptor
-    && ((unsigned int)omp_get_max_threads()) < batchsize
-# if defined(LIBXSMM_EXT_TASKS)
-    && 0 == omp_get_active_level()
-# endif
-    )
+  if (0 != descriptor && 0 == (LIBXSMM_MMBATCH_FLAG_SEQUENTIAL & descriptor->flags)
+    /* general check if parallelization should be used */
+    && ((unsigned int)omp_get_max_threads()) < batchsize)
   {
     const unsigned int typesize = libxsmm_gemm_typesize((libxsmm_gemm_precision)descriptor->datatype);
     const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(descriptor);
-#   pragma omp parallel
-    {
-      const int tid = omp_get_thread_num(), nthreads = omp_get_num_threads();
-      libxsmm_mmbatch_internal(kernel, typesize, a_matrix, b_matrix, c_matrix,
-      index_base, index_stride, a_stride, b_stride, c_stride, batchsize,
-      tid, nthreads, descriptor);
-    } /* implicit synchronization (barrier) */
+# if defined(LIBXSMM_EXT_TASKS)
+    if (0 == omp_get_active_level())
+# endif
+    { /* enable internal parallelization */
+#     pragma omp parallel
+      {
+        libxsmm_mmbatch_internal(kernel, typesize, a_matrix, b_matrix, c_matrix,
+          index_base, index_stride, a_stride, b_stride, c_stride, batchsize,
+          omp_get_thread_num()/*tid*/, omp_get_num_threads(), descriptor);
+      } /* implicit synchronization (barrier) */
+    }
+# if defined(LIBXSMM_EXT_TASKS)
+    else { /* assume external parallelization, and use OpenMP-tasks */
+      const int ntasks = (LIBXSMM_EXT_TSK_SLACK) * omp_get_num_threads();
+      int tid;
+      for (tid = 0; tid < ntasks; ++tid) {
+#       pragma omp task
+        libxsmm_mmbatch_internal(kernel, typesize, a_matrix, b_matrix, c_matrix,
+          index_base, index_stride, a_stride, b_stride, c_stride, batchsize,
+          tid, ntasks, descriptor);
+      }
+      /* allow to omit synchronization */
+      if (0 != libxsmm_sync) {
+#       pragma omp taskwait
+      }
+    }
+# endif
     result = EXIT_SUCCESS;
   }
   else
-#endif
-  {
+#endif /*defined(_OPENMP)*/
+  { /* sequential */
     result = libxsmm_mmbatch(descriptor, a_matrix, b_matrix, c_matrix,
       index_base, index_stride, a_stride, b_stride, c_stride, batchsize);
   }
