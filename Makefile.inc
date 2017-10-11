@@ -1280,9 +1280,13 @@ LDFLAGS := $(strip $(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
 CLDFLAGS := $(strip $(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
 DFLAGS := $(strip $(NOBLAS_DFLAGS) $(BLAS_DFLAGS))
 IFLAGS := $(strip $(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
-# more cleanup
+# cleanup eventually duplicated flags
 LDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(LDFLAGS))
 CLDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(CLDFLAGS))
+# cleanup duplicated slashes
+LDFLAGS := $(subst //,/,$(LDFLAGS))
+CLDFLAGS := $(subst //,/,$(CLDFLAGS))
+IFLAGS  := $(subst //,/,$(IFLAGS))
 
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \

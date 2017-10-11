@@ -32,8 +32,7 @@
       MODULE LIBXSMM
         USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
      &    C_FLOAT, C_DOUBLE, C_CHAR, C_INT, C_LONG_LONG,                &
-     &    C_INTPTR_T, C_F_POINTER, C_F_PROCPOINTER, C_LOC,              &
-     &    C_PTR, C_NULL_PTR, C_FUNPTR
+     &    C_INTPTR_T, C_F_POINTER, C_LOC, C_PTR
         IMPLICIT NONE
 
         PRIVATE :: srealptr, drealptr

@@ -46,7 +46,7 @@
 
 LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller)
 {
-  static LIBXSMM_TLS libxsmm_sgemm_function original = 0;
+  static libxsmm_sgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(float, original, caller);
   assert(0 != original);
   return original;
@@ -55,7 +55,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original
 
 LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller)
 {
-  static LIBXSMM_TLS libxsmm_dgemm_function original = 0;
+  static libxsmm_dgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(double, original, caller);
   assert(0 != original);
   return original;
@@ -78,7 +78,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   };
   const char *const env_m = getenv("LIBXSMM_TGEMM_M"), *const env_n = getenv("LIBXSMM_TGEMM_N"), *const env_k = getenv("LIBXSMM_TGEMM_K");
   const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH"), *const env_w = getenv("LIBXSMM_GEMM_WRAP");
-  const char *const env_s = getenv("LIBXSMM_GEMM_BATCHSIZE"), *const env_b = getenv("LIBXSMM_GEMM_BATCH");
+  const char *const env_s = getenv("LIBXSMM_GEMM_BATCHSIZE");
   const int uid = ((0 == env_p || 0 == *env_p) ? 6/*LIBXSMM_PREFETCH_AL2_AHEAD*/ : atoi(env_p));
   const int batchsize = ((0 == env_s || 0 == *env_s) ? -1 : atoi(env_s));
   const int gemm_m = ((0 == env_m || 0 == *env_m) ? -1 : atoi(env_m));
@@ -101,10 +101,6 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 
   /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
   libxsmm_gemm_wrap = ((0 == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
-
-  if (0 != env_b && 0 != *env_b) { /* even/negative: parallelized, odd: sequential */
-    libxsmm_gemm_batchmode = atoi(env_b);
-  }
 
   if (0 != libxsmm_gemm_wrap) { /* batch-recording available */
     /* use libxsmm_malloc to draw memory from the default memory allocation domain */
@@ -497,15 +493,17 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_internal(
         const char *const ia = (const char*)a_stride, *const ib = (const char*)b_stride, *const ic = (const char*)c_stride;
         ai = a + da * typesize; bi = b + db * typesize; ci = c + dc * typesize;
         if (0 != kernel.xmm) {
-          for (n = begin; n < (end - 1); ++n) {
+          const unsigned int end1 = (end != batchsize ? end : (end - 1));
+          for (n = begin; n < end1; ++n) {
             const char *const an = a + (0 != ia ? (*((const unsigned int*)(ia + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
             const char *const bn = b + (0 != ib ? (*((const unsigned int*)(ib + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
             char *const cn = c + (0 != ic ? (*((const unsigned int*)(ic + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
             kernel.xmm(ai, bi, ci, an, bn, cn); /* prefetch */
             ai = an; bi = bn; ci = cn;
           }
-          /* last multiplication with pseudo-prefetch */
-          kernel.xmm(ai, bi, ci, ai, bi, ci);
+          if (end != end1) { /* remainder multiplication */
+            kernel.xmm(ai, bi, ci, ai, bi, ci); /* pseudo-prefetch */
+          }
         }
         else if (LIBXSMM_GEMM_PRECISION_F64 == kernel_desc->datatype) { /* fall-back (DP) */
           for (n = begin; n < end; ++n) {
@@ -534,15 +532,17 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_internal(
       else if (typesize <= da && typesize <= db && typesize <= dc) { /* strides are measured in Bytes */
         ai = a; bi = b; ci = c;
         if (0 != kernel.xmm) {
-          for (n = begin; n < (end - 1); ++n) {
+          const unsigned int end1 = (end != batchsize ? end : (end - 1));
+          for (n = begin; n < end1; ++n) {
             const char *const an = ai + da;
             const char *const bn = bi + db;
             char *const cn = ci + dc;
             kernel.xmm(ai, bi, ci, an, bn, cn); /* prefetch */
             ai = an; bi = bn; ci = cn; /* next */
           }
-          /* last multiplication with pseudo-prefetch */
-          kernel.xmm(ai, bi, ci, ai, bi, ci);
+          if (end != end1) { /* remainder multiplication */
+            kernel.xmm(ai, bi, ci, ai, bi, ci); /* pseudo-prefetch */
+          }
         }
         else if (LIBXSMM_GEMM_PRECISION_F64 == kernel_desc->datatype) { /* fall-back (DP) */
           for (n = begin; n < end; ++n) {
@@ -674,6 +674,10 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_blas_dgemm)(const char* tran
 }
 
 
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_smmbatch_thread)(libxsmm_xmmfunction /*kernel*/,
+  const float /*a_matrix*/[], const float /*b_matrix*/[], float /*c_matrix*/[], const int* /*index_stride*/,
+  const unsigned int /*a_stride*/[], const unsigned int /*b_stride*/[], const unsigned int /*c_stride*/[],
+  const unsigned int* /*batchsize*/, const int* /*tid*/, const int* /*nthreads*/);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smmbatch_thread)(libxsmm_xmmfunction kernel,
   const float a_matrix[], const float b_matrix[], float c_matrix[], const int* index_stride,
   const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[],
@@ -688,8 +692,12 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smmbatch_thread)(libxsmm_xmm
 }
 
 
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dmmbatch_thread)(libxsmm_xmmfunction /*kernel*/,
+  const double /*a_matrix*/[], const double /*b_matrix*/[], double /*c_matrix*/[], const int* /*index_stride*/,
+  const unsigned int /*a_stride*/[], const unsigned int /*b_stride*/[], const unsigned int /*c_stride*/[],
+  const unsigned int* /*batchsize*/, const int* /*tid*/, const int* /*nthreads*/);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dmmbatch_thread)(libxsmm_xmmfunction kernel,
-  const float a_matrix[], const float b_matrix[], float c_matrix[], const int* index_stride,
+  const double a_matrix[], const double b_matrix[], double c_matrix[], const int* index_stride,
   const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[],
   const unsigned int* batchsize, const int* tid, const int* nthreads)
 {

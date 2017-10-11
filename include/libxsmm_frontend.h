@@ -117,13 +117,23 @@ typedef LIBXSMM_BLASINT libxsmm_blasint;
 # endif
 #endif
 
-/** Fallback prototype functions served by any compliant LAPACK/BLAS. */
+/** GEMM: fall-back prototype functions served by any compliant LAPACK/BLAS. */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(
   const char*, const char*, const LIBXSMM_BLASINT*, const LIBXSMM_BLASINT*, const LIBXSMM_BLASINT*,
   const float*, const float*, const LIBXSMM_BLASINT*, const float*, const LIBXSMM_BLASINT*,
   const float*, float*, const LIBXSMM_BLASINT*);
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
   const char*, const char*, const LIBXSMM_BLASINT*, const LIBXSMM_BLASINT*, const LIBXSMM_BLASINT*,
+  const double*, const double*, const LIBXSMM_BLASINT*, const double*, const LIBXSMM_BLASINT*,
+  const double*, double*, const LIBXSMM_BLASINT*);
+
+/** GEMV: fall-back prototype functions served by any compliant LAPACK/BLAS. */
+typedef LIBXSMM_RETARGETABLE void(*libxsmm_sgemv_function)(
+  const char*, const LIBXSMM_BLASINT*, const LIBXSMM_BLASINT*,
+  const float*, const float*, const LIBXSMM_BLASINT*, const float*, const LIBXSMM_BLASINT*,
+  const float*, float*, const LIBXSMM_BLASINT*);
+typedef LIBXSMM_RETARGETABLE void(*libxsmm_dgemv_function)(
+  const char*, const LIBXSMM_BLASINT*, const LIBXSMM_BLASINT*,
   const double*, const double*, const LIBXSMM_BLASINT*, const double*, const LIBXSMM_BLASINT*,
   const double*, double*, const LIBXSMM_BLASINT*);
 
@@ -152,6 +162,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #define LIBXSMM_ORIGINAL_GEMM(TYPE)     LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_BLAS_GEMM_SYMBOL(TYPE)  LIBXSMM_ORIGINAL_GEMM(TYPE)(LIBXSMM_CALLER)
 #define LIBXSMM_GEMMFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm_function))
+#define LIBXSMM_GEMVFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemv_function))
 #define LIBXSMM_MMFUNCTION_TYPE(TYPE)   LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmfunction))
 #define LIBXSMM_MMDISPATCH_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmdispatch))
 #define LIBXSMM_XBLAS_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(TYPE, gemm))
