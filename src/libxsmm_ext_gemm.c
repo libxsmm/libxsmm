@@ -426,9 +426,10 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* de
     { /* enable internal parallelization */
 #     pragma omp parallel
       {
+        const int tid = omp_get_thread_num(), nthreads = omp_get_num_threads();
         libxsmm_mmbatch_internal(kernel, typesize, a_matrix, b_matrix, c_matrix,
           index_base, index_stride, a_stride, b_stride, c_stride, batchsize,
-          omp_get_thread_num()/*tid*/, omp_get_num_threads(), descriptor);
+          tid, nthreads, descriptor);
       } /* implicit synchronization (barrier) */
     }
 # if defined(LIBXSMM_EXT_TASKS)
