@@ -1287,10 +1287,6 @@ CLDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(CLDFLAGS))
 LDFLAGS := $(subst //,/,$(LDFLAGS))
 CLDFLAGS := $(subst //,/,$(CLDFLAGS))
 IFLAGS  := $(subst //,/,$(IFLAGS))
-# cleanup superfluous path specifications
-LDFLAGS := $(subst ./,$(NULL),$(LDFLAGS))
-CLDFLAGS := $(subst ./,$(NULL),$(CLDFLAGS))
-IFLAGS  := $(subst ./,$(NULL),$(IFLAGS))
 
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
