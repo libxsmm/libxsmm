@@ -498,7 +498,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_internal(
             const char *const an = a + (0 != ia ? (*((const unsigned int*)(ia + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
             const char *const bn = b + (0 != ib ? (*((const unsigned int*)(ib + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
             char *const cn = c + (0 != ic ? (*((const unsigned int*)(ic + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
-            kernel.xmm(ai, bi, ci, an, bn, cn); /* prefetch */
+            kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
             ai = an; bi = bn; ci = cn;
           }
           if (end != end1) { /* remainder multiplication */
@@ -537,11 +537,15 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_internal(
             const char *const an = ai + da;
             const char *const bn = bi + db;
             char *const cn = ci + dc;
-            kernel.xmm(ai, bi, ci, an, bn, cn); /* prefetch */
+            kernel.xmm( /* with prefetch */
+              *((const void**)ai), *((const void**)bi), *((void**)ci),
+              *((const void**)an), *((const void**)bn), *((const void**)cn));
             ai = an; bi = bn; ci = cn; /* next */
           }
           if (end != end1) { /* remainder multiplication */
-            kernel.xmm(ai, bi, ci, ai, bi, ci); /* pseudo-prefetch */
+            kernel.xmm( /* pseudo-prefetch */
+              *((const void**)ai), *((const void**)bi), *((void**)ci),
+              *((const void**)ai), *((const void**)bi), *((const void**)ci));
           }
         }
         else if (LIBXSMM_GEMM_PRECISION_F64 == kernel_desc->datatype) { /* fall-back (DP) */
@@ -549,8 +553,11 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_internal(
             const char *const an = ai + da;
             const char *const bn = bi + db;
             char *const cn = ci + dc;
-            LIBXSMM_BLAS_XGEMM(double, kernel_desc->flags, kernel_desc->m, kernel_desc->n, kernel_desc->k,
-              kernel_desc->alpha, ai, kernel_desc->lda, bi, kernel_desc->ldb, kernel_desc->beta, ci, kernel_desc->ldc);
+            LIBXSMM_BLAS_XGEMM(double, kernel_desc->flags,
+              kernel_desc->m, kernel_desc->n, kernel_desc->k,
+              kernel_desc->alpha, *((const void**)ai), kernel_desc->lda,
+                                  *((const void**)bi), kernel_desc->ldb,
+               kernel_desc->beta, *((void**)ci), kernel_desc->ldc);
             ai = an; bi = bn; ci = cn; /* next */
           }
         }
@@ -559,8 +566,11 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_internal(
             const char *const an = ai + da;
             const char *const bn = bi + db;
             char *const cn = ci + dc;
-            LIBXSMM_BLAS_XGEMM(float, kernel_desc->flags, kernel_desc->m, kernel_desc->n, kernel_desc->k,
-              kernel_desc->alpha, ai, kernel_desc->lda, bi, kernel_desc->ldb, kernel_desc->beta, ci, kernel_desc->ldc);
+            LIBXSMM_BLAS_XGEMM(float, kernel_desc->flags,
+              kernel_desc->m, kernel_desc->n, kernel_desc->k,
+              kernel_desc->alpha, *((const void**)ai), kernel_desc->lda,
+                                  *((const void**)bi), kernel_desc->ldb,
+               kernel_desc->beta, *((void**)ci), kernel_desc->ldc);
             ai = an; bi = bn; ci = cn; /* next */
           }
         }
