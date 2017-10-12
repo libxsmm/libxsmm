@@ -39,7 +39,7 @@
 #include "libxsmm_dnn_convolution_winograd_backward.h"
 #include "libxsmm_dnn_convolution_winograd_weight_update.h"
 
-#define DP64_BN_STATS
+#define FP64_BN_STATS
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -803,7 +803,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
 #ifdef FP32_BN_STATS
               layout->dim_size[3] = 2;
 #endif
-#ifdef DP64_BN_STATS
+#ifdef FP64_BN_STATS
               layout->dim_size[3] = 3;
 #endif
             }

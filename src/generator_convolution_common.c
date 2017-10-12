@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DP64_BN_STATS
+#define FP64_BN_STATS
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_convolution_header_m_loop( libxsmm_generated_code*                   io_generated_code,
@@ -486,7 +486,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
                                           0);      
 
-#ifdef DP64_BN_STATS
+#ifdef FP64_BN_STATS
      libxsmm_x86_instruction_prefetch( io_generated_code,
                                           LIBXSMM_X86_INSTR_PREFETCHT0, 
                                           i_gp_reg_mapping->gp_reg_help_3,
@@ -536,7 +536,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                                                  i_conv_kernel_config->instruction_set,
                                                  i_conv_kernel_config->vxor_instruction,
                                                  i_conv_kernel_config->vector_name, 1, 1, 1);
-#ifdef DP64_BN_STATS
+#ifdef FP64_BN_STATS
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                  i_conv_kernel_config->instruction_set,
                                                  i_conv_kernel_config->vxor_instruction,
@@ -658,7 +658,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                                           i_conv_kernel_config->vector_name,
                                           1, 0, 1 );
 #endif
-#ifdef DP64_BN_STATS
+#ifdef FP64_BN_STATS
         unsigned int X;
         for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
           for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {

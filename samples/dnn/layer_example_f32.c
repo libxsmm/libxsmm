@@ -41,7 +41,7 @@
 /*# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE*/
 # define USE_FUSED_BATCH_STATS
 
-#define DP64_BN_STATS
+#define FP64_BN_STATS
 
 #if !defined(USE_FUSED_BIAS) && 0
 # define USE_FUSED_BIAS
@@ -593,7 +593,7 @@ int main(int argc, char* argv[])
 #ifdef FP32_BN_STATS
   batchstats_libxsmm    = (float*)libxsmm_aligned_malloc( 2*nImg*nOfm*        sizeof(float), 2097152);
 #endif
-#ifdef DP64_BN_STATS
+#ifdef FP64_BN_STATS
   batchstats_libxsmm    = (float*)libxsmm_aligned_malloc( 3*nImg*nOfm*        sizeof(float), 2097152);
 #endif
   naive_bias            = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
@@ -751,7 +751,7 @@ int main(int argc, char* argv[])
 #ifdef FP32_BN_STATS 
     zero_buf(batchstats_libxsmm, 2*nImg*nOfm);
 #endif
-#ifdef DP64_BN_STATS 
+#ifdef FP64_BN_STATS 
     zero_buf(batchstats_libxsmm, 3*nImg*nOfm);
 #endif
 
@@ -815,7 +815,7 @@ int main(int argc, char* argv[])
         int ch_j = 0;
         int pxl_i = 0;
         LIBXSMM_VLA_DECL(4, float, sum_fuse,  batchstats_libxsmm, nOfm/16, nImg, 16);
-#ifdef DP64_BN_STATS   
+#ifdef FP64_BN_STATS   
         LIBXSMM_VLA_DECL(3, double, sum_fuse_dp,  batchstats_libxsmm + nImg * nOfm,  nImg, 16);
 #endif
         LIBXSMM_VLA_DECL(3, float, sum_naive, naive_output,       nOfm, ofhp*ofwp);
@@ -838,7 +838,7 @@ int main(int argc, char* argv[])
 #ifdef FP32_BN_STATS        
               ch_sum2_fuse[(ch_i*16) + ch_j] += sum_fuse[1][ch_i][img_i][ch_j];
 #endif
-#ifdef DP64_BN_STATS    
+#ifdef FP64_BN_STATS    
               ch_sum2_fuse[(ch_i*16) + ch_j] += (float) sum_fuse_dp[ch_i][img_i][ch_j];  
 #endif
             }
