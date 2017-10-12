@@ -310,7 +310,6 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_sw(const libxsm
   const char *const desc = (const char*)descs;
   const unsigned int end = hint + ndescs;
   unsigned int i;
-#if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW)) /* most general implementation */
   for (i = hint; i < end; ++i) {
     const unsigned int j = i % ndescs; /* wrap around index */
     /* negative stride runs backwards */
@@ -318,15 +317,6 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_sw(const libxsm
       return j;
     }
   }
-#else /* slightly more optimized implementation */
-  assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
-  for (i = hint; i < end; ++i) {
-    const unsigned int j = LIBXSMM_MOD2(i, ndescs); /* wrap around index */
-    if (0 == libxsmm_gemm_diff_sw(reference, (const libxsmm_gemm_descriptor*)(desc + j * nbytes))) {
-      return j;
-    }
-  }
-#endif
   return ndescs;
 }
 
@@ -336,7 +326,7 @@ unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference,
   const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_AVX)
-  assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
+  assert(0 == ndescs || /*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
   {
@@ -390,7 +380,7 @@ unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference,
   const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_AVX2)
-  assert(/*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
+  assert(0 == ndescs || /*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
   {
@@ -444,7 +434,7 @@ unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
   const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_AVX512) && !defined(LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS)
-  assert(/*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
+  assert(0 == ndescs || /*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
 # if (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
   assert(32 == nbytes); /* padded descriptor array */
   {
@@ -499,7 +489,7 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_imci(const libx
   const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_KNC) && (28 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
-  assert(/*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
+  assert(0 == ndescs || /*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
   assert(32 == nbytes); /* padded descriptor array */
   {
     const unsigned int hint_even = (hint & 0xFFFFFFFE), end = hint_even + ndescs;
@@ -525,7 +515,7 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_imci(const libx
     return ndescs;
   }
 #elif defined(LIBXSMM_GEMM_DIFF_KNC) && (16 == LIBXSMM_GEMM_DESCRIPTOR_SIZE)
-  assert(/*is pot*/ndescs == (1 << LIBXSMM_LOG2(ndescs)));
+  assert(0 == ndescs || /*is pot*/ndescs == (1u << LIBXSMM_LOG2(ndescs)));
   assert(16 == nbytes); /* padded descriptor array */
   { /* TODO: implement for 16 Byte descriptor */
     return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);

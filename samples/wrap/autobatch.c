@@ -76,9 +76,16 @@ int main(int argc, char* argv[])
   const libxsmm_blasint n = 2 < argc ? atoi(argv[2]) : k;
   const libxsmm_blasint size = 4 < argc ? atoi(argv[4]) : 1000;
   const libxsmm_blasint lda = m, ldb = k, ldc = m;
-  const REAL_TYPE alpha = 1.0, beta = 1.0;
+  const REAL_TYPE alpha = 1.0, beta = 0.0;
   const char transa = 'N', transb = 'N';
-  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb) /*| LIBXSMM_MMBATCH_FLAG_SEQUENTIAL*/;
+  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb)
+#if 0
+    | LIBXSMM_MMBATCH_FLAG_SEQUENTIAL
+#endif
+#if 1
+    | LIBXSMM_MMBATCH_FLAG_STATISTIC
+#endif
+  ;
   REAL_TYPE *a = 0, *b = 0, *c = 0;
   int result = EXIT_SUCCESS, i;
 
@@ -91,6 +98,7 @@ int main(int argc, char* argv[])
 
   libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
     &transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+  fprintf(stdout, "\n"); /* linefeed */
 
   if (EXIT_SUCCESS == result) {
     init(42, a, m, k, lda, 1.0);
