@@ -100,7 +100,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
     const void *const extra = 0;
     /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
     libxsmm_gemm_wrap = ((0 == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
-    if (3 <= libxsmm_verbosity || 0 > libxsmm_verbosity) { /* enables the auto-batch statistic */
+    if (0 != libxsmm_verbosity) { /* enables the auto-batch statistic */
       libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC;
     }
     /* use libxsmm_malloc to draw memory from the default memory allocation domain */
