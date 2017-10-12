@@ -36,6 +36,7 @@
     (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || !defined(NDEBUG))
 # define LIBXSMM_GEMM_EXT_MMBATCH
 # include "libxsmm_gemm_diff.h"
+# include "libxsmm_trace.h"
 #endif
 
 #if defined(LIBXSMM_GEMM_EXT_MMBATCH)
@@ -98,9 +99,9 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(void)
         0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize, batchsize);
     }
     else { /* print and clear statistic */
-      unsigned int i;
+      unsigned int i, threshold;
       qsort(libxsmm_gemm_batcharray, batchsize, sizeof(libxsmm_gemm_batchitem), internal_mmbatch_sortrev);
-      const unsigned int threshold = ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity || 3 >= batchsize)
+      threshold = ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity || 3 >= batchsize)
         ? 0 : libxsmm_gemm_batcharray[0].stat.count / 2);
       LIBXSMM_FLOCK(stdout);
       fprintf(stdout, "\nLIBXSMM STATISTIC: %u multiplication%c\n",
