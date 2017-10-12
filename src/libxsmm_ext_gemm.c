@@ -101,7 +101,8 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(void)
       unsigned int i;
       qsort(libxsmm_gemm_batcharray, batchsize, sizeof(libxsmm_gemm_batchitem), internal_mmbatch_sortrev);
       LIBXSMM_FLOCK(stdout);
-      fprintf(stdout, "\nLIBXSMM STATISTIC\n");
+      fprintf(stdout, "\nLIBXSMM STATISTIC: %u multiplication%c\n",
+        internal_ext_gemm_batchcount, 1 < internal_ext_gemm_batchcount ? 's' : ' ');
       for (i = 0; i < batchsize; ++i) {
         const libxsmm_blasint lda = libxsmm_gemm_batcharray[i].stat.desc.lda;
         const libxsmm_blasint ldb = libxsmm_gemm_batcharray[i].stat.desc.ldb;
