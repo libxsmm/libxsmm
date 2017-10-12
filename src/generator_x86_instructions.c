@@ -746,6 +746,20 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_vreg2 = l_vreg1;
           l_vreg1 = 0;
           break;
+       case LIBXSMM_X86_INSTR_VCVTPS2PD:
+          l_fpadj2 -= 0x81;
+          l_fpadj += 0x01;
+          if ( l_vreg2 != LIBXSMM_X86_VEC_REG_UNDEF )
+          {
+             LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF );
+/*
+             fprintf(stderr,"Please call VCVTPS2PD with regs 0 and 1. Use UNDEF with reg 2\n");
+*/
+             exit(-1);
+          }
+          l_vreg2 = l_vreg1;
+          l_vreg1 = 0;
+          break;
        case LIBXSMM_X86_INSTR_VSUBPD:
           l_fpadj = 3;
           break;
@@ -2030,6 +2044,7 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
           buf[i++] = (unsigned char)(0xe3 - l_oddgrp0 * 0x20 - l_oddgrp2 * 0x80);
           buf[i++] = (unsigned char)(0x7d - l_oddgrp1 * 0x40 - l_vecval1*8);
           buf[i++] = (unsigned char)(0x06);
+          buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval2*8);
           break;
        case LIBXSMM_X86_INSTR_VSHUFPS:
           if ( (i_vector_name!='y') && (i_vector_name!='Y') )
@@ -2051,6 +2066,7 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
           buf[i++] = (unsigned char)(0xc5 - l_extra_byte);
           buf[i++] = (unsigned char)(0xfc - l_extra_offset - l_oddgrp0 * 0x80 - l_oddgrp1 * 0x40 - l_oddgrp2 * 0x80 - l_vecval1*8);
           buf[i++] = (unsigned char)(0xc6);
+          buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval2*8);
           break;
        case LIBXSMM_X86_INSTR_VSHUFF64X2:
           l_2or3grp0 = (l_vecgrp0>=2);
@@ -2066,14 +2082,53 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
           buf[i++] = (unsigned char)(0xfd - l_oddgrp1 * 0x40 - l_vecval1*8);
           buf[i++] = (unsigned char)(0x48 - l_2or3grp1 * 0x08);
           buf[i++] = (unsigned char)(0x23);
+          buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval2*8);
+          break;
+       case LIBXSMM_X86_INSTR_VEXTRACTF32X8:
+          l_2or3grp0 = (l_vecgrp0>=2);
+          l_2or3grp1 = (l_vecgrp1>=2);
+          if ( i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF )
+          {
+             fprintf(stderr,"libxsmm_x86_instruction_vec_shuffle_reg: VEXTRACTF32X8 requires vec2 be undef\n");
+             exit(-1);
+          }
+          if ( (i_vector_name!='z') && (i_vector_name!='Z') )
+          {
+             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: VEXTRACTF32X8 only works for zmm\n");
+             exit(-1);
+          }
+          buf[i++] = (unsigned char)(0x62);
+          buf[i++] = (unsigned char)(0xf3 - l_oddgrp0 * 0x80 - l_oddgrp1 * 0x20 - l_2or3grp0 * 0x10 - l_2or3grp1 * 0x40);
+          buf[i++] = (unsigned char)(0x7d);
+          buf[i++] = (unsigned char)(0x48);
+          buf[i++] = (unsigned char)(0x1b);
+          buf[i++] = (unsigned char)(0xc0 + l_vecval0*8 + l_vecval1);
+          break;
+       case LIBXSMM_X86_INSTR_VEXTRACTF64X4:
+          l_2or3grp0 = (l_vecgrp0>=2);
+          l_2or3grp1 = (l_vecgrp1>=2);
+          if ( i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF )
+          {
+             fprintf(stderr,"libxsmm_x86_instruction_vec_shuffle_reg: VEXTRACTF64x4 requires vec2 be undef\n");
+             exit(-1);
+          }
+          if ( (i_vector_name!='z') && (i_vector_name!='Z') )
+          {
+             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: VEXTRACTF64x4 only works for zmm\n");
+             exit(-1);
+          }
+          buf[i++] = (unsigned char)(0x62);
+          buf[i++] = (unsigned char)(0xf3 - l_oddgrp0 * 0x80 - l_oddgrp1 * 0x20 - l_2or3grp0 * 0x10 - l_2or3grp1 * 0x40);
+          buf[i++] = (unsigned char)(0xfd);
+          buf[i++] = (unsigned char)(0x48);
+          buf[i++] = (unsigned char)(0x1b);
+          buf[i++] = (unsigned char)(0xc0 + l_vecval0*8 + l_vecval1);
           break;
        default:
           fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg doesn't yet do this instruction\n");
           exit(-1);
     }
 
-    /* Every instruction has this for a penultimate byte */
-    buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval2*8);
     /* Every instruction in this group has 1 byte at the end with the operand */
     buf[i++] = (unsigned char)(i_shuffle_operand);
 

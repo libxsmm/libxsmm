@@ -438,9 +438,15 @@ LIBXSMM_API_EXTERN void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char*, LIBXSMM
   LIBXSMM_GEMM_CONST double*, LIBXSMM_GEMM_CONST libxsmm_blasint*,
   LIBXSMM_GEMM_CONST double*, double*, LIBXSMM_GEMM_CONST libxsmm_blasint*);
 
-typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
-  const void *a, *b;
-  void *c;
+typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
+  struct {
+    const void *a, *b;
+    void *c;
+  } value;
+  struct {
+    libxsmm_gemm_descriptor desc;
+    unsigned int count;
+  } stat;
   /* TODO: consider padding */
 } libxsmm_gemm_batchitem;
 
