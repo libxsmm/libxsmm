@@ -39,7 +39,9 @@
 
 # define USE_OVERWRITE
 /*# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE*/
-/*# define USE_FUSED_BATCH_STATS*/
+# define USE_FUSED_BATCH_STATS
+
+#define DP64_BN_STATS
 
 #if !defined(USE_FUSED_BIAS) && 0
 # define USE_FUSED_BIAS
@@ -588,7 +590,12 @@ int main(int argc, char* argv[])
   dfilter_libxsmm       = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
   doutput_libxsmm       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   filtertr_libxsmm      = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+#ifdef FP32_BN_STATS
   batchstats_libxsmm    = (float*)libxsmm_aligned_malloc( 2*nImg*nOfm*        sizeof(float), 2097152);
+#endif
+#ifdef DP64_BN_STATS
+  batchstats_libxsmm    = (float*)libxsmm_aligned_malloc( 3*nImg*nOfm*        sizeof(float), 2097152);
+#endif
   naive_bias            = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
   naive_dbias           = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
   bias_libxsmm          = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
@@ -741,7 +748,12 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter, (void*)naive_filter,      LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_bias,   (void*)naive_bias,        LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
     zero_buf(filtertr_libxsmm, nOfm*nIfm*kh*kw);
+#ifdef FP32_BN_STATS 
     zero_buf(batchstats_libxsmm, 2*nImg*nOfm);
+#endif
+#ifdef DP64_BN_STATS 
+    zero_buf(batchstats_libxsmm, 3*nImg*nOfm);
+#endif
 
     /* bind buffers and filter to handle */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_input,      LIBXSMM_DNN_REGULAR_INPUT ) );
@@ -803,6 +815,9 @@ int main(int argc, char* argv[])
         int ch_j = 0;
         int pxl_i = 0;
         LIBXSMM_VLA_DECL(4, float, sum_fuse,  batchstats_libxsmm, nOfm/16, nImg, 16);
+#ifdef DP64_BN_STATS   
+        LIBXSMM_VLA_DECL(3, double, sum_fuse_dp,  batchstats_libxsmm + nImg * nOfm,  nImg, 16);
+#endif
         LIBXSMM_VLA_DECL(3, float, sum_naive, naive_output,       nOfm, ofhp*ofwp);
 
         ch_sum       = (float*) malloc(nOfm*sizeof(float));
@@ -820,7 +835,12 @@ int main(int argc, char* argv[])
           for ( img_i = 0; img_i < nImg; ++img_i ) {
             for ( ch_j = 0; ch_j < 16; ++ch_j ) {
               ch_sum_fuse[(ch_i*16) + ch_j]  += sum_fuse[0][ch_i][img_i][ch_j];
+#ifdef FP32_BN_STATS        
               ch_sum2_fuse[(ch_i*16) + ch_j] += sum_fuse[1][ch_i][img_i][ch_j];
+#endif
+#ifdef DP64_BN_STATS    
+              ch_sum2_fuse[(ch_i*16) + ch_j] += (float) sum_fuse_dp[ch_i][img_i][ch_j];  
+#endif
             }
           }
         }

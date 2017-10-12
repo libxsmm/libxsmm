@@ -40,6 +40,8 @@
 #include <assert.h>
 #include <stdio.h>
 
+#define DP64_BN_STATS
+
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code*                       io_generated_code,
                                                           const libxsmm_convolution_forward_descriptor* i_conv_desc,
@@ -385,7 +387,14 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
                                           LIBXSMM_X86_INSTR_PREFETCHT1, 
                                           l_gp_reg_mapping.gp_reg_help_3,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          0);      
+                                          0);  
+#ifdef DP64_BN_STATS
+         libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT1, 
+                                          l_gp_reg_mapping.gp_reg_help_3,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          64);  
+#endif       
         }
 
 
