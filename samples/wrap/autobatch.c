@@ -40,6 +40,10 @@
 # define DGEMM LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__wrap_, LIBXSMM_TPREFIX(REAL_TYPE, gemm)))
 #endif
 
+#if !defined(CALL_BEGIN_END)
+# define CALL_BEGIN_END
+#endif
+
 
 /** Function prototype for LIBXSMM's wrapped DGEMM; this way auto-batch can be tested as if DGEMM calls are intercepted/batched. */
 void DGEMM(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
@@ -78,14 +82,16 @@ int main(int argc, char* argv[])
   const libxsmm_blasint lda = m, ldb = k, ldc = m;
   const REAL_TYPE alpha = 1.0, beta = 0.0;
   const char transa = 'N', transb = 'N';
+#if defined(CALL_BEGIN_END)
   const int flags = LIBXSMM_GEMM_FLAGS(transa, transb)
-#if 0
+# if 0
     | LIBXSMM_MMBATCH_FLAG_SEQUENTIAL
-#endif
-#if 1
+# endif
+# if 1
     | LIBXSMM_MMBATCH_FLAG_STATISTIC
-#endif
+# endif
   ;
+#endif
   REAL_TYPE *a = 0, *b = 0, *c = 0;
   int result = EXIT_SUCCESS, i;
 
@@ -96,6 +102,7 @@ int main(int argc, char* argv[])
     result = EXIT_FAILURE;
   }
 
+  libxsmm_init();
   libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
     &transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
   fprintf(stdout, "\n"); /* linefeed */
@@ -105,17 +112,20 @@ int main(int argc, char* argv[])
     init(24, b, k, n, ldb, 1.0);
     init(0, c, m, n, ldc, 1.0);
 
+#if defined(CALL_BEGIN_END)
     /* enable batch-recording of the specified matrix multiplication */
     libxsmm_mmbatch_begin(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &flags, &m, &n, &k, &lda, &ldb, &ldc, &alpha, &beta);
-
+#endif
     for (i = 0; i < size; ++i) {
       DGEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
     }
-
+#if defined(CALL_BEGIN_END)
     /* disable/flush multiplication batch */
     result = libxsmm_mmbatch_end();
+#endif
   }
 
+  libxsmm_finalize();
   free(a);
   free(b);
   free(c);
