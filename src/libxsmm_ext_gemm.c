@@ -100,37 +100,41 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(void)
     else { /* print and clear statistic */
       unsigned int i;
       qsort(libxsmm_gemm_batcharray, batchsize, sizeof(libxsmm_gemm_batchitem), internal_mmbatch_sortrev);
+      const unsigned int threshold = ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity || 3 >= batchsize)
+        ? 0 : libxsmm_gemm_batcharray[0].stat.count / 2);
       LIBXSMM_FLOCK(stdout);
       fprintf(stdout, "\nLIBXSMM STATISTIC: %u multiplication%c\n",
         internal_ext_gemm_batchcount, 1 < internal_ext_gemm_batchcount ? 's' : ' ');
       for (i = 0; i < batchsize; ++i) {
-        const libxsmm_blasint lda = libxsmm_gemm_batcharray[i].stat.desc.lda;
-        const libxsmm_blasint ldb = libxsmm_gemm_batcharray[i].stat.desc.ldb;
-        const libxsmm_blasint ldc = libxsmm_gemm_batcharray[i].stat.desc.ldc;
-        const libxsmm_blasint m = libxsmm_gemm_batcharray[i].stat.desc.m;
-        const libxsmm_blasint n = libxsmm_gemm_batcharray[i].stat.desc.n;
-        const libxsmm_blasint k = libxsmm_gemm_batcharray[i].stat.desc.k;
         const unsigned int ci = libxsmm_gemm_batcharray[i].stat.count;
-        assert(0 != ci);
-        if (LIBXSMM_GEMM_PRECISION_F64 == libxsmm_gemm_batcharray[i].stat.desc.datatype) {
-          const double alpha = libxsmm_gemm_batcharray[i].stat.desc.alpha;
-          const double beta = libxsmm_gemm_batcharray[i].stat.desc.beta;
-          LIBXSMM_GEMM_PRINT(stdout,
-            LIBXSMM_GEMM_PRECISION_F64, libxsmm_gemm_batcharray[i].stat.desc.flags,
-            &m, &n, &k, &alpha, 0/*a*/, &lda, 0/*b*/, &ldb, &beta, 0/*c*/, &ldc);
-        }
-        else if (LIBXSMM_GEMM_PRECISION_F32 == libxsmm_gemm_batcharray[i].stat.desc.datatype) {
-          const float alpha = libxsmm_gemm_batcharray[i].stat.desc.alpha;
-          const float beta = libxsmm_gemm_batcharray[i].stat.desc.beta;
-          LIBXSMM_GEMM_PRINT(stdout,
-            LIBXSMM_GEMM_PRECISION_F32, libxsmm_gemm_batcharray[i].stat.desc.flags,
-            &m, &n, &k, &alpha, 0/*a*/, &lda, 0/*b*/, &ldb, &beta, 0/*c*/, &ldc);
-        }
-        else {
-          result = EXIT_FAILURE;
-        }
-        if (ci <= internal_ext_gemm_batchcount) { /* sanity check */
-          fprintf(stdout, ": %.0f%%\n", 100.0 * ci / internal_ext_gemm_batchcount);
+        if (threshold < ci) {
+          const libxsmm_blasint lda = libxsmm_gemm_batcharray[i].stat.desc.lda;
+          const libxsmm_blasint ldb = libxsmm_gemm_batcharray[i].stat.desc.ldb;
+          const libxsmm_blasint ldc = libxsmm_gemm_batcharray[i].stat.desc.ldc;
+          const libxsmm_blasint m = libxsmm_gemm_batcharray[i].stat.desc.m;
+          const libxsmm_blasint n = libxsmm_gemm_batcharray[i].stat.desc.n;
+          const libxsmm_blasint k = libxsmm_gemm_batcharray[i].stat.desc.k;
+          assert(0 != ci);
+          if (LIBXSMM_GEMM_PRECISION_F64 == libxsmm_gemm_batcharray[i].stat.desc.datatype) {
+            const double alpha = libxsmm_gemm_batcharray[i].stat.desc.alpha;
+            const double beta = libxsmm_gemm_batcharray[i].stat.desc.beta;
+            LIBXSMM_GEMM_PRINT(stdout,
+              LIBXSMM_GEMM_PRECISION_F64, libxsmm_gemm_batcharray[i].stat.desc.flags,
+              &m, &n, &k, &alpha, 0/*a*/, &lda, 0/*b*/, &ldb, &beta, 0/*c*/, &ldc);
+          }
+          else if (LIBXSMM_GEMM_PRECISION_F32 == libxsmm_gemm_batcharray[i].stat.desc.datatype) {
+            const float alpha = libxsmm_gemm_batcharray[i].stat.desc.alpha;
+            const float beta = libxsmm_gemm_batcharray[i].stat.desc.beta;
+            LIBXSMM_GEMM_PRINT(stdout,
+              LIBXSMM_GEMM_PRECISION_F32, libxsmm_gemm_batcharray[i].stat.desc.flags,
+              &m, &n, &k, &alpha, 0/*a*/, &lda, 0/*b*/, &ldb, &beta, 0/*c*/, &ldc);
+          }
+          else {
+            result = EXIT_FAILURE;
+          }
+          if (ci <= internal_ext_gemm_batchcount) { /* sanity check */
+            fprintf(stdout, ": %.0f%%\n", 100.0 * ci / internal_ext_gemm_batchcount);
+          }
         }
       }
       LIBXSMM_FUNLOCK(stdout);

@@ -333,8 +333,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
           string_a, a, (long long)ilda, b, (long long)ildb, string_b, c, (long long)ildc);
       }
       else {
-        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %lli/*m*/, %lli/*n*/, %lli/*k*/, "
-                                "%lli/*lda*/, %lli/*ldb*/, %lli/*ldc*/, %s/*alpha*/, %s/*beta*/)",
+        fprintf((FILE*)ostream, "%cgemm(trans=%c%c mnk=%lli,%lli,%lli ldx=%lli,%lli,%lli a,b=%s,%s)",
           typeprefix, ctransa, ctransa, (long long)*m, (long long)nn, (long long)kk,
           (long long)ilda, (long long)ildb, (long long)ildc, string_a, string_b);
       }
