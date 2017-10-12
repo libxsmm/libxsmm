@@ -95,13 +95,12 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
   }
 #if defined(LIBXSMM_BUILD) && (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || !defined(NDEBUG))
   {
-    const char *const env_w = getenv("LIBXSMM_GEMM_WRAP"), *const env_s = getenv("LIBXSMM_GEMM_WRAPSTAT");
-    const char *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
+    const char *const env_w = getenv("LIBXSMM_GEMM_WRAP"), *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
     const int batchsize = ((0 == env_b || 0 == *env_b) ? -1 : atoi(env_b));
     const void *const extra = 0;
     /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
     libxsmm_gemm_wrap = ((0 == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
-    if (0 != env_s && 0 != *env_s) { /* enables the auto-batch statistic */
+    if (3 <= libxsmm_verbosity || 0 > libxsmm_verbosity) { /* enables the auto-batch statistic */
       libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC;
     }
     /* use libxsmm_malloc to draw memory from the default memory allocation domain */
@@ -137,12 +136,16 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 
 LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 {
-  void* extra = 0;
-  if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, 0/*size*/, 0/*flags*/, &extra)) {
-    const libxsmm_mmbatch_flush_function flush = *(libxsmm_mmbatch_flush_function*)extra;
-    flush();
+#if defined(LIBXSMM_BUILD) && (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || !defined(NDEBUG))
+  if (0 != libxsmm_gemm_batcharray) {
+    void* extra = 0;
+    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, 0/*size*/, 0/*flags*/, &extra)) {
+      const libxsmm_mmbatch_flush_function flush = *(libxsmm_mmbatch_flush_function*)extra;
+      if (0 != flush) flush();
+    }
+    libxsmm_free(libxsmm_gemm_batcharray);
   }
-  libxsmm_free(libxsmm_gemm_batcharray);
+#endif
 }
 
 
