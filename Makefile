@@ -14,7 +14,7 @@ endif
 endif
 
 #ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
-ROOTDIR = $(dir $(firstword $(MAKEFILE_LIST)))
+ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
 SPLDIR = $(ROOTDIR)/samples
 SCRDIR = $(ROOTDIR)/scripts
 TSTDIR = $(ROOTDIR)/tests
