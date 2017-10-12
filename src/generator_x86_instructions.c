@@ -2104,6 +2104,26 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
           buf[i++] = (unsigned char)(0x1b);
           buf[i++] = (unsigned char)(0xc0 + l_vecval0*8 + l_vecval1);
           break;
+       case LIBXSMM_X86_INSTR_VEXTRACTF64X4:
+          l_2or3grp0 = (l_vecgrp0>=2);
+          l_2or3grp1 = (l_vecgrp1>=2);
+          if ( i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF )
+          {
+             fprintf(stderr,"libxsmm_x86_instruction_vec_shuffle_reg: VEXTRACTF64x4 requires vec2 be undef\n");
+             exit(-1);
+          }
+          if ( (i_vector_name!='z') && (i_vector_name!='Z') )
+          {
+             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: VEXTRACTF64x4 only works for zmm\n");
+             exit(-1);
+          }
+          buf[i++] = (unsigned char)(0x62);
+          buf[i++] = (unsigned char)(0xf3 - l_oddgrp0 * 0x80 - l_oddgrp1 * 0x20 - l_2or3grp0 * 0x10 - l_2or3grp1 * 0x40);
+          buf[i++] = (unsigned char)(0xfd);
+          buf[i++] = (unsigned char)(0x48);
+          buf[i++] = (unsigned char)(0x1b);
+          buf[i++] = (unsigned char)(0xc0 + l_vecval0*8 + l_vecval1);
+          break;
        default:
           fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg doesn't yet do this instruction\n");
           exit(-1);
