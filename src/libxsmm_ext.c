@@ -33,8 +33,8 @@
 #include <libxsmm.h>
 
 
-#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
-#if !defined(__STATIC)
+#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD_EXT) && !defined(__STATIC) /* no-BLAS library */
 
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
   LIBXSMM_GEMM_CONST libxsmm_blasint* m, LIBXSMM_GEMM_CONST libxsmm_blasint* n, LIBXSMM_GEMM_CONST libxsmm_blasint* k,
