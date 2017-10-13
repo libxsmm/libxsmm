@@ -571,7 +571,7 @@ LIBXSMM_API_INLINE void internal_init(void)
     internal_statistic_med = 23;
 #if defined(LIBXSMM_TRACE)
     {
-      int filter_threadid = -1, filter_mindepth = -1, filter_maxnsyms = -1;
+      int filter_threadid = 0, filter_mindepth = -1, filter_maxnsyms = 0;
       const char *const env = getenv("LIBXSMM_TRACE");
       if (0 != env && 0 != *env) {
         char buffer[32];
