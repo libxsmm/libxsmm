@@ -903,7 +903,10 @@ else # GCC assumed
     endif
   endif
   endif
-  ifneq (0,$(STATIC))
+  ifeq (1,$(STATIC))
+    SLDFLAGS += -Bstatic -static-libgcc -static-libstdc++
+    DFLAGS += -D__STATIC=1
+  else ifneq (0,$(STATIC))
     DFLAGS += -D__STATIC=$(STATIC)
     ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | grep -q "\-ldummydoesnotexist"; echo "$$?"))
       SLDFLAGS += -static
