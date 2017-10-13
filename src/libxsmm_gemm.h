@@ -446,6 +446,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
   struct {
     libxsmm_gemm_descriptor desc;
     unsigned int count;
+    const char* symbol;
   } stat;
   /* TODO: consider padding */
 } libxsmm_gemm_batchitem;
