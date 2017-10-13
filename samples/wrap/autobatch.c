@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
     }
 #if defined(CALL_BEGIN_END)
     /* disable/flush multiplication batch */
-    result = libxsmm_mmbatch_end();
+    libxsmm_mmbatch_end();
 #endif
   }
 

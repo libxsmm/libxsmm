@@ -456,7 +456,7 @@ LIBXSMM_API int libxsmm_mmbatch_internal(
   int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize,
   int tid, int nthreads, const libxsmm_gemm_descriptor* kernel_desc);
 
-typedef int (*libxsmm_mmbatch_flush_function)(void);
+typedef void (*libxsmm_mmbatch_flush_function)(void);
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][8/*size-range*/];

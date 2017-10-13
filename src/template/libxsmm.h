@@ -182,7 +182,7 @@ typedef enum libxsmm_mmbatch_flags {
 
 /**
  * This function is a no-op unless LIBXSMM is built to intercept GEMM calls.
- * Pointer arguments are used to prefilter intercepted GEMM calls such that
+ * Pointer arguments are used to filter intercepted GEMM calls such that
  * non-NULL values match. Otherwise (NULL) the respective argument is
  * considered a "free value" i.e., every value can match; libxsmmext required.
  */
@@ -191,7 +191,7 @@ LIBXSMM_API void libxsmm_mmbatch_begin(libxsmm_gemm_precision precision, const i
   const void* alpha, const void* beta);
 
 /** Processes the batch of previously recorded matrix multiplications (libxsmm_mmbatch_begin); libxsmmext required. */
-LIBXSMM_API int libxsmm_mmbatch_end(void);
+LIBXSMM_API void libxsmm_mmbatch_end(void);
 
 /** Code generation routine for JIT matcopy using a descriptor. */
 LIBXSMM_API libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor);
@@ -251,7 +251,7 @@ LIBXSMM_API int libxsmm_otrans_thread(void* out, const void* in, unsigned int ty
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   int tid, int nthreads);
 
-  /** Matrix transposition; MT via libxsmmext (out-of-place form). */
+/** Matrix transposition; MT via libxsmmext (out-of-place form). */
 LIBXSMM_API int libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 

@@ -553,7 +553,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
       }
     }
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM ERROR: GEMM batch recording failed to enable!\n");
     }
@@ -567,7 +567,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_mmbatch_end(void)
+LIBXSMM_API_DEFINITION void libxsmm_mmbatch_end(void)
 {
 #if defined(LIBXSMM_GEMM_EXT_MMBATCH)
   const int result = internal_mmbatch_flush();
@@ -578,14 +578,17 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_end(void)
   else {
     memset(&libxsmm_gemm_batchdesc, 0, sizeof(libxsmm_gemm_batchdesc));
   }
-#else
-  const int result = EXIT_SUCCESS;
+  if (EXIT_SUCCESS != result && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: GEMM batch recording failed to enable!\n");
+    }
+  }
 #endif
-  return result;
 }
 
 
-#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_sgemm_omp)(const char*, const char*,
@@ -618,5 +621,26 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dgemm_omp)(const char* trans
   libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
-#endif /*defined(LIBXSMM_BUILD)*/
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_mmbatch_begin)(const libxsmm_gemm_precision* /*precision*/, const int* /*flags*/,
+  const int* /*m*/, const int* /*n*/, const int* /*k*/, const int* /*lda*/, const int* /*ldb*/, const int* /*ldc*/,
+  const void* /*alpha*/, const void* /*beta*/);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_mmbatch_begin)(const libxsmm_gemm_precision* precision, const int* flags,
+  const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
+  const void* alpha, const void* beta)
+{
+  assert(0 != precision);
+  libxsmm_mmbatch_begin(*precision, flags, m, n, k, lda, ldb, ldc, alpha, beta);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_mmbatch_end)(void);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_mmbatch_end)(void)
+{
+  libxsmm_mmbatch_end();
+}
+
+#endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)*/
 
