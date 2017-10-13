@@ -29,13 +29,11 @@
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_gemm_diff.h"
+#include "libxsmm_trace.h"
 #include "libxsmm_trans.h"
 #include "libxsmm_gemm.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_main.h"
-#if defined(__TRACE) || !defined(_WIN32) || defined(LIBXSMM_BUILD)
-# include "libxsmm_trace.h"
-#endif
 #if defined(LIBXSMM_PERF)
 # include "libxsmm_perf.h"
 #endif
@@ -571,7 +569,7 @@ LIBXSMM_API_INLINE void internal_init(void)
     internal_statistic_mnk = libxsmm_icbrt(LIBXSMM_MAX_MNK);
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
-#if defined(__TRACE) || !defined(_WIN32) || defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_TRACE)
     {
       int filter_threadid = -1, filter_mindepth = -1, filter_maxnsyms = -1;
       const char *const env = getenv("LIBXSMM_TRACE");
@@ -656,7 +654,7 @@ LIBXSMM_API_INLINE void internal_init(void)
         free(result);
       }
     }
-#if defined(__TRACE) || !defined(_WIN32) || defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_TRACE)
     else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
       fprintf(stderr, "LIBXSMM ERROR: failed to initialize TRACE (error #%i)!\n", init_code);
     }
@@ -722,7 +720,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 
       /* serves as an id to invalidate the thread-local cache; never decremented */
       ++internal_teardown;
-#if defined(__TRACE) || !defined(_WIN32) || defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_TRACE)
       i = libxsmm_trace_finalize();
       if (EXIT_SUCCESS != i && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
         fprintf(stderr, "LIBXSMM ERROR: failed to finalize trace (error #%i)!\n", i);

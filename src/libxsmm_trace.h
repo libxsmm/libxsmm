@@ -40,6 +40,12 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if defined(__TRACE) || ( \
+  !(defined(__APPLE__) && defined(__MACH__)) && \
+  !(defined(_WIN32) && !defined(LIBXSMM_BUILD)))
+# define LIBXSMM_TRACE
+#endif
+
 
 /** Initializes the trace facility; NOT thread-safe. */
 LIBXSMM_API int libxsmm_trace_init(

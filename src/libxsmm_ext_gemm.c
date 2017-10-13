@@ -33,7 +33,8 @@
 #include "libxsmm_ext.h"
 
 #if !defined(LIBXSMM_GEMM_EXT_MMBATCH) && defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && \
-    (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || !defined(NDEBUG))
+    (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || \
+    !defined(NDEBUG) || defined(_WIN32)) /* debug purpose */
 # define LIBXSMM_GEMM_EXT_MMBATCH
 # include "libxsmm_gemm_diff.h"
 # include "libxsmm_trace.h"
@@ -134,7 +135,9 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(void)
             result = EXIT_FAILURE;
           }
           if (ci <= internal_ext_gemm_batchcount) { /* sanity check */
-            fprintf(stdout, ": %.0f%%\n", 100.0 * ci / internal_ext_gemm_batchcount);
+            const char *const symbol = libxsmm_gemm_batcharray[i].stat.symbol;
+            fprintf(stdout, ": %.0f%% [%s]\n", 100.0 * ci / internal_ext_gemm_batchcount,
+              0 != symbol ? symbol : "unknown location");
           }
         }
       }
@@ -198,8 +201,14 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
             i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchsize, 1, LIBXSMM_ATOMIC_RELAXED);
             if (i <= libxsmm_gemm_batchsize) { /* bounds check */
               void* extra = 0;
+#if defined(NDEBUG)
+              unsigned int depth = 1;
+#else
+              unsigned int depth = 2;
+#endif
               libxsmm_gemm_batcharray[i-1].stat.desc = descriptor;
               libxsmm_gemm_batcharray[i-1].stat.count = 1;
+              libxsmm_gemm_batcharray[i-1].stat.symbol = libxsmm_trace_info(&depth, 0, 0, 0, 0);
               if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, 0/*size*/, 0/*flags*/, &extra)) {
                 *(libxsmm_mmbatch_flush_function*)extra = libxsmm_mmbatch_end;
               }
@@ -278,8 +287,14 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
             i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchsize, 1, LIBXSMM_ATOMIC_RELAXED);
             if (i <= libxsmm_gemm_batchsize) { /* bounds check */
               void* extra = 0;
+#if defined(NDEBUG)
+              unsigned int depth = 1;
+#else
+              unsigned int depth = 2;
+#endif
               libxsmm_gemm_batcharray[i-1].stat.desc = descriptor;
               libxsmm_gemm_batcharray[i-1].stat.count = 1;
+              libxsmm_gemm_batcharray[i-1].stat.symbol = libxsmm_trace_info(&depth, 0, 0, 0, 0);
               if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, 0/*size*/, 0/*flags*/, &extra)) {
                 *(libxsmm_mmbatch_flush_function*)extra = libxsmm_mmbatch_end;
               }

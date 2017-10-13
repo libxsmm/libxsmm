@@ -154,7 +154,7 @@ LIBXSMM_API_DEFINITION int libxsmm_trace_init(int filter_threadid, int filter_mi
 {
   int result = EXIT_SUCCESS;
   internal_trace_initialized = -1; /* disabled */
-#if defined(__TRACE) || !defined(_WIN32) || defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_TRACE)
 # if defined(_WIN32) || defined(__CYGWIN__)
   SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
   result = (FALSE != SymInitialize(GetCurrentProcess(), NULL, TRUE) ? EXIT_SUCCESS : GetLastError());
@@ -185,7 +185,7 @@ int libxsmm_trace_finalize(void);
 LIBXSMM_API_DEFINITION int libxsmm_trace_finalize(void)
 {
   int result;
-#if defined(__TRACE) || !defined(_WIN32) || defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_TRACE)
   const int initialized = LIBXSMM_ATOMIC_LOAD(&internal_trace_initialized, LIBXSMM_ATOMIC_RELAXED);
   if (0 == initialized) {
     LIBXSMM_ATOMIC_STORE(&internal_trace_initialized, -1/*disable*/, LIBXSMM_ATOMIC_SEQ_CST);
@@ -242,7 +242,7 @@ LIBXSMM_API_DEFINITION
 const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms)
 {
   const char *fname = NULL;
-#if defined(__TRACE) || !defined(_WIN32) || defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_TRACE)
   const int max_n = (0 != depth ? (LIBXSMM_TRACE_MAXDEPTH) : 2);
   const int min_n = (0 != depth ? (LIBXSMM_TRACE_MINDEPTH + *depth) : 2);
   void *stacktrace[LIBXSMM_TRACE_MAXDEPTH], **symbol = stacktrace + LIBXSMM_MIN(0 != depth ? ((int)(*depth + 1)) : 1, max_n - 1);
@@ -430,7 +430,7 @@ void libxsmm_trace(FILE* stream, unsigned int depth, const int* filter_threadid,
 
 LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms)
 {
-#if defined(__TRACE) || !defined(_WIN32) || defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_TRACE)
   unsigned int depth1 = depth + 1, threadid;
   const char *const name = libxsmm_trace_info(&depth1, &threadid,
     filter_threadid, filter_mindepth, filter_maxnsyms);
@@ -459,7 +459,7 @@ LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, cons
 LIBXSMM_API_EXTERN LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
 LIBXSMM_API_INTERN void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
-#if defined(__TRACE) || !defined(_WIN32) || defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_TRACE)
 # if !defined(LIBXSMM_TRACE_DLINFO)
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
   libxsmm_trace(stderr, 2/*no need for parent (0) but parent of parent (1)*/,

@@ -595,7 +595,7 @@ ifneq (0,$(INTEL))
     FCFLAGS += -finstrument-functions
     DFLAGS += -D__TRACE=$(INSTRUMENT)
   endif
-  ifneq (0,$(TRACE))
+  ifneq (0,$(SYM))
   ifneq (0,$(DEPSTATIC))
   ifneq (Darwin,$(UNAME))
   ifneq (Windows_NT,$(UNAME))

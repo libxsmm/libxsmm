@@ -93,7 +93,8 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
     const int uid = ((0 == env_p || 0 == *env_p) ? 6/*LIBXSMM_PREFETCH_AL2_AHEAD*/ : atoi(env_p));
     libxsmm_gemm_tiled_prefetch = (0 <= uid ? libxsmm_gemm_uid2prefetch(uid) : prefetch);
   }
-#if defined(LIBXSMM_BUILD) && (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || !defined(NDEBUG))
+#if defined(LIBXSMM_BUILD) && (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || \
+   !defined(NDEBUG)) || defined(_WIN32) /* debug purpose */
   {
     const char *const env_w = getenv("LIBXSMM_GEMM_WRAP"), *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
     const int batchsize = ((0 == env_b || 0 == *env_b) ? -1 : atoi(env_b));
