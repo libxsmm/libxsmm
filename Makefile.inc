@@ -595,15 +595,6 @@ ifneq (0,$(INTEL))
     FCFLAGS += -finstrument-functions
     DFLAGS += -D__TRACE=$(INSTRUMENT)
   endif
-  ifneq (0,$(SYM))
-  ifneq (0,$(DEPSTATIC))
-  ifneq (Darwin,$(UNAME))
-  ifneq (Windows_NT,$(UNAME))
-    LDFLAGS += -Wl,--export-dynamic
-  endif
-  endif
-  endif
-  endif
   ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     ifeq (0,$(COMPATIBLE))
     ifneq (,$(filter environment% override command%,$(origin COMPATIBLE)))
@@ -663,6 +654,13 @@ ifneq (0,$(INTEL))
       CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
       CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
       FCFLAGS := -g -traceback $(FCFLAGS)
+    endif
+    ifneq (0,$(DEPSTATIC))
+    ifneq (Darwin,$(UNAME))
+    ifneq (Windows_NT,$(UNAME))
+      LDFLAGS += -Wl,--export-dynamic
+    endif
+    endif
     endif
   endif
   ifeq (0,$(EXP))
@@ -839,16 +837,9 @@ else # GCC assumed
     DFLAGS += -D__TRACE=$(INSTRUMENT)
   endif
   ifneq (0,$(TRACE))
-    ifeq (Windows_NT,$(UNAME))
-      LDFLAGS += -ldbghelp
-    endif
-    ifneq (0,$(DEPSTATIC))
-    ifneq (Darwin,$(UNAME))
-    ifneq (Windows_NT,$(UNAME))
-      LDFLAGS += -Wl,--export-dynamic
-    endif
-    endif
-    endif
+  ifeq (Windows_NT,$(UNAME))
+    LDFLAGS += -ldbghelp
+  endif
   endif
   ifneq (0,$(SYM))
     ifeq (1,$(SYM))
@@ -865,6 +856,13 @@ else # GCC assumed
       CXXFLAGS := -g3 -gdwarf-2 $(CXXFLAGS)
       CFLAGS := -g3 -gdwarf-2 $(CFLAGS)
       FCFLAGS := -g $(FCFLAGS)
+    endif
+    ifneq (0,$(DEPSTATIC))
+    ifneq (Darwin,$(UNAME))
+    ifneq (Windows_NT,$(UNAME))
+      LDFLAGS += -Wl,--export-dynamic
+    endif
+    endif
     endif
   endif
   ifeq (0,$(EXP))
