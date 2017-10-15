@@ -544,6 +544,17 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                                                  i_conv_kernel_config->vxor_instruction,
                                                  i_conv_kernel_config->vector_name, 1, 1, 1);
 #endif
+#ifdef FP64_BN_STATS   
+        /* reset zmm2 and zmm3 */
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vxor_instruction,
+                                                 i_conv_kernel_config->vector_name, 2, 2, 2);
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vxor_instruction,
+                                                 i_conv_kernel_config->vector_name, 3, 3, 3);
+#endif
       }
 
       for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
@@ -795,7 +806,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           i_conv_kernel_config->instruction_set,
-                                          i_conv_kernel_config->vmove_instruction,
+                                          LIBXSMM_X86_INSTR_VMOVAPD,
                                           i_gp_reg_mapping->gp_reg_help_2,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
                                           0,
@@ -804,7 +815,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           i_conv_kernel_config->instruction_set,
-                                          i_conv_kernel_config->vmove_instruction,
+                                          LIBXSMM_X86_INSTR_VMOVAPD,
                                           i_gp_reg_mapping->gp_reg_help_2,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
                                           64,
