@@ -391,6 +391,12 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
 #ifdef FP64_BN_STATS
          libxsmm_x86_instruction_prefetch( io_generated_code,
                                           LIBXSMM_X86_INSTR_PREFETCHT1, 
+                                          l_gp_reg_mapping.gp_reg_help_2,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          64);  
+
+         libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT1, 
                                           l_gp_reg_mapping.gp_reg_help_3,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
                                           64);  
