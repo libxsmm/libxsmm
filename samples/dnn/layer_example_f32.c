@@ -602,7 +602,7 @@ int main(int argc, char* argv[])
   batchstats_libxsmm    = (float*)libxsmm_aligned_malloc( 2*nImg*nOfm*        sizeof(float), 2097152);
 #endif
 #ifdef FP64_BN_STATS
-  batchstats_libxsmm    = (double*)libxsmm_aligned_malloc( 2*nImg*nOfm*        sizeof(float), 2097152);
+  batchstats_libxsmm    = (double*)libxsmm_aligned_malloc( 2*nImg*nOfm*        sizeof(double), 2097152);
 #endif
   naive_bias            = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
   naive_dbias           = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);

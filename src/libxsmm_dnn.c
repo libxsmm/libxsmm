@@ -39,6 +39,9 @@
 #include "libxsmm_dnn_convolution_winograd_backward.h"
 #include "libxsmm_dnn_convolution_winograd_weight_update.h"
 
+
+#define FP64_BN_STATS
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
@@ -783,6 +786,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
       } else if ( (type == LIBXSMM_DNN_BATCH_STATS) ) {
         layout->format = handle->buffer_format;
         layout->tensor_type = LIBXSMM_DNN_BATCH_STATS;
+#ifdef FP64_BN_STATS     
+        layout->datatype = LIBXSMM_DNN_DATATYPE_F64; 
+#endif
 
         if ((handle->buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) {
           if ( handle->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
