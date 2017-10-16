@@ -377,8 +377,8 @@
           SUBROUTINE libxsmm_mmbatch_begin(precision, flags, m, n, k,   &
      &    lda, ldb, ldc, alpha, beta) BIND(C)
             IMPORT C_INT, C_PTR
-            INTEGER(C_INT), INTENT(IN) :: precision, flags
-            INTEGER(C_INT), INTENT(IN) :: m, n, k, lda, ldb, ldc
+            INTEGER(C_INT), INTENT(IN), VALUE :: precision
+            INTEGER(C_INT), INTENT(IN) :: flags, m, n, k, lda, ldb, ldc
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
           END SUBROUTINE
 
