@@ -205,6 +205,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
+
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_begin
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_end
         INTERFACE
@@ -381,6 +382,7 @@
             INTEGER(C_INT), INTENT(IN) :: flags, m, n, k, lda, ldb, ldc
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
           END SUBROUTINE
+
 
           ! Processes the batch of previously recorded matrix multiplications
           ! (libxsmm_mmbatch_begin); libxsmmext required.
