@@ -258,4 +258,32 @@ if (handle->datatype != handle->datatype_itm) {
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
+
+  /* Fuse ReLu here*/
+  if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
+    int ii, ij, ifm1, ifm2, img;
+    img = ltid;
+    LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+    LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);  
+    element_input_type *orig_input_ptr;
+    element_input_type *del_input_ptr;
+    __m512 zero_reg  = _mm512_setzero_ps();  
+    __m512 orig_reg;
+    __mmask16 mask; 
+    for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++ ) {
+      orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+      del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+      for (ij = 0; ij < handle->desc.H; ij++) {
+        for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
+          orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
+          mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
+          _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
+        }
+        orig_input_ptr += handle->ifwp * 16;
+        del_input_ptr += handle->ifwp *16;
+      }
+    }
+    libxsmm_barrier_wait(handle->barrier, ltid);
+  }
+
 }
