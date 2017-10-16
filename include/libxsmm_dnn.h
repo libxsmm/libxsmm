@@ -168,10 +168,13 @@ typedef enum libxsmm_dnn_conv_fuse_op {
   LIBXSMM_DNN_CONV_FUSE_NONE = 0,
   /* we fuse bias addition into convolution */
   LIBXSMM_DNN_CONV_FUSE_BIAS = 1,
-  /* we fuse ReLU calculation into convolution op */
-  LIBXSMM_DNN_CONV_FUSE_RELU = 2,
+  /* we fuse ReLU calculation into fwd convolution op */
+  LIBXSMM_DNN_CONV_FUSE_RELU_FWD = 2,
+  /* we fuse ReLU calculation into bwd convolution op */
+  LIBXSMM_DNN_CONV_FUSE_RELU_BWD = 4,
   /* we fuse batch stats */
-  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS = 4,
+  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS = 8,
+  LIBXSMM_DNN_CONV_FUSE_RELU = 16/*LIBXSMM_DNN_CONV_FUSE_RELU_FWD | LIBXSMM_DNN_CONV_FUSE_RELU_BWD*/,
   /* we fuse bias addition and ReLU into convolution op */
   LIBXSMM_DNN_CONV_FUSE_BIAS_RELU = LIBXSMM_DNN_CONV_FUSE_BIAS | LIBXSMM_DNN_CONV_FUSE_RELU
 } libxsmm_dnn_conv_fuse_op;

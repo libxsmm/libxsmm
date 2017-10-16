@@ -173,6 +173,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int use_hybrid_wu_parallelism;
   int weight_copies;
   int compute_batch_stats_in_kernel;
+  int perform_relu_in_kernel;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;

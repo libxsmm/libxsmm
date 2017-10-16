@@ -92,6 +92,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
   handle->compute_batch_stats_in_kernel = 0;
   handle->use_fwd_for_bwd = 0;
+  handle->perform_relu_in_kernel = 0;
+
   if ( 0 == env_jit ) {
     /* By default do not do any thread private jitting */
     handle->use_thread_private_jit = 0;
@@ -647,6 +649,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.datatype_itm = handle->datatype_itm;
       descriptor.option = handle->desc.options;
       descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
+      descriptor.perform_relu_in_kernel = 0;
 
      if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_nts_fwd == 1) && (handle->use_fwd_for_bwd == 0) ) {
       descriptor.compute_batch_stats = 1;
@@ -801,7 +804,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       libxsmm_matcopy_descriptor matcopyback_descriptor;
       libxsmm_convolution_forward_descriptor fwd_equivalent_descriptor;
       libxsmm_matcopy_descriptor matzero_descriptor_overwrite;
-    
+
+
       fwd_equivalent_descriptor.input_L2_prefetching = 0;
       if (handle->desc.R != 1 || handle->desc.S != 1) {
         fwd_equivalent_descriptor.extra_L2_prefetching = 0;
@@ -918,6 +922,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matcopy_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype);
           matcopy_descriptor.flags = 0;
         } 
+        handle->perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0 ;
+        fwd_equivalent_descriptor.perform_relu_in_kernel = handle->perform_relu_in_kernel;
       }
 
 
@@ -1169,7 +1175,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           mirror_handle->ofhp = handle->ifhp;
           mirror_handle->ofwp = handle->ifwp;
           mirror_handle->use_nts_fwd = handle->use_nts_bwd;
-          mirror_handle->block_fwd_ofm = handle->block_fwd_ifm;
+         mirror_handle->block_fwd_ofm = handle->block_fwd_ifm;
           mirror_handle->blocksifm = handle->blocksofm;
           mirror_handle->ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.S) / handle->desc.v + 1;
           mirror_handle->ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.R) / handle->desc.u + 1;

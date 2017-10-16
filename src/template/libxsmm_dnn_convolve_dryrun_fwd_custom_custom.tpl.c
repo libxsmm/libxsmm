@@ -133,7 +133,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   }
 
   mark_ofm_init = ( ( (  (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_fwd == 0) ) || ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) ? 1 : 0;
-  mark_ofm_close = ( (handle->datatype != handle->datatype_itm) || (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 0) )) ? 1 : 0;
+  mark_ofm_close = ( (handle->datatype != handle->datatype_itm) || (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 0) ) || (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0) ) ) ? 1 : 0;
   mark_img_init = (  (handle->padding_flag == 1) || (mark_ofm_close == 1)) ? 1 : 0;
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */

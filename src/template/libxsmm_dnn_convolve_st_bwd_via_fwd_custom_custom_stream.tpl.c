@@ -145,7 +145,7 @@ if (handle->datatype != handle->datatype_itm) {
     }
 
     weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt2, 0, 0, 0, 0, 0, 0, 0,
-    handle->blocksofm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
+        handle->blocksofm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
 
     libxsmm_barrier_wait(handle->barrier, ltid);
   }
@@ -156,69 +156,215 @@ if (handle->datatype != handle->datatype_itm) {
   if (n_segments) {
     /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
     code_stream = handle->bwd_code_segments[ltid];
+    if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
+      if (handle->ofw == 7) {
+        for (pc = 0; pc < n_segments; pc++) {
+          instr = code_stream[pc].segment_type;
+          n_convs = code_stream[pc].n_convs;
 
-    if (handle->ofw == 7) {
-      for (pc = 0; pc < n_segments; pc++) {
-        instr = code_stream[pc].segment_type;
-        n_convs = code_stream[pc].n_convs;
+          if (instr == IMG_LOOP_INIT) {
+            img = code_stream[pc].aux_index;
+            /* Apply padding  */
+            if (handle->padding_flag == 1) {
+#include "libxsmm_dnn_bwd_custom_custom_padding.tpl.c"
+            }
+          }
 
-        if (instr == IMG_LOOP_INIT) {
-          img = code_stream[pc].aux_index;
-          /* Apply padding  */
-          if (handle->padding_flag == 1) {
-            #include "libxsmm_dnn_bwd_custom_custom_padding.tpl.c"
+          if ( instr == IFM_LOOP_INIT ) {
+            /* Apply bias if requested  */
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
+              /*#include "libxsmm_dnn_fwd_custom_custom_bias.tpl.c"*/
+            }
+            /* Overwrite output with zeros if requested */
+            if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0) ) {
+              jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
+            }
+          } 
+
+          /* Run the stream of convolutions for this segment */
+          for (conv_i = 0; conv_i < n_convs; conv_i++) {
+            offset_i = stream[i];
+            offset_w = stream[i+1];
+            offset_o = stream[i+2];
+            pi = stream[i+3];
+            pw = stream[i+4];
+            po = stream[i+5];
+            kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+            pool_index++;
+            i+=3;
           }
         }
-
-        if ( instr == IFM_LOOP_INIT ) {
-          /* Apply bias if requested  */
-          if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
-            /*#include "libxsmm_dnn_fwd_custom_custom_bias.tpl.c"*/
+      } else {
+        for (pc = 0; pc < n_segments; pc++) {
+          instr = code_stream[pc].segment_type;
+          n_convs = code_stream[pc].n_convs;
+          if (instr == IMG_LOOP_INIT) {
+            img = code_stream[pc].aux_index;
+            /* Apply padding  */
+            if (handle->padding_flag == 1) {
+#include "libxsmm_dnn_bwd_custom_custom_padding.tpl.c"
+            }
           }
-          /* Overwrite output with zeros if requested */
-          if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0) ) {
-            jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
-          }
-        } 
 
-        /* Run the stream of convolutions for this segment */
-        for (conv_i = 0; conv_i < n_convs; conv_i++) {
+          if ( instr == IFM_LOOP_INIT ) {
+            /* Apply bias if requested  */
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
+              /*#include "libxsmm_dnn_fwd_custom_custom_bias.tpl.c"*/
+            }
+            /* Overwrite output with zeros if requested */
+            if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0) ) {
+              jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
+            }
+          }
+
+          /* Run the stream of convolutions for this segment */
+          for (conv_i = 0; conv_i < n_convs; conv_i++) {
+            offset_i = stream[i];
+            offset_w = stream[i+1];
+            offset_o = stream[i+2];
+            pi = stream[i+3];
+            pw = stream[i+4];
+            po = stream[i+5];
+            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+            i+=3;
+          }
+        }
+      }
+    } else { /* We don't do RELU stuff in the kernel  */
+      if (handle->ofw == 7) {
+        for (pc = 0; pc < n_segments; pc++) {
+          instr = code_stream[pc].segment_type;
+          n_convs = code_stream[pc].n_convs;
+
+          if (instr == IMG_LOOP_INIT) {
+            img = code_stream[pc].aux_index;
+            /* Apply padding  */
+            if (handle->padding_flag == 1) {
+#include "libxsmm_dnn_bwd_custom_custom_padding.tpl.c"
+            }
+          }
+
+          if ( instr == IFM_LOOP_INIT ) {
+            /* Apply bias if requested  */
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
+              /*#include "libxsmm_dnn_fwd_custom_custom_bias.tpl.c"*/
+            }
+            /* Overwrite output with zeros if requested */
+            if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0) ) {
+              jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
+            }
+          } 
+
+          if ( instr == IFM_LOOP_CLOSE ) {
+            ifm1 = code_stream[pc].aux_index; 
+            LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);  
+            element_input_type *orig_input_ptr;
+            element_input_type *del_input_ptr;
+            __m512 zero_reg  = _mm512_setzero_ps();  
+            __m512 orig_reg;
+            __mmask16 mask; 
+            orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            for (ij = 0; ij < handle->desc.H; ij++) {
+              for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
+                orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
+                mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
+                _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
+              }
+              orig_input_ptr += handle->ifwp * 16;
+              del_input_ptr += handle->ifwp *16;
+            }
+          }
+
+          /* Run the stream of convolutions for this segment */
+          for (conv_i = 0; conv_i < n_convs; conv_i++) {
+            offset_i = stream[i];
+            offset_w = stream[i+1];
+            offset_o = stream[i+2];
+            pi = stream[i+3];
+            pw = stream[i+4];
+            po = stream[i+5];
+            kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+            pool_index++;
+            i+=3;
+          }
+        }
+      } else {
+        for (pc = 0; pc < n_segments; pc++) {
+          instr = code_stream[pc].segment_type;
+          n_convs = code_stream[pc].n_convs;
+          if (instr == IMG_LOOP_INIT) {
+            img = code_stream[pc].aux_index;
+            /* Apply padding  */
+            if (handle->padding_flag == 1) {
+#include "libxsmm_dnn_bwd_custom_custom_padding.tpl.c"
+            }
+          }
+
+          if ( instr == IFM_LOOP_INIT ) {
+            /* Apply bias if requested  */
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
+              /*#include "libxsmm_dnn_fwd_custom_custom_bias.tpl.c"*/
+            }
+            /* Overwrite output with zeros if requested */
+            if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0) ) {
+              jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
+            }
+          }
+
+          if ( instr == IFM_LOOP_CLOSE ) {
+            ifm1 = code_stream[pc].aux_index; 
+            LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);  
+            element_input_type *orig_input_ptr;
+            element_input_type *del_input_ptr;
+            __m512 zero_reg  = _mm512_setzero_ps();  
+            __m512 orig_reg;
+            __mmask16 mask; 
+            orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            for (ij = 0; ij < handle->desc.H; ij++) {
+              for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
+                orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
+                mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
+                _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
+              }
+              orig_input_ptr += handle->ifwp * 16;
+              del_input_ptr += handle->ifwp *16;
+            }
+          }        
+
+          /* Run the stream of convolutions for this segment */
+          for (conv_i = 0; conv_i < n_convs; conv_i++) {
+            offset_i = stream[i];
+            offset_w = stream[i+1];
+            offset_o = stream[i+2];
+            pi = stream[i+3];
+            pw = stream[i+4];
+            po = stream[i+5];
+            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+            i+=3;
+          }
+        }
+      }
+    }
+  } else {
+    /* Run the stream of convolutions, no extra operations are required... */
+    if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
+      if (handle->ofw == 7) {
+        for (pc = 0; pc < instr; pc+=1) {
           offset_i = stream[i];
-          offset_w = stream[i+1];
+          offset_w = stream[i+1]; 
           offset_o = stream[i+2];
           pi = stream[i+3];
           pw = stream[i+4];
           po = stream[i+5];
-          kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
-          pool_index++;
-          i+=3;
+          kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+          i+=3;  
         }
-      }
-    } else {
-      for (pc = 0; pc < n_segments; pc++) {
-        instr = code_stream[pc].segment_type;
-        n_convs = code_stream[pc].n_convs;
-        if (instr == IMG_LOOP_INIT) {
-          img = code_stream[pc].aux_index;
-          /* Apply padding  */
-          if (handle->padding_flag == 1) {
-            #include "libxsmm_dnn_bwd_custom_custom_padding.tpl.c"
-          }
-        }
-
-        if ( instr == IFM_LOOP_INIT ) {
-          /* Apply bias if requested  */
-          if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
-            /*#include "libxsmm_dnn_fwd_custom_custom_bias.tpl.c"*/
-          }
-          /* Overwrite output with zeros if requested */
-          if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0) ) {
-            jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
-          }
-        }
-
-        /* Run the stream of convolutions for this segment */
-        for (conv_i = 0; conv_i < n_convs; conv_i++) {
+      } else { 
+        for (pc = 0; pc < instr; pc++) {
           offset_i = stream[i];
           offset_w = stream[i+1];
           offset_o = stream[i+2];
@@ -229,36 +375,36 @@ if (handle->datatype != handle->datatype_itm) {
           i+=3;
         }
       }
-    }
-  } else {
-    /* Run the stream of convolutions, no extra operations are required... */
-    if (handle->ofw == 7) {
-      for (pc = 0; pc < instr; pc+=1) {
-        offset_i = stream[i];
-        offset_w = stream[i+1]; 
-        offset_o = stream[i+2];
-        pi = stream[i+3];
-        pw = stream[i+4];
-        po = stream[i+5];
-        kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
-        i+=3;  
-      }
-    } else { 
-      for (pc = 0; pc < instr; pc++) {
-        offset_i = stream[i];
-        offset_w = stream[i+1];
-        offset_o = stream[i+2];
-        pi = stream[i+3];
-        pw = stream[i+4];
-        po = stream[i+5];
-        kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
-        i+=3;
-      }
+    } else {
+      if (handle->ofw == 7) {
+        for (pc = 0; pc < instr; pc+=1) {
+          offset_i = stream[i];
+          offset_w = stream[i+1]; 
+          offset_o = stream[i+2];
+          pi = stream[i+3];
+          pw = stream[i+4];
+          po = stream[i+5];
+          kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+          i+=3;  
+        }
+      } else { 
+        for (pc = 0; pc < instr; pc++) {
+          offset_i = stream[i];
+          offset_w = stream[i+1];
+          offset_o = stream[i+2];
+          pi = stream[i+3];
+          pw = stream[i+4];
+          po = stream[i+5];
+          kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+          i+=3;
+        }
+      }    
     }
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
 
+#if 0
   /* Fuse ReLu here*/
   if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
     int ii, ij, ifm1, ifm2, img;
@@ -285,5 +431,6 @@ if (handle->datatype != handle->datatype_itm) {
     }
     libxsmm_barrier_wait(handle->barrier, ltid);
   }
+#endif
 
 }
