@@ -71,6 +71,7 @@
 
         ! Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
+     &    LIBXSMM_GEMM_FLAG_NONE    = 0,                                &
      &    LIBXSMM_GEMM_FLAG_TRANS_A = 1,                                &
      &    LIBXSMM_GEMM_FLAG_TRANS_B = 2
 
