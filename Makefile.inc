@@ -839,10 +839,8 @@ else # GCC assumed
     endif
     DFLAGS += -D__TRACE=$(INSTRUMENT)
   endif
-  ifneq (0,$(TRACE))
   ifeq (Windows_NT,$(UNAME))
-    LDFLAGS += -ldbghelp
-  endif
+    LDFLAGS += $(XLIB_BEGIN) -ldbghelp $(XLIB_END)
   endif
   ifneq (0,$(SYM))
     ifeq (1,$(SYM))
