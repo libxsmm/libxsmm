@@ -466,24 +466,26 @@ LIBXSMM_API_INTERN void __cyg_profile_func_enter(void* this_fn, void* call_site)
     /* inherit global settings from libxsmm_trace_init */
     NULL, NULL, NULL);
 # else
-# if 1
-  Dl_info info;
-# else
-  struct {
-      const char *dli_fname;
-      void       *dli_fbase;  /* Address at which shared object
-                                 is loaded */
-      const char *dli_sname;  /* Name of nearest symbol with address
-                                 lower than addr */
-      void       *dli_saddr;
-  } info;
-# endif
-  if (0 != dladdr(this_fn, (Dl_info*)&info)) {
-    if (0 != info.dli_sname) {
-      fprintf(stderr, "%s\n", info.dli_sname);
-    }
-    else if (0 != info.dli_saddr) {
-      fprintf(stderr, "0x%llx\n", (unsigned long long)info.dli_saddr);
+  if (0 == internal_trace_initialized && 0 != internal_trace_maxnsyms) {
+#   if 1
+    Dl_info info;
+#   else
+    struct {
+      const char* dli_fname;
+      /* address at which shared object is loaded */
+      void* dli_fbase;
+      /* name of nearest symbol with address lower than address */
+      const char* dli_sname;
+      void* dli_saddr;
+    } info;
+#   endif
+    if (0 != dladdr(this_fn, (Dl_info*)&info)) {
+      if (0 != info.dli_sname) {
+        fprintf(stderr, "%s\n", info.dli_sname);
+      }
+      else if (0 != info.dli_saddr) {
+        fprintf(stderr, "0x%llx\n", (unsigned long long)info.dli_saddr);
+      }
     }
   }
 # endif
