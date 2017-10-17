@@ -42,6 +42,7 @@
 /*# define USE_FUSED_BATCH_STATS*/
 
 #define FP64_BN_STATS
+#define USE_FUSED_RELU_BWD
 
 #if !defined(USE_FUSED_BIAS) && 0
 # define USE_FUSED_BIAS
@@ -281,7 +282,7 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
   }
 }
 
-LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float* output, const float* filter)
+LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float* output, const float* filter, const float* naive_input_save)
 {
   int nImg      = param->nImg;
   int nIfm      = param->nIfm;
@@ -309,6 +310,7 @@ LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float
 
   LIBXSMM_VLA_DECL(4, const float, output_t, output + (pad_w_out * ofwp + pad_h_out), nOfm, ofhp, ofwp);
   LIBXSMM_VLA_DECL(4,       float,  input_t,  input + (pad_w_in * ifwp + pad_h_in), nIfm, ifhp, ifwp);
+  LIBXSMM_VLA_DECL(4,       float,  naive_input_t,  naive_input_save + (pad_w_in * ifwp + pad_h_in), nIfm, ifhp, ifwp);
   LIBXSMM_VLA_DECL(4, const float, filter_t, filter, nIfm, kh, kw);
 
 #if defined(_OPENMP)
@@ -333,6 +335,15 @@ LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float
           }
         }
       }
+#if defined(USE_FUSED_RELU_BWD) 
+      for (ij = 0; ij < ifh; ij++) {
+        for (ii = 0; ii < ifw; ii++) {
+          if ( LIBXSMM_VLA_ACCESS(4,  naive_input_t, img, ifm, ij, ii , nIfm, ifhp, ifwp) == 0.0 ) {
+            LIBXSMM_VLA_ACCESS(4, input_t, img, ifm, ij, ii , nIfm, ifhp, ifwp) = 0.0;
+          }
+        }
+      }
+#endif
     }
   }
 }
@@ -613,6 +624,17 @@ int main(int argc, char* argv[])
 
   /* initialize data */
   init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
+#if defined(USE_FUSED_RELU_BWD)
+  /* Initialize some entries with zeros  */
+  {
+    int i;
+    for (i = 0; i < nImg*nIfm*ifhp*ifwp; i++ ) {
+      if ( ((i%16) == 2) || ((i%16) == 3) || ((i%16) == 7) || ((i%16) == 14) ) {
+        naive_input[i] = 0.0;
+      }
+    }
+  }
+#endif
   init_buf(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
   init_buf(naive_output_wu,      nImg*nOfm*ofhp*ofwp, 0, 0);
   set_zeropad_nchw(naive_input, nImg, nIfm, ifhp, ifwp, pad_h_in, pad_w_in);
@@ -653,7 +675,7 @@ int main(int argc, char* argv[])
 #ifdef USE_OVERWRITE
     zero_buf(naive_input,         nImg*nIfm*ifhp*ifwp);
 #endif
-    naive_conv_bp(&naive_param, naive_input, naive_output_bp, naive_filter);
+    naive_conv_bp(&naive_param, naive_input, naive_output_bp, naive_filter, naive_input_save);
   }
   if (type == 'A' || type == 'U') {
     /* NB: We reuse naive_input_save for weight update because the input should not
@@ -710,6 +732,10 @@ int main(int argc, char* argv[])
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
 #elif defined(USE_FUSED_BATCH_STATS)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS;
+#elif defined(USE_FUSED_RELU_BWD)
+   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU_BWD;
+#elif defined(USE_FUSED_BATCH_STATCH_RELU_BWD)
+   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD;
 #else
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
