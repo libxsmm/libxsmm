@@ -168,6 +168,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
 #if defined(LIBXSMM_GEMM_EXT_MMBATCH)
     unsigned int i = libxsmm_gemm_batchsize + 1; /* no flush */
     int flags = -1;
+    LIBXSMM_INIT
     if (0 == libxsmm_gemm_batcharray
       || LIBXSMM_GEMM_PRECISION_F32 != libxsmm_gemm_batchdesc.datatype
       || ((unsigned int)*lda) != libxsmm_gemm_batchdesc.lda
@@ -272,6 +273,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
 #if defined(LIBXSMM_GEMM_EXT_MMBATCH)
     unsigned int i = libxsmm_gemm_batchsize + 1; /* no flush */
     int flags = -1;
+    LIBXSMM_INIT
     if (0 == libxsmm_gemm_batcharray
       || LIBXSMM_GEMM_PRECISION_F64 != libxsmm_gemm_batchdesc.datatype
       || ((unsigned int)*lda) != libxsmm_gemm_batchdesc.lda
