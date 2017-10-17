@@ -115,6 +115,9 @@ int main(int argc, char* argv[])
     /* enable batch-recording of the specified matrix multiplication */
     libxsmm_mmbatch_begin(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &flags, &m, &n, &k, &lda, &ldb, &ldc, &alpha, &beta);
 #endif
+#if defined(_OPENMP)
+#   pragma omp parallel for private(i)
+#endif
     for (i = 0; i < size; ++i) {
       const libxsmm_blasint mi = ((rand() % maxv) + 1) * maxn / maxv;
       const libxsmm_blasint ni = ((rand() % maxv) + 1) * maxn / maxv;
