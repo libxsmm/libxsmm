@@ -76,14 +76,6 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
     { { {  39,  52,  57, 201, 256, 201, 201, 201 }, {  26,  86, 115,  14,  27,  14,  14,  14 }, { 256, 101, 102,  53, 114,  53,  53,  53 } },   /* DP */
       { {  41, 119, 102, 106, 106, 106, 106, 106 }, {  32,  65, 108, 130, 130, 130, 130, 130 }, {  73,  90,  86,  89,  89,  89,  89,  89 } } }  /* SP */
   };
-  const char *const env_m = getenv("LIBXSMM_TGEMM_M"), *const env_n = getenv("LIBXSMM_TGEMM_N"), *const env_k = getenv("LIBXSMM_TGEMM_K");
-  const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH"), *const env_w = getenv("LIBXSMM_GEMM_WRAP");
-  const char *const env_s = getenv("LIBXSMM_GEMM_BATCHSIZE");
-  const int uid = ((0 == env_p || 0 == *env_p) ? 6/*LIBXSMM_PREFETCH_AL2_AHEAD*/ : atoi(env_p));
-  const int batchsize = ((0 == env_s || 0 == *env_s) ? -1 : atoi(env_s));
-  const int gemm_m = ((0 == env_m || 0 == *env_m) ? -1 : atoi(env_m));
-  const int gemm_n = ((0 == env_n || 0 == *env_n) ? -1 : atoi(env_n));
-  const int gemm_k = ((0 == env_k || 0 == *env_k) ? -1 : atoi(env_k));
   int config, i;
 
   if (LIBXSMM_X86_AVX512_CORE <= archid) {
@@ -96,41 +88,66 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
     config = 0;
   }
 
-  /* setup prefetch strategy for tiled GEMMs */
-  libxsmm_gemm_tiled_prefetch = (0 <= uid ? libxsmm_gemm_uid2prefetch(uid) : prefetch);
-
-  /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
-  libxsmm_gemm_wrap = ((0 == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
-
-  if (0 != libxsmm_gemm_wrap) { /* batch-recording available */
+  { /* setup prefetch strategy for tiled GEMMs */
+    const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH");
+    const int uid = ((0 == env_p || 0 == *env_p) ? 6/*LIBXSMM_PREFETCH_AL2_AHEAD*/ : atoi(env_p));
+    libxsmm_gemm_tiled_prefetch = (0 <= uid ? libxsmm_gemm_uid2prefetch(uid) : prefetch);
+  }
+#if defined(LIBXSMM_BUILD) && (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || \
+   !defined(NDEBUG)) || defined(_WIN32) /* debug purpose */
+  {
+    const char *const env_w = getenv("LIBXSMM_GEMM_WRAP"), *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
+    const int batchsize = ((0 == env_b || 0 == *env_b) ? -1 : atoi(env_b));
+    const void *const extra = 0;
+    /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
+    libxsmm_gemm_wrap = ((0 == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
+    if (0 != libxsmm_verbosity) { /* enables the auto-batch statistic */
+      libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC;
+    }
     /* use libxsmm_malloc to draw memory from the default memory allocation domain */
     if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&libxsmm_gemm_batcharray,
       sizeof(libxsmm_gemm_batchitem) * (0 > batchsize ? (LIBXSMM_GEMM_BATCHSIZE) : batchsize),
-      0, LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/))
+      0, LIBXSMM_MALLOC_FLAG_SCRATCH, &extra, sizeof(extra)))
     {
       libxsmm_gemm_batchsize = batchsize;
+      LIBXSMM_LOCK_INIT(&libxsmm_gemm_batchlock);
     }
   }
-
-  for (i = 0; i < 8; ++i) {
-    /* environment-defined tile sizes apply for DP and SP */
-    libxsmm_gemm_tile[0/*DP*/][0/*M*/][i] = libxsmm_gemm_tile[1/*SP*/][0/*M*/][i] = (unsigned int)LIBXSMM_MAX(gemm_m, 0);
-    libxsmm_gemm_tile[0/*DP*/][1/*N*/][i] = libxsmm_gemm_tile[1/*SP*/][1/*N*/][i] = (unsigned int)LIBXSMM_MAX(gemm_n, 0);
-    libxsmm_gemm_tile[0/*DP*/][2/*K*/][i] = libxsmm_gemm_tile[1/*SP*/][2/*K*/][i] = (unsigned int)LIBXSMM_MAX(gemm_k, 0);
-    /* load predefined configuration if tile size is not setup by the environment */
-    if (0 >= libxsmm_gemm_tile[0/*DP*/][0/*M*/][i]) libxsmm_gemm_tile[0][0][i] = tile_configs[config][0][0][i];
-    if (0 >= libxsmm_gemm_tile[0/*DP*/][1/*N*/][i]) libxsmm_gemm_tile[0][1][i] = tile_configs[config][0][1][i];
-    if (0 >= libxsmm_gemm_tile[0/*DP*/][2/*K*/][i]) libxsmm_gemm_tile[0][2][i] = tile_configs[config][0][2][i];
-    if (0 >= libxsmm_gemm_tile[1/*SP*/][0/*M*/][i]) libxsmm_gemm_tile[1][0][i] = tile_configs[config][1][0][i];
-    if (0 >= libxsmm_gemm_tile[1/*SP*/][1/*N*/][i]) libxsmm_gemm_tile[1][1][i] = tile_configs[config][1][1][i];
-    if (0 >= libxsmm_gemm_tile[1/*SP*/][2/*K*/][i]) libxsmm_gemm_tile[1][2][i] = tile_configs[config][1][2][i];
+#endif
+  {
+    const char *const env_m = getenv("LIBXSMM_TGEMM_M"), *const env_n = getenv("LIBXSMM_TGEMM_N"), *const env_k = getenv("LIBXSMM_TGEMM_K");
+    const int m = ((0 == env_m || 0 == *env_m) ? -1 : atoi(env_m));
+    const int n = ((0 == env_n || 0 == *env_n) ? -1 : atoi(env_n));
+    const int k = ((0 == env_k || 0 == *env_k) ? -1 : atoi(env_k));
+    for (i = 0; i < 8; ++i) {
+      /* environment-defined tile sizes apply for DP and SP */
+      libxsmm_gemm_tile[0/*DP*/][0/*M*/][i] = libxsmm_gemm_tile[1/*SP*/][0/*M*/][i] = (unsigned int)LIBXSMM_MAX(m, 0);
+      libxsmm_gemm_tile[0/*DP*/][1/*N*/][i] = libxsmm_gemm_tile[1/*SP*/][1/*N*/][i] = (unsigned int)LIBXSMM_MAX(n, 0);
+      libxsmm_gemm_tile[0/*DP*/][2/*K*/][i] = libxsmm_gemm_tile[1/*SP*/][2/*K*/][i] = (unsigned int)LIBXSMM_MAX(k, 0);
+      /* load predefined configuration if tile size is not setup by the environment */
+      if (0 >= libxsmm_gemm_tile[0/*DP*/][0/*M*/][i]) libxsmm_gemm_tile[0][0][i] = tile_configs[config][0][0][i];
+      if (0 >= libxsmm_gemm_tile[0/*DP*/][1/*N*/][i]) libxsmm_gemm_tile[0][1][i] = tile_configs[config][0][1][i];
+      if (0 >= libxsmm_gemm_tile[0/*DP*/][2/*K*/][i]) libxsmm_gemm_tile[0][2][i] = tile_configs[config][0][2][i];
+      if (0 >= libxsmm_gemm_tile[1/*SP*/][0/*M*/][i]) libxsmm_gemm_tile[1][0][i] = tile_configs[config][1][0][i];
+      if (0 >= libxsmm_gemm_tile[1/*SP*/][1/*N*/][i]) libxsmm_gemm_tile[1][1][i] = tile_configs[config][1][1][i];
+      if (0 >= libxsmm_gemm_tile[1/*SP*/][2/*K*/][i]) libxsmm_gemm_tile[1][2][i] = tile_configs[config][1][2][i];
+    }
   }
 }
 
 
 LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 {
-  libxsmm_free(libxsmm_gemm_batcharray);
+#if defined(LIBXSMM_BUILD) && (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || !defined(NDEBUG))
+  if (0 != libxsmm_gemm_batcharray) {
+    void* extra = 0;
+    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, 0/*size*/, 0/*flags*/, &extra)) {
+      const libxsmm_mmbatch_flush_function flush = *(libxsmm_mmbatch_flush_function*)extra;
+      if (0 != flush) flush();
+    }
+    libxsmm_free(libxsmm_gemm_batcharray);
+  }
+#endif
 }
 
 
@@ -318,8 +335,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
           string_a, a, (long long)ilda, b, (long long)ildb, string_b, c, (long long)ildc);
       }
       else {
-        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %lli/*m*/, %lli/*n*/, %lli/*k*/, "
-                                "%lli/*lda*/, %lli/*ldb*/, %lli/*ldc*/, %s/*alpha*/, %s/*beta*/)",
+        fprintf((FILE*)ostream, "%cgemm(trans=%c%c mnk=%lli,%lli,%lli ldx=%lli,%lli,%lli a,b=%s,%s)",
           typeprefix, ctransa, ctransa, (long long)*m, (long long)nn, (long long)kk,
           (long long)ilda, (long long)ildb, (long long)ildc, string_a, string_b);
       }

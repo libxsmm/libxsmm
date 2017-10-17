@@ -595,15 +595,6 @@ ifneq (0,$(INTEL))
     FCFLAGS += -finstrument-functions
     DFLAGS += -D__TRACE=$(INSTRUMENT)
   endif
-  ifneq (0,$(TRACE))
-  ifneq (0,$(DEPSTATIC))
-  ifneq (Darwin,$(UNAME))
-  ifneq (Windows_NT,$(UNAME))
-    LDFLAGS += -Wl,--export-dynamic
-  endif
-  endif
-  endif
-  endif
   ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     ifeq (0,$(COMPATIBLE))
     ifneq (,$(filter environment% override command%,$(origin COMPATIBLE)))
@@ -664,6 +655,13 @@ ifneq (0,$(INTEL))
       CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
       FCFLAGS := -g -traceback $(FCFLAGS)
     endif
+    ifneq (0,$(DEPSTATIC))
+    ifneq (Darwin,$(UNAME))
+    ifneq (Windows_NT,$(UNAME))
+      LDFLAGS += -Wl,--export-dynamic
+    endif
+    endif
+    endif
   endif
   ifeq (0,$(EXP))
     CXXFLAGS += -fno-exceptions
@@ -687,7 +685,10 @@ ifneq (0,$(INTEL))
   endif
   endif
   ifeq (1,$(STATIC))
-    SLDFLAGS += -no-intel-extensions -static-intel -static-libgcc -static-libstdc++
+    SLDFLAGS += -no-intel-extensions -static-intel -static-libstdc++
+    ifneq (Darwin,$(UNAME))
+      SLDFLAGS += -static-libgcc
+    endif
     DFLAGS += -D__STATIC=1
   else ifneq (0,$(STATIC))
     DFLAGS += -D__STATIC=$(STATIC)
@@ -838,17 +839,8 @@ else # GCC assumed
     endif
     DFLAGS += -D__TRACE=$(INSTRUMENT)
   endif
-  ifneq (0,$(TRACE))
-    ifeq (Windows_NT,$(UNAME))
-      LDFLAGS += -ldbghelp
-    endif
-    ifneq (0,$(DEPSTATIC))
-    ifneq (Darwin,$(UNAME))
-    ifneq (Windows_NT,$(UNAME))
-      LDFLAGS += -Wl,--export-dynamic
-    endif
-    endif
-    endif
+  ifeq (Windows_NT,$(UNAME))
+    LDFLAGS += $(XLIB_BEGIN) -ldbghelp $(XLIB_END)
   endif
   ifneq (0,$(SYM))
     ifeq (1,$(SYM))
@@ -865,6 +857,13 @@ else # GCC assumed
       CXXFLAGS := -g3 -gdwarf-2 $(CXXFLAGS)
       CFLAGS := -g3 -gdwarf-2 $(CFLAGS)
       FCFLAGS := -g $(FCFLAGS)
+    endif
+    ifneq (0,$(DEPSTATIC))
+    ifneq (Darwin,$(UNAME))
+    ifneq (Windows_NT,$(UNAME))
+      LDFLAGS += -Wl,--export-dynamic
+    endif
+    endif
     endif
   endif
   ifeq (0,$(EXP))
@@ -905,7 +904,13 @@ else # GCC assumed
     endif
   endif
   endif
-  ifneq (0,$(STATIC))
+  ifeq (1,$(STATIC))
+    SLDFLAGS += -Bstatic -static-libstdc++
+    ifneq (Darwin,$(UNAME))
+      SLDFLAGS += -static-libgcc
+    endif
+    DFLAGS += -D__STATIC=1
+  else ifneq (0,$(STATIC))
     DFLAGS += -D__STATIC=$(STATIC)
     ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | grep -q "\-ldummydoesnotexist"; echo "$$?"))
       SLDFLAGS += -static
@@ -1030,12 +1035,14 @@ else
 endif
 CINFO = C / C++: $(if $(CTARGET),$(CTARGET),<compiler default>)
 
-ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
-  LIBRT = -lrt
-endif
-ifneq (0,$(shell $(LD) $(SLDFLAGS) -ldl 2>&1 | grep -q "\-ldl"; echo "$$?"))
-  LIBDL = -ldl
-endif
+#ifneq (0,$(DEPSTATIC))
+  ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
+    LIBRT = -lrt
+  endif
+  ifneq (0,$(shell $(LD) $(SLDFLAGS) -ldl 2>&1 | grep -q "\-ldl"; echo "$$?"))
+    LIBDL = -ldl
+  endif
+#endif
 ifneq (,$(strip $(LIBRT) $(LIBDL)))
   LDFLAGS += $(XLIB_BEGIN) $(LIBRT) $(LIBDL) $(XLIB_END)
 endif

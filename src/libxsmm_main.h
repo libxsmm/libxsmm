@@ -417,7 +417,7 @@ LIBXSMM_API_VARIABLE size_t libxsmm_scratch_limit;
 LIBXSMM_API_VARIABLE double libxsmm_scratch_scale;
 /** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
 LIBXSMM_API_VARIABLE double libxsmm_timer_scale;
-/** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
+/** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
 LIBXSMM_API_VARIABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
 LIBXSMM_API_VARIABLE int libxsmm_target_archid;

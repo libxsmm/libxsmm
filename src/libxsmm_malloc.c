@@ -437,8 +437,9 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
 #if defined(LIBXSMM_MALLOC_NOCRC)
   return result;
 #else /* calculate checksum over info */
-  const size_t checksize = (size_t)(((const char*)&result->hash) - ((const char*)result));
-  return (0 != result && result->hash == libxsmm_crc32(result, checksize, LIBXSMM_MALLOC_SEED)) ? result : 0;
+  return (0 != result && result->hash == libxsmm_crc32(
+    result, ((const char*)&result->hash) - ((const char*)result),
+    LIBXSMM_MALLOC_SEED)) ? result : 0;
 #endif
 }
 

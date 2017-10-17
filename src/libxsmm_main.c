@@ -29,13 +29,11 @@
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_gemm_diff.h"
+#include "libxsmm_trace.h"
 #include "libxsmm_trans.h"
 #include "libxsmm_gemm.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_main.h"
-#if defined(__TRACE)
-# include "libxsmm_trace.h"
-#endif
 #if defined(LIBXSMM_PERF)
 # include "libxsmm_perf.h"
 #endif
@@ -571,30 +569,33 @@ LIBXSMM_API_INLINE void internal_init(void)
     internal_statistic_mnk = libxsmm_icbrt(LIBXSMM_MAX_MNK);
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
-#if !defined(__TRACE)
-    LIBXSMM_UNUSED(init_code);
-#else
+#if defined(LIBXSMM_TRACE)
     {
-      int filter_threadid = 0, filter_mindepth = 1, filter_maxnsyms = 0;
+      int filter_threadid = 0, filter_mindepth = -1, filter_maxnsyms = 0;
       const char *const env = getenv("LIBXSMM_TRACE");
+      init_code = EXIT_SUCCESS;
       if (0 != env && 0 != *env) {
         char buffer[32];
         if (1 == sscanf(env, "%32[^,],", buffer)) {
-          sscanf(buffer, "%i", &filter_threadid);
+          init_code = (0 <= sscanf(buffer, "%i", &filter_threadid) ? EXIT_SUCCESS : EXIT_FAILURE);
         }
         if (1 == sscanf(env, "%*[^,],%32[^,],", buffer)) {
-          sscanf(buffer, "%i", &filter_mindepth);
+          init_code = (0 <= sscanf(buffer, "%i", &filter_mindepth) ? EXIT_SUCCESS : EXIT_FAILURE);
         }
         if (1 == sscanf(env, "%*[^,],%*[^,],%32s", buffer)) {
-          sscanf(buffer, "%i", &filter_maxnsyms);
+          init_code = (0 <= sscanf(buffer, "%i", &filter_maxnsyms) ? EXIT_SUCCESS : EXIT_FAILURE);
         }
         else {
           filter_maxnsyms = -1; /* all */
         }
       }
-      init_code = libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
+      if (EXIT_SUCCESS == init_code) {
+        init_code = libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
+      }
     }
     if (EXIT_SUCCESS == init_code)
+#else
+    LIBXSMM_UNUSED(init_code);
 #endif
     {
       libxsmm_gemm_diff_init(libxsmm_target_archid);
@@ -656,7 +657,7 @@ LIBXSMM_API_INLINE void internal_init(void)
         free(result);
       }
     }
-#if defined(__TRACE)
+#if defined(LIBXSMM_TRACE)
     else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
       fprintf(stderr, "LIBXSMM ERROR: failed to initialize TRACE (error #%i)!\n", init_code);
     }
@@ -722,7 +723,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 
       /* serves as an id to invalidate the thread-local cache; never decremented */
       ++internal_teardown;
-#if defined(__TRACE)
+#if defined(LIBXSMM_TRACE)
       i = libxsmm_trace_finalize();
       if (EXIT_SUCCESS != i && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
         fprintf(stderr, "LIBXSMM ERROR: failed to finalize trace (error #%i)!\n", i);

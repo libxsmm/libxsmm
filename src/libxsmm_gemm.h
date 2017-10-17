@@ -33,6 +33,7 @@
 
 #include <libxsmm_generator.h>
 #include <libxsmm_frontend.h>
+#include <libxsmm_sync.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -446,6 +447,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
   struct {
     libxsmm_gemm_descriptor desc;
     unsigned int count;
+    const char* symbol;
   } stat;
   /* TODO: consider padding */
 } libxsmm_gemm_batchitem;
@@ -455,10 +457,16 @@ LIBXSMM_API int libxsmm_mmbatch_internal(
   int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize,
   int tid, int nthreads, const libxsmm_gemm_descriptor* kernel_desc);
 
+typedef void (*libxsmm_mmbatch_flush_function)(void);
+
 /** Configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][8/*size-range*/];
+/** auto-batch descriptor (filter). */
+LIBXSMM_API_VARIABLE libxsmm_gemm_descriptor libxsmm_gemm_batchdesc;
 /** Records a batch of SMMs. */
 LIBXSMM_API_VARIABLE libxsmm_gemm_batchitem* libxsmm_gemm_batcharray;
+/** Lock: libxsmm_mmbatch_begin, libxsmm_mmbatch_end, internal_mmbatch_flush. */
+LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE libxsmm_gemm_batchlock;
 /** Maximum size of the recorded batch. */
 LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_batchsize;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
@@ -467,9 +475,10 @@ LIBXSMM_API_VARIABLE int libxsmm_gemm_auto_prefetch;
 LIBXSMM_API_VARIABLE int libxsmm_gemm_tiled_prefetch;
 /**
  * Intercepted GEMM
- * - odd: sequential and non-tiled
- * - even (or negative): parallelized
- * - 0: lazy batch/recording disabled
+ * - odd: sequential and non-tiled (small problem sizes only)
+ * - even (or negative): parallelized and tiled (all problem sizes)
+ * - 3: GEMV is intercepted; small problem sizes
+ * - 4: GEMV is intercepted; all problem sizes
  */
 LIBXSMM_API_VARIABLE int libxsmm_gemm_wrap;
 
