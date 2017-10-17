@@ -107,11 +107,11 @@ if (handle->datatype != handle->datatype_itm) {
     memset( input_base, 0, handle->blocksofm * padded_h * padded_w * handle->ofmblock * handle->fm_lp_block * sizeof(element_output_type) );
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(6, del_out, 0, 0, 0, 0, 0, 0,
-      handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
+        handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
   }
 
   output_base = &LIBXSMM_VLA_ACCESS(5, del_input, 0, 0, 0, 0, 0,
-        handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
+      handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
   weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt2, 0, 0, 0, 0, 0, 0, 0,
       handle->blocksofm * handle->fm_lp_block, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
 
@@ -157,6 +157,10 @@ if (handle->datatype != handle->datatype_itm) {
     /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
     code_stream = handle->bwd_code_segments[ltid];
     if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
+      LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
+      element_input_type *regular_input_base;
+      regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
+
       if (handle->ofw == 7) {
         for (pc = 0; pc < n_segments; pc++) {
           instr = code_stream[pc].segment_type;
@@ -189,7 +193,7 @@ if (handle->datatype != handle->datatype_itm) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+            kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o);
             pool_index++;
             i+=3;
           }
@@ -225,7 +229,7 @@ if (handle->datatype != handle->datatype_itm) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o);
             i+=3;
           }
         }
@@ -352,6 +356,10 @@ if (handle->datatype != handle->datatype_itm) {
   } else {
     /* Run the stream of convolutions, no extra operations are required... */
     if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
+      LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
+      element_input_type *regular_input_base;
+      regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
+
       if (handle->ofw == 7) {
         for (pc = 0; pc < instr; pc+=1) {
           offset_i = stream[i];
@@ -360,7 +368,7 @@ if (handle->datatype != handle->datatype_itm) {
           pi = stream[i+3];
           pw = stream[i+4];
           po = stream[i+5];
-          kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+          kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o);
           i+=3;  
         }
       } else { 
@@ -371,7 +379,7 @@ if (handle->datatype != handle->datatype_itm) {
           pi = stream[i+3];
           pw = stream[i+4];
           po = stream[i+5];
-          kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+          kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o);
           i+=3;
         }
       }

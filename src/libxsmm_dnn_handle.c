@@ -912,6 +912,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         fwd_equivalent_descriptor.stride_w_store = handle->desc.v;
         fwd_equivalent_descriptor.use_nts = handle->use_nts_bwd;
         fwd_equivalent_descriptor.compute_batch_stats = 0;
+        fwd_equivalent_descriptor.perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0 ;
         if (handle->padding_flag == 1) {
           matcopy_descriptor.n = handle->ofhp;
           matcopy_descriptor.m = handle->ofwp * handle->ofmblock * handle->fm_lp_block;
@@ -922,9 +923,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matcopy_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype);
           matcopy_descriptor.flags = 0;
         } 
-        handle->perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0 ;
-        fwd_equivalent_descriptor.perform_relu_in_kernel = handle->perform_relu_in_kernel;
-      }
+     }
 
 
       /* TODO check JIT errors */
@@ -1175,7 +1174,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           mirror_handle->ofhp = handle->ifhp;
           mirror_handle->ofwp = handle->ifwp;
           mirror_handle->use_nts_fwd = handle->use_nts_bwd;
-         mirror_handle->block_fwd_ofm = handle->block_fwd_ifm;
+          mirror_handle->block_fwd_ofm = handle->block_fwd_ifm;
           mirror_handle->blocksifm = handle->blocksofm;
           mirror_handle->ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.S) / handle->desc.v + 1;
           mirror_handle->ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.R) / handle->desc.u + 1;
@@ -1188,6 +1187,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           mirror_handle->fwd_code_segments = handle->bwd_code_segments;
           mirror_handle->ofh_fwd_start = handle->ofh_bwd_start;
           mirror_handle->ofh_fwd_end = handle->ofh_bwd_end;
+          mirror_handle->perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0 ;
+          handle->perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0 ;     
           status = libxsmm_dnn_perform_fwd_dryrun_direct(mirror_handle);
 
           /* In case overwrite is requested, generate zero-ing kernel */

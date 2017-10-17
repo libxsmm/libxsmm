@@ -217,6 +217,17 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
                                          0 );
   }
 
+  if ( i_conv_desc->perform_relu_in_kernel == 1 ) {
+    libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, l_gp_reg_mapping.gp_reg_help_0);
+    libxsmm_x86_instruction_alu_mem( io_generated_code,
+                                         l_conv_kernel_config.alu_mov_instruction,
+                                         l_gp_reg_mapping.gp_reg_help_0,
+                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                         48,
+                                         l_gp_reg_mapping.gp_reg_help_2,
+                                         0 );
+  }
+
   /* load an additional temp register with 32 16bit 1s */
   if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, 65537 );
@@ -403,6 +414,22 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
 #endif       
         }
 
+        if ( (i_conv_desc->perform_relu_in_kernel == 1) && (peel_index == 2) ) {
+          unsigned int i, j, store_offset;
+          /* Prefetch to L2 all "regular inputs" based on passed pointer (now in help2 register) */
+          for (i = 0; i < i_conv_desc->ofh_rb; i++) {
+            for ( j = 0; j < i_conv_desc->ofw_rb; j++ ) {
+                store_offset = ((i * i_conv_desc->stride_h_store) * i_conv_desc->ofw_padded + j * i_conv_desc->stride_w_store) * l_conv_kernel_config.vector_length_out * l_conv_kernel_config.datatype_size_out;
+
+                libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT1, 
+                                          l_gp_reg_mapping.gp_reg_help_2,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          store_offset);  
+
+            }
+          } 
+        }
 
           #include "kernel_repeat.tpl.c"
 
@@ -452,6 +479,24 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
       }
     }
 
+#if 0
+    if ( i_conv_desc->perform_relu_in_kernel == 1 ) {
+      unsigned int i, j, store_offset;
+      /* Prefetch to L2 all "regular inputs" based on passed pointer (now in help2 register) */
+      for (i = 0; i < i_conv_desc->ofh_rb; i++) {
+        for ( j = 0; j < i_conv_desc->ofw_rb; j++ ) {
+          store_offset = ((i * i_conv_desc->stride_h_store) * i_conv_desc->ofw_padded + j * i_conv_desc->stride_w_store) * l_conv_kernel_config.vector_length_out * l_conv_kernel_config.datatype_size_out;
+          libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT0, 
+                                          l_gp_reg_mapping.gp_reg_help_2,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          store_offset);  
+
+        }
+      } 
+    }
+#endif
+  
     #include "kernel_repeat.tpl.c"
   } else {
     #include "kernel_repeat.tpl.c"
