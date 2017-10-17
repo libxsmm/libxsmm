@@ -117,8 +117,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       exit(-1);
     }
     /* If we use any options/fuse ops, disable kernel streams */
-    if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ||
-         ((handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU) > 0)    ) {
+    if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
       handle->use_thread_private_jit = 0;
       printf("no kernel streams is not supported in this version of LIBXSMM\n");
       exit(-1);
