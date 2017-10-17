@@ -1373,7 +1373,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 ifw_padded = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
               }
 
-              qfma_padding = (ifw_padded % 4 == 0) ? 0 : 4 - ifw_padded % 4;
+              qfma_padding = (handle->desc.W % 4 == 0) ? 0 : 4 - handle->desc.W % 4;
               kernel_ifw_padded = ifw_padded + qfma_padding;
               handle->qfma_input_pad = qfma_padding;
               descriptor.ifw_padded = kernel_ifw_padded;
