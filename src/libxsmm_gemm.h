@@ -33,6 +33,7 @@
 
 #include <libxsmm_generator.h>
 #include <libxsmm_frontend.h>
+#include <libxsmm_sync.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -464,6 +465,8 @@ LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][8/*s
 LIBXSMM_API_VARIABLE libxsmm_gemm_descriptor libxsmm_gemm_batchdesc;
 /** Records a batch of SMMs. */
 LIBXSMM_API_VARIABLE libxsmm_gemm_batchitem* libxsmm_gemm_batcharray;
+/** Lock: libxsmm_mmbatch_begin, libxsmm_mmbatch_end, internal_mmbatch_flush. */
+LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE libxsmm_gemm_batchlock;
 /** Maximum size of the recorded batch. */
 LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_batchsize;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
@@ -472,9 +475,10 @@ LIBXSMM_API_VARIABLE int libxsmm_gemm_auto_prefetch;
 LIBXSMM_API_VARIABLE int libxsmm_gemm_tiled_prefetch;
 /**
  * Intercepted GEMM
- * - odd: sequential and non-tiled
- * - even (or negative): parallelized
- * - 0: lazy batch/recording disabled
+ * - odd: sequential and non-tiled (small problem sizes only)
+ * - even (or negative): parallelized and tiled (all problem sizes)
+ * - 3: GEMV is intercepted; small problem sizes
+ * - 4: GEMV is intercepted; all problem sizes
  */
 LIBXSMM_API_VARIABLE int libxsmm_gemm_wrap;
 

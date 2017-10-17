@@ -235,7 +235,24 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       assert(0 <= flags);
     }
     if (i == libxsmm_gemm_batchsize) { /* flush */
+# if !defined(NDEBUG)
+      int result;
+# endif
+      LIBXSMM_LOCK_ACQUIRE(&libxsmm_gemm_batchlock);
+# if defined(NDEBUG)
       internal_mmbatch_flush();
+# else
+      result = internal_mmbatch_flush();
+# endif
+      LIBXSMM_LOCK_RELEASE(&libxsmm_gemm_batchlock);
+# if !defined(NDEBUG)
+      if (EXIT_SUCCESS != result && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+        static int error_once = 0;
+        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+          fprintf(stderr, "LIBXSMM ERROR: GEMM batch flush failed!\n");
+        }
+      }
+# endif
     }
 #endif
   }
@@ -322,7 +339,24 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       assert(0 <= flags);
     }
     if (i == libxsmm_gemm_batchsize) { /* flush */
+# if !defined(NDEBUG)
+      int result;
+# endif
+      LIBXSMM_LOCK_ACQUIRE(&libxsmm_gemm_batchlock);
+# if defined(NDEBUG)
       internal_mmbatch_flush();
+# else
+      result = internal_mmbatch_flush();
+# endif
+      LIBXSMM_LOCK_RELEASE(&libxsmm_gemm_batchlock);
+# if !defined(NDEBUG)
+      if (EXIT_SUCCESS != result && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+        static int error_once = 0;
+        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+          fprintf(stderr, "LIBXSMM ERROR: GEMM batch flush failed!\n");
+        }
+      }
+# endif
     }
 #endif
   }
@@ -537,12 +571,13 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
       precision, *m, *n, *k, lda, ldb, ldc, alpha, beta, flags, &prefetch);
 
     if (EXIT_SUCCESS == result) {
+      LIBXSMM_LOCK_ACQUIRE(&libxsmm_gemm_batchlock);
       result = internal_mmbatch_flush();
       if (EXIT_SUCCESS == result) {
-        const unsigned int i = LIBXSMM_ATOMIC_ADD_FETCH(&internal_ext_gemm_batchdepth, 1, LIBXSMM_ATOMIC_RELAXED);
-        if (i <= LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH) {
-          internal_ext_gemm_batchdesc[i-1] = libxsmm_gemm_batchdesc; /* backup */
+        if (internal_ext_gemm_batchdepth < LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH) {
+          internal_ext_gemm_batchdesc[internal_ext_gemm_batchdepth] = libxsmm_gemm_batchdesc; /* backup */
         }
+        ++internal_ext_gemm_batchdepth;
         if (0 == (LIBXSMM_MMBATCH_FLAG_STATISTIC & *flags)) {
           libxsmm_gemm_batchdesc = descriptor;
         }
@@ -551,6 +586,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
           libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC;
         }
       }
+      LIBXSMM_LOCK_RELEASE(&libxsmm_gemm_batchlock);
     }
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -570,14 +606,19 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
 LIBXSMM_API_DEFINITION void libxsmm_mmbatch_end(void)
 {
 #if defined(LIBXSMM_GEMM_EXT_MMBATCH)
-  const int result = internal_mmbatch_flush();
-  const unsigned int i = LIBXSMM_ATOMIC_SUB_FETCH(&internal_ext_gemm_batchdepth, 1, LIBXSMM_ATOMIC_RELAXED);
-  if (i < LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH) {
-    libxsmm_gemm_batchdesc = internal_ext_gemm_batchdesc[i]; /* restore */
+  int result;
+  LIBXSMM_LOCK_ACQUIRE(&libxsmm_gemm_batchlock);
+  {
+    result = internal_mmbatch_flush();
+    --internal_ext_gemm_batchdepth;
+    if (internal_ext_gemm_batchdepth < LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH) {
+      libxsmm_gemm_batchdesc = internal_ext_gemm_batchdesc[internal_ext_gemm_batchdepth]; /* restore */
+    }
+    else {
+      memset(&libxsmm_gemm_batchdesc, 0, sizeof(libxsmm_gemm_batchdesc));
+    }
   }
-  else {
-    memset(&libxsmm_gemm_batchdesc, 0, sizeof(libxsmm_gemm_batchdesc));
-  }
+  LIBXSMM_LOCK_RELEASE(&libxsmm_gemm_batchlock);
   if (EXIT_SUCCESS != result && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {

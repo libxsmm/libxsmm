@@ -110,6 +110,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
       0, LIBXSMM_MALLOC_FLAG_SCRATCH, &extra, sizeof(extra)))
     {
       libxsmm_gemm_batchsize = batchsize;
+      LIBXSMM_LOCK_INIT(&libxsmm_gemm_batchlock);
     }
   }
 #endif
