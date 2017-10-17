@@ -575,20 +575,23 @@ LIBXSMM_API_INLINE void internal_init(void)
       const char *const env = getenv("LIBXSMM_TRACE");
       if (0 != env && 0 != *env) {
         char buffer[32];
+        init_code = EXIT_SUCCESS;
         if (1 == sscanf(env, "%32[^,],", buffer)) {
-          sscanf(buffer, "%i", &filter_threadid);
+          init_code = (0 <= sscanf(buffer, "%i", &filter_threadid) ? EXIT_SUCCESS : EXIT_FAILURE);
         }
         if (1 == sscanf(env, "%*[^,],%32[^,],", buffer)) {
-          sscanf(buffer, "%i", &filter_mindepth);
+          init_code = (0 <= sscanf(buffer, "%i", &filter_mindepth) ? EXIT_SUCCESS : EXIT_FAILURE);
         }
         if (1 == sscanf(env, "%*[^,],%*[^,],%32s", buffer)) {
-          sscanf(buffer, "%i", &filter_maxnsyms);
+          init_code = (0 <= sscanf(buffer, "%i", &filter_maxnsyms) ? EXIT_SUCCESS : EXIT_FAILURE);
         }
         else {
           filter_maxnsyms = -1; /* all */
         }
       }
-      init_code = libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
+      if (EXIT_SUCCESS == init_code) {
+        init_code = libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
+      }
     }
     if (EXIT_SUCCESS == init_code)
 #else
