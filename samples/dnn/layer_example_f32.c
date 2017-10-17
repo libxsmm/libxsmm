@@ -42,7 +42,7 @@
 /*# define USE_FUSED_BATCH_STATS*/
 
 #define FP64_BN_STATS
-#define USE_FUSED_RELU_BWD
+/*#define USE_FUSED_RELU_BWD*/
 
 #if !defined(USE_FUSED_BIAS) && 0
 # define USE_FUSED_BIAS
@@ -126,6 +126,22 @@ LIBXSMM_INLINE void set_zeropad_nchw(float* nchw, int N, int C, int H, int W, in
   }
 }
 
+LIBXSMM_INLINE void copy_internal_nchw(float* dst , float* src, int N, int C, int H, int W, int pad_h, int pad_w)
+{
+  LIBXSMM_VLA_DECL(4, float, input, src, C, H, W);
+  LIBXSMM_VLA_DECL(4, float, new_input, dst, C, H+2*pad_h, W+2*pad_w);
+  int n, h, w, c;
+
+  for ( n = 0; n < N; n++ ) {
+    for ( c = 0; c < C; c++ ) {
+      for ( h = 0; h < H; h++ ) {
+        for ( w = 0; w < W; w++ ) {
+          LIBXSMM_VLA_ACCESS(4, new_input, n, c, h+pad_h, w+pad_w, C, H+2*pad_h, W+2*pad_w) =  LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W);
+        }
+      }
+    }
+  }
+}
 
 LIBXSMM_INLINE void naive_copy_NCHW_to_NHWC(const float* nchw, float* nhwc, int N, int H, int W, int C)
 {
@@ -623,7 +639,13 @@ int main(int argc, char* argv[])
   dbias_nhwc            = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
 
   /* initialize data */
-  init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
+  float *naive_input_tmp           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  if (padding_mode == 0 ) {
+    init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
+  } else {
+    init_buf(naive_input_tmp,          nImg*nIfm*ifh*ifw, 0, 0);
+    copy_internal_nchw( naive_input , naive_input_tmp, nImg, nIfm, ifh, ifw, pad_h, pad_w);
+  }
 #if defined(USE_FUSED_RELU_BWD)
   /* Initialize some entries with zeros  */
   {
@@ -635,15 +657,31 @@ int main(int argc, char* argv[])
     }
   }
 #endif
-  init_buf(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
-  init_buf(naive_output_wu,      nImg*nOfm*ofhp*ofwp, 0, 0);
+
+  float *naive_output_bp_tmp       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  float *naive_output_wu_tmp       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  if (padding_mode == 0 ) {
+    init_buf(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
+    init_buf(naive_output_wu,      nImg*nOfm*ofhp*ofwp, 0, 0);
+  } else {
+    init_buf(naive_output_bp_tmp,      nImg*nOfm*ofh*ofw, 0, 0);
+    copy_internal_nchw( naive_output_bp , naive_output_bp_tmp, nImg, nOfm, ofh, ofw, pad_h, pad_w);
+    init_buf(naive_output_wu_tmp,      nImg*nOfm*ofh*ofw, 0, 0);
+    copy_internal_nchw( naive_output_wu , naive_output_wu_tmp, nImg, nOfm, ofh, ofw, pad_h, pad_w); 
+  }
   set_zeropad_nchw(naive_input, nImg, nIfm, ifhp, ifwp, pad_h_in, pad_w_in);
   set_zeropad_nchw(naive_output_bp, nImg, nOfm, ofhp, ofwp, pad_h_out, pad_w_out);
   set_zeropad_nchw(naive_output_wu, nImg, nOfm, ofhp, ofwp, pad_h_out, pad_w_out);
 
   copy_buf(naive_input, naive_input_save, nImg*nIfm*ifhp*ifwp);
   zero_buf(naive_output_save,    nImg*nOfm*ofhp*ofwp);
-  init_buf(naive_output,       nImg*nOfm*ofhp*ofwp, 0, 0);
+
+  float *naive_output_tmp          = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+  if (padding_mode == 0 ) {
+    init_buf(naive_output,       nImg*nOfm*ofhp*ofwp, 0, 0);
+  } else {
+    init_buf(naive_output_tmp,       nImg*nOfm*ofh*ofw, 0, 0);
+  }
   set_zeropad_nchw(naive_output, nImg, nOfm, ofhp, ofwp, pad_h_out, pad_w_out);
 
   copy_buf(naive_output, naive_output_save, nImg*nOfm*ofhp*ofwp);
