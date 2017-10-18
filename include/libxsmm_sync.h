@@ -179,7 +179,13 @@
 #   include <pthread.h>
 #   define LIBXSMM_LOCK_ACQUIRED 0
 #   define LIBXSMM_LOCK_ATTR_TYPE pthread_mutexattr_t
-#   define LIBXSMM_LOCK_ATTR_INIT(ATTR) pthread_mutexattr_init(ATTR); pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_RECURSIVE)
+#   if defined(NDEBUG)
+#     define LIBXSMM_LOCK_ATTR_INIT(ATTR) pthread_mutexattr_init(ATTR); \
+              pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_NORMAL)
+#   else
+#     define LIBXSMM_LOCK_ATTR_INIT(ATTR) pthread_mutexattr_init(ATTR); \
+              pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_ERRORCHECK)
+#   endif
 #   define LIBXSMM_LOCK_ATTR_DESTROY(ATTR) pthread_mutexattr_destroy(ATTR)
 #   define LIBXSMM_LOCK_TYPE pthread_mutex_t
 #   define LIBXSMM_LOCK_CONSTRUCT PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
