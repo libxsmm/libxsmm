@@ -254,7 +254,10 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       assert(0 <= flags);
     }
     if (libxsmm_gemm_batchsize < i) { /* flush */
-      result = internal_mmbatch_flush(&libxsmm_gemm_batchdesc, libxsmm_gemm_batchsize, libxsmm_gemm_batcharray);
+# if !defined(NDEBUG)
+      result =
+# endif
+      internal_mmbatch_flush(&libxsmm_gemm_batchdesc, libxsmm_gemm_batchsize, libxsmm_gemm_batcharray);
     }
 # if !defined(NDEBUG) /* library code is expected to be mute */
     if (EXIT_SUCCESS != result && 0 != libxsmm_verbosity &&
@@ -363,7 +366,10 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       assert(0 <= flags);
     }
     if (libxsmm_gemm_batchsize < i) { /* flush */
-      result = internal_mmbatch_flush(&libxsmm_gemm_batchdesc, libxsmm_gemm_batchsize, libxsmm_gemm_batcharray);
+# if !defined(NDEBUG)
+      result =
+# endif
+      internal_mmbatch_flush(&libxsmm_gemm_batchdesc, libxsmm_gemm_batchsize, libxsmm_gemm_batcharray);
     }
 # if !defined(NDEBUG) /* library code is expected to be mute */
     if (EXIT_SUCCESS != result && 0 != libxsmm_verbosity &&
