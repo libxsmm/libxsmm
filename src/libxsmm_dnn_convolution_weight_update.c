@@ -59,6 +59,23 @@ void gather_transpose_ps_16_56_56_16(int M, int N, float *LIBXSMM_RESTRICT dst, 
   }
 }
 
+void gather_transpose_ps_16_56_58_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x00FF;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n;
+    #pragma unroll(3)
+    for(n = 0; n < 3; ++n) {
+      const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
+      _mm512_store_ps((void*)(dst+m*58+n*16),tmp);
+    }
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*58+n*16),Nremmask,tmprem);
+  }
+}
+
 void gather_transpose_ps_16_58_60_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
   const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
   const __mmask16 Nremmask = 0x03FF;
@@ -73,6 +90,23 @@ void gather_transpose_ps_16_58_60_16(int M, int N, float *LIBXSMM_RESTRICT dst, 
     }
     const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
     _mm512_mask_store_ps((void*)(dst+m*60+n*16),Nremmask,tmprem);
+  }
+}
+
+void gather_transpose_ps_16_58_58_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x03FF;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n;
+    #pragma unroll(3)
+    for(n = 0; n < 3; ++n) {
+      const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
+      _mm512_store_ps((void*)(dst+m*58+n*16),tmp);
+    }
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*58+n*16),Nremmask,tmprem);
   }
 }
 
@@ -91,6 +125,21 @@ void gather_transpose_ps_16_28_28_16(int M, int N, float *LIBXSMM_RESTRICT dst, 
   }
 }
 
+void gather_transpose_ps_16_28_30_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x0FFF;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n = 0;
+    const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
+    _mm512_store_ps((void*)(dst+m*30+n*16),tmp);
+    n = 1;
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*30+n*16),Nremmask,tmprem);
+  }
+}
+
 void gather_transpose_ps_16_30_32_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
   const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
   const __mmask16 Nremmask = 0x3FFF;
@@ -106,6 +155,20 @@ void gather_transpose_ps_16_30_32_16(int M, int N, float *LIBXSMM_RESTRICT dst, 
   }
 }
 
+void gather_transpose_ps_16_30_30_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x3FFF;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n = 0;
+    const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
+    _mm512_store_ps((void*)(dst+m*30+n*16),tmp);
+    n = 1;
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*30+n*16),Nremmask,tmprem);
+  }
+}
 void gather_transpose_ps_16_16_16_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
   const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
   int m;
@@ -114,6 +177,17 @@ void gather_transpose_ps_16_16_16_16(int M, int N, float *LIBXSMM_RESTRICT dst, 
     int n = 0;
     const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
     _mm512_store_ps((void*)(dst+m*16+n*16),tmp);
+  }
+}
+
+void gather_transpose_ps_16_16_18_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n = 0;
+    const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
+    _mm512_store_ps((void*)(dst+m*18+n*16),tmp);
   }
 }
 
@@ -129,6 +203,18 @@ void gather_transpose_ps_16_14_16_16(int M, int N, float *LIBXSMM_RESTRICT dst, 
   }
 }
 
+void gather_transpose_ps_16_14_18_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x3FFF;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n = 0;
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*18+n*16),Nremmask,tmprem);
+  }
+}
+
 void gather_transpose_ps_16_7_8_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
   const __m512i vindex = _mm512_set_epi32(0, 97, 81, 65, 49, 33, 17,  1,
                                           0, 96, 80, 64, 48, 32, 16,  0);
@@ -141,6 +227,18 @@ void gather_transpose_ps_16_7_8_16(int M, int N, float *LIBXSMM_RESTRICT dst, in
   }
 }
 
+void gather_transpose_ps_16_7_10_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x07F;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n = 0;
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*10+n*16),Nremmask,tmprem);
+  }
+}
+
 void gather_transpose_ps_16_9_12_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
   const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
   const __mmask16 Nremmask = 0x01FF;
@@ -150,6 +248,18 @@ void gather_transpose_ps_16_9_12_16(int M, int N, float *LIBXSMM_RESTRICT dst, i
     int n = 0;
     const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
     _mm512_mask_store_ps((void*)(dst+m*12+n*16),Nremmask,tmprem);
+  }
+}
+
+void gather_transpose_ps_16_9_10_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
+  const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
+  const __mmask16 Nremmask = 0x01FF;
+  int m;
+  #pragma unroll_and_jam(4)
+  for(m = 0; m < 16; ++m) {
+    int n = 0;
+    const __m512 tmprem =  _mm512_mask_i32gather_ps(_mm512_undefined(), Nremmask, vindex, src+m+n*256, 4);
+    _mm512_mask_store_ps((void*)(dst+m*10+n*16),Nremmask,tmprem);
   }
 }
 
@@ -192,23 +302,47 @@ transposer get_transposer(int M, int N, int ldD, int ldS) {
   if(M == 16 && N == 7 && ldD == 8 && ldS == 16) {
     return gather_transpose_ps_16_7_8_16;
   }
+  if(M == 16 && N == 7 && ldD == 10 && ldS == 16) {
+    return gather_transpose_ps_16_7_10_16;
+  }
+  if(M == 16 && N == 9 && ldD == 10 && ldS == 16) {
+    return gather_transpose_ps_16_9_10_16;
+  }
   if(M == 16 && N == 9 && ldD == 12 && ldS == 16) {
     return gather_transpose_ps_16_9_12_16;
   }
   if(M == 16 && N == 14 && ldD == 16 && ldS == 16) {
     return gather_transpose_ps_16_14_16_16;
   }
+  if(M == 16 && N == 14 && ldD == 18 && ldS == 16) {
+    return gather_transpose_ps_16_14_18_16;
+  }
   if(M == 16 && N == 16 && ldD == 16 && ldS == 16) {
     return gather_transpose_ps_16_16_16_16;
   }
+  if(M == 16 && N == 16 && ldD == 18 && ldS == 16) {
+    return gather_transpose_ps_16_16_18_16;
+  }
   if(M == 16 && N == 28 && ldD == 28 && ldS == 16) {
     return gather_transpose_ps_16_28_28_16;
+  }
+  if(M == 16 && N == 28 && ldD == 30 && ldS == 16) {
+    return gather_transpose_ps_16_28_30_16;
+  }
+  if(M == 16 && N == 30 && ldD == 30 && ldS == 16) {
+    return gather_transpose_ps_16_30_30_16;
   }
   if(M == 16 && N == 30 && ldD == 32 && ldS == 16) {
     return gather_transpose_ps_16_30_32_16;
   }
   if(M == 16 && N == 56 && ldD == 56 && ldS == 16) {
     return gather_transpose_ps_16_56_56_16;
+  }
+  if(M == 16 && N == 56 && ldD == 58 && ldS == 16) {
+    return gather_transpose_ps_16_56_58_16;
+  }
+  if(M == 16 && N == 58 && ldD == 58 && ldS == 16) {
+    return gather_transpose_ps_16_58_58_16;
   }
   if(M == 16 && N == 58 && ldD == 60 && ldS == 16) {
     return gather_transpose_ps_16_58_60_16;
