@@ -109,7 +109,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
           if (LIBXSMM_PREFETCH_AUTO == prefetch) { /* automatically chosen */
             /* TODO: more sophisticated strategy perhaps according to CPUID */
             const char *const env_p = getenv("LIBXSMM_BGEMM_PREFETCH");
-            const int uid = ((0 == env_p || 0 == *env_p) ? 7/*LIBXSMM_PREFETCH_AL2BL2_VIA_C*/ : atoi(env_p));
+            const int uid = ((0 == env_p || 0 == *env_p) ? libxsmm_gemm_uid2prefetch(LIBXSMM_PREFETCH_AL2BL2_VIA_C) : atoi(env_p));
             descriptor.prefetch = (unsigned short)libxsmm_gemm_uid2prefetch(uid);
           }
           else { /* user-defined */
