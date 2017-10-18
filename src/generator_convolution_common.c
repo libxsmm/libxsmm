@@ -579,6 +579,12 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
        unsigned int reg_X;
        unsigned int store_offset;
 
+       libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vxor_instruction,
+                                                 i_conv_kernel_config->vector_name, 0, 0, 0);
+     
+
         for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
           for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
             for ( l_k = 0; l_k < l_reg_per_block; l_k++ ) {
@@ -587,20 +593,29 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                                               ( l_j * l_lead_dim * i_conv_kernel_config->datatype_size_out ) +
                                               ( l_k * i_conv_kernel_config->vector_length_out * i_conv_kernel_config->datatype_size_out );
               /* VCMP  */
-
+              libxsmm_x86_instruction_vec_compute_mem_mask ( io_generated_code,
+                                                             i_conv_kernel_config->instruction_set,
+                                                             LIBXSMM_X86_INSTR_VCMPPS,
+                                                             0,        
+                                                             i_gp_reg_mapping->gp_reg_help_2,
+                                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                             store_offset,
+                                                             i_conv_kernel_config->vector_name,
+                                                             0,
+                                                             reg_X,
+                                                             0,
+                                                             1); 
+         
               /* BLEND  */
-
-              /* STORE  */
-            /* foo store */     
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                                          i_conv_kernel_config->instruction_set,
-                                          i_conv_kernel_config->vmove_instruction,
-                                          i_gp_reg_mapping->gp_reg_help_2,
-                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          store_offset,
-                                          i_conv_kernel_config->vector_name,
-                                          0, 0, 0 );            
-
+              libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
+                                                            i_conv_kernel_config->instruction_set,
+                                                            LIBXSMM_X86_INSTR_VBLENDMPS,
+                                                            i_conv_kernel_config->vector_name,
+                                                            0,
+                                                            reg_X,
+                                                            reg_X,
+                                                            1);             
+              /* STORE */
               libxsmm_x86_instruction_vec_move( io_generated_code,
                                               i_conv_kernel_config->instruction_set,
                                               l_intr_store,
@@ -986,28 +1001,37 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                                     reg_X, 0, 1 );
           } else {
               /* VCMP  */
-
+              libxsmm_x86_instruction_vec_compute_mem_mask ( io_generated_code,
+                                                             i_conv_kernel_config->instruction_set,
+                                                             LIBXSMM_X86_INSTR_VCMPPS,
+                                                             0,        
+                                                             i_gp_reg_mapping->gp_reg_help_2,
+                                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                             store_offset,
+                                                             i_conv_kernel_config->vector_name,
+                                                             0,
+                                                             reg_X,
+                                                             0,
+                                                             1); 
+         
               /* BLEND  */
-
-              /* STORE  */
-           libxsmm_x86_instruction_vec_move( io_generated_code,
-                                          i_conv_kernel_config->instruction_set,
-                                          i_conv_kernel_config->vmove_instruction,
-                                          i_gp_reg_mapping->gp_reg_help_2,
-                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          store_offset,
-                                          i_conv_kernel_config->vector_name,
-                                          0, 0, 0 );  
-
-            libxsmm_x86_instruction_vec_move( io_generated_code,
-                                    i_conv_kernel_config->instruction_set,
-                                    l_intr_store,
-                                    i_gp_reg_mapping->gp_reg_output,
-                                    LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                    store_offset,
-                                    i_conv_kernel_config->vector_name,
-                                    reg_X, 0, 1 );       
-          
+              libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
+                                                            i_conv_kernel_config->instruction_set,
+                                                            LIBXSMM_X86_INSTR_VBLENDMPS,
+                                                            i_conv_kernel_config->vector_name,
+                                                            0,
+                                                            reg_X,
+                                                            reg_X,
+                                                            1);             
+              /* STORE */
+              libxsmm_x86_instruction_vec_move( io_generated_code,
+                                              i_conv_kernel_config->instruction_set,
+                                              l_intr_store,
+                                              i_gp_reg_mapping->gp_reg_output,
+                                              LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                              store_offset,
+                                              i_conv_kernel_config->vector_name,
+                                              reg_X, 0, 1 );
           }
 
           if ( i_conv_desc->use_nts == 1 ) {
