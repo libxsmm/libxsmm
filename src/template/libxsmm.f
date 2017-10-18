@@ -75,6 +75,15 @@
      &    LIBXSMM_GEMM_FLAG_TRANS_A = 1,                                &
      &    LIBXSMM_GEMM_FLAG_TRANS_B = 2
 
+        ! Flag enumeration which can be IORed.
+        INTEGER(C_INT), PARAMETER ::                                    &
+          ! Handle recorded batch in parallel.
+     &    LIBXSMM_MMBATCH_FLAG_DEFAULT    = 0,                          &
+          ! Handle recorded batch sequentially.
+     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL = 256,                        &
+          ! Only record a statistic of potential SMMs.
+     &    LIBXSMM_MMBATCH_FLAG_STATISTIC  = 512
+
         ! Flag which denotes the value type (for weak-typed interface
         ! functions such as libxsmm_xmmdispatch).
         INTEGER(C_INT), PARAMETER ::                                    &
@@ -205,7 +214,6 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
-
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_begin
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_end
         INTERFACE
@@ -382,7 +390,6 @@
             INTEGER(C_INT), INTENT(IN) :: flags, m, n, k, lda, ldb, ldc
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
           END SUBROUTINE
-
 
           ! Processes the batch of previously recorded matrix multiplications
           ! (libxsmm_mmbatch_begin); libxsmmext required.
