@@ -110,7 +110,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
       (size_t)((LIBXSMM_GEMM_BATCHSCALE) * sizeof(libxsmm_gemm_batchitem) * batchsize),
       0, LIBXSMM_MALLOC_FLAG_SCRATCH, &extra, sizeof(extra)))
     {
-      LIBXSMM_LOCK_INIT(&libxsmm_gemm_batchlock);
+      LIBXSMM_LOCK_INIT(&libxsmm_gemm_batchlock, &libxsmm_lock_attr_default);
       libxsmm_gemm_batchsize = batchsize;
     }
   }
@@ -522,7 +522,12 @@ LIBXSMM_API_DEFINITION int libxsmm_xmmbatch(
             kernel.xmm(ai, bi, ci, ai, bi, ci); /* pseudo-prefetch */
           }
         }
-        else if (LIBXSMM_GEMM_PRECISION_F64 == kernel_desc->datatype) { /* fall-back (DP) */
+        else if (LIBXSMM_GEMM_PRECISION_F64 == kernel_desc->datatype
+          && 0 < kernel_desc->m && 0 < kernel_desc->n && 0 < kernel_desc->k
+          && kernel_desc->m <= kernel_desc->lda
+          && kernel_desc->k <= kernel_desc->ldb
+          && kernel_desc->m <= kernel_desc->ldc)
+        { /* fall-back (DP) */
           for (n = begin; n < end; ++n) {
             const char *const an = a + (0 != ia ? (*((const unsigned int*)(ia + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
             const char *const bn = b + (0 != ib ? (*((const unsigned int*)(ib + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
@@ -534,7 +539,12 @@ LIBXSMM_API_DEFINITION int libxsmm_xmmbatch(
             ai = an; bi = bn; ci = cn;
           }
         }
-        else if (LIBXSMM_GEMM_PRECISION_F32 == kernel_desc->datatype) { /* fall-back (SP) */
+        else if (LIBXSMM_GEMM_PRECISION_F32 == kernel_desc->datatype
+          && 0 < kernel_desc->m && 0 < kernel_desc->n && 0 < kernel_desc->k
+          && kernel_desc->m <= kernel_desc->lda
+          && kernel_desc->k <= kernel_desc->ldb
+          && kernel_desc->m <= kernel_desc->ldc)
+        { /* fall-back (SP) */
           for (n = begin; n < end; ++n) {
             const char *const an = a + (0 != ia ? (*((const unsigned int*)(ia + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
             const char *const bn = b + (0 != ib ? (*((const unsigned int*)(ib + (n + 1) * index_stride)) - index_base) : index_base) * typesize;
@@ -571,7 +581,12 @@ LIBXSMM_API_DEFINITION int libxsmm_xmmbatch(
               *((const void**)ai), *((const void**)bi), *((const void**)ci));
           }
         }
-        else if (LIBXSMM_GEMM_PRECISION_F64 == kernel_desc->datatype) { /* fall-back (DP) */
+        else if (LIBXSMM_GEMM_PRECISION_F64 == kernel_desc->datatype
+          && 0 < kernel_desc->m && 0 < kernel_desc->n && 0 < kernel_desc->k
+          && kernel_desc->m <= kernel_desc->lda
+          && kernel_desc->k <= kernel_desc->ldb
+          && kernel_desc->m <= kernel_desc->ldc)
+        { /* fall-back (DP) */
           for (n = begin; n < end; ++n) {
             const char *const an = ai + da;
             const char *const bn = bi + db;
@@ -586,7 +601,12 @@ LIBXSMM_API_DEFINITION int libxsmm_xmmbatch(
             ai = an; bi = bn; ci = cn; /* next */
           }
         }
-        else if (LIBXSMM_GEMM_PRECISION_F32 == kernel_desc->datatype) { /* fall-back (SP) */
+        else if (LIBXSMM_GEMM_PRECISION_F32 == kernel_desc->datatype
+          && 0 < kernel_desc->m && 0 < kernel_desc->n && 0 < kernel_desc->k
+          && kernel_desc->m <= kernel_desc->lda
+          && kernel_desc->k <= kernel_desc->ldb
+          && kernel_desc->m <= kernel_desc->ldc)
+        { /* fall-back (SP) */
           for (n = begin; n < end; ++n) {
             const char *const an = ai + da;
             const char *const bn = bi + db;

@@ -466,9 +466,8 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   }
 #if !defined(LIBXSMM_NO_SYNC)
   { /* release locks */
-    int i;
-    for (i = 0; i < (INTERNAL_REGLOCK_MAXN); ++i) LIBXSMM_LOCK_DESTROY(internal_reglock + i);
-    LIBXSMM_LOCK_DESTROY(&libxsmm_lock_global);
+    int i; for (i = 0; i < (INTERNAL_REGLOCK_MAXN); ++i) LIBXSMM_LOCK_DESTROY(internal_reglock + i);
+    LIBXSMM_LOCK_DESTROY(&libxsmm_lock_global); LIBXSMM_LOCK_ATTR_DESTROY(&libxsmm_lock_attr_default);
   }
 #endif
 }
@@ -684,8 +683,9 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&reglock_check, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
       int i;
       assert(sizeof(internal_reglock) == (INTERNAL_REGLOCK_MAXN * sizeof(*internal_reglock)));
-      for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_INIT(internal_reglock + i);
-      LIBXSMM_LOCK_INIT(&libxsmm_lock_global); /* valid */
+      LIBXSMM_LOCK_ATTR_INIT(&libxsmm_lock_attr_default);
+      for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_INIT(internal_reglock + i, &libxsmm_lock_attr_default);
+      LIBXSMM_LOCK_INIT(&libxsmm_lock_global, &libxsmm_lock_attr_default); /* valid */
       memset(&global_lock, -1, sizeof(LIBXSMM_LOCK_TYPE)); /* mark invalid */
     }
     else {
