@@ -122,7 +122,8 @@ int main(int argc, char* argv[])
       const libxsmm_blasint mi = ((rand() % maxv) + 1) * maxn / maxv;
       const libxsmm_blasint ni = ((rand() % maxv) + 1) * maxn / maxv;
       const libxsmm_blasint ki = ((rand() % maxv) + 1) * maxn / maxv;
-      DGEMM(&transa, &transb, &mi, &ni, &ki, &alpha, a, &mi, b, &ki, &beta, c, &mi);
+      const libxsmm_blasint ilda = mi, ildb = ki, ildc = mi;
+      DGEMM(&transa, &transb, &mi, &ni, &ki, &alpha, a, &ilda, b, &ildb, &beta, c, &ildc);
     }
 #if defined(CALL_BEGIN_END)
     /* disable/flush multiplication batch */
