@@ -32,8 +32,7 @@
       MODULE LIBXSMM
         USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
      &    C_FLOAT, C_DOUBLE, C_CHAR, C_INT, C_LONG_LONG,                &
-     &    C_INTPTR_T, C_F_POINTER, C_F_PROCPOINTER, C_LOC,              &
-     &    C_PTR, C_NULL_PTR, C_FUNPTR
+     &    C_INTPTR_T, C_F_POINTER, C_LOC, C_PTR
         IMPLICIT NONE
 
         PRIVATE :: srealptr, drealptr
@@ -72,14 +71,25 @@
 
         ! Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
+     &    LIBXSMM_GEMM_FLAG_NONE    = 0,                                &
      &    LIBXSMM_GEMM_FLAG_TRANS_A = 1,                                &
      &    LIBXSMM_GEMM_FLAG_TRANS_B = 2
+
+        ! Flag enumeration which can be IORed.
+        INTEGER(C_INT), PARAMETER ::                                    &
+          ! Handle recorded batch in parallel.
+     &    LIBXSMM_MMBATCH_FLAG_DEFAULT    = 0,                          &
+          ! Handle recorded batch sequentially.
+     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL = 256,                        &
+          ! Only record a statistic of potential SMMs.
+     &    LIBXSMM_MMBATCH_FLAG_STATISTIC  = 512
 
         ! Flag which denotes the value type (for weak-typed interface
         ! functions such as libxsmm_xmmdispatch).
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_GEMM_PRECISION_F64 = 0,                               &
-     &    LIBXSMM_GEMM_PRECISION_F32 = 1
+     &    LIBXSMM_GEMM_PRECISION_F32 = 1,                               &
+     &    LIBXSMM_GEMM_PRECISION_I16 = 3
 
         ! Enumeration of the available prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
@@ -204,6 +214,8 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_begin
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_end
         INTERFACE
           ! Initialize the library; pay for setup cost at a specific point.
           SUBROUTINE libxsmm_init() BIND(C)
@@ -274,20 +286,22 @@
 
           ! Impure function which returns the current clock tick of a
           ! monotonic timer source; uses a platform-specific resolution.
+          ! Implicit FORTRAN 77 interface: not available.
           INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_tick() BIND(C)
             IMPORT :: C_LONG_LONG
           END FUNCTION
 
           ! Impure function (timer freq. may vary) which returns the duration
           ! (in seconds) between two values received by libxsmm_timer_tick.
+          ! Implicit FORTRAN 77 interface: not available.
           REAL(C_DOUBLE) FUNCTION libxsmm_timer_duration(               &
      &    tick0, tick1) BIND(C)
             IMPORT :: C_LONG_LONG, C_DOUBLE
             INTEGER(C_LONG_LONG), INTENT(IN), VALUE :: tick0, tick1
           END FUNCTION
 
-          ! Type-generic (unsafe) code dispatch (trylock: impure routine),
-          ! which is also suited for FORTRAN 77 when relying on:
+          ! Type-generic (unsafe) code dispatch (trylock: impure routine).
+          ! Implicit FORTRAN 77 interface:
           ! INTEGER(4) :: precision, m, n, k, lda, ldb, ldc, flags, prefetch
           ! REAL(4|8)  :: alpha, beta
           ! INTEGER(8) :: fn
@@ -303,6 +317,9 @@
           END SUBROUTINE
 
           ! Generic call routine (3-argument form).
+          ! Implicit FORTRAN 77 interface:
+          ! REAL(4|8)  :: a(1), b(1), c(1)
+          ! INTEGER(8) :: fn
           PURE SUBROUTINE libxsmm_xmmcall_abc(fn, a, b, c)              &
      &    BIND(C, NAME="libxsmm_xmmcall_abc_")
             IMPORT :: C_INTPTR_T, C_PTR
@@ -311,6 +328,9 @@
           END SUBROUTINE
 
           ! Generic call routine (6-argument form).
+          ! Implicit FORTRAN 77 interface:
+          ! REAL(4|8)  :: a(1), b(1), c(1), pa(1), pb(1), pc(1)
+          ! INTEGER(8) :: fn
           PURE SUBROUTINE libxsmm_xmmcall_prf(fn, a, b, c, pa, pb, pc)  &
      &    BIND(C, NAME="libxsmm_xmmcall_prf_")
             IMPORT :: C_INTPTR_T, C_PTR
@@ -318,6 +338,10 @@
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
           END SUBROUTINE
 
+          ! Matrix transposition; MT via libxsmmext (out-of-place form).
+          ! Implicit FORTRAN 77 interface:
+          ! INTEGER(4) :: typesize, m, n, ldi, ldo
+          ! ANY ARRAY  :: output, input
           PURE SUBROUTINE libxsmm_otrans_omp(output, input, typesize,   &
      &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_omp_")
             IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
@@ -326,6 +350,8 @@
             INTEGER(C_INT), INTENT(IN) :: typesize
           END SUBROUTINE
 
+          ! General dense matrix multiplication; MT via libxsmmext (single-precision).
+          ! Implicit FORTRAN 77 interface: similar to SGEMM.
           SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,         &
      &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
             IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_FLOAT
@@ -337,6 +363,8 @@
             REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
           END SUBROUTINE
 
+          ! General dense matrix multiplication; MT via libxsmmext (double-precision).
+          ! Implicit FORTRAN 77 interface: similar to DGEMM.
           SUBROUTINE libxsmm_dgemm_omp(transa, transb, m, n, k,         &
      &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
             IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_DOUBLE
@@ -346,6 +374,27 @@
             REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
             REAL(C_DOUBLE), INTENT(IN) :: a(lda,*), b(ldb,*)
             REAL(C_DOUBLE), INTENT(INOUT) :: c(ldc,*)
+          END SUBROUTINE
+
+          ! This function is a no-op unless LIBXSMM is built to intercept GEMM calls.
+          ! Pointer arguments are used to filter intercepted GEMM calls such that
+          ! non-NULL values match. Otherwise (NULL) the respective argument is
+          ! considered a "free value" i.e., every value can match; libxsmmext required.
+          ! Implicit FORTRAN 77 interface:
+          ! INTEGER(4) :: precision, flags, m, n, k, lda, ldb, ldc
+          ! REAL(4|8)  :: alpha, beta
+          SUBROUTINE libxsmm_mmbatch_begin(precision, flags, m, n, k,   &
+     &    lda, ldb, ldc, alpha, beta) BIND(C)
+            IMPORT C_INT, C_PTR
+            INTEGER(C_INT), INTENT(IN), VALUE :: precision
+            INTEGER(C_INT), INTENT(IN) :: flags, m, n, k, lda, ldb, ldc
+            TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+          END SUBROUTINE
+
+          ! Processes the batch of previously recorded matrix multiplications
+          ! (libxsmm_mmbatch_begin); libxsmmext required.
+          ! Implicit FORTRAN 77 interface: available.
+          SUBROUTINE libxsmm_mmbatch_end() BIND(C)
           END SUBROUTINE
         END INTERFACE$MNK_INTERFACE_LIST
 

@@ -47,7 +47,7 @@ if __name__ == "__main__":
         alpha = beta = 1
         alignment = 64
         prefetch = -1
-        wrap = 2
+        wrap = 1
         mnklist = list()
 
         # optional argument(s)

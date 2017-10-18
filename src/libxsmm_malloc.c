@@ -437,8 +437,9 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
 #if defined(LIBXSMM_MALLOC_NOCRC)
   return result;
 #else /* calculate checksum over info */
-  const size_t checksize = (size_t)(((const char*)&result->hash) - ((const char*)result));
-  return (0 != result && result->hash == libxsmm_crc32(result, checksize, LIBXSMM_MALLOC_SEED)) ? result : 0;
+  return (0 != result && result->hash == libxsmm_crc32(
+    result, ((const char*)&result->hash) - ((const char*)result),
+    LIBXSMM_MALLOC_SEED)) ? result : 0;
 #endif
 }
 
@@ -1047,8 +1048,10 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
     const size_t align_size = (0 == alignment ? libxsmm_alignment(size, alignment) : alignment);
     const size_t alloc_size = size + align_size - 1, limit = internal_get_scratch_size();
     size_t local_size = 0, req_size = 0;
-    const unsigned int tid = libxsmm_get_tid();
     unsigned int i = 0;
+#if !defined(LIBXSMM_NO_SYNC)
+    const unsigned int tid = libxsmm_get_tid();
+#endif
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
     for (; i < libxsmm_scratch_pools; ++i) {
 # if defined(LIBXSMM_NO_SYNC)
@@ -1121,7 +1124,9 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
 
     if (0 == local_size) { /* draw from buffer */
       char* head;
+#if !defined(LIBXSMM_NO_SYNC)
       assert(pools[i].instance.tid == tid);
+#endif
       LIBXSMM_ATOMIC_ADD_FETCH(&pools[i].instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
       head = (char*)LIBXSMM_ATOMIC_ADD_FETCH((uintptr_t*)&pools[i].instance.head, alloc_size, LIBXSMM_ATOMIC_SEQ_CST);
       result = LIBXSMM_ALIGN(head - alloc_size, align_size);
@@ -1210,8 +1215,12 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
       if (EXIT_SUCCESS == internal_scratch_free(memory, pools + i)) {
 # if !defined(NDEBUG)
         static int error_once = 0;
-        if (libxsmm_get_tid() != pools[i].instance.tid && (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
-          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        if (
+# if !defined(LIBXSMM_NO_SYNC)
+          libxsmm_get_tid() != pools[i].instance.tid &&
+# endif
+          (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) && /* library code is expected to be mute */
+          (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)))
         {
           fprintf(stderr, "LIBXSMM WARNING: thread-id differs between allocation and deallocation!\n");
         }

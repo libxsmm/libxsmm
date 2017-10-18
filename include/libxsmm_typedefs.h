@@ -248,6 +248,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int input_L2_prefetching;
   unsigned int lookahead;
   unsigned int compute_batch_stats;
+  unsigned int perform_relu_in_kernel;
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;
@@ -306,6 +307,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
   unsigned int ofw;                             /* upper bound of oi loop */
   unsigned int ofw_unroll;                      /* this we use to unroll ofw loop */
   unsigned int blocks_h;
+  unsigned int blocks_img;
   unsigned int use_nts;
   unsigned int transpose_ofw_ifm;               /* transpose ofw and ifm */
   unsigned int ofw_fake_pixels;

@@ -35,9 +35,6 @@
 #endif
 #include <stdlib.h>
 #include <stdio.h>
-#if defined(_OPENMP)
-# include <omp.h>
-#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif

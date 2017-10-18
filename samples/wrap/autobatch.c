@@ -40,6 +40,10 @@
 # define DGEMM LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__wrap_, LIBXSMM_TPREFIX(REAL_TYPE, gemm)))
 #endif
 
+#if !defined(CALL_BEGIN_END)
+# define CALL_BEGIN_END
+#endif
+
 
 /** Function prototype for LIBXSMM's wrapped DGEMM; this way auto-batch can be tested as if DGEMM calls are intercepted/batched. */
 void DGEMM(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
@@ -71,43 +75,63 @@ void init(int seed, REAL_TYPE* dst, libxsmm_blasint nrows, libxsmm_blasint ncols
 
 int main(int argc, char* argv[])
 {
-  const libxsmm_blasint m = 2 < argc ? atoi(argv[1]) : 23;
-  const libxsmm_blasint k = 3 < argc ? atoi(argv[3]) : m;
-  const libxsmm_blasint n = 2 < argc ? atoi(argv[2]) : k;
-  const libxsmm_blasint size = 4 < argc ? atoi(argv[4]) : 1000;
+  const libxsmm_blasint maxn = 1 < argc ? atoi(argv[1]) : 23;
+  const libxsmm_blasint maxv = 2 < argc ? atoi(argv[2]) : 2;
+  const libxsmm_blasint size = 3 < argc ? atoi(argv[3]) : 1000;
+
+  const libxsmm_blasint m = ((rand() % maxv) + 1) * maxn / maxv;
+  const libxsmm_blasint n = ((rand() % maxv) + 1) * maxn / maxv;
+  const libxsmm_blasint k = ((rand() % maxv) + 1) * maxn / maxv;
   const libxsmm_blasint lda = m, ldb = k, ldc = m;
-  const REAL_TYPE alpha = 1.0, beta = 1.0;
+  const REAL_TYPE alpha = 1.0, beta = 0.0;
   const char transa = 'N', transb = 'N';
-  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb) /*| LIBXSMM_MMBATCH_FLAG_SEQUENTIAL*/;
+#if defined(CALL_BEGIN_END)
+  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb)
+# if 0
+    | LIBXSMM_MMBATCH_FLAG_SEQUENTIAL
+# endif
+# if 1
+    | LIBXSMM_MMBATCH_FLAG_STATISTIC
+# endif
+  ;
+#endif
+
   REAL_TYPE *a = 0, *b = 0, *c = 0;
   int result = EXIT_SUCCESS, i;
 
-  a = (REAL_TYPE*)malloc(lda * k * sizeof(REAL_TYPE));
-  b = (REAL_TYPE*)malloc(ldb * n * sizeof(REAL_TYPE));
-  c = (REAL_TYPE*)malloc(ldc * n * sizeof(REAL_TYPE));
-  if (0 == a || 0 == b || 0 == c) {
-    result = EXIT_FAILURE;
-  }
+  libxsmm_init();
 
-  libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-    &transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+  a = (REAL_TYPE*)malloc(maxn * maxn * sizeof(REAL_TYPE));
+  b = (REAL_TYPE*)malloc(maxn * maxn * sizeof(REAL_TYPE));
+  c = (REAL_TYPE*)malloc(maxn * maxn * sizeof(REAL_TYPE));
+  if (0 == a || 0 == b || 0 == c) result = EXIT_FAILURE;
 
   if (EXIT_SUCCESS == result) {
-    init(42, a, m, k, lda, 1.0);
-    init(24, b, k, n, ldb, 1.0);
-    init(0, c, m, n, ldc, 1.0);
+    init(42, a, maxn, maxn, maxn, 1.0);
+    init(24, b, maxn, maxn, maxn, 1.0);
+    init(0, c, maxn, maxn, maxn, 1.0);
 
+#if defined(CALL_BEGIN_END)
     /* enable batch-recording of the specified matrix multiplication */
     libxsmm_mmbatch_begin(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &flags, &m, &n, &k, &lda, &ldb, &ldc, &alpha, &beta);
-
+#endif
+#if defined(_OPENMP)
+#   pragma omp parallel for private(i)
+#endif
     for (i = 0; i < size; ++i) {
-      DGEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+      const libxsmm_blasint mi = ((rand() % maxv) + 1) * maxn / maxv;
+      const libxsmm_blasint ni = ((rand() % maxv) + 1) * maxn / maxv;
+      const libxsmm_blasint ki = ((rand() % maxv) + 1) * maxn / maxv;
+      const libxsmm_blasint ilda = mi, ildb = ki, ildc = mi;
+      DGEMM(&transa, &transb, &mi, &ni, &ki, &alpha, a, &ilda, b, &ildb, &beta, c, &ildc);
     }
-
+#if defined(CALL_BEGIN_END)
     /* disable/flush multiplication batch */
-    result = libxsmm_mmbatch_end();
+    libxsmm_mmbatch_end();
+#endif
   }
 
+  libxsmm_finalize();
   free(a);
   free(b);
   free(c);

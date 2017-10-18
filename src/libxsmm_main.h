@@ -160,6 +160,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int nbImg;
   int blocksifm_blocking;
   int blocksofm_blocking;
+  int blocksimg_blocking;
   int use_nts_fwd;
   int use_nts_bwd;
   int use_fwd_for_bwd;
@@ -169,6 +170,10 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int ifhp_resized;
   int ifwp_resized;
   int use_fastpath;
+  int use_hybrid_wu_parallelism;
+  int weight_copies;
+  int compute_batch_stats_in_kernel;
+  int perform_relu_in_kernel;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;
@@ -229,6 +234,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
 
   int *n_entries_fwd;
   int **compute_fwd_indices_ptrs;
+  int **bn_indices_ptrs;
   char **kernel_fwd_variant_ptrs;
   int block_fwd_oj;
   int block_fwd_oi;
@@ -384,6 +390,9 @@ LIBXSMM_API unsigned long long libxsmm_timer_tick_rdtsc(void);
 LIBXSMM_API void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API void libxsmm_dnn_finalize(void);
 
+/** Default attribute of internal locks. */
+LIBXSMM_API_VARIABLE LIBXSMM_LOCK_ATTR_TYPE libxsmm_lock_attr_default;
+/** Global lock; create an own lock for an independent domain. */
 LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE libxsmm_lock_global;
 /** Function used to allocate default memory. */
 LIBXSMM_API_VARIABLE libxsmm_malloc_function libxsmm_default_malloc_fn;
@@ -407,7 +416,7 @@ LIBXSMM_API_VARIABLE size_t libxsmm_scratch_limit;
 LIBXSMM_API_VARIABLE double libxsmm_scratch_scale;
 /** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
 LIBXSMM_API_VARIABLE double libxsmm_timer_scale;
-/** Stores the verbosity level (libxsmm_get_verbosity, libxsmm_set_verbosity). */
+/** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
 LIBXSMM_API_VARIABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
 LIBXSMM_API_VARIABLE int libxsmm_target_archid;

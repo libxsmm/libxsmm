@@ -39,6 +39,9 @@
 #include "libxsmm_dnn_convolution_winograd_backward.h"
 #include "libxsmm_dnn_convolution_winograd_weight_update.h"
 
+
+#define FP64_BN_STATS
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
@@ -804,6 +807,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
       } else if ( (type == LIBXSMM_DNN_BATCH_STATS) ) {
         layout->format = handle->buffer_format;
         layout->tensor_type = LIBXSMM_DNN_BATCH_STATS;
+#ifdef FP64_BN_STATS     
+        layout->datatype = LIBXSMM_DNN_DATATYPE_F64; 
+#endif
 
         if ((handle->buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) {
           if ( handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -858,7 +864,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_duplicate_tens
   if (layout != 0 && layout->num_dims != 0) {
     unsigned int dim = 0;
 
-    dst_layout = (libxsmm_dnn_tensor_datalayout*) malloc(sizeof(libxsmm_dnn_tensor_datalayout));
+    dst_layout = (libxsmm_dnn_tensor_datalayout*)malloc(sizeof(libxsmm_dnn_tensor_datalayout));
     if (0 != dst_layout) {
       memset(dst_layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
       dst_layout->dim_type = (libxsmm_dnn_tensor_dimtype*)malloc(layout->num_dims * sizeof(libxsmm_dnn_tensor_dimtype));
@@ -868,10 +874,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_duplicate_tens
       dst_layout->custom_format = layout->custom_format;
       dst_layout->datatype = layout->datatype;
       dst_layout->tensor_type = layout->tensor_type;
-
-      for (dim = 0; dim < layout->num_dims; ++dim) {
-        dst_layout->dim_type[dim] = layout->dim_type[dim];
-        dst_layout->dim_size[dim] = layout->dim_size[dim];
+      if (0 != dst_layout->dim_type && 0 != dst_layout->dim_size) {
+        for (dim = 0; dim < layout->num_dims; ++dim) {
+          dst_layout->dim_type[dim] = layout->dim_type[dim];
+          dst_layout->dim_size[dim] = layout->dim_size[dim];
+        }
+      } else {
+        *status = LIBXSMM_DNN_ERR_CREATE_LAYOUT;
       }
     } else {
       *status = LIBXSMM_DNN_ERR_CREATE_LAYOUT;

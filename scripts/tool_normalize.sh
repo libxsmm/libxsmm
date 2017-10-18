@@ -60,7 +60,7 @@ if [ "" != "${ICONV}" ] && [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && [ "" != 
       if [ "" != "$(${SED} -n /[${BANNED_CHARS}]/p ${FILE} 2> /dev/null)" ]; then
         ${ECHO} "Warning: ${FILE} contains banned characters!"
       fi
-      ${ICONV} -t ASCII ${FILE} | ${SED} -e "s/\s\s*$//" > ${TMPF}
+      ${ICONV} -t ASCII ${FILE} | ${SED} -e "N;s/\r\n$/\n/" -e "N;s/\r$/\n/" | ${SED} -e "s/\s\s*$//" > ${TMPF}
       ${CP} ${TMPF} ${FILE}
     done
   done

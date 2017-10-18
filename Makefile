@@ -14,7 +14,7 @@ endif
 endif
 
 #ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
-ROOTDIR = $(dir $(firstword $(MAKEFILE_LIST)))
+ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
 SPLDIR = $(ROOTDIR)/samples
 SCRDIR = $(ROOTDIR)/scripts
 TSTDIR = $(ROOTDIR)/tests
@@ -119,14 +119,16 @@ THREADS ?= 1
 STATIC ?= 1
 
 # Determines if the library can act as a wrapper-library (GEMM)
-# 1: enables wrapping SGEMM and DGEMM
-# 2: enables wrapping DGEMM only
+# 1: enables wrapping SGEMM/DGEMM, and GEMV (depends on "GEMM")
+# 2: enables wrapping DGEMM only (DGEMV-wrap depends on "GEMM")
 WRAP ?= 0
 
-# Determines kind routine called for intercepted GEMMs
-# 1: sequential and non-tiled (small problem sizes only)
-# 2: parallelized and tiled
-GEMM ?= 2
+# Determines the kind of routine called for intercepted GEMMs
+# odd: sequential and non-tiled (small problem sizes only)
+# even: parallelized and tiled (all problem sizes)
+# 3: GEMV is intercepted; small problem sizes
+# 4: GEMV is intercepted; all problem sizes
+GEMM ?= 1
 
 # JIT backend is enabled by default
 JIT ?= 1

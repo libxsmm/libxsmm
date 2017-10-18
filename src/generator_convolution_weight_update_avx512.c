@@ -170,6 +170,14 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
      libxsmm_generator_convolution_weight_update_load_weight( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
 
 
+     /* We bring image loop inside to exploit NTS  */
+     if (i_conv_desc->blocks_img > 1) {
+         libxsmm_generator_convolution_header_image_block_loop( io_generated_code, &l_loop_label_tracker,
+                                                         &l_conv_kernel_config, l_gp_reg_mapping.gp_reg_help_3 );
+        libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_input );
+        libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_output );
+     } 
+
 
      /* Assembly loop start for ofh_blocks  */
      if ( i_conv_desc->blocks_h >  1 ) {
@@ -225,7 +233,25 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
                                                             is_last_call);
      }
 
+
+     if (i_conv_desc->blocks_img > 1) {
+        libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_output );
+        libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_input );
+
+         /* Advance input register */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
+                                     l_gp_reg_mapping.gp_reg_input, i_conv_desc->blocks_ifm  *  i_conv_desc->ifh_padded *  i_conv_desc->ifw_padded * l_conv_kernel_config.l_ld_ifm_act * l_conv_kernel_config.datatype_size_in  );
+
+        /* Advance output register */
+        libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
+                                     l_gp_reg_mapping.gp_reg_output, i_conv_desc->blocks_ofm  *  i_conv_desc->ofh_padded  * i_conv_desc->ofw_padded * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_out  );
+
+        libxsmm_generator_convolution_footer_image_block_loop( io_generated_code, &l_loop_label_tracker,
+                                                        &l_conv_kernel_config, l_gp_reg_mapping.gp_reg_help_3, i_conv_desc->blocks_img);
+     }
+
      libxsmm_generator_convolution_weight_update_store_weight( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
+
 
   } else if (i_conv_desc->transpose_ofw_ifm == 1) {
 
@@ -442,7 +468,8 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
   unsigned int input_pf_index = 0;
   unsigned int input_pf_bound = i_conv_desc->ofw_rb * i_conv_desc->ofh_rb;
   unsigned int output_pf_bound = i_conv_desc->ofw_rb * i_conv_desc->ofh_rb * i_conv_kernel_config->l_ld_ofm_act *  i_conv_kernel_config->datatype_size_out ;
-
+  unsigned int eq_index = 0;
+  
   LIBXSMM_UNUSED(ofh_trip_counter);
 
   /* apply k blocking */
@@ -477,49 +504,59 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
 
     if (  l_k == 0 ) {
       /* load output */
-      libxsmm_x86_instruction_vec_move( io_generated_code,
+      for (eq_index = 0; eq_index < 4; eq_index++) {
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                         i_conv_kernel_config->instruction_set,
                                         i_conv_kernel_config->vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_output,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        (l_k)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out) ,
-                                        i_conv_kernel_config->vector_name, 0,
+                                        (l_k)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out) +  eq_index * (i_conv_desc->ofw_padded * i_conv_desc->ofh_padded) * (i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out),
+                                        i_conv_kernel_config->vector_name, 0 + eq_index * 4,
                                         0, 0 );
+      }
 
       if ( (i_conv_desc->ofw_rb * i_ofh_unroll > 1) && (num_look_ahead > 1) ) {
-        for ( l_w = 1; l_w < num_look_ahead; l_w++ ) {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
+        for ( l_w = 1; l_w < num_look_ahead; l_w++) {
+          for (eq_index = 0; eq_index < 4; eq_index++) {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
                                           i_conv_kernel_config->instruction_set,
                                           i_conv_kernel_config->vmove_instruction,
                                           i_gp_reg_mapping->gp_reg_output,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          (l_k+l_w)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out) ,
-                                          i_conv_kernel_config->vector_name, l_w,
+                                          (l_k+l_w)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out) + eq_index * (i_conv_desc->ofw_padded * i_conv_desc->ofh_padded) * (i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out),
+                                          i_conv_kernel_config->vector_name, l_w + eq_index * 4,
                                           0, 0 );
+          }
         }
         output_counter += num_look_ahead -1;
       }
     } else if ((l_k < ((i_conv_desc->ofw_rb * i_ofh_unroll) - (num_look_ahead-1))) && (l_k_2 >= (i_conv_desc->ofw_rb - (num_look_ahead-1))) && (l_k_2 < i_conv_desc->ofw_rb) ) {
-      libxsmm_x86_instruction_vec_move( io_generated_code,
+      for (eq_index = 0; eq_index < 4; eq_index++  ) {
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                         i_conv_kernel_config->instruction_set,
                                         i_conv_kernel_config->vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_output,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         ((output_counter)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out) )
-                                        + ((l_k_1 + 1) * i_conv_desc->ofw_padded*i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out  ),
-                                        i_conv_kernel_config->vector_name, (l_k+(num_look_ahead-1))%num_look_ahead,
+                                        + ((l_k_1 + 1) * i_conv_desc->ofw_padded*i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out  )
+                                        +eq_index * (i_conv_desc->ofw_padded * i_conv_desc->ofh_padded) * (i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out),
+                                        i_conv_kernel_config->vector_name, (l_k+(num_look_ahead-1))%num_look_ahead + eq_index * 4,
                                         0, 0 );
+      }
     } else if ( l_k < ((i_conv_desc->ofw_rb*i_ofh_unroll) - (num_look_ahead - 1)) ) {
-      libxsmm_x86_instruction_vec_move( io_generated_code,
+      for (eq_index = 0; eq_index < 4; eq_index++  ) {
+        libxsmm_x86_instruction_vec_move( io_generated_code,
                                         i_conv_kernel_config->instruction_set,
                                         i_conv_kernel_config->vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_output,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         ((output_counter)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out) )
-                                        + ((l_k_1) * i_conv_desc->ofw_padded*i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out  ),
-                                        i_conv_kernel_config->vector_name, (l_k+(num_look_ahead-1))%num_look_ahead,
+                                        + ((l_k_1) * i_conv_desc->ofw_padded*i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out  )
+                                        + eq_index * (i_conv_desc->ofw_padded * i_conv_desc->ofh_padded) * (i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out),
+                                        i_conv_kernel_config->vector_name, (l_k+(num_look_ahead-1))%num_look_ahead + eq_index * 4,
                                         0, 0 );
-    }
+      }
+   }
 
     if (output_counter >= (i_conv_desc->ofw_rb-1)) {
       output_counter = 0;
@@ -574,8 +611,8 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
       } else {
         assert(0/*should not happen*/);
       }
-
-      libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+      for (eq_index = 0; eq_index < 4; eq_index++) {
+        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                i_conv_kernel_config->instruction_set,
                                                i_conv_kernel_config->vfma_instruction,
                                                1,
@@ -584,8 +621,11 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
                                                l_scale,
                                                l_disp,
                                                i_conv_kernel_config->vector_name,
-                                               l_k%num_look_ahead,
-                                               i_conv_kernel_config->vector_reg_count - unroll_factor + l_n );
+                                               l_k%num_look_ahead + eq_index * 4,
+                                               i_conv_kernel_config->vector_reg_count - unroll_factor + l_n - eq_index * 3);
+      }
+
+#if 0
       if ( (l_n == 0) &&  ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) && (input_pf_index < input_pf_bound) ) {
           input_pf_offset = (l_k_1 * i_conv_desc->stride_h) * (i_conv_desc->ofw_rb * i_conv_desc->stride_w) + l_k_2 *  (i_conv_desc->ofw_rb * i_conv_desc->stride_w) * (i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in);
           libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -604,6 +644,8 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
                                           output_pf_offset );
         output_pf_offset += 64;
       }
+#endif
+     
     }
     l_displacement_k++;
   }
