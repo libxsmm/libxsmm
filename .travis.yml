@@ -14,6 +14,7 @@ matrix:
   #- os: osx
   exclude:
   - os: osx
+    env: OPT=1 LIBXSMM_TARGET=0
     compiler: gcc
   include:
   - os: osx
