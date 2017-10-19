@@ -38,7 +38,7 @@ addons:
 
 before_install:
   - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then brew update; fi
-  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then brew install python
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then brew install python; fi
 
 install:
   - pip install --user codecov
