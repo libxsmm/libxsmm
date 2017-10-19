@@ -392,7 +392,7 @@
 
 
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
-LIBXSMM_API void libxsmm_gemm_init(int archid, int prefetch/*default prefetch strategy*/);
+LIBXSMM_API void libxsmm_gemm_init(int archid);
 
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API void libxsmm_gemm_finalize(void);
@@ -472,6 +472,8 @@ LIBXSMM_API_VARIABLE libxsmm_gemm_batchitem* libxsmm_gemm_batcharray;
 LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE libxsmm_gemm_batchlock;
 /** Maximum size of the recorded batch. */
 LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_batchsize;
+/** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
+LIBXSMM_API_VARIABLE int libxsmm_gemm_auto_prefetch_default;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_API_VARIABLE int libxsmm_gemm_auto_prefetch;
 /** Prefetch strategy for tiled GEMM. */
