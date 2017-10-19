@@ -14,8 +14,9 @@ matrix:
   #- os: osx
   exclude:
   - os: osx
-    env: OPT=1 LIBXSMM_TARGET=0
     compiler: gcc
+  - os: osx
+    env: OPT=1 LIBXSMM_TARGET=0
   include:
   - os: osx
     osx_image: xcode9.1
