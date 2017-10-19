@@ -76,7 +76,7 @@ void init(int seed, REAL_TYPE* dst, libxsmm_blasint nrows, libxsmm_blasint ncols
 int main(int argc, char* argv[])
 {
   const libxsmm_blasint maxn = 1 < argc ? atoi(argv[1]) : 23;
-  const libxsmm_blasint maxv = 2 < argc ? atoi(argv[2]) : 2;
+  const libxsmm_blasint maxv = LIBXSMM_MIN(2 < argc ? atoi(argv[2]) : 2, maxn);
   const libxsmm_blasint size = 3 < argc ? atoi(argv[3]) : 1000;
 
   const libxsmm_blasint m = ((rand() % maxv) + 1) * maxn / maxv;
@@ -111,24 +111,34 @@ int main(int argc, char* argv[])
     init(24, b, maxn, maxn, maxn, 1.0);
     init(0, c, maxn, maxn, maxn, 1.0);
 
+#if defined(_OPENMP)
+#   pragma omp parallel private(i)
+#endif
+    {
 #if defined(CALL_BEGIN_END)
-    /* enable batch-recording of the specified matrix multiplication */
-    libxsmm_mmbatch_begin(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &flags, &m, &n, &k, &lda, &ldb, &ldc, &alpha, &beta);
+# if defined(_OPENMP)
+#     pragma omp single nowait
+# endif /* enable batch-recording of the specified matrix multiplication */
+      libxsmm_mmbatch_begin(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &flags, &m, &n, &k, &lda, &ldb, &ldc, &alpha, &beta);
 #endif
 #if defined(_OPENMP)
-#   pragma omp parallel for private(i)
+#     pragma omp for
 #endif
-    for (i = 0; i < size; ++i) {
-      const libxsmm_blasint mi = ((rand() % maxv) + 1) * maxn / maxv;
-      const libxsmm_blasint ni = ((rand() % maxv) + 1) * maxn / maxv;
-      const libxsmm_blasint ki = ((rand() % maxv) + 1) * maxn / maxv;
-      const libxsmm_blasint ilda = mi, ildb = ki, ildc = mi;
-      DGEMM(&transa, &transb, &mi, &ni, &ki, &alpha, a, &ilda, b, &ildb, &beta, c, &ildc);
-    }
+      for (i = 0; i < size; ++i) {
+        const libxsmm_blasint mi = ((rand() % maxv) + 1) * maxn / maxv;
+        const libxsmm_blasint ni = ((rand() % maxv) + 1) * maxn / maxv;
+        const libxsmm_blasint ki = ((rand() % maxv) + 1) * maxn / maxv;
+        const libxsmm_blasint ilda = mi, ildb = ki, ildc = mi;
+        assert(0 < mi && 0 < ni && 0 < ki && mi <= ilda && ki <= ildb && mi <= ildc);
+        DGEMM(&transa, &transb, &mi, &ni, &ki, &alpha, a, &ilda, b, &ildb, &beta, c, &ildc);
+      }
 #if defined(CALL_BEGIN_END)
-    /* disable/flush multiplication batch */
-    libxsmm_mmbatch_end();
+# if defined(_OPENMP)
+#     pragma omp single nowait
+# endif /* disable/flush multiplication batch */
+      libxsmm_mmbatch_end();
 #endif
+    }
   }
 
   libxsmm_finalize();
