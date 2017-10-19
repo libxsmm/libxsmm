@@ -65,7 +65,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
+LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
 {
   /* setup tile sizes according to CPUID or environment (LIBXSMM_TGEMM_M, LIBXSMM_TGEMM_N, LIBXSMM_TGEMM_K) */
   const unsigned int tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/][8/*size-range*/] = {
@@ -93,8 +93,9 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid, int prefetch)
 
   { /* setup prefetch strategy for tiled GEMMs */
     const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH");
-    const int uid = ((0 == env_p || 0 == *env_p) ? libxsmm_gemm_prefetch2uid(LIBXSMM_PREFETCH_AL2_AHEAD) : atoi(env_p));
-    libxsmm_gemm_tiled_prefetch = (0 <= uid ? libxsmm_gemm_uid2prefetch(uid) : prefetch);
+    const int tiled_prefetch_default = LIBXSMM_PREFETCH_AL2_AHEAD;
+    const int uid = ((0 == env_p || 0 == *env_p) ? -1/*default*/ : atoi(env_p));
+    libxsmm_gemm_tiled_prefetch = (0 <= uid ? libxsmm_gemm_uid2prefetch(uid) : tiled_prefetch_default);
   }
 #if defined(LIBXSMM_BUILD) && (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || \
    !defined(NDEBUG)) || defined(_WIN32) /* debug purpose */
@@ -226,7 +227,9 @@ LIBXSMM_API_DEFINITION int libxsmm_dgemm_descriptor_init(libxsmm_gemm_descriptor
 {
   int result;
   if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor) {
-    LIBXSMM_GEMM_DESCRIPTOR(*descriptor, LIBXSMM_GEMM_PRECISION(double), flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+    LIBXSMM_GEMM_DESCRIPTOR(*descriptor,
+      LIBXSMM_GEMM_PRECISION(double), flags, m, n, k, lda, ldb, ldc, alpha, beta,
+      0 > prefetch ? libxsmm_gemm_auto_prefetch_default : prefetch);
     result = EXIT_SUCCESS;
   }
   else { /* unsupported */
@@ -241,7 +244,9 @@ LIBXSMM_API_DEFINITION int libxsmm_sgemm_descriptor_init(libxsmm_gemm_descriptor
 {
   int result;
   if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor) {
-    LIBXSMM_GEMM_DESCRIPTOR(*descriptor, LIBXSMM_GEMM_PRECISION(float), flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+    LIBXSMM_GEMM_DESCRIPTOR(*descriptor,
+      LIBXSMM_GEMM_PRECISION(float), flags, m, n, k, lda, ldb, ldc, alpha, beta,
+      0 > prefetch ? libxsmm_gemm_auto_prefetch_default : prefetch);
     result = EXIT_SUCCESS;
   }
   else { /* unsupported */
@@ -256,7 +261,9 @@ LIBXSMM_API_DEFINITION int libxsmm_wgemm_descriptor_init(libxsmm_gemm_descriptor
 {
   int result;
   if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor) {
-    LIBXSMM_GEMM_DESCRIPTOR(*descriptor, LIBXSMM_GEMM_PRECISION(short), flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+    LIBXSMM_GEMM_DESCRIPTOR(*descriptor,
+      LIBXSMM_GEMM_PRECISION(short), flags, m, n, k, lda, ldb, ldc, alpha, beta,
+      0 > prefetch ? libxsmm_gemm_auto_prefetch_default : prefetch);
     result = EXIT_SUCCESS;
   }
   else { /* unsupported */

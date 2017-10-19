@@ -192,7 +192,6 @@ LIBXSMM_API_VARIABLE unsigned int internal_statistic_num_mcopy, internal_statist
 LIBXSMM_API_VARIABLE unsigned int internal_teardown;
 LIBXSMM_API_VARIABLE int internal_dispatch_trylock_locked;
 LIBXSMM_API_VARIABLE int internal_gemm_auto_prefetch_locked;
-LIBXSMM_API_VARIABLE int internal_gemm_auto_prefetch;
 
 
 LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(int datatype, int m, int n, int k, unsigned int ntry, unsigned int ncol)
@@ -626,20 +625,21 @@ LIBXSMM_API_INLINE void internal_init(void)
 #           include <libxsmm_dispatch.h>
         }
 #endif
-        internal_gemm_auto_prefetch = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
+        libxsmm_gemm_auto_prefetch_default = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
           /* avoid special prefetch if static code is present, since such code uses INTERNAL_PREFETCH */
-          ? (LIBXSMM_X86_AVX512_MIC != libxsmm_target_archid ? LIBXSMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_PREFETCH_BL2_VIA_C)
+          ? (((LIBXSMM_X86_AVX512 >= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid))
+            ? LIBXSMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_PREFETCH_BL2_VIA_C)
           : INTERNAL_PREFETCH;
         libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
         if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
           const int uid = atoi(env);
           if (0 <= uid) {
-            internal_gemm_auto_prefetch = libxsmm_gemm_uid2prefetch(uid);
-            libxsmm_gemm_auto_prefetch = internal_gemm_auto_prefetch;
+            libxsmm_gemm_auto_prefetch_default = libxsmm_gemm_uid2prefetch(uid);
+            libxsmm_gemm_auto_prefetch = libxsmm_gemm_auto_prefetch_default;
             internal_gemm_auto_prefetch_locked = 1;
           }
         }
-        libxsmm_gemm_init(libxsmm_target_archid, libxsmm_gemm_auto_prefetch);
+        libxsmm_gemm_init(libxsmm_target_archid);
         if (0 == internal_teardown) {
           atexit(internal_finalize);
         }
@@ -963,7 +963,7 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch
 LIBXSMM_API_DEFINITION void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strategy)
 {
   if (0 == internal_gemm_auto_prefetch_locked) { /* LIBXSMM_GEMM_PREFETCH environment takes precedence */
-    LIBXSMM_ATOMIC_STORE(&internal_gemm_auto_prefetch, strategy, LIBXSMM_ATOMIC_RELAXED);
+    LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_auto_prefetch_default, strategy, LIBXSMM_ATOMIC_RELAXED);
     LIBXSMM_ATOMIC_STORE(&libxsmm_gemm_auto_prefetch, strategy, LIBXSMM_ATOMIC_RELAXED);
   }
 }
@@ -1572,13 +1572,13 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_descriptor_init(libxsmm_gemm_descriptor*
       result = libxsmm_dgemm_descriptor_init(descriptor, m, n, k, ilda, ildb, ildc,
         0 != alpha ? *((const double*)alpha) : (LIBXSMM_ALPHA),
         0 != beta ? *((const double*)beta) : (LIBXSMM_BETA),
-        iflags, 0 > internal_prefetch ? internal_gemm_auto_prefetch : internal_prefetch);
+        iflags, internal_prefetch);
     } break;
     case LIBXSMM_GEMM_PRECISION_F32: {
       result = libxsmm_sgemm_descriptor_init(descriptor, m, n, k, ilda, ildb, ildc,
         0 != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA),
         0 != beta ? *((const float*)beta) : (LIBXSMM_BETA),
-        iflags, 0 > internal_prefetch ? internal_gemm_auto_prefetch : internal_prefetch);
+        iflags, internal_prefetch);
     } break;
     case LIBXSMM_GEMM_PRECISION_I16: {
       /**
@@ -1590,7 +1590,7 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_descriptor_init(libxsmm_gemm_descriptor*
       result = libxsmm_wgemm_descriptor_init(descriptor, m, n, k, ilda, ildb, ildc,
         0 != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA),
         0 != beta ? *((const short*)beta) : (LIBXSMM_BETA),
-        iflags, 0 > internal_prefetch ? internal_gemm_auto_prefetch : internal_prefetch);
+        iflags, internal_prefetch);
     } break;
     default: {
       static int error_once = 0;
