@@ -191,7 +191,7 @@
       else { /* dump matrices */ \
         libxsmm_gemm_print(0, LIBXSMM_GEMM_PRECISION(TYPE), \
           &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(MM), &(NN), &(KK), \
-          &libxsmm_tiled_xgemm_alpha_, A, &(LDA), B, &(LDB), &libxsmm_tiled_xgemm_beta_, C, &(LDC)); \        
+          &libxsmm_tiled_xgemm_alpha_, A, &(LDA), B, &(LDB), &libxsmm_tiled_xgemm_beta_, C, &(LDC)); \
       } \
     }
 #endif
