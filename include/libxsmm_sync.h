@@ -116,8 +116,8 @@
 # define LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, VALUE) while ((VALUE) == (LOCK)); LIBXSMM_SYNC_PAUSE
 # define LIBXSMM_ATOMIC_SYNC_SET(LOCK) do { LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, 1); } while(0 != __sync_lock_test_and_set(&(LOCK), 1))
 # define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK) __sync_lock_release(&(LOCK))
-#elif defined(_REENTRANT) && defined(_WIN32) /*TODO*/
-# define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) (*(SRC_PTR))
+#elif defined(_REENTRANT) && defined(_WIN32) /* TODO: atomics */
+# define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) (*((SRC_PTR) /*+ InterlockedOr((LONG volatile*)(SRC_PTR), 0) * 0*/))
 # define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) (*(DST_PTR) = VALUE)
 # define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) += VALUE)
 # define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) -= VALUE)
@@ -151,7 +151,7 @@
   /* OpenMP based locks need to stay disabled unless both
    * libxsmm and libxsmmext are built with OpenMP support.
    */
-# if defined(_OPENMP) && 0/*disabled*/
+# if defined(_OPENMP) && defined(LIBXSMM_OMP)
 #   include <omp.h>
 #   define LIBXSMM_LOCK_ACQUIRED 1
 #   define LIBXSMM_LOCK_ATTR_TYPE const void*
