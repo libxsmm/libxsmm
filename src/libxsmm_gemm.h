@@ -170,6 +170,32 @@
   } \
 }
 
+#if defined(NDEBUG)
+# define LIBXSMM_TILED_XGEMM_FALLBACK_PRINT(TYPE, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+#else
+# define LIBXSMM_TILED_XGEMM_FALLBACK_PRINT(TYPE, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+    if (((INT_MAX) - 1) != libxsmm_verbosity \
+      && (unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, MM, NN, KK, 1/*try*/, 0)) \
+    { \
+      const char libxsmm_tiled_xgemm_transa_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'); \
+      const char libxsmm_tiled_xgemm_transb_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T'); \
+      const TYPE libxsmm_tiled_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_tiled_xgemm_beta_ = (TYPE)(BETA); \
+      if (0 < libxsmm_verbosity) { /* print fallback */ \
+        LIBXSMM_FLOCK(stderr); \
+        fprintf(stderr, "LIBXSMM FALLBACK: "); libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(TYPE), \
+          &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(MM), &(NN), &(KK), \
+          &libxsmm_tiled_xgemm_alpha_, 0/*A*/, &(LDA), 0/*B*/, &(LDB), &libxsmm_tiled_xgemm_beta_, 0/*C*/, &(LDC)); \
+        fprintf(stderr, "\n"); \
+        LIBXSMM_FUNLOCK(stderr); \
+      } \
+      else { /* dump matrices */ \
+        libxsmm_gemm_print(0, LIBXSMM_GEMM_PRECISION(TYPE), \
+          &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(MM), &(NN), &(KK), \
+          &libxsmm_tiled_xgemm_alpha_, A, &(LDA), B, &(LDB), &libxsmm_tiled_xgemm_beta_, C, &(LDC)); \        
+      } \
+    }
+#endif
+
 #define LIBXSMM_TILED_XGEMM(PARALLEL, LOOP_START, KERNEL_START, SYNC, \
   MIN_TASKS, OVERHEAD, NT, TYPE, FLAGS, TILE_M, TILE_N, TILE_K, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
 { /* use NN, etc. rather than N due to below char. constant */ \
@@ -271,17 +297,7 @@
   else { /* fall-back */ \
     assert(0 == LIBXSMM_NO_BLAS); \
     LIBXSMM_FALLBACK1(TYPE, libxsmm_blasint, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
-    if (((INT_MAX) - 1) != libxsmm_verbosity \
-      && (unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, MM, NN, KK, 1/*try*/, 0)) \
-    { \
-      const char libxsmm_tiled_xgemm_transa_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'); \
-      const char libxsmm_tiled_xgemm_transb_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T'); \
-      const TYPE libxsmm_tiled_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_tiled_xgemm_beta_ = (TYPE)(BETA); \
-      libxsmm_gemm_print(0 < libxsmm_verbosity ? stderr : 0, LIBXSMM_GEMM_PRECISION(TYPE), \
-        &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(MM), &(NN), &(KK), \
-        &libxsmm_tiled_xgemm_alpha_, A, &(LDA), B, &(LDB), &libxsmm_tiled_xgemm_beta_, C, &(LDC)); \
-      if (0 < libxsmm_verbosity) fprintf(stderr, "\n"); \
-    } \
+    LIBXSMM_TILED_XGEMM_FALLBACK_PRINT(TYPE, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
 }
 
