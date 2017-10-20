@@ -577,6 +577,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
   const void* alpha, const void* beta)
 {
 #if defined(LIBXSMM_GEMM_EXT_MMBATCH)
+  LIBXSMM_INIT
   if (0 != libxsmm_gemm_batcharray /* batch-recording available, but not yet running */
     /* currently, batch recording is only enabled if all values are present (no complex filtering) */
     && 0 != flags && 0 != alpha && 0 != beta
@@ -587,10 +588,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
     static int error_once = 0;
     const int prefetch = LIBXSMM_GEMM_EXT_MMBATCH_PREFETCH;
     libxsmm_gemm_descriptor descriptor;
-    int result;
-
-    LIBXSMM_INIT
-    result = libxsmm_gemm_descriptor_init(&descriptor, precision,
+    int result = libxsmm_gemm_descriptor_init(&descriptor, precision,
       *m, *n, *k, lda, ldb, ldc, alpha, beta, flags, &prefetch);
 
     if (EXIT_SUCCESS == result) {
