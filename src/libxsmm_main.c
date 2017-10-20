@@ -693,7 +693,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 #endif
     internal_init();
     s1 = libxsmm_timer_tick(); t1 = libxsmm_timer_tick_rdtsc(); /* final timings */
-    if (0 == libxsmm_timer_scale && s0 != s1 && t0 != t1) {
+    if (0 != LIBXSMM_FEQ(0, libxsmm_timer_scale) && s0 != s1 && t0 != t1) {
       libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / (t0 < t1 ? (t1 - t0) : (t0 - t1));
     }
   }
