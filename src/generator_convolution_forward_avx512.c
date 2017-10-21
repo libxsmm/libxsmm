@@ -1944,7 +1944,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
       }
       l_prefetch_input_index_h++;
     }
-    moffset += 16;
+    moffset += 4*i_conv_kernel_config->datatype_size_in*i_conv_desc->fm_lp_block;
   }
 }
 

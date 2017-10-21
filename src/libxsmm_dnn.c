@@ -527,7 +527,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
               *status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
             }
           /* @TODO this need to change */
-          } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) || (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) ) {
+          } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) ) {
             layout->datatype = handle->datatype_in;
             layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(6*sizeof(libxsmm_dnn_tensor_dimtype));
             layout->dim_size = (unsigned int*) malloc(6*sizeof(unsigned int));
@@ -547,7 +547,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
                 layout->dim_size[4] = handle->blocksifm;
                 layout->dim_size[5] = handle->desc.N;
               } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
-                layout->dim_size[0] = handle->fm_lp_block;
+                layout->dim_size[0] = 1;
                 layout->dim_size[1] = handle->ofmblock;
                 layout->dim_size[2] = handle->ofwp;
                 layout->dim_size[3] = handle->ofhp;
@@ -1063,7 +1063,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyin_tensor(const libxsmm
 #include "template/libxsmm_dnn_tensor_buffer_copy_in_nchw.tpl.c"
                 } break;
                 case LIBXSMM_DNN_DATATYPE_I16: {
-                  typedef short element_type;
+                  typedef short  element_type;
 #define LIBXSMM_DNN_COPY_LOW_PRECISION
 #include "template/libxsmm_dnn_tensor_buffer_copy_in_nchw.tpl.c"
 #undef LIBXSMM_DNN_COPY_LOW_PRECISION
@@ -1238,7 +1238,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsm
 #include "template/libxsmm_dnn_tensor_buffer_copy_out_nchw.tpl.c"
                 } break;
                 case LIBXSMM_DNN_DATATYPE_I16: {
-                  typedef short element_type;
+                /* FIXME... HACK....  */
+                  typedef int element_type;
 #define LIBXSMM_DNN_COPY_LOW_PRECISION
 #include "template/libxsmm_dnn_tensor_buffer_copy_out_nchw.tpl.c"
 #undef LIBXSMM_DNN_COPY_LOW_PRECISION
@@ -1274,7 +1275,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsm
 #include "template/libxsmm_dnn_tensor_filter_copy_out_kcrs.tpl.c"
                 } break;
                 case LIBXSMM_DNN_DATATYPE_I16: {
-                  typedef short element_type;
+                  typedef short  element_type;
 #define LIBXSMM_DNN_COPY_LOW_PRECISION
 #include "template/libxsmm_dnn_tensor_filter_copy_out_kcrs.tpl.c"
 #undef LIBXSMM_DNN_COPY_LOW_PRECISION

@@ -110,12 +110,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       printf("no kernel streams is not supported in this version of LIBXSMM\n");
       exit(-1);
     }
+#if 0
     /* If we do not follow FP32 path disable kernel streams  */
     if ( (handle->datatype_in != LIBXSMM_DNN_DATATYPE_F32) || (handle->datatype_out != LIBXSMM_DNN_DATATYPE_F32) ) {
       handle->use_thread_private_jit = 0;
       printf("no kernel streams is not supported in this version of LIBXSMM\n");
       exit(-1);
     }
+#endif
     /* If we use any options/fuse ops, disable kernel streams */
     if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) {
       handle->use_thread_private_jit = 0;
@@ -211,8 +213,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->fm_lp_block = 1;
     }
     else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
-      handle->ifmblock = (handle->desc.C >=16) ? 8 : (handle->desc.C/2);
-      handle->ofmblock = (handle->desc.K >=16) ? 8 : (handle->desc.K/2);
+      handle->ifmblock = (handle->desc.C >=16) ? 16 : (handle->desc.C/2);
+      handle->ofmblock = (handle->desc.K >=16) ? 16 : (handle->desc.K/2);
       handle->fm_lp_block = 2;
       if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ) {
         status = LIBXSMM_DNN_WARN_FALLBACK;
@@ -246,23 +248,23 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     /* if we have 1x1 let's bring some ifms into the kernel for forward to increase accumulation chain length on AVX512 */
     /* @TODO we limit ifm blocking in JIT to custom format 1 for now */
     if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) ) {
-      if ( (handle->ifmblock%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*512) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      if ( ((handle->ifmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*512) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksifm_blocking = 512;
-      } else if ( (handle->ifmblock%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*256) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ifmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*256) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksifm_blocking = 256;
-      } else if ( (handle->ifmblock%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*128) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ifmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*128) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksifm_blocking = 128;
-      } else if ( (handle->ifmblock%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*64) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ifmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*64) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksifm_blocking = 64;
-      } else if ( (handle->ifmblock%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*32) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ifmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*32) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksifm_blocking = 32;
-      } else if ( (handle->ifmblock%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*16) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ifmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*16) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksifm_blocking = 16;
-      } else if ( (handle->ifmblock%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*8) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ifmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*8) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksifm_blocking = 8;
-      } else if ( (handle->ifmblock%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*4) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ifmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*4) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksifm_blocking = 4;
-      } else if ( (handle->ifmblock%16 == 0) && (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*2) == 0) && (handle->desc.R == 1) && (handle->desc.S == 1) ) {
+      } else if ( ((handle->ifmblock*handle->fm_lp_block)%16 == 0) && (handle->desc.C%(handle->ifmblock*handle->fm_lp_block*2) == 0) && (handle->desc.R == 1) && (handle->desc.S == 1) ) {
         handle->blocksifm_blocking = 2;
       } else {
         handle->blocksifm_blocking = 1;
@@ -279,23 +281,23 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
     /* Ditto for ofms in BWD  */
     if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) ) {
-      if ( (handle->ofmblock%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*512) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      if ( ((handle->ofmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*512) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 512;
-      } else if ( (handle->ofmblock%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*256) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*256) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 256;
-      } else if ( (handle->ofmblock%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*128) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*128) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 128;
-      } else if ( (handle->ofmblock%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*64) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*64) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 64;
-      } else if ( (handle->ofmblock%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*32) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*32) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 32;
-      } else if ( (handle->ofmblock%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*16) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*16) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 16;
-      } else if ( (handle->ofmblock%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*8) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*8) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 8;
-      } else if ( (handle->ofmblock%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*4) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*4) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 4;
-      } else if ( (handle->ofmblock%16 == 0) && (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*2) == 0) && (handle->desc.R == 1) && (handle->desc.S == 1) ) {
+      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) && (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*2) == 0) && (handle->desc.R == 1) && (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 2;
       } else {
         handle->blocksofm_blocking = 1;
@@ -357,7 +359,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     /* when we chose overwrite and we loop over all ifms, then let's use streaming stores */
     if (    ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0)
          && (handle->desc.C == handle->blocksifm_blocking*handle->ifmblock*handle->fm_lp_block)
-         && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
+         && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 || handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) ) {
       handle->use_nts_fwd = 1;
     } else {
       handle->use_nts_fwd = 0;
@@ -365,7 +367,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
     if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) 
          && (handle->desc.K == handle->blocksofm_blocking*handle->ofmblock*handle->fm_lp_block) 
-         && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32) ) {
+         && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 || handle->datatype_in == LIBXSMM_DNN_DATATYPE_I32 ) ) {
       handle->use_nts_bwd = 1;
     } else {
       handle->use_nts_bwd = 0;
@@ -513,7 +515,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
   /* Let's calculate how many blocks we need */
   handle->blocksifm = handle->desc.C / (handle->ifmblock * handle->fm_lp_block);
-  handle->blocksofm = handle->desc.K / (handle->ofmblock * handle->fm_lp_block);
+  handle->blocksofm = handle->desc.K / (handle->ofmblock);
 
   /* Calculate number of image blocks in case of custom_2 format */
   if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
@@ -522,7 +524,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
   /* Let's check that we can actually block */
   if ( (handle->desc.C % (handle->ifmblock * handle->fm_lp_block) != 0) ||
-      (handle->desc.K % (handle->ofmblock * handle->fm_lp_block) != 0)    )
+      (handle->desc.K % (handle->ofmblock) != 0)    )
   {
     handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
     status = LIBXSMM_DNN_WARN_FALLBACK;
@@ -604,7 +606,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.kw = handle->desc.S;
       descriptor.stride_h = handle->desc.u;
       descriptor.stride_w = handle->desc.v;
-      descriptor.blocks_ofm = handle->blocksofm*handle->fm_lp_block;
+      descriptor.blocks_ofm = handle->blocksofm;
       descriptor.blocks_ifm = handle->blocksifm;
       descriptor.blocks_ifm_blocking = handle->blocksifm_blocking;
       descriptor.weight_stride = 1;

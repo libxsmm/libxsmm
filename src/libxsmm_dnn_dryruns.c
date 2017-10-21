@@ -157,15 +157,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
     /* In these case we run fallback code so we do not support thread private jitting */
     status = LIBXSMM_DNN_WARN_FALLBACK;
   } else {
-    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
+    if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-      } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-      }
     } else {
-      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-      return status;
+# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
     }
   }
 
