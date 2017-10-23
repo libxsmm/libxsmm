@@ -18,7 +18,7 @@ repo_url: https://github.com/hfp/libxsmm
 edit_uri: edit/master/documentation
 
 pages:
-- index.md
+- Overview: index.md
 - Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md
   - "DNN: Deep Neural Networks": libxsmm_dnn.md
