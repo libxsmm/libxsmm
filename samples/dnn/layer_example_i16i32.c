@@ -303,6 +303,7 @@ int main(int argc, char* argv[])
   int padw = 1;           /* padding in input, width */
   int stride = 1;         /* stride when accessing inputs */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
+  char format = 'L';
 
   const char *const env_check = getenv("CHECK")/*, *const env_winograd = getenv("WINOGRAD")*/;
   const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
@@ -356,6 +357,7 @@ int main(int argc, char* argv[])
   if (argc > i) padh       = atoi(argv[i++]);
   if (argc > i) stride     = atoi(argv[i++]);
   if (argc > i) type       = *(argv[i++]);
+  if (argc > i) format     = *(argv[i++]);
   if (argc > i) padding_mode = atoi(argv[i++]);
 
   if (type != 'A' && type != 'F' && type != 'B'/* && type != 'U'*/) {
