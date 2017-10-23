@@ -1177,7 +1177,11 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
       }
       l_prefetch_input_index_h++;
     }
-    moffset += 16;
+    if (step_size == 1) {
+      moffset += 4;
+    } else {
+      moffset += 16;
+    }
   }
 }
 
