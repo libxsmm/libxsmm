@@ -32,6 +32,7 @@
 #define OFM_LOOP_INIT 1
 #define OFM_LOOP_CLOSE 2
 #define CONVOLUTION_KERNEL 3
+#define IFM_LOOP_CLOSE_S 4
 
 #define MIXED 0
 #define KHWC 1
@@ -47,13 +48,13 @@ int ltid;
 
 int loop_order = MIXED;
 /*
-const char *const env_order = getenv("LOOP_ORDER");
-if ( 0 == env_order || 0 == *env_order) {
-  loop_order = MIXED;
-} else {
-  loop_order = atoi(getenv("LOOP_ORDER"));
-}
-*/
+   const char *const env_order = getenv("LOOP_ORDER");
+   if ( 0 == env_order || 0 == *env_order) {
+   loop_order = MIXED;
+   } else {
+   loop_order = atoi(getenv("LOOP_ORDER"));
+   }
+   */
 
 if (handle->desc.H >= 28 && handle->desc.R == 1) {
   loop_order = HWKC;
@@ -103,7 +104,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int nOfmBlocks;
   int total_calls;
   int n_code_segments;
-  int mark_ofm_init, mark_ofm_close, mark_img_init;
+  int mark_ofm_init, mark_ofm_close, mark_img_init, mark_ifm_close;
   int *tmp_expanded_stream, tmp_stream_index;
   segment_t *encoded_code_segments = NULL;
   int expanded_size;
@@ -132,33 +133,126 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     my_ofm_end = LIBXSMM_MIN((myOfmId+1) * nOfmBlocks, handle->blocksofm);
   }
 
+  /* FIXME!!!! */
+  int using_scratchpad_for_store = 0; //(handle->blocksifm_blocking == 1) ? 0 : 1 ;
+
   mark_ofm_init = ( ( (  (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_fwd == 0) ) || ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) ? 1 : 0;
   mark_ofm_close = (  /* (handle->datatype_in != handle->datatype_out) ||*/ (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 0) ) || (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0) ) ) ? 1 : 0;
-  mark_img_init = (  (handle->padding_flag == 1) || (mark_ofm_close == 1)) ? 1 : 0;
+  mark_ifm_close =  (using_scratchpad_for_store == 1) ? 1 : 0; 
+  mark_img_init = (  (handle->padding_flag == 1) || (mark_ofm_close == 1) || (mark_ifm_close == 1) ) ? 1 : 0;
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */
-  for (img = my_img_start; img < my_img_end; img++) {
-    if (mark_img_init== 1) {
-      n_code_segments++;
-    }
-    for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
-      for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
-        for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
-          for ( ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
-              for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
-                for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
-                  local_entries += 3;
+  if (loop_order == MIXED) {
+    if (using_scratchpad_for_store == 0) { /* Well, in this case leave loop as is...  */  
+      for (img = my_img_start; img < my_img_end; img++) {
+        if (mark_img_init== 1) {
+          n_code_segments++;
+        }
+        for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+          for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+            for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+                for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
+                  for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+                    for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+                      local_entries += 3;
 
-                  if (mark_ofm_init == 1) {
-                    if (ifm1 == 0 && oj == 0 && oi == 0) {
-                      n_code_segments++;
+                      if (mark_ofm_init == 1) {
+                        if (ifm1 == 0 && oj == 0 && oi == 0) {
+                          n_code_segments++;
+                        }
+                      }
+
+                      if (mark_ofm_close == 1) {
+                        if (ifm1 == handle->blocksifm-handle->blocksifm_blocking  && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                          n_code_segments++;
+                        }
+                      }
+
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    } else { 
+      for (img = my_img_start; img < my_img_end; img++) {
+        if (mark_img_init== 1) {
+          n_code_segments++;
+        }
+        for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+              for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+                for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+                  for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+                    for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
+                      local_entries += 3;
 
-                  if (mark_ofm_close == 1) {
-                    if (ifm1 == handle->blocksifm-handle->blocksifm_blocking  && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
-                      n_code_segments++;
+                      if (mark_ofm_init == 1) {
+                        if (ifm1 == 0 && oj == 0 && oi == 0) {
+                          n_code_segments++;
+                        }
+                      }
+
+                      if (mark_ofm_close == 1) {
+                        if (ifm1 == handle->blocksifm-handle->blocksifm_blocking  && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                          n_code_segments++;
+                        }
+                      }
+
+
+                      if (mark_ifm_close == 1) {
+                        if ( ifm1 >= handle->blocksifm-handle->blocksifm_blocking ) {
+                          n_code_segments++;
+                        }
+                      }
+
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (loop_order == HWKC) {
+    for (img = my_img_start; img < my_img_end; img++) {
+      if (mark_img_init== 1) {
+        n_code_segments++;
+      }
+      for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+        for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+          for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+            for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {   
+                for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {       
+                  for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
+
+                    local_entries += 3;
+
+                    if (mark_ofm_init == 1) {
+                      if (ifm1 == 0 && oj == 0 && oi == 0) {
+                        n_code_segments++;
+                      }
+                    }
+
+                    if (mark_ofm_close == 1) {
+                      if (ifm1 == handle->blocksifm-handle->blocksifm_blocking  && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                        n_code_segments++;
+                      }
+                    }
+
+
+                    if (mark_ifm_close == 1) {
+                      if ( ifm1 >= handle->blocksifm-handle->blocksifm_blocking ) {
+                        n_code_segments++;
+                      }
                     }
                   }
 
@@ -170,6 +264,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       }
     }
   }
+
 
   handle->n_entries_fwd[ltid] = local_entries/3;
 
@@ -196,71 +291,151 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   local_entries = 0;
 
   /* Second run to compute actual indices */
-
   if (loop_order == MIXED) {
-    for (img = my_img_start; img < my_img_end; img++) {
-      if (mark_img_init== 1) {
-        tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
-        tmp_stream_index++;
+    if (using_scratchpad_for_store == 0) { /* Well, in this case leave loop as is...  */
+      for (img = my_img_start; img < my_img_end; img++) {
+        if (mark_img_init== 1) {
+          tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
+          tmp_stream_index++;
+        }
+        for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+          for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+            for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+                for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
+                  for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+                    for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+
+                      if ( handle->use_fwd_for_bwd == 0 ) {
+                        ij_use = oj * handle->desc.u;
+                        ii_use = oi * handle->desc.v;
+                        oi_use = oi;
+                        oj_use = oj;
+                      } else {
+                        ij_use = oj;
+                        ii_use = oi;
+                        oi_use = oi * handle->desc.u;
+                        oj_use = oj * handle->desc.v;                    
+                      }
+
+                      if (mark_ofm_init == 1) {
+                        if (ifm1 == 0 && oj == 0 && oi == 0) {
+                          tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
+                          tmp_stream_index++;
+                        }
+                      }
+
+                      if (handle->padding_flag == 1) {
+                        compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij_use) * padded_w)  +  ii_use) *  handle->ifmblock * handle->fm_lp_block;
+                      } else {
+                        compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij_use) * handle->ifwp)  +  ii_use  ) *  handle->ifmblock * handle->fm_lp_block;
+                      }
+                      compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
+                      compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_use) * handle->ofwp)  +  oi_use) *  handle->ofmblock;
+
+                      /* Initialize kernel variant with the one that prefetches everything */
+                      if (oj == 0 ) {
+                        kernel_variant[local_entries/3] = 0;
+                      } else {
+                        kernel_variant[local_entries/3] = 1;
+                      }
+
+                      if (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
+                        bn_indices[local_entries/3] =  img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
+                      }
+
+                      local_entries += 3;
+
+                      tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                      tmp_stream_index++;
+
+                      if (mark_ofm_close == 1) {
+                        if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                          tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
+                          tmp_stream_index++;
+                        }
+                      }
+
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
-      for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
-        for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+    } else { /* Bring in all ifms to introduce IFM close tag  */
+      for (img = my_img_start; img < my_img_end; img++) {
+        if (mark_img_init== 1) {
+          tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
+          tmp_stream_index++;
+        }
+        for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
           for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
             for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-              for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
-                for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
-                  for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+              for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+                for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+                  for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+                    for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
 
-                    if ( handle->use_fwd_for_bwd == 0 ) {
-                      ij_use = oj * handle->desc.u;
-                      ii_use = oi * handle->desc.v;
-                      oi_use = oi;
-                      oj_use = oj;
-                    } else {
-                      ij_use = oj;
-                      ii_use = oi;
-                      oi_use = oi * handle->desc.u;
-                      oj_use = oj * handle->desc.v;                    
-                    }
-
-                    if (mark_ofm_init == 1) {
-                      if (ifm1 == 0 && oj == 0 && oi == 0) {
-                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
-                        tmp_stream_index++;
+                      if ( handle->use_fwd_for_bwd == 0 ) {
+                        ij_use = oj * handle->desc.u;
+                        ii_use = oi * handle->desc.v;
+                        oi_use = oi;
+                        oj_use = oj;
+                      } else {
+                        ij_use = oj;
+                        ii_use = oi;
+                        oi_use = oi * handle->desc.u;
+                        oj_use = oj * handle->desc.v;                    
                       }
-                    }
 
-                    if (handle->padding_flag == 1) {
-                      compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij_use) * padded_w)  +  ii_use) *  handle->ifmblock * handle->fm_lp_block;
-                    } else {
-                      compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij_use) * handle->ifwp)  +  ii_use  ) *  handle->ifmblock * handle->fm_lp_block;
-                    }
-                    compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
-                    compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_use) * handle->ofwp)  +  oi_use) *  handle->ofmblock;
-
-                    /* Initialize kernel variant with the one that prefetches everything */
-                    if (oj == 0 ) {
-                      kernel_variant[local_entries/3] = 0;
-                    } else {
-                      kernel_variant[local_entries/3] = 1;
-                    }
-
-                    if (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
-                      bn_indices[local_entries/3] =  img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
-                    }
-
-                    local_entries += 3;
-
-                    tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
-                    tmp_stream_index++;
-
-                    if (mark_ofm_close == 1) {
-                      if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
-                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
-                        tmp_stream_index++;
+                      if (mark_ofm_init == 1) {
+                        if (ifm1 == 0 && oj == 0 && oi == 0) {
+                          tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
+                          tmp_stream_index++;
+                        }
                       }
-                    }
 
+                      if (handle->padding_flag == 1) {
+                        compute_indices[local_entries] =  ( ( ( ifm1 *  padded_h  +  ij_use) * padded_w)  +  ii_use) *  handle->ifmblock * handle->fm_lp_block;
+                      } else {
+                        compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij_use) * handle->ifwp)  +  ii_use  ) *  handle->ifmblock * handle->fm_lp_block;
+                      }
+                      compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
+                      compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_use) * handle->ofwp)  +  oi_use) *  handle->ofmblock;
+
+                      /* Initialize kernel variant with the one that prefetches everything */
+                      if (oj == 0 ) {
+                        kernel_variant[local_entries/3] = 0;
+                      } else {
+                        kernel_variant[local_entries/3] = 1;
+                      }
+
+                      if (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
+                        bn_indices[local_entries/3] =  img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
+                      }
+
+                      local_entries += 3;
+
+                      tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                      tmp_stream_index++;
+
+                      if (mark_ifm_close == 1) {
+                        if ( ifm1 >= handle->blocksifm-handle->blocksifm_blocking ) {
+                          tmp_expanded_stream[tmp_stream_index] = IFM_LOOP_CLOSE_S;
+                          tmp_stream_index++;
+                        }
+                      }
+
+                      if (mark_ofm_close == 1) {
+                        if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                          tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
+                          tmp_stream_index++;
+                        }
+                      }
+
+                    }
                   }
                 }
               }
@@ -281,10 +456,10 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
       for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
         for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
-          for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {     
-            for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
-              for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
-                for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {       
+          for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+            for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {   
+                for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {       
                   for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
 
                     if ( handle->use_fwd_for_bwd == 0 ) {
@@ -329,6 +504,13 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
                     tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
                     tmp_stream_index++;
+
+                    if (mark_ifm_close == 1) {
+                      if ( ifm1 >= handle->blocksifm-handle->blocksifm_blocking ) {
+                        tmp_expanded_stream[tmp_stream_index] = IFM_LOOP_CLOSE_S;
+                        tmp_stream_index++;
+                      }
+                    }   
 
                     if (mark_ofm_close == 1) {
                       if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
@@ -377,32 +559,130 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
     /* Final pass over the segments to fill-in auxiliary indices...  */
     encoded_stream_index = 0;
-    for (img = my_img_start; img < my_img_end; img++) {
-      if (mark_img_init== 1) {
-        encoded_code_segments[encoded_stream_index].aux_index = img;
-        encoded_stream_index++;
-      }
-      for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
-        for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
-          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
-            for ( ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-              for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
-                for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
-                  for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
-                    ij = oj * handle->desc.u;
-                    ii = oi * handle->desc.v;
 
-                    if (mark_ofm_init == 1) {
-                      if (ifm1 == 0 && oj == 0 && oi == 0) {
-                        encoded_code_segments[encoded_stream_index].aux_index = ofm1;
-                        encoded_stream_index++;
+    if (loop_order == MIXED) {
+      if (using_scratchpad_for_store == 0) { /* Well, in this case leave loop as is...  */  
+        for (img = my_img_start; img < my_img_end; img++) {
+          if (mark_img_init== 1) {
+            encoded_code_segments[encoded_stream_index].aux_index = img;
+            encoded_stream_index++;
+          }
+          for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+            for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+              for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+                for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+                  for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
+                    for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+                      for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+
+                        ij = oj * handle->desc.u;
+                        ii = oi * handle->desc.v;
+
+                        if (mark_ofm_init == 1) {
+                          if (ifm1 == 0 && oj == 0 && oi == 0) {
+                            encoded_code_segments[encoded_stream_index].aux_index = ofm1;
+                            encoded_stream_index++;
+                          }
+                        }
+
+                        if (mark_ofm_close == 1) {
+                          if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                            encoded_code_segments[encoded_stream_index].aux_index = ofm1;
+                            encoded_stream_index++;
+                          }
+                        }
                       }
                     }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else {
+        for (img = my_img_start; img < my_img_end; img++) {
+          if (mark_img_init== 1) {
+            encoded_code_segments[encoded_stream_index].aux_index = img;
+            encoded_stream_index++;
+          }
+          for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+            for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+                for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+                  for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+                    for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
+                      for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
 
-                    if (mark_ofm_close == 1) {
-                      if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
-                        encoded_code_segments[encoded_stream_index].aux_index = ofm1;
-                        encoded_stream_index++;
+                        ij = oj * handle->desc.u;
+                        ii = oi * handle->desc.v;
+
+                        if (mark_ofm_init == 1) {
+                          if (ifm1 == 0 && oj == 0 && oi == 0) {
+                            encoded_code_segments[encoded_stream_index].aux_index = ofm1;
+                            encoded_stream_index++;
+                          }
+                        }
+
+                        if (mark_ofm_close == 1) {
+                          if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                            encoded_code_segments[encoded_stream_index].aux_index = ofm1;
+                            encoded_stream_index++;
+                          }
+                        }
+
+                        if (mark_ifm_close == 1) {
+                          if ( ifm1 >= handle->blocksifm-handle->blocksifm_blocking ) {
+                            encoded_stream_index++;
+                          }
+                        }
+
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (loop_order == HWKC) {
+      for (img = my_img_start; img < my_img_end; img++) {
+        if (mark_img_init== 1) {
+          encoded_code_segments[encoded_stream_index].aux_index = img;
+          encoded_stream_index++;
+        }
+        for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
+          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+            for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
+              for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+                for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {   
+                  for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {       
+                    for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
+
+                      ij = oj * handle->desc.u;
+                      ii = oi * handle->desc.v;
+
+                      if (mark_ofm_init == 1) {
+                        if (ifm1 == 0 && oj == 0 && oi == 0) {
+                          encoded_code_segments[encoded_stream_index].aux_index = ofm1;
+                          encoded_stream_index++;
+                        }
+                      }
+
+                      if (mark_ofm_close == 1) {
+                        if (ifm1 == handle->blocksifm-handle->blocksifm_blocking && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                          encoded_code_segments[encoded_stream_index].aux_index = ofm1;
+                          encoded_stream_index++;
+                        }
+                      }
+
+                      if (mark_ifm_close == 1) {
+                        if ( ifm1 >= handle->blocksifm-handle->blocksifm_blocking ) {
+                          encoded_stream_index++;
+                        }
+
                       }
                     }
                   }
@@ -414,6 +694,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       }
     }
   }
+
 
   free(tmp_expanded_stream);
 
