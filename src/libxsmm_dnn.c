@@ -645,7 +645,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
               layout->dim_size[3] = handle->desc.S;
               layout->dim_size[4] = handle->desc.R;
               layout->dim_size[5] = handle->blocksifm;
-              layout->dim_size[6] = handle->blocksofm*handle->fm_lp_block;
+              layout->dim_size[6] = handle->blocksofm;
             }
           } else {
             free(layout);
@@ -1190,7 +1190,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_zero_tensor(const libxsmm_d
         for (i = 0; i < size; ++i) int32_data[i] = 0;
       } break;
       case LIBXSMM_DNN_DATATYPE_I16: {
-        short* int16_data = (short*)tensor->data;
+        /*FIXME HACK*/
+        int* int16_data = (int*)tensor->data;
         for (i = 0; i < size; ++i) int16_data[i] = 0;
       } break;
       case LIBXSMM_DNN_DATATYPE_I8: {

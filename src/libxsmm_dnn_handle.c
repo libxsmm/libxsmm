@@ -741,7 +741,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           }
           matzero_descriptor.prefetch = 0;
           matzero_descriptor.unroll_level = 2;
-          matzero_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype_in);
+          matzero_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype_out);
           matzero_descriptor.flags = LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE;
           handle->matcopy_fwd[1].xmatcopy = libxsmm_xmatcopydispatch(&matzero_descriptor);
 
