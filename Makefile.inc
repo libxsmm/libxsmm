@@ -215,7 +215,14 @@ endif
 
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
-EXTLIB = $(call abslib,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
+LIBDEP = $(LIBNAME).$(LIBEXT)
+MAINLIB = $(call abslib,$(LIBDEP))
+
+FORTDEP = $(LIBNAME)f.$(LIBEXT)
+FORTLIB = $(call abslib,$(FORTDEP))
+
+EXTDEP = $(LIBNAME)ext.$(LIBEXT)
+EXTLIB = $(call abslib,$(EXTDEP)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides libxsmmnoblas to satisfy BLAS symbols
   NOBLASLIB = $(call abslib,$(LIBNAME)noblas.$(LIBEXT))
