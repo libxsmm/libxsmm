@@ -37,7 +37,11 @@
 # define REAL_TYPE double
 #endif
 #if !defined(DGEMM)
-# define DGEMM LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__wrap_, LIBXSMM_TPREFIX(REAL_TYPE, gemm)))
+# if defined(WRAP)
+#   define DGEMM LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL_TYPE, gemm))
+# else
+#   define DGEMM LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__wrap_, LIBXSMM_TPREFIX(REAL_TYPE, gemm)))
+# endif
 #endif
 
 #if !defined(CALL_BEGIN_END)

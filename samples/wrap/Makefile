@@ -78,8 +78,17 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
+ifneq (0,$(XWRAP))
+  ifneq (2,$(XWRAP))
+    WRAP_FLAG = -Wl,--wrap=dgemm_,--wrap=sgemm_
+  else
+    WRAP_FLAG = -Wl,--wrap=dgemm_
+  endif
+  DFLAGS = -DWRAP
+endif
+
 $(OUTDIR)/autobatch: $(BLDDIR)/autobatch-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/autobatch-c.o $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
 
 $(OUTDIR)/dgemm-blas: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
@@ -88,14 +97,6 @@ ifneq (0,$(XWRAP))
 	$(info ================================================================================)
 	$(info The static link-time wrapper mechanism is not supported under OS X!)
 	$(info ================================================================================)
-endif
-endif
-
-ifneq (0,$(XWRAP))
-ifneq (2,$(XWRAP))
-  WRAP_FLAG = -Wl,--wrap=dgemm_,--wrap=sgemm_
-else
-  WRAP_FLAG = -Wl,--wrap=dgemm_
 endif
 endif
 
