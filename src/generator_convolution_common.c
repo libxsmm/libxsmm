@@ -444,7 +444,13 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
   /* store instruction to use */
   unsigned int l_intr_store = i_conv_kernel_config->vmove_instruction;
 
-  int use_scratch_for_store = i_conv_desc->use_nts;
+  int use_scratch_for_store;
+
+  if (i_conv_desc->datatype_itm != i_conv_desc->datatype ) {
+    use_scratch_for_store = i_conv_desc->use_nts;
+  } else {
+    use_scratch_for_store = 0;
+  }
 
 #if !defined(NDEBUG)
   /* Do some test if it's possible to generated the requested code.

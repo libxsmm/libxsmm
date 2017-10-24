@@ -278,12 +278,20 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->blocksifm_blocking = 8;
     }
 
-    printf("The blocking ORIGINBALLY was %d\n",handle->blocksifm_blocking);
+    if (handle->datatype_out != handle->datatype_in ) {
+      handle->use_lp_kernel = 1;
+    } else {
+      handle->use_lp_kernel = 0;
+    }
 
-    if (handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block > 256) {
-      handle->blocksifm_blocking = 8;
-      while ( handle->desc.C%(handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block) != 0  ) {
-         handle->blocksifm_blocking--;
+    printf("The blocking ORIGINALLY was %d\n",handle->blocksifm_blocking);
+
+    if (handle->use_lp_kernel == 1) {
+      if (handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block > 256) {
+        handle->blocksifm_blocking = 8;
+        while ( handle->desc.C%(handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block) != 0  ) {
+           handle->blocksifm_blocking--;
+        }
       }
     }
 
@@ -376,13 +384,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->use_nts_fwd = 0;
     }
 
-    /* FIXME: add better logic  */
-    if (handle->blocksifm_blocking == 1) {
-      handle->use_nts_fwd = 0; 
-    } else {
-      handle->use_nts_fwd = 1; 
+    if (handle->use_lp_kernel == 1) {
+      if (handle->blocksifm_blocking == 1) {
+        handle->use_nts_fwd = 0; 
+      } else {
+        handle->use_nts_fwd = 1; 
+      }
     }
-
 
     if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) 
          && (handle->desc.K == handle->blocksofm_blocking*handle->ofmblock*handle->fm_lp_block) 
