@@ -190,6 +190,13 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     l_kh_trips = i_conv_desc->kh;
   }
 
+  int use_scratch_for_store;
+  if (i_conv_desc->datatype != i_conv_desc->datatype_itm) {
+    use_scratch_for_store = ( i_conv_desc->use_nts == 1 ) ? 1 : 0;
+  } else {
+    use_scratch_for_store = 0;
+  }
+
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
@@ -424,6 +431,22 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
                 libxsmm_x86_instruction_prefetch( io_generated_code,
                                           LIBXSMM_X86_INSTR_PREFETCHT1, 
                                           l_gp_reg_mapping.gp_reg_help_2,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          store_offset);  
+
+            }
+          } 
+        }
+
+        if ( (use_scratch_for_store == 1) && (peel_index == 2) ) {
+          unsigned int i, j, store_offset;
+          /* Prefetch to L2 store scratch in case of LP convs */
+          for (i = 0; i < i_conv_desc->ofh_rb; i++) {
+            for ( j = 0; j < i_conv_desc->ofw_rb; j++ ) {
+                store_offset = (i * i_conv_desc->ofw_rb + j) * l_conv_kernel_config.vector_length_out * l_conv_kernel_config.datatype_size_out;
+                libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT1, 
+                                          l_gp_reg_mapping.gp_reg_output_pf,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
                                           store_offset);  
 
