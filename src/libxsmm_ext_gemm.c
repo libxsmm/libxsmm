@@ -413,11 +413,12 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
     }
 #endif
     assert((0 < tm || 0 == *m) && (0 < tn || 0 == nn) && (0 < tk || 0 == kk) && 0 < libxsmm_nt);
-#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
+#if defined(_OPENMP)
+# if defined(LIBXSMM_EXT_TASKS)
     if (0 == omp_get_active_level())
-#else
+# else
     if (0 == omp_in_parallel())
-#endif
+# endif
     {
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
@@ -425,21 +426,24 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
         float, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
-    else {
-#if defined(LIBXSMM_EXT_TASKS)
+    else
+# if defined(LIBXSMM_EXT_TASKS)
+    { /* assume external parallelization */
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
         if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
         float, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
-#else
+    }
+# endif
+#endif /*defined(_OPENMP)*/
+    {
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
         LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
         float, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
-#endif
     }
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
     if (0 != d) {
@@ -489,11 +493,12 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
     }
 #endif
     assert((0 < tm || 0 == *m) && (0 < tn || 0 == nn) && (0 < tk || 0 == kk) && 0 < libxsmm_nt);
-#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
+#if defined(_OPENMP)
+# if defined(LIBXSMM_EXT_TASKS)
     if (0 == omp_get_active_level())
-#else
+# else
     if (0 == omp_in_parallel())
-#endif
+# endif
     {
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
@@ -501,21 +506,24 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
         double, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
-    else {
-#if defined(LIBXSMM_EXT_TASKS)
+    else
+# if defined(LIBXSMM_EXT_TASKS)
+    { /* assume external parallelization */
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
         if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
         double, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
-#else
+    }
+# endif
+#endif /*defined(_OPENMP)*/
+    {
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
         LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
         double, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
-#endif
     }
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
     if (0 != d) {
