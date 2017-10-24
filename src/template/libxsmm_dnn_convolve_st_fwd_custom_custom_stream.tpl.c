@@ -94,13 +94,20 @@ output_base = &LIBXSMM_VLA_ACCESS(5, output, 0, 0, 0, 0, 0,
 instr = handle->n_entries_fwd[ltid];
 n_segments = handle->n_fwd_code_segments[ltid];
 
-/* FIXME: add proper size of scratchpad..,  */
+int using_scratchpad_for_store;
+if (handle->use_lp_kernel == 1) {
+  using_scratchpad_for_store = (handle->use_nts_fwd == 1) ? 1 : 0;
+} else {
+  using_scratchpad_for_store = 0;
+}
+
 const int n_regs = 28;
 element_output_type scratchpad[n_regs*16] __attribute__((aligned(64)));
-/*element_output_type *scratchpad = (element_output_type*)  libxsmm_aligned_malloc(n_regs*16*sizeof(element_output_type), 64);*/
-__m512 zero_reg = _mm512_setzero_ps();    
-for (i=0; i<n_regs; i++) {
-  _mm512_store_ps( (float*) &scratchpad[i*16], zero_reg);
+if (using_scratchpad_for_store == 1) {
+  __m512 zero_reg = _mm512_setzero_ps();    
+  for (i=0; i<n_regs; i++) {
+    _mm512_store_ps( (float*) &scratchpad[i*16], zero_reg);
+  }
 }
 
 i = 0;
@@ -117,7 +124,7 @@ double *bn_sum_base2;
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
-int using_scratchpad_for_store = (handle->use_nts_fwd == 1) ? 1 : 0 ;
+
 
 if ( using_scratchpad_for_store == 0 ) {
   if (n_segments) {

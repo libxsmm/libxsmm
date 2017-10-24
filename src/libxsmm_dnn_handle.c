@@ -284,8 +284,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->use_lp_kernel = 0;
     }
 
-    printf("The blocking ORIGINALLY was %d\n",handle->blocksifm_blocking);
-
     if (handle->use_lp_kernel == 1) {
       if (handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block > 256) {
         handle->blocksifm_blocking = 8;
@@ -294,9 +292,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
       }
     }
-
-    printf("The blocking FINALLY is %d\n",handle->blocksifm_blocking);
-
 
     /* Ditto for ofms in BWD  */
     if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) ) {
