@@ -132,7 +132,16 @@ To further simplify the multiplication of matrices in a batch, the above interfa
 
 Since the library is binary compatible with existing GEMM calls (BLAS), such calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original BLAS library. There are two cases to consider: (1)&#160;static linkage, and (2)&#160;dynamic linkage of the application against the original BLAS library.
 
-In any case, a sophisticated statistic (histogram) becomes available with LIBXSMM_VERBOSE=1 (or higher). The histogram displays the call sites of all intercepted GEMMs. With level&#160;2 (or higher) the histogram yields the entire content, and eventually less relevant entries are not pruned. LIBXSMM must be built with `make SYM=1` (or similar) to display the symbol names of where the GEMMs originated (call site).
+```bash
+LIBXSMM STATISTIC: 1000 multiplications
+dgemm(trans=NN mnk=32,32,21 ldx=32,21,32 a,b=1,0): 8% [main$omp$1]
+dgemm(trans=NN mnk=32,21,32 ldx=32,32,32 a,b=1,0): 8% [main$omp$1]
+dgemm(trans=NN mnk=10,21,32 ldx=10,32,10 a,b=1,0): 5% [main$omp$1]
+dgemm(trans=NN mnk=32,10,32 ldx=32,32,32 a,b=1,0): 5% [main$omp$1]
+dgemm(trans=NN mnk=32,32,10 ldx=32,10,32 a,b=1,0): 5% [main$omp$1]
+```bash
+
+In any case, a sophisticated statistic (histogram) becomes available with LIBXSMM_VERBOSE=1 (or higher). The histogram displays the call sites of all intercepted GEMMs ([example](https://github.com/hfp/libxsmm/blob/master/samples/wrap/autobatch.c) above depicts an OpenMP region hosted by the main function). With level&#160;2 (or higher) the histogram yields the entire content, and eventually less relevant entries are not pruned. An application must be built with symbols (`-g`) and export symbols similar to shared libraries (`-Wl,--export-dynamic`) even when linked statically in order to display the symbol names of where the GEMMs originated (call site).
 
 **NOTE**: Using the same multiplication kernel in a consecutive fashion (batch-processing) allows to extract higher performance, when using LIBXSMM's native programming interface.
 
