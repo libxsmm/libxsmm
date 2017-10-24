@@ -139,7 +139,7 @@ dgemm(trans=NN mnk=32,21,32 ldx=32,32,32 a,b=1,0): 8% [main$omp$1]
 dgemm(trans=NN mnk=10,21,32 ldx=10,32,10 a,b=1,0): 5% [main$omp$1]
 dgemm(trans=NN mnk=32,10,32 ldx=32,32,32 a,b=1,0): 5% [main$omp$1]
 dgemm(trans=NN mnk=32,32,10 ldx=32,10,32 a,b=1,0): 5% [main$omp$1]
-```bash
+```
 
 In any case, a sophisticated statistic (histogram) becomes available with LIBXSMM_VERBOSE=1 (or higher). The histogram displays the call sites of all intercepted GEMMs ([example](https://github.com/hfp/libxsmm/blob/master/samples/wrap/autobatch.c) above depicts an OpenMP region hosted by the main function). With level&#160;2 (or higher) the histogram yields the entire content, and eventually less relevant entries are not pruned. An application must be built with symbols (`-g`) and export symbols similar to shared libraries (`-Wl,--export-dynamic`) even when linked statically in order to display the symbol names of where the GEMMs originated (call site).
 
