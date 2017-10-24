@@ -415,6 +415,8 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
     assert((0 < tm || 0 == *m) && (0 < tn || 0 == nn) && (0 < tk || 0 == kk) && 0 < libxsmm_nt);
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
     if (0 == omp_get_active_level())
+#else
+    if (0 == omp_in_parallel())
 #endif
     {
       LIBXSMM_TILED_XGEMM(
@@ -423,16 +425,22 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
         float, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
-#if defined(LIBXSMM_EXT_TASKS)
     else {
+#if defined(LIBXSMM_EXT_TASKS)
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
         if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
         float, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
-    }
+#else
+      LIBXSMM_TILED_XGEMM(
+        LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
+        LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
+        float, flags, tm, tn, tk, *m, nn, kk,
+        ralpha, a, ilda, b, ildb, rbeta, c, ildc);
 #endif
+    }
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
     if (0 != d) {
       libxsmm_matdiff_info diff;
@@ -483,6 +491,8 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
     assert((0 < tm || 0 == *m) && (0 < tn || 0 == nn) && (0 < tk || 0 == kk) && 0 < libxsmm_nt);
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
     if (0 == omp_get_active_level())
+#else
+    if (0 == omp_in_parallel())
 #endif
     {
       LIBXSMM_TILED_XGEMM(
@@ -491,16 +501,22 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
         double, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
-#if defined(LIBXSMM_EXT_TASKS)
     else {
+#if defined(LIBXSMM_EXT_TASKS)
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
         if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
         double, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
-    }
+#else
+      LIBXSMM_TILED_XGEMM(
+        LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
+        LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
+        double, flags, tm, tn, tk, *m, nn, kk,
+        ralpha, a, ilda, b, ildb, rbeta, c, ildc);
 #endif
+    }
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
     if (0 != d) {
       libxsmm_matdiff_info diff;
@@ -534,6 +550,8 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* de
     const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(descriptor);
 # if defined(LIBXSMM_EXT_TASKS)
     if (0 == omp_get_active_level())
+# else
+    if (0 == omp_in_parallel())
 # endif
     { /* enable internal parallelization */
 #     pragma omp parallel
@@ -543,9 +561,10 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* de
           index_base, index_stride, a_stride, b_stride, c_stride, batchsize,
           tid, nthreads, descriptor);
       } /* implicit synchronization (barrier) */
+      result = EXIT_SUCCESS;
     }
-# if defined(LIBXSMM_EXT_TASKS)
-    else { /* assume external parallelization, and use OpenMP-tasks */
+    else { /* assume external parallelization */
+# if defined(LIBXSMM_EXT_TASKS) /* use OpenMP-tasks */
       const int ntasks = (LIBXSMM_EXT_TSK_SLACK) * omp_get_num_threads();
       int tid;
       for (tid = 0; tid < ntasks; ++tid) {
@@ -558,9 +577,12 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* de
       if (0 != libxsmm_sync) {
 #       pragma omp taskwait
       }
-    }
+      result = EXIT_SUCCESS;
+# else /* sequential */
+      result = libxsmm_mmbatch(descriptor, a_matrix, b_matrix, c_matrix,
+        index_base, index_stride, a_stride, b_stride, c_stride, batchsize);
 # endif
-    result = EXIT_SUCCESS;
+    }
   }
   else
 #endif /*defined(_OPENMP)*/

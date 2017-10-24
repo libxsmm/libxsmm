@@ -54,6 +54,8 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
     if ((LIBXSMM_TRANS_THRESHOLD) < size) { /* consider problem-size (threshold) */
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
       if (0 == omp_get_active_level())
+#else
+      if (0 == omp_in_parallel())
 #endif
       { /* enable internal parallelization */
         LIBXSMM_EXT_PARALLEL
@@ -66,8 +68,8 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
           libxsmm_matcopy_thread(out, in, typesize, m, n, ldi, ldo, prefetch, tid, nthreads);
         } /* implicit synchronization (barrier) */
       }
-#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
       else { /* assume external parallelization */
+#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
         const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
         libxsmm_matcopy_descriptor descriptor = { 0 };
@@ -96,8 +98,10 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
             LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, xmatcopy,
             out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
         }
-      }
+#else /* no MT */
+        result = libxsmm_matcopy(out, in, typesize, m, n, ldi, ldo, prefetch);
 #endif
+      }
     }
     else { /* small problem-size (no MT) */
       result = libxsmm_matcopy(out, in, typesize, m, n, ldi, ldo, prefetch);
@@ -144,6 +148,8 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
       if ((LIBXSMM_TRANS_THRESHOLD) < size) { /* consider problem-size (threshold) */
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         if (0 == omp_get_active_level())
+#else
+        if (0 == omp_in_parallel())
 #endif
         { /* enable internal parallelization */
           LIBXSMM_EXT_PARALLEL
@@ -156,8 +162,8 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
             libxsmm_otrans_thread(out, in, typesize, m, n, ldi, ldo, tid, nthreads);
           } /* implicit synchronization (barrier) */
         }
-#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         else { /* assume external parallelization */
+#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
           const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
           const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
           libxsmm_transpose_descriptor descriptor = { 0 };
@@ -176,8 +182,10 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
             if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
             LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans,
             out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
-        }
+#else /* no MT */
+          result = libxsmm_otrans(out, in, typesize, m, n, ldi, ldo);
 #endif
+        }
       }
       else { /* small problem-size (no MT) */
         result = libxsmm_otrans(out, in, typesize, m, n, ldi, ldo);
