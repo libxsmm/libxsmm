@@ -96,7 +96,8 @@ n_segments = handle->n_fwd_code_segments[ltid];
 
 /* FIXME: add proper size of scratchpad..,  */
 const int n_regs = 28;
-element_output_type scratchpad[n_regs*16];
+element_output_type scratchpad[n_regs*16] __attribute__((aligned(64)));
+/*element_output_type *scratchpad = (element_output_type*)  libxsmm_aligned_malloc(n_regs*16*sizeof(element_output_type), 64);*/
 __m512 zero_reg = _mm512_setzero_ps();    
 for (i=0; i<n_regs; i++) {
   _mm512_store_ps( (float*) &scratchpad[i*16], zero_reg);
