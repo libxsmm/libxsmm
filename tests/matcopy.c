@@ -44,7 +44,7 @@
 #   include <mkl_trans.h>
 #   define MATCOPY_GOLD(M, N, A, LDI, B, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))('C', 'N', \
-        *(M), *(N), (ELEM_TYPE)1, A, *(LDI), B, *(LDO))
+        (size_t)(*(M)), (size_t)(*(N)), (ELEM_TYPE)1, A, (size_t)(*(LDI)), B, (size_t)(*(LDO)))
 # elif defined(__OPENBLAS77)
 #   include <openblas/f77blas.h>
 #   define MATCOPY_GOLD(M, N, A, LDI, B, LDO) { \
@@ -113,14 +113,14 @@ int main(void)
     maxi = LIBXSMM_MAX(maxi, ldi[test]);
     maxo = LIBXSMM_MAX(maxo, ldo[test]);
   }
-  a = (ELEM_TYPE*)libxsmm_malloc(maxi * maxn * sizeof(ELEM_TYPE));
-  b = (ELEM_TYPE*)libxsmm_malloc(maxo * maxn * sizeof(ELEM_TYPE));
+  a = (ELEM_TYPE*)libxsmm_malloc((size_t)(maxi * maxn * sizeof(ELEM_TYPE)));
+  b = (ELEM_TYPE*)libxsmm_malloc((size_t)(maxo * maxn * sizeof(ELEM_TYPE)));
   assert(0 != a && 0 != b);
 
   init(42, a, maxm, maxn, maxi, 1.0);
   init( 0, b, maxm, maxn, maxo, 1.0);
 #if defined(MATCOPY_GOLD)
-  c = (ELEM_TYPE*)libxsmm_malloc(maxo * maxn * sizeof(ELEM_TYPE));
+  c = (ELEM_TYPE*)libxsmm_malloc((size_t)(maxo * maxn * sizeof(ELEM_TYPE)));
   assert(0 != c);
   init(0, c, maxm, maxn, maxo, 1.0);
 #endif

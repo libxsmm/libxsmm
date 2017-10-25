@@ -56,7 +56,7 @@
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
@@ -83,19 +83,21 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
   try {
     typedef REAL_TYPE T;
-    const int m = 1 < argc ? std::atoi(argv[1]) : 23;
-    const int k = 3 < argc ? std::atoi(argv[3]) : m;
-    const int n = 2 < argc ? std::atoi(argv[2]) : k;
+    const libxsmm_blasint m = 1 < argc ? std::atoi(argv[1]) : 23;
+    const libxsmm_blasint k = 3 < argc ? std::atoi(argv[3]) : m;
+    const libxsmm_blasint n = 2 < argc ? std::atoi(argv[2]) : k;
 
-    const int asize = m * k, bsize = k * n, csize = m * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
-    const int s = (2ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 2 GByte
-    const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T); // batched (A, B, and C)
-    const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // omit size of A, B, or C since it is held in cache
+    const libxsmm_blasint asize = m * k, bsize = k * n, csize = m * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
+    const libxsmm_blasint s = (2ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 2 GByte
+    const size_t bwsize_batched = (size_t)((asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T)); // batched (A, B, and C)
+    const size_t bwsize = (size_t)((asize/*load*/ + bsize/*load*/) * sizeof(T)); // omit size of A, B, or C since it is held in cache
     const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0 / s;
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
-      raii(int asize_, int bsize_, int csize_): a(new T[asize_]), b(new T[bsize_]), c(new T[csize_]) {}
+      raii(libxsmm_blasint asize_, libxsmm_blasint bsize_, libxsmm_blasint csize_)
+        : a(new T[static_cast<size_t>(asize_)]), b(new T[static_cast<size_t>(bsize_)])
+        , c(new T[static_cast<size_t>(csize_)]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1);
     T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
@@ -105,7 +107,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #   pragma omp parallel for
 #endif
-    for (int i = 0; i < s; ++i) {
+    for (libxsmm_blasint i = 0; i < s; ++i) {
       init(42 + i, a + i * asize, m, k, m, scale);
       init(24 + i, b + i * bsize, k, n, k, scale);
       init(22 + i, c + i * csize, m, n, m, scale);
@@ -121,11 +123,13 @@ int main(int argc, char* argv[])
       // initialize LIBXSMM
       libxsmm_init();
 
+      fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n",
+        (long long)m, (long long)n, (long long)k, (long long)s,
+        1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20),
+        8 == sizeof(T) ? "DP" : "SP");
+
       // eventually JIT-compile the requested kernel
       libxsmm_mmfunction<T>(m, n, k);
-
-      fprintf(stdout, "m=%i n=%i k=%i size=%i memory=%.1f MB (%s)\n\n", m, n, k, s,
-        1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
       { // batched
         fprintf(stdout, "Batched (A,B,C)...\n");
@@ -133,7 +137,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #       pragma omp parallel for
 #endif
-        for (int i = 0; i < s; ++i) {
+        for (libxsmm_blasint i = 0; i < s; ++i) {
           libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
             0/*alpha*/, a + i * asize, 0/*lda*/, b + i * bsize, 0/*ldb*/,
             0/*beta*/, c + i * csize, 0/*ldc*/);
@@ -154,7 +158,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #       pragma omp parallel for
 #endif
-        for (int i = 0; i < s; ++i) {
+        for (libxsmm_blasint i = 0; i < s; ++i) {
           libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
             0/*alpha*/, a + i * asize, 0/*lda*/, b, 0/*ldb*/,
             0/*beta*/, c + i * csize, 0/*ldc*/);
@@ -175,7 +179,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #       pragma omp parallel for
 #endif
-        for (int i = 0; i < s; ++i) {
+        for (libxsmm_blasint i = 0; i < s; ++i) {
           libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
             0/*alpha*/, a, 0/*lda*/, b + i * bsize, 0/*ldb*/,
             0/*beta*/, c + i * csize, 0/*ldc*/);
@@ -197,7 +201,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #         pragma omp parallel for
 #endif
-          for (int i = 0; i < s; ++i) {
+          for (libxsmm_blasint i = 0; i < s; ++i) {
             T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             // do nothing else with tmp; just a benchmark
             libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
@@ -220,7 +224,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #         pragma omp parallel for
 #endif
-          for (int i = 0; i < s; ++i) {
+          for (libxsmm_blasint i = 0; i < s; ++i) {
             T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             // do nothing else with tmp; just a benchmark
             libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,

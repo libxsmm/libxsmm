@@ -105,9 +105,9 @@ int main(int argc, char* argv[])
 
   libxsmm_init();
 
-  a = (REAL_TYPE*)malloc(maxn * maxn * sizeof(REAL_TYPE));
-  b = (REAL_TYPE*)malloc(maxn * maxn * sizeof(REAL_TYPE));
-  c = (REAL_TYPE*)malloc(maxn * maxn * sizeof(REAL_TYPE));
+  a = (REAL_TYPE*)malloc((size_t)(maxn * maxn * sizeof(REAL_TYPE)));
+  b = (REAL_TYPE*)malloc((size_t)(maxn * maxn * sizeof(REAL_TYPE)));
+  c = (REAL_TYPE*)malloc((size_t)(maxn * maxn * sizeof(REAL_TYPE)));
   if (0 == a || 0 == b || 0 == c) result = EXIT_FAILURE;
 
   if (EXIT_SUCCESS == result) {

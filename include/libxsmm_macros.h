@@ -252,13 +252,13 @@
 #endif
 
 /*Based on Stackoverflow's NBITSx macro.*/
-#define LIBXSMM_LOG2_02(N) (0 != ((N) & 0x2/*0b10*/) ? 1 : 0)
-#define LIBXSMM_LOG2_04(N) (0 != ((N) & 0xC/*0b1100*/) ? (2 | LIBXSMM_LOG2_02((N) >> 2)) : LIBXSMM_LOG2_02(N))
-#define LIBXSMM_LOG2_08(N) (0 != ((N) & 0xF0/*0b11110000*/) ? (4 | LIBXSMM_LOG2_04((N) >> 4)) : LIBXSMM_LOG2_04(N))
-#define LIBXSMM_LOG2_16(N) (0 != ((N) & 0xFF00) ? (8 | LIBXSMM_LOG2_08((N) >> 8)) : LIBXSMM_LOG2_08(N))
-#define LIBXSMM_LOG2_32(N) (0 != ((N) & 0xFFFF0000) ? (16 | LIBXSMM_LOG2_16((N) >> 16)) : LIBXSMM_LOG2_16(N))
-#define LIBXSMM_LOG2_64(N) (0 != ((N) & 0xFFFFFFFF00000000) ? (32 | LIBXSMM_LOG2_32((N) >> 32)) : LIBXSMM_LOG2_32(N))
-#define LIBXSMM_LOG2(N) LIBXSMM_MAX(LIBXSMM_LOG2_64((unsigned long long)(N)), 1)
+#define LIBXSMM_LOG2_02(N) (0 != ((N) & 0x2/*0b10*/) ? 1ULL : 0ULL)
+#define LIBXSMM_LOG2_04(N) (0 != ((N) & 0xC/*0b1100*/) ? (2ULL | LIBXSMM_LOG2_02((N) >> 2)) : LIBXSMM_LOG2_02(N))
+#define LIBXSMM_LOG2_08(N) (0 != ((N) & 0xF0/*0b11110000*/) ? (4ULL | LIBXSMM_LOG2_04((N) >> 4)) : LIBXSMM_LOG2_04(N))
+#define LIBXSMM_LOG2_16(N) (0 != ((N) & 0xFF00) ? (8ULL | LIBXSMM_LOG2_08((N) >> 8)) : LIBXSMM_LOG2_08(N))
+#define LIBXSMM_LOG2_32(N) (0 != ((N) & 0xFFFF0000) ? (16ULL | LIBXSMM_LOG2_16((N) >> 16)) : LIBXSMM_LOG2_16(N))
+#define LIBXSMM_LOG2_64(N) (0 != ((N) & 0xFFFFFFFF00000000) ? (32ULL | LIBXSMM_LOG2_32((N) >> 32)) : LIBXSMM_LOG2_32(N))
+#define LIBXSMM_LOG2(N) LIBXSMM_MAX((unsigned int)LIBXSMM_LOG2_64((unsigned long long)(N)), 1U)
 
 #define LIBXSMM_DEFAULT(DEFAULT, VALUE) (0 < (VALUE) ? (VALUE) : (DEFAULT))
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
@@ -267,9 +267,9 @@
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
 #define LIBXSMM_CLMP(VALUE, LO, HI) ((LO) < (VALUE) ? ((HI) > (VALUE) ? (VALUE) : LIBXSMM_MAX(HI, VALUE)) : LIBXSMM_MIN(LO, VALUE))
 #define LIBXSMM_MOD2(N, NPOT) ((N) & ((NPOT) - 1))
-#define LIBXSMM_MUL2(N, NPOT) ((N) << LIBXSMM_LOG2(NPOT))
-#define LIBXSMM_DIV2(N, NPOT) ((N) >> LIBXSMM_LOG2(NPOT))
-#define LIBXSMM_SQRT2(N) (1 << (LIBXSMM_LOG2((N << 1) - 1) >> 1))
+#define LIBXSMM_MUL2(N, NPOT) (((unsigned long long)(N)) << LIBXSMM_LOG2(NPOT))
+#define LIBXSMM_DIV2(N, NPOT) (((unsigned long long)(N)) >> LIBXSMM_LOG2(NPOT))
+#define LIBXSMM_SQRT2(N) ((unsigned int)(1ULL << (LIBXSMM_LOG2(((N) << 1) - 1) >> 1)))
 #define LIBXSMM_UP2(N, NPOT) (((N) + ((NPOT) - 1)) & ~((NPOT) - 1))
 #define LIBXSMM_UP(N, UP) ((((N) + (UP) - 1) / (UP)) * (UP))
 /* compares floating point values but avoids warning about unreliable comparison */

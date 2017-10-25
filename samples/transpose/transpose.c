@@ -68,15 +68,14 @@
   ((!LIBXSMM_EQUAL(ELEM_TYPE, float) && !LIBXSMM_EQUAL(ELEM_TYPE, double)) || (0 == __BLAS))
 # define USE_SELF_VALIDATION
 #endif
-
 #if !defined(USE_SELF_VALIDATION)
 # if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 #   define OTRANS_GOLD(M, N, A, LDI, B, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))('C', 'T', \
-        *(M), *(N), (ELEM_TYPE)1, A, *(LDI), B, *(LDO))
+        (size_t)(*(M)), (size_t)(*(N)), (ELEM_TYPE)1, A, (size_t)(*(LDI)), B, (size_t)(*(LDO)))
 #   define ITRANS_GOLD(M, N, A, LDI, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, imatcopy))('C', 'T', \
-        *(M), *(N), (ELEM_TYPE)1, A, *(LDI), *(LDO))
+        (size_t)(*(M)), (size_t)(*(N)), (ELEM_TYPE)1, A, (size_t)(*(LDI)), (size_t)(*(LDO)))
 # elif defined(__OPENBLAS)
 #   define OTRANS_GOLD(M, N, A, LDI, B, LDO) { \
       /*const*/char otrans_gold_tc_ = 'C', otrans_gold_tt_ = 'T'; \
@@ -137,11 +136,11 @@ int main(int argc, char* argv[])
   {
     const char *const env_tasks = getenv("TASKS"), *const env_check = getenv("CHECK");
     const int tasks = (0 == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
-    ELEM_TYPE *const a = (ELEM_TYPE*)libxsmm_malloc(ldi * (('o' == t || 'O' == t) ? n : ldo) * sizeof(ELEM_TYPE));
-    ELEM_TYPE *const b = (ELEM_TYPE*)libxsmm_malloc(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE));
+    ELEM_TYPE *const a = (ELEM_TYPE*)libxsmm_malloc((size_t)(ldi * (('o' == t || 'O' == t) ? n : ldo) * sizeof(ELEM_TYPE)));
+    ELEM_TYPE *const b = (ELEM_TYPE*)libxsmm_malloc((size_t)(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE)));
 #if !defined(USE_SELF_VALIDATION) /* check against an alternative/external implementation */
     ELEM_TYPE *const c = (ELEM_TYPE*)((0 == env_check || 0 != atoi(env_check))
-      ? libxsmm_malloc(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE))
+      ? libxsmm_malloc((size_t)(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE)))
       : 0);
     double duration2 = 0;
 #endif
@@ -186,7 +185,7 @@ int main(int argc, char* argv[])
           ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
         }
       }
-      size += km * kn * sizeof(ELEM_TYPE);
+      size += (size_t)(km * kn * sizeof(ELEM_TYPE));
 
       if (('o' == t || 'O' == t)) {
         if (0 == tasks) { /* library-internal parallelization */
@@ -218,7 +217,7 @@ int main(int argc, char* argv[])
       }
       else {
         assert(('i' == t || 'I' == t) && kldo == kldi);
-        memcpy(b, a, kldi * kn * sizeof(ELEM_TYPE));
+        memcpy(b, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
 
         if (2 > tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
@@ -236,7 +235,7 @@ int main(int argc, char* argv[])
         }
 #if !defined(USE_SELF_VALIDATION)
         if (0 != c) { /* check */
-          memcpy(c, a, kldi * kn * sizeof(ELEM_TYPE));
+          memcpy(c, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
           start = libxsmm_timer_tick();
           ITRANS_GOLD(&km, &kn, c, &kldi, &kldo);
           duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
