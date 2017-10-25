@@ -472,8 +472,8 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
 } libxsmm_gemm_batchitem;
 
 LIBXSMM_API int libxsmm_xmmbatch(
-  libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize,
+  libxsmm_xmmfunction kernel, unsigned int typesize, const void* a, const void* b, void* c,
+  int index_base, int index_stride, const unsigned int stride_a[], const unsigned int stride_b[], const unsigned int stride_c[], unsigned int batchsize,
   int tid, int nthreads, const libxsmm_gemm_descriptor* kernel_desc);
 
 typedef void (*libxsmm_mmbatch_flush_function)(void);

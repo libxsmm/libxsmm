@@ -545,8 +545,8 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* descriptor, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize)
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* descriptor, const void* a, const void* b, void* c,
+  int index_base, int index_stride, const unsigned int stride_a[], const unsigned int stride_b[], const unsigned int stride_c[], unsigned int batchsize)
 {
   int result;
 #if defined(_OPENMP)
@@ -565,8 +565,8 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* de
 #     pragma omp parallel
       {
         const int tid = omp_get_thread_num(), nthreads = omp_get_num_threads();
-        libxsmm_xmmbatch(kernel, typesize, a_matrix, b_matrix, c_matrix,
-          index_base, index_stride, a_stride, b_stride, c_stride, batchsize,
+        libxsmm_xmmbatch(kernel, typesize, a, b, c,
+          index_base, index_stride, stride_a, stride_b, stride_c, batchsize,
           tid, nthreads, descriptor);
       } /* implicit synchronization (barrier) */
       result = EXIT_SUCCESS;
@@ -577,8 +577,8 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* de
       int tid;
       for (tid = 0; tid < ntasks; ++tid) {
 #       pragma omp task
-        libxsmm_xmmbatch(kernel, typesize, a_matrix, b_matrix, c_matrix,
-          index_base, index_stride, a_stride, b_stride, c_stride, batchsize,
+        libxsmm_xmmbatch(kernel, typesize, a, b, c,
+          index_base, index_stride, stride_a, stride_b, stride_c, batchsize,
           tid, ntasks, descriptor);
       }
       /* allow to omit synchronization */
@@ -587,18 +587,41 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* de
       }
       result = EXIT_SUCCESS;
 # else /* sequential */
-      result = libxsmm_mmbatch(descriptor, a_matrix, b_matrix, c_matrix,
-        index_base, index_stride, a_stride, b_stride, c_stride, batchsize);
+      result = libxsmm_mmbatch(descriptor, a, b, c,
+        index_base, index_stride, stride_a, stride_b, stride_c, batchsize);
 # endif
     }
   }
   else
 #endif /*defined(_OPENMP)*/
   { /* sequential */
-    result = libxsmm_mmbatch(descriptor, a_matrix, b_matrix, c_matrix,
-      index_base, index_stride, a_stride, b_stride, c_stride, batchsize);
+    result = libxsmm_mmbatch(descriptor, a, b, c,
+      index_base, index_stride, stride_a, stride_b, stride_c, batchsize);
   }
   return result;
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision, const char* transa, const char* transb, int m, int n, int k,
+  const void* alpha, const void* a, const int* lda, const void* b, const int* ldb, const void* beta, void* c, const int* ldc,
+  int index_base, int index_stride, const unsigned int stride_a[], const unsigned int stride_b[], const unsigned int stride_c[],
+  unsigned int batchsize)
+{
+  const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS), prefetch = LIBXSMM_PREFETCH_AUTO;
+  libxsmm_gemm_descriptor descriptor;
+
+  if (EXIT_SUCCESS == libxsmm_gemm_descriptor_init(&descriptor, precision, m, n, k, lda, ldb, ldc, alpha, beta, &flags, &prefetch)) {
+    static int error_once = 0;
+    if (EXIT_SUCCESS != libxsmm_mmbatch(&descriptor, a, b, c, index_base, index_stride, stride_a, stride_b, stride_c, batchsize)
+      && 0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_gemm_batch_omp failed!\n");
+    }
+  }
+  else { /* fall-back */
+    assert(0/*TODO*/);
+  }
 }
 
 

@@ -73,17 +73,17 @@ else
 .PHONY: $(OUTDIR)/$(OUTNAME)
 endif
 
-$(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/blas-cpp.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/dispatched: $(OUTDIR)/.make $(BLDDIR)/dispatched-cpp.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/dispatched-cpp.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/dispatched: $(BLDDIR)/dispatched-cpp.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/inlined: $(OUTDIR)/.make $(BLDDIR)/inlined-cpp.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/inlined-cpp.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/inlined: $(BLDDIR)/inlined-cpp.o $(OUTDIR)/.make $(LIBDEP)
+	$(LD) -o $@ $< $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/specialized: $(OUTDIR)/.make $(BLDDIR)/specialized-cpp.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/specialized-cpp.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/specialized: $(BLDDIR)/specialized-cpp.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

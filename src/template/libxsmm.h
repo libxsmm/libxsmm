@@ -145,30 +145,43 @@ LIBXSMM_API libxsmm_wmmfunction libxsmm_wmmdispatch(int m, int n, int k,
   const int* flags, const int* prefetch);
 
 /** Process a series of matrix multiplications (batch). */
-LIBXSMM_API int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
+LIBXSMM_API int libxsmm_mmbatch_thread(libxsmm_xmmfunction kernel, unsigned int typesize, const void* a, const void* b, void* c,
   /** Determines index-base (usually 0, 1 for one-based indexes); uses the same unit as the strides. */
   int index_base,
-  /** Common stride (in Bytes, usually sizeof(unsigned int)) used to walk a_stride, b_stride, and c_stride. */
+  /** Common stride (in Bytes, usually sizeof(unsigned int)) used to walk stride_a, stride_b, and stride_c. */
   int index_stride,
   /**
-   * index_stride==0: a single value measured in Bytes for a_stride, b_stride, and c_stride is expected,
-   * index_stride!=1: a_stride, b_stride, and c_stride are arrays of indexes; array size equals batchsize.
+   * index_stride==0: a single value measured in Bytes for stride_a, stride_b, and stride_c is expected,
+   * index_stride!=1: stride_a, stride_b, and stride_c are arrays of indexes; array size equals batchsize.
    * A stride of zero (value or pointer) is valid, and will not advance the corresponding matrix-operand.
-   * Note: if the C-stride is zero, the kernel should correspond (Beta=1) and accesses to c_matrix will
+   * Note: if the C-stride is zero, the kernel should correspond (Beta=1) and accesses to c will
    * be internally synchronized.
    */
-  const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[],
+  const unsigned int stride_a[], const unsigned int stride_b[], const unsigned int stride_c[],
   /** Number of matrix multiplications. */
   unsigned int batchsize,
   /** Thread-ID (TID), and number of threads. */
   /*unsigned*/int tid, /*unsigned*/int nthreads);
 
 /** Process a series of matrix multiplications; MT via libxsmmext. */
-LIBXSMM_API int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* descriptor, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize);
+LIBXSMM_API int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* descriptor, const void* a, const void* b, void* c,
+  int index_base, int index_stride, const unsigned int stride_a[], const unsigned int stride_b[], const unsigned int stride_c[],
+  unsigned int batchsize);
 /** Process a series of matrix multiplications; sequential. */
-LIBXSMM_API int libxsmm_mmbatch(const libxsmm_gemm_descriptor* descriptor, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize);
+LIBXSMM_API int libxsmm_mmbatch(const libxsmm_gemm_descriptor* descriptor, const void* a, const void* b, void* c,
+  int index_base, int index_stride, const unsigned int stride_a[], const unsigned int stride_b[], const unsigned int stride_c[],
+  unsigned int batchsize);
+
+/** Process a series of matrix multiplications; MT via libxsmmext. */
+LIBXSMM_API void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision, const char* transa, const char* transb, int m, int n, int k,
+  const void* alpha, const void* a, const int* lda, const void* b, const int* ldb, const void* beta, void* c, const int* ldc,
+  int index_base, int index_stride, const unsigned int stride_a[], const unsigned int stride_b[], const unsigned int stride_c[],
+  unsigned int batchsize);
+/** Process a series of matrix multiplications; sequential. */
+LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision precision, const char* transa, const char* transb, int m, int n, int k,
+  const void* alpha, const void* a, const int* lda, const void* b, const int* ldb, const void* beta, void* c, const int* ldc,
+  int index_base, int index_stride, const unsigned int stride_a[], const unsigned int stride_b[], const unsigned int stride_c[],
+  unsigned int batchsize);
 
 /** Auto-batch flags (can be ORed) applicable to mmbatch_begin/mmbatch_end. */
 typedef enum libxsmm_mmbatch_flags {
