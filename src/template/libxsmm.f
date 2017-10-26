@@ -389,7 +389,7 @@
           ! Otherwise arguments are similar to GEMM.
           SUBROUTINE libxsmm_gemm_batch(precision, transa, transb,      &
      &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,                 &
-     &    index_stride, stride_a, stride_b, stride_c, batchsize) 
+     &    index_stride, stride_a, stride_b, stride_c, batchsize)
      &    BIND(C, NAME="libxsmm_gemm_batch_")
             IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INT), INTENT(IN) :: precision
@@ -404,7 +404,7 @@
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
           END SUBROUTINE
-          
+
           ! Process a series of matrix multiplications (batch); MT via libxsmmext.
           ! Implicit FORTRAN 77 interface:
           ! INTEGER(4)   :: precision
@@ -415,7 +415,7 @@
           ! Otherwise arguments are similar to GEMM.
           SUBROUTINE libxsmm_gemm_batch_omp(precision, transa, transb,  &
      &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,                 &
-     &    index_stride, stride_a, stride_b, stride_c, batchsize) 
+     &    index_stride, stride_a, stride_b, stride_c, batchsize)
      &    BIND(C, NAME="libxsmm_gemm_batch_omp_")
             IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INT), INTENT(IN) :: precision
@@ -461,7 +461,7 @@
           ! INTEGER(4|8) :: index_stride, batchsize
           SUBROUTINE libxsmm_mmbatch_omp(precision, kernel, a, b, c,    &
      &    index_stride, stride_a, stride_b, stride_c, batchsize)        &
-     &    BIND(C, NAME="libxsmm_mmbatch_")
+     &    BIND(C, NAME="libxsmm_mmbatch_omp_")
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INT), INTENT(IN) :: precision
             INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
