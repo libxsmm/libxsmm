@@ -302,15 +302,17 @@
 
           ! Type-generic (unsafe) code dispatch (trylock: impure routine).
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4) :: precision, m, n, k, lda, ldb, ldc, flags, prefetch
-          ! REAL(4|8)  :: alpha, beta
-          ! INTEGER(8) :: fn
+          ! INTEGER(4)   :: precision, flags, prefetch
+          ! INTEGER(4|8) :: m, n, k, lda, ldb, ldc
+          ! REAL(4|8)    :: alpha, beta
+          ! INTEGER(8)   :: fn
           SUBROUTINE libxsmm_xmmdispatch(fn, precision,                 &
      &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
      &    BIND(C, NAME="libxsmm_xmmdispatch_")
-            IMPORT :: C_INTPTR_T, C_PTR, C_INT
+            IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INTPTR_T), INTENT(OUT) :: fn
-            INTEGER(C_INT), INTENT(IN) :: precision, m, n, k
+            INTEGER(C_INT), INTENT(IN) :: precision
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
             TYPE(C_PTR), INTENT(IN), VALUE :: flags, prefetch
@@ -340,11 +342,12 @@
 
           ! Matrix transposition; MT via libxsmmext (out-of-place form).
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4) :: typesize, m, n, ldi, ldo
-          ! ANY ARRAY  :: output, input
+          ! INTEGER(4|8) :: m, n, ldi, ldo
+          ! ANY ARRAY    :: output, input
+          ! INTEGER(4)   :: typesize
           PURE SUBROUTINE libxsmm_otrans_omp(output, input, typesize,   &
      &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_omp_")
-            IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
+            IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
             INTEGER(C_INT), INTENT(IN) :: typesize
@@ -354,7 +357,7 @@
           ! Implicit FORTRAN 77 interface: similar to SGEMM.
           SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,         &
      &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
-            IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_FLOAT
+            IMPORT C_FLOAT, C_CHAR, LIBXSMM_BLASINT_KIND
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
@@ -367,7 +370,7 @@
           ! Implicit FORTRAN 77 interface: similar to DGEMM.
           SUBROUTINE libxsmm_dgemm_omp(transa, transb, m, n, k,         &
      &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
-            IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_DOUBLE
+            IMPORT C_DOUBLE, C_CHAR, LIBXSMM_BLASINT_KIND
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
@@ -381,13 +384,16 @@
           ! non-NULL values match. Otherwise (NULL) the respective argument is
           ! considered a "free value" i.e., every value can match; libxsmmext required.
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4) :: precision, flags, m, n, k, lda, ldb, ldc
-          ! REAL(4|8)  :: alpha, beta
+          ! INTEGER(4)   :: precision, flags
+          ! INTEGER(4|8) :: m, n, k, lda, ldb, ldc
+          ! REAL(4|8)    :: alpha, beta
           SUBROUTINE libxsmm_mmbatch_begin(precision, flags, m, n, k,   &
      &    lda, ldb, ldc, alpha, beta) BIND(C)
-            IMPORT C_INT, C_PTR
+            IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INT), INTENT(IN), VALUE :: precision
-            INTEGER(C_INT), INTENT(IN) :: flags, m, n, k, lda, ldb, ldc
+            INTEGER(C_INT), INTENT(IN) :: flags
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
           END SUBROUTINE
 
@@ -559,7 +565,7 @@
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_sgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              IMPORT C_PTR, LIBXSMM_BLASINT_KIND
               TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
@@ -588,7 +594,7 @@
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_dgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              IMPORT C_PTR, LIBXSMM_BLASINT_KIND
               TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
@@ -617,7 +623,7 @@
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_sgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              IMPORT C_PTR, LIBXSMM_BLASINT_KIND
               TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
@@ -646,7 +652,7 @@
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_dgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              IMPORT C_PTR, LIBXSMM_BLASINT_KIND
               TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc

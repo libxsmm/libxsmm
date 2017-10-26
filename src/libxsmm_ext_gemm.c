@@ -97,8 +97,39 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
     const libxsmm_blasint itemsize = sizeof(libxsmm_gemm_batchitem);
     assert(0 != batchdesc);
     if (0 == (LIBXSMM_MMBATCH_FLAG_STATISTIC & batchdesc->flags)) { /* process batch */
-      result = libxsmm_mmbatch_omp(batchdesc, &batcharray->value.a, &batcharray->value.b, &batcharray->value.c,
-        0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize, batchsize);
+      const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(batchdesc);
+      if (0 != kernel.xmm) {
+        if (0 == (LIBXSMM_MMBATCH_FLAG_SEQUENTIAL & batchdesc->flags)) { /* parallelized */
+          result = libxsmm_mmbatch_omp((libxsmm_gemm_precision)batchdesc->datatype, kernel,
+            &batcharray->value.a, &batcharray->value.b, &batcharray->value.c, 0/*index_base*/, 0/*index_stride*/,
+            &itemsize, &itemsize, &itemsize, batchsize);
+        }
+        else { /* sequential */
+          result = libxsmm_mmbatch((libxsmm_gemm_precision)batchdesc->datatype, kernel,
+            &batcharray->value.a, &batcharray->value.b, &batcharray->value.c, 0/*index_base*/, 0/*index_stride*/,
+            &itemsize, &itemsize, &itemsize, batchsize, 0/*tid*/, 1/*nthreads*/);
+        }
+      }
+      else { /* may happen because of try-lock (registry) */
+        const char transa = (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & batchdesc->flags) ? 'N' : 'T');
+        const char transb = (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & batchdesc->flags) ? 'N' : 'T');
+        const libxsmm_blasint lda = batchdesc->lda, ldb = batchdesc->ldb, ldc = batchdesc->ldc;
+        switch (batchdesc->datatype) {
+          case LIBXSMM_GEMM_PRECISION_F64: {
+            const double alpha = batchdesc->alpha, beta = batchdesc->beta;
+            result = libxsmm_dmmbatch_blas(&transa, &transb, batchdesc->m, batchdesc->n, batchdesc->k,
+              &alpha, &batcharray->value.a, &lda, &batcharray->value.b, &ldb, &beta, &batcharray->value.c, &ldc,
+              0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize, batchsize);
+          } break;
+          case LIBXSMM_GEMM_PRECISION_F32: {
+            const float alpha = batchdesc->alpha, beta = batchdesc->beta;
+            result = libxsmm_smmbatch_blas(&transa, &transb, batchdesc->m, batchdesc->n, batchdesc->k,
+              &alpha, &batcharray->value.a, &lda, &batcharray->value.b, &ldb, &beta, &batcharray->value.c, &ldc,
+              0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize, batchsize);
+          } break;
+          default: result = EXIT_FAILURE;
+        }
+      }
       memset(batcharray, 0, (size_t)(batchsize * itemsize)); /* clear */
     }
     else { /* print statistic */
@@ -546,19 +577,14 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* descriptor,
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_gemm_precision precision, libxsmm_xmmfunction kernel,
   const void* a, const void* b, void* c, libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize)
 {
   int result;
 #if defined(_OPENMP)
-  if (0 != descriptor && 0 == (LIBXSMM_MMBATCH_FLAG_SEQUENTIAL & descriptor->flags)
-    /* general check if parallelization should be used */
-    && omp_get_max_threads() < batchsize)
-  {
-    const unsigned int typesize = libxsmm_gemm_typesize((libxsmm_gemm_precision)descriptor->datatype);
-    const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(descriptor);
+  if (omp_get_max_threads() < batchsize) { /* general check if parallelization should be used */
 # if defined(LIBXSMM_EXT_TASKS)
     if (0 == omp_get_active_level())
 # else
@@ -568,9 +594,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* de
 #     pragma omp parallel
       {
         const int tid = omp_get_thread_num(), nthreads = omp_get_num_threads();
-        libxsmm_xmmbatch(kernel, typesize, a, b, c,
+        libxsmm_mmbatch(precision, kernel, a, b, c,
           index_base, index_stride, stride_a, stride_b, stride_c, batchsize,
-          tid, nthreads, descriptor);
+          tid, nthreads);
       } /* implicit synchronization (barrier) */
       result = EXIT_SUCCESS;
     }
@@ -580,9 +606,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* de
       int tid;
       for (tid = 0; tid < ntasks; ++tid) {
 #       pragma omp task
-        libxsmm_xmmbatch(kernel, typesize, a, b, c,
+        libxsmm_mmbatch(precision, kernel, a, b, c,
           index_base, index_stride, stride_a, stride_b, stride_c, batchsize,
-          tid, ntasks, descriptor);
+          tid, nthreads);
       }
       /* allow to omit synchronization */
       if (0 != libxsmm_sync) {
@@ -590,16 +616,18 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(const libxsmm_gemm_descriptor* de
       }
       result = EXIT_SUCCESS;
 # else /* sequential */
-      result = libxsmm_mmbatch(descriptor, a, b, c,
-        index_base, index_stride, stride_a, stride_b, stride_c, batchsize);
+      result = libxsmm_mmbatch(precision, kernel, a, b, c,
+        index_base, index_stride, stride_a, stride_b, stride_c, batchsize,
+        0/*tid*/, 1/*nthreads*/);
 # endif
     }
   }
   else
 #endif /*defined(_OPENMP)*/
   { /* sequential */
-    result = libxsmm_mmbatch(descriptor, a, b, c,
-      index_base, index_stride, stride_a, stride_b, stride_c, batchsize);
+    result = libxsmm_mmbatch(precision, kernel, a, b, c,
+      index_base, index_stride, stride_a, stride_b, stride_c, batchsize,
+      0/*tid*/, 1/*nthreads*/);
   }
   return result;
 }
@@ -612,20 +640,37 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precis
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize)
 {
-  const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS), prefetch = LIBXSMM_PREFETCH_AUTO;
   libxsmm_gemm_descriptor descriptor;
+  const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS), prefetch = LIBXSMM_PREFETCH_AUTO;
+  int result = libxsmm_gemm_descriptor_init(&descriptor, precision, m, n, k, lda, ldb, ldc, alpha, beta, &flags, &prefetch);
+  const libxsmm_xmmfunction nullfn = { 0 }, kernel = (EXIT_SUCCESS == result ? libxsmm_xmmdispatch(&descriptor) : nullfn);
+  static int error_once = 0;
 
-  if (EXIT_SUCCESS == libxsmm_gemm_descriptor_init(&descriptor, precision, m, n, k, lda, ldb, ldc, alpha, beta, &flags, &prefetch)) {
-    static int error_once = 0;
-    if (EXIT_SUCCESS != libxsmm_mmbatch(&descriptor, a, b, c, index_base, index_stride, stride_a, stride_b, stride_c, batchsize)
-      && 0 != libxsmm_verbosity /* library code is expected to be mute */
-      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: libxsmm_gemm_batch_omp failed!\n");
-    }
+  if (0 != kernel.xmm) {
+    result = libxsmm_mmbatch(precision, kernel,
+      a, b, c, index_base, index_stride, stride_a, stride_b, stride_c, batchsize,
+      0/*tid*/, 1/*nthreads*/);
   }
   else { /* fall-back */
-    assert(0/*TODO*/);
+    switch (precision) {
+      case LIBXSMM_GEMM_PRECISION_F64: {
+        result = libxsmm_dmmbatch_blas(transa, transb, m, n, k,
+          (const double*)alpha, a, lda, b, ldb, (const double*)beta, c, ldc,
+          index_base, index_stride, stride_a, stride_b, stride_c, batchsize);
+      } break;
+      case LIBXSMM_GEMM_PRECISION_F32: {
+        result = libxsmm_smmbatch_blas(transa, transb, m, n, k,
+          (const float*)alpha, a, lda, b, ldb, (const float*)beta, c, ldc,
+          index_base, index_stride, stride_a, stride_b, stride_c, batchsize);
+      } break;
+      default: result = EXIT_FAILURE;
+    }
+  }
+  if (EXIT_SUCCESS != result
+    && 0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: libxsmm_gemm_batch_omp failed!\n");
   }
 }
 
