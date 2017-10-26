@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
 
       { // LIBXSMM batch interface
         fprintf(stdout, "Batched-indirect (A,B,C)...\n");
-        const int flags = LIBXSMM_FLAGS, prefetch = LIBXSMM_PREFETCH_AUTO;
+        const int flags = LIBXSMM_FLAGS;
         const char transa = (0 == (flags & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T');
         const char transb = (0 == (flags & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T');
         const T alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
