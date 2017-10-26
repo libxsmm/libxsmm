@@ -389,7 +389,7 @@
           ! Otherwise arguments are similar to GEMM.
           SUBROUTINE libxsmm_gemm_batch(precision, transa, transb,      &
      &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,                 &
-     &    index_stride, stride_a, stride_b, stride_c, batchsize)
+     &    index_stride, stride_a, stride_b, stride_c, batchsize)        &
      &    BIND(C, NAME="libxsmm_gemm_batch_")
             IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INT), INTENT(IN) :: precision
@@ -415,7 +415,7 @@
           ! Otherwise arguments are similar to GEMM.
           SUBROUTINE libxsmm_gemm_batch_omp(precision, transa, transb,  &
      &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,                 &
-     &    index_stride, stride_a, stride_b, stride_c, batchsize)
+     &    index_stride, stride_a, stride_b, stride_c, batchsize)        &
      &    BIND(C, NAME="libxsmm_gemm_batch_omp_")
             IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INT), INTENT(IN) :: precision
