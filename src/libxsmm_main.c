@@ -1568,9 +1568,6 @@ LIBXSMM_API_DEFINITION int libxsmm_gemm_descriptor_init(libxsmm_gemm_descriptor*
   const int iflags = (0 == flags ? LIBXSMM_FLAGS : *flags);
   int result;
 
-  LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(ilda, ildb, ildc);
-  LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(m, n, k);
-
   switch (precision) {
     case LIBXSMM_GEMM_PRECISION_F64: {
       result = libxsmm_dgemm_descriptor_init(descriptor, m, n, k, ilda, ildb, ildc,
