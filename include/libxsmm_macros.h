@@ -479,6 +479,12 @@
 # define inline LIBXSMM_INLINE_KEYWORD
 #endif
 
+/* _Float128 was introduced with GNU GCC 7.0. */
+#if defined(__GNUC__) && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
+  || (defined(__INTEL_COMPILER) && defined(__INTEL_COMPILER_UPDATE) && (1801 > ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE)))))
+# define _Float128 __float128
+#endif
+
 #if defined(LIBXSMM_OFFLOAD_BUILD) && \
   defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
 # define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
