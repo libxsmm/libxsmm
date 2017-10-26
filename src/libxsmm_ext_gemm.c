@@ -459,17 +459,17 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
     else
-# if defined(LIBXSMM_EXT_TASKS)
+#endif /*defined(_OPENMP)*/
+#if defined(LIBXSMM_EXT_TASKS) /* implies OpenMP */
     { /* assume external parallelization */
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
         if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
-        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        float, flags, tm, tn, tk, *m, nn, kk,
-        ralpha, a, ilda, b, ildb, rbeta, c, ildc);
+          LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+          float, flags, tm, tn, tk, *m, nn, kk,
+          ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
-# endif
-#endif /*defined(_OPENMP)*/
+#else
     {
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
@@ -477,6 +477,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
         float, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
+#endif
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
     if (0 != d) {
       libxsmm_matdiff_info diff;
@@ -539,17 +540,17 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
     else
-# if defined(LIBXSMM_EXT_TASKS)
+#endif /*defined(_OPENMP)*/
+#if defined(LIBXSMM_EXT_TASKS) /* implies OpenMP */
     { /* assume external parallelization */
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
         if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
-        LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        double, flags, tm, tn, tk, *m, nn, kk,
-        ralpha, a, ilda, b, ildb, rbeta, c, ildc);
+          LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
+          double, flags, tm, tn, tk, *m, nn, kk,
+          ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
-# endif
-#endif /*defined(_OPENMP)*/
+#else
     {
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
@@ -557,6 +558,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
         double, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
+#endif
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
     if (0 != d) {
       libxsmm_matdiff_info diff;
