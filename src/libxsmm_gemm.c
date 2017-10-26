@@ -676,7 +676,7 @@ LIBXSMM_API_DEFINITION int libxsmm_dmmbatch_blas(const char* transa, const char*
         ai = an; bi = bn; ci = cn;
       }
     }
-    else if (sizeof(double) <= LIBXSMM_MIN(LIBXSMM_MIN(da, db), dc)) { /* singular strides are measured in Bytes */
+    else if (((int)sizeof(double)) <= LIBXSMM_MIN(LIBXSMM_MIN(da, db), dc)) { /* singular strides are measured in Bytes */
       const char *a0 = (const char*)a, *b0 = (const char*)b, *ai = a0, *bi = b0;
       char *c0 = (char*)c, *ci = c0;
       for (i = 0; i < batchsize; ++i) {
@@ -732,7 +732,7 @@ LIBXSMM_API_DEFINITION int libxsmm_smmbatch_blas(const char* transa, const char*
         ai = an; bi = bn; ci = cn;
       }
     }
-    else if (sizeof(float) <= LIBXSMM_MIN(LIBXSMM_MIN(da, db), dc)) { /* singular strides are measured in Bytes */
+    else if (((int)sizeof(float)) <= LIBXSMM_MIN(LIBXSMM_MIN(da, db), dc)) { /* singular strides are measured in Bytes */
       const char *a0 = (const char*)a, *b0 = (const char*)b, *ai = a0, *bi = b0;
       char *c0 = (char*)c, *ci = c0;
       for (i = 0; i < batchsize; ++i) {
