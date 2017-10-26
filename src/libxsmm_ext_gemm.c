@@ -608,7 +608,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_gemm_precision precision,
 #       pragma omp task
         libxsmm_mmbatch(precision, kernel, a, b, c,
           index_base, index_stride, stride_a, stride_b, stride_c, batchsize,
-          tid, nthreads);
+          tid, ntasks);
       }
       /* allow to omit synchronization */
       if (0 != libxsmm_sync) {
@@ -799,6 +799,45 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dgemm_omp)(const char* trans
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_mmbatch_omp)(const libxsmm_gemm_precision* precision, libxsmm_xmmfunction kernel, const void* a, const void* b, void* c,
+  const libxsmm_blasint* index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[], const libxsmm_blasint* batchsize);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_mmbatch_omp)(const libxsmm_gemm_precision* precision, libxsmm_xmmfunction kernel, const void* a, const void* b, void* c,
+  const libxsmm_blasint* index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[], const libxsmm_blasint* batchsize)
+{
+  static int error_once = 0;
+  assert(0 != precision && 0 != a && 0 != b && 0 != c && 0 != index_stride && 0 != batchsize);
+  if (EXIT_SUCCESS != libxsmm_mmbatch_omp(*precision, kernel, a, b, c, 1/*index_base*/,
+    *index_stride, stride_a, stride_b, stride_c, *batchsize)
+    && 0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: libxsmm_mmbatch_omp failed!\n");
+  }
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_gemm_batch_omp)(const libxsmm_gemm_precision* precision,
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc, const libxsmm_blasint* index_stride,
+  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  const libxsmm_blasint* batchsize);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_gemm_batch_omp)(const libxsmm_gemm_precision* precision,
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc, const libxsmm_blasint* index_stride,
+  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  const libxsmm_blasint* batchsize)
+{
+  assert(0 != precision && 0 != m && 0 != n && 0 != k && 0 != index_stride && 0 != batchsize);
+  libxsmm_gemm_batch_omp(*precision,
+    transa, transb, *m, *n, *k, alpha, a, lda, b, ldb, beta, c, ldc,
+    1/*index_base*/, *index_stride, stride_a, stride_b, stride_c, *batchsize);
 }
 
 
