@@ -114,7 +114,17 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     l_conv_kernel_config.vfma_instruction = LIBXSMM_X86_INSTR_VPMADDWD;
     l_conv_kernel_config.vadd_instruction = LIBXSMM_X86_INSTR_VPADDD;
     l_conv_kernel_config.vbcst_instruction = LIBXSMM_X86_INSTR_VPBROADCASTD;
-  } else if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I16) {
+  }  else if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
+    l_conv_kernel_config.vector_length_in = 32;
+    l_conv_kernel_config.datatype_size_in = 2;
+    l_conv_kernel_config.vector_length_out = 16;
+    l_conv_kernel_config.datatype_size_out = 4;
+    l_conv_kernel_config.vector_length_wt = 32;
+    l_conv_kernel_config.datatype_size_wt = 2;
+    l_conv_kernel_config.vfma_instruction = LIBXSMM_X86_INSTR_VPMADDWD;
+    l_conv_kernel_config.vadd_instruction = LIBXSMM_X86_INSTR_VPADDD;
+    l_conv_kernel_config.vbcst_instruction = LIBXSMM_X86_INSTR_VPBROADCASTD;  
+  }  else if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I16) {
     l_conv_kernel_config.vector_length_in = 64;
     l_conv_kernel_config.datatype_size_in = 1;
     l_conv_kernel_config.vector_length_out = 32;
@@ -1426,6 +1436,8 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma( libxsmm_generate
         l_qinstr = LIBXSMM_X86_INSTR_V4FMADDPS;
       } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
         l_qinstr = LIBXSMM_X86_INSTR_VP4DPWSSD;
+      } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+        l_qinstr = LIBXSMM_X86_INSTR_VP4DPWSSD;
       } else {
         /* shouldn't happen */
       }
@@ -1658,6 +1670,8 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_two_rows( libxsmm
           l_qinstr = LIBXSMM_X86_INSTR_V4FMADDPS;
         } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
           l_qinstr = LIBXSMM_X86_INSTR_VP4DPWSSD;
+        } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+          l_qinstr = LIBXSMM_X86_INSTR_VP4DPWSSD;
         } else {
           /* shouldn't happen */
         }
@@ -1856,6 +1870,8 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
         if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
           l_qinstr = LIBXSMM_X86_INSTR_V4FMADDPS;
         } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
+          l_qinstr = LIBXSMM_X86_INSTR_VP4DPWSSD;
+        } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
           l_qinstr = LIBXSMM_X86_INSTR_VP4DPWSSD;
         } else {
           /* shouldn't happen */

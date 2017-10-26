@@ -566,12 +566,12 @@ if ( using_scratchpad_for_store == 0 ) {
               __m512 zero_reg = _mm512_setzero_ps();    
               for (j_p=0; j_p<H_RB; j_p++) {
                 for (i_p=0; i_p<W_RB; i_p++) {
-                  scratch_tmp = _mm512_load_ps( (float*) &scratchpad[j_p*W_RB*16+i_p*16] );
-                  _mm512_stream_ps( (float*) &LIBXSMM_VLA_ACCESS(3, output_dst, j_p, i_p, 0, handle->ofwp, handle->ofmblock), scratch_tmp);
+                  scratch_tmp = _mm512_load_ps(&scratchpad[j_p*W_RB*16+i_p*16] );
+                  _mm512_stream_ps(&LIBXSMM_VLA_ACCESS(3, output_dst, j_p, i_p, 0, handle->ofwp, handle->ofmblock), scratch_tmp);
                 }
               }
               for (i_p=0; i_p<n_regs; i_p++ ) {
-                _mm512_store_ps( (float*) &scratchpad[i_p*16], zero_reg);
+                _mm512_store_ps(&scratchpad[i_p*16], zero_reg);
               }
             } 
 
@@ -622,12 +622,12 @@ if ( using_scratchpad_for_store == 0 ) {
               __m512 zero_reg = _mm512_setzero_ps();            
               for (j_p=0; j_p<H_RB; j_p++) {
                 for (i_p=0; i_p<W_RB; i_p++) {
-                  scratch_tmp = _mm512_load_ps( (float*) &scratchpad[j_p*W_RB*16+i_p*16] );
-                  _mm512_stream_ps( (float*) &LIBXSMM_VLA_ACCESS(3, output_dst, j_p, i_p, 0, handle->ofwp, handle->ofmblock), scratch_tmp);
+                  scratch_tmp = _mm512_load_ps(&scratchpad[j_p*W_RB*16+i_p*16] );
+                  _mm512_stream_ps(&LIBXSMM_VLA_ACCESS(3, output_dst, j_p, i_p, 0, handle->ofwp, handle->ofmblock), scratch_tmp);
                 }
               }
               for (i_p=0; i_p<n_regs; i_p++) {
-                _mm512_store_ps( (float*) &scratchpad[i_p*16], zero_reg);
+                _mm512_store_ps(&scratchpad[i_p*16], zero_reg);
               }
             }     
 
@@ -683,7 +683,7 @@ if ( using_scratchpad_for_store == 0 ) {
               for (j_p=0; j_p<H_RB; j_p++) {
                 for (i_p=0; i_p<W_RB; i_p++) {
                   scratch_tmp = _mm512_load_ps(&scratchpad[j_p*W_RB*16+i_p*16] );
-                 _mm512_stream_si512( &LIBXSMM_VLA_ACCESS(3, output_dst, j_p, i_p, 0, handle->ofwp, handle->ofmblock), _mm512_cvt_roundps_epi32(scratch_tmp, (_MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC) ) );
+                  _mm512_stream_ps(&LIBXSMM_VLA_ACCESS(3, output_dst, j_p, i_p, 0, handle->ofwp, handle->ofmblock), scratch_tmp);
                 }
               }
               for (i_p=0; i_p<n_regs; i_p++ ) {
@@ -756,6 +756,7 @@ if ( using_scratchpad_for_store == 0 ) {
               pi = stream[i+3];
               pw = stream[i+4];
               po = stream[i+5];
+              _MM_SET_ROUNDING_MODE(_MM_ROUND_NEAREST );
               kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, scratchpad, &scale_factor);
               pool_index++;
               i+=3;
@@ -794,7 +795,7 @@ if ( using_scratchpad_for_store == 0 ) {
               for (j_p=0; j_p<H_RB; j_p++) {
                 for (i_p=0; i_p<W_RB; i_p++) {
                   scratch_tmp = _mm512_load_ps( &scratchpad[j_p*W_RB*16+i_p*16] );
-                  _mm512_stream_si512( &LIBXSMM_VLA_ACCESS(3, output_dst, j_p, i_p, 0, handle->ofwp, handle->ofmblock), _mm512_cvt_roundps_epi32(scratch_tmp, (_MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC) ) );
+                  _mm512_stream_ps(&LIBXSMM_VLA_ACCESS(3, output_dst, j_p, i_p, 0, handle->ofwp, handle->ofmblock), scratch_tmp);
                 }
               }
               for (i_p=0; i_p<n_regs; i_p++ ) {
@@ -867,6 +868,7 @@ if ( using_scratchpad_for_store == 0 ) {
               pi = stream[i+3];
               pw = stream[i+4];
               po = stream[i+5];
+              _MM_SET_ROUNDING_MODE(_MM_ROUND_NEAREST );
               kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, scratchpad, &scale_factor);
               i+=3;
             }
