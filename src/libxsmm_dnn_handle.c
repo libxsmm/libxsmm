@@ -145,7 +145,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 #define LIBXSMM_FWD_OFH_BLOCKING
 #if defined(LIBXSMM_FWD_OFH_BLOCKING)
     if ( ((handle->ofw < 15) && (handle->ofh % 2 == 0) && (handle->desc.S == 1)) ||
-        ((handle->ofw < 15) && (handle->ofh % 2 == 0) && (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM)) ) {
+        ((handle->ofw < 15) && (handle->ofh % 2 == 0)) ) {
       handle->fwd_ofw_rb = handle->ofw;
       handle->fwd_ofh_rb = 2;
       /* on AVX512_CORE and int this only works for smaller 13 */
