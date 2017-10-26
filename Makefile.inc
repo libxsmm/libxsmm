@@ -706,6 +706,10 @@ ifneq (0,$(INTEL))
     FCFLAGS += -autodouble
   endif
   endif
+  # workaround for certain bits introduced by GCC 7.0
+  ifneq (0,$(shell echo "$$((180001 > $(CC_VERSION) && 0 != $(CC_VERSION)))"))
+    DFLAGS += -D_Float128=__float128
+  endif
 else # GCC assumed
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   LIBGFORTRAN = $(shell $(FLD) $(SLDFLAGS) -lgfortran -Wl,-t 2> /dev/null | grep gfortran)
