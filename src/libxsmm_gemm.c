@@ -578,12 +578,12 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
 
       if (0 != index_stride) { /* stride arrays contain indexes */
         if (((int)sizeof(libxsmm_blasint)) <= index_stride) {
-          const char *const ia = (const char*)stride_a, *const ib = (const char*)b, *const ic = (const char*)c;
+          const char *const ia = (const char*)stride_a, *const ib = (const char*)stride_b, *const ic = (const char*)stride_c;
           const libxsmm_blasint da = (0 != stride_a ? (*stride_a - index_base) : 0);
           const libxsmm_blasint db = (0 != stride_b ? (*stride_b - index_base) : 0);
           const libxsmm_blasint dc = (0 != stride_c ? (*stride_c - index_base) : 0);
           const libxsmm_blasint end1 = (end != batchsize ? end : (end - 1));
-          assert(0 != dc || 1 == nthreads); /* TODO: implement synchronization */
+          assert(0 != stride_c || 1 == nthreads); /* TODO: implement synchronization */
           ai = a0 + da * typesize; bi = b0 + db * typesize; ci = c0 + dc * typesize;
           for (i = begin; i < end1; ++i) {
             const libxsmm_blasint ii = (i + 1) * index_stride;
@@ -673,7 +673,7 @@ LIBXSMM_API_DEFINITION int libxsmm_dmmbatch_blas(const char* transa, const char*
         const libxsmm_blasint da = (0 != stride_a ? (*stride_a - index_base) : 0);
         const libxsmm_blasint db = (0 != stride_b ? (*stride_b - index_base) : 0);
         const libxsmm_blasint dc = (0 != stride_c ? (*stride_c - index_base) : 0);
-        const char *const ia = (const char*)stride_a, *const ib = (const char*)b, *const ic = (const char*)c;
+        const char *const ia = (const char*)stride_a, *const ib = (const char*)stride_b, *const ic = (const char*)stride_c;
         const double *const a0 = (const double*)a, *const b0 = (const double*)b, *ai = a0 + da, *bi = b0 + db;
         double *const c0 = (double*)c, *ci = c0 + dc;
         for (i = 0; i < batchsize; ++i) {
@@ -741,7 +741,7 @@ LIBXSMM_API_DEFINITION int libxsmm_smmbatch_blas(const char* transa, const char*
         const libxsmm_blasint da = (0 != stride_a ? (*stride_a - index_base) : 0);
         const libxsmm_blasint db = (0 != stride_b ? (*stride_b - index_base) : 0);
         const libxsmm_blasint dc = (0 != stride_c ? (*stride_c - index_base) : 0);
-        const char *const ia = (const char*)stride_a, *const ib = (const char*)b, *const ic = (const char*)c;
+        const char *const ia = (const char*)stride_a, *const ib = (const char*)stride_b, *const ic = (const char*)stride_c;
         const float *a0 = (const float*)a, *b0 = (const float*)b, *ai = a0 + da, *bi = b0 + db;
         float *c0 = (float*)c, *ci = c0 + dc;
         for (i = 0; i < batchsize; ++i) {
