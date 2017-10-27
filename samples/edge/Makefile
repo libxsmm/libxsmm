@@ -63,20 +63,20 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/edge_vol_int: $(OUTDIR)/.make $(BLDDIR)/edge_vol_int-c.o $(BLDDIR)/edge_proxy_common-c.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/edge_vol_int-c.o $(BLDDIR)/edge_proxy_common-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/edge_vol_int: $(OUTDIR)/.make $(BLDDIR)/edge_vol_int-c.o $(BLDDIR)/edge_proxy_common-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/edge_vol_int-c.o $(BLDDIR)/edge_proxy_common-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/asparse_soa_f64: $(OUTDIR)/.make $(BLDDIR)/asparse_soa-c.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/asparse_soa-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/asparse_soa_f64: $(OUTDIR)/.make $(BLDDIR)/asparse_soa-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/asparse_soa-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/bsparse_soa_f64: $(OUTDIR)/.make $(BLDDIR)/bsparse_soa-c.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/bsparse_soa-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/bsparse_soa_f64: $(OUTDIR)/.make $(BLDDIR)/bsparse_soa-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/bsparse_soa-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/asparse_soa_f32: $(OUTDIR)/.make $(BLDDIR)/asparse_soa-c-f32.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/asparse_soa-c-f32.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/asparse_soa_f32: $(OUTDIR)/.make $(BLDDIR)/asparse_soa-c-f32.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/asparse_soa-c-f32.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/bsparse_soa_f32: $(OUTDIR)/.make $(BLDDIR)/bsparse_soa-c-f32.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/bsparse_soa-c-f32.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/bsparse_soa_f32: $(OUTDIR)/.make $(BLDDIR)/bsparse_soa-c-f32.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/bsparse_soa-c-f32.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

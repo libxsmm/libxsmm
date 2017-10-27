@@ -56,7 +56,7 @@
 #define MYASSERT(x) if(!(x)) { printf("Assertion %s failed...\n", #x); exit(1);}
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
@@ -121,12 +121,12 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    REAL_TYPE* agold = (REAL_TYPE*)libxsmm_malloc(lda * k * sizeof(REAL_TYPE));
-    REAL_TYPE* bgold = (REAL_TYPE*)libxsmm_malloc(ldb * n * sizeof(REAL_TYPE));
-    REAL_TYPE* cgold = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
-    REAL_TYPE* a = (REAL_TYPE*)libxsmm_malloc(m * k * sizeof(REAL_TYPE));
-    REAL_TYPE* b = (REAL_TYPE*)libxsmm_malloc(k * n * sizeof(REAL_TYPE));
-    REAL_TYPE* c = (REAL_TYPE*)libxsmm_malloc(m * n * sizeof(REAL_TYPE));
+    REAL_TYPE* agold = (REAL_TYPE*)libxsmm_malloc((size_t)(lda * k * sizeof(REAL_TYPE)));
+    REAL_TYPE* bgold = (REAL_TYPE*)libxsmm_malloc((size_t)(ldb * n * sizeof(REAL_TYPE)));
+    REAL_TYPE* cgold = (REAL_TYPE*)libxsmm_malloc((size_t)(ldc * n * sizeof(REAL_TYPE)));
+    REAL_TYPE* a = (REAL_TYPE*)libxsmm_malloc((size_t)(m * k * sizeof(REAL_TYPE)));
+    REAL_TYPE* b = (REAL_TYPE*)libxsmm_malloc((size_t)(k * n * sizeof(REAL_TYPE)));
+    REAL_TYPE* c = (REAL_TYPE*)libxsmm_malloc((size_t)(m * n * sizeof(REAL_TYPE)));
     libxsmm_bgemm_handle* handle = 0;
     unsigned long long start;
     double duration;
@@ -162,8 +162,9 @@ int main(int argc, char* argv[])
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
       if (0 < duration) {
         if (ab) {
-          fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s | %i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i\n",
-            gflops * nrepeat / duration, m, n, k, bm, bn, bk, order, b_m1, b_n1, b_k1, b_k2);
+          fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s | %lli,%lli,%lli,%lli,%lli,%lli,%i,%lli,%lli,%lli,%lli\n",
+            gflops * nrepeat / duration, (long long)m, (long long)n, (long long)k, (long long)bm, (long long)bn, (long long)bk,
+            order, (long long)b_m1, (long long)b_n1, (long long)b_k1, (long long)b_k2);
         } else {
           fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
         }
@@ -186,7 +187,7 @@ int main(int argc, char* argv[])
         libxsmm_free(a); a = 0;
         libxsmm_free(b); b = 0;
         /* allocate C-matrix in regular format, and perform copy-out */
-        ctest = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
+        ctest = (REAL_TYPE*)libxsmm_malloc((size_t)(ldc * n * sizeof(REAL_TYPE)));
         if (0 != ctest) {
           libxsmm_matdiff_info diff;
           libxsmm_bgemm_copyout_c(handle, c, &ldc, ctest);

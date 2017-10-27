@@ -68,9 +68,9 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(EXTDEP) $(LIBDEP)
 	$(LD) -o $@ $(OBJECTS) \
-		$(call abslib,$(LIBNAME).$(LIBEXT)) \
+		$(MAINLIB) \
 		$(call abslib,$(LIBNAME)noblas.$(LIBEXT)) \
 		$(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 

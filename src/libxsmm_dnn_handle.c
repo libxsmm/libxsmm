@@ -147,7 +147,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 #define LIBXSMM_FWD_OFH_BLOCKING
 #if defined(LIBXSMM_FWD_OFH_BLOCKING)
     if ( ((handle->ofw < 15) && (handle->ofh % 2 == 0) && (handle->desc.S == 1)) ||
-        ((handle->ofw < 15) && (handle->ofh % 2 == 0) && (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM)) ) {
+        ((handle->ofw < 15) && (handle->ofh % 2 == 0)) ) {
       handle->fwd_ofw_rb = handle->ofw;
       handle->fwd_ofh_rb = 2;
       /* on AVX512_CORE and int this only works for smaller 13 */
@@ -1362,7 +1362,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 ifw_padded = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
               }
 
-              qfma_padding = (handle->desc.W % 4 == 0) ? 0 : 4 - handle->desc.W % 4;
+              if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
+                qfma_padding = (handle->desc.W % 4 == 0) ? 0 : 4 - handle->desc.W % 4;
+              } else {
+                qfma_padding = 0;
+              }
               kernel_ifw_padded = ifw_padded + qfma_padding;
               handle->qfma_input_pad = qfma_padding;
               descriptor.ifw_padded = kernel_ifw_padded;
@@ -1378,7 +1382,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   kernel_ofw_compute = handle->ofw;
                 }
               }
-              kernel_ofw_fake_pixels = (kernel_ofw_compute % 4 == 0) ? 0 : 4 - kernel_ofw_compute % 4;
+              if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
+                kernel_ofw_fake_pixels = (kernel_ofw_compute % 4 == 0) ? 0 : 4 - kernel_ofw_compute % 4;
+              } else {
+                kernel_ofw_fake_pixels = 0;
+              }
               kernel_ofw = kernel_ofw_compute + kernel_ofw_fake_pixels;
               descriptor.ofw_fake_pixels = kernel_ofw_fake_pixels;
               descriptor.ofw_rb = kernel_ofw;  
@@ -1541,13 +1549,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           if ((handle->ifmblock == 1) || (handle->blocksifm * handle->blocksofm < handle->desc.threads) ) {
             handle->use_thread_private_filter = 1;
             /* determine if we will transpose input  */
-            if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM)  && (handle->upd_ofw_rb%4 == 0) ) {
+            if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)) ) {
               handle->trans_ofw_ifm = 1;
             }
           } else {
             handle->use_thread_private_filter = 0;
             /* determine if we will transpose input  */
-            if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) &&  (handle->upd_ofw_rb%4 == 0) ) {
+            if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)) ) {
               handle->trans_ofw_ifm = 1;
               if ( handle->desc.R !=1 && handle->desc.S != 1 && ( handle->desc.u !=1 || handle->desc.v != 1 )  ) {
                 handle->trans_ofw_ifm = 0;

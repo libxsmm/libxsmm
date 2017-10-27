@@ -63,27 +63,28 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/layer_example_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_f32-c.o $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/layer_example_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_f32-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/layer_example_f32-c.o \
-		$(call abslib,$(LIBNAME).$(LIBEXT)) \
+		$(MAINLIB) \
 		$(call abslib,$(LIBNAME)noblas.$(LIBEXT)) \
 		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/layer_example_i16i32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i16i32-c.o $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/layer_example_i16i32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i16i32-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/layer_example_i16i32-c.o \
-		$(call abslib,$(LIBNAME).$(LIBEXT)) \
+		$(MAINLIB) \
 		$(call abslib,$(LIBNAME)noblas.$(LIBEXT)) \
 		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/layer_example_i16f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i16f32-c.o $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/layer_example_i16f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i16f32-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/layer_example_i16f32-c.o \
-		$(call abslib,$(LIBNAME).$(LIBEXT)) \
+		$(MAINLIB) \
 		$(call abslib,$(LIBNAME)noblas.$(LIBEXT)) \
 		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/layer_example_i8i32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i8i32-c.o $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/layer_example_i8i32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i8i32-c.o $(LIBDEP)
+
 	$(LD) -o $@ $(BLDDIR)/layer_example_i8i32-c.o \
-		$(call abslib,$(LIBNAME).$(LIBEXT)) \
+		$(MAINLIB) \
 		$(call abslib,$(LIBNAME)noblas.$(LIBEXT)) \
 		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 

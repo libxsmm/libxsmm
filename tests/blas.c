@@ -49,7 +49,7 @@
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
@@ -99,10 +99,10 @@ int main(void)
     maxc = LIBXSMM_MAX(maxc, ldc[test]);
   }
 
-  a = (REAL_TYPE*)libxsmm_malloc(maxa * maxk * sizeof(REAL_TYPE));
-  b = (REAL_TYPE*)libxsmm_malloc(maxb * maxn * sizeof(REAL_TYPE));
-  c = (REAL_TYPE*)libxsmm_malloc(maxc * maxn * sizeof(REAL_TYPE));
-  d = (REAL_TYPE*)libxsmm_malloc(maxc * maxn * sizeof(REAL_TYPE));
+  a = (REAL_TYPE*)libxsmm_malloc((size_t)(maxa * maxk * sizeof(REAL_TYPE)));
+  b = (REAL_TYPE*)libxsmm_malloc((size_t)(maxb * maxn * sizeof(REAL_TYPE)));
+  c = (REAL_TYPE*)libxsmm_malloc((size_t)(maxc * maxn * sizeof(REAL_TYPE)));
+  d = (REAL_TYPE*)libxsmm_malloc((size_t)(maxc * maxn * sizeof(REAL_TYPE)));
   assert(0 != a && 0 != b && 0 != c && 0 != d);
 
   init(42, a, maxm, maxk, maxa, 1.0);

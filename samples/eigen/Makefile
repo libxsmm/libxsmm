@@ -95,7 +95,7 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 # no need to link against any of LIBXSMM's libraries since the sample code uses header-only LIBXSMM
-$(OUTDIR)/$(OUTNAME)_smm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_smm-cpp.o #$(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/$(OUTNAME)_smm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_smm-cpp.o #$(EXTDEP) $(LIBDEP)
 ifneq (0,$(BLAS))
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_smm-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 else
@@ -103,7 +103,7 @@ else
 endif
 
 # no need to link against any of LIBXSMM's libraries since the sample code uses header-only LIBXSMM
-$(OUTDIR)/$(OUTNAME)_tensor: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_tensor-cpp.o #$(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/$(OUTNAME)_tensor: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_tensor-cpp.o #$(EXTDEP) $(LIBDEP)
 ifneq (0,$(BLAS))
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_tensor-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 else

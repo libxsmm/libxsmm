@@ -70,13 +70,25 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/dgemm-blas $(OUTDIR)/dgemm-wrap
+XFILES := $(OUTDIR)/autobatch $(OUTDIR)/dgemm-blas $(OUTDIR)/dgemm-wrap
 
 .PHONY: all
 all: $(XFILES)
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
+
+ifneq (0,$(XWRAP))
+  ifneq (2,$(XWRAP))
+    WRAP_FLAG = -Wl,--wrap=dgemm_,--wrap=sgemm_
+  else
+    WRAP_FLAG = -Wl,--wrap=dgemm_
+  endif
+  DFLAGS = -DWRAP
+endif
+
+$(OUTDIR)/autobatch: $(BLDDIR)/autobatch-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
 
 $(OUTDIR)/dgemm-blas: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
@@ -89,22 +101,14 @@ endif
 endif
 
 ifneq (0,$(XWRAP))
-ifneq (2,$(XWRAP))
-  WRAP_FLAG = -Wl,--wrap=dgemm_,--wrap=sgemm_
-else
-  WRAP_FLAG = -Wl,--wrap=dgemm_
-endif
-endif
-
-ifneq (0,$(XWRAP))
-$(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
 ifneq (0,$(OMP))
-	$(LD) -o $@ $< $(EXTLIB) $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
 else ifneq (,$(strip $(OMPLIB)))
-	$(LD) -o $@ $< $(EXTLIB) $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG) \
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG) \
 		$(XLIB_BEGIN) $(OMPLIB) $(XLIB_END)
 else # should not happen
-	$(LD) -o $@ $< $(EXTLIB) $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
 endif
 else
 .PHONY: $(OUTDIR)/dgemm-wrap

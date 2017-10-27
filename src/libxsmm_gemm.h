@@ -170,6 +170,32 @@
   } \
 }
 
+#if defined(NDEBUG)
+# define LIBXSMM_TILED_XGEMM_FALLBACK_PRINT(TYPE, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+#else
+# define LIBXSMM_TILED_XGEMM_FALLBACK_PRINT(TYPE, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+    if (((INT_MAX) - 1) != libxsmm_verbosity \
+      && (unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(LIBXSMM_GEMM_PRECISION(TYPE), MM, NN, KK, 1/*try*/, 0)) \
+    { \
+      const char libxsmm_tiled_xgemm_transa_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'); \
+      const char libxsmm_tiled_xgemm_transb_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T'); \
+      const TYPE libxsmm_tiled_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_tiled_xgemm_beta_ = (TYPE)(BETA); \
+      if (0 < libxsmm_verbosity) { /* print fallback */ \
+        LIBXSMM_FLOCK(stderr); \
+        fprintf(stderr, "LIBXSMM FALLBACK: "); libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(TYPE), \
+          &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(MM), &(NN), &(KK), \
+          &libxsmm_tiled_xgemm_alpha_, 0/*A*/, &(LDA), 0/*B*/, &(LDB), &libxsmm_tiled_xgemm_beta_, 0/*C*/, &(LDC)); \
+        fprintf(stderr, "\n"); \
+        LIBXSMM_FUNLOCK(stderr); \
+      } \
+      else { /* dump matrices */ \
+        libxsmm_gemm_print(0, LIBXSMM_GEMM_PRECISION(TYPE), \
+          &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(MM), &(NN), &(KK), \
+          &libxsmm_tiled_xgemm_alpha_, A, &(LDA), B, &(LDB), &libxsmm_tiled_xgemm_beta_, C, &(LDC)); \
+      } \
+    }
+#endif
+
 #define LIBXSMM_TILED_XGEMM(PARALLEL, LOOP_START, KERNEL_START, SYNC, \
   MIN_TASKS, OVERHEAD, NT, TYPE, FLAGS, TILE_M, TILE_N, TILE_K, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
 { /* use NN, etc. rather than N due to below char. constant */ \
@@ -210,9 +236,15 @@
         float libxsmm_tiled_xgemm_rm_ = 1.f, libxsmm_tiled_xgemm_rn_ = ((float)(NN)) / (MM), libxsmm_tiled_xgemm_rk_ = ((float)(KK)) / (MM); \
         if (1.f < libxsmm_tiled_xgemm_rn_) { libxsmm_tiled_xgemm_rm_ /= libxsmm_tiled_xgemm_rn_; libxsmm_tiled_xgemm_rn_ = 1.f; libxsmm_tiled_xgemm_rk_ /= libxsmm_tiled_xgemm_rn_; } \
         if (1.f < libxsmm_tiled_xgemm_rk_) { libxsmm_tiled_xgemm_rm_ /= libxsmm_tiled_xgemm_rk_; libxsmm_tiled_xgemm_rn_ /= libxsmm_tiled_xgemm_rk_; libxsmm_tiled_xgemm_rk_ = 1.f; } \
-        libxsmm_tiled_xgemm_tm_ = LIBXSMM_CLMP((libxsmm_blasint)(1 << LIBXSMM_LOG2(libxsmm_tiled_xgemm_tm_ * libxsmm_tiled_xgemm_rm_)/* + 0.5*/), 8, MM); \
-        libxsmm_tiled_xgemm_tn_ = LIBXSMM_CLMP((libxsmm_blasint)(1 << LIBXSMM_LOG2(libxsmm_tiled_xgemm_tn_ * libxsmm_tiled_xgemm_rn_)/* + 0.5*/), 8, NN); \
-        libxsmm_tiled_xgemm_tk_ = LIBXSMM_CLMP((libxsmm_blasint)(1 << LIBXSMM_LOG2(libxsmm_tiled_xgemm_tk_ * libxsmm_tiled_xgemm_rk_)/* + 0.5*/), 8, KK); \
+        libxsmm_tiled_xgemm_tm_ = (libxsmm_blasint)(libxsmm_tiled_xgemm_tm_ * libxsmm_tiled_xgemm_rm_ /*+ 0.5f*/); \
+        libxsmm_tiled_xgemm_tn_ = (libxsmm_blasint)(libxsmm_tiled_xgemm_tn_ * libxsmm_tiled_xgemm_rn_ /*+ 0.5f*/); \
+        libxsmm_tiled_xgemm_tk_ = (libxsmm_blasint)(libxsmm_tiled_xgemm_tk_ * libxsmm_tiled_xgemm_rk_ /*+ 0.5f*/); \
+        libxsmm_tiled_xgemm_tm_ = (libxsmm_blasint)(1ULL << LIBXSMM_LOG2(libxsmm_tiled_xgemm_tm_)); \
+        libxsmm_tiled_xgemm_tn_ = (libxsmm_blasint)(1ULL << LIBXSMM_LOG2(libxsmm_tiled_xgemm_tn_)); \
+        libxsmm_tiled_xgemm_tk_ = (libxsmm_blasint)(1ULL << LIBXSMM_LOG2(libxsmm_tiled_xgemm_tk_)); \
+        libxsmm_tiled_xgemm_tm_ = LIBXSMM_CLMP(libxsmm_tiled_xgemm_tm_, 8, MM); \
+        libxsmm_tiled_xgemm_tn_ = LIBXSMM_CLMP(libxsmm_tiled_xgemm_tn_, 8, NN); \
+        libxsmm_tiled_xgemm_tk_ = LIBXSMM_CLMP(libxsmm_tiled_xgemm_tk_, 8, KK); \
       } \
       LIBXSMM_GEMM_DESCRIPTOR(libxsmm_tiled_xgemm_desc_, LIBXSMM_GEMM_PRECISION(TYPE), FLAGS, \
         libxsmm_tiled_xgemm_tm_, libxsmm_tiled_xgemm_tn_, libxsmm_tiled_xgemm_tk_, \
@@ -271,17 +303,7 @@
   else { /* fall-back */ \
     assert(0 == LIBXSMM_NO_BLAS); \
     LIBXSMM_FALLBACK1(TYPE, libxsmm_blasint, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
-    if (((INT_MAX) - 1) != libxsmm_verbosity \
-      && (unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(FLAGS, MM, NN, KK, 1/*try*/, 0)) \
-    { \
-      const char libxsmm_tiled_xgemm_transa_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'); \
-      const char libxsmm_tiled_xgemm_transb_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T'); \
-      const TYPE libxsmm_tiled_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_tiled_xgemm_beta_ = (TYPE)(BETA); \
-      libxsmm_gemm_print(0 < libxsmm_verbosity ? stderr : 0, LIBXSMM_GEMM_PRECISION(TYPE), \
-        &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(MM), &(NN), &(KK), \
-        &libxsmm_tiled_xgemm_alpha_, A, &(LDA), B, &(LDB), &libxsmm_tiled_xgemm_beta_, C, &(LDC)); \
-      if (0 < libxsmm_verbosity) fprintf(stderr, "\n"); \
-    } \
+    LIBXSMM_TILED_XGEMM_FALLBACK_PRINT(TYPE, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC); \
   } \
 }
 
@@ -392,7 +414,7 @@
 
 
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
-LIBXSMM_API void libxsmm_gemm_init(int archid, int prefetch/*default prefetch strategy*/);
+LIBXSMM_API void libxsmm_gemm_init(int archid);
 
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API void libxsmm_gemm_finalize(void);
@@ -403,11 +425,17 @@ LIBXSMM_API int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
 
 LIBXSMM_API int libxsmm_dgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
-  int m, int n, int k, int lda, int ldb, int ldc, double alpha, double beta, int flags, int prefetch);
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
+  double alpha, double beta, int flags, int prefetch);
 LIBXSMM_API int libxsmm_sgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
-  int m, int n, int k, int lda, int ldb, int ldc, float alpha, float beta, int flags, int prefetch);
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
+  float alpha, float beta, int flags, int prefetch);
 LIBXSMM_API int libxsmm_wgemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
-  int m, int n, int k, int lda, int ldb, int ldc, int alpha, int beta, int flags, int prefetch);
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
+  int alpha, int beta, int flags, int prefetch);
 
 #if defined(LIBXSMM_GEMM_WRAP_STATIC)
 LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(
@@ -455,10 +483,14 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
   /* TODO: consider padding */
 } libxsmm_gemm_batchitem;
 
-LIBXSMM_API int libxsmm_xmmbatch(
-  libxsmm_xmmfunction kernel, unsigned int typesize, const void* a_matrix, const void* b_matrix, void* c_matrix,
-  int index_base, int index_stride, const unsigned int a_stride[], const unsigned int b_stride[], const unsigned int c_stride[], unsigned int batchsize,
-  int tid, int nthreads, const libxsmm_gemm_descriptor* kernel_desc);
+LIBXSMM_API int libxsmm_dmmbatch_blas(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const double* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb, const double* beta, void* c, const libxsmm_blasint* ldc,
+  libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  libxsmm_blasint batchsize);
+LIBXSMM_API int libxsmm_smmbatch_blas(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const float* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb, const float* beta, void* c, const libxsmm_blasint* ldc,
+  libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  libxsmm_blasint batchsize);
 
 typedef void (*libxsmm_mmbatch_flush_function)(void);
 
@@ -472,6 +504,8 @@ LIBXSMM_API_VARIABLE libxsmm_gemm_batchitem* libxsmm_gemm_batcharray;
 LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE libxsmm_gemm_batchlock;
 /** Maximum size of the recorded batch. */
 LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_batchsize;
+/** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
+LIBXSMM_API_VARIABLE int libxsmm_gemm_auto_prefetch_default;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_API_VARIABLE int libxsmm_gemm_auto_prefetch;
 /** Prefetch strategy for tiled GEMM. */

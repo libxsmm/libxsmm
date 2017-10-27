@@ -14,10 +14,11 @@ site_name: LIBXSMM
 site_author: Hans Pabst
 copyright: Copyright (c) 2009-2017, LIBXSMM <a href="http://libxsmm.readthedocs.io/LICENSE/">Contributors</a>.
 site_description: Library targeting Intel Architecture for small, dense or sparse matrix multiplications, and small convolutions.
-repo_url: https://github.com/hfp/libxsmm.git
+repo_url: https://github.com/hfp/libxsmm
+edit_uri: edit/master/documentation
 
 pages:
-- index.md
+- Overview: index.md
 - Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md
   - "DNN: Deep Neural Networks": libxsmm_dnn.md
