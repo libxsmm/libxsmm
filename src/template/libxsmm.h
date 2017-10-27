@@ -145,32 +145,41 @@ LIBXSMM_API libxsmm_wmmfunction libxsmm_wmmdispatch(libxsmm_blasint m, libxsmm_b
 
 /** Process a series of matrix multiplications (batch). */
 LIBXSMM_API int libxsmm_mmbatch(libxsmm_gemm_precision precision,
-  /** Kernel (matches precision, trans, beta, etc.) */
+  /** Kernel (matches precision, transa, transb, beta, etc.). */
   libxsmm_xmmfunction kernel,
-  /** Arrays of matrix operands (a, b, c). */
-  const void* a, const void* b, void* c,
   /** Determines index-base (usually 0, 1 for one-based indexes); uses the same unit as the strides. */
   libxsmm_blasint index_base,
-  /** Stride used to walk stride_a, stride_b, and stride_c; zero turns stride_* into scalar values. */
+  /**
+   * Stride used to walk stride_a, stride_b, and stride_c; zero turns stride_* into scalar values.
+   * The index_stride is always measured in Bytes (sizeof(libxsmm_blasint) determines packed indexes).
+   */
   libxsmm_blasint index_stride,
   /**
    * index_stride==0: a single value (measured in Bytes) for stride_a, stride_b, and stride_c is expected,
-   * index_stride!=1: stride_a, stride_b, and stride_c are arrays of indexes; array size equals batchsize.
-   * A stride of zero (value or pointer) is valid, and will not advance the corresponding matrix-operand.
-   * Note: if the C-stride is zero, the kernel should correspond (Beta=1) and accesses to c will
-   * be internally synchronized.
+   * index_stride!=0: stride_a, stride_b, and stride_c are arrays of indexes (measured in elements);
+   *                  array size equals batchsize, and indexes are discovered using the index_stride
+   *                  (measured in Bytes). The typical value of index_stride is sizeof(libxsmm_blasint),
+   *                  which determines a packed array of indexes.
+   * A stride of zero (NULL pointer, or zero-index) does not advance the corresponding matrix-operand.
+   * Note: if the C-stride is zero, the kernel may be built for Beta=1,
+   * and more important, accesses to C are internally synchronized.
    */
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  /**
+   * Arrays of matrix operands (a, b, c). Depending on index_stride, the arrays are:
+   * index_stride==0: pointers to pointers of elements e.g., double** for the C matrices.
+   * index_stride!=0: pointer to elements e.g., const double* for the A and B matrices.
+   */
+  const void* a, const void* b, void* c,
   /** Number of matrix multiplications. */
   libxsmm_blasint batchsize,
   /** Thread-ID (TID), and number of threads. */
   /*unsigned*/int tid, /*unsigned*/int nthreads);
 
 /** Process a series of matrix multiplications (batch) similar to libxsmm_mmbatch; MT via libxsmmext. */
-LIBXSMM_API int libxsmm_mmbatch_omp(libxsmm_gemm_precision precision, libxsmm_xmmfunction kernel,
-  const void* a, const void* b, void* c, libxsmm_blasint index_base, libxsmm_blasint index_stride,
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
-  libxsmm_blasint batchsize);
+LIBXSMM_API int libxsmm_mmbatch_omp(libxsmm_gemm_precision precision, libxsmm_xmmfunction kernel, libxsmm_blasint index_base,
+  libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  const void* a, const void* b, void* c, libxsmm_blasint batchsize);
 
 /** Process a series of matrix multiplications (batch); sequential. */
 LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision precision, const char* transa, const char* transb,
