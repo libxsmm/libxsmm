@@ -50,24 +50,23 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
 
   assert(typesize <= 255);
   if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && m <= ldo) {
+#if defined(_OPENMP)
     const unsigned int size = (unsigned int)(1U * m * n);
     if ((LIBXSMM_TRANS_THRESHOLD) < size) { /* consider problem-size (threshold) */
-#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
+# if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
       if (0 == omp_get_active_level())
-#endif
+# else
+      if (0 == omp_in_parallel())
+# endif
       { /* enable internal parallelization */
         LIBXSMM_EXT_PARALLEL
         {
-#if defined(_OPENMP)
           const int tid = omp_get_thread_num(), nthreads = omp_get_num_threads();
-#else
-          const int tid = 0, nthreads = 1;
-#endif
           libxsmm_matcopy_thread(out, in, typesize, m, n, ldi, ldo, prefetch, tid, nthreads);
         } /* implicit synchronization (barrier) */
       }
-#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
       else { /* assume external parallelization */
+# if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
         const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
         libxsmm_matcopy_descriptor descriptor = { 0 };
@@ -96,10 +95,14 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
             LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, xmatcopy,
             out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
         }
+# else /* no MT */
+        result = libxsmm_matcopy(out, in, typesize, m, n, ldi, ldo, prefetch);
+# endif
       }
-#endif
     }
-    else { /* small problem-size (no MT) */
+    else
+#endif /*defined(_OPENMP)*/
+    { /* no MT, or small problem-size */
       result = libxsmm_matcopy(out, in, typesize, m, n, ldi, ldo, prefetch);
     }
   }
@@ -140,24 +143,23 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
   assert(typesize <= 255);
   if (0 != out && 0 != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
     if (out != in) {
+#if defined(_OPENMP)
       const unsigned int size = (unsigned int)(1U * m * n);
       if ((LIBXSMM_TRANS_THRESHOLD) < size) { /* consider problem-size (threshold) */
-#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
+# if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         if (0 == omp_get_active_level())
-#endif
+# else
+        if (0 == omp_in_parallel())
+# endif
         { /* enable internal parallelization */
           LIBXSMM_EXT_PARALLEL
           {
-#if defined(_OPENMP)
             const int tid = omp_get_thread_num(), nthreads = omp_get_num_threads();
-#else
-            const int tid = 0, nthreads = 1;
-#endif
             libxsmm_otrans_thread(out, in, typesize, m, n, ldi, ldo, tid, nthreads);
           } /* implicit synchronization (barrier) */
         }
-#if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         else { /* assume external parallelization */
+# if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
           const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
           const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
           libxsmm_transpose_descriptor descriptor = { 0 };
@@ -176,10 +178,14 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
             if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
             LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans,
             out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
+# else /* no MT */
+          result = libxsmm_otrans(out, in, typesize, m, n, ldi, ldo);
+# endif
         }
-#endif
       }
-      else { /* small problem-size (no MT) */
+      else
+#endif /*defined(_OPENMP)*/
+      { /* no MT, or small problem-size */
         result = libxsmm_otrans(out, in, typesize, m, n, ldi, ldo);
       }
     }

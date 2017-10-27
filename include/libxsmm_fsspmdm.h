@@ -31,26 +31,15 @@
 #ifndef LIBXSMM_FSSPMDM_H
 #define LIBXSMM_FSSPMDM_H
 
-#include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdlib.h>
-#if !defined(NDEBUG)
-# include <stdio.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 /** Opaque types for fsspmdm */
 typedef struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm libxsmm_dfsspmdm;
 typedef struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm libxsmm_sfsspmdm;
 
-LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( const int M,   const int N,   const int K,
-                                                       const int lda, const int ldb, const int ldc,
+LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( libxsmm_blasint M,   libxsmm_blasint   N, libxsmm_blasint   K,
+                                                       libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
                                                        const double alpha, const double beta,
                                                        const double* a_dense );
 
@@ -58,8 +47,8 @@ LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const
 
 LIBXSMM_API void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle );
 
-LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create( const int M,   const int N,   const int K,
-                                                       const int lda, const int ldb, const int ldc,
+LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create( libxsmm_blasint M,   libxsmm_blasint   N, libxsmm_blasint   K,
+                                                       libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
                                                        const float alpha, const float beta,
                                                        const float* a_dense );
 

@@ -44,8 +44,9 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(const int M, const int N, const int K,
-  const int lda, const int ldb, const int ldc,
+LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
+  libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K,
+  libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   const double alpha, const double beta,
   const double* a_dense)
 {
@@ -73,11 +74,12 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(const int M, co
 
   /* initialize the handle */
   memset((void*)new_handle, 0, sizeof(libxsmm_dfsspmdm));
-  new_handle->N = N;
-  new_handle->M = M;
-  new_handle->K = K;
-  new_handle->ldb = ldb;
-  new_handle->ldc = ldc;
+  /* TODO: in case of ILP64, check value ranges */
+  new_handle->N = (int)N;
+  new_handle->M = (int)M;
+  new_handle->K = (int)K;
+  new_handle->ldb = (int)ldb;
+  new_handle->ldc = (int)ldc;
 
   /* get number of non-zeros */
   a_nnz = 0;
@@ -92,8 +94,8 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(const int M, co
   if (0 < a_nnz) {
     /* allocate CSR structure */
     a_csr_values = (double*)malloc(a_nnz * sizeof(double));
-    a_csr_rowptr = (unsigned int*)malloc((M + 1) * sizeof(unsigned int));
-    a_csr_colidx = (unsigned int*)malloc(a_nnz * sizeof(unsigned int));
+    a_csr_rowptr = (unsigned int*)malloc((size_t)((M + 1) * sizeof(unsigned int)));
+    a_csr_colidx = (unsigned int*)malloc((size_t)(a_nnz * sizeof(unsigned int)));
   }
 
   if (0 != a_csr_values && 0 != a_csr_rowptr && 0 != a_csr_colidx) {
@@ -126,7 +128,7 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(const int M, co
     new_handle->N_chunksize = 16;
     new_handle->kernel = libxsmm_dmmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, 0, (const int*)LIBXSMM_PREFETCH_NONE);
     /* copy A over */
-    new_handle->a_dense = (double*)libxsmm_aligned_malloc(M*K*sizeof(double), 64);
+    new_handle->a_dense = (double*)libxsmm_aligned_malloc((size_t)(M * K * sizeof(double)), 64);
     for ( i = 0; i < M; i++ ) {
       for ( j = 0; j < K; j++) {
         new_handle->a_dense[(i*K)+j] = a_dense[(i*lda)+j];
@@ -143,8 +145,9 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(const int M, co
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, const int N, const int K,
-  const int lda, const int ldb, const int ldc,
+LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
+  libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K,
+  libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   const float alpha, const float beta,
   const float* a_dense)
 {
@@ -172,11 +175,12 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
 
   /* initialize the handle */
   memset((void*)new_handle, 0, sizeof(libxsmm_sfsspmdm));
-  new_handle->N = N;
-  new_handle->M = M;
-  new_handle->K = K;
-  new_handle->ldb = ldb;
-  new_handle->ldc = ldc;
+  /* TODO: in case of ILP64, check value ranges */
+  new_handle->N = (int)N;
+  new_handle->M = (int)M;
+  new_handle->K = (int)K;
+  new_handle->ldb = (int)ldb;
+  new_handle->ldc = (int)ldc;
 
   /* get number of non-zeros */
   a_nnz = 0;
@@ -190,9 +194,9 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
 
   if (0 < a_nnz) {
     /* allocate CSR structure */
-    a_csr_values = (float*)malloc(a_nnz * sizeof(float));
-    a_csr_rowptr = (unsigned int*)malloc((M + 1) * sizeof(unsigned int));
-    a_csr_colidx = (unsigned int*)malloc(a_nnz * sizeof(unsigned int));
+    a_csr_values = (float*)malloc((size_t)(a_nnz * sizeof(float)));
+    a_csr_rowptr = (unsigned int*)malloc((size_t)((M + 1) * sizeof(unsigned int)));
+    a_csr_colidx = (unsigned int*)malloc((size_t)(a_nnz * sizeof(unsigned int)));
   }
 
   if (0 != a_csr_values && 0 != a_csr_rowptr && 0 != a_csr_colidx) {
@@ -226,7 +230,7 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(const int M, co
     new_handle->N_chunksize = 16;
     new_handle->kernel = libxsmm_smmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, 0, (const int*)LIBXSMM_PREFETCH_NONE);
     /* copy A over */
-    new_handle->a_dense = (float*)libxsmm_aligned_malloc(M*K*sizeof(float), 64);
+    new_handle->a_dense = (float*)libxsmm_aligned_malloc((size_t)(M * K * sizeof(float)), 64);
     for ( i = 0; i < M; i++ ) {
       for ( j = 0; j < K; j++) {
         new_handle->a_dense[(i*K)+j] = a_dense[(i*lda)+j];

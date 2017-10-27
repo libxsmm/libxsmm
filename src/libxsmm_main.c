@@ -113,7 +113,9 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
   const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, internal_reglock_count); \
   if (LIBXSMM_LOCK_ACQUIRED != LIBXSMM_LOCK_TRYLOCK(internal_reglock + (LOCKINDEX))) { \
-    if (1 < internal_reglock_count) { /* (re-)try and get (meanwhile) generated code */ \
+    if (1 < internal_reglock_count && /* (re-)try and get (meanwhile) generated code */ \
+        0 != internal_registry) /* ensure engine is not shut down */ \
+    { \
       continue; \
     } \
     else { /* exit dispatch and let client fall back */ \
@@ -153,7 +155,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #endif
 
 #define INTERNAL_DISPATCH(TYPE, DESC, PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH) { \
-  const int ilda = (0 == (PLDA) ? m : *(PLDA)), ildb = (0 == (PLDB) ? k : *(PLDB)), ildc = (0 == (PLDC) ? m : *(PLDC)); \
+  const libxsmm_blasint ilda = (0 == (PLDA) ? m : *(PLDA)), ildb = (0 == (PLDB) ? k : *(PLDB)), ildc = (0 == (PLDC) ? m : *(PLDC)); \
   const int internal_prefetch = (0 == (PREFETCH) ? libxsmm_gemm_auto_prefetch : *(PREFETCH)); \
   const int iflags = (0 == (PFLAGS) ? LIBXSMM_FLAGS : *(PFLAGS)); \
   libxsmm_code_pointer internal_dispatch_result_; \
@@ -194,10 +196,11 @@ LIBXSMM_API_VARIABLE int internal_dispatch_trylock_locked;
 LIBXSMM_API_VARIABLE int internal_gemm_auto_prefetch_locked;
 
 
-LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(int datatype, int m, int n, int k, unsigned int ntry, unsigned int ncol)
+LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision precision,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, unsigned int ntry, unsigned int ncol)
 {
   const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(m, n, k);
-  const int precision = (LIBXSMM_GEMM_PRECISION_F64 == datatype ? 0 : 1);
+  const int index = (LIBXSMM_GEMM_PRECISION_F64 == precision ? 0 : 1);
   int bucket = 3/*huge*/;
 
   if (LIBXSMM_MNK_SIZE(internal_statistic_sml, internal_statistic_sml, internal_statistic_sml) >= kernel_size) {
@@ -210,8 +213,8 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(int datatype, int
     bucket = 2;
   }
 
-  LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[precision][bucket].ncol, ncol, LIBXSMM_ATOMIC_RELAXED);
-  return LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[precision][bucket].ntry, ntry, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[index][bucket].ncol, ncol, LIBXSMM_ATOMIC_RELAXED);
+  return LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[index][bucket].ntry, ntry, LIBXSMM_ATOMIC_RELAXED);
 }
 
 
@@ -219,7 +222,7 @@ LIBXSMM_API_INLINE unsigned int internal_update_mmstatistic(const libxsmm_gemm_d
   unsigned int ntry, unsigned int ncol)
 {
   assert(0 != desc && 0 == ((LIBXSMM_GEMM_FLAG_MATCOPY | LIBXSMM_GEMM_FLAG_TKERNEL) & desc->iflags));
-  return libxsmm_update_mmstatistic(desc->datatype, desc->m, desc->n, desc->k, ntry, ncol);
+  return libxsmm_update_mmstatistic((libxsmm_gemm_precision)desc->datatype, desc->m, desc->n, desc->k, ntry, ncol);
 }
 
 
@@ -476,11 +479,9 @@ LIBXSMM_API_INLINE void internal_init(void)
 {
   libxsmm_code_pointer* result;
   int init_code = EXIT_FAILURE, i;
-  unsigned long long s0 = libxsmm_timer_tick(), s1, t0, t1; /* warmup */
-  s0 = libxsmm_timer_tick(); t0 = libxsmm_timer_tick_rdtsc(); /* initial timings */
 #if !defined(LIBXSMM_NO_SYNC) /* setup the locks in a thread-safe fashion */
-  for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock + i);
   LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
+  for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock + i);
 #endif
   result = internal_registry;
   if (0 == result) {
@@ -666,36 +667,36 @@ LIBXSMM_API_INLINE void internal_init(void)
   for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
   LIBXSMM_LOCK_RELEASE(&libxsmm_lock_global);
 #endif
-  s1 = libxsmm_timer_tick(); t1 = libxsmm_timer_tick_rdtsc(); /* final timings */
-  if (s0 != s1 && t0 != t1) {
-    libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / (t0 < t1 ? (t1 - t0) : (t0 - t1));
-  }
 }
 
 
 LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
-  const void *const registry = LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED);
-  if (0 == registry) {
+  if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
+    unsigned long long s1 = libxsmm_timer_tick(), t1; /* warm-up */
+    const unsigned long long s0 = libxsmm_timer_tick(), t0 = libxsmm_timer_tick_rdtsc();
 #if !defined(LIBXSMM_NO_SYNC) /* setup the locks in a thread-safe fashion */
-    static int reglock_check = 0;
-    static LIBXSMM_LOCK_TYPE global_lock;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&reglock_check, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
+    static int counter = 0, once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
       int i;
       assert(sizeof(internal_reglock) == (INTERNAL_REGLOCK_MAXN * sizeof(*internal_reglock)));
       LIBXSMM_LOCK_ATTR_INIT(&libxsmm_lock_attr_default);
-      for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_INIT(internal_reglock + i, &libxsmm_lock_attr_default);
-      LIBXSMM_LOCK_INIT(&libxsmm_lock_global, &libxsmm_lock_attr_default); /* valid */
-      memset(&global_lock, -1, sizeof(LIBXSMM_LOCK_TYPE)); /* mark invalid */
-    }
-    else {
-      while (0 == memcmp(&global_lock, &libxsmm_lock_global, sizeof(LIBXSMM_LOCK_TYPE))) {
-        const void *const a = &global_lock, *const b = &libxsmm_lock_global;
-        if (0 != memcmp(a, b, sizeof(LIBXSMM_LOCK_TYPE))) break; else LIBXSMM_SYNC_PAUSE;
+      LIBXSMM_LOCK_INIT(&libxsmm_lock_global, &libxsmm_lock_attr_default);
+      for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) {
+        LIBXSMM_LOCK_INIT(internal_reglock + i, &libxsmm_lock_attr_default);
       }
+      once = 1;
+    }
+    else while (1) {
+      if (0 != once) break;
+      else LIBXSMM_SYNC_PAUSE;
     }
 #endif
     internal_init();
+    s1 = libxsmm_timer_tick(); t1 = libxsmm_timer_tick_rdtsc(); /* final timings */
+    if (0 != LIBXSMM_FEQ(0, libxsmm_timer_scale) && s0 != s1 && t0 != t1) {
+      libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / (t0 < t1 ? (t1 - t0) : (t0 - t1));
+    }
   }
 }
 
@@ -712,6 +713,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
   if (0 != registry) {
     int i;
 #if !defined(LIBXSMM_NO_SYNC)
+    LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
     /* acquire locks and thereby shortcut lazy initialization later on */
     for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock + i);
 #endif
@@ -793,6 +795,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     }
 #if !defined(LIBXSMM_NO_SYNC) /* LIBXSMM_LOCK_RELEASE, but no LIBXSMM_LOCK_DESTROY */
     for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
+    LIBXSMM_LOCK_RELEASE(&libxsmm_lock_global);
 #endif
   }
 }
@@ -1556,16 +1559,14 @@ LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(libxsmm_registry_info* info
 
 
 LIBXSMM_API_DEFINITION int libxsmm_gemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
-  libxsmm_gemm_precision precision, int m, int n, int k, const int* lda, const int* ldb, const int* ldc,
+  libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, const int* flags, const int* prefetch)
 {
-  const int ilda = (0 == lda ? m : *lda), ildb = (0 == ldb ? k : *ldb), ildc = (0 == ldc ? m : *ldc);
+  const libxsmm_blasint ilda = (0 == lda ? m : *lda), ildb = (0 == ldb ? k : *ldb), ildc = (0 == ldc ? m : *ldc);
   const int internal_prefetch = (0 == prefetch ? libxsmm_gemm_auto_prefetch : *prefetch);
   const int iflags = (0 == flags ? LIBXSMM_FLAGS : *flags);
   int result;
-
-  LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(ilda, ildb, ildc);
-  LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(m, n, k);
 
   switch (precision) {
     case LIBXSMM_GEMM_PRECISION_F64: {
@@ -1632,18 +1633,8 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
 LIBXSMM_PRAGMA_OPTIMIZE_OFF
 #endif
 
-LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,
-  const int* lda, const int* ldb, const int* ldc,
-  const float* alpha, const float* beta,
-  const int* flags, const int* prefetch)
-{
-  LIBXSMM_INIT
-  INTERNAL_DISPATCH(float, descriptor, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
-}
-
-
-LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
-  const int* lda, const int* ldb, const int* ldc,
+LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const double* alpha, const double* beta,
   const int* flags, const int* prefetch)
 {
@@ -1652,8 +1643,18 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_wmmfunction libxsmm_wmmdispatch(int m, int n, int k,
-  const int* lda, const int* ldb, const int* ldc,
+LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const float* alpha, const float* beta,
+  const int* flags, const int* prefetch)
+{
+  LIBXSMM_INIT
+  INTERNAL_DISPATCH(float, descriptor, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_wmmfunction libxsmm_wmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const int* alpha, const int* beta,
   const int* flags, const int* prefetch)
 {
@@ -1875,11 +1876,13 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_finalize)(void)
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* /*fn*/, const libxsmm_gemm_precision* /*precision*/,
-  const int* /*m*/, const int* /*n*/, const int* /*k*/, const int* /*lda*/, const int* /*ldb*/, const int* /*ldc*/,
-  const void* /*alpha*/, const void* /*beta*/, const int* /*flags*/, const int* /*prefetch*/);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn, const libxsmm_gemm_precision* precision,
-  const int* m, const int* n, const int* k, const int* lda, const int* ldb, const int* ldc,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
+  const libxsmm_gemm_precision* precision, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const void* alpha, const void* beta, const int* flags, const int* prefetch);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
+  const libxsmm_gemm_precision* precision, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, const int* flags, const int* prefetch)
 {
 #if !defined(NDEBUG) /* this should not happen */
@@ -1888,7 +1891,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn, c
 #endif
   {
     const libxsmm_gemm_precision gemm_precision = (0 != precision ? *precision : LIBXSMM_GEMM_PRECISION_F64);
-    const int kk = *(0 != k ? k : m), nn = (0 != n ? *n : kk);
+    const libxsmm_blasint kk = *(0 != k ? k : m), nn = (0 != n ? *n : kk);
     switch (gemm_precision) {
       case LIBXSMM_GEMM_PRECISION_F64: {
         *fn = (intptr_t)libxsmm_dmmdispatch(*m, nn, kk, lda, ldb, ldc,
@@ -1932,7 +1935,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn, c
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
-  const libxsmm_code_pointer* /*fn*/, const void* /*a*/, const void* /*b*/, void* /*c*/);
+  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
   const libxsmm_code_pointer* fn, const void* a, const void* b, void* c)
 {
@@ -1967,8 +1970,8 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
-  const libxsmm_code_pointer* /*fn*/, const void* /*a*/, const void* /*b*/, void* /*c*/,
-  const void* /*pa*/, const void* /*pb*/, const void* /*pc*/);
+  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
+  const void* pa, const void* pb, const void* pc);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
   const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc)
@@ -2004,8 +2007,8 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
-  const libxsmm_code_pointer* /*fn*/, const void* /*a*/, const void* /*b*/, void* /*c*/,
-  const void* /*pa*/, const void* /*pb*/, const void* /*pc*/);
+  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
+  const void* pa, const void* pb, const void* pc);
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
   const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc)

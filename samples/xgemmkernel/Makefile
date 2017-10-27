@@ -63,11 +63,11 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/sdgemmkernel: $(OUTDIR)/.make $(BLDDIR)/sdgemmkernel-c.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/sdgemmkernel-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/sdgemmkernel: $(OUTDIR)/.make $(BLDDIR)/sdgemmkernel-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/sdgemmkernel-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/bwgemmkernel: $(OUTDIR)/.make $(BLDDIR)/bwgemmkernel-c.o $(LIBNAME).$(LIBEXT)
-	$(LD) -o $@ $(BLDDIR)/bwgemmkernel-c.o $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/bwgemmkernel: $(OUTDIR)/.make $(BLDDIR)/bwgemmkernel-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/bwgemmkernel-c.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

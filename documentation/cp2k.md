@@ -7,7 +7,7 @@ Some additional reference can found under
 
 ## Getting the Source Code
 
-The source code is hosted at GitHub and is supposed to represent the master version of CP2K in a timely fashion. CP2K's main repository is hosted at SourceForge but automatically mirrored at GitHub. The LIBXSMM library can be found under [https://github.com/hfp/libxsmm](https://github.com/hfp/libxsmm).
+The source code is hosted at GitHub and is supposed to represent the master version of CP2K in a timely fashion. CP2K's main repository is hosted at SourceForge but automatically mirrored at GitHub. The LIBXSMM library can be found under [https://github.com/hfp/libxsmm](http://libxsmm.readthedocs.io).
 
 ## Build Instructions
 
@@ -74,8 +74,8 @@ Running an MPI/OpenMP-hybrid application, an MPI rank-count that is half the num
 
 ```bash
 mpirun -np 16 \
-  -genv I_MPI_PIN_DOMAIN=auto \
-  -genv KMP_AFFINITY=scatter,granularity=fine,1 \
+  -genv I_MPI_PIN_DOMAIN=auto -genv I_MPI_PIN_ORDER=spread \
+  -genv KMP_AFFINITY=compact,granularity=fine,1 \
   -genv OMP_NUM_THREADS=4 \
   cp2k/exe/Linux-x86-64-intel/cp2k.psmp workload.inp
 ```
@@ -92,45 +92,15 @@ The CP2K/intel branch carries several "reconfigurations" and environment variabl
 
 ## LIBINT and LIBXC<a name="libint-and-libxc-dependencies"></a>
 
-Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://github.com/hfp/xconfigure)), which helps to configure common HPC software for Intel software development tools. The XCONFIGURE project provides recipes for LIBINT, LIBXC, and ELPA.
+Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](http://xconfigure.readthedocs.io)), which helps to configure common HPC software for Intel software development tools.
 
-To configure, build, and install LIBINT (version&#160;1.1.5 and 1.1.6 have been tested), one may proceed as shown below (please note there is no easy way to cross-built the library for an instruction set extension which is not supported by the compiler host). To incorporate LIBINT, the key `LIBINTROOT=/path/to/libint` needs to be supplied when using CP2K/intel's ARCH files (make).
+To configure, build, and install LIBINT (version&#160;1.1.5 and 1.1.6 have been tested), one can proceed with [https://github.com/hfp/xconfigure/tree/master/config/libint](http://xconfigure.readthedocs.io/libint/README/). Please note there is no straightforward way to cross-compile LIBINT&#160;1.1.x for an instruction set extension which is not supported by the compiler host. To incorporate LIBINT into CP2K, the key `LIBINTROOT=/path/to/libint` needs to be supplied when using CP2K/intel's ARCH files (make).
 
-```bash
-env \
-  AR=xiar CC=icc CXX=icpc \
-./configure \
-  --with-cxx-optflags="-O2 -xCORE-AVX2" \
-  --with-cc-optflags=" -O2 -xCORE-AVX2" \
-  --with-libderiv-max-am1=4 \
-  --with-libint-max-am=5 \
-  --prefix=$HOME/libint/default-hsw
-make
-make install
-make realclean
-```
-
-To configure, build, and install LIBXC (version&#160;3.0.0 has been tested), one may proceed as shown below. To make use of LIBXC, the key `LIBXCROOT=/path/to/libxc` needs to be supplied when using CP2K/intel's ARCH files (make).
-
-```bash
-env \
-  AR=xiar F77=ifort F90=ifort FC=ifort CC=icc \
-  FCFLAGS="-O2 -xCORE-AVX2" \
-  CFLAGS=" -O2 -xCORE-AVX2" \
-./configure \
-  --prefix=$HOME/libxc/default-hsw
-make
-make install
-make clean
-```
-
-If the library needs to be cross-compiled, one may add `--host=x86_64-unknown-linux-gnu` to the command line arguments of the configure script.
+To configure, build, and install LIBXC (version&#160;3.0.0 has been tested), one can proceed with [https://github.com/hfp/xconfigure/tree/master/config/libxc](http://xconfigure.readthedocs.io/libxc/README/). To incorporate LIBXC into CP2K, the key `LIBXCROOT=/path/to/libxc` needs to be supplied when using CP2K/intel's ARCH files (make).
 
 ## ELPA<a name="eigenvalue-solvers-for-petaflop-applications-elpa"></a>
 
-Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://github.com/hfp/xconfigure)), which helps to configure common HPC software (and [ELPA](http://xconfigure.readthedocs.io/elpa/README/) in particular) for Intel software development tools.
-
-To incorporate the Eigenvalue SoLvers for Petaflop-Applications (ELPA), the key `ELPAROOT=/path/to/elpa` needs to be supplied when using CP2K/intel's ARCH files (make). The Intel-branch defaults to ELPA-2017.05 (earlier versions can be rely on the ELPA key-value pair e.g., `ELPA=201611`).
+Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](http://xconfigure.readthedocs.io)), which helps to configure common HPC software for Intel software development tools. To incorporate the Eigenvalue SoLvers for Petaflop-Applications (ELPA), one can proceed with [https://github.com/hfp/xconfigure/tree/master/config/elpa](http://xconfigure.readthedocs.io/elpa/README/). To incorporate ELPA into CP2K, the key `ELPAROOT=/path/to/elpa` needs to be supplied when using CP2K/intel's ARCH files (make). The Intel-branch defaults to ELPA-2017.05 (earlier versions can rely on the ELPA key-value pair e.g., `ELPA=201611`).
 
 ```bash
 make ARCH=Linux-x86-64-intel VERSION=psmp ELPAROOT=/path/to/elpa/default-arch

@@ -53,7 +53,7 @@
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
@@ -101,13 +101,13 @@ int main(int argc, char* argv[])
   {
     const char *const env_tasks = getenv("TASKS");
     const int tasks = (0 == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
-    REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc(lda * k * sizeof(REAL_TYPE));
-    REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc(ldb * n * sizeof(REAL_TYPE));
-    REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
+    REAL_TYPE *const a = (REAL_TYPE*)libxsmm_malloc((size_t)(lda * k * sizeof(REAL_TYPE)));
+    REAL_TYPE *const b = (REAL_TYPE*)libxsmm_malloc((size_t)(ldb * n * sizeof(REAL_TYPE)));
+    REAL_TYPE *const c = (REAL_TYPE*)libxsmm_malloc((size_t)(ldc * n * sizeof(REAL_TYPE)));
 #if defined(CHECK)
     REAL_TYPE* d = 0;
     if (!LIBXSMM_FEQ(0, check)) {
-      d = (REAL_TYPE*)libxsmm_malloc(ldc * n * sizeof(REAL_TYPE));
+      d = (REAL_TYPE*)libxsmm_malloc((size_t)(ldc * n * sizeof(REAL_TYPE)));
       init(0, d, m, n, ldc, 1.0);
     }
 #endif

@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_MAIN_H
 #define LIBXSMM_MAIN_H
 
-#include <libxsmm_typedefs.h>
+#include <libxsmm_frontend.h>
 #include <libxsmm_generator.h>
 #include <libxsmm_malloc.h>
 #include <libxsmm_sync.h>
@@ -386,7 +386,8 @@ LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
 /** Updates counters of the statistic, which is shown at program termination. */
-LIBXSMM_API unsigned int libxsmm_update_mmstatistic(int flags, int m, int n, int k, unsigned int ntry, unsigned int ncol);
+LIBXSMM_API unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision precision,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, unsigned int ntry, unsigned int ncol);
 
 /** Returns the current tick of a (monotonic) platform-specific counter; not necessarily CPU cycles. */
 LIBXSMM_API unsigned long long libxsmm_timer_tick_rdtsc(void);
