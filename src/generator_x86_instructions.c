@@ -735,6 +735,42 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           else l_fpadj2 = -0x81;
           l_fpadj = 5;
           break;
+       case LIBXSMM_X86_INSTR_VPANDD:
+          if ( (i_vector_name!='z') && (i_vector_name!='Z') )
+          {
+             fprintf(stderr,"VPANDD in vec_compute_reg expects zmm registers\n");
+             exit(-1);
+          }
+          l_fpadj2 = -0x80;
+          l_fpadj = 0x82;
+          break;
+       case LIBXSMM_X86_INSTR_VPANDQ:
+          if ( (i_vector_name!='z') && (i_vector_name!='Z') )
+          {
+             fprintf(stderr,"VPANDQ in vec_compute_reg expects zmm registers\n");
+             exit(-1);
+          }
+          l_fpadj2 = 0;
+          l_fpadj = 0x82;
+          break;
+       case LIBXSMM_X86_INSTR_VMAXPD:
+          if ( (i_vector_name!='z') && (i_vector_name!='Z') )
+          {
+             fprintf(stderr,"VMAXPD in vec_compute_reg expects zmm registers\n");
+             exit(-1);
+          }
+          l_fpadj2 = 0;
+          l_fpadj = 6;
+          break;
+       case LIBXSMM_X86_INSTR_VMAXPS:
+          if ( (i_vector_name!='z') && (i_vector_name!='Z') )
+          {
+             fprintf(stderr,"VMAXPS in vec_compute_reg expects zmm registers\n");
+             exit(-1);
+          }
+          l_fpadj2 = -0x81;
+          l_fpadj = 6;
+          break;
        case LIBXSMM_X86_INSTR_VCVTDQ2PS:
           l_fpadj2 -= 0x81;
           l_fpadj += 0x02;
@@ -1336,6 +1372,13 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           break;
        case LIBXSMM_X86_INSTR_VSUBPD:
           l_fpadj = 3;
+          break;
+       case LIBXSMM_X86_INSTR_VMAXPD:
+          l_fpadj = 6;
+          break;
+       case LIBXSMM_X86_INSTR_VMAXPS:
+          l_fpadj = 6;
+          l_fpadj2 = -0x81;
           break;
        case LIBXSMM_X86_INSTR_VFMADD231PD:
           l_second += 0x21;
