@@ -39,7 +39,7 @@
 
 # define USE_OVERWRITE
 /*# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE*/
-# define USE_FUSED_BATCH_STATS
+/*# define USE_FUSED_BATCH_STATS*/
 
 #define FP64_BN_STATS
 /*#define USE_FUSED_RELU_BWD*/
@@ -106,7 +106,6 @@ LIBXSMM_INLINE void init_buf(float* buf, long size, int initPos, int initOne)
 {
   int i;
   zero_buf(buf, size);
-#pragma omp parallel for private(i)
   for (i = 0; i < size; ++i) {
     buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? drand48() : (0.05 - drand48()/10.0)));
   }
