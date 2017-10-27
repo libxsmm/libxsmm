@@ -37,7 +37,11 @@
 # define REAL_TYPE double
 #endif
 #if !defined(DGEMM)
-# define DGEMM LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__wrap_, LIBXSMM_TPREFIX(REAL_TYPE, gemm)))
+# if defined(WRAP)
+#   define DGEMM LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL_TYPE, gemm))
+# else
+#   define DGEMM LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__wrap_, LIBXSMM_TPREFIX(REAL_TYPE, gemm)))
+# endif
 #endif
 
 #if !defined(CALL_BEGIN_END)
@@ -101,9 +105,9 @@ int main(int argc, char* argv[])
 
   libxsmm_init();
 
-  a = (REAL_TYPE*)malloc(maxn * maxn * sizeof(REAL_TYPE));
-  b = (REAL_TYPE*)malloc(maxn * maxn * sizeof(REAL_TYPE));
-  c = (REAL_TYPE*)malloc(maxn * maxn * sizeof(REAL_TYPE));
+  a = (REAL_TYPE*)malloc((size_t)(maxn * maxn * sizeof(REAL_TYPE)));
+  b = (REAL_TYPE*)malloc((size_t)(maxn * maxn * sizeof(REAL_TYPE)));
+  c = (REAL_TYPE*)malloc((size_t)(maxn * maxn * sizeof(REAL_TYPE)));
   if (0 == a || 0 == b || 0 == c) result = EXIT_FAILURE;
 
   if (EXIT_SUCCESS == result) {

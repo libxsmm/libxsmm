@@ -44,22 +44,24 @@ libxsmm_?gemm_omp(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta,
 
 ### Manual Code Dispatch
 
-Successively calling a kernel (i.e., multiple times) allows for amortizing the cost of the code dispatch. Moreover, to customize the dispatch mechanism, one can rely on the following interface. Overloaded function signatures are provided and allow to omit arguments (C++ and FORTRAN), which are then derived from the [configurable defaults](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h).
+Successively calling a kernel (i.e., multiple times) allows for amortizing the cost of the code dispatch. Moreover, to customize the dispatch mechanism, one can rely on the following interface.
 
 ```C
-/** If non-zero function pointer is returned, call (*function_ptr)(a, b, c). */
-libxsmm_smmfunction libxsmm_smmdispatch(int m, int n, int k,
-  const int* lda, const int* ldb, const int* ldc,
-  const float* alpha, const float* beta,
-  const int* flags, const int* prefetch);
-/** If non-zero function pointer is returned, call (*function_ptr)(a, b, c). */
-libxsmm_dmmfunction libxsmm_dmmdispatch(int m, int n, int k,
-  const int* lda, const int* ldb, const int* ldc,
-  const double* alpha, const double* beta,
-  const int* flags, const int* prefetch);
+/** If non-zero function pointer is returned, call (*function_ptr)(a, b, c [, pa, pb, pc]). */
+libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const double* alpha, const double* beta, const int* flags, const int* prefetch);
+/** If non-zero function pointer is returned, call (*function_ptr)(a, b, c [, pa, pb, pc]). */
+libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const float* alpha, const float* beta, const int* flags, const int* prefetch);
+/** If non-zero function pointer is returned, call (*function_ptr)(a, b, c [, pa, pb, pc]). */
+libxsmm_smmfunction libxsmm_wmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const int* alpha, const int* beta, const int* flags, const int* prefetch);
 ```
 
-In C++, `libxsmm_mmfunction<type>` can be used to instantiate a functor rather than making a distinction between numeric types per type-prefix (see [samples/smm/specialized.cpp](https://github.com/hfp/libxsmm/blob/master/samples/smm/specialized.cpp)).
+Overloaded function signatures are provided and allow to omit arguments (C++ and FORTRAN), which are then derived from the [configurable defaults](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h). In C++, `libxsmm_mmfunction<type>` can be used to instantiate a functor rather than making a distinction between numeric types per type-prefix.
 
 ```C
 libxsmm_mmfunction<T> xmm(m, n, k); /* generates or dispatches the code specialization */
@@ -70,7 +72,7 @@ if (xmm) { /* JIT'ted code */
 }
 ```
 
-Similarly in FORTRAN (see [samples/smm/smm.f](https://github.com/hfp/libxsmm/blob/master/samples/smm/smm.f)), a generic interface (`libxsmm_mmdispatch`) can be used to dispatch a `LIBXSMM_?MMFUNCTION`, and the encapsulated handle can be called via `libxsmm_call`. Beside of dispatching code, one can also call any statically generated kernels (e.g., `libxsmm_dmm_4_4_4`) using the prototype functions included with the FORTRAN and C/C++ interface.
+Similarly in FORTRAN (see [samples/smm/smm.f](https://github.com/hfp/libxsmm/blob/master/samples/smm/smm.f)), a generic interface (`libxsmm_mmdispatch`) can be used to dispatch a `LIBXSMM_?MMFUNCTION`. The handle encapsulated such a `LIBXSMM_?MMFUNCTION` can be called per `libxsmm_call`. Beside of dispatching code, one can also call statically generated kernels (e.g., `libxsmm_dmm_4_4_4`) by using the prototype functions included with the FORTRAN and C/C++ interface.
 
 ```FORTRAN
 TYPE(LIBXSMM_DMMFUNCTION) :: xmm
@@ -96,7 +98,7 @@ xmm = libxsmm_dmmdispatch(23/*m*/, 23/*n*/, 23/*k*/,
   &alpha, &beta, &flags, &prefetch);
 ```
 
-Above, pointer-arguments of `libxsmm_dmmdispatch` can be NULL (or OPTIONAL in FORTRAN): for LDx this means a "tight" leading dimension, alpha, beta, and flags are given by a [default value](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h) (which is selected at compile-time), and for the prefetch strategy a NULL-argument refers to "no prefetch" (which is equivalent to an explicit `LIBXSMM_PREFETCH_NONE`).
+Above, pointer-arguments of `libxsmm_dmmdispatch` can be NULL (or OPTIONAL in FORTRAN): for LDx this means a "tight" leading dimension, alpha, beta, and flags are given by a [default value](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h) (which is selected at compile-time), and for the prefetch strategy a NULL-argument refers to "no prefetch" (which is equivalent to an explicit `LIBXSMM_PREFETCH_NONE`). By design, the prefetch strategy can be changed at runtime (as soon as valid next-locations are used) without changing the call-site (kernel-signature with six arguments).
 
 ```C
 if (0 < n) { /* check that n is at least 1 */
@@ -117,14 +119,26 @@ To process a batch of matrix multiplications and to prefetch the operands of the
 
 ```C
 /** Process a series of matrix multiplications (explicit data representation). */
-int libxsmm_mmbatch(const libxsmm_gemm_descriptor* descriptor,
-  const void* a_matrix, const void* b_matrix, void* c_matrix,
-  int index_base, int index_stride, const unsigned int a_stride[],
-  const unsigned int b_stride[], const unsigned int c_stride[],
-  unsigned int batchsize);
+int libxsmm_mmbatch(libxsmm_gemm_precision precision, libxsmm_xmmfunction kernel,
+  const void* a, const void* b, void* c, libxsmm_blasint index_base, libxsmm_blasint index_stride,
+  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  libxsmm_blasint batchsize, int tid, int nthreads);
 ```
 
-To further simplify the multiplication of matrices in a batch, the above interface can help if an explicit data representation is available. A lower level form (`libxsmm_mmbatch_thread`) can employ a user-defined threading runtime. In case of OpenMP, `libxsmm_mmbatch_omp` is ready to use and hosted by the extension library (libxsmmext). Please note that an explicit data presentation is not necessary to prefetch a series of matrix multiplications. A "chain" of multiplications can be programmatically described without the need for arrays of operands or indexes.
+To further simplify the multiplication of matrices in a batch, the above interface can help if an explicit data representation is available. This low-level form is also able to employ a user-defined threading runtime. In case of OpenMP, `libxsmm_mmbatch_omp` is ready to use and hosted by the extension library (libxsmmext). An even higher-level set of procedures (and potentially more convenient functions) are available with `libxsmm_gemm_batch` and `libxsmm_gemm_batch_omp`.
+
+```C
+void libxsmm_gemm_batch(libxsmm_gemm_precision precision, const char* transa, const char* transb,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+                     const void* b, const libxsmm_blasint* ldb,
+   const void* beta,       void* c, const libxsmm_blasint* ldc,
+  libxsmm_blasint index_base, libxsmm_blasint index_stride,
+  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  libxsmm_blasint batchsize);
+```
+
+Please note that an explicit data representation is not actually necessary to process a series of matrix multiplications. A "chain" of multiplications can be programmatically described without the need for arrays of operands or indexes.
 
 ### Call Wrapper
 
@@ -132,7 +146,16 @@ To further simplify the multiplication of matrices in a batch, the above interfa
 
 Since the library is binary compatible with existing GEMM calls (BLAS), such calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original BLAS library. There are two cases to consider: (1)&#160;static linkage, and (2)&#160;dynamic linkage of the application against the original BLAS library.
 
-In any case, a sophisticated statistic (histogram) becomes available with LIBXSMM_VERBOSE=1 (or higher). The histogram displays the call sites of all intercepted GEMMs. With level&#160;2 (or higher) the histogram yields the entire content, and eventually less relevant entries are not pruned. LIBXSMM must be built with `make SYM=1` (or similar) to display the symbol names of where the GEMMs originated (call site).
+```bash
+LIBXSMM STATISTIC: 1000 multiplications
+dgemm(trans=NN mnk=32,32,21 ldx=32,21,32 a,b=1,0): 8% [main$omp$1]
+dgemm(trans=NN mnk=32,21,32 ldx=32,32,32 a,b=1,0): 8% [main$omp$1]
+dgemm(trans=NN mnk=10,21,32 ldx=10,32,10 a,b=1,0): 5% [main$omp$1]
+dgemm(trans=NN mnk=32,10,32 ldx=32,32,32 a,b=1,0): 5% [main$omp$1]
+dgemm(trans=NN mnk=32,32,10 ldx=32,10,32 a,b=1,0): 5% [main$omp$1]
+```
+
+In any case, a sophisticated statistic (histogram) becomes available with LIBXSMM_VERBOSE=1 (or higher). The histogram displays the call sites of all intercepted GEMMs ([example](https://github.com/hfp/libxsmm/blob/master/samples/wrap/autobatch.c) above depicts an OpenMP region hosted by the main function). With level&#160;2 (or higher) the histogram yields the entire content, and eventually less relevant entries are not pruned. An application must be built with symbols (`-g`) and export symbols similar to shared libraries (`-Wl,--export-dynamic`) even when linked statically in order to display the symbol names of where the GEMMs originated (call site).
 
 **NOTE**: Using the same multiplication kernel in a consecutive fashion (batch-processing) allows to extract higher performance, when using LIBXSMM's native programming interface.
 

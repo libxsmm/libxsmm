@@ -63,15 +63,15 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (,$(strip $(FC)))
-$(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME)f.$(LIBEXT) $(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
-	$(FLD) -o $@ $(FTNOBJS) $(EXTLIB) $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(call abslib,$(LIBNAME).$(LIBEXT)) \
+$(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(EXTDEP) $(LIBDEP)
+	$(FLD) -o $@ $(FTNOBJS) $(EXTLIB) $(FORTLIB) $(MAINLIB) \
 		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(OUTDIR)/$(OUTNAME)f
 endif
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME).$(LIBEXT) $(LIBNAME)ext.$(LIBEXT)
-	$(LD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

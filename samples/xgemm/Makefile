@@ -63,11 +63,11 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBNAME)ext.$(LIBEXT) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(EXTDEP) $(LIBDEP)
 ifneq (0,$(BLAS))
-	$(LD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 else
-	$(LD) -o $@ $(OBJECTS) $(call abslib,$(LIBNAME).$(LIBEXT)) $(EXTLIB) $(call abslib, $(LIBNAME)noblas.$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(EXTLIB) $(call abslib, $(LIBNAME)noblas.$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 endif
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc

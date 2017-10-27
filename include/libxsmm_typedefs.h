@@ -324,16 +324,16 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
   libxsmm_convolution_prefetch_type prefetch;
 } libxsmm_convolution_winograd_descriptor;
 
-/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
-/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
+/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */
+typedef LIBXSMM_RETARGETABLE void(*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
+/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (low-precision). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmmfunction)(const short* a, const short* b, int* c, ...);
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   void (*xmm)(const void* a, const void* b, void* c, ...);
-  libxsmm_smmfunction smm; libxsmm_dmmfunction dmm; libxsmm_wmmfunction wmm;
+  libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wmmfunction wmm;
 } libxsmm_xmmfunction;
 
 /** Specialized function for matrix-copy (weak-typed). */
