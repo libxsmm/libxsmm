@@ -533,7 +533,6 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
     if ( (i_conv_desc->use_fwd_generator_for_bwd == 0) || (i_conv_desc->stride_w_store == 1 && i_conv_desc->stride_h_store == 1) ) {
       /* check if we need to calculate batch stats */
       if ( i_conv_desc->compute_batch_stats > 0 ) {
-#ifdef FP32_BN_STATS   
         /* reset zmm0 and zmm1 */
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                  i_conv_kernel_config->instruction_set,
@@ -543,7 +542,6 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                                                  i_conv_kernel_config->instruction_set,
                                                  i_conv_kernel_config->vxor_instruction,
                                                  i_conv_kernel_config->vector_name, 1, 1, 1);
-#endif
 #ifdef FP64_BN_STATS   
         /* reset zmm2 and zmm3 */
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
