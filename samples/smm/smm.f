@@ -44,8 +44,9 @@
         TYPE(LIBXSMM_DMMFUNCTION) :: xmm
         DOUBLE PRECISION :: duration, scale, max_diff, diff
         INTEGER(8) :: i, r, s, size0, size1, size, repetitions, start
-        INTEGER :: argc, m, n, k
+        INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, k
         CHARACTER(32) :: argv
+        INTEGER :: argc
 
         argc = COMMAND_ARGUMENT_COUNT()
         IF (1 <= argc) THEN
@@ -102,7 +103,6 @@
         ALLOCATE(b(k,n,s))
 
         ! Initialize a, b
-        !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(s, a, b, scale)
         DO i = 1, s
           CALL init(42, a(:,:,i), scale, i - 1)
           CALL init(24, b(:,:,i), scale, i - 1)
@@ -115,7 +115,7 @@
         ! compute reference solution and warmup BLAS library
         ALLOCATE(d(m,n))
         d(:,:) = 0
-        !$OMP PARALLEL REDUCTION(+:d) PRIVATE(i, r) &
+        !$OMP PARALLEL REDUCTION(+:d) PRIVATE(i, r)                     &
         !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b, repetitions)
         ALLOCATE(tmp(m,n))
         tmp(:,:) = 0
@@ -133,8 +133,9 @@
 
         WRITE(*, "(A)") "Streamed... (BLAS)"
         c(:,:) = 0
-        !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, r, start) &
-        !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b, duration, repetitions)
+        !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, r, start)              &
+        !$OMP   DEFAULT(NONE)                                           &
+        !$OMP   SHARED(m, n, k, a, b, duration, repetitions)
         ALLOCATE(tmp(m,n))
         tmp(:,:) = 0
         !$OMP MASTER
@@ -160,8 +161,9 @@
 
         WRITE(*, "(A)") "Streamed... (auto-dispatched)"
         c(:,:) = 0
-        !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, r, start) &
-        !$OMP   DEFAULT(NONE) SHARED(m, n, k, a, b, duration, repetitions)
+        !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, r, start)              &
+        !$OMP   DEFAULT(NONE)                                           &
+        !$OMP   SHARED(m, n, k, a, b, duration, repetitions)
         ALLOCATE(tmp(m,n))
         tmp(:,:) = 0
         !$OMP MASTER
@@ -231,7 +233,7 @@
         IF (1.LT.max_diff) STOP 1
 
       CONTAINS
-        PURE SUBROUTINE init(seed, matrix, scale, n)
+        SUBROUTINE init(seed, matrix, scale, n)
           INTEGER, INTENT(IN) :: seed
           REAL(T), INTENT(OUT) :: matrix(:,:)
           REAL(8), INTENT(IN) :: scale
@@ -244,7 +246,9 @@
           addval = (UBOUND(matrix, 1) - LBOUND(matrix, 1)) * ld         &
      &           + (UBOUND(matrix, 2) - LBOUND(matrix, 2))
           maxval = MAX(ABS(minval), addval)
-          norm = MERGE(scale / maxval, scale, 0.NE.maxval)
+          norm = MERGE(scale / maxval, scale, 0.NE.maxval)          
+          !$OMP PARALLEL DO PRIVATE(i, j, value) DEFAULT(NONE)          &
+          !$OMP   SHARED(ld, matrix, norm, minval, addval)
           DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
             DO i = LBOUND(matrix, 1),                                   &
      &             LBOUND(matrix, 1) + UBOUND(matrix, 1) - 1
@@ -279,9 +283,9 @@
         END SUBROUTINE
 
         SUBROUTINE performance(duration, m, n, k, size)
-          REAL(T), INTENT(IN) :: duration
-          INTEGER, INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(8), INTENT(IN) :: size
+          REAL(T), INTENT(IN) :: duration
           IF (0.LT.duration) THEN
             WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:",         &
      &        2D0 * size * m * n * k * 1D-9 / duration, " GFLOPS/s"

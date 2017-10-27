@@ -109,9 +109,6 @@ int main(int argc, char* argv[])
     T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
     T *d = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
 
-#if defined(_OPENMP)
-#   pragma omp parallel for
-#endif
     for (libxsmm_blasint i = 0; i < s; ++i) {
       init(42 + i, a + i * asize, m, k, m, scale);
       init(24 + i, b + i * bsize, k, n, k, scale);

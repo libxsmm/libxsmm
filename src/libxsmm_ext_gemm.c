@@ -649,9 +649,9 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precis
   static int error_once = 0;
 
   if (0 != kernel.xmm) {
-    result = libxsmm_mmbatch(precision, kernel, index_base,
+    result = libxsmm_mmbatch_omp(precision, kernel, index_base,
       index_stride, stride_a, stride_b, stride_c,
-      a, b, c, batchsize, 0/*tid*/, 1/*nthreads*/);
+      a, b, c, batchsize);
   }
   else { /* fall-back */
     switch (precision) {

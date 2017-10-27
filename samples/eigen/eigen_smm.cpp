@@ -93,7 +93,7 @@ void smm_xsmm_specialized(const libxsmm_mmfunction<T>& xmm,
 
 template<typename T>
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE
-void init(int seed, T *LIBXSMM_RESTRICT dst,
+void init(libxsmm_blasint seed, T *LIBXSMM_RESTRICT dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
@@ -121,32 +121,31 @@ int main(int argc, char* argv[])
   try {
     typedef REAL_TYPE T;
 
-    const int m = (1 < argc ? std::atoi(argv[1]) : 23);
-    const int k = (3 < argc ? std::atoi(argv[3]) : m);
-    const int n = (2 < argc ? std::atoi(argv[2]) : k);
+    const libxsmm_blasint m = (1 < argc ? std::atoi(argv[1]) : 23);
+    const libxsmm_blasint k = (3 < argc ? std::atoi(argv[3]) : m);
+    const libxsmm_blasint n = (2 < argc ? std::atoi(argv[2]) : k);
 
-    const int asize = m * k, bsize = k * n, csize = m * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
-    const int q = (4 < argc ? std::atoi(argv[4]) : 0/*auto*/);
-    const int r = (5 < argc ? std::atoi(argv[5]) : (0 >= q ? 13 : 1)); // number of repetitions
-    const int max_size = ((2ULL << 30/*2 GB*/) / ((asize + bsize + csize) * sizeof(T)));
-    const int s = LIBXSMM_MIN(0 < q ? q : max_size, max_size);
-    const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T); // batched (A, B, and C)
-    const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // omit size of A, B, or C since it is held in cache
+    const libxsmm_blasint asize = m * k, bsize = k * n, csize = m * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
+    const libxsmm_blasint q = (4 < argc ? std::atoi(argv[4]) : 0/*auto*/);
+    const libxsmm_blasint r = (5 < argc ? std::atoi(argv[5]) : (0 >= q ? 13 : 1)); // number of repetitions
+    const libxsmm_blasint max_size = ((2ULL << 30/*2 GB*/) / ((asize + bsize + csize) * sizeof(T)));
+    const libxsmm_blasint s = LIBXSMM_MIN(0 < q ? q : max_size, max_size);
+    const size_t bwsize_batched = static_cast<size_t>((asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T)); // batched (A, B, and C)
+    const size_t bwsize = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(T)); // omit size of A, B, or C since it is held in cache
     const double gflops = 2.0 * r * s * m * n * k * 1E-9, scale = 1.0 / s;
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
-      raii(int asize_, int bsize_, int csize_): a(new T[asize_]), b(new T[bsize_]), c(new T[csize_]) {}
+      raii(libxsmm_blasint asize_, libxsmm_blasint bsize_, libxsmm_blasint csize_)
+        : a(new T[static_cast<size_t>(asize_)]), b(new T[static_cast<size_t>(bsize_)])
+        , c(new T[static_cast<size_t>(csize_)]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1);
     T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
     T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
     T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
 
-#if defined(_OPENMP)
-#   pragma omp parallel for
-#endif
-    for (int i = 0; i < s; ++i) {
+    for (libxsmm_blasint i = 0; i < s; ++i) {
       init(42 + i, a + i * asize, m, k, m, scale);
       init(24 + i, b + i * bsize, k, n, k, scale);
       init(22 + i, c + i * csize, m, n, m, scale);
@@ -162,7 +161,7 @@ int main(int argc, char* argv[])
       // initialize LIBXSMM
       libxsmm_init();
 
-      fprintf(stdout, "m=%i n=%i k=%i size=%i memory=%.1f MB (%s)\n\n", m, n, k, s,
+      fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n", m, n, k, s,
         1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
       const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAG_NONE, m, n, k, LIBXSMM_PREFETCH_AUTO);
@@ -170,11 +169,11 @@ int main(int argc, char* argv[])
       if (xmm) {
         fprintf(stdout, "LIBXSMM batched (A,B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
-        for (int j = 0; j < r; ++j) {
+        for (libxsmm_blasint j = 0; j < r; ++j) {
 #if defined(_OPENMP)
 #         pragma omp parallel for
 #endif
-          for (int i = 0; i < s; ++i) {
+          for (libxsmm_blasint i = 0; i < s; ++i) {
             const T *const ai = a + i * asize, *const bi = b + i * bsize;
             T *const ci = c + i * csize;
             smm_xsmm_specialized<T>(xmm, ai, bi, ci,
@@ -197,11 +196,11 @@ int main(int argc, char* argv[])
       {
         fprintf(stdout, "Eigen/dynamic batched (A,B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
-        for (int j = 0; j < r; ++j) {
+        for (libxsmm_blasint j = 0; j < r; ++j) {
 #if defined(_OPENMP)
 #         pragma omp parallel for
 #endif
-          for (int i = 0; i < s; ++i) {
+          for (libxsmm_blasint i = 0; i < s; ++i) {
             const T *const ai = a + i * asize, *const bi = b + i * bsize;
             T *const ci = c + i * csize;
             smm_eigen_dynamic(m, n, k, ai, bi, ci);
@@ -221,11 +220,11 @@ int main(int argc, char* argv[])
       if (xmm) {
         fprintf(stdout, "LIBXSMM streamed (A,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
-        for (int j = 0; j < r; ++j) {
+        for (libxsmm_blasint j = 0; j < r; ++j) {
 #if defined(_OPENMP)
 #         pragma omp parallel for
 #endif
-          for (int i = 0; i < s; ++i) {
+          for (libxsmm_blasint i = 0; i < s; ++i) {
             const T *const ai = a + i * asize;
             T* ci = c + i * csize;
             smm_xsmm_specialized<T>(xmm, ai, b, ci,
@@ -248,11 +247,11 @@ int main(int argc, char* argv[])
       {
         fprintf(stdout, "Eigen/dynamic streamed (A,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
-        for (int j = 0; j < r; ++j) {
+        for (libxsmm_blasint j = 0; j < r; ++j) {
 #if defined(_OPENMP)
 #         pragma omp parallel for
 #endif
-          for (int i = 0; i < s; ++i) {
+          for (libxsmm_blasint i = 0; i < s; ++i) {
             const T *const ai = a + i * asize;
             T* ci = c + i * csize;
             smm_eigen_dynamic(m, n, k, ai, b, ci);
@@ -272,11 +271,11 @@ int main(int argc, char* argv[])
       if (xmm) {
         fprintf(stdout, "LIBXSMM streamed (B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
-        for (int j = 0; j < r; ++j) {
+        for (libxsmm_blasint j = 0; j < r; ++j) {
 #if defined(_OPENMP)
 #         pragma omp parallel for
 #endif
-          for (int i = 0; i < s; ++i) {
+          for (libxsmm_blasint i = 0; i < s; ++i) {
             const T *const bi = b + i * bsize;
             T* ci = c + i * csize;
             smm_xsmm_specialized<T>(xmm, a, bi, ci,
@@ -299,11 +298,11 @@ int main(int argc, char* argv[])
       {
         fprintf(stdout, "Eigen/dynamic streamed (B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
-        for (int j = 0; j < r; ++j) {
+        for (libxsmm_blasint j = 0; j < r; ++j) {
 #if defined(_OPENMP)
 #         pragma omp parallel for
 #endif
-          for (int i = 0; i < s; ++i) {
+          for (libxsmm_blasint i = 0; i < s; ++i) {
             const T *const bi = b + i * bsize;
             T* ci = c + i * csize;
             smm_eigen_dynamic(m, n, k, a, bi, ci);
@@ -324,11 +323,11 @@ int main(int argc, char* argv[])
         if (xmm) {
           fprintf(stdout, "LIBXSMM streamed (A,B)...\n");
           const unsigned long long start = libxsmm_timer_tick();
-          for (int j = 0; j < r; ++j) {
+          for (libxsmm_blasint j = 0; j < r; ++j) {
 #if defined(_OPENMP)
 #           pragma omp parallel for
 #endif
-            for (int i = 0; i < s; ++i) {
+            for (libxsmm_blasint i = 0; i < s; ++i) {
               T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
               const T *const ai = a + i * asize, *const bi = b + i * bsize;
               // do nothing else with tmp; just a benchmark
@@ -352,11 +351,11 @@ int main(int argc, char* argv[])
         {
           fprintf(stdout, "Eigen/dynamic streamed (A,B)...\n");
           const unsigned long long start = libxsmm_timer_tick();
-          for (int j = 0; j < r; ++j) {
+          for (libxsmm_blasint j = 0; j < r; ++j) {
 #if defined(_OPENMP)
 #           pragma omp parallel for
 #endif
-            for (int i = 0; i < s; ++i) {
+            for (libxsmm_blasint i = 0; i < s; ++i) {
               T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
               const T *const ai = a + i * asize, *const bi = b + i * bsize;
               // do nothing else with tmp; just a benchmark
@@ -377,11 +376,11 @@ int main(int argc, char* argv[])
         if (xmm) {
           fprintf(stdout, "LIBXSMM cached...\n");
           const unsigned long long start = libxsmm_timer_tick();
-          for (int j = 0; j < r; ++j) {
+          for (libxsmm_blasint j = 0; j < r; ++j) {
 #if defined(_OPENMP)
 #           pragma omp parallel for
 #endif
-            for (int i = 0; i < s; ++i) {
+            for (libxsmm_blasint i = 0; i < s; ++i) {
               T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
               // do nothing else with tmp; just a benchmark
               smm_xsmm_specialized<T>(xmm, a, b, tmp,
@@ -403,11 +402,11 @@ int main(int argc, char* argv[])
         {
           fprintf(stdout, "Eigen/dynamic cached...\n");
           const unsigned long long start = libxsmm_timer_tick();
-          for (int j = 0; j < r; ++j) {
+          for (libxsmm_blasint j = 0; j < r; ++j) {
 #if defined(_OPENMP)
 #           pragma omp parallel for
 #endif
-            for (int i = 0; i < s; ++i) {
+            for (libxsmm_blasint i = 0; i < s; ++i) {
               T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
               // do nothing else with tmp; just a benchmark
               smm_eigen_dynamic(m, n, k, a, b, tmp);
