@@ -173,6 +173,10 @@ endif
 # always agnostic wrt the threading runtime
 OMP ?= 0
 
+ifneq (0,$(OMP))
+  DFLAGS += -DLIBXSMM_OMP
+endif
+
 ifneq (,$(MKL))
   BLAS = $(MKL)
 endif

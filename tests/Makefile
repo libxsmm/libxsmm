@@ -80,13 +80,13 @@ TEST_NOBLASLIB = $(call abslib, $(LIBNAME)noblas.$(LIBEXT))
 #endif
 
 define DEFINE_LINK_LD_RULE
-ifneq (,$(wildcard $(LIBNAME).$(LIBEXT)))
-ifneq (,$(wildcard $(LIBNAME)ext.$(LIBEXT)))
-$(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(LIBNAME).$(LIBEXT) $(LIBNAME)ext.$(LIBEXT) $(dir $(1))/.make
+ifneq (,$(wildcard $(LIBDEP)))
+ifneq (,$(wildcard $(EXTDEP)))
+$(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(LIBDEP) $(EXTDEP) $(dir $(1))/.make
 ifneq (0,$(BLAS))
-	$(LD) $(SLDFLAGS) -o $(1) $(2) $(TEST_EXTLIB) $(call abslib, $(LIBNAME).$(LIBEXT)) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) $(SLDFLAGS) -o $(1) $(2) $(TEST_EXTLIB) $(call abslib, $(LIBDEP)) $(LDFLAGS) $(CLDFLAGS)
 else
-	$(LD) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(LIBNAME).$(LIBEXT)) $(TEST_EXTLIB) $(TEST_NOBLASLIB) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(LIBDEP)) $(TEST_EXTLIB) $(TEST_NOBLASLIB) $(LDFLAGS) $(CLDFLAGS)
 endif
 else
 .PHONY: $(1)
@@ -98,15 +98,15 @@ endef
 
 define DEFINE_LINK_FC_RULE
 ifneq (,$(strip $(FC)))
-ifneq (,$(wildcard $(LIBNAME).$(LIBEXT)))
-ifneq (,$(wildcard $(LIBNAME)f.$(LIBEXT)))
-ifneq (,$(wildcard $(LIBNAME)ext.$(LIBEXT)))
-$(1): $(2) $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) $(LIBNAME)f.$(LIBEXT) $(LIBNAME).$(LIBEXT) $(LIBNAME)ext.$(LIBEXT) $(dir $(1))/.make
+ifneq (,$(wildcard $(LIBDEP)))
+ifneq (,$(wildcard $(FORTDEP)))
+ifneq (,$(wildcard $(EXTDEP)))
+$(1): $(2) $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) $(FORTDEP) $(LIBDEP) $(EXTDEP) $(dir $(1))/.make
 ifneq (0,$(BLAS))
-	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(LIBNAME)f.$(LIBEXT)) $(TEST_EXTLIB) \
-		$(call abslib, $(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(FORTDEP)) $(TEST_EXTLIB) \
+		$(call abslib, $(LIBDEP)) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
-	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(LIBNAME)f.$(LIBEXT)) $(call abslib, $(LIBNAME).$(LIBEXT)) $(TEST_EXTLIB) \
+	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(FORTDEP)) $(call abslib, $(LIBDEP)) $(TEST_EXTLIB) \
 		$(TEST_NOBLASLIB) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 endif
 else

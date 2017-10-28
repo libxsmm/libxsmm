@@ -109,7 +109,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
           if (LIBXSMM_PREFETCH_AUTO == prefetch) { /* automatically chosen */
             /* TODO: more sophisticated strategy perhaps according to CPUID */
             const char *const env_p = getenv("LIBXSMM_BGEMM_PREFETCH");
-            const int uid = ((0 == env_p || 0 == *env_p) ? 7/*LIBXSMM_PREFETCH_AL2BL2_VIA_C*/ : atoi(env_p));
+            const int uid = ((0 == env_p || 0 == *env_p) ? libxsmm_gemm_uid2prefetch(LIBXSMM_PREFETCH_AL2BL2_VIA_C) : atoi(env_p));
             descriptor.prefetch = (unsigned short)libxsmm_gemm_uid2prefetch(uid);
           }
           else { /* user-defined */
@@ -119,7 +119,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
         }
         if (0 != handle.kernel.smm && (LIBXSMM_PREFETCH_NONE == descriptor.prefetch || 0 != handle.kernel_pf.smm)) {
           const size_t tls_size = ((mm * nn * handle.typesize + LIBXSMM_CACHELINE_SIZE - 1) & ~(LIBXSMM_CACHELINE_SIZE - 1)) * LIBXSMM_BGEMM_MAX_NTHREADS;
-          const libxsmm_blasint size_locks = handle.mb * handle.nb * sizeof(libxsmm_bgemm_lock);
+          const size_t size_locks = (size_t)(handle.mb * handle.nb * sizeof(libxsmm_bgemm_lock));
           handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size_locks, LIBXSMM_CACHELINE_SIZE);
           handle.buffer = libxsmm_aligned_malloc(tls_size, LIBXSMM_CACHELINE_SIZE);
           result = (libxsmm_bgemm_handle*)malloc(sizeof(libxsmm_bgemm_handle));

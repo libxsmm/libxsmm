@@ -194,6 +194,9 @@ void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
   internal_sync_thread_tag *const thread = barrier->threads[tid];
   internal_sync_core_tag *const core = thread->core;
 
+  /* first let's execute a memory fence */
+  LIBXSMM_SYNCHRONIZE;
+
   /* first signal this thread's arrival */
   core->thread_senses[thread->core_tid] = (uint8_t)(0 == core->thread_senses[thread->core_tid] ? 1 : 0);
 

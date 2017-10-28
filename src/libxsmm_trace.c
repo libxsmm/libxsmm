@@ -88,6 +88,9 @@ LIBXSMM_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
 LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 # endif
 #endif
+#if !defined(_WIN32)
+# include <pthread.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif

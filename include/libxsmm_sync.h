@@ -112,12 +112,13 @@
 #   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_add_and_fetch(DST_PTR, VALUE)
 #   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_sub_and_fetch(DST_PTR, VALUE)
 # endif
-/* TODO: distinct implementation of LIBXSMM_ATIMIC_SYNC_* wrt LIBXSMM_GCCATOMICS */
+# define LIBXSMM_SYNCHRONIZE __sync_synchronize()
+/* TODO: distinct implementation of LIBXSMM_ATOMIC_SYNC_* wrt LIBXSMM_GCCATOMICS */
 # define LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, VALUE) while ((VALUE) == (LOCK)); LIBXSMM_SYNC_PAUSE
 # define LIBXSMM_ATOMIC_SYNC_SET(LOCK) do { LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, 1); } while(0 != __sync_lock_test_and_set(&(LOCK), 1))
 # define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK) __sync_lock_release(&(LOCK))
-#elif defined(_REENTRANT) && defined(_WIN32) /*TODO*/
-# define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) (*(SRC_PTR))
+#elif defined(_REENTRANT) && defined(_WIN32) /* TODO: atomics */
+# define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) (*((SRC_PTR) /*+ InterlockedOr((LONG volatile*)(SRC_PTR), 0) * 0*/))
 # define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) (*(DST_PTR) = VALUE)
 # define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) += VALUE)
 # define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) -= VALUE)
@@ -128,14 +129,16 @@
     } while(0 != libxsmm_sync_set_i_); \
   }
 # define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK) (LOCK) = 0
+# define LIBXSMM_SYNCHRONIZE /* TODO */
 #else
 # define LIBXSMM_ATOMIC_LOAD LIBXSMM_NONATOMIC_LOAD
 # define LIBXSMM_ATOMIC_STORE LIBXSMM_NONATOMIC_STORE
 # define LIBXSMM_ATOMIC_ADD_FETCH LIBXSMM_NONATOMIC_ADD_FETCH
 # define LIBXSMM_ATOMIC_SUB_FETCH LIBXSMM_NONATOMIC_SUB_FETCH
-# define LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, VALUE)
-# define LIBXSMM_ATOMIC_SYNC_SET(LOCK)
-# define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK)
+# define LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, VALUE) LIBXSMM_UNUSED(LOCK)
+# define LIBXSMM_ATOMIC_SYNC_SET(LOCK) LIBXSMM_UNUSED(LOCK)
+# define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK) LIBXSMM_UNUSED(LOCK)
+# define LIBXSMM_SYNCHRONIZE
 #endif
 #if !defined(LIBXSMM_ATOMIC_STORE_ZERO)
 # define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE(DST_PTR, 0, KIND)
@@ -148,23 +151,45 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #if defined(_REENTRANT)
-# if defined(_WIN32)
+  /* OpenMP based locks need to stay disabled unless both
+   * libxsmm and libxsmmext are built with OpenMP support.
+   */
+# if defined(_OPENMP) && defined(LIBXSMM_OMP)
+#   include <omp.h>
+#   define LIBXSMM_LOCK_ACQUIRED 1
+#   define LIBXSMM_LOCK_ATTR_TYPE const void*
+#   define LIBXSMM_LOCK_ATTR_INIT(ATTR) LIBXSMM_UNUSED(ATTR)
+#   define LIBXSMM_LOCK_ATTR_DESTROY(ATTR) LIBXSMM_UNUSED(ATTR)
+#   define LIBXSMM_LOCK_TYPE omp_lock_t
+#   define LIBXSMM_LOCK_CONSTRUCT LIBXSMM_LOCK_TYPE()
+#   define LIBXSMM_LOCK_INIT(LOCK, ATTR) omp_init_lock(LOCK)
+#   define LIBXSMM_LOCK_DESTROY(LOCK) omp_destroy_lock(LOCK)
+#   define LIBXSMM_LOCK_ACQUIRE(LOCK) omp_set_lock(LOCK)
+#   define LIBXSMM_LOCK_TRYLOCK(LOCK) omp_test_lock(LOCK)
+#   define LIBXSMM_LOCK_RELEASE(LOCK) omp_unset_lock(LOCK)
+# elif defined(_WIN32)
 #   include <windows.h>
 #   if 1
 #     define LIBXSMM_LOCK_ACQUIRED WAIT_OBJECT_0
+#     define LIBXSMM_LOCK_ATTR_TYPE LPSECURITY_ATTRIBUTES
+#     define LIBXSMM_LOCK_ATTR_INIT(ATTR) *(ATTR) = NULL
+#     define LIBXSMM_LOCK_ATTR_DESTROY(ATTR)
 #     define LIBXSMM_LOCK_TYPE HANDLE
 #     define LIBXSMM_LOCK_CONSTRUCT 0
-#     define LIBXSMM_LOCK_INIT(LOCK) *(LOCK) = CreateMutex(NULL, FALSE, NULL)
+#     define LIBXSMM_LOCK_INIT(LOCK, ATTR) *(LOCK) = CreateMutex(*(ATTR), FALSE, NULL)
 #     define LIBXSMM_LOCK_DESTROY(LOCK) CloseHandle(*(LOCK))
 #     define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(*(LOCK), INFINITE)
 #     define LIBXSMM_LOCK_TRYLOCK(LOCK) WaitForSingleObject(*(LOCK), 0)
 #     define LIBXSMM_LOCK_RELEASE(LOCK) ReleaseMutex(*(LOCK))
 #   else /*TODO*/
 #     define LIBXSMM_LOCK_ACQUIRED WAIT_OBJECT_0
+#     define LIBXSMM_LOCK_ATTR_TYPE const void*
+#     define LIBXSMM_LOCK_ATTR_INIT(ATTR) *(ATTR) = NULL
+#     define LIBXSMM_LOCK_ATTR_DESTROY(ATTR) LIBXSMM_UNUSED(ATTR)
 #     define LIBXSMM_LOCK_TYPE CRITICAL_SECTION
 #     define LIBXSMM_LOCK_CONSTRUCT LIBXSMM_LOCK_TYPE()
-#     define LIBXSMM_LOCK_INIT(LOCK) InitializeCriticalSection(LOCK)
-#     define LIBXSMM_LOCK_DESTROY(LOCK)
+#     define LIBXSMM_LOCK_INIT(LOCK, ATTR) InitializeCriticalSection(LOCK)
+#     define LIBXSMM_LOCK_DESTROY(LOCK) DeleteCriticalSection(LOCK)
 #     define LIBXSMM_LOCK_ACQUIRE(LOCK) EnterCriticalSection(LOCK)
 #     define LIBXSMM_LOCK_TRYLOCK(LOCK) TryEnterCriticalSection(LOCK)
 #     define LIBXSMM_LOCK_RELEASE(LOCK) LeaveCriticalSection(LOCK)
@@ -172,9 +197,18 @@
 # else
 #   include <pthread.h>
 #   define LIBXSMM_LOCK_ACQUIRED 0
+#   define LIBXSMM_LOCK_ATTR_TYPE pthread_mutexattr_t
+#   if defined(NDEBUG)
+#     define LIBXSMM_LOCK_ATTR_INIT(ATTR) pthread_mutexattr_init(ATTR); \
+              pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_NORMAL)
+#   else
+#     define LIBXSMM_LOCK_ATTR_INIT(ATTR) pthread_mutexattr_init(ATTR); \
+              pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_ERRORCHECK)
+#   endif
+#   define LIBXSMM_LOCK_ATTR_DESTROY(ATTR) pthread_mutexattr_destroy(ATTR)
 #   define LIBXSMM_LOCK_TYPE pthread_mutex_t
-#   define LIBXSMM_LOCK_CONSTRUCT PTHREAD_MUTEX_INITIALIZER
-#   define LIBXSMM_LOCK_INIT(LOCK) pthread_mutex_init(LOCK, 0)
+#   define LIBXSMM_LOCK_CONSTRUCT PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
+#   define LIBXSMM_LOCK_INIT(LOCK, ATTR) pthread_mutex_init(LOCK, ATTR)
 #   define LIBXSMM_LOCK_DESTROY(LOCK) pthread_mutex_destroy(LOCK)
 #   define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_mutex_lock(LOCK)
 #   define LIBXSMM_LOCK_TRYLOCK(LOCK) pthread_mutex_trylock(LOCK)
@@ -182,9 +216,12 @@
 # endif
 #else
 # define LIBXSMM_LOCK_ACQUIRED 0
+# define LIBXSMM_LOCK_ATTR_TYPE const void*
+# define LIBXSMM_LOCK_ATTR_INIT(ATTR) *(ATTR) = NULL
+# define LIBXSMM_LOCK_ATTR_DESTROY(ATTR) LIBXSMM_UNUSED(ATTR)
 # define LIBXSMM_LOCK_TYPE const void*
 # define LIBXSMM_LOCK_CONSTRUCT 0
-# define LIBXSMM_LOCK_INIT(LOCK) LIBXSMM_UNUSED(LOCK)
+# define LIBXSMM_LOCK_INIT(LOCK, ATTR) *(LOCK) = NULL; LIBXSMM_UNUSED(ATTR)
 # define LIBXSMM_LOCK_DESTROY(LOCK) LIBXSMM_UNUSED(LOCK)
 # define LIBXSMM_LOCK_ACQUIRE(LOCK) LIBXSMM_UNUSED(LOCK)
 # define LIBXSMM_LOCK_TRYLOCK(LOCK) LIBXSMM_UNUSED(LOCK)

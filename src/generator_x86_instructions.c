@@ -1217,9 +1217,6 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
     /* int i = *loc; */
     unsigned int l_maxsize = io_generated_code->buffer_size;
     /* unsigned int l_maxsize = 1024; */
-    int l_fpadj=0;
-    int l_fpadj2=0;
-    int l_bytes=4;
     int l_vecval0 = i_vec_reg_number_0 % 8;
     int l_vecgrp0 = i_vec_reg_number_0 / 8;
     int l_oddgrp0 = ((l_vecgrp0 % 2)==1);
@@ -1958,7 +1955,7 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
                                               const unsigned int      i_vec_reg_number_0,
                                               const unsigned int      i_vec_reg_number_1,
                                               const unsigned int      i_shuffle_operand,
-                                              const unsigned int      i_mask_reg_number ) 
+                                              const unsigned int      i_mask_reg_number )
 {
   /* @TODO add checks in debug mode */
   if ( (i_instruction_set != LIBXSMM_X86_IMCI)        &&
@@ -1977,7 +1974,6 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
     unsigned int l_maxsize = io_generated_code->buffer_size;
     /*unsigned int l_maxsize = 1024;*/
 
-    int l_broadcast = (int)i_use_broadcast;
     int l_regbas0 = i_gp_reg_base % 8;
     int l_gp8     = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
     int l_regidx  = i_gp_reg_idx  % 8;
@@ -1989,6 +1985,7 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
     int l_scaleadj = 0;
     int l_place = i;
     int l_sizereg = 64;
+    int l_forced_offset = 0;
 
     if ( l_maxsize - i < 20 )
     {
@@ -1996,13 +1993,13 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
        return;
     }
     if ( (i_gp_reg_base == LIBXSMM_X86_GP_REG_UNDEF) ||
-         ((i_gp_reg_base < LIBXSMM_X86_GP_REG_RAX) || (i_gp_reg_base > LIBXSMM_X86_GP_REG_R15)) )
+         (((int)i_gp_reg_base < LIBXSMM_X86_GP_REG_RAX) || (i_gp_reg_base > LIBXSMM_X86_GP_REG_R15)) )
     {
        fprintf(stderr,"libxsmm_instruction_vec_compute_mem_mask has invalid i_gp_reg_base input\n");
        exit(-1);
     }
     if ( (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF) &&
-         ((i_gp_reg_idx < LIBXSMM_X86_GP_REG_RAX) || (i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15)) )
+         (((int)i_gp_reg_idx < LIBXSMM_X86_GP_REG_RAX) || (i_gp_reg_idx > LIBXSMM_X86_GP_REG_R15)) )
     {
        fprintf(stderr,"libxsmm_instruction_vec_compute_mem_mask has invalid i_gp_reg_idx input\n");
        exit(-1);
@@ -2073,7 +2070,6 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
         buf[i++] = (unsigned char)(0x04 + i_mask_reg_number*8);
         buf[i++] = (unsigned char)(0x00 + l_scaleadj + l_regbas0 + l_regidx*8);
     }
-    int l_forced_offset = 0;
     if ( (l_regbas0 == 5) && (i_displacement==0) )
     {
        /* Registers like rbp/r13 when you have a displacement of 0, we need

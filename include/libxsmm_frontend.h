@@ -91,8 +91,10 @@
 #define LIBXSMM_EQUAL_doublefloat 0
 
 /** Check ILP64 configuration for sanity. */
-#if !defined(LIBXSMM_ILP64) || (defined(MKL_ILP64) && 0 == LIBXSMM_ILP64)
+#if !defined(LIBXSMM_ILP64) || (0 == LIBXSMM_ILP64 && defined(MKL_ILP64))
 # error "Inconsistent ILP64 configuration detected!"
+#elif (0 != LIBXSMM_ILP64 && !defined(MKL_ILP64))
+# define MKL_ILP64
 #endif
 #if (0 != LIBXSMM_ILP64)
 # define LIBXSMM_BLASINT long long
@@ -176,9 +178,9 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 
 /** Helper macro allowing NULL-requests (transposes) supplied by some default. */
 #define LIBXSMM_GEMM_PFLAGS(TRANSA, TRANSB, DEFAULT) LIBXSMM_GEMM_FLAGS( \
-  0 != ((const void*)(TRANSA)) ? *((const char*)(TRANSA)) : (0 == ((DEFAULT) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'), \
-  0 != ((const void*)(TRANSB)) ? *((const char*)(TRANSB)) : (0 == ((DEFAULT) & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T')) \
-  | ((DEFAULT) & ~(LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B))
+  0 != ((const void*)(TRANSA)) ? *((const char*)(TRANSA)) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (DEFAULT)) ? 'N' : 'T'), \
+  0 != ((const void*)(TRANSB)) ? *((const char*)(TRANSB)) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (DEFAULT)) ? 'N' : 'T')) \
+  | (~(LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B) & (DEFAULT))
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (template). */
 #if !defined(__BLAS) || (0 != __BLAS)
@@ -332,10 +334,10 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #define LIBXSMM_XGEMM(TYPE, INT, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
   if (((unsigned long long)(LIBXSMM_MAX_MNK)) >= LIBXSMM_MNK_SIZE(M, N, K)) { \
     const int libxsmm_xgemm_flags_ = (int)(FLAGS); \
-    const int libxsmm_xgemm_lda_ = (int)(LDA), libxsmm_xgemm_ldb_ = (int)(LDB), libxsmm_xgemm_ldc_ = (int)(LDC); \
+    const INT libxsmm_xgemm_lda_ = (INT)(LDA), libxsmm_xgemm_ldb_ = (INT)(LDB), libxsmm_xgemm_ldc_ = (INT)(LDC); \
     const TYPE libxsmm_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_xgemm_beta_ = (TYPE)(BETA); \
     const LIBXSMM_MMFUNCTION_TYPE(TYPE) libxsmm_mmfunction_ = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)( \
-      (int)(M), (int)(N), (int)(K), &libxsmm_xgemm_lda_, &libxsmm_xgemm_ldb_, &libxsmm_xgemm_ldc_, \
+      (INT)(M), (INT)(N), (INT)(K), &libxsmm_xgemm_lda_, &libxsmm_xgemm_ldb_, &libxsmm_xgemm_ldc_, \
       &libxsmm_xgemm_alpha_, &libxsmm_xgemm_beta_, &libxsmm_xgemm_flags_, 0); \
     if (0 != libxsmm_mmfunction_) { \
       LIBXSMM_MMCALL_LDX(libxsmm_mmfunction_, (const TYPE*)(A), (const TYPE*)(B), (TYPE*)(C), M, N, K, LDA, LDB, LDC); \

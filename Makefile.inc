@@ -215,7 +215,14 @@ endif
 
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
-EXTLIB = $(call abslib,$(LIBNAME)ext.$(LIBEXT)) #$(XLIB_BEGIN) -lm $(XLIB_END)
+LIBDEP = $(LIBNAME).$(LIBEXT)
+MAINLIB = $(call abslib,$(LIBDEP))
+
+FORTDEP = $(LIBNAME)f.$(LIBEXT)
+FORTLIB = $(call abslib,$(FORTDEP))
+
+EXTDEP = $(LIBNAME)ext.$(LIBEXT)
+EXTLIB = $(call abslib,$(EXTDEP)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides libxsmmnoblas to satisfy BLAS symbols
   NOBLASLIB = $(call abslib,$(LIBNAME)noblas.$(LIBEXT))
@@ -698,6 +705,10 @@ ifneq (0,$(INTEL))
   ifneq (0,$(R8))
     FCFLAGS += -autodouble
   endif
+  endif
+  # workaround for certain bits introduced by GCC 7.0
+  ifneq (0,$(shell echo "$$((180001 > $(CC_VERSION) && 0 != $(CC_VERSION)))"))
+    CFLAGS += -D_Float128=__float128
   endif
 else # GCC assumed
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)

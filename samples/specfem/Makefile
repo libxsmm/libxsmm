@@ -90,13 +90,13 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (,$(strip $(FC)))
-$(OUTDIR)/specfem: $(OUTDIR)/.make $(FTNOBJS) $(LIBNAME).$(LIBEXT)
+$(OUTDIR)/specfem: $(OUTDIR)/.make $(FTNOBJS) $(LIBDEP)
 ifneq (0,$(KNC))
 ifneq (0,$(MPSS))
 	@echo ""
 	@echo "building MIC/KNC version"
 	@echo ""
-	$(FLD) -o $@ -mmic $(FTNOBJS) $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(call abslib,$(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS_MIC) $(FLDFLAGS) $(ELDFLAGS)
+	$(FLD) -o $@ -mmic $(FTNOBJS) $(FORTLIB) $(MAINLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS_MIC) $(FLDFLAGS) $(ELDFLAGS)
 endif
 endif
 ifeq (0,$(KNC))
@@ -104,7 +104,7 @@ ifeq (0,$(MPSS))
 	@echo ""
 	@echo "building host version"
 	@echo ""
-	$(FLD) -o $@ $(FTNOBJS) $(call abslib,$(LIBNAME)f.$(LIBEXT)) $(call abslib,$(LIBNAME).$(LIBEXT)) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+	$(FLD) -o $@ $(FTNOBJS) $(FORTLIB) $(MAINLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 endif
 endif
 else

@@ -45,9 +45,6 @@
 # include <mkl_service.h>
 # include <mkl.h>
 #endif
-#if defined(_OPENMP)
-# include <omp.h>
-#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -61,7 +58,7 @@
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
@@ -88,46 +85,35 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
   try {
     typedef REAL_TYPE T;
-    const int m = 1 < argc ? std::atoi(argv[1]) : 23;
-    const int k = 3 < argc ? std::atoi(argv[3]) : m;
-    const int n = 2 < argc ? std::atoi(argv[2]) : k;
+    const libxsmm_blasint m = 1 < argc ? std::atoi(argv[1]) : 23;
+    const libxsmm_blasint k = 3 < argc ? std::atoi(argv[3]) : m;
+    const libxsmm_blasint n = 2 < argc ? std::atoi(argv[2]) : k;
     const unsigned long size = LIBXSMM_DEFAULT(2048/*default: 2 GByte*/,
       4 < argc ? std::strtoul(argv[4], 0, 10) : 0) << 20;
 
-    const int asize = m * k, bsize = k * n, csize = m * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
-    const int s = LIBXSMM_MAX(size / ((asize + bsize + csize) * sizeof(T)), 1);
-    const size_t bwsize_batched = (asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T); // batched (A, B, and C)
-    const size_t bwsize = (asize/*load*/ + bsize/*load*/) * sizeof(T); // omit size of A, B, or C since it is held in cache
+    const libxsmm_blasint asize = m * k, bsize = k * n, csize = m * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
+    const libxsmm_blasint s = LIBXSMM_MAX(size / ((asize + bsize + csize) * sizeof(T)), 1);
+    const size_t bwsize_batched = static_cast<size_t>((asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T)); // batched (A, B, and C)
+    const size_t bwsize = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(T)); // omit size of A, B, or C since it is held in cache
     const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0;
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
       T *a, *b, *c, *d;
-      raii(int asize_, int bsize_, int csize_): a(new T[asize_]), b(new T[bsize_]), c(new T[csize_]), d(new T[csize_]) {}
+      raii(libxsmm_blasint asize_, libxsmm_blasint bsize_, libxsmm_blasint csize_)
+        : a(new T[static_cast<size_t>(asize_)]), b(new T[static_cast<size_t>(bsize_)])
+        , c(new T[static_cast<size_t>(csize_)]), d(new T[static_cast<size_t>(csize_)]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; delete[] d; }
-#else
-      T *a, *b, *c;
-      raii(int asize, int bsize, int csize): a(new T[asize]), b(new T[bsize]), c(new T[csize]) {}
-      ~raii() { delete[] a; delete[] b; delete[] c; }
-#endif
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1);
     T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
     T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
     T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
     T *d = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
-#endif
 
-#if defined(_OPENMP)
-#   pragma omp parallel for
-#endif
-    for (int i = 0; i < s; ++i) {
+    for (libxsmm_blasint i = 0; i < s; ++i) {
       init(42 + i, a + i * asize, m, k, m, scale);
       init(24 + i, b + i * bsize, k, n, k, scale);
       init(22 + i, c + i * csize, m, n, m, scale);
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
       init(22 + i, d + i * csize, m, n, m, scale);
-#endif
     }
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -144,14 +130,16 @@ int main(int argc, char* argv[])
       // initialize LIBXSMM
       libxsmm_init();
 
-      fprintf(stdout, "m=%i n=%i k=%i size=%i memory=%.1f MB (%s)\n\n", m, n, k, s,
-        1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
+      fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n",
+        (long long)m, (long long)n, (long long)k, (long long)s,
+        1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20),
+        8 == sizeof(T) ? "DP" : "SP");
 
       { // LAPACK/BLAS3 (warmup BLAS Library)
 #if defined(_OPENMP)
 #       pragma omp parallel for
 #endif
-        for (int i = 0; i < s; ++i) {
+        for (libxsmm_blasint i = 0; i < s; ++i) {
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
             LIBXSMM_ALPHA, a + i * asize, m, b + i * bsize, k,
@@ -165,7 +153,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #       pragma omp parallel for
 #endif
-        for (int i = 0; i < s; ++i) {
+        for (libxsmm_blasint i = 0; i < s; ++i) {
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
             LIBXSMM_ALPHA, a + i * asize, m, b + i * bsize, k,
@@ -181,18 +169,66 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
+      { // LIBXSMM batch interface
+        fprintf(stdout, "Batched-indirect (A,B,C)...\n");
+        const int flags = LIBXSMM_FLAGS;
+        const char transa = (0 == (flags & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T');
+        const char transb = (0 == (flags & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T');
+        const T alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
+        const libxsmm_blasint ptrsize = sizeof(T*);
+        std::vector<const T*> va_array(static_cast<size_t>(s)), vb_array(static_cast<size_t>(s));
+        std::vector<T*> vc_array(static_cast<size_t>(s));
+        const T* *const a_array = &va_array[0];
+        const T* *const b_array = &vb_array[0];
+        T* *const c_array = &vc_array[0];
+        for (libxsmm_blasint i = 0; i < s; ++i) {
+          a_array[i] = a + i * asize; b_array[i] = b + i * bsize; c_array[i] = d + i * csize;
+        }
+        // warm-up
+        libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
+          m, n, k, &alpha, &a_array[0], &m, &b_array[0], &k, &beta, &c_array[0], &m,
+          0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
+        // reset the destination after warm-up
+        for (libxsmm_blasint i = 0; i < s; ++i) c_array[i] = d + i * csize;
+        const unsigned long long start = libxsmm_timer_tick();
+        libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
+          m, n, k, &alpha, &a_array[0], &m, &b_array[0], &k, &beta, &c_array[0], &m,
+          0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
+        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
+        const double duration = libxsmm_timer_duration(start, end);
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        double d2 = 0;
+        for (libxsmm_blasint h = 0; h < s; ++h) {
+          const T *const u = c + h * csize, *const v = c_array[h];
+          for (libxsmm_blasint i = 0; i < m; ++i) {
+            for (libxsmm_blasint j = 0; j < n; ++j) {
+              const libxsmm_blasint index = i * n + j;
+              const double d1 = static_cast<double>(u[index] - v[index]);
+              d2 += d1 * d1;
+            }
+          }
+        }
+        fprintf(stdout, "\tdiff=%f\n", d2 / s);
+      }
+
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
       { // MKL-batched
         fprintf(stdout, "MKL-Batched (A,B,C)...\n");
         const char transa_array[] = { 0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T' };
         const char transb_array[] = { 0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T' };
         const T alpha_array[] = { LIBXSMM_ALPHA }, beta_array[] = { LIBXSMM_BETA };
-        std::vector<const T*> va_array(s), vb_array(s); std::vector<T*> vc_array(s);
+        std::vector<const T*> va_array(static_cast<size_t>(s)), vb_array(static_cast<size_t>(s));
+        std::vector<T*> vc_array(static_cast<size_t>(s));
         const T* *const a_array = &va_array[0];
         const T* *const b_array = &vb_array[0];
         T* *const c_array = &vc_array[0];
-        const int group_count = 1;
-        for (int i = 0; i < s; ++i) {
+        const libxsmm_blasint group_count = 1;
+        for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a + i * asize; b_array[i] = b + i * bsize; c_array[i] = d + i * csize;
         }
         // additional warm-up
@@ -200,7 +236,7 @@ int main(int argc, char* argv[])
           alpha_array, &a_array[0], &m, &b_array[0], &k,
            beta_array, &c_array[0], &m, &group_count, &s);
         // reset the destination after warm-up
-        for (int i = 0; i < s; ++i) c_array[i] = d + i * csize;
+        for (libxsmm_blasint i = 0; i < s; ++i) c_array[i] = d + i * csize;
         const unsigned long long start = libxsmm_timer_tick();
         LIBXSMM_TPREFIX(REAL_TYPE,gemm_batch)(transa_array, transb_array, &m, &n, &k,
           alpha_array, &a_array[0], &m, &b_array[0], &k,
@@ -214,11 +250,11 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         double d2 = 0;
-        for (int h = 0; h < s; ++h) {
+        for (libxsmm_blasint h = 0; h < s; ++h) {
           const T *const u = c + h * csize, *const v = c_array[h];
-          for (int i = 0; i < m; ++i) {
-            for (int j = 0; j < n; ++j) {
-              const int index = i * n + j;
+          for (libxsmm_blasint i = 0; i < m; ++i) {
+            for (libxsmm_blasint j = 0; j < n; ++j) {
+              const libxsmm_blasint index = i * n + j;
               const double d1 = static_cast<double>(u[index] - v[index]);
               d2 += d1 * d1;
             }
@@ -234,7 +270,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #       pragma omp parallel for
 #endif
-        for (int i = 0; i < s; ++i) {
+        for (libxsmm_blasint i = 0; i < s; ++i) {
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
             LIBXSMM_ALPHA, a + i * asize, m, b, k,
@@ -256,7 +292,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #       pragma omp parallel for
 #endif
-        for (int i = 0; i < s; ++i) {
+        for (libxsmm_blasint i = 0; i < s; ++i) {
           // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
           LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
             LIBXSMM_ALPHA, a, m, b + i * bsize, k,
@@ -279,7 +315,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #         pragma omp parallel for
 #endif
-          for (int i = 0; i < s; ++i) {
+          for (libxsmm_blasint i = 0; i < s; ++i) {
             T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             // do nothing else with tmp; just a benchmark
             // alternatively libxsmm_blas_gemm can be called instead of relying on a macro
@@ -303,7 +339,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #         pragma omp parallel for
 #endif
-          for (int i = 0; i < s; ++i) {
+          for (libxsmm_blasint i = 0; i < s; ++i) {
             T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
             // do nothing else with tmp; just a benchmark
             // alternatively libxsmm_blas_gemm can be called instead of relying on a macro

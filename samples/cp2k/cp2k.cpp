@@ -97,7 +97,7 @@ private:
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
+LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
@@ -121,9 +121,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, REAL_TYPE *LIBXSMM_RESTR
 
 template<typename T>
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE
-void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, int nrows, int ncols, int ld_src = 0)
+void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld_src = 0)
 {
-  const int ld = 0 == ld_src ? ncols : ld_src;
+  const libxsmm_blasint ld = 0 == ld_src ? ncols : ld_src;
 #if defined(_OPENMP) && defined(CP2K_SYNCHRONIZATION) && (0 < (CP2K_SYNCHRONIZATION))
 # if (1 == (CP2K_SYNCHRONIZATION))
 # pragma omp critical(smmadd)
@@ -132,9 +132,9 @@ void add(T *LIBXSMM_RESTRICT dst, const T *LIBXSMM_RESTRICT src, int nrows, int 
 # endif
 #endif
   {
-    for (int i = 0; i < nrows; ++i) {
+    for (libxsmm_blasint i = 0; i < nrows; ++i) {
       LIBXSMM_PRAGMA_UNROLL
-      for (int j = 0; j < ncols; ++j) {
+      for (libxsmm_blasint j = 0; j < ncols; ++j) {
         const T value = src[i*ld+j];
 #if defined(_OPENMP) && (!defined(CP2K_SYNCHRONIZATION) || (0 == (CP2K_SYNCHRONIZATION)))
 #       pragma omp atomic
@@ -154,43 +154,42 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
   try {
     typedef REAL_TYPE T;
-    const int m = 1 < argc ? std::atoi(argv[1]) : 23;
-    const int q = ((1ULL << 30) / (3 * m * m * sizeof(T)));
-    const int r = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]
+    const libxsmm_blasint m = 1 < argc ? std::atoi(argv[1]) : 23;
+    const libxsmm_blasint q = ((1ULL << 30) / (3 * m * m * sizeof(T)));
+    const libxsmm_blasint r = 2 < argc ? (0 < std::atoi(argv[2]) ? std::atoi(argv[2]) : ('+' == *argv[2]
       ? (q << std::strlen(argv[2])) : ('-' == *argv[2]
       ? (q >> std::strlen(argv[2])) : 0))) : 0;
-    const int t = 3 < argc ? (0 < std::atoi(argv[3]) ? std::atoi(argv[3]) : ('+' == *argv[3]
+    const libxsmm_blasint t = 3 < argc ? (0 < std::atoi(argv[3]) ? std::atoi(argv[3]) : ('+' == *argv[3]
       ? ((CP2K_MIN_NLOCAL) << std::strlen(argv[3])) : ('-' == *argv[3]
       ? ((CP2K_MIN_NLOCAL) >> std::strlen(argv[3])) : -1))) : -1;
-    const int k = 5 < argc ? std::atoi(argv[5]) : m;
-    const int n = 4 < argc ? std::atoi(argv[4]) : k;
+    const libxsmm_blasint k = 5 < argc ? std::atoi(argv[5]) : m;
+    const libxsmm_blasint n = 4 < argc ? std::atoi(argv[4]) : k;
 
-    const int csize = m * n;
+    const libxsmm_blasint csize = m * n;
     if ((MAX_SIZE) < csize) {
       throw "The size M x N is exceeding MAX_SIZE!";
     }
 
-    const int asize = m * k, bsize = k * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
-    const int s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
-    const int u = 0 < t ? t : static_cast<int>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
-    const size_t bwsize = (s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T);
+    const libxsmm_blasint asize = m * k, bsize = k * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
+    const libxsmm_blasint s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
+    const libxsmm_blasint u = 0 < t ? t : static_cast<libxsmm_blasint>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
+    const size_t bwsize = static_cast<size_t>((s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T));
     const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0 / s;
     const char *const env_check = getenv("CHECK");
     const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
 
     LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;
-      raii(int asize_, int bsize_, int csize_): a(new T[asize_]), b(new T[bsize_]), c(new T[csize_]) {}
+      raii(libxsmm_blasint asize_, libxsmm_blasint bsize_, libxsmm_blasint csize_)
+        : a(new T[static_cast<size_t>(asize_)]), b(new T[static_cast<size_t>(bsize_)])
+        , c(new T[static_cast<size_t>(csize_)]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, csize);
     T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
     T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
     T * /*const*/ c = buffer.c; // no alignment, but thread-local array will be aligned
 
-#if defined(_OPENMP)
-#   pragma omp parallel for CP2K_SCHEDULE
-#endif
-    for (int i = 0; i < s; ++i) {
+    for (libxsmm_blasint i = 0; i < s; ++i) {
       init(42 + i, a + i * asize, m, k, m, scale);
       init(24 + i, b + i * bsize, k, n, k, scale);
     }
@@ -210,12 +209,12 @@ int main(int argc, char* argv[])
 #endif
       //libxsmm_set_dispatch_trylock(1);
 
-      fprintf(stdout, "m=%i n=%i k=%i size=%i memory=%.1f MB (%s)\n\n", m, n, k, s,
+      fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n", m, n, k, s,
         1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
       LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
         T *expect;
-        explicit raii(int size): expect(0 < size ? new T[size] : 0) {}
+        explicit raii(libxsmm_blasint size): expect(0 < size ? new T[static_cast<size_t>(size)] : 0) {}
         ~raii() { delete[] expect; }
       } expect_buffer(LIBXSMM_FEQ(0, check) ? 0 : csize);
       T *const expect = (0 == expect_buffer.expect ? c : expect_buffer.expect);
@@ -230,10 +229,10 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
-        for (int i = 0; i < s; i += u) {
+        for (libxsmm_blasint i = 0; i < s; i += u) {
           T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
           const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+          for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
             libxsmm_blas_gemm(0/*transa*/, 0/*transb*/, m, n, k,
               0/*alpha*/, ai, 0/*lda*/, bi, 0/*ldb*/,
@@ -252,10 +251,10 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
-        for (int i = 0; i < s; i += u) {
+        for (libxsmm_blasint i = 0; i < s; i += u) {
           T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
           const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+          for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
             // alternatively libxsmm_blas_gemm can be called (see above)
             LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
@@ -286,10 +285,10 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
-        for (int i = 0; i < s; i += u) {
+        for (libxsmm_blasint i = 0; i < s; i += u) {
           T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
           const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+          for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
             LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
               LIBXSMM_ALPHA, ai, m, bi, k,
@@ -319,10 +318,10 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
-        for (int i = 0; i < s; i += u) {
+        for (libxsmm_blasint i = 0; i < s; i += u) {
           T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
           const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+          for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
             libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
               0/*alpha*/, ai, 0/*lda*/, bi, 0/*ldb*/,
@@ -352,10 +351,10 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #       pragma omp parallel for CP2K_SCHEDULE
 #endif
-        for (int i = 0; i < s; i += u) {
+        for (libxsmm_blasint i = 0; i < s; i += u) {
           T tmp[MAX_SIZE] = { 0 }; // make sure that stacksize is covering the problem size
           const T *ai = a + i * asize, *bi = b + i * bsize;
-          for (int j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
+          for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
 #if (0 != LIBXSMM_PREFETCH)
             xmm(ai, bi, tmp,

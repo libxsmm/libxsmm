@@ -75,6 +75,15 @@
      &    LIBXSMM_GEMM_FLAG_TRANS_A = 1,                                &
      &    LIBXSMM_GEMM_FLAG_TRANS_B = 2
 
+        ! Flag enumeration which can be IORed.
+        INTEGER(C_INT), PARAMETER ::                                    &
+          ! Handle recorded batch in parallel.
+     &    LIBXSMM_MMBATCH_FLAG_DEFAULT    = 0,                          &
+          ! Handle recorded batch sequentially.
+     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL = 256,                        &
+          ! Only record a statistic of potential SMMs.
+     &    LIBXSMM_MMBATCH_FLAG_STATISTIC  = 512
+
         ! Flag which denotes the value type (for weak-typed interface
         ! functions such as libxsmm_xmmdispatch).
         INTEGER(C_INT), PARAMETER ::                                    &
@@ -205,7 +214,6 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
-
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_begin
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_end
         INTERFACE
@@ -294,15 +302,17 @@
 
           ! Type-generic (unsafe) code dispatch (trylock: impure routine).
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4) :: precision, m, n, k, lda, ldb, ldc, flags, prefetch
-          ! REAL(4|8)  :: alpha, beta
-          ! INTEGER(8) :: fn
-          SUBROUTINE libxsmm_xmmdispatch(fn, precision,                 &
-     &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
+          ! INTEGER(4)   :: prec, flags, prefetch
+          ! INTEGER(4|8) :: m, n, k, lda, ldb, ldc
+          ! REAL(4|8)    :: alpha, beta
+          ! INTEGER(8)   :: kernel
+          SUBROUTINE libxsmm_xmmdispatch(kernel, prec, m, n, k,         &
+     &    lda, ldb, ldc, alpha, beta, flags, prefetch)                  &
      &    BIND(C, NAME="libxsmm_xmmdispatch_")
-            IMPORT :: C_INTPTR_T, C_PTR, C_INT
-            INTEGER(C_INTPTR_T), INTENT(OUT) :: fn
-            INTEGER(C_INT), INTENT(IN) :: precision, m, n, k
+            IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            INTEGER(C_INTPTR_T), INTENT(OUT) :: kernel
+            INTEGER(C_INT), INTENT(IN) :: prec
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
             TYPE(C_PTR), INTENT(IN), VALUE :: flags, prefetch
@@ -311,55 +321,43 @@
           ! Generic call routine (3-argument form).
           ! Implicit FORTRAN 77 interface:
           ! REAL(4|8)  :: a(1), b(1), c(1)
-          ! INTEGER(8) :: fn
-          PURE SUBROUTINE libxsmm_xmmcall_abc(fn, a, b, c)              &
+          ! INTEGER(8) :: kernel
+          PURE SUBROUTINE libxsmm_xmmcall_abc(kernel, a, b, c)          &
      &    BIND(C, NAME="libxsmm_xmmcall_abc_")
             IMPORT :: C_INTPTR_T, C_PTR
-            INTEGER(C_INTPTR_T), INTENT(IN) :: fn
+            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
           END SUBROUTINE
 
           ! Generic call routine (6-argument form).
           ! Implicit FORTRAN 77 interface:
           ! REAL(4|8)  :: a(1), b(1), c(1), pa(1), pb(1), pc(1)
-          ! INTEGER(8) :: fn
-          PURE SUBROUTINE libxsmm_xmmcall_prf(fn, a, b, c, pa, pb, pc)  &
-     &    BIND(C, NAME="libxsmm_xmmcall_prf_")
+          ! INTEGER(8) :: kernel
+          PURE SUBROUTINE libxsmm_xmmcall_prf(kernel, a, b, c,          &
+     &    pa, pb, pc) BIND(C, NAME="libxsmm_xmmcall_prf_")
             IMPORT :: C_INTPTR_T, C_PTR
-            INTEGER(C_INTPTR_T), INTENT(IN) :: fn
+            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
           END SUBROUTINE
 
           ! Matrix transposition; MT via libxsmmext (out-of-place form).
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4) :: typesize, m, n, ldi, ldo
-          ! ANY ARRAY  :: output, input
+          ! INTEGER(4|8) :: m, n, ldi, ldo
+          ! ANY ARRAY    :: output, input
+          ! INTEGER(4)   :: typesize
           PURE SUBROUTINE libxsmm_otrans_omp(output, input, typesize,   &
      &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_omp_")
-            IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
+            IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
             INTEGER(C_INT), INTENT(IN) :: typesize
-          END SUBROUTINE
-
-          ! General dense matrix multiplication; MT via libxsmmext (single-precision).
-          ! Implicit FORTRAN 77 interface: similar to SGEMM.
-          SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,         &
-     &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
-            IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_FLOAT
-            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-            REAL(C_FLOAT), INTENT(IN) :: alpha, beta
-            REAL(C_FLOAT), INTENT(IN) :: a(lda,*), b(ldb,*)
-            REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
           END SUBROUTINE
 
           ! General dense matrix multiplication; MT via libxsmmext (double-precision).
           ! Implicit FORTRAN 77 interface: similar to DGEMM.
           SUBROUTINE libxsmm_dgemm_omp(transa, transb, m, n, k,         &
      &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
-            IMPORT LIBXSMM_BLASINT_KIND, C_CHAR, C_DOUBLE
+            IMPORT C_DOUBLE, C_CHAR, LIBXSMM_BLASINT_KIND
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
@@ -368,21 +366,155 @@
             REAL(C_DOUBLE), INTENT(INOUT) :: c(ldc,*)
           END SUBROUTINE
 
+          ! General dense matrix multiplication; MT via libxsmmext (single-precision).
+          ! Implicit FORTRAN 77 interface: similar to SGEMM.
+          SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,         &
+     &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
+            IMPORT C_FLOAT, C_CHAR, LIBXSMM_BLASINT_KIND
+            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
+            REAL(C_FLOAT), INTENT(IN) :: alpha, beta
+            REAL(C_FLOAT), INTENT(IN) :: a(lda,*), b(ldb,*)
+            REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
+          END SUBROUTINE
+
+          ! Process a series of matrix multiplications (batch); sequential.
+          ! Implicit FORTRAN 77 interface:
+          ! INTEGER(4)   :: prec
+          ! REAL(4|8)    :: alpha, beta
+          ! ARRAY        :: a, b, c
+          ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
+          ! INTEGER(4|8) :: index_base, index_stride, batchsize
+          ! Otherwise arguments are similar to GEMM.
+          SUBROUTINE libxsmm_gemm_batch(prec, transa, transb,           &
+     &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, index_base,     &
+     &    index_stride, stride_a, stride_b, stride_c, batchsize)        &
+     &    BIND(C, NAME="libxsmm_gemm_batch_")
+            IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
+            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+            TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
+            INTEGER(C_INT), INTENT(IN) :: prec
+          END SUBROUTINE
+
+          ! Process a series of matrix multiplications (batch); MT via libxsmmext.
+          ! Implicit FORTRAN 77 interface:
+          ! INTEGER(4)   :: prec
+          ! REAL(4|8)    :: alpha, beta
+          ! ARRAY        :: a, b, c
+          ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
+          ! INTEGER(4|8) :: index_base, index_stride, batchsize
+          ! Otherwise arguments are similar to GEMM.
+          SUBROUTINE libxsmm_gemm_batch_omp(prec, transa, transb,       &
+     &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, index_base,     &
+     &    index_stride, stride_a, stride_b, stride_c, batchsize)        &
+     &    BIND(C, NAME="libxsmm_gemm_batch_omp_")
+            IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
+            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+            TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
+            INTEGER(C_INT), INTENT(IN) :: prec
+          END SUBROUTINE
+
+          ! Process a series of matrix multiplications (batch).
+          ! Implicit FORTRAN 77 interface:
+          ! INTEGER(4)   :: prec, tid, nthreads
+          ! INTEGER(8)   :: kernel
+          ! ARRAY        :: a, b, c
+          ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
+          ! INTEGER(4|8) :: index_base, index_stride, batchsize
+          SUBROUTINE libxsmm_mmbatch(prec, kernel, index_base,          &
+     &    index_stride, stride_a, stride_b, stride_c, a, b, c,          &
+     &    batchsize, tid, nthreads) BIND(C, NAME="libxsmm_mmbatch_")
+            IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            ! Determines index-base (1 for one-based indexes);
+            ! uses the same unit as the strides.
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
+            ! Stride used to walk stride_a, stride_b, and stride_c;
+            ! zero turns stride_* into scalar values. The index_stride
+            ! is always measured in Bytes (value of LIBXSMM_BLASINT_KIND
+            ! determines a packed array of indexes).
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
+            ! The number of matrix multiplications.
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
+            ! Precision, Thread-ID (TID), and the number of threads.
+            INTEGER(C_INT), INTENT(IN) :: prec, tid, nthreads
+            ! Kernel (matches precision, transa, transb, beta, etc.).
+            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
+            ! index_stride==0: a single value (in Bytes) for stride_* is expected,
+            ! index_stride!=0: stride_* are arrays of indexes (measured in elements);
+            !                  array size equals batchsize, and indexes are discovered
+            !                  using the index_stride (in Bytes). The typical value of
+            !                  index_stride is LIBXSMM_BLASINT_KIND (packed indexes).
+            ! A stride of zero (zero-index) does not advance the matrix-operand.
+            ! Note: if the C-stride is zero, the kernel may be built for Beta=1,
+            ! and more important, accesses to C are internally synchronized.
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
+            ! Arrays of matrix operands (a, b, c). Depending on index_stride:
+            ! index_stride==0: pointers to pointers of elements.
+            ! index_stride!=0: pointer to elements.
+            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          END SUBROUTINE
+
+          ! Process a series of matrix multiplications (batch)
+          ! similar to libxsmm_mmbatch; MT via libxsmmext.
+          ! Implicit FORTRAN 77 interface:
+          ! INTEGER(4)   :: prec, tid, nthreads
+          ! INTEGER(8)   :: kernel
+          ! ARRAY        :: a, b, c
+          ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
+          ! INTEGER(4|8) :: index_base, index_stride, batchsize
+          SUBROUTINE libxsmm_mmbatch_omp(prec, kernel, index_base,      &
+     &    index_stride, stride_a, stride_b, stride_c, a, b, c,          &
+     &    batchsize) BIND(C, NAME="libxsmm_mmbatch_omp_")
+            IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
+            INTEGER(C_INT), INTENT(IN) :: prec
+            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
+            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          END SUBROUTINE
+
           ! This function is a no-op unless LIBXSMM is built to intercept GEMM calls.
           ! Pointer arguments are used to filter intercepted GEMM calls such that
           ! non-NULL values match. Otherwise (NULL) the respective argument is
           ! considered a "free value" i.e., every value can match; libxsmmext required.
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4) :: precision, flags, m, n, k, lda, ldb, ldc
-          ! REAL(4|8)  :: alpha, beta
-          SUBROUTINE libxsmm_mmbatch_begin(precision, flags, m, n, k,   &
+          ! INTEGER(4)   :: prec, flags
+          ! INTEGER(4|8) :: m, n, k, lda, ldb, ldc
+          ! REAL(4|8)    :: alpha, beta
+          SUBROUTINE libxsmm_mmbatch_begin(prec, flags, m, n, k,        &
      &    lda, ldb, ldc, alpha, beta) BIND(C)
-            IMPORT C_INT, C_PTR
-            INTEGER(C_INT), INTENT(IN), VALUE :: precision
-            INTEGER(C_INT), INTENT(IN) :: flags, m, n, k, lda, ldb, ldc
+            IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            INTEGER(C_INT), INTENT(IN), VALUE :: prec
+            INTEGER(C_INT), INTENT(IN) :: flags
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
           END SUBROUTINE
-
 
           ! Processes the batch of previously recorded matrix multiplications
           ! (libxsmm_mmbatch_begin); libxsmmext required.
@@ -432,109 +564,111 @@
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmdispatch
-        SUBROUTINE libxsmm_smmdispatch(fn,                              &
+        SUBROUTINE libxsmm_smmdispatch(kernel,                          &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-          TYPE(LIBXSMM_SMMFUNCTION), INTENT(OUT) :: fn
-          INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k
-          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: lda, ldb, ldc
+          TYPE(LIBXSMM_SMMFUNCTION), INTENT(OUT) :: kernel
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                                OPTIONAL, TARGET :: lda, ldb, ldc
           REAL(C_FLOAT),  INTENT(IN), OPTIONAL, TARGET :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: flags
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
           CALL libxsmm_xmmdispatch(                                     &
-     &      fn%handle, LIBXSMM_GEMM_PRECISION_F32,                      &
+     &      kernel%handle, LIBXSMM_GEMM_PRECISION_F32,                  &
      &      m, n, k, C_LOC(lda), C_LOC(ldb), C_LOC(ldc),                &
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmdispatch
-        SUBROUTINE libxsmm_dmmdispatch(fn,                              &
+        SUBROUTINE libxsmm_dmmdispatch(kernel,                          &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
-          TYPE(LIBXSMM_DMMFUNCTION), INTENT(OUT) :: fn
-          INTEGER(C_INT), INTENT(IN), VALUE :: m, n, k
-          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: lda, ldb, ldc
+          TYPE(LIBXSMM_DMMFUNCTION), INTENT(OUT) :: kernel
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                                OPTIONAL, TARGET :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: flags
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
           CALL libxsmm_xmmdispatch(                                     &
-     &      fn%handle, LIBXSMM_GEMM_PRECISION_F64,                      &
+     &      kernel%handle, LIBXSMM_GEMM_PRECISION_F64,                  &
      &      m, n, k, C_LOC(lda), C_LOC(ldb), C_LOC(ldc),                &
      &      C_LOC(alpha), C_LOC(beta), C_LOC(flags), C_LOC(prefetch))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmavailable
-        LOGICAL PURE FUNCTION libxsmm_smmavailable(fn)
-          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
-          libxsmm_smmavailable = 0.NE.fn%handle
+        LOGICAL PURE FUNCTION libxsmm_smmavailable(kernel)
+          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
+          libxsmm_smmavailable = 0.NE.kernel%handle
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmavailable
-        LOGICAL PURE FUNCTION libxsmm_dmmavailable(fn)
-          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
-          libxsmm_dmmavailable = 0.NE.fn%handle
+        LOGICAL PURE FUNCTION libxsmm_dmmavailable(kernel)
+          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
+          libxsmm_dmmavailable = 0.NE.kernel%handle
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall
-        SUBROUTINE libxsmm_smmcall(fn, a, b, c, pa, pb, pc)
-          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
+        SUBROUTINE libxsmm_smmcall(kernel, a, b, c, pa, pb, pc)
+          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(*), b(*)
           REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(*)
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pa(*)
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pb(*)
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: pc(*)
           IF (PRESENT(pa).AND.PRESENT(pb).AND.PRESENT(pc)) THEN
-            CALL libxsmm_xmmcall_prf(fn%handle,                         &
+            CALL libxsmm_xmmcall_prf(kernel%handle,                     &
      &        C_LOC(a), C_LOC(b), C_LOC(c),                             &
      &        C_LOC(pa), C_LOC(pb), C_LOC(pc))
           ELSE
-            CALL libxsmm_xmmcall_abc(fn%handle,                         &
+            CALL libxsmm_xmmcall_abc(kernel%handle,                     &
      &        C_LOC(a), C_LOC(b), C_LOC(c))
           END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall
-        SUBROUTINE libxsmm_dmmcall(fn, a, b, c, pa, pb, pc)
-          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
+        SUBROUTINE libxsmm_dmmcall(kernel, a, b, c, pa, pb, pc)
+          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a(*), b(*)
           REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(*)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pa(*)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pb(*)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: pc(*)
           IF (PRESENT(pa).AND.PRESENT(pb).AND.PRESENT(pc)) THEN
-            CALL libxsmm_xmmcall_prf(fn%handle,                         &
+            CALL libxsmm_xmmcall_prf(kernel%handle,                     &
      &        C_LOC(a), C_LOC(b), C_LOC(c),                             &
      &        C_LOC(pa), C_LOC(pb), C_LOC(pc))
           ELSE
-            CALL libxsmm_xmmcall_abc(fn%handle,                         &
+            CALL libxsmm_xmmcall_abc(kernel%handle,                     &
      &        C_LOC(a), C_LOC(b), C_LOC(c))
           END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abc
-        PURE SUBROUTINE libxsmm_smmcall_abc(fn, a, b, c)
-          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
+        PURE SUBROUTINE libxsmm_smmcall_abc(kernel, a, b, c)
+          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c
-          CALL libxsmm_xmmcall_abc(fn%handle, a, b, c)
+          CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abc
-        PURE SUBROUTINE libxsmm_dmmcall_abc(fn, a, b, c)
-          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
+        PURE SUBROUTINE libxsmm_dmmcall_abc(kernel, a, b, c)
+          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c
-          CALL libxsmm_xmmcall_abc(fn%handle, a, b, c)
+          CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prf
-        PURE SUBROUTINE libxsmm_smmcall_prf(fn, a, b, c, pa, pb, pc)
-          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: fn
+        PURE SUBROUTINE libxsmm_smmcall_prf(kernel, a, b, c, pa, pb, pc)
+          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
-          CALL libxsmm_xmmcall_prf(fn%handle, a, b, c, pa, pb, pc)
+          CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prf
-        PURE SUBROUTINE libxsmm_dmmcall_prf(fn, a, b, c, pa, pb, pc)
-          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: fn
+        PURE SUBROUTINE libxsmm_dmmcall_prf(kernel, a, b, c, pa, pb, pc)
+          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
-          CALL libxsmm_xmmcall_prf(fn%handle, a, b, c, pa, pb, pc)
+          CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm
@@ -552,7 +686,7 @@
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_sgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              IMPORT C_PTR, LIBXSMM_BLASINT_KIND
               TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
@@ -581,7 +715,7 @@
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_dgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              IMPORT C_PTR, LIBXSMM_BLASINT_KIND
               TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
@@ -610,7 +744,7 @@
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_sgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              IMPORT C_PTR, LIBXSMM_BLASINT_KIND
               TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
@@ -639,7 +773,7 @@
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_dgemm")
-              IMPORT LIBXSMM_BLASINT_KIND, C_PTR
+              IMPORT C_PTR, LIBXSMM_BLASINT_KIND
               TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
               TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
