@@ -246,7 +246,7 @@
           addval = (UBOUND(matrix, 1) - LBOUND(matrix, 1)) * ld         &
      &           + (UBOUND(matrix, 2) - LBOUND(matrix, 2))
           maxval = MAX(ABS(minval), addval)
-          norm = MERGE(scale / maxval, scale, 0.NE.maxval)          
+          norm = MERGE(scale / maxval, scale, 0.NE.maxval)
           !$OMP PARALLEL DO PRIVATE(i, j, value) DEFAULT(NONE)          &
           !$OMP   SHARED(ld, matrix, norm, minval, addval)
           DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
