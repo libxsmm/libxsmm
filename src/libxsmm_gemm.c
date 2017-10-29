@@ -568,23 +568,23 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
       0 <= batchsize && 0 <= tid && tid < nthreads)
   {
     const libxsmm_blasint tasksize = (batchsize + nthreads - 1) / nthreads;
-    const libxsmm_blasint begin = tid * tasksize;
-    const libxsmm_blasint end = LIBXSMM_MIN(begin + tasksize, batchsize);
+    const libxsmm_blasint begin = tid * tasksize, span = begin + tasksize;
+    const libxsmm_blasint end = LIBXSMM_MIN(span, batchsize);
 
     if (begin < end) {
-      const char *const a0 = (const char*)a, *const b0 = (const char*)b, *ai, *bi;
-      char *const c0 = (char*)c, *ci;
+      const char *const a0 = (const char*)a, *const b0 = (const char*)b;
+      char *const c0 = (char*)c;
       libxsmm_blasint i;
 
       if (0 != index_stride) { /* stride arrays contain indexes */
         if (((int)sizeof(libxsmm_blasint)) <= index_stride) {
           const char *const ia = (const char*)stride_a, *const ib = (const char*)stride_b, *const ic = (const char*)stride_c;
-          const libxsmm_blasint da = (0 != stride_a ? (*stride_a - index_base) : 0);
-          const libxsmm_blasint db = (0 != stride_b ? (*stride_b - index_base) : 0);
-          const libxsmm_blasint dc = (0 != stride_c ? (*stride_c - index_base) : 0);
+          const char* ai = a0 + (0 != stride_a ? (*stride_a - index_base) : 0) * typesize;
+          const char* bi = b0 + (0 != stride_b ? (*stride_b - index_base) : 0) * typesize;
+          char* ci = c0 + (0 != stride_c ? (*stride_c - index_base) : 0) * typesize;
           const libxsmm_blasint end1 = (end != batchsize ? end : (end - 1));
+
           assert(0 != stride_c || 1 == nthreads); /* TODO: implement synchronization */
-          ai = a0 + da * typesize; bi = b0 + db * typesize; ci = c0 + dc * typesize;
           for (i = begin; i < end1; ++i) {
             const libxsmm_blasint ii = (i + 1) * index_stride;
             const char *const an = a0 + (0 != stride_a ? ((*((const libxsmm_blasint*)(ia + ii)) - index_base) * typesize) : 0);
@@ -619,10 +619,10 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
         assert(0 != dc || 1 == nthreads); /* TODO: implement synchronization */
         if (typesize <= da && typesize <= db && typesize <= dc) {
           const libxsmm_blasint end1 = (end != batchsize ? end : (end - 1));
-          ai = a0; bi = b0; ci = c0;
+          const char *ai = a0, *bi = b0;
+          char* ci = c0;
           for (i = begin; i < end1; ++i) {
-            const char *const an = ai + da;
-            const char *const bn = bi + db;
+            const char *const an = ai + da, *const bn = bi + db;
             char *const cn = ci + dc;
 #if defined(LIBXSMM_GEMM_CHECK)
             if (0 != *((const void**)ai) && 0 != *((const void**)bi) && 0 != *((const void**)ci))

@@ -161,7 +161,8 @@ int main(int argc, char* argv[])
       // initialize LIBXSMM
       libxsmm_init();
 
-      fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n", m, n, k, s,
+      fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n",
+        static_cast<long long>(m), static_cast<long long>(n), static_cast<long long>(k), static_cast<long long>(s),
         1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
       const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAG_NONE, m, n, k, LIBXSMM_PREFETCH_AUTO);
