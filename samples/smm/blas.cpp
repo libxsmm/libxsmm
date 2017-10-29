@@ -202,18 +202,15 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        double d2 = 0;
+        libxsmm_matdiff_info diff = { 0 };
         for (libxsmm_blasint h = 0; h < s; ++h) {
           const T *const u = c + h * csize, *const v = c_array[h];
-          for (libxsmm_blasint i = 0; i < m; ++i) {
-            for (libxsmm_blasint j = 0; j < n; ++j) {
-              const libxsmm_blasint index = i * n + j;
-              const double d1 = static_cast<double>(u[index] - v[index]);
-              d2 += d1 * d1;
-            }
+          libxsmm_matdiff_info dv;
+          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, u, v, &m, &m, &dv)) {
+            libxsmm_matdiff_reduce(&diff, &dv);
           }
         }
-        fprintf(stdout, "\tdiff=%f\n", d2 / s);
+        fprintf(stdout, "\tdiff: %.0f%%\n", 100.0 * diff.normf_rel);
       }
 
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
@@ -249,18 +246,15 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        double d2 = 0;
+        libxsmm_matdiff_info diff = { 0 };
         for (libxsmm_blasint h = 0; h < s; ++h) {
           const T *const u = c + h * csize, *const v = c_array[h];
-          for (libxsmm_blasint i = 0; i < m; ++i) {
-            for (libxsmm_blasint j = 0; j < n; ++j) {
-              const libxsmm_blasint index = i * n + j;
-              const double d1 = static_cast<double>(u[index] - v[index]);
-              d2 += d1 * d1;
-            }
+          libxsmm_matdiff_info dv;
+          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, u, v, &m, &m, &dv)) {
+            libxsmm_matdiff_reduce(&diff, &dv);
           }
         }
-        fprintf(stdout, "\tdiff=%f\n", d2 / s);
+        fprintf(stdout, "\tdiff: %.0f%%\n", 100.0 * diff.normf_rel);
       }
 #endif
 
