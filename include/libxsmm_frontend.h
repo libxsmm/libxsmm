@@ -412,12 +412,19 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
 LIBXSMM_API_INLINE void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input) {
   LIBXSMM_ASSERT(0 != output && 0 != input);
   if (output->normf_rel < input->normf_rel) {
+    output->linf_abs_m = input->linf_abs_m;
+    output->linf_abs_n = input->linf_abs_n;
     output->norm1_abs = input->norm1_abs;
     output->norm1_rel = input->norm1_rel;
     output->normi_abs = input->normi_abs;
     output->normi_rel = input->normi_rel;
-    output->l2_abs = input->l2_abs;
     output->normf_rel = input->normf_rel;
+    output->linf_abs = input->linf_abs;
+    output->linf_rel = input->linf_rel;
+    output->l2_abs = input->l2_abs;
+    output->l2_rel = input->l2_rel;
+    output->l1_ref = input->l1_ref;
+    output->l1_tst = input->l1_tst;
   }
 }
 
