@@ -39,6 +39,7 @@
 #include <cstring>
 #include <cassert>
 #include <cstdio>
+#include <vector>
 #include <cmath>
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl_service.h>
@@ -91,15 +92,16 @@ int main(int argc, char* argv[])
     const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0 / s;
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
-      T *a, *b, *c;
+      T *a, *b, *c , *d;
       raii(libxsmm_blasint asize_, libxsmm_blasint bsize_, libxsmm_blasint csize_)
         : a(new T[static_cast<size_t>(asize_)]), b(new T[static_cast<size_t>(bsize_)])
-        , c(new T[static_cast<size_t>(csize_)]) {}
-      ~raii() { delete[] a; delete[] b; delete[] c; }
+        , c(new T[static_cast<size_t>(csize_)]), d(new T[static_cast<size_t>(csize_)]) {}
+      ~raii() { delete[] a; delete[] b; delete[] c; delete[] d; }
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1);
     T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
     T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
     T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
+    T *d = LIBXSMM_ALIGN(buffer.d, LIBXSMM_ALIGNMENT);
 
 #if defined(_OPENMP)
 #   pragma omp parallel for
@@ -154,6 +156,48 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      }
+
+      { // LIBXSMM batch interface
+        fprintf(stdout, "Batched-indirect (A,B,C)...\n");
+        const int flags = LIBXSMM_FLAGS;
+        const char transa = (0 == (flags & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T');
+        const char transb = (0 == (flags & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T');
+        const T alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
+        const libxsmm_blasint ptrsize = sizeof(T*);
+        std::vector<const T*> va_array(static_cast<size_t>(s)), vb_array(static_cast<size_t>(s));
+        std::vector<T*> vc_array(static_cast<size_t>(s));
+        const T* *const a_array = &va_array[0];
+        const T* *const b_array = &vb_array[0];
+        T* *const c_array = &vc_array[0];
+        for (libxsmm_blasint i = 0; i < s; ++i) {
+          a_array[i] = a + i * asize; b_array[i] = b + i * bsize; c_array[i] = d + i * csize;
+        }
+        // warm-up
+        libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
+          m, n, k, &alpha, &a_array[0], &m, &b_array[0], &k, &beta, &c_array[0], &m,
+          0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
+        const unsigned long long start = libxsmm_timer_tick();
+        libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
+          m, n, k, &alpha, &a_array[0], &m, &b_array[0], &k, &beta, &c_array[0], &m,
+          0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
+        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
+        const double duration = libxsmm_timer_duration(start, end);
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        libxsmm_matdiff_info diff = { 0 };
+        for (libxsmm_blasint h = 0; h < s; ++h) {
+          const T *const u = c + h * csize, *const v = c_array[h];
+          libxsmm_matdiff_info dv;
+          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, u, v, &m, &m, &dv)) {
+            libxsmm_matdiff_reduce(&diff, &dv);
+          }
+        }
+        if (0 < diff.normf_rel) fprintf(stdout, "\tdiff: %.0f%%\n", 100.0 * diff.normf_rel);
       }
 
       { // streaming A and C
