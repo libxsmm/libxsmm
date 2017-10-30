@@ -63,9 +63,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *L
 {
   const double seed1 = scale * (seed + 1);
   libxsmm_blasint i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
   for (i = 0; i < ncols; ++i) {
     libxsmm_blasint j = 0;
     for (; j < nrows; ++j) {
@@ -109,6 +106,9 @@ int main(int argc, char* argv[])
     T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
     T *d = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
 
+#if defined(_OPENMP)
+#   pragma omp parallel for
+#endif
     for (libxsmm_blasint i = 0; i < s; ++i) {
       init(42 + i, a + i * asize, m, k, m, scale);
       init(24 + i, b + i * bsize, k, n, k, scale);
