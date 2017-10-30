@@ -156,6 +156,9 @@ int main(int argc, char* argv[])
       1.0 * (m * n * sizeof(ELEM_TYPE)) / (1 << 20), LIBXSMM_STRINGIFY(ELEM_TYPE),
       ('o' == t || 'O' == t) ? "out-of-place" : "in-place");
 
+#if defined(_OPENMP)
+#   pragma omp parallel for private(i, j)
+#endif
     for (i = 0; i < n; ++i) {
       for (j = 0; j < m; ++j) {
         a[i*ldi+j] = initial_value(i, j, m);

@@ -100,6 +100,7 @@
         IF (('o'.EQ.trans).OR.('O'.EQ.trans)) THEN
           ALLOCATE(a1(lda*n))
           an(1:lda,1:n) => a1
+          !$OMP PARALLEL DO PRIVATE(i, j) DEFAULT(NONE) SHARED(m, n, an)
           DO j = 1, n
             DO i = 1, m
               an(i,j) = initial_value(i - 1, j - 1, m)
@@ -113,6 +114,7 @@
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
           DEALLOCATE(a1)
         ELSE ! in-place
+          !$OMP PARALLEL DO PRIVATE(i, j) DEFAULT(NONE) SHARED(m, n, bn)
           DO j = 1, n
             DO i = 1, m
               bn(i,j) = initial_value(i - 1, j - 1, m)
