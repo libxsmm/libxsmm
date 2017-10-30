@@ -110,10 +110,11 @@ int main(int argc, char* argv[])
       init(42 + i, a + i * asize, m, k, m, scale);
       init(24 + i, b + i * bsize, k, n, k, scale);
       init(22 + i, c + i * csize, m, n, m, scale);
+      init(22 + i, d + i * csize, m, n, m, scale);
     }
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
-#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) inout(c: length(s * csize))
+#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) inout(c: length(s * csize) inout(d: length(s * csize))
 #endif
     {
 #if defined(MKL_ENABLE_AVX512)
@@ -173,10 +174,6 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a + i * asize; b_array[i] = b + i * bsize; c_array[i] = d + i * csize;
         }
-        // warm-up
-        libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
-          m, n, k, &alpha, &a_array[0], &m, &b_array[0], &k, &beta, &c_array[0], &m,
-          0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
         const unsigned long long start = libxsmm_timer_tick();
         libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
           m, n, k, &alpha, &a_array[0], &m, &b_array[0], &k, &beta, &c_array[0], &m,
@@ -328,3 +325,4 @@ int main(int argc, char* argv[])
 
   return result;
 }
+
