@@ -579,9 +579,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
       if (0 != index_stride) { /* stride arrays contain indexes */
         if (((int)sizeof(libxsmm_blasint)) <= index_stride) {
           const char *const ia = (const char*)stride_a, *const ib = (const char*)stride_b, *const ic = (const char*)stride_c;
-          const char* ai = a0 + (0 != stride_a ? (*stride_a - index_base) : 0) * typesize;
-          const char* bi = b0 + (0 != stride_b ? (*stride_b - index_base) : 0) * typesize;
-          char* ci = c0 + (0 != stride_c ? (*stride_c - index_base) : 0) * typesize;
+          const char* ai = a0 + (0 != stride_a ? ((*((const libxsmm_blasint*)(ia + begin)) - index_base) * typesize) : 0);
+          const char* bi = b0 + (0 != stride_b ? ((*((const libxsmm_blasint*)(ib + begin)) - index_base) * typesize) : 0);
+          char* ci = c0 + (0 != stride_c ? ((*((const libxsmm_blasint*)(ic + begin)) - index_base) * typesize) : 0);
           const libxsmm_blasint end1 = (end != batchsize ? end : (end - 1));
 
           assert(0 != stride_c || 1 == nthreads); /* TODO: implement synchronization */
@@ -619,8 +619,8 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
         assert(0 != dc || 1 == nthreads); /* TODO: implement synchronization */
         if (typesize <= da && typesize <= db && typesize <= dc) {
           const libxsmm_blasint end1 = (end != batchsize ? end : (end - 1));
-          const char *ai = a0, *bi = b0;
-          char* ci = c0;
+          const char *ai = a0 + da * begin, *bi = b0 + db * begin;
+          char* ci = c0 + dc * begin;
           for (i = begin; i < end1; ++i) {
             const char *const an = ai + da, *const bn = bi + db;
             char *const cn = ci + dc;
