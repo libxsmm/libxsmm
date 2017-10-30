@@ -324,6 +324,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->blocksofm_blocking = 8;
     }
 
+    if (handle->use_lp_kernel == 1) {
+      if (handle->blocksofm_blocking * handle->ofmblock * handle->fm_lp_block > 256) {
+        handle->blocksofm_blocking = 8;
+        while ( handle->desc.K%(handle->blocksofm_blocking * handle->ofmblock * handle->fm_lp_block) != 0  ) {
+           handle->blocksofm_blocking--;
+        }
+      }
+    } 
+
     /* Logic for L2 tiling  */
     unsigned int input_block_size = 28 * handle->blocksifm_blocking * 64;
     unsigned int output_block_size = 28 * 64;
@@ -381,7 +390,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
     if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) 
          && (handle->desc.K == handle->blocksofm_blocking*handle->ofmblock*handle->fm_lp_block) 
-         && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 || handle->datatype_in == LIBXSMM_DNN_DATATYPE_I32 ) ) {
+         && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 || handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) ) {
       handle->use_nts_bwd = 1;
     } else {
       handle->use_nts_bwd = 0;
