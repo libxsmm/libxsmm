@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
 #endif
     double duration = 0;
     unsigned long long start;
-    libxsmm_blasint i = 0, j;
+    libxsmm_blasint i, j;
     size_t size = 0;
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
