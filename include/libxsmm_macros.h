@@ -270,6 +270,12 @@
 #define LIBXSMM_MUL2(N, NPOT) (((unsigned long long)(N)) << LIBXSMM_LOG2(NPOT))
 #define LIBXSMM_DIV2(N, NPOT) (((unsigned long long)(N)) >> LIBXSMM_LOG2(NPOT))
 #define LIBXSMM_SQRT2(N) ((unsigned int)(1ULL << (LIBXSMM_LOG2(((N) << 1) - 1) >> 1)))
+#define LIBXSMM_UP2POT_01(N) (((N) - 1) | (((N) - 1) >> 1))
+#define LIBXSMM_UP2POT_02(N) (LIBXSMM_UP2POT_01(N) | (LIBXSMM_UP2POT_01(N) >> 2))
+#define LIBXSMM_UP2POT_04(N) (LIBXSMM_UP2POT_02(N) | (LIBXSMM_UP2POT_02(N) >> 4))
+#define LIBXSMM_UP2POT_08(N) (LIBXSMM_UP2POT_04(N) | (LIBXSMM_UP2POT_04(N) >> 8))
+#define LIBXSMM_UP2POT_16(N) (LIBXSMM_UP2POT_08(N) | (LIBXSMM_UP2POT_08(N) >> 16))
+#define LIBXSMM_UP2POT(N) ((LIBXSMM_UP2POT_16((unsigned long long)(N)) | (LIBXSMM_UP2POT_16((unsigned long long)(N)) >> 32)) + 1)
 #define LIBXSMM_UP2(N, NPOT) (((N) + ((NPOT) - 1)) & ~((NPOT) - 1))
 #define LIBXSMM_UP(N, UP) ((((N) + (UP) - 1) / (UP)) * (UP))
 /* compares floating point values but avoids warning about unreliable comparison */
