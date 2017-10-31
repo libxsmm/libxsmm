@@ -145,6 +145,8 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int ofmblock;
   int blocksifm;
   int blocksofm;
+  int blocksifm_lp;
+  int blocksofm_lp;
   int fwd_ofw_rb;
   int fwd_ofw_rb_2;
   int fwd_ofh_rb;

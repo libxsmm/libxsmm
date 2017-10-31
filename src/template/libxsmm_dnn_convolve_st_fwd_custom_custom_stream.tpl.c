@@ -36,6 +36,10 @@
 
 #define FP64_BN_STATS
 
+/* FIXME assignemnts here  */
+int BLOCKSIFM = handle->blocksifm;
+int BLOCKSOFM = handle->blocksofm;
+
 const int ltid = tid-start_thread;
 int gs = 72; /*atoi(getenv("GSIZE"));*/
 const int tile_id = ltid/gs;
@@ -46,10 +50,10 @@ element_input_type *input_zero;
 element_output_type *output_base;
 element_input_type *copy_ptr, *prefetch_ptr;
 element_output_type *out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->ofmblock);
-LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-LIBXSMM_VLA_DECL(6, const element_input_type, input, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-/* LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);*/
-LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data + tile_id * handle->blocksifm * handle->blocksofm * handle->ifmblock * handle->ofmblock * handle->fm_lp_block *  handle->desc.R * handle->desc.S, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+LIBXSMM_VLA_DECL(5, element_output_type, output, out, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+LIBXSMM_VLA_DECL(6, const element_input_type, input, (element_input_type*)handle->reg_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+/* LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);*/
+LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data + tile_id * BLOCKSIFM * BLOCKSOFM * handle->ifmblock * handle->ofmblock * handle->fm_lp_block *  handle->desc.R * handle->desc.S, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
 
 /* Auxiliary integer variables   */
 int instr, n_segments, offset_bn, offset_i, offset_o, offset_w, pi, po, pw, pc, i, ih, n_convs, conv_i, ifm1, ofm1, ofm2, oj, img, input_h_start, input_h_end, my_h_out, oi;
@@ -61,7 +65,7 @@ int *bn_stream = handle->bn_indices_ptrs[ltid];
 /* Padding related variables */
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
-LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
+LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * BLOCKSIFM * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
 /* Kernel related variables  */
 libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
 libxsmm_xmatcopyfunction jitted_zero_overwrite = handle->matcopy_fwd[1].xmatcopy;
@@ -81,15 +85,15 @@ if (handle->padding_flag == 1) {
       padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
   /* we need to set the scratch to zero */
   /* @TODO: we need to find a better/faster code here */
-  memset( input_zero, 0, handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block * sizeof(element_input_type) );
+  memset( input_zero, 0, BLOCKSIFM * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block * sizeof(element_input_type) );
 } else {
   input_base = &LIBXSMM_VLA_ACCESS(6, input, 0, 0, 0, 0, 0, 0,
-      handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+      BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
 }
 weight_base = &LIBXSMM_VLA_ACCESS(7, weight, 0, 0, 0, 0, 0, 0, 0,
-    handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+    BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
 output_base = &LIBXSMM_VLA_ACCESS(5, output, 0, 0, 0, 0, 0,
-    handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+    BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
 
 instr = handle->n_entries_fwd[ltid];
 n_segments = handle->n_fwd_code_segments[ltid];
@@ -118,16 +122,16 @@ if (n_segments) {
   /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
   code_stream = handle->fwd_code_segments[ltid];
   /* If we are in the img_par execution then avoid fine-grained copy in case of padding...  */
-  if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
+  if (handle->desc.N*BLOCKSOFM >= handle->desc.threads) {
     if (handle->compute_batch_stats_in_kernel == 1) { /* We  do BN stuff in the kernel  */
 #ifdef FP32_BN_STATS
-      LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, handle->batch_stats->data, handle->blocksofm, handle->desc.N, handle->ofmblock);
+      LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #endif
 #ifdef FP64_BN_STATS
-      LIBXSMM_VLA_DECL(4, double, kernel_stats, handle->batch_stats->data, handle->blocksofm, handle->desc.N, handle->ofmblock);
+      LIBXSMM_VLA_DECL(4, double, kernel_stats, handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #endif   
-      bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, handle->blocksofm, handle->desc.N, handle->ofmblock);
-      bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, handle->blocksofm, handle->desc.N, handle->ofmblock);
+      bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
+      bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 
       if (handle->ofw == 7) {
         for (pc = 0; pc < n_segments; pc++) {
@@ -235,9 +239,9 @@ if (n_segments) {
             /* Compute batch norm statistics... */
 #ifdef FP32_BN_STATS
             ofm1 =  code_stream[pc].aux_index;
-            LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  handle->blocksofm, handle->desc.N, handle->ofmblock);
+            LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
             element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock); 
+                BLOCKSOFM*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock); 
             __m512 bsum  = _mm512_setzero_ps();
             __m512 bsum2 = _mm512_setzero_ps();
 
@@ -251,15 +255,15 @@ if (n_segments) {
             }
 
             _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
-                  handle->blocksofm, handle->desc.N,  handle->ofmblock), bsum );
+                  BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
             _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
-                  handle->blocksofm, handle->desc.N, handle->ofmblock), bsum2 );
+                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2 );
 #endif  
 #ifdef FP64_BN_STATS
             ofm1 =  code_stream[pc].aux_index;
-            LIBXSMM_VLA_DECL(4, double, stats, handle->batch_stats->data,  handle->blocksofm, handle->desc.N, handle->ofmblock);
+            LIBXSMM_VLA_DECL(4, double, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
             element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock);
+                BLOCKSOFM*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock);
             __m512d bsum1a = _mm512_setzero_pd();
             __m512d bsum1b = _mm512_setzero_pd();
             __m512d bsum2a = _mm512_setzero_pd();
@@ -278,13 +282,13 @@ if (n_segments) {
             }
 
             _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
-                  handle->blocksofm, handle->desc.N, handle->ofmblock), bsum1a );
+                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1a );
             _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 8,
-                  handle->blocksofm, handle->desc.N, handle->ofmblock), bsum1b );
+                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1b );
             _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
-                  handle->blocksofm, handle->desc.N, handle->ofmblock), bsum2a );
+                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
             _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
-                  handle->blocksofm, handle->desc.N, handle->ofmblock), bsum2b );
+                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
 #endif  
           }
 
@@ -328,9 +332,9 @@ if (n_segments) {
             /* Compute batch norm statistics... */
 #ifdef FP32_BN_STATS
             ofm1 =  code_stream[pc].aux_index;
-            LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  handle->blocksofm, handle->desc.N, handle->ofmblock);
+            LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
             element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock); 
+                BLOCKSOFM*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock); 
             __m512 bsum  = _mm512_setzero_ps();
             __m512 bsum2 = _mm512_setzero_ps();
 
@@ -344,15 +348,15 @@ if (n_segments) {
             }
 
             _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
-                  handle->blocksofm, handle->desc.N,  handle->ofmblock), bsum );
+                  BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
             _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
-                  handle->blocksofm, handle->desc.N, handle->ofmblock), bsum2 );
+                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2 );
 #endif  
 #ifdef FP64_BN_STATS
             ofm1 =  code_stream[pc].aux_index;
-            LIBXSMM_VLA_DECL(4, double, stats, handle->batch_stats->data,  handle->blocksofm, handle->desc.N, handle->ofmblock);
+            LIBXSMM_VLA_DECL(4, double, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
             element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                handle->blocksofm*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock);
+                BLOCKSOFM*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock);
             __m512d bsum1a = _mm512_setzero_pd();
             __m512d bsum1b = _mm512_setzero_pd();
             __m512d bsum2a = _mm512_setzero_pd();
@@ -371,13 +375,13 @@ if (n_segments) {
             }
 
             _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
-                  handle->blocksofm, handle->desc.N, handle->ofmblock), bsum1a );
+                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1a );
             _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 8,
-                  handle->blocksofm, handle->desc.N, handle->ofmblock), bsum1b );
+                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1b );
             _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
-                  handle->blocksofm, handle->desc.N, handle->ofmblock), bsum2a );
+                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
             _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
-                  handle->blocksofm, handle->desc.N, handle->ofmblock), bsum2b );
+                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
 #endif  
           }
 
@@ -441,13 +445,13 @@ if (n_segments) {
   /* Run the stream of convolutions, no extra operations are required... */
   if ( handle->compute_batch_stats_in_kernel == 1 ) { /* We  do BN stuff in the kernel  */
 #ifdef FP32_BN_STATS
-    LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, handle->batch_stats->data, handle->blocksofm, handle->desc.N, handle->ofmblock);
+    LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #endif
 #ifdef FP64_BN_STATS
-    LIBXSMM_VLA_DECL(4, double, kernel_stats, handle->batch_stats->data, handle->blocksofm, handle->desc.N, handle->ofmblock);
+    LIBXSMM_VLA_DECL(4, double, kernel_stats, handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #endif  
-    bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, handle->blocksofm, handle->desc.N, handle->ofmblock);
-    bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, handle->blocksofm, handle->desc.N, handle->ofmblock);    
+    bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
+    bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);    
     if (handle->ofw == 7) {
       for (pc = 0; pc < instr; pc+=1) {
         offset_i = stream[i];

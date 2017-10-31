@@ -35,12 +35,16 @@
 
 const int ltid = tid-start_thread;
 
+/* FIXME assignemnts here  */
+int BLOCKSIFM = handle->blocksifm;
+int BLOCKSOFM = handle->blocksofm;
+
 /* number of tasks for transpose that could be run in parallel */
 int transpose_work;
 if (handle->use_lp_kernel == 0) {
-  transpose_work = handle->blocksofm * (handle->blocksifm * handle->fm_lp_block);
+  transpose_work = BLOCKSOFM * (BLOCKSIFM * handle->fm_lp_block);
 } else {
-  transpose_work = handle->blocksofm * (handle->blocksifm * handle->fm_lp_block);
+  transpose_work = BLOCKSOFM * (BLOCKSIFM * handle->fm_lp_block);
 }
 
 /* compute chunck size */
@@ -59,7 +63,7 @@ element_output_type *prefetch_ptr;
 /* Padding related variables */
 const int padded_h = handle->ofhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ofwp + 2 * handle->desc.pad_w;
-LIBXSMM_VLA_DECL(5, element_output_type, output_buffer, ((element_output_type*)handle->scratch5) + ltid * handle->blocksofm * padded_h * padded_w * handle->ofmblock * handle->fm_lp_block, padded_h, padded_w, handle->ofmblock, handle->fm_lp_block);
+LIBXSMM_VLA_DECL(5, element_output_type, output_buffer, ((element_output_type*)handle->scratch5) + ltid * BLOCKSOFM * padded_h * padded_w * handle->ofmblock * handle->fm_lp_block, padded_h, padded_w, handle->ofmblock, handle->fm_lp_block);
 
 libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
 libxsmm_convfunction kernel_bwd = (libxsmm_convfunction)handle->code_bwd[4].xconv.sconv;
@@ -85,14 +89,14 @@ if (handle->use_lp_kernel == 1) {
 }
 
 { /* open new scope for additional variable declarations (C89) */
-  LIBXSMM_VLA_DECL(5, element_input_type, del_input, del_in, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  LIBXSMM_VLA_DECL(5, element_input_type, del_input, del_in, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
   /* Ouput tensor declaration */
   element_output_type *const out = ((element_output_type*)handle->grad_output->data) /* + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block*/;
-  LIBXSMM_VLA_DECL(6, element_output_type, del_out, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
+  LIBXSMM_VLA_DECL(6, element_output_type, del_out, out, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
 
   /* Weight and transpose_weight tensor declaration */
-  LIBXSMM_VLA_DECL(7, element_filter_type, wt, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
-  LIBXSMM_VLA_DECL(7, element_filter_type, tr_wt2, (element_filter_type*)handle->scratch1, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
+  LIBXSMM_VLA_DECL(7, element_filter_type, wt, (element_filter_type*)handle->reg_filter->data, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+  LIBXSMM_VLA_DECL(7, element_filter_type, tr_wt2, (element_filter_type*)handle->scratch1, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
 
   /* Auxiliary integer variables   */
   int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i,  n_convs, conv_i, ifm1, img = 0, ifm2, ij, ii, ifm1lpblock ;
@@ -115,16 +119,16 @@ if (handle->use_lp_kernel == 1) {
         padded_h, padded_w, handle->ofmblock, handle->fm_lp_block);
     /* we need to set the scratch to zero */
     /* @TODO: we need to find a better/faster code here, e.g. just setting the rim */
-    memset( input_base, 0, handle->blocksofm * padded_h * padded_w * handle->ofmblock * handle->fm_lp_block * sizeof(element_output_type) );
+    memset( input_base, 0, BLOCKSOFM * padded_h * padded_w * handle->ofmblock * handle->fm_lp_block * sizeof(element_output_type) );
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(6, del_out, 0, 0, 0, 0, 0, 0,
-        handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
+        BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
   }
 
   output_base = &LIBXSMM_VLA_ACCESS(5, del_input, 0, 0, 0, 0, 0,
-      handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+      BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
   weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt2, 0, 0, 0, 0, 0, 0, 0,
-      handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
+      BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
 
   instr = handle->n_entries_bwd[ltid];
   n_segments = handle->n_bwd_code_segments[ltid];
@@ -140,16 +144,16 @@ if (handle->use_lp_kernel == 1) {
   } else {
     if (handle->use_lp_kernel == 0) {
       for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-        ofm1 = ifm1ofm1 / handle->blocksifm;
-        ifm1 = ifm1ofm1 % handle->blocksifm;
+        ofm1 = ifm1ofm1 / BLOCKSIFM;
+        ifm1 = ifm1ofm1 % BLOCKSIFM;
         for (kj=0; kj < handle->desc.R; kj++) {
           for (ki=0; ki < handle->desc.S; ki++) {
             /* TODO: enable this later */
             /*transpose<VLEN,VLEN>(&wt[ofm1][ifm1][kj][ki][0][0],&tr_wt[ofm1][ifm1][kj][ki][0][0]);*/
             for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
               for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                LIBXSMM_VLA_ACCESS(7, tr_wt2, ifm1, ofm1, handle->desc.R-1-kj , handle->desc.S-1-ki, ofm2, ifm2, 0, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block) =
-                  LIBXSMM_VLA_ACCESS(7, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+                LIBXSMM_VLA_ACCESS(7, tr_wt2, ifm1, ofm1, handle->desc.R-1-kj , handle->desc.S-1-ki, ofm2, ifm2, 0, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block) =
+                  LIBXSMM_VLA_ACCESS(7, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, 0, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
               }
             }
           }
@@ -159,7 +163,7 @@ if (handle->use_lp_kernel == 1) {
 
     }
     weight_base = &LIBXSMM_VLA_ACCESS(7, wt, 0, 0, 0, 0, 0, 0, 0,
-        handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
+        BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
     libxsmm_barrier_wait(handle->barrier, ltid);
   }
 
@@ -170,9 +174,9 @@ if (handle->use_lp_kernel == 1) {
     /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
     code_stream = handle->bwd_code_segments[ltid];
     if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
-      LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+      LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
       element_input_type *regular_input_base;
-      regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+      regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
 
       if (handle->ofw == 7) {
         for (pc = 0; pc < n_segments; pc++) {
@@ -274,15 +278,15 @@ if (handle->use_lp_kernel == 1) {
 
           if ( instr == IFM_LOOP_CLOSE ) {
             ifm1 = code_stream[pc].aux_index; 
-            LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-            LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);  
+            LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
+            LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);  
             element_input_type *orig_input_ptr;
             element_input_type *del_input_ptr;
             __m512 zero_reg  = _mm512_setzero_ps();  
             __m512 orig_reg;
             __mmask16 mask; 
-            orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-            del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
+            del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
             for (ij = 0; ij < handle->desc.H; ij++) {
               for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
                 orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
@@ -332,15 +336,15 @@ if (handle->use_lp_kernel == 1) {
 
           if ( instr == IFM_LOOP_CLOSE ) {
             ifm1 = code_stream[pc].aux_index; 
-            LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-            LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);  
+            LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
+            LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);  
             element_input_type *orig_input_ptr;
             element_input_type *del_input_ptr;
             __m512 zero_reg  = _mm512_setzero_ps();  
             __m512 orig_reg;
             __mmask16 mask; 
-            orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-            del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
+            del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
             for (ij = 0; ij < handle->desc.H; ij++) {
               for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
                 orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
@@ -369,9 +373,9 @@ if (handle->use_lp_kernel == 1) {
   } else {
     /* Run the stream of convolutions, no extra operations are required... */
     if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
-      LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+      LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
       element_input_type *regular_input_base;
-      regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+      regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
 
       if (handle->ofw == 7) {
         for (pc = 0; pc < instr; pc+=1) {
@@ -430,16 +434,16 @@ if (handle->use_lp_kernel == 1) {
   if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
     int ii, ij, ifm1, ifm2, img;
     img = ltid;
-    LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-    LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);  
+    LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
+    LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);  
     element_input_type *orig_input_ptr;
     element_input_type *del_input_ptr;
     __m512 zero_reg  = _mm512_setzero_ps();  
     __m512 orig_reg;
     __mmask16 mask; 
-    for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++ ) {
-      orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-      del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+    for (ifm1 = 0; ifm1 < BLOCKSIFM; ifm1++ ) {
+      orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
+      del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
       for (ij = 0; ij < handle->desc.H; ij++) {
         for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
           orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
