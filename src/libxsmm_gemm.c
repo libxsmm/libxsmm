@@ -116,25 +116,26 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
     for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_INIT(internal_gemm_lock + i, &libxsmm_lock_attr_default);
   }
 #endif
-#if defined(LIBXSMM_BUILD) && (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || \
-   !defined(NDEBUG)) || defined(_WIN32) /* debug purpose */
+#if defined(LIBXSMM_GEMM_MMBATCH)
   {
     const char *const env_w = getenv("LIBXSMM_GEMM_WRAP"), *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
     const unsigned int batchsize = ((0 == env_b || 0 == *env_b || 0 > atoi(env_b)) ? (LIBXSMM_GEMM_BATCHSIZE) : atoi(env_b));
     const void *const extra = 0;
     /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
     libxsmm_gemm_wrap = ((0 == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
-    if (0 != libxsmm_verbosity) { /* enables the auto-batch statistic */
-      libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC;
-    }
-    /* use libxsmm_malloc to draw memory from the default memory allocation domain */
-    assert(1 < (LIBXSMM_GEMM_BATCHSCALE));
-    if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&libxsmm_gemm_batcharray,
-      (size_t)((LIBXSMM_GEMM_BATCHSCALE) * sizeof(libxsmm_gemm_batchitem) * batchsize),
-      0, LIBXSMM_MALLOC_FLAG_SCRATCH, &extra, sizeof(extra)))
-    {
-      LIBXSMM_LOCK_INIT(&libxsmm_gemm_batchlock, &libxsmm_lock_attr_default);
-      libxsmm_gemm_batchsize = batchsize;
+    if (0 != libxsmm_gemm_wrap) {
+      if (0 != libxsmm_verbosity) { /* enables the auto-batch statistic */
+        libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC;
+      }
+      /* draw default/non-scratch memory, but utilize the scratch memory allocator */
+      assert(1 < (LIBXSMM_GEMM_BATCHSCALE));
+      if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&libxsmm_gemm_batcharray,
+        (size_t)((LIBXSMM_GEMM_BATCHSCALE) * sizeof(libxsmm_gemm_batchitem) * batchsize),
+        0, LIBXSMM_MALLOC_FLAG_SCRATCH, &extra, sizeof(extra)))
+      {
+        LIBXSMM_LOCK_INIT(&libxsmm_gemm_batchlock, &libxsmm_lock_attr_default);
+        libxsmm_gemm_batchsize = batchsize;
+      }
     }
   }
 #endif
@@ -165,7 +166,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 #if !defined(LIBXSMM_NO_SYNC)
   unsigned int i; for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_DESTROY(internal_gemm_lock + i);
 #endif
-#if defined(LIBXSMM_BUILD) && (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || !defined(NDEBUG))
+#if defined(LIBXSMM_GEMM_MMBATCH)
   if (0 != libxsmm_gemm_batcharray) {
     void* extra = 0;
     if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, 0/*size*/, 0/*flags*/, &extra)) {

@@ -53,6 +53,13 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD) && \
+    (defined(LIBXSMM_CONFIG_WRAP) && 0 != (LIBXSMM_CONFIG_WRAP)) && \
+    (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || \
+    !defined(NDEBUG) || defined(_WIN32)) /* debug purpose */
+# define LIBXSMM_GEMM_MMBATCH
+#endif
+
 #if !defined(LIBXSMM_GEMM_CONST)
 # if defined(LIBXSMM_GEMM_NONCONST) || defined(__OPENBLAS)
 #   define LIBXSMM_GEMM_CONST
