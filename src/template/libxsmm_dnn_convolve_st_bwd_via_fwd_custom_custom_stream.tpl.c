@@ -37,13 +37,18 @@ const int ltid = tid-start_thread;
 
 int BLOCKSIFM = handle->blocksifm_lp;
 int BLOCKSOFM = handle->blocksofm_lp;
+const int oKB = handle->desc.K/32;
+const int iCB = handle->desc.C/32;
 
 /* number of tasks for transpose that could be run in parallel */
 int transpose_work;
 if (handle->use_lp_kernel == 0) {
   transpose_work = BLOCKSOFM * (BLOCKSIFM * handle->fm_lp_block);
 } else {
+#if 0
   transpose_work = handle->desc.C * handle->desc.K;
+#endif
+  transpose_work = oKB * iCB;
 }
 
 /* compute chunck size */
@@ -159,6 +164,7 @@ if (handle->use_lp_kernel == 1) {
         }
       }
     } else {
+#if 0
       int k, c, r, s;
       for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
         k = ifm1ofm1 / handle->desc.C;
@@ -181,6 +187,40 @@ if (handle->use_lp_kernel == 1) {
               LIBXSMM_VLA_ACCESS(7, wt, i_k1, i_c1, r, s, i_c2, i_k2, i_c3, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
           }
         }  
+      }
+#endif
+      int icb, okb, kkb, ocbb, ikbb;
+      element_filter_type  * __restrict o_b;
+      const element_filter_type *__restrict i_b;
+      const __m512i vgindex_base = _mm512_set_epi32(7,6,5,4,3,2,1,0,7,6,5,4,3,2,1,0);
+      const __m512i vgindex_hi_offs = _mm512_mullo_epi32(_mm512_set1_epi32(2), _mm512_set_epi32(1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0));
+      const __m512i vgindex = _mm512_add_epi32(vgindex_hi_offs, _mm512_mullo_epi32(_mm512_set1_epi32(16), vgindex_base));
+      const __m512i vsindex_base = _mm512_mullo_epi32(_mm512_set1_epi32(2), _mm512_set_epi32(7,6,5,4,3,2,1,0,7,6,5,4,3,2,1,0));
+      const __m512i vsindex_hi_offs = _mm512_mullo_epi32(_mm512_set1_epi32(16), _mm512_set_epi32(1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0));
+      const __m512i vsindex = _mm512_add_epi32(vsindex_hi_offs, vsindex_base);
+      
+      for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+        icb = ifm1ofm1 / oKB;
+        okb = ifm1ofm1 % oKB;
+        for (kj=0; kj < handle->desc.R; kj++) {
+          for (ki=0; ki < handle->desc.S; ki++) {
+            for(ocbb = 0; ocbb < 2; ++ocbb) {
+              for(ikbb = 0; ikbb < 2; ++ikbb) {
+                i_b = &LIBXSMM_VLA_ACCESS(7, wt, okb*2+ikbb, icb, kj, ki, ocbb*8, 0, 0, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block); 
+                o_b = &LIBXSMM_VLA_ACCESS(7, tr_wt2, icb*2+ocbb, okb, handle->desc.R-1-kj , handle->desc.S-1-ki, ikbb*8, 0, 0, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
+#pragma unroll(4)
+                for(kkb = 0; kkb < 4; ++kkb) {
+                  const __m512i inp = _mm512_i32gather_epi32(vgindex, i_b + 8*kkb, 4);
+                  const __m512i inp2 = _mm512_i32gather_epi32(vgindex, i_b + 8*kkb+2, 4);
+                  const __m512i zeros = _mm512_or_epi32(_mm512_and_epi32(inp, _mm512_set1_epi32(0x0000FFFF)), _mm512_slli_epi32(inp2, 16));
+                  const __m512i ones = _mm512_or_epi32(_mm512_and_epi32(inp2, _mm512_set1_epi32(0xFFFF0000)), _mm512_srli_epi32(inp, 16));
+                  _mm512_i32scatter_epi32(o_b + (kkb*4/2)*32,     vsindex, zeros, 4);
+                  _mm512_i32scatter_epi32(o_b + (kkb*4/2)*32 + 2, vsindex, ones, 4);
+                }
+              }
+            }
+          }
+        }
       }
     }
     weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt2, 0, 0, 0, 0, 0, 0, 0,
