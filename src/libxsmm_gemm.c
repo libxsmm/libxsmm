@@ -603,9 +603,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
         if (((int)sizeof(libxsmm_blasint)) <= index_stride) {
           const char *const sa = (const char*)stride_a, *const sb = (const char*)stride_b, *const sc = (const char*)stride_c;
           libxsmm_blasint ii = begin * index_stride, ni;
-          const char* ai = a0 + (0 != sa ? (*((const libxsmm_blasint*)(sa + ii)) - index_base) : 0) * typesize;
-          const char* bi = b0 + (0 != sb ? (*((const libxsmm_blasint*)(sb + ii)) - index_base) : 0) * typesize;
-          char*       ci = c0 + (0 != sc ? (*((const libxsmm_blasint*)(sc + ii)) - index_base) : 0) * typesize;
+          const char* ai = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
+          const char* bi = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
+          char*       ci = c0 + (0 != sc ? ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize) : 0);
           const libxsmm_blasint end1 = (end != batchsize ? end : (end - 1));
 #if !defined(LIBXSMM_NO_SYNC)
           if (1 == nthreads || 0 == internal_gemm_nlocks)
@@ -617,9 +617,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
               if (0 != ai && 0 != bi && 0 != ci)
 #endif
               {
-                const char *const an = a0 + (0 != sa ? (*((const libxsmm_blasint*)(sa + ii)) - index_base) : 0) * typesize;
-                const char *const bn = b0 + (0 != sb ? (*((const libxsmm_blasint*)(sb + ii)) - index_base) : 0) * typesize;
-                char       *const cn = c0 + (0 != sc ? (*((const libxsmm_blasint*)(sc + ii)) - index_base) : 0) * typesize;
+                const char *const an = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
+                const char *const bn = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
+                char       *const cn = c0 + (0 != sc ? ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize) : 0);
                 kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
                 ai = an; bi = bn; ci = cn;
               }
@@ -642,9 +642,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
               if (0 != ai && 0 != bi && 0 != ci)
 # endif
               {
-                const char *const an = a0 + (0 != sa ? (*((const libxsmm_blasint*)(sa + ii)) - index_base) : 0) * typesize;
-                const char *const bn = b0 + (0 != sb ? (*((const libxsmm_blasint*)(sb + ii)) - index_base) : 0) * typesize;
-                char       *const cn = c0 + (0 != sc ? (*((const libxsmm_blasint*)(sc + ii)) - index_base) : 0) * typesize;
+                const char *const an = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
+                const char *const bn = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
+                char       *const cn = c0 + (0 != sc ? ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize) : 0);
                 LIBXSMM_LOCK_ACQUIRE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
                 kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
                 LIBXSMM_LOCK_RELEASE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
