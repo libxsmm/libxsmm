@@ -35,16 +35,15 @@
 
 const int ltid = tid-start_thread;
 
-/* FIXME assignemnts here  */
 int BLOCKSIFM = handle->blocksifm_lp;
-int BLOCKSOFM = handle->blocksofm;
+int BLOCKSOFM = handle->blocksofm_lp;
 
 /* number of tasks for transpose that could be run in parallel */
 int transpose_work;
 if (handle->use_lp_kernel == 0) {
   transpose_work = BLOCKSOFM * (BLOCKSIFM * handle->fm_lp_block);
 } else {
-  transpose_work = BLOCKSOFM * (BLOCKSIFM * handle->fm_lp_block);
+  transpose_work = handle->desc.C * handle->desc.K;
 }
 
 /* compute chunck size */
@@ -160,7 +159,29 @@ if (handle->use_lp_kernel == 1) {
         }
       }
     } else {
-
+      int k, c, r, s;
+      for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+        k = ifm1ofm1 / handle->desc.C;
+        c = ifm1ofm1 % handle->desc.C;
+        for ( r = 0; r < handle->desc.R; r++ ) {
+          for ( s = 0; s < handle->desc.S; s++ ) {
+            int i_c1, i_c2, i_c3, i_k1, i_k2;
+            int o_c1, o_c2, o_k1, o_k2, o_k3;
+            o_k1 = k/32;
+            o_k2 = (k%32)/2;
+            o_k3 = (k%32)%2;
+            o_c1 = c/16;
+            o_c2 = c%16;
+            i_c1 = c/32;
+            i_c2 = (c%32)/2;
+            i_c3 = (c%32)%2;
+            i_k1 = k/16;
+            i_k2 = k%16;
+            LIBXSMM_VLA_ACCESS(7, tr_wt2, o_c1, o_k1, handle->desc.R-1-r , handle->desc.S-1-s, o_k2, o_c2, o_k3, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block) =
+              LIBXSMM_VLA_ACCESS(7, wt, i_k1, i_c1, r, s, i_c2, i_k2, i_c3, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+          }
+        }  
+      }
     }
     weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt2, 0, 0, 0, 0, 0, 0, 0,
         BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);

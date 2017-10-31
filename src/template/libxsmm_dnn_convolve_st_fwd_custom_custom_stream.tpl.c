@@ -36,8 +36,7 @@
 
 #define FP64_BN_STATS
 
-/* FIXME assignemnts here  */
-int BLOCKSIFM = handle->blocksifm;
+int BLOCKSIFM = handle->blocksifm_lp;
 int BLOCKSOFM = handle->blocksofm;
 
 const int ltid = tid-start_thread;

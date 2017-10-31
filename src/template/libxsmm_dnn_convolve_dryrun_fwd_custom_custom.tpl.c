@@ -46,7 +46,6 @@ int blockifm = 8;
 int ltid;
 #endif
 
-/* FIXME assignemnts here  */
 int BLOCKSIFM_BLOCKING = handle->blocksifm_blocking;
 int BLOCKSIFM = handle->blocksifm_lp;
 int BLOCKSOFM = handle->blocksofm;
