@@ -333,6 +333,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       }
     } 
 
+    /* Let's calculate how many blocks we need */
+    handle->blocksifm = handle->desc.C / handle->ifmblock;
+    handle->blocksofm = handle->desc.K / handle->ofmblock;
+    handle->blocksifm_lp = handle->desc.C / (handle->ifmblock * handle->fm_lp_block);
+    handle->blocksofm_lp = handle->desc.K / (handle->ofmblock * handle->fm_lp_block);
+
     /* Logic for L2 tiling  */
     unsigned int input_block_size = 28 * handle->blocksifm_blocking * 64;
     unsigned int output_block_size = 28 * 64;
@@ -536,9 +542,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     handle->fm_lp_block = 1;
   }
 
-  /* Let's calculate how many blocks we need */
-  handle->blocksifm = handle->desc.C / (handle->ifmblock * handle->fm_lp_block);
-  handle->blocksofm = handle->desc.K / (handle->ofmblock);
+
 
   /* Calculate number of image blocks in case of custom_2 format */
   if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
@@ -563,8 +567,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && (handle->desc.pad_h_out == 0) && (handle->desc.pad_w_out == 0) && ((handle->desc.pad_h > 0) || (handle->desc.pad_w > 0))) {
     handle->padding_flag = 1;
     handle->scratch5  = 0;
-    handle->minibatch_scratch_size = LIBXSMM_MAX(handle->desc.N * handle->blocksifm * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w+4) * libxsmm_dnn_typesize(handle->datatype_out), handle->desc.N * handle->blocksofm * handle->ofmblock * handle->fm_lp_block * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_out));
-    handle->fwdbwd_scratch_size = handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_out);
+    handle->minibatch_scratch_size = LIBXSMM_MAX(handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w+4) * libxsmm_dnn_typesize(handle->datatype_out), handle->desc.N * handle->blocksofm_lp * handle->ofmblock * handle->fm_lp_block * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_out));
+    handle->fwdbwd_scratch_size = handle->desc.threads * handle->blocksifm_lp * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_out);
     handle->max_scratch5_size = (handle->minibatch_scratch_size > handle->fwdbwd_scratch_size) ? handle->minibatch_scratch_size : handle->fwdbwd_scratch_size;
   } else {
     handle->padding_flag = 0;
@@ -613,9 +617,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matcopy_descriptor.ldi = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
           matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock * handle->fm_lp_block;
         } else { /* Assumes NHWC format */
-          matcopy_descriptor.m = handle->ifwp * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
-          matcopy_descriptor.ldi = handle->ifwp * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
-          matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->blocksifm * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.m = handle->ifwp * handle->blocksifm_lp * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.ldi = handle->ifwp * handle->blocksifm_lp * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->blocksifm_lp * handle->ifmblock * handle->fm_lp_block;
         }
         matcopy_descriptor.prefetch = 1;
         matcopy_descriptor.unroll_level = 2;
@@ -630,7 +634,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.stride_h = handle->desc.u;
       descriptor.stride_w = handle->desc.v;
       descriptor.blocks_ofm = handle->blocksofm;
-      descriptor.blocks_ifm = handle->blocksifm;
+      descriptor.blocks_ifm = handle->blocksifm_lp;
       descriptor.blocks_ifm_blocking = handle->blocksifm_blocking;
       descriptor.weight_stride = 1;
       descriptor.use_fwd_generator_for_bwd = 0;
@@ -853,7 +857,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.stride_h = handle->desc.u;
       descriptor.stride_w = handle->desc.v;
       descriptor.blocks_ofm = handle->blocksofm;
-      descriptor.blocks_ifm = handle->blocksifm;
+      descriptor.blocks_ifm = handle->blocksifm_lp;
       /* ORIG::descriptor.ofm_block= ((nOfm % VLEN == 0) ? VLEN : 1); */
       descriptor.ofm_block = handle->ofmblock;
       /* ORIG::descriptor.ifm_block = VLEN; */
@@ -891,7 +895,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         fwd_equivalent_descriptor.stride_h = 1;
         fwd_equivalent_descriptor.stride_w = 1;
         fwd_equivalent_descriptor.blocks_ofm = handle->blocksifm;
-        fwd_equivalent_descriptor.blocks_ifm = handle->blocksofm;
+        fwd_equivalent_descriptor.blocks_ifm = handle->blocksofm_lp;
         fwd_equivalent_descriptor.ofm_block = handle->ifmblock;
         fwd_equivalent_descriptor.ifm_block = handle->ofmblock;
         fwd_equivalent_descriptor.ofh_padded = handle->ifhp;
@@ -1167,6 +1171,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           mirror_handle->fwd_ofh_rb = handle->bwd_ofh_rb;
           mirror_handle->fwd_ofw_rb = handle->bwd_ofw_rb;
           mirror_handle->blocksofm = handle->blocksifm;
+          mirror_handle->blocksofm_lp = handle->blocksifm_lp;
           mirror_handle->ifhp = handle->ofhp;
           mirror_handle->ifwp = handle->ofwp;
           mirror_handle->ofhp = handle->ifhp;
@@ -1174,6 +1179,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           mirror_handle->use_nts_fwd = handle->use_nts_bwd;
           mirror_handle->block_fwd_ofm = handle->block_fwd_ifm;
           mirror_handle->blocksifm = handle->blocksofm;
+          mirror_handle->blocksifm_lp = handle->blocksofm_lp;        
           mirror_handle->ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.S) / handle->desc.v + 1;
           mirror_handle->ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.R) / handle->desc.u + 1;
           mirror_handle->ifmblock = handle->ofmblock;
@@ -1269,7 +1275,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.stride_h = handle->desc.u;
         descriptor.stride_w = handle->desc.v;
         descriptor.blocks_ofm = handle->blocksofm;
-        descriptor.blocks_ifm = handle->blocksifm;
+        descriptor.blocks_ifm = handle->blocksifm_lp;
         descriptor.ofh_padded = handle->ofhp;
         descriptor.ofw_padded = handle->ofwp;
         descriptor.ofw = handle->ofw;
@@ -1419,11 +1425,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 descriptor.blocks_h = 1;
                 handle->upd_ofh_rb = 2;
                 descriptor.ofh_rb = 2;
-                if ( handle->blocksofm == 32 && handle->blocksifm == 16 ) {
+                if ( handle->blocksofm == 32 && handle->blocksifm_lp == 16 ) {
                   handle->upd_ofh_rb = 7;
                   descriptor.ofh_rb = 7;
                 }
-                if ( handle->blocksofm == 8 && handle->blocksifm == 16 ) {
+                if ( handle->blocksofm == 8 && handle->blocksifm_lp == 16 ) {
                   handle->upd_ofh_rb = 1;
                   descriptor.ofh_rb = 1;
                 }
@@ -1555,7 +1561,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
           handle->trans_ofw_ifm = 0;
           /* Determine if we will be using thread private filters  */
-          if ((handle->ifmblock == 1) || (handle->blocksifm * handle->blocksofm < handle->desc.threads) ) {
+          if ((handle->ifmblock == 1) || (handle->blocksifm_lp * handle->blocksofm < handle->desc.threads) ) {
             handle->use_thread_private_filter = 1;
             /* determine if we will transpose input  */
             if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)) ) {
@@ -1629,7 +1635,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
         /* backward transpose filters */
         handle->scratch1 = 0;
-        handle->scratch1_size = handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
+        handle->scratch1_size = handle->blocksifm_lp * handle->ifmblock * handle->blocksofm * handle->ofmblock
           * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
         if (handle->fm_lp_block > 1) {
           /* If low precision, we need extra buffer to store intermediate weight tensor */
@@ -1638,14 +1644,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
         /* weight update transpose of minibatch */
         handle->scratch3 = 0;
-        handle->scratch3_size = handle->desc.N * handle->blocksifm * handle->ifmblock * handle->ifhp * (handle->ifwp+4)
+        handle->scratch3_size = handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->ifhp * (handle->ifwp+4)
           * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
 
         /* minibatch parallel execution of weight update kernel */
         if ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < handle->desc.threads) || (handle->use_thread_private_jit)) {
           handle->upd_use_thread_fil = 1;
           handle->scratch4 = 0;
-          handle->scratch4_size = handle->desc.threads * handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
+          handle->scratch4_size = handle->desc.threads * handle->blocksifm_lp * handle->ifmblock * handle->blocksofm * handle->ofmblock
             * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_out);
           handle->scratch4_size += handle->desc.threads * LIBXSMM_MIN(handle->block_upd_ofm, handle->blocksofm) * LIBXSMM_MIN(handle->block_upd_ifm, handle->blocksifm) * handle->desc.R
             * handle->desc.S * handle->ifmblock * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_out);

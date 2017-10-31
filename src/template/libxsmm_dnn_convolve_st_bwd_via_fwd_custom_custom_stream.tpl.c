@@ -36,7 +36,7 @@
 const int ltid = tid-start_thread;
 
 /* FIXME assignemnts here  */
-int BLOCKSIFM = handle->blocksifm;
+int BLOCKSIFM = handle->blocksifm_lp;
 int BLOCKSOFM = handle->blocksofm;
 
 /* number of tasks for transpose that could be run in parallel */
@@ -162,7 +162,7 @@ if (handle->use_lp_kernel == 1) {
     } else {
 
     }
-    weight_base = &LIBXSMM_VLA_ACCESS(7, wt, 0, 0, 0, 0, 0, 0, 0,
+    weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt2, 0, 0, 0, 0, 0, 0, 0,
         BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
     libxsmm_barrier_wait(handle->barrier, ltid);
   }

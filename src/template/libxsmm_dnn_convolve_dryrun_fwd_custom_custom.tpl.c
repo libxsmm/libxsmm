@@ -48,7 +48,7 @@ int ltid;
 
 /* FIXME assignemnts here  */
 int BLOCKSIFM_BLOCKING = handle->blocksifm_blocking;
-int BLOCKSIFM = handle->blocksifm;
+int BLOCKSIFM = handle->blocksifm_lp;
 int BLOCKSOFM = handle->blocksofm;
 
 int loop_order = MIXED;
