@@ -161,8 +161,7 @@ LIBXSMM_API int libxsmm_mmbatch(libxsmm_gemm_precision precision,
    *                  (measured in Bytes). The typical value of index_stride is sizeof(libxsmm_blasint),
    *                  which determines a packed array of indexes.
    * A stride of zero (NULL pointer, or zero-index) does not advance the corresponding matrix-operand.
-   * Note: if the C-stride is zero, the kernel may be built for Beta=1,
-   * and more important, accesses to C are internally synchronized.
+   * Note: accesses to the same C-matrix are internally synchronized.
    */
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   /**

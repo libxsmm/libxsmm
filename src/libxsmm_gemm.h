@@ -75,19 +75,16 @@
 # define LIBXSMM_GEMM_COLLAPSE 2
 #endif
 
+#if !defined(LIBXSMM_GEMM_BATCHSCALE)
+# define LIBXSMM_GEMM_BATCHSCALE 1.5
+#endif
+
 #if !defined(LIBXSMM_NO_BLAS)
 # if !defined(__BLAS) || (0 != __BLAS)
 #   define LIBXSMM_NO_BLAS 0
 # else
 #   define LIBXSMM_NO_BLAS 1
 # endif
-#endif
-
-#if !defined(LIBXSMM_GEMM_BATCHSIZE)
-# define LIBXSMM_GEMM_BATCHSIZE 1024
-#endif
-#if !defined(LIBXSMM_GEMM_BATCHSCALE)
-# define LIBXSMM_GEMM_BATCHSCALE 1.5
 #endif
 
 #define LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA) ( \
