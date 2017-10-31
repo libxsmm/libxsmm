@@ -179,7 +179,9 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 }
 
 #if !defined(LIBXSMM_NO_SYNC)
-# define INTERNAL_REGLOCK_MAXN 256
+# if !defined(INTERNAL_REGLOCK_MAXN)
+#   define INTERNAL_REGLOCK_MAXN 256
+# endif
 LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE internal_reglock[INTERNAL_REGLOCK_MAXN];
 #endif
 
@@ -468,7 +470,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   }
 #if !defined(LIBXSMM_NO_SYNC)
   { /* release locks */
-    int i; for (i = 0; i < (INTERNAL_REGLOCK_MAXN); ++i) LIBXSMM_LOCK_DESTROY(internal_reglock + i);
+    int i; for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_DESTROY(internal_reglock + i);
     LIBXSMM_LOCK_DESTROY(&libxsmm_lock_global); LIBXSMM_LOCK_ATTR_DESTROY(&libxsmm_lock_attr_default);
   }
 #endif
@@ -481,7 +483,7 @@ LIBXSMM_API_INLINE void internal_init(void)
   int init_code = EXIT_FAILURE, i;
 #if !defined(LIBXSMM_NO_SYNC) /* setup the locks in a thread-safe fashion */
   LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
-  for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock + i);
+  for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock + i);
 #endif
   result = internal_registry;
   if (0 == result) {
@@ -530,18 +532,6 @@ LIBXSMM_API_INLINE void internal_init(void)
     { const char *const env = getenv("LIBXSMM_SYNC");
       libxsmm_sync = (0 == env || 0 == *env) ? 1/*default*/ : atoi(env);
     }
-#if !defined(LIBXSMM_NO_SYNC)
-    { const char *const env = getenv("LIBXSMM_TRYLOCK");
-      if (0 == env || 0 == *env) {
-        internal_reglock_count = INTERNAL_REGLOCK_MAXN;
-      }
-      else {
-        internal_reglock_count = (0 != atoi(env) ? 1 : (INTERNAL_REGLOCK_MAXN));
-        internal_dispatch_trylock_locked = 1;
-      }
-      assert(1 <= internal_reglock_count);
-    }
-#endif
     /* clear internal counters/statistic */
     for (i = 0; i < 4/*sml/med/big/xxx*/; ++i) {
       memset(&internal_statistic[0/*DP*/][i], 0, sizeof(internal_statistic_type));
@@ -623,7 +613,7 @@ LIBXSMM_API_INLINE void internal_init(void)
 # endif
         { /* opening a scope for eventually declaring variables */
           /* setup the dispatch table for the statically generated code */
-#           include <libxsmm_dispatch.h>
+#         include <libxsmm_dispatch.h>
         }
 #endif
         libxsmm_gemm_auto_prefetch_default = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
@@ -664,7 +654,7 @@ LIBXSMM_API_INLINE void internal_init(void)
 #endif
   }
 #if !defined(LIBXSMM_NO_SYNC) /* release locks */
-  for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
+  for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
   LIBXSMM_LOCK_RELEASE(&libxsmm_lock_global);
 #endif
 }
@@ -678,11 +668,20 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 #if !defined(LIBXSMM_NO_SYNC) /* setup the locks in a thread-safe fashion */
     static int counter = 0, once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
+      const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
       int i;
       assert(sizeof(internal_reglock) == (INTERNAL_REGLOCK_MAXN * sizeof(*internal_reglock)));
       LIBXSMM_LOCK_ATTR_INIT(&libxsmm_lock_attr_default);
       LIBXSMM_LOCK_INIT(&libxsmm_lock_global, &libxsmm_lock_attr_default);
-      for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) {
+      if (0 == env_trylock || 0 == *env_trylock) {
+        internal_reglock_count = INTERNAL_REGLOCK_MAXN;
+      }
+      else {
+        internal_reglock_count = (0 != atoi(env_trylock) ? 1 : (INTERNAL_REGLOCK_MAXN));
+        internal_dispatch_trylock_locked = 1;
+      }
+      assert(1 <= internal_reglock_count);
+      for (i = 0; i < internal_reglock_count; ++i) {
         LIBXSMM_LOCK_INIT(internal_reglock + i, &libxsmm_lock_attr_default);
       }
       once = 1;
@@ -715,7 +714,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 #if !defined(LIBXSMM_NO_SYNC)
     LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
     /* acquire locks and thereby shortcut lazy initialization later on */
-    for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock + i);
+    for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_ACQUIRE(internal_reglock + i);
 #endif
     registry = internal_registry;
 
@@ -794,7 +793,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       libxsmm_release_scratch();
     }
 #if !defined(LIBXSMM_NO_SYNC) /* LIBXSMM_LOCK_RELEASE, but no LIBXSMM_LOCK_DESTROY */
-    for (i = 0; i < INTERNAL_REGLOCK_MAXN; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
+    for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
     LIBXSMM_LOCK_RELEASE(&libxsmm_lock_global);
 #endif
   }
