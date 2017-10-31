@@ -1086,7 +1086,7 @@ else
   OMPLIB = $(NULL)
 endif
 
-ifneq (0,$(OMP))
+ifeq (0,$(OMP))
   EXTLIB += $(OMPLIB)
 endif
 

@@ -74,7 +74,7 @@ Running an MPI/OpenMP-hybrid application, an MPI rank-count that is half the num
 
 ```bash
 mpirun -np 16 \
-  -genv I_MPI_PIN_DOMAIN=auto -genv I_MPI_PIN_ORDER=spread \
+  -genv I_MPI_PIN_DOMAIN=auto -genv I_MPI_PIN_ORDER=bunch \
   -genv KMP_AFFINITY=compact,granularity=fine,1 \
   -genv OMP_NUM_THREADS=4 \
   cp2k/exe/Linux-x86-64-intel/cp2k.psmp workload.inp

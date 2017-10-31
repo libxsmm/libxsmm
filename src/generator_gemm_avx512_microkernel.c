@@ -1549,6 +1549,10 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
       l_register_offset = (l_n_blocking*((l_k%2)+1));
     }
 
+    if (0 != io_generated_code->last_error) {
+      return; /* propagate error */
+    }
+
     /* compute vectorwidth (A) * column broadcast (B) */
     /* we just use displacements for very small GEMMS to save GPR instructions */
     if ( i_k_blocking == 9 ) {

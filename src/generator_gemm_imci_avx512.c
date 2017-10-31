@@ -143,6 +143,10 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
                                                   i_arch,
                                                   i_n_blocking );
 
+    if (0 != io_generated_code->last_error) {
+      return; /* propagate error */
+    }
+
     /* if we are generating for KNL && i_n_blocking is greater 18  -> pop prefetch gpr */
     if ( (i_n_blocking > 18)          &&
          (strcmp(i_arch, "knc") != 0) ) {

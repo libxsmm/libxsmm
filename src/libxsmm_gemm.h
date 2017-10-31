@@ -53,6 +53,13 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD) && \
+    (defined(LIBXSMM_CONFIG_WRAP) && 0 != (LIBXSMM_CONFIG_WRAP)) && \
+    (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || \
+    !defined(NDEBUG) || defined(_WIN32)) /* debug purpose */
+# define LIBXSMM_GEMM_MMBATCH
+#endif
+
 #if !defined(LIBXSMM_GEMM_CONST)
 # if defined(LIBXSMM_GEMM_NONCONST) || defined(__OPENBLAS)
 #   define LIBXSMM_GEMM_CONST
@@ -75,19 +82,16 @@
 # define LIBXSMM_GEMM_COLLAPSE 2
 #endif
 
+#if !defined(LIBXSMM_GEMM_BATCHSCALE)
+# define LIBXSMM_GEMM_BATCHSCALE 1.5
+#endif
+
 #if !defined(LIBXSMM_NO_BLAS)
 # if !defined(__BLAS) || (0 != __BLAS)
 #   define LIBXSMM_NO_BLAS 0
 # else
 #   define LIBXSMM_NO_BLAS 1
 # endif
-#endif
-
-#if !defined(LIBXSMM_GEMM_BATCHSIZE)
-# define LIBXSMM_GEMM_BATCHSIZE 1024
-#endif
-#if !defined(LIBXSMM_GEMM_BATCHSCALE)
-# define LIBXSMM_GEMM_BATCHSCALE 1.5
 #endif
 
 #define LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA) ( \

@@ -103,6 +103,7 @@
         ALLOCATE(b(k,n,s))
 
         ! Initialize a, b
+        !$OMP PARALLEL DO PRIVATE(i) DEFAULT(NONE) SHARED(s, a, b, scale)
         DO i = 1, s
           CALL init(42, a(:,:,i), scale, i - 1)
           CALL init(24, b(:,:,i), scale, i - 1)
@@ -246,9 +247,7 @@
           addval = (UBOUND(matrix, 1) - LBOUND(matrix, 1)) * ld         &
      &           + (UBOUND(matrix, 2) - LBOUND(matrix, 2))
           maxval = MAX(ABS(minval), addval)
-          norm = MERGE(scale / maxval, scale, 0.NE.maxval)          
-          !$OMP PARALLEL DO PRIVATE(i, j, value) DEFAULT(NONE)          &
-          !$OMP   SHARED(ld, matrix, norm, minval, addval)
+          norm = MERGE(scale / maxval, scale, 0.NE.maxval)
           DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
             DO i = LBOUND(matrix, 1),                                   &
      &             LBOUND(matrix, 1) + UBOUND(matrix, 1) - 1
