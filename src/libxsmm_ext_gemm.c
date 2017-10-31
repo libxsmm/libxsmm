@@ -109,8 +109,8 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
         }
       }
       else { /* may happen because of try-lock (registry) */
-        const char transa = (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & batchdesc->flags) ? 'N' : 'T');
-        const char transb = (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & batchdesc->flags) ? 'N' : 'T');
+        const char transa = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & batchdesc->flags) ? 'N' : 'T');
+        const char transb = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & batchdesc->flags) ? 'N' : 'T');
         const libxsmm_blasint lda = batchdesc->lda, ldb = batchdesc->ldb, ldc = batchdesc->ldc;
         switch (batchdesc->datatype) {
           case LIBXSMM_GEMM_PRECISION_F64: {
