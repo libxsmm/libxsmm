@@ -1368,7 +1368,7 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
-		--latex-engine=xelatex --template=$(notdir $(TMPFILE)) --listings \
+		--template=$(notdir $(TMPFILE)) --listings \
 		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Documentation" \
@@ -1400,7 +1400,7 @@ $(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/documentation/libxsmm_samples.md
 		> $(TMPFILE)
 	@iconv -t utf-8 $(ROOTDIR)/documentation/libxsmm_samples.md \
 	| pandoc \
-		--latex-engine=xelatex --template=$(TMPFILE) --listings \
+		--template=$(TMPFILE) --listings \
 		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="LIBXSMM Sample Code Summary" \
@@ -1425,7 +1425,7 @@ $(DOCDIR)/cp2k.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documen
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
-		--latex-engine=xelatex --template=$(notdir $(TMPFILE)) --listings \
+		--template=$(notdir $(TMPFILE)) --listings \
 		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="CP2K with LIBXSMM" \
@@ -1451,7 +1451,7 @@ $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/d
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
 	| pandoc \
-		--latex-engine=xelatex --template=$(notdir $(TMPFILE)) --listings \
+		--template=$(notdir $(TMPFILE)) --listings \
 		-f markdown_github+all_symbols_escapable+subscript+superscript \
 		-V documentclass=scrartcl \
 		-V title-meta="TensorFlow with LIBXSMM" \
