@@ -112,7 +112,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
   { /* initialize locks for the batch interface */
     const char *const env_locks = getenv("LIBXSMM_GEMM_NLOCKS");
     const int nlocks = ((0 == env_locks || 0 == *env_locks) ? -1/*default*/ : atoi(env_locks));
-    internal_gemm_nlocks = LIBXSMM_UP2POT(0 > nlocks ? (LIBXSMM_GEMM_MAXNLOCKS) : LIBXSMM_MAX(LIBXSMM_GEMM_MAXNLOCKS, nlocks));
+    internal_gemm_nlocks = LIBXSMM_UP2POT(0 > nlocks ? (LIBXSMM_GEMM_MAXNLOCKS) : LIBXSMM_MIN(nlocks, LIBXSMM_GEMM_MAXNLOCKS));
     for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_INIT(internal_gemm_lock + i, &libxsmm_lock_attr_default);
   }
 #endif
@@ -713,9 +713,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
             uintptr_t ic = (uintptr_t)cc;
 
             for (i = begin; i < end1; ++i) {
-#if defined(LIBXSMM_GEMM_CHECK)
+# if defined(LIBXSMM_GEMM_CHECK)
               if (0 != *((const void**)ai) && 0 != *((const void**)bi) && 0 != cc)
-#endif
+# endif
               {
                 const char *const an = ai + da, *const bn = bi + db;
                 char *const cn = ci + dc;
@@ -728,9 +728,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
               }
             }
             if (end != end1 /* remainder multiplication */
-#if defined(LIBXSMM_GEMM_CHECK)
+# if defined(LIBXSMM_GEMM_CHECK)
               && 0 != *((const void**)ai) && 0 != *((const void**)bi) && 0 != cc
-#endif
+# endif
               )
             {
               LIBXSMM_LOCK_ACQUIRE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
@@ -740,7 +740,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
               LIBXSMM_LOCK_RELEASE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
             }
           }
-#endif
+#endif /*!defined(LIBXSMM_NO_SYNC)*/
         }
         else { /* incorrect argument(s) */
           result = EXIT_FAILURE;
