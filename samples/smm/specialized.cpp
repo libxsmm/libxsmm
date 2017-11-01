@@ -28,6 +28,9 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#if !defined(NDEBUG) && (defined(__CYGWIN__) || defined(_WIN32))
+# define LIBXSMM_FALLBACK_MMFUNCTION
+#endif
 #include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -128,6 +131,13 @@ int main(int argc, char* argv[])
       const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, lda, ldb, ldc, alpha, beta);
       if (!xmm) throw "no specialized routine found!";
 
+      // arrays needed for the batch interface (indirect)
+      std::vector<const T*> va_array(static_cast<size_t>(s)), vb_array(static_cast<size_t>(s));
+      std::vector<T*> vc_array(static_cast<size_t>(s));
+      const T* *const a_array = &va_array[0];
+      const T* *const b_array = &vb_array[0];
+      T* *const c_array = &vc_array[0];
+
       { // batched
         fprintf(stdout, "Batched (A,B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
@@ -156,14 +166,9 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
-      { // LIBXSMM batch interface
+      { // batched/indirect
         fprintf(stdout, "Indirect (A,B,C)...\n");
         const libxsmm_blasint ptrsize = sizeof(T*);
-        std::vector<const T*> va_array(static_cast<size_t>(s)), vb_array(static_cast<size_t>(s));
-        std::vector<T*> vc_array(static_cast<size_t>(s));
-        const T* *const a_array = &va_array[0];
-        const T* *const b_array = &vb_array[0];
-        T* *const c_array = &vc_array[0];
         for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a + i * asize; b_array[i] = b + i * bsize; c_array[i] = d + i * csize;
         }
@@ -217,6 +222,33 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
+      { // indirect A and C
+        fprintf(stdout, "Indirect (A,C)...\n");
+        const libxsmm_blasint ptrsize = sizeof(T*);
+        for (libxsmm_blasint i = 0; i < s; ++i) { a_array[i] = a + i * asize; b_array[i] = b; c_array[i] = d + i * csize; }
+        const unsigned long long start = libxsmm_timer_tick();
+        libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
+          m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
+          0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
+        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
+        const double duration = libxsmm_timer_duration(start, end);
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        libxsmm_matdiff_info diff = { 0 };
+        for (libxsmm_blasint h = 0; h < s; ++h) {
+          const T *const u = c + h * csize, *const v = c_array[h];
+          libxsmm_matdiff_info dv;
+          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, u, v, &ldc, &ldc, &dv)) {
+            libxsmm_matdiff_reduce(&diff, &dv);
+          }
+        }
+        if (0 < diff.normf_rel) fprintf(stdout, "\tdiff: %.0f%%\n", 100.0 * diff.normf_rel);
+      }
+
       { // streaming B and C
         fprintf(stdout, "Streamed (B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
@@ -242,6 +274,33 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      }
+
+      { // indirect B and C
+        fprintf(stdout, "Indirect (B,C)...\n");
+        const libxsmm_blasint ptrsize = sizeof(T*);
+        for (libxsmm_blasint i = 0; i < s; ++i) { a_array[i] = a; b_array[i] = b + i * bsize; c_array[i] = d + i * csize; }
+        const unsigned long long start = libxsmm_timer_tick();
+        libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
+          m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
+          0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
+        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
+        const double duration = libxsmm_timer_duration(start, end);
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        libxsmm_matdiff_info diff = { 0 };
+        for (libxsmm_blasint h = 0; h < s; ++h) {
+          const T *const u = c + h * csize, *const v = c_array[h];
+          libxsmm_matdiff_info dv;
+          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, u, v, &ldc, &ldc, &dv)) {
+            libxsmm_matdiff_reduce(&diff, &dv);
+          }
+        }
+        if (0 < diff.normf_rel) fprintf(stdout, "\tdiff: %.0f%%\n", 100.0 * diff.normf_rel);
       }
 
       { // streaming A and B
@@ -271,6 +330,24 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
+      { // indirect A and B
+        fprintf(stdout, "Indirect (A,B)...\n");
+        const libxsmm_blasint ptrsize = sizeof(T*);
+        for (libxsmm_blasint i = 0; i < s; ++i) { a_array[i] = a + i * asize; b_array[i] = b + i * bsize; c_array[i] = d; }
+        const unsigned long long start = libxsmm_timer_tick();
+        libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
+          m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
+          0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
+        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
+        const double duration = libxsmm_timer_duration(start, end);
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      }
+
       { // cached
         fprintf(stdout, "Cached...\n");
         const unsigned long long start = libxsmm_timer_tick();
@@ -285,6 +362,24 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != x) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      }
+
+      { // indirect cached
+        fprintf(stdout, "Indirect cached...\n");
+        const libxsmm_blasint ptrsize = sizeof(T*);
+        for (libxsmm_blasint i = 0; i < s; ++i) { a_array[i] = a; b_array[i] = b; c_array[i] = d; }
+        const unsigned long long start = libxsmm_timer_tick();
+        libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
+          m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
+          0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
+        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
+        const double duration = libxsmm_timer_duration(start, end);
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
