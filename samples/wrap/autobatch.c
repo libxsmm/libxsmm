@@ -36,11 +36,12 @@
 #if !defined(REAL_TYPE)
 # define REAL_TYPE double
 #endif
-#if !defined(DGEMM)
+#if !defined(GEMM)
 # if defined(WRAP)
-#   define DGEMM LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(REAL_TYPE, gemm))
+#   define GEMM LIBXSMM_GEMM_SYMBOL(REAL_TYPE)
 # else
-#   define DGEMM LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__wrap_, LIBXSMM_TPREFIX(REAL_TYPE, gemm)))
+    /* prototype for LIBXSMM's wrapped GEMM; this way auto-batch can be tested as if GEMM calls are intercepted */
+#   define GEMM LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__wrap_, LIBXSMM_TPREFIX(REAL_TYPE, gemm)))
 # endif
 #endif
 
@@ -49,8 +50,7 @@
 #endif
 
 
-/** Function prototype for LIBXSMM's wrapped DGEMM; this way auto-batch can be tested as if DGEMM calls are intercepted/batched. */
-void DGEMM(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+void GEMM(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const REAL_TYPE*, const REAL_TYPE*, const libxsmm_blasint*, const REAL_TYPE*, const libxsmm_blasint*,
   const REAL_TYPE*, REAL_TYPE*, const libxsmm_blasint*);
 
@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
         const libxsmm_blasint ki = ((rand() % maxv) + 1) * maxn / maxv;
         const libxsmm_blasint ilda = mi, ildb = ki, ildc = mi;
         assert(0 < mi && 0 < ni && 0 < ki && mi <= ilda && ki <= ildb && mi <= ildc);
-        DGEMM(&transa, &transb, &mi, &ni, &ki, &alpha, a, &ilda, b, &ildb, &beta, c, &ildc);
+        GEMM(&transa, &transb, &mi, &ni, &ki, &alpha, a, &ilda, b, &ildb, &beta, c, &ildc);
       }
 #if defined(CALL_BEGIN_END)
 # if defined(_OPENMP)

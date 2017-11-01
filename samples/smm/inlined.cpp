@@ -40,19 +40,12 @@
 #include <cassert>
 #include <cstdio>
 #include <cmath>
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-# include <mkl_service.h>
-#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 
 #if !defined(REAL_TYPE)
 # define REAL_TYPE double
-#endif
-
-#if !defined(MAX_SIZE)
-# define MAX_SIZE ((LIBXSMM_MAX_M) * (LIBXSMM_MAX_N))
 #endif
 
 
@@ -84,7 +77,11 @@ int main(int argc, char* argv[])
     const libxsmm_blasint k = 3 < argc ? std::atoi(argv[3]) : m;
     const libxsmm_blasint n = 2 < argc ? std::atoi(argv[2]) : k;
 
-    const libxsmm_blasint asize = m * k, bsize = k * n, csize = m * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
+    const libxsmm_blasint lda = m, ldb = k, ldc = m;
+    const char transa = 'N', transb = 'N';
+    const T alpha = 1, beta = 1;
+
+    const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
     const libxsmm_blasint s = (2ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 2 GByte
     const size_t bwsize_batched = (size_t)((asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T)); // batched (A, B, and C)
     const size_t bwsize = (size_t)((asize/*load*/ + bsize/*load*/) * sizeof(T)); // omit size of A, B, or C since it is held in cache
@@ -105,9 +102,9 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for
 #endif
     for (libxsmm_blasint i = 0; i < s; ++i) {
-      init(42 + i, a + i * asize, m, k, m, scale);
-      init(24 + i, b + i * bsize, k, n, k, scale);
-      init(22 + i, c + i * csize, m, n, m, scale);
+      init(42 + i, a + i * asize, m, k, lda, scale);
+      init(24 + i, b + i * bsize, k, n, ldb, scale);
+      init(22 + i, c + i * csize, m, n, ldc, scale);
     }
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -133,8 +130,8 @@ int main(int argc, char* argv[])
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, a + i * asize, m, b + i * bsize, k,
-            LIBXSMM_BETA, c + i * csize, m);
+            alpha, a + i * asize, lda, b + i * bsize, ldb,
+             beta, c + i * csize, ldc);
         }
         const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
         const double duration = libxsmm_timer_duration(start, end);
@@ -154,8 +151,8 @@ int main(int argc, char* argv[])
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, a + i * asize, m, b, k,
-            LIBXSMM_BETA, c + i * csize, m);
+            alpha, a + i * asize, lda, b, ldb,
+             beta, c + i * csize, ldc);
         }
         const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
         const double duration = libxsmm_timer_duration(start, end);
@@ -175,8 +172,8 @@ int main(int argc, char* argv[])
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-            LIBXSMM_ALPHA, a, m, b + i * bsize, k,
-            LIBXSMM_BETA, c + i * csize, m);
+            alpha, a, lda, b + i * bsize, ldb,
+             beta, c + i * csize, ldc);
         }
         const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
         const double duration = libxsmm_timer_duration(start, end);
@@ -188,56 +185,45 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
-      if ((MAX_SIZE) >= csize) {
-        { // streaming A and B
-          fprintf(stdout, "Streamed (A,B)...\n");
-          const unsigned long long start = libxsmm_timer_tick();
+      { // streaming A and B
+        fprintf(stdout, "Streamed (A,B)...\n");
+        const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#         pragma omp parallel for
+#       pragma omp parallel for
 #endif
-          for (libxsmm_blasint i = 0; i < s; ++i) {
-            T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
-            // do nothing else with tmp; just a benchmark
-            LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-              LIBXSMM_ALPHA, a + i * asize, m, b + i * bsize, k,
-              LIBXSMM_BETA, tmp, m);
-            c[0] = tmp[0]; // prevents GCC from optimizing-away the entire benchmark
-          }
-          const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-          const double duration = libxsmm_timer_duration(start, end);
-          if (0 < duration && 0 != x) {
-            fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
-            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-            fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
-          }
-          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        for (libxsmm_blasint i = 0; i < s; ++i) {
+          LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
+            alpha, a + i * asize, lda, b + i * bsize, ldb,
+             beta, c, ldc);
         }
-
-        { // cached
-          fprintf(stdout, "Cached...\n");
-          const unsigned long long start = libxsmm_timer_tick();
-#if defined(_OPENMP)
-#         pragma omp parallel for
-#endif
-          for (libxsmm_blasint i = 0; i < s; ++i) {
-            T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
-            // do nothing else with tmp; just a benchmark
-            LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-              LIBXSMM_ALPHA, a, m, b, k,
-              LIBXSMM_BETA, tmp, m);
-            c[0] = tmp[0]; // prevents GCC from optimizing-away the entire benchmark
-          }
-          const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-          const double duration = libxsmm_timer_duration(start, end);
-          if (0 < duration && 0 != x) {
-            fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
-            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          }
-          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
+        const double duration = libxsmm_timer_duration(start, end);
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
-      else {
-        fprintf(stderr, "Warning: size M x N is exceeding MAX_SIZE!\n");
+
+      { // cached
+        fprintf(stdout, "Cached...\n");
+        const unsigned long long start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+#       pragma omp parallel for
+#endif
+        for (libxsmm_blasint i = 0; i < s; ++i) {
+          LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
+            alpha, a, lda, b, ldb,
+             beta, c, ldc);
+        }
+        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
+        const double duration = libxsmm_timer_duration(start, end);
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
       // finalize LIBXSMM

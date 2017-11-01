@@ -41,19 +41,12 @@
 #include <cstdio>
 #include <vector>
 #include <cmath>
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-# include <mkl_service.h>
-#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 
 #if !defined(REAL_TYPE)
 # define REAL_TYPE double
-#endif
-
-#if !defined(MAX_SIZE)
-# define MAX_SIZE ((LIBXSMM_MAX_M) * (LIBXSMM_MAX_N))
 #endif
 
 
@@ -85,7 +78,11 @@ int main(int argc, char* argv[])
     const libxsmm_blasint k = 3 < argc ? std::atoi(argv[3]) : m;
     const libxsmm_blasint n = 2 < argc ? std::atoi(argv[2]) : k;
 
-    const libxsmm_blasint asize = m * k, bsize = k * n, csize = m * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
+    const libxsmm_blasint lda = m, ldb = k, ldc = m;
+    const char transa = 'N', transb = 'N';
+    const T alpha = 1, beta = 1;
+
+    const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
     const libxsmm_blasint s = (2ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 2 GByte
     const size_t bwsize_batched = (size_t)((asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T)); // batched (A, B, and C)
     const size_t bwsize = (size_t)((asize/*load*/ + bsize/*load*/) * sizeof(T)); // omit size of A, B, or C since it is held in cache
@@ -107,10 +104,10 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for
 #endif
     for (libxsmm_blasint i = 0; i < s; ++i) {
-      init(42 + i, a + i * asize, m, k, m, scale);
-      init(24 + i, b + i * bsize, k, n, k, scale);
-      init(22 + i, c + i * csize, m, n, m, scale);
-      init(22 + i, d + i * csize, m, n, m, scale);
+      init(42 + i, a + i * asize, m, k, lda, scale);
+      init(24 + i, b + i * bsize, k, n, ldb, scale);
+      init(22 + i, c + i * csize, m, n, ldc, scale);
+      init(22 + i, d + i * csize, m, n, ldc, scale);
     }
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -160,11 +157,7 @@ int main(int argc, char* argv[])
       }
 
       { // LIBXSMM batch interface
-        fprintf(stdout, "Batched-indirect (A,B,C)...\n");
-        const int flags = LIBXSMM_FLAGS;
-        const char transa = (0 == (flags & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T');
-        const char transb = (0 == (flags & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T');
-        const T alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
+        fprintf(stdout, "Indirect (A,B,C)...\n");
         const libxsmm_blasint ptrsize = sizeof(T*);
         std::vector<const T*> va_array(static_cast<size_t>(s)), vb_array(static_cast<size_t>(s));
         std::vector<T*> vc_array(static_cast<size_t>(s));
@@ -176,7 +169,7 @@ int main(int argc, char* argv[])
         }
         const unsigned long long start = libxsmm_timer_tick();
         libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
-          m, n, k, &alpha, &a_array[0], &m, &b_array[0], &k, &beta, &c_array[0], &m,
+          m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
           0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
         const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
         const double duration = libxsmm_timer_duration(start, end);
@@ -190,7 +183,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint h = 0; h < s; ++h) {
           const T *const u = c + h * csize, *const v = c_array[h];
           libxsmm_matdiff_info dv;
-          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, u, v, &m, &m, &dv)) {
+          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, u, v, &ldc, &ldc, &dv)) {
             libxsmm_matdiff_reduce(&diff, &dv);
           }
         }
@@ -251,58 +244,49 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
-      if ((MAX_SIZE) >= csize) {
-        { // streaming A and B
-          fprintf(stdout, "Streamed (A,B)...\n");
-          const unsigned long long start = libxsmm_timer_tick();
+      { // streaming A and B
+        fprintf(stdout, "Streamed (A,B)...\n");
+        const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#         pragma omp parallel for
+#       pragma omp parallel for
 #endif
-          for (libxsmm_blasint i = 0; i < s; ++i) {
-            T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
-            const T *const ai = a + i * asize, *const bi = b + i * bsize;
-            // do nothing else with tmp; just a benchmark
+        for (libxsmm_blasint i = 0; i < s; ++i) {
+          const T *const ai = a + i * asize, *const bi = b + i * bsize;
 #if (0 != LIBXSMM_PREFETCH)
-            xmm(ai, bi, tmp,
-              LIBXSMM_PREFETCH_A(ai + asize),
-              LIBXSMM_PREFETCH_B(bi + bsize),
-              LIBXSMM_PREFETCH_C(tmp));
+          xmm(ai, bi, c,
+            LIBXSMM_PREFETCH_A(ai + asize),
+            LIBXSMM_PREFETCH_B(bi + bsize),
+            LIBXSMM_PREFETCH_C(c));
 #else
-            xmm(ai, bi, tmp);
+          xmm(ai, bi, c);
 #endif
-          }
-          const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-          const double duration = libxsmm_timer_duration(start, end);
-          if (0 < duration && 0 != x) {
-            fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
-            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-            fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
-          }
-          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         }
-
-        { // cached
-          fprintf(stdout, "Cached...\n");
-          const unsigned long long start = libxsmm_timer_tick();
-#if defined(_OPENMP)
-#         pragma omp parallel for
-#endif
-          for (libxsmm_blasint i = 0; i < s; ++i) {
-            T tmp[MAX_SIZE]; // make sure that stacksize is covering the problem size
-            // do nothing else with tmp; just a benchmark
-            xmm(a, b, tmp);
-          }
-          const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-          const double duration = libxsmm_timer_duration(start, end);
-          if (0 < duration && 0 != x) {
-            fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
-            fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          }
-          fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
+        const double duration = libxsmm_timer_duration(start, end);
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
-      else {
-        fprintf(stderr, "Warning: size M x N is exceeding MAX_SIZE!\n");
+
+      { // cached
+        fprintf(stdout, "Cached...\n");
+        const unsigned long long start = libxsmm_timer_tick();
+#if defined(_OPENMP)
+#       pragma omp parallel for
+#endif
+        for (libxsmm_blasint i = 0; i < s; ++i) {
+          xmm(a, b, c);
+        }
+        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
+        const double duration = libxsmm_timer_duration(start, end);
+        if (0 < duration && 0 != x) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (s * (2.0 * m * n * k - m * n)) / x);
+          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+        }
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 
       // finalize LIBXSMM
