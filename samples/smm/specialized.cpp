@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
         1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20),
         8 == sizeof(T) ? "DP" : "SP");
 
-      const libxsmm_mmfunction<T> xmm(m, n, k);
+      const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, lda, ldb, ldc, alpha, beta);
       if (!xmm) throw "no specialized routine found!";
 
       { // batched

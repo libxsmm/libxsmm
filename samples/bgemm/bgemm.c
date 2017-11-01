@@ -56,7 +56,9 @@
 #define MYASSERT(x) if(!(x)) { printf("Assertion %s failed...\n", #x); exit(1);}
 
 
+#if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
 LIBXSMM_GEMM_DECL(LIBXSMM_GEMM_CONST, REAL_TYPE);
+#endif
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
