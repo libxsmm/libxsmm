@@ -146,8 +146,8 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
     const int k = ((0 == env_k || 0 == *env_k) ? 0 : atoi(env_k));
     for (i = 0; i < 8; ++i) {
       if (0 < m) tile_configs[config][0/*DP*/][0/*M*/][i] = tile_configs[config][1/*SP*/][0/*M*/][i] = m;
-      if (0 < n) tile_configs[config][0/*DP*/][1/*N*/][i] = tile_configs[config][1/*SP*/][0/*N*/][i] = n;
-      if (0 < k) tile_configs[config][0/*DP*/][2/*K*/][i] = tile_configs[config][1/*SP*/][0/*K*/][i] = k;
+      if (0 < n) tile_configs[config][0/*DP*/][1/*N*/][i] = tile_configs[config][1/*SP*/][1/*N*/][i] = n;
+      if (0 < k) tile_configs[config][0/*DP*/][2/*K*/][i] = tile_configs[config][1/*SP*/][2/*K*/][i] = k;
     }
     libxsmm_gemm_tile = tile_configs[config];
   }
