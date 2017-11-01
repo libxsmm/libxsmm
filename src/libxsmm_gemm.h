@@ -455,8 +455,8 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const double*, double*, const libxsmm_blasint*);
 #endif
 
-LIBXSMM_GEMM_DECL(LIBXSMM_GEMM_CONST, float);
-LIBXSMM_GEMM_DECL(LIBXSMM_GEMM_CONST, double);
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, float);
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, double);
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
   struct {
@@ -483,7 +483,7 @@ LIBXSMM_API int libxsmm_smmbatch_blas(const char* transa, const char* transb, li
 typedef void (*libxsmm_mmbatch_flush_function)(void);
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
-LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][8/*size-range*/];
+LIBXSMM_API_VARIABLE /*const*/ unsigned int (*libxsmm_gemm_tile)[3/*M,N,K*/][8/*size-range*/];
 /** auto-batch descriptor (filter). */
 LIBXSMM_API_VARIABLE libxsmm_gemm_descriptor libxsmm_gemm_batchdesc;
 /** Records a batch of SMMs. */

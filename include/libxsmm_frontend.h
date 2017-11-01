@@ -180,7 +180,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 # endif
 #endif
 
-#define LIBXSMM_GEMM_DECL(CONST, TYPE) \
+#define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE) \
   LIBXSMM_API_EXTERN void LIBXSMM_GEMM_SYMBOL(TYPE)(CONST char*, CONST char*, \
     CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
     CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, \
