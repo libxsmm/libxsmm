@@ -437,6 +437,33 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
         }
       }
       #endif
+    } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      if (handle->upd_use_thread_fil > 0) {
+        typedef short element_input_type;
+        typedef short element_output_type;
+        typedef float element_filter_type;
+        typedef libxsmm_uwsconvfunction libxsmm_convfunction;
+        if (handle->use_fastpath) {
+          if ( handle->use_hybrid_wu_parallelism == 1) {
+#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
+          } else {
+#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
+          }
+        } 
+#if 0
+        if (handle->padding_flag == 1) {
+#define INPUT_PADDING
+#define LIBXSMM_WU_PER_THREAD_ALLOCATION
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+#undef LIBXSMM_WU_PER_THREAD_ALLOCATION
+#undef INPUT_PADDING
+        } else {
+#define LIBXSMM_WU_PER_THREAD_ALLOCATION
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+#undef LIBXSMM_WU_PER_THREAD_ALLOCATION
+        }
+#endif
+      }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;

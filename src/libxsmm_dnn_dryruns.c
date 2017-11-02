@@ -102,7 +102,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct_custom_custo
     /* In these case we run fallback code so we do not support thread private jitting */
     status = LIBXSMM_DNN_WARN_FALLBACK;
   } else {
-    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+    if (1) { /*(handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {*/
       if (handle->use_fastpath) {
         if ( handle->use_hybrid_wu_parallelism == 1 ) {
 #include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom.tpl.c"     

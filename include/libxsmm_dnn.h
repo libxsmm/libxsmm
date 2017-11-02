@@ -288,6 +288,9 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction)(const short* input1, 
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_wsconvfunction)(const short* input1, const short* input2, float* output,
                                                            const short* ipf1, const short* ipf2, const float* opf, ...);
 
+typedef LIBXSMM_RETARGETABLE void (*libxsmm_uwsconvfunction)(short* input1, float* input2, short* output,
+                                                             short* ipf1, float* ipf2, short* opf, ...);
+
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction)(const unsigned char* input1, const char* input2, short* output,
                                                              const unsigned char* ipf1, const char* ipf2, const short* opf, ...);
 
@@ -304,7 +307,7 @@ typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction_bwd)(const unsigned 
                                                              const unsigned int* ipf1, const char* ipf2, const char* opf, ...);
 
 /** Function type which is either libxsmm_sconvfunction or libxsmm_wconvfunction (weak-typed). */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction { libxsmm_sconvfunction sconv; libxsmm_wsconvfunction wsconv; libxsmm_wconvfunction wconv; libxsmm_busconvfunction busconv; libxsmm_budconvfunction budconv; libxsmm_wconvfunction_bwd wconvb; libxsmm_busconvfunction_bwd busconvb; libxsmm_budconvfunction_bwd budconvb; } libxsmm_xconvfunction;
+typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction { libxsmm_sconvfunction sconv; libxsmm_wsconvfunction wsconv; libxsmm_uwsconvfunction uwsconv; libxsmm_wconvfunction wconv; libxsmm_busconvfunction busconv; libxsmm_budconvfunction budconv; libxsmm_wconvfunction_bwd wconvb; libxsmm_busconvfunction_bwd busconvb; libxsmm_budconvfunction_bwd budconvb; } libxsmm_xconvfunction;
 
 /** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
 LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
