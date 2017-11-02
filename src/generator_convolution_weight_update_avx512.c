@@ -993,12 +993,15 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
   unsigned int weight_pf_offset = 0;
   unsigned int step_size = 0;
   unsigned int l_compute_instr = 0;
+  unsigned int w_pixels_dim = 1;
 
   /* depending on datatype emit the needed FMA(-sequence) */
   if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     l_compute_instr = LIBXSMM_X86_INSTR_V4FMADDPS;
+    w_pixels_dim = 1;
   }  else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSD;
+    w_pixels_dim = 2;
   } else {
     /* shouldn't happen */
   }
@@ -1015,7 +1018,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
     cache_line_offset = 0;
 
     /* apply k blocking */
-    for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb; l_k_2+=step_size ) {
+    for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb/w_pixels_dim; l_k_2+=step_size ) {
       /* for quad, we need to load outputs in groups of 4 as this is the source block for qmadd */
       int n_fake_pixels = i_conv_desc->ofw_fake_pixels;
       int n_compute_pixels = i_conv_desc->ofw_rb - n_fake_pixels;
