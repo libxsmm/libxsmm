@@ -83,7 +83,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_barrier {
 LIBXSMM_API_DEFINITION libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per_core)
 {
   libxsmm_barrier *const barrier = (libxsmm_barrier*)libxsmm_aligned_malloc(
-    sizeof(libxsmm_barrier), LIBXSMM_CACHELINE_SIZE);
+    sizeof(libxsmm_barrier), LIBXSMM_CACHELINE);
 #if defined(_REENTRANT)
   barrier->ncores = ncores;
   barrier->ncores_log2 = LIBXSMM_LOG2((ncores << 1) - 1);
@@ -91,9 +91,9 @@ LIBXSMM_API_DEFINITION libxsmm_barrier* libxsmm_barrier_create(int ncores, int n
   barrier->nthreads = ncores * nthreads_per_core;
 
   barrier->threads = (internal_sync_thread_tag**)libxsmm_aligned_malloc(
-    barrier->nthreads * sizeof(internal_sync_thread_tag*), LIBXSMM_CACHELINE_SIZE);
+    barrier->nthreads * sizeof(internal_sync_thread_tag*), LIBXSMM_CACHELINE);
   barrier->cores = (internal_sync_core_tag**)libxsmm_aligned_malloc(
-    barrier->ncores * sizeof(internal_sync_core_tag*), LIBXSMM_CACHELINE_SIZE);
+    barrier->ncores * sizeof(internal_sync_core_tag*), LIBXSMM_CACHELINE);
 
   LIBXSMM_ATOMIC_SET(barrier->threads_waiting.counter, barrier->nthreads);
   barrier->init_done = 0;
@@ -119,28 +119,28 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int t
 
   /* allocate per-thread structure */
   thread = (internal_sync_thread_tag*)libxsmm_aligned_malloc(
-    sizeof(internal_sync_thread_tag), LIBXSMM_CACHELINE_SIZE);
+    sizeof(internal_sync_thread_tag), LIBXSMM_CACHELINE);
   barrier->threads[tid] = thread;
   thread->core_tid = tid - (barrier->nthreads_per_core * cid); /* mod */
 
   /* each core's thread 0 does all the allocations */
   if (0 == thread->core_tid) {
     core = (internal_sync_core_tag*)libxsmm_aligned_malloc(
-      sizeof(internal_sync_core_tag), LIBXSMM_CACHELINE_SIZE);
+      sizeof(internal_sync_core_tag), LIBXSMM_CACHELINE);
     core->id = (uint8_t)cid;
     core->core_sense = 1;
 
     core->thread_senses = (uint8_t*)libxsmm_aligned_malloc(
-      barrier->nthreads_per_core * sizeof(uint8_t), LIBXSMM_CACHELINE_SIZE);
+      barrier->nthreads_per_core * sizeof(uint8_t), LIBXSMM_CACHELINE);
     for (i = 0; i < barrier->nthreads_per_core; ++i) core->thread_senses[i] = 1;
 
     for (i = 0; i < 2;  ++i) {
       core->my_flags[i] = (uint8_t*)libxsmm_aligned_malloc(
-        barrier->ncores_log2 * sizeof(uint8_t) * LIBXSMM_CACHELINE_SIZE,
-        LIBXSMM_CACHELINE_SIZE);
+        barrier->ncores_log2 * sizeof(uint8_t) * LIBXSMM_CACHELINE,
+        LIBXSMM_CACHELINE);
       core->partner_flags[i] = (uint8_t**)libxsmm_aligned_malloc(
         barrier->ncores_log2 * sizeof(uint8_t*),
-        LIBXSMM_CACHELINE_SIZE);
+        LIBXSMM_CACHELINE);
     }
 
     core->parity = 0;
@@ -163,7 +163,7 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int t
   /* each core's thread 0 completes setup */
   if (0 == thread->core_tid) {
     int di;
-    for (i = di = 0; i < barrier->ncores_log2; ++i, di += LIBXSMM_CACHELINE_SIZE) {
+    for (i = di = 0; i < barrier->ncores_log2; ++i, di += LIBXSMM_CACHELINE) {
       /* find dissemination partner and link to it */
       const int dissem_cid = (cid + (1 << i)) % barrier->ncores;
       assert(0 != core); /* initialized under the same condition; see above */
@@ -217,15 +217,15 @@ void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
       int di;
 #if defined(__MIC__)
       /* cannot use LIBXSMM_ALIGNED since attribute may not apply to local non-static arrays */
-      uint8_t sendbuffer[LIBXSMM_CACHELINE_SIZE+LIBXSMM_CACHELINE_SIZE-1];
-      uint8_t *const sendbuf = LIBXSMM_ALIGN(sendbuffer, LIBXSMM_CACHELINE_SIZE);
+      uint8_t sendbuffer[LIBXSMM_CACHELINE+LIBXSMM_CACHELINE-1];
+      uint8_t *const sendbuf = LIBXSMM_ALIGN(sendbuffer, LIBXSMM_CACHELINE);
       __m512d m512d;
       _mm_prefetch((const char*)core->partner_flags[core->parity][0], _MM_HINT_ET1);
       sendbuf[0] = core->sense;
       m512d = LIBXSMM_INTRINSICS_MM512_LOAD_PD(sendbuf);
 #endif
 
-      for (i = di = 0; i < barrier->ncores_log2 - 1; ++i, di += LIBXSMM_CACHELINE_SIZE) {
+      for (i = di = 0; i < barrier->ncores_log2 - 1; ++i, di += LIBXSMM_CACHELINE) {
 #if defined(__MIC__)
         _mm_prefetch((const char*)core->partner_flags[core->parity][i+1], _MM_HINT_ET1);
         _mm512_storenrngo_pd(core->partner_flags[core->parity][i], m512d);

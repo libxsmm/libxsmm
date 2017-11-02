@@ -51,7 +51,7 @@
 
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
-  char pad[LIBXSMM_CACHELINE_SIZE];
+  char pad[LIBXSMM_CACHELINE];
   volatile int instance;
 } libxsmm_bgemm_lock;
 
@@ -118,10 +118,10 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
           handle.kernel_pf = libxsmm_xmmdispatch(&descriptor);
         }
         if (0 != handle.kernel.smm && (LIBXSMM_PREFETCH_NONE == descriptor.prefetch || 0 != handle.kernel_pf.smm)) {
-          const size_t tls_size = ((mm * nn * handle.typesize + LIBXSMM_CACHELINE_SIZE - 1) & ~(LIBXSMM_CACHELINE_SIZE - 1)) * LIBXSMM_BGEMM_MAX_NTHREADS;
+          const size_t tls_size = ((mm * nn * handle.typesize + LIBXSMM_CACHELINE - 1) & ~(LIBXSMM_CACHELINE - 1)) * LIBXSMM_BGEMM_MAX_NTHREADS;
           const size_t size_locks = (size_t)(handle.mb * handle.nb * sizeof(libxsmm_bgemm_lock));
-          handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size_locks, LIBXSMM_CACHELINE_SIZE);
-          handle.buffer = libxsmm_aligned_malloc(tls_size, LIBXSMM_CACHELINE_SIZE);
+          handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size_locks, LIBXSMM_CACHELINE);
+          handle.buffer = libxsmm_aligned_malloc(tls_size, LIBXSMM_CACHELINE);
           result = (libxsmm_bgemm_handle*)malloc(sizeof(libxsmm_bgemm_handle));
 
           if (0 != result && 0 != handle.buffer && 0 != handle.locks) {

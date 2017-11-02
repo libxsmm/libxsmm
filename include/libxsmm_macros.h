@@ -34,6 +34,7 @@
 #include "libxsmm_config.h"
 
 /** Parameters the library and static kernels were built for. */
+#define LIBXSMM_CACHELINE LIBXSMM_CONFIG_CACHELINE
 #define LIBXSMM_ALIGNMENT LIBXSMM_CONFIG_ALIGNMENT
 #define LIBXSMM_PREFETCH LIBXSMM_CONFIG_PREFETCH
 #define LIBXSMM_MAX_MNK LIBXSMM_CONFIG_MAX_MNK
