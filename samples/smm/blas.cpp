@@ -45,6 +45,9 @@
 # include <mkl_service.h>
 # include <mkl.h>
 #endif
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -300,9 +303,14 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
+#if defined(_OPENMP) /* write to disjunct cachelines to measure in-cache performance (TLS would serve as well) */
+          const libxsmm_blasint j = LIBXSMM_MIN(omp_get_thread_num() * (libxsmm_blasint)LIBXSMM_UP2(csize, 2 * LIBXSMM_CACHELINE / sizeof(T)), s - csize);
+#else
+          const libxsmm_blasint j = 0;
+#endif
           LIBXSMM_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
             &alpha, a + i * asize, &lda, b + i * bsize, &ldb,
-             &beta, c, &ldc);
+             &beta, c + j, &ldc);
         }
         const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
         const double duration = libxsmm_timer_duration(start, end);
@@ -317,7 +325,17 @@ int main(int argc, char* argv[])
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
       { // indirect A and B
         fprintf(stdout, "Indirect (A,B)...\n");
-        for (libxsmm_blasint i = 0; i < s; ++i) { a_array[i] = a + i * asize; b_array[i] = b + i * bsize; c_array[i] = d; }
+#if defined(_OPENMP)
+#       pragma omp parallel for
+#endif
+        for (libxsmm_blasint i = 0; i < s; ++i) {
+#if defined(_OPENMP) /* write to disjunct cachelines to measure in-cache performance (TLS would serve as well) */
+          const libxsmm_blasint j = LIBXSMM_MIN(omp_get_thread_num() * (libxsmm_blasint)LIBXSMM_UP2(csize, 2 * LIBXSMM_CACHELINE / sizeof(T)), s - csize);
+#else
+          const libxsmm_blasint j = 0;
+#endif
+          a_array[i] = a + i * asize; b_array[i] = b + i * bsize; c_array[i] = d + j;
+        }
         const unsigned long long start = libxsmm_timer_tick();
         LIBXSMM_TPREFIX(REAL_TYPE, gemm_batch)(&transa, &transb, &m, &n, &k,
           &alpha, &a_array[0], &lda, &b_array[0], &ldb,
@@ -340,9 +358,14 @@ int main(int argc, char* argv[])
 #       pragma omp parallel for
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
+#if defined(_OPENMP) /* write to disjunct cachelines (even when unaligned) to measure in-cache performance (TLS would serve as well) */
+          const libxsmm_blasint j = LIBXSMM_MIN(omp_get_thread_num() * (libxsmm_blasint)LIBXSMM_UP2(csize, 2 * LIBXSMM_CACHELINE / sizeof(T)), s - csize);
+#else
+          const libxsmm_blasint j = 0;
+#endif
           LIBXSMM_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
             &alpha, a, &lda, b, &ldb,
-             &beta, c, &ldc);
+             &beta, c + j, &ldc);
         }
         const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
         const double duration = libxsmm_timer_duration(start, end);
@@ -356,7 +379,17 @@ int main(int argc, char* argv[])
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
       { // indirect cached
         fprintf(stdout, "Indirect cached\n");
-        for (libxsmm_blasint i = 0; i < s; ++i) { a_array[i] = a; b_array[i] = b; c_array[i] = d; }
+#if defined(_OPENMP)
+#       pragma omp parallel for
+#endif
+        for (libxsmm_blasint i = 0; i < s; ++i) {
+#if defined(_OPENMP) /* write to disjunct cachelines (even when unaligned) to measure in-cache performance (TLS would serve as well) */
+          const libxsmm_blasint j = LIBXSMM_MIN(omp_get_thread_num() * (libxsmm_blasint)LIBXSMM_UP2(csize, 2 * LIBXSMM_CACHELINE / sizeof(T)), s - csize);
+#else
+          const libxsmm_blasint j = 0;
+#endif
+          a_array[i] = a; b_array[i] = b; c_array[i] = d + j;
+        }
         const unsigned long long start = libxsmm_timer_tick();
         LIBXSMM_TPREFIX(REAL_TYPE, gemm_batch)(&transa, &transb, &m, &n, &k,
           &alpha, &a_array[0], &lda, &b_array[0], &ldb,

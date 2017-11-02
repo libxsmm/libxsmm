@@ -132,7 +132,7 @@
         DEALLOCATE(tmp)
         !$OMP END PARALLEL
 
-        WRITE(*, "(A)") "Streamed... (BLAS)"
+        WRITE(*, "(A)") "Streamed (A,B)... (BLAS)"
         c(:,:) = 0
         !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, r, start)              &
         !$OMP   DEFAULT(NONE)                                           &
@@ -160,7 +160,7 @@
         !$OMP END PARALLEL
         CALL performance(duration, m, n, k, size)
 
-        WRITE(*, "(A)") "Streamed... (auto-dispatched)"
+        WRITE(*, "(A)") "Streamed (A,B)... (auto-dispatched)"
         c(:,:) = 0
         !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, r, start)              &
         !$OMP   DEFAULT(NONE)                                           &
@@ -193,7 +193,7 @@
 
         IF (libxsmm_available(xmm)) THEN
           c(:,:) = 0
-          WRITE(*, "(A)") "Streamed... (specialized)"
+          WRITE(*, "(A)") "Streamed (A,B)... (specialized)"
           !$OMP PARALLEL REDUCTION(+:c) PRIVATE(i, r, start)
             !DEFAULT(NONE) SHARED(m, n, a, b, duration, repetitions, xmm)
           ALLOCATE(tmp(m,n))
