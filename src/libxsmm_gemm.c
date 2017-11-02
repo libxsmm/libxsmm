@@ -716,12 +716,17 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
               {
                 const char *const an = ai + da, *const bn = bi + db;
                 char *const cn = ci + dc;
-                if (cm != ci) LIBXSMM_LOCK_ACQUIRE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
+                void *const nc = *((void**)cn);
+                if (cc != cm) {
+                  LIBXSMM_LOCK_ACQUIRE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
+                }
                 kernel.xmm( /* with prefetch */
                   *((const void**)ai), *((const void**)bi), cc,
                   *((const void**)an), *((const void**)bn), *((const void**)cn));
-                if (ci != cn || ni == end1) LIBXSMM_LOCK_RELEASE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
-                ai = an; bi = bn; cm = ci; ci = cn; cc = *((void**)cn); ic = (uintptr_t)cc; /* next */
+                if (cc != nc || ni == end1) {
+                  LIBXSMM_LOCK_RELEASE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
+                }
+                ai = an; bi = bn; ci = cn; cm = cc; cc = nc; ic = (uintptr_t)cc; /* next */
               }
             }
             if (end != end1 /* remainder multiplication */
