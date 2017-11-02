@@ -1014,7 +1014,7 @@ LIBXSMM_API_INLINE size_t internal_get_scratch_size(void)
 {
   size_t result = 0;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-  const internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)((uintptr_t)(internal_malloc_pool_buffer + (LIBXSMM_CACHELINE)-1) & ~((LIBXSMM_CACHELINE)-1));
+  const internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_CACHELINE);
   const internal_malloc_info_type* info = internal_malloc_info(pools[0].instance.buffer);
   unsigned int i;
   if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pools[0].instance.site) {

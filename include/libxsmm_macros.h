@@ -273,10 +273,10 @@
 #define LIBXSMM_UP2POT_08(N) (LIBXSMM_UP2POT_04(N) | (LIBXSMM_UP2POT_04(N) >> 8))
 #define LIBXSMM_UP2POT_16(N) (LIBXSMM_UP2POT_08(N) | (LIBXSMM_UP2POT_08(N) >> 16))
 #define LIBXSMM_UP2POT_32(N) (LIBXSMM_UP2POT_16(N) | (LIBXSMM_UP2POT_16(N) >> 32))
-#define LIBXSMM_UP2POT(N) (LIBXSMM_UP2POT_32((unsigned long long)((N) - 1)) + 1)
+#define LIBXSMM_UP2POT(N) (LIBXSMM_UP2POT_32((uintptr_t)((N) - 1)) + 1)
 
-#define LIBXSMM_UP2(N, NPOT) (((N) + ((NPOT) - 1)) & ~((NPOT) - 1))
-#define LIBXSMM_UP(N, UP) ((((N) + (UP) - 1) / (UP)) * (UP))
+#define LIBXSMM_UP2(N, NPOT) ((((uintptr_t)(N)) + ((NPOT) - 1)) & ~((NPOT) - 1))
+#define LIBXSMM_UP(N, UP) (((((uintptr_t)(N)) + (UP) - 1) / (UP)) * (UP))
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
