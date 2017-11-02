@@ -60,7 +60,7 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle
 # if defined(LIBXSMM_BGEMM_BARRIER)
       libxsmm_barrier* barrier = 0;
 # endif /*defined(LIBXSMM_BGEMM_BARRIER)*/
-#     pragma omp parallel schedule(static)
+#     pragma omp parallel
       {
         nthreads = omp_get_num_threads();
       }
@@ -80,7 +80,7 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle
         barrier = libxsmm_barrier_create(nthreads / 2, 2);
       }
 # endif /*defined(LIBXSMM_BGEMM_BARRIER)*/
-#     pragma omp parallel schedule(static)
+#     pragma omp parallel
 #endif /*defined(_OPENMP)*/
       {
         int tid = 0, i;

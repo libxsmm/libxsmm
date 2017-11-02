@@ -594,7 +594,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_gemm_precision precision,
     if (0 == omp_in_parallel())
 # endif
     { /* enable internal parallelization */
-#     pragma omp parallel schedule(static)
+#     pragma omp parallel
       {
         const int tid = omp_get_thread_num(), nthreads = omp_get_num_threads();
         libxsmm_mmbatch(precision, kernel, index_base,
