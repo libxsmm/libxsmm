@@ -206,15 +206,17 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        libxsmm_matdiff_info diff = { 0 };
-        for (libxsmm_blasint h = 0; h < s; ++h) {
-          const T *const u = c + h * csize, *const v = c_array[h];
-          libxsmm_matdiff_info dv;
-          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, u, v, &ldc, &ldc, &dv)) {
-            libxsmm_matdiff_reduce(&diff, &dv);
+        if (0 == benchmark) { /* Gold result is available */
+          libxsmm_matdiff_info diff = { 0 };
+          for (libxsmm_blasint h = 0; h < s; ++h) {
+            const T *const u = c + h * csize, *const v = c_array[h];
+            libxsmm_matdiff_info dv;
+            if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, u, v, &ldc, &ldc, &dv)) {
+              libxsmm_matdiff_reduce(&diff, &dv);
+            }
           }
+          if (0 < diff.normf_rel) fprintf(stdout, "\tdiff: %.0f%%\n", 100.0 * diff.normf_rel);
         }
-        if (0 < diff.normf_rel) fprintf(stdout, "\tdiff: %.0f%%\n", 100.0 * diff.normf_rel);
       }
 #endif
       break;
