@@ -116,18 +116,18 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
   try {
     typedef REAL_TYPE T;
-
-    const libxsmm_blasint m = (1 < argc ? std::atoi(argv[1]) : 23);
-    const libxsmm_blasint k = (3 < argc ? std::atoi(argv[3]) : m);
-    const libxsmm_blasint n = (2 < argc ? std::atoi(argv[2]) : k);
+    const libxsmm_blasint benchmark = 1 < argc ? std::atoi(argv[1]) : 0;
+    const libxsmm_blasint m = (2 < argc ? std::atoi(argv[2]) : 23);
+    const libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
+    const libxsmm_blasint n = (3 < argc ? std::atoi(argv[3]) : k);
 
     const libxsmm_blasint lda = m, ldb = k, ldc = m;
     const char transa = 'N', transb = 'N';
     const T alpha = 1, beta = 1;
 
     const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
-    const libxsmm_blasint q = (4 < argc ? std::atoi(argv[4]) : 0/*auto*/);
-    const libxsmm_blasint nrepeat = (5 < argc ? std::atoi(argv[5]) : (0 >= q ? 13 : 1)); // number of repetitions
+    const libxsmm_blasint q = (5 < argc ? std::atoi(argv[5]) : 0/*auto*/);
+    const libxsmm_blasint nrepeat = (6 < argc ? std::atoi(argv[6]) : (0 >= q ? 13 : 1)); // number of repetitions
     const libxsmm_blasint max_size = ((2ULL << 30/*2 GB*/) / ((asize + bsize + csize) * sizeof(T)));
     const libxsmm_blasint s = LIBXSMM_MIN(0 < q ? q : max_size, max_size);
     const size_t bwsize_batched = static_cast<size_t>((asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T)); // batched (A, B, and C)
@@ -170,7 +170,8 @@ int main(int argc, char* argv[])
 
       const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH_AUTO);
 
-      if (xmm) {
+      switch (benchmark) {
+      case 0: if (xmm) {
         fprintf(stdout, "LIBXSMM batched (A,B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -193,10 +194,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize_batched / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } /*break;*/
 
 #if defined(__EIGEN)
-      {
+      case 1: {
         fprintf(stdout, "Eigen/dynamic batched (A,B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -219,8 +220,8 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 #endif /*defined(__EIGEN)*/
-
-      if (xmm) {
+      break;
+      case 2: if (xmm) {
         fprintf(stdout, "LIBXSMM streamed (A,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -243,10 +244,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } /*break;*/
 
 #if defined(__EIGEN)
-      {
+      case 3: {
         fprintf(stdout, "Eigen/dynamic streamed (A,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -269,8 +270,8 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 #endif /*defined(__EIGEN)*/
-
-      if (xmm) {
+      break;
+      case 4: if (xmm) {
         fprintf(stdout, "LIBXSMM streamed (B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -293,10 +294,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } /*break;*/
 
 #if defined(__EIGEN)
-      {
+      case 5: {
         fprintf(stdout, "Eigen/dynamic streamed (B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -319,8 +320,8 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 #endif /*defined(__EIGEN)*/
-
-      if (xmm) {
+      break;
+      case 6: if (xmm) {
         fprintf(stdout, "LIBXSMM streamed (A,B)...\n");
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -347,10 +348,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } /*break;*/
 
 #if defined(__EIGEN)
-      {
+      case 7: {
         fprintf(stdout, "Eigen/dynamic streamed (A,B)...\n");
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -377,8 +378,8 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 #endif /*defined(__EIGEN)*/
-
-      if (xmm) {
+      break;
+      case 8: if (xmm) {
         fprintf(stdout, "LIBXSMM cached...\n");
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -403,10 +404,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } /*break;*/
 
 #if defined(__EIGEN)
-      {
+      case 9: {
         fprintf(stdout, "Eigen/dynamic cached...\n");
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
@@ -431,6 +432,9 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 #endif /*defined(__EIGEN)*/
+      break;
+      default: throw "invalid case selected!";
+      } /*switch*/
 
       // finalize LIBXSMM
       libxsmm_finalize();

@@ -86,18 +86,17 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
   try {
     typedef REAL_TYPE T;
-    const libxsmm_blasint m = 1 < argc ? std::atoi(argv[1]) : 23;
-    const libxsmm_blasint k = 3 < argc ? std::atoi(argv[3]) : m;
-    const libxsmm_blasint n = 2 < argc ? std::atoi(argv[2]) : k;
-    const unsigned long size = LIBXSMM_DEFAULT(2048/*default: 2 GByte*/,
-      4 < argc ? std::strtoul(argv[4], 0, 10) : 0) << 20;
+    const libxsmm_blasint benchmark = 1 < argc ? std::atoi(argv[1]) : 0;
+    const libxsmm_blasint m = (2 < argc ? std::atoi(argv[2]) : 23);
+    const libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
+    const libxsmm_blasint n = (3 < argc ? std::atoi(argv[3]) : k);
 
     const libxsmm_blasint lda = m, ldb = k, ldc = m;
     const char transa = 'N', transb = 'N';
     const T alpha = 1, beta = 1;
 
     const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
-    const libxsmm_blasint s = LIBXSMM_MAX(size / ((asize + bsize + csize) * sizeof(T)), 1);
+    const libxsmm_blasint s = (2ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 2 GByte
     const size_t bwsize_batched = static_cast<size_t>((asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T)); // batched (A, B, and C)
     const size_t bwsize = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(T)); // omit size of A, B, or C since it is held in cache
     const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0;
@@ -154,7 +153,17 @@ int main(int argc, char* argv[])
         }
       }
 
-      { // batched
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
+      std::vector<const T*> va_array(static_cast<size_t>(s)), vb_array(static_cast<size_t>(s));
+      std::vector<T*> vc_array(static_cast<size_t>(s));
+      const T* *const a_array = &va_array[0];
+      const T* *const b_array = &vb_array[0];
+      T* *const c_array = &vc_array[0];
+      const libxsmm_blasint group_count = 1;
+#endif
+
+      switch (benchmark) {
+      case 0: { // batched
         fprintf(stdout, "Batched (A,B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -173,17 +182,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } /*break;*/
 
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
-      std::vector<const T*> va_array(static_cast<size_t>(s)), vb_array(static_cast<size_t>(s));
-      std::vector<T*> vc_array(static_cast<size_t>(s));
-      const T* *const a_array = &va_array[0];
-      const T* *const b_array = &vb_array[0];
-      T* *const c_array = &vc_array[0];
-      const libxsmm_blasint group_count = 1;
-
-      { // batched indirect
+      case 1: { // batched indirect
         fprintf(stdout, "Indirect (A,B,C)...\n");
         for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a + i * asize; b_array[i] = b + i * bsize; c_array[i] = d + i * csize;
@@ -215,8 +217,8 @@ int main(int argc, char* argv[])
         if (0 < diff.normf_rel) fprintf(stdout, "\tdiff: %.0f%%\n", 100.0 * diff.normf_rel);
       }
 #endif
-
-      { // streaming A and C
+      break;
+      case 2: { // streaming A and C
         fprintf(stdout, "Streamed (A,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -235,10 +237,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } /*break;*/
 
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
-      { // indirect A and C
+      case 3: { // indirect A and C
         fprintf(stdout, "Indirect (A,C)...\n");
         for (libxsmm_blasint i = 0; i < s; ++i) { a_array[i] = a + i * asize; b_array[i] = b; c_array[i] = d + i * csize; }
         const unsigned long long start = libxsmm_timer_tick();
@@ -255,8 +257,8 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 #endif
-
-      { // streaming B and C
+      break;
+      case 4: { // streaming B and C
         fprintf(stdout, "Streamed (B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -275,10 +277,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } /*break;*/
 
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
-      { // indirect B and C
+      case 5: { // indirect B and C
         fprintf(stdout, "Indirect (B,C)...\n");
         for (libxsmm_blasint i = 0; i < s; ++i) { a_array[i] = a; b_array[i] = b + i * bsize; c_array[i] = d + i * csize; }
         const unsigned long long start = libxsmm_timer_tick();
@@ -295,8 +297,8 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 #endif
-
-      { // streaming A and B
+      break;
+      case 6: { // streaming A and B
         fprintf(stdout, "Streamed (A,B)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -320,10 +322,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } /*break;*/
 
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
-      { // indirect A and B
+      case 7: { // indirect A and B
         fprintf(stdout, "Indirect (A,B)...\n");
 #if defined(_OPENMP)
 #       pragma omp parallel for
@@ -350,8 +352,8 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 #endif
-
-      { // cached
+      break;
+      case 8: { // cached
         fprintf(stdout, "Cached...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -374,10 +376,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } /*break;*/
 
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
-      { // indirect cached
+      case 9: { // indirect cached
         fprintf(stdout, "Indirect cached\n");
 #if defined(_OPENMP)
 #       pragma omp parallel for
@@ -404,6 +406,9 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
 #endif
+      break;
+      default: throw "invalid case selected!";
+      } /*switch*/
 
       // finalize LIBXSMM
       libxsmm_finalize();

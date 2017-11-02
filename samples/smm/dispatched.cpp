@@ -76,9 +76,10 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
   try {
     typedef REAL_TYPE T;
-    const libxsmm_blasint m = 1 < argc ? std::atoi(argv[1]) : 23;
-    const libxsmm_blasint k = 3 < argc ? std::atoi(argv[3]) : m;
-    const libxsmm_blasint n = 2 < argc ? std::atoi(argv[2]) : k;
+    const libxsmm_blasint benchmark = 1 < argc ? std::atoi(argv[1]) : 0;
+    const libxsmm_blasint m = (2 < argc ? std::atoi(argv[2]) : 23);
+    const libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
+    const libxsmm_blasint n = (3 < argc ? std::atoi(argv[3]) : k);
 
     const libxsmm_blasint lda = m, ldb = k, ldc = m;
     const char transa = 'N', transb = 'N';
@@ -126,9 +127,10 @@ int main(int argc, char* argv[])
         8 == sizeof(T) ? "DP" : "SP");
 
       // eventually JIT-compile the requested kernel
-      libxsmm_mmfunction<T>(m, n, k);
+      libxsmm_mmfunction<T>(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, lda, ldb, ldc, alpha, beta);
 
-      { // batched
+      switch (benchmark) {
+      case 0: { // batched
         fprintf(stdout, "Batched (A,B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -147,9 +149,9 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize_batched / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } break;
 
-      { // streaming A and C
+      case 1: { // streaming A and C
         fprintf(stdout, "Streamed (A,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -168,9 +170,9 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } break;
 
-      { // streaming B and C
+      case 2: { // streaming B and C
         fprintf(stdout, "Streamed (B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -189,9 +191,9 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } break;
 
-      { // streaming A and B
+      case 3: { // streaming A and B
         fprintf(stdout, "Streamed (A,B)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -215,9 +217,9 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } break;
 
-      { // cached
+      case 4: { // cached
         fprintf(stdout, "Cached...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -240,7 +242,9 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      }
+      } break;
+      default: throw "invalid case selected!";
+      } /*switch*/
 
       // finalize LIBXSMM
       libxsmm_finalize();
