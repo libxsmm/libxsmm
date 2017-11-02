@@ -380,7 +380,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_halfvector( libxsmm_micro_k
               (strcmp( i_arch, "knm" ) == 0) ||
               (strcmp( i_arch, "skx" ) == 0) ) {
 #if !defined(NDEBUG)
-    fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_gemm_init_micro_kernel_config_halfvector, IMCI/AVX512 redirecting to fullvector, please fix the generation code!!!\n");
+    fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_gemm_init_micro_kernel_config_halfvector, IMCI/AVX512 redirecting to fullvector!\n");
 #endif
     libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
   } else {
@@ -497,7 +497,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
     if ((strcmp( i_arch, "knc" ) == 0)) {
       io_micro_kernel_config->instruction_set = LIBXSMM_X86_IMCI;
 #if !defined(NDEBUG)
-      fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_gemm_init_micro_kernel_config_scalar, IMCI redirecting to fullvector, please fix the generation code!!!\n");
+      fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_gemm_init_micro_kernel_config_scalar, IMCI redirecting to fullvector!\n");
 #endif
       libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_xgemm_desc, i_arch, i_use_masking_a_c );
     } else if ((strcmp( i_arch, "knl" ) == 0)) {

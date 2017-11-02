@@ -180,7 +180,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
   if ( (i_is_store == 0) && ( (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTPD) ||
                               (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTPS) ||
                               (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVNTDQ)   )) {
-    fprintf(stderr, "libxsmm_instruction_vec_move: streaming stores are only avaiable when setting storing option to true!\n");
+    fprintf(stderr, "libxsmm_instruction_vec_move: streaming stores are only available when setting storing option to true!\n");
     exit(-1);
   }
 
@@ -586,7 +586,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
        else if ( i_scale == 8 ) l_tscale = 0xc0;
        else
        {
-          fprintf(stderr, "libxsmm_instruction_vec_move: Don't understand the i_scale parameter");
+          fprintf(stderr, "libxsmm_instruction_vec_move: cannot handle i_scale=%u parameter\n", i_scale);
           exit(-1);
        }
        buf[i++] = (unsigned char)(l_tscale + l_iregnum + 8*(i_gp_reg_idx%8));
@@ -1114,7 +1114,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Unknown instruction type: %u\n", i_vec_instr);
-          break;
+          exit(-1);
     }
     if ( i_vector_name == 'x' ) l_xreg = -4;
     l_reg0 = l_vreg0 % 8;
@@ -1246,7 +1246,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
           break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_reg_mask: Unknown instruction type: %u\n", i_vec_instr);
-          break;
+          exit(-1);
     }
 
     buf[i++] = (unsigned char)(0x62);
@@ -1748,7 +1748,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_mem: Unknown instruction type: %u\n", i_vec_instr);
-          break;
+          exit(-1);
     }
     if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) &&
     ((int)i_gp_reg_idx >= LIBXSMM_X86_GP_REG_RAX) &&
@@ -1768,9 +1768,8 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
              l_scaleadj=0xc0;
              break;
           default:
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: i_scale parameter appears bogus=%u\n", i_scale);
-             exit(-1);
-             break;
+            fprintf(stderr, "libxsmm_instruction_vec_compute_mem: cannot handle i_scale=%u parameter\n", i_scale);
+            exit(-1);
        }
     }
     if ( (i_gp_reg_base >= 8) && (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF) )
@@ -2025,7 +2024,7 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
           break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_mem_mask: Unknown instruction type: %u\n", i_vec_instr);
-          break;
+          exit(-1);
     }
 
     if ( (i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF) &&
@@ -2046,9 +2045,8 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
              l_scaleadj=0xc0;
              break;
           default:
-             fprintf(stderr, "libxsmm_instruction_vec_compute_mem_mask: i_scale parameter appears bogus=%u\n", i_scale);
+             fprintf(stderr, "libxsmm_instruction_vec_compute_mem_mask: cannot handle i_scale=%u parameter\n", i_scale);
              exit(-1);
-             break;
        }
     }
 
@@ -2198,9 +2196,8 @@ void libxsmm_x86_instruction_vec_compute_qfma( libxsmm_generated_code* io_genera
           l_instr_off = -0x47;
           break;
        default:
-          fprintf(stderr, "Strange qmadd instruction");
+          fprintf(stderr, "Strange qmadd instruction\n");
           exit(-1);
-          break;
     }
     if ( i_gp_reg_base == LIBXSMM_X86_GP_REG_RSP )
     {
@@ -2531,9 +2528,8 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
           l_instr_offset2 = 1;
           break;
        default:
-          fprintf(stderr, "libxsmm_x86_instruction_vec_move_gathscat: Strange gather/scatter instruction");
+          fprintf(stderr, "libxsmm_x86_instruction_vec_move_gathscat: Strange gather/scatter instruction\n");
           exit(-1);
-          break;
     }
     if ( i_vector_name != 'z' )
     {
@@ -2673,7 +2669,6 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
        default:
           fprintf(stderr, "libxsmm_instruction_prefetch: Strange prefetch instruction: %u\n",i_prefetch_instr);
           exit(-1);
-          break;
     }
 
     if (i_scale==2) l_sca=0x40;
@@ -2778,7 +2773,6 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
        default:
           fprintf(stderr, "libxsmm_instruction_alu_mem: Unknown instruction: %u\n", i_alu_instr);
           exit(-1);
-          break;
      }
 
      l_regbas0 = i_gp_reg_base % 8;
@@ -2848,7 +2842,9 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
        case LIBXSMM_X86_INSTR_SALQ:
           if ( (i_immediate < 0) || (i_immediate > 127) )
           {
-             fprintf(stderr, "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq. Because other immediates are signed but salq is unsigned. So this code should be changed if you want an immediate in this range.\n");
+             fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
+                              "because other immediates are signed but salq is unsigned. So this code\n"
+                              "should be changed if you want an immediate in this range.\n");
              exit(-1);
           }
           l_unsignedadj = 0x3e;
@@ -3157,9 +3153,8 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
           l_case += 0x83;
           break;
        default:
-          fprintf(stderr, "libxsmm_instruction_mask_move: Strange kmov instruction");
+          fprintf(stderr, "libxsmm_instruction_mask_move: Strange kmov instruction\n");
           exit(-1);
-          break;
     }
     if ( i_mask_reg_number > 7 )
     {
@@ -3239,9 +3234,8 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
        case LIBXSMM_X86_INSTR_KXNORW:
           break;
        default:
-          fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: Strange kmov instruction");
+          fprintf(stderr, "libxsmm_x86_instruction_mask_compute_reg: Strange kmov instruction\n");
           exit(-1);
-          break;
     }
     buf[i++] = 0xc5;
     buf[i++] = (unsigned char)(0xfc - i_mask_reg_number_src_1 * 8);
@@ -3552,8 +3546,8 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
     unsigned int l_max_size = io_generated_code->buffer_size;
 
     if (l_max_size < (l_code_size + 9)) {
-      fprintf(stderr, "libxsmm_generator_gemm_x86_open_instruction_stream: Jit buffer too small\n!");
-      exit(-1);
+      LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+      return;
     }
 
     /* check for a valid register allocation for input pointers */
@@ -3785,8 +3779,8 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
     unsigned int l_max_size = io_generated_code->buffer_size;
 
     if (l_max_size < (l_code_size + 10)) {
-      fprintf(stderr, "libxsmm_generator_gemm_x86_close_instruction_stream: Jit buffer too small!\n" );
-      exit(-1);
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
+      return;
     }
 
     /* check for a valid register allocation for input pointers */
@@ -4033,8 +4027,8 @@ void libxsmm_x86_instruction_open_stream_convolution( libxsmm_generated_code*   
     unsigned int l_max_size = io_generated_code->buffer_size;
 
     if (l_max_size < (l_code_size + 9)) {
-      fprintf(stderr, "libxsmm_x86_instruction_open_stream_conv: Jit buffer too small\n!");
-      exit(-1);
+      LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+      return;
     }
 
     /* push rbx */
@@ -4121,8 +4115,8 @@ void libxsmm_x86_instruction_close_stream_convolution( libxsmm_generated_code*  
     unsigned int l_max_size = io_generated_code->buffer_size;
 
     if (l_max_size < (l_code_size + 10)) {
-      fprintf(stderr, "libxsmm_generator_dense_x86_close_instruction_stream: Jit buffer too small!\n" );
-      exit(-1);
+      LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+      return;
     }
 
     /* pop r15 */
@@ -4198,8 +4192,8 @@ void libxsmm_x86_instruction_open_stream_transpose( libxsmm_generated_code*     
     unsigned int l_max_size = io_generated_code->buffer_size;
 
     if (l_max_size < (l_code_size + 9)) {
-      fprintf(stderr, "libxsmm_x86_instruction_open_stream_conv: Jit buffer too small\n!");
-      exit(-1);
+      LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+      return;
     }
 
     /* push rbx */
@@ -4274,14 +4268,14 @@ void libxsmm_x86_instruction_close_stream_transpose( libxsmm_generated_code*    
   /* libxsmm_x86_instruction_close_stream_convolution(io_generated_code, i_arch); */
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-    /* @TODO this is a very simple System V ABI 64 interfacce */
+    /* @TODO this is a very simple System V ABI 64 interface */
     unsigned char *l_code_buffer = (unsigned char *) io_generated_code->generated_code;
     unsigned int l_code_size = io_generated_code->code_size;
     unsigned int l_max_size = io_generated_code->buffer_size;
 
     if (l_max_size < (l_code_size + 11)) {
-      fprintf(stderr, "libxsmm_generator_dense_x86_close_instruction_stream: Jit buffer too small!\n" );
-      exit(-1);
+      LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+      return;
     }
 
 if ( l_code_size==59 ) printf("Starting wrap-up on byte 59\n");
@@ -4365,8 +4359,8 @@ void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*       
     unsigned int l_max_size = io_generated_code->buffer_size;
 
     if (l_max_size < (l_code_size + 9)) {
-      fprintf(stderr, "libxsmm_x86_instruction_open_stream_conv: Jit buffer too small\n!");
-      exit(-1);
+      LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+      return;
     }
 
     /* push rbx */
@@ -4452,8 +4446,8 @@ void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*      
     unsigned int l_max_size = io_generated_code->buffer_size;
 
     if (l_max_size < (l_code_size + 10)) {
-      fprintf(stderr, "libxsmm_generator_dense_x86_close_instruction_stream: Jit buffer too small!\n" );
-      exit(-1);
+      LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL);
+      return;
     }
 
     /* pop r15 */
