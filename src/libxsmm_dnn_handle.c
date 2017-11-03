@@ -580,11 +580,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       libxsmm_matcopy_descriptor matzero_descriptor;
 
       descriptor.input_L2_prefetching = 0;
-      if (handle->desc.R != 1 || handle->desc.S != 1) {
-        descriptor.extra_L2_prefetching = 0;
-      } else {
-        descriptor.extra_L2_prefetching = 1;
-        descriptor.lookahead = 4;
+      descriptor.lookahead = 0;
+      if ( (handle->desc.R == 1) && (handle->desc.S == 1) ) {
+        if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) ) {
+          descriptor.extra_L2_prefetching = 1;
+          descriptor.lookahead = 4;
+        } else {
+          descriptor.extra_L2_prefetching = 0;
+          descriptor.lookahead = 0;
+        }
       }
 
       descriptor.use_nts =  handle->use_nts_fwd;
@@ -806,11 +810,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
 
       fwd_equivalent_descriptor.input_L2_prefetching = 0;
-      if (handle->desc.R != 1 || handle->desc.S != 1) {
-        fwd_equivalent_descriptor.extra_L2_prefetching = 0;
-      } else {
-        fwd_equivalent_descriptor.extra_L2_prefetching = 1;
-        fwd_equivalent_descriptor.lookahead = 4;
+      fwd_equivalent_descriptor.lookahead = 0;
+      if ( (handle->desc.R == 1) && (handle->desc.S == 1) ) {
+        if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) ) {
+          fwd_equivalent_descriptor.extra_L2_prefetching = 1;
+          fwd_equivalent_descriptor.lookahead = 4;
+        } else {
+          fwd_equivalent_descriptor.extra_L2_prefetching = 0;
+          fwd_equivalent_descriptor.lookahead = 0;
+        }
       }
 
       if (handle->padding_flag == 1) {
