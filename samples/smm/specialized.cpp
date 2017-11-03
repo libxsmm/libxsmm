@@ -356,7 +356,7 @@ int main(int argc, char* argv[])
         }
         const libxsmm_blasint ptrsize = sizeof(T*);
         const unsigned long long start = libxsmm_timer_tick();
-        libxsmm_gemm_batch/*_omp*/(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
+        libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
           m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
           0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
         const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
