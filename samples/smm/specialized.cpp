@@ -90,8 +90,7 @@ int main(int argc, char* argv[])
     const T alpha = 1, beta = 1;
 
     const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
-    //const libxsmm_blasint s = (2ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 2 GByte
-    const libxsmm_blasint s = 16;
+    const libxsmm_blasint s = (2ULL << 30) / ((asize + bsize + csize) * sizeof(T)); // 2 GByte
     const size_t bwsize_batched = (size_t)((asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T)); // batched (A, B, and C)
     const size_t bwsize = (size_t)((asize/*load*/ + bsize/*load*/) * sizeof(T)); // omit size of A, B, or C since it is held in cache
     const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0 / s;
