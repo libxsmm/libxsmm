@@ -351,8 +351,11 @@ int main(int argc, char* argv[])
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a + i * asize; b_array[i] = b + i * bsize;
-          /* attempt to write to disjunct cachelines */
+#if defined(_OPENMP) /* attempt to write to disjunct cachelines */
           c_array[i] = d + omp_get_thread_num() * chunksize * csize;
+#else
+          c_array[i] = d;
+#endif
         }
         const libxsmm_blasint ptrsize = sizeof(T*);
         const unsigned long long start = libxsmm_timer_tick();
@@ -408,8 +411,11 @@ int main(int argc, char* argv[])
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a; b_array[i] = b;
-          /* attempt to write to disjunct cachelines */
+#if defined(_OPENMP) /* attempt to write to disjunct cachelines */
           c_array[i] = d + omp_get_thread_num() * chunksize * csize;
+#else
+          c_array[i] = d;
+#endif
         }
         const libxsmm_blasint ptrsize = sizeof(T*);
         const unsigned long long start = libxsmm_timer_tick();
