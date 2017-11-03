@@ -45,11 +45,14 @@
 #if !defined(LIBXSMM_GEMM_CHECK) && !defined(NDEBUG)
 # define LIBXSMM_GEMM_CHECK
 #endif
+#if !defined(LIBXSMM_GEMM_BATCHSIZE)
+# define LIBXSMM_GEMM_BATCHSIZE 1024
+#endif
 #if !defined(LIBXSMM_GEMM_MAXNLOCKS)
 # define LIBXSMM_GEMM_MAXNLOCKS 1024
 #endif
-#if !defined(LIBXSMM_GEMM_BATCHSIZE)
-# define LIBXSMM_GEMM_BATCHSIZE 1024
+#if !defined(LIBXSMM_GEMM_LOCKFWD)
+# define LIBXSMM_GEMM_LOCKFWD
 #endif
 
 #if !defined(LIBXSMM_NO_SYNC) /** Locks for the batch interface (duplicated C indexes). */
@@ -629,8 +632,10 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
           }
 #if !defined(LIBXSMM_NO_SYNC)
           else { /* synchronize among C-indexes */
-            LIBXSMM_LOCK_TYPE *lock = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)ci, internal_gemm_nlocks), *lock0 = 0;
-
+            LIBXSMM_LOCK_TYPE* lock = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)ci, internal_gemm_nlocks);
+# if defined(LIBXSMM_GEMM_LOCKFWD)
+            LIBXSMM_LOCK_TYPE* lock0 = 0;
+# endif
             for (i = begin; i < end1; i = ni) {
               ni = i + 1; ii = ni * index_stride;
 # if defined(LIBXSMM_GEMM_CHECK)
@@ -641,9 +646,17 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
                 const char *const bn = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
                 char       *const cn = c0 + (0 != sc ? ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize) : 0);
                 LIBXSMM_LOCK_TYPE *const lock1 = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)cn, internal_gemm_nlocks);
+# if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(lock); }
+# else
+                LIBXSMM_LOCK_ACQUIRE(lock);
+# endif
                 kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
+# if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock1 || ni == end1) { LIBXSMM_LOCK_RELEASE(lock); lock = lock1; }
+# else
+                LIBXSMM_LOCK_RELEASE(lock); lock = lock1;
+# endif
                 ai = an; bi = bn; ci = cn; /* next */
               }
             }
@@ -706,8 +719,10 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
 #if !defined(LIBXSMM_NO_SYNC)
           else { /* synchronize among C-indexes */
             void* cc = *((void**)ci);
-            LIBXSMM_LOCK_TYPE *lock = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)cc, internal_gemm_nlocks), *lock0 = 0;
-
+            LIBXSMM_LOCK_TYPE* lock = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)cc, internal_gemm_nlocks);
+# if defined(LIBXSMM_GEMM_LOCKFWD)
+            LIBXSMM_LOCK_TYPE* lock0 = 0;
+# endif
             for (i = begin; i < end1; i = ni) {
               ni = i + 1;
 # if defined(LIBXSMM_GEMM_CHECK)
@@ -718,11 +733,19 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
                 char *const cn = ci + dc;
                 void *const nc = *((void**)cn);
                 LIBXSMM_LOCK_TYPE *const lock1 = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)nc, internal_gemm_nlocks);
+# if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(lock); }
+# else
+                LIBXSMM_LOCK_ACQUIRE(lock);
+# endif
                 kernel.xmm( /* with prefetch */
                   *((const void**)ai), *((const void**)bi), cc,
                   *((const void**)an), *((const void**)bn), *((const void**)cn));
+# if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock1 || ni == end1) { LIBXSMM_LOCK_RELEASE(lock); lock = lock1; }
+# else
+                LIBXSMM_LOCK_RELEASE(lock); lock = lock1;
+# endif
                 ai = an; bi = bn; ci = cn; cc = nc; /* next */
               }
             }
