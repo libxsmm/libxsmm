@@ -1210,7 +1210,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
 
       }
 
-      cache_line_offset += step_size * 64;
+      cache_line_offset += (step_size/lp_dim_out) * 64;
     } /* l_k_2 */
   } /* l_k_1 */
 }
