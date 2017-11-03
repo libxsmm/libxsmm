@@ -172,8 +172,10 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       local_entries += 3;
 
                       /* For transpose: Find first (img,ifmb) in this stream. Occurs when ofmb == 0. */
-                      if ( (ofmb == 0) && (ojb == 0) && (ofm1 == ofmb) && (ifm1 == ifmb) && (oj_ == ojb) && (oi__ == 0) && (kj == 0) && (ki == 0)) {
-                        n_code_segments++;
+                      if (handle->use_lp_kernel == 0) {
+                        if ( (ofmb == 0) && (ojb == 0) && (ofm1 == ofmb) && (ifm1 == ifmb) && (oj_ == ojb) && (oi__ == 0) && (kj == 0) && (ki == 0)) {
+                          n_code_segments++;
+                        }
                       }
 
                       if (mark_weight_init == 1) {
@@ -236,9 +238,11 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       ij_ = oj_*stride_h;
 
                       /* For transpose: Find first (img,ifmb) in this stream. Occurs when ofmb == 0. */
-                      if ( (ofmb == 0) && (ojb == 0) && (ofm1 == ofmb) && (ifm1 == ifmb) && (oj_ == ojb) && (oi__ == 0) && (kj == 0) && (ki == 0)) {
-                        tmp_expanded_stream[tmp_stream_index] = TRANSPOSE_EXEC;
-                        tmp_stream_index++;
+                      if (handle->use_lp_kernel == 0) {
+                        if ( (ofmb == 0) && (ojb == 0) && (ofm1 == ofmb) && (ifm1 == ifmb) && (oj_ == ojb) && (oi__ == 0) && (kj == 0) && (ki == 0)) {
+                          tmp_expanded_stream[tmp_stream_index] = TRANSPOSE_EXEC;
+                          tmp_stream_index++;
+                        }
                       }
 
                       if (mark_weight_init == 1) {
@@ -254,7 +258,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + (ii_ + ki) ) *  handle->ifmblock;
                       }
 
-               
+
                       /* use different weights format if we can skip init and copy */
                       if (mark_weight_init == 1 && mark_weight_copy == 1) {
                         compute_indices[local_entries+1] = ( ( (ofm1-ofmb) * LIBXSMM_MIN(handle->block_upd_ifm, handle->blocksifm) ) + (ifm1-ifmb) ) * handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock;
@@ -333,11 +337,13 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         ij_ = oj_*stride_h;
 
                         /* For transpose: Find first (img,ifmb) in this stream. Occurs when ofmb == 0. */
-                        if ( (ofmb == 0) && (ojb == 0) && (ofm1 == ofmb) && (ifm1 == ifmb) && (oj_ == ojb) && (oi__ == 0) && (kj == 0) && (ki == 0)) {
-                          assert(img < (1 << LIBXSMM_UPD_STREAMS_TRANSPOSE_IFMB_SHIFT));
-                          assert(ifmb < (1 << (31-LIBXSMM_UPD_STREAMS_TRANSPOSE_IFMB_SHIFT)));
-                          encoded_code_segments[encoded_stream_index].aux_index = img + (ifmb << LIBXSMM_UPD_STREAMS_TRANSPOSE_IFMB_SHIFT);
-                          encoded_stream_index++;
+                        if (handle->use_lp_kernel == 0) {
+                          if ( (ofmb == 0) && (ojb == 0) && (ofm1 == ofmb) && (ifm1 == ifmb) && (oj_ == ojb) && (oi__ == 0) && (kj == 0) && (ki == 0)) {
+                            assert(img < (1 << LIBXSMM_UPD_STREAMS_TRANSPOSE_IFMB_SHIFT));
+                            assert(ifmb < (1 << (31-LIBXSMM_UPD_STREAMS_TRANSPOSE_IFMB_SHIFT)));
+                            encoded_code_segments[encoded_stream_index].aux_index = img + (ifmb << LIBXSMM_UPD_STREAMS_TRANSPOSE_IFMB_SHIFT);
+                            encoded_stream_index++;
+                          }
                         }
 
                         if (mark_weight_init == 1) {
