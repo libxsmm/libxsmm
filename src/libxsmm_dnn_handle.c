@@ -567,7 +567,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && (handle->desc.pad_h_out == 0) && (handle->desc.pad_w_out == 0) && ((handle->desc.pad_h > 0) || (handle->desc.pad_w > 0))) {
     handle->padding_flag = 1;
     handle->scratch5  = 0;
-    handle->minibatch_scratch_size = LIBXSMM_MAX(handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w+4) * libxsmm_dnn_typesize(handle->datatype_out), handle->desc.N * handle->blocksofm_lp * handle->ofmblock * handle->fm_lp_block * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_out));
+    handle->minibatch_scratch_size = LIBXSMM_MAX(handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w+8) * libxsmm_dnn_typesize(handle->datatype_out), handle->desc.N * handle->blocksofm_lp * handle->ofmblock * handle->fm_lp_block * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_out));
     handle->fwdbwd_scratch_size = handle->desc.threads * handle->blocksifm_lp * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_out);
     handle->max_scratch5_size = (handle->minibatch_scratch_size > handle->fwdbwd_scratch_size) ? handle->minibatch_scratch_size : handle->fwdbwd_scratch_size;
   } else {
@@ -1362,6 +1362,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               int kernel_ofw_compute;
               int kernel_ofw_fake_pixels;
               int kernel_ofw;
+              int padding_target;
+              if (handle->use_lp_kernel == 0) {
+                padding_target = 4;
+              } else {
+                padding_target = 8;
+              }
+
               if (handle->desc.R == 1 && handle->desc.S == 1 && (handle->desc.u != 1 || handle->desc.v != 1)) {
                 handle->resize_input = 1;
                 handle->ifwp_resized = handle->ifwp/handle->desc.u;
@@ -1378,7 +1385,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               }
 
               if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
-                qfma_padding = (handle->desc.W % 4 == 0) ? 0 : 4 - handle->desc.W % 4;
+                qfma_padding = (handle->desc.W % padding_target == 0) ? 0 : padding_target - handle->desc.W % padding_target;
               } else {
                 qfma_padding = 0;
               }
@@ -1398,7 +1405,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 }
               }
               if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
-                kernel_ofw_fake_pixels = (kernel_ofw_compute % 4 == 0) ? 0 : 4 - kernel_ofw_compute % 4;
+                kernel_ofw_fake_pixels = (kernel_ofw_compute % padding_target == 0) ? 0 : padding_target - kernel_ofw_compute % padding_target;
               } else {
                 kernel_ofw_fake_pixels = 0;
               }
@@ -1425,11 +1432,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 descriptor.blocks_h = 1;
                 handle->upd_ofh_rb = 2;
                 descriptor.ofh_rb = 2;
-                if ( handle->blocksofm == 32 && handle->blocksifm_lp == 16 ) {
+                if ( handle->blocksofm == 32 && handle->blocksifm == 16 ) {
                   handle->upd_ofh_rb = 7;
                   descriptor.ofh_rb = 7;
                 }
-                if ( handle->blocksofm == 8 && handle->blocksifm_lp == 16 ) {
+                if ( handle->blocksofm == 8 && handle->blocksifm == 16 ) {
                   handle->upd_ofh_rb = 1;
                   descriptor.ofh_rb = 1;
                 }
@@ -1632,7 +1639,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       } /* end of weight-update handle */
       {
         handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
-
         /* backward transpose filters */
         handle->scratch1 = 0;
         handle->scratch1_size = handle->blocksifm_lp * handle->ifmblock * handle->blocksofm * handle->ofmblock
@@ -1644,7 +1650,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
         /* weight update transpose of minibatch */
         handle->scratch3 = 0;
-        handle->scratch3_size = handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->ifhp * (handle->ifwp+4)
+        handle->scratch3_size = handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->ifhp * (handle->ifwp+8)
           * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
 
         /* minibatch parallel execution of weight update kernel */
@@ -1664,6 +1670,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           handle->scratch4 = 0;
           handle->scratch4_size = 0;
           handle->upd_use_thread_fil = 0;
+        }
+
+        /* Allocate scrarch for additional output transpose */
+        if (handle->use_lp_kernel == 1) {
+          handle->scratch6 = 0;
+          handle->scratch6_size = handle->desc.N * handle->blocksofm * handle->ofmblock * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+8+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_in);
+        } else {
+          handle->scratch6 = 0;
+          handle->scratch6_size = 0;
         }
       }
     }

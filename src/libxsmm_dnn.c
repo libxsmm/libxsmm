@@ -391,6 +391,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const li
     }
 
     if (handle->padding_flag) libxsmm_free(handle->scratch5);
+    if (handle->use_lp_kernel == 1) libxsmm_free(handle->scratch6);
 
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_layer*)handle);
@@ -1593,6 +1594,9 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
                                                scratch5_size = handle->minibatch_scratch_size;
                                                l_scratch_size += scratch5_size + 64;
                                              }
+                                             if (handle->use_lp_kernel == 1) {
+                                              l_scratch_size += handle->scratch6_size +64;
+                                             }
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
                                              /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
@@ -1606,6 +1610,9 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
                                              if (handle->padding_flag == 1) {
                                                scratch5_size = handle->max_scratch5_size;
                                                l_scratch_size += scratch5_size + 64;
+                                             }
+                                             if (handle->use_lp_kernel == 1) {
+                                              l_scratch_size += handle->scratch6_size +64;
                                              }
                                            } break;
         default: {
@@ -1746,6 +1753,16 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
                                                  offset = (64 - address % 64);
                                                  handle->scratch4 = (void*)(address+offset);
                                                }
+                                               address += handle->scratch4_size + 64;
+                                             }
+                                             if (handle->use_lp_kernel == 1) {
+                                               if (address % 64 == 0) {
+                                                 handle->scratch6 = (void*)address;
+                                               } else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch6 = (void*)(address+offset);
+                                               }
+                                               address += handle->scratch6_size + 64;
                                              }
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
@@ -1784,6 +1801,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_la
                                                  handle->scratch4 = (void*)(address+offset);
                                                }
                                                address += handle->scratch4_size + 64;
+                                             }
+                                             if (handle->use_lp_kernel == 1) {
+                                               if (address % 64 == 0) {
+                                                 handle->scratch6 = (void*)address;
+                                               } else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch6 = (void*)(address+offset);
+                                               }
+                                               address += handle->scratch6_size + 64;
                                              }
                                            } break;
         default: {
@@ -1824,12 +1850,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn
                                              handle->scratch3 = 0;
                                              handle->scratch4 = 0;
                                              handle->scratch5 = 0;
+                                             handle->scratch6 = 0;
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
                                              handle->scratch1 = 0;
                                              handle->scratch3 = 0;
                                              handle->scratch4 = 0;
                                              handle->scratch5 = 0;
+                                             handle->scratch6 = 0;
                                            } break;
         default: {
                    status = LIBXSMM_DNN_ERR_INVALID_KIND;
