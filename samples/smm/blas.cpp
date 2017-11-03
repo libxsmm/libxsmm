@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
     T *d = LIBXSMM_ALIGN(buffer.d, LIBXSMM_ALIGNMENT);
 
 #if defined(_OPENMP)
-#   pragma omp parallel for
+#   pragma omp parallel for schedule(static)
 #endif
     for (libxsmm_blasint i = 0; i < s; ++i) {
       init(42 + i, a + i * asize, m, k, lda, scale);
@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
 
       { // LAPACK/BLAS3 (warmup BLAS Library)
 #if defined(_OPENMP)
-#       pragma omp parallel for
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           LIBXSMM_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Batched (A,B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           LIBXSMM_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
@@ -224,7 +224,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Streamed (A,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           LIBXSMM_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Streamed (B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           LIBXSMM_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
@@ -304,11 +304,12 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Streamed (A,B)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for
+        const libxsmm_blasint chunksize = s / omp_get_max_threads();
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
-#if defined(_OPENMP) /* write to disjunct cachelines to measure in-cache performance (TLS would serve as well) */
-          const libxsmm_blasint j = LIBXSMM_MIN(omp_get_thread_num() * (libxsmm_blasint)LIBXSMM_UP2(csize, 2 * LIBXSMM_CACHELINE / sizeof(T)), s - csize);
+#if defined(_OPENMP) /* attempt to write to disjunct cachelines */
+          const libxsmm_blasint j = omp_get_thread_num() * chunksize;
 #else
           const libxsmm_blasint j = 0;
 #endif
@@ -330,15 +331,13 @@ int main(int argc, char* argv[])
       case 7: { // indirect A and B
         fprintf(stdout, "Indirect (A,B)...\n");
 #if defined(_OPENMP)
-#       pragma omp parallel for
+        const libxsmm_blasint chunksize = s / omp_get_max_threads();
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
-#if defined(_OPENMP) /* write to disjunct cachelines to measure in-cache performance (TLS would serve as well) */
-          const libxsmm_blasint j = LIBXSMM_MIN(omp_get_thread_num() * (libxsmm_blasint)LIBXSMM_UP2(csize, 2 * LIBXSMM_CACHELINE / sizeof(T)), s - csize);
-#else
-          const libxsmm_blasint j = 0;
-#endif
-          a_array[i] = a + i * asize; b_array[i] = b + i * bsize; c_array[i] = d + j;
+          a_array[i] = a + i * asize; b_array[i] = b + i * bsize;
+          /* attempt to write to disjunct cachelines */
+          c_array[i] = d + omp_get_thread_num() * chunksize;
         }
         const unsigned long long start = libxsmm_timer_tick();
         LIBXSMM_TPREFIX(REAL_TYPE, gemm_batch)(&transa, &transb, &m, &n, &k,
@@ -359,11 +358,12 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Cached...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for
+        const libxsmm_blasint chunksize = s / omp_get_max_threads();
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
-#if defined(_OPENMP) /* write to disjunct cachelines (even when unaligned) to measure in-cache performance (TLS would serve as well) */
-          const libxsmm_blasint j = LIBXSMM_MIN(omp_get_thread_num() * (libxsmm_blasint)LIBXSMM_UP2(csize, 2 * LIBXSMM_CACHELINE / sizeof(T)), s - csize);
+#if defined(_OPENMP) /* attempt to write to disjunct cachelines */
+          const libxsmm_blasint j = omp_get_thread_num() * chunksize;
 #else
           const libxsmm_blasint j = 0;
 #endif
@@ -384,15 +384,13 @@ int main(int argc, char* argv[])
       case 9: { // indirect cached
         fprintf(stdout, "Indirect cached\n");
 #if defined(_OPENMP)
-#       pragma omp parallel for
+        const libxsmm_blasint chunksize = s / omp_get_max_threads();
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
-#if defined(_OPENMP) /* write to disjunct cachelines (even when unaligned) to measure in-cache performance (TLS would serve as well) */
-          const libxsmm_blasint j = LIBXSMM_MIN(omp_get_thread_num() * (libxsmm_blasint)LIBXSMM_UP2(csize, 2 * LIBXSMM_CACHELINE / sizeof(T)), s - csize);
-#else
-          const libxsmm_blasint j = 0;
-#endif
-          a_array[i] = a; b_array[i] = b; c_array[i] = d + j;
+          a_array[i] = a; b_array[i] = b;
+          /* attempt to write to disjunct cachelines */
+          c_array[i] = d + omp_get_thread_num() * chunksize;
         }
         const unsigned long long start = libxsmm_timer_tick();
         LIBXSMM_TPREFIX(REAL_TYPE, gemm_batch)(&transa, &transb, &m, &n, &k,

@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
     T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
 
 #if defined(_OPENMP)
-#   pragma omp parallel for
+#   pragma omp parallel for schedule(static)
 #endif
     for (libxsmm_blasint i = 0; i < s; ++i) {
       init(42 + i, a + i * asize, m, k, lda, scale);
@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Batched (A,B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           LIBXSMM_INLINE_GEMM(flags, m, n, k,
@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Streamed (A,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           LIBXSMM_INLINE_GEMM(flags, m, n, k,
@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Streamed (B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           LIBXSMM_INLINE_GEMM(flags, m, n, k,
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Streamed (A,B)...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
 #if defined(_OPENMP) /* write to disjunct cachelines (even when unaligned) to measure in-cache performance (TLS would serve as well) */
@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Cached...\n");
         const unsigned long long start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-#       pragma omp parallel for
+#       pragma omp parallel for schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
 #if defined(_OPENMP) /* write to disjunct cachelines (even when unaligned) to measure in-cache performance (TLS would serve as well) */

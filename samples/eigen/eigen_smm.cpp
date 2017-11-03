@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
     T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
 
 #if defined(_OPENMP)
-#   pragma omp parallel for
+#   pragma omp parallel for schedule(static)
 #endif
     for (libxsmm_blasint i = 0; i < s; ++i) {
       init(42 + i, a + i * asize, m, k, lda, scale);
@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for
+#         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             const T *const ai = a + i * asize, *const bi = b + i * bsize;
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for
+#         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             const T *const ai = a + i * asize, *const bi = b + i * bsize;
@@ -226,7 +226,7 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for
+#         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             const T *const ai = a + i * asize;
@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for
+#         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             const T *const ai = a + i * asize;
@@ -276,7 +276,7 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for
+#         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             const T *const bi = b + i * bsize;
@@ -302,7 +302,7 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for
+#         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             const T *const bi = b + i * bsize;
@@ -326,11 +326,12 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for
+          const libxsmm_blasint chunksize = s / omp_get_max_threads();
+#         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-#if defined(_OPENMP) /* write to disjunct cachelines to measure in-cache performance (TLS would serve as well) */
-            const libxsmm_blasint j = LIBXSMM_MIN(omp_get_thread_num() * (libxsmm_blasint)LIBXSMM_UP2(csize, 2 * LIBXSMM_CACHELINE / sizeof(T)), s - csize);
+#if defined(_OPENMP) /* attempt to write to disjunct cachelines */
+            const libxsmm_blasint j = omp_get_thread_num() * chunksize;
 #else
             const libxsmm_blasint j = 0;
 #endif
@@ -356,11 +357,12 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for
+          const libxsmm_blasint chunksize = s / omp_get_max_threads();
+#         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-#if defined(_OPENMP) /* write to disjunct cachelines to measure in-cache performance (TLS would serve as well) */
-            const libxsmm_blasint j = LIBXSMM_MIN(omp_get_thread_num() * (libxsmm_blasint)LIBXSMM_UP2(csize, 2 * LIBXSMM_CACHELINE / sizeof(T)), s - csize);
+#if defined(_OPENMP) /* attempt to write to disjunct cachelines */
+            const libxsmm_blasint j = omp_get_thread_num() * chunksize;
 #else
             const libxsmm_blasint j = 0;
 #endif
@@ -384,11 +386,12 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for
+          const libxsmm_blasint chunksize = s / omp_get_max_threads();
+#         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-#if defined(_OPENMP) /* write to disjunct cachelines to measure in-cache performance (TLS would serve as well) */
-            const libxsmm_blasint j = LIBXSMM_MIN(omp_get_thread_num() * (libxsmm_blasint)LIBXSMM_UP2(csize, 2 * LIBXSMM_CACHELINE / sizeof(T)), s - csize);
+#if defined(_OPENMP) /* attempt to write to disjunct cachelines */
+            const libxsmm_blasint j = omp_get_thread_num() * chunksize;
 #else
             const libxsmm_blasint j = 0;
 #endif
@@ -412,11 +415,12 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for
+          const libxsmm_blasint chunksize = s / omp_get_max_threads();
+#         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-#if defined(_OPENMP) /* write to disjunct cachelines to measure in-cache performance (TLS would serve as well) */
-            const libxsmm_blasint j = LIBXSMM_MIN(omp_get_thread_num() * (libxsmm_blasint)LIBXSMM_UP2(csize, 2 * LIBXSMM_CACHELINE / sizeof(T)), s - csize);
+#if defined(_OPENMP) /* attempt to write to disjunct cachelines */
+            const libxsmm_blasint j = omp_get_thread_num() * chunksize;
 #else
             const libxsmm_blasint j = 0;
 #endif
