@@ -43,10 +43,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_EXT_TSK_GRAIN)
-# define LIBXSMM_EXT_TSK_GRAIN 64
-#endif
-
 #if defined(_OPENMP)
 # if !defined(LIBXSMM_EXT_TASKS) && (200805 <= _OPENMP) /*OpenMP 3.0*/
 #   define LIBXSMM_EXT_TASKS

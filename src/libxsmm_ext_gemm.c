@@ -587,25 +587,26 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_gemm_precision precision,
 {
   int result;
 #if defined(_OPENMP)
-  if (omp_get_max_threads() < batchsize) { /* general check if parallelization should be used */
+  const int ntasks = (int)((batchsize + libxsmm_gemm_chunksize - 1) / libxsmm_gemm_chunksize);
+  if (1 < ntasks) {
 # if defined(LIBXSMM_EXT_TASKS)
     if (0 == omp_get_active_level())
 # else
     if (0 == omp_in_parallel())
 # endif
     { /* enable internal parallelization */
-#     pragma omp parallel
+      const int max_nthreads = omp_get_max_threads();
+      const int nthreads = LIBXSMM_MIN(max_nthreads, ntasks);
+#     pragma omp parallel num_threads(nthreads)
       {
-        const int tid = omp_get_thread_num(), nthreads = omp_get_num_threads();
         libxsmm_mmbatch(precision, kernel, index_base,
           index_stride, stride_a, stride_b, stride_c,
-          a, b, c, batchsize, tid, nthreads);
+          a, b, c, batchsize, omp_get_thread_num(), nthreads);
       } /* implicit synchronization (barrier) */
       result = EXIT_SUCCESS;
     }
     else { /* assume external parallelization */
-# if defined(LIBXSMM_EXT_TASKS) /* use OpenMP-tasks */
-      const libxsmm_blasint ntasks = (batchsize + (LIBXSMM_EXT_TSK_GRAIN) - 1) / (LIBXSMM_EXT_TSK_GRAIN);
+# if defined(LIBXSMM_EXT_TASKS) /* OpenMP-tasks */
       libxsmm_blasint tid;
       for (tid = 0; tid < ntasks; ++tid) {
 #       pragma omp task
