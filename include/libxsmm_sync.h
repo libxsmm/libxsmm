@@ -196,7 +196,7 @@
 #   endif
 # else
 #   include <pthread.h>
-#   if defined(LIBXSMM_LOCK_MUTEX)
+#   if defined(LIBXSMM_LOCK_MUTEX) || (defined(__APPLE__) && defined(__MACH__))
 #     define LIBXSMM_LOCK_ACQUIRED 0
 #     define LIBXSMM_LOCK_ATTR_TYPE pthread_mutexattr_t
 #     if defined(NDEBUG)
