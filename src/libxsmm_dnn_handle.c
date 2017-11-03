@@ -579,6 +579,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       libxsmm_matcopy_descriptor matcopy_descriptor;
       libxsmm_matcopy_descriptor matzero_descriptor;
 
+      /* init descriptors */
+      memset( &descriptor, 0, sizeof(libxsmm_convolution_forward_descriptor) );
+      memset( &matcopy_descriptor, 0, sizeof(libxsmm_matcopy_descriptor) );
+      memset( &matzero_descriptor, 0, sizeof(libxsmm_matcopy_descriptor) );
+
       descriptor.input_L2_prefetching = 0;
       descriptor.lookahead = 0;
       if ( (handle->desc.R == 1) && (handle->desc.S == 1) ) {
@@ -808,6 +813,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       libxsmm_convolution_forward_descriptor fwd_equivalent_descriptor;
       libxsmm_matcopy_descriptor matzero_descriptor_overwrite;
 
+      /* init descriptors */
+      memset( &descriptor, 0, sizeof(libxsmm_convolution_backward_descriptor) );
+      memset( &fwd_equivalent_descriptor, 0, sizeof(libxsmm_convolution_forward_descriptor) );
+      memset( &matcopy_descriptor, 0, sizeof(libxsmm_matcopy_descriptor) );
+      memset( &matcopyback_descriptor, 0, sizeof(libxsmm_matcopy_descriptor) );
+      memset( &matzero_descriptor_overwrite, 0, sizeof(libxsmm_matcopy_descriptor) );
 
       fwd_equivalent_descriptor.input_L2_prefetching = 0;
       fwd_equivalent_descriptor.lookahead = 0;
@@ -1237,6 +1248,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       { libxsmm_convolution_weight_update_descriptor descriptor;
         libxsmm_matcopy_descriptor matcopy_descriptor;
         libxsmm_matcopy_descriptor matzero_descriptor;
+
+        /* init descriptors */
+        memset( &descriptor, 0, sizeof(libxsmm_convolution_weight_update_descriptor) );
+        memset( &matcopy_descriptor, 0, sizeof(libxsmm_matcopy_descriptor) );
+        memset( &matzero_descriptor, 0, sizeof(libxsmm_matcopy_descriptor) );
+
         if (handle->padding_flag == 1) {
           descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
           descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;
@@ -1824,6 +1841,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         libxsmm_convolution_winograd_descriptor wino_desc_fp;
         libxsmm_convolution_winograd_descriptor wino_desc_bp;
         libxsmm_convolution_winograd_descriptor wino_desc_wu;
+
+        memset( &wino_desc_fp, 0, sizeof(libxsmm_convolution_winograd_descriptor) );
+        memset( &wino_desc_bp, 0, sizeof(libxsmm_convolution_winograd_descriptor) );
+        memset( &wino_desc_wu, 0, sizeof(libxsmm_convolution_winograd_descriptor) );
+
         const int alpha = 6; /* The value of alpha can be either 4 or 6 */
         const int tileSize = alpha - 2;
         int allowed_unroll = 0;
