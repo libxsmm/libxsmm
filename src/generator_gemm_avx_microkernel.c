@@ -227,7 +227,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
                                                i_micro_kernel_config->vadd_instruction,
                                                i_micro_kernel_config->vector_name,
                                                i_n_blocking + l_m_blocking + l_m,
-                                               l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) ,
+                                               l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
                                                l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         }
       }

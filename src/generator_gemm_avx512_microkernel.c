@@ -91,7 +91,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                    i_gp_reg_mapping->gp_reg_help_3, i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb * 7 );
 
   /* helper 4: B + 9*ldb, additional base address
-     helper 5: B + 18*ldb, additional base address , using the reg_c register, which was saved to stack
+     helper 5: B + 18*ldb, additional base address, using the reg_c register, which was saved to stack
      helper 6: B + 27*ldb, additional base address WARNING: If i_n_blocking is > 27, then we can not prefetch C in L1 */
   if ( i_n_blocking > 9 ) {
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_b, i_gp_reg_mapping->gp_reg_help_4);
