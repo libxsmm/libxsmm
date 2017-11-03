@@ -43,8 +43,8 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_EXT_TSK_SLACK)
-# define LIBXSMM_EXT_TSK_SLACK 2
+#if !defined(LIBXSMM_EXT_TSK_GRAIN)
+# define LIBXSMM_EXT_TSK_GRAIN 64
 #endif
 
 #if defined(_OPENMP)

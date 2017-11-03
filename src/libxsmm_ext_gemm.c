@@ -605,8 +605,8 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_gemm_precision precision,
     }
     else { /* assume external parallelization */
 # if defined(LIBXSMM_EXT_TASKS) /* use OpenMP-tasks */
-      const int ntasks = (LIBXSMM_EXT_TSK_SLACK) * omp_get_num_threads();
-      int tid;
+      const libxsmm_blasint ntasks = (batchsize + (LIBXSMM_EXT_TSK_GRAIN) - 1) / (LIBXSMM_EXT_TSK_GRAIN);
+      libxsmm_blasint tid;
       for (tid = 0; tid < ntasks; ++tid) {
 #       pragma omp task
         libxsmm_mmbatch(precision, kernel, index_base,
