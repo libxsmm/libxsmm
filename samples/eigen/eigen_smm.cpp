@@ -331,7 +331,7 @@ int main(int argc, char* argv[])
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
 #if defined(_OPENMP) /* attempt to write to disjunct cachelines */
-            const libxsmm_blasint j = omp_get_thread_num() * chunksize;
+            const libxsmm_blasint j = omp_get_thread_num() * chunksize * csize;
 #else
             const libxsmm_blasint j = 0;
 #endif
@@ -362,7 +362,7 @@ int main(int argc, char* argv[])
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
 #if defined(_OPENMP) /* attempt to write to disjunct cachelines */
-            const libxsmm_blasint j = omp_get_thread_num() * chunksize;
+            const libxsmm_blasint j = omp_get_thread_num() * chunksize * csize;
 #else
             const libxsmm_blasint j = 0;
 #endif
@@ -391,7 +391,7 @@ int main(int argc, char* argv[])
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
 #if defined(_OPENMP) /* attempt to write to disjunct cachelines */
-            const libxsmm_blasint j = omp_get_thread_num() * chunksize;
+            const libxsmm_blasint j = omp_get_thread_num() * chunksize * csize;
 #else
             const libxsmm_blasint j = 0;
 #endif
@@ -420,7 +420,7 @@ int main(int argc, char* argv[])
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
 #if defined(_OPENMP) /* attempt to write to disjunct cachelines */
-            const libxsmm_blasint j = omp_get_thread_num() * chunksize;
+            const libxsmm_blasint j = omp_get_thread_num() * chunksize * csize;
 #else
             const libxsmm_blasint j = 0;
 #endif
