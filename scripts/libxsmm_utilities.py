@@ -36,7 +36,7 @@ import os
 
 try:
     from functools import reduce
-except:
+except ImportError:
     pass
 
 

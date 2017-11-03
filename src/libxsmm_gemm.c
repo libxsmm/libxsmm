@@ -79,7 +79,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original
 LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
 {
   /* setup tile sizes according to CPUID or environment (LIBXSMM_TGEMM_M, LIBXSMM_TGEMM_N, LIBXSMM_TGEMM_K) */
-  const unsigned int tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/][8/*size-range*/] = {
+  static unsigned int tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/][8/*size-range*/] = {
     /* generic (hsw) */
     { { {  25,  50,  69, 169, 169, 169, 169, 169 }, {  37,  98,  78,  39,  39,  39,  39,  39 }, { 100,  81,  55,  37,  37,  37,  37,  37 } },   /* DP */
       { {  43,  49, 107, 103, 103, 103, 103, 103 }, {  38,  52, 113, 141, 141, 141, 141, 141 }, { 232,  89, 100,  76,  76,  76,  76,  76 } } }, /* SP */
@@ -141,22 +141,15 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
 #endif
   {
     const char *const env_m = getenv("LIBXSMM_TGEMM_M"), *const env_n = getenv("LIBXSMM_TGEMM_N"), *const env_k = getenv("LIBXSMM_TGEMM_K");
-    const int m = ((0 == env_m || 0 == *env_m) ? -1 : atoi(env_m));
-    const int n = ((0 == env_n || 0 == *env_n) ? -1 : atoi(env_n));
-    const int k = ((0 == env_k || 0 == *env_k) ? -1 : atoi(env_k));
+    const int m = ((0 == env_m || 0 == *env_m) ? 0 : atoi(env_m));
+    const int n = ((0 == env_n || 0 == *env_n) ? 0 : atoi(env_n));
+    const int k = ((0 == env_k || 0 == *env_k) ? 0 : atoi(env_k));
     for (i = 0; i < 8; ++i) {
-      /* environment-defined tile sizes apply for DP and SP */
-      libxsmm_gemm_tile[0/*DP*/][0/*M*/][i] = libxsmm_gemm_tile[1/*SP*/][0/*M*/][i] = (unsigned int)LIBXSMM_MAX(m, 0);
-      libxsmm_gemm_tile[0/*DP*/][1/*N*/][i] = libxsmm_gemm_tile[1/*SP*/][1/*N*/][i] = (unsigned int)LIBXSMM_MAX(n, 0);
-      libxsmm_gemm_tile[0/*DP*/][2/*K*/][i] = libxsmm_gemm_tile[1/*SP*/][2/*K*/][i] = (unsigned int)LIBXSMM_MAX(k, 0);
-      /* load predefined configuration if tile size is not setup by the environment */
-      if (0 >= libxsmm_gemm_tile[0/*DP*/][0/*M*/][i]) libxsmm_gemm_tile[0][0][i] = tile_configs[config][0][0][i];
-      if (0 >= libxsmm_gemm_tile[0/*DP*/][1/*N*/][i]) libxsmm_gemm_tile[0][1][i] = tile_configs[config][0][1][i];
-      if (0 >= libxsmm_gemm_tile[0/*DP*/][2/*K*/][i]) libxsmm_gemm_tile[0][2][i] = tile_configs[config][0][2][i];
-      if (0 >= libxsmm_gemm_tile[1/*SP*/][0/*M*/][i]) libxsmm_gemm_tile[1][0][i] = tile_configs[config][1][0][i];
-      if (0 >= libxsmm_gemm_tile[1/*SP*/][1/*N*/][i]) libxsmm_gemm_tile[1][1][i] = tile_configs[config][1][1][i];
-      if (0 >= libxsmm_gemm_tile[1/*SP*/][2/*K*/][i]) libxsmm_gemm_tile[1][2][i] = tile_configs[config][1][2][i];
+      if (0 < m) tile_configs[config][0/*DP*/][0/*M*/][i] = tile_configs[config][1/*SP*/][0/*M*/][i] = m;
+      if (0 < n) tile_configs[config][0/*DP*/][1/*N*/][i] = tile_configs[config][1/*SP*/][1/*N*/][i] = n;
+      if (0 < k) tile_configs[config][0/*DP*/][2/*K*/][i] = tile_configs[config][1/*SP*/][2/*K*/][i] = k;
     }
+    libxsmm_gemm_tile = tile_configs[config];
   }
 }
 
@@ -598,12 +591,12 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
     if (begin < end) {
       const char *const a0 = (const char*)a, *const b0 = (const char*)b;
       char *const c0 = (char*)c;
-      libxsmm_blasint i;
+      libxsmm_blasint i, ni;
 
       if (0 != index_stride) { /* stride arrays contain indexes */
         if (((int)sizeof(libxsmm_blasint)) <= index_stride) {
           const char *const sa = (const char*)stride_a, *const sb = (const char*)stride_b, *const sc = (const char*)stride_c;
-          libxsmm_blasint ii = begin * index_stride, ni;
+          libxsmm_blasint ii = begin * index_stride;
           const char* ai = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
           const char* bi = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
           char*       ci = c0 + (0 != sc ? ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize) : 0);
@@ -636,7 +629,8 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
           }
 #if !defined(LIBXSMM_NO_SYNC)
           else { /* synchronize among C-indexes */
-            uintptr_t ic = (uintptr_t)ci;
+            LIBXSMM_LOCK_TYPE *lock = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)ci, internal_gemm_nlocks), *lock0 = 0;
+
             for (i = begin; i < end1; i = ni) {
               ni = i + 1; ii = ni * index_stride;
 # if defined(LIBXSMM_GEMM_CHECK)
@@ -646,10 +640,11 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
                 const char *const an = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
                 const char *const bn = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
                 char       *const cn = c0 + (0 != sc ? ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize) : 0);
-                LIBXSMM_LOCK_ACQUIRE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
+                LIBXSMM_LOCK_TYPE *const lock1 = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)cn, internal_gemm_nlocks);
+                if (lock != lock0) { LIBXSMM_LOCK_ACQUIRE(lock); lock0 = lock; }
                 kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
-                LIBXSMM_LOCK_RELEASE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
-                ai = an; bi = bn; ci = cn; ic = (uintptr_t)cn;
+                if (lock != lock1 || ni == end1) { LIBXSMM_LOCK_RELEASE(lock); lock = lock1; }
+                ai = an; bi = bn; ci = cn; /* next */
               }
             }
             if (end != end1 /* remainder multiplication */
@@ -658,9 +653,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
 # endif
               )
             {
-              LIBXSMM_LOCK_ACQUIRE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
+              LIBXSMM_LOCK_ACQUIRE(lock);
               kernel.xmm(ai, bi, ci, ai, bi, ci); /* pseudo-prefetch */
-              LIBXSMM_LOCK_RELEASE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
+              LIBXSMM_LOCK_RELEASE(lock);
             }
           }
 #endif /*!defined(LIBXSMM_NO_SYNC)*/
@@ -711,21 +706,24 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
 #if !defined(LIBXSMM_NO_SYNC)
           else { /* synchronize among C-indexes */
             void* cc = *((void**)ci);
-            uintptr_t ic = (uintptr_t)cc;
+            LIBXSMM_LOCK_TYPE *lock = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)cc, internal_gemm_nlocks), *lock0 = 0;
 
-            for (i = begin; i < end1; ++i) {
+            for (i = begin; i < end1; i = ni) {
+              ni = i + 1;
 # if defined(LIBXSMM_GEMM_CHECK)
               if (0 != *((const void**)ai) && 0 != *((const void**)bi) && 0 != cc)
 # endif
               {
                 const char *const an = ai + da, *const bn = bi + db;
                 char *const cn = ci + dc;
-                LIBXSMM_LOCK_ACQUIRE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
+                void *const nc = *((void**)cn);
+                LIBXSMM_LOCK_TYPE *const lock1 = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)nc, internal_gemm_nlocks);
+                if (lock != lock0) { LIBXSMM_LOCK_ACQUIRE(lock); lock0 = lock; }
                 kernel.xmm( /* with prefetch */
                   *((const void**)ai), *((const void**)bi), cc,
                   *((const void**)an), *((const void**)bn), *((const void**)cn));
-                LIBXSMM_LOCK_RELEASE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
-                ai = an; bi = bn; ci = cn; cc = *((void**)cn); ic = (uintptr_t)cc; /* next */
+                if (lock != lock1 || ni == end1) { LIBXSMM_LOCK_RELEASE(lock); lock = lock1; }
+                ai = an; bi = bn; ci = cn; cc = nc; /* next */
               }
             }
             if (end != end1 /* remainder multiplication */
@@ -734,11 +732,11 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
 # endif
               )
             {
-              LIBXSMM_LOCK_ACQUIRE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
+              LIBXSMM_LOCK_ACQUIRE(lock);
               kernel.xmm( /* pseudo-prefetch */
                 *((const void**)ai), *((const void**)bi), cc,
                 *((const void**)ai), *((const void**)bi), cc);
-              LIBXSMM_LOCK_RELEASE(internal_gemm_lock + LIBXSMM_MOD2(ic, internal_gemm_nlocks));
+              LIBXSMM_LOCK_RELEASE(lock);
             }
           }
 #endif /*!defined(LIBXSMM_NO_SYNC)*/

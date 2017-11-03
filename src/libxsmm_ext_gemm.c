@@ -44,9 +44,9 @@
 # if !defined(LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH)
 #   define LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH 8/*POT*/
 # endif
-LIBXSMM_API_VARIABLE libxsmm_gemm_descriptor internal_ext_gemm_batchdesc[LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH];
-LIBXSMM_API_VARIABLE unsigned int internal_ext_gemm_batchdepth;
-LIBXSMM_API_VARIABLE unsigned int internal_ext_gemm_batchsize;
+LIBXSMM_VARIABLE libxsmm_gemm_descriptor internal_ext_gemm_batchdesc[LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH];
+LIBXSMM_VARIABLE unsigned int internal_ext_gemm_batchdepth;
+LIBXSMM_VARIABLE unsigned int internal_ext_gemm_batchsize;
 #endif
 
 
@@ -426,6 +426,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
   const libxsmm_blasint nn = *(n ? n : m), kk = *(k ? k : m);
   const unsigned long long size = 1ULL * (*m) * nn * kk;
   LIBXSMM_INIT
+  assert(0 != libxsmm_gemm_tile);
   if (LIBXSMM_MAX_MNK < size) {
     const int index = LIBXSMM_MIN(libxsmm_icbrt(size) >> 10, 7);
     const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][index], (unsigned int)*m);
@@ -453,7 +454,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
 # endif
     {
       LIBXSMM_TILED_XGEMM(
-        LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
+        LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_DLOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
         float, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
@@ -507,6 +508,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
   const libxsmm_blasint nn = *(n ? n : m), kk = *(k ? k : m);
   const unsigned long long size = 1ULL * (*m) * nn * kk;
   LIBXSMM_INIT
+  assert(0 != libxsmm_gemm_tile);
   if (LIBXSMM_MAX_MNK < size) {
     const int index = LIBXSMM_MIN(libxsmm_icbrt(size) >> 10, 7);
     const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][index], (unsigned int)*m);
@@ -534,7 +536,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
 # endif
     {
       LIBXSMM_TILED_XGEMM(
-        LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_LOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
+        LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_DLOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
         double, flags, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);

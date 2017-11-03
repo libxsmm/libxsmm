@@ -82,6 +82,9 @@
 #endif
 
 
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, REAL_TYPE);
+
+
 int main(int argc, char* argv[])
 {
   int result = EXIT_SUCCESS;
@@ -134,7 +137,7 @@ int main(int argc, char* argv[])
       {
         start = libxsmm_timer_tick();
         for (int i = 0; i < nrepeat; ++i) {
-          LIBXSMM_XBLAS_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
+          LIBXSMM_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
             &alpha, ta.data(), &m, tb.data(), &k,
              &beta, td.data(), &m);
         }

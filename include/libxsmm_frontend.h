@@ -161,15 +161,31 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 /** Construct symbol name from a given real type name (float, double and short). */
 #define LIBXSMM_DATATYPE(TYPE)          LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_DATATYPE_)
 #define LIBXSMM_GEMM_PRECISION(TYPE)    LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_GEMM_PRECISION_)
-#define LIBXSMM_ORIGINAL_GEMM(TYPE)     LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemm))
-#define LIBXSMM_BLAS_GEMM_SYMBOL(TYPE)  LIBXSMM_ORIGINAL_GEMM(TYPE)(LIBXSMM_CALLER)
+#define LIBXSMM_GEMM_SYMBOL(TYPE)       LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm))
+#define LIBXSMM_GEMV_SYMBOL(TYPE)       LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemv))
 #define LIBXSMM_GEMMFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm_function))
 #define LIBXSMM_GEMVFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemv_function))
+#define LIBXSMM_ORIGINAL_GEMM(TYPE)     LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemm))(LIBXSMM_CALLER)
 #define LIBXSMM_MMFUNCTION_TYPE(TYPE)   LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmfunction))
 #define LIBXSMM_MMDISPATCH_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmdispatch))
 #define LIBXSMM_XBLAS_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_XGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(TYPE), _omp)
+
+#if !defined(LIBXSMM_GEMM_CONST)
+# if defined(LIBXSMM_GEMM_NONCONST) || defined(__OPENBLAS)
+#   define LIBXSMM_GEMM_CONST
+# else
+#   define LIBXSMM_GEMM_CONST const
+# endif
+#endif
+
+#define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE) \
+  LIBXSMM_API_EXTERN void LIBXSMM_GEMM_SYMBOL(TYPE)(CONST char*, CONST char*, \
+    CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
+    CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, \
+    CONST TYPE*, CONST libxsmm_blasint*, \
+    CONST TYPE*, TYPE*, CONST libxsmm_blasint*)
 
 /** Helper macro consolidating the transpose requests into a set of flags. */
 #define LIBXSMM_GEMM_FLAGS(TRANSA, TRANSB) /* check for N/n rather than T/t since C/c is also valid! */ \
@@ -194,8 +210,8 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
     const libxsmm_blasint libxsmm_blas_xgemm_m_ = (libxsmm_blasint)(MM); \
     const libxsmm_blasint libxsmm_blas_xgemm_n_ = (libxsmm_blasint)(NN); \
     const libxsmm_blasint libxsmm_blas_xgemm_k_ = (libxsmm_blasint)(KK); \
-    LIBXSMM_ASSERT(0 != ((uintptr_t)LIBXSMM_BLAS_GEMM_SYMBOL(TYPE))); \
-    LIBXSMM_BLAS_GEMM_SYMBOL(TYPE)(&libxsmm_blas_xgemm_transa_, &libxsmm_blas_xgemm_transb_, \
+    LIBXSMM_ASSERT(0 != ((uintptr_t)LIBXSMM_ORIGINAL_GEMM(TYPE))); \
+    LIBXSMM_ORIGINAL_GEMM(TYPE)(&libxsmm_blas_xgemm_transa_, &libxsmm_blas_xgemm_transb_, \
       &libxsmm_blas_xgemm_m_, &libxsmm_blas_xgemm_n_, &libxsmm_blas_xgemm_k_, \
       &libxsmm_blas_xgemm_alpha_, (const TYPE*)(A), &libxsmm_blas_xgemm_lda_, \
                                   (const TYPE*)(B), &libxsmm_blas_xgemm_ldb_, \

@@ -711,7 +711,6 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
     case LIBXSMM_X86_INSTR_VP4DPWSSDS:
       l_return = 1;
       break;
-
     /* default, we didn't had a match */
     default:
       fprintf(stderr, "libxsmm_is_x86_vec_instr_single_precision i_instr_number (%u) is not a x86 FP vector instruction!\n", i_instr_number);

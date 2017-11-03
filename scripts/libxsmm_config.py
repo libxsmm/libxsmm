@@ -45,7 +45,7 @@ if __name__ == "__main__":
         ilp64 = offload = precision = flags = threshold = 0
         sync = jit = 1
         alpha = beta = 1
-        alignment = 64
+        cacheline = 64
         prefetch = -1
         wrap = 1
         mnklist = list()
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         if (3 < argc):
             offload = int(sys.argv[3])
         if (4 < argc):
-            alignment = libxsmm_utilities.sanitize_alignment(int(sys.argv[4]))
+            cacheline = libxsmm_utilities.sanitize_alignment(int(sys.argv[4]))
         if (5 < argc):
             precision = int(sys.argv[5])
         if (6 < argc):
@@ -107,7 +107,7 @@ if __name__ == "__main__":
             "MINOR":      minor,
             "UPDATE":     update,
             "PATCH":      patch,
-            "ALIGNMENT":  alignment,
+            "CACHELINE":  cacheline,
             "PREFETCH":   [-1, prefetch][0 <= prefetch],
             "MAX_MNK":    maxmnk,
             "MAX_M":      [maxdim, maxm][avgm < maxm],
