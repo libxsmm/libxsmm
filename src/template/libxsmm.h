@@ -170,7 +170,10 @@ LIBXSMM_API int libxsmm_mmbatch(libxsmm_gemm_precision precision,
    * index_stride!=0: pointer to elements e.g., const double* for the A and B matrices.
    */
   const void* a, const void* b, void* c,
-  /** Number of matrix multiplications. */
+  /**
+   * Number of matrix multiplications. If the size is given as a negative value,
+   * then internal synchronization is omitted.
+   */
   libxsmm_blasint batchsize,
   /** Thread-ID (TID), and number of threads. */
   /*unsigned*/int tid, /*unsigned*/int nthreads);
@@ -180,7 +183,7 @@ LIBXSMM_API int libxsmm_mmbatch_omp(libxsmm_gemm_precision precision, libxsmm_xm
   libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize);
 
-/** Process a series of matrix multiplications (batch); sequential. */
+/** Process a series of matrix multiplications (batch); sequential. See also libxsmm_mmbatch. */
 LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision precision, const char* transa, const char* transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
@@ -190,7 +193,7 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision precision, const char
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-/** Process a series of matrix multiplications (batch); MT via libxsmmext. */
+/** Process a series of matrix multiplications (batch); MT via libxsmmext. See also libxsmm_mmbatch. */
 LIBXSMM_API void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision, const char* transa, const char* transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,

@@ -587,7 +587,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_gemm_precision precision,
 {
   int result;
 #if defined(_OPENMP)
-  const int ntasks = (int)((batchsize + libxsmm_gemm_chunksize - 1) / libxsmm_gemm_chunksize);
+  int ntasks;
+  LIBXSMM_INIT
+  ntasks = (int)((LIBXSMM_ABS(batchsize) + libxsmm_gemm_chunksize - 1) / libxsmm_gemm_chunksize);
   if (1 < ntasks) {
 # if defined(LIBXSMM_EXT_TASKS)
     if (0 == omp_get_active_level())

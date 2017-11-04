@@ -215,6 +215,10 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch_omp
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_begin
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_end
         INTERFACE
@@ -381,6 +385,7 @@
           END SUBROUTINE
 
           ! Process a series of matrix multiplications (batch); sequential.
+          ! For the documentation of the call arguments have a look at libxsmm_mmbatch.
           ! Implicit FORTRAN 77 interface:
           ! INTEGER(4)   :: prec
           ! REAL(4|8)    :: alpha, beta
@@ -408,6 +413,7 @@
           END SUBROUTINE
 
           ! Process a series of matrix multiplications (batch); MT via libxsmmext.
+          ! For the documentation of the call arguments have a look at libxsmm_mmbatch.
           ! Implicit FORTRAN 77 interface:
           ! INTEGER(4)   :: prec
           ! REAL(4|8)    :: alpha, beta
@@ -453,7 +459,8 @@
             ! is always measured in Bytes (value of LIBXSMM_BLASINT_KIND
             ! determines a packed array of indexes).
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
-            ! The number of matrix multiplications.
+            ! The number of matrix multiplications. If the size is given as
+            ! a negative value, then internal synchronization is omitted.
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
             ! Precision, Thread-ID (TID), and the number of threads.
             INTEGER(C_INT), INTENT(IN) :: prec, tid, nthreads

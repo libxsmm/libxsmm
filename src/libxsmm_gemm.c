@@ -588,15 +588,16 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
 {
   const libxsmm_blasint typesize = libxsmm_gemm_typesize(precision);
   int result = EXIT_SUCCESS;
-
+  LIBXSMM_INIT
   assert(0 < typesize);
   if (0 != kernel.xmm && 0 != a && 0 != b && 0 != c &&
       /* use (signed) integer types, but check sanity of input */
-      0 <= batchsize && 0 <= tid && tid < nthreads)
+      0 <= tid && tid < nthreads)
   {
-    const libxsmm_blasint tasksize = (batchsize + nthreads - 1) / nthreads;
+    const libxsmm_blasint size = LIBXSMM_ABS(batchsize);
+    const libxsmm_blasint tasksize = (size + nthreads - 1) / nthreads;
     const libxsmm_blasint begin = tid * tasksize, span = begin + tasksize;
-    const libxsmm_blasint end = LIBXSMM_MIN(span, batchsize);
+    const libxsmm_blasint end = LIBXSMM_MIN(span, size);
 
     if (begin < end) {
       const char *const a0 = (const char*)a, *const b0 = (const char*)b;
@@ -610,9 +611,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
           const char* ai = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
           const char* bi = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
           char*       ci = c0 + (0 != sc ? ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize) : 0);
-          const libxsmm_blasint end1 = (end != batchsize ? end : (end - 1));
+          const libxsmm_blasint end1 = (end != size ? end : (end - 1));
 #if !defined(LIBXSMM_NO_SYNC)
-          if (1 == nthreads || 0 == internal_gemm_nlocks)
+          if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize)
 #endif
           { /* no locking */
             for (i = begin; i < end1; i = ni) {
@@ -691,12 +692,12 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
         const libxsmm_blasint dc = (0 != stride_c ? (*stride_c - index_base * stride_unit) : 0);
 
         if (typesize <= da && typesize <= db && typesize <= dc) {
-          const libxsmm_blasint end1 = (end != batchsize ? end : (end - 1));
+          const libxsmm_blasint end1 = (end != size ? end : (end - 1));
           const char *ai = a0 + da * begin, *bi = b0 + db * begin;
           char* ci = c0 + dc * begin;
 
 #if !defined(LIBXSMM_NO_SYNC)
-          if (1 == nthreads || 0 == internal_gemm_nlocks)
+          if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize)
 #endif
           { /* no locking */
             for (i = begin; i < end1; ++i) {
@@ -792,6 +793,7 @@ LIBXSMM_API_DEFINITION int libxsmm_dmmbatch_blas(const char* transa, const char*
   int result = EXIT_SUCCESS;
 
   if (0 != a && 0 != b && 0 != c) {
+    const libxsmm_blasint end = LIBXSMM_ABS(batchsize);
     libxsmm_blasint i;
 
     if (0 != index_stride) { /* stride arrays contain indexes */
@@ -802,7 +804,7 @@ LIBXSMM_API_DEFINITION int libxsmm_dmmbatch_blas(const char* transa, const char*
         const char *const sa = (const char*)stride_a, *const sb = (const char*)stride_b, *const sc = (const char*)stride_c;
         const double *const a0 = (const double*)a, *const b0 = (const double*)b, *ai = a0 + da, *bi = b0 + db;
         double *const c0 = (double*)c, *ci = c0 + dc;
-        for (i = 0; i < batchsize; ++i) {
+        for (i = 0; i < end; ++i) {
           const libxsmm_blasint ii = (i + 1) * index_stride;
           const double *const an = a0 + (0 != stride_a ? (*((const libxsmm_blasint*)(sa + ii)) - index_base) : 0);
           const double *const bn = b0 + (0 != stride_b ? (*((const libxsmm_blasint*)(sb + ii)) - index_base) : 0);
@@ -828,7 +830,7 @@ LIBXSMM_API_DEFINITION int libxsmm_dmmbatch_blas(const char* transa, const char*
       if (((int)sizeof(double)) <= LIBXSMM_MIN(LIBXSMM_MIN(da, db), dc)) {
         const char *const a0 = (const char*)a, *const b0 = (const char*)b, *ai = a0, *bi = b0;
         char *const c0 = (char*)c, *ci = c0;
-        for (i = 0; i < batchsize; ++i) {
+        for (i = 0; i < end; ++i) {
           const char *const an = ai + da, *const bn = bi + db;
           char *const cn = ci + dc;
 #if defined(LIBXSMM_GEMM_CHECK)
@@ -860,6 +862,7 @@ LIBXSMM_API_DEFINITION int libxsmm_smmbatch_blas(const char* transa, const char*
   int result = EXIT_SUCCESS;
 
   if (0 != a && 0 != b && 0 != c) {
+    const libxsmm_blasint end = LIBXSMM_ABS(batchsize);
     libxsmm_blasint i;
 
     if (0 != index_stride) { /* stride arrays contain indexes */
@@ -870,7 +873,7 @@ LIBXSMM_API_DEFINITION int libxsmm_smmbatch_blas(const char* transa, const char*
         const char *const sa = (const char*)stride_a, *const sb = (const char*)stride_b, *const sc = (const char*)stride_c;
         const float *a0 = (const float*)a, *b0 = (const float*)b, *ai = a0 + da, *bi = b0 + db;
         float *c0 = (float*)c, *ci = c0 + dc;
-        for (i = 0; i < batchsize; ++i) {
+        for (i = 0; i < end; ++i) {
           const libxsmm_blasint ii = (i + 1) * index_stride;
           const float *const an = a0 + (0 != stride_a ? (*((const libxsmm_blasint*)(sa + ii)) - index_base) : 0);
           const float *const bn = b0 + (0 != stride_b ? (*((const libxsmm_blasint*)(sb + ii)) - index_base) : 0);
@@ -896,7 +899,7 @@ LIBXSMM_API_DEFINITION int libxsmm_smmbatch_blas(const char* transa, const char*
       if (((int)sizeof(float)) <= LIBXSMM_MIN(LIBXSMM_MIN(da, db), dc)) {
         const char *a0 = (const char*)a, *b0 = (const char*)b, *ai = a0, *bi = b0;
         char *c0 = (char*)c, *ci = c0;
-        for (i = 0; i < batchsize; ++i) {
+        for (i = 0; i < end; ++i) {
           const char *const an = ai + da;
           const char *const bn = bi + db;
           char *const cn = ci + dc;
