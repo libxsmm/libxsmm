@@ -323,7 +323,7 @@ LIBXSMM_API_INLINE unsigned int internal_print_statistic(FILE* ostream,
       }
       for (n = 0; n < linebreaks; ++n) fprintf(ostream, "\n");
     }
-    fprintf(ostream, "%*s%-8s %6s %6s %6s %6s\n", (int)indent, "", title, "TRY" ,"JIT", "STA", "COL");
+    fprintf(ostream, "%*s%-8s %6s %6s %6s %6s\n", (int)indent, "", title, "TRY", "JIT", "STA", "COL");
     LIBXSMM_SNPRINTF(range, sizeof(range), "%u..%u", 0u, internal_statistic_sml);
     counter[0] = internal_print_number(statistic_sml.ntry, ' ', unit + 0);
     counter[1] = internal_print_number(statistic_sml.njit, ' ', unit + 1);

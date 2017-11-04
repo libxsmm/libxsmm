@@ -169,11 +169,11 @@
 #   define LIBXSMM_LOCK_RELEASE(LOCK) omp_unset_lock(LOCK)
 # elif defined(_WIN32)
 #   include <windows.h>
-#   if 1
+#   if defined(LIBXSMM_LOCK_MUTEX)
 #     define LIBXSMM_LOCK_ACQUIRED WAIT_OBJECT_0
 #     define LIBXSMM_LOCK_ATTR_TYPE LPSECURITY_ATTRIBUTES
 #     define LIBXSMM_LOCK_ATTR_INIT(ATTR) *(ATTR) = NULL
-#     define LIBXSMM_LOCK_ATTR_DESTROY(ATTR)
+#     define LIBXSMM_LOCK_ATTR_DESTROY(ATTR) LIBXSMM_UNUSED(ATTR)
 #     define LIBXSMM_LOCK_TYPE HANDLE
 #     define LIBXSMM_LOCK_CONSTRUCT 0
 #     define LIBXSMM_LOCK_INIT(LOCK, ATTR) *(LOCK) = CreateMutex(*(ATTR), FALSE, NULL)
@@ -181,8 +181,8 @@
 #     define LIBXSMM_LOCK_ACQUIRE(LOCK) WaitForSingleObject(*(LOCK), INFINITE)
 #     define LIBXSMM_LOCK_TRYLOCK(LOCK) WaitForSingleObject(*(LOCK), 0)
 #     define LIBXSMM_LOCK_RELEASE(LOCK) ReleaseMutex(*(LOCK))
-#   else /*TODO*/
-#     define LIBXSMM_LOCK_ACQUIRED WAIT_OBJECT_0
+#   else
+#     define LIBXSMM_LOCK_ACQUIRED TRUE
 #     define LIBXSMM_LOCK_ATTR_TYPE const void*
 #     define LIBXSMM_LOCK_ATTR_INIT(ATTR) *(ATTR) = NULL
 #     define LIBXSMM_LOCK_ATTR_DESTROY(ATTR) LIBXSMM_UNUSED(ATTR)
@@ -196,23 +196,37 @@
 #   endif
 # else
 #   include <pthread.h>
-#   define LIBXSMM_LOCK_ACQUIRED 0
-#   define LIBXSMM_LOCK_ATTR_TYPE pthread_mutexattr_t
-#   if defined(NDEBUG)
-#     define LIBXSMM_LOCK_ATTR_INIT(ATTR) pthread_mutexattr_init(ATTR); \
-              pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_NORMAL)
+#   if defined(LIBXSMM_LOCK_MUTEX) || (defined(__APPLE__) && defined(__MACH__))
+#     define LIBXSMM_LOCK_ACQUIRED 0
+#     define LIBXSMM_LOCK_ATTR_TYPE pthread_mutexattr_t
+#     if defined(NDEBUG)
+#       define LIBXSMM_LOCK_ATTR_INIT(ATTR) pthread_mutexattr_init(ATTR); \
+                pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_NORMAL)
+#     else
+#       define LIBXSMM_LOCK_ATTR_INIT(ATTR) pthread_mutexattr_init(ATTR); \
+                pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_ERRORCHECK)
+#     endif
+#     define LIBXSMM_LOCK_ATTR_DESTROY(ATTR) pthread_mutexattr_destroy(ATTR)
+#     define LIBXSMM_LOCK_TYPE pthread_mutex_t
+#     define LIBXSMM_LOCK_CONSTRUCT PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
+#     define LIBXSMM_LOCK_INIT(LOCK, ATTR) pthread_mutex_init(LOCK, ATTR)
+#     define LIBXSMM_LOCK_DESTROY(LOCK) pthread_mutex_destroy(LOCK)
+#     define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_mutex_lock(LOCK)
+#     define LIBXSMM_LOCK_TRYLOCK(LOCK) pthread_mutex_trylock(LOCK)
+#     define LIBXSMM_LOCK_RELEASE(LOCK) pthread_mutex_unlock(LOCK)
 #   else
-#     define LIBXSMM_LOCK_ATTR_INIT(ATTR) pthread_mutexattr_init(ATTR); \
-              pthread_mutexattr_settype(ATTR, PTHREAD_MUTEX_ERRORCHECK)
+#     define LIBXSMM_LOCK_ACQUIRED 0
+#     define LIBXSMM_LOCK_ATTR_TYPE int
+#     define LIBXSMM_LOCK_ATTR_INIT(ATTR) *(ATTR) = 0
+#     define LIBXSMM_LOCK_ATTR_DESTROY(ATTR) LIBXSMM_UNUSED(ATTR)
+#     define LIBXSMM_LOCK_TYPE pthread_spinlock_t
+#     define LIBXSMM_LOCK_CONSTRUCT PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
+#     define LIBXSMM_LOCK_INIT(LOCK, ATTR) pthread_spin_init(LOCK, *(ATTR))
+#     define LIBXSMM_LOCK_DESTROY(LOCK) pthread_spin_destroy(LOCK)
+#     define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_spin_lock(LOCK)
+#     define LIBXSMM_LOCK_TRYLOCK(LOCK) pthread_spin_trylock(LOCK)
+#     define LIBXSMM_LOCK_RELEASE(LOCK) pthread_spin_unlock(LOCK)
 #   endif
-#   define LIBXSMM_LOCK_ATTR_DESTROY(ATTR) pthread_mutexattr_destroy(ATTR)
-#   define LIBXSMM_LOCK_TYPE pthread_mutex_t
-#   define LIBXSMM_LOCK_CONSTRUCT PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
-#   define LIBXSMM_LOCK_INIT(LOCK, ATTR) pthread_mutex_init(LOCK, ATTR)
-#   define LIBXSMM_LOCK_DESTROY(LOCK) pthread_mutex_destroy(LOCK)
-#   define LIBXSMM_LOCK_ACQUIRE(LOCK) pthread_mutex_lock(LOCK)
-#   define LIBXSMM_LOCK_TRYLOCK(LOCK) pthread_mutex_trylock(LOCK)
-#   define LIBXSMM_LOCK_RELEASE(LOCK) pthread_mutex_unlock(LOCK)
 # endif
 #else
 # define LIBXSMM_LOCK_ACQUIRED 0

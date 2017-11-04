@@ -45,11 +45,17 @@
 #if !defined(LIBXSMM_GEMM_CHECK) && !defined(NDEBUG)
 # define LIBXSMM_GEMM_CHECK
 #endif
-#if !defined(LIBXSMM_GEMM_MAXNLOCKS)
-# define LIBXSMM_GEMM_MAXNLOCKS 256
-#endif
 #if !defined(LIBXSMM_GEMM_BATCHSIZE)
 # define LIBXSMM_GEMM_BATCHSIZE 1024
+#endif
+#if !defined(LIBXSMM_GEMM_MAXNLOCKS)
+# define LIBXSMM_GEMM_MAXNLOCKS 1024
+#endif
+#if !defined(LIBXSMM_GEMM_CHUNKSIZE)
+# define LIBXSMM_GEMM_CHUNKSIZE 64
+#endif
+#if !defined(LIBXSMM_GEMM_LOCKFWD)
+# define LIBXSMM_GEMM_LOCKFWD
 #endif
 
 #if !defined(LIBXSMM_NO_SYNC) /** Locks for the batch interface (duplicated C indexes). */
@@ -117,16 +123,13 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
   }
 #endif
 #if defined(LIBXSMM_GEMM_MMBATCH)
-  {
-    const char *const env_w = getenv("LIBXSMM_GEMM_WRAP"), *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
-    const unsigned int batchsize = ((0 == env_b || 0 == *env_b || 0 > atoi(env_b)) ? (LIBXSMM_GEMM_BATCHSIZE) : atoi(env_b));
-    const void *const extra = 0;
+  { const char *const env_w = getenv("LIBXSMM_GEMM_WRAP");
     /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
     libxsmm_gemm_wrap = ((0 == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
     if (0 != libxsmm_gemm_wrap) {
-      if (0 != libxsmm_verbosity) { /* enables the auto-batch statistic */
-        libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC;
-      }
+      const char *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
+      const unsigned int batchsize = ((0 == env_b || 0 == *env_b || 0 >= atoi(env_b)) ? (LIBXSMM_GEMM_BATCHSIZE) : atoi(env_b));
+      const void *const extra = 0;
       /* draw default/non-scratch memory, but utilize the scratch memory allocator */
       assert(1 < (LIBXSMM_GEMM_BATCHSCALE));
       if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&libxsmm_gemm_batcharray,
@@ -135,6 +138,9 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
       {
         LIBXSMM_LOCK_INIT(&libxsmm_gemm_batchlock, &libxsmm_lock_attr_default);
         libxsmm_gemm_batchsize = batchsize;
+      }
+      if (0 != libxsmm_verbosity) { /* enables the auto-batch statistic */
+        libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC;
       }
     }
   }
@@ -150,6 +156,10 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
       if (0 < k) tile_configs[config][0/*DP*/][2/*K*/][i] = tile_configs[config][1/*SP*/][2/*K*/][i] = k;
     }
     libxsmm_gemm_tile = tile_configs[config];
+  }
+  { /* grain/chunk size when processing batches */
+    const char *const env_c = getenv("LIBXSMM_GEMM_CHUNKSIZE");
+    libxsmm_gemm_chunksize = ((0 == env_c || 0 == *env_c || 0 > atoi(env_c)) ? (LIBXSMM_GEMM_CHUNKSIZE) : atoi(env_c));
   }
 }
 
@@ -629,8 +639,10 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
           }
 #if !defined(LIBXSMM_NO_SYNC)
           else { /* synchronize among C-indexes */
-            LIBXSMM_LOCK_TYPE *lock = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)ci, internal_gemm_nlocks), *lock0 = 0;
-
+            LIBXSMM_LOCK_TYPE* lock = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)ci, internal_gemm_nlocks);
+# if defined(LIBXSMM_GEMM_LOCKFWD)
+            LIBXSMM_LOCK_TYPE* lock0 = 0;
+# endif
             for (i = begin; i < end1; i = ni) {
               ni = i + 1; ii = ni * index_stride;
 # if defined(LIBXSMM_GEMM_CHECK)
@@ -641,9 +653,17 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
                 const char *const bn = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
                 char       *const cn = c0 + (0 != sc ? ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize) : 0);
                 LIBXSMM_LOCK_TYPE *const lock1 = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)cn, internal_gemm_nlocks);
-                if (lock != lock0) { LIBXSMM_LOCK_ACQUIRE(lock); lock0 = lock; }
+# if defined(LIBXSMM_GEMM_LOCKFWD)
+                if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(lock); }
+# else
+                LIBXSMM_LOCK_ACQUIRE(lock);
+# endif
                 kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
+# if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock1 || ni == end1) { LIBXSMM_LOCK_RELEASE(lock); lock = lock1; }
+# else
+                LIBXSMM_LOCK_RELEASE(lock); lock = lock1;
+# endif
                 ai = an; bi = bn; ci = cn; /* next */
               }
             }
@@ -706,8 +726,10 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
 #if !defined(LIBXSMM_NO_SYNC)
           else { /* synchronize among C-indexes */
             void* cc = *((void**)ci);
-            LIBXSMM_LOCK_TYPE *lock = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)cc, internal_gemm_nlocks), *lock0 = 0;
-
+            LIBXSMM_LOCK_TYPE* lock = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)cc, internal_gemm_nlocks);
+# if defined(LIBXSMM_GEMM_LOCKFWD)
+            LIBXSMM_LOCK_TYPE* lock0 = 0;
+# endif
             for (i = begin; i < end1; i = ni) {
               ni = i + 1;
 # if defined(LIBXSMM_GEMM_CHECK)
@@ -718,11 +740,19 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
                 char *const cn = ci + dc;
                 void *const nc = *((void**)cn);
                 LIBXSMM_LOCK_TYPE *const lock1 = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)nc, internal_gemm_nlocks);
-                if (lock != lock0) { LIBXSMM_LOCK_ACQUIRE(lock); lock0 = lock; }
+# if defined(LIBXSMM_GEMM_LOCKFWD)
+                if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(lock); }
+# else
+                LIBXSMM_LOCK_ACQUIRE(lock);
+# endif
                 kernel.xmm( /* with prefetch */
                   *((const void**)ai), *((const void**)bi), cc,
                   *((const void**)an), *((const void**)bn), *((const void**)cn));
+# if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock1 || ni == end1) { LIBXSMM_LOCK_RELEASE(lock); lock = lock1; }
+# else
+                LIBXSMM_LOCK_RELEASE(lock); lock = lock1;
+# endif
                 ai = an; bi = bn; ci = cn; cc = nc; /* next */
               }
             }
