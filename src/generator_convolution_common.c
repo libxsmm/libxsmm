@@ -1523,6 +1523,13 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
     offset *= i_conv_desc->ncopies;
   }
 
+  int use_lp_kernel;
+  if (i_conv_desc->datatype_itm != i_conv_desc->datatype) {
+    use_lp_kernel = 1;
+  } else {
+    use_lp_kernel = 0;
+  }
+
   /* for filter in RSCK format it's active ofm leading dimension */
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0 ) {
     offset = i_conv_kernel_config->l_ld_ofm_act;
@@ -1554,6 +1561,18 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
   } else {
     for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
+
+        if (use_lp_kernel == 1) {
+        /* Convert result to F32  */
+        libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
+            i_conv_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VCVTDQ2PS,
+            i_conv_kernel_config->vector_name,
+            l_vec_reg_acc_start + reg_count ,
+            l_vec_reg_acc_start + reg_count ,
+            LIBXSMM_X86_VEC_REG_UNDEF);
+        }
+
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_conv_kernel_config->instruction_set,
             LIBXSMM_X86_INSTR_VMOVNTPS,

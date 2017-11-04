@@ -266,7 +266,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         compute_indices[local_entries+1] = ( ( (ofm1 *  handle->blocksifm ) + ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock ) * handle->desc.threads;
                       }
 
-                      compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_ ) * handle->ofwp)  +  oi_ ) *  handle->ofmblock;
+                      compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_ ) * (handle->ofwp+handle->output_lp_padding))  +  oi_ ) *  handle->ofmblock;
 
                       local_entries += 3;
 

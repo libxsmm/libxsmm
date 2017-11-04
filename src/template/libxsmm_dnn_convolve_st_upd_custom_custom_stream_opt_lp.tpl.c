@@ -37,6 +37,7 @@
 /* FIXME assignemnts here  */
 int BLOCKSIFM = handle->blocksifm;
 int BLOCKSOFM = handle->blocksofm;
+int OFWP = handle->ofwp+handle->output_lp_padding;
 
 /* computing first logical thread */
 const int ltid = tid-start_thread;
@@ -61,8 +62,8 @@ const int copy_thr_begin = (ltid * copychunksize < copywork) ? (ltid * copychunk
 const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) * copychunksize) : copywork;
 
 /* Pointer related variables for output and weight */
-element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
-LIBXSMM_VLA_DECL(5, element_output_type, output, out, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * OFWP + handle->desc.pad_w_out) * handle->ofmblock;
+LIBXSMM_VLA_DECL(5, element_output_type, output, (element_output_type*)handle->scratch6, BLOCKSOFM, handle->ofhp, OFWP, handle->ofmblock);
 element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->data;
 element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4) + (ltid*LIBXSMM_MIN(handle->block_upd_ofm,BLOCKSOFM)*LIBXSMM_MIN(handle->block_upd_ifm,BLOCKSIFM)*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
 LIBXSMM_VLA_DECL(2, element_filter_type, per_thread_weight, per_thread_weight_ptr, handle->ofmblock);
@@ -177,7 +178,7 @@ if ( handle->ofh == 28 || handle->ofh == 56 )
 } else {
   weight_base = &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid, 0, handle->desc.threads, handle->ofmblock); /* weights are accumulated in registers and can be written straight to memory */
 }
-output_base = &LIBXSMM_VLA_ACCESS(5, output, 0, 0, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+output_base = &LIBXSMM_VLA_ACCESS(5, output, 0, 0, 0, 0, 0, BLOCKSOFM, handle->ofhp, OFWP, handle->ofmblock);
 
 i = 0;
 instr = handle->n_entries_upd[ltid];

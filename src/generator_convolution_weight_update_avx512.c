@@ -1002,6 +1002,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
   unsigned int step_size = 0;
   unsigned int l_compute_instr = 0;
   unsigned int lp_dim_out = 1;
+  unsigned int use_lp_kernel = 0;
 
   /* depending on datatype emit the needed FMA(-sequence) */
   if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -1017,14 +1018,18 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
     if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
       step_size = 4;
       lp_dim_out = 1;
+      use_lp_kernel = 0;
     }  else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
       step_size = 8;
       lp_dim_out = 2;
+      use_lp_kernel = 1;
     } else {
       /* shouldn't happen */
     }
   } else {
     step_size = 1;
+    lp_dim_out = 1;
+    use_lp_kernel = 0;
   }
 
   for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb; l_k_1++) {
@@ -1034,10 +1039,19 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
     /* apply k blocking */
     for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb; l_k_2+=step_size ) {
       /* for quad, we need to load outputs in groups of 4 as this is the source block for qmadd */
-      int n_fake_pixels = i_conv_desc->ofw_fake_pixels;
-      int n_compute_pixels = i_conv_desc->ofw_rb - n_fake_pixels;
-      int bound = LIBXSMM_MIN(step_size/lp_dim_out, n_compute_pixels-l_k_2);
-      int remainder = 0;
+      int n_fake_pixels;
+      int n_compute_pixels;
+      int bound;
+      int remainder;
+
+      if (use_lp_kernel == 0) {
+        n_fake_pixels = i_conv_desc->ofw_fake_pixels;
+      } else {
+        n_fake_pixels = 0; 
+      }
+      n_compute_pixels = i_conv_desc->ofw_rb - n_fake_pixels;
+      bound = LIBXSMM_MIN(step_size/lp_dim_out, n_compute_pixels-l_k_2);
+      remainder = 0;
 
       for ( l_w = 0; l_w < bound; l_w++ ) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
