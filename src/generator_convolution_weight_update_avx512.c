@@ -412,7 +412,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
                                         i_conv_kernel_config->vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_output,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        (l_k)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out),
+                                        (l_k)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out) ,
                                         i_conv_kernel_config->vector_name, 0,
                                         0, 0 );
 
@@ -423,7 +423,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
                                           i_conv_kernel_config->vmove_instruction,
                                           i_gp_reg_mapping->gp_reg_output,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          (l_k+l_w)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out),
+                                          (l_k+l_w)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out) ,
                                           i_conv_kernel_config->vector_name, l_w,
                                           0, 0 );
         }
@@ -700,8 +700,8 @@ unroll_factor = i_conv_desc->ifm_block;
                                         i_conv_kernel_config->vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_output,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        /*(l_k)*(i_conv_kernel_config->vector_length_out)*(i_conv_kernel_config->datatype_size_out),*/
-                                        (l_k)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out),
+                                        /*(l_k)*(i_conv_kernel_config->vector_length_out)*(i_conv_kernel_config->datatype_size_out) ,*/
+                                        (l_k)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out) ,
                                         i_conv_kernel_config->vector_name, 0,
                                         0, 0 );
 
@@ -712,8 +712,8 @@ unroll_factor = i_conv_desc->ifm_block;
                                           i_conv_kernel_config->vmove_instruction,
                                           i_gp_reg_mapping->gp_reg_output,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          /*(l_k+l_w)*(i_conv_kernel_config->vector_length_out)*(i_conv_kernel_config->datatype_size_out),*/
-                                          (l_k+l_w)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out),
+                                          /*(l_k+l_w)*(i_conv_kernel_config->vector_length_out)*(i_conv_kernel_config->datatype_size_out) ,*/
+                                          (l_k+l_w)*(i_conv_kernel_config->l_ld_ofm_act)*(i_conv_kernel_config->datatype_size_out) ,
                                           i_conv_kernel_config->vector_name, l_w,
                                           0, 0 );
         }

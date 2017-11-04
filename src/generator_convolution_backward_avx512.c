@@ -236,7 +236,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
     libxsmm_x86_instruction_vec_move( io_generated_code,
                                       l_conv_kernel_config.instruction_set,
                                       l_conv_kernel_config.vbcst_instruction,
-                                      LIBXSMM_X86_GP_REG_RSP,
+                                      LIBXSMM_X86_GP_REG_RSP ,
                                       LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
                                       l_conv_kernel_config.vector_name, 6, 0, 0 );
 
@@ -614,7 +614,7 @@ void libxsmm_generator_convolution_backward_avx512_load_input( libxsmm_generated
                                   LIBXSMM_X86_GP_REG_UNDEF, 0,
                                   j * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                   i_conv_kernel_config->vector_name,
-                                  l_vec_reg_acc_start + j, 0, 0 );
+                                  l_vec_reg_acc_start + j , 0, 0 );
 #ifdef ENABLE_INPUT_PREFETCH
           if (((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -635,7 +635,7 @@ void libxsmm_generator_convolution_backward_avx512_load_input( libxsmm_generated
                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
                                     j * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                     i_conv_kernel_config->vector_name,
-                                    l_vec_reg_acc_start + j, 0, 0 );
+                                    l_vec_reg_acc_start + j , 0, 0 );
 #ifdef ENABLE_INPUT_PREFETCH
             if (((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
                 libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -729,7 +729,7 @@ void libxsmm_generator_convolution_backward_avx512_load_input( libxsmm_generated
                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                                 (j * i_conv_desc->stride_w + l_k_2) * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                 i_conv_kernel_config->vector_name,
-                                l_vec_reg_acc_start + j, 0, 0 );
+                                l_vec_reg_acc_start + j , 0, 0 );
 #ifdef ENABLE_INPUT_PREFETCH
         if (((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
             libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -750,7 +750,7 @@ void libxsmm_generator_convolution_backward_avx512_load_input( libxsmm_generated
                                   LIBXSMM_X86_GP_REG_UNDEF, 0,
                                   (j * i_conv_desc->stride_w + l_k_2) * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                   i_conv_kernel_config->vector_name,
-                                  l_vec_reg_acc_start + j, 0, 0 );
+                                  l_vec_reg_acc_start + j , 0, 0 );
 #ifdef ENABLE_INPUT_PREFETCH
           if (((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -789,7 +789,7 @@ void libxsmm_generator_convolution_backward_avx512_load_input_two_rows( libxsmm_
                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
                                     (j + i * i_conv_desc->ifw_padded) * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                     i_conv_kernel_config->vector_name,
-                                    l_vec_reg_acc_start + (i * i_conv_desc->ofw_rb) + j, 0, 0 );
+                                    l_vec_reg_acc_start + (i * i_conv_desc->ofw_rb) + j , 0, 0 );
 #ifdef ENABLE_INPUT_PREFETCH
             if (((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
                 libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -837,7 +837,7 @@ void libxsmm_generator_convolution_backward_avx512_load_input_two_rows( libxsmm_
                                   LIBXSMM_X86_GP_REG_UNDEF, 0,
                                   ((i * i_conv_desc->stride_h) * i_conv_desc->ifw_padded + j * i_conv_desc->stride_w + l_k_2) * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                   i_conv_kernel_config->vector_name,
-                                  l_vec_reg_acc_start + (i * i_conv_desc->ofw_rb) + j, 0, 0 );
+                                  l_vec_reg_acc_start + (i * i_conv_desc->ofw_rb) + j , 0, 0 );
 #ifdef ENABLE_INPUT_PREFETCH
           if (((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1)) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -889,7 +889,7 @@ void libxsmm_generator_convolution_backward_avx512_store_input( libxsmm_generate
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         (j+l_k_2)*i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                         i_conv_kernel_config->vector_name,
-                                        l_vec_reg_acc_start + ((j+l_k_2) % i_conv_desc->ofw_rb), 0, 1 );
+                                        l_vec_reg_acc_start + ((j+l_k_2) % i_conv_desc->ofw_rb) , 0, 1 );
 
         }
       } else { /* If no extra accumulator is used */
@@ -901,7 +901,7 @@ void libxsmm_generator_convolution_backward_avx512_store_input( libxsmm_generate
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         (j+l_k_2)*i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                         i_conv_kernel_config->vector_name,
-                                        l_vec_reg_acc_start + ((j+l_k_2) % i_conv_desc->ofw_rb), 0, 1 );
+                                        l_vec_reg_acc_start + ((j+l_k_2) % i_conv_desc->ofw_rb) , 0, 1 );
         }
       } /* end of if extra accumulator is used */
     } else { /* If not last iteration */
@@ -924,7 +924,7 @@ void libxsmm_generator_convolution_backward_avx512_store_input( libxsmm_generate
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         l_k_2 * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                         i_conv_kernel_config->vector_name,
-                                        l_vec_reg_acc_start + (l_k_2 % i_conv_desc->ofw_rb), 0, 1 );
+                                        l_vec_reg_acc_start + (l_k_2 % i_conv_desc->ofw_rb) , 0, 1 );
 
       } else { /* If no extra accumulator is used */
         assert(0 != i_conv_desc->ofw_rb);
@@ -935,7 +935,7 @@ void libxsmm_generator_convolution_backward_avx512_store_input( libxsmm_generate
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         l_k_2 * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                         i_conv_kernel_config->vector_name,
-                                        l_vec_reg_acc_start + (l_k_2 % i_conv_desc->ofw_rb), 0, 1 );
+                                        l_vec_reg_acc_start + (l_k_2 % i_conv_desc->ofw_rb) , 0, 1 );
       } /* end of if extra accumulator is used */
     } /* end of pipelined store of inputs */
   } else { /* If stride_w != 1 */
@@ -961,7 +961,7 @@ void libxsmm_generator_convolution_backward_avx512_store_input( libxsmm_generate
                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                                 (j * i_conv_desc->stride_w + l_k_2) * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                 i_conv_kernel_config->vector_name,
-                                l_vec_reg_acc_start + j, 0, 1 );
+                                l_vec_reg_acc_start + j , 0, 1 );
       } /* end of for loop over ofw_rb */
     } else { /* If no extra accumulator is used */
       for ( j = 0; j < i_conv_desc->ofw_rb; j++ ) {
@@ -972,7 +972,7 @@ void libxsmm_generator_convolution_backward_avx512_store_input( libxsmm_generate
                                   LIBXSMM_X86_GP_REG_UNDEF, 0,
                                   (j * i_conv_desc->stride_w + l_k_2) * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                   i_conv_kernel_config->vector_name,
-                                  l_vec_reg_acc_start + j, 0, 1 );
+                                  l_vec_reg_acc_start + j , 0, 1 );
       } /* end of for ofw_rb loop */
     } /* end of if extra accumulator is used */
   } /* end of if stride == 1 */
@@ -1002,7 +1002,7 @@ void libxsmm_generator_convolution_backward_avx512_store_input_two_rows( libxsmm
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         ((i * i_conv_desc->ifw_padded) + j + l_k_2)*i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                         i_conv_kernel_config->vector_name,
-                                        l_vec_reg_acc_start + (i * i_conv_desc->ofw_rb) + ((j+l_k_2) % i_conv_desc->ofw_rb), 0, 1 );
+                                        l_vec_reg_acc_start + (i * i_conv_desc->ofw_rb) + ((j+l_k_2) % i_conv_desc->ofw_rb) , 0, 1 );
         } /* end of for ofw_rb loop */
       } /* end of for ofh_rb loop */
     } else { /* If not last iteration */
@@ -1016,7 +1016,7 @@ void libxsmm_generator_convolution_backward_avx512_store_input_two_rows( libxsmm
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         (i * i_conv_desc->ifw_padded + l_k_2) * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                         i_conv_kernel_config->vector_name,
-                                        l_vec_reg_acc_start + (i * i_conv_desc->ofw_rb) + (l_k_2 % i_conv_desc->ofw_rb), 0, 1 );
+                                        l_vec_reg_acc_start + (i * i_conv_desc->ofw_rb) + (l_k_2 % i_conv_desc->ofw_rb) , 0, 1 );
       } /* end of for ofh_rb loop */
     } /* end of pipelined store of inputs */
   } else { /* If stride_w != 1 */
@@ -1030,7 +1030,7 @@ void libxsmm_generator_convolution_backward_avx512_store_input_two_rows( libxsmm
                                   LIBXSMM_X86_GP_REG_UNDEF, 0,
                                   ((i * i_conv_desc->stride_h) * i_conv_desc->ifw_padded + j * i_conv_desc->stride_w + l_k_2) * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in,
                                   i_conv_kernel_config->vector_name,
-                                  l_vec_reg_acc_start + (i * i_conv_desc->ofw_rb) + j, 0, 1 );
+                                  l_vec_reg_acc_start + (i * i_conv_desc->ofw_rb) + j , 0, 1 );
       } /* end of for ofw_rb loop */
     } /* end of for ofh_rb loop */
   } /* end of if stride == 1 */
@@ -1229,7 +1229,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
 #ifdef ENABLE_OUTPUT_PREFETCH
         if ( (l_n == 2) && (l_k < num_output_prefetch) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
-                                            LIBXSMM_X86_INSTR_PREFETCHT0,
+                                            LIBXSMM_X86_INSTR_PREFETCHT0 ,
                                             i_gp_reg_mapping->gp_reg_output_pf,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
@@ -1445,7 +1445,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
 #ifdef ENABLE_OUTPUT_PREFETCH
           if ( (l_n == 2) && (l_k < num_output_prefetch) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) ) {
             libxsmm_x86_instruction_prefetch( io_generated_code,
-                                              LIBXSMM_X86_INSTR_PREFETCHT0,
+                                              LIBXSMM_X86_INSTR_PREFETCHT0 ,
                                               i_gp_reg_mapping->gp_reg_output_pf,
                                               LIBXSMM_X86_GP_REG_UNDEF,
                                               0,
@@ -1564,7 +1564,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generat
 #ifdef ENABLE_OUTPUT_PREFETCH
         if ( (l_n == 2) && ((l_k/2) < num_output_prefetch) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
-                                            LIBXSMM_X86_INSTR_PREFETCHT0,
+                                            LIBXSMM_X86_INSTR_PREFETCHT0 ,
                                             i_gp_reg_mapping->gp_reg_output_pf,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
@@ -1572,7 +1572,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generat
         }
         if ( (l_n == 4) && ((l_k/2) < num_output_prefetch) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
-                                            LIBXSMM_X86_INSTR_PREFETCHT0,
+                                            LIBXSMM_X86_INSTR_PREFETCHT0 ,
                                             i_gp_reg_mapping->gp_reg_output_pf,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
@@ -1709,7 +1709,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_two_rows( libxsm
 #ifdef ENABLE_OUTPUT_PREFETCH
         if ( (l_n == 2) && ((l_k/2) < num_output_prefetch) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
-                                            LIBXSMM_X86_INSTR_PREFETCHT0,
+                                            LIBXSMM_X86_INSTR_PREFETCHT0 ,
                                             i_gp_reg_mapping->gp_reg_output_pf,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
@@ -1717,7 +1717,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_two_rows( libxsm
         }
         if ( (l_n == 4) && ((l_k/2) < num_output_prefetch) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
-                                            LIBXSMM_X86_INSTR_PREFETCHT0,
+                                            LIBXSMM_X86_INSTR_PREFETCHT0 ,
                                             i_gp_reg_mapping->gp_reg_output_pf,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,

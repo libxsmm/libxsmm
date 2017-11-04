@@ -202,7 +202,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     libxsmm_x86_instruction_vec_move( io_generated_code,
                                       l_conv_kernel_config.instruction_set,
                                       l_conv_kernel_config.vbcst_instruction,
-                                      LIBXSMM_X86_GP_REG_RSP,
+                                      LIBXSMM_X86_GP_REG_RSP ,
                                       LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
                                       l_conv_kernel_config.vector_name, 6, 0, 0 );
 /*
