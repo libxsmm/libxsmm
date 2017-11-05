@@ -1554,6 +1554,92 @@ LIBXSMM_API_DEFINITION int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel,
 }
 
 
+LIBXSMM_API_DEFINITION int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libxsmm_transpose_descriptor* info, size_t* code_size)
+{
+  libxsmm_code_pointer code;
+  static int error_once = 0;
+  int result;
+  code.xtrans = kernel;
+  if (0 != info || 0 != code_size) {
+    const libxsmm_kernel_info *const kernel_info = libxsmm_get_kernel_info(code.const_pmm, code_size);
+    if (0 != kernel_info) {
+      if (0 == ((LIBXSMM_KERNEL_KIND_MATCOPY | LIBXSMM_KERNEL_KIND_TKERNEL) & kernel_info->xgemm.iflags)) {
+        if (0 != info) *info = kernel_info->trans;
+        result = EXIT_SUCCESS;
+      }
+      else {
+        if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM WARNING: code is not a GEMM-kernel!\n");
+        }
+        result = EXIT_FAILURE;
+      }
+    }
+    else {
+      if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM WARNING: non-JIT kernel cannot be inspected!\n");
+      }
+      result = EXIT_FAILURE;
+    }
+  }
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: invalid argument!\n");
+    }
+    result = EXIT_FAILURE;
+  }
+  return result;
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_get_matcopykernel_info(libxsmm_xmatcopyfunction kernel, libxsmm_matcopy_descriptor* info, size_t* code_size)
+{
+  libxsmm_code_pointer code;
+  static int error_once = 0;
+  int result;
+  code.xmatcopy = kernel;
+  if (0 != info || 0 != code_size) {
+    const libxsmm_kernel_info *const kernel_info = libxsmm_get_kernel_info(code.const_pmm, code_size);
+    if (0 != kernel_info) {
+      if (0 == ((LIBXSMM_KERNEL_KIND_MATCOPY | LIBXSMM_KERNEL_KIND_TKERNEL) & kernel_info->xgemm.iflags)) {
+        if (0 != info) *info = kernel_info->mcopy;
+        result = EXIT_SUCCESS;
+      }
+      else {
+        if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM WARNING: code is not a GEMM-kernel!\n");
+        }
+        result = EXIT_FAILURE;
+      }
+    }
+    else {
+      if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM WARNING: non-JIT kernel cannot be inspected!\n");
+      }
+      result = EXIT_FAILURE;
+    }
+  }
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: invalid argument!\n");
+    }
+    result = EXIT_FAILURE;
+  }
+  return result;
+}
+
+
 LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(libxsmm_registry_info* info)
 {
   int result = EXIT_SUCCESS;
