@@ -165,17 +165,18 @@ if (handle->padding_flag == 1) {
 }
 #endif
 
-#if 0
 {
   int img = ltid, ifm1, ij, ifm2, ii;
   int ofm1, ofm2, k, lp;
+  int FM;
 
   for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
     for (ij = 0; ij < handle->ifhp; ++ij) {
       for (ii = 0; ii < handle->ifwp; ++ii) {
         for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-          for (lp = 0; lp < handle->fm_lp_block; ++lp) {  
-            LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1*handle->fm_lp_block+lp, ij, ifm2, ii, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended) =
+          for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+            FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block + lp;
+            LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock, ii, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended) =
               LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
           }
         }
@@ -188,8 +189,9 @@ if (handle->padding_flag == 1) {
       for (ii = 0; ii < handle->ofwp/2; ++ii) {
         for (k = 0; k < 2; ++k) {
           for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-            for (lp = 0; lp < handle->fm_lp_block; ++lp) {    
-              LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1*handle->fm_lp_block+lp, ij, ii, ofm2, k, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2) = 
+            for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+              FM = ofm1 * handle->ofmblock * handle->fm_lp_block + ofm2  * handle->fm_lp_block + lp;    
+              LIBXSMM_VLA_ACCESS(6,  tr_output, img, FM/handle->ofmblock, ij, ii, FM%handle->ofmblock, k, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2) = 
                 LIBXSMM_VLA_ACCESS(6,   output, img, ofm1, ij, ii*2 + k,   ofm2, lp,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
             }
           }
@@ -199,7 +201,6 @@ if (handle->padding_flag == 1) {
   }
 
 }
-#endif
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
