@@ -169,6 +169,7 @@ if (handle->padding_flag == 1) {
   int img = ltid, ifm1, ij, ifm2, ii;
   int ofm1, ofm2, k, lp;
   int FM;
+  int W;
 
   for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
     for (ij = 0; ij < handle->ifhp; ++ij) {
@@ -186,20 +187,24 @@ if (handle->padding_flag == 1) {
 
   for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
     for (ij = 0; ij < handle->ofhp; ++ij) {
-      for (ii = 0; ii < handle->ofwp/2; ++ii) {
+      for (ii = 0; ii < OFWP/2; ++ii) {
         for (k = 0; k < 2; ++k) {
           for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
             for (lp = 0; lp < handle->fm_lp_block; ++lp) {
-              FM = ofm1 * handle->ofmblock * handle->fm_lp_block + ofm2  * handle->fm_lp_block + lp;    
-              LIBXSMM_VLA_ACCESS(6,  tr_output, img, FM/handle->ofmblock, ij, ii, FM%handle->ofmblock, k, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2) = 
-                LIBXSMM_VLA_ACCESS(6,   output, img, ofm1, ij, ii*2 + k,   ofm2, lp,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
+              FM = ofm1 * handle->ofmblock * handle->fm_lp_block + ofm2  * handle->fm_lp_block + lp;
+              W = ii*2 + k;
+              if (W < handle->ofwp ) {
+                LIBXSMM_VLA_ACCESS(6,  tr_output, img, FM/handle->ofmblock, ij, ii, FM%handle->ofmblock, k, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2) = 
+                  LIBXSMM_VLA_ACCESS(6,   output, img, ofm1, ij, W, ofm2, lp,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
+              } else {
+                LIBXSMM_VLA_ACCESS(6,  tr_output, img, FM/handle->ofmblock, ij, ii, FM%handle->ofmblock, k, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2) = (element_output_type)0;
+              }
             }
           }
         }
       }
     }
   }
-
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
