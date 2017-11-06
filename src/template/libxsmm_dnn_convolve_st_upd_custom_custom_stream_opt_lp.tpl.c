@@ -151,6 +151,14 @@ if (handle->padding_flag == 1) {
 }
 #endif
 
+/* Initialize base pointers */
+if (handle->padding_flag == 1) {
+  input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
+  input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
+  memset( input_zero, 0, BLOCKSIFM * padded_h * ifwp_extended * handle->ifmblock * sizeof(element_input_type) );
+} else {
+  input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, dst_ifhp, handle->ifmblock, ifwp_extended);
+}
 
 {
   int img = ltid, ifm1, ij, ifm2, ii;
@@ -158,14 +166,30 @@ if (handle->padding_flag == 1) {
   int FM;
   int W;
 
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (ij = 0; ij < handle->ifhp; ++ij) {
-      for (ii = 0; ii < handle->ifwp; ++ii) {
-        for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-          for (lp = 0; lp < handle->fm_lp_block; ++lp) {
-            FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block + lp;
-            LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock, ii, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended) =
-              LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+  if (handle->padding_flag == 1) {
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+      for (ij = 0; ij < handle->ifhp; ++ij) {
+        for (ii = 0; ii < handle->ifwp; ++ii) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+              FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block + lp;
+              LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, FM/handle->ifmblock, ij+handle->desc.pad_h, FM%handle->ifmblock, ii+handle->desc.pad_w, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended) =
+                LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            }
+          }
+        }
+      }
+    }  
+  } else {
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+      for (ij = 0; ij < handle->ifhp; ++ij) {
+        for (ii = 0; ii < handle->ifwp; ++ii) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+              FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block + lp;
+              LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock, ii, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended) =
+                LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            }
           }
         }
       }
@@ -191,27 +215,6 @@ if (handle->padding_flag == 1) {
         }
       }
     }
-  }
-}
-
-/* Initialize base pointers */
-if (handle->padding_flag == 1) {
-  if (handle->trans_ofw_ifm > 0) {
-    input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
-    input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
-  } else {
-    input_base = &LIBXSMM_VLA_ACCESS(5, input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, padded_w, handle->ifmblock);
-    input_zero = &LIBXSMM_VLA_ACCESS(5, input_padded, ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, padded_w, handle->ifmblock);
-  }
-  /* we need to set the scratch to zero */
-  /* @TODO: we need to find a better/faster code here */
-  memset( input_zero, 0, BLOCKSIFM * padded_h * ifwp_extended * handle->ifmblock * sizeof(element_input_type) );
-} else {
-  if (handle->trans_ofw_ifm > 0) {
-    input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, dst_ifhp, handle->ifmblock, ifwp_extended);
-    /*input_base = &LIBXSMM_VLA_ACCESS(5, input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock); */
-  } else {
-    input_base = &LIBXSMM_VLA_ACCESS(5, input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
   }
 }
 
@@ -310,30 +313,30 @@ if (handle->upd_use_external_reduce == 0) {
 #else
     element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
     LIBXSMM_PRAGMA_VALIGNED
-    LIBXSMM_PRAGMA_SIMD
-    for ( k = 0; k < 16; k++ ) {
-      weight_sum[k] = (element_filter_type) 0;
-    }
-    for ( i = 0; i < handle->desc.threads; i++ ) {
-      LIBXSMM_PRAGMA_VALIGNED
       LIBXSMM_PRAGMA_SIMD
       for ( k = 0; k < 16; k++ ) {
-        weight_sum[k] += LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, k, handle->desc.threads, 16);
+        weight_sum[k] = (element_filter_type) 0;
       }
+    for ( i = 0; i < handle->desc.threads; i++ ) {
+      LIBXSMM_PRAGMA_VALIGNED
+        LIBXSMM_PRAGMA_SIMD
+        for ( k = 0; k < 16; k++ ) {
+          weight_sum[k] += LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, k, handle->desc.threads, 16);
+        }
     }
     if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
       LIBXSMM_PRAGMA_NONTEMPORAL
-      LIBXSMM_PRAGMA_VALIGNED
-      LIBXSMM_PRAGMA_SIMD
-      for ( k = 0; k < 16; k++ ) {
-        weight_ptr[j*16 + k] = weight_sum[k];
-      }
+        LIBXSMM_PRAGMA_VALIGNED
+        LIBXSMM_PRAGMA_SIMD
+        for ( k = 0; k < 16; k++ ) {
+          weight_ptr[j*16 + k] = weight_sum[k];
+        }
     } else {
       LIBXSMM_PRAGMA_VALIGNED
-      LIBXSMM_PRAGMA_SIMD
-      for ( k = 0; k < 16; k++ ) {
-        weight_ptr[j*16 + k] += weight_sum[k];
-      }
+        LIBXSMM_PRAGMA_SIMD
+        for ( k = 0; k < 16; k++ ) {
+          weight_ptr[j*16 + k] += weight_sum[k];
+        }
     }
 #endif
 #undef __AVX512F__
