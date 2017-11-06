@@ -222,6 +222,11 @@ output_base = &LIBXSMM_VLA_ACCESS(6, tr_output, 0, 0, 0, 0, 0, 0, BLOCKSOFM, han
 i = 0;
 instr = handle->n_entries_upd[ltid];
 
+float scale_factor __attribute__((aligned(64)));
+if (handle->use_lp_kernel == 1) {
+  scale_factor = 1.0; // (float) pow(2.0, -1.0*(handle->reg_filter->exp + handle->reg_input->exp));
+}
+
 for (pc = 0; pc < instr; pc++) {
   offset_i = stream[i];
   offset_w = stream[i+1];
@@ -229,7 +234,7 @@ for (pc = 0; pc < instr; pc++) {
   pi = stream[i+3];
   pw = stream[i+4];
   po = stream[i+5];
-  kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po);
+  kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor);
   i+=3;
 }
 

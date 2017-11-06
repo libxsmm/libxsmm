@@ -1044,11 +1044,15 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
       int bound;
       int remainder;
 
+      /*
       if (use_lp_kernel == 0) {
         n_fake_pixels = i_conv_desc->ofw_fake_pixels;
       } else {
         n_fake_pixels = 0; 
-      }
+      }*/
+
+      n_fake_pixels = i_conv_desc->ofw_fake_pixels;
+
       n_compute_pixels = i_conv_desc->ofw_rb - n_fake_pixels;
       bound = LIBXSMM_MIN(step_size/lp_dim_out, n_compute_pixels-l_k_2);
       remainder = 0;
@@ -1075,9 +1079,9 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
             l_w);      
       }
 
-      output_counter += step_size;
+      output_counter += step_size/lp_dim_out;
 
-      if (output_counter == i_conv_desc->ofw_rb ) {
+      if (output_counter == i_conv_desc->ofw_rb/lp_dim_out ) {
         output_counter = 0;
       }
 
