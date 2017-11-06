@@ -1151,6 +1151,10 @@ ifeq (1,$(MKL_DIRECT))
   else ifneq (0,$(MKL))
     BLAS_DFLAGS += -DMKL_DIRECT_CALL
   endif
+  ifneq (0,$(GCC))
+    CXXFLAGS += -Wno-unused-value
+	CFLAGS += -Wno-unused-value
+  endif
 endif
 ifneq (Darwin,$(UNAME))
   MKL_ARCH = intel64
