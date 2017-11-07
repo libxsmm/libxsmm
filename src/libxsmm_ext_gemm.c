@@ -149,7 +149,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
 
         memset(batcharray + i, 0, (size_t)itemsize); /* clear */
         if (threshold < ci && count < limit /* limit printed statistic */
-          && 0 < m && 0 < n && 0 < k && m <= lda && k <= ldb && m <= ldc)
+          && 0 < m && 0 < n && 0 < k)
         {
           assert(0 != ci);
           if (0 == count) {

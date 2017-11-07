@@ -255,34 +255,18 @@ LIBXSMM_API_DEFINITION int libxsmm_dgemm_descriptor_init(libxsmm_gemm_descriptor
   double alpha, double beta, int flags, int prefetch)
 {
   int result;
-#if defined(LIBXSMM_GEMM_CHECK)
-  if (0 < m && 0 < n && 0 < k && m <= lda && k <= ldb && m <= ldc)
-#endif
+  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
   {
-    if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor
-      && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
-      && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
-    {
-      LIBXSMM_GEMM_DESCRIPTOR(*descriptor,
-        LIBXSMM_GEMM_PRECISION(double), flags, m, n, k, lda, ldb, ldc, alpha, beta,
-        0 > prefetch ? libxsmm_gemm_auto_prefetch_default : prefetch);
-      result = EXIT_SUCCESS;
-    }
-    else { /* unsupported */
-      result = EXIT_FAILURE;
-    }
+    LIBXSMM_GEMM_DESCRIPTOR(*descriptor,
+      LIBXSMM_GEMM_PRECISION(double), flags, m, n, k, lda, ldb, ldc, alpha, beta,
+      0 > prefetch ? libxsmm_gemm_auto_prefetch_default : prefetch);
+    result = EXIT_SUCCESS;
   }
-#if defined(LIBXSMM_GEMM_CHECK)
-  else {
-    static int error_once = 0;
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
-      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: DGEMM descriptor values invalid!\n");
-    }
+  else { /* quiet error (unsupported) */
     result = EXIT_FAILURE;
   }
-#endif
   return result;
 }
 
@@ -293,34 +277,18 @@ LIBXSMM_API_DEFINITION int libxsmm_sgemm_descriptor_init(libxsmm_gemm_descriptor
   float alpha, float beta, int flags, int prefetch)
 {
   int result;
-#if defined(LIBXSMM_GEMM_CHECK)
-  if (0 < m && 0 < n && 0 < k && m <= lda && k <= ldb && m <= ldc)
-#endif
+  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
   {
-    if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor
-      && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
-      && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
-    {
-      LIBXSMM_GEMM_DESCRIPTOR(*descriptor,
-        LIBXSMM_GEMM_PRECISION(float), flags, m, n, k, lda, ldb, ldc, alpha, beta,
-        0 > prefetch ? libxsmm_gemm_auto_prefetch_default : prefetch);
-      result = EXIT_SUCCESS;
-    }
-    else { /* unsupported */
-      result = EXIT_FAILURE;
-    }
+    LIBXSMM_GEMM_DESCRIPTOR(*descriptor,
+      LIBXSMM_GEMM_PRECISION(float), flags, m, n, k, lda, ldb, ldc, alpha, beta,
+      0 > prefetch ? libxsmm_gemm_auto_prefetch_default : prefetch);
+    result = EXIT_SUCCESS;
   }
-#if defined(LIBXSMM_GEMM_CHECK)
-  else {
-    static int error_once = 0;
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
-      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: SGEMM descriptor values invalid!\n");
-    }
+  else { /* unsupported */
     result = EXIT_FAILURE;
   }
-#endif
   return result;
 }
 
@@ -331,34 +299,18 @@ LIBXSMM_API_DEFINITION int libxsmm_wgemm_descriptor_init(libxsmm_gemm_descriptor
   int alpha, int beta, int flags, int prefetch)
 {
   int result;
-#if defined(LIBXSMM_GEMM_CHECK)
-  if (0 < m && 0 < n && 0 < k && m <= lda && k <= ldb && m <= ldc)
-#endif
+  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
   {
-    if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta) && 0 != descriptor
-      && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
-      && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
-    {
-      LIBXSMM_GEMM_DESCRIPTOR(*descriptor,
-        LIBXSMM_GEMM_PRECISION(short), flags, m, n, k, lda, ldb, ldc, alpha, beta,
-        0 > prefetch ? libxsmm_gemm_auto_prefetch_default : prefetch);
-      result = EXIT_SUCCESS;
-    }
-    else { /* unsupported */
-      result = EXIT_FAILURE;
-    }
+    LIBXSMM_GEMM_DESCRIPTOR(*descriptor,
+      LIBXSMM_GEMM_PRECISION(short), flags, m, n, k, lda, ldb, ldc, alpha, beta,
+      0 > prefetch ? libxsmm_gemm_auto_prefetch_default : prefetch);
+    result = EXIT_SUCCESS;
   }
-#if defined(LIBXSMM_GEMM_CHECK)
-  else {
-    static int error_once = 0;
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
-      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: WGEMM descriptor values invalid!\n");
-    }
+  else { /* unsupported */
     result = EXIT_FAILURE;
   }
-#endif
   return result;
 }
 
