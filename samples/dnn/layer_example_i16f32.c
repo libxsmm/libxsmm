@@ -49,7 +49,7 @@
 
 #define FP64_BN_STATS
 /*#define USE_FUSED_RELU_BWD*/
-
+JJJJ
 typedef struct {
   int nImg;
   int nIfm;
@@ -78,7 +78,7 @@ LIBXSMM_INLINE void zero_buf_int16(short* buf, long size) {
   int i;
   for (i = 0; i < size; ++i) {
     buf[i] = 0;
-  }
+  }JJJJ
 }
 
 LIBXSMM_INLINE void zero_buf_int32(int* buf, long size) {
@@ -361,6 +361,9 @@ int main(int argc, char* argv[])
 #ifdef FP64_BN_STATS
   double *batchstats_libxsmm;
 #endif
+#ifdef MAX_STATS
+  float *maxstats_libxsmm;
+#endif
 
   /* some parameters we can overwrite via cli,
      default is some inner layer of overfeat */
@@ -403,6 +406,9 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_doutput;
   libxsmm_dnn_tensor* libxsmm_dfilter;
   libxsmm_dnn_tensor* libxsmm_batchstats;
+  libxsmm_dnn_tensor* libxsmm_maxstats_fwd;
+  libxsmm_dnn_tensor* libxsmm_maxstats_bwd;
+  libxsmm_dnn_tensor* libxsmm_maxstats_upd;
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
 
@@ -531,6 +537,9 @@ int main(int argc, char* argv[])
 #ifdef FP64_BN_STATS
   batchstats_libxsmm    = (double*)libxsmm_aligned_malloc( 2*nImg*nOfm*        sizeof(double), 2097152);
 #endif
+#ifdef MAX_STATS
+  maxstats_libxsmm    = (double*)libxsmm_aligned_malloc(3*nThreads*16*sizeof(float), 2097152);
+#endif
 
   /* initialize data */
   short  *naive_input_tmp  = (short*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(short), 2097152);
@@ -657,6 +666,20 @@ int main(int argc, char* argv[])
   libxsmm_batchstats  = libxsmm_dnn_link_tensor( libxsmm_layout, batchstats_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
+#ifdef MAX_STATS
+  libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_MAX_STATS_FWD, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_maxstats_fwd  = libxsmm_dnn_link_tensor( libxsmm_layout, maxstats_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+  libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_MAX_STATS_BWD, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_maxstats_bwd  = libxsmm_dnn_link_tensor( libxsmm_layout, maxstats_libxsmm+nThreads*16, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+  libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_MAX_STATS_UPD, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_maxstats_upd  = libxsmm_dnn_link_tensor( libxsmm_layout, maxstats_libxsmm+2*nThreads*16, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+#endif
+
   /* copy in data to LIBXSMM format */
   /* we can also use the layout functions and set the data on our
      own external to the library, @TODO, we plan to add an example here */
@@ -681,6 +704,12 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_filter, LIBXSMM_DNN_REGULAR_FILTER ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_dfilter, LIBXSMM_DNN_GRADIENT_FILTER ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_batchstats, LIBXSMM_DNN_BATCH_STATS ) );
+
+#ifdef MAX_STATS
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_maxstats_fwd, LIBXSMM_DNN_MAX_STATS_FWD ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_maxstats_bwd, LIBXSMM_DNN_MAX_STATS_BWD ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_maxstats_upd, LIBXSMM_DNN_MAX_STATS_UPD ) );
+#endif
 
   /* let's allocate and bind scratch */
   scratch_size = libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );

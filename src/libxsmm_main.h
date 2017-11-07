@@ -193,6 +193,10 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_tensor* reg_filter_tr;
   /* batchnorm stats */
   libxsmm_dnn_tensor* batch_stats;
+  /* maxstats used in low-recision kernels */
+  libxsmm_dnn_tensor* maxstats_fwd;
+  libxsmm_dnn_tensor* maxstats_bwd;
+  libxsmm_dnn_tensor* maxstats_upd;
 
   /* barrier */
   libxsmm_barrier* barrier;

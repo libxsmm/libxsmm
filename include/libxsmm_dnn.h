@@ -147,7 +147,10 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_BIAS,
   /** batch stats */
   LIBXSMM_DNN_BATCH_STATS,
-  /** general type, if needed might cause API issues in copy in/out API */
+  LIBXSMM_DNN_MAX_STATS_FWD,
+  LIBXSMM_DNN_MAX_STATS_BWD,
+  LIBXSMM_DNN_MAX_STATS_UPD,
+   /** general type, if needed might cause API issues in copy in/out API */
   LIBXSMM_DNN_TENSOR
 } libxsmm_dnn_tensor_type;
 
@@ -174,6 +177,7 @@ typedef enum libxsmm_dnn_conv_fuse_op {
   LIBXSMM_DNN_CONV_FUSE_RELU_BWD = 4,
   /* we fuse batch stats */
   LIBXSMM_DNN_CONV_FUSE_BATCH_STATS = 8,
+  LIBXSMM_DNN_CONV_FUSE_MAX_STATS = 16,
   LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD = LIBXSMM_DNN_CONV_FUSE_RELU_BWD | LIBXSMM_DNN_CONV_FUSE_BATCH_STATS,
   /* we fuse bias addition and ReLU into convolution op */
   LIBXSMM_DNN_CONV_FUSE_RELU = LIBXSMM_DNN_CONV_FUSE_RELU_FWD | LIBXSMM_DNN_CONV_FUSE_RELU_BWD,
