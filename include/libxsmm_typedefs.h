@@ -248,6 +248,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int input_L2_prefetching;
   unsigned int lookahead;
   unsigned int compute_batch_stats;
+  unsigned int compute_max;
   unsigned int perform_relu_in_kernel;
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;

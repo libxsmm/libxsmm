@@ -102,6 +102,14 @@ if (handle->use_lp_kernel == 1) {
   scale_factor = 1.0; // (float) pow(2.0, -1.0*(handle->reg_filter->exp + handle->reg_input->exp));
 }
 
+float *max_vals;
+if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
+  LIBXSMM_VLA_DECL(2, element_output_type, maxstats, handle->maxstats_fwd->data, handle->ofmblock);
+  max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, handle->ofmblock);
+  __m512 max_abs = _mm512_setzero_ps();
+  _mm512_store_ps(max_vals, max_abs);
+}
+
 i = 0;
 /* Stream for BN offsets */
 int bn_i = 0;
@@ -165,7 +173,7 @@ if (n_segments) {
             pw = stream[i+4];
             po = stream[i+5];
             offset_bn = bn_stream[bn_i];
-            kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor);
+            kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
             pool_index++;
             i+=3;
             bn_i++;
@@ -203,7 +211,7 @@ if (n_segments) {
             pw = stream[i+4];
             po = stream[i+5];
             offset_bn = bn_stream[bn_i];
-            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor);
+            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
             i+=3;
             bn_i++;
           }
@@ -236,59 +244,76 @@ if (n_segments) {
 
           if (instr == OFM_LOOP_CLOSE) {
             /* Compute batch norm statistics... */
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) {
 #ifdef FP32_BN_STATS
-            ofm1 =  code_stream[pc].aux_index;
-            LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
-            element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                BLOCKSOFM*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock); 
-            __m512 bsum  = _mm512_setzero_ps();
-            __m512 bsum2 = _mm512_setzero_ps();
+              ofm1 =  code_stream[pc].aux_index;
+              LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
+              element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+                  BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock); 
+              __m512 bsum  = _mm512_setzero_ps();
+              __m512 bsum2 = _mm512_setzero_ps();
 
-            for ( oj = 0; oj < handle->ofh; oj++ ) {
-              for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                __m512 btmp = _mm512_load_ps( red+oi );
-                bsum = _mm512_add_ps( bsum, btmp );
-                bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
+              for ( oj = 0; oj < handle->ofh; oj++ ) {
+                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                  __m512 btmp = _mm512_load_ps( red+oi );
+                  bsum = _mm512_add_ps( bsum, btmp );
+                  bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
+                }
+                red += handle->ofwp*handle->ofmblock;
               }
-              red += handle->ofwp*handle->ofmblock;
-            }
 
-            _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
-                  BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
-            _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
-                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2 );
+              _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
+                    BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
+              _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
+                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2 );
 #endif  
 #ifdef FP64_BN_STATS
-            ofm1 =  code_stream[pc].aux_index;
-            LIBXSMM_VLA_DECL(4, double, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
-            element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                BLOCKSOFM*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock);
-            __m512d bsum1a = _mm512_setzero_pd();
-            __m512d bsum1b = _mm512_setzero_pd();
-            __m512d bsum2a = _mm512_setzero_pd();
-            __m512d bsum2b = _mm512_setzero_pd();
+              ofm1 =  code_stream[pc].aux_index;
+              LIBXSMM_VLA_DECL(4, double, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
+              element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+                  BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+              __m512d bsum1a = _mm512_setzero_pd();
+              __m512d bsum1b = _mm512_setzero_pd();
+              __m512d bsum2a = _mm512_setzero_pd();
+              __m512d bsum2b = _mm512_setzero_pd();
 
-            for ( oj = 0; oj < handle->ofh; oj++ ) {
-              for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                __m512d btmpa = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+0)) );
-                __m512d btmpb = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+8)) );
-                bsum1a = _mm512_add_pd( bsum1a, btmpa);
-                bsum1b = _mm512_add_pd( bsum1b, btmpb);  
-                bsum2a = _mm512_add_pd( bsum2a, _mm512_mul_pd( btmpa, btmpa ) );
-                bsum2b = _mm512_add_pd( bsum2b, _mm512_mul_pd( btmpb, btmpb ) );
+              for ( oj = 0; oj < handle->ofh; oj++ ) {
+                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                  __m512d btmpa = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+0)) );
+                  __m512d btmpb = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+8)) );
+                  bsum1a = _mm512_add_pd( bsum1a, btmpa);
+                  bsum1b = _mm512_add_pd( bsum1b, btmpb);  
+                  bsum2a = _mm512_add_pd( bsum2a, _mm512_mul_pd( btmpa, btmpa ) );
+                  bsum2b = _mm512_add_pd( bsum2b, _mm512_mul_pd( btmpb, btmpb ) );
+                }
+                red += handle->ofwp*handle->ofmblock;
               }
-              red += handle->ofwp*handle->ofmblock;
+
+              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
+                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1a );
+              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 8,
+                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1b );
+              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
+                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
+              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
+                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
+#endif  
             }
 
-            _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
-                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1a );
-            _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 8,
-                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1b );
-            _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
-                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
-            _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
-                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
-#endif  
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {     
+              ofm1 =  code_stream[pc].aux_index;
+              element_output_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+                  BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+              __m512 max_abs = _mm512_setzero_ps();
+              for ( oj = 0; oj < handle->ofh; oj++ ) {
+                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                  max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+oi)));
+                }
+                cur_vec += handle->ofwp*handle->ofmblock;
+              }
+              max_abs = _mm512_max_ps(max_abs, _mm512_load_ps(max_vals));
+              _mm512_store_ps(max_vals, max_abs);
+            }
           }
 
           /* Run the stream of convolutions for this segment */
@@ -299,7 +324,7 @@ if (n_segments) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor);
+            kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
             pool_index++;
             i+=3;
           }
@@ -329,59 +354,76 @@ if (n_segments) {
 
           if ( instr == OFM_LOOP_CLOSE ) {
             /* Compute batch norm statistics... */
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) {
 #ifdef FP32_BN_STATS
-            ofm1 =  code_stream[pc].aux_index;
-            LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
-            element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                BLOCKSOFM*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock); 
-            __m512 bsum  = _mm512_setzero_ps();
-            __m512 bsum2 = _mm512_setzero_ps();
+              ofm1 =  code_stream[pc].aux_index;
+              LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
+              element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+                  BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock); 
+              __m512 bsum  = _mm512_setzero_ps();
+              __m512 bsum2 = _mm512_setzero_ps();
 
-            for ( oj = 0; oj < handle->ofh; oj++ ) {
-              for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                __m512 btmp = _mm512_load_ps( red+oi );
-                bsum = _mm512_add_ps( bsum, btmp );
-                bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
+              for ( oj = 0; oj < handle->ofh; oj++ ) {
+                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                  __m512 btmp = _mm512_load_ps( red+oi );
+                  bsum = _mm512_add_ps( bsum, btmp );
+                  bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
+                }
+                red += handle->ofwp*handle->ofmblock;
               }
-              red += handle->ofwp*handle->ofmblock;
-            }
 
-            _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
-                  BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
-            _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
-                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2 );
+              _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
+                    BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
+              _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
+                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2 );
 #endif  
 #ifdef FP64_BN_STATS
-            ofm1 =  code_stream[pc].aux_index;
-            LIBXSMM_VLA_DECL(4, double, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
-            element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                BLOCKSOFM*handle->fm_lp_block, handle->ofhp, handle->ofwp, handle->ofmblock);
-            __m512d bsum1a = _mm512_setzero_pd();
-            __m512d bsum1b = _mm512_setzero_pd();
-            __m512d bsum2a = _mm512_setzero_pd();
-            __m512d bsum2b = _mm512_setzero_pd();
+              ofm1 =  code_stream[pc].aux_index;
+              LIBXSMM_VLA_DECL(4, double, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
+              element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+                  BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+              __m512d bsum1a = _mm512_setzero_pd();
+              __m512d bsum1b = _mm512_setzero_pd();
+              __m512d bsum2a = _mm512_setzero_pd();
+              __m512d bsum2b = _mm512_setzero_pd();
 
-            for ( oj = 0; oj < handle->ofh; oj++ ) {
-              for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                __m512d btmpa = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+0)) );
-                __m512d btmpb = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+8)) );
-                bsum1a = _mm512_add_pd( bsum1a, btmpa);
-                bsum1b = _mm512_add_pd( bsum1b, btmpb);  
-                bsum2a = _mm512_add_pd( bsum2a, _mm512_mul_pd( btmpa, btmpa ) );
-                bsum2b = _mm512_add_pd( bsum2b, _mm512_mul_pd( btmpb, btmpb ) );
+              for ( oj = 0; oj < handle->ofh; oj++ ) {
+                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                  __m512d btmpa = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+0)) );
+                  __m512d btmpb = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+8)) );
+                  bsum1a = _mm512_add_pd( bsum1a, btmpa);
+                  bsum1b = _mm512_add_pd( bsum1b, btmpb);  
+                  bsum2a = _mm512_add_pd( bsum2a, _mm512_mul_pd( btmpa, btmpa ) );
+                  bsum2b = _mm512_add_pd( bsum2b, _mm512_mul_pd( btmpb, btmpb ) );
+                }
+                red += handle->ofwp*handle->ofmblock;
               }
-              red += handle->ofwp*handle->ofmblock;
+
+              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
+                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1a );
+              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 8,
+                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1b );
+              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
+                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
+              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
+                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
+#endif  
             }
 
-            _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
-                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1a );
-            _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 8,
-                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1b );
-            _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
-                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
-            _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
-                  BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
-#endif  
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {     
+              ofm1 =  code_stream[pc].aux_index;
+              element_output_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+                  BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+              __m512 max_abs = _mm512_setzero_ps();
+              for ( oj = 0; oj < handle->ofh; oj++ ) {
+                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                  max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+oi)));
+                }
+                cur_vec += handle->ofwp*handle->ofmblock;
+              }
+              max_abs = _mm512_max_ps(max_abs, _mm512_load_ps(max_vals));
+              _mm512_store_ps(max_vals, max_abs);
+            }
           }
 
           /* Run the stream of convolutions for this segment */
@@ -392,13 +434,12 @@ if (n_segments) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor);
+            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
             i+=3;
           }
         }
       }
     }
-
   } else {
     /* Use fine-grained operations since we are in the img_par path, so update relevant kernel pointers... */
     jitted_matcopy = handle->matcopy_fwd[2].xmatcopy;
@@ -435,7 +476,7 @@ if (n_segments) {
         pi = stream[i+3];
         pw = stream[i+4];
         po = stream[i+5];
-        kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor);
+        kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
         i+=3;
       }
     }
@@ -460,7 +501,7 @@ if (n_segments) {
         pw = stream[i+4];
         po = stream[i+5];
         offset_bn = bn_stream[bn_i];
-        kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor);
+        kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
         i+=3;
         bn_i++;
       }
@@ -473,7 +514,7 @@ if (n_segments) {
         pw = stream[i+4];
         po = stream[i+5];
         offset_bn = bn_stream[bn_i];
-        kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,  bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor);
+        kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,  bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
         i+=3;
         bn_i++;
       }
@@ -487,7 +528,7 @@ if (n_segments) {
         pi = stream[i+3];
         pw = stream[i+4];
         po = stream[i+5];
-        kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor);
+        kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
         i+=3;  
       }
     } else { 
@@ -498,7 +539,7 @@ if (n_segments) {
         pi = stream[i+3];
         pw = stream[i+4];
         po = stream[i+5];
-        kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor);
+        kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
         i+=3;
       }
     }
