@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
         if (ab) {
           fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s | %lli,%lli,%lli,%lli,%lli,%lli,%i,%lli,%lli,%lli,%lli\n",
             gflops * nrepeat / duration, (long long)m, (long long)n, (long long)k, (long long)bm, (long long)bn, (long long)bk,
-            order, (long long)b_m1, (long long)b_n1, (long long)b_k1, (long long)b_k2);
+            (int)order, (long long)b_m1, (long long)b_n1, (long long)b_k1, (long long)b_k2);
         } else {
           fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
         }
