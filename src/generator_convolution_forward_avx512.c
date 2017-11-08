@@ -216,6 +216,8 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
                                                    l_gp_reg_mapping.gp_reg_input_pf, l_gp_reg_mapping.gp_reg_weight_pf,
                                                    l_gp_reg_mapping.gp_reg_output_pf, i_arch );
 
+  unsigned int rsp_maxval_offset = 56;
+
   if ( i_conv_desc->compute_batch_stats > 0 && i_conv_desc->ifm_block != 3 ) {
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, l_gp_reg_mapping.gp_reg_help_0);
     libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -232,8 +234,10 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
                                          56,
                                          l_gp_reg_mapping.gp_reg_help_3,
                                          0 );
+    
+    rsp_maxval_offset = 72;
   }
-
+  
   if ( i_conv_desc->perform_relu_in_kernel == 1 ) {
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, l_gp_reg_mapping.gp_reg_help_0);
     libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -243,6 +247,8 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
                                          48,
                                          l_gp_reg_mapping.gp_reg_help_2,
                                          0 );
+    
+    rsp_maxval_offset = 64;
   }
 
   /* load an additional temp register with 32 16bit 1s */
@@ -431,6 +437,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
 #endif       
         }
 
+
         if ( (i_conv_desc->perform_relu_in_kernel == 1) && (peel_index == 2) ) {
           unsigned int i, j, store_offset;
           /* Prefetch to L2 all "regular inputs" based on passed pointer (now in help2 register) */
@@ -448,6 +455,23 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
           } 
         }
 
+        if ((i_conv_desc->compute_max == 1) && (peel_index == 2)) {
+          libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, l_gp_reg_mapping.gp_reg_help_2);
+          libxsmm_x86_instruction_alu_mem( io_generated_code,
+                                         l_conv_kernel_config.alu_mov_instruction,
+                                         l_gp_reg_mapping.gp_reg_help_2,
+                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                         rsp_maxval_offset,
+                                         l_gp_reg_mapping.gp_reg_help_3,
+                                         0 );
+
+          libxsmm_x86_instruction_prefetch( io_generated_code,
+                                          LIBXSMM_X86_INSTR_PREFETCHT1, 
+                                          l_gp_reg_mapping.gp_reg_help_3,
+                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                          0);  
+        }
+      
 #if 0
         if ( (prefetch_current_output == 1) && (peel_index == 2) ) {
           unsigned int i, j, store_offset;

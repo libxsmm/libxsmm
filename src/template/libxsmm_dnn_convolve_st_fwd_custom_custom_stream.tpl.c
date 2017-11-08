@@ -102,7 +102,7 @@ if (handle->use_lp_kernel == 1) {
   scale_factor = 1.0; // (float) pow(2.0, -1.0*(handle->reg_filter->exp + handle->reg_input->exp));
 }
 
-float *max_vals;
+float *max_vals __attribute__((aligned(64)));
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, element_output_type, maxstats, handle->maxstats_fwd->data, handle->ofmblock);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, handle->ofmblock);
@@ -545,5 +545,6 @@ if (n_segments) {
     }
   }
 }
+
 libxsmm_barrier_wait(handle->barrier, ltid);
 

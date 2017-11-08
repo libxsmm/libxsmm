@@ -583,8 +583,18 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
               i_conv_kernel_config->vxor_instruction,
               i_conv_kernel_config->vector_name, 1, 1, 1);
 
-          /* Initialize "mask" for ABS() via AND() */
-          /* TODO  */
+          /* Initialize "zmm mask" in zmm2 */
+          int mask_array[64];
+          int ind_mask;
+          for (ind_mask = 0; ind_mask < 16; ind_mask++) {
+            mask_array[ind_mask] = 0x7FFFFFFF;
+          }         
+
+          libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+              (const unsigned char*) mask_array,
+              "abs_mask",
+              i_conv_kernel_config->vector_name,
+              2);
         }
 
         for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
@@ -621,7 +631,26 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                     i_conv_kernel_config->vector_name,
                     regX,
                     0,
-                    regX);               
+                    regX);
+
+                if (i_conv_desc->compute_max == 1) {
+                  /* Compute ABS(regX) in zmm3  */
+                  libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
+                      i_conv_kernel_config->instruction_set,
+                      LIBXSMM_X86_INSTR_VPANDD,
+                      i_conv_kernel_config->vector_name,
+                      regX,
+                      2,
+                      3);
+
+                  libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
+                      i_conv_kernel_config->instruction_set,
+                      LIBXSMM_X86_INSTR_VMAXPS,
+                      i_conv_kernel_config->vector_name,
+                      1,
+                      3,
+                      1);
+                }
               }
 
               /* Store the result to output  */
@@ -640,6 +669,23 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
 
         if (i_conv_desc->compute_max == 1) {
           /* Store "max" register (zmm1) to max_vals address  */
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              i_conv_kernel_config->vmove_instruction,
+              i_gp_reg_mapping->gp_reg_help_4,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              0,
+              i_conv_kernel_config->vector_name,
+              2, 0, 0 );
+
+          libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VMAXPS,
+              i_conv_kernel_config->vector_name,
+              2,
+              1,
+              1);
+
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_conv_kernel_config->instruction_set,
               i_conv_kernel_config->vmove_instruction,
