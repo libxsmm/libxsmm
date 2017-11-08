@@ -1014,7 +1014,6 @@ endif
 endif
 
 ifneq (0,$(THREADS))
-  DFLAGS += -D_REENTRANT
   ifeq (0,$(COMPATIBLE))
     CXXFLAGS += -pthread
     CFLAGS += -pthread

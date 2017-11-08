@@ -495,6 +495,10 @@
 # define inline LIBXSMM_INLINE_KEYWORD
 #endif
 
+#if !defined(LIBXSMM_NO_SYNC) && !defined(_REENTRANT)
+# define _REENTRANT
+#endif
+
 /* _Float128 was introduced with GNU GCC 7.0. */
 #if !defined(_Float128) && defined(__GNUC__) && !defined(__cplusplus) \
   && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
