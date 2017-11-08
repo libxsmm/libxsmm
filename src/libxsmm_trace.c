@@ -106,10 +106,10 @@ LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
-# define LIBXSMM_TRACE_INITINT LONG
+LIBXSMM_API_VARIABLE volatile LONG internal_trace_initialized /*= -1*/;
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
-# define LIBXSMM_TRACE_INITINT int
+LIBXSMM_API_VARIABLE volatile int internal_trace_initialized /*= -1*/;
 #if !defined(LIBXSMM_NO_SYNC)
 LIBXSMM_API_VARIABLE pthread_key_t internal_trace_key /*= 0*/;
 #endif
@@ -142,7 +142,6 @@ LIBXSMM_API_DEFINITION void internal_delete(void* value)
 #endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
 
 
-LIBXSMM_API_VARIABLE volatile LIBXSMM_TRACE_INITINT internal_trace_initialized /*= -1*/;
 LIBXSMM_API_VARIABLE int internal_trace_mindepth;
 LIBXSMM_API_VARIABLE int internal_trace_threadid;
 LIBXSMM_API_VARIABLE int internal_trace_maxnsyms;
@@ -190,9 +189,8 @@ LIBXSMM_API_DEFINITION int libxsmm_trace_finalize(void)
 {
   int result;
 #if defined(LIBXSMM_TRACE)
-  const int initialized = LIBXSMM_ATOMIC_LOAD(&internal_trace_initialized, LIBXSMM_ATOMIC_RELAXED);
-  if (0 == initialized) {
-    LIBXSMM_ATOMIC_STORE(&internal_trace_initialized, (LIBXSMM_TRACE_INITINT)-1/*disable*/, LIBXSMM_ATOMIC_SEQ_CST);
+  if (0 == internal_trace_initialized) {
+    internal_trace_initialized = -1; /* disable */
 # if defined(_WIN32) || defined(__CYGWIN__)
     result = (FALSE != SymCleanup(GetCurrentProcess()) ? EXIT_SUCCESS : GetLastError());
 # elif !defined(LIBXSMM_NO_SYNC)
