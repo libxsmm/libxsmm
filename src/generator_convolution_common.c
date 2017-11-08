@@ -566,6 +566,27 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
             0,
             i_conv_kernel_config->vector_name, 0,
             0, 0 );
+
+        if (i_conv_desc->compute_max == 1) {
+          /* Load  address of "max_vals" */
+          libxsmm_x86_instruction_alu_mem( io_generated_code,
+              i_conv_kernel_config->alu_mov_instruction,
+              i_gp_reg_mapping->gp_reg_help_5,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              rsp_offset+8,
+              i_gp_reg_mapping->gp_reg_help_4,
+              0 );
+            
+          /* Initialize zmm1 with zeros */
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              i_conv_kernel_config->vxor_instruction,
+              i_conv_kernel_config->vector_name, 1, 1, 1);
+
+          /* Initialize "mask" for ABS() via AND() */
+          /* TODO  */
+        }
+
         for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
           for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
             for ( l_k = 0; l_k < l_reg_per_block; l_k++ ) {
@@ -616,6 +637,19 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
             }
           }
         }  
+
+        if (i_conv_desc->compute_max == 1) {
+          /* Store "max" register (zmm1) to max_vals address  */
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              i_conv_kernel_config->vmove_instruction,
+              i_gp_reg_mapping->gp_reg_help_4,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              0,
+              i_conv_kernel_config->vector_name,
+              1, 0, 1 );  
+        }
+
       } else {
         for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
           for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
@@ -709,6 +743,8 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                   store_offset,
                   i_conv_kernel_config->vector_name,
                   reg_X, 0, 1 );
+
+              /* TODO: Max calculation also here  */
             }
           }
         }
