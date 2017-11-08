@@ -209,7 +209,7 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_prec
 LIBXSMM_API_INLINE unsigned int internal_update_mmstatistic(const libxsmm_gemm_descriptor* desc,
   unsigned int ntry, unsigned int ncol)
 {
-  assert(0 != desc && 0 == ((LIBXSMM_KERNEL_KIND_MATCOPY | LIBXSMM_KERNEL_KIND_TKERNEL) & desc->iflags));
+  assert(0 != desc && LIBXSMM_KERNEL_KIND_MATMUL == desc->iflags);
   return libxsmm_update_mmstatistic((libxsmm_gemm_precision)desc->datatype, desc->m, desc->n, desc->k, ntry, ncol);
 }
 
@@ -732,7 +732,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
         const libxsmm_code_pointer code = registry[i];
         if (0 != code.const_pmm) {
           /* check if the registered entity is a GEMM kernel */
-          if (0 == ((LIBXSMM_KERNEL_KIND_MATCOPY | LIBXSMM_KERNEL_KIND_TKERNEL) & registry_keys[i].xgemm.iflags)) {
+          if (LIBXSMM_KERNEL_KIND_MATMUL == registry_keys[i].xgemm.iflags) {
             const libxsmm_gemm_descriptor *const desc = &registry_keys[i].xgemm;
             const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
             const int precision = (LIBXSMM_GEMM_PRECISION_F64 == desc->datatype ? 0 : 1);
@@ -754,11 +754,14 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
               ++internal_statistic[precision][bucket].nsta;
             }
           }
-          else if (0 != (LIBXSMM_KERNEL_KIND_MATCOPY & registry_keys[i].xgemm.iflags)) {
+          else if (LIBXSMM_KERNEL_KIND_MCOPY == registry_keys[i].xgemm.iflags) {
             ++internal_statistic_num_mcopy;
           }
-          else if (0 != (LIBXSMM_KERNEL_KIND_TKERNEL & registry_keys[i].xgemm.iflags)) {
+          else if (LIBXSMM_KERNEL_KIND_TCOPY == registry_keys[i].xgemm.iflags) {
             ++internal_statistic_num_tcopy;
+          }
+          else {
+            fprintf(stderr, "LIBXSMM ERROR: code registry is corrupted!\n");
           }
           if (0 == (LIBXSMM_CODE_STATIC & code.uimm)) { /* check for allocated/generated JIT-code */
             void* buffer = 0;
@@ -1422,8 +1425,8 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
           if (0 == internal_registry[i].const_pmm) { /* double-check registry after acquiring the lock */
             libxsmm_build_request request; /* setup the code build request */
             request.descriptor.gemm = descriptor;
-            if (0 == (LIBXSMM_KERNEL_KIND_MATCOPY & descriptor->iflags)) {
-              if (0 == (LIBXSMM_KERNEL_KIND_TKERNEL & descriptor->iflags)) { /* gemm */
+            if (LIBXSMM_KERNEL_KIND_MCOPY != descriptor->iflags) {
+              if (LIBXSMM_KERNEL_KIND_TCOPY != descriptor->iflags) { /* gemm */
                 internal_update_mmstatistic(descriptor, 1/*try*/, 0); /* count attempt */
                 request.kind = LIBXSMM_BUILD_KIND_GEMM;
               }
@@ -1500,44 +1503,53 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 }
 
 
-LIBXSMM_API_DEFINITION const libxsmm_kernel_info* libxsmm_get_kernel_info(const void* kernel, size_t* size)
+LIBXSMM_API_DEFINITION const libxsmm_kernel_info* libxsmm_get_kernel_info(const void* kernel, libxsmm_kernel_kind* kind, size_t* size)
 {
+  const libxsmm_kernel_info* result;
   void* extra = 0;
-  LIBXSMM_INIT
-  return (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(kernel, size, 0/*flags*/, &extra)
+  if (0 != kernel && 0 != internal_registry && 0 != internal_registry_keys
+    && EXIT_SUCCESS == libxsmm_get_malloc_xinfo(kernel, size, 0/*flags*/, &extra)
     && 0 != extra && *((const unsigned int*)extra) < (LIBXSMM_CAPACITY_REGISTRY)
-    && kernel == internal_registry[*((const unsigned int*)extra)].const_pmm)
-    ? &internal_registry_keys[*((const unsigned int*)extra)] : 0;
+    && kernel == internal_registry[*((const unsigned int*)extra)].const_pmm
+    /* the kernel kind is stored in the internal flags of the libxsmm_gemm_descriptor (iflags). */
+    && internal_registry_keys[*((const unsigned int*)extra)].xgemm.iflags < LIBXSMM_KERNEL_KIND_INVALID)
+  {
+    if (0 != kind) *kind = (libxsmm_kernel_kind)internal_registry_keys[*((const unsigned int*)extra)].xgemm.iflags;
+    result = internal_registry_keys + *((const unsigned int*)extra);
+  }
+  else {
+    if (0 != kind) *kind = LIBXSMM_KERNEL_KIND_INVALID;
+    result = 0;
+  }
+  return result;
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_get_kernel_kind(const void* kernel, libxsmm_kernel_kind* kind)
+{
+  const libxsmm_kernel_info *const info = libxsmm_get_kernel_info(kernel, kind, 0/*code_size*/);
+  return (0 != info ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
 
 LIBXSMM_API_DEFINITION int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_gemm_descriptor* info, size_t* code_size)
 {
   libxsmm_code_pointer code;
+  libxsmm_kernel_kind kind;
   static int error_once = 0;
   int result;
   code.xgemm = kernel;
   if (0 != info || 0 != code_size) {
-    const libxsmm_kernel_info *const kernel_info = libxsmm_get_kernel_info(code.const_pmm, code_size);
-    if (0 != kernel_info) {
-      if (0 == ((LIBXSMM_KERNEL_KIND_MATCOPY | LIBXSMM_KERNEL_KIND_TKERNEL) & kernel_info->xgemm.iflags)) {
-        if (0 != info) *info = kernel_info->xgemm;
-        result = EXIT_SUCCESS;
-      }
-      else {
-        if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
-          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-        {
-          fprintf(stderr, "LIBXSMM WARNING: code is not a GEMM-kernel!\n");
-        }
-        result = EXIT_FAILURE;
-      }
+    const libxsmm_kernel_info *const kernel_info = libxsmm_get_kernel_info(code.const_pmm, &kind, code_size);
+    if (0 != kernel_info && LIBXSMM_KERNEL_KIND_MATMUL == kind) {
+      if (0 != info) *info = kernel_info->xgemm;
+      result = EXIT_SUCCESS;
     }
     else {
-      if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+      if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM WARNING: non-JIT kernel cannot be inspected!\n");
+        fprintf(stderr, "LIBXSMM ERROR: invalid kernel cannot be inspected!\n");
       }
       result = EXIT_FAILURE;
     }
@@ -1557,30 +1569,21 @@ LIBXSMM_API_DEFINITION int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel,
 LIBXSMM_API_DEFINITION int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libxsmm_transpose_descriptor* info, size_t* code_size)
 {
   libxsmm_code_pointer code;
+  libxsmm_kernel_kind kind;
   static int error_once = 0;
   int result;
   code.xtrans = kernel;
   if (0 != info || 0 != code_size) {
-    const libxsmm_kernel_info *const kernel_info = libxsmm_get_kernel_info(code.const_pmm, code_size);
-    if (0 != kernel_info) {
-      if (0 == ((LIBXSMM_KERNEL_KIND_MATCOPY | LIBXSMM_KERNEL_KIND_TKERNEL) & kernel_info->xgemm.iflags)) {
-        if (0 != info) *info = kernel_info->trans;
-        result = EXIT_SUCCESS;
-      }
-      else {
-        if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
-          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-        {
-          fprintf(stderr, "LIBXSMM WARNING: code is not a GEMM-kernel!\n");
-        }
-        result = EXIT_FAILURE;
-      }
+    const libxsmm_kernel_info *const kernel_info = libxsmm_get_kernel_info(code.const_pmm, &kind, code_size);
+    if (0 != kernel_info && LIBXSMM_KERNEL_KIND_TCOPY == kind) {
+      if (0 != info) *info = kernel_info->trans;
+      result = EXIT_SUCCESS;
     }
     else {
-      if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+      if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM WARNING: non-JIT kernel cannot be inspected!\n");
+        fprintf(stderr, "LIBXSMM ERROR: invalid kernel cannot be inspected!\n");
       }
       result = EXIT_FAILURE;
     }
@@ -1600,30 +1603,21 @@ LIBXSMM_API_DEFINITION int libxsmm_get_transkernel_info(libxsmm_xtransfunction k
 LIBXSMM_API_DEFINITION int libxsmm_get_matcopykernel_info(libxsmm_xmatcopyfunction kernel, libxsmm_matcopy_descriptor* info, size_t* code_size)
 {
   libxsmm_code_pointer code;
+  libxsmm_kernel_kind kind;
   static int error_once = 0;
   int result;
   code.xmatcopy = kernel;
   if (0 != info || 0 != code_size) {
-    const libxsmm_kernel_info *const kernel_info = libxsmm_get_kernel_info(code.const_pmm, code_size);
-    if (0 != kernel_info) {
-      if (0 == ((LIBXSMM_KERNEL_KIND_MATCOPY | LIBXSMM_KERNEL_KIND_TKERNEL) & kernel_info->xgemm.iflags)) {
-        if (0 != info) *info = kernel_info->mcopy;
-        result = EXIT_SUCCESS;
-      }
-      else {
-        if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
-          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-        {
-          fprintf(stderr, "LIBXSMM WARNING: code is not a GEMM-kernel!\n");
-        }
-        result = EXIT_FAILURE;
-      }
+    const libxsmm_kernel_info *const kernel_info = libxsmm_get_kernel_info(code.const_pmm, &kind, code_size);
+    if (0 != kernel_info && LIBXSMM_KERNEL_KIND_MCOPY == kind) {
+      if (0 != info) *info = kernel_info->mcopy;
+      result = EXIT_SUCCESS;
     }
     else {
-      if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+      if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM WARNING: non-JIT kernel cannot be inspected!\n");
+        fprintf(stderr, "LIBXSMM ERROR: invalid kernel cannot be inspected!\n");
       }
       result = EXIT_FAILURE;
     }
@@ -1800,7 +1794,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->flags) < sizeof(query));
     LIBXSMM_INIT
     query.mcopy = *descriptor;
-    query.xgemm.iflags = LIBXSMM_KERNEL_KIND_MATCOPY;
+    query.xgemm.iflags = LIBXSMM_KERNEL_KIND_MCOPY;
     result = internal_find_code(&query.xgemm).xmatcopy;
   }
   return result;
@@ -1817,7 +1811,7 @@ LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxs
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
     LIBXSMM_INIT
     query.trans = *descriptor;
-    query.xgemm.iflags = LIBXSMM_KERNEL_KIND_TKERNEL;
+    query.xgemm.iflags = LIBXSMM_KERNEL_KIND_TCOPY;
     result = internal_find_code(&query.xgemm).xtrans;
   }
   return result;

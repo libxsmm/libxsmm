@@ -336,6 +336,18 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wmmfunction wmm;
 } libxsmm_xmmfunction;
 
+/** Determines the kernel kind. */
+typedef enum libxsmm_kernel_kind {
+  /** Matrix multiplication kernel */
+  LIBXSMM_KERNEL_KIND_MATMUL  = 0,
+  /** Matcopy kernel kind */
+  LIBXSMM_KERNEL_KIND_MCOPY   = 1,
+  /** Transpose kernel kind */
+  LIBXSMM_KERNEL_KIND_TCOPY   = 2,
+  /** Not a JIT kernel */
+  LIBXSMM_KERNEL_KIND_INVALID = 3
+} libxsmm_kernel_kind;
+
 /** Specialized function for matrix-copy (weak-typed). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmatcopyfunction)(const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);
 

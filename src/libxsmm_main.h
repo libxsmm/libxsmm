@@ -369,16 +369,8 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_kernel_info {
   libxsmm_transpose_descriptor trans;
 } libxsmm_kernel_info;
 
-/** Descriptor kind stored in the iflag of the libxsmm_gemm_descriptor. */
-typedef enum libxsmm_kernel_kind {
-  /** Matcopy kernel kind */
-  LIBXSMM_KERNEL_KIND_MATCOPY = 1,
-  /** Transpose kernel kind */
-  LIBXSMM_KERNEL_KIND_TKERNEL = 2
-} libxsmm_kernel_kind;
-
 /** Attempts to receive information about JIT-generated code. */
-LIBXSMM_API const libxsmm_kernel_info* libxsmm_get_kernel_info(const void* kernel, size_t* size);
+LIBXSMM_API const libxsmm_kernel_info* libxsmm_get_kernel_info(const void* kernel, libxsmm_kernel_kind* kind, size_t* size);
 
 /** Updates counters of the statistic, which is shown at program termination. */
 LIBXSMM_API unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision precision,
