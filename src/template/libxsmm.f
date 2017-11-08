@@ -442,12 +442,12 @@
 
           ! Process a series of matrix multiplications (batch).
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4)   :: prec, tid, nthreads
+          ! INTEGER(4)   :: tid, nthreads
           ! INTEGER(8)   :: kernel
           ! ARRAY        :: a, b, c
           ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
           ! INTEGER(4|8) :: index_base, index_stride, batchsize
-          SUBROUTINE libxsmm_mmbatch(prec, kernel, index_base,          &
+          SUBROUTINE libxsmm_mmbatch(kernel, index_base,                &
      &    index_stride, stride_a, stride_b, stride_c, a, b, c,          &
      &    batchsize, tid, nthreads) BIND(C, NAME="libxsmm_mmbatch_")
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
@@ -463,7 +463,7 @@
             ! a negative value, then internal synchronization is omitted.
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
             ! Precision, Thread-ID (TID), and the number of threads.
-            INTEGER(C_INT), INTENT(IN) :: prec, tid, nthreads
+            INTEGER(C_INT), INTENT(IN) :: tid, nthreads
             ! Kernel (matches precision, transa, transb, beta, etc.).
             INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
             ! index_stride==0: a single value (in Bytes) for stride_* is expected,
@@ -485,19 +485,18 @@
           ! Process a series of matrix multiplications (batch)
           ! similar to libxsmm_mmbatch; MT via libxsmmext.
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4)   :: prec, tid, nthreads
+          ! INTEGER(4)   :: tid, nthreads
           ! INTEGER(8)   :: kernel
           ! ARRAY        :: a, b, c
           ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
           ! INTEGER(4|8) :: index_base, index_stride, batchsize
-          SUBROUTINE libxsmm_mmbatch_omp(prec, kernel, index_base,      &
+          SUBROUTINE libxsmm_mmbatch_omp(kernel, index_base,            &
      &    index_stride, stride_a, stride_b, stride_c, a, b, c,          &
      &    batchsize) BIND(C, NAME="libxsmm_mmbatch_omp_")
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
-            INTEGER(C_INT), INTENT(IN) :: prec
             INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_b

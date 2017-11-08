@@ -156,7 +156,7 @@ LIBXSMM_API libxsmm_wmmfunction libxsmm_wmmdispatch(libxsmm_blasint m, libxsmm_b
   const int* alpha, const int* beta, const int* flags, const int* prefetch);
 
 /** Process a series of matrix multiplications (batch). */
-LIBXSMM_API int libxsmm_mmbatch(libxsmm_gemm_precision precision,
+LIBXSMM_API int libxsmm_mmbatch(
   /** Kernel (matches precision, transa, transb, beta, etc.). */
   libxsmm_xmmfunction kernel,
   /** Determines index-base (usually 0, 1 for one-based indexes); uses the same unit as the strides. */
@@ -191,8 +191,8 @@ LIBXSMM_API int libxsmm_mmbatch(libxsmm_gemm_precision precision,
   /*unsigned*/int tid, /*unsigned*/int nthreads);
 
 /** Process a series of matrix multiplications (batch) similar to libxsmm_mmbatch; MT via libxsmmext. */
-LIBXSMM_API int libxsmm_mmbatch_omp(libxsmm_gemm_precision precision, libxsmm_xmmfunction kernel, libxsmm_blasint index_base,
-  libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+LIBXSMM_API int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
+  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize);
 
 /** Process a series of matrix multiplications (batch); sequential. See also libxsmm_mmbatch. */

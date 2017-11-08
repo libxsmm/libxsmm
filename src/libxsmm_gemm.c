@@ -534,17 +534,20 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, libxsmm_xmmfunction kernel, libxsmm_blasint index_base,
-  libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
+  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize, int tid, int nthreads)
 {
-  const libxsmm_blasint typesize = libxsmm_gemm_typesize(precision);
+  const libxsmm_kernel_info* info;
+  libxsmm_code_pointer code;
+  libxsmm_kernel_kind kind;
   int result = EXIT_SUCCESS;
-  LIBXSMM_INIT
-  assert(0 < typesize);
-  if (0 != kernel.xmm && 0 != a && 0 != b && 0 != c &&
-      /* use (signed) integer types, but check sanity of input */
-      0 <= tid && tid < nthreads)
+
+  code.xgemm = kernel;
+  info = libxsmm_get_kernel_info(code, &kind, 0/*size*/);
+  if (0 != info && LIBXSMM_KERNEL_KIND_MATMUL == kind && 0 != a && 0 != b && 0 != c
+    /* use (signed) integer types, but check sanity of input */
+    && 0 <= tid && tid < nthreads)
   {
     const libxsmm_blasint size = LIBXSMM_ABS(batchsize);
     const libxsmm_blasint tasksize = (size + nthreads - 1) / nthreads;
@@ -552,10 +555,13 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_gemm_precision precision, lib
     const libxsmm_blasint end = LIBXSMM_MIN(span, size);
 
     if (begin < end) {
+      const libxsmm_blasint typesize = libxsmm_gemm_typesize((libxsmm_gemm_precision)info->xgemm.datatype);
       const char *const a0 = (const char*)a, *const b0 = (const char*)b;
       char *const c0 = (char*)c;
       libxsmm_blasint i, ni;
 
+      LIBXSMM_INIT
+      assert(0 < typesize);
       if (0 != index_stride) { /* stride arrays contain indexes */
         if (((int)sizeof(libxsmm_blasint)) <= index_stride) {
           const char *const sa = (const char*)stride_a, *const sb = (const char*)stride_b, *const sc = (const char*)stride_c;
@@ -890,9 +896,9 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_batch(libxsmm_gemm_precision precision,
   static int error_once = 0;
 
   if (0 != kernel.xmm) {
-    result = libxsmm_mmbatch(precision, kernel,
-      index_base, index_stride, stride_a, stride_b, stride_c,
-      a, b, c, batchsize, 0/*tid*/, 1/*nthreads*/);
+    result = libxsmm_mmbatch(kernel, index_base, index_stride,
+      stride_a, stride_b, stride_c, a, b, c, batchsize,
+      0/*tid*/, 1/*nthreads*/);
   }
   else { /* fall-back */
     switch (precision) {
@@ -985,16 +991,16 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_blas_dgemm)(const char* tran
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_mmbatch)(const libxsmm_gemm_precision* precision, libxsmm_xmmfunction kernel, const libxsmm_blasint* index_base,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_mmbatch)(libxsmm_xmmfunction kernel, const libxsmm_blasint* index_base,
   const libxsmm_blasint* index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, const libxsmm_blasint* batchsize, const int* tid, const int* nthreads);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_mmbatch)(const libxsmm_gemm_precision* precision, libxsmm_xmmfunction kernel, const libxsmm_blasint* index_base,
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_mmbatch)(libxsmm_xmmfunction kernel, const libxsmm_blasint* index_base,
   const libxsmm_blasint* index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, const libxsmm_blasint* batchsize, const int* tid, const int* nthreads)
 {
   static int error_once = 0;
-  assert(0 != precision && 0 != a && 0 != b && 0 != c && 0 != index_base && 0 != index_stride && 0 != batchsize && 0 != tid && 0 != nthreads);
-  if (EXIT_SUCCESS != libxsmm_mmbatch(*precision, kernel, *index_base, *index_stride, stride_a, stride_b, stride_c, a, b, c, *batchsize, *tid, *nthreads)
+  assert(0 != a && 0 != b && 0 != c && 0 != index_base && 0 != index_stride && 0 != batchsize && 0 != tid && 0 != nthreads);
+  if (EXIT_SUCCESS != libxsmm_mmbatch(kernel, *index_base, *index_stride, stride_a, stride_b, stride_c, a, b, c, *batchsize, *tid, *nthreads)
     && 0 != libxsmm_verbosity /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
