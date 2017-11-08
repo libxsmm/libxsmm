@@ -369,7 +369,7 @@ LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_des
 
   if (0 != dst_entry->ptr_const) { /* collision? */
     /* start at a re-hashed index position */
-    const unsigned int start = LIBXSMM_HASH_MOD(LIBXSMM_HASH2(hash), LIBXSMM_CAPACITY_REGISTRY);
+    const unsigned int start = LIBXSMM_HASH_MOD(libxsmm_crc32_u32(151981/*seed*/, hash), LIBXSMM_CAPACITY_REGISTRY);
     unsigned int i0, i, next;
 #if defined(LIBXSMM_HASH_COLLISION)
     /* mark current entry as a collision (this might be already the case) */
