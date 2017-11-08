@@ -685,7 +685,8 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_xmmfunction kernel, libxsmm_b
 #if !defined(LIBXSMM_NO_SYNC)
           else { /* synchronize among C-indexes */
             void* cc = *((void**)ci);
-            LIBXSMM_LOCK_TYPE* lock = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)cc, internal_gemm_nlocks);
+            const unsigned int bsf = LIBXSMM_INTRINSICS_BITSCANFWD64((uintptr_t)cc), alignment = (1 << ((bsf >> 1) << 1));
+            LIBXSMM_LOCK_TYPE* lock = internal_gemm_lock + LIBXSMM_FOLD2(cc, alignment, internal_gemm_nlocks);
 # if defined(LIBXSMM_GEMM_LOCKFWD)
             LIBXSMM_LOCK_TYPE* lock0 = 0;
 # endif
@@ -698,7 +699,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_xmmfunction kernel, libxsmm_b
                 const char *const an = ai + da, *const bn = bi + db;
                 char *const cn = ci + dc;
                 void *const nc = *((void**)cn);
-                LIBXSMM_LOCK_TYPE *const lock1 = internal_gemm_lock + LIBXSMM_MOD2((uintptr_t)nc, internal_gemm_nlocks);
+                LIBXSMM_LOCK_TYPE *const lock1 = internal_gemm_lock + LIBXSMM_FOLD2(nc, alignment, internal_gemm_nlocks);
 # if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(lock); }
 # else

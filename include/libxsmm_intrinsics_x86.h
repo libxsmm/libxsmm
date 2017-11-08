@@ -382,15 +382,38 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if (defined(__INTEL_COMPILER) || defined(_CRAYC)) && !defined(LIBXSMM_INTRINSICS_NONE)
-# define LIBXSMM_INTRINSICS_BITSCANFWD(N) _bit_scan_forward(N)
-#elif defined(__GNUC__) && !defined(_CRAYC) && !defined(LIBXSMM_INTRINSICS_NONE)
-# define LIBXSMM_INTRINSICS_BITSCANFWD(N) (__builtin_ffs(N) - 1)
-#else /* fall-back implementation */
-  LIBXSMM_API_INLINE int libxsmm_bitscanfwd(int n) {
-    int i, r = 0; for (i = 1; 0 == (n & i) ; i <<= 1) { ++r; } return r;
+#if (defined(__INTEL_COMPILER) || defined(_MSC_VER) || defined(_CRAYC)) && !defined(LIBXSMM_INTRINSICS_NONE)
+# if defined(_MSC_VER)
+    LIBXSMM_API_INLINE unsigned int LIBXSMM_INTRINSICS_BITSCANFWD32(unsigned int n) {
+      unsigned long r = 0; _BitScanForward(&r, n); return r;
+    }
+    LIBXSMM_API_INLINE unsigned int LIBXSMM_INTRINSICS_BITSCANBWD32(unsigned int n) {
+      unsigned long r = 0; _BitScanReverse(&r, n); return r;
+    }
+# else
+#   define LIBXSMM_INTRINSICS_BITSCANFWD32(N) _bit_scan_forward(N)
+#   define LIBXSMM_INTRINSICS_BITSCANBWD32(N) _bit_scan_reverse(N)
+#endif
+  LIBXSMM_API_INLINE unsigned int LIBXSMM_INTRINSICS_BITSCANFWD64(unsigned long long n) {
+    unsigned long r = 0; _BitScanForward64(&r, n); return r;
   }
-# define LIBXSMM_INTRINSICS_BITSCANFWD(N) libxsmm_bitscanfwd(N)
+  LIBXSMM_API_INLINE unsigned int LIBXSMM_INTRINSICS_BITSCANBWD64(unsigned long long n) {
+    unsigned long r = 0; _BitScanReverse64(&r, n); return r;
+  }
+#elif defined(__GNUC__) && !defined(_CRAYC) && !defined(LIBXSMM_INTRINSICS_NONE)
+# define LIBXSMM_INTRINSICS_BITSCANFWD32(N) (__builtin_ffs(N) - 1)
+# define LIBXSMM_INTRINSICS_BITSCANBWD32(N) LIBXSMM_LOG2_32(N)
+# define LIBXSMM_INTRINSICS_BITSCANFWD64(N) (__builtin_ffsll(N) - 1)
+# define LIBXSMM_INTRINSICS_BITSCANBWD64(N) LIBXSMM_LOG2_64(N)
+#else /* fall-back implementation */
+  LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD32(int n) {
+    int i, r = 0; for (i = 1; 0 == (n & i); i <<= 1) { ++r; } return r;
+  }
+# define LIBXSMM_INTRINSICS_BITSCANBWD32(N) LIBXSMM_LOG2_32(N)
+  LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64(unsigned long long n) {
+    unsigned int i, r = 0; for (i = 1; 0 == (n & i); i <<= 1) { ++r; } return r;
+  }
+# define LIBXSMM_INTRINSICS_BITSCANBWD64(N) LIBXSMM_LOG2_64(N)
 #endif
 
 #if !defined(LIBXSMM_INTRINSICS_KNC) && !defined(LIBXSMM_INTRINSICS_NONE) && defined(__MIC__)

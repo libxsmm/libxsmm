@@ -86,10 +86,10 @@ public:
   }
 public:
   void acquire(const void* address) {
-    omp_set_lock(m_lock + LIBXSMM_HASH2(address, LIBXSMM_ALIGNMENT, CP2K_SYNCHRONIZATION));
+    omp_set_lock(m_lock + LIBXSMM_FOLD2(address, LIBXSMM_ALIGNMENT, CP2K_SYNCHRONIZATION));
   }
   void release(const void* address) {
-    omp_unset_lock(m_lock + LIBXSMM_HASH2(address, LIBXSMM_ALIGNMENT, CP2K_SYNCHRONIZATION));
+    omp_unset_lock(m_lock + LIBXSMM_FOLD2(address, LIBXSMM_ALIGNMENT, CP2K_SYNCHRONIZATION));
   }
 private:
   omp_lock_t m_lock[CP2K_SYNCHRONIZATION];
