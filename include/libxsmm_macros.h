@@ -258,12 +258,12 @@
 #endif
 
 /** Binary Logarithm (based on Stackoverflow's NBITSx macro). */
-#define LIBXSMM_LOG2_02(N) (0 != ((N) & 0x2/*0b10*/) ? 1ULL : 0ULL)
-#define LIBXSMM_LOG2_04(N) (0 != ((N) & 0xC/*0b1100*/) ? (2ULL | LIBXSMM_LOG2_02((N) >> 2)) : LIBXSMM_LOG2_02(N))
-#define LIBXSMM_LOG2_08(N) (0 != ((N) & 0xF0/*0b11110000*/) ? (4ULL | LIBXSMM_LOG2_04((N) >> 4)) : LIBXSMM_LOG2_04(N))
-#define LIBXSMM_LOG2_16(N) (0 != ((N) & 0xFF00) ? (8ULL | LIBXSMM_LOG2_08((N) >> 8)) : LIBXSMM_LOG2_08(N))
-#define LIBXSMM_LOG2_32(N) (0 != ((N) & 0xFFFF0000) ? (16ULL | LIBXSMM_LOG2_16((N) >> 16)) : LIBXSMM_LOG2_16(N))
-#define LIBXSMM_LOG2_64(N) (0 != ((N) & 0xFFFFFFFF00000000) ? (32ULL | LIBXSMM_LOG2_32((N) >> 32)) : LIBXSMM_LOG2_32(N))
+#define LIBXSMM_LOG2_02(N) (0 != ((N) & 0x2/*0b10*/) ? 1 : 0)
+#define LIBXSMM_LOG2_04(N) (0 != ((N) & 0xC/*0b1100*/) ? (2 | LIBXSMM_LOG2_02((N) >> 2)) : LIBXSMM_LOG2_02(N))
+#define LIBXSMM_LOG2_08(N) (0 != ((N) & 0xF0/*0b11110000*/) ? (4 | LIBXSMM_LOG2_04((N) >> 4)) : LIBXSMM_LOG2_04(N))
+#define LIBXSMM_LOG2_16(N) (0 != ((N) & 0xFF00) ? (8 | LIBXSMM_LOG2_08((N) >> 8)) : LIBXSMM_LOG2_08(N))
+#define LIBXSMM_LOG2_32(N) (0 != ((N) & 0xFFFF0000) ? (16 | LIBXSMM_LOG2_16((N) >> 16)) : LIBXSMM_LOG2_16(N))
+#define LIBXSMM_LOG2_64(N) (0 != ((N) & 0xFFFFFFFF00000000) ? (32 | LIBXSMM_LOG2_32((N) >> 32)) : LIBXSMM_LOG2_32(N))
 #define LIBXSMM_LOG2(N) LIBXSMM_MAX((unsigned int)LIBXSMM_LOG2_64((unsigned long long)(N)), 1U)
 
 /** LIBXSMM_UP2POT rounds up to the next power of two (POT). */
