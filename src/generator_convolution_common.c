@@ -550,7 +550,11 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
       if (use_lp_kernel == 1) {
         unsigned int regX, mem_offset;
         libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
-        unsigned int rsp_offset = (i_conv_desc->compute_batch_stats > 0) ? 64 : 48 ;
+        unsigned int rsp_offset = (i_conv_desc->compute_batch_stats > 0) ? 64 : 48;
+        if (i_conv_desc->perform_relu_in_kernel == 1) {
+          rsp_offset = 56;
+        }
+
         libxsmm_x86_instruction_alu_mem( io_generated_code,
             i_conv_kernel_config->alu_mov_instruction,
             i_gp_reg_mapping->gp_reg_help_5,
@@ -569,30 +573,25 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
 
         if (i_conv_desc->compute_max == 1) {
           /* Load  address of "max_vals" */
-          unsigned int relu_offset = 0;
-          if (i_conv_desc->perform_relu_in_kernel == 1) {
-            relu_offset = 8;
-          }
-
           libxsmm_x86_instruction_alu_mem( io_generated_code,
               i_conv_kernel_config->alu_mov_instruction,
               i_gp_reg_mapping->gp_reg_help_5,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
-              rsp_offset+relu_offset+8,
+              rsp_offset+8,
               i_gp_reg_mapping->gp_reg_help_4,
               0 );
 
           if (i_conv_desc->perform_relu_in_kernel == 1) {
             libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, l_gp_reg_mapping.gp_reg_help_0);
             libxsmm_x86_instruction_alu_mem( io_generated_code,
-                                         l_conv_kernel_config.alu_mov_instruction,
-                                         l_gp_reg_mapping.gp_reg_help_0,
-                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                         48,
-                                         l_gp_reg_mapping.gp_reg_help_2,
-                                         0 ); 
+                l_conv_kernel_config.alu_mov_instruction,
+                l_gp_reg_mapping.gp_reg_help_0,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                48,
+                l_gp_reg_mapping.gp_reg_help_2,
+                0 ); 
           }
-            
+
           /* Initialize zmm1 with zeros */
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
               i_conv_kernel_config->instruction_set,
