@@ -252,6 +252,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
   }
 
   /* load an additional temp register with 32 16bit 1s */
+#if 0
   if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, 65537 );
     libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0 );
@@ -265,6 +266,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
 
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0 );
   }
+#endif
 
 
   libxsmm_generator_convolution_forward_load_output( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
