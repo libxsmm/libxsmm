@@ -572,7 +572,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_xmmfunction kernel, libxsmm_b
           char*       ci = c0 + (0 != sc ? ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize) : 0);
           const libxsmm_blasint end1 = (end != size ? end : (end - 1));
 #if !defined(LIBXSMM_NO_SYNC)
-          if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize)
+          if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 == info->xgemm.beta)
 #endif
           { /* no locking */
             for (i = begin; i < end1; i = ni) {
@@ -656,7 +656,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch(libxsmm_xmmfunction kernel, libxsmm_b
           char* ci = c0 + dc * begin;
 
 #if !defined(LIBXSMM_NO_SYNC)
-          if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize)
+          if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 == info->xgemm.beta)
 #endif
           { /* no locking */
             for (i = begin; i < end1; ++i) {
