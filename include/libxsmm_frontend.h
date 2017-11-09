@@ -97,8 +97,10 @@
 # define MKL_ILP64
 #endif
 #if (0 != LIBXSMM_ILP64)
+# define LIBXSMM_BLASINT_NBITS 64
 # define LIBXSMM_BLASINT long long
 #else /* LP64 */
+# define LIBXSMM_BLASINT_NBITS 32
 # define LIBXSMM_BLASINT int
 #endif
 
