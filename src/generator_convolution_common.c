@@ -582,13 +582,13 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
               0 );
 
           if (i_conv_desc->perform_relu_in_kernel == 1) {
-            libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, l_gp_reg_mapping.gp_reg_help_0);
+            libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_0);
             libxsmm_x86_instruction_alu_mem( io_generated_code,
-                l_conv_kernel_config.alu_mov_instruction,
-                l_gp_reg_mapping.gp_reg_help_0,
+                i_conv_kernel_config->alu_mov_instruction,
+                i_gp_reg_mapping->gp_reg_help_0,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 48,
-                l_gp_reg_mapping.gp_reg_help_2,
+                i_gp_reg_mapping->gp_reg_help_2,
                 0 ); 
           }
 
