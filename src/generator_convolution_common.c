@@ -545,16 +545,19 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
   } else {
     /* adding to C, so let's store C */
     if ( (i_conv_desc->use_fwd_generator_for_bwd == 0) || (i_conv_desc->stride_w_store == 1 && i_conv_desc->stride_h_store == 1) ) {
-
       /* In case of LP kernel convert the kernels to F32  */
       if (use_lp_kernel == 1) {
         unsigned int regX, mem_offset;
         libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
-        unsigned int rsp_offset = (i_conv_desc->compute_batch_stats > 0) ? 64 : 48;
+        unsigned int rsp_offset;
+        /* Scale factor offset in rsp */
+        rsp_offset = 48;
+        if (i_conv_desc->compute_batch_stats == 1) {
+          rsp_offset = 64;
+        }
         if (i_conv_desc->perform_relu_in_kernel == 1) {
           rsp_offset = 56;
         }
-
         libxsmm_x86_instruction_alu_mem( io_generated_code,
             i_conv_kernel_config->alu_mov_instruction,
             i_gp_reg_mapping->gp_reg_help_5,
@@ -572,7 +575,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
             0, 0 );
 
         if (i_conv_desc->compute_max == 1) {
-          /* Load  address of "max_vals" */
+          /* Load  address of "max_vals" -- max vals is always next to scale factor in RSP, thus +8 in RSP offset */
           libxsmm_x86_instruction_alu_mem( io_generated_code,
               i_conv_kernel_config->alu_mov_instruction,
               i_gp_reg_mapping->gp_reg_help_5,
@@ -582,6 +585,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
               0 );
 
           if (i_conv_desc->perform_relu_in_kernel == 1) {
+            /* Load in reg_help_2 the offset for the "input" to determine RELU  */
             libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_0);
             libxsmm_x86_instruction_alu_mem( io_generated_code,
                 i_conv_kernel_config->alu_mov_instruction,
