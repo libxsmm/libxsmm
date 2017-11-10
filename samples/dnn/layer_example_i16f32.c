@@ -45,8 +45,8 @@
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
 #define USE_OVERWRITE
-/*#define USE_FUSED_BATCH_STATS*/
-/* #define USE_FUSED_MAX_STATS */
+#define USE_FUSED_BATCH_STATS
+#define USE_FUSED_MAX_STATS
 #define FP64_BN_STATS
 /*#define USE_FUSED_RELU_BWD*/
 
@@ -618,14 +618,20 @@ int main(int argc, char* argv[])
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU;
 #elif defined(USE_FUSED_BIAS_RELU)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
+#elif (defined(USE_FUSED_BATCH_STATS) && defined(USE_FUSED_MAX_STATS))
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_AND_MAX;  
+#elif (defined(USE_FUSED_RELU_BWD) && defined(USE_FUSED_MAX_STATS))
+   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU_BWD_AND_MAX;
+#elif defined(USE_FUSED_BATCH_STATCH_RELU_BWD)
+   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD;
+#elif defined(USE_FUSED_BATCH_STATCH_RELU_BWD_AND_MAX)
+   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD_AND_MAX;
 #elif defined(USE_FUSED_BATCH_STATS)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS;
 #elif defined(USE_FUSED_MAX_STATS)
-    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_MAX_STATS;  
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_MAX_STATS;
 #elif defined(USE_FUSED_RELU_BWD)
-   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU_BWD;
-#elif defined(USE_FUSED_BATCH_STATCH_RELU_BWD)
-   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD;
+   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU_BWD;  
 #else
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
@@ -774,9 +780,10 @@ int main(int argc, char* argv[])
           max_libxsmm = LIBXSMM_MAX( max_libxsmm, maxstats_libxsmm[img_i*16+ch_i]);
         }
       }
-      printf("ABSOLUTE MAX VALUES FWD:\n");
-      printf("Reference max abs FWD value : %.25f\n", max_naive);
-      printf("LIBXSMM max abs FWD value : %.25f\n", max_libxsmm);
+      printf("\nABSOLUTE MAX VALUES FWD:\n");
+      printf("Referen. max abs FWD value: %.25f\n", max_naive);
+      printf("LIBXSMM  max abs FWD value: %.25f\n", max_libxsmm);
+      printf("L2 abs.error  : %.24f\n\n", max_naive-max_libxsmm);
     }
 #endif
 
@@ -851,7 +858,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_batchstats.normf_rel);
 
       libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum2, ch_sum2_fuse, 0, 0, &norms_batchstats);
-      printf("Channel Sum2:\n");
+      printf("\nChannel Sum2:\n");
       printf("L1 reference  : %.25f\n", norms_batchstats.l1_ref);
       printf("L1 test       : %.25f\n", norms_batchstats.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_batchstats.l2_abs);
