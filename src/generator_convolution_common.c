@@ -731,6 +731,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
               i_conv_kernel_config->vector_name,
               1, 0, 1 );  
         }
+
       } else {
         for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
           for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {

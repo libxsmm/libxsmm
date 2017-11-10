@@ -364,6 +364,7 @@ int main(int argc, char* argv[])
 #endif
 #ifdef USE_FUSED_MAX_STATS
   float *maxstats_libxsmm;
+  float *maxstats_libxsmm_bwd;
 #endif
 
   /* some parameters we can overwrite via cli,
@@ -539,7 +540,8 @@ int main(int argc, char* argv[])
   batchstats_libxsmm    = (double*)libxsmm_aligned_malloc( 2*nImg*nOfm*        sizeof(double), 2097152);
 #endif
 #ifdef USE_FUSED_MAX_STATS
-  maxstats_libxsmm    = (float*)libxsmm_aligned_malloc(3*nImg*16*sizeof(float), 2097152);
+  maxstats_libxsmm    = (float*)libxsmm_aligned_malloc(nImg*16*sizeof(float), 2097152);
+  maxstats_libxsmm_bwd    = (float*)libxsmm_aligned_malloc(nImg*16*sizeof(float), 2097152);
 #endif
 
   /* initialize data */
@@ -681,7 +683,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_MAX_STATS_BWD, &status ); CHKERR_LIBXSMM_DNN( status );
-  libxsmm_maxstats_bwd  = libxsmm_dnn_link_tensor( libxsmm_layout, maxstats_libxsmm+nThreads*16, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_maxstats_bwd  = libxsmm_dnn_link_tensor( libxsmm_layout, maxstats_libxsmm_bwd, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_MAX_STATS_UPD, &status ); CHKERR_LIBXSMM_DNN( status );
@@ -761,7 +763,6 @@ int main(int argc, char* argv[])
 
 #ifdef USE_FUSED_MAX_STATS
     {
-      float *max_val_reference;
       int img_i = 0;
       int ch_i = 0;
       int pxl_i = 0;
@@ -904,6 +905,33 @@ int main(int argc, char* argv[])
     printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
     printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_bwd);
+
+#ifdef USE_FUSED_MAX_STATS
+    {
+      int img_i = 0;
+      int ch_i = 0;
+      int pxl_i = 0;
+      float max_naive = 0.0;
+      float max_libxsmm = 0.0;
+      LIBXSMM_VLA_DECL(3, float, val_naive, naive_input_bp, nIfm, ifhp*ifwp);
+      for ( img_i = 0; img_i < nImg; ++img_i ) {
+        for ( ch_i = 0; ch_i < nIfm; ++ch_i ) {
+          for ( pxl_i = 0; pxl_i < ifhp*ifwp; ++pxl_i ) {
+            max_naive = LIBXSMM_MAX( max_naive , fabs(val_naive[img_i][ch_i][pxl_i]) );
+          }
+        }
+      }
+      for ( img_i = 0; img_i < nImg; ++img_i ) {
+        for ( ch_i = 0; ch_i < 16; ++ch_i ) {
+          max_libxsmm = LIBXSMM_MAX( max_libxsmm, maxstats_libxsmm_bwd[img_i*16+ch_i]);
+        }
+      }
+      printf("\nABSOLUTE MAX VALUES BWD:\n");
+      printf("Referen. max abs BWD value: %.25f\n", max_naive);
+      printf("LIBXSMM  max abs BWD value: %.25f\n", max_libxsmm);
+      printf("L2 abs.error  : %.24f\n\n", max_naive-max_libxsmm);
+    }
+#endif
   }
 
   if ((type == 'A' || type == 'U')){
