@@ -49,7 +49,7 @@
 # define LIBXSMM_GEMM_BATCHSIZE 1024
 #endif
 #if !defined(LIBXSMM_GEMM_CHUNKSIZE)
-# define LIBXSMM_GEMM_CHUNKSIZE 64
+# define LIBXSMM_GEMM_CHUNKSIZE 512
 #endif
 
 #if !defined(LIBXSMM_NO_SYNC) /** Locks for the batch interface (duplicated C indexes). */
