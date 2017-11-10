@@ -414,7 +414,7 @@ LIBXSMM_API_VARIABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
 LIBXSMM_API_VARIABLE int libxsmm_target_archid;
 /** Determines whether a threaded implementation is synchronized or not. */
-LIBXSMM_API_VARIABLE int libxsmm_sync;
+LIBXSMM_API_VARIABLE int libxsmm_nosync;
 /** Number of threads per core. */
 LIBXSMM_API_VARIABLE int libxsmm_nt;
 

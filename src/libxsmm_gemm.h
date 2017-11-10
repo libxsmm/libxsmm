@@ -500,6 +500,8 @@ LIBXSMM_API_VARIABLE int libxsmm_gemm_auto_prefetch_default;
 LIBXSMM_API_VARIABLE int libxsmm_gemm_auto_prefetch;
 /** Prefetch strategy for tiled GEMM. */
 LIBXSMM_API_VARIABLE int libxsmm_gemm_tiled_prefetch;
+/** Determines if OpenMP tasks are used. */
+LIBXSMM_API_VARIABLE int libxsmm_gemm_tasks;
 /**
  * Intercepted GEMM
  * - odd: sequential and non-tiled (small problem sizes only)

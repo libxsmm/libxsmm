@@ -163,6 +163,10 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
     const char *const env_c = getenv("LIBXSMM_GEMM_CHUNKSIZE");
     libxsmm_gemm_chunksize = ((0 == env_c || 0 == *env_c || 0 > atoi(env_c)) ? (LIBXSMM_GEMM_CHUNKSIZE) : atoi(env_c));
   }
+  { /* determines if OpenMP tasks are used (when available) */
+    const char *const env_t = getenv("LIBXSMM_GEMM_TASKS");
+    libxsmm_gemm_tasks = ((0 == env_t || 0 == *env_t) ? 0/*disabled*/ : atoi(env_t));
+  }
 }
 
 

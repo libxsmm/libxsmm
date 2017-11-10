@@ -465,7 +465,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
     { /* assume external parallelization */
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
-        if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
+        if (0 == libxsmm_nosync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
           LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
           float, flags, tm, tn, tk, *m, nn, kk,
           ralpha, a, ilda, b, ildb, rbeta, c, ildc);
@@ -547,7 +547,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
     { /* assume external parallelization */
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
-        if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
+        if (0 == libxsmm_nosync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
           LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
           double, flags, tm, tn, tk, *m, nn, kk,
           ralpha, a, ilda, b, ildb, rbeta, c, ildc);
@@ -599,12 +599,34 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxs
     { /* enable internal parallelization */
       const int max_nthreads = omp_get_max_threads();
       const int nthreads = LIBXSMM_MIN(max_nthreads, ntasks);
-#     pragma omp parallel num_threads(nthreads)
+# if defined(LIBXSMM_EXT_TASKS)
+      if (0 == libxsmm_gemm_tasks)
+# endif
       {
-        libxsmm_mmbatch(kernel, index_base, index_stride,
-          stride_a, stride_b, stride_c, a, b, c, batchsize,
-          omp_get_thread_num(), nthreads);
-      } /* implicit synchronization (barrier) */
+#       pragma omp parallel num_threads(nthreads)
+        {
+          libxsmm_mmbatch(kernel, index_base, index_stride,
+            stride_a, stride_b, stride_c, a, b, c, batchsize,
+            omp_get_thread_num(), nthreads);
+        } /* implicit synchronization (barrier) */
+      }
+# if defined(LIBXSMM_EXT_TASKS)
+      else { /* tasks requested */
+#       pragma omp parallel num_threads(nthreads)
+        {
+#         pragma omp single nowait /* anyone is good */
+          { /* first thread discovering work will launch all tasks */
+            libxsmm_blasint tid;
+            for (tid = 0; tid < ntasks; ++tid) {
+#             pragma omp task
+              libxsmm_mmbatch(kernel, index_base, index_stride,
+                stride_a, stride_b, stride_c, a, b, c, batchsize,
+                tid, ntasks);
+            }
+          }
+        } /* implicit synchronization (barrier) */
+      }
+# endif
       result = EXIT_SUCCESS;
     }
     else { /* assume external parallelization */
@@ -617,7 +639,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxs
           tid, ntasks);
       }
       /* allow to omit synchronization */
-      if (0 != libxsmm_sync) {
+      if (0 == libxsmm_nosync) {
 #       pragma omp taskwait
       }
       result = EXIT_SUCCESS;
