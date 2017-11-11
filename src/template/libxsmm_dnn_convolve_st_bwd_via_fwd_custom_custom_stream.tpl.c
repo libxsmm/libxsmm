@@ -93,10 +93,11 @@ if (handle->use_lp_kernel == 1) {
 }
 
 float *max_vals  __attribute__((aligned(64)));
+__m512 max_abs;
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, float, maxstats, handle->maxstats_bwd->data, handle->ifmblock);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, handle->ofmblock);
-  __m512 max_abs = _mm512_setzero_ps();
+  max_abs = _mm512_setzero_ps();
   _mm512_store_ps(max_vals, max_abs);
 }
 
@@ -206,7 +207,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       const __m512i vsindex_base = _mm512_mullo_epi32(_mm512_set1_epi32(2), _mm512_set_epi32(7,6,5,4,3,2,1,0,7,6,5,4,3,2,1,0));
       const __m512i vsindex_hi_offs = _mm512_mullo_epi32(_mm512_set1_epi32(16), _mm512_set_epi32(1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0));
       const __m512i vsindex = _mm512_add_epi32(vsindex_hi_offs, vsindex_base);
-      
+
       for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
         icb = ifm1ofm1 / oKB;
         okb = ifm1ofm1 % oKB;
@@ -276,15 +277,12 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               ifm1 =  code_stream[pc].aux_index;
               element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-              __m512 max_abs = _mm512_setzero_ps();
               for ( ij = 0; ij < handle->desc.H; ij++ ) {
                 for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
                   max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+ii)));
                 }
                 cur_vec += handle->ifwp*handle->ifmblock;
               }
-              max_abs = _mm512_max_ps(max_abs, _mm512_load_ps(max_vals));
-              _mm512_store_ps(max_vals, max_abs);
             }
           }
 
@@ -329,15 +327,12 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               ifm1 =  code_stream[pc].aux_index;
               element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-              __m512 max_abs = _mm512_setzero_ps();
               for ( ij = 0; ij < handle->desc.H; ij++ ) {
                 for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
                   max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+ii)));
                 }
                 cur_vec += handle->ifwp*handle->ifmblock;
               }
-              max_abs = _mm512_max_ps(max_abs, _mm512_load_ps(max_vals));
-              _mm512_store_ps(max_vals, max_abs);
             }
           }
 
@@ -406,15 +401,12 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               ifm1 =  code_stream[pc].aux_index;
               element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-              __m512 max_abs = _mm512_setzero_ps();
               for ( ij = 0; ij < handle->desc.H; ij++ ) {
                 for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
                   max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+ii)));
                 }
                 cur_vec += handle->ifwp*handle->ifmblock;
               }
-              max_abs = _mm512_max_ps(max_abs, _mm512_load_ps(max_vals));
-              _mm512_store_ps(max_vals, max_abs);
             }
           }
 
@@ -481,15 +473,12 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               ifm1 =  code_stream[pc].aux_index;
               element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-              __m512 max_abs = _mm512_setzero_ps();
               for ( ij = 0; ij < handle->desc.H; ij++ ) {
                 for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
                   max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+ii)));
                 }
                 cur_vec += handle->ifwp*handle->ifmblock;
               }
-              max_abs = _mm512_max_ps(max_abs, _mm512_load_ps(max_vals));
-              _mm512_store_ps(max_vals, max_abs);
             }
           }     
 
@@ -564,6 +553,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
     }
   }
 
+  if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_lp_kernel == 1) && (handle->compute_max_in_kernel_bwd == 0) ) {   
+    _mm512_store_ps(max_vals, max_abs);
+  }
   libxsmm_barrier_wait(handle->barrier, ltid);
 
 #if 0

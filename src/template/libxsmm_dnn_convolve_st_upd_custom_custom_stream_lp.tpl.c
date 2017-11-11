@@ -258,7 +258,6 @@ if (handle->padding_flag == 1) {
       }
     }
   }
-
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
@@ -274,6 +273,13 @@ if (handle->use_lp_kernel == 1) {
   scale_factor = 1.0; // (float) pow(2.0, -1.0*(handle->reg_filter->exp + handle->reg_input->exp));
 }
 
+float *max_vals __attribute__((aligned(64)));
+__m512 max_abs = _mm512_setzero_ps();
+if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
+  LIBXSMM_VLA_DECL(2, float, maxstats, handle->maxstats_upd->data, 16);
+  max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, 16);
+}
+
 for (pc = 0; pc < instr; pc++) {
   offset_i = stream[i];
   offset_w = stream[i+1];
@@ -287,14 +293,15 @@ for (pc = 0; pc < instr; pc++) {
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 #define __AVX512F__
+for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 #ifdef __AVX512F__
   __m512 weight_sum = _mm512_setzero_ps();
   for ( i = 0; i < handle->weight_copies; i++ ) {
     weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
   }
   _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
+  max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(weight_sum));
 #else
   element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
   LIBXSMM_PRAGMA_VALIGNED
@@ -316,7 +323,10 @@ for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
       weight_ptr[j*16 + k] = weight_sum[k];
     }
 #endif
-#undef __AVX512F__
 }
+#ifdef __AVX512F__
+_mm512_store_ps(max_vals, max_abs);
+#endif
 libxsmm_barrier_wait(handle->barrier, ltid);
+#undef __AVX512F__
 

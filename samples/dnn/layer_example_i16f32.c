@@ -363,8 +363,9 @@ int main(int argc, char* argv[])
   double *batchstats_libxsmm;
 #endif
 #ifdef USE_FUSED_MAX_STATS
-  float *maxstats_libxsmm;
+  float *maxstats_libxsmm_fwd;
   float *maxstats_libxsmm_bwd;
+  float *maxstats_libxsmm_upd;
 #endif
 
   /* some parameters we can overwrite via cli,
@@ -540,8 +541,9 @@ int main(int argc, char* argv[])
   batchstats_libxsmm    = (double*)libxsmm_aligned_malloc( 2*nImg*nOfm*        sizeof(double), 2097152);
 #endif
 #ifdef USE_FUSED_MAX_STATS
-  maxstats_libxsmm    = (float*)libxsmm_aligned_malloc(nImg*16*sizeof(float), 2097152);
+  maxstats_libxsmm_fwd    = (float*)libxsmm_aligned_malloc(nImg*16*sizeof(float), 2097152);
   maxstats_libxsmm_bwd    = (float*)libxsmm_aligned_malloc(nImg*16*sizeof(float), 2097152);
+  maxstats_libxsmm_upd    = (float*)libxsmm_aligned_malloc(nImg*16*sizeof(float), 2097152);
 #endif
 
   /* initialize data */
@@ -679,7 +681,7 @@ int main(int argc, char* argv[])
 
 #ifdef USE_FUSED_MAX_STATS
   libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_MAX_STATS_FWD, &status ); CHKERR_LIBXSMM_DNN( status );
-  libxsmm_maxstats_fwd  = libxsmm_dnn_link_tensor( libxsmm_layout, maxstats_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_maxstats_fwd  = libxsmm_dnn_link_tensor( libxsmm_layout, maxstats_libxsmm_fwd, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_MAX_STATS_BWD, &status ); CHKERR_LIBXSMM_DNN( status );
@@ -687,7 +689,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_MAX_STATS_UPD, &status ); CHKERR_LIBXSMM_DNN( status );
-  libxsmm_maxstats_upd  = libxsmm_dnn_link_tensor( libxsmm_layout, maxstats_libxsmm+2*nThreads*16, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_maxstats_upd  = libxsmm_dnn_link_tensor( libxsmm_layout, maxstats_libxsmm_upd, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 #endif
 
@@ -778,7 +780,7 @@ int main(int argc, char* argv[])
       }
       for ( img_i = 0; img_i < nImg; ++img_i ) {
         for ( ch_i = 0; ch_i < 16; ++ch_i ) {
-          max_libxsmm = LIBXSMM_MAX( max_libxsmm, maxstats_libxsmm[img_i*16+ch_i]);
+          max_libxsmm = LIBXSMM_MAX( max_libxsmm, maxstats_libxsmm_fwd[img_i*16+ch_i]);
         }
       }
       printf("\nABSOLUTE MAX VALUES FWD:\n");
@@ -963,6 +965,32 @@ int main(int argc, char* argv[])
     printf("Linf rel.error: %.24f\n", norms_upd.linf_rel);
     printf("Check-norm    : %.24f\n", norms_upd.normf_rel);
     libxsmm_matdiff_reduce(&diff, &norms_upd);
+
+#ifdef USE_FUSED_MAX_STATS
+    {
+      int thread_i = 0;
+      int entry_i = 0;
+      int c,k,r,s;
+      float max_naive = 0.0;
+      float max_libxsmm = 0.0;
+
+      for ( entry_i = 0; entry_i < nOfm*nIfm*kh*kw; ++entry_i) {
+        max_naive = LIBXSMM_MAX( max_naive , fabs(naive_filter_wu[entry_i]));
+      }
+
+      for ( thread_i = 0; thread_i < nImg; ++thread_i) {
+        for ( entry_i = 0; entry_i < 16; ++entry_i ) {
+          max_libxsmm = LIBXSMM_MAX( max_libxsmm, maxstats_libxsmm_upd[thread_i*16+entry_i]);
+        }
+      }
+
+      printf("\nABSOLUTE MAX VALUES UPD:\n");
+      printf("Referen. max abs UPD value: %.25f\n", max_naive);
+      printf("LIBXSMM  max abs UPD value: %.25f\n", max_libxsmm);
+      printf("L2 abs.error  : %.24f\n\n", max_naive-max_libxsmm);
+    }
+#endif
+
   }
 
   if ((type == 'A' || type == 'F') && LIBXSMM_FEQ(0, check)) {

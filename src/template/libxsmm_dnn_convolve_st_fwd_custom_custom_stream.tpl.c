@@ -103,10 +103,11 @@ if (handle->use_lp_kernel == 1) {
 }
 
 float *max_vals __attribute__((aligned(64)));
+__m512 max_abs;
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, element_output_type, maxstats, handle->maxstats_fwd->data, handle->ofmblock);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, handle->ofmblock);
-  __m512 max_abs = _mm512_setzero_ps();
+  max_abs = _mm512_setzero_ps();
   _mm512_store_ps(max_vals, max_abs);
 }
 
@@ -304,15 +305,12 @@ if (n_segments) {
               ofm1 =  code_stream[pc].aux_index;
               element_output_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
-              __m512 max_abs = _mm512_setzero_ps();
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                   max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+oi)));
                 }
                 cur_vec += handle->ofwp*handle->ofmblock;
               }
-              max_abs = _mm512_max_ps(max_abs, _mm512_load_ps(max_vals));
-              _mm512_store_ps(max_vals, max_abs);
             }
           }
 
@@ -414,15 +412,12 @@ if (n_segments) {
               ofm1 =  code_stream[pc].aux_index;
               element_output_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
-              __m512 max_abs = _mm512_setzero_ps();
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                   max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+oi)));
                 }
                 cur_vec += handle->ofwp*handle->ofmblock;
               }
-              max_abs = _mm512_max_ps(max_abs, _mm512_load_ps(max_vals));
-              _mm512_store_ps(max_vals, max_abs);
             }
           }
 
@@ -544,6 +539,10 @@ if (n_segments) {
       }
     }
   }
+}
+
+if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_lp_kernel == 1) && (handle->compute_max_in_kernel_fwd == 0) ) {   
+  _mm512_store_ps(max_vals, max_abs);
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);

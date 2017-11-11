@@ -266,6 +266,13 @@ if (handle->use_lp_kernel == 1) {
   scale_factor = 1.0; // (float) pow(2.0, -1.0*(handle->reg_filter->exp + handle->reg_input->exp));
 }
 
+float *max_vals __attribute__((aligned(64)));
+__m512 max_abs = _mm512_setzero_ps();
+if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
+  LIBXSMM_VLA_DECL(2, float, maxstats, handle->maxstats_upd->data, 16);
+  max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, 16);
+}
+
 if (n_segments) {
   /* We have segmented the stream of convolutions since we need to inject different functionalities... */
   code_stream = handle->upd_code_segments[ltid];
@@ -325,11 +332,11 @@ if (n_segments) {
   }
 }
 
+#define __AVX512F__
 /* Perform reduction because we used thread private filters... */
 if (handle->upd_use_external_reduce == 0) {
   libxsmm_barrier_wait(handle->barrier, ltid);
   for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
-#define __AVX512F__
 #ifdef __AVX512F__
     __m512 weight_sum = _mm512_setzero_ps();
     for ( i = 0; i < handle->desc.threads; i++ ) {
@@ -337,8 +344,11 @@ if (handle->upd_use_external_reduce == 0) {
     }
     if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
       _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
+      max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(weight_sum));
     } else {
-      _mm512_store_ps(&weight_ptr[j*16], _mm512_add_ps(weight_sum, _mm512_load_ps(&weight_ptr[j*16])));
+      __m512 new_result = _mm512_add_ps(weight_sum, _mm512_load_ps(&weight_ptr[j*16]));
+      _mm512_store_ps(&weight_ptr[j*16], new_result);
+      max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(new_result));
     }
 #else
     element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
@@ -369,7 +379,10 @@ if (handle->upd_use_external_reduce == 0) {
         }
     }
 #endif
-#undef __AVX512F__
   }
+#ifdef __AVX512F__
+  _mm512_store_ps(max_vals, max_abs);
+#endif
 }
 libxsmm_barrier_wait(handle->barrier, ltid);
+#undef __AVX512F__
