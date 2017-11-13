@@ -35,6 +35,7 @@ function capturedTxtToDataFile {
     -e "/${VARIANT}/d" \
     -e "/\.\.\./,/Finished/{//!d}" \
     -e "/Finished/d" \
+    -e "/diff:/d" \
     -e "/\.\.\./d" \
     -e "/^$/d" \
     ${HERE}/$1.txt \
