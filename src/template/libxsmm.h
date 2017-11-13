@@ -83,7 +83,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id);
  * libxsmm_get_target_arch* functions, or as set by the LIBXSMM_TARGET environment variable.
  */
 LIBXSMM_API const char* libxsmm_get_target_arch(void);
-/** Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx", NULL/"0": CPUID) for subsequent code generation (JIT). */
+/** Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|icl", NULL/"0": CPUID) for subsequent code generation (JIT). */
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch);
 
 /** Get the level of verbosity. */
