@@ -57,7 +57,7 @@
 #endif
 
 
-#if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+#if (LIBXSMM_VERSION3(11, 2, 0) > INTEL_MKL_VERSION) || !(defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL))
 LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, REAL_TYPE);
 #endif
 
@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
             &beta, c + i * csize, &ldc);
       }
 
-#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
       std::vector<const T*> va_array(static_cast<size_t>(s)), vb_array(static_cast<size_t>(s));
       std::vector<T*> vc_array(static_cast<size_t>(s));
       const T* *const a_array = &va_array[0];
@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } /*break;*/
 
-#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
       case 1: { // batched indirect
         fprintf(stdout, "Indirect (A,B,C)...\n");
         const unsigned long long start = libxsmm_timer_tick();
@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } /*break;*/
 
-#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
       case 3: { // indirect A and C
         fprintf(stdout, "Indirect (A,C)...\n");
         for (libxsmm_blasint i = 0; i < s; ++i) { a_array[i] = a + i * asize; b_array[i] = b; c_array[i] = d + i * csize; }
@@ -296,7 +296,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } /*break;*/
 
-#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
       case 5: { // indirect B and C
         fprintf(stdout, "Indirect (B,C)...\n");
         for (libxsmm_blasint i = 0; i < s; ++i) { a_array[i] = a; b_array[i] = b + i * bsize; c_array[i] = d + i * csize; }
@@ -345,7 +345,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } /*break;*/
 
-#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
       case 7: { // indirect A and B
         fprintf(stdout, "Indirect (A,B)...\n");
 #if defined(_OPENMP)
@@ -403,7 +403,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } /*break;*/
 
-#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && defined(INTEL_MKL_VERSION) && (110300 <= (INTEL_MKL_VERSION))
+#if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
       case 9: { // indirect cached
         fprintf(stdout, "Indirect cached...\n");
 #if defined(_OPENMP)

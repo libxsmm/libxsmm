@@ -43,7 +43,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cmath>
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#if defined(__MKL)
 # include <mkl_service.h>
 #endif
 #if defined(_OPENMP)
