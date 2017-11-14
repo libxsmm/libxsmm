@@ -243,8 +243,7 @@ if (handle->padding_flag == 1) {
         for (ij = 0; ij < handle->ifhp; ++ij) {
           /* Handle full chunks  */
           for (w = 0; w < w_chunks; w++) {
-            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block;
+            for (ifm2 = 0; ifm2 < 8; ++ifm2) {
               base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w*16, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
               __m512i gather_reg = _mm512_i32gather_epi32(vgindex, base_addr, 1);
               __m256i lo_reg= _mm512_extracti64x4_epi64(gather_reg,0);
@@ -257,15 +256,30 @@ if (handle->padding_flag == 1) {
              compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_high, 0), 1);
              __m256i compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_low,1), 0);
              compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_high, 1), 1);
-              _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), compressed_low_store);
-              _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock+1, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), compressed_high_store);
+              _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1*2, ij, ifm2*2, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), compressed_low_store);
+              _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1*2, ij, ifm2*2+1, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), compressed_high_store);
             }
+            for (ifm2 = 8; ifm2 < handle->ifmblock; ++ifm2) {
+              base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w*16, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+              __m512i gather_reg = _mm512_i32gather_epi32(vgindex, base_addr, 1);
+              __m256i lo_reg= _mm512_extracti64x4_epi64(gather_reg,0);
+              __m256i hi_reg= _mm512_extracti64x4_epi64(gather_reg,1);
+              __m256i compressed_low  = _mm256_unpacklo_epi16(lo_reg, hi_reg);
+              compressed_low =  _mm256_permutevar8x32_epi32(compressed_low, shuffler);
+              __m256i compressed_high  = _mm256_unpackhi_epi16(lo_reg, hi_reg);
+              compressed_high =  _mm256_permutevar8x32_epi32(compressed_high, shuffler);
+              __m256i compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_low,0), 0);
+             compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_high, 0), 1);
+             __m256i compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_low,1), 0);
+             compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_high, 1), 1);
+              _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1*2+1, ij, 2*ifm2-16, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), compressed_low_store);
+              _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1*2+1, ij, 2*ifm2-15, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), compressed_high_store);
+            }        
           }
 
           /* Handle remainder */
           if ( w_remainder > 0) {
-            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block;
+            for (ifm2 = 0; ifm2 < 8; ++ifm2) {
               base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w_chunks*16, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
               __m512i gather_reg = _mm512_mask_i32gather_epi32(gather_reg, gmask, vgindex, base_addr, 1);
               __m256i lo_reg= _mm512_extracti64x4_epi64(gather_reg,0);
@@ -275,12 +289,28 @@ if (handle->padding_flag == 1) {
               __m256i compressed_high  = _mm256_unpackhi_epi16(lo_reg, hi_reg);
               compressed_high =  _mm256_permutevar8x32_epi32(compressed_high, shuffler);
               __m256i compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_low,0), 0);
-             compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_high, 0), 1);
-             __m256i compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_low,1), 0);
-             compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_high, 1), 1);
-              _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock, w_chunks*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, compressed_low_store);
-              _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock+1, w_chunks*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, compressed_high_store);  
+              compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_high, 0), 1);
+              __m256i compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_low,1), 0);
+              compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_high, 1), 1);
+              _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1*2, ij, ifm2*2, w_chunks*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, compressed_low_store);
+              _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1*2, ij, ifm2*2+1, w_chunks*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, compressed_high_store);  
             }
+            for (ifm2 = 8; ifm2 < handle->ifmblock; ++ifm2) {
+              base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w_chunks*16, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+              __m512i gather_reg = _mm512_mask_i32gather_epi32(gather_reg, gmask, vgindex, base_addr, 1);
+              __m256i lo_reg= _mm512_extracti64x4_epi64(gather_reg,0);
+              __m256i hi_reg= _mm512_extracti64x4_epi64(gather_reg,1);
+              __m256i compressed_low   = _mm256_unpacklo_epi16(lo_reg, hi_reg);
+              compressed_low =  _mm256_permutevar8x32_epi32(compressed_low, shuffler);
+              __m256i compressed_high  = _mm256_unpackhi_epi16(lo_reg, hi_reg);
+              compressed_high =  _mm256_permutevar8x32_epi32(compressed_high, shuffler);
+              __m256i compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_low,0), 0);
+              compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_high, 0), 1);
+              __m256i compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_low,1), 0);
+              compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_high, 1), 1);
+              _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1*2+1, ij, 2*ifm2-16, w_chunks*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, compressed_low_store);
+              _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1*2+1, ij, 2*ifm2-15, w_chunks*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, compressed_high_store);  
+            }          
           }
         }
       }
