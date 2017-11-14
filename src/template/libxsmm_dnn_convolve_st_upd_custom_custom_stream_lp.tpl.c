@@ -197,6 +197,7 @@ if (handle->padding_flag == 1) {
     }  
   } else {
     if (handle->resize_input == 0) {
+#if 0
       for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
         for (ij = 0; ij < handle->ifhp; ++ij) {
           for (ii = 0; ii < handle->ifwp; ++ii) {
@@ -210,6 +211,148 @@ if (handle->padding_flag == 1) {
           }
         }
       }
+#endif
+      int w_chunks = handle->ifwp/16;
+      int w_remainder = handle->ifwp%16;
+      element_input_type gather_buffer[32];
+      element_input_type compressed_gather_buffer[32];
+      int w_i, w;
+      int c_i;
+      element_input_type *base_addr;
+      const __m512i vgindex = _mm512_set_epi32(960,896,832,768,704,640,576,512,448,384,320,256,192,128,64,0);
+      const __mmask16 gmask = ((uint32_t)1 << w_remainder)-1;
+
+      int mask_remainder = (w_remainder+1)/2;
+      unsigned int mask[8];
+      for (c_i=0; c_i<mask_remainder; c_i++) {
+        mask[c_i] = (1<<31);
+      }
+      for (c_i=mask_remainder; c_i<8; c_i++) {
+        mask[c_i] = 0;
+      }
+      __m256i mask_reg = _mm256_loadu_si256((const union __m256i *) mask);
+
+      for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+        for (ij = 0; ij < handle->ifhp; ++ij) {
+
+          /* Handle full chunks  */
+          for (w=0; w<w_chunks; w++) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block;
+              base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w*16, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+              __m512i gather_reg = _mm512_i32gather_epi32(vgindex, base_addr, 1);
+              _mm512_store_epi32(gather_buffer, gather_reg);
+              /* Emulated compress...  */
+#if 1
+              int lo_ind = 0;
+              int hi_ind = 16;
+              for (c_i=0; c_i<32; c_i+=2) {
+                compressed_gather_buffer[lo_ind] = gather_buffer[c_i];
+                compressed_gather_buffer[hi_ind] = gather_buffer[c_i+1];
+                lo_ind++;
+                hi_ind++;
+              }
+#else
+              compressed_gather_buffer[0] = gather_buffer[0];
+              compressed_gather_buffer[16] = gather_buffer[1];
+              compressed_gather_buffer[1] = gather_buffer[2];
+              compressed_gather_buffer[17] = gather_buffer[3];
+              compressed_gather_buffer[2] = gather_buffer[4];
+              compressed_gather_buffer[18] = gather_buffer[5];
+              compressed_gather_buffer[3] = gather_buffer[6];
+              compressed_gather_buffer[19] = gather_buffer[7];
+              compressed_gather_buffer[4] = gather_buffer[8];
+              compressed_gather_buffer[20] = gather_buffer[9];
+              compressed_gather_buffer[5] = gather_buffer[10];
+              compressed_gather_buffer[21] = gather_buffer[11];
+              compressed_gather_buffer[6] = gather_buffer[12];
+              compressed_gather_buffer[22] = gather_buffer[13];
+              compressed_gather_buffer[7] = gather_buffer[14];
+              compressed_gather_buffer[23] = gather_buffer[15];
+              compressed_gather_buffer[8] = gather_buffer[16];
+              compressed_gather_buffer[24] = gather_buffer[17];
+              compressed_gather_buffer[9] = gather_buffer[18];
+              compressed_gather_buffer[25] = gather_buffer[19];
+              compressed_gather_buffer[10] = gather_buffer[20];
+              compressed_gather_buffer[26] = gather_buffer[21];
+              compressed_gather_buffer[11] = gather_buffer[22];
+              compressed_gather_buffer[27] = gather_buffer[23];
+              compressed_gather_buffer[12] = gather_buffer[24];
+              compressed_gather_buffer[28] = gather_buffer[25];
+              compressed_gather_buffer[13] = gather_buffer[26];
+              compressed_gather_buffer[29] = gather_buffer[27];
+              compressed_gather_buffer[14] = gather_buffer[28];
+              compressed_gather_buffer[30] = gather_buffer[29];
+              compressed_gather_buffer[15] = gather_buffer[30];
+              compressed_gather_buffer[31] = gather_buffer[31];
+#endif
+              /* Store  */
+              _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended) , _mm256_loadu_si256((const union __m256i *) &compressed_gather_buffer[0]));
+              _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock+1, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended) , _mm256_loadu_si256((const union __m256i *) &compressed_gather_buffer[16]));
+            }
+          }
+
+          /* Handle remainder */
+          if ( w_remainder > 0) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block;
+              base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w_chunks*16, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+              __m512i gather_reg = _mm512_mask_i32gather_epi32(gather_reg, gmask, vgindex, base_addr, 1);
+              _mm512_store_epi32(gather_buffer, gather_reg);
+
+              /* Emulated compress...  */
+#if 1
+              int lo_ind = 0;
+              int hi_ind = 16;
+              for (c_i=0; c_i<32; c_i+=2) {
+                compressed_gather_buffer[lo_ind] = gather_buffer[c_i];
+                compressed_gather_buffer[hi_ind] = gather_buffer[c_i+1];
+                lo_ind++;
+                hi_ind++;
+              }
+#else
+              compressed_gather_buffer[0] = gather_buffer[0];
+              compressed_gather_buffer[16] = gather_buffer[1];
+              compressed_gather_buffer[1] = gather_buffer[2];
+              compressed_gather_buffer[17] = gather_buffer[3];
+              compressed_gather_buffer[2] = gather_buffer[4];
+              compressed_gather_buffer[18] = gather_buffer[5];
+              compressed_gather_buffer[3] = gather_buffer[6];
+              compressed_gather_buffer[19] = gather_buffer[7];
+              compressed_gather_buffer[4] = gather_buffer[8];
+              compressed_gather_buffer[20] = gather_buffer[9];
+              compressed_gather_buffer[5] = gather_buffer[10];
+              compressed_gather_buffer[21] = gather_buffer[11];
+              compressed_gather_buffer[6] = gather_buffer[12];
+              compressed_gather_buffer[22] = gather_buffer[13];
+              compressed_gather_buffer[7] = gather_buffer[14];
+              compressed_gather_buffer[23] = gather_buffer[15];
+              compressed_gather_buffer[8] = gather_buffer[16];
+              compressed_gather_buffer[24] = gather_buffer[17];
+              compressed_gather_buffer[9] = gather_buffer[18];
+              compressed_gather_buffer[25] = gather_buffer[19];
+              compressed_gather_buffer[10] = gather_buffer[20];
+              compressed_gather_buffer[26] = gather_buffer[21];
+              compressed_gather_buffer[11] = gather_buffer[22];
+              compressed_gather_buffer[27] = gather_buffer[23];
+              compressed_gather_buffer[12] = gather_buffer[24];
+              compressed_gather_buffer[28] = gather_buffer[25];
+              compressed_gather_buffer[13] = gather_buffer[26];
+              compressed_gather_buffer[29] = gather_buffer[27];
+              compressed_gather_buffer[14] = gather_buffer[28];
+              compressed_gather_buffer[30] = gather_buffer[29];
+              compressed_gather_buffer[15] = gather_buffer[30];
+              compressed_gather_buffer[31] = gather_buffer[31];
+#endif
+              /* Store  */
+              _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, _mm256_loadu_si256((const union __m256i *) &compressed_gather_buffer[0]));
+              _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock+1, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, _mm256_loadu_si256((const union __m256i *) &compressed_gather_buffer[16]));  
+            }
+          }
+
+        }
+      }
+
     } else {
       int dst_i, dst_j, src_i, src_j;
       for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
