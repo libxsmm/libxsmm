@@ -219,9 +219,16 @@ if (handle->padding_flag == 1) {
       int w_i, w;
       int c_i;
       element_input_type *base_addr;
-      const __m512i vgindex = _mm512_set_epi32(960,896,832,768,704,640,576,512,448,384,320,256,192,128,64,0);
-      const __mmask16 gmask = ((uint32_t)1 << w_remainder)-1;
-
+      const __m512i vgindex = _mm512_set_epi32(960,832,448,320,  704,576,192,64,  896,768,384,256,  640,512,128,0);
+      const int gather_offsets[16] = {960,832,448,320,  704,576,192,64,  896,768,384,256,  640,512,128,0};
+      const __m256i shuffler = _mm256_set_epi32(7,5,3,1,6,4,2,0);
+      unsigned int int_mask = 0xffffffff;
+      for (c_i=0;c_i<16;c_i++) {
+        if (gather_offsets[16-c_i-1] >= w_remainder*64) {
+          int_mask = int_mask & ~(1 << c_i);
+         }
+      }
+      const __mmask16 gmask = int_mask;
       int mask_remainder = (w_remainder+1)/2;
       unsigned int mask[8];
       for (c_i=0; c_i<mask_remainder; c_i++) {
@@ -234,61 +241,24 @@ if (handle->padding_flag == 1) {
 
       for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
         for (ij = 0; ij < handle->ifhp; ++ij) {
-
           /* Handle full chunks  */
-          for (w=0; w<w_chunks; w++) {
+          for (w = 0; w < w_chunks; w++) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
               FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block;
               base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w*16, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
               __m512i gather_reg = _mm512_i32gather_epi32(vgindex, base_addr, 1);
-              _mm512_store_epi32(gather_buffer, gather_reg);
-              /* Emulated compress...  */
-#if 1
-              int lo_ind = 0;
-              int hi_ind = 16;
-              for (c_i=0; c_i<32; c_i+=2) {
-                compressed_gather_buffer[lo_ind] = gather_buffer[c_i];
-                compressed_gather_buffer[hi_ind] = gather_buffer[c_i+1];
-                lo_ind++;
-                hi_ind++;
-              }
-#else
-              compressed_gather_buffer[0] = gather_buffer[0];
-              compressed_gather_buffer[16] = gather_buffer[1];
-              compressed_gather_buffer[1] = gather_buffer[2];
-              compressed_gather_buffer[17] = gather_buffer[3];
-              compressed_gather_buffer[2] = gather_buffer[4];
-              compressed_gather_buffer[18] = gather_buffer[5];
-              compressed_gather_buffer[3] = gather_buffer[6];
-              compressed_gather_buffer[19] = gather_buffer[7];
-              compressed_gather_buffer[4] = gather_buffer[8];
-              compressed_gather_buffer[20] = gather_buffer[9];
-              compressed_gather_buffer[5] = gather_buffer[10];
-              compressed_gather_buffer[21] = gather_buffer[11];
-              compressed_gather_buffer[6] = gather_buffer[12];
-              compressed_gather_buffer[22] = gather_buffer[13];
-              compressed_gather_buffer[7] = gather_buffer[14];
-              compressed_gather_buffer[23] = gather_buffer[15];
-              compressed_gather_buffer[8] = gather_buffer[16];
-              compressed_gather_buffer[24] = gather_buffer[17];
-              compressed_gather_buffer[9] = gather_buffer[18];
-              compressed_gather_buffer[25] = gather_buffer[19];
-              compressed_gather_buffer[10] = gather_buffer[20];
-              compressed_gather_buffer[26] = gather_buffer[21];
-              compressed_gather_buffer[11] = gather_buffer[22];
-              compressed_gather_buffer[27] = gather_buffer[23];
-              compressed_gather_buffer[12] = gather_buffer[24];
-              compressed_gather_buffer[28] = gather_buffer[25];
-              compressed_gather_buffer[13] = gather_buffer[26];
-              compressed_gather_buffer[29] = gather_buffer[27];
-              compressed_gather_buffer[14] = gather_buffer[28];
-              compressed_gather_buffer[30] = gather_buffer[29];
-              compressed_gather_buffer[15] = gather_buffer[30];
-              compressed_gather_buffer[31] = gather_buffer[31];
-#endif
-              /* Store  */
-              _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended) , _mm256_loadu_si256((const union __m256i *) &compressed_gather_buffer[0]));
-              _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock+1, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended) , _mm256_loadu_si256((const union __m256i *) &compressed_gather_buffer[16]));
+              __m256i lo_reg= _mm512_extracti64x4_epi64(gather_reg,0);
+              __m256i hi_reg= _mm512_extracti64x4_epi64(gather_reg,1);
+              __m256i compressed_low  = _mm256_unpacklo_epi16(lo_reg, hi_reg);
+              compressed_low =  _mm256_permutevar8x32_epi32(compressed_low, shuffler);
+              __m256i compressed_high  = _mm256_unpackhi_epi16(lo_reg, hi_reg);
+              compressed_high =  _mm256_permutevar8x32_epi32(compressed_high, shuffler);
+              __m256i compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_low,0), 0);
+             compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_high, 0), 1);
+             __m256i compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_low,1), 0);
+             compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_high, 1), 1);
+              _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), compressed_low_store);
+              _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock+1, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), compressed_high_store);
             }
           }
 
@@ -298,61 +268,22 @@ if (handle->padding_flag == 1) {
               FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block;
               base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w_chunks*16, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
               __m512i gather_reg = _mm512_mask_i32gather_epi32(gather_reg, gmask, vgindex, base_addr, 1);
-              _mm512_store_epi32(gather_buffer, gather_reg);
-
-              /* Emulated compress...  */
-#if 1
-              int lo_ind = 0;
-              int hi_ind = 16;
-              for (c_i=0; c_i<32; c_i+=2) {
-                compressed_gather_buffer[lo_ind] = gather_buffer[c_i];
-                compressed_gather_buffer[hi_ind] = gather_buffer[c_i+1];
-                lo_ind++;
-                hi_ind++;
-              }
-#else
-              compressed_gather_buffer[0] = gather_buffer[0];
-              compressed_gather_buffer[16] = gather_buffer[1];
-              compressed_gather_buffer[1] = gather_buffer[2];
-              compressed_gather_buffer[17] = gather_buffer[3];
-              compressed_gather_buffer[2] = gather_buffer[4];
-              compressed_gather_buffer[18] = gather_buffer[5];
-              compressed_gather_buffer[3] = gather_buffer[6];
-              compressed_gather_buffer[19] = gather_buffer[7];
-              compressed_gather_buffer[4] = gather_buffer[8];
-              compressed_gather_buffer[20] = gather_buffer[9];
-              compressed_gather_buffer[5] = gather_buffer[10];
-              compressed_gather_buffer[21] = gather_buffer[11];
-              compressed_gather_buffer[6] = gather_buffer[12];
-              compressed_gather_buffer[22] = gather_buffer[13];
-              compressed_gather_buffer[7] = gather_buffer[14];
-              compressed_gather_buffer[23] = gather_buffer[15];
-              compressed_gather_buffer[8] = gather_buffer[16];
-              compressed_gather_buffer[24] = gather_buffer[17];
-              compressed_gather_buffer[9] = gather_buffer[18];
-              compressed_gather_buffer[25] = gather_buffer[19];
-              compressed_gather_buffer[10] = gather_buffer[20];
-              compressed_gather_buffer[26] = gather_buffer[21];
-              compressed_gather_buffer[11] = gather_buffer[22];
-              compressed_gather_buffer[27] = gather_buffer[23];
-              compressed_gather_buffer[12] = gather_buffer[24];
-              compressed_gather_buffer[28] = gather_buffer[25];
-              compressed_gather_buffer[13] = gather_buffer[26];
-              compressed_gather_buffer[29] = gather_buffer[27];
-              compressed_gather_buffer[14] = gather_buffer[28];
-              compressed_gather_buffer[30] = gather_buffer[29];
-              compressed_gather_buffer[15] = gather_buffer[30];
-              compressed_gather_buffer[31] = gather_buffer[31];
-#endif
-              /* Store  */
-              _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, _mm256_loadu_si256((const union __m256i *) &compressed_gather_buffer[0]));
-              _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock+1, w*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, _mm256_loadu_si256((const union __m256i *) &compressed_gather_buffer[16]));  
+              __m256i lo_reg= _mm512_extracti64x4_epi64(gather_reg,0);
+              __m256i hi_reg= _mm512_extracti64x4_epi64(gather_reg,1);
+              __m256i compressed_low   = _mm256_unpacklo_epi16(lo_reg, hi_reg);
+              compressed_low =  _mm256_permutevar8x32_epi32(compressed_low, shuffler);
+              __m256i compressed_high  = _mm256_unpackhi_epi16(lo_reg, hi_reg);
+              compressed_high =  _mm256_permutevar8x32_epi32(compressed_high, shuffler);
+              __m256i compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_low,0), 0);
+             compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_high, 0), 1);
+             __m256i compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_low,1), 0);
+             compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_high, 1), 1);
+              _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock, w_chunks*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, compressed_low_store);
+              _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock+1, w_chunks*16, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, compressed_high_store);  
             }
           }
-
         }
       }
-
     } else {
       int dst_i, dst_j, src_i, src_j;
       for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
