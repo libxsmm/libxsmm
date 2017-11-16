@@ -1756,6 +1756,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
       }
     }
   } else {
+
     for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -1765,8 +1766,17 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
             l_vec_reg_acc_start + reg_count,
             l_vec_reg_acc_start + reg_count,
             l_vec_reg_acc_start + reg_count);
+
+        if ( (i_conv_desc->use_nts == 0) && (use_lp_kernel == 1) ) {
+          libxsmm_x86_instruction_prefetch( io_generated_code,
+              LIBXSMM_X86_INSTR_PREFETCHT1 ,
+              i_gp_reg_mapping->gp_reg_weight,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              (reg_count)*offset * i_conv_kernel_config->datatype_size_wt);
+        }
       }
     }
+
   }
 }
 
