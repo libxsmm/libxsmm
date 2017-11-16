@@ -121,50 +121,6 @@ tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-#if 0
-if (handle->padding_flag == 1) {
-  input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
-  memset( input_zero, 0, BLOCKSIFM * padded_h * ifwp_extended * handle->ifmblock * sizeof(element_input_type) );
-  for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
-    img = imgifm1/BLOCKSIFM;
-    ifm1 = imgifm1%BLOCKSIFM;
-    for (ij=0; ij < handle->ifhp; ++ij) {
-      float *dst = &(LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij + handle->desc.pad_h, 0, 0 + handle->desc.pad_w, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended));
-      float *src = &(LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, ij, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock));
-      tp_func(handle->ifmblock, handle->ifwp, dst, ifwp_extended, src, handle->ifmblock);
-    }
-  }
-} else {
-  if (handle->resize_input == 0) {
-    for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
-      img = imgifm1/BLOCKSIFM;
-      ifm1 = imgifm1%BLOCKSIFM;
-      for (ij=0; ij < handle->ifhp; ++ij) {
-        float *dst = &(LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended));
-        float *src = &(LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, ij, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock));
-        tp_func(handle->ifmblock, handle->ifwp, dst, ifwp_extended, src, handle->ifmblock);
-      }
-    }
-  } else {
-    int dst_i, dst_j, src_i, src_j, fm;
-    for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
-      img = imgifm1/BLOCKSIFM;
-      ifm1 = imgifm1%BLOCKSIFM;
-      for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
-        src_j = dst_j * handle->desc.v;
-        for (dst_i=0; dst_i < handle->ifwp_resized; dst_i++) {
-          src_i = dst_i * handle->desc.u;
-          for (fm = 0; fm < handle->ifmblock; fm++){
-            LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, dst_j, fm, dst_i, BLOCKSIFM, handle->ifhp_resized, handle->ifmblock, ifwp_extended) =
-              LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, src_j, src_i, fm, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
-          }
-        }
-      }
-    }
-  }
-}
-#endif
-
 /* Initialize base pointers */
 if (handle->padding_flag == 1) {
   input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
@@ -175,6 +131,7 @@ if (handle->padding_flag == 1) {
 }
 
 
+/* LP transformations */
 {
   int img = ltid, ifm1, ij, ifm2, ii;
   int ofm1, ofm2, k, lp;
@@ -197,67 +154,21 @@ if (handle->padding_flag == 1) {
     }  
   } else {
     if (handle->resize_input == 0) {
-      for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-        for (ij = 0; ij < handle->ifhp; ++ij) {
-          for (ii = 0; ii < handle->ifwp; ++ii) {
-            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              for (lp = 0; lp < handle->fm_lp_block; ++lp) {
-                FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block + lp;
-                LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, ij, FM%handle->ifmblock, ii, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended) =
-                  LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-              }
-            }
-          }
-        }
+      if (handle->ifwp%16 == 0) {
+#include "input_lp_transposer.tpl.c" 
+      } else {
+#include "input_lp_transposer_remainder.tpl.c"   
       }
     } else {
-      int dst_i, dst_j, src_i, src_j;
-      for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-        for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
-          src_j = dst_j * handle->desc.v;
-          for (dst_i=0; dst_i < handle->ifwp_resized; dst_i++) {
-            src_i = dst_i * handle->desc.u;
-            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              for (lp = 0; lp < handle->fm_lp_block; ++lp) {
-                FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block + lp;
-                LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, FM/handle->ifmblock, dst_j, FM%handle->ifmblock, dst_i, BLOCKSIFM, handle->ifhp_resized, handle->ifmblock, ifwp_extended) =
-                  LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, src_j, src_i, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-              }
-            }
-          }
-        }
+      if (handle->ifwp_resized%16 == 0) {
+#include "input_lp_transposer_resizer.tpl.c"   
+      } else {
+#include "input_lp_transposer_resizer_remainder.tpl.c"     
       }
     }
   }
 
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
-    for (ij = 0; ij < handle->ofhp; ++ij) {
-      for (ii = 0; ii < handle->ofwp; ++ii) {
-        for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-          for (lp = 0; lp < handle->fm_lp_block; ++lp) {
-            FM = ofm1 * handle->ofmblock * handle->fm_lp_block + ofm2  * handle->fm_lp_block + lp;
-            LIBXSMM_VLA_ACCESS(6,  tr_output, img, FM/handle->ofmblock, ij, ii/2, FM%handle->ofmblock, ii%2, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2) = 
-              LIBXSMM_VLA_ACCESS(6,   output, img, ofm1, ij, ii, ofm2, lp,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
-          }
-        }
-      }
-    }
-  }
-
-  /* Zero out the "output padding pixel" */
-  if (handle->output_lp_padding != 0) {
-    ii = handle->ofwp-1;
-    for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
-      for (ij = 0; ij < handle->ofhp; ++ij) {
-        for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-          for (lp = 0; lp < handle->fm_lp_block; ++lp) {
-            FM = ofm1 * handle->ofmblock * handle->fm_lp_block + ofm2  * handle->fm_lp_block + lp;
-            LIBXSMM_VLA_ACCESS(6,  tr_output, img, FM/handle->ofmblock, ij, ii/2, FM%handle->ofmblock, 1, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2) = (element_output_type)0; 
-          }
-        }
-      }
-    }
-  }
+#include "output_lp_transposer.tpl.c"
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
