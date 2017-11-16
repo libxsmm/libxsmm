@@ -411,7 +411,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor* libxsmm_dnn_link_tensor(const libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_tensor* libxsmm_dnn_link_qtensor(const libxsmm_dnn_tensor_datalayout* layout, const void* data, const char exp, libxsmm_dnn_err_t* status)
+LIBXSMM_API_DEFINITION libxsmm_dnn_tensor* libxsmm_dnn_link_qtensor(const libxsmm_dnn_tensor_datalayout* layout, const void* data, const unsigned char scf, libxsmm_dnn_err_t* status)
 {
   libxsmm_dnn_tensor* tensor = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
   *status = LIBXSMM_DNN_SUCCESS;
@@ -420,7 +420,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor* libxsmm_dnn_link_qtensor(const libxsm
     memset(tensor, 0, sizeof(libxsmm_dnn_tensor));
     tensor->layout = libxsmm_dnn_duplicate_tensor_datalayout(layout, status);
     tensor->data = (void*)data;
-    tensor->exp = exp;
+    tensor->scf = scf;
     /* when layout copy failed, free layout */
     if (*status != LIBXSMM_DNN_SUCCESS) {
       libxsmm_dnn_destroy_tensor_datalayout(tensor->layout);
@@ -1091,12 +1091,12 @@ LIBXSMM_API_DEFINITION void* libxsmm_dnn_get_tensor_data_ptr(const libxsmm_dnn_t
 }
 
 
-LIBXSMM_API_DEFINITION char libxsmm_dnn_get_qtensor_exp(const libxsmm_dnn_tensor* tensor, libxsmm_dnn_err_t* status)
+LIBXSMM_API_DEFINITION unsigned char libxsmm_dnn_get_qtensor_scf(const libxsmm_dnn_tensor* tensor, libxsmm_dnn_err_t* status)
 {
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != tensor) {
-    return tensor->exp;
+    return tensor->scf;
   }
   else {
     *status = LIBXSMM_DNN_ERR_INVALID_TENSOR;
@@ -1106,12 +1106,12 @@ LIBXSMM_API_DEFINITION char libxsmm_dnn_get_qtensor_exp(const libxsmm_dnn_tensor
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_set_qtensor_exp(libxsmm_dnn_tensor* tensor, const char exp)
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_set_qtensor_scf(libxsmm_dnn_tensor* tensor, const unsigned char scf)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != tensor) {
-    tensor->exp = exp;
+    tensor->scf = scf;
   }
   else {
     status = LIBXSMM_DNN_ERR_INVALID_TENSOR;
