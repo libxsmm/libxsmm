@@ -110,7 +110,7 @@ typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor
 struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor {
   libxsmm_dnn_tensor_datalayout* layout;           /* data-layout descriptor */
   void* data;                                      /* pointer to data */
-  char exp;                                        /* fix point exponent for this tensor */
+  unsigned char scf;                               /* fix point scaling factor for this tensor */
 };
 
 /* Structure to record segment in stream of code  */

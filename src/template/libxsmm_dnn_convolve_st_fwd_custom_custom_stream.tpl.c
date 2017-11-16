@@ -99,7 +99,7 @@ n_segments = handle->n_fwd_code_segments[ltid];
 
 float scale_factor __attribute__((aligned(64)));
 if (handle->use_lp_kernel == 1) {
-  scale_factor = 1.0; // (float) pow(2.0, -1.0*(handle->reg_filter->exp + handle->reg_input->exp));
+  scale_factor = 1.0; /*(float) pow(2.0, -1.0*(handle->reg_filter->scf + handle->reg_input->scf));*/
 }
 
 float *max_vals __attribute__((aligned(64)));
