@@ -71,6 +71,18 @@ if (w_chunks == 0) {
       }
     }
   }
+} else if (w_chunks == 1) {
+  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
+      src_j = dst_j * handle->desc.v;
+      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
+        TRANSPOSE_W_CHUNK(img, ifm1, 0, src_j, 0, dst_j, ifm2, 2*ifm1, 2*ifm2);
+        TRANSPOSE_W_CHUNK(img, ifm1, 0, src_j, 0, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);
+        TRANSPOSE_W_REMAINDER(img, ifm1, u*16, src_j, 16, dst_j, ifm2, 2*ifm1, 2*ifm2);  
+        TRANSPOSE_W_REMAINDER(img, ifm1, u*16, src_j, 16, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);
+      }
+    }
+  }
 } else {
   for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
     for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
@@ -90,6 +102,5 @@ if (w_chunks == 0) {
     }
   }
 }
-
 #undef TRANSPOSE_W_CHUNK
 #undef TRANSPOSE_W_REMAINDER

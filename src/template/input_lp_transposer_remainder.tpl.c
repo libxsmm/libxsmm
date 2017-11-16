@@ -61,10 +61,33 @@ __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, c
 if (w_chunks == 0) {
   for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
     for (ij = 0; ij < handle->ifhp; ++ij) {
-      /* Handle remainder */
       for (ifm2 = 0; ifm2 < 8; ++ifm2) {
         TRANSPOSE_W_REMAINDER(img, ifm1, ij, 0, ifm2, 2*ifm1, 2*ifm2);
         TRANSPOSE_W_REMAINDER(img, ifm1, ij, 0, ifm2+8,  2*ifm1+1, 2*ifm2); 
+      }
+    }
+  }
+} else if (w_chunks == 1) {
+  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (ij = 0; ij < handle->ifhp; ++ij) {
+      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
+        TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2, 2*ifm1, 2*ifm2);
+        TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2+8, 2*ifm1+1, 2*ifm2);
+        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 16, ifm2, 2*ifm1, 2*ifm2);
+        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 16, ifm2+8,  2*ifm1+1, 2*ifm2);   
+      }
+    }
+  }
+} else if (w_chunks == 2) {
+  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (ij = 0; ij < handle->ifhp; ++ij) {
+      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
+        TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2, 2*ifm1, 2*ifm2);
+        TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2+8, 2*ifm1+1, 2*ifm2);
+        TRANSPOSE_W_CHUNK(img, ifm1, ij, 16, ifm2, 2*ifm1, 2*ifm2);
+        TRANSPOSE_W_CHUNK(img, ifm1, ij, 16, ifm2+8, 2*ifm1+1, 2*ifm2);
+        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 32, ifm2, 2*ifm1, 2*ifm2);
+        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 32, ifm2+8,  2*ifm1+1, 2*ifm2);   
       }
     }
   }
