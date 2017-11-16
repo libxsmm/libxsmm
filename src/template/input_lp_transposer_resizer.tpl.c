@@ -25,16 +25,26 @@ int dst_i, dst_j, src_i, src_j;
 __m512i gather_reg;
 __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
 
-for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-  for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
-    src_j = dst_j * handle->desc.v;
-    for (w = 0; w < w_chunks; w++) {
+if (w_chunks == 1) {
+  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
+      src_j = dst_j * handle->desc.v;
       for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-        TRANSPOSE_W_CHUNK(img, ifm1, w*u*16, src_j, w*16, dst_j, ifm2, 2*ifm1, 2*ifm2);  
+        TRANSPOSE_W_CHUNK(img, ifm1, 0, src_j, 0, dst_j, ifm2, 2*ifm1, 2*ifm2);
+        TRANSPOSE_W_CHUNK(img, ifm1, 0, src_j, 0, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);      
       }
-      for (ifm2 = 8; ifm2 < handle->ifmblock; ++ifm2) {
-        TRANSPOSE_W_CHUNK(img, ifm1, w*u*16, src_j, w*16, dst_j, ifm2, 2*ifm1+1, 2*ifm2-16);  
-      }        
+    }
+  }
+} else {
+  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
+      src_j = dst_j * handle->desc.v;
+      for (w = 0; w < w_chunks; w++) {
+        for (ifm2 = 0; ifm2 < 8; ++ifm2) {
+          TRANSPOSE_W_CHUNK(img, ifm1, w*u*16, src_j, w*16, dst_j, ifm2, 2*ifm1, 2*ifm2);
+          TRANSPOSE_W_CHUNK(img, ifm1, w*u*16, src_j, w*16, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);      
+        }
+      }
     }
   }
 }

@@ -17,7 +17,7 @@
 
 #define TRANSPOSE_W_REMAINDER(img, src_ifm1, src_i, src_j, dst_i, dst_j, src_ifm2, dst_ifm1, dst_ifm2) \
         base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, src_ifm1, src_j, src_i, src_ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block); \
-        gather_reg = _mm512_mask_i32gather_epi32(gather_reg, gmask, vgindex, base_addr, 1); \
+        gather_reg = _mm512_mask_i32gather_epi32(_mm512_undefined_epi32(), gmask, vgindex, base_addr, 1); \
         lo_reg= _mm512_extracti64x4_epi64(gather_reg,0); \
         hi_reg= _mm512_extracti64x4_epi64(gather_reg,1); \
         compressed_low  = _mm256_unpacklo_epi16(lo_reg, hi_reg); \
@@ -60,25 +60,34 @@ int dst_i, dst_j, src_i, src_j;
 __m512i gather_reg;
 __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
 
-for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-  for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
-    src_j = dst_j * handle->desc.v;
-    /* Handle full chunks  */
-    for (w = 0; w < w_chunks; w++) {
+
+if (w_chunks == 0) {
+  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
+      src_j = dst_j * handle->desc.v;
       for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-        TRANSPOSE_W_CHUNK(img, ifm1, w*u*16, src_j, w*16, dst_j, ifm2, 2*ifm1, 2*ifm2);  
+        TRANSPOSE_W_REMAINDER(img, ifm1, 0, src_j, w_chunks*16, dst_j, ifm2, 2*ifm1, 2*ifm2);
+        TRANSPOSE_W_REMAINDER(img, ifm1, 0, src_j, w_chunks*16, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);
       }
-      for (ifm2 = 8; ifm2 < handle->ifmblock; ++ifm2) {
-        TRANSPOSE_W_CHUNK(img, ifm1, w*u*16, src_j, w*16, dst_j, ifm2, 2*ifm1+1, 2*ifm2-16);  
-      }        
     }
-    /* Handle remainder */
-    for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-      TRANSPOSE_W_REMAINDER(img, ifm1, w_chunks*u*16, src_j, w_chunks*16, dst_j, ifm2, 2*ifm1, 2*ifm2);  
+  }
+} else {
+  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
+      src_j = dst_j * handle->desc.v;
+      /* Handle full chunks  */
+      for (w = 0; w < w_chunks; w++) {
+        for (ifm2 = 0; ifm2 < 8; ++ifm2) {
+          TRANSPOSE_W_CHUNK(img, ifm1, w*u*16, src_j, w*16, dst_j, ifm2, 2*ifm1, 2*ifm2);
+          TRANSPOSE_W_CHUNK(img, ifm1, w*u*16, src_j, w*16, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);  
+        }
+      }
+      /* Handle remainder */
+      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
+        TRANSPOSE_W_REMAINDER(img, ifm1, w_chunks*u*16, src_j, w_chunks*16, dst_j, ifm2, 2*ifm1, 2*ifm2);  
+        TRANSPOSE_W_REMAINDER(img, ifm1, w_chunks*u*16, src_j, w_chunks*16, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);
+      }
     }
-    for (ifm2 = 8; ifm2 < handle->ifmblock; ++ifm2) {
-      TRANSPOSE_W_REMAINDER(img, ifm1, w_chunks*u*16, src_j, w_chunks*16, dst_j, ifm2, 2*ifm1+1, 2*ifm2-16);
-    }  
   }
 }
 

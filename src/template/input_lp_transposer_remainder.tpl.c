@@ -58,25 +58,32 @@ __m256i mask_reg = _mm256_loadu_si256((const union __m256i *) mask);
 __m512i gather_reg;
 __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
 
-
-for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-  for (ij = 0; ij < handle->ifhp; ++ij) {
-    /* Handle full chunks  */
-    for (w = 0; w < w_chunks; w++) {
+if (w_chunks == 0) {
+  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (ij = 0; ij < handle->ifhp; ++ij) {
+      /* Handle remainder */
       for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, w*16, ifm2, 2*ifm1, 2*ifm2);
+        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 0, ifm2, 2*ifm1, 2*ifm2);
+        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 0, ifm2+8,  2*ifm1+1, 2*ifm2); 
       }
-      for (ifm2 = 8; ifm2 < handle->ifmblock; ++ifm2) {
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, w*16, ifm2, 2*ifm1+1, 2*ifm2-16);
-      }        
     }
-    /* Handle remainder */
-    for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-      TRANSPOSE_W_REMAINDER(img, ifm1, ij, w_chunks*16, ifm2, 2*ifm1, 2*ifm2);
+  }
+} else {
+  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (ij = 0; ij < handle->ifhp; ++ij) {
+      /* Handle full chunks  */
+      for (w = 0; w < w_chunks; w++) {
+        for (ifm2 = 0; ifm2 < 8; ++ifm2) {
+          TRANSPOSE_W_CHUNK(img, ifm1, ij, w*16, ifm2, 2*ifm1, 2*ifm2);
+          TRANSPOSE_W_CHUNK(img, ifm1, ij, w*16, ifm2+8, 2*ifm1+1, 2*ifm2);
+        }
+      }
+      /* Handle remainder */
+      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
+        TRANSPOSE_W_REMAINDER(img, ifm1, ij, w_chunks*16, ifm2, 2*ifm1, 2*ifm2);
+        TRANSPOSE_W_REMAINDER(img, ifm1, ij, w_chunks*16, ifm2+8,  2*ifm1+1, 2*ifm2); 
+      }
     }
-    for (ifm2 = 8; ifm2 < handle->ifmblock; ++ifm2) {
-      TRANSPOSE_W_REMAINDER(img, ifm1, ij, w_chunks*16, ifm2,  2*ifm1+1, 2*ifm2-16);
-    }          
   }
 }
 
