@@ -229,6 +229,32 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   libxsmm_dnn_conv_fuse_op fuse_ops;        /* used ops into convolutions */
 } libxsmm_dnn_conv_desc;
 
+/** these are some quatization definitions, not sure if we want to
+    move them into some main part of LIBXSMM */
+/* @TODO check position of these declarations and defines */
+typedef union LIBXSMM_RETARGETABLE libxsmm_intfloat {
+  unsigned int ui;
+  float f;
+} libxsmm_intfloat;
+
+/* F32 masking defines */
+#define LIBXSNN_DNN_MASK_SIGN_F32      0x80000000
+#define LIBXSMM_DNN_MASK_EXP_F32       0x7f800000
+#define LIBXSMM_DNN_MASK_MANT_F32      0x007fffff
+#define LIBXSMM_DNN_MASK_ABS_F32       0x7fffffff
+#define LIBXSMM_DNN_MASK_FULL_F32      0xffffffff
+#define LIBXSMM_DNN_MANT_SZ_F32        23
+#define LIBXSMM_DNN_SZ_F32             32
+ 
+/* DFP16 masking defines */
+#define LIBXSMM_DNN_MANT_DFP16         15
+#define LIXSMMM_DNN_RES_DFP16          (pow(2,-(LIBXSMM_DNN_MANT_DFP16)))
+
+/* Qunatization Rounding Defines */
+#define LIBXSMM_DNN_QUANT_NO_ROUND     80000
+#define LIBXSMM_DNN_QUANT_BIAS_ROUND   80001
+#define LIBXSMM_DNN_QUANT_STOCH_ROUND  80002
+
 /** get string of error code */
 LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code);
 LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype);
@@ -282,6 +308,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_layer* ha
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_reduce_wu_filters(libxsmm_dnn_layer* handle, const libxsmm_dnn_tensor_type type);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind, unsigned int* num_tasks);
+
+/** some quantization helper functions, 
+    @TODO need to be integrated better for all different ways of quantizations */
+LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int length, unsigned char add_shift, unsigned char* scf, int round_mode );
+LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, int length, unsigned char scf );
 
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API) /* Internal API */
 
