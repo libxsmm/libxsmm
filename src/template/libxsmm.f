@@ -78,12 +78,14 @@
 
         ! Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
-          ! Handle recorded batch in parallel.
-     &    LIBXSMM_MMBATCH_FLAG_DEFAULT    = 0,                          &
+          ! Handle recorded batch unsynchronized-parallel.
+     &    LIBXSMM_MMBATCH_FLAG_DEFAULT      = 0,                        &
+          ! Synchronize among C matrices.
+     &    LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = 256,                      &
           ! Handle recorded batch sequentially.
-     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL = 256,                        &
+     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = 512,                      &
           ! Only record a statistic of potential SMMs.
-     &    LIBXSMM_MMBATCH_FLAG_STATISTIC  = 512
+     &    LIBXSMM_MMBATCH_FLAG_STATISTIC    = 1024
 
         ! Flag which denotes the value type (for weak-typed interface
         ! functions such as libxsmm_xmmdispatch).

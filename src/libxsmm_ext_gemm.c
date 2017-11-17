@@ -97,9 +97,10 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
       const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(batchdesc);
       if (0 != kernel.xmm) {
         if (0 == (LIBXSMM_MMBATCH_FLAG_SEQUENTIAL & batchdesc->flags)) { /* parallelized */
+          const libxsmm_blasint sync = (0 == (LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED & batchdesc->flags) ? 1 : -1);
           result = libxsmm_mmbatch_omp(
             kernel, 0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize,
-            &batcharray->value.a, &batcharray->value.b, &batcharray->value.c, batchsize);
+            &batcharray->value.a, &batcharray->value.b, &batcharray->value.c, batchsize * sync);
         }
         else { /* sequential */
           result = libxsmm_mmbatch(
