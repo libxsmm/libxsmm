@@ -176,7 +176,6 @@ if (handle->padding_flag == 1) {
 }
 #endif
 
-/* FIXME: Make dispatch logic more generic/better */
 if (handle->padding_flag == 1) {
   int img = ltid, ifm1, ij, ifm2, ii;
   int ofm1, ofm2, k, lp;
@@ -197,6 +196,12 @@ if (handle->padding_flag == 1) {
   }  
   #include "output_lp_transposer.tpl.c"
 } else {
+  if (handle->resize_input == 0) {
+    lp_transpose_input_and_output(ltid, handle);
+  } else {
+    lp_transpose_and_resize_input_and_output(ltid, handle);
+  }
+#if 0
   if (handle->resize_input == 0) {
     int w_chunks = handle->ifwp/16;
     int w_remainder = handle->ifwp%16;
@@ -227,6 +232,7 @@ if (handle->padding_flag == 1) {
       }
     }
   }
+#endif
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);

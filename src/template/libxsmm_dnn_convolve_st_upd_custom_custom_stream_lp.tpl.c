@@ -193,6 +193,12 @@ if (handle->padding_flag == 1) {
   #include "output_lp_transposer.tpl.c"
 } else {
   if (handle->resize_input == 0) {
+    lp_transpose_input_and_output(ltid, handle);
+  } else {
+    lp_transpose_and_resize_input_and_output(ltid, handle);
+  }
+#if 0
+  if (handle->resize_input == 0) {
     int w_chunks = handle->ifwp/16;
     int w_remainder = handle->ifwp%16;
     if (handle->output_lp_padding == 0) {
@@ -222,6 +228,7 @@ if (handle->padding_flag == 1) {
       }
     }
   }
+#endif
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
