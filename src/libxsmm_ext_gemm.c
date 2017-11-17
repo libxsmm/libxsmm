@@ -595,17 +595,12 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxs
   code.xgemm = kernel;
   info = libxsmm_get_kernel_info(code, &kind, 0/*size*/);
   if (0 != info && LIBXSMM_KERNEL_KIND_MATMUL == kind && 0 != a && 0 != b && 0 != c) {
-    static int chunksizes[/*configs*/][2/*DP/LP*/][4/*size-range*/] = {
-      { { 64, 64, 64, 64 }, { 64, 64, 64, 64 } }, /* generic (hsw) */
-      { { 64, 64, 64, 64 }, { 64, 64, 64, 64 } }, /* mic (knl/knm) */
-      { { 64, 64, 64, 64 }, { 64, 64, 64, 64 } }  /* core (skx) */
-    }; /* DP,                 LP */
-    int config, index, chunksize;
-    LIBXSMM_INIT /* before target_archid */
-    config = (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid ? 2 : ((LIBXSMM_X86_AVX512_MIC <= libxsmm_target_archid && LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid) ? 1 : 0));
-    index = LIBXSMM_MIN(libxsmm_cbrt_u32(info->xgemm.m * info->xgemm.n * info->xgemm.k) >> 4, 3);
-    chunksize = (0 >= libxsmm_gemm_chunksize ? chunksizes[config][info->xgemm.datatype-LIBXSMM_GEMM_PRECISION_F64][index] : libxsmm_gemm_chunksize);
-    ntasks = (int)((LIBXSMM_ABS(batchsize) + chunksize - 1) / chunksize);
+    const unsigned int size = info->xgemm.m * info->xgemm.n * info->xgemm.k;
+    int chunksize, max_chunksize;
+    LIBXSMM_INIT /* before using libxsmm_gemm_chunksize */
+    chunksize = (0 >= libxsmm_gemm_chunksize ? ((int)(1048576 * libxsmm_cbrt_u32(size) / size)) : libxsmm_gemm_chunksize);
+    max_chunksize = LIBXSMM_MAX(chunksize, 1);
+    ntasks = (int)((LIBXSMM_ABS(batchsize) + max_chunksize - 1) / max_chunksize);
   }
   if (1 < ntasks) {
 # if defined(LIBXSMM_EXT_TASKS)
