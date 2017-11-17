@@ -544,7 +544,7 @@ LIBXSMM_API_INLINE void internal_init(void)
       }
 #endif
     }
-    internal_statistic_mnk = libxsmm_icbrt(LIBXSMM_MAX_MNK);
+    internal_statistic_mnk = libxsmm_cbrt_u64(LIBXSMM_MAX_MNK);
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
 #if defined(LIBXSMM_TRACE)

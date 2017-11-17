@@ -31,9 +31,7 @@
 #ifndef LIBXSMM_GEMM_H
 #define LIBXSMM_GEMM_H
 
-#include <libxsmm_generator.h>
-#include <libxsmm_frontend.h>
-#include <libxsmm_sync.h>
+#include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -471,6 +469,11 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
   /* TODO: consider padding */
 } libxsmm_gemm_batchitem;
 
+LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
+  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  const void* a, const void* b, void* c, libxsmm_blasint batchsize, int tid, int nthreads,
+  const libxsmm_gemm_descriptor* info);
+
 LIBXSMM_API int libxsmm_dmmbatch_blas(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const double* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb, const double* beta, void* c, const libxsmm_blasint* ldc,
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
@@ -493,7 +496,7 @@ LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE libxsmm_gemm_batchlock;
 /** Maximum size of the recorded batch. */
 LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_batchsize;
 /** Grain/chunk size when processing batches. */
-LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_chunksize;
+LIBXSMM_API_VARIABLE int libxsmm_gemm_chunksize;
 /** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_API_VARIABLE int libxsmm_gemm_auto_prefetch_default;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */

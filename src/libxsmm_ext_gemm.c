@@ -429,7 +429,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
   LIBXSMM_INIT
   assert(0 != libxsmm_gemm_tile);
   if (LIBXSMM_MAX_MNK < size) {
-    const int index = LIBXSMM_MIN(libxsmm_icbrt(size) >> 10, 7);
+    const int index = LIBXSMM_MIN(libxsmm_cbrt_u64(size) >> 10, 7);
     const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][index], (unsigned int)*m);
     const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][index], (unsigned int)nn);
     const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][index], (unsigned int)kk);
@@ -511,7 +511,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
   LIBXSMM_INIT
   assert(0 != libxsmm_gemm_tile);
   if (LIBXSMM_MAX_MNK < size) {
-    const int index = LIBXSMM_MIN(libxsmm_icbrt(size) >> 10, 7);
+    const int index = LIBXSMM_MIN(libxsmm_cbrt_u64(size) >> 10, 7);
     const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][index], (unsigned int)*m);
     const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][index], (unsigned int)nn);
     const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][index], (unsigned int)kk);
@@ -588,9 +588,25 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxs
 {
   int result;
 #if defined(_OPENMP)
-  int ntasks;
-  LIBXSMM_INIT
-  ntasks = (int)((LIBXSMM_ABS(batchsize) + libxsmm_gemm_chunksize - 1) / libxsmm_gemm_chunksize);
+  const libxsmm_kernel_info* info;
+  libxsmm_code_pointer code;
+  libxsmm_kernel_kind kind;
+  int ntasks = 1;
+  code.xgemm = kernel;
+  info = libxsmm_get_kernel_info(code, &kind, 0/*size*/);
+  if (0 != info && LIBXSMM_KERNEL_KIND_MATMUL == kind && 0 != a && 0 != b && 0 != c) {
+    static int chunksizes[/*configs*/][2/*DP/LP*/][4/*size-range*/] = {
+      { { 64, 64, 64, 64 }, { 64, 64, 64, 64 } }, /* generic (hsw) */
+      { { 64, 64, 64, 64 }, { 64, 64, 64, 64 } }, /* mic (knl/knm) */
+      { { 64, 64, 64, 64 }, { 64, 64, 64, 64 } }  /* core (skx) */
+    }; /* DP,                 LP */
+    int config, index, chunksize;
+    LIBXSMM_INIT /* before target_archid */
+    config = (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid ? 2 : ((LIBXSMM_X86_AVX512_MIC <= libxsmm_target_archid && LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid) ? 1 : 0));
+    index = LIBXSMM_MIN(libxsmm_cbrt_u32(info->xgemm.m * info->xgemm.n * info->xgemm.k) >> 4, 3);
+    chunksize = (0 >= libxsmm_gemm_chunksize ? chunksizes[config][info->xgemm.datatype-LIBXSMM_GEMM_PRECISION_F64][index] : libxsmm_gemm_chunksize);
+    ntasks = (int)((LIBXSMM_ABS(batchsize) + chunksize - 1) / chunksize);
+  }
   if (1 < ntasks) {
 # if defined(LIBXSMM_EXT_TASKS)
     if (0 == omp_get_active_level())
@@ -606,9 +622,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxs
       {
 #       pragma omp parallel num_threads(nthreads)
         {
-          libxsmm_mmbatch(kernel, index_base, index_stride,
+          libxsmm_mmbatch_internal(kernel, index_base, index_stride,
             stride_a, stride_b, stride_c, a, b, c, batchsize,
-            omp_get_thread_num(), nthreads);
+            omp_get_thread_num(), nthreads, &info->xgemm);
         } /* implicit synchronization (barrier) */
       }
 # if defined(LIBXSMM_EXT_TASKS)
@@ -620,9 +636,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxs
             libxsmm_blasint tid;
             for (tid = 0; tid < ntasks; ++tid) {
 #             pragma omp task
-              libxsmm_mmbatch(kernel, index_base, index_stride,
+              libxsmm_mmbatch_internal(kernel, index_base, index_stride,
                 stride_a, stride_b, stride_c, a, b, c, batchsize,
-                tid, ntasks);
+                tid, ntasks, &info->xgemm);
             }
           }
         } /* implicit synchronization (barrier) */
@@ -635,9 +651,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxs
       libxsmm_blasint tid;
       for (tid = 0; tid < ntasks; ++tid) {
 #       pragma omp task
-        libxsmm_mmbatch(kernel, index_base, index_stride,
+        libxsmm_mmbatch_internal(kernel, index_base, index_stride,
           stride_a, stride_b, stride_c, a, b, c, batchsize,
-          tid, ntasks);
+          tid, ntasks, &info->xgemm);
       }
       /* allow to omit synchronization */
       if (0 == libxsmm_nosync) {
@@ -645,9 +661,9 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxs
       }
       result = EXIT_SUCCESS;
 # else /* sequential */
-      result = libxsmm_mmbatch(kernel, index_base, index_stride,
+      result = libxsmm_mmbatch_internal(kernel, index_base, index_stride,
         stride_a, stride_b, stride_c, a, b, c, batchsize,
-        0/*tid*/, 1/*nthreads*/);
+        0/*tid*/, 1/*nthreads*/, &info->xgemm);
 # endif
     }
   }

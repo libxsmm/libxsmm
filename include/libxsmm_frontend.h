@@ -446,4 +446,23 @@ LIBXSMM_API_INLINE void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, con
   }
 }
 
+/* Implementation is taken from an anonymous GitHub Gist. */
+LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u64(unsigned long long n) {
+  unsigned long long b; unsigned int y = 0; int s;
+  for (s = 63; s >= 0; s -= 3) {
+    y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
+    if (b <= (n >> s)) { n -= b << s; ++y; }
+  }
+  return y;
+}
+
+LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u32(unsigned int n) {
+  unsigned int b; unsigned int y = 0; int s;
+  for (s = 31; s >= 0; s -= 3) {
+    y += y; b = 3 * y * (y + 1) + 1;
+    if (b <= (n >> s)) { n -= b << s; ++y; }
+  }
+  return y;
+}
+
 #endif /*LIBXSMM_FRONTEND_H*/
