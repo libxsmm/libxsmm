@@ -130,7 +130,7 @@ if (handle->padding_flag == 1) {
   input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, dst_ifhp, handle->ifmblock, ifwp_extended);
 }
 
-
+#if 0
 /* LP transformations */
 {
   int img = ltid, ifm1, ij, ifm2, ii;
@@ -169,6 +169,59 @@ if (handle->padding_flag == 1) {
   }
 
 #include "output_lp_transposer.tpl.c"
+}
+#endif
+
+if (handle->padding_flag == 1) {
+  int img = ltid, ifm1, ij, ifm2, ii;
+  int ofm1, ofm2, k, lp;
+  int FM;
+  int W;  
+  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (ij = 0; ij < handle->ifhp; ++ij) {
+      for (ii = 0; ii < handle->ifwp; ++ii) {
+        for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+          for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+            FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block + lp;
+            LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, FM/handle->ifmblock, ij+handle->desc.pad_h, FM%handle->ifmblock, ii+handle->desc.pad_w, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended) =
+              LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+          }
+        }
+      }
+    }
+  }  
+  #include "output_lp_transposer.tpl.c"
+} else {
+  if (handle->resize_input == 0) {
+    int w_chunks = handle->ifwp/16;
+    int w_remainder = handle->ifwp%16;
+    if (handle->output_lp_padding == 0) {
+      if (w_chunks == 0) {
+        lp_transpose_0_chunk_1_remainder_even_pixels(ltid, handle);
+      } else if (w_chunks == 1) {
+        if (w_remainder) {
+          lp_transpose_1_chunk_1_remainder_even_pixels(ltid, handle);
+        } else {
+          lp_transpose_1_chunk_0_remainder_even_pixels(ltid, handle);
+        }
+      } else if (w_chunks == 3) {
+        lp_transpose_3_chunk_1_remainder_even_pixels(ltid, handle);
+      }
+    } else {
+      lp_transpose_0_chunk_1_remainder_odd_pixels(ltid, handle);
+    }
+  } else {
+    int w_chunks = handle->ifwp_resized/16;
+    if (w_chunks == 1) {
+      lp_transpose_and_resize_1_chunk_1_remainder_even_pixels(ltid, handle);
+    } else {
+      if (handle->output_lp_padding == 0) {
+        lp_transpose_and_resize_0_chunk_1_remainder_even_pixels(ltid, handle);
+      } else {
+        lp_transpose_and_resize_0_chunk_1_remainder_odd_pixels(ltid, handle);
+      }
+    }
+  }
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);

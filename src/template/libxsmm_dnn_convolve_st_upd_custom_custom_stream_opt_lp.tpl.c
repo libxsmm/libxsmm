@@ -125,31 +125,6 @@ if(tp_func == 0) {
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
-#if 0
-/* If padding is requested, copy the entire minibatch upfront (only if trnaspose is not requested, otherwise we combine trnaspose with padding) */
-if (handle->padding_flag == 1) {
-  /* Initialize in parallel scratch5 to zero */
-  for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
-    img = imgifm1/BLOCKSIFM;
-    ifm1 = imgifm1%BLOCKSIFM;
-    copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, 0, 0, 0, BLOCKSIFM, padded_h, padded_w, handle->ifmblock);
-    jitted_matzero(NULL, NULL, copy_ptr, NULL, NULL);
-  }
-  libxsmm_barrier_wait(handle->barrier, ltid);
-
-  if ( handle->trans_ofw_ifm == 0 ) {
-    for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
-      img = imgifm1/BLOCKSIFM;
-      ifm1 = imgifm1%BLOCKSIFM;
-      input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
-      copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, BLOCKSIFM, padded_h, padded_w, handle->ifmblock);
-      prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, (imgifm1-1)/BLOCKSIFM, (imgifm1-1)%BLOCKSIFM, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
-      jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
-    }
-    libxsmm_barrier_wait(handle->barrier, ltid);
-  }
-}
-#endif
 
 /* Initialize base pointers */
 if (handle->padding_flag == 1) {
@@ -161,6 +136,7 @@ if (handle->padding_flag == 1) {
 }
 
 /* LP transformations */
+#if 0
 {
   int img = ltid, ifm1, ij, ifm2, ii;
   int ofm1, ofm2, k, lp;
@@ -197,6 +173,60 @@ if (handle->padding_flag == 1) {
     }
   }
 #include "output_lp_transposer.tpl.c"
+}
+#endif
+
+/* FIXME: Make dispatch logic more generic/better */
+if (handle->padding_flag == 1) {
+  int img = ltid, ifm1, ij, ifm2, ii;
+  int ofm1, ofm2, k, lp;
+  int FM;
+  int W;  
+  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (ij = 0; ij < handle->ifhp; ++ij) {
+      for (ii = 0; ii < handle->ifwp; ++ii) {
+        for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+          for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+            FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block + lp;
+            LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, FM/handle->ifmblock, ij+handle->desc.pad_h, FM%handle->ifmblock, ii+handle->desc.pad_w, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended) =
+              LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+          }
+        }
+      }
+    }
+  }  
+  #include "output_lp_transposer.tpl.c"
+} else {
+  if (handle->resize_input == 0) {
+    int w_chunks = handle->ifwp/16;
+    int w_remainder = handle->ifwp%16;
+    if (handle->output_lp_padding == 0) {
+      if (w_chunks == 0) {
+        lp_transpose_0_chunk_1_remainder_even_pixels(ltid, handle);
+      } else if (w_chunks == 1) {
+        if (w_remainder) {
+          lp_transpose_1_chunk_1_remainder_even_pixels(ltid, handle);
+        } else {
+          lp_transpose_1_chunk_0_remainder_even_pixels(ltid, handle);
+        }
+      } else if (w_chunks == 3) {
+        lp_transpose_3_chunk_1_remainder_even_pixels(ltid, handle);
+      }
+    } else {
+      lp_transpose_0_chunk_1_remainder_odd_pixels(ltid, handle);
+    }
+  } else {
+    int w_chunks = handle->ifwp_resized/16;
+    if (w_chunks == 1) {
+      lp_transpose_and_resize_1_chunk_1_remainder_even_pixels(ltid, handle);
+    } else {
+      if (handle->output_lp_padding == 0) {
+        lp_transpose_and_resize_0_chunk_1_remainder_even_pixels(ltid, handle);
+      } else {
+        lp_transpose_and_resize_0_chunk_1_remainder_odd_pixels(ltid, handle);
+      }
+    }
+  }
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
