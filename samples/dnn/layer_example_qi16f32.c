@@ -439,6 +439,7 @@ int main(int argc, char* argv[])
   float *output_libxsmm, *dinput_libxsmm, *dfilter_libxsmm, *bias_libxsmm;
   short *input_libxsmm, *filter_libxsmm, *doutput_libxsmm, *filtertr_libxsmm;
   short *i16_naive_input, *i16_naive_filter, *i16_naive_doutput;
+  float *dq_naive_input, *dq_naive_filter, *dq_naive_doutput;
   unsigned char scf_input, scf_filter, scf_doutput, scf_filtertr;
   
 #ifdef FP32_BN_STATS
@@ -501,12 +502,13 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
 
-  libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff, norms_batchstats;
+  libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff, norms_batchstats, norms_quant;
   memset(&norms_fwd, 0, sizeof(norms_fwd));
   memset(&norms_bwd, 0, sizeof(norms_bwd));
   memset(&norms_upd, 0, sizeof(norms_upd));
   memset(&norms_batchstats, 0, sizeof(norms_batchstats));
   memset(&diff, 0, sizeof(diff));
+  memset(&norms_quant, 0, sizeof(norms_quant));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type format padding_mode\n", argv[0]);
@@ -632,6 +634,9 @@ int main(int argc, char* argv[])
   i16_naive_input       = (short*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(short), 2097152);
   i16_naive_filter      = (short*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(short), 2097152);
   i16_naive_doutput     = (short*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(short), 2097152);
+  dq_naive_input        = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  dq_naive_filter       = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
+  dq_naive_doutput      = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
 #ifdef FP32_BN_STATS
   batchstats_libxsmm    = (float*)libxsmm_aligned_malloc( 2*nImg*nOfm*        sizeof(float), 2097152);
 #endif
@@ -840,12 +845,16 @@ int main(int argc, char* argv[])
     libxsmm_dnn_set_qtensor_scf( libxsmm_input,  scf_input );
     libxsmm_dnn_set_qtensor_scf( libxsmm_filter, scf_filter );
 
+    /* dequantize to check quantization error */
+    libxsmm_dnn_dequantize( i16_naive_input,  dq_naive_input,  nImg*nIfm*ifhp*ifwp, scf_input );
+    libxsmm_dnn_dequantize( i16_naive_filter, dq_naive_filter, nIfm*nOfm*kw*kh,     scf_filter ); 
+
     /* copy in data to LIBXSMM format */
     /* we can also use the layout functions and set the data on our
        own external to the library, @TODO, we plan to add an example here */
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,  (void*)naive_input_save,  LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,  (void*)i16_naive_input,   LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output, (void*)naive_output_save, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter, (void*)naive_filter,      LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter, (void*)i16_naive_filter,  LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_bias,   (void*)naive_bias,        LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
     zero_buf_i16(filtertr_libxsmm, nOfm*nIfm*kh*kw);
 #ifdef FP32_BN_STATS 
@@ -895,8 +904,30 @@ int main(int argc, char* argv[])
       /* copy out data */
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
+      /* norms quantization */
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input_save, dq_naive_input, 0, 0, &norms_quant);
+      printf("Input Quantization:\n");
+      printf("L1 reference  : %.25g\n", norms_quant.l1_ref);
+      printf("L1 test       : %.25g\n", norms_quant.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_quant.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_quant.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_quant.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_quant.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_quant.normf_rel);
+
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nIfm*nOfm*kw*kh, 1, naive_filter, dq_naive_filter, 0, 0, &norms_quant);
+      printf("Filter Quantization:\n");
+      printf("L1 reference  : %.25g\n", norms_quant.l1_ref);
+      printf("L1 test       : %.25g\n", norms_quant.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_quant.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_quant.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_quant.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_quant.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_quant.normf_rel);
+
       /* compare */
       libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0, &norms_fwd);
+      printf("Output:\n");
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
@@ -1213,6 +1244,12 @@ int main(int argc, char* argv[])
   libxsmm_free(naive_dbias);
   libxsmm_free(bias_libxsmm);
   libxsmm_free(dbias_libxsmm);
+  libxsmm_free(i16_naive_input);
+  libxsmm_free(i16_naive_filter);
+  libxsmm_free(i16_naive_doutput);
+  libxsmm_free(dq_naive_input);
+  libxsmm_free(dq_naive_filter);
+  libxsmm_free(dq_naive_doutput);
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 100.0 : atof(env_check_scale));
