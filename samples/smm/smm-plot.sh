@@ -75,7 +75,7 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
     GDFONTPATH=/cygdrive/c/Windows/Fonts \
     FILENAME=${FILENAME} \
     MULTI=${MULTI} \
-	LIMIT=${LIMIT} \
+    LIMIT=${LIMIT} \
   "${WGNUPLOT}" smm-perf.plt
 fi
 
