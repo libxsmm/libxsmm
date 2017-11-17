@@ -587,87 +587,91 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxs
   const void* a, const void* b, void* c, libxsmm_blasint batchsize)
 {
   int result;
-#if defined(_OPENMP)
   const libxsmm_kernel_info* info;
   libxsmm_code_pointer code;
   libxsmm_kernel_kind kind;
-  int ntasks = 1;
   code.xgemm = kernel;
   info = libxsmm_get_kernel_info(code, &kind, 0/*size*/);
   if (0 != info && LIBXSMM_KERNEL_KIND_MATMUL == kind && 0 != a && 0 != b && 0 != c) {
-    const unsigned int size = info->xgemm.m * info->xgemm.n * info->xgemm.k;
-    int chunksize, max_chunksize;
-    LIBXSMM_INIT /* before using libxsmm_gemm_chunksize */
-    chunksize = (0 >= libxsmm_gemm_chunksize ? ((int)(1048576 * libxsmm_cbrt_u32(size) / size)) : libxsmm_gemm_chunksize);
-    max_chunksize = LIBXSMM_MAX(chunksize, 1);
-    ntasks = (int)((LIBXSMM_ABS(batchsize) + max_chunksize - 1) / max_chunksize);
-  }
-  if (1 < ntasks) {
+    LIBXSMM_INIT
+    {
+#if defined(_OPENMP)
+      const unsigned int size = info->xgemm.m * info->xgemm.n * info->xgemm.k;
+      const int chunksize = (0 >= libxsmm_gemm_chunksize ? ((int)(1048576 * libxsmm_cbrt_u32(size) / size)) : libxsmm_gemm_chunksize);
+      const int max_chunksize = LIBXSMM_MAX(chunksize, 1);
+      const int ntasks = (int)((LIBXSMM_ABS(batchsize) + max_chunksize - 1) / max_chunksize);
+
+      if (1 < ntasks) {
 # if defined(LIBXSMM_EXT_TASKS)
-    if (0 == omp_get_active_level())
+        if (0 == omp_get_active_level())
 # else
-    if (0 == omp_in_parallel())
+        if (0 == omp_in_parallel())
 # endif
-    { /* enable internal parallelization */
-      const int max_nthreads = omp_get_max_threads();
-      const int nthreads = LIBXSMM_MIN(max_nthreads, ntasks);
+        { /* enable internal parallelization */
+          const int max_nthreads = omp_get_max_threads();
+          const int nthreads = LIBXSMM_MIN(max_nthreads, ntasks);
 # if defined(LIBXSMM_EXT_TASKS)
-      if (0 == libxsmm_gemm_tasks)
+          if (0 == libxsmm_gemm_tasks)
 # endif
-      {
-#       pragma omp parallel num_threads(nthreads)
-        {
-          libxsmm_mmbatch_internal(kernel, index_base, index_stride,
-            stride_a, stride_b, stride_c, a, b, c, batchsize,
-            omp_get_thread_num(), nthreads, &info->xgemm);
-        } /* implicit synchronization (barrier) */
-      }
-# if defined(LIBXSMM_EXT_TASKS)
-      else { /* tasks requested */
-#       pragma omp parallel num_threads(nthreads)
-        {
-#         pragma omp single nowait /* anyone is good */
-          { /* first thread discovering work will launch all tasks */
-            libxsmm_blasint tid;
-            for (tid = 0; tid < ntasks; ++tid) {
-#             pragma omp task
+          {
+#           pragma omp parallel num_threads(nthreads)
+            {
               libxsmm_mmbatch_internal(kernel, index_base, index_stride,
                 stride_a, stride_b, stride_c, a, b, c, batchsize,
-                tid, ntasks, &info->xgemm);
-            }
+                omp_get_thread_num(), nthreads, &info->xgemm);
+            } /* implicit synchronization (barrier) */
           }
-        } /* implicit synchronization (barrier) */
-      }
+# if defined(LIBXSMM_EXT_TASKS)
+          else { /* tasks requested */
+#           pragma omp parallel num_threads(nthreads)
+            {
+#             pragma omp single nowait /* anyone is good */
+              { /* first thread discovering work will launch all tasks */
+                libxsmm_blasint tid;
+                for (tid = 0; tid < ntasks; ++tid) {
+#                 pragma omp task
+                  libxsmm_mmbatch_internal(kernel, index_base, index_stride,
+                    stride_a, stride_b, stride_c, a, b, c, batchsize,
+                    tid, ntasks, &info->xgemm);
+                }
+              }
+            } /* implicit synchronization (barrier) */
+          }
 # endif
-      result = EXIT_SUCCESS;
-    }
-    else { /* assume external parallelization */
+          result = EXIT_SUCCESS;
+        }
+        else { /* assume external parallelization */
 # if defined(LIBXSMM_EXT_TASKS) /* OpenMP-tasks */
-      libxsmm_blasint tid;
-      for (tid = 0; tid < ntasks; ++tid) {
-#       pragma omp task
-        libxsmm_mmbatch_internal(kernel, index_base, index_stride,
-          stride_a, stride_b, stride_c, a, b, c, batchsize,
-          tid, ntasks, &info->xgemm);
-      }
-      /* allow to omit synchronization */
-      if (0 == libxsmm_nosync) {
-#       pragma omp taskwait
-      }
-      result = EXIT_SUCCESS;
+          libxsmm_blasint tid;
+          for (tid = 0; tid < ntasks; ++tid) {
+#           pragma omp task
+            libxsmm_mmbatch_internal(kernel, index_base, index_stride,
+              stride_a, stride_b, stride_c, a, b, c, batchsize,
+              tid, ntasks, &info->xgemm);
+          }
+          /* allow to omit synchronization */
+          if (0 == libxsmm_nosync) {
+#           pragma omp taskwait
+          }
+          result = EXIT_SUCCESS;
 # else /* sequential */
-      result = libxsmm_mmbatch_internal(kernel, index_base, index_stride,
-        stride_a, stride_b, stride_c, a, b, c, batchsize,
-        0/*tid*/, 1/*nthreads*/, &info->xgemm);
+          result = libxsmm_mmbatch_internal(kernel, index_base, index_stride,
+            stride_a, stride_b, stride_c, a, b, c, batchsize,
+            0/*tid*/, 1/*nthreads*/, &info->xgemm);
 # endif
+        }
+      }
+      else
+#endif /*defined(_OPENMP)*/
+      { /* sequential */
+        result = libxsmm_mmbatch_internal(kernel, index_base, index_stride,
+          stride_a, stride_b, stride_c, a, b, c, batchsize,
+          0/*tid*/, 1/*nthreads*/, &info->xgemm);
+      }
     }
   }
-  else
-#endif /*defined(_OPENMP)*/
-  { /* sequential */
-    result = libxsmm_mmbatch(kernel, index_base, index_stride,
-      stride_a, stride_b, stride_c, a, b, c, batchsize,
-      0/*tid*/, 1/*nthreads*/);
+  else { /* incorrect argument(s) */
+    result = EXIT_FAILURE;
   }
   return result;
 }
