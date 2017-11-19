@@ -76,16 +76,17 @@
 #endif
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
-  const void* const_pmm;
+  void (*ptr_fn)(LIBXSMM_VARIADIC);
+  const void* ptr_const;
   void* pmm;
-  uintptr_t uimm;
-  intptr_t imm;
+  uintptr_t uval;
+  intptr_t ival;
   libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wmm, or void-function */
+  libxsmm_xmatcopyfunction xmatcopy;
+  libxsmm_xtransfunction xtrans;
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)
   libxsmm_xconvfunction xconv;
 #endif
-  libxsmm_xmatcopyfunction xmatcopy;
-  libxsmm_xtransfunction xtrans;
 } libxsmm_code_pointer;
 
 typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
@@ -381,6 +382,15 @@ LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
+typedef union LIBXSMM_RETARGETABLE libxsmm_kernel_info {
+  libxsmm_gemm_descriptor xgemm;
+  libxsmm_matcopy_descriptor mcopy;
+  libxsmm_transpose_descriptor trans;
+} libxsmm_kernel_info;
+
+/** Attempts to receive information about JIT-generated code. */
+LIBXSMM_API const libxsmm_kernel_info* libxsmm_get_kernel_info(libxsmm_code_pointer code, libxsmm_kernel_kind* kind, size_t* size);
+
 /** Updates counters of the statistic, which is shown at program termination. */
 LIBXSMM_API unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision precision,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, unsigned int ntry, unsigned int ncol);
@@ -422,7 +432,7 @@ LIBXSMM_API_VARIABLE int libxsmm_verbosity;
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
 LIBXSMM_API_VARIABLE int libxsmm_target_archid;
 /** Determines whether a threaded implementation is synchronized or not. */
-LIBXSMM_API_VARIABLE int libxsmm_sync;
+LIBXSMM_API_VARIABLE int libxsmm_nosync;
 /** Number of threads per core. */
 LIBXSMM_API_VARIABLE int libxsmm_nt;
 

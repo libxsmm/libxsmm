@@ -84,7 +84,7 @@ LIBXSMM_API_DEFINITION libxsmm_barrier* libxsmm_barrier_create(int ncores, int n
 {
   libxsmm_barrier *const barrier = (libxsmm_barrier*)libxsmm_aligned_malloc(
     sizeof(libxsmm_barrier), LIBXSMM_CACHELINE);
-#if defined(_REENTRANT)
+#if !defined(LIBXSMM_NO_SYNC)
   barrier->ncores = ncores;
   barrier->ncores_log2 = LIBXSMM_LOG2((ncores << 1) - 1);
   barrier->nthreads_per_core = nthreads_per_core;
@@ -106,7 +106,7 @@ LIBXSMM_API_DEFINITION libxsmm_barrier* libxsmm_barrier_create(int ncores, int n
 
 LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
 {
-#if defined(_REENTRANT)
+#if !defined(LIBXSMM_NO_SYNC)
   const int cid = tid / barrier->nthreads_per_core; /* this thread's core ID */
   internal_sync_core_tag* core = 0;
   int i;
@@ -190,7 +190,7 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int t
 LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
 void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
 {
-#if defined(_REENTRANT)
+#if !defined(LIBXSMM_NO_SYNC)
   internal_sync_thread_tag *const thread = barrier->threads[tid];
   internal_sync_core_tag *const core = thread->core;
 
@@ -266,7 +266,7 @@ void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
 
 LIBXSMM_API_DEFINITION void libxsmm_barrier_release(const libxsmm_barrier* barrier)
 {
-#if defined(_REENTRANT)
+#if !defined(LIBXSMM_NO_SYNC)
   int i;
   if (2 == barrier->init_done) {
     for (i = 0; i < barrier->ncores; ++i) {

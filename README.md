@@ -67,55 +67,21 @@ make clean
 make realclean
 ```
 
-By default, LIBXSMM uses the [JIT backend](#jit-backend) which is automatically building optimized code. However, one can also statically specialize the matrix sizes (M, N, and K values), for convolutions the options below can be ignored:
+By default, LIBXSMM uses the [JIT backend](#jit-backend) which is automatically building optimized code. Matrix multiplication kernels can be also statically specialized at compile-time of the library (M, N, and K values), which is documented in the [Customization](documentation/libxsmm_tune.md) section. Functionality of LIBXSMM, which is unrelated to GEMM can be used without introducing a dependency to BLAS. This can be achieved in two ways: (1)&#160;building a special library with `make BLAS=0`, or (2)&#160;linking the application against the 'libxsmmnoblas' library.
 
-```bash
-make M="2 4" N="1" K="$(echo $(seq 2 5))"
-```
-
-The above example is generating the following set of (M,N,K) triplets:
-
-```bash
-(2,1,2), (2,1,3), (2,1,4), (2,1,5),
-(4,1,2), (4,1,3), (4,1,4), (4,1,5)
-```
-
-The index sets are in a loop-nest relationship (M(N(K))) when generating the indices. Moreover, an empty index set resolves to the next non-empty outer index set of the loop nest (including to wrap around from the M to K set). An empty index set does not participate in the loop-nest relationship. Here is an example of generating multiplication routines which are "squares" with respect to M and N (N inherits the current value of the "M loop"):
-
-```bash
-make M="$(echo $(seq 2 5))" K="$(echo $(seq 2 5))"
-```
-
-An even more flexible specialization is possible by using the MNK variable when building the library. It takes a list of indexes which are eventually grouped (using commas):
-
-```bash
-make MNK="2 3, 23"
-```
-
-Each group of the above indexes is combined into all possible triplets generating the following set of (M,N,K) values:
-
-```bash
-(2,2,2), (2,2,3), (2,3,2), (2,3,3),
-(3,2,2), (3,2,3), (3,3,2), (3,3,3), (23,23,23)
-```
-
-Of course, both mechanisms (M/N/K and MNK based) can be combined using the same command line (make). Static optimization and JIT can also be combined (no need to turn off the JIT backend). Testing the library is supported by a variety of targets with "test" and "test-all" being the most prominent for this matter.
-
-Functionality of LIBXSMM, which is unrelated to GEMM can be used without introducing a dependency to BLAS. This can be achieved in two ways: (1)&#160;building a special library with `make BLAS=0`, or (2)&#160;linking the application against the 'libxsmmnoblas' library. Some care must be taken with any matrix multiplication which does not appear to require BLAS for the given test arguments. However, it may fall back to BLAS (at runtime of the application), if an unforeseen input is given (problem-size, or unsupported GEMM arguments).
-
-**NOTE**: By default, a C/C++ and a FORTRAN compiler is needed (some sample code is written in C++). Beside of specifying the compilers (`make CXX=g++ CC=gcc FC=gfortran` and maybe `AR=ar`), the need for a FORTRAN compiler can be relaxed (`make FC=` or `make FORTRAN=0`). The latter affects the availability of the MODule file and the corresponding 'libxsmmf' library (the interface 'libxsmm.f' is still generated). FORTRAN code can make use of LIBXSMM in three different ways:
+**NOTE**: By default, C/C++ and FORTRAN compilers are needed (some sample code is written in C++). Beside of specifying the compilers (`make CXX=g++ CC=gcc FC=gfortran` and maybe `AR=ar`), the need for a FORTRAN compiler can be relaxed (`make FC=` or `make FORTRAN=0`). The latter affects the availability of the MODule file and the corresponding 'libxsmmf' library (the interface 'libxsmm.f' is still generated). FORTRAN code can make use of LIBXSMM in three ways:
 
 * By relying on the module file, and by linking against 'libxsmmf', 'libxsmm', and (optionally) 'libxsmmext',
 * By including the interface 'libxsmm.f' and linking against 'libxsmm', and (optionally) 'libxsmmext', or
-* By declaring e.g., `libxsmm_?gemm` (BLAS signature) and linking 'libxsmm' (and 'libxsmmext' if needed).
+* By optionally declaring a SUBROUTINE, or by simply calling a SUBROUTINE (FORTRAN&#160;77).
 
-At the expense of a limited set of functionality (`libxsmm_?gemm[_omp]`, `libxsmm_blas_?gemm`, and `libxsmm_[s|d]otrans[_omp]`), the latter method also works with FORTRAN&#160;77 (otherwise the FORTRAN&#160;2003 standard is necessary). For the "omp" functionality, the 'libxsmmext' library needs to be present at the link line. For no code change at all, the [Call Wrapper](documentation/libxsmm_mm.md#call-wrapper) might be of interest.
+A FORTRAN&#160;77 interface is implicitly available and documented in 'libxsmm.f' (comments). It can be useful to have a look at the [implementation of the FORTRAN&#160;77 interface](https://github.com/hfp/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility).
 
 ### Link Instructions
 
-The library is agnostic with respect to the threading-runtime, and therefore an application is free to use any threading runtime (e.g., OpenMP). The library is also thread-safe, and multiple application threads can call LIBXSMM's routines concurrently. Forcing OpenMP (OMP=1) for the entire build of LIBXSMM is not supported and untested ('libxsmmext' is automatically built with OpenMP enabled).
+The library is agnostic with respect to the threading-runtime, and therefore an application is free to use any threading runtime (e.g., OpenMP). The library is also thread-safe, and multiple application threads can call LIBXSMM's routines concurrently. Enabling OpenMP for LIBXSMM's main library is supported as well (OMP=1), and mostly affects the synchronization primitives used inside of the library. All of the "omp" functionality (function postfix) is served by the 'libxsmmext' library, which is automatically built with OpenMP enabled. When using this "omp" functionality, 'libxsmmext' needs to be present at the link line.
 
-Similarly, an application is free to choose any BLAS or LAPACK library (if the link model available on the OS supports this), and therefore linking GEMM routines when linking LIBXSMM itself (by supplying BLAS=1&#124;2) may prevent a user from making this decision at the time of linking the actual application.
+Similarly, an application is free to choose any BLAS or LAPACK library (if the link model available on the OS supports this), and therefore linking GEMM routines when linking LIBXSMM itself (by supplying BLAS=1&#124;2) may prevent a user from making this decision at the time of linking the actual application. For no application code changes, the [Call Wrapper](documentation/libxsmm_mm.md#call-wrapper) can intercept existing BLAS calls and use LIBXSMM instead.
 
 **NOTE**: LIBXSMM does not support to dynamically link 'libxsmm' or 'libxsmmext' ("so"), when BLAS is linked statically ("a"). If BLAS is linked statically, the static version of LIBXSMM must be used!
 
@@ -217,6 +183,8 @@ Since explicitly JIT-generated code (`libxsmm_?mmdispatch`) does not fall under 
 ```bash
 Registry: 20 MB (gemm=0 mcopy=14 tcopy=0)
 ```
+
+If the call-wrapper is used, an additional runtime statistic becomes available (see [Call Wrapper](documentation/libxsmm_mm.md#call-wrapper)).
 
 **NOTE**: Setting LIBXSMM_VERBOSE to a negative value will binary-dump each generated JIT kernel to a file with each file being named like the function name shown in [Intel&#160;VTune](documentation/libxsmm_prof.md#intelvtuneamplifier). Disassembly of the raw binary files can be accomplished by:
 

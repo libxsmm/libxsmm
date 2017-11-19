@@ -37,7 +37,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#if defined(__MKL)
 # include <mkl_trans.h>
 # include <mkl_service.h>
 #elif defined(__OPENBLAS77)
@@ -69,7 +69,7 @@
 # define USE_SELF_VALIDATION
 #endif
 #if !defined(USE_SELF_VALIDATION)
-# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# if defined(__MKL)
 #   define OTRANS_GOLD(M, N, A, LDI, B, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))('C', 'T', \
         (size_t)(*(M)), (size_t)(*(N)), (ELEM_TYPE)1, A, (size_t)(*(LDI)), B, (size_t)(*(LDO)))

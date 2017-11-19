@@ -53,6 +53,9 @@ typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(const void*, 
 LIBXSMM_HASH_API void libxsmm_hash_init(int target_arch);
 LIBXSMM_HASH_API void libxsmm_hash_finalize(void);
 
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u32(unsigned int seed, unsigned int value);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u64(unsigned int seed, unsigned long long value);
+
 /** Dispatched implementation which may (or may not) use a SIMD extension. */
 LIBXSMM_HASH_API unsigned int libxsmm_crc32(
   const void* data, size_t size, unsigned int seed);
