@@ -41,9 +41,11 @@
 #if defined(__EDGE_EXECUTE_F32__)
 #define REALTYPE float
 #define N_CRUNS 16
+/*#define N_CRUNS 8*/
 #else
 #define REALTYPE double
 #define N_CRUNS 8
+/*#define N_CRUNS 4*/
 #endif
 
 static double sec(struct timeval start, struct timeval end) {

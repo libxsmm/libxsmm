@@ -51,7 +51,8 @@
         INTEGER(C_INT), PARAMETER :: LIBXSMM_VERSION_PATCH = $PATCH
 
         ! Parameters the library and static kernels were built for.
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_ALIGNMENT = $ALIGNMENT
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_CACHELINE = $CACHELINE
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_ALIGNMENT = $CACHELINE
         INTEGER(C_INT), PARAMETER :: LIBXSMM_PREFETCH = $PREFETCH
         INTEGER(C_INT), PARAMETER :: LIBXSMM_MAX_MNK = $MAX_MNK
         INTEGER(C_INT), PARAMETER :: LIBXSMM_FLAGS = $FLAGS
@@ -464,8 +465,7 @@
             !                  using the index_stride (in Bytes). The typical value of
             !                  index_stride is LIBXSMM_BLASINT_KIND (packed indexes).
             ! A stride of zero (zero-index) does not advance the matrix-operand.
-            ! Note: if the C-stride is zero, the kernel may be built for Beta=1,
-            ! and more important, accesses to C are internally synchronized.
+            ! Note: accesses to the same C-matrix are internally synchronized.
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_c

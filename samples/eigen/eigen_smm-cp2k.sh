@@ -17,6 +17,12 @@ RUNS8=$(${SCRT} -1 $((80*80*80-0))   37  23, 6, 14 16 29, 14 32 29, 5 32 13 24 2
 RUNS9=$(${SCRT} -1 $((80*80*80-0))   38  23, 6, 14 16 29, 14 32 29, 5 32 13 24 26, 9 32 22, 64, 78, 16 29 55, 32 29 55, 12, 4 5 7 9 13 25 26 28 32 45, 4 10 15 0 0)
 RUNS10=$(${SCRT} -1 $((128*128*128)) 41  23, 6, 14 16 29, 14 32 29, 5 32 13 24 26, 9 32 22, 64, 78, 16 29 55, 32 29 55, 12, 4 5 7 9 13 25 26 28 32 45, 4 10 15, 6 7 8 0 0)
 
+CASE=0
+if [ "" != "$1" ]; then
+  CASE=$1
+  shift
+fi
+
 case "$1" in
   "-"*) RUNS=RUNS${1:1}; shift
   ;;
@@ -45,7 +51,7 @@ for RUN in ${!RUNS} ; do
   NVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f2)
   KVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f3)
   >&2 ${ECHO} -n "${NRUN} of ${NMAX} (M=${MVALUE} N=${NVALUE} K=${KVALUE})... "
-  ERROR=$({ ${HERE}/eigen_smm ${MVALUE} ${NVALUE} ${KVALUE} ${SIZE} ${NREPEAT} >> ${FILE}; } 2>&1)
+  ERROR=$({ ${HERE}/eigen_smm ${CASE} ${MVALUE} ${NVALUE} ${KVALUE} ${SIZE} ${NREPEAT} >> ${FILE}; } 2>&1)
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
     ${ECHO} "FAILED(${RESULT}) ${ERROR}"

@@ -37,16 +37,16 @@
 #if !defined(REAL_TYPE)
 # define REAL_TYPE double
 #endif
-#if !defined(NON_DEFAULT_REFERENCE_BLAS)
-# define REFERENCE_BLAS LIBXSMM_BLAS_GEMM_SYMBOL
-#else
-# define REFERENCE_BLAS LIBXSMM_XBLAS_SYMBOL
+#if !defined(REFERENCE_BLAS)
+# define REFERENCE_BLAS LIBXSMM_GEMM_SYMBOL
 #endif
-#if !defined(NON_DEFAULT_LIBXSMM_BLAS)
+#if !defined(LIBXSMM_BLAS)
 # define LIBXSMM_BLAS LIBXSMM_XGEMM_SYMBOL
-#else
-# define LIBXSMM_BLAS LIBXSMM_YGEMM_SYMBOL
+/*# define LIBXSMM_BLAS LIBXSMM_YGEMM_SYMBOL*/
 #endif
+
+
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, REAL_TYPE);
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
@@ -75,14 +75,14 @@ int main(void)
 {
 #if !defined(__BLAS) || (0 != __BLAS)
   const char transa = 'N', transb = 'N';
-  libxsmm_blasint m[]     = { 0, 0, 1, 1, 3, 3, 1,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32 };
-  libxsmm_blasint n[]     = { 0, 1, 1, 1, 3, 1, 3, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33 };
-  libxsmm_blasint k[]     = { 0, 1, 1, 1, 3, 2, 2,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192 };
-  libxsmm_blasint lda[]   = { 0, 1, 1, 1, 3, 3, 1,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32 };
-  libxsmm_blasint ldb[]   = { 0, 1, 1, 1, 3, 2, 2, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048 };
-  libxsmm_blasint ldc[]   = { 0, 1, 0, 1, 3, 3, 1, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048 };
-  const REAL_TYPE alpha[] = { 1, 1, 1, 1, 1, 1, 1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1 };
-  const REAL_TYPE beta[]  = { 0, 1, 0, 1, 1, 0, 0,   1,     0,     0,   0,   0,   0,   0,   0,  0,  0,  0,  0,    0 };
+  libxsmm_blasint m[]     = { 0, 0, 1, 1, 3, 3, 1,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32,    9 };
+  libxsmm_blasint n[]     = { 0, 1, 1, 1, 3, 1, 3, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33,    9 };
+  libxsmm_blasint k[]     = { 0, 1, 1, 1, 3, 2, 2,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192, 1742 };
+  libxsmm_blasint lda[]   = { 0, 1, 1, 1, 3, 3, 1,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9 };
+  libxsmm_blasint ldb[]   = { 0, 1, 1, 1, 3, 2, 2, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742 };
+  libxsmm_blasint ldc[]   = { 0, 1, 0, 1, 3, 3, 1, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
+  const REAL_TYPE alpha[] = { 1, 1, 1, 1, 1, 1, 1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
+  const REAL_TYPE beta[]  = { 0, 1, 0, 1, 1, 0, 0,   1,     0,     0,   0,   0,   0,   0,   0,  0,  0,  0,  0,    0,    0 };
   const int begin = 3, end = sizeof(m) / sizeof(*m);
   libxsmm_blasint maxm = 1, maxn = 1, maxk = 1, maxa = 1, maxb = 1, maxc = 1;
   REAL_TYPE *a = 0, *b = 0, *c = 0, *d = 0;

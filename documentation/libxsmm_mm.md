@@ -119,10 +119,10 @@ To process a batch of matrix multiplications and to prefetch the operands of the
 
 ```C
 /** Process a series of matrix multiplications (explicit data representation). */
-int libxsmm_mmbatch(libxsmm_gemm_precision precision, libxsmm_xmmfunction kernel,
-  const void* a, const void* b, void* c, libxsmm_blasint index_base, libxsmm_blasint index_stride,
+int libxsmm_mmbatch(libxsmm_gemm_precision precision,
+  libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
-  libxsmm_blasint batchsize, int tid, int nthreads);
+  const void* a, const void* b, void* c, libxsmm_blasint batchsize, int tid, int nthreads);
 ```
 
 To further simplify the multiplication of matrices in a batch, the above interface can help if an explicit data representation is available. This low-level form is also able to employ a user-defined threading runtime. In case of OpenMP, `libxsmm_mmbatch_omp` is ready to use and hosted by the extension library (libxsmmext). An even higher-level set of procedures (and potentially more convenient functions) are available with `libxsmm_gemm_batch` and `libxsmm_gemm_batch_omp`.

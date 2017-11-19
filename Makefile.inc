@@ -569,9 +569,9 @@ ifneq (0,$(INTEL))
   FMFLAGS += -module
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
-    CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -qoverride_limits -fp-model fast=2
-    CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -qoverride_limits -fp-model fast=2
-    FCFLAGS += $(OPTFLAG) -qoverride_limits -fp-model fast=2
+    CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
+    CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
+    FCFLAGS += $(OPTFLAG) -qoverride_limits #-fp-model fast=2
     ifneq (0,$(shell echo "$$((130000 <= $(FC_VERSION)))"))
       FCFLAGS += -align array64byte
     endif
@@ -794,9 +794,9 @@ else # GCC assumed
         LDFLAGS += -Wl,--gc-sections
       endif
       ifneq (0,$(GCC))
-        CXXFLAGS += -ffast-math
-        CFLAGS += -ffast-math
-        FCFLAGS += -ffast-math
+        #CXXFLAGS += -ffast-math
+        #CFLAGS += -ffast-math
+        #FCFLAGS += -ffast-math
         ifneq (0,$(SIMD))
         ifneq (0,$(shell echo "$$((40900 <= $(GXX_VERSION)))"))
           DFLAGS += -DLIBXSMM_OPENMP_SIMD
@@ -805,10 +805,10 @@ else # GCC assumed
           FCFLAGS += -fopenmp-simd
         endif
         endif
-      else ifneq (3,$(AVX))
-        CXXFLAGS += -ffast-math
-        CFLAGS += -ffast-math
-        FCFLAGS += -ffast-math
+      #else ifneq (3,$(AVX))
+        #CXXFLAGS += -ffast-math
+        #CFLAGS += -ffast-math
+        #FCFLAGS += -ffast-math
       endif
     endif
     ifneq (0,$(IPO))
@@ -1086,7 +1086,7 @@ else
   OMPLIB = $(NULL)
 endif
 
-ifneq (0,$(OMP))
+ifeq (0,$(OMP))
   EXTLIB += $(OMPLIB)
 endif
 

@@ -302,7 +302,7 @@ void libxsmm_generator_gemm_sse3_microkernel( libxsmm_generated_code*           
                                                  i_micro_kernel_config->vadd_instruction,
                                                  i_micro_kernel_config->vector_name,
                                                  i_n_blocking + l_m + l_n,
-                                                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) ,
+                                                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
                                                  LIBXSMM_X86_VEC_REG_UNDEF );
           } else {
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -317,7 +317,7 @@ void libxsmm_generator_gemm_sse3_microkernel( libxsmm_generated_code*           
                                                  i_micro_kernel_config->vadd_instruction,
                                                  i_micro_kernel_config->vector_name,
                                                  i_n_blocking + l_m_blocking + l_n - 1,
-                                                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) ,
+                                                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
                                                  LIBXSMM_X86_VEC_REG_UNDEF );
           }
         }

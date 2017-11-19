@@ -53,12 +53,11 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_GEMM_CONST)
-# if defined(LIBXSMM_GEMM_NONCONST) || defined(__OPENBLAS)
-#   define LIBXSMM_GEMM_CONST
-# else
-#   define LIBXSMM_GEMM_CONST const
-# endif
+#if !defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD) && \
+    (defined(LIBXSMM_CONFIG_WRAP) && 0 != (LIBXSMM_CONFIG_WRAP)) && \
+    (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || \
+    !defined(NDEBUG) || defined(_WIN32)) /* debug purpose */
+# define LIBXSMM_GEMM_MMBATCH
 #endif
 
 /** Undefine (disarm) MKL's DIRECT_CALL macros. */
@@ -75,19 +74,16 @@
 # define LIBXSMM_GEMM_COLLAPSE 2
 #endif
 
+#if !defined(LIBXSMM_GEMM_BATCHSCALE)
+# define LIBXSMM_GEMM_BATCHSCALE 1.5
+#endif
+
 #if !defined(LIBXSMM_NO_BLAS)
 # if !defined(__BLAS) || (0 != __BLAS)
 #   define LIBXSMM_NO_BLAS 0
 # else
 #   define LIBXSMM_NO_BLAS 1
 # endif
-#endif
-
-#if !defined(LIBXSMM_GEMM_BATCHSIZE)
-# define LIBXSMM_GEMM_BATCHSIZE 1024
-#endif
-#if !defined(LIBXSMM_GEMM_BATCHSCALE)
-# define LIBXSMM_GEMM_BATCHSCALE 1.5
 #endif
 
 #define LIBXSMM_GEMM_NO_BYPASS(FLAGS, ALPHA, BETA) ( \
@@ -371,27 +367,27 @@
     if (0 == (ORIGINAL)) { \
       union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } libxsmm_gemm_wrapper_dynamic_ = { 0 }; \
       dlerror(); /* clear an eventual error status */ \
-      libxsmm_gemm_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)))); \
+      libxsmm_gemm_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMM_SYMBOL(TYPE))); \
       if (libxsmm_gemm_wrapper_dynamic_.pv != (CALLER)) { \
         LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_gemm_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED); \
       } \
-      LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER, LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm))); \
+      LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER, LIBXSMM_GEMM_SYMBOL(TYPE)); \
     }
 # define LIBXSMM_GEMV_WRAPPER_DYNAMIC(TYPE, ORIGINAL, CALLER) \
     if (0 == (ORIGINAL)) { \
       union { const void* pv; LIBXSMM_GEMVFUNCTION_TYPE(TYPE) pf; } libxsmm_gemv_wrapper_dynamic_ = { 0 }; \
       dlerror(); /* clear an eventual error status */ \
-      libxsmm_gemv_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemv)))); \
+      libxsmm_gemv_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMV_SYMBOL(TYPE))); \
       if (libxsmm_gemv_wrapper_dynamic_.pv != (CALLER)) { \
         LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_gemv_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED); \
       } \
-      LIBXSMM_GEMV_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER, LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemv))); \
+      LIBXSMM_GEMV_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER, LIBXSMM_GEMV_SYMBOL(TYPE)); \
     }
 #else
 # define LIBXSMM_GEMM_WRAPPER_DYNAMIC(TYPE, ORIGINAL, CALLER) LIBXSMM_GEMM_WRAPPER_BLAS( \
-    TYPE, ORIGINAL, CALLER, LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm)))
+    TYPE, ORIGINAL, CALLER, LIBXSMM_GEMM_SYMBOL(TYPE))
 # define LIBXSMM_GEMV_WRAPPER_DYNAMIC(TYPE, ORIGINAL, CALLER) LIBXSMM_GEMV_WRAPPER_BLAS( \
-    TYPE, ORIGINAL, CALLER, LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemv)))
+    TYPE, ORIGINAL, CALLER, LIBXSMM_GEMV_SYMBOL(TYPE))
 #endif
 
 #if defined(NDEBUG) /* library code is expected to be mute */
@@ -459,16 +455,8 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const double*, double*, const libxsmm_blasint*);
 #endif
 
-LIBXSMM_API_EXTERN void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char*, LIBXSMM_GEMM_CONST char*,
-  LIBXSMM_GEMM_CONST libxsmm_blasint*, LIBXSMM_GEMM_CONST libxsmm_blasint*, LIBXSMM_GEMM_CONST libxsmm_blasint*,
-  LIBXSMM_GEMM_CONST float*, LIBXSMM_GEMM_CONST float*, LIBXSMM_GEMM_CONST libxsmm_blasint*,
-  LIBXSMM_GEMM_CONST float*, LIBXSMM_GEMM_CONST libxsmm_blasint*,
-  LIBXSMM_GEMM_CONST float*, float*, LIBXSMM_GEMM_CONST libxsmm_blasint*);
-LIBXSMM_API_EXTERN void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char*, LIBXSMM_GEMM_CONST char*,
-  LIBXSMM_GEMM_CONST libxsmm_blasint*, LIBXSMM_GEMM_CONST libxsmm_blasint*, LIBXSMM_GEMM_CONST libxsmm_blasint*,
-  LIBXSMM_GEMM_CONST double*, LIBXSMM_GEMM_CONST double*, LIBXSMM_GEMM_CONST libxsmm_blasint*,
-  LIBXSMM_GEMM_CONST double*, LIBXSMM_GEMM_CONST libxsmm_blasint*,
-  LIBXSMM_GEMM_CONST double*, double*, LIBXSMM_GEMM_CONST libxsmm_blasint*);
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, float);
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, double);
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
   struct {
@@ -495,7 +483,7 @@ LIBXSMM_API int libxsmm_smmbatch_blas(const char* transa, const char* transb, li
 typedef void (*libxsmm_mmbatch_flush_function)(void);
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
-LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_tile[2/*DP/SP*/][3/*M,N,K*/][8/*size-range*/];
+LIBXSMM_API_VARIABLE /*const*/ unsigned int (*libxsmm_gemm_tile)[3/*M,N,K*/][8/*size-range*/];
 /** auto-batch descriptor (filter). */
 LIBXSMM_API_VARIABLE libxsmm_gemm_descriptor libxsmm_gemm_batchdesc;
 /** Records a batch of SMMs. */
@@ -504,6 +492,8 @@ LIBXSMM_API_VARIABLE libxsmm_gemm_batchitem* libxsmm_gemm_batcharray;
 LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE libxsmm_gemm_batchlock;
 /** Maximum size of the recorded batch. */
 LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_batchsize;
+/** Grain/chunk size when processing batches. */
+LIBXSMM_API_VARIABLE unsigned int libxsmm_gemm_chunksize;
 /** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_API_VARIABLE int libxsmm_gemm_auto_prefetch_default;
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */

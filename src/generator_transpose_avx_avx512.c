@@ -565,7 +565,7 @@ void gen_one_trans(
       if (n >= 2) libxsmm_x86_instruction_alu_mem(io_generated_code, l_instr, LIBXSMM_X86_GP_REG_RDX, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + shiftmult, LIBXSMM_X86_GP_REG_R10, 1);
       /* movl %r11d, (%rdx) */
       if (n >= 3) libxsmm_x86_instruction_alu_mem(io_generated_code, l_instr, LIBXSMM_X86_GP_REG_RDX, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + shiftmult * 2, LIBXSMM_X86_GP_REG_R11, 1);
-      /* movl %eax , (%rdx) */
+      /* movl %eax,  (%rdx) */
       if (n >= 4) libxsmm_x86_instruction_alu_mem(io_generated_code, l_instr, LIBXSMM_X86_GP_REG_RDX, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + shiftmult * 3, LIBXSMM_X86_GP_REG_RAX, 1);
       /* movl %r12d, (%rdx) */
       if (n >= 5) libxsmm_x86_instruction_alu_mem(io_generated_code, l_instr, LIBXSMM_X86_GP_REG_RDX, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + shiftmult * 4, LIBXSMM_X86_GP_REG_R12, 1);
@@ -868,7 +868,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
         {
            io_generated_code->code_size = i;
            /* addq %r8, %rdi: */
-           if ( REGSIZE == 4 ) libxsmm_x86_instruction_alu_reg ( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_R8 , LIBXSMM_X86_GP_REG_RDI );
+           if ( REGSIZE == 4 ) libxsmm_x86_instruction_alu_reg ( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_R8,  LIBXSMM_X86_GP_REG_RDI );
            /* addq %rbp, %rdi: */
            if ( REGSIZE == 8 ) libxsmm_x86_instruction_alu_reg ( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, LIBXSMM_X86_GP_REG_RBP, LIBXSMM_X86_GP_REG_RDI );
            /* addq %rsi, %rdi: */

@@ -55,10 +55,6 @@
 # define LIBXSMM_MALLOC_SCRATCH_INTERNAL ((const void*)-1)
 #endif
 
-#if !defined(LIBXSMM_CACHELINE_SIZE)
-# define LIBXSMM_CACHELINE_SIZE 64
-#endif
-
 #if !defined(LIBXSMM_EXT_MIN_NTASKS)
 # define LIBXSMM_MIN_NTASKS(NT) 1
 #endif

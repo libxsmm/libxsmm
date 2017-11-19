@@ -102,9 +102,6 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *L
 {
   const double seed1 = scale * (seed + 1);
   libxsmm_blasint i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
   for (i = 0; i < ncols; ++i) {
     libxsmm_blasint j = 0;
     for (; j < nrows; ++j) {
@@ -189,6 +186,9 @@ int main(int argc, char* argv[])
     T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
     T * /*const*/ c = buffer.c; // no alignment, but thread-local array will be aligned
 
+#if defined(_OPENMP)
+#   pragma omp parallel for
+#endif
     for (libxsmm_blasint i = 0; i < s; ++i) {
       init(42 + i, a + i * asize, m, k, m, scale);
       init(24 + i, b + i * bsize, k, n, k, scale);
@@ -209,7 +209,8 @@ int main(int argc, char* argv[])
 #endif
       //libxsmm_set_dispatch_trylock(1);
 
-      fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n", m, n, k, s,
+      fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n",
+        static_cast<long long>(m), static_cast<long long>(n), static_cast<long long>(k), static_cast<long long>(s),
         1.0 * (s * (asize + bsize) * sizeof(T)) / (1 << 20), 8 == sizeof(T) ? "DP" : "SP");
 
       LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)

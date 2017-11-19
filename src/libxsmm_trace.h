@@ -40,9 +40,8 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if defined(__TRACE) || ( \
-  !(defined(__APPLE__) && defined(__MACH__)) && \
-  !(defined(_WIN32) && !defined(LIBXSMM_BUILD)))
+#if (defined(__TRACE) || defined(LIBXSMM_BUILD) || !defined(_WIN32)) && \
+   !(defined(__APPLE__) && defined(__MACH__))
 # define LIBXSMM_TRACE
 #endif
 

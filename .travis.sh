@@ -147,20 +147,20 @@ then
         echo "#!/bin/bash" > ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-           [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env ]; \
+           [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ]; \
         then
           ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
           ${CP} -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2> /dev/null
           echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
-          echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env" >> ${TESTSCRIPT}
+          echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
         fi
         # record the actual test case
         echo "${TEST} 2>&1" >> ${TESTSCRIPT}
       else # make execution environment locally available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-           [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env ]; \
+           [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ]; \
         then
-          source ${TRAVIS_BUILD_DIR}/.env/${HOST}_${CONFIG}.env
+          source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env
         fi
       fi
 
