@@ -39,8 +39,8 @@
 
 # define USE_OVERWRITE
 /*# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE*/
-# define USE_FUSED_BATCH_STATS
-/*#define USE_FUSED_MAX_STATS*/
+/*# define USE_FUSED_BATCH_STATS*/
+/*# define USE_FUSED_MAX_STATS*/
 #define FP64_BN_STATS
 /*#define USE_FUSED_RELU_BWD*/
 
@@ -1395,7 +1395,14 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_BIAS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_BIAS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER_TRANS ) );
+#ifdef USE_FUSED_BATCH_STATS
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_BATCH_STATS ) );
+#endif
+#ifdef USE_FUSED_MAX_STATS
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_MAX_STATS_FWD ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_MAX_STATS_BWD ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_MAX_STATS_UPD ) );
+#endif
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_input ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_output ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_filter ) );
@@ -1405,7 +1412,14 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dbias ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_filter_tr ) );
+#ifdef USE_FUSED_BATCH_STATS
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_batchstats ) );
+#endif
+#ifdef USE_FUSED_MAX_STATS
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_maxstats_fwd ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_maxstats_bwd ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_maxstats_upd ) );
+#endif
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_conv_layer( libxsmm_handle ) );
   }
 
