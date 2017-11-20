@@ -1558,7 +1558,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_tensor(libxsmm_dnn_layer* hand
       (type != LIBXSMM_DNN_REGULAR_OUTPUT)       && (type != LIBXSMM_DNN_GRADIENT_OUTPUT) &&
       (type != LIBXSMM_DNN_REGULAR_FILTER)       && (type != LIBXSMM_DNN_GRADIENT_FILTER) &&
       (type != LIBXSMM_DNN_REGULAR_BIAS)         && (type != LIBXSMM_DNN_GRADIENT_BIAS)   &&
-      (type != LIBXSMM_DNN_REGULAR_FILTER_TRANS) && (type != LIBXSMM_DNN_BATCH_STATS)        ) {
+      (type != LIBXSMM_DNN_REGULAR_FILTER_TRANS) && (type != LIBXSMM_DNN_BATCH_STATS) && (type != LIBXSMM_DNN_MAX_STATS_FWD) && (type != LIBXSMM_DNN_MAX_STATS_BWD)  && (type != LIBXSMM_DNN_MAX_STATS_UPD)  ) {
     status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
     return status;
   }
@@ -1584,6 +1584,12 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_tensor(libxsmm_dnn_layer* hand
       handle->reg_filter_tr = 0;
     } else if ( type == LIBXSMM_DNN_BATCH_STATS ) {
       handle->batch_stats = 0;
+    }  else if ( type == LIBXSMM_DNN_MAX_STATS_FWD ) {
+      handle->maxstats_fwd = 0;
+    } else if ( type == LIBXSMM_DNN_MAX_STATS_BWD ) {
+      handle->maxstats_bwd = 0;
+    } else if ( type == LIBXSMM_DNN_MAX_STATS_UPD ) {
+      handle->maxstats_upd = 0;
     } else {
       /* cannot happen */
     }
@@ -1640,7 +1646,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
                                                l_scratch_size += scratch5_size + 64;
                                              }
                                              if (handle->use_lp_kernel == 1) {
-                                              l_scratch_size += handle->scratch6_size +64;
+                                               l_scratch_size += handle->scratch6_size +64;
                                              }
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
@@ -1657,7 +1663,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_lay
                                                l_scratch_size += scratch5_size + 64;
                                              }
                                              if (handle->use_lp_kernel == 1) {
-                                              l_scratch_size += handle->scratch6_size +64;
+                                               l_scratch_size += handle->scratch6_size +64;
                                              }
                                            } break;
         default: {
@@ -2361,7 +2367,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_quantize( float* in_buffer, short* out_b
       if ( sign > 0 && qvalue > 0 ) {
         qvalue = (~qvalue + 1);
       }
-      
+
       if (round_mode == LIBXSMM_DNN_QUANT_BIAS_ROUND) {
         /* biased rounding towards next bigger number */
         /* first let's determine in the original number if we need a bias rounding, @TODO need fix for F64 */
@@ -2399,7 +2405,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_quantize( float* in_buffer, short* out_b
 LIBXSMM_API_DEFINITION void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, int length, unsigned char scf ) {
   int i = 0;
   float exp = pow(2.0, -scf);
-  
+
   for ( i = 0 ; i < length; ++i ) {
     out_buffer[i] = ((float)in_buffer[i])*exp;
   }
