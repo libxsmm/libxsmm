@@ -215,18 +215,6 @@ LIBXSMM_API void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision, const 
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-/** Auto-batch flags (can be ORed) applicable to mmbatch_begin/mmbatch_end. */
-typedef enum libxsmm_mmbatch_flags {
-  /** Handle recorded batch unsynchronized-parallel. */
-  LIBXSMM_MMBATCH_FLAG_DEFAULT      = LIBXSMM_GEMM_FLAG_INVALID * 0,
-  /** Synchronize among C matrices. */
-  LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = LIBXSMM_GEMM_FLAG_INVALID * 1,
-  /** Handle recorded batch sequentially. */
-  LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = LIBXSMM_GEMM_FLAG_INVALID * 2,
-  /** Only record a statistic of potential SMMs. */
-  LIBXSMM_MMBATCH_FLAG_STATISTIC    = LIBXSMM_GEMM_FLAG_INVALID * 4
-} libxsmm_mmbatch_flags;
-
 /**
  * This function is a no-op unless LIBXSMM is built to intercept GEMM calls.
  * Pointer arguments are used to filter intercepted GEMM calls such that
