@@ -154,7 +154,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     if ( i_matcopy_desc->typesize == 4  ) {
       /* Use streaming stores if we want to zero the destination */
       if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & i_matcopy_desc->flags)) {
-        l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVNTPS;
+        l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       } else {
         l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
