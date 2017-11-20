@@ -47,9 +47,9 @@ int main(void)
   libxsmm_gemm_descriptor descs[8], desc_a, desc_b;
   unsigned int result = EXIT_SUCCESS;
 
-  LIBXSMM_GEMM_DESCRIPTOR(desc_a, LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_FLAGS,
-    m, n, k, lda, ldb, ldc, 1, 0.0, LIBXSMM_PREFETCH_NONE);
-  LIBXSMM_GEMM_DESCRIPTOR(desc_b, LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_FLAGS,
+  LIBXSMM_GEMM_DESCRIPTOR(desc_a, LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_GEMM_FLAGS('N', 'N'),
+    m, n, k, lda, ldb, ldc, 1, 0.0, LIBXSMM_PREFETCH_BL2_VIA_C);
+  LIBXSMM_GEMM_DESCRIPTOR(desc_b, LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_GEMM_FLAGS('N', 'T'),
     m, n, k, lda, ldb, ldc, 1.0, 0, LIBXSMM_PREFETCH_BL2_VIA_C);
 
   descs[0] = desc_b; descs[1] = desc_a;
