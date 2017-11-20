@@ -88,12 +88,22 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define gp register mapping */
+#if defined(_WIN32) || defined(__CYGWIN__)
+  l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RCX;
+  l_gp_reg_mapping.gp_reg_lda = LIBXSMM_X86_GP_REG_RDX;
+  l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_R8;
+  l_gp_reg_mapping.gp_reg_ldb = LIBXSMM_X86_GP_REG_R9;
+  /* TODO: full support for Windows calling convention */
+  l_gp_reg_mapping.gp_reg_a_pf = LIBXSMM_X86_GP_REG_RDI;
+  l_gp_reg_mapping.gp_reg_b_pf = LIBXSMM_X86_GP_REG_RSI;
+#else /* match calling convention on Linux */
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
   l_gp_reg_mapping.gp_reg_lda = LIBXSMM_X86_GP_REG_RSI;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_ldb = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_a_pf = LIBXSMM_X86_GP_REG_R8;
   l_gp_reg_mapping.gp_reg_b_pf = LIBXSMM_X86_GP_REG_R9;
+#endif
   l_gp_reg_mapping.gp_reg_m_loop = LIBXSMM_X86_GP_REG_R15;
   l_gp_reg_mapping.gp_reg_n_loop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_RAX;

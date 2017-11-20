@@ -86,7 +86,8 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 } internal_statistic_type;
 
 /** Helper macro determining the default prefetch strategy which is used for statically generated kernels. */
-#if (0 > LIBXSMM_PREFETCH) /* auto-prefetch (frontend) */
+#if (0 > LIBXSMM_PREFETCH) /* auto-prefetch (frontend) */ || \
+  (defined(_WIN32) || defined(__CYGWIN__)) /* TODO: full support for Windows calling convention */
 # define INTERNAL_PREFETCH LIBXSMM_PREFETCH_NONE
 #else
 # define INTERNAL_PREFETCH LIBXSMM_PREFETCH
@@ -605,11 +606,15 @@ LIBXSMM_API_INLINE void internal_init(void)
 #         include <libxsmm_dispatch.h>
         }
 #endif
+#if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
+        libxsmm_gemm_auto_prefetch_default = INTERNAL_PREFETCH;
+#else
         libxsmm_gemm_auto_prefetch_default = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
           /* avoid special prefetch if static code is present, since such code uses INTERNAL_PREFETCH */
           ? (((LIBXSMM_X86_AVX512 >= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid))
             ? LIBXSMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_PREFETCH_BL2_VIA_C)
           : INTERNAL_PREFETCH;
+#endif
         libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
         if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
           const int uid = atoi(env);
@@ -1011,7 +1016,7 @@ LIBXSMM_API_DEFINITION const char* internal_get_typesize_string(size_t typesize)
 LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code)
 {
   int result = EXIT_SUCCESS;
-#if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/) && !defined(_WIN32)
+#if !defined(__MIC__)
   const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
   libxsmm_generated_code generated_code = { 0 };
   char jit_name[256] = { 0 };
@@ -1742,7 +1747,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
     LIBXSMM_INIT
     if (0 > (int)descriptor->prefetch) {
       backend_descriptor = *descriptor;
-      backend_descriptor.prefetch = (unsigned char)libxsmm_gemm_auto_prefetch;
+      LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(backend_descriptor, libxsmm_gemm_auto_prefetch);
       descriptor = &backend_descriptor;
     }
     result = internal_find_code(descriptor).xgemm;
@@ -1800,6 +1805,9 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->flags) < sizeof(query));
     LIBXSMM_INIT
     query.mcopy = *descriptor;
+#if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
+    query.mcopy.prefetch = 0;
+#endif
     query.xgemm.iflags = LIBXSMM_KERNEL_KIND_MCOPY;
     result = internal_find_code(&query.xgemm).xmatcopy;
   }
@@ -1827,61 +1835,83 @@ LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxs
 LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const void* values)
 {
-  libxsmm_code_pointer code = { 0 };
-  libxsmm_csr_soa_descriptor ssoa;
-  libxsmm_build_request request;
-  LIBXSMM_INIT
-  ssoa.gemm = descriptor;
-  ssoa.row_ptr = row_ptr;
-  ssoa.column_idx = column_idx;
-  ssoa.values = values;
-  request.descriptor.ssoa = &ssoa;
-  request.kind = LIBXSMM_BUILD_KIND_SSOA;
-  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-  return code.xgemm;
+  libxsmm_code_pointer result = { 0 };
+  if (0 != descriptor && 0 != row_ptr && 0 != column_idx && 0 != values) {
+    libxsmm_csr_soa_descriptor ssoa;
+    libxsmm_build_request request;
+#if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
+    libxsmm_gemm_descriptor gemm = *descriptor;
+    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_PREFETCH_NONE);
+    descriptor = &gemm;
+#endif
+    LIBXSMM_INIT
+    ssoa.gemm = descriptor;
+    ssoa.row_ptr = row_ptr;
+    ssoa.column_idx = column_idx;
+    ssoa.values = values;
+    request.descriptor.ssoa = &ssoa;
+    request.kind = LIBXSMM_BUILD_KIND_SSOA;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+  }
+  return result.xgemm;
 }
 
 
 LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values)
 {
-  libxsmm_code_pointer code = { 0 };
-  libxsmm_csr_reg_descriptor sreg;
-  libxsmm_build_request request;
-  LIBXSMM_INIT
-  sreg.gemm = descriptor;
-  sreg.row_ptr = row_ptr;
-  sreg.column_idx = column_idx;
-  sreg.values = values;
-  request.descriptor.sreg = &sreg;
-  request.kind = LIBXSMM_BUILD_KIND_SREG;
-  libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-  return code.xgemm.dmm;
+  libxsmm_code_pointer result = { 0 };
+  if (0 != descriptor && 0 != row_ptr && 0 != column_idx && 0 != values) {
+    libxsmm_csr_reg_descriptor sreg;
+    libxsmm_build_request request;
+#if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
+    libxsmm_gemm_descriptor gemm = *descriptor;
+    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_PREFETCH_NONE);
+    descriptor = &gemm;
+#endif
+    LIBXSMM_INIT
+    sreg.gemm = descriptor;
+    sreg.row_ptr = row_ptr;
+    sreg.column_idx = column_idx;
+    sreg.values = values;
+    request.descriptor.sreg = &sreg;
+    request.kind = LIBXSMM_BUILD_KIND_SREG;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+  }
+  return result.xgemm.dmm;
 }
 
 
 LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const float* values)
 {
-  unsigned int n = row_ptr[descriptor->m], i;
-  double *const d_values = (double*)malloc(n * sizeof(double));
-  libxsmm_code_pointer code = { 0 };
-  libxsmm_csr_reg_descriptor sreg;
-  libxsmm_build_request request;
-  LIBXSMM_INIT
-  if (0 != d_values) {
-    /* we need to copy the values into a double precision buffer */
-    for (i = 0; i < n; ++i) d_values[i] = (double)values[i];
-    sreg.gemm = descriptor;
-    sreg.row_ptr = row_ptr;
-    sreg.column_idx = column_idx;
-    sreg.values = d_values;
-    request.descriptor.sreg = &sreg;
-    request.kind = LIBXSMM_BUILD_KIND_SREG;
-    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    free(d_values);
+  libxsmm_code_pointer result = { 0 };
+  if (0 != descriptor && 0 != row_ptr && 0 != column_idx && 0 != values) {
+    libxsmm_csr_reg_descriptor sreg;
+    libxsmm_build_request request;
+    const unsigned int n = row_ptr[descriptor->m];
+    double *const d_values = (double*)malloc(n * sizeof(double));
+#if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
+    libxsmm_gemm_descriptor gemm = *descriptor;
+    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_PREFETCH_NONE);
+    descriptor = &gemm;
+#endif
+    if (0 != d_values) {
+      unsigned int i;
+      LIBXSMM_INIT
+      /* we need to copy the values into a double precision buffer */
+      for (i = 0; i < n; ++i) d_values[i] = (double)values[i];
+      sreg.gemm = descriptor;
+      sreg.row_ptr = row_ptr;
+      sreg.column_idx = column_idx;
+      sreg.values = d_values;
+      request.descriptor.sreg = &sreg;
+      request.kind = LIBXSMM_BUILD_KIND_SREG;
+      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+      free(d_values);
+    }
   }
-  return code.xgemm.smm;
+  return result.xgemm.smm;
 }
 
 

@@ -47,8 +47,9 @@ void libxsmm_generator_transpose_kernel( libxsmm_generated_code*                
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
   /* generate kernel */
-  if ( (strcmp(i_arch, "knl") == 0) ||
-       (strcmp(i_arch, "skx") == 0) ||
+  if ( (strcmp(i_arch, "skx") == 0) ||
+       (strcmp(i_arch, "knm") == 0) ||
+       (strcmp(i_arch, "knl") == 0) ||
        (strcmp(i_arch, "hsw") == 0) ||
        (strcmp(i_arch, "snb") == 0)    ) {
     libxsmm_generator_transpose_avx_avx512_kernel( io_generated_code, i_trans_desc, i_arch );
