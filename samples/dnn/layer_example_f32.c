@@ -39,8 +39,7 @@
 
 # define USE_OVERWRITE
 /*# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE*/
-/*# define USE_FUSED_BATCH_STATS*/
-
+# define USE_FUSED_BATCH_STATS
 #define FP64_BN_STATS
 /*#define USE_FUSED_RELU_BWD*/
 
@@ -820,9 +819,11 @@ int main(int argc, char* argv[])
     libxsmm_filter_tr  = libxsmm_dnn_link_tensor( libxsmm_layout, filtertr_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
+#ifdef USE_FUSED_BATCH_STATS
     libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_BATCH_STATS, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_batchstats  = libxsmm_dnn_link_tensor( libxsmm_layout, batchstats_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+#endif
 
     /* copy in data to LIBXSMM format */
     /* we can also use the layout functions and set the data on our
@@ -849,7 +850,9 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_bias,       LIBXSMM_DNN_REGULAR_BIAS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_dbias,      LIBXSMM_DNN_GRADIENT_BIAS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_filter_tr,  LIBXSMM_DNN_REGULAR_FILTER_TRANS ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_batchstats, LIBXSMM_DNN_BATCH_STATS ) );
+#ifdef USE_FUSED_BATCH_STATS 
+   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_batchstats, LIBXSMM_DNN_BATCH_STATS ) );
+#endif
 
     /* let's allocate and bind scratch */
     scratch_size = libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
