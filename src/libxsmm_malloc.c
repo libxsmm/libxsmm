@@ -1242,12 +1242,7 @@ LIBXSMM_API_DEFINITION void libxsmm_release_scratch(void)
   internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)((uintptr_t)(internal_malloc_pool_buffer + (LIBXSMM_CACHELINE)-1) & ~((LIBXSMM_CACHELINE)-1));
   unsigned int i;
   assert(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
-  for (i = 0; i < libxsmm_scratch_pools; ++i) { /* TODO: thread-safety */
-    libxsmm_xfree(pools[i].instance.buffer);
-    pools[i].instance.counter = 0;
-    pools[i].instance.buffer = 0;
-    pools[i].instance.head = 0;
-  }
+  /* acquire pending mallocs prior to cleanup (below libxsmm_xfree) */
   if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
     libxsmm_scratch_info scratch_info;
     if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info) && 0 < scratch_info.npending) {
@@ -1255,6 +1250,9 @@ LIBXSMM_API_DEFINITION void libxsmm_release_scratch(void)
         (unsigned long int)scratch_info.npending);
     }
   }
+  /* TODO: thread-safety */
+  for (i = 0; i < libxsmm_scratch_pools; ++i) libxsmm_xfree(pools[i].instance.buffer);
+  memset(pools, 0, (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) * sizeof(internal_malloc_pool_type));
 #endif
 }
 

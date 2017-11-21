@@ -80,6 +80,7 @@ int main(int argc, char* argv[])
     const char *const longlife_env = getenv("LONGLIFE");
     const int enable_longlife = ((0 == longlife_env || 0 == *longlife_env) ? 0 : atoi(longlife_env));
     void *const longlife = (0 == enable_longlife ? 0 : malloc_offsite((MAX_MALLOC_MB) << 20));
+    libxsmm_scratch_info info;
 
     /* run non-inline function to measure call overhead of an "empty" function */
     start = libxsmm_timer_tick();
@@ -110,14 +111,21 @@ int main(int argc, char* argv[])
     }
     dalloc = libxsmm_timer_duration(start, libxsmm_timer_tick());
     libxsmm_free(longlife);
-  }
 
-  if (0 < dcall && 0 < dalloc && 0 < ncalls) {
-    const double alloc_freq = 1E-6 * ncalls / dalloc;
-    const double empty_freq = 1E-6 * (ncycles * (MAX_MALLOC_N)) / dcall;
-    fprintf(stdout, "\tallocation+free calls/s: %.1f MHz\n", alloc_freq);
-    fprintf(stdout, "\tempty calls/s: %.1f MHz\n", empty_freq);
-    fprintf(stdout, "\toverhead: %.1fx\n", empty_freq / alloc_freq);
+    if (0 < dcall && 0 < dalloc && 0 < ncalls) {
+      const double alloc_freq = 1E-6 * ncalls / dalloc;
+      const double empty_freq = 1E-6 * (ncycles * (MAX_MALLOC_N)) / dcall;
+      fprintf(stdout, "\tallocation+free calls/s: %.1f MHz\n", alloc_freq);
+      fprintf(stdout, "\tempty calls/s: %.1f MHz\n", empty_freq);
+      fprintf(stdout, "\toverhead: %.1fx\n", empty_freq / alloc_freq);
+    }
+
+    if (EXIT_SUCCESS == libxsmm_get_scratch_info(&info) && 0 < info.size) {
+      fprintf(stdout, "\nScratch: %.f MB (mallocs=%lu, pools=%u",
+        1.0 * info.size / (1 << 20), (unsigned long int)info.nmallocs, info.npools);
+      if (1 < nthreads) fprintf(stdout, ", threads=%u)\n", nthreads); else fprintf(stdout, ")\n");
+      libxsmm_release_scratch(); /* suppress LIBXSMM's termination message about scratch */
+    }
   }
 
   fprintf(stdout, "Finished\n");
