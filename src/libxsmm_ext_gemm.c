@@ -598,8 +598,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxs
 #if defined(_OPENMP)
       const unsigned int size = info->xgemm.m * info->xgemm.n * info->xgemm.k;
       const int chunksize = (0 >= libxsmm_gemm_chunksize ? ((int)(1048576 * libxsmm_cbrt_u32(size) / size)) : libxsmm_gemm_chunksize);
-      const int max_chunksize = LIBXSMM_MAX(chunksize, 1);
-      const int ntasks = (int)((LIBXSMM_ABS(batchsize) + max_chunksize - 1) / max_chunksize);
+      const int max_chunksize = LIBXSMM_MAX(chunksize, 1), ntasks = (int)((LIBXSMM_ABS(batchsize) + max_chunksize - 1) / max_chunksize);
 
       if (1 < ntasks) {
 # if defined(LIBXSMM_EXT_TASKS)
