@@ -84,9 +84,6 @@ int main(int argc, char* argv[])
 
     /* run non-inline function to measure call overhead of an "empty" function */
     start = libxsmm_timer_tick();
-#if defined(_OPENMP)
-#   pragma omp parallel for num_threads(nthreads) private(i) default(none)
-#endif
     for (i = 0; i < (ncycles * (MAX_MALLOC_N)); ++i) {
       libxsmm_init(); /* subsequent calls are not doing any work */
     }
@@ -113,10 +110,10 @@ int main(int argc, char* argv[])
     libxsmm_free(longlife);
 
     if (0 < dcall && 0 < dalloc && 0 < ncalls) {
-      const double alloc_freq = 1E-6 * ncalls / dalloc;
-      const double empty_freq = 1E-6 * (ncycles * (MAX_MALLOC_N)) / dcall;
-      fprintf(stdout, "\tallocation+free calls/s: %.1f MHz\n", alloc_freq);
-      fprintf(stdout, "\tempty calls/s: %.1f MHz\n", empty_freq);
+      const double alloc_freq = 1E-3 * ncalls / dalloc;
+      const double empty_freq = 1E-3 * (ncycles * (MAX_MALLOC_N)) / dcall;
+      fprintf(stdout, "\tallocation+free calls/s: %.1f kHz\n", alloc_freq);
+      fprintf(stdout, "\tempty calls/s: %.1f kHz\n", empty_freq);
       fprintf(stdout, "\toverhead: %.1fx\n", empty_freq / alloc_freq);
     }
 
