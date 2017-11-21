@@ -33,7 +33,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#if defined(__MKL)
 # include <mkl_service.h>
 #endif
 #include <stdlib.h>
@@ -53,9 +53,7 @@
 #endif
 
 
-#if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
 LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, REAL_TYPE);
-#endif
 
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
@@ -91,7 +89,7 @@ int main(int argc, char* argv[])
   const REAL_TYPE alpha = (REAL_TYPE)(7 < argc ? atof(argv[7]) : 1.0);
   const REAL_TYPE beta  = (REAL_TYPE)(8 < argc ? atof(argv[8]) : 1.0);
   const int nrepeat = LIBXSMM_DEFAULT(
-    LIBXSMM_MAX(13 / LIBXSMM_MAX(1, libxsmm_icbrt(1ULL * m * n * k) >> 10), 3),
+    LIBXSMM_MAX(13 / LIBXSMM_MAX(1, libxsmm_cbrt_u64(1ULL * m * n * k) >> 10), 3),
     9 < argc ? atoi(argv[9]) : 0);
   const double gflops = 2.0 * m * n * k * 1E-9;
   const char transa = 'N', transb = 'N';

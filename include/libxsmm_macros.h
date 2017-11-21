@@ -258,12 +258,12 @@
 #endif
 
 /** Binary Logarithm (based on Stackoverflow's NBITSx macro). */
-#define LIBXSMM_LOG2_02(N) (0 != ((N) & 0x2/*0b10*/) ? 1ULL : 0ULL)
-#define LIBXSMM_LOG2_04(N) (0 != ((N) & 0xC/*0b1100*/) ? (2ULL | LIBXSMM_LOG2_02((N) >> 2)) : LIBXSMM_LOG2_02(N))
-#define LIBXSMM_LOG2_08(N) (0 != ((N) & 0xF0/*0b11110000*/) ? (4ULL | LIBXSMM_LOG2_04((N) >> 4)) : LIBXSMM_LOG2_04(N))
-#define LIBXSMM_LOG2_16(N) (0 != ((N) & 0xFF00) ? (8ULL | LIBXSMM_LOG2_08((N) >> 8)) : LIBXSMM_LOG2_08(N))
-#define LIBXSMM_LOG2_32(N) (0 != ((N) & 0xFFFF0000) ? (16ULL | LIBXSMM_LOG2_16((N) >> 16)) : LIBXSMM_LOG2_16(N))
-#define LIBXSMM_LOG2_64(N) (0 != ((N) & 0xFFFFFFFF00000000) ? (32ULL | LIBXSMM_LOG2_32((N) >> 32)) : LIBXSMM_LOG2_32(N))
+#define LIBXSMM_LOG2_02(N) (0 != ((N) & 0x2/*0b10*/) ? 1 : 0)
+#define LIBXSMM_LOG2_04(N) (0 != ((N) & 0xC/*0b1100*/) ? (2 | LIBXSMM_LOG2_02((N) >> 2)) : LIBXSMM_LOG2_02(N))
+#define LIBXSMM_LOG2_08(N) (0 != ((N) & 0xF0/*0b11110000*/) ? (4 | LIBXSMM_LOG2_04((N) >> 4)) : LIBXSMM_LOG2_04(N))
+#define LIBXSMM_LOG2_16(N) (0 != ((N) & 0xFF00) ? (8 | LIBXSMM_LOG2_08((N) >> 8)) : LIBXSMM_LOG2_08(N))
+#define LIBXSMM_LOG2_32(N) (0 != ((N) & 0xFFFF0000) ? (16 | LIBXSMM_LOG2_16((N) >> 16)) : LIBXSMM_LOG2_16(N))
+#define LIBXSMM_LOG2_64(N) (0 != ((N) & 0xFFFFFFFF00000000) ? (32 | LIBXSMM_LOG2_32((N) >> 32)) : LIBXSMM_LOG2_32(N))
 #define LIBXSMM_LOG2(N) LIBXSMM_MAX((unsigned int)LIBXSMM_LOG2_64((unsigned long long)(N)), 1U)
 
 /** LIBXSMM_UP2POT rounds up to the next power of two (POT). */
@@ -285,6 +285,7 @@
 #define LIBXSMM_MUL2(N, NPOT) (((unsigned long long)(N)) << LIBXSMM_LOG2(NPOT))
 #define LIBXSMM_DIV2(N, NPOT) (((unsigned long long)(N)) >> LIBXSMM_LOG2(NPOT))
 #define LIBXSMM_SQRT2(N) ((unsigned int)(1ULL << (LIBXSMM_LOG2(((N) << 1) - 1) >> 1)))
+#define LIBXSMM_HASH2(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 /** Compares floating point values but avoids warning about unreliable comparison. */
 #define LIBXSMM_FEQ(A, B) (!((A) < (B) || (A) > (B)))
 
@@ -305,8 +306,7 @@
 # endif
 #endif
 #define LIBXSMM_ALIGN(POINTER, ALIGNMENT/*POT*/) ((POINTER) + (LIBXSMM_UP2((uintptr_t)(POINTER), ALIGNMENT) - ((uintptr_t)(POINTER))) / sizeof(*(POINTER)))
-#define LIBXSMM_HASH_VALUE(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
-#define LIBXSMM_HASH2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_HASH_VALUE(LIBXSMM_DIV2((uintptr_t)(POINTER), ALIGNMENT)), NPOT)
+#define LIBXSMM_FOLD2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_DIV2((uintptr_t)(POINTER), ALIGNMENT), NPOT)
 
 #if defined(_MSC_VER) /* account for incorrect handling of __VA_ARGS__ */
 # define LIBXSMM_SELECT_ELEMENT(INDEX1/*one-based*/, .../*elements*/) LIBXSMM_CONCATENATE(LIBXSMM_SELECT_ELEMENT_, INDEX1)LIBXSMM_EXPAND((__VA_ARGS__))
@@ -495,6 +495,10 @@
 # define inline LIBXSMM_INLINE_KEYWORD
 #endif
 
+#if !defined(LIBXSMM_NO_SYNC) && !defined(_REENTRANT)
+# define _REENTRANT
+#endif
+
 /* _Float128 was introduced with GNU GCC 7.0. */
 #if !defined(_Float128) && defined(__GNUC__) && !defined(__cplusplus) \
   && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
@@ -527,20 +531,6 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
-
-
-/* Implementation is taken from an anonymous GiHub Gist. */
-LIBXSMM_API_INLINE unsigned int libxsmm_icbrt(unsigned long long n) {
-  unsigned long long b; unsigned int y = 0; int s;
-  for (s = 63; s >= 0; s -= 3) {
-    y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
-    if (b <= (n >> s)) { n -= b << s; ++y; }
-  }
-  return y;
-}
-
-/** Similar to LIBXSMM_UNUSED, this helper "sinks" multiple arguments. */
-LIBXSMM_API_INLINE int libxsmm_sink(int rvalue, ...) { return rvalue; }
 
 #endif /*LIBXSMM_MACROS_H*/
 

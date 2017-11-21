@@ -75,7 +75,7 @@ This collection of code samples exercises different memory streaming cases when 
 Beside of measuring the duration of a test case, the performance is presented in GFLOPS/s. As an alternative metric, the memory bandwidth is given (the artificial "cached" case omits to present the cache-memory bandwidth). The "pseudo-performance" given in FLOPS/cycle is an artificial scoring, it not only uses a non-standard formula for calculating the FLOPS (*2 \* M \* N \* K - M \* N* rather than *2 \* M \* N \* K*) but also relies on [pseudo clock cycles](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_timer.h#L37):
 
 ```
-$ ./specialized.sh 32
+$ ./specialized.sh 0
 m=32 n=32 k=32 size=87381 memory=2048.0 MB (DP)
 
 Batched (A,B,C)...
@@ -83,25 +83,6 @@ Batched (A,B,C)...
         performance: 23.9 GFLOPS/s
         bandwidth: 11.1 GB/s
         duration: 239 ms
-Streamed (A,B)...
-        pseudo-perf.: 13.4 FLOPS/cycle
-        performance: 29.9 GFLOPS/s
-        bandwidth: 7.0 GB/s
-        duration: 192 ms
-Streamed (A,C)...
-        pseudo-perf.: 12.3 FLOPS/cycle
-        performance: 27.4 GFLOPS/s
-        bandwidth: 6.4 GB/s
-        duration: 209 ms
-Streamed (B,C)...
-        pseudo-perf.: 14.8 FLOPS/cycle
-        performance: 33.0 GFLOPS/s
-        bandwidth: 7.7 GB/s
-        duration: 173 ms
-Cached...
-        pseudo-perf.: 23.2 FLOPS/cycle
-        performance: 51.8 GFLOPS/s
-        duration: 111 ms
 Finished
 ```
 
@@ -109,11 +90,11 @@ There are two sub collections of samples codes: (1)&#160;a collection of C++ cod
 
 **C/C++ Code Samples: Command Line Interface (CLI)**
 
+* Takes an optional number (1st arg.) to select the streaming-case (0...8)
 * Optionally takes the M, N, and K parameter of the GEMM in this order
 * If only M is supplied, the N and K "inherit" the M-value
-* Shows the performance of each of the streaming cases
-* Example I: ./specialized.sh 16 8 9
-* Example II: ./specialized.sh 16
+* Example I  (A,B,C): ./specialized.sh 0 16 8 9
+* Example II   (A,B): ./specialized.sh 6 16
 
 **Fortran Code Sample: Command Line Interface (CLI)**
 

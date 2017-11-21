@@ -45,6 +45,13 @@
 # define LIBXSMM_INTRINSICS(TARGET)
 #elif !defined(LIBXSMM_INTRINSICS_NONE) /*!defined(__MIC__)*/
 # if    defined(__AVX512F__)  && defined(__AVX512CD__) \
+   &&   defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VL__) && defined(__AVX512VNNI__) \
+   &&   defined(__AVX2__) && defined(__FMA__) && defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__) \
+   && !(defined(__APPLE__) && defined(__MACH__)) \
+   && (!defined(__clang__) || ((LIBXSMM_VERSION3(3, 9, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
+   || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))))
+#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_ICL
+# elif    defined(__AVX512F__)  && defined(__AVX512CD__) \
    &&   defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VL__) \
    &&   defined(__AVX2__) && defined(__FMA__) && defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__) \
    && !(defined(__APPLE__) && defined(__MACH__)) \
@@ -216,6 +223,9 @@
 #     if !defined(__AVX512VL__)
 #       define __AVX512VL__ 1
 #     endif
+#     if !defined(__AVX512VNNI__)
+#       define __AVX512VNNI__ 1
+#     endif
 #     if defined(__GNUC__) && !defined(__clang__)
 #       pragma GCC push_options
 #       if (LIBXSMM_X86_AVX < LIBXSMM_MAX_STATIC_TARGET_ARCH)
@@ -259,6 +269,9 @@
 #       undef __AVX512DQ__
 #       undef __AVX512BW__
 #       undef __AVX512VL__
+#     endif
+#     if (LIBXSMM_X86_AVX512_ICL > (LIBXSMM_STATIC_TARGET_ARCH))
+#       undef __AVX512VNNI__
 #     endif
 #   endif /*defined(LIBXSMM_INTRINSICS_PATCH)*/
 #   if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
@@ -308,6 +321,11 @@
 #         define LIBXSMM_ATTRIBUTE_TARGET_1020 target("avx2,fma,avx512f,avx512cd,avx512dq,avx512bw,avx512vl")
 #       else /* LIBXSMM_X86_AVX512 */
 #         define LIBXSMM_ATTRIBUTE_TARGET_1020 LIBXSMM_ATTRIBUTE_TARGET_1007
+#       endif
+#       if (LIBXSMM_X86_AVX512_ICL <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#         define LIBXSMM_ATTRIBUTE_TARGET_1022 target("avx2,fma,avx512f,avx512cd,avx512dq,avx512bw,avx512vl,avx512vnni")
+#       else /* LIBXSMM_X86_AVX512_CORE */
+#         define LIBXSMM_ATTRIBUTE_TARGET_1022 LIBXSMM_ATTRIBUTE_TARGET_1020
 #       endif
 #     else
 #       define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
@@ -382,15 +400,43 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if (defined(__INTEL_COMPILER) || defined(_CRAYC)) && !defined(LIBXSMM_INTRINSICS_NONE)
-# define LIBXSMM_INTRINSICS_BITSCANFWD(N) _bit_scan_forward(N)
-#elif defined(__GNUC__) && !defined(_CRAYC) && !defined(LIBXSMM_INTRINSICS_NONE)
-# define LIBXSMM_INTRINSICS_BITSCANFWD(N) (__builtin_ffs(N) - 1)
-#else /* fall-back implementation */
-  LIBXSMM_API_INLINE int libxsmm_bitscanfwd(int n) {
-    int i, r = 0; for (i = 1; 0 == (n & i) ; i <<= 1) { ++r; } return r;
+LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD32_SW(unsigned int n) {
+  unsigned int i, r = 0; if (0 != n) for (i = 1; 0 == (n & i); i <<= 1) { ++r; } return r;
+}
+LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) {
+  unsigned int i, r = 0; if (0 != n) for (i = 1; 0 == (n & i); i <<= 1) { ++r; } return r;
+}
+#define LIBXSMM_INTRINSICS_BITSCANBWD32_SW(N) LIBXSMM_LOG2_32((unsigned int)(N))
+#define LIBXSMM_INTRINSICS_BITSCANBWD64_SW(N) LIBXSMM_LOG2_64((unsigned long long)(N))
+
+#if defined(_WIN32) && !defined(LIBXSMM_INTRINSICS_NONE)
+  LIBXSMM_API_INLINE unsigned int LIBXSMM_INTRINSICS_BITSCANFWD32(unsigned int n) {
+    unsigned long r = 0; _BitScanForward(&r, n); return (0 != n) * r;
   }
-# define LIBXSMM_INTRINSICS_BITSCANFWD(N) libxsmm_bitscanfwd(N)
+  LIBXSMM_API_INLINE unsigned int LIBXSMM_INTRINSICS_BITSCANBWD32(unsigned int n) {
+    unsigned long r = 0; _BitScanReverse(&r, n); return r;
+  }
+# if defined(_WIN64)
+    LIBXSMM_API_INLINE unsigned int LIBXSMM_INTRINSICS_BITSCANFWD64(unsigned long long n) {
+      unsigned long r = 0; _BitScanForward64(&r, n); return (0 != n) * r;
+    }
+    LIBXSMM_API_INLINE unsigned int LIBXSMM_INTRINSICS_BITSCANBWD64(unsigned long long n) {
+      unsigned long r = 0; _BitScanReverse64(&r, n); return r;
+    }
+# else
+#   define LIBXSMM_INTRINSICS_BITSCANFWD64 LIBXSMM_INTRINSICS_BITSCANFWD64_SW
+#   define LIBXSMM_INTRINSICS_BITSCANBWD64 LIBXSMM_INTRINSICS_BITSCANBWD64_SW
+# endif
+#elif defined(__GNUC__) && !defined(LIBXSMM_INTRINSICS_NONE)
+# define LIBXSMM_INTRINSICS_BITSCANFWD32(N) ((0 != (N)) * __builtin_ctz(N))
+# define LIBXSMM_INTRINSICS_BITSCANFWD64(N) ((0 != (N)) * __builtin_ctzll(N))
+# define LIBXSMM_INTRINSICS_BITSCANBWD32(N) ((0 != (N)) * (31 - __builtin_clz(N)))
+# define LIBXSMM_INTRINSICS_BITSCANBWD64(N) ((0 != (N)) * (63 - __builtin_clzll(N)))
+#else /* fall-back implementation */
+# define LIBXSMM_INTRINSICS_BITSCANFWD32 LIBXSMM_INTRINSICS_BITSCANFWD32_SW
+# define LIBXSMM_INTRINSICS_BITSCANFWD64 LIBXSMM_INTRINSICS_BITSCANFWD64_SW
+# define LIBXSMM_INTRINSICS_BITSCANBWD32 LIBXSMM_INTRINSICS_BITSCANBWD32_SW
+# define LIBXSMM_INTRINSICS_BITSCANBWD64 LIBXSMM_INTRINSICS_BITSCANBWD64_SW
 #endif
 
 #if !defined(LIBXSMM_INTRINSICS_KNC) && !defined(LIBXSMM_INTRINSICS_NONE) && defined(__MIC__)
@@ -458,6 +504,13 @@
      (!defined(LIBXSMM_INTRINSICS_LEGACY) && (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_MAX_STATIC_TARGET_ARCH)) \
   || (defined(__clang__) && LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH))
 # define LIBXSMM_INTRINSICS_AVX512_CORE
+#endif
+
+/** LIBXSMM_INTRINSICS_AVX512_ICL is defined only if the compiler is able to generate this code without special flags. */
+#if !defined(LIBXSMM_INTRINSICS_AVX512_ICL) && !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_INTRINSICS_AVX512_CORE) && ( \
+     (!defined(LIBXSMM_INTRINSICS_LEGACY) && (LIBXSMM_X86_AVX512_ICL <= LIBXSMM_MAX_STATIC_TARGET_ARCH)) \
+  || (defined(__clang__) && LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH))
+# define LIBXSMM_INTRINSICS_AVX512_ICL
 #endif
 
 #endif /*LIBXSMM_INTRINSICS_X86_H*/

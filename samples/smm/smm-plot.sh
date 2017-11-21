@@ -2,6 +2,7 @@
 
 HERE=$(cd $(dirname $0); pwd -P)
 VARIANT=Cached
+LIMIT=31
 
 if [ "" != "$1" ]; then
   VARIANT=$1
@@ -27,26 +28,32 @@ if [ -f "${GNUPLOT}" ]; then
 fi
 GNUPLOT_VERSION=$((GNUPLOT_MAJOR * 10000 + GNUPLOT_MINOR * 100))
 
-GREP=$(which grep)
 SED=$(which sed)
-
 function capturedTxtToDataFile {
-  ${GREP} -i -A2 \
-    -e "^m=" -e "${VARIANT}" \
+  ${SED} \
+    -e "/^m=/,/${VARIANT}/{//!d}" \
+    -e "/${VARIANT}/d" \
+    -e "/\.\.\./,/Finished/{//!d}" \
+    -e "/Finished/d" \
+    -e "/diff:/d" \
+    -e "/\.\.\./d" \
+    -e "/^$/d" \
     ${HERE}/$1.txt \
   | ${SED} \
-    -e "s/m=//" -e "s/n=//" -e "s/k=//" -e "s/ (.\+) / /" \
-    -e "s/size=//" -e "s/memory=//" -e "s/ GB\/s//" \
-    -e "/^.\+\.\.\./Id" -e "/^$/d" -e "/--/d" \
+    -e "s/m=//" -e "s/n=//" -e "s/k=//" -e "s/ (..*) / /" \
+    -e "s/size=//" \
+    -e "/duration:/d" \
   | ${SED} \
-    -e "N;s/ MB\n\tperformance://g" \
-    -e "N;s/ GFLOPS\/s\n\t.\+$//g" \
+    -e "N;s/ memory=..*\n..*//" \
+    -e "N;s/\n\tperformance:\(..*\) GFLOPS\/s/\1/" \
+    -e "N;s/\n\tbandwidth:\(..*\) GB\/s/\1/" \
   > ${HERE}/$1.dat
 }
 
 if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
+  RM=$(which rm)
   if [ "" = "$1" ]; then
-    FILENAME=smm-$(echo ${VARIANT} | tr '[:upper:]' '[:lower:]').pdf
+    FILENAME=smm-$(echo ${VARIANT} | tr ' ,' '-' | tr -d '()' | tr '[:upper:]' '[:lower:]').pdf
   else
     FILENAME=$1
     shift
@@ -58,15 +65,17 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
     shift
   fi
 
+  ${RM} -f *.dat
   capturedTxtToDataFile smm-blas
-  capturedTxtToDataFile smm-dispatched
-  capturedTxtToDataFile smm-inlined
   capturedTxtToDataFile smm-specialized
+  #capturedTxtToDataFile smm-dispatched
+  #capturedTxtToDataFile smm-inlined
 
   env \
     GDFONTPATH=/cygdrive/c/Windows/Fonts \
     FILENAME=${FILENAME} \
     MULTI=${MULTI} \
+    LIMIT=${LIMIT} \
   "${WGNUPLOT}" smm-perf.plt
 fi
 

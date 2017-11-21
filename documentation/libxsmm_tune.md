@@ -1,8 +1,44 @@
 ## Customization
 
-### Tuning for Specific Targets<a name="tuning"></a>
+### Static Specialization
 
-Specifying a code path is not really necessary if the JIT backend is not disabled. However, disabling JIT compilation, statically generating a collection of kernels, and targeting a specific instruction set extension for the entire library looks like:
+By default, LIBXSMM uses the [JIT backend](#jit-backend) which is automatically building optimized code. Matrix multiplication kernels can be also statically specialized at compile-time of the library (M, N, and K values). This mechanism also affects the interface of the library because function prototypes are included into both the C and FORTRAN interface.
+
+```bash
+make M="2 4" N="1" K="$(echo $(seq 2 5))"
+```
+
+The above example is generating the following set of (M,N,K) triplets:
+
+```bash
+(2,1,2), (2,1,3), (2,1,4), (2,1,5),
+(4,1,2), (4,1,3), (4,1,4), (4,1,5)
+```
+
+The index sets are in a loop-nest relationship (M(N(K))) when generating the indices. Moreover, an empty index set resolves to the next non-empty outer index set of the loop nest (including to wrap around from the M to K set). An empty index set does not participate in the loop-nest relationship. Here is an example of generating multiplication routines which are "squares" with respect to M and N (N inherits the current value of the "M loop"):
+
+```bash
+make M="$(echo $(seq 2 5))" K="$(echo $(seq 2 5))"
+```
+
+An even more flexible specialization is possible by using the MNK variable when building the library. It takes a list of indexes which are eventually grouped (using commas):
+
+```bash
+make MNK="2 3, 23"
+```
+
+Each group of the above indexes is combined into all possible triplets generating the following set of (M,N,K) values:
+
+```bash
+(2,2,2), (2,2,3), (2,3,2), (2,3,3),
+(3,2,2), (3,2,3), (3,3,2), (3,3,3), (23,23,23)
+```
+
+Of course, both mechanisms (M/N/K and MNK based) can be combined using the same command line (make). Static optimization and JIT can also be combined (no need to turn off the JIT backend).
+
+### Targeted Compilation<a name="tuning"></a>
+
+Specifying a code path is not necessary if the JIT backend is not disabled. However, disabling JIT compilation, statically generating a collection of kernels, and targeting a specific instruction set extension for the entire library looks like:
 
 ```bash
 make JIT=0 AVX=3 MNK="1 2 3 4 5"

@@ -83,6 +83,18 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_INVALID = 256
 } libxsmm_gemm_flags;
 
+/** Auto-batch flags (can be ORed) applicable to mmbatch_begin/mmbatch_end. */
+typedef enum libxsmm_mmbatch_flags {
+  /** Handle recorded batch unsynchronized-parallel. */
+  LIBXSMM_MMBATCH_FLAG_DEFAULT      = LIBXSMM_GEMM_FLAG_INVALID * 0,
+  /** Synchronize among C matrices. */
+  LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = LIBXSMM_GEMM_FLAG_INVALID * 1,
+  /** Handle recorded batch sequentially. */
+  LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = LIBXSMM_GEMM_FLAG_INVALID * 2,
+  /** Only record a statistic of potential SMMs. */
+  LIBXSMM_MMBATCH_FLAG_STATISTIC    = LIBXSMM_GEMM_FLAG_INVALID * 4
+} libxsmm_mmbatch_flags;
+
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {
   /** Automatically select strategy (frontend). */
@@ -355,6 +367,18 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   void (*xmm)(const void* a, const void* b, void* c, ...);
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wmmfunction wmm;
 } libxsmm_xmmfunction;
+
+/** Determines the kernel kind. */
+typedef enum libxsmm_kernel_kind {
+  /** Matrix multiplication kernel */
+  LIBXSMM_KERNEL_KIND_MATMUL  = 0,
+  /** Matcopy kernel kind */
+  LIBXSMM_KERNEL_KIND_MCOPY   = 1,
+  /** Transpose kernel kind */
+  LIBXSMM_KERNEL_KIND_TCOPY   = 2,
+  /** Not a JIT kernel */
+  LIBXSMM_KERNEL_KIND_INVALID = 3
+} libxsmm_kernel_kind;
 
 /** Specialized function for matrix-copy (weak-typed). */
 typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmatcopyfunction)(const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);

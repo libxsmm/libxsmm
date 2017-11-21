@@ -1,16 +1,15 @@
 MPARM = 1
 NPARM = 2
 KPARM = 3
-FLOPS = 6
+FLOPS = 5
 
 HIM = -1
 HIN = HIM
 HIK = HIM
 
-BASENAME = "smm"
 FILENAME = system("sh -c \"echo ${FILENAME}\"")
 if (FILENAME eq "") {
-  FILENAME = BASENAME."-perf.pdf"
+  FILENAME = "smm-perf.pdf"
 }
 
 FILECOUNT = 1 # initial file number
@@ -20,6 +19,11 @@ FILECOUNT = 1 # initial file number
 MULTI = system("sh -c \"echo ${MULTI}\"")
 if (MULTI eq "") {
   MULTI = 1
+}
+
+LIMIT = system("sh -c \"echo ${LIMIT}\"")
+if (LIMIT eq "") {
+  LIMIT = 128
 }
 
 if (MULTI==1) {
@@ -47,9 +51,15 @@ set xtics rotate by -45 scale 0; set bmargin 6
 set ytics format ""
 set y2tics nomirror
 set y2label "GFLOP/s"
+set xrange [0:LIMIT+0.85]
 set yrange [0:*]
 set autoscale fix
-plot  BASENAME."-inlined.dat" using FLOPS title "Inlined", \
-      BASENAME."-blas.dat" using FLOPS title "BLAS", \
-      BASENAME."-dispatched.dat" using FLOPS title "Dispatched", \
-      BASENAME."-specialized.dat" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "Specialized"
+if (0!=system("sh -c \"if [[ -e smm-inlined.dat ]]; then echo 1; else echo 0; fi\"")) {
+plot  "smm-inlined.dat" using FLOPS title "Inlined", \
+      "smm-blas.dat" using FLOPS title "BLAS", \
+      "smm-dispatched.dat" using FLOPS title "Dispatched", \
+      "smm-specialized.dat" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "Specialized"
+} else {
+plot  "smm-blas.dat"        using FLOPS title "BLAS", \
+      "smm-specialized.dat" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "Specialized"
+}

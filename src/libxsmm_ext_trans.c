@@ -84,14 +84,14 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
         if (0 == xmatcopy || 0 == descriptor.prefetch) {
           LIBXSMM_XCOPY(
             LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
-            if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
+            if (0 == libxsmm_nosync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
             LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, xmatcopy,
             out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
         }
         else {
           LIBXSMM_XCOPY(
             LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
-            if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
+            if (0 == libxsmm_nosync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
             LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, xmatcopy,
             out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
         }
@@ -175,7 +175,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
           }
           LIBXSMM_XCOPY(
             LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
-            if (0 != libxsmm_sync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
+            if (0 == libxsmm_nosync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
             LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans,
             out, in, typesize, uldi, uldo, descriptor.m, descriptor.n, 0, m, 0, n);
 # else /* no MT */

@@ -83,7 +83,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id);
  * libxsmm_get_target_arch* functions, or as set by the LIBXSMM_TARGET environment variable.
  */
 LIBXSMM_API const char* libxsmm_get_target_arch(void);
-/** Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx", NULL/"0": CPUID) for subsequent code generation (JIT). */
+/** Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|icl", NULL/"0": CPUID) for subsequent code generation (JIT). */
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch);
 
 /** Get the level of verbosity. */
@@ -103,6 +103,18 @@ LIBXSMM_API void libxsmm_set_dispatch_trylock(int trylock);
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_auto_prefetch(void);
 /** Set the default prefetch strategy. */
 LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strategy);
+
+/** Determine the kind of JIT-kernel. */
+LIBXSMM_API int libxsmm_get_kernel_kind(const void* kernel, libxsmm_kernel_kind* kind);
+
+/** Get information about the matrix multiplication kernel. */
+LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_gemm_descriptor* info, size_t* code_size);
+
+/** Get information about the matrix transpose kernel. */
+LIBXSMM_API int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libxsmm_transpose_descriptor* info, size_t* code_size);
+
+/** Get information about the matrix copy kernel. */
+LIBXSMM_API int libxsmm_get_matcopykernel_info(libxsmm_xmatcopyfunction kernel, libxsmm_matcopy_descriptor* info, size_t* code_size);
 
 /** Get information about the code registry. */
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
@@ -144,7 +156,7 @@ LIBXSMM_API libxsmm_wmmfunction libxsmm_wmmdispatch(libxsmm_blasint m, libxsmm_b
   const int* alpha, const int* beta, const int* flags, const int* prefetch);
 
 /** Process a series of matrix multiplications (batch). */
-LIBXSMM_API int libxsmm_mmbatch(libxsmm_gemm_precision precision,
+LIBXSMM_API int libxsmm_mmbatch(
   /** Kernel (matches precision, transa, transb, beta, etc.). */
   libxsmm_xmmfunction kernel,
   /** Determines index-base (usually 0, 1 for one-based indexes); uses the same unit as the strides. */
@@ -170,17 +182,20 @@ LIBXSMM_API int libxsmm_mmbatch(libxsmm_gemm_precision precision,
    * index_stride!=0: pointer to elements e.g., const double* for the A and B matrices.
    */
   const void* a, const void* b, void* c,
-  /** Number of matrix multiplications. */
+  /**
+   * Number of matrix multiplications. If the size is given as a negative value,
+   * then internal synchronization is omitted.
+   */
   libxsmm_blasint batchsize,
   /** Thread-ID (TID), and number of threads. */
   /*unsigned*/int tid, /*unsigned*/int nthreads);
 
 /** Process a series of matrix multiplications (batch) similar to libxsmm_mmbatch; MT via libxsmmext. */
-LIBXSMM_API int libxsmm_mmbatch_omp(libxsmm_gemm_precision precision, libxsmm_xmmfunction kernel, libxsmm_blasint index_base,
-  libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+LIBXSMM_API int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
+  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize);
 
-/** Process a series of matrix multiplications (batch); sequential. */
+/** Process a series of matrix multiplications (batch); sequential. See also libxsmm_mmbatch. */
 LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision precision, const char* transa, const char* transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
@@ -190,7 +205,7 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision precision, const char
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-/** Process a series of matrix multiplications (batch); MT via libxsmmext. */
+/** Process a series of matrix multiplications (batch); MT via libxsmmext. See also libxsmm_mmbatch. */
 LIBXSMM_API void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision, const char* transa, const char* transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
@@ -199,16 +214,6 @@ LIBXSMM_API void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision, const 
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
-
-/** Auto-batch flags (can be ORed) applicable to mmbatch_begin/mmbatch_end. */
-typedef enum libxsmm_mmbatch_flags {
-  /** Handle recorded batch in parallel. */
-  LIBXSMM_MMBATCH_FLAG_DEFAULT    = LIBXSMM_GEMM_FLAG_INVALID * 0,
-  /** Handle recorded batch sequentially. */
-  LIBXSMM_MMBATCH_FLAG_SEQUENTIAL = LIBXSMM_GEMM_FLAG_INVALID * 1,
-  /** Only record a statistic of potential SMMs. */
-  LIBXSMM_MMBATCH_FLAG_STATISTIC  = LIBXSMM_GEMM_FLAG_INVALID * 2
-} libxsmm_mmbatch_flags;
 
 /**
  * This function is a no-op unless LIBXSMM is built to intercept GEMM calls.

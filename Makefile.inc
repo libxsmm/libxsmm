@@ -1014,7 +1014,6 @@ endif
 endif
 
 ifneq (0,$(THREADS))
-  DFLAGS += -D_REENTRANT
   ifeq (0,$(COMPATIBLE))
     CXXFLAGS += -pthread
     CFLAGS += -pthread
@@ -1150,6 +1149,10 @@ ifeq (1,$(MKL_DIRECT))
     BLAS_DFLAGS += -DMKL_DIRECT_CALL_SEQ
   else ifneq (0,$(MKL))
     BLAS_DFLAGS += -DMKL_DIRECT_CALL
+  endif
+  ifneq (0,$(GCC))
+    CXXFLAGS += -Wno-unused-value
+	CFLAGS += -Wno-unused-value
   endif
 endif
 ifneq (Darwin,$(UNAME))

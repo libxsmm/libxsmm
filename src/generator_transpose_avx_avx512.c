@@ -602,12 +602,21 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define gp register mapping */
+#if defined(_WIN32) || defined(__CYGWIN__)
+  l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RCX;
+  l_gp_reg_mapping.gp_reg_lda = LIBXSMM_X86_GP_REG_RDX;
+  l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_R8;
+  l_gp_reg_mapping.gp_reg_ldb = LIBXSMM_X86_GP_REG_R9;
+  l_gp_reg_mapping.gp_reg_m_loop = LIBXSMM_X86_GP_REG_RDI;
+  l_gp_reg_mapping.gp_reg_n_loop = LIBXSMM_X86_GP_REG_RSI;
+#else /* match calling convention on Linux */
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
   l_gp_reg_mapping.gp_reg_lda = LIBXSMM_X86_GP_REG_RSI;
   l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RDX;
   l_gp_reg_mapping.gp_reg_ldb = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_m_loop = LIBXSMM_X86_GP_REG_R8;
   l_gp_reg_mapping.gp_reg_n_loop = LIBXSMM_X86_GP_REG_R9;
+#endif
   l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_UNDEF;
   l_gp_reg_mapping.gp_reg_help_1 = LIBXSMM_X86_GP_REG_UNDEF;
   l_gp_reg_mapping.gp_reg_help_2 = LIBXSMM_X86_GP_REG_UNDEF;
@@ -624,14 +633,12 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
    * Otherwise, we get by with registers that don't require pushing/popping */
 
   /* define transposition kernel config */
-  if ( strcmp( i_arch, "snb" ) == 0 ) {
-    avx512 = 0;
-  } else if ( strcmp( i_arch, "hsw" ) == 0 ) {
-    avx512 = 0;
-  } else if ( strcmp( i_arch, "skx" ) == 0 ) {
+  if (strcmp(i_arch, "skx") == 0) {
     avx512 = 1;
-  } else if ( strcmp( i_arch, "knl" ) == 0 ) {
+  } else if (strcmp(i_arch, "knl") == 0 || strcmp(i_arch, "knm") == 0) {
     avx512 = 2;
+  } else if (strcmp(i_arch, "snb") == 0 || strcmp(i_arch, "hsw") == 0) {
+    avx512 = 0;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;

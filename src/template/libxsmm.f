@@ -78,12 +78,14 @@
 
         ! Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
-          ! Handle recorded batch in parallel.
-     &    LIBXSMM_MMBATCH_FLAG_DEFAULT    = 0,                          &
+          ! Handle recorded batch unsynchronized-parallel.
+     &    LIBXSMM_MMBATCH_FLAG_DEFAULT      = 0,                        &
+          ! Synchronize among C matrices.
+     &    LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = 256,                      &
           ! Handle recorded batch sequentially.
-     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL = 256,                        &
+     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = 512,                      &
           ! Only record a statistic of potential SMMs.
-     &    LIBXSMM_MMBATCH_FLAG_STATISTIC  = 512
+     &    LIBXSMM_MMBATCH_FLAG_STATISTIC    = 1024
 
         ! Flag which denotes the value type (for weak-typed interface
         ! functions such as libxsmm_xmmdispatch).
@@ -142,7 +144,8 @@
      &    LIBXSMM_X86_AVX512      = 1007,                               &
      &    LIBXSMM_X86_AVX512_MIC  = 1010,                               &
      &    LIBXSMM_X86_AVX512_KNM  = 1011,                               &
-     &    LIBXSMM_X86_AVX512_CORE = 1020
+     &    LIBXSMM_X86_AVX512_CORE = 1020,                               &
+     &    LIBXSMM_X86_AVX512_ICL  = 1022
 
         ! Generic function type (single-precision).
         TYPE :: LIBXSMM_SMMFUNCTION
@@ -215,6 +218,10 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch_omp
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_begin
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_end
         INTERFACE
@@ -265,7 +272,7 @@
             INTEGER(C_INT), INTENT(IN), VALUE :: id
           END SUBROUTINE
 
-          ! Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx", "0": CPUID)
+          ! Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|icl", "0": CPUID)
           ! for subsequent code generation (JIT).
           SUBROUTINE libxsmm_set_target_arch(arch) BIND(C)
             IMPORT :: C_CHAR
@@ -381,6 +388,7 @@
           END SUBROUTINE
 
           ! Process a series of matrix multiplications (batch); sequential.
+          ! For the documentation of the call arguments have a look at libxsmm_mmbatch.
           ! Implicit FORTRAN 77 interface:
           ! INTEGER(4)   :: prec
           ! REAL(4|8)    :: alpha, beta
@@ -408,6 +416,7 @@
           END SUBROUTINE
 
           ! Process a series of matrix multiplications (batch); MT via libxsmmext.
+          ! For the documentation of the call arguments have a look at libxsmm_mmbatch.
           ! Implicit FORTRAN 77 interface:
           ! INTEGER(4)   :: prec
           ! REAL(4|8)    :: alpha, beta
@@ -436,12 +445,12 @@
 
           ! Process a series of matrix multiplications (batch).
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4)   :: prec, tid, nthreads
+          ! INTEGER(4)   :: tid, nthreads
           ! INTEGER(8)   :: kernel
           ! ARRAY        :: a, b, c
           ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
           ! INTEGER(4|8) :: index_base, index_stride, batchsize
-          SUBROUTINE libxsmm_mmbatch(prec, kernel, index_base,          &
+          SUBROUTINE libxsmm_mmbatch(kernel, index_base,                &
      &    index_stride, stride_a, stride_b, stride_c, a, b, c,          &
      &    batchsize, tid, nthreads) BIND(C, NAME="libxsmm_mmbatch_")
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
@@ -453,10 +462,11 @@
             ! is always measured in Bytes (value of LIBXSMM_BLASINT_KIND
             ! determines a packed array of indexes).
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
-            ! The number of matrix multiplications.
+            ! The number of matrix multiplications. If the size is given as
+            ! a negative value, then internal synchronization is omitted.
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
             ! Precision, Thread-ID (TID), and the number of threads.
-            INTEGER(C_INT), INTENT(IN) :: prec, tid, nthreads
+            INTEGER(C_INT), INTENT(IN) :: tid, nthreads
             ! Kernel (matches precision, transa, transb, beta, etc.).
             INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
             ! index_stride==0: a single value (in Bytes) for stride_* is expected,
@@ -478,19 +488,18 @@
           ! Process a series of matrix multiplications (batch)
           ! similar to libxsmm_mmbatch; MT via libxsmmext.
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4)   :: prec, tid, nthreads
+          ! INTEGER(4)   :: tid, nthreads
           ! INTEGER(8)   :: kernel
           ! ARRAY        :: a, b, c
           ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
           ! INTEGER(4|8) :: index_base, index_stride, batchsize
-          SUBROUTINE libxsmm_mmbatch_omp(prec, kernel, index_base,      &
+          SUBROUTINE libxsmm_mmbatch_omp(kernel, index_base,            &
      &    index_stride, stride_a, stride_b, stride_c, a, b, c,          &
      &    batchsize) BIND(C, NAME="libxsmm_mmbatch_omp_")
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
-            INTEGER(C_INT), INTENT(IN) :: prec
             INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_b

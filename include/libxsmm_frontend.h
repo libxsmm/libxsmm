@@ -97,8 +97,10 @@
 # define MKL_ILP64
 #endif
 #if (0 != LIBXSMM_ILP64)
+# define LIBXSMM_BLASINT_NBITS 64
 # define LIBXSMM_BLASINT long long
 #else /* LP64 */
+# define LIBXSMM_BLASINT_NBITS 32
 # define LIBXSMM_BLASINT int
 #endif
 
@@ -250,8 +252,8 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 # define LIBXSMM_INLINE_XGEMM(TYPE, INT, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
   const TYPE libxsmm_inline_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_inline_xgemm_beta_ = (TYPE)(BETA); \
   INT libxsmm_inline_xgemm_i_, libxsmm_inline_xgemm_j_, libxsmm_inline_xgemm_k_; \
+  LIBXSMM_UNUSED(FLAGS); /* TODO: remove/adjust precondition if anything other than NN is supported */ \
   LIBXSMM_ASSERT(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) && 0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS))/*not supported*/); \
-  /* TODO: remove/adjust precondition if anything other than NN is supported */ \
   LIBXSMM_ASSERT((M) <= (LDA) && (K) <= (LDB) && (M) <= (LDC)); \
   LIBXSMM_PRAGMA_SIMD \
   for (libxsmm_inline_xgemm_j_ = 0; libxsmm_inline_xgemm_j_ < ((INT)(M)); ++libxsmm_inline_xgemm_j_) { \
@@ -442,6 +444,25 @@ LIBXSMM_API_INLINE void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, con
     output->l1_ref = input->l1_ref;
     output->l1_tst = input->l1_tst;
   }
+}
+
+/* Implementation is taken from an anonymous GitHub Gist. */
+LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u64(unsigned long long n) {
+  unsigned long long b; unsigned int y = 0; int s;
+  for (s = 63; s >= 0; s -= 3) {
+    y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
+    if (b <= (n >> s)) { n -= b << s; ++y; }
+  }
+  return y;
+}
+
+LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u32(unsigned int n) {
+  unsigned int b; unsigned int y = 0; int s;
+  for (s = 31; s >= 0; s -= 3) {
+    y += y; b = 3 * y * (y + 1) + 1;
+    if (b <= (n >> s)) { n -= b << s; ++y; }
+  }
+  return y;
 }
 
 #endif /*LIBXSMM_FRONTEND_H*/
