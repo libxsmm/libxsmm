@@ -1299,11 +1299,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     libxsmm_convolution_winograd_descriptor wino_desc_fp;
     libxsmm_convolution_winograd_descriptor wino_desc_bp;
     libxsmm_convolution_winograd_descriptor wino_desc_wu;
-    const int alpha = 6; /* The value of alpha can be either 4 or 6 */
+    const int alpha = 6; 
     const int tileSize = alpha - 2;
     int allowed_unroll = 0;
     int max_acc = 0;
     int flagBenchmark = 0;
+    int temp_ur;
     LIBXSMM_UNUSED(flagBenchmark/*TODO*/);
 
     /* Forward path */
@@ -1392,15 +1393,21 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
       /* LUT for AlexNet */
       else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_fp.ur = 16;
         flagBenchmark = 1;
       } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_fp.ur = 16;
         flagBenchmark = 1;
       } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_fp.ur = 16;
         flagBenchmark = 1;
       }
@@ -1411,55 +1418,80 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_fp.ur = 14;
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur = 14;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_fp.ur = (0 == wino_desc_fp.bimg % 2) ? 14 : 7;
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur = 14;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_fp.ur = (0 == wino_desc_fp.bimg % 2) ? 14 : 7;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_fp.ur = 16;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_fp.ur = 16;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_fp.ur = 16;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_fp.ur = 16;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_fp.ur = 16;
         flagBenchmark = 1;
       } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_fp.ur = 4;
         flagBenchmark = 1;
       } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_fp.ur = 4;
         flagBenchmark = 1;
       }
 
       /* LUT for Overfeat */
       else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 12;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_fp.ur = (0 == wino_desc_fp.bimg % 4) ? 12 : 
+                          (0 == wino_desc_fp.bimg % 2) ? 6 : 3;
         flagBenchmark = 1;
       } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 12;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_fp.ur = (0 == wino_desc_fp.bimg % 4) ? 12 : 
+                          (0 == wino_desc_fp.bimg % 2) ? 6 : 3;
         flagBenchmark = 1;
       } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
-        wino_desc_fp.ur = 12;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_fp.ur = (0 == wino_desc_fp.bimg % 4) ? 12 : 
+                          (0 == wino_desc_fp.bimg % 2) ? 6 : 3;
         flagBenchmark = 1;
       }
 
@@ -1477,15 +1509,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_fp.ur = 14;
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 4;
-        wino_desc_fp.ur = 14;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_fp.ur = (0 == wino_desc_fp.bimg % 2) ? 14 : 7;
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 4; /*2;*/
-        wino_desc_fp.ur = 14;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_fp.ur = (0 == wino_desc_fp.bimg % 2) ? 14 : 7;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_fp.bimg = 8;
+        wino_desc_fp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_fp.ur = 4;
         flagBenchmark = 1;
       }
@@ -1506,7 +1542,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
         internal_dnn_handle_factors_all( wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, &(wino_desc_fp.ur), max_acc );
         /* ur should be at least 14 to hide qfma latency */
-        wino_desc_fp.ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_fp.ur, 14), wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg);
+        temp_ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_fp.ur, 14), wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg);
+        if (0 == wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg % temp_ur) {
+          wino_desc_fp.ur = temp_ur;
+        }
       }
 
       /* The following condition checks whether we have encountered an input which is listed in our benchmark LUT */
@@ -1612,15 +1651,21 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
       /* LUT for AlexNet */
       else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_bp.ur = 16;
         flagBenchmark = 1;
       } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_bp.ur = 16;
         flagBenchmark = 1;
       } else if ((13 == handle->desc.W) && (13 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_bp.ur = 16;
         flagBenchmark = 1;
       }
@@ -1631,55 +1676,80 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_bp.ur = 14;
         flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur = 14;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_bp.ur = (0 == wino_desc_bp.bimg % 2) ? 14 : 7;
         flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur = 14;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_bp.ur = (0 == wino_desc_bp.bimg % 2) ? 14 : 7;
         flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_bp.ur = 16;
         flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_bp.ur = 16;
         flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_bp.ur = 16;
         flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_bp.ur = 16;
         flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_bp.ur = 16;
         flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_bp.ur = 4;
         flagBenchmark = 1;
       } else if ((7 == handle->desc.W) && (7 == handle->desc.H) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_bp.ur = 4;
         flagBenchmark = 1;
       }
 
       /* LUT for Overfeat */
       else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 12;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_bp.ur = (0 == wino_desc_bp.bimg % 4) ? 12 : 
+                          (0 == wino_desc_bp.bimg % 2) ? 6 : 3;
         flagBenchmark = 1;
       } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 12;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_bp.ur = (0 == wino_desc_bp.bimg % 4) ? 12 : 
+                          (0 == wino_desc_bp.bimg % 2) ? 6 : 3;
         flagBenchmark = 1;
       } else if ((12 == handle->desc.W) && (12 == handle->desc.H) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
-        wino_desc_bp.ur = 12;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_bp.ur = (0 == wino_desc_bp.bimg % 4) ? 12 : 
+                          (0 == wino_desc_bp.bimg % 2) ? 6 : 3;
         flagBenchmark = 1;
       }
 
@@ -1697,15 +1767,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_bp.ur = 14;
         flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 4;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_bp.ur = 14;
         flagBenchmark = 1;
       } else if ((28 == handle->desc.W) && (28 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 4;
-        wino_desc_bp.ur = 14;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_bp.ur = (0 == wino_desc_bp.bimg % 2) ? 14 : 7;
         flagBenchmark = 1;
       } else if ((14 == handle->desc.W) && (14 == handle->desc.H) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_bp.bimg = 8;
+        wino_desc_bp.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_bp.ur = 4;
         flagBenchmark = 1;
       }
@@ -1719,7 +1793,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           max_acc = 26;
         }
         internal_dnn_handle_factors_all( wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, &(wino_desc_bp.ur), max_acc );
-        wino_desc_bp.ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_bp.ur, 14), wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg);
+        temp_ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_bp.ur, 14), wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg);
+        if (0 == wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg % temp_ur) {
+          wino_desc_bp.ur = temp_ur;
+        }
       }
 
       wino_desc_bp.ur_ifm = handle->blocksofm;
@@ -1835,15 +1912,21 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
       /* LUT for AlexNet */
       else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
+        wino_desc_wu.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (384 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
+        wino_desc_wu.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((13 == handle->ofw) && (13 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
+        wino_desc_wu.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       }
@@ -1854,55 +1937,87 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (128 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur = 2;
+        wino_desc_wu.bimg = (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_wu.ur = (0 == wino_desc_wu.bimg % 2) ? 2 : 1;
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (192 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur = 2;
+        wino_desc_wu.bimg = (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_wu.ur = (0 == wino_desc_wu.bimg % 2) ? 2 : 1;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (96 == handle->desc.C) && (208 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
+        wino_desc_wu.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (112 == handle->desc.C) && (224 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
+        wino_desc_wu.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (128 == handle->desc.C) && (256 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
+        wino_desc_wu.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (144 == handle->desc.C) && (288 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
+        wino_desc_wu.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_wu.ur = 1;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
+        wino_desc_wu.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (160 == handle->desc.C) && (320 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 32;
+        wino_desc_wu.bimg = (0 == handle->desc.N % 32) ? 32 : 
+                            (0 == handle->desc.N % 16) ? 16 : 
+                            (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((7 == handle->ofw) && (7 == handle->ofh) && (64 <= handle->desc.N) && (192 == handle->desc.C) && (384 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 32;
+        wino_desc_wu.bimg = (0 == handle->desc.N % 32) ? 32 : 
+                            (0 == handle->desc.N % 16) ? 16 : 
+                            (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       }
 
       /* LUT for Overfeat */
       else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 32;
-        wino_desc_wu.ur = 2;
+        wino_desc_wu.bimg = (0 == handle->desc.N % 32) ? 32 : 
+                            (0 == handle->desc.N % 16) ? 16 : 
+                            (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_wu.ur = (0 == wino_desc_wu.bimg % 2) ? 2 : 1;
         flagBenchmark = 1;
       } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 32;
-        wino_desc_wu.ur = 2;
+        wino_desc_wu.bimg = (0 == handle->desc.N % 32) ? 32 : 
+                            (0 == handle->desc.N % 16) ? 16 : 
+                            (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_wu.ur = (0 == wino_desc_wu.bimg % 2) ? 2 : 1;
         flagBenchmark = 1;
       } else if ((12 == handle->ofw) && (12 == handle->ofh) && (64 <= handle->desc.N) && (1024 == handle->desc.C) && (1024 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 32;
-        wino_desc_wu.ur = 2;
+        wino_desc_wu.bimg = (0 == handle->desc.N % 32) ? 32 : 
+                            (0 == handle->desc.N % 16) ? 16 : 
+                            (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_wu.ur = (0 == wino_desc_wu.bimg % 2) ? 2 : 1;
         flagBenchmark = 1;
       }
 
@@ -1920,15 +2035,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (256 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur = 2;
+        wino_desc_wu.bimg = (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_wu.ur = (0 == wino_desc_wu.bimg % 2) ? 2 : 1;
         flagBenchmark = 1;
       } else if ((28 == handle->ofw) && (28 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 4;
-        wino_desc_wu.ur = 2;
+        wino_desc_wu.bimg = (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
+        wino_desc_wu.ur = (0 == wino_desc_wu.bimg % 2) ? 2 : 1;
         flagBenchmark = 1;
       } else if ((14 == handle->ofw) && (14 == handle->ofh) && (64 <= handle->desc.N) && (512 == handle->desc.C) && (512 == handle->desc.K) && (6 == alpha)) {
-        wino_desc_wu.bimg = 8; /*16;*/
+        wino_desc_wu.bimg = (0 == handle->desc.N % 8) ? 8 : 
+                            (0 == handle->desc.N % 4) ? 4 : 
+                            (0 == handle->desc.N % 2) ? 2 : 1;
         wino_desc_wu.ur = 2;
         flagBenchmark = 1;
       }
