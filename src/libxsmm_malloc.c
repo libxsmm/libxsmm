@@ -133,7 +133,7 @@ typedef struct iJIT_Method_Load_V2 {
 #endif
 
 #if !defined(LIBXSMM_MALLOC_ALIGNMAX)
-# define LIBXSMM_MALLOC_ALIGNMAX (2 * 1024 *1024)
+# define LIBXSMM_MALLOC_ALIGNMAX (2 * 1024 * 1024)
 #endif
 #if !defined(LIBXSMM_MALLOC_ALIGNFCT)
 # define LIBXSMM_MALLOC_ALIGNFCT 8
@@ -146,6 +146,9 @@ typedef struct iJIT_Method_Load_V2 {
 
 #if !defined(LIBXSMM_MALLOC_SCRATCH_LOCKED_FREE)
 # define LIBXSMM_MALLOC_SCRATCH_LOCKED_FREE
+#endif
+#if !defined(LIBXSMM_MALLOC_SCRATCH_MERGE)
+# define LIBXSMM_MALLOC_SCRATCH_MERGE
 #endif
 
 
@@ -1069,7 +1072,12 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
       const size_t pool_size = (0 != info ? info->size : 0);
       req_size = alloc_size + /*used:*/(pool->instance.head - buffer);
 
-      if (pool_size < req_size) {
+      if (pool_size < req_size
+#if defined(LIBXSMM_MALLOC_SCRATCH_MERGE)
+        && (0 == pool_size || pool->instance.site != site || pool->instance.tid != tid)
+#endif
+        )
+      {
         const size_t minsize_old = pool->instance.minsize;
         size_t minsize_new = LIBXSMM_MAX(minsize_old, (size_t)(libxsmm_scratch_scale * req_size));
         if (0 == buffer && ((limit + minsize_new) <= (libxsmm_scratch_limit + minsize_old)
@@ -1113,10 +1121,20 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
         }
       }
 #if defined(LIBXSMM_NO_SYNC)
-      else if ((0 == site || pool->instance.site == site)) break;
+      else if ((0 == site || pool->instance.site == site))
 #else
-      else if ((0 == site || pool->instance.site == site) && pool->instance.tid == tid) break;
+      else if ((0 == site || pool->instance.site == site) && pool->instance.tid == tid)
 #endif
+      {
+#if defined(LIBXSMM_MALLOC_SCRATCH_MERGE)
+        if (0 < pool_size && pool_size < req_size) {
+          const size_t minsize_inc = (size_t)(libxsmm_scratch_scale * alloc_size);
+          LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.minsize, minsize_inc, LIBXSMM_ATOMIC_RELAXED);
+          local_size = size;
+        }
+#endif
+        break;
+      }
     }
 
     /* attempt to fall-back to local memory allocation */
