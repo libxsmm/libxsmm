@@ -1095,22 +1095,19 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
         )
       {
         const size_t minsize = pool->instance.minsize; /* snapshot outside of locked region */
-#if 1
-        size_t minsize_new = (size_t)(libxsmm_scratch_scale * alloc_size) + minsize;
-#else
-        size_t minsize_new = LIBXSMM_MAX(minsize, (size_t)(libxsmm_scratch_scale * req_size));
-#endif
-        if (0 == buffer && ((limit + minsize_new) <= (libxsmm_scratch_limit + minsize)
-          /* prefer pooled allocation exceeding the limit over local alloc. (if it must happen) */
-          || libxsmm_scratch_limit <= alloc_size))
+        const size_t scale_size = (size_t)(libxsmm_scratch_scale * alloc_size);
+        assert(1 <= libxsmm_scratch_scale); /* no shrink (sanity check) */
+
+        if (0 == buffer && ((limit + scale_size) <= libxsmm_scratch_limit
+          /* prefer pooled allocation over large local allocation (if it must happen anyways) */
+          || pool_size <= alloc_size))
         {
           int finished = 0;
           LIBXSMM_LOCK_ACQUIRE(&libxsmm_lock_global);
           buffer = pool->instance.buffer; /* update */
           if (0 == buffer) {
             assert(0 == pool->instance.head/*sanity check*/);
-            if (minsize_new < alloc_size) minsize_new = alloc_size;
-            if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&buffer, minsize_new, 0/*auto*/,
+            if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&buffer, minsize + scale_size, 0/*auto*/,
               LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/))
             {
               LIBXSMM_ATOMIC_STORE(&pool->instance.buffer, buffer, LIBXSMM_ATOMIC_SEQ_CST);
@@ -1122,9 +1119,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
               pool->instance.tid = tid;
 # endif
 #endif
-              if (minsize < minsize_new) {
-                LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.minsize, minsize_new - minsize, LIBXSMM_ATOMIC_RELAXED);
-              }
+              LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.minsize, scale_size, LIBXSMM_ATOMIC_RELAXED);
               if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != caller) {
                 LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch_nmallocs, 1, LIBXSMM_ATOMIC_RELAXED);
               }
@@ -1149,7 +1144,12 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
       {
 #if defined(LIBXSMM_MALLOC_SCRATCH_MERGE)
         if (0 < pool_size && pool_size < req_size) {
-          LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.minsize, alloc_size, LIBXSMM_ATOMIC_RELAXED);
+          if ((limit + alloc_size) <= libxsmm_scratch_limit
+            /* prefer pooled allocation over large local allocation (if it must happen anyways) */
+            || pool_size <= alloc_size)
+          {
+            LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.minsize, alloc_size, LIBXSMM_ATOMIC_RELAXED);
+          }
           local_size = size;
         }
 #endif
@@ -1220,13 +1220,13 @@ LIBXSMM_API_INLINE int internal_scratch_free(const void* memory, internal_malloc
 #endif
     {
       assert(pool_buffer <= pool->instance.head);
-      if (1 < pool->instance.counter || pool->instance.minsize <= info->size) { /* reuse scratch domain */
+      if (0 != LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST)
+        || pool->instance.minsize <= info->size) /* reuse scratch domain */
+      {
         /* TODO: document/check that allocation/deallocation must follow the linear/scoped allocator policy */
         LIBXSMM_ATOMIC_STORE(&pool->instance.head, pool_buffer, LIBXSMM_ATOMIC_SEQ_CST);
-        LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
       }
       else { /* reallocate scratch domain */
-        LIBXSMM_ATOMIC_STORE_ZERO(&pool->instance.counter, LIBXSMM_ATOMIC_SEQ_CST);
         LIBXSMM_ATOMIC_STORE_ZERO(&pool->instance.buffer, LIBXSMM_ATOMIC_SEQ_CST);
         LIBXSMM_ATOMIC_STORE_ZERO(&pool->instance.head, LIBXSMM_ATOMIC_SEQ_CST);
         libxsmm_xfree(pool_buffer);
