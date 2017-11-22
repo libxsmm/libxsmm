@@ -33,7 +33,6 @@
 #if !defined(_GNU_SOURCE)
 # define _GNU_SOURCE
 #endif
-#include <libxsmm.h>
 #include "libxsmm_trace.h"
 #include "libxsmm_main.h"
 #include "libxsmm_hash.h"
@@ -127,9 +126,10 @@ typedef struct iJIT_Method_Load_V2 {
 # elif !defined(LIBXSMM_BUILD)
 #   define LIBXSMM_MALLOC_NOCRC
 # endif
-# if !defined(LIBXSMM_MALLOC_NOCRC) && !defined(LIBXSMM_MALLOC_SEED)
-#   define LIBXSMM_MALLOC_SEED 1051981
-# endif
+#endif
+
+#if !defined(LIBXSMM_MALLOC_SEED)
+# define LIBXSMM_MALLOC_SEED 1051981
 #endif
 
 #if !defined(LIBXSMM_MALLOC_ALIGNMAX)
@@ -996,11 +996,16 @@ LIBXSMM_API_DEFINITION void* libxsmm_aligned_malloc(size_t size, size_t alignmen
 }
 
 
-LIBXSMM_API_INLINE const void* internal_malloc_site(const void* site)
+LIBXSMM_API_INLINE const void* internal_malloc_site(const char* site)
 {
   const void* result;
-  if (0 == site) {
+  if (0 != site) {
+#if defined(_MSC_VER) && !defined(LIBXSMM_STRING_POOLING)
+    const uintptr_t hash = libxsmm_hash(site, strlen(site), LIBXSMM_MALLOC_SEED);
+    result = (const void*)hash;
+#else
     result = site;
+#endif
   }
   else {
 #if defined(NDEBUG) /* internal_malloc_site is inlined */
@@ -1043,7 +1048,7 @@ LIBXSMM_API_INLINE size_t internal_get_scratch_size(void)
 }
 
 
-LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignment, const void* caller)
+LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignment, const char* caller)
 {
   void* result = 0;
   static int error_once = 0;
@@ -1091,7 +1096,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
       {
         const size_t minsize = pool->instance.minsize; /* snapshot outside of locked region */
 #if 1
-        size_t minsize_new = LIBXSMM_MAX(minsize, (size_t)(libxsmm_scratch_scale * alloc_size) + minsize);
+        size_t minsize_new = (size_t)(libxsmm_scratch_scale * alloc_size) + minsize;
 #else
         size_t minsize_new = LIBXSMM_MAX(minsize, (size_t)(libxsmm_scratch_scale * req_size));
 #endif
@@ -1296,8 +1301,8 @@ LIBXSMM_API_DEFINITION int libxsmm_get_malloc_info(const void* memory, libxsmm_m
   if (0 != info) {
     size_t size;
     result = libxsmm_get_malloc_xinfo(memory, &size, 0/*flags*/, 0/*extra*/);
+    memset(info, 0, sizeof(libxsmm_malloc_info));
     if (EXIT_SUCCESS == result) {
-      memset(info, 0, sizeof(libxsmm_malloc_info));
       info->size = size;
     }
   }

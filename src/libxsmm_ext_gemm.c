@@ -54,7 +54,7 @@ LIBXSMM_VARIABLE unsigned int internal_ext_gemm_batchsize;
 
 #if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
 LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK
-libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller)
+libxsmm_sgemm_function libxsmm_original_sgemm(const char* caller)
 {
   static libxsmm_sgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(float, original, caller);
@@ -64,7 +64,7 @@ libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller)
 
 
 LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK
-libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller)
+libxsmm_dgemm_function libxsmm_original_dgemm(const char* caller)
 {
   static libxsmm_dgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(double, original, caller);

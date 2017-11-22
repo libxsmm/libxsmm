@@ -157,8 +157,8 @@ typedef LIBXSMM_RETARGETABLE void(*libxsmm_dgemv_function)(
 #endif
 
 /** The original GEMM functions (SGEMM and DGEMM). */
-LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(const void* caller);
-LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const void* caller);
+LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(const char* caller);
+LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const char* caller);
 
 /** Construct symbol name from a given real type name (float, double and short). */
 #define LIBXSMM_DATATYPE(TYPE)          LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_DATATYPE_)
