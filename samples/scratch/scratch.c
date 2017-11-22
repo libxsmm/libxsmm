@@ -35,6 +35,9 @@
 #endif
 #include <stdlib.h>
 #include <stdio.h>
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -52,12 +55,18 @@ void* malloc_offsite(size_t size);
 
 int main(int argc, char* argv[])
 {
-  const int ncycles = LIBXSMM_MAX(1 < argc ? atoi(argv[1]) : 1000000, 1);
-  const int nalloc = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 4, 1, MAX_MALLOC_N);
-  const int nthreads = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 1, 1);
+  const int ncalls = 1000000;
+#if defined(_OPENMP)
+  const int max_nthreads = omp_get_max_threads();
+#else
+  const int max_nthreads = 1;
+#endif
+  const int ncycles = LIBXSMM_MAX(1 < argc ? atoi(argv[1]) : ncalls, 1);
+  const int max_nallocs = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 4, 1, MAX_MALLOC_N);
+  const int nthreads = LIBXSMM_CLMP(3 < argc ? atoi(argv[3]) : 1, 1, max_nthreads);
   unsigned long long start;
-  unsigned int ncalls = 0;
-  double dcall, dalloc;
+  unsigned int nallocs = 0;
+  double dcalls, dalloc;
   int r[MAX_MALLOC_N];
   int i;
 
@@ -66,12 +75,12 @@ int main(int argc, char* argv[])
 
   /* count number of calls according to randomized scheme */
   for (i = 0; i < ncycles; ++i) {
-    ncalls += LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % nalloc, 1);
+    nallocs += LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % max_nallocs, 1);
   }
-  assert(0 != ncalls);
+  assert(0 != nallocs);
 
   fprintf(stdout, "Running %i cycles with max. %i malloc+free (%u calls) using %i thread%s...\n",
-    ncycles, nalloc, ncalls, 1 >= nthreads ? 1 : nthreads, 1 >= nthreads ? "" : "s");
+    ncycles, max_nallocs, nallocs, 1 >= nthreads ? 1 : nthreads, 1 >= nthreads ? "" : "s");
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
@@ -84,17 +93,17 @@ int main(int argc, char* argv[])
 
     /* run non-inline function to measure call overhead of an "empty" function */
     start = libxsmm_timer_tick();
-    for (i = 0; i < (ncycles * (MAX_MALLOC_N)); ++i) {
+    for (i = 0; i < ncalls; ++i) {
       libxsmm_init(); /* subsequent calls are not doing any work */
     }
-    dcall = libxsmm_timer_duration(start, libxsmm_timer_tick());
+    dcalls = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 #   pragma omp parallel for num_threads(nthreads) private(i) default(none) shared(r)
 #endif
     for (i = 0; i < ncycles; ++i) {
-      const int count = LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % nalloc, 1);
+      const int count = LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % max_nallocs, 1);
       void* p[MAX_MALLOC_N];
       int j;
       assert(count <= MAX_MALLOC_N);
@@ -109,9 +118,9 @@ int main(int argc, char* argv[])
     dalloc = libxsmm_timer_duration(start, libxsmm_timer_tick());
     libxsmm_free(longlife);
 
-    if (0 < dcall && 0 < dalloc && 0 < ncalls) {
-      const double alloc_freq = 1E-3 * ncalls / dalloc;
-      const double empty_freq = 1E-3 * (ncycles * (MAX_MALLOC_N)) / dcall;
+    if (0 < dcalls && 0 < dalloc && 0 < nallocs) {
+      const double alloc_freq = 1E-3 * nallocs / dalloc;
+      const double empty_freq = 1E-3 * ncalls / dcalls;
       fprintf(stdout, "\tallocation+free calls/s: %.1f kHz\n", alloc_freq);
       fprintf(stdout, "\tempty calls/s: %.1f kHz\n", empty_freq);
       fprintf(stdout, "\toverhead: %.1fx\n", empty_freq / alloc_freq);
