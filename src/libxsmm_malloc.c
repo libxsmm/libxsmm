@@ -1070,7 +1070,8 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
       char* buffer = pool->instance.buffer;
       const internal_malloc_info_type *const info = internal_malloc_info(buffer);
       const size_t pool_size = (0 != info ? info->size : 0);
-      req_size = alloc_size + /*used:*/(pool->instance.head - buffer);
+      const size_t pool_used = pool->instance.head - buffer;
+      req_size = alloc_size + pool_used;
 
       if (pool_size < req_size
 #if defined(LIBXSMM_MALLOC_SCRATCH_MERGE)
@@ -1078,9 +1079,9 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
 #endif
         )
       {
-        const size_t minsize_old = pool->instance.minsize;
-        size_t minsize_new = LIBXSMM_MAX(minsize_old, (size_t)(libxsmm_scratch_scale * req_size));
-        if (0 == buffer && ((limit + minsize_new) <= (libxsmm_scratch_limit + minsize_old)
+        const size_t minsize = pool->instance.minsize; /* snapshot outside of locked region */
+        size_t minsize_new = LIBXSMM_MAX(minsize, (size_t)(libxsmm_scratch_scale * alloc_size));
+        if (0 == buffer && ((limit + minsize_new) <= (libxsmm_scratch_limit + minsize)
           || libxsmm_scratch_limit <= alloc_size/*prefer pooled allocation (otherwise it would be local)*/))
         {
           int finished = 0;
@@ -1101,8 +1102,8 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
               pool->instance.tid = tid;
 # endif
 #endif
-              if (minsize_old < minsize_new) {
-                LIBXSMM_ATOMIC_STORE(&pool->instance.minsize, minsize_new, LIBXSMM_ATOMIC_SEQ_CST);
+              if (minsize < minsize_new) {
+                LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.minsize, minsize_new - minsize, LIBXSMM_ATOMIC_RELAXED);
               }
               if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != caller) {
                 LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch_nmallocs, 1, LIBXSMM_ATOMIC_RELAXED);
@@ -1128,8 +1129,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
       {
 #if defined(LIBXSMM_MALLOC_SCRATCH_MERGE)
         if (0 < pool_size && pool_size < req_size) {
-          const size_t minsize_inc = (size_t)(libxsmm_scratch_scale * alloc_size);
-          LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.minsize, minsize_inc, LIBXSMM_ATOMIC_RELAXED);
+          LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.minsize, alloc_size, LIBXSMM_ATOMIC_RELAXED);
           local_size = size;
         }
 #endif
