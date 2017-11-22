@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
 
   /* count number of calls according to randomized scheme */
   for (i = 0; i < ncycles; ++i) {
-    nallocs += LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % max_nallocs, 1);
+    nallocs += r[i%(MAX_MALLOC_N)] % max_nallocs + 1;
   }
   assert(0 != nallocs);
 
@@ -103,12 +103,13 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for num_threads(nthreads) private(i) default(none) shared(r)
 #endif
     for (i = 0; i < ncycles; ++i) {
-      const int count = LIBXSMM_MAX(r[i%(MAX_MALLOC_N)] % max_nallocs, 1);
+      const int count = r[i%(MAX_MALLOC_N)] % max_nallocs + 1;
       void* p[MAX_MALLOC_N];
       int j;
       assert(count <= MAX_MALLOC_N);
       for (j = 0; j < count; ++j) {
-        const size_t nbytes = (r[j%(MAX_MALLOC_N)] % (MAX_MALLOC_MB) + 1) << 20;
+        const int k = (i * count + j) % (MAX_MALLOC_N);
+        const size_t nbytes = (r[k] % (MAX_MALLOC_MB) + 1) << 20;
         p[j] = libxsmm_aligned_scratch(nbytes, 0/*auto*/);
       }
       for (j = 0; j < count; ++j) {
@@ -129,7 +130,7 @@ int main(int argc, char* argv[])
     if (EXIT_SUCCESS == libxsmm_get_scratch_info(&info) && 0 < info.size) {
       fprintf(stdout, "\nScratch: %.f MB (mallocs=%lu, pools=%u",
         1.0 * info.size / (1 << 20), (unsigned long int)info.nmallocs, info.npools);
-      if (1 < nthreads) fprintf(stdout, ", threads=%u)\n", nthreads); else fprintf(stdout, ")\n");
+      if (1 < nthreads) fprintf(stdout, ", threads=%i)\n", nthreads); else fprintf(stdout, ")\n");
       libxsmm_release_scratch(); /* suppress LIBXSMM's termination message about scratch */
     }
   }
