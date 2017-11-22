@@ -667,21 +667,19 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_generated_code,
-                                                   const unsigned int i_instruction_set,
+                                                   const unsigned int      i_instruction_set,
                                                    const unsigned int      i_vec_instr,
                                                    const char              i_vector_name,
                                                    const unsigned int      i_vec_reg_src,
                                                    const unsigned int      i_vec_reg_dst,
                                                    const unsigned int      i_shuffle_operand )
 {
+  LIBXSMM_UNUSED(i_instruction_set);
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
-    int i = io_generated_code->code_size;
-    /* int i = *loc; */
+    int i = io_generated_code->code_size; /* i = *loc; */
     unsigned int l_maxsize = io_generated_code->buffer_size;
-    /* unsigned int l_maxsize = 1024; */
-    int l_vec0, l_vec1;
-    int l_second = 0, l_third = 0, l_fifth = 0;
+    int l_vec0 = 0, l_vec1 = 0, l_second = 0, l_third = 0, l_fifth = 0;
 
     if ( l_maxsize - i < 20 )
     {
