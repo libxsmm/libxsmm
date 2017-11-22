@@ -2304,19 +2304,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_
   return status;
 }
 
-
-/* @TODO make this routine aware of any int type */
-LIBXSMM_API_DEFINITION void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int length, unsigned char add_shift, unsigned char* scf, int round_mode ) {
+LIBXSMM_API_DEFINITION unsigned char libxsmm_internal_get_max_exp( float* in_buffer, int length ) {
   int i = 0;
-  libxsmm_intfloat value;
   libxsmm_intfloat exp;
-  unsigned int qvalue = 0;
-  unsigned int mant = 0;
-  unsigned int sign = 0;
-  unsigned char rhs = 0;
-  unsigned char exp_off = 0;
+  float absmax_value = 0.0f;
   unsigned char max_exp = 0;
-  float absmax_value = 0;
 
   /* finding absmax float for largest exp */
   absmax_value = (float)fabs((double)(in_buffer[0]));
@@ -2350,75 +2342,97 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_quantize( float* in_buffer, short* out_b
   /* shift by mantissa to the right and convert to char */
   max_exp = (unsigned char)((exp.ui & LIBXSMM_DNN_MASK_ABS_F32) >> LIBXSMM_DNN_MANT_SZ_F32);
 
+  return max_exp;
+}
+
+LIBXSMM_API_DEFINITION short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned char max_exp, unsigned char add_shift, int round_mode ) {
+  libxsmm_intfloat value;
+  unsigned int qvalue = 0;
+  unsigned int mant = 0;
+  unsigned int sign = 0;
+  unsigned char rhs = 0;
+  unsigned char exp_off = 0;
+
+  /* in case of zero we don't need to do anything */
+  if (input == 0.0f) {
+    qvalue = 0;
+  } else {
+    /* let's get a float copy to work on */
+    /* vinp = _mm512_load_ps( in_buffer[i] ); */
+    value.f = input;
+    /* let's compute the offset of the current exp at pos i from max offset, we need to mask the sign bit though */
+    /*__m512i vexp     = _mm512_cvtps_epi32(_mm512_getexp_ps (vinp));
+      __m512i vexp_off = _mm512_sub_epi32(maxexpf, vexp);*/
+    exp_off = max_exp - (unsigned char)((value.ui & LIBXSMM_DNN_MASK_ABS_F32) >> LIBXSMM_DNN_MANT_SZ_F32);
+    /* cut out mantissa and set leading bit */
+    /*__m512i mmask = _mm512_set1_epi32(LIBXSMM_DNN_MASK_MANT_F32);
+      __m512i vmant = _mm512_or_epi32(_mm512_set1_epi32(0x1 << LIBXSMM_DNN_MANT_SZ_F32), _mm512_and_epi32( _mm512_castps_si512( vinp ), mmask));*/
+    mant = ((0x1 << LIBXSMM_DNN_MANT_SZ_F32) | (value.ui & LIBXSMM_DNN_MASK_MANT_F32));
+    /* extract sign */
+    /* __mmask16 smask =  _mm512_cmplt_ps_mask (inp, _mm512_set1_ps(0)); */
+    sign = (value.ui & LIBXSNN_DNN_MASK_SIGN_F32) >> (LIBXSMM_DNN_SZ_F32-1);
+    /* caclulate rhs, be aware of the now explicit leading bit, @TODO add DFP8/4 */
+    rhs = (unsigned char)(LIBXSMM_DNN_MANT_SZ_F32+1) - LIBXSMM_DNN_MANT_DFP16 + exp_off + add_shift;
+    /* some safety, to generate 0 when we fall off quant region, @TODO issue a LIBXSMM Warning that we shifted out the entire mantissa */
+    if (rhs > (LIBXSMM_DNN_MANT_SZ_F32+1)) { 
+      rhs = (LIBXSMM_DNN_MANT_SZ_F32+1);
+    }
+    /* finally shfit the value into the region we need, this is now a 15-add_rhs bit number for the max value in in_buffer */
+    qvalue = (mant >> rhs);
+    /* handle sign, 2 complement */
+    if ( sign > 0 && qvalue > 0 ) {
+      qvalue = (~qvalue + 1);
+    }
+
+    if (round_mode == LIBXSMM_DNN_QUANT_BIAS_ROUND) {
+      /* biased rounding towards next bigger number */
+      /* first let's determine in the original number if we need a bias rounding, @TODO need fix for F64 */
+      int bias_needed = (mant & (0x3 << rhs));
+      /* apply bias */
+      if (bias_needed > 0) {
+        qvalue++;
+      }
+    } else if (round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND) {
+      /* stochastic rounding, as implemented in the IBM paper from 2015, @TODO, fix F64 and DFP8 */ 
+      float p, q;
+      libxsmm_intfloat fvalue;
+      float eps = (float)LIXSMMM_DNN_RES_DFP16;
+      /* masking all bits which will be shifted out */
+      fvalue.ui = value.ui & ((LIBXSMM_DNN_MASK_FULL_F32) << rhs);
+      /* drawing a random number */
+      float r = (float)fabs((double)rand());
+      p = r/((float)RAND_MAX);
+      q = (input - fvalue.f)/eps;
+      /* apply rounding if needed */
+      if (p+q > 0.5f) {
+        qvalue++;
+      }
+    } else {
+      /* do nothing about rounding, just chop */
+    }
+  }
+
+  return (short)qvalue;
+}
+
+/* @TODO make this routine aware of any int type */
+LIBXSMM_API_DEFINITION void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int length, unsigned char add_shift, unsigned char* scf, int round_mode ) {
+  int i = 0;
+  unsigned char max_exp = 0;
+
+  /* get max exponent */
+  max_exp = libxsmm_internal_get_max_exp( in_buffer, length );
+
   /* if we go for stochstic rounding, let's intialize random seed */
   if ( round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND ) {
     srand( time(NULL) );
   }
 
 #ifdef _OPENMP
-#pragma omp parallel for private(i, value, qvalue, exp_off, mant, sign, rhs)
+#pragma omp parallel for private(i)
 #endif
   for( i = 0; i < length; ++i ) {
-    value.f = in_buffer[i];
-    /* in case of zero we don't need to do anything */
-    if (in_buffer[i] == 0.0f) {
-      qvalue = 0;
-    } else {
-      /* let's get a float copy to work on */
-      /* vinp = _mm512_load_ps( in_buffer[i] ); */
-      value.f = in_buffer[i];
-      /* let's compute the offset of the current exp at pos i from max offset, we need to mask the sign bit though */
-      /*__m512i vexp     = _mm512_cvtps_epi32(_mm512_getexp_ps (vinp));
-        __m512i vexp_off = _mm512_sub_epi32(maxexpf, vexp);*/
-      exp_off = max_exp - (unsigned char)((value.ui & LIBXSMM_DNN_MASK_ABS_F32) >> LIBXSMM_DNN_MANT_SZ_F32);
-      /* cut out mantissa and set leading bit */
-      /*__m512i mmask = _mm512_set1_epi32(LIBXSMM_DNN_MASK_MANT_F32);
-        __m512i vmant = _mm512_or_epi32(_mm512_set1_epi32(0x1 << LIBXSMM_DNN_MANT_SZ_F32), _mm512_and_epi32( _mm512_castps_si512( vinp ), mmask));*/
-      mant = ((0x1 << LIBXSMM_DNN_MANT_SZ_F32) | (value.ui & LIBXSMM_DNN_MASK_MANT_F32));
-      /* extract sign */
-      /* __mmask16 smask =  _mm512_cmplt_ps_mask (inp, _mm512_set1_ps(0)); */
-      sign = (value.ui & LIBXSNN_DNN_MASK_SIGN_F32) >> (LIBXSMM_DNN_SZ_F32-1);
-      /* caclulate rhs, be aware of the now explicit leading bit, @TODO add DFP8/4 */
-      rhs = (unsigned char)(LIBXSMM_DNN_MANT_SZ_F32+1) - LIBXSMM_DNN_MANT_DFP16 + exp_off + add_shift;
-      /* some safety, to generate 0 when we fall off quant region, @TODO issue a LIBXSMM Warning that we shifted out the entire mantissa */
-      if (rhs > (LIBXSMM_DNN_MANT_SZ_F32+1)) { 
-        rhs = (LIBXSMM_DNN_MANT_SZ_F32+1);
-      }
-      /* finally shfit the value into the region we need, this is now a 15-add_rhs bit number for the max value in in_buffer */
-      qvalue = (mant >> rhs);
-      /* handle sign, 2 complement */
-      if ( sign > 0 && qvalue > 0 ) {
-        qvalue = (~qvalue + 1);
-      }
-
-      if (round_mode == LIBXSMM_DNN_QUANT_BIAS_ROUND) {
-        /* biased rounding towards next bigger number */
-        /* first let's determine in the original number if we need a bias rounding, @TODO need fix for F64 */
-        int bias_needed = (mant & (0x3 << rhs));
-        /* apply bias */
-        if (bias_needed > 0) {
-          qvalue++;
-        }
-      } else if (round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND) {
-        /* stochastic rounding, as implemented in the IBM paper from 2015, @TODO, fix F64 and DFP8 */ 
-        float p, q;
-        libxsmm_intfloat fvalue;
-        float eps = (float)LIXSMMM_DNN_RES_DFP16;
-        /* masking all bits which will be shifted out */
-        fvalue.ui = value.ui & ((LIBXSMM_DNN_MASK_FULL_F32) << rhs);
-        /* drawing a random number */
-        float r = (float)fabs((double)rand());
-        p = r/((float)RAND_MAX);
-        q = (in_buffer[i] - fvalue.f)/eps;
-        /* apply rounding if needed */
-        if (p+q > 0.5f) {
-          qvalue++;
-        }
-      } else {
-        /* do nothing about rounding, just chop */
-      }
-    }
-    out_buffer[i] = (short)qvalue;
+    out_buffer[i] = libxsmm_internal_quantize_scalar_no_scf( in_buffer[i], max_exp, add_shift, round_mode );
   }
 
   *scf = 14-add_shift-(max_exp-127);
@@ -2429,6 +2443,9 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_dequantize( short* in_buffer, float* out
   int i = 0;
   float exp = pow(2.0, -scf);
 
+#ifdef _OPENMP
+#pragma omp parallel for private(i)
+#endif
   for ( i = 0 ; i < length; ++i ) {
     out_buffer[i] = ((float)in_buffer[i])*exp;
   }
