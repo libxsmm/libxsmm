@@ -680,6 +680,8 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
     int i = io_generated_code->code_size; /* i = *loc; */
     unsigned int l_maxsize = io_generated_code->buffer_size;
     int l_vec0 = 0, l_vec1 = 0, l_second = 0, l_third = 0, l_fifth = 0;
+    int l_vecval0, l_vecgrp0, l_oddgrp0, l_2or3grp0;
+    int l_vecval1, l_vecgrp1, l_oddgrp1, l_2or3grp1;
 
     if ( l_maxsize - i < 20 )
     {
@@ -726,14 +728,14 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
           fprintf(stderr, "libxsmm_instruction_vec_compute_convert: Unknown instruction type: %u\n", i_vec_instr);
           break;
     }
-    int l_vecval0 = l_vec0 % 8;
-    int l_vecgrp0 = l_vec0 / 8;
-    int l_oddgrp0 = ((l_vecgrp0 % 2)==1);
-    int l_2or3grp0 = (l_vecgrp0>=2);
-    int l_vecval1 = l_vec1 % 8;
-    int l_vecgrp1 = l_vec1 / 8;
-    int l_oddgrp1 = ((l_vecgrp1 % 2)==1);
-    int l_2or3grp1 = (l_vecgrp1>=2);
+    l_vecval0 = l_vec0 % 8;
+    l_vecgrp0 = l_vec0 / 8;
+    l_oddgrp0 = ((l_vecgrp0 % 2)==1);
+    l_2or3grp0 = (l_vecgrp0>=2);
+    l_vecval1 = l_vec1 % 8;
+    l_vecgrp1 = l_vec1 / 8;
+    l_oddgrp1 = ((l_vecgrp1 % 2)==1);
+    l_2or3grp1 = (l_vecgrp1>=2);
 
     buf[i++] = (unsigned char)(0x62);
     buf[i++] = (unsigned char)(0xf1 + l_second - l_oddgrp0 * 0x20 - l_oddgrp1 * 0x80 - l_2or3grp0 * 0x40 - l_2or3grp1 * 0x10);
