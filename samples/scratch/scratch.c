@@ -67,8 +67,7 @@ int main(int argc, char* argv[])
   unsigned long long start;
   unsigned int nallocs = 0;
   double dcalls, dalloc;
-  int r[MAX_MALLOC_N];
-  int i;
+  int r[MAX_MALLOC_N], i;
 
   /* generate set of random number for parallel region */
   for (i = 0; i < (MAX_MALLOC_N); ++i) r[i] = rand();
