@@ -103,7 +103,7 @@
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
 #endif /*__cplusplus*/
 #if !defined(LIBXSMM_CALLER)
-# define LIBXSMM_CALLER 0
+# define LIBXSMM_CALLER NULL
 #endif
 
 #define LIBXSMM_VARIABLE LIBXSMM_RETARGETABLE
@@ -454,7 +454,14 @@
 # endif
 #endif
 
-/** Below group is to fixup some platform/compiler specifics. */
+/** Determines whether constant-folding is available or not. */
+#if !defined(LIBXSMM_STRING_POOLING)
+# if defined(__GNUC__) /*&& !defined(_MSC_VER)*/
+#   define LIBXSMM_STRING_POOLING
+# endif
+#endif
+
+/** Below group is to fix-up some platform/compiler specifics. */
 #if defined(_WIN32)
 # if !defined(_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES)
 #   define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES 1

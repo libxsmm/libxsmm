@@ -1000,11 +1000,11 @@ LIBXSMM_API_INLINE const void* internal_malloc_site(const char* site)
 {
   const void* result;
   if (0 != site) {
-#if defined(_MSC_VER) && !defined(LIBXSMM_STRING_POOLING)
-    const uintptr_t hash = libxsmm_hash(site, strlen(site), LIBXSMM_MALLOC_SEED);
-    result = (const void*)hash;
-#else
+#if defined(LIBXSMM_STRING_POOLING)
     result = site;
+#else
+    const uintptr_t hash = libxsmm_hash(site, strlen(site), LIBXSMM_MALLOC_SEED);
+    result = (const void*)((LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE) != hash ? hash : (hash - 1));
 #endif
   }
   else {
