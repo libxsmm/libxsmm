@@ -1005,6 +1005,7 @@ LIBXSMM_API_INLINE const void* internal_malloc_site(const char* site)
 #else
     const uintptr_t hash = libxsmm_hash(site, strlen(site), LIBXSMM_MALLOC_SEED);
     result = (const void*)((LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE) != hash ? hash : (hash - 1));
+    assert((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != result);
 #endif
   }
   else {
@@ -1018,7 +1019,7 @@ LIBXSMM_API_INLINE const void* internal_malloc_site(const char* site)
     void* stacktrace[] = { 0, 0, 0, 0 };
 #endif
     const unsigned int size = sizeof(stacktrace) / sizeof(*stacktrace);
-    result = (size == libxsmm_backtrace(stacktrace, size) ? stacktrace[size - 1] : 0);
+    result = (size == libxsmm_backtrace(stacktrace, size) ? stacktrace[size-1] : 0);
   }
   return result;
 }
@@ -1213,11 +1214,11 @@ LIBXSMM_API_INLINE int internal_scratch_free(const void* memory, internal_malloc
     result = ((/*0 != info &&*/ pool_buffer <= buffer && buffer < (pool_buffer + info->size)) ? EXIT_SUCCESS : EXIT_FAILURE);
     if (EXIT_SUCCESS == result) {
 #if defined(LIBXSMM_MALLOC_SCRATCH_MERGE)
-      const size_t incsize = pool->instance.incsize; /* snapshot */
-      const size_t alloc_size = pool->instance.minsize + incsize + internal_get_scratch_size();
-      const size_t limit_size = LIBXSMM_MIN(alloc_size, libxsmm_scratch_limit);
-      const size_t minsize = pool->instance.minsize + LIBXSMM_MAX(limit_size - pool->instance.minsize, 0);
-      LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.incsize, incsize, LIBXSMM_ATOMIC_SEQ_CST);
+      const size_t scratch_size = internal_get_scratch_size();
+      const size_t avail_size = libxsmm_scratch_limit - LIBXSMM_MIN(scratch_size, libxsmm_scratch_limit);
+      const size_t alloc_size = pool->instance.minsize + pool->instance.incsize;
+      const size_t minsize = LIBXSMM_MIN(alloc_size, avail_size);
+      LIBXSMM_ATOMIC_STORE_ZERO(&pool->instance.incsize, LIBXSMM_ATOMIC_SEQ_CST);
       pool->instance.minsize = minsize;
 #else
       const size_t minsize = pool->instance.minsize;
