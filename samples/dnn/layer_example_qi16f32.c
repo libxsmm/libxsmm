@@ -43,6 +43,7 @@
 /*# define USE_FUSED_MAX_STATS*/
 #define FP64_BN_STATS
 /*#define USE_FUSED_RELU_BWD*/
+#define USE_FORMATED_QUANT
 
 #if !defined(USE_FUSED_BIAS) && 0
 # define USE_FUSED_BIAS
@@ -878,6 +879,12 @@ int main(int argc, char* argv[])
     libxsmm_dnn_quantize( naive_input_save, i16_naive_input,  nImg*nIfm*ifhp*ifwp, 2, &scf_input,  LIBXSMM_DNN_QUANT_BIAS_ROUND );
     libxsmm_dnn_quantize( naive_filter,     i16_naive_filter, nIfm*nOfm*kw*kh    , 2, &scf_filter, LIBXSMM_DNN_QUANT_BIAS_ROUND );
 
+#ifdef USE_FORMATED_QUANT
+    /* quantize and copy into LIBXSMM format */
+    libxsmm_dnn_quantize_act( naive_input_save, input_libxsmm,  nImg, nIfm, ifhp, ifwp, 1, 16, 2, 2, &scf_input,  LIBXSMM_DNN_QUANT_BIAS_ROUND );
+    libxsmm_dnn_quantize_fil( naive_filter,     filter_libxsmm, nOfm, nIfm, kw, kh, 1, 16, 1, 16, 2, 2, &scf_filter, LIBXSMM_DNN_QUANT_BIAS_ROUND );
+#endif
+
     /* set scaling factors into tensors */
     libxsmm_dnn_set_qtensor_scf( libxsmm_input,  scf_input );
     libxsmm_dnn_set_qtensor_scf( libxsmm_filter, scf_filter );
@@ -889,9 +896,11 @@ int main(int argc, char* argv[])
     /* copy in data to LIBXSMM format */
     /* we can also use the layout functions and set the data on our
        own external to the library, @TODO, we plan to add an example here */
+#ifndef USE_FORMATED_QUANT
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,  (void*)i16_naive_input,   LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output, (void*)naive_output_save, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter, (void*)i16_naive_filter,  LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+#endif
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output, (void*)naive_output_save, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_bias,   (void*)naive_bias,        LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
     zero_buf_i16(filtertr_libxsmm, nOfm*nIfm*kh*kw);
 #ifdef FP32_BN_STATS 
