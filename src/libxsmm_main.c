@@ -786,13 +786,13 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       }
       free(registry_keys);
       free(registry);
-      /* release scratch memory pool */
-      libxsmm_release_scratch();
     }
 #if !defined(LIBXSMM_NO_SYNC) /* LIBXSMM_LOCK_RELEASE, but no LIBXSMM_LOCK_DESTROY */
     for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_RELEASE(internal_reglock + i);
     LIBXSMM_LOCK_RELEASE(&libxsmm_lock_global);
 #endif
+    /* release scratch memory pool */
+    libxsmm_release_scratch();
   }
 }
 
