@@ -1118,11 +1118,11 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
           if (0 != libxsmm_verbosity /* library code is expected to be mute */
             && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
           {
-            if (minsize < alloc_size && (1 < libxsmm_verbosity || 0 > libxsmm_verbosity)) {
-              fprintf(stderr, "LIBXSMM WARNING: scratch memory domain is exhausted!\n");
-            }
-            else {
+            if (alloc_size <= minsize) {
               fprintf(stderr, "LIBXSMM ERROR: failed to allocate scratch memory!\n");
+            }
+            else if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
+              fprintf(stderr, "LIBXSMM WARNING: scratch memory domain is exhausted!\n");
             }
           }
           local_size = size;
