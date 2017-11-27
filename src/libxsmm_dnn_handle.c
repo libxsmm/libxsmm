@@ -215,7 +215,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->fm_lp_block = 1;
     }
     else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
-      handle->ifmblock = (handle->desc.C >=16) ? 16 : (handle->desc.C/2);
+      handle->ifmblock = (handle->desc.C >=16) ? 8 : (handle->desc.C/2);
       handle->ofmblock = (handle->desc.K >=16) ? 16 : (handle->desc.K/2);
       handle->fm_lp_block = 2;
       if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ) {
