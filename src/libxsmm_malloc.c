@@ -141,6 +141,10 @@ typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_NO_AFFINITY) && 0
 # define LIBXSMM_MALLOC_NO_AFFINITY ((unsigned int)-1)
 #endif
+/* map memory for scratch buffers */
+#if !defined(LIBXSMM_MALLOC_SCRATCH_MMAP) && 0
+# define LIBXSMM_MALLOC_SCRATCH_MMAP
+#endif
 /* map memory even for non-executable buffers */
 #if !defined(LIBXSMM_MALLOC_MMAP) && 0
 # define LIBXSMM_MALLOC_MMAP
@@ -1057,11 +1061,7 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
   size_t local_size = 0;
   void* result = 0;
   LIBXSMM_INIT
-#if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) || (0 >= (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-  LIBXSMM_UNUSED(caller);
-  {
-    local_size = size;
-#else
+#if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
   if (0 < libxsmm_scratch_pools && 0 < libxsmm_scratch_limit) {
     internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)((uintptr_t)(internal_malloc_pool_buffer + (LIBXSMM_CACHELINE)-1) & ~((LIBXSMM_CACHELINE)-1));
     internal_malloc_pool_type *const end = pools + libxsmm_scratch_pools, *pool0 = end, *pool = pools;
@@ -1169,20 +1169,25 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
     else { /* fall-back to local memory allocation */
       local_size = size;
     }
+  }
+  else { /* fall-back to local memory allocation */
+    local_size = size;
+  }
 
-    if (0 != local_size)
+  if (0 != local_size)
+#else
+  local_size = size;
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
-    { /* local memory allocation */
-      if (EXIT_SUCCESS != libxsmm_xmalloc(&result, local_size, alignment,
-        LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/) &&
-        /* library code is expected to be mute */0 != libxsmm_verbosity &&
-        1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM ERROR: scratch memory fall-back failed!\n");
-      }
-      if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != caller) {
-        LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch_nmallocs, 1, LIBXSMM_ATOMIC_RELAXED);
-      }
+  { /* local memory allocation */
+    if (EXIT_SUCCESS != libxsmm_xmalloc(&result, local_size, alignment,
+      LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/) &&
+      /* library code is expected to be mute */0 != libxsmm_verbosity &&
+      1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: scratch memory fall-back failed!\n");
+    }
+    if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != caller) {
+      LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch_nmallocs, 1, LIBXSMM_ATOMIC_RELAXED);
     }
   }
   return result;
