@@ -152,34 +152,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         ((handle->ofw < 15) && (handle->ofh % 2 == 0)) ) {
       handle->fwd_ofw_rb = handle->ofw;
       handle->fwd_ofh_rb = 2;
-      /* on AVX512_CORE and int this only works for smaller 13 */
-      if ( (((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) ||
-              (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8)) &&
-            (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)) &&
-          (handle->ofw > 12) ) {
-        handle->fwd_ofh_rb = 1;
-      }
     }
     else {
 #endif
-      /* we need additional temp registers when running with int on AVX512_CORE */
-      if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) &&
-            (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) &&
-            (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32))   ) {
-        for (i = 26; i > 1; --i) {
-          if (handle->ofw % i == 0) break;
-        }
-        /* for 32 accumulation we need even one register more */
-      } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) &&
-          (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) &&
-          ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
-        for (i = 25; i > 1; --i) {
-          if (handle->ofw % i == 0) break;
-        }
-      } else {
-        for (i = 28; i > 1; --i) {
-          if (handle->ofw % i == 0) break;
-        }
+      for (i = 28; i > 1; --i) {
+        if (handle->ofw % i == 0) break;
       }
       handle->fwd_ofw_rb = i;
       handle->fwd_ofh_rb = 1;
@@ -611,6 +588,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.unroll_kh = 0;
         descriptor.unroll_kw = 1;
       }
+#if 0
       if ( ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) ||
             (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) ) &&
           (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) &&
@@ -619,6 +597,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.unroll_kh = 0;
         descriptor.unroll_kw = 0;
       }
+#endif
       if (handle->padding_flag == 1) {
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
         descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;

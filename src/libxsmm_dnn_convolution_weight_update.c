@@ -37,6 +37,7 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <string.h>
+#include <math.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif

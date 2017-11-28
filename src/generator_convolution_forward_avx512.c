@@ -87,8 +87,10 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_KNM;
   } else if ( strcmp( i_arch, "knl" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_MIC;
-  } else if (strcmp( i_arch, "skx" ) == 0 ) {
+  } else if ( strcmp( i_arch, "skx" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE;
+  } else if ( strcmp( i_arch, "icl" ) == 0 ) {
+    l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_ICL;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;
@@ -706,17 +708,59 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
                    + (l_n * i_conv_kernel_config->datatype_size_in * i_conv_desc->stride_w * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block);
 
       if (step_size == 1) {
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                 i_conv_kernel_config->instruction_set,
-                                                 i_conv_kernel_config->vfma_instruction,
-                                                 1,
-                                                 l_input_reg,
-                                                 l_input_idx,
-                                                 l_scale,
-                                                 l_disp,
-                                                 i_conv_kernel_config->vector_name,
-                                                 0,
-                                                 i_conv_kernel_config->vector_reg_count - l_reg_block + l_n );
+        if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+          libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                   i_conv_kernel_config->instruction_set,
+                                                   i_conv_kernel_config->vfma_instruction,
+                                                   1,
+                                                   l_input_reg,
+                                                   l_input_idx,
+                                                   l_scale,
+                                                   l_disp,
+                                                   i_conv_kernel_config->vector_name,
+                                                   0,
+                                                   i_conv_kernel_config->vector_reg_count - l_reg_block + l_n );
+        } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) || 
+                    (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32)    ) {
+          if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {     
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                                               i_conv_kernel_config->instruction_set,
+                                               i_conv_kernel_config->vbcst_instruction,
+                                               l_input_reg,
+                                               l_input_idx, l_scale,
+                                               l_disp,
+                                               i_conv_kernel_config->vector_name,
+                                               1, 0, 0 );
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                               i_conv_kernel_config->instruction_set,
+                                               i_conv_kernel_config->vfma_instruction,
+                                               i_conv_kernel_config->vector_name,
+                                               0,
+                                               1,
+                                               1 );
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                               i_conv_kernel_config->instruction_set,
+                                               i_conv_kernel_config->vadd_instruction,
+                                               i_conv_kernel_config->vector_name,
+                                               1,
+                                               i_conv_kernel_config->vector_reg_count - l_reg_block + l_n,
+                                               i_conv_kernel_config->vector_reg_count - l_reg_block + l_n );
+          } else {
+            libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                     i_conv_kernel_config->instruction_set,
+                                                     LIBXSMM_X86_INSTR_VPDPWSSD,
+                                                     1,
+                                                     l_input_reg,
+                                                     l_input_idx,
+                                                     l_scale,
+                                                     l_disp,
+                                                     i_conv_kernel_config->vector_name,
+                                                     0,
+                                                     i_conv_kernel_config->vector_reg_count - l_reg_block + l_n );
+          }
+        } else {
+          /* shouldn't happen */
+        }
       } else {
         if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
           l_compute_instr = LIBXSMM_X86_INSTR_V4FMADDPS;
@@ -926,17 +970,59 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
                    + (l_m * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block * i_conv_kernel_config->datatype_size_in);
 
         if (step_size == 1) {
-          libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                   i_conv_kernel_config->instruction_set,
-                                                   i_conv_kernel_config->vfma_instruction,
-                                                   1,
-                                                   l_input_reg,
-                                                   l_input_idx,
-                                                   l_scale,
-                                                   l_disp,
-                                                   i_conv_kernel_config->vector_name,
-                                                   0,
-                                                   i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb) );
+          if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+            libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                     i_conv_kernel_config->instruction_set,
+                                                     i_conv_kernel_config->vfma_instruction,
+                                                     1,
+                                                     l_input_reg,
+                                                     l_input_idx,
+                                                     l_scale,
+                                                     l_disp,
+                                                     i_conv_kernel_config->vector_name,
+                                                     0,
+                                                     i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb) );
+          } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) || 
+                      (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32)    ) {
+            if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {     
+              libxsmm_x86_instruction_vec_move( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vbcst_instruction,
+                                                 l_input_reg,
+                                                 l_input_idx, l_scale,
+                                                 l_disp,
+                                                 i_conv_kernel_config->vector_name,
+                                                 1, 0, 0 );
+              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vfma_instruction,
+                                                 i_conv_kernel_config->vector_name,
+                                                 0,
+                                                 1,
+                                                 1 );
+              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vadd_instruction,
+                                                 i_conv_kernel_config->vector_name,
+                                                 1,
+                                                 i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb),
+                                                 i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb) );
+            } else {
+              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                       i_conv_kernel_config->instruction_set,
+                                                       LIBXSMM_X86_INSTR_VPDPWSSD,
+                                                       1,
+                                                       l_input_reg,
+                                                       l_input_idx,
+                                                       l_scale,
+                                                       l_disp,
+                                                       i_conv_kernel_config->vector_name,
+                                                       0,
+                                                       i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb) );
+            }
+          } else {
+            /* shouldn't happen */
+          }
         } else {
           /* depending on datatype emit the needed FMA(-sequence) */
           if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -1131,17 +1217,59 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
         l_disp = ((l_m * i_conv_desc->ifw_padded *  i_conv_desc->stride_h) + l_n * i_conv_desc->stride_w) * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in * i_conv_desc->fm_lp_block + moffset;
 
         if (step_size == 1) {
-          libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                   i_conv_kernel_config->instruction_set,
-                                                   i_conv_kernel_config->vfma_instruction,
-                                                   1,
-                                                   l_input_reg,
-                                                   LIBXSMM_X86_GP_REG_UNDEF,
-                                                   LIBXSMM_X86_GP_REG_UNDEF,
-                                                   l_disp,
-                                                   i_conv_kernel_config->vector_name,
-                                                   0,
-                                                   i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_x_rows) + l_n + (l_m*i_conv_desc->ofw_rb) );
+          if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+            libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                     i_conv_kernel_config->instruction_set,
+                                                     i_conv_kernel_config->vfma_instruction,
+                                                     1,
+                                                     l_input_reg,
+                                                     LIBXSMM_X86_GP_REG_UNDEF,
+                                                     0,
+                                                     l_disp,
+                                                     i_conv_kernel_config->vector_name,
+                                                     0,
+                                                     i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_x_rows) + l_n + (l_m*i_conv_desc->ofw_rb) );
+          } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) || 
+                      (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32)    ) {
+            if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {     
+              libxsmm_x86_instruction_vec_move( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vbcst_instruction,
+                                                 l_input_reg,
+                                                 LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                                 l_disp,
+                                                 i_conv_kernel_config->vector_name,
+                                                 1, 0, 0 );
+              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vfma_instruction,
+                                                 i_conv_kernel_config->vector_name,
+                                                 0,
+                                                 1,
+                                                 1 );
+              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vadd_instruction,
+                                                 i_conv_kernel_config->vector_name,
+                                                 1,
+                                                 i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_x_rows) + l_n + (l_m*i_conv_desc->ofw_rb),
+                                                 i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_x_rows) + l_n + (l_m*i_conv_desc->ofw_rb) );
+            } else {
+              libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                       i_conv_kernel_config->instruction_set,
+                                                       LIBXSMM_X86_INSTR_VPDPWSSD,
+                                                       1,
+                                                       l_input_reg,
+                                                       LIBXSMM_X86_GP_REG_UNDEF,
+                                                       0,
+                                                       l_disp,
+                                                       i_conv_kernel_config->vector_name,
+                                                       0,
+                                                       i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_x_rows) + l_n + (l_m*i_conv_desc->ofw_rb) );
+            }
+          } else {
+            /* shouldn't happen */
+          }
         } else {
           /* depending on datatype emit the needed FMA(-sequence) */
           if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -1159,7 +1287,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
               l_compute_instr,
               l_input_reg,
               LIBXSMM_X86_GP_REG_UNDEF,
-              LIBXSMM_X86_GP_REG_UNDEF,
+              0,
               l_disp,
               i_conv_kernel_config->vector_name,
               0,
