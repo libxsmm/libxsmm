@@ -1204,6 +1204,42 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_fpadj += 0x96;
           l_fpadj2 += 0x80;
           break;
+        case LIBXSMM_X86_INSTR_VPDPWSSD:
+          if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) &&
+               (i_vec_reg_number_1<=15) && (i_vec_reg_number_2<=15) )
+               l_fpadj2 = -1;
+          else l_fpadj2 = -0x81;
+          l_fpadj = -0x07;
+          l_second += 0x01;
+          l_third += 0x01;
+          break;
+        case LIBXSMM_X86_INSTR_VPDPWSSDS:
+          if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) &&
+               (i_vec_reg_number_1<=15) && (i_vec_reg_number_2<=15) )
+               l_fpadj2 = -1;
+          else l_fpadj2 = -0x81;
+          l_fpadj = -0x06;
+          l_second += 0x01;
+          l_third += 0x01;
+          break;
+        case LIBXSMM_X86_INSTR_VPDPBUSD:
+          if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) &&
+               (i_vec_reg_number_1<=15) && (i_vec_reg_number_2<=15) )
+               l_fpadj2 = -1;
+          else l_fpadj2 = -0x81;
+          l_fpadj = -0x09;
+          l_second += 0x01;
+          l_third += 0x01;
+          break;
+        case LIBXSMM_X86_INSTR_VPDPBUSDS:
+          if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) &&
+               (i_vec_reg_number_1<=15) && (i_vec_reg_number_2<=15) )
+               l_fpadj2 = -1;
+          else l_fpadj2 = -0x81;
+          l_fpadj = -0x08;
+          l_second += 0x01;
+          l_third += 0x01;
+          break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Unknown instruction type: %u\n", i_vec_instr);
           exit(-1);
@@ -1837,6 +1873,47 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           l_fpadj2 -= 0x80;
           l_fpadj  += 0xA5;
           if ( l_broadcast == 1 ) l_sizereg = 4;
+          break;
+       case LIBXSMM_X86_INSTR_VPDPWSSD:
+          l_second += 0x01;
+          l_fpadj  -= 0x07;
+          l_fpadj2 -= 0x80;
+          if ( l_broadcast == 1 ) l_sizereg = 4;
+          if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_RSP ) {
+             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vpdpwssd and idx=rsp?\n");
+             exit(-1);
+             exit(-1);
+          }
+          break;
+        case LIBXSMM_X86_INSTR_VPDPWSSDS:
+          l_second += 0x01;
+          l_fpadj  -= 0x06;
+          l_fpadj2 -= 0x80;
+          if ( l_broadcast == 1 ) l_sizereg = 4;
+          if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_RSP ) {
+             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vpdpwssds and idx=rsp?\n");
+             exit(-1);
+          }
+          break;
+        case LIBXSMM_X86_INSTR_VPDPBUSD:
+          l_second += 0x01;
+          l_fpadj  -= 0x09;
+          l_fpadj2 -= 0x80;
+          if ( l_broadcast == 1 ) l_sizereg = 4;
+          if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_RSP ) {
+             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vpdpbusd and idx=rsp?\n");
+             exit(-1);
+          }
+          break;
+        case LIBXSMM_X86_INSTR_VPDPBUSDS:
+          l_second += 0x01;
+          l_fpadj  -= 0x08;
+          l_fpadj2 -= 0x80;
+          if ( l_broadcast == 1 ) l_sizereg = 4;
+          if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_RSP ) {
+             fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vpdpbusds and idx=rsp?\n");
+             exit(-1);
+          }
           break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_mem: Unknown instruction type: %u\n", i_vec_instr);

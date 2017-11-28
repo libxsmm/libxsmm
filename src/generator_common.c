@@ -446,6 +446,19 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_VP4DPWSSDS:
       libxsmm_strncpy(o_instr_name, "vp4dpwssds", i_instr_name_max_length, 15 );
       break;
+    /* AVX512, VNNI */
+    case LIBXSMM_X86_INSTR_VPDPWSSD:
+      libxsmm_strncpy(o_instr_name, "vpdpwssd", i_instr_name_max_length, 8 );
+      break;
+    case LIBXSMM_X86_INSTR_VPDPWSSDS:
+      libxsmm_strncpy(o_instr_name, "vpdpwssds", i_instr_name_max_length, 9 );
+      break;
+    case LIBXSMM_X86_INSTR_VPDPBUSD:
+      libxsmm_strncpy(o_instr_name, "vpdpbusd", i_instr_name_max_length, 8 );
+      break;
+    case LIBXSMM_X86_INSTR_VPDPBUSDS:
+      libxsmm_strncpy(o_instr_name, "vpdpbusds", i_instr_name_max_length, 9 );
+      break;
     /* GP instructions */
     case LIBXSMM_X86_INSTR_ADDQ:
       libxsmm_strncpy(o_instr_name, "addq", i_instr_name_max_length, 4 );
