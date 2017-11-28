@@ -56,13 +56,13 @@ void* malloc_offsite(size_t size);
 
 int main(int argc, char* argv[])
 {
-  const int ncalls = 100000;
+  const int ncalls = 1000000;
 #if defined(_OPENMP)
   const int max_nthreads = omp_get_max_threads();
 #else
   const int max_nthreads = 1;
 #endif
-  const int ncycles = LIBXSMM_MAX(1 < argc ? atoi(argv[1]) : ncalls, 1);
+  const int ncycles = LIBXSMM_MAX(1 < argc ? atoi(argv[1]) : 100, 1);
   const int max_nallocs = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 4, 1, MAX_MALLOC_N);
   const int nthreads = LIBXSMM_CLMP(3 < argc ? atoi(argv[3]) : 1, 1, max_nthreads);
   unsigned int nallocs = 0, nerrors = 0;
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
       const double alloc_freq = 1E-3 * nallocs / dalloc;
       const double empty_freq = 1E-3 * ncalls / dcalls;
       fprintf(stdout, "\tallocation+free calls/s: %.1f kHz\n", alloc_freq);
-      fprintf(stdout, "\tempty calls/s: %.1f kHz\n", empty_freq);
+      fprintf(stdout, "\tempty calls/s: %.1f MHz\n", 1E-3 * empty_freq);
       fprintf(stdout, "\toverhead: %.1fx\n", empty_freq / alloc_freq);
     }
 
