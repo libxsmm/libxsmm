@@ -188,10 +188,10 @@ int main(int argc, char* argv[])
                &beta, c + i * csize, &ldc);
           }
         }
-        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-        const double duration = libxsmm_timer_duration(start, end);
-        if (0 < duration && 0 != x) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / x);
+        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const double duration = libxsmm_timer_duration(0, ncycles);
+        if (0 < duration && 0 != ncycles) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize_batched / (duration * (1 << 30)));
         }
@@ -207,10 +207,10 @@ int main(int argc, char* argv[])
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
              &beta, &c_array[0], &ldc, &group_count, &s);
         }
-        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-        const double duration = libxsmm_timer_duration(start, end);
-        if (0 < duration && 0 != x) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / x);
+        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const double duration = libxsmm_timer_duration(0, ncycles);
+        if (0 < duration && 0 != ncycles) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize_batched / (duration * (1 << 30)));
         }
@@ -242,10 +242,10 @@ int main(int argc, char* argv[])
                &beta, c + i * csize, &ldc);
           }
         }
-        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-        const double duration = libxsmm_timer_duration(start, end);
-        if (0 < duration && 0 != x) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / x);
+        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const double duration = libxsmm_timer_duration(0, ncycles);
+        if (0 < duration && 0 != ncycles) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
@@ -262,10 +262,10 @@ int main(int argc, char* argv[])
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
             &beta, &c_array[0], &ldc, &group_count, &s);
         }
-        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-        const double duration = libxsmm_timer_duration(start, end);
-        if (0 < duration && 0 != x) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / x);
+        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const double duration = libxsmm_timer_duration(0, ncycles);
+        if (0 < duration && 0 != ncycles) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
@@ -286,10 +286,10 @@ int main(int argc, char* argv[])
                &beta, c + i * csize, &ldc);
           }
         }
-        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-        const double duration = libxsmm_timer_duration(start, end);
-        if (0 < duration && 0 != x) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / x);
+        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const double duration = libxsmm_timer_duration(0, ncycles);
+        if (0 < duration && 0 != ncycles) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
@@ -306,10 +306,10 @@ int main(int argc, char* argv[])
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
             &beta, &c_array[0], &ldc, &group_count, &s);
         }
-        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-        const double duration = libxsmm_timer_duration(start, end);
-        if (0 < duration && 0 != x) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / x);
+        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const double duration = libxsmm_timer_duration(0, ncycles);
+        if (0 < duration && 0 != ncycles) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
@@ -335,10 +335,10 @@ int main(int argc, char* argv[])
                &beta, c + j, &ldc);
           }
         }
-        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-        const double duration = libxsmm_timer_duration(start, end);
-        if (0 < duration && 0 != x) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / x);
+        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const double duration = libxsmm_timer_duration(0, ncycles);
+        if (0 < duration && 0 != ncycles) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
@@ -365,10 +365,10 @@ int main(int argc, char* argv[])
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
             &beta, &c_array[0], &ldc, &group_count, &s);
         }
-        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-        const double duration = libxsmm_timer_duration(start, end);
-        if (0 < duration && 0 != x) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / x);
+        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const double duration = libxsmm_timer_duration(0, ncycles);
+        if (0 < duration && 0 != ncycles) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
@@ -394,10 +394,10 @@ int main(int argc, char* argv[])
                &beta, c + j, &ldc);
           }
         }
-        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-        const double duration = libxsmm_timer_duration(start, end);
-        if (0 < duration && 0 != x) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / x);
+        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const double duration = libxsmm_timer_duration(0, ncycles);
+        if (0 < duration && 0 != ncycles) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
@@ -423,10 +423,10 @@ int main(int argc, char* argv[])
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
             &beta, &c_array[0], &ldc, &group_count, &s);
         }
-        const unsigned long long end = libxsmm_timer_tick(), x = std::max(end, start) - start;
-        const double duration = libxsmm_timer_duration(start, end);
-        if (0 < duration && 0 != x) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / x);
+        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const double duration = libxsmm_timer_duration(0, ncycles);
+        if (0 < duration && 0 != ncycles) {
+          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
