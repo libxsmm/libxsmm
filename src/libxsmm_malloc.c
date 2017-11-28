@@ -614,6 +614,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
             : 0;
         }
 #else /* !defined(_WIN32) */
+# if defined(MAP_HUGETLB)
+        static int hugefail = 0;
+# endif
         int xflags = 0
 # if defined(MAP_NORESERVE)
           | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? MAP_NORESERVE : 0)
@@ -622,7 +625,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
           | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? MAP_32BIT : 0)
 # endif
 # if defined(MAP_HUGETLB) /* may fail depending on system settings */
-          | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? 0 : MAP_HUGETLB)
+          | (((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size || 0 != hugefail) ? 0 : MAP_HUGETLB)
 # endif
 # if defined(MAP_UNINITIALIZED) /* unlikely to be available */
           | MAP_UNINITIALIZED
@@ -691,9 +694,15 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
         }
         if (alloc_failed != buffer) {
           assert(0 != buffer);
-          flags |= LIBXSMM_MALLOC_FLAG_MMAP; /* select the corresponding deallocation */
+          flags |= LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
         }
         else {
+# if defined(MAP_HUGETLB) /* no further attempts to rely on huge pages */
+          if (0 != (xflags & MAP_HUGETLB)) {
+            flags &= ~LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
+            hugefail = 1;
+          }
+# endif
           if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) { /* fall-back allocation */
             buffer = 0 != malloc_fn.function
               ? (0 == context ? malloc_fn.function(alloc_size) : malloc_fn.ctx_form(context, alloc_size))
@@ -741,7 +750,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM ERROR: memory allocation error for size %llu with flags=%i!\n",
+          fprintf(stderr, "LIBXSMM ERROR: memory allocation error for size %llu with flag=%i!\n",
             (unsigned long long)alloc_size, flags);
         }
         result = EXIT_FAILURE;
