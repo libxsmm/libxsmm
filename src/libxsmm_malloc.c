@@ -1043,10 +1043,9 @@ LIBXSMM_API_INLINE size_t internal_get_scratch_size(const internal_malloc_pool_t
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
   assert(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
   for (i = 1; i < libxsmm_scratch_pools; ++i) {
-    pool = pools + i;
-    if (pool != exclude && (LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pool->instance.site) {
-      info = internal_malloc_info(pool->instance.buffer);
-      if (0 != info) result += info->size;
+    pool = pools + i; info = internal_malloc_info(pool->instance.buffer);
+    if (0 != info && pool != exclude && (LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pool->instance.site) {
+      result += info->size;
     }
   }
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
