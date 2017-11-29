@@ -296,8 +296,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
 
     /* Ditto for ofms in BWD  */
+#if 0
     if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) ) {
-      if ( ((handle->ofmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*512) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+      if ( ((handle->ofmblock*handle->)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*512) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 512;
       } else if ( ((handle->ofmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*256) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 256;
@@ -321,13 +322,40 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     } else {
       handle->blocksofm_blocking = 1;
     }
+#else
+    if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) ) {
+      if ( ((handle->ofmblock)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*512) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+        handle->blocksofm_blocking = 512;
+      } else if ( ((handle->ofmblock)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*256) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+        handle->blocksofm_blocking = 256;
+      } else if ( ((handle->ofmblock)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*128) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+        handle->blocksofm_blocking = 128;
+      } else if ( ((handle->ofmblock)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*64) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+        handle->blocksofm_blocking = 64;
+      } else if ( ((handle->ofmblock)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*32) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+        handle->blocksofm_blocking = 32;
+      } else if ( ((handle->ofmblock)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*16) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+        handle->blocksofm_blocking = 16;
+      } else if ( ((handle->ofmblock)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*8) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+        handle->blocksofm_blocking = 8;
+      } else if ( ((handle->ofmblock)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*4) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
+        handle->blocksofm_blocking = 4;
+      } else if ( ((handle->ofmblock)%16  == 0) && (handle->desc.K%(handle->ofmblock*2) == 0) && (handle->desc.R == 1) && (handle->desc.S == 1) ) {
+        handle->blocksofm_blocking = 2;
+      } else {
+        handle->blocksofm_blocking = 1;
+      }
+    } else {
+      handle->blocksofm_blocking = 1;
+    }
+#endif
 
     if ( (handle->desc.C == 256 && handle->desc.K == 1024) || (handle->desc.C == 512 && handle->desc.K == 2048) ||  (handle->desc.C == 1024 && handle->desc.K == 2048) ) {
       handle->blocksofm_blocking = 8;
     }
 
     if (handle->use_lp_kernel == 1) {
-      if (handle->blocksofm_blocking * handle->ofmblock * handle->fm_lp_block > 256) {
+      if (handle->blocksofm_blocking * handle->ofmblock > 256) {
         handle->blocksofm_blocking = 8;
         while ( handle->desc.K%(handle->blocksofm_blocking * handle->ofmblock * handle->fm_lp_block) != 0  ) {
           handle->blocksofm_blocking--;
@@ -336,10 +364,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     } 
 
     /* Let's calculate how many blocks we need */
-    handle->blocksifm = handle->desc.C / handle->ifmblock;
-    handle->blocksofm = handle->desc.K / handle->ofmblock;
-    handle->blocksifm_lp = handle->desc.C / (handle->ifmblock * handle->fm_lp_block);
-    handle->blocksofm_lp = handle->desc.K / (handle->ofmblock * handle->fm_lp_block);
+    handle->blocksifm = handle->desc.C / 16;
+    handle->blocksofm = handle->desc.K / 16;
+    handle->blocksifm_lp = handle->desc.C / 16;
+    handle->blocksofm_lp = handle->desc.K / 16;
 
     /* Logic for L2 tiling  */
     unsigned int input_block_size = 28 * handle->blocksifm_blocking * 64;
@@ -397,7 +425,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
 
     if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) 
-        && (handle->desc.K == handle->blocksofm_blocking*handle->ofmblock*handle->fm_lp_block) 
+        && (handle->desc.K == handle->blocksofm_blocking*handle->ofmblock) 
         && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 || handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) ) {
       handle->use_nts_bwd = 1;
     } else {
@@ -922,13 +950,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         fwd_equivalent_descriptor.kh = handle->desc.R;
         fwd_equivalent_descriptor.kw = handle->desc.S;
         fwd_equivalent_descriptor.unroll_kw = 1;
-        fwd_equivalent_descriptor.unroll_kh = 0;
+        fwd_equivalent_descriptor.unroll_kh = 1;
         fwd_equivalent_descriptor.stride_h = 1;
         fwd_equivalent_descriptor.stride_w = 1;
         fwd_equivalent_descriptor.blocks_ofm = handle->blocksifm;
-        fwd_equivalent_descriptor.blocks_ifm = handle->blocksofm_lp;
-        fwd_equivalent_descriptor.ofm_block = handle->ifmblock;
-        fwd_equivalent_descriptor.ifm_block = handle->ofmblock;
+        fwd_equivalent_descriptor.blocks_ifm = handle->blocksofm;
+        fwd_equivalent_descriptor.ofm_block = handle->ofmblock;
+        fwd_equivalent_descriptor.ifm_block = handle->ifmblock;
         fwd_equivalent_descriptor.ofh_padded = handle->ifhp;
         fwd_equivalent_descriptor.ofw_padded = handle->ifwp;
         fwd_equivalent_descriptor.ofh_rb = handle->bwd_ofh_rb;
@@ -1221,8 +1249,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               mirror_handle->blocksifm_lp = handle->blocksofm_lp;        
               mirror_handle->ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.S) / handle->desc.v + 1;
               mirror_handle->ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.R) / handle->desc.u + 1;
-              mirror_handle->ifmblock = handle->ofmblock;
-              mirror_handle->ofmblock = handle->ifmblock;
+              mirror_handle->ifmblock = handle->ifmblock;
+              mirror_handle->ofmblock = handle->ifmblock*handle->fm_lp_block;
               mirror_handle->compute_fwd_indices_ptrs =  handle->compute_bwd_indices_ptrs;
               mirror_handle->n_entries_fwd = handle->n_entries_bwd;
               mirror_handle->kernel_fwd_variant_ptrs = handle->kernel_bwd_variant_ptrs;

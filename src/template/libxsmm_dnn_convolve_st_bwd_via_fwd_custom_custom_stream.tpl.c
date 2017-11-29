@@ -37,18 +37,19 @@ const int ltid = tid-start_thread;
 
 int BLOCKSIFM = handle->blocksifm_lp;
 int BLOCKSOFM = handle->blocksofm_lp;
-const int oKB = handle->desc.K/32;
-const int iCB = handle->desc.C/32;
+int oKB = handle->desc.K/16;
+int iCB = handle->desc.C/16;
 
 /* number of tasks for transpose that could be run in parallel */
 int transpose_work;
 if (handle->use_lp_kernel == 0) {
   transpose_work = BLOCKSOFM * (BLOCKSIFM * handle->fm_lp_block);
 } else {
-#if 0
+#if 1
   transpose_work = handle->desc.C * handle->desc.K;
-#endif
+#else
   transpose_work = oKB * iCB;
+#endif
 }
 
 /* compute chunck size */
@@ -67,7 +68,7 @@ element_output_type *prefetch_ptr;
 /* Padding related variables */
 const int padded_h = handle->ofhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ofwp + 2 * handle->desc.pad_w;
-LIBXSMM_VLA_DECL(5, element_output_type, output_buffer, ((element_output_type*)handle->scratch5) + ltid * BLOCKSOFM * padded_h * padded_w * handle->ofmblock * handle->fm_lp_block, padded_h, padded_w, handle->ofmblock, handle->fm_lp_block);
+LIBXSMM_VLA_DECL(5, element_output_type, output_buffer, ((element_output_type*)handle->scratch5) + ltid * BLOCKSOFM * padded_h * padded_w * handle->ofmblock, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
 
 libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
 libxsmm_convfunction kernel_bwd = (libxsmm_convfunction)handle->code_bwd[4].xconv.sconv;
@@ -82,7 +83,7 @@ char *variant = handle->kernel_bwd_variant_ptrs[ltid];
 element_input_type* del_in = 0;
 /* select pointer based on precision */
 if (handle->datatype_in != handle->datatype_out) {
-  del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock);
+  del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock*handle->fm_lp_block);
 } else {
   del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock); 
 }
@@ -91,6 +92,7 @@ float scale_factor __attribute__((aligned(64)));
 if (handle->use_lp_kernel == 1) {
   scale_factor = (float) pow(2.0, -1.0*((double)(handle->reg_filter->scf + handle->grad_output->scf)));
 }
+scale_factor = 1.0;
 
 float *max_vals  __attribute__((aligned(64)));
 __m512 max_abs;
@@ -102,14 +104,14 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 }
 
 { /* open new scope for additional variable declarations (C89) */
-  LIBXSMM_VLA_DECL(5, element_input_type, del_input, del_in, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  LIBXSMM_VLA_DECL(5, element_input_type, del_input, del_in, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ofmblock);
   /* Ouput tensor declaration */
   element_output_type *const out = ((element_output_type*)handle->grad_output->data) /* + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block*/;
-  LIBXSMM_VLA_DECL(6, element_output_type, del_out, out, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
+  LIBXSMM_VLA_DECL(6, element_output_type, del_out, out, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ifmblock, handle->fm_lp_block);
 
   /* Weight and transpose_weight tensor declaration */
   LIBXSMM_VLA_DECL(7, element_filter_type, wt, (element_filter_type*)handle->reg_filter->data, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
-  LIBXSMM_VLA_DECL(7, element_filter_type, tr_wt2, (element_filter_type*)handle->scratch1, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
+  LIBXSMM_VLA_DECL(7, element_filter_type, tr_wt2, (element_filter_type*)handle->scratch1, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
 
   /* Auxiliary integer variables   */
   int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i,  n_convs, conv_i, ifm1, img = 0, ifm2, ij, ii, ifm1lpblock ;
@@ -129,19 +131,19 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   /* Initialize base pointers */
   if ( handle->padding_flag == 1  ) {
     input_base = &LIBXSMM_VLA_ACCESS(5, output_buffer, 0, 0, 0, 0, 0,
-        padded_h, padded_w, handle->ofmblock, handle->fm_lp_block);
+        padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
     /* we need to set the scratch to zero */
     /* @TODO: we need to find a better/faster code here, e.g. just setting the rim */
-    memset( input_base, 0, BLOCKSOFM * padded_h * padded_w * handle->ofmblock * handle->fm_lp_block * sizeof(element_output_type) );
+    memset( input_base, 0, BLOCKSOFM * padded_h * padded_w * handle->ofmblock * sizeof(element_output_type) );
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(6, del_out, 0, 0, 0, 0, 0, 0,
-        BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
+        BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ifmblock, handle->fm_lp_block);
   }
 
   output_base = &LIBXSMM_VLA_ACCESS(5, del_input, 0, 0, 0, 0, 0,
-      handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+      handle->blocksifm, handle->ifhp, handle->ifwp, handle->ofmblock);
   weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt2, 0, 0, 0, 0, 0, 0, 0,
-      BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
+      BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
 
   instr = handle->n_entries_bwd[ltid];
   n_segments = handle->n_bwd_code_segments[ltid];
@@ -197,7 +199,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           }
         }  
       }
-#endif
+#elif 0
       int icb, okb, kkb, ocbb, ikbb;
       element_filter_type  * __restrict o_b;
       const element_filter_type *__restrict i_b;
@@ -231,12 +233,38 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           }
         }
       }
+#else
+      int k, c, r, s;
+      for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+        k = ifm1ofm1 / handle->desc.C;
+        c = ifm1ofm1 % handle->desc.C;
+        for ( r = 0; r < handle->desc.R; r++ ) {
+          for ( s = 0; s < handle->desc.S; s++ ) {
+            int i_c1, i_c2, i_c3, i_k1, i_k2;
+            int o_c1, o_c2, o_k1, o_k2, o_k3;
+            o_k1 = k/16;
+            o_k2 = (k%16)/2;
+            o_k3 = (k%16)%2;
+            o_c1 = c/16;
+            o_c2 = c%16;
+
+            i_c1 = c/16;
+            i_c2 = (c%16)/2;
+            i_c3 = (c%16)%2;
+            i_k1 = k/16;
+            i_k2 = k%16;
+
+            LIBXSMM_VLA_ACCESS(7, tr_wt2, o_c1, o_k1, handle->desc.R-1-r , handle->desc.S-1-s, o_k2, o_c2, o_k3, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block) =
+              LIBXSMM_VLA_ACCESS(7, wt, i_k1, i_c1, r, s, i_c2, i_k2, i_c3, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+          }
+        }  
+      }
+#endif
     }
     weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt2, 0, 0, 0, 0, 0, 0, 0,
-        BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block);
+        BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
     libxsmm_barrier_wait(handle->barrier, ltid);
   }
-
   pool_index = 0;
   i = 0;
 
