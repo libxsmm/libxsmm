@@ -881,12 +881,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         if (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) {
           matcopy_descriptor.n = handle->ifhp;
           matcopyback_descriptor.n = handle->ifhp;
-          matcopy_descriptor.m = handle->ifwp * handle->ifmblock;
-          matcopyback_descriptor.m = handle->ifwp * handle->ifmblock;
-          matcopy_descriptor.ldi = handle->ifwp * handle->ifmblock;
-          matcopyback_descriptor.ldi = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock;
-          matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock;
-          matcopyback_descriptor.ldo = handle->ifwp * handle->ifmblock;
+          matcopy_descriptor.m = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
+          matcopyback_descriptor.m = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.ldi = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
+          matcopyback_descriptor.ldi = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock * handle->fm_lp_block;
+          matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock * handle->fm_lp_block;
+          matcopyback_descriptor.ldo = handle->ifwp * handle->ifmblock * handle->fm_lp_block;
         } else { /* Assumes NHWC format */
           matcopy_descriptor.n = 1;
           matcopy_descriptor.m =  handle->ifmblock;
@@ -984,9 +984,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         fwd_equivalent_descriptor.perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0 ;
         if (handle->padding_flag == 1) {
           matcopy_descriptor.n = handle->ofhp;
-          matcopy_descriptor.m = handle->ofwp * handle->ofmblock * handle->fm_lp_block;
-          matcopy_descriptor.ldi = handle->ofwp * handle->ofmblock * handle->fm_lp_block;
-          matcopy_descriptor.ldo = (handle->ofwp + 2*handle->desc.pad_w) * handle->ofmblock * handle->fm_lp_block;
+          matcopy_descriptor.m = handle->ofwp * handle->ofmblock;
+          matcopy_descriptor.ldi = handle->ofwp * handle->ofmblock;
+          matcopy_descriptor.ldo = (handle->ofwp + 2*handle->desc.pad_w) * handle->ofmblock;
           matcopy_descriptor.prefetch = 1;
           matcopy_descriptor.unroll_level = 2;
           matcopy_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype_in);
