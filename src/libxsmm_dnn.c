@@ -704,7 +704,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
                 layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
                 layout->dim_type[5] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_size[0] = handle->ofmblock;
-                layout->dim_size[1] = handle->ifmblock;
+                layout->dim_size[1] = handle->ofmblock;
                 layout->dim_size[2] = handle->desc.S;
                 layout->dim_size[3] = handle->desc.R;
                 layout->dim_size[4] = handle->blocksifm;

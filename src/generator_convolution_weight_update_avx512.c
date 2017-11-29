@@ -114,7 +114,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
 
   /* calculate leading dimension depending on format */
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
-    l_conv_kernel_config.l_ld_ifm_act = i_conv_desc->ifm_block;
+    l_conv_kernel_config.l_ld_ifm_act = i_conv_desc->ofm_block;
     l_conv_kernel_config.l_ld_ofm_act = i_conv_desc->ofm_block;
   }
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0 ) {
@@ -989,7 +989,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
   unsigned int l_disp;
   unsigned int l_w;
   unsigned int output_counter = 0;
-  unsigned int unroll_factor = i_conv_desc->ifm_block;
+  unsigned int unroll_factor = i_conv_desc->ofm_block;
   unsigned int input_pf_register;
   unsigned int output_pf_register;
   unsigned int input_pf_init_offset;
