@@ -141,7 +141,7 @@ typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_NO_AFFINITY)
 # define LIBXSMM_MALLOC_NO_AFFINITY ((unsigned int)-1)
 #endif
-#if !defined(LIBXSMM_MALLOC_SCRATCH_JOIN)
+#if !defined(LIBXSMM_MALLOC_SCRATCH_JOIN) && 0
 # define LIBXSMM_MALLOC_SCRATCH_JOIN
 #endif
 /* map memory for scratch buffers */
