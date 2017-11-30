@@ -1,29 +1,3 @@
-#define TRANSPOSE_W_FULL_PAIR_OBS(img, ofm1, ij, ii, half_i) \
-      even_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ifmblock, handle->fm_lp_block); \
-      odd_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii+1, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ifmblock, handle->fm_lp_block); \
-      even_pixel = _mm256_loadu_si256((const union __m256i *) even_addr); \
-      odd_pixel = _mm256_loadu_si256((const union __m256i *) odd_addr); \
-      compressed_lo  = _mm256_unpacklo_epi16(even_pixel_lo, odd_pixel_lo); \
-      compressed_hi  = _mm256_unpackhi_epi16(even_pixel_lo, odd_pixel_lo); \
-      compressed_lo_store = _mm256_insertf128_si256(compressed_lo_store, _mm256_extractf128_si256(compressed_lo,0), 0); \
-      compressed_lo_store = _mm256_insertf128_si256(compressed_lo_store, _mm256_extractf128_si256(compressed_hi,0), 1); \
-      compressed_hi_store = _mm256_insertf128_si256(compressed_hi_store, _mm256_extractf128_si256(compressed_lo,1), 0); \
-      compressed_hi_store = _mm256_insertf128_si256(compressed_hi_store, _mm256_extractf128_si256(compressed_hi,1), 1); \
-      dst_lo = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, 2*ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      dst_hi = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, 2*ofm1, ij, half_i, 8, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      _mm256_storeu_si256((union __m256i *) dst_lo, compressed_lo_store); \
-      _mm256_storeu_si256((union __m256i *) dst_hi, compressed_hi_store); \
-      compressed_lo  = _mm256_unpacklo_epi16(even_pixel_hi, odd_pixel_hi); \
-      compressed_hi  = _mm256_unpackhi_epi16(even_pixel_hi, odd_pixel_hi); \
-      compressed_lo_store = _mm256_insertf128_si256(compressed_lo_store, _mm256_extractf128_si256(compressed_lo,0), 0); \
-      compressed_lo_store = _mm256_insertf128_si256(compressed_lo_store, _mm256_extractf128_si256(compressed_hi,0), 1); \
-      compressed_hi_store = _mm256_insertf128_si256(compressed_hi_store, _mm256_extractf128_si256(compressed_lo,1), 0); \
-      compressed_hi_store = _mm256_insertf128_si256(compressed_hi_store, _mm256_extractf128_si256(compressed_hi,1), 1); \
-      dst_lo = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, 2*ofm1+1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      dst_hi = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, 2*ofm1+1, ij, half_i, 8, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      _mm256_storeu_si256((union __m256i *) dst_lo, compressed_lo_store); \
-      _mm256_storeu_si256((union __m256i *) dst_hi, compressed_hi_store);
-
 #define TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i) \
       pair_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ifmblock, handle->fm_lp_block); \
       pair_pixels = _mm512_loadu_si512(pair_addr); \
@@ -58,36 +32,6 @@
       compact = _mm512_inserti32x4 (compact, part3, 3); \
       pair_addr = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
       _mm512_storeu_si512(pair_addr, compact);
-
-
-#define TRANSPOSE_W_HALF_PAIR_OBS(img, ofm1, ij, ii, half_i) \
-      even_addr_lo = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block); \
-      even_addr_hi = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 8, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block); \
-      even_pixel_lo = _mm256_loadu_si256((const union __m256i *) even_addr_lo); \
-      even_pixel_hi = _mm256_loadu_si256((const union __m256i *) even_addr_hi); \
-      odd_pixel_lo = _mm256_xor_si256(odd_pixel_lo,odd_pixel_lo); \
-      odd_pixel_hi = odd_pixel_lo; \
-      compressed_lo  = _mm256_unpacklo_epi16(even_pixel_lo, odd_pixel_lo); \
-      compressed_hi  = _mm256_unpackhi_epi16(even_pixel_lo, odd_pixel_lo); \
-      compressed_lo_store = _mm256_insertf128_si256(compressed_lo_store, _mm256_extractf128_si256(compressed_lo,0), 0); \
-      compressed_lo_store = _mm256_insertf128_si256(compressed_lo_store, _mm256_extractf128_si256(compressed_hi,0), 1); \
-      compressed_hi_store = _mm256_insertf128_si256(compressed_hi_store, _mm256_extractf128_si256(compressed_lo,1), 0); \
-      compressed_hi_store = _mm256_insertf128_si256(compressed_hi_store, _mm256_extractf128_si256(compressed_hi,1), 1); \
-      dst_lo = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, 2*ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      dst_hi = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, 2*ofm1, ij, half_i, 8, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      _mm256_storeu_si256((union __m256i *) dst_lo, compressed_lo_store); \
-      _mm256_storeu_si256((union __m256i *) dst_hi, compressed_hi_store); \
-      compressed_lo  = _mm256_unpacklo_epi16(even_pixel_hi, odd_pixel_hi); \
-      compressed_hi  = _mm256_unpackhi_epi16(even_pixel_hi, odd_pixel_hi); \
-      compressed_lo_store = _mm256_insertf128_si256(compressed_lo_store, _mm256_extractf128_si256(compressed_lo,0), 0); \
-      compressed_lo_store = _mm256_insertf128_si256(compressed_lo_store, _mm256_extractf128_si256(compressed_hi,0), 1); \
-      compressed_hi_store = _mm256_insertf128_si256(compressed_hi_store, _mm256_extractf128_si256(compressed_lo,1), 0); \
-      compressed_hi_store = _mm256_insertf128_si256(compressed_hi_store, _mm256_extractf128_si256(compressed_hi,1), 1); \
-      dst_lo = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, 2*ofm1+1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      dst_hi = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, 2*ofm1+1, ij, half_i, 8, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      _mm256_storeu_si256((union __m256i *) dst_lo, compressed_lo_store); \
-      _mm256_storeu_si256((union __m256i *) dst_hi, compressed_hi_store);
-
 
 element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi, *pair_addr;
 element_output_type *dst_lo, *dst_hi;

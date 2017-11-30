@@ -137,7 +137,7 @@ if (handle->padding_flag == 1) {
       }
     }
   }  
-  #include "output_lp_transposer.tpl.c"
+#include "output_lp_transposer.tpl.c"
 } else {
   if (handle->resize_input == 0) {
     lp_transpose_input_and_output(ltid, handle);
