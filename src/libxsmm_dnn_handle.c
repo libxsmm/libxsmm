@@ -1353,7 +1353,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           descriptor.ifw_padded = handle->ifwp;
         }
         descriptor.ofm_block = handle->ofmblock;
-        descriptor.ifm_block = handle->ifmblock;        
+        descriptor.ifm_block = handle->ifmblock;
+        descriptor.ofm_block_lp = handle->ofmblock_lp;
+        descriptor.ifm_block_hp = handle->ifmblock_hp;  
+        descriptor.fm_lp_block = handle->fm_lp_block;     
         descriptor.kh = handle->desc.R;
         descriptor.kw = handle->desc.S;
         descriptor.unroll_kw = (descriptor.ifm_block == 1) ? 1 : 0;
