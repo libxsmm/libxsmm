@@ -364,10 +364,17 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     } 
 
     /* Let's calculate how many blocks we need */
-    handle->blocksifm = handle->desc.C / 16;
-    handle->blocksofm = handle->desc.K / 16;
-    handle->blocksifm_lp = handle->desc.C / 16;
-    handle->blocksofm_lp = handle->desc.K / 16;
+    if (handle->use_lp_kernel == 1) {
+      handle->blocksifm = handle->desc.C / 16;
+      handle->blocksofm = handle->desc.K / 16;
+      handle->blocksifm_lp = handle->desc.C / 16;
+      handle->blocksofm_lp = handle->desc.K / 16;
+    } else {
+      handle->blocksifm = handle->desc.C / handle->ifmblock;
+      handle->blocksofm = handle->desc.K / handle->ofmblock;
+      handle->blocksifm_lp = handle->blocksifm;
+      handle->blocksofm_lp = handle->blocksofm;
+    }
 
     /* Logic for L2 tiling  */
     unsigned int input_block_size = 28 * handle->blocksifm_blocking * 64;
