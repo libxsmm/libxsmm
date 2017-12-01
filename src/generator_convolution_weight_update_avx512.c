@@ -123,10 +123,10 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
   }
 
   /* check if we have full vectors */
-  /*if ((i_conv_desc->ofm_block*i_conv_desc->fm_lp_block) % l_conv_kernel_config.vector_length_out != 0 ) {
+  if (i_conv_desc->ofm_block % l_conv_kernel_config.vector_length_out != 0 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
     return;
-  }*/
+  }
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );

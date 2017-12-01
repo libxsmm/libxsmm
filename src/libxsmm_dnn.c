@@ -598,7 +598,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
                 layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
                 layout->dim_type[5] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
                 layout->dim_size[0] = handle->fm_lp_block;
-                layout->dim_size[1] = handle->ifmblock;
+                layout->dim_size[1] = handle->ofmblock_lp;
                 layout->dim_size[2] = handle->ofwp;
                 layout->dim_size[3] = handle->ofhp;
                 layout->dim_size[4] = handle->blocksofm;
@@ -622,7 +622,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
                 layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
                 layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
                 layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-                layout->dim_size[0] = handle->ofmblock;
+                layout->dim_size[0] = handle->ifmblock_hp;
                 layout->dim_size[1] = handle->ifwp;
                 layout->dim_size[2] = handle->ifhp;
                 layout->dim_size[3] = handle->blocksifm;
