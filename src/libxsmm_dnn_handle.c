@@ -213,11 +213,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->ifmblock = (handle->desc.C >=16) ? 16 : handle->desc.C;
       handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K;
       handle->fm_lp_block = 1;
+      handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
+      handle->ofmblock_lp = handle->ofmblock / handle->fm_lp_block;
     }
     else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
       handle->ifmblock = (handle->desc.C >=16) ? 8 : (handle->desc.C/2);
       handle->ofmblock = (handle->desc.K >=16) ? 16 : (handle->desc.K/2);
       handle->fm_lp_block = 2;
+      handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
+      handle->ofmblock_lp = handle->ofmblock / handle->fm_lp_block;
       if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ) {
         status = LIBXSMM_DNN_WARN_FALLBACK;
         handle->ifmblock = 1;
@@ -365,10 +369,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
     /* Let's calculate how many blocks we need */
     if (handle->use_lp_kernel == 1) {
-      handle->blocksifm = handle->desc.C / 16;
-      handle->blocksofm = handle->desc.K / 16;
-      handle->blocksifm_lp = handle->desc.C / 16;
-      handle->blocksofm_lp = handle->desc.K / 16;
+      handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
+      handle->blocksofm = handle->desc.K / handle->ofmblock;
+      handle->blocksifm_lp = handle->desc.C / handle->ifmblock_hp;
+      handle->blocksofm_lp = handle->desc.K / handle->ofmblock;
     } else {
       handle->blocksifm = handle->desc.C / handle->ifmblock;
       handle->blocksofm = handle->desc.K / handle->ofmblock;
@@ -688,6 +692,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       descriptor.stride_w_store = 1;
       descriptor.ofm_block = handle->ofmblock;
       descriptor.ifm_block = handle->ifmblock;
+      descriptor.ifm_block_hp = handle->ifmblock_hp;
       descriptor.ofh_padded = handle->ofhp;
       descriptor.ofw_padded = handle->ofwp;
       descriptor.ofh_rb = handle->fwd_ofh_rb;
@@ -962,8 +967,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         fwd_equivalent_descriptor.stride_w = 1;
         fwd_equivalent_descriptor.blocks_ofm = handle->blocksifm;
         fwd_equivalent_descriptor.blocks_ifm = handle->blocksofm;
-        fwd_equivalent_descriptor.ofm_block = handle->ofmblock;
-        fwd_equivalent_descriptor.ifm_block = handle->ifmblock;
+        fwd_equivalent_descriptor.ofm_block = handle->ifmblock_hp;
+        fwd_equivalent_descriptor.ifm_block = handle->ofmblock_lp;
         fwd_equivalent_descriptor.ofh_padded = handle->ifhp;
         fwd_equivalent_descriptor.ofw_padded = handle->ifwp;
         fwd_equivalent_descriptor.ofh_rb = handle->bwd_ofh_rb;
@@ -1256,8 +1261,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               mirror_handle->blocksifm_lp = handle->blocksofm_lp;        
               mirror_handle->ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.S) / handle->desc.v + 1;
               mirror_handle->ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.R) / handle->desc.u + 1;
-              mirror_handle->ifmblock = handle->ifmblock;
-              mirror_handle->ofmblock = handle->ifmblock*handle->fm_lp_block;
+              mirror_handle->ifmblock = handle->ofmblock_lp;
+              mirror_handle->ofmblock = handle->ifmblock_hp;
               mirror_handle->compute_fwd_indices_ptrs =  handle->compute_bwd_indices_ptrs;
               mirror_handle->n_entries_fwd = handle->n_entries_bwd;
               mirror_handle->kernel_fwd_variant_ptrs = handle->kernel_bwd_variant_ptrs;
@@ -1273,9 +1278,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0 )  {
                 matzero_descriptor_overwrite.n = 1;
                 if (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) {
-                  matzero_descriptor_overwrite.m = handle->desc.H*handle->ifwp*handle->ifmblock;
-                  matzero_descriptor_overwrite.ldi = handle->desc.H*handle->ifwp*handle->ifmblock;
-                  matzero_descriptor_overwrite.ldo = handle->desc.H*handle->ifwp*handle->ifmblock;
+                  matzero_descriptor_overwrite.m = handle->desc.H*handle->ifwp*handle->ifmblock_hp;
+                  matzero_descriptor_overwrite.ldi = handle->desc.H*handle->ifwp*handle->ifmblock_hp;
+                  matzero_descriptor_overwrite.ldo = handle->desc.H*handle->ifwp*handle->ifmblock_hp;
                 } else { /* Assumes NHWC format */
                   status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
                 }
@@ -1320,12 +1325,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           matzero_descriptor.n = 1;
           if (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) {
             matcopy_descriptor.n = handle->ifhp;
-            matcopy_descriptor.m = handle->ifwp * handle->ifmblock;
-            matzero_descriptor.m = descriptor.ifh_padded * descriptor.ifw_padded * handle->ifmblock;
-            matcopy_descriptor.ldi = handle->ifwp * handle->ifmblock;
-            matzero_descriptor.ldi = descriptor.ifh_padded * descriptor.ifw_padded * handle->ifmblock;
-            matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock;
-            matzero_descriptor.ldo = descriptor.ifh_padded * descriptor.ifw_padded * handle->ifmblock;
+            matcopy_descriptor.m = handle->ifwp * handle->ifmblock_hp;
+            matzero_descriptor.m = descriptor.ifh_padded * descriptor.ifw_padded * handle->ifmblock_hp;
+            matcopy_descriptor.ldi = handle->ifwp * handle->ifmblock_hp;
+            matzero_descriptor.ldi = descriptor.ifh_padded * descriptor.ifw_padded * handle->ifmblock_hp;
+            matcopy_descriptor.ldo = (handle->ifwp + 2*handle->desc.pad_w) * handle->ifmblock_hp;
+            matzero_descriptor.ldo = descriptor.ifh_padded * descriptor.ifw_padded * handle->ifmblock_hp;
           } else { /* Assumes NHWC format */
             matcopy_descriptor.n = 1;
             matcopy_descriptor.m = handle->ifwp * handle->blocksifm * handle->ifmblock;
@@ -1348,7 +1353,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           descriptor.ifw_padded = handle->ifwp;
         }
         descriptor.ofm_block = handle->ofmblock;
-        descriptor.ifm_block = handle->ifmblock;
+        descriptor.ifm_block = handle->ifmblock;        
         descriptor.kh = handle->desc.R;
         descriptor.kw = handle->desc.S;
         descriptor.unroll_kw = (descriptor.ifm_block == 1) ? 1 : 0;
