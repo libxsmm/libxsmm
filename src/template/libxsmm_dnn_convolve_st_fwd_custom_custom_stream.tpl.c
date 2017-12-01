@@ -101,7 +101,6 @@ float scale_factor __attribute__((aligned(64)));
 if (handle->use_lp_kernel == 1) {
   scale_factor = (float) pow(2.0, -1.0*((double)(handle->reg_filter->scf + handle->reg_input->scf)));
 }
-scale_factor = 1.0;
 
 float *max_vals __attribute__((aligned(64)));
 __m512 max_abs;
