@@ -49,7 +49,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
 
   /* If we have int16 input and KNM arch, we should make the remainder mask "half", since we have only VMOVUPS instruction (i.e. treat the int16 entries in pairs, thus the mask length should be half) */
   if ( (i_micro_kernel_config->vector_length == 32) && (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) ) {
-    l_mask = l_mask/2;
+    l_mask = (1ULL << (remainder/2)) - 1;
   }
 
   /* Move mask to GP register */
