@@ -60,9 +60,9 @@ const int copy_thr_begin = (ltid * copychunksize < copywork) ? (ltid * copychunk
 const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) * copychunksize) : copywork;
 
 /* Pointer related variables for output and weight */
-element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ifmblock * handle->fm_lp_block;
+element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
 LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ifmblock, handle->fm_lp_block);
+LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
 element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->data;
 element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4) + (ltid*LIBXSMM_MIN(handle->block_upd_ofm,BLOCKSOFM)*LIBXSMM_MIN(handle->block_upd_ifm,BLOCKSIFM)*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock*handle->fm_lp_block);
 LIBXSMM_VLA_DECL(2, element_filter_type, per_thread_weight, per_thread_weight_ptr, handle->ofmblock);
@@ -86,9 +86,9 @@ if (handle->resize_input == 1) {
 }
 
 LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-LIBXSMM_VLA_DECL(5, element_input_type, tr_input_padded, (element_input_type*)handle->scratch5, BLOCKSIFM, padded_h, handle->ofmblock, ifwp_extended);
-LIBXSMM_VLA_DECL(5, element_input_type, input_padded, (element_input_type*)handle->scratch5, BLOCKSIFM, padded_h, padded_w, handle->ofmblock);
-LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ofmblock, ifwp_extended);
+LIBXSMM_VLA_DECL(5, element_input_type, tr_input_padded, (element_input_type*)handle->scratch5, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended);
+LIBXSMM_VLA_DECL(5, element_input_type, input_padded, (element_input_type*)handle->scratch5, BLOCKSIFM, padded_h, padded_w, handle->ifmblock_hp);
+LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended);
 
 /* Stream related variables  */
 segment_t *code_stream;
@@ -112,11 +112,11 @@ libxsmm_barrier_init(handle->barrier, ltid);
 
 /* Initialize base pointers */
 if (handle->padding_flag == 1) {
-  input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ofmblock, ifwp_extended);
-  input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ofmblock, ifwp_extended);
-  memset( input_zero, 0, BLOCKSIFM * padded_h * ifwp_extended * handle->ofmblock * sizeof(element_input_type) );
+  input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended);
+  input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended);
+  memset( input_zero, 0, BLOCKSIFM * padded_h * ifwp_extended * handle->ifmblock_hp * sizeof(element_input_type) );
 } else {
-  input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, dst_ifhp, handle->ofmblock, ifwp_extended);
+  input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended);
 }
 
 /* LP transformations */
@@ -130,7 +130,7 @@ if (handle->padding_flag == 1) {
       for (ii = 0; ii < handle->ifwp; ++ii) {
         for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
           for (lp = 0; lp < handle->fm_lp_block; ++lp) {
-            LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij+handle->desc.pad_h, ifm2*handle->fm_lp_block+lp, ii+handle->desc.pad_w, BLOCKSIFM, padded_h, handle->ofmblock, ifwp_extended) =
+            LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij+handle->desc.pad_h, ifm2*handle->fm_lp_block+lp, ii+handle->desc.pad_w, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended) =
               LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
           }
         }
@@ -183,7 +183,7 @@ if (n_segments) {
 
     if (instr == WEIGHT_INIT) {
       offset_w = code_stream[pc].aux_index;
-      for ( j = offset_w; j < offset_w + handle->desc.R*handle->desc.S*handle->ofmblock*handle->ofmblock; j += 16) {
+      for ( j = offset_w; j < offset_w + handle->desc.R*handle->desc.S*handle->ofmblock*handle->ifmblock_hp; j += 16) {
         LIBXSMM_PRAGMA_VALIGNED
           LIBXSMM_PRAGMA_SIMD
           for ( k = 0; k < 16; ++k ) {
@@ -193,10 +193,10 @@ if (n_segments) {
     }
 
     if (instr == WEIGHT_COPY) {
-      offset_w /= handle->desc.R * handle->desc.S * handle->ofmblock * handle->ofmblock;
-      offset_w *= handle->desc.R * handle->desc.S * handle->ofmblock;
+      offset_w /= handle->desc.R * handle->desc.S * handle->ifmblock_hp * handle->ofmblock;
+      offset_w *= handle->desc.R * handle->desc.S * handle->ifmblock_hp;
       offset_s = code_stream[pc].aux_index;
-      for ( j = 0; j < handle->desc.R*handle->desc.S*handle->ofmblock; j++ ) {
+      for ( j = 0; j < handle->desc.R*handle->desc.S*handle->ifmblock_hp; j++ ) {
         LIBXSMM_PRAGMA_NONTEMPORAL
           LIBXSMM_PRAGMA_VALIGNED
           LIBXSMM_PRAGMA_SIMD

@@ -41,7 +41,7 @@ int BLOCKSOFM = handle->blocksofm;
 
 int IFMBLOCK;
 if (handle->use_lp_kernel) {
-  IFMBLOCK=16;   
+  IFMBLOCK = handle->ifmblock_hp;   
 } else {
   IFMBLOCK = handle->ifmblock;
 }

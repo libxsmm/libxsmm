@@ -1,5 +1,5 @@
 #define TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i) \
-      pair_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ifmblock, handle->fm_lp_block); \
+      pair_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); \
       pair_pixels = _mm512_loadu_si512(pair_addr); \
       even_pixel = _mm512_extracti64x4_epi64(pair_pixels, 0); \
       odd_pixel = _mm512_extracti64x4_epi64(pair_pixels, 1); \
@@ -17,7 +17,7 @@
       _mm512_storeu_si512 (pair_addr, compact);
 
 #define TRANSPOSE_W_HALF_PAIR(img, ofm1, ij, ii, half_i) \
-      pair_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ifmblock, handle->fm_lp_block); \
+      pair_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); \
       even_pixel = _mm256_loadu_si256((const union __m256i *) pair_addr); \
       odd_pixel = _mm256_xor_si256(odd_pixel, odd_pixel); \
       compressed_lo  = _mm256_unpacklo_epi16(even_pixel, odd_pixel); \
