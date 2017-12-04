@@ -554,7 +554,7 @@ LIBXSMM_API_INLINE void internal_init(void)
       const char *const env = getenv("LIBXSMM_TRACE");
       init_code = EXIT_SUCCESS;
       if (0 != env && 0 != *env) {
-        char buffer[32];
+        char buffer[32] = { 0 };
         if (1 == sscanf(env, "%32[^,],", buffer)) {
           init_code = (0 <= sscanf(buffer, "%i", &filter_threadid) ? EXIT_SUCCESS : EXIT_FAILURE);
         }
