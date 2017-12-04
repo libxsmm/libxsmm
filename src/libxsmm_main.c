@@ -1059,26 +1059,49 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         }
       }
     } break;
-    case LIBXSMM_BUILD_KIND_SSOA: { /* sparse SOA kernel */
-      assert(0 != request->descriptor.ssoa && 0 != request->descriptor.ssoa->gemm);
-      assert(0 != request->descriptor.ssoa->row_ptr && 0 != request->descriptor.ssoa->column_idx && 0 != request->descriptor.ssoa->values);
+    case LIBXSMM_BUILD_KIND_SRSOA: { /* sparse SOA kernel, CSR format */
+      assert(0 != request->descriptor.srsoa && 0 != request->descriptor.ssoa->gemm);
+      assert(0 != request->descriptor.srsoa->row_ptr && 0 != request->descriptor.srsoa->column_idx && 0 != request->descriptor.srsoa->values);
       /* only floating point */
-      if (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.ssoa->gemm->datatype || LIBXSMM_GEMM_PRECISION_F32 == request->descriptor.ssoa->gemm->datatype) {
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csr_soa_kernel, &generated_code, request->descriptor.ssoa->gemm, target_arch,
-          request->descriptor.ssoa->row_ptr, request->descriptor.ssoa->column_idx, request->descriptor.ssoa->values);
+      if (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.srsoa->gemm->datatype || LIBXSMM_GEMM_PRECISION_F32 == request->descriptor.srsoa->gemm->datatype) {
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csr_soa_kernel, &generated_code, request->descriptor.srsoa->gemm, target_arch,
+          request->descriptor.srsoa->row_ptr, request->descriptor.srsoa->column_idx, request->descriptor.srsoa->values);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.ssoa->gemm->prefetch);
-          const char *const tname = internal_get_typename(request->descriptor.ssoa->gemm->datatype);
+          const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.srsoa->gemm->prefetch);
+          const char *const tname = internal_get_typename(request->descriptor.srsoa->gemm->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_nnz%u.ssoa", target_arch, tname,
-            0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.ssoa->gemm->flags) ? 'n' : 't',
-            0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.ssoa->gemm->flags) ? 'n' : 't',
-            (unsigned int)request->descriptor.ssoa->gemm->m,   (unsigned int)request->descriptor.ssoa->gemm->n,   (unsigned int)request->descriptor.ssoa->gemm->k,
-            (unsigned int)request->descriptor.ssoa->gemm->lda, (unsigned int)request->descriptor.ssoa->gemm->ldb, (unsigned int)request->descriptor.ssoa->gemm->ldc,
-            request->descriptor.ssoa->gemm->alpha, request->descriptor.ssoa->gemm->beta, uid, request->descriptor.ssoa->row_ptr[request->descriptor.ssoa->gemm->m]);
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_nnz%u.srsoa", target_arch, tname,
+            0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.srsoa->gemm->flags) ? 'n' : 't',
+            0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.srsoa->gemm->flags) ? 'n' : 't',
+            (unsigned int)request->descriptor.srsoa->gemm->m,   (unsigned int)request->descriptor.srsoa->gemm->n,   (unsigned int)request->descriptor.srsoa->gemm->k,
+            (unsigned int)request->descriptor.srsoa->gemm->lda, (unsigned int)request->descriptor.srsoa->gemm->ldb, (unsigned int)request->descriptor.srsoa->gemm->ldc,
+            request->descriptor.srsoa->gemm->alpha, request->descriptor.srsoa->gemm->beta, uid, request->descriptor.srsoa->row_ptr[request->descriptor.srsoa->gemm->m]);
+        }
+      }
+    } break;
+    case LIBXSMM_BUILD_KIND_SCSOA: { /* sparse SOA kernel, CSC format */
+      assert(0 != request->descriptor.scsoa && 0 != request->descriptor.scsoa->gemm);
+      assert(0 != request->descriptor.scsoa->row_ptr && 0 != request->descriptor.scsoa->column_idx && 0 != request->descriptor.scsoa->values);
+      /* only floating point */
+      if (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.scsoa->gemm->datatype || LIBXSMM_GEMM_PRECISION_F32 == request->descriptor.scsoa->gemm->datatype) {
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csc_soa_kernel, &generated_code, request->descriptor.scsoa->gemm, target_arch,
+          request->descriptor.scsoa->row_idx, request->descriptor.scsoa->column_ptr, request->descriptor.scsoa->values);
+# if !defined(LIBXSMM_VTUNE)
+        if (0 > libxsmm_verbosity)
+# endif
+        {
+          const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.scsoa->gemm->prefetch);
+          const char *const tname = internal_get_typename(request->descriptor.scsoa->gemm->datatype);
+          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_nnz%u.scsoa", target_arch, tname,
+            0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.scsoa->gemm->flags) ? 'n' : 't',
+            0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.scsoa->gemm->flags) ? 'n' : 't',
+            (unsigned int)request->descriptor.scsoa->gemm->m,   (unsigned int)request->descriptor.scsoa->gemm->n,   (unsigned int)request->descriptor.scsoa->gemm->k,
+            (unsigned int)request->descriptor.scsoa->gemm->lda, (unsigned int)request->descriptor.scsoa->gemm->ldb, (unsigned int)request->descriptor.scsoa->gemm->ldc,
+            request->descriptor.scsoa->gemm->alpha, request->descriptor.scsoa->gemm->beta, uid, request->descriptor.scsoa->column_ptr[request->descriptor.scsoa->gemm->m]);
         }
       }
     } break;
@@ -1095,7 +1118,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.ssoa->gemm->prefetch);
+          const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.sreg->gemm->prefetch);
           const char *const tname = internal_get_typename(request->descriptor.sreg->gemm->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.sreg", target_arch, tname,
@@ -1837,7 +1860,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm
 {
   libxsmm_code_pointer result = { 0 };
   if (0 != descriptor && 0 != row_ptr && 0 != column_idx && 0 != values) {
-    libxsmm_csr_soa_descriptor ssoa;
+    libxsmm_csr_soa_descriptor srsoa;
     libxsmm_build_request request;
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
     libxsmm_gemm_descriptor gemm = *descriptor;
@@ -1845,12 +1868,37 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm
     descriptor = &gemm;
 #endif
     LIBXSMM_INIT
-    ssoa.gemm = descriptor;
-    ssoa.row_ptr = row_ptr;
-    ssoa.column_idx = column_idx;
-    ssoa.values = values;
-    request.descriptor.ssoa = &ssoa;
-    request.kind = LIBXSMM_BUILD_KIND_SSOA;
+    srsoa.gemm = descriptor;
+    srsoa.row_ptr = row_ptr;
+    srsoa.column_idx = column_idx;
+    srsoa.values = values;
+    request.descriptor.srsoa = &srsoa;
+    request.kind = LIBXSMM_BUILD_KIND_SRSOA;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+  }
+  return result.xgemm;
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descriptor* descriptor,
+  const unsigned int* column_ptr, const unsigned int* row_idx, const void* values)
+{
+  libxsmm_code_pointer result = { 0 };
+  if (0 != descriptor && 0 != column_ptr && 0 != row_idx && 0 != values) {
+    libxsmm_csc_soa_descriptor scsoa;
+    libxsmm_build_request request;
+#if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
+    libxsmm_gemm_descriptor gemm = *descriptor;
+    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_PREFETCH_NONE);
+    descriptor = &gemm;
+#endif
+    LIBXSMM_INIT
+    scsoa.gemm = descriptor;
+    scsoa.column_ptr = column_ptr;
+    scsoa.row_idx = row_idx;
+    scsoa.values = values;
+    request.descriptor.scsoa = &scsoa;
+    request.kind = LIBXSMM_BUILD_KIND_SCSOA;
     libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
   }
   return result.xgemm;
