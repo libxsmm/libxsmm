@@ -72,11 +72,8 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
                                                           const unsigned int*             i_row_idx,
                                                           const unsigned int*             i_column_idx,
                                                           const void*                     i_values ) {
-  unsigned int l_m;
   unsigned int l_n;
   unsigned int l_k;
-  unsigned int l_z;
-  unsigned int l_row_elements;
   unsigned int l_soa_width;
   unsigned int l_max_cols = 0;
   unsigned int l_n_processed = 0;
@@ -199,8 +196,8 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
     for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) {
       unsigned int l_found_qmadd = 0;
       unsigned int l_col_k = 0;
-      unsigned int l_column_active[l_n_limit - l_n_processed];
-      int l_nnz_idx[l_n_limit - l_n_processed][4];
+      unsigned int l_column_active[28];
+      int l_nnz_idx[28][4];
 
       /* reset helpers */
       for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
