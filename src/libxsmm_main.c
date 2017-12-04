@@ -1060,7 +1060,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       }
     } break;
     case LIBXSMM_BUILD_KIND_SRSOA: { /* sparse SOA kernel, CSR format */
-      assert(0 != request->descriptor.srsoa && 0 != request->descriptor.ssoa->gemm);
+      assert(0 != request->descriptor.srsoa && 0 != request->descriptor.srsoa->gemm);
       assert(0 != request->descriptor.srsoa->row_ptr && 0 != request->descriptor.srsoa->column_idx && 0 != request->descriptor.srsoa->values);
       /* only floating point */
       if (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.srsoa->gemm->datatype || LIBXSMM_GEMM_PRECISION_F32 == request->descriptor.srsoa->gemm->datatype) {
@@ -1084,7 +1084,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
     } break;
     case LIBXSMM_BUILD_KIND_SCSOA: { /* sparse SOA kernel, CSC format */
       assert(0 != request->descriptor.scsoa && 0 != request->descriptor.scsoa->gemm);
-      assert(0 != request->descriptor.scsoa->row_ptr && 0 != request->descriptor.scsoa->column_idx && 0 != request->descriptor.scsoa->values);
+      assert(0 != request->descriptor.scsoa->row_idx && 0 != request->descriptor.scsoa->column_ptr && 0 != request->descriptor.scsoa->values);
       /* only floating point */
       if (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.scsoa->gemm->datatype || LIBXSMM_GEMM_PRECISION_F32 == request->descriptor.scsoa->gemm->datatype) {
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csc_soa_kernel, &generated_code, request->descriptor.scsoa->gemm, target_arch,
@@ -1106,7 +1106,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       }
     } break;
     case LIBXSMM_BUILD_KIND_SREG: { /* sparse register kernel */
-      assert(0 != request->descriptor.sreg && 0 != request->descriptor.ssoa->gemm);
+      assert(0 != request->descriptor.sreg && 0 != request->descriptor.sreg->gemm);
       assert(0 != request->descriptor.sreg->row_ptr && 0 != request->descriptor.sreg->column_idx && 0 != request->descriptor.sreg->values);
 #if 1
       if (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.sreg->gemm->flags) { /* only double-precision */
