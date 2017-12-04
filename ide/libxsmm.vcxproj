@@ -68,6 +68,7 @@
     <ClInclude Include="..\src\generator_matcopy_avx_avx512.h" />
     <ClInclude Include="..\src\generator_spgemm_csc_asparse.h" />
     <ClInclude Include="..\src\generator_spgemm_csc_bsparse.h" />
+    <ClInclude Include="..\src\generator_spgemm_csc_bsparse_soa.h" />
     <ClInclude Include="..\src\generator_spgemm_csc_reader.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_asparse.h" />
     <ClInclude Include="..\src\generator_spgemm_csr_asparse_reg.h" />
@@ -124,6 +125,7 @@
     <ClCompile Include="..\src\generator_spgemm.c" />
     <ClCompile Include="..\src\generator_spgemm_csc_asparse.c" />
     <ClCompile Include="..\src\generator_spgemm_csc_bsparse.c" />
+    <ClCompile Include="..\src\generator_spgemm_csc_bsparse_soa.c" />
     <ClCompile Include="..\src\generator_spgemm_csc_reader.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_asparse.c" />
     <ClCompile Include="..\src\generator_spgemm_csr_asparse_reg.c" />
