@@ -38,6 +38,7 @@
 #include "generator_spgemm_csr_asparse_reg.h"
 #include "generator_spgemm_csr_bsparse_soa.h"
 #include "generator_spgemm_csr_asparse_soa.h"
+#include "generator_spgemm_csc_bsparse_soa.h"
 
 #include <stdlib.h>
 #include <string.h>
