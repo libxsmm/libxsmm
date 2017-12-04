@@ -12,9 +12,11 @@ if [ "" != "${MKDIR}" ] && [ "" != "${WGET}" ]; then
   ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/edge/mats/fluxMatrix_3D_csr_de.mtx
   ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/edge/mats/fluxMatrix_3D_csr_sp.mtx
   ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/edge/mats/starMatrix_3D_csr.mtx
+  ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/edge/mats/starMatrix_3D_csc.mtx
   for DATA in ${DATASET}; do
     for NUM in ${NUMS}; do
       ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/edge/mats/${DATA}_3D_${NUM}_csr.mtx
+      ${WGET} -N https://github.com/hfp/libxsmm/raw/master/samples/edge/mats/${DATA}_3D_${NUM}_csc.mtx
     done
   done
 fi
