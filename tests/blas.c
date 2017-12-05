@@ -75,19 +75,18 @@ int main(void)
 {
 #if !defined(__BLAS) || (0 != __BLAS)
   const char transa = 'N', transb = 'N';
-  libxsmm_blasint m[]     = { 0, 0, 1, 1, 3, 3, 1,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32,    9 };
-  libxsmm_blasint n[]     = { 0, 1, 1, 1, 3, 1, 3, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33,    9 };
-  libxsmm_blasint k[]     = { 0, 1, 1, 1, 3, 2, 2,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192, 1742 };
-  libxsmm_blasint lda[]   = { 0, 1, 1, 1, 3, 3, 1,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9 };
-  libxsmm_blasint ldb[]   = { 0, 1, 1, 1, 3, 2, 2, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742 };
-  libxsmm_blasint ldc[]   = { 0, 1, 0, 1, 3, 3, 1, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
-  const REAL_TYPE alpha[] = { 1, 1, 1, 1, 1, 1, 1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
-  const REAL_TYPE beta[]  = { 0, 1, 0, 1, 1, 0, 0,   1,     0,     0,   0,   0,   0,   0,   0,  0,  0,  0,  0,    0,    0 };
+  libxsmm_blasint m[]     = { 0, 0, 1, 1, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32,    9 };
+  libxsmm_blasint n[]     = { 0, 1, 1, 1, 3, 1, 3,    8, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33,    9 };
+  libxsmm_blasint k[]     = { 0, 1, 1, 1, 3, 2, 2,   64,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192, 1742 };
+  libxsmm_blasint lda[]   = { 0, 1, 1, 1, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9 };
+  libxsmm_blasint ldb[]   = { 0, 1, 1, 1, 3, 2, 2, 9216, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742 };
+  libxsmm_blasint ldc[]   = { 0, 1, 0, 1, 3, 3, 1, 4096, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
+  const REAL_TYPE alpha[] = { 1, 1, 1, 1, 1, 1, 1,    1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
+  const REAL_TYPE beta[]  = { 0, 1, 0, 1, 1, 0, 0,    0,   1,     0,     0,   0,   0,   0,   0,   0,  0,  0,  0,  0,    0,    0 };
   const int begin = 3, end = sizeof(m) / sizeof(*m);
   libxsmm_blasint maxm = 1, maxn = 1, maxk = 1, maxa = 1, maxb = 1, maxc = 1;
   REAL_TYPE *a = 0, *b = 0, *c = 0, *d = 0;
-  libxsmm_blasint i, j;
-  double d2 = 0;
+  libxsmm_matdiff_info diff = { 0 };
   int test;
 
   for (test = begin; test < end; ++test) {
@@ -111,7 +110,7 @@ int main(void)
   init( 0, d, maxm, maxn, maxc, 1.0);
 
   for (test = begin; test < end; ++test) {
-    double dtest = 0;
+    libxsmm_matdiff_info diff_test;
 
     LIBXSMM_BLAS(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
       alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
@@ -119,15 +118,9 @@ int main(void)
     REFERENCE_BLAS(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
       alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
 
-    for (i = 0; i < n[test]; ++i) {
-      for (j = 0; j < m[test]; ++j) {
-        const libxsmm_blasint h = i * ldc[test] + j;
-        const double d1 = c[h] - d[h];
-        c[h] = d[h]; /* count error only once */
-        dtest += d1 * d1;
-      }
+    if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m[test], n[test], d, c, ldc + test, ldc + test, &diff_test)) {
+      libxsmm_matdiff_reduce(&diff, &diff_test);
     }
-    d2 = LIBXSMM_MAX(d2, dtest);
   }
 
   libxsmm_free(a);
@@ -135,12 +128,12 @@ int main(void)
   libxsmm_free(c);
   libxsmm_free(d);
 
-  if (0.001 > d2) {
+  if (1000.0 * diff.normf_rel <= 1.0) {
     return EXIT_SUCCESS;
   }
   else {
 # if defined(_DEBUG)
-    fprintf(stderr, "diff=%f\n", d2);
+    fprintf(stderr, "diff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
 # endif
     return EXIT_FAILURE;
   }
