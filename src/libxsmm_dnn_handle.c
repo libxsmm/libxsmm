@@ -583,8 +583,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       if (handle->desc.R == 1 && handle->desc.S == 1) {
         descriptor.unroll_kh = 1;
         descriptor.unroll_kw = 1;
-      }
-      else {
+      } else if (handle->desc.R > 1 && handle->desc.S == 1 ) {
+        descriptor.unroll_kh = 1;
+        descriptor.unroll_kw = 0;
+      } else if (handle->desc.R == 1 && handle->desc.S > 1 ) {
+        descriptor.unroll_kh = 1;
+        descriptor.unroll_kw = 1;
+      } else {
         descriptor.unroll_kh = 0;
         descriptor.unroll_kw = 1;
       }
