@@ -213,16 +213,19 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
         /* loop over the columns of B/C */
         for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
           unsigned int l_found = 0;
+          unsigned int l_acol_k = 0;
           unsigned int l_col_elements = i_column_idx[l_n_processed+l_n+1] - i_column_idx[l_n_processed+l_n];
           unsigned int l_cur_column = i_column_idx[l_n_processed+l_n];
 
           for ( l_col_k = 0; l_col_k < l_col_elements; l_col_k++ ) {
-            if ( (l_k + l_found) == i_row_idx[l_cur_column + l_col_k] ) {
-              l_nnz_idx[l_n][l_found] = l_cur_column + l_col_k;
-              l_found++;
-            }
-            if (l_found == 3) {
-              l_col_k = l_col_elements;
+            for ( l_acol_k = l_found; l_acol_k < 4 ; l_acol_k++ ) {
+              if ( (l_k + l_acol_k) == i_row_idx[l_cur_column + l_col_k] ) {
+                l_nnz_idx[l_n][l_acol_k] = l_cur_column + l_col_k;
+                l_found = l_acol_k+1;
+              }
+              if (l_found == 4) {
+                l_col_k = l_col_elements;
+              }
             }
           }
           /* let's check if we can apply qmadd in col l_n */
