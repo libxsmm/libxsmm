@@ -307,7 +307,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #endif
 
 #if defined(__cplusplus) /** Fallback in libxsmm_mmfunction (C++). */
-# if defined(LIBXSMM_FALLBACK_MMFUNCTION)
+# if defined(LIBXSMM_FALLBACK_MMFUNCTION) || !defined(NDEBUG)
 #   if !defined(LIBXSMM_FALLBACK_SMMFUNCTION)
 #     define LIBXSMM_FALLBACK_SMMFUNCTION
 #   endif
