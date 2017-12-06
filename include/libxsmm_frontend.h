@@ -287,7 +287,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
   } \
 }
 
-/** Fallback code paths: LIBXSMM_FALLBACK0, and LIBXSMM_FALLBACK1 (template). */
+/** Fall-back code paths: LIBXSMM_FALLBACK0, and LIBXSMM_FALLBACK1 (template). */
 #if defined(LIBXSMM_FALLBACK_INLINE_GEMM)
 # define LIBXSMM_FALLBACK0(TYPE, INT, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
     LIBXSMM_INLINE_XGEMM(TYPE, INT, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
@@ -306,15 +306,14 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
     LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #endif
 
-#if defined(__cplusplus) /** Fallback in libxsmm_mmfunction (C++). */
-# if defined(LIBXSMM_FALLBACK_MMFUNCTION) || !defined(NDEBUG)
-#   if !defined(LIBXSMM_FALLBACK_SMMFUNCTION)
-#     define LIBXSMM_FALLBACK_SMMFUNCTION
-#   endif
-#   if !defined(LIBXSMM_FALLBACK_DMMFUNCTION)
-#     define LIBXSMM_FALLBACK_DMMFUNCTION
-#   endif
-# endif
+#if defined(__cplusplus) /** Fall-back from JIT inside of libxsmm_mmfunction (C++). */ \
+  && (defined(LIBXSMM_FALLBACK_MMFUNCTION) || !defined(NDEBUG)/*debug code*/) \
+  /* there are no individual fall-back requests for single or double-precision */ \
+  && !defined(LIBXSMM_FALLBACK_SMMFUNCTION) && !defined(LIBXSMM_FALLBACK_DMMFUNCTION) \
+  /* there is no request to avoid falling back */ \
+  && !defined(LIBXSMM_FALLBACK_MMFUNCTION_NONE)
+# define LIBXSMM_FALLBACK_SMMFUNCTION
+# define LIBXSMM_FALLBACK_DMMFUNCTION
 #endif
 
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
@@ -345,7 +344,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #define LIBXSMM_MNK_SIZE(M, N, K) (((unsigned long long)(M)) * ((unsigned long long)(N)) * ((unsigned long long)(K)))
 
 /**
- * Execute a specialized function, or use a fallback code path depending on threshold (template).
+ * Execute a specialized function, or use a fall-back code path depending on threshold (template).
  * LIBXSMM_FALLBACK0 or specialized function: below LIBXSMM_MAX_MNK
  * LIBXSMM_FALLBACK1: above LIBXSMM_MAX_MNK
  */
