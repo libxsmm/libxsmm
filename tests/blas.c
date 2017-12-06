@@ -128,7 +128,7 @@ int main(void)
   libxsmm_free(c);
   libxsmm_free(d);
 
-  if (1000.0 * diff.normf_rel <= 1.0) {
+  if (100.0 * diff.normf_rel <= 1.0) {
     return EXIT_SUCCESS;
   }
   else {
