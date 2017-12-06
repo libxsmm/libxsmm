@@ -84,30 +84,29 @@ int main(void)
   const REAL_TYPE alpha[] = { 1, 1, 1, 1, 1, 1, 1,    1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
   const REAL_TYPE beta[]  = { 0, 1, 0, 1, 1, 0, 0,    0,   1,     0,     0,   0,   0,   0,   0,   0,  0,  0,  0,  0,    0,    0 };
   const int begin = 3, end = sizeof(m) / sizeof(*m);
-  libxsmm_blasint maxm = 1, maxn = 1, maxk = 1, maxa = 1, maxb = 1, maxc = 1;
+  libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0;
   REAL_TYPE *a = 0, *b = 0, *c = 0, *d = 0;
   libxsmm_matdiff_info diff = { 0 };
   int test;
 
   for (test = begin; test < end; ++test) {
-    maxm = LIBXSMM_MAX(maxm, m[test]);
-    maxn = LIBXSMM_MAX(maxn, n[test]);
-    maxk = LIBXSMM_MAX(maxk, k[test]);
-    maxa = LIBXSMM_MAX(maxa, lda[test]);
-    maxb = LIBXSMM_MAX(maxb, ldb[test]);
-    maxc = LIBXSMM_MAX(maxc, ldc[test]);
+    const libxsmm_blasint size_a = lda[test] * k[test], size_b = ldb[test] * n[test], size_c = ldc[test] * n[test];
+    assert(m[test] <= lda[test] && k[test] <= ldb[test] && m[test] <= ldc[test]);
+    max_size_a = LIBXSMM_MAX(max_size_a, size_a);
+    max_size_b = LIBXSMM_MAX(max_size_b, size_b);
+    max_size_c = LIBXSMM_MAX(max_size_c, size_c);
   }
 
-  a = (REAL_TYPE*)libxsmm_malloc((size_t)(maxa * maxk * sizeof(REAL_TYPE)));
-  b = (REAL_TYPE*)libxsmm_malloc((size_t)(maxb * maxn * sizeof(REAL_TYPE)));
-  c = (REAL_TYPE*)libxsmm_malloc((size_t)(maxc * maxn * sizeof(REAL_TYPE)));
-  d = (REAL_TYPE*)libxsmm_malloc((size_t)(maxc * maxn * sizeof(REAL_TYPE)));
+  a = (REAL_TYPE*)libxsmm_malloc((size_t)(max_size_a * sizeof(REAL_TYPE)));
+  b = (REAL_TYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(REAL_TYPE)));
+  c = (REAL_TYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(REAL_TYPE)));
+  d = (REAL_TYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(REAL_TYPE)));
   assert(0 != a && 0 != b && 0 != c && 0 != d);
 
-  init(42, a, maxm, maxk, maxa, 1.0);
-  init(24, b, maxk, maxn, maxb, 1.0);
-  init( 0, c, maxm, maxn, maxc, 1.0);
-  init( 0, d, maxm, maxn, maxc, 1.0);
+  init(42, a, max_size_a, 1, max_size_a, 1.0);
+  init(24, b, max_size_b, 1, max_size_b, 1.0);
+  init( 0, c, max_size_c, 1, max_size_c, 1.0);
+  init( 0, d, max_size_c, 1, max_size_c, 1.0);
 
   for (test = begin; test < end; ++test) {
     libxsmm_matdiff_info diff_test;
@@ -128,7 +127,7 @@ int main(void)
   libxsmm_free(c);
   libxsmm_free(d);
 
-  if (100.0 * diff.normf_rel <= 1.0) {
+  if (1000.0 * diff.normf_rel <= 1.0) {
     return EXIT_SUCCESS;
   }
   else {

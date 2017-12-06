@@ -98,7 +98,7 @@ int main(void)
   const libxsmm_blasint ldo[] = { 1, 2, 3, 16, 64, 512, 3072 };
   const int prefetch[]        = { 1, 0, 1,  0,  1,   0,    1 };
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
-  libxsmm_blasint maxm = 0, maxn = 0, maxi = 0, maxo = 0;
+  libxsmm_blasint max_size_a = 0, max_size_b = 0;
   unsigned int nerrors = 0;
   ELEM_TYPE *a = 0, *b = 0;
 #if defined(MATCOPY_GOLD)
@@ -107,22 +107,21 @@ int main(void)
   int test;
 
   for (test = start; test < ntests; ++test) {
+    const libxsmm_blasint size_a = ldi[test] * n[test], size_b = ldo[test] * n[test];
     assert(m[test] <= ldi[test] && m[test] <= ldo[test]);
-    maxm = LIBXSMM_MAX(maxm, m[test]);
-    maxn = LIBXSMM_MAX(maxn, n[test]);
-    maxi = LIBXSMM_MAX(maxi, ldi[test]);
-    maxo = LIBXSMM_MAX(maxo, ldo[test]);
+    max_size_a = LIBXSMM_MAX(max_size_a, size_a);
+    max_size_b = LIBXSMM_MAX(max_size_b, size_b);
   }
-  a = (ELEM_TYPE*)libxsmm_malloc((size_t)(maxi * maxn * sizeof(ELEM_TYPE)));
-  b = (ELEM_TYPE*)libxsmm_malloc((size_t)(maxo * maxn * sizeof(ELEM_TYPE)));
+  a = (ELEM_TYPE*)libxsmm_malloc((size_t)(max_size_a * sizeof(ELEM_TYPE)));
+  b = (ELEM_TYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ELEM_TYPE)));
   assert(0 != a && 0 != b);
 
-  init(42, a, maxm, maxn, maxi, 1.0);
-  init( 0, b, maxm, maxn, maxo, 1.0);
+  init(42, a, max_size_a, 1, max_size_a, 1.0);
+  init( 0, b, max_size_b, 1, max_size_b, 1.0);
 #if defined(MATCOPY_GOLD)
-  c = (ELEM_TYPE*)libxsmm_malloc((size_t)(maxo * maxn * sizeof(ELEM_TYPE)));
+  c = (ELEM_TYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ELEM_TYPE)));
   assert(0 != c);
-  init(0, c, maxm, maxn, maxo, 1.0);
+  init(0, c, max_size_b, 1, max_size_b, 1.0);
 #endif
   for (test = start; test < ntests; ++test) {
     unsigned int testerrors = (EXIT_SUCCESS == MATCOPY(
