@@ -132,13 +132,13 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
       memset(batcharray, 0, (size_t)(batchsize * itemsize)); /* clear */
     }
     else { /* print statistic */
-      const libxsmm_blasint limit = ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) ? batchsize : 7);
+      const libxsmm_blasint limit = ((3 < libxsmm_verbosity || 0 > libxsmm_verbosity) ? batchsize : 7);
       unsigned int threshold, batchcount;
       libxsmm_blasint count = 0, i;
       assert(0 != batcharray);
       qsort(batcharray, (size_t)batchsize, (size_t)itemsize, internal_mmbatch_sortrev);
       batchcount = batcharray[0].stat.count;
-      threshold = ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity || 3 >= batchsize) ? 0 : (batchcount / 2));
+      threshold = ((3 < libxsmm_verbosity || 0 > libxsmm_verbosity || 3 >= batchsize) ? 0 : (batchcount / 2));
       for (i = 1; i < batchsize; ++i) batchcount += batcharray[i].stat.count;
       LIBXSMM_FLOCK(stdout);
       for (i = 0; i < batchsize; ++i) {
