@@ -250,7 +250,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
 #if 0
         printf("l_max_cols: %i, l_n_processed: %i, l_n_limit: %i\n", l_max_cols, l_n_processed, l_n_limit);
 #endif
-    
+
         /* load C accumulator */
         for ( l_m_r = 0; l_m_r < l_m_unroll_num; l_m_r++) {
           for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
@@ -272,7 +272,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
             }
           }
         }
-    
+
         /* do dense soa times sparse multiplication */
         /* for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) { */
         for ( l_k = l_k_processed; l_k < l_k_limit; l_k++ ) {
@@ -365,7 +365,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
             }
           }
         }
-    
+
         /* store C accumulator */
         for ( l_m_r = 0; l_m_r < l_m_unroll_num; l_m_r++) {
           for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
@@ -379,20 +379,20 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
                                               l_n + l_row_reg_block*l_m_r, 0, 1 );
           }
         }
-    
+
         /* adjust n progression */
         l_n_processed += l_n_chunksize;
         l_n_limit = LIBXSMM_MIN(l_n_processed + l_n_chunksize, l_max_cols);
       }
-    
+
       /* advance C pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_c,
                                          l_micro_kernel_config.datatype_size*l_soa_width*i_xgemm_desc->ldc*l_m_unroll_num);
-    
+
       /* advance A pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_a,
                                        l_micro_kernel_config.datatype_size*l_soa_width*i_xgemm_desc->lda*l_m_unroll_num);
-    
+
       if (l_m_processed == 0) {
         /* close m loop */
         libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_mloop, l_m_limit );
@@ -416,7 +416,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
       /* reset m loop */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_mloop, 0 );
     }
-    
+
     /* adjust k progression */
     l_k_processed += l_k_chunksize;
     l_k_limit = LIBXSMM_MIN(l_k_processed + l_k_chunksize, l_max_rows);
