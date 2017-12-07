@@ -143,7 +143,7 @@ Please note that an explicit data representation is not actually necessary to pr
 
 #### Overview
 
-Since the library is binary compatible with existing GEMM calls (BLAS), such calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original BLAS library. There are two cases to consider: (1)&#160;static linkage, and (2)&#160;dynamic linkage of the application against the original BLAS library.
+Since the library is binary compatible with existing GEMM calls (BLAS), such calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original BLAS library. There are two cases to consider: (1)&#160;static linkage, and (2)&#160;dynamic linkage of the application against the original BLAS library. When calls are intercepted, one can select which problem sizes are handled (ignored). By default, only small GEMMs are handled by LIBXSMM (LIBXSMM_GEMM_WRAP=1). Of course, one can handle all problem sizes (LIBXSMM_GEMM_WRAP=2, which denotes "||" for "parallel"), and the default behavior can be also adjusted at compile-time e.g., `make GEMM=2` to handle larger problem-sizes in an OpenMP-parallel fashion.
 
 ```bash
 LIBXSMM STATISTIC: 1000 multiplications
@@ -154,9 +154,9 @@ dgemm(trans=NN mnk=32,10,32 ldx=32,32,32 a,b=1,0): 5% [main$omp$1]
 dgemm(trans=NN mnk=32,32,10 ldx=32,10,32 a,b=1,0): 5% [main$omp$1]
 ```
 
-In any case, a sophisticated statistic (histogram) becomes available with LIBXSMM_VERBOSE=1 (or higher). The histogram displays the call sites of all intercepted GEMMs ([example](https://github.com/hfp/libxsmm/blob/master/samples/wrap/autobatch.c) above depicts an OpenMP region hosted by the main function). With level&#160;2 (or higher) the histogram yields the entire content, and eventually less relevant entries are not pruned. An application must be built with symbols (`-g`) and export symbols similar to shared libraries (`-Wl,--export-dynamic`) even when linked statically in order to display the symbol names of where the GEMMs originated (call site).
+Intercepted GEMMs can also build a sophisticated statistic (histogram) with LIBXSMM_VERBOSE=3 (or higher). The histogram displays the call sites (debug symbol name) of all intercepted GEMMs ([example](https://github.com/hfp/libxsmm/blob/master/samples/wrap/autobatch.c) above depicts an OpenMP region hosted by the main function). With level&#160;4 (or higher), the histogram yields the entire content, and eventually less relevant entries are not pruned. An application must be built with symbols (`-g`) and export symbols similar to shared libraries (`-Wl,--export-dynamic` even when linked statically) in order to display the symbol names of where the GEMMs originated (call site).
 
-**NOTE**: Using the same multiplication kernel in a consecutive fashion (batch-processing) allows to extract higher performance, when using LIBXSMM's native programming interface.
+**NOTE**: Intercepting GEMM calls is low effort but implies overhead, which can be relatively high for small problem sizes. LIBXSMM's native programming interface has lower overhead and allows to amortize this overhead when using the same multiplication kernel in a consecutive fashion along with sophisticated data prefetch.
 
 #### Static Linkage
 
