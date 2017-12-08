@@ -458,6 +458,10 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       }
     }
   }
+
+  /* release scratch memory pool */
+  libxsmm_release_scratch();
+
 #if !defined(LIBXSMM_NO_SYNC)
   { /* release locks */
     int i; for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_DESTROY(LIBXSMM_LOCK_DEFAULT, internal_reglock + i);
@@ -791,8 +795,6 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_DEFAULT, internal_reglock + i);
     LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_DEFAULT, &libxsmm_lock_global);
 #endif
-    /* release scratch memory pool */
-    libxsmm_release_scratch();
   }
 }
 
