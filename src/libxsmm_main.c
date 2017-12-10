@@ -722,6 +722,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       assert(1 <= internal_reglock_count);
       for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_DEFAULT, internal_reglock + i, &libxsmm_lock_attr_default);
 # else
+      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK_RWLOCK, &internal_reglock_attr);
       LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_RWLOCK, &internal_reglock, &internal_reglock_attr);
 # endif
       once = 1;
