@@ -536,6 +536,13 @@
 # include <assert.h>
 # define LIBXSMM_ASSERT(EXPR) assert(EXPR)
 #endif
+#if !defined(LIBXSMM_EXPECT)
+# if defined(NDEBUG)
+#   define LIBXSMM_EXPECT(RESULT, EXPR) (EXPR)
+# else
+#   define LIBXSMM_EXPECT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) == (EXPR))
+# endif
+#endif
 #include <stddef.h>
 #include <stdint.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
