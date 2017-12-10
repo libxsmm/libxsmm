@@ -802,7 +802,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 LIBXSMM_API_DEFINITION int libxsmm_get_target_archid(void)
 {
   LIBXSMM_INIT
-#if !defined(__MIC__) && (!defined(__CYGWIN__) || !defined(NDEBUG)/*code-coverage with Cygwin; fails@runtime!*/)
+#if !defined(__MIC__)
   return libxsmm_target_archid;
 #else /* no JIT support */
   return LIBXSMM_MIN(libxsmm_target_archid, LIBXSMM_X86_SSE4);
