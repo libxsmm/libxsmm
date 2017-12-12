@@ -107,6 +107,15 @@ libxsmm_xmatcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
 libxsmm_xmatcopyfunction jitted_matzero_weights = handle->matcopy_upd[2].xmatcopy;
 libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 || handle->ifmblock == 1 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
 
+transposer tp_func;
+if ( handle->trans_ofw_ifm > 0 ) {
+  if (handle->padding_flag == 1) {
+    tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
+  }
+  else
+    tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
+}
+
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
@@ -120,6 +129,7 @@ if (handle->padding_flag == 1) {
 }
 
 /* LP transformations */
+#if 1
 if (handle->padding_flag == 1) {
   int img = ltid, ifm1, ij, ifm2, ii;
   int ofm1, ofm2, k, lp;
@@ -145,6 +155,7 @@ if (handle->padding_flag == 1) {
     lp_transpose_and_resize_input_and_output(ltid, handle);
   }
 }
+#endif
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 

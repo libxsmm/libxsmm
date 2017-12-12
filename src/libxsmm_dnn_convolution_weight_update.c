@@ -107,21 +107,16 @@
 
 #define TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i) \
       pair_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); \
-      pair_pixels = _mm512_loadu_si512(pair_addr); \
+      pair_pixels =  _mm512_loadu_si512(pair_addr); \
       even_pixel = _mm512_extracti64x4_epi64(pair_pixels, 0); \
       odd_pixel = _mm512_extracti64x4_epi64(pair_pixels, 1); \
       compressed_lo  = _mm256_unpacklo_epi16(even_pixel, odd_pixel); \
       compressed_hi  = _mm256_unpackhi_epi16(even_pixel, odd_pixel); \
-      part0 = _mm256_extractf128_si256(compressed_lo,0); \
-      part2 = _mm256_extractf128_si256(compressed_lo,1); \
-      part1 = _mm256_extractf128_si256(compressed_hi,0); \
-      part3 =  _mm256_extractf128_si256(compressed_hi,1); \
-      compact = _mm512_inserti32x4 (compact, part0, 0); \
-      compact = _mm512_inserti32x4 (compact, part1, 1); \
-      compact = _mm512_inserti32x4 (compact, part2, 2); \
-      compact = _mm512_inserti32x4 (compact, part3, 3); \
-      pair_addr = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      _mm512_storeu_si512 (pair_addr, compact);
+      compact =  _mm512_inserti64x4(compact, compressed_lo, 0); \
+      compact =  _mm512_inserti64x4(compact, compressed_hi, 1); \
+      compact =  _mm512_permutevar_epi32(permute_compact_idx, compact); \
+      pair_addr_dst = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
+      _mm512_stream_si512(pair_addr_dst, compact);
 
 #define TRANSPOSE_W_HALF_PAIR(img, ofm1, ij, ii, half_i) \
       pair_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); \
@@ -129,17 +124,11 @@
       odd_pixel = _mm256_xor_si256(odd_pixel, odd_pixel); \
       compressed_lo  = _mm256_unpacklo_epi16(even_pixel, odd_pixel); \
       compressed_hi  = _mm256_unpackhi_epi16(even_pixel, odd_pixel); \
-      part0 = _mm256_extractf128_si256(compressed_lo,0); \
-      part2 = _mm256_extractf128_si256(compressed_lo,1); \
-      part1 = _mm256_extractf128_si256(compressed_hi,0); \
-      part3 =  _mm256_extractf128_si256(compressed_hi,1); \
-      compact = _mm512_inserti32x4 (compact, part0, 0); \
-      compact = _mm512_inserti32x4 (compact, part1, 1); \
-      compact = _mm512_inserti32x4 (compact, part2, 2); \
-      compact = _mm512_inserti32x4 (compact, part3, 3); \
-      pair_addr = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      _mm512_storeu_si512(pair_addr, compact);
-
+      compact =  _mm512_inserti64x4(compact, compressed_lo, 0); \
+      compact =  _mm512_inserti64x4(compact, compressed_hi, 1); \
+      compact =  _mm512_permutevar_epi32(permute_compact_idx, compact); \
+      pair_addr_dst = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
+      _mm512_stream_si512(pair_addr_dst, compact);
 
 void lp_transpose_input_and_output(int img, libxsmm_dnn_layer* handle) {
   typedef short element_input_type;
@@ -180,34 +169,37 @@ void lp_transpose_input_and_output(int img, libxsmm_dnn_layer* handle) {
   LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended);
 
   if (w_remainder) {
-    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ifm1+=2) {
       for (ij = 0; ij < handle->ifhp; ++ij) {
         /* Handle full chunks  */
         for (w = 0; w < w_chunks; w++) {
           for (ifm2 = 0; ifm2 < 8; ++ifm2) {
             TRANSPOSE_W_CHUNK(img, ifm1, ij, w*16, ifm2);
+            TRANSPOSE_W_CHUNK(img, ifm1+1, ij, w*16, ifm2);
           }
         }
         /* Handle remainder */
         for (ifm2 = 0; ifm2 < 8; ++ifm2) {
           TRANSPOSE_W_REMAINDER(img, ifm1, ij, w_chunks*16, ifm2);
+          TRANSPOSE_W_REMAINDER(img, ifm1+1, ij, w_chunks*16, ifm2);  
         }
       }
     }
   } else {
-    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ifm1+=2) {
       for (ij = 0; ij < handle->ifhp; ++ij) {
         /* Handle full chunks  */
         for (w = 0; w < w_chunks; w++) {
           for (ifm2 = 0; ifm2 < 8; ++ifm2) {
             TRANSPOSE_W_CHUNK(img, ifm1, ij, w*16, ifm2);
+            TRANSPOSE_W_CHUNK(img, ifm1+1, ij, w*16, ifm2);   
           }
         }
       }
     }
   }
 
-  element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi, *pair_addr;
+  element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi, *pair_addr, *pair_addr_dst;
   element_output_type *dst_lo, *dst_hi;
   int half_i, ofm1, ii;
   int BLOCKSOFM = handle->blocksofm;
@@ -215,13 +207,14 @@ void lp_transpose_input_and_output(int img, libxsmm_dnn_layer* handle) {
   __m256i even_pixel_lo, even_pixel_hi, odd_pixel_hi, odd_pixel_lo, compressed_hi, compressed_lo, compressed_lo_store, compressed_hi_store, even_pixel, odd_pixel;
   __m128i part0, part1, part2, part3;
   __m512i compact, pair_pixels;
+  const __m512i permute_compact_idx = _mm512_set_epi32(15,14,13,12,  7,6,5,4,  11,10,9,8,  3,2,1,0);
  
   /* Output transpose */
   element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
   LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
   LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
 
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
+  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
     for (ij = 0; ij < handle->ofhp; ++ij) {
       for (ii = 0, half_i=0 ; ii < handle->ofwp-1; ii+=2, half_i++) {
         TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i);
@@ -231,7 +224,7 @@ void lp_transpose_input_and_output(int img, libxsmm_dnn_layer* handle) {
 
   if (handle->output_lp_padding != 0) {
     /* Zero out the "output padding pixel" */
-    for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
+    for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
       for (ij = 0; ij < handle->ofhp; ++ij) {
         ii = handle->ofwp-1;
         half_i = ii/2;
@@ -285,36 +278,39 @@ void lp_transpose_and_resize_input_and_output(int img, libxsmm_dnn_layer* handle
   LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended);
   
   if (w_remainder) {
-    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ifm1+=2) {
       for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
         src_j = dst_j * handle->desc.v;
         /* Handle full chunks  */
         for (w = 0; w < w_chunks; w++) {
           for (ifm2 = 0; ifm2 < 8; ++ifm2) {
             TRANSPOSE_W_CHUNK_RESIZED(img, ifm1, w*u*16, src_j, ifm2, w*16, dst_j);
+            TRANSPOSE_W_CHUNK_RESIZED(img, ifm1+1, w*u*16, src_j, ifm2, w*16, dst_j);
           }
         }
         /* Handle remainder */
         for (ifm2 = 0; ifm2 < 8; ++ifm2) {
           TRANSPOSE_W_REMAINDER_RESIZED(img, ifm1, w_chunks*u*16, src_j, ifm2, w_chunks*16, dst_j);  
+          TRANSPOSE_W_REMAINDER_RESIZED(img, ifm1+1, w_chunks*u*16, src_j, ifm2, w_chunks*16, dst_j);   
         }
       }
     }
   } else {
-    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ifm1+=2) {
       for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
         src_j = dst_j * handle->desc.v;
         /* Handle full chunks  */
         for (w = 0; w < w_chunks; w++) {
           for (ifm2 = 0; ifm2 < 8; ++ifm2) {
             TRANSPOSE_W_CHUNK_RESIZED(img, ifm1, w*u*16, src_j, ifm2, w*16, dst_j);
+            TRANSPOSE_W_CHUNK_RESIZED(img, ifm1+1, w*u*16, src_j, ifm2, w*16, dst_j);       
           }
         }
       }
     }
   }
 
-  element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi, *pair_addr;
+  element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi, *pair_addr, *pair_addr_dst;
   element_output_type *dst_lo, *dst_hi;
   int half_i, ofm1, ii;
   int BLOCKSOFM = handle->blocksofm;
@@ -322,13 +318,14 @@ void lp_transpose_and_resize_input_and_output(int img, libxsmm_dnn_layer* handle
   __m256i even_pixel_lo, even_pixel_hi, odd_pixel_hi, odd_pixel_lo, compressed_hi, compressed_lo, compressed_lo_store, compressed_hi_store, even_pixel, odd_pixel;
   __m128i part0, part1, part2, part3;
   __m512i compact, pair_pixels;
+  const __m512i permute_compact_idx = _mm512_set_epi32(15,14,13,12,  7,6,5,4,  11,10,9,8,  3,2,1,0);
  
   /* Output transpose */
   element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
   LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
   LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
 
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
+  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
     for (ij = 0; ij < handle->ofhp; ++ij) {
       for (ii = 0, half_i=0 ; ii < handle->ofwp-1; ii+=2, half_i++) {
         TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i);
@@ -338,7 +335,7 @@ void lp_transpose_and_resize_input_and_output(int img, libxsmm_dnn_layer* handle
 
   if (handle->output_lp_padding != 0) {
     /* Zero out the "output padding pixel" */
-    for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
+    for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
       for (ij = 0; ij < handle->ofhp; ++ij) {
         ii = handle->ofwp-1;
         half_i = ii/2;

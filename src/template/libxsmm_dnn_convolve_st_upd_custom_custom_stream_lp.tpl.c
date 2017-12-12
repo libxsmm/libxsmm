@@ -115,9 +115,11 @@ libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
 libxsmm_xmatcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
 libxsmm_convfunction kernel = (handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
 
+transposer tp_func;
+tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
+
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
-
 /* Initialize base pointers */
 if (handle->padding_flag == 1) {
   input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended);
@@ -127,48 +129,7 @@ if (handle->padding_flag == 1) {
   input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended);
 }
 
-#if 0
-/* LP transformations */
-{
-  int img = ltid, ifm1, ij, ifm2, ii;
-  int ofm1, ofm2, k, lp;
-  int FM;
-  int W;
-
-  if (handle->padding_flag == 1) {
-    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-      for (ij = 0; ij < handle->ifhp; ++ij) {
-        for (ii = 0; ii < handle->ifwp; ++ii) {
-          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-            for (lp = 0; lp < handle->fm_lp_block; ++lp) {
-              FM = ifm1 * handle->ifmblock * handle->fm_lp_block + ifm2 * handle->fm_lp_block + lp;
-              LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, FM/handle->ifmblock, ij+handle->desc.pad_h, FM%handle->ifmblock, ii+handle->desc.pad_w, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended) =
-                LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-            }
-          }
-        }
-      }
-    }  
-  } else {
-    if (handle->resize_input == 0) {
-      if (handle->ifwp%16 == 0) {
-#include "input_lp_transposer.tpl.c" 
-      } else {
-#include "input_lp_transposer_remainder.tpl.c"   
-      }
-    } else {
-      if (handle->ifwp_resized%16 == 0) {
-#include "input_lp_transposer_resizer.tpl.c"   
-      } else {
-#include "input_lp_transposer_resizer_remainder.tpl.c"     
-      }
-    }
-  }
-
-#include "output_lp_transposer.tpl.c"
-}
-#endif
-
+#if 1
 if (handle->padding_flag == 1) {
   int img = ltid, ifm1, ij, ifm2, ii;
   int ofm1, ofm2, k, lp;
@@ -194,6 +155,7 @@ if (handle->padding_flag == 1) {
     lp_transpose_and_resize_input_and_output(ltid, handle);
   }
 }
+#endif
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
