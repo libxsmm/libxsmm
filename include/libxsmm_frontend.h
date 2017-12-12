@@ -174,12 +174,13 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #define LIBXSMM_XGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(TYPE), _omp)
 
-#if !defined(LIBXSMM_GEMM_CONST)
-# if defined(LIBXSMM_GEMM_NONCONST) || defined(__OPENBLAS)
-#   define LIBXSMM_GEMM_CONST
-# else
-#   define LIBXSMM_GEMM_CONST const
-# endif
+#if defined(LIBXSMM_GEMM_CONST)
+# undef LIBXSMM_GEMM_CONST
+# define LIBXSMM_GEMM_CONST const
+#elif defined(LIBXSMM_GEMM_NONCONST) || defined(__OPENBLAS)
+# define LIBXSMM_GEMM_CONST
+#else
+# define LIBXSMM_GEMM_CONST const
 #endif
 
 #define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE) \
