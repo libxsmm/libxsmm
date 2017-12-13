@@ -515,7 +515,7 @@ LIBXSMM_API_DEFINITION void libxsmm_rwlock_acquire(libxsmm_rwlock* rwlock)
 #if defined(_WIN32)
   while (prev.bits != ((uint32_t)InterlockedCompareExchange((volatile LONG*)&rwlock->requests.bits, next.bits, prev.bits)));
 #else
-  while (0 != __sync_bool_compare_and_swap(&rwlock->requests.bits, prev.bits, next.bits));
+  while (0 == __sync_bool_compare_and_swap(&rwlock->requests.bits, prev.bits, next.bits));
 #endif
   while (rwlock->completions.bits != prev.bits) {
     if (0 != internal_sync_cycle(&spin_count)) internal_sync_sleep(spin_count);
