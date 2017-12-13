@@ -275,7 +275,7 @@
 #     define LIBXSMM_LOCK_ATTR_DESTROY_spin(ATTR) LIBXSMM_UNUSED(ATTR)
       /* implementation mutex */
 #     if defined(LIBXSMM_LOCK_SYSTEM)
-#       define LIBXSMM_LOCK_TYPE_spin pthread_mutex_t
+#       define LIBXSMM_LOCK_TYPE_mutex pthread_mutex_t
 #       define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) LIBXSMM_EXPECT(0, pthread_mutex_init(LOCK, ATTR))
 #       define LIBXSMM_LOCK_DESTROY_mutex(LOCK) LIBXSMM_EXPECT(0, pthread_mutex_destroy(LOCK))
 #       define LIBXSMM_LOCK_TRYLOCK_mutex(LOCK) pthread_mutex_trylock(LOCK)
@@ -295,7 +295,7 @@
 #       define LIBXSMM_LOCK_ATTR_DESTROY_mutex(ATTR) LIBXSMM_EXPECT(0, pthread_mutexattr_destroy(ATTR))
 #     endif
       /* implementation rwlock */
-#     define LIBXSMM_LOCK_TYPE_spin pthread_rwlock_t
+#     define LIBXSMM_LOCK_TYPE_rwlock pthread_rwlock_t
 #     define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) LIBXSMM_EXPECT(0, pthread_rwlock_init(LOCK, ATTR))
 #     define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) LIBXSMM_EXPECT(0, pthread_rwlock_destroy(LOCK))
 #     define LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK) pthread_rwlock_trywrlock(LOCK)

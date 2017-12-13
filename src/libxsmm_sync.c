@@ -42,8 +42,8 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#include <assert.h>
 #include <stdint.h>
+#include <string.h>
 #include <stdio.h>
 #include <math.h>
 #if defined(_WIN32)
@@ -439,7 +439,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_release(libxsmm_mutex* mutex)
 {
   assert(0 != mutex);
 #if !defined(_WIN32) && !defined(__CYGWIN__)
-  asm volatile ("" ::: "memory");
+  __asm__ __volatile__ ("" ::: "memory");
 #endif
 #if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
   if (INTERNAL_SYNC_MUTEX_STATE_CONTESTED == __sync_fetch_and_sub(mutex->state, 1)) {
