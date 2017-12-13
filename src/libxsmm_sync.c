@@ -35,7 +35,7 @@
 #include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
 
-#if !defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__) && 0
+#if !defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
 # define LIBXSMM_SYNC_FUTEX
 #endif
 
@@ -300,12 +300,13 @@ enum {
   INTERNAL_SYNC_MUTEX_STATE_FREE = 0,
   INTERNAL_SYNC_MUTEX_STATE_LOCKED,
   INTERNAL_SYNC_MUTEX_STATE_CONTESTED,
-  INTERNAL_SYNC_RWLOCK_READINC = 0x10000
+  INTERNAL_SYNC_RWLOCK_READINC = 0x10000,
+  INTERNAL_SYNC_FUTEX = 202
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_mutex {
 #if defined(LIBXSMM_SYNC_FUTEX)
-  volatile int state[1];
+  volatile int state;
 #else
   volatile char state;
 #endif
@@ -421,7 +422,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
         if ( INTERNAL_SYNC_MUTEX_STATE_LOCKED != state || INTERNAL_SYNC_MUTEX_STATE_FREE != __sync_val_compare_and_swap(&mutex->state,
           INTERNAL_SYNC_MUTEX_STATE_LOCKED, INTERNAL_SYNC_MUTEX_STATE_CONTESTED))
         {
-          sys_futex(&mutex->state, FUTEX_WAIT, INTERNAL_SYNC_MUTEX_STATE_CONTESTED, NULL, NULL, 0);
+          syscall(INTERNAL_SYNC_FUTEX, &mutex->state, FUTEX_WAIT, INTERNAL_SYNC_MUTEX_STATE_CONTESTED, NULL, NULL, 0);
           new_state = INTERNAL_SYNC_MUTEX_STATE_CONTESTED;
         }
         break;
@@ -442,9 +443,9 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_release(libxsmm_mutex* mutex)
   __asm__ __volatile__ ("" ::: "memory");
 #endif
 #if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
-  if (INTERNAL_SYNC_MUTEX_STATE_CONTESTED == __sync_fetch_and_sub(mutex->state, 1)) {
-    *mutex->state = INTERNAL_SYNC_MUTEX_STATE_FREE;
-    sys_futex((void*)mutex->state, FUTEX_WAKE, 1, NULL, NULL, 0);
+  if (INTERNAL_SYNC_MUTEX_STATE_CONTESTED == __sync_fetch_and_sub(&mutex->state, 1)) {
+    mutex->state = INTERNAL_SYNC_MUTEX_STATE_FREE;
+    syscall(INTERNAL_SYNC_FUTEX, &mutex->state, FUTEX_WAKE, 1, NULL, NULL, 0);
   }
 #else
   mutex->state = INTERNAL_SYNC_MUTEX_STATE_FREE;
