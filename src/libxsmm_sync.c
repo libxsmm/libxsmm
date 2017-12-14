@@ -300,7 +300,7 @@ enum {
   INTERNAL_SYNC_MUTEX_STATE_FREE = 0,
   INTERNAL_SYNC_MUTEX_STATE_LOCKED,
   INTERNAL_SYNC_MUTEX_STATE_CONTESTED,
-  INTERNAL_SYNC_RWLOCK_READINC = 0x10000,
+  INTERNAL_SYNC_RWLOCK_READINC = USHRT_MAX + 1/*0x10000*/,
   INTERNAL_SYNC_FUTEX = 202
 };
 
@@ -484,44 +484,43 @@ LIBXSMM_API_DEFINITION void libxsmm_rwlock_destroy(const libxsmm_rwlock* rwlock)
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_rwlock_trylock(libxsmm_rwlock* rwlock)
+LIBXSMM_API_INLINE int internal_rwlock_trylock(libxsmm_rwlock* rwlock, internal_sync_counter* prev)
 {
-  internal_sync_counter prev, next;
+  internal_sync_counter next;
   uint32_t before;
-  assert(0 != rwlock);
-  prev.bits = rwlock->requests.bits;
-  next.bits = prev.bits;
-  ++next.kind.writer;
+  assert(0 != rwlock && 0 != prev);
+  do {
+    prev->bits = rwlock->requests.bits;
+    next.bits = prev->bits;
+    ++next.kind.writer;
 #if defined(_WIN32)
-  before = (uint32_t)InterlockedCompareExchange((volatile LONG*)&rwlock->requests.bits, next.bits, prev.bits);
+    before = (uint32_t)InterlockedCompareExchange((volatile LONG*)&rwlock->requests.bits, next.bits, prev->bits);
 #else
-  before = __sync_val_compare_and_swap(&rwlock->requests.bits, prev.bits, next.bits);
+    before = __sync_val_compare_and_swap(&rwlock->requests.bits, prev->bits, next.bits);
 #endif
-  return (prev.bits != before || rwlock->completions.bits != prev.bits)
+  }
+  while (prev->bits != before);
+  return rwlock->completions.bits != prev->bits
     ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) + 1)
     : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK));
 }
 
 
+LIBXSMM_API_DEFINITION int libxsmm_rwlock_trylock(libxsmm_rwlock* rwlock)
+{
+  internal_sync_counter prev;
+  return internal_rwlock_trylock(rwlock, &prev);
+}
+
+
 LIBXSMM_API_DEFINITION void libxsmm_rwlock_acquire(libxsmm_rwlock* rwlock)
 {
-  internal_sync_counter prev, next;
-  unsigned int spin_count = 0;
-  uint32_t before;
-  assert(0 != rwlock);
-  do {
-    prev.bits = rwlock->requests.bits;
-    next.bits = prev.bits;
-    ++next.kind.writer;
-#if defined(_WIN32)
-    before = (uint32_t)InterlockedCompareExchange((volatile LONG*)&rwlock->requests.bits, next.bits, prev.bits);
-#else
-    before = __sync_val_compare_and_swap(&rwlock->requests.bits, prev.bits, next.bits);
-#endif
-  }
-  while (prev.bits != before);
-  while (rwlock->completions.bits != prev.bits) {
-    if (0 != internal_sync_cycle(&spin_count)) internal_sync_sleep(spin_count);
+  internal_sync_counter prev;
+  if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) != internal_rwlock_trylock(rwlock, &prev)) {
+    unsigned int spin_count = 0;
+    while (rwlock->completions.bits != prev.bits) {
+      if (0 != internal_sync_cycle(&spin_count)) internal_sync_sleep(spin_count);
+    }
   }
 }
 
@@ -537,33 +536,35 @@ LIBXSMM_API_DEFINITION void libxsmm_rwlock_release(libxsmm_rwlock* rwlock)
 }
 
 
+LIBXSMM_API_INLINE int internal_rwlock_tryread(libxsmm_rwlock* rwlock, internal_sync_counter* prev)
+{
+  assert(0 != rwlock && 0 != prev);
+#if defined(_WIN32)
+  prev->bits = InterlockedExchangeAdd((volatile LONG*)&rwlock->requests.bits, INTERNAL_SYNC_RWLOCK_READINC);
+#else
+  prev->bits = __sync_fetch_and_add(&rwlock->requests.bits, INTERNAL_SYNC_RWLOCK_READINC);
+#endif
+  return rwlock->completions.kind.writer != prev->kind.writer
+    ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) + 1)
+    : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK));
+}
+
+
 LIBXSMM_API_DEFINITION int libxsmm_rwlock_tryread(libxsmm_rwlock* rwlock)
 {
   internal_sync_counter prev;
-  assert(0 != rwlock);
-#if defined(_WIN32)
-  prev.bits = InterlockedExchangeAdd((volatile LONG*)&rwlock->requests.bits, INTERNAL_SYNC_RWLOCK_READINC);
-#else
-  prev.bits = __sync_fetch_and_add(&rwlock->requests.bits, INTERNAL_SYNC_RWLOCK_READINC);
-#endif
-  return rwlock->completions.kind.writer != prev.kind.writer
-    ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) + 1)
-    : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK));
+  return internal_rwlock_tryread(rwlock, &prev);
 }
 
 
 LIBXSMM_API_DEFINITION void libxsmm_rwlock_acqread(libxsmm_rwlock* rwlock)
 {
   internal_sync_counter prev;
-  unsigned int spin_count = 0;
-  assert(0 != rwlock);
-#if defined(_WIN32)
-  prev.bits = InterlockedExchangeAdd((volatile LONG*)&rwlock->requests.bits, INTERNAL_SYNC_RWLOCK_READINC);
-#else
-  prev.bits = __sync_fetch_and_add(&rwlock->requests.bits, INTERNAL_SYNC_RWLOCK_READINC);
-#endif
-  while (rwlock->completions.kind.writer != prev.kind.writer) {
-    if (0 != internal_sync_cycle(&spin_count)) internal_sync_sleep(spin_count);
+  if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) != internal_rwlock_tryread(rwlock, &prev)) {
+    unsigned int spin_count = 0;
+    while (rwlock->completions.kind.writer != prev.kind.writer) {
+      if (0 != internal_sync_cycle(&spin_count)) internal_sync_sleep(spin_count);
+    }
   }
 }
 
