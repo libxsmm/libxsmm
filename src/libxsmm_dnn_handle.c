@@ -292,7 +292,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
     if (handle->use_lp_kernel == 1) {
       if (handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block > 256) {
-        handle->blocksifm_blocking = 8;
+        handle->blocksifm_blocking = 16;
         while ( handle->desc.C%(handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block) != 0  ) {
           handle->blocksifm_blocking--;
         }
@@ -360,7 +360,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
     if (handle->use_lp_kernel == 1) {
       if (handle->blocksofm_blocking * handle->ofmblock > 256) {
-        handle->blocksofm_blocking = 8;
+        handle->blocksofm_blocking = 16;
         while ( handle->desc.K%(handle->blocksofm_blocking * handle->ofmblock * handle->fm_lp_block) != 0  ) {
           handle->blocksofm_blocking--;
         }
