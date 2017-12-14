@@ -1884,7 +1884,6 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_RSP ) {
              fprintf(stderr, "libxsmm_instruction_vec_compute_mem: vpdpwssd and idx=rsp?\n");
              exit(-1);
-             exit(-1);
           }
           break;
         case LIBXSMM_X86_INSTR_VPDPWSSDS:

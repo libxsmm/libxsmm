@@ -50,10 +50,10 @@ Please note that certain content under `tensorflow/models` may cause an error du
 
 For AVX-512 in general, GCC&#160;5.x (or higher) should be used (see section [Non-default Compiler](#non-default-compiler)). LIBXSMM supports Intel&#160;AVX2 as the baseline code path for all JIT-generated DNN-code (SMM domain also supports AVX). For Intel&#160;AVX-512 (on top of AVX2), the foundational instructions are sufficient in many cases, but for the sparse domain the Core-flavor is a prerequisite ("Skylake server" or SKX), and VNNI/QFMA instructions are honored on Intel Xeon&#160;Phi code-named "Knights Mill" (KNM).
 
-Generally, please follow the [guide](https://www.tensorflow.org/install/install_sources) to build TensorFlow from the sources. Please invoke the following commands to build the pip-package (Python wheel):
+Generally, please follow the [guide](https://www.tensorflow.org/install/install_sources) to build TensorFlow from the sources. Bazel command lines (like below) can be extended to build an optimized target (default: `-c opt`), or they can be extended to include debug symbols (per `-c dbg`, which is usually combined with `--copt=-O0`). Please invoke the following commands to build the pip-package (Python wheel):
 
 ```bash
-bazel build -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
+bazel build --copt=-O2 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
   //tensorflow/tools/pip_package:build_pip_package
@@ -83,7 +83,7 @@ cd /path/to/tensorflow-xsmm
 mkdir -p tensorflow/models
 ln -s /path/to/convnet-benchmarks/tensorflow tensorflow/models/convnetbenchmarks
 
-bazel build -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
+bazel build --copt=-O2 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
   //tensorflow/models/convnetbenchmarks:benchmark_alexnet \
@@ -146,7 +146,7 @@ To get named JIT-kernels, one may add the following flags to Bazel's build line:
 There are two aspects of LIBXSMM enabled within TensorFlow: (1)&#160;sparse CNN, and (2)&#160;CNN. To build and test the sparse routines:
 
 ```bash
-bazel build -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
+bazel build --copt=-O2 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
   //tensorflow/core/kernels:sparse_matmul_op_test
@@ -154,7 +154,7 @@ bazel build -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD 
 bazel-bin/tensorflow/core/kernels/sparse_matmul_op_test --benchmarks=all
 bazel-bin/tensorflow/core/kernels/sparse_matmul_op_test
 
-bazel run -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
+bazel run --copt=-O2 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
   //tensorflow/python/kernel_tests:sparse_matmul_op_test
@@ -163,14 +163,14 @@ bazel run -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --
 To build and test the regular CNN routines (note that below `bazel run...` may be deadlocking during the test):
 
 ```bash
-bazel build -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
+bazel build --copt=-O2 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
   //tensorflow/core/kernels:conv_ops_test
 
 bazel-bin/tensorflow/core/kernels/conv_ops_test
 
-bazel run -c opt --copt=-O3 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
+bazel run --copt=-O2 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
   --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
   <line-of-target-flags-from-above> \
   //tensorflow/python/kernel_tests:conv_ops_test
