@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
   }
   else {
-    fprintf(stdout, "FAILED (%i errors)\n", nerrors);
+    fprintf(stdout, "FAILED (%u errors)\n", nerrors);
     return EXIT_FAILURE;
   }
 }
