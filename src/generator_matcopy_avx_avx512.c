@@ -124,6 +124,11 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     l_kernel_config.vector_reg_count = 32;
     l_kernel_config.vector_name = 'z';
     l_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
+  } else if ( strcmp( i_arch, "icl" ) == 0 ) {
+    l_kernel_config.instruction_set = LIBXSMM_X86_AVX512_ICL;
+    l_kernel_config.vector_reg_count = 32;
+    l_kernel_config.vector_name = 'z';
+    l_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
   } else if ( strcmp( i_arch, "knl" ) == 0 ) {
     /* For now make the code work for KNL */
     l_kernel_config.instruction_set = LIBXSMM_X86_AVX512_MIC;
@@ -172,7 +177,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     } else if ( i_matcopy_desc->typesize == 2  ) {
       if (l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM) {
         l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
-      } else if ( l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE) {
+      } else if ( l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE || l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_ICL ) {
         l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVDQU16;
       } else {
         /* Should not happen!!! */
@@ -209,7 +214,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
       l_gp_reg_mapping.gp_reg_b_pf, i_arch );
 
   /* In case we should do masked load/store and we have AVX512 arch, precompute the mask */
-  if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_MIC ||  l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM || l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE)) {
+  if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_MIC ||  l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM || l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE || l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_ICL) ) {
     libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask(io_generated_code,
         &l_gp_reg_mapping,
         &l_kernel_config,
@@ -346,7 +351,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   }
 
   /* Add load/store with mask if there is remaining and we have AVX512 arch */
-  if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_MIC ||  l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM || l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE)) {
+  if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_MIC ||  l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM || l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE || l_kernel_config.instruction_set == LIBXSMM_X86_AVX512_ICL)) {
     if (0 == (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & i_matcopy_desc->flags)) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
           l_kernel_config.instruction_set,

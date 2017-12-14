@@ -78,6 +78,8 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_MIC;
   } else if ( strcmp( i_arch, "skx" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE;
+  } else if ( strcmp( i_arch, "icl" ) == 0 ) {
+    l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_ICL;
   } else if ( strcmp( i_arch, "knm" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_KNM;
   } else {

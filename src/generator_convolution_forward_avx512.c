@@ -748,7 +748,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
           } else {
             libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                      i_conv_kernel_config->instruction_set,
-                                                     LIBXSMM_X86_INSTR_VPDPWSSD,
+                                                     LIBXSMM_X86_INSTR_VPDPWSSDS,
                                                      1,
                                                      l_input_reg,
                                                      l_input_idx,
@@ -765,9 +765,9 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
         if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
           l_compute_instr = LIBXSMM_X86_INSTR_V4FMADDPS;
         } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
-          l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSD;
+          l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSDS;
         } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-          l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSD;
+          l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSDS;
         }
 
         libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
@@ -1010,7 +1010,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
             } else {
               libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                        i_conv_kernel_config->instruction_set,
-                                                       LIBXSMM_X86_INSTR_VPDPWSSD,
+                                                       LIBXSMM_X86_INSTR_VPDPWSSDS,
                                                        1,
                                                        l_input_reg,
                                                        l_input_idx,
@@ -1028,9 +1028,9 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
           if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
             l_compute_instr = LIBXSMM_X86_INSTR_V4FMADDPS;
           } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
-            l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSD;
+            l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSDS;
           } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-            l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSD;
+            l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSDS;
           }
 
           libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
@@ -1257,7 +1257,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
             } else {
               libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                        i_conv_kernel_config->instruction_set,
-                                                       LIBXSMM_X86_INSTR_VPDPWSSD,
+                                                       LIBXSMM_X86_INSTR_VPDPWSSDS,
                                                        1,
                                                        l_input_reg,
                                                        LIBXSMM_X86_GP_REG_UNDEF,
@@ -1275,9 +1275,9 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
           if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
             l_compute_instr = LIBXSMM_X86_INSTR_V4FMADDPS;
           } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
-            l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSD;
+            l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSDS;
           } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-            l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSD;
+            l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSDS;
           } else {
             /* shouldn't happen */
           }

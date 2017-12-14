@@ -614,7 +614,8 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
 
     if ( (i_instruction_set == LIBXSMM_X86_AVX512_MIC   ||
           i_instruction_set == LIBXSMM_X86_AVX512_CORE  ||
-          i_instruction_set == LIBXSMM_X86_AVX512_KNM   ) &&
+          i_instruction_set == LIBXSMM_X86_AVX512_KNM   || 
+          i_instruction_set == LIBXSMM_X86_AVX512_ICL     ) &&
          (i_use_masking != 0) ) {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
@@ -1430,6 +1431,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        (i_instruction_set != LIBXSMM_X86_AVX512_MIC)  &&
        (i_instruction_set != LIBXSMM_X86_AVX512_CORE) &&
        (i_instruction_set != LIBXSMM_X86_AVX512_KNM)  &&
+       (i_instruction_set != LIBXSMM_X86_AVX512_ICL)  &&
        (i_use_broadcast != 0) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_IMCI_AVX512_BCAST );
     return;
@@ -2130,6 +2132,7 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
        (i_instruction_set != LIBXSMM_X86_AVX512_MIC)  &&
        (i_instruction_set != LIBXSMM_X86_AVX512_CORE) &&
        (i_instruction_set != LIBXSMM_X86_AVX512_KNM)  &&
+       (i_instruction_set != LIBXSMM_X86_AVX512_ICL)  &&
        (i_use_broadcast != 0) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_IMCI_AVX512_BCAST );
     return;
@@ -2755,7 +2758,7 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
       fprintf(stderr, "LIBXSMM ERROR: libxsmm_x86_instruction_vec_move_gathscat yet needs to be implemented for scatters!\n");
       exit(-1);
     } else {
-      if ( i_instruction_set == LIBXSMM_X86_AVX512_MIC || i_instruction_set == LIBXSMM_X86_AVX512_CORE ) {
+      if ( i_instruction_set == LIBXSMM_X86_AVX512_MIC || i_instruction_set == LIBXSMM_X86_AVX512_CORE || i_instruction_set == LIBXSMM_X86_AVX512_ICL ) {
         if ( io_generated_code->code_type == 0 ) {
           l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%zmm%u,%u), %%%%zmm%u%%{%%%%k%u%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vec_reg_idx, i_scale, i_vec_reg_number, i_mask_reg_number);
         } else {

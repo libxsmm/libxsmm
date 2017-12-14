@@ -294,7 +294,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const li
 
     if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM  ||
-          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) && (handle->avx512avx2fallback == 0) ) {
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
+          libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL    ) && (handle->avx512avx2fallback == 0) ) {
       if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
         libxsmm_free(handle->code_fwd[0].pmm);
       }

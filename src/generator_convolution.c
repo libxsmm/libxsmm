@@ -56,7 +56,8 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
   if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     if ( (strcmp(i_arch, "knl") == 0) ||
          (strcmp(i_arch, "knm") == 0) ||
-         (strcmp(i_arch, "skx") == 0) ) {
+         (strcmp(i_arch, "skx") == 0) ||
+         (strcmp(i_arch, "icl") == 0) ) {
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
     } else if ( (strcmp(i_arch, "hsw") == 0) ) {
       libxsmm_generator_convolution_forward_avx2_kernel( io_generated_code, i_conv_desc, i_arch );
@@ -66,6 +67,7 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
     }
   } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
     if ( (strcmp(i_arch, "skx") == 0) ||
+         (strcmp(i_arch, "icl") == 0) ||
          (strcmp(i_arch, "knm") == 0) ) {
       /* call actual kernel generation with revised parameters */
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
@@ -75,24 +77,18 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
     }
   } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     if ( (strcmp(i_arch, "skx") == 0) ||
-         (strcmp(i_arch, "knm") == 0) ) {
+         (strcmp(i_arch, "icl") == 0) ||
+         (strcmp(i_arch, "knm") == 0)   ) {
       /* call actual kernel generation with revised parameters */
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
     }  
-  } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I16
-                     && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
-    if ( (strcmp(i_arch, "skx") == 0) ) {
-      libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
-    } else {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
-      return;
-    }
   } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32
                      && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
-    if ( (strcmp(i_arch, "skx") == 0) ) {
+    if ( (strcmp(i_arch, "skx") == 0) ||
+         (strcmp(i_arch, "icl") == 0)   ) {
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
@@ -121,7 +117,8 @@ void libxsmm_generator_convolution_backward_kernel( libxsmm_generated_code*     
   if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
     if ( (strcmp(i_arch, "knl") == 0) ||
          (strcmp(i_arch, "knm") == 0) ||
-         (strcmp(i_arch, "skx") == 0) ) {
+         (strcmp(i_arch, "skx") == 0) ||
+         (strcmp(i_arch, "icl") == 0)   ) {
       libxsmm_generator_convolution_backward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
     } else if ( (strcmp(i_arch, "hsw") == 0) ) {
       libxsmm_generator_convolution_backward_avx2_kernel( io_generated_code, i_conv_desc, i_arch );
@@ -152,7 +149,8 @@ void libxsmm_generator_convolution_weight_update_kernel( libxsmm_generated_code*
   if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) ||  (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32)  ) {
     if ( (strcmp(i_arch, "knl") == 0) ||
          (strcmp(i_arch, "knm") == 0) ||
-         (strcmp(i_arch, "skx") == 0) ) {
+         (strcmp(i_arch, "skx") == 0) ||
+         (strcmp(i_arch, "icl") == 0)   ) {
       if ( 0/*((i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0) ||*/
            /*((i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0)*/ ) {
         libxsmm_generator_convolution_weight_update_avx2_kernel( io_generated_code, i_conv_desc, i_arch );
