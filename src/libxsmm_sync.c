@@ -454,17 +454,17 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_release(libxsmm_mutex* mutex)
 
 
 typedef union LIBXSMM_RETARGETABLE internal_sync_counter {
-  volatile struct {
+  struct {
     uint16_t writer;
     uint16_t reader;
   } kind;
-  volatile uint32_t bits;
+  uint32_t bits;
 } internal_sync_counter;
 
 
 struct LIBXSMM_RETARGETABLE libxsmm_rwlock {
-  internal_sync_counter requests;
-  internal_sync_counter completions;
+  volatile internal_sync_counter requests;
+  volatile internal_sync_counter completions;
 };
 
 
@@ -487,16 +487,17 @@ LIBXSMM_API_DEFINITION void libxsmm_rwlock_destroy(const libxsmm_rwlock* rwlock)
 LIBXSMM_API_DEFINITION int libxsmm_rwlock_trylock(libxsmm_rwlock* rwlock)
 {
   internal_sync_counter prev, next;
+  uint32_t before;
   assert(0 != rwlock);
   prev.bits = rwlock->requests.bits;
   next.bits = prev.bits;
   ++next.kind.writer;
 #if defined(_WIN32)
-  return (prev.bits != ((uint32_t)InterlockedCompareExchange((volatile LONG*)&rwlock->requests.bits, next.bits, prev.bits)) ||
+  before = (uint32_t)InterlockedCompareExchange((volatile LONG*)&rwlock->requests.bits, next.bits, prev.bits);
 #else
-  return (0 != __sync_bool_compare_and_swap(&rwlock->requests.bits, prev.bits, next.bits) ||
+  before = __sync_val_compare_and_swap(&rwlock->requests.bits, prev.bits, next.bits);
 #endif
-    rwlock->completions.bits != prev.bits)
+  return (prev.bits != before || rwlock->completions.bits != prev.bits)
     ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) + 1)
     : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK));
 }
@@ -506,17 +507,19 @@ LIBXSMM_API_DEFINITION void libxsmm_rwlock_acquire(libxsmm_rwlock* rwlock)
 {
   internal_sync_counter prev, next;
   unsigned int spin_count = 0;
+  uint32_t before;
   assert(0 != rwlock);
   do {
     prev.bits = rwlock->requests.bits;
     next.bits = prev.bits;
     ++next.kind.writer;
-  }
 #if defined(_WIN32)
-  while (prev.bits != ((uint32_t)InterlockedCompareExchange((volatile LONG*)&rwlock->requests.bits, next.bits, prev.bits)));
+    before = (uint32_t)InterlockedCompareExchange((volatile LONG*)&rwlock->requests.bits, next.bits, prev.bits);
 #else
-  while (0 == __sync_bool_compare_and_swap(&rwlock->requests.bits, prev.bits, next.bits));
+    before = __sync_val_compare_and_swap(&rwlock->requests.bits, prev.bits, next.bits);
 #endif
+  }
+  while (prev.bits != before);
   while (rwlock->completions.bits != prev.bits) {
     if (0 != internal_sync_cycle(&spin_count)) internal_sync_sleep(spin_count);
   }
