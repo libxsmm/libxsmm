@@ -208,7 +208,7 @@
 #     define LIBXSMM_LOCK_ACQUIRED_spin TRUE
 #     define LIBXSMM_LOCK_TYPE_spin CRITICAL_SECTION
 #     define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) InitializeCriticalSection(LOCK)
-#     define LIBXSMM_LOCK_DESTROY_spin(LOCK) DeleteCriticalSection(LOCK)
+#     define LIBXSMM_LOCK_DESTROY_spin(LOCK) DeleteCriticalSection((LIBXSMM_LOCK_TYPE_spin*)(LOCK))
 #     define LIBXSMM_LOCK_TRYLOCK_spin(LOCK) TryEnterCriticalSection(LOCK)
 #     define LIBXSMM_LOCK_ACQUIRE_spin(LOCK) EnterCriticalSection(LOCK)
 #     define LIBXSMM_LOCK_RELEASE_spin(LOCK) LeaveCriticalSection(LOCK)
