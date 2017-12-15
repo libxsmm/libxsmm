@@ -106,8 +106,9 @@
 #   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_add_and_fetch(DST_PTR, VALUE)
 #   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_sub_and_fetch(DST_PTR, VALUE)
 # endif
+# define LIBXSMM_SYNC_BARRIER __asm__ __volatile__ ("" ::: "memory")
 # define LIBXSMM_SYNCHRONIZE __sync_synchronize()
-/* TODO: distinct implementation of LIBXSMM_ATOMIC_SYNC_* wrt LIBXSMM_GCCATOMICS */
+    /* TODO: distinct implementation of LIBXSMM_ATOMIC_SYNC_* wrt LIBXSMM_GCCATOMICS */
 # define LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, VALUE) while ((VALUE) == (LOCK)); LIBXSMM_SYNC_PAUSE
 # define LIBXSMM_ATOMIC_SYNC_SET(LOCK) do { LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, 1); } while(0 != __sync_lock_test_and_set(&(LOCK), 1))
 # define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK) __sync_lock_release(&(LOCK))
@@ -123,6 +124,7 @@
     } while(0 != libxsmm_sync_set_i_); \
   }
 # define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK) (LOCK) = 0
+# define LIBXSMM_SYNC_BARRIER _ReadWriteBarrier()
 # define LIBXSMM_SYNCHRONIZE /* TODO */
 #else
 # define LIBXSMM_ATOMIC_LOAD LIBXSMM_NONATOMIC_LOAD
@@ -132,6 +134,7 @@
 # define LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, VALUE) LIBXSMM_UNUSED(LOCK)
 # define LIBXSMM_ATOMIC_SYNC_SET(LOCK) LIBXSMM_UNUSED(LOCK)
 # define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK) LIBXSMM_UNUSED(LOCK)
+# define LIBXSMM_SYNC_BARRIER
 # define LIBXSMM_SYNCHRONIZE
 #endif
 #if !defined(LIBXSMM_ATOMIC_STORE_ZERO)

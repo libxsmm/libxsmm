@@ -312,7 +312,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_mutex {
 #if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_MUTEX) impl;
 #else
-# if defined(LIBXSMM_SYNC_FUTEX)
+# if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
   volatile int state;
 # else
   volatile char state;
@@ -468,9 +468,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_release(libxsmm_mutex* mutex)
 #if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_MUTEX, &mutex->impl);
 #else
-# if !defined(_WIN32) && !defined(__CYGWIN__)
-  __asm__ __volatile__ ("" ::: "memory");
-# endif
+  LIBXSMM_SYNC_BARRIER;
 # if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
   if (INTERNAL_SYNC_MUTEX_STATE_CONTESTED == __sync_fetch_and_sub(&mutex->state, 1)) {
     mutex->state = INTERNAL_SYNC_MUTEX_STATE_FREE;
