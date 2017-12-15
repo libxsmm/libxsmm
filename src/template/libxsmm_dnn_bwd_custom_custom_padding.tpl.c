@@ -32,13 +32,13 @@
 /* Padding code via jitted matcopy kernel */
 
 for (ofm1 = handle->blocksofm-1; ofm1 >= 1; ofm1--) {
-  input_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(6, del_out, img, ofm1, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
-  copy_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(5, output_buffer, ofm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ofmblock, handle->fm_lp_block);
-  prefetch_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(6, del_out, img, ofm1-1, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
+  input_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(6, del_out, img, ofm1, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
+  copy_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(5, output_buffer, ofm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ofmblock_lp, handle->fm_lp_block);
+  prefetch_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(6, del_out, img, ofm1-1, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
   jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
 }
-input_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(6, del_out, img, ofm1, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
-copy_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(5, output_buffer, ofm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ofmblock, handle->fm_lp_block);
-prefetch_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(6, del_out, img+1, handle->blocksofm-1, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
+input_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(6, del_out, img, ofm1, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
+copy_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(5, output_buffer, ofm1, handle->desc.pad_h, handle->desc.pad_w, 0, 0, padded_h, padded_w, handle->ofmblock_lp, handle->fm_lp_block);
+prefetch_ptr = (element_output_type*)&LIBXSMM_VLA_ACCESS(6, del_out, img+1, handle->blocksofm-1, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
 jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
 

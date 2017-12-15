@@ -45,8 +45,8 @@
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
 #define USE_OVERWRITE
-#define USE_FUSED_BATCH_STATS
-#define USE_FUSED_MAX_STATS
+/*#define USE_FUSED_BATCH_STATS*/
+/*#define USE_FUSED_MAX_STATS */
 #define FP64_BN_STATS
 /*#define USE_FUSED_RELU_BWD*/
 

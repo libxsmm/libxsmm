@@ -785,13 +785,16 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
       if (l_k % 4 == 0) {
         /* handle prefetches for input and weights */
         if ( (l_n % 2 == 1) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) && (l_prefetch_input_index < i_conv_desc->ofw_rb) ) {
-          libxsmm_x86_instruction_prefetch( io_generated_code,
+          unsigned int pf_offset = l_prefetch_input_index * i_conv_desc->stride_w * i_conv_kernel_config->datatype_size_in * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block;
+          if (pf_offset % 64 == 0) {
+            libxsmm_x86_instruction_prefetch( io_generated_code,
                                             prefetch_type_input,
                                             i_gp_reg_mapping->gp_reg_input_pf,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
                                             (l_prefetch_input_index * i_conv_desc->stride_w) * i_conv_kernel_config->datatype_size_in
                                               * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block );
+          }
           l_prefetch_input_index++;
         }
 
@@ -1048,13 +1051,16 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
         if ( l_k % 4 == 0 ) {
           /* handle prefetches for input and weights */
           if ( ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) && (l_prefetch_input_index_w < i_conv_desc->ofw_rb)  && (l_prefetch_input_index_h < i_conv_desc->ofh_rb)  ) {
-            libxsmm_x86_instruction_prefetch( io_generated_code,
+            unsigned int pf_offset = (l_prefetch_input_index_w * i_conv_desc->stride_w + l_prefetch_input_index_h * i_conv_desc->stride_h * i_conv_desc->ifw_padded)  * i_conv_kernel_config->datatype_size_in * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block;
+            if (pf_offset % 64 == 0) {
+               libxsmm_x86_instruction_prefetch( io_generated_code,
                                             prefetch_type_input,
                                             i_gp_reg_mapping->gp_reg_input_pf,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
                                             (l_prefetch_input_index_w * i_conv_desc->stride_w + l_prefetch_input_index_h * i_conv_desc->stride_h * i_conv_desc->ifw_padded ) * i_conv_kernel_config->datatype_size_in *
                                               i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block );
+            }
             l_prefetch_input_index_w++;
           }
            
@@ -1296,13 +1302,16 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
 
         if ( l_k % 4 == 0 ) {
           if ( ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1) && (l_prefetch_input_index_w < i_conv_desc->ofw_rb)  && (l_prefetch_input_index_h < i_conv_desc->ofh_rb)  ) {
-            libxsmm_x86_instruction_prefetch( io_generated_code,
+            unsigned int pf_offset = (l_prefetch_input_index_w * i_conv_desc->stride_w + l_prefetch_input_index_h * i_conv_desc->stride_h * i_conv_desc->ifw_padded) * i_conv_kernel_config->datatype_size_in * i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block;  
+            if (pf_offset % 64 == 0) {
+              libxsmm_x86_instruction_prefetch( io_generated_code,
                 prefetch_type_input,
                 i_gp_reg_mapping->gp_reg_input_pf,
                 LIBXSMM_X86_GP_REG_UNDEF,
                 0,
                 (l_prefetch_input_index_w * i_conv_desc->stride_w + l_prefetch_input_index_h * i_conv_desc->stride_h * i_conv_desc->ifw_padded ) * i_conv_kernel_config->datatype_size_in *
                 i_conv_kernel_config->l_ld_ifm_act * i_conv_desc->fm_lp_block );
+            }
             l_prefetch_input_index_w++;
           }
 

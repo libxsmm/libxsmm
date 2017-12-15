@@ -1695,9 +1695,9 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
     const libxsmm_convolution_weight_update_descriptor*     i_conv_desc) {
   /* determine the number of registers needed for an ofm block */
   /* const unsigned int l_reg_per_block = (i_conv_desc->ifm_block == 1) ? (i_conv_desc->kw) : (i_conv_desc->ifm_block / i_conv_kernel_config->vector_length_wt); */
-  const unsigned int l_reg_per_block = (i_conv_desc->ifm_block == 1) ? (i_conv_desc->kw) : (i_conv_desc->ifm_block < i_conv_kernel_config->vector_length_wt ? 1 : i_conv_desc->ifm_block / i_conv_kernel_config->vector_length_wt);
+  const unsigned int l_reg_per_block = (i_conv_desc->ifm_block == 1) ? (i_conv_desc->kw) : (i_conv_desc->ifm_block_hp < i_conv_kernel_config->vector_length_wt ? 1 : i_conv_desc->ifm_block_hp / i_conv_kernel_config->vector_length_wt);
   /* start register of accumulator */
-  const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - ( i_conv_desc->ifm_block * l_reg_per_block);
+  const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - ( i_conv_desc->ifm_block_hp * l_reg_per_block);
   /* register blocking counter */
   unsigned int reg_count = 0;
 
@@ -1731,7 +1731,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
 
   /* adding to C, so let's load C */
   if ( (i_conv_desc->use_nts == 0) && (use_lp_kernel == 0) ) {
-    for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
+    for ( l_j = 0; l_j < i_conv_desc->ifm_block_hp; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
         for (eq_index = 0; eq_index < unrolled_ofms; eq_index++) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -1740,7 +1740,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
               i_gp_reg_mapping->gp_reg_weight,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               (reg_count)*offset * i_conv_kernel_config->datatype_size_wt + 
-              eq_index * i_conv_desc->kw * i_conv_desc->kh *  i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->l_ld_ifm_act *  i_conv_kernel_config->datatype_size_wt ,
+              eq_index * i_conv_desc->kw * i_conv_desc->kh *  i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->l_ld_ofm_act *  i_conv_kernel_config->datatype_size_wt ,
               i_conv_kernel_config->vector_name,
               l_vec_reg_acc_start + reg_count - eq_index * 3 , 0, 0);
 
@@ -1750,14 +1750,14 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
                 i_gp_reg_mapping->gp_reg_weight_pf,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 (reg_count)*offset * i_conv_kernel_config->datatype_size_wt  +
-                eq_index * i_conv_desc->kw * i_conv_desc->kh *  i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->l_ld_ifm_act *  i_conv_kernel_config->datatype_size_wt  );
+                eq_index * i_conv_desc->kw * i_conv_desc->kh *  i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->l_ld_ofm_act *  i_conv_kernel_config->datatype_size_wt  );
           }
         }
       }
     }
   } else {
 
-    for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
+    for ( l_j = 0; l_j < i_conv_desc->ifm_block_hp; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
             i_conv_kernel_config->instruction_set,
@@ -1819,9 +1819,9 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
     const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
     const libxsmm_convolution_weight_update_descriptor*     i_conv_desc) {
   /* determine the number of registers needed for an ofm block */
-  const unsigned int l_reg_per_block = (i_conv_desc->ifm_block == 1) ? (i_conv_desc->kw) : (i_conv_desc->ifm_block < i_conv_kernel_config->vector_length_wt ? 1 : i_conv_desc->ifm_block / i_conv_kernel_config->vector_length_wt);
+  const unsigned int l_reg_per_block = (i_conv_desc->ifm_block == 1) ? (i_conv_desc->kw) : (i_conv_desc->ifm_block_hp < i_conv_kernel_config->vector_length_wt ? 1 : i_conv_desc->ifm_block_hp / i_conv_kernel_config->vector_length_wt);
   /* start register of accumulator */
-  const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - ( i_conv_desc->ifm_block * l_reg_per_block);
+  const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - ( i_conv_desc->ifm_block_hp * l_reg_per_block);
   /* register blocking counter  */
   unsigned int reg_count = 0;
 
@@ -1874,7 +1874,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
 
   if ( i_conv_desc->use_nts == 0  ) {
     /* adding to C, so let's load C */
-    for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
+    for ( l_j = 0; l_j < i_conv_desc->ifm_block_hp; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
         for (eq_index = 0; eq_index < unrolled_ofms; eq_index++) {
           if (use_lp_kernel == 0) {
@@ -1884,7 +1884,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
                 i_gp_reg_mapping->gp_reg_weight,
                 LIBXSMM_X86_GP_REG_UNDEF, 0,
                 (reg_count)*offset * i_conv_kernel_config->datatype_size_wt +
-                eq_index * i_conv_desc->kw * i_conv_desc->kh *  i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->l_ld_ifm_act *  i_conv_kernel_config->datatype_size_wt,
+                eq_index * i_conv_desc->kw * i_conv_desc->kh *  i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->l_ld_ofm_act *  i_conv_kernel_config->datatype_size_wt,
                 i_conv_kernel_config->vector_name,
                 l_vec_reg_acc_start + reg_count - eq_index * 3 , 0, 1 );
           } else {
@@ -1926,7 +1926,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
       }
     }
   } else {
-    for ( l_j = 0; l_j < i_conv_desc->ifm_block; l_j++ ) {
+    for ( l_j = 0; l_j < i_conv_desc->ifm_block_hp; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
         if (use_lp_kernel == 1) {
           /* Convert result to F32  */
