@@ -245,7 +245,11 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         ii_ = oi_*stride_w;
                         ij_ = oj_*stride_h;
 
-                        compute_indices[local_entries] =  ( ( ( ( ( (img *  BLOCKSIFM) +  ifm1) * padded_h )  +  (ij_+kj)) * IFMBLOCK) ) * padded_w  + (ii_ + ki) ;
+                        if (handle->trans_ofw_ifm == 1 ) {
+                          compute_indices[local_entries] =  ( ( ( ( ( (img *  BLOCKSIFM) +  ifm1) * padded_h )  +  (ij_+kj)) * IFMBLOCK) ) * padded_w  + (ii_ + ki) ; 
+                        } else {
+                          compute_indices[local_entries] =  ( ( ( ( ( (img *  BLOCKSIFM)  +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + (ii_ + ki) ) *  IFMBLOCK;
+                        }
                         compute_indices[local_entries+1] = (( (ofm1 *  BLOCKSIFM )  +  ifm1 ) * handle->desc.R * handle->desc.S *  IFMBLOCK *  handle->ofmblock + kj * handle->desc.S *  IFMBLOCK *  handle->ofmblock + ki * IFMBLOCK *  handle->ofmblock)  * handle->weight_copies;
 
                         compute_indices[local_entries+2] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  handle->ofhp )  +  oj_ ) * (handle->ofwp+handle->output_lp_padding))  +  oi_ ) *  handle->ofmblock;
@@ -277,7 +281,11 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         ii_ = oi_*stride_w;
                         ij_ = oj_*stride_h;
 
-                        compute_indices[local_entries] =  ( ( ( ( ( (img *  BLOCKSIFM) +  ifm1) * padded_h )  +  (ij_+kj)) * IFMBLOCK) ) * padded_w  + (ii_ + ki) ;
+                        if (handle->trans_ofw_ifm == 1 ) {
+                          compute_indices[local_entries] =  ( ( ( ( ( (img *  BLOCKSIFM) +  ifm1) * padded_h )  +  (ij_+kj)) * IFMBLOCK) ) * padded_w  + (ii_ + ki) ;
+                        } else {
+                          compute_indices[local_entries] =  ( ( ( ( ( (img *  BLOCKSIFM)  +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + (ii_ + ki) ) *  IFMBLOCK;               
+                        }
                         compute_indices[local_entries+1] = (( (ofm1 *  BLOCKSIFM )  +  ifm1 ) * handle->desc.R * handle->desc.S *  IFMBLOCK *  handle->ofmblock + kj * handle->desc.S *  IFMBLOCK *  handle->ofmblock + ki * IFMBLOCK *  handle->ofmblock)  * handle->weight_copies;
                         compute_indices[local_entries+2] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  handle->ofhp )  +  oj_ ) * (handle->ofwp+handle->output_lp_padding))  +  oi_ ) *  handle->ofmblock;
                         local_entries += 3;
