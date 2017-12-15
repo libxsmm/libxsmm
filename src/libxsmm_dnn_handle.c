@@ -1518,6 +1518,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   descriptor.ofh_rb--;
                 }
 
+                if (handle->ofh == 14 &&  libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) {
+                  descriptor.ofh_rb = 2;
+                }
+
                 descriptor.use_nts = 1;
                 descriptor.blocks_h = handle->ofh / descriptor.ofh_rb;
                 handle->upd_ofh_rb = descriptor.ofh_rb * descriptor.blocks_h;
