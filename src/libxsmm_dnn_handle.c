@@ -1462,7 +1462,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   handle->output_lp_padding = output_lp_padding;
                 }
 
-                if (handle->desc.R == 1 && handle->desc.S == 1 && (handle->desc.u != 1 || handle->desc.v != 1)) {
+                if (handle->desc.R == 1 && handle->desc.S == 1 && (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->desc.u != 1 || handle->desc.v != 1)) {
                   handle->resize_input = 1;
                   handle->ifwp_resized = handle->ifwp/handle->desc.u;
                   handle->ifhp_resized = handle->ifhp/handle->desc.v;

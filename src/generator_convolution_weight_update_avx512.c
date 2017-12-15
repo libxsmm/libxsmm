@@ -1259,7 +1259,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
   unsigned int l_compute_instr = 0;
   unsigned int lp_dim_out = 1;
   unsigned int use_lp_kernel = 0;
-  unsigned int lookahead = 0;
+  unsigned int lookahead = 1;
 
   /* depending on datatype emit the needed FMA(-sequence) */
   if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
