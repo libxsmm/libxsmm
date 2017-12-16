@@ -1455,6 +1455,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   handle->resize_input = 1;
                   handle->ifwp_resized = handle->ifwp/handle->desc.u;
                   handle->ifhp_resized = handle->ifhp/handle->desc.v;
+                  descriptor.stride_h = 1;
+                  descriptor.stride_w = 1;    
                   descriptor.ifh_padded = handle->ifhp_resized;
                 } else {
                   handle->resize_input = 0;
