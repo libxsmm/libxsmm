@@ -156,6 +156,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
 
   /* calculate the chunk size of current columns to work on */
   l_n_chunks = ( (l_max_cols % l_max_reg_block) == 0 ) ? (l_max_cols / l_max_reg_block) : (l_max_cols / l_max_reg_block) + 1;
+  assert(0 != l_n_chunks); /* mute static analysis (division-by-zero); such invalid input must be caught upfront */
   l_n_chunksize = ( (l_max_cols % l_n_chunks) == 0 ) ? (l_max_cols / l_n_chunks) : (l_max_cols / l_n_chunks) + 1;
 
   /* open asm */
@@ -207,8 +208,8 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
       l_found_mul = 0;
 
       /* let's figure out if we can apply qmadd when being sin F32 setting and on KNM */
-      if ( (l_k < ((unsigned int)i_xgemm_desc->k - 3))                       && 
-           (l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM) && 
+      if ( (l_k < ((unsigned int)i_xgemm_desc->k - 3))                       &&
+           (l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM) &&
            (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype)               ) {
         /* loop over the columns of B/C */
         for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
@@ -280,7 +281,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
                                             l_micro_kernel_config.vector_name,
                                             l_max_reg_block+l_lcl_k, 0, 0 );
         }
-        
+
         /* loop over the columns of B/C */
         for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
           /* issue a qmadd */
