@@ -215,6 +215,8 @@ int main(int argc, char* argv[]) {
   }
   printf("max error: %f\n", l_max_error);
 
+  printf("PERFDUMP,%s,%i,%i,%f,%f,%f\n", l_csr_file, REPS, N_ELEMENT_MODES, l_max_error, l_total, ((double)((double)REPS * (double)N_QUANTITIES * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9) );
+
   /* free */
   libxsmm_free( l_b_de );
   libxsmm_free( l_a );
