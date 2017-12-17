@@ -444,8 +444,8 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
     for (state = mutex->state; INTERNAL_SYNC_MUTEX_STATE_FREE != state; state = mutex->state) {
       if (0 != internal_sync_cycle(&spin_count)) {
 #   if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
-        if ( INTERNAL_SYNC_MUTEX_STATE_LOCKED != state || INTERNAL_SYNC_MUTEX_STATE_FREE != __sync_val_compare_and_swap(&mutex->state,
-          INTERNAL_SYNC_MUTEX_STATE_LOCKED, INTERNAL_SYNC_MUTEX_STATE_CONTESTED))
+        if (INTERNAL_SYNC_MUTEX_STATE_LOCKED != state || INTERNAL_SYNC_MUTEX_STATE_FREE != __sync_val_compare_and_swap(&mutex->state,
+            INTERNAL_SYNC_MUTEX_STATE_LOCKED, INTERNAL_SYNC_MUTEX_STATE_CONTESTED))
         {
           syscall(INTERNAL_SYNC_FUTEX, &mutex->state, FUTEX_WAIT, INTERNAL_SYNC_MUTEX_STATE_CONTESTED, NULL, NULL, 0);
           new_state = INTERNAL_SYNC_MUTEX_STATE_CONTESTED;
