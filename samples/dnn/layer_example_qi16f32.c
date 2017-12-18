@@ -881,8 +881,8 @@ int main(int argc, char* argv[])
 
 #ifdef USE_FORMATED_QUANT
     /* quantize and copy into LIBXSMM format */
-    libxsmm_dnn_quantize_act( naive_input_save, input_libxsmm,  nImg, nIfm, ifhp, ifwp, 1, 16, 2, 2, &scf_input,  LIBXSMM_DNN_QUANT_BIAS_ROUND );
-    libxsmm_dnn_quantize_fil( naive_filter,     filter_libxsmm, nOfm, nIfm, kw, kh, 1, 16, 1, 16, 2, 2, &scf_filter, LIBXSMM_DNN_QUANT_BIAS_ROUND );
+    libxsmm_dnn_quantize_act( naive_input_save, input_libxsmm,  nImg, nIfm, ifhp, ifwp, 1, 8, 2, 2, &scf_input,  LIBXSMM_DNN_QUANT_BIAS_ROUND );
+    libxsmm_dnn_quantize_fil( naive_filter,     filter_libxsmm, nOfm, nIfm, kw, kh, 1, 8, 1, 16, 2, 2, &scf_filter, LIBXSMM_DNN_QUANT_BIAS_ROUND );
 #endif
 
     /* set scaling factors into tensors */
