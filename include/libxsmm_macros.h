@@ -282,6 +282,7 @@
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
+#define LIBXSMM_DIFF(T0, T1) ((T0) < (T1) ? ((T1) - (T0)) : ((T0) - (T1)))
 #define LIBXSMM_CLMP(VALUE, LO, HI) ((LO) < (VALUE) ? ((VALUE) <= (HI) ? (VALUE) : LIBXSMM_MIN(VALUE, HI)) : LIBXSMM_MAX(LO, VALUE))
 #define LIBXSMM_MOD2(N, NPOT) ((N) & ((NPOT) - 1))
 #define LIBXSMM_MUL2(N, NPOT) (((unsigned long long)(N)) << LIBXSMM_LOG2(NPOT))
@@ -534,6 +535,13 @@
 #if !defined(LIBXSMM_ASSERT)
 # include <assert.h>
 # define LIBXSMM_ASSERT(EXPR) assert(EXPR)
+#endif
+#if !defined(LIBXSMM_EXPECT)
+# if defined(NDEBUG)
+#   define LIBXSMM_EXPECT(RESULT, EXPR) (EXPR)
+# else
+#   define LIBXSMM_EXPECT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) == (EXPR))
+# endif
 #endif
 #include <stddef.h>
 #include <stdint.h>

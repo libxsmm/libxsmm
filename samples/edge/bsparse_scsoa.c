@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2014-2016, Intel Corporation                                **
+** Copyright (c) 2014-2017, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -36,15 +36,14 @@
 int main(int argc, char* argv[]) {
   unsigned int N_ELEMENT_MODES = ( argc == 4 ) ? atoi(argv[1]) : 20;
   unsigned int REPS = ( argc == 4 ) ? atoi(argv[2]) : 1;
-  char* l_csr_file = ( argc == 4 ) ? argv[3] : "file.csr" ;
+  char* l_csc_file = ( argc == 4 ) ? argv[3] : "file.csc" ;
 
   REALTYPE* l_a = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
   REALTYPE* l_b_de = (REALTYPE*)libxsmm_aligned_malloc(N_ELEMENT_MODES * N_ELEMENT_MODES * sizeof(REALTYPE), 64);
   REALTYPE* l_b_sp;
-  unsigned int* l_rowptr;
-  unsigned int* l_colidx;
+  unsigned int* l_colptr;
+  unsigned int* l_rowidx;
   unsigned int l_rowcount, l_colcount, l_elements;
-  REALTYPE* l_c = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
   REALTYPE* l_c_gold = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
   REALTYPE* l_c_asm = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
   REALTYPE l_max_error = 0.0;
@@ -55,7 +54,6 @@ int main(int argc, char* argv[]) {
   unsigned int l_n;
 
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_a, l_a, N_ELEMENT_MODES, N_CRUNS);
-  LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c, l_c, N_ELEMENT_MODES, N_CRUNS);
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c_asm, l_c_asm, N_ELEMENT_MODES, N_CRUNS);
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c_gold, l_c_gold, N_ELEMENT_MODES, N_CRUNS);
 
@@ -70,7 +68,7 @@ int main(int argc, char* argv[]) {
   double l_total;
 
   if (argc != 4) {
-    fprintf( stderr, "arguments: M #iters CSR-file!\n" );
+    fprintf( stderr, "arguments: M #iters CSC-file!\n" );
     exit(-1);
   }
 
@@ -87,22 +85,21 @@ int main(int argc, char* argv[]) {
   for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
     for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
       for ( l_k = 0; l_k < N_CRUNS; l_k++ ) {
-        LIBXSMM_VLA_ACCESS(3, l_p_c,      l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) = (REALTYPE)0.0;
         LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) = (REALTYPE)0.0;
         LIBXSMM_VLA_ACCESS(3, l_p_c_asm,  l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) = (REALTYPE)0.0;
       }
     }
   }
 
-  /* read B, CSR */
-  libxsmm_sparse_csr_reader(  l_csr_file,
-                             &l_rowptr,
-                             &l_colidx,
+  /* read B, CSC */
+  libxsmm_sparse_csc_reader(  l_csc_file,
+                             &l_colptr,
+                             &l_rowidx,
                              &l_b_sp,
                              &l_rowcount, &l_colcount, &l_elements );
 
   /* copy b to dense */
-  printf("CSR matrix data structure we just read:\n");
+  printf("CSC matrix data structure we just read:\n");
   printf("rows: %u, columns: %u, elements: %u\n", l_rowcount, l_colcount, l_elements);
 
   for ( l_n = 0; l_n < (N_ELEMENT_MODES * N_ELEMENT_MODES); l_n++) {
@@ -110,11 +107,11 @@ int main(int argc, char* argv[]) {
   }
 
   for ( l_n = 0; l_n < N_ELEMENT_MODES; l_n++) {
-    const unsigned int l_rowelems = l_rowptr[l_n+1] - l_rowptr[l_n];
-    assert(l_rowptr[l_n+1] >= l_rowptr[l_n]);
+    const unsigned int l_colelems = l_colptr[l_n+1] - l_colptr[l_n];
+    assert(l_colptr[l_n+1] >= l_colptr[l_n]);
 
-    for ( l_k = 0; l_k < l_rowelems; l_k++) {
-      l_b_de[(l_n * N_ELEMENT_MODES) + l_colidx[l_rowptr[l_n] + l_k]] = l_b_sp[l_rowptr[l_n] + l_k];
+    for ( l_k = 0; l_k < l_colelems; l_k++) {
+      l_b_de[(l_rowidx[l_colptr[l_n] + l_k] * N_ELEMENT_MODES) + l_n] = l_b_sp[l_colptr[l_n] + l_k];
     }
   }
 
@@ -142,40 +139,16 @@ int main(int argc, char* argv[]) {
   printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)N_QUANTITIES * (double)N_ELEMENT_MODES * (double)N_ELEMENT_MODES * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
 
   /* sparse routine */
-  gettimeofday(&l_start, NULL);
-  for ( l_n = 0; l_n < REPS; l_n++) {
-    for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
-      for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
-        unsigned int l_elems_per_row = l_rowptr[l_j+1] - l_rowptr[l_j];
-        unsigned int l_rowstart = l_rowptr[l_j];
-        for ( l_jj = 0; l_jj < l_elems_per_row; l_jj++) {
-          LIBXSMM_PRAGMA_SIMD
-          for (l_k = 0; l_k < N_CRUNS; l_k++) {
-            LIBXSMM_VLA_ACCESS(3, l_p_c, l_i, l_colidx[l_rowstart+l_jj], l_k, N_ELEMENT_MODES, N_CRUNS)
-              +=   l_b_sp[l_rowstart+l_jj]
-                 * LIBXSMM_VLA_ACCESS(3, l_p_a, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS);
-          }
-        }
-      }
-    }
-  }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
-  printf("%fs for sparse\n", l_total);
-  printf("%f GFLOPS for sparse\n", ((double)((double)REPS * (double)N_QUANTITIES * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
-
-
-  /* sparse routine */
 #if defined(__EDGE_EXECUTE_F32__)
   LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, LIBXSMM_GEMM_PRECISION_F32, 0/*flags*/,
     N_QUANTITIES, N_ELEMENT_MODES, N_ELEMENT_MODES, N_ELEMENT_MODES, 0, N_ELEMENT_MODES,
     1.0, 1.0, LIBXSMM_PREFETCH_NONE);
-  mykernel = libxsmm_create_xcsr_soa( &l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_b_sp ).smm;
+  mykernel = libxsmm_create_xcsc_soa( &l_xgemm_desc, l_colptr, l_rowidx, (const void*)l_b_sp ).smm;
 #else
   LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, LIBXSMM_GEMM_PRECISION_F64, 0/*flags*/,
     N_QUANTITIES, N_ELEMENT_MODES, N_ELEMENT_MODES, N_ELEMENT_MODES, 0, N_ELEMENT_MODES,
     1.0, 1.0, LIBXSMM_PREFETCH_NONE);
-  mykernel = libxsmm_create_xcsr_soa( &l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_b_sp ).dmm;
+  mykernel = libxsmm_create_xcsc_soa( &l_xgemm_desc, l_colptr, l_rowidx, (const void*)l_b_sp ).dmm;
 #endif
 
   gettimeofday(&l_start, NULL);
@@ -186,19 +159,6 @@ int main(int argc, char* argv[]) {
   l_total = sec(l_start, l_end);
   printf("%fs for sparse (asm)\n", l_total);
   printf("%f GFLOPS for sparse (asm)\n", ((double)((double)REPS * (double)N_QUANTITIES * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
-  /* check for errors */
-  for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
-    for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
-      for ( l_k = 0; l_k < N_CRUNS; l_k++ ) {
-        if (fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
-                    - LIBXSMM_VLA_ACCESS(3, l_p_c, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) ) > l_max_error ) {
-          l_max_error = (REALTYPE)fabs( LIBXSMM_VLA_ACCESS(3, l_p_c_gold, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS)
-                                      - LIBXSMM_VLA_ACCESS(3, l_p_c, l_i, l_j, l_k, N_ELEMENT_MODES, N_CRUNS) );
-        }
-      }
-    }
-  }
-  printf("max error: %f\n", l_max_error);
 
   /* check for errors */
   l_max_error = (REALTYPE)0.0;
@@ -215,10 +175,11 @@ int main(int argc, char* argv[]) {
   }
   printf("max error: %f\n", l_max_error);
 
+  printf("PERFDUMP,%s,%i,%i,%f,%f,%f\n", l_csc_file, REPS, N_ELEMENT_MODES, l_max_error, l_total, ((double)((double)REPS * (double)N_QUANTITIES * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9) );
+
   /* free */
   libxsmm_free( l_b_de );
   libxsmm_free( l_a );
-  libxsmm_free( l_c );
   libxsmm_free( l_c_gold );
   libxsmm_free( l_c_asm );
 

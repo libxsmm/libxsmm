@@ -94,7 +94,7 @@ int main(void)
     const libxsmm_blasint m = r[3*i+0] % max_shape + 1;
     const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
     const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
-    f[i].s = libxsmm_smmdispatch((int)m, (int)n, (int)k,
+    f[i].s = libxsmm_smmdispatch(m, n, k,
       NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
       &flags, &prefetch);
   }

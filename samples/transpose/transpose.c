@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
 #endif
     double duration = 0;
     unsigned long long start;
-    libxsmm_blasint i, j;
+    libxsmm_blasint i;
     size_t size = 0;
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
@@ -157,9 +157,10 @@ int main(int argc, char* argv[])
       ('o' == t || 'O' == t) ? "out-of-place" : "in-place");
 
 #if defined(_OPENMP)
-#   pragma omp parallel for private(i, j)
+#   pragma omp parallel for private(i)
 #endif
     for (i = 0; i < n; ++i) {
+      libxsmm_blasint j;
       for (j = 0; j < m; ++j) {
         a[i*ldi+j] = initial_value(i, j, m);
       }
@@ -248,6 +249,7 @@ int main(int argc, char* argv[])
 #if defined(USE_SELF_VALIDATION)
       if (0 == env_check || 0 != atoi(env_check)) { /* check */
         for (i = 0; i < km; ++i) {
+          libxsmm_blasint j;
           for (j = 0; j < kn; ++j) {
             const ELEM_TYPE u = b[i*kldo+j];
             const ELEM_TYPE v = a[j*kldi+i];

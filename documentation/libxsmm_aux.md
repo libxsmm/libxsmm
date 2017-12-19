@@ -87,7 +87,7 @@ int libxsmm_get_scratch_allocator(void** context,
   libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 ```
 
-There are currently no claims on the properties of the default memory allocation (except when [tuning](libxsmm_tune.md#scalable_malloc) the thread scalability). In contrast, the scratch memory allocation is very effective and delivers a decent speedup over subsequent regular memory allocations. In contrast to the default allocation technique, the scratch memory establishes a watermark for repeatedly allocated and deallocated buffers. The scratch memory domain is (arbitrarily) limited to 2&#160;GB of memory, but it is possible to set a different Byte-limit (available per [libxsmm_malloc.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_malloc.h#L37), and also per environment variable LIBXSMM_SCRATCH_LIMIT with optional "k|K", "m|M", and "g|G" units).
+There are currently no claims on the properties of the default memory allocation (except when [tuning](libxsmm_tune.md#scalable_malloc) the thread scalability). In contrast, the scratch memory allocation is very effective and delivers a decent speedup over subsequent regular memory allocations. In contrast to the default allocation technique, the scratch memory establishes a watermark for repeatedly allocated and deallocated buffers. The scratch memory domain is (arbitrarily) limited to 4&#160;GB of memory, but it is possible to set a different Byte-limit (available per [libxsmm_malloc.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_malloc.h#L37), and also per environment variable LIBXSMM_SCRATCH_LIMIT with optional "k|K", "m|M", and "g|G" units).
 
 ```C
 void libxsmm_set_scratch_limit(size_t nbytes);

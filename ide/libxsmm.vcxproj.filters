@@ -216,6 +216,9 @@
     <ClInclude Include="..\src\libxsmm_dnn_dryruns.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_spgemm_csc_bsparse_soa.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -399,6 +402,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_dryruns.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_spgemm_csc_bsparse_soa.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

@@ -660,10 +660,6 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
-  if ( i_k_blocking % 4 != 0 ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_K_BLOCK );
-    return;
-  }
 #endif
 
   /* compute number of n accumulators to hide FMA latencies */
@@ -725,7 +721,9 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
   }
 
   /* apply k blocking */
-  for ( l_k = 0; l_k < i_k_blocking; l_k+=4 ) {
+  for ( l_k = 0; l_k < i_k_blocking; ++l_k ) {
+    unsigned int l_lcl_k = (l_k+4 <= i_k_blocking) ? 4 : 1;
+
     /* advance b pointer if needed */
     if ( (l_k > 0) && ((l_k%128) == 0) ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction,
@@ -750,7 +748,7 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
       l_k_b_updates++;
     }
 
-    for ( l_z = 0; l_z < 4; l_z++ ) {
+    for ( l_z = 0; l_z < l_lcl_k; l_z++ ) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                         i_micro_kernel_config->instruction_set,
                                         i_micro_kernel_config->a_vmove_instruction,
@@ -784,14 +782,14 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST ||
          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2 ||
          i_xgemm_desc->prefetch == LIBXSMM_PREFETCH_AL2BL2_VIA_C) {
-      for ( l_z = 0; l_z < 4; l_z++ ) {
+      for ( l_z = 0; l_z < l_lcl_k; l_z++ ) {
         libxsmm_x86_instruction_prefetch( io_generated_code,
                                           i_micro_kernel_config->prefetch_instruction,
                                           i_gp_reg_mapping->gp_reg_a_prefetch,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
                                           (i_xgemm_desc->lda * (l_k+l_z) * i_micro_kernel_config->datatype_size) );
       }
-      if ( ((l_k+4) == i_k_blocking) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
+      if ( ((l_k+l_lcl_k) == i_k_blocking) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
         libxsmm_x86_instruction_alu_imm( io_generated_code,
                                          i_micro_kernel_config->alu_add_instruction,
                                          i_gp_reg_mapping->gp_reg_a_prefetch,
@@ -800,7 +798,7 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
     }
 
     /* in last k-iteration: advance pointers */
-    if ( ((l_k+4) == i_k_blocking) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
+    if ( ((l_k+l_lcl_k) == i_k_blocking) && (i_k_blocking != (unsigned int)i_xgemm_desc->k) ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_add_instruction,
                                        i_gp_reg_mapping->gp_reg_a,
@@ -856,33 +854,54 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
         /* shouldn't happen.... */
       }
 
-      if (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) {
-        libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
-                                                  i_micro_kernel_config->instruction_set,
-                                                  LIBXSMM_X86_INSTR_V4FMADDPS,
-                                                  l_b_reg,
-                                                  l_b_idx,
-                                                  l_scale,
-                                                  l_disp,
-                                                  i_micro_kernel_config->vector_name,
-                                                  0,
-                                                  i_micro_kernel_config->vector_reg_count - (i_n_blocking*(((l_k/4)%l_n_accs)+1)) + l_n );
-      } else if (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype) {
-        libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
-                                                  i_micro_kernel_config->instruction_set,
-                                                  LIBXSMM_X86_INSTR_VP4DPWSSD,
-                                                  l_b_reg,
-                                                  l_b_idx,
-                                                  l_scale,
-                                                  l_disp,
-                                                  i_micro_kernel_config->vector_name,
-                                                  0,
-                                                  i_micro_kernel_config->vector_reg_count - (i_n_blocking*(((l_k/4)%l_n_accs)+1)) + l_n );
+      if ( l_lcl_k == 4 ) {
+        if (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) {
+          libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
+                                                    i_micro_kernel_config->instruction_set,
+                                                    LIBXSMM_X86_INSTR_V4FMADDPS,
+                                                    l_b_reg,
+                                                    l_b_idx,
+                                                    l_scale,
+                                                    l_disp,
+                                                    i_micro_kernel_config->vector_name,
+                                                    0,
+                                                    i_micro_kernel_config->vector_reg_count - (i_n_blocking*(((l_k/4)%l_n_accs)+1)) + l_n );
+        } else if (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype) {
+          libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
+                                                    i_micro_kernel_config->instruction_set,
+                                                    LIBXSMM_X86_INSTR_VP4DPWSSD,
+                                                    l_b_reg,
+                                                    l_b_idx,
+                                                    l_scale,
+                                                    l_disp,
+                                                    i_micro_kernel_config->vector_name,
+                                                    0,
+                                                    i_micro_kernel_config->vector_reg_count - (i_n_blocking*(((l_k/4)%l_n_accs)+1)) + l_n );
+        } else {
+          /* shouldn't happen */
+        }
       } else {
-        /* shouldn't happen */
+        if (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) {
+          libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                   i_micro_kernel_config->instruction_set,
+                                                   i_micro_kernel_config->vmul_instruction,
+                                                   1,
+                                                   l_b_reg,
+                                                   l_b_idx,
+                                                   l_scale,
+                                                   l_disp,
+                                                   i_micro_kernel_config->vector_name,
+                                                   0,
+                                                   i_micro_kernel_config->vector_reg_count - (i_n_blocking*(((l_k)%l_n_accs)+1)) + l_n );
+        } else if (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype) {
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_K_BLOCK );
+          return;
+        } else { 
+          /* shouldn't happen */
+        }
       }
 
-      if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_AL1_BL1_CL1) {
+      if (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_AL1_BL1_CL1 && l_k % 4 == 0) {
 
         b_prefetch_blocks = i_xgemm_desc->k/i_micro_kernel_config->vector_length;
         b_pref_freq = ((i_k_blocking/4)/b_prefetch_blocks)/2;
@@ -932,7 +951,12 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
         }
       }
     }
-    l_displacement_k_b+=4;
+    if (l_lcl_k == 4) {
+      l_displacement_k_b+=4;
+      l_k+=3;
+    } else {
+      l_displacement_k_b++;
+    }
   }
 
   /* Adjust a pointer */
@@ -1737,16 +1761,25 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
 
   /* Let's do something special for SeisSol high-order (N == 9 holds true) */
   if ((i_xgemm_desc->k >= 8) && (i_xgemm_desc->n == 9)) {
-    libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( io_generated_code,
-                                                               i_gp_reg_mapping,
-                                                               i_micro_kernel_config,
-                                                               i_xgemm_desc,
-                                                               i_xgemm_desc->k );
+    if ( ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM)
+            && ((LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) || (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype))) ) {
+      libxsmm_generator_gemm_avx512_microkernel_qfma( io_generated_code,
+                                                      i_gp_reg_mapping,
+                                                      i_micro_kernel_config,
+                                                      i_xgemm_desc,
+                                                      i_xgemm_desc->n,
+                                                      i_xgemm_desc->k);
+    } else {
+      libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( io_generated_code,
+                                                                 i_gp_reg_mapping,
+                                                                 i_micro_kernel_config,
+                                                                 i_xgemm_desc,
+                                                                 i_xgemm_desc->k );
+    }
     l_k_unrolled = 1;
   } else if ( (unsigned int)i_xgemm_desc->k <= l_k_threshold ) {
-    if ( ((unsigned int)i_xgemm_desc->k%4 == 0) &&
-         ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM)
-         && ((LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) || (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype))) ) {
+    if ( ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM)
+            && ((LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) || (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype))) ) {
       libxsmm_generator_gemm_avx512_microkernel_qfma( io_generated_code,
                                                       i_gp_reg_mapping,
                                                       i_micro_kernel_config,
@@ -1766,9 +1799,8 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
     libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
                                           i_micro_kernel_config->vector_length, l_k_blocking);
 
-    if ( (l_k_blocking%4 == 0) &&
-         ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM)
-         && ((LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) || (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype))) ) {
+    if ( ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM)
+           && ((LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) || (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype))) ) {
       libxsmm_generator_gemm_avx512_microkernel_qfma( io_generated_code,
                                                       i_gp_reg_mapping,
                                                       i_micro_kernel_config,
@@ -1792,9 +1824,8 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
       libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config,
                                             i_micro_kernel_config->vector_length, l_k_blocking);
 
-      if ( (l_k_blocking%4 == 0) &&
-           ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM)
-           && ((LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) || (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype)) ) ) {
+      if ( ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM)
+             && ((LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) || (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype)) ) ) {
         libxsmm_generator_gemm_avx512_microkernel_qfma( io_generated_code,
                                                         i_gp_reg_mapping,
                                                         i_micro_kernel_config,
