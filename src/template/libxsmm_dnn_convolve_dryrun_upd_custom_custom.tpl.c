@@ -186,13 +186,35 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   int my_in_tile_id = ltid % group_size;
   int ifms_per_thread = BLOCKSIFM/group_size;
+  int ofms_per_thread;
   my_ifm_start = LIBXSMM_MIN( my_in_tile_id * ifms_per_thread, BLOCKSIFM  );
   my_ifm_end = LIBXSMM_MIN( (my_in_tile_id+1) * ifms_per_thread, BLOCKSIFM  );
   my_ofm_start = 0;
   my_ofm_end = BLOCKSOFM;
 
-  int block_ofm = handle->block_upd_ofm; 
-  int block_ifm = handle->block_upd_ifm;
+  if (handle->reduce_weights == 0) {
+    /* Parallelize over the FMs in this case and avoid reduction */    
+    int team_div = (int) sqrt(handle->desc.threads);
+    while ( handle->desc.threads % team_div != 0  ) {
+      team_div--;
+    }
+    int n_ifm_teams = ( BLOCKSIFM > BLOCKSOFM ) ? handle->desc.threads/team_div : team_div ;
+    int n_ofm_teams = ( BLOCKSIFM > BLOCKSOFM ) ? team_div : handle->desc.threads/team_div ;
+    ifms_per_thread = (BLOCKSIFM+n_ifm_teams-1)/n_ifm_teams;
+    ofms_per_thread = (BLOCKSOFM+n_ofm_teams-1)/n_ofm_teams;
+    int my_ifm_id = ltid/n_ofm_teams;
+    int my_ofm_id = ltid%n_ofm_teams;
+    my_ifm_start =  LIBXSMM_MIN(my_ifm_id * ifms_per_thread, BLOCKSIFM);
+    my_ifm_end =  LIBXSMM_MIN((my_ifm_id+1) * ifms_per_thread, BLOCKSIFM);
+    my_ofm_start =  LIBXSMM_MIN(my_ofm_id * ofms_per_thread, BLOCKSOFM);
+    my_ofm_end =  LIBXSMM_MIN((my_ofm_id+1) * ofms_per_thread, BLOCKSOFM);
+    my_img_start = 0;
+    my_img_end = handle->desc.N;
+  }
+
+
+  int block_ofm = my_ofm_end-my_ofm_start+1 ;//handle->block_upd_ofm; 
+  int block_ifm = my_ifm_end-my_ifm_start+1 ;//handle->block_upd_ifm;
 
   for (img = my_img_start; img < my_img_end; img += handle->blocksimg_blocking) {
     for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {
