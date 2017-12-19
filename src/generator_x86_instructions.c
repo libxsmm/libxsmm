@@ -794,6 +794,10 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           break;
        case LIBXSMM_X86_INSTR_VMULPD:
           break;
+       case LIBXSMM_X86_INSTR_VPERMW:
+          l_second += 0x01;
+          l_fpadj += 0x34;
+          break;
        case LIBXSMM_X86_INSTR_VUNPCKLPD:
           l_fpadj = -0x45;
           break;
@@ -1504,6 +1508,10 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VMAXPS:
           l_fpadj = 6;
           l_fpadj2 = -0x81;
+          break;
+       case LIBXSMM_X86_INSTR_VPERMW:
+          l_second += 0x01;
+          l_fpadj = 0x34;
           break;
        case LIBXSMM_X86_INSTR_VFMADD231PD:
           l_second += 0x21;
