@@ -1320,7 +1320,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
     step_size = 1;
     use_lp_kernel = 0; 
   } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-    l_compute_instr = LIBXSMM_X86_INSTR_VFMADD231PS;
+    l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSDS;
     step_size = 2;
     use_lp_kernel = 1; 
   } else {

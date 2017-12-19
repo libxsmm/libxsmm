@@ -200,6 +200,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int use_lp_kernel;
   int output_lp_padding;
   int reduce_weights;
+  int use_vperm_transposes;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;
