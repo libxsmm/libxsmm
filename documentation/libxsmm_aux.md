@@ -130,7 +130,7 @@ LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_DEFAULT, &lock);
 LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_DEFAULT, &lock);
 ```
 
-If the lock-kind is LIBXSMM_LOCK_RWLOCK, non-exclusive a.k.a. shared locking allows to permit multiple readers (LIBXSMM_LOCK_ACQREAD, LIBXSMM_LOCK_TRYREAD, and LIBXSMM_LOCK_RELREAD) if the lock is not acquired exclusively (see above). An attempt to only read-lock anything else but an RW-lock is an exclusive lock (see above):
+If the lock-kind is LIBXSMM_LOCK_RWLOCK, non-exclusive a.k.a. shared locking allows to permit multiple readers (LIBXSMM_LOCK_ACQREAD, LIBXSMM_LOCK_TRYREAD, and LIBXSMM_LOCK_RELREAD) if the lock is not acquired exclusively (see above). An attempt to only read-lock anything else but an RW-lock is an exclusive lock (see above).
 
 ```C
 if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) ==
@@ -138,6 +138,18 @@ if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) ==
 { /* locked code section */
   LIBXSMM_LOCK_RELREAD(LIBXSMM_LOCK_RWLOCK, &rwlock);
 }
+```
+
+Locking different sections for read (LIBXSMM_LOCK_ACQREAD, LIBXSMM_LOCK_RELREAD) and write (LIBXSMM_LOCK_ACQUIRE, LIBXSMM_LOCK_RELEASE) may look like:
+
+```C
+LIBXSMM_LOCK_ACQREAD(LIBXSMM_LOCK_RWLOCK, &rwlock);
+/* locked code section: only reads are performed */
+LIBXSMM_LOCK_RELREAD(LIBXSMM_LOCK_RWLOCK, &rwlock);
+
+LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_RWLOCK, &rwlock);
+/* locked code section: exclusive write (no R/W) */
+LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_RWLOCK, &rwlock);
 ```
 
 Depending on the platform or when using OpenMP to implement the low-level synchronization primitives, the LIBXSMM_LOCK_RWLOCK may be not implemented (OSX) or not available (OMP). In any case, LIBXSMM also implements own lock primitives which are available per API (libxsmm_mutex_\*, and libxsmm_rwlock_\*). This experimental implementation can be used independently of the LIBXSMM_LOCK_\* macros. Future versions of the library eventually map the macros to LIBXSMM's own low-level primitives.
