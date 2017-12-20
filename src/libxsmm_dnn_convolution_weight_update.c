@@ -134,6 +134,7 @@
 void lp_transpose_input_and_output(int img, libxsmm_dnn_layer* handle) {
   typedef short element_input_type;
   typedef short element_output_type;
+  
   if (handle->use_vperm_transposes == 1) {
     if (handle->trans_ofw_ifm == 1) {
       int w_chunks = handle->ifwp/16;
@@ -202,16 +203,21 @@ void lp_transpose_input_and_output(int img, libxsmm_dnn_layer* handle) {
         }
       }
     } else {
-      const __m512i perm_index = _mm512_set_epi16(31,15, 30,14, 29,13, 28,12, 27,11 ,26,10, 25,9, 24,8, 23,7, 22,6, 21,5, 20,4, 19,3, 18,2, 17,1, 16,0); 
-      LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-      int ifm1, ij, ii, ofm1;
-      for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ifm1++) {
-        for (ij = 0; ij < handle->ifhp; ij++) {
-          for (ii = 0; ii < handle->ifwp; ii+=2) {
-            element_input_type *addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, 0, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-            __m512i cl =  _mm512_loadu_si512(addr);
-            __m512i permuted_reg =  _mm512_permutexvar_epi16(perm_index, cl);
-            _mm512_store_si512(addr, permuted_reg);
+      if (handle->avoid_input_trans == 0) {
+        const __m512i perm_index = _mm512_set_epi16(31,15, 30,14, 29,13, 28,12, 27,11 ,26,10, 25,9, 24,8, 23,7, 22,6, 21,5, 20,4, 19,3, 18,2, 17,1, 16,0); 
+        LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+        LIBXSMM_VLA_DECL(6, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, handle->blocksifm_lp, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);
+
+        int ifm1, ij, ii, ofm1;
+        for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ifm1++) {
+          for (ij = 0; ij < handle->ifhp; ij++) {
+            for (ii = 0; ii < handle->ifwp; ii+=2) {
+              element_input_type *addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, 0, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+              element_input_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_input_nopad, img, ifm1, ij, ii/2, 0, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2); 
+              __m512i cl =  _mm512_loadu_si512(addr);
+              __m512i permuted_reg =  _mm512_permutexvar_epi16(perm_index, cl);
+              _mm512_store_si512(dst_addr, permuted_reg);
+            }
           }
         }
       }
@@ -220,22 +226,18 @@ void lp_transpose_input_and_output(int img, libxsmm_dnn_layer* handle) {
     if (handle->avoid_output_trans == 0 ) {
       const __m512i perm_index = _mm512_set_epi16(31,15, 30,14, 29,13, 28,12, 27,11 ,26,10, 25,9, 24,8, 23,7, 22,6, 21,5, 20,4, 19,3, 18,2, 17,1, 16,0); 
       int ifm1, ij, ii, ofm1;    
-      element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp/* + handle->desc.pad_w_out*/) * handle->ofmblock_lp * handle->fm_lp_block;
-      /* + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;*/
-      LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
-
-
+      element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
       LIBXSMM_VLA_DECL(6, element_output_type, tr_output, (element_output_type*)handle->scratch6 , handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
-
+      LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
 
       for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
         for (ij = 0; ij < handle->ofhp; ij++) {
           for (ii = 0; ii < handle->ofwp; ii+=2) {
             element_output_type *addr =  &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
+            element_output_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
             __m512i cl =  _mm512_loadu_si512(addr);
             __m512i permuted_reg =  _mm512_permutexvar_epi16(perm_index, cl);
-            /*    addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);*/
-            _mm512_store_si512(addr, permuted_reg);
+            _mm512_store_si512(dst_addr, permuted_reg);
           }
         }
       }
@@ -421,25 +423,26 @@ void lp_transpose_and_resize_input_and_output(int img, libxsmm_dnn_layer* handle
     }
   }
 
-  if (handle->use_vperm_transposes) {
-
-    if (handle->avoid_output_trans == 0 ) {
+  if (handle->use_vperm_transposes == 1) {
+    if (handle->avoid_output_trans == 0) {
       const __m512i perm_index = _mm512_set_epi16(31,15, 30,14, 29,13, 28,12, 27,11 ,26,10, 25,9, 24,8, 23,7, 22,6, 21,5, 20,4, 19,3, 18,2, 17,1, 16,0); 
       int ifm1, ij, ii, ofm1;    
-      element_output_type *out = (element_output_type*)handle->grad_output->data; /* + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;*/
-      LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);    
+      element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
+      LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); 
+      LIBXSMM_VLA_DECL(6, element_output_type, tr_output, (element_output_type*)handle->scratch6 , handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
+
       for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
         for (ij = 0; ij < handle->ofhp; ij++) {
           for (ii = 0; ii < handle->ofwp; ii+=2) {
             element_output_type *addr =  &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
+            element_output_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
             __m512i cl =  _mm512_loadu_si512(addr);
             __m512i permuted_reg =  _mm512_permutexvar_epi16(perm_index, cl);
-            _mm512_store_si512(addr, permuted_reg);
+            _mm512_store_si512(dst_addr, permuted_reg);
           }
         }
       }  
     }
-
   } else {
     element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi, *pair_addr, *pair_addr_dst;
     element_output_type *dst_lo, *dst_hi;

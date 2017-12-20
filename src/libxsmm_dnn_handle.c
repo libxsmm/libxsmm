@@ -1441,8 +1441,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               }
 
               if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
-                  handle->avoid_output_trans = 1;
-                  descriptor.avoid_output_trans = 1;
+                  handle->avoid_output_trans = atoi(getenv("OUT"));
+                  descriptor.avoid_output_trans = handle->avoid_output_trans;
+                  handle->avoid_input_trans = 0;
               }
 
               if (handle->use_fastpath == 1) {
