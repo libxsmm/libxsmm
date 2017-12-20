@@ -1345,7 +1345,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
         /* set displacement */
         l_disp =   l_k_1 * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in
                  + l_k_2 * i_conv_desc->stride_w * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in
-                 + l_n * i_conv_kernel_config->datatype_size_in;
+                 + l_n * step_size * i_conv_kernel_config->datatype_size_in;
 
         if (step_size == 1) {
           libxsmm_x86_instruction_vec_compute_mem( io_generated_code,

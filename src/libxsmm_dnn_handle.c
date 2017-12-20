@@ -1448,17 +1448,20 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 int padding_target;
                 int output_lp_padding = 0;
                 handle->output_lp_padding = 0;
-
                 if (handle->use_lp_kernel == 0) {
                   padding_target = 4;
                 } else {
                   padding_target = 8;
+                  if (  libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
+                    padding_target = 2;
+                  }
                   output_lp_padding = handle->ofwp%2;
                   handle->output_lp_padding = output_lp_padding;
                 }
 
-                if (handle->desc.R == 1 && handle->desc.S == 1 && (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->desc.u != 1 || handle->desc.v != 1)) {
+                if (handle->desc.R == 1 && handle->desc.S == 1 && (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) && (handle->desc.u != 1 || handle->desc.v != 1)) {
                   handle->resize_input = 1;
+                  handle->trans_ofw_ifm = 1;
                   handle->ifwp_resized = handle->ifwp/handle->desc.u;
                   handle->ifhp_resized = handle->ifhp/handle->desc.v;
                   descriptor.stride_h = 1;
@@ -1474,7 +1477,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   ifw_padded = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
                 }
 
-                if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
+                if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ||  libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  ) {
                   qfma_padding = (handle->desc.W % padding_target == 0) ? 0 : padding_target - handle->desc.W % padding_target;
                 } else {
                   qfma_padding = 0;
@@ -1496,7 +1499,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   }
                 }
 
-                if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
+                if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ||  libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
                   kernel_ofw_fake_pixels = (kernel_ofw_compute % padding_target == 0) ? 0 : padding_target - kernel_ofw_compute % padding_target;
                 } else {
                   kernel_ofw_fake_pixels = 0;
@@ -1692,13 +1695,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           if ((handle->ifmblock == 1) || (handle->blocksifm_lp * handle->blocksofm < handle->desc.threads) ) {
             handle->use_thread_private_filter = 1;
             /* determine if we will transpose input  */
-            if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) /*|| (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)*/) ) {
+            if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  && handle->use_lp_kernel == 1 && (handle->desc.R !=1 || handle->desc.S != 1 || handle->desc.u != 1 || handle->desc.v != 1)) ) ) {
               handle->trans_ofw_ifm = 1;
             }
           } else {
             handle->use_thread_private_filter = 0;
             /* determine if we will transpose input  */
-            if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) /* || (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE)*/) ) {
+            if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC)  || (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  && handle->use_lp_kernel == 1 && (handle->desc.R !=1 || handle->desc.S !=1 || handle->desc.u != 1 || handle->desc.v != 1)) ) ) {
               handle->trans_ofw_ifm = 1;
               if ( handle->desc.R !=1 && handle->desc.S != 1 && ( handle->desc.u !=1 || handle->desc.v != 1 )  ) {
                 handle->trans_ofw_ifm = 0;
