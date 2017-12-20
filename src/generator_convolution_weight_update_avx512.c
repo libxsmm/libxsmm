@@ -174,6 +174,17 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
     l_ofw_trips = 1;
   }
 
+  if ( i_conv_desc->avoid_output_trans) {
+    /* Initialize "permute mask" in zmm3 */
+    unsigned short  mask_array[32] = {0,16,  1,17,  2,18,  3,19,  4,20,  5,21,  6,22,  7,23,  8,24,  9,25,  10,26,  11,27,  12,28,  13,29,  14,30,  15,31 };
+
+     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+        (const unsigned char*) mask_array,
+        "abs_mask",
+        l_conv_kernel_config.vector_name,
+        3);
+  }
+
   if (i_conv_desc->use_fastpath) {
     /* New clean kernel for convolution...  */
     libxsmm_generator_convolution_weight_update_load_weight( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
@@ -1068,8 +1079,9 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
       bound = LIBXSMM_MIN(step_size/lp_dim_out, (n_compute_pixels-l_k_2)/lp_dim_out);
       remainder = 0;
 
-      for ( l_w = 0; l_w < bound; l_w++ ) {
-        libxsmm_x86_instruction_vec_move( io_generated_code,
+      if ( i_conv_desc->avoid_output_trans == 0 )  {
+        for ( l_w = 0; l_w < bound; l_w++ ) {
+          libxsmm_x86_instruction_vec_move( io_generated_code,
             i_conv_kernel_config->instruction_set,
             i_conv_kernel_config->vmove_instruction,
             i_gp_reg_mapping->gp_reg_output,
@@ -1078,7 +1090,24 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
             + ((l_k_1) * i_conv_desc->ofw_padded*i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out  ),
             i_conv_kernel_config->vector_name, l_w,
             0, 0 );
-      }
+        }
+      } else {
+        l_w = 0;
+               libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VPERMW,
+              0,
+              i_gp_reg_mapping->gp_reg_output,
+              LIBXSMM_X86_GP_REG_UNDEF,
+              LIBXSMM_X86_GP_REG_UNDEF,
+              ((output_counter+l_w)*(i_conv_kernel_config->l_ld_ofm_act * lp_dim_out)*(i_conv_kernel_config->datatype_size_out) )
+              + ((l_k_1) * i_conv_desc->ofw_padded*i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out  ),
+              i_conv_kernel_config->vector_name,
+              3,
+              0 ); 
+
+         l_w = bound; 
+      }  
 
       for (remainder = l_w; l_w < step_size/lp_dim_out; l_w++ ) {
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -1330,6 +1359,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
   for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb; l_k_1++) {
     for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb; l_k_2 += step_size) {
 
+      if ( i_conv_desc->avoid_output_trans == 0 )  {
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_conv_kernel_config->instruction_set,
           i_conv_kernel_config->vmove_instruction,
@@ -1339,6 +1369,21 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
           + l_k_1 * i_conv_desc->ofw_padded*i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out,
           i_conv_kernel_config->vector_name, 0,
           0, 0 );
+      } else {
+               libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VPERMW,
+              0,
+              i_gp_reg_mapping->gp_reg_output,
+              LIBXSMM_X86_GP_REG_UNDEF,
+              LIBXSMM_X86_GP_REG_UNDEF,
+              l_k_2 * i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out
+              + l_k_1 * i_conv_desc->ofw_padded*i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out,
+              i_conv_kernel_config->vector_name,
+              3,
+              0 );    
+      }
+      
 
       /* compute vectorwidth (A) * column broadcast (B) */
       for ( l_n = 0; l_n < unroll_factor; l_n++) {        

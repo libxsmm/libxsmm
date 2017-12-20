@@ -1366,7 +1366,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         descriptor.format = (libxsmm_dnn_tensor_format)(handle->buffer_format | handle->filter_format);
         descriptor.use_nts = 0;
         descriptor.blocks_img = 1;
-        descriptor.ncopies = handle->desc.threads;  
+        descriptor.ncopies = handle->desc.threads; 
+ 
 
         /* TODO check JIT errors */
         if ( /*(*/libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
@@ -1437,6 +1438,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 handle->use_vperm_transposes = 1;
               } else {
                 handle->use_vperm_transposes = 0;
+              }
+
+              if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ) {
+                  handle->avoid_output_trans = 1;
+                  descriptor.avoid_output_trans = 1;
               }
 
               if (handle->use_fastpath == 1) {
