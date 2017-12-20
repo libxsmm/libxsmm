@@ -223,5 +223,9 @@ int main(int argc, char* argv[]) {
   libxsmm_free( l_c_gold );
   libxsmm_free( l_c_asm );
 
+  free( l_a_sp );
+  free( l_rowptr );
+  free( l_colidx );
+
   return 0;
 }
