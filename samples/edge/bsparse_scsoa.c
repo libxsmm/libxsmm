@@ -53,8 +53,8 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
   unsigned int  l_count = 0;
   unsigned int  l_found_qmadd = 0;
 
-  cm_dense      = (REALTYPE*)malloc( m*n*sizeof(REALTYPE) ); 
-  cm_dense_data = (REALTYPE*)malloc( m*n*sizeof(REALTYPE) ); 
+  cm_dense      = (REALTYPE*)malloc( m*n*sizeof(REALTYPE) );
+  cm_dense_data = (REALTYPE*)malloc( m*n*sizeof(REALTYPE) );
 
   /* set all values in copy to 1 or 0 */
   for ( j = 0; j < n; ++j ) {
@@ -73,7 +73,7 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
         l_max_cols = j+1;
       }
     }
-  }  
+  }
 
   /* calculate n blocking as in the generator */
   l_n_chunks = ( (l_max_cols % l_max_reg_block) == 0 ) ? (l_max_cols / l_max_reg_block) : (l_max_cols / l_max_reg_block) + 1;
@@ -86,12 +86,12 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
   while ( l_n_processed < l_max_cols ) {
     /* first pass look for qmadds and potential qmadds in the same rows */
     for ( i = 0; i < m; ++i ) {
-      if ( i >= m-3 ) continue; 
+      if ( i >= m-3 ) continue;
       l_found_qmadd = 0;
       for ( j = l_n_processed; j < l_n_limit - l_n_processed; ++j ) {
-        if ( (cm_dense[(j*m)+(i+0)] == (REALTYPE)1.0) && 
-             (cm_dense[(j*m)+(i+1)] == (REALTYPE)1.0) && 
-             (cm_dense[(j*m)+(i+2)] == (REALTYPE)1.0) && 
+        if ( (cm_dense[(j*m)+(i+0)] == (REALTYPE)1.0) &&
+             (cm_dense[(j*m)+(i+1)] == (REALTYPE)1.0) &&
+             (cm_dense[(j*m)+(i+2)] == (REALTYPE)1.0) &&
              (cm_dense[(j*m)+(i+3)] == (REALTYPE)1.0)    ) {
           cm_dense[(j*m)+(i+0)] = (REALTYPE)10.0;
           cm_dense[(j*m)+(i+1)] = (REALTYPE)10.0;
@@ -104,9 +104,9 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
       /* -> let's pad them to 4 nnz */
       if (l_found_qmadd == 1) {
         for ( j = l_n_processed; j < l_n_limit - l_n_processed; ++j ) {
-          if ( (cm_dense[(j*m)+(i+0)] + 
-                cm_dense[(j*m)+(i+1)] + 
-                cm_dense[(j*m)+(i+2)] + 
+          if ( (cm_dense[(j*m)+(i+0)] +
+                cm_dense[(j*m)+(i+1)] +
+                cm_dense[(j*m)+(i+2)] +
                 cm_dense[(j*m)+(i+3)]) == (REALTYPE)3.0 ) {
             cm_dense[(j*m)+(i+0)] = (REALTYPE)10.0;
             cm_dense[(j*m)+(i+1)] = (REALTYPE)10.0;
@@ -129,9 +129,9 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
       /* we are in a potential candidate row for padding 0 for qmadd */
       if ( l_found_qmadd == 0 ) {
         for ( j = l_n_processed; j < l_n_limit - l_n_processed; ++j ) {
-          if ( (cm_dense[(j*m)+(i+0)] + 
-                cm_dense[(j*m)+(i+1)] + 
-                cm_dense[(j*m)+(i+2)] + 
+          if ( (cm_dense[(j*m)+(i+0)] +
+                cm_dense[(j*m)+(i+1)] +
+                cm_dense[(j*m)+(i+2)] +
                 cm_dense[(j*m)+(i+3)]) == (REALTYPE)3.0 ) {
             cm_dense[(j*m)+(i+0)] = (REALTYPE)10.0;
             cm_dense[(j*m)+(i+1)] = (REALTYPE)10.0;
@@ -147,7 +147,7 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
     }
     /* adjust n progression */
     l_n_processed += l_n_chunksize;
-    l_n_limit = LIBXSMM_MIN(l_n_processed + l_n_chunksize, l_max_cols);   
+    l_n_limit = LIBXSMM_MIN(l_n_processed + l_n_chunksize, l_max_cols);
   }
 #endif
 
@@ -165,7 +165,7 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
   (*colptr) = (unsigned int*) malloc( (n+1)*sizeof(unsigned int) );
   (*rowidx) = (unsigned int*) malloc( l_nnz*sizeof(unsigned int) );
   (*values) = (REALTYPE*    ) malloc( l_nnz*sizeof(REALTYPE    ) );
-  
+
   l_colptr = (*colptr);
   l_rowidx = (*rowidx);
   l_values = (*values);
