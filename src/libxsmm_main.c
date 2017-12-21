@@ -532,7 +532,8 @@ LIBXSMM_API_INLINE void internal_init(void)
     }
     { const char *const env = getenv("LIBXSMM_SCRATCH_LIMIT");
       if (0 == env || 0 == *env) {
-        libxsmm_scratch_limit = (size_t)LIBXSMM_MALLOC_SCRATCH_LIMIT;
+        /*const*/ unsigned long long limit = LIBXSMM_MALLOC_SCRATCH_LIMIT;
+        libxsmm_scratch_limit = (size_t)limit;
       }
       else {
         size_t u = strlen(env) - 1; /* 0 < strlen(env) */
