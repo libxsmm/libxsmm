@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -33,11 +33,16 @@
 
 #include "libxsmm_cpuid.h"
 
-/** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below) */
+/** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE2(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+
+/** PGI's own intrinsic header file(s) appear to be broken with PGI C++. */
+#if !defined(LIBXSMM_INTRINSICS_NONE) && (defined(__PGI) && defined(__cplusplus))
+# define LIBXSMM_INTRINSICS_NONE
 #endif
 
 #if defined(__MIC__) && !defined(LIBXSMM_INTRINSICS_NONE)

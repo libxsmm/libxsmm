@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017, Intel Corporation                                     **
+** Copyright (c) 2017-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -222,6 +222,10 @@ int main(int argc, char* argv[]) {
   libxsmm_free( l_c );
   libxsmm_free( l_c_gold );
   libxsmm_free( l_c_asm );
+
+  free( l_a_sp );
+  free( l_rowptr );
+  free( l_colidx );
 
   return 0;
 }

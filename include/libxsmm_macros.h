@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2013-2017, Intel Corporation                                **
+** Copyright (c) 2013-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -333,7 +333,7 @@
  * To ultimately disable VLA-support, define LIBXSMM_NO_VLA (make VLA=0).
  * VLA-support is signaled by LIBXSMM_VLA.
  */
-#if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
+#if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && !defined(__PGI) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
    (!defined(__STDC_NO_VLA__)&& 199901L/*C99*/ < __STDC_VERSION__))) || (defined(__INTEL_COMPILER) && !defined(_WIN32)) || \
     (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__cplusplus))/*depends on above C99-check*/)
 # define LIBXSMM_VLA
