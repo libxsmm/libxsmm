@@ -620,12 +620,10 @@ LIBXSMM_API_DEFINITION void libxsmm_rwlock_release(libxsmm_rwlock* rwlock)
   assert(0 != rwlock);
 # if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_RWLOCK, &rwlock->impl);
-# else
-#   if defined(_WIN32)
+# elif defined(_WIN32)
   _InterlockedExchangeAdd16((volatile short*)&rwlock->completions.kind.writer, 1);
-#   else
+# else
   LIBXSMM_ATOMIC_ADD_FETCH(&rwlock->completions.kind.writer, 1, LIBXSMM_ATOMIC_SEQ_CST);
-#   endif
 # endif
 #else
   LIBXSMM_UNUSED(rwlock);
@@ -698,12 +696,10 @@ LIBXSMM_API_DEFINITION void libxsmm_rwlock_relread(libxsmm_rwlock* rwlock)
   assert(0 != rwlock);
 # if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_RELREAD(LIBXSMM_LOCK_RWLOCK, &rwlock->impl);
-# else
-#   if defined(_WIN32)
+# elif defined(_WIN32)
   _InterlockedExchangeAdd16((volatile short*)&rwlock->completions.kind.reader, 1);
-#   else
+# else
   LIBXSMM_ATOMIC_ADD_FETCH(&rwlock->completions.kind.reader, 1, LIBXSMM_ATOMIC_SEQ_CST);
-#   endif
 # endif
 #else
   LIBXSMM_UNUSED(rwlock);
