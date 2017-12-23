@@ -34,9 +34,13 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-#include <sys/time.h>
 
 #define N_QUANTITIES 9
+
+#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
+# define drand48() ((double)rand() / RAND_MAX)
+# define srand48 srand
+#endif
 
 #if defined(__EDGE_EXECUTE_F32__)
 #define REALTYPE float
@@ -48,9 +52,6 @@
 /*#define N_CRUNS 4*/
 #endif
 
-static double sec(struct timeval start, struct timeval end) {
-  return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
-}
 
 static void libxsmm_sparse_csr_reader( const char*    i_csr_file_in,
                                 unsigned int**        o_row_idx,

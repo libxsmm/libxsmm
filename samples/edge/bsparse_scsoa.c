@@ -31,9 +31,8 @@
 
 #include <libxsmm.h>
 
-#include <common_edge_proxy.h>
+#include "common_edge_proxy.h"
 
-extern int libxsmm_target_archid;
 
 void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsigned int **colptr, unsigned int **rowidx, REALTYPE **values) {
   REALTYPE* cm_dense = NULL;
@@ -222,7 +221,7 @@ int main(int argc, char* argv[]) {
   libxsmm_dmmfunction mykernel = NULL;
 #endif
 
-  struct timeval l_start, l_end;
+  unsigned long long l_start, l_end;
   double l_total;
 
   if (argc != 4) {
@@ -274,14 +273,14 @@ int main(int argc, char* argv[]) {
   }
 
   /* pad B to a better qmadd matrix */
-  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
+  if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
     qfma_fill_in( l_b_de, N_ELEMENT_MODES, N_ELEMENT_MODES, &l_colptr_padded, &l_rowidx_padded, &l_b_sp_padded );
     printf("qfma padded CSC matrix data structure we just read:\n");
     printf("rows: %u, columns: %u, elements: %u\n", l_rowcount, l_colcount, l_colptr_padded[N_ELEMENT_MODES]);
   }
 
   /* dense routine */
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
 #if 1
   for ( l_n = 0; l_n < REPS; l_n++) {
     for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
@@ -298,8 +297,8 @@ int main(int argc, char* argv[]) {
     }
   }
 #endif
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for dense\n", l_total);
   printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)N_QUANTITIES * (double)N_ELEMENT_MODES * (double)N_ELEMENT_MODES * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
 
@@ -320,8 +319,8 @@ int main(int argc, char* argv[]) {
   mykernel = libxsmm_create_xcsc_soa( &l_xgemm_desc, l_colptr, l_rowidx, (const void*)l_b_sp ).dmm;
 #endif
 
-  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
-    gettimeofday(&l_start, NULL);
+  if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
+    l_start = libxsmm_timer_tick();
     for ( l_n = 0; l_n < REPS; l_n++) {
 #if defined(__EDGE_EXECUTE_F32__)
       mykernel( l_a, l_b_sp_padded, l_c_asm );
@@ -329,15 +328,15 @@ int main(int argc, char* argv[]) {
       mykernel( l_a, l_b_sp, l_c_asm );
 #endif
     }
-    gettimeofday(&l_end, NULL);
+    l_end = libxsmm_timer_tick();
   } else {
-    gettimeofday(&l_start, NULL);
+    l_start = libxsmm_timer_tick();
     for ( l_n = 0; l_n < REPS; l_n++) {
       mykernel( l_a, l_b_sp, l_c_asm );
     }
-    gettimeofday(&l_end, NULL);
+    l_end = libxsmm_timer_tick();
   }
-  l_total = sec(l_start, l_end);
+  l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for sparse (asm)\n", l_total);
   printf("%f GFLOPS for sparse (asm)\n", ((double)((double)REPS * (double)N_QUANTITIES * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
 

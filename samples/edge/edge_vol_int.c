@@ -39,7 +39,7 @@
 # include <omp.h>
 #endif
 
-#include <edge_proxy_common.h>
+#include "edge_proxy_common.h"
 
 #if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
 # define drand48() ((double)rand() / RAND_MAX)
@@ -48,37 +48,38 @@
 
 int main(int argc, char* argv[])
 {
-  char* mat_a;
+  char* mat_a = 0;
   unsigned int *mat_a_rowptr, *mat_a_colidx;
   unsigned int mat_a_rowcount, mat_a_colcount, mat_a_nnz;
   double* mat_a_values;
   libxsmm_dmmfunction a_kernel;
 
-  char* mat_b;
+  char* mat_b = 0;
   unsigned int *mat_b_rowptr, *mat_b_colidx;
   unsigned int mat_b_rowcount, mat_b_colcount, mat_b_nnz;
   double* mat_b_values;
   libxsmm_dmmfunction b_kernel;
 
-  char* mat_c;
+  char* mat_c = 0;
   unsigned int *mat_c_rowptr, *mat_c_colidx;
   unsigned int mat_c_rowcount, mat_c_colcount, mat_c_nnz;
   double* mat_c_values;
   libxsmm_dmmfunction c_kernel;
 
-  char* mat_st;
+  char* mat_st = 0;
   unsigned int *mat_st_rowptr, *mat_st_colidx;
   unsigned int mat_st_rowcount, mat_st_colcount, mat_st_nnz;
   double* mat_st_values;
   libxsmm_dmmfunction st_kernel;
 
-  size_t num_elems;
+  size_t num_elems = 0;
   size_t num_modes = 9;
   size_t num_quants = 9;
   size_t num_cfr = 8;
-  size_t num_reps;
+  size_t num_reps = 1;
   size_t elem_size;
-  size_t i, j;
+  /* OpenMP: signed induction variables */
+  int i, j;
 
   libxsmm_gemm_descriptor l_xgemm_desc_stiff;
   libxsmm_gemm_descriptor l_xgemm_desc_star;
@@ -143,13 +144,13 @@ int main(int argc, char* argv[])
   qt = (double*)libxsmm_aligned_malloc( num_elems*num_modes*num_quants*num_cfr*sizeof(double), 2097152);
 
   #pragma omp parallel for private(i,j)
-  for ( i = 0; i < num_elems; i++ ) {
+  for ( i = 0; i < (int)num_elems; i++ ) {
     for ( j = 0; j < elem_size; j++) {
       q[i*elem_size + j] = drand48();
     }
   }
   #pragma omp parallel for private(i,j)
-  for ( i = 0; i < num_elems; i++ ) {
+  for ( i = 0; i < (int)num_elems; i++ ) {
     for ( j = 0; j < elem_size; j++) {
       qt[i*elem_size + j] = drand48();
     }
@@ -160,7 +161,7 @@ int main(int argc, char* argv[])
   /* benchmark single core all kernels */
   printf("benchmarking kernels... \n");
   l_start = libxsmm_timer_tick();
-  for ( i = 0; i < num_reps; i++) {
+  for ( i = 0; i < (int)num_reps; i++) {
     a_kernel( qt, mat_a_values, q );
   }
   l_end = libxsmm_timer_tick();
@@ -169,7 +170,7 @@ int main(int argc, char* argv[])
   printf("%f GFLOPS for stiff1 (asm)\n", ((double)((double)num_reps * (double)num_quants * (double)mat_a_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
 
   l_start = libxsmm_timer_tick();
-  for ( i = 0; i < num_reps; i++) {
+  for ( i = 0; i < (int)num_reps; i++) {
     b_kernel( qt, mat_b_values, q );
   }
   l_end = libxsmm_timer_tick();
@@ -178,7 +179,7 @@ int main(int argc, char* argv[])
   printf("%f GFLOPS for stiff2 (asm)\n", ((double)((double)num_reps * (double)num_quants * (double)mat_b_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
 
   l_start = libxsmm_timer_tick();
-  for ( i = 0; i < num_reps; i++) {
+  for ( i = 0; i < (int)num_reps; i++) {
     c_kernel( qt, mat_c_values, q );
   }
   l_end = libxsmm_timer_tick();
@@ -187,7 +188,7 @@ int main(int argc, char* argv[])
   printf("%f GFLOPS for stiff3 (asm)\n", ((double)((double)num_reps * (double)num_quants * (double)mat_c_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
 
   l_start = libxsmm_timer_tick();
-  for ( i = 0; i < num_reps; i++) {
+  for ( i = 0; i < (int)num_reps; i++) {
     st_kernel( mat_st_values, qt, q );
   }
   l_end = libxsmm_timer_tick();
@@ -198,23 +199,23 @@ int main(int argc, char* argv[])
 
   /* benchmark volumne integration */
   #pragma omp parallel for private(i,j)
-  for ( i = 0; i < num_elems; i++ ) {
+  for ( i = 0; i < (int)num_elems; i++ ) {
     for ( j = 0; j < elem_size; j++) {
       q[i*elem_size + j] = drand48();
     }
   }
   #pragma omp parallel for private(i,j)
-  for ( i = 0; i < num_elems; i++ ) {
+  for ( i = 0; i < (int)num_elems; i++ ) {
     for ( j = 0; j < elem_size; j++) {
       qt[i*elem_size + j] = drand48();
     }
   }
 
   l_start = libxsmm_timer_tick();
-  for ( i = 0; i < num_reps; i++) {
+  for ( i = 0; i < (int)num_reps; i++) {
     #pragma omp parallel private(i, j)
     {
-      __attribute__((aligned(64))) double tp[20*8*9];
+      LIBXSMM_ALIGNED(double tp[20*8*9], LIBXSMM_ALIGNMENT);
 
       #pragma omp for private(j)
       for ( j = 0; j < num_elems; j++ ) {
