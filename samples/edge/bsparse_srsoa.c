@@ -31,7 +31,8 @@
 
 #include <libxsmm.h>
 
-#include <common_edge_proxy.h>
+#include "common_edge_proxy.h"
+
 
 int main(int argc, char* argv[]) {
   unsigned int N_ELEMENT_MODES = ( argc == 4 ) ? atoi(argv[1]) : 20;
@@ -66,7 +67,7 @@ int main(int argc, char* argv[]) {
   libxsmm_dmmfunction mykernel = NULL;
 #endif
 
-  struct timeval l_start, l_end;
+  unsigned long long l_start, l_end;
   double l_total;
 
   if (argc != 4) {
@@ -119,7 +120,7 @@ int main(int argc, char* argv[]) {
   }
 
   /* dense routine */
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
 #if 1
   for ( l_n = 0; l_n < REPS; l_n++) {
     for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
@@ -136,13 +137,13 @@ int main(int argc, char* argv[]) {
     }
   }
 #endif
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for dense\n", l_total);
   printf("%f GFLOPS for dense\n", ((double)((double)REPS * (double)N_QUANTITIES * (double)N_ELEMENT_MODES * (double)N_ELEMENT_MODES * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
 
   /* sparse routine */
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( l_n = 0; l_n < REPS; l_n++) {
     for ( l_i = 0; l_i < N_QUANTITIES; l_i++) {
       for ( l_j = 0; l_j < N_ELEMENT_MODES; l_j++) {
@@ -159,8 +160,8 @@ int main(int argc, char* argv[]) {
       }
     }
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for sparse\n", l_total);
   printf("%f GFLOPS for sparse\n", ((double)((double)REPS * (double)N_QUANTITIES * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
 
@@ -178,12 +179,12 @@ int main(int argc, char* argv[]) {
   mykernel = libxsmm_create_xcsr_soa( &l_xgemm_desc, l_rowptr, l_colidx, (const void*)l_b_sp ).dmm;
 #endif
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( l_n = 0; l_n < REPS; l_n++) {
     mykernel( l_a, l_b_sp, l_c_asm );
   }
-  gettimeofday(&l_end, NULL);
-  l_total = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total = libxsmm_timer_duration(l_start, l_end);
   printf("%fs for sparse (asm)\n", l_total);
   printf("%f GFLOPS for sparse (asm)\n", ((double)((double)REPS * (double)N_QUANTITIES * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9));
   /* check for errors */
