@@ -961,7 +961,7 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     }
   }
 
-  if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid || LIBXSMM_X86_AVX512_CORE < target_archid) {
+  if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid || LIBXSMM_X86_AVX512_ICL < target_archid) {
     target_archid = libxsmm_cpuid();
   }
   else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
