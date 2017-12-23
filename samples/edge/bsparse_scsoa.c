@@ -307,7 +307,7 @@ int main(int argc, char* argv[]) {
   LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, LIBXSMM_GEMM_PRECISION_F32, 0/*flags*/,
     N_QUANTITIES, N_ELEMENT_MODES, N_ELEMENT_MODES, N_ELEMENT_MODES, 0, N_ELEMENT_MODES,
     1.0, 1.0, LIBXSMM_PREFETCH_NONE);
-  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
+  if ( libxsmm_get_target_archid() == LIBXSMM_X86_AVX512_KNM ) {
     mykernel = libxsmm_create_xcsc_soa( &l_xgemm_desc, l_colptr_padded, l_rowidx_padded, (const void*)l_b_sp_padded ).smm;
   } else {
     mykernel = libxsmm_create_xcsc_soa( &l_xgemm_desc, l_colptr, l_rowidx, (const void*)l_b_sp ).smm;
