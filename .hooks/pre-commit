@@ -64,7 +64,7 @@ EOD
   fi
 
   if [ "" != "${TOUCH}" ] && [ "" != "${GREP}" ] && [ "" != "${RM}" ]; then
-    if [ "0" != "$(${GIT} diff --cached --name-status | ${GREP} version.txt)" ]; then
+    if [ "" = "$(${GIT} diff --cached --name-status | ${GREP} version.txt)" ]; then
       # trigger updating the version file
       ${TOUCH} ${LOCKFILE}-version
     else # cleanup
