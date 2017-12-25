@@ -118,6 +118,7 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
     }
     /* second pass look out for consecutive 4 rows which have 3 nnz in a specifc column */
     for ( i = 0; i < m; ++i ) {
+      if ( i >= m-3 ) continue;
       l_found_qmadd = 0;
       /* first check if already a qmadd in that row */
       for ( j = l_n_processed; j < l_n_limit - l_n_processed; ++j ) {
