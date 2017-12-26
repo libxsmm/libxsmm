@@ -468,35 +468,35 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512_reorder(const libxsmm_gemm_
                                                              const unsigned int              i_n_limit,
                                                              unsigned int**                  o_row_schedule,
                                                              unsigned int*                   o_num_active_rows ) {
-  unsigned int l_k;
-  unsigned int l_k2;
-  unsigned int l_z;
+  unsigned int l_k = 0;
+  unsigned int l_k2 = 0;
+  unsigned int l_z = 0;
 
   /* init */
-  unsigned int l_row_elements;
-  unsigned int l_total_elements;
-  unsigned int l_found_mul;
-  unsigned int *l_merged;
-  unsigned int *l_write_set;
-  unsigned int *l_row_size;
+  unsigned int l_row_elements = 0;
+  unsigned int l_total_elements = 0;
+  unsigned int l_found_mul = 0;
+  unsigned int *l_merged = NULL;
+  unsigned int *l_write_set = NULL;
+  unsigned int *l_row_size = NULL;
   /* merging */
   unsigned int l_group_count = 0;
   unsigned int l_row_count = 0;
-  unsigned int l_write_board;
-  unsigned int *l_row_idx;
-  unsigned int *l_group_idx;
-  unsigned int *l_group_size;
+  unsigned int l_write_board = 0;
+  unsigned int *l_row_idx = NULL;
+  unsigned int *l_group_idx = NULL;
+  unsigned int *l_group_size = NULL;
   /* sorting */
-  unsigned int l_left;
-  unsigned int l_right;
-  unsigned int l_cur;
-  unsigned int l_stride;
-  unsigned int l_section;
-  unsigned int *l_group_sort;
-  unsigned int *l_group_sort_aux;
-  unsigned int *l_tmp;
+  unsigned int l_left = 0;
+  unsigned int l_right = 0;
+  unsigned int l_cur = 0;
+  unsigned int l_stride = 0;
+  unsigned int l_section = 0;
+  unsigned int *l_group_sort = NULL;
+  unsigned int *l_group_sort_aux = NULL;
+  unsigned int *l_tmp = NULL;
 
-  unsigned int *l_row_schedule;
+  unsigned int *l_row_schedule = NULL;
 
   l_row_schedule = (unsigned int *) malloc((i_k_limit - i_k_processed) * sizeof(unsigned int));
   *o_row_schedule = l_row_schedule;

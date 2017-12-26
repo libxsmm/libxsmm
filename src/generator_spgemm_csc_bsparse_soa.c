@@ -72,9 +72,9 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
                                                           const unsigned int*             i_row_idx,
                                                           const unsigned int*             i_column_idx,
                                                           const void*                     i_values ) {
-  unsigned int l_n;
-  unsigned int l_k;
-  unsigned int l_soa_width;
+  unsigned int l_n = 0;
+  unsigned int l_k = 0;
+  unsigned int l_soa_width = 0;
   unsigned int l_max_cols = 0;
   unsigned int l_n_processed = 0;
   unsigned int l_n_limit = 0;
@@ -84,22 +84,22 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
   unsigned int l_max_reg_block = 0;
   /* cacheblocking for B */
   unsigned int l_max_rows = 0;
-  unsigned int l_k_chunks;
-  unsigned int l_k_chunksize;
-  unsigned int l_k_processed;
-  unsigned int l_k_limit;
+  unsigned int l_k_chunks = 0;
+  unsigned int l_k_chunksize = 0;
+  unsigned int l_k_processed = 0;
+  unsigned int l_k_limit = 0;
   /* unrolling for A */
-  unsigned int l_m_unroll_num;
-  unsigned int l_m_processed;
-  unsigned int l_m_limit;
-  unsigned int l_row_reg_block;
-  unsigned int l_m_r;
-  unsigned int l_m_peeling;
+  unsigned int l_m_unroll_num = 0;
+  unsigned int l_m_processed = 0;
+  unsigned int l_m_limit = 0;
+  unsigned int l_row_reg_block = 0;
+  unsigned int l_m_r = 0;
+  unsigned int l_m_peeling = 0;
   /* reordering for fma */
-  unsigned int l_r;
-  unsigned int l_reorder_enabled;
-  unsigned int l_num_active_rows;
-  unsigned int *l_row_schedule;
+  unsigned int l_r = 0;
+  unsigned int l_reorder_enabled = 0;
+  unsigned int l_num_active_rows = 0;
+  unsigned int *l_row_schedule = NULL;
 
   libxsmm_micro_kernel_config l_micro_kernel_config = { 0 };
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -717,7 +717,6 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx512_reorder(const libxsmm_gemm_
 
   /* interleave the small groups with the large groups */
   if (l_group_count >= 3) {
-    unsigned int l_threshold = LIBXSMM_MIN(l_row_size[l_k-i_k_processed] / l_group_count, 12);
     l_left = 0;
     l_right = l_group_count - 2;
     l_cur = 0;
