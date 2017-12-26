@@ -225,9 +225,10 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
 
   /* reorder strategy */
   l_reorder_enabled = 0;
-  if ( strcmp(i_arch, "knl") == 0 ||
-       strcmp(i_arch, "skx") == 0 ||
-       strcmp(i_arch, "knm") == 0 ) {
+  if ( ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) &&
+       ( strcmp(i_arch, "knl") == 0 ||
+         strcmp(i_arch, "skx") == 0 ||
+         strcmp(i_arch, "knm") == 0   )                            ) {
     l_reorder_enabled = 1;
   }
 
