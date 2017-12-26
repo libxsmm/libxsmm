@@ -571,7 +571,6 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512_reorder(const libxsmm_gemm_
   
   /* sort the groups according the number of elements per group; merge sort */
   l_stride = 2;
-  l_group_sort = (unsigned int*)malloc(l_group_count * sizeof(unsigned int));
   for (l_z = 0; l_z < l_group_count; l_z++) l_group_sort[l_z] = l_z;
   while (l_stride/2 < l_group_count) {
     for (l_section = 0; l_section < (l_group_count + l_stride - 1) / l_stride; l_section++) {
