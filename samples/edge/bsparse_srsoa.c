@@ -41,9 +41,9 @@ int main(int argc, char* argv[]) {
 
   REALTYPE* l_a = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
   REALTYPE* l_b_de = (REALTYPE*)libxsmm_aligned_malloc(N_ELEMENT_MODES * N_ELEMENT_MODES * sizeof(REALTYPE), 64);
-  REALTYPE* l_b_sp;
-  unsigned int* l_rowptr;
-  unsigned int* l_colidx;
+  REALTYPE* l_b_sp = NULL;
+  unsigned int* l_rowptr = NULL;
+  unsigned int* l_colidx = NULL;
   unsigned int l_rowcount, l_colcount, l_elements;
   REALTYPE* l_c = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
   REALTYPE* l_c_gold = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);

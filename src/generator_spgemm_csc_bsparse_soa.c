@@ -304,17 +304,17 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
 
         /* do dense soa times sparse multiplication */
         for ( l_r = l_k_processed; l_r < l_k_limit; l_r++ ) {
+          unsigned int l_found_qmadd = 0;
+          unsigned int l_col_k = 0;
+          unsigned int l_column_active[28];
+          int l_nnz_idx[28][4];
+
           if (l_reorder_enabled == 1) {
             if (l_r-l_k_processed >= l_num_active_rows) break;
             l_k = l_row_schedule[l_r - l_k_processed];
           } else {
             l_k = l_r;
           }
-
-          unsigned int l_found_qmadd = 0;
-          unsigned int l_col_k = 0;
-          unsigned int l_column_active[28];
-          int l_nnz_idx[28][4];
 
           /* reset helpers */
           for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
@@ -589,7 +589,6 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx512_reorder(const libxsmm_gemm_
   unsigned int l_col_k;
 
   /* recording */
-  unsigned int l_col_elements;
   unsigned int l_total_elements;
   unsigned int l_found_mul;
   unsigned int *l_merged;
@@ -690,7 +689,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx512_reorder(const libxsmm_gemm_
   
   /* sort the groups according the number of elements per group; merge sort */
   l_stride = 2;
-  l_group_sort = malloc(l_group_count * sizeof(unsigned int));
+  l_group_sort = (unsigned int*)malloc(l_group_count * sizeof(unsigned int));
   for (l_z = 0; l_z < l_group_count; l_z++) l_group_sort[l_z] = l_z;
   while (l_stride/2 < l_group_count) {
     for (l_section = 0; l_section < (l_group_count + l_stride - 1) / l_stride; l_section++) {

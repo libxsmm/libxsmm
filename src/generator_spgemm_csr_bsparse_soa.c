@@ -468,7 +468,6 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512_reorder(const libxsmm_gemm_
                                                              const unsigned int              i_n_limit,
                                                              unsigned int**                  o_row_schedule,
                                                              unsigned int*                   o_num_active_rows ) {
-  unsigned int l_n;
   unsigned int l_k;
   unsigned int l_k2;
   unsigned int l_z;
@@ -527,7 +526,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512_reorder(const libxsmm_gemm_
            (i_column_idx[i_row_idx[l_k] + l_z] >= i_n_processed)                &&
            (i_column_idx[i_row_idx[l_k] + l_z] < i_n_limit) )                        {
         l_found_mul = 1;
-        l_write_set[l_k-i_k_processed] |= ( 1 << i_column_idx[i_row_idx[l_k] + l_z] - i_n_processed );
+        l_write_set[l_k-i_k_processed] |= ( 1 << (i_column_idx[i_row_idx[l_k] + l_z] - i_n_processed) );
         l_row_size[l_k-i_k_processed] += 1;
       }
     }
@@ -572,7 +571,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512_reorder(const libxsmm_gemm_
   
   /* sort the groups according the number of elements per group; merge sort */
   l_stride = 2;
-  l_group_sort = malloc(l_group_count * sizeof(unsigned int));
+  l_group_sort = (unsigned int*)malloc(l_group_count * sizeof(unsigned int));
   for (l_z = 0; l_z < l_group_count; l_z++) l_group_sort[l_z] = l_z;
   while (l_stride/2 < l_group_count) {
     for (l_section = 0; l_section < (l_group_count + l_stride - 1) / l_stride; l_section++) {
@@ -600,7 +599,6 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512_reorder(const libxsmm_gemm_
 
   /* interleave the small groups with the large groups */
   if (l_group_count >= 3) {
-    unsigned int l_threshold = LIBXSMM_MIN(l_row_size[l_k-i_k_processed] / l_group_count, 12);
     l_left = 0;
     l_right = l_group_count - 2;
     l_cur = 0;

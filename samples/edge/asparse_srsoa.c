@@ -40,10 +40,10 @@ int main(int argc, char* argv[]) {
   char* l_csr_file = ( argc == 4 ) ? argv[3] : "file.csr" ;
 
   REALTYPE* l_a_de = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_QUANTITIES * sizeof(REALTYPE), 64);
-  REALTYPE* l_a_sp;
+  REALTYPE* l_a_sp = NULL;
   REALTYPE* l_b = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS* sizeof(REALTYPE), 64);
-  unsigned int* l_rowptr;
-  unsigned int* l_colidx;
+  unsigned int* l_rowptr = NULL;
+  unsigned int* l_colidx = NULL;
   unsigned int l_rowcount, l_colcount, l_elements;
   REALTYPE* l_c = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
   REALTYPE* l_c_gold = (REALTYPE*)libxsmm_aligned_malloc(N_QUANTITIES * N_ELEMENT_MODES * N_CRUNS * sizeof(REALTYPE), 64);
