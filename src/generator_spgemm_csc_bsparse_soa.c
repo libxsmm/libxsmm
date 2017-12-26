@@ -161,7 +161,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
 #if 0
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
-#endif 
+#endif
 
   /* define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
@@ -273,8 +273,8 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
                                                        l_micro_kernel_config.instruction_set,
                                                        l_micro_kernel_config.vxor_instruction,
                                                        l_micro_kernel_config.vector_name,
-                                                       l_n + l_row_reg_block*l_m_r, 
-                                                       l_n + l_row_reg_block*l_m_r, 
+                                                       l_n + l_row_reg_block*l_m_r,
+                                                       l_n + l_row_reg_block*l_m_r,
                                                        l_n + l_row_reg_block*l_m_r );
             } else {
               libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -384,7 +384,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
             }
           }
 
-          /* unroll load A and fma */          
+          /* unroll load A and fma */
           for ( l_m_r = 0; l_m_r < l_m_unroll_num; l_m_r++) {
             /* First case: we can use qmadd */
             if ( l_found_qmadd != 0 ) {
@@ -538,7 +538,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
       /* advance A pointer */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_a,
                                        l_micro_kernel_config.datatype_size*l_soa_width*i_xgemm_desc->lda*l_m_unroll_num);
-      
+
       if (l_m_processed == 0) {
         /* close m loop */
         libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_mloop, l_m_limit );
@@ -630,10 +630,10 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx512_reorder(const libxsmm_gemm_
   l_total_elements = 0;
   for (l_k = i_k_processed; l_k < i_k_limit; l_k++) {
     l_found_mul = 0;
-    l_merged[l_k-i_k_processed] = 0;    
+    l_merged[l_k-i_k_processed] = 0;
     l_write_set[l_k-i_k_processed] = 0;
     l_row_size[l_k-i_k_processed] = 0;
-    
+
     /* check if the row is empty; if not, add the row to the schedule and record its columns */
     for ( l_n = 0; l_n < i_n_limit - i_n_processed; l_n++ ) {
       unsigned int l_col_elements = i_column_idx[i_n_processed+l_n+1] - i_column_idx[i_n_processed+l_n];
@@ -657,28 +657,28 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx512_reorder(const libxsmm_gemm_
 
   /* reordering policy */
   if ((i_n_limit-i_n_processed) < 10) return;
-  
+
   /* merge rows without any dependency into the same group */
   l_group_count = 0;
   l_row_count = 0;
   for (l_k = 0; l_k < i_k_limit-i_k_processed; l_k++) {
     if ( (l_merged[l_k] == 1) || l_write_set[l_k] == 0 ) continue;
-    
+
     l_merged[l_k] = 1;
     l_write_board = l_write_set[l_k];
 
     l_group_idx[l_group_count] = l_row_count;
     l_row_idx[l_row_count++] = l_k;
     l_group_size[l_group_count] = l_row_size[l_k];
-    
+
     for (l_k2 = l_k+1; l_k2 < i_k_limit-i_k_processed; l_k2++) {
       if ( (l_merged[l_k2] == 1) || l_write_set[l_k2] == 0 ) continue;
-      
+
       if ( ( l_write_board & l_write_set[l_k2] ) == 0 ) {
         /* if two rows are independent */
         l_merged[l_k2] = 1;
         l_write_board |= l_write_set[l_k2];
-        
+
         l_row_idx[l_row_count++] = l_k2;
         l_group_size[l_group_count] += l_row_size[l_k2];
       }
@@ -686,7 +686,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx512_reorder(const libxsmm_gemm_
     l_group_count++;
   }
   l_group_idx[l_group_count] = l_row_count;
-  
+
   /* sort the groups according the number of elements per group; merge sort */
   l_stride = 2;
   for (l_z = 0; l_z < l_group_count; l_z++) l_group_sort[l_z] = l_z;
@@ -730,7 +730,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx512_reorder(const libxsmm_gemm_
   l_tmp            = l_group_sort_aux;
   l_group_sort_aux = l_group_sort;
   l_group_sort     = l_tmp;
-  
+
 
   /* generate the final row schedule */
   if (l_group_count >= 2) {
