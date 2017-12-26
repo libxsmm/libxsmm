@@ -220,9 +220,10 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
 
   /* reorder strategy */
   l_reorder_enabled = 0;
-  if ( strcmp(i_arch, "knl") == 0 ||
-       strcmp(i_arch, "skx") == 0 ||
-       ( strcmp(i_arch, "knm") == 0 && LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) ) {
+  if ( ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) &&
+       ( strcmp(i_arch, "knl") == 0 ||
+         strcmp(i_arch, "skx") == 0 ||
+         strcmp(i_arch, "knm") == 0   )                            ) {
     l_reorder_enabled = 1;
   }
 
@@ -433,7 +434,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
                 }
               }
               /* increment by additional 3 columns */
-              l_k += 3;
+              l_r += 3;
             } else if ( l_found_mul != 0 ) {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                                                 l_micro_kernel_config.instruction_set,
