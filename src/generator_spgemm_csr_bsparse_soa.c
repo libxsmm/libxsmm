@@ -177,22 +177,27 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
   l_max_rows = 0;
   for ( l_k = 0; l_k < (unsigned int)i_xgemm_desc->k; l_k++ ) {
     l_nnz += (i_row_idx[l_k+1] - i_row_idx[l_k]);
-    if (i_row_idx[l_k+1] > i_row_idx[l_k])
+    if (i_row_idx[l_k+1] > i_row_idx[l_k]) {
       l_max_rows = l_k;
+    }
   }
   l_max_rows++;
 
   /* cacheblocking strategy for B */
   if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
-    if ( (28*1024/8 - l_soa_width*(l_max_cols+i_xgemm_desc->lda)) > 0 )
+    if ( (28*1024/8 - l_soa_width*(l_max_cols+i_xgemm_desc->lda)) > 0 ) {
       l_k_chunks = l_nnz / (28*1024/8 - l_soa_width*(l_max_cols+i_xgemm_desc->lda)) + 1;
-    else
+    }
+    else {
       l_k_chunks = 1;
+    }
   } else {
-    if ( (28*1024/4 - l_soa_width*(l_max_cols+i_xgemm_desc->lda)) > 0 )
+    if ( (28*1024/4 - l_soa_width*(l_max_cols+i_xgemm_desc->lda)) > 0 ) {
       l_k_chunks = l_nnz / (28*1024/4 - l_soa_width*(l_max_cols+i_xgemm_desc->lda)) + 1;
-    else
+    }
+    else {
       l_k_chunks = 1;
+    }
   }
   l_k_chunksize = ( (l_max_rows % l_k_chunks) == 0 ) ? (l_max_rows / l_k_chunks) : (l_max_rows / l_k_chunks) + 1;
 
@@ -222,7 +227,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
   l_reorder_enabled = 0;
   if ( strcmp(i_arch, "knl") == 0 ||
        strcmp(i_arch, "skx") == 0 ||
-       strcmp(i_arch, "knm") == 0    ) {
+       strcmp(i_arch, "knm") == 0 ) {
     l_reorder_enabled = 1;
   }
 
