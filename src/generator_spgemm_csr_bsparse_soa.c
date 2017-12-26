@@ -318,7 +318,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
           for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
             if ( (i_column_idx[i_row_idx[l_k] + l_z] < (unsigned int)i_xgemm_desc->n) &&
                  (i_column_idx[i_row_idx[l_k] + l_z] >= l_n_processed)                &&
-                 (i_column_idx[i_row_idx[l_k] + l_z] < l_n_limit) )                        {
+                 (i_column_idx[i_row_idx[l_k] + l_z] < l_n_limit) ) {
               l_found_mul = 1;
             }
           }
@@ -340,7 +340,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
               /* check k such that we just use columns which actually need to be multiplied */
               if ( (i_column_idx[i_row_idx[l_k] + l_z] < (unsigned int)i_xgemm_desc->n) &&
                    (i_column_idx[i_row_idx[l_k] + l_z] >= l_n_processed)                &&
-                   (i_column_idx[i_row_idx[l_k] + l_z] < l_n_limit) )                        {
+                   (i_column_idx[i_row_idx[l_k] + l_z] < l_n_limit) ) {
                 if ( strcmp(i_arch, "knl") == 0 ||
                      strcmp(i_arch, "knm") == 0 ||
                      strcmp(i_arch, "skx") == 0 ) {
@@ -515,6 +515,11 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512_reorder(const libxsmm_gemm_
   l_group_sort = (unsigned int *) malloc( (i_k_limit - i_k_processed) * sizeof(unsigned int) );
   l_group_sort_aux = (unsigned int *) malloc( (i_k_limit - i_k_processed) * sizeof(unsigned int) );
 
+#if !defined(NDEBUG) /* mute static analysis regarding garbage content */
+  memset(l_write_set, 0, (i_k_limit - i_k_processed) * sizeof(unsigned int));
+  memset(l_row_size, 0, (i_k_limit - i_k_processed) * sizeof(unsigned int));
+  memset(l_merged, 0, (i_k_limit - i_k_processed) * sizeof(unsigned int));
+#endif
   /* initialize; generate the naive row schedule */
   *o_num_active_rows = 0;
   l_total_elements = 0;
@@ -529,7 +534,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512_reorder(const libxsmm_gemm_
     for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
       if ( (i_column_idx[i_row_idx[l_k] + l_z] < (unsigned int)i_xgemm_desc->n) &&
            (i_column_idx[i_row_idx[l_k] + l_z] >= i_n_processed)                &&
-           (i_column_idx[i_row_idx[l_k] + l_z] < i_n_limit) )                        {
+           (i_column_idx[i_row_idx[l_k] + l_z] < i_n_limit) ) {
         l_found_mul = 1;
         l_write_set[l_k-i_k_processed] |= ( 1 << (i_column_idx[i_row_idx[l_k] + l_z] - i_n_processed) );
         l_row_size[l_k-i_k_processed] += 1;
@@ -543,7 +548,17 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512_reorder(const libxsmm_gemm_
   }
 
   /* reordering policy */
-  if ((i_n_limit-i_n_processed) < 10) return;
+  if ((i_n_limit-i_n_processed) < 10) {
+    free(l_merged);
+    free(l_write_set);
+    free(l_row_size);
+    free(l_row_idx);
+    free(l_group_idx);
+    free(l_group_size);
+    free(l_group_sort);
+    free(l_group_sort_aux);
+    return;
+  }
 
   /* merge rows without any dependency into the same group */
   l_group_count = 0;
@@ -623,8 +638,9 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx512_reorder(const libxsmm_gemm_
   if (l_group_count >= 2) {
     l_cur = 0;
     for (l_z = 0; l_z < l_group_count; l_z++) {
-      for (l_k = 0; l_k < (l_group_idx[l_group_sort[l_z]+1] - l_group_idx[l_group_sort[l_z]]); l_k++)
+      for (l_k = 0; l_k < (l_group_idx[l_group_sort[l_z]+1] - l_group_idx[l_group_sort[l_z]]); l_k++) {
         l_row_schedule[l_cur++] = l_row_idx[l_group_idx[l_group_sort[l_z]]+l_k]+i_k_processed;
+      }
     }
   }
 #if 0
