@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2017, Intel Corporation                                **
+** Copyright (c) 2015-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -209,6 +209,7 @@
 #define LIBXSMM_X86_INSTR_VMAXPS         20069
 #define LIBXSMM_X86_INSTR_VCVTPS2PH      20070
 #define LIBXSMM_X86_INSTR_VCVTPH2PS      20071
+#define LIBXSMM_X86_INSTR_VPERMD         20072
 
 /* AVX512, QUAD MADD, QUAD VNNI and VNNI */
 #define LIBXSMM_X86_INSTR_V4FMADDPS      26000
