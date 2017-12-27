@@ -183,6 +183,8 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
   l_max_rows++;
 
   /* cacheblocking strategy for B */
+  l_k_chunks = 1;
+#if 0
   if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
     if ( (28*1024/8 - l_soa_width*(l_max_cols+i_xgemm_desc->lda)) > 0 )
       l_k_chunks = i_column_idx[i_xgemm_desc->n] / (28*1024/8 - l_soa_width*(l_max_cols+i_xgemm_desc->lda)) + 1;
@@ -194,6 +196,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
     else
       l_k_chunks = 1;
   }
+#endif
   l_k_chunksize = ( (l_max_rows % l_k_chunks) == 0 ) ? (l_max_rows / l_k_chunks) : (l_max_rows / l_k_chunks) + 1;
 
   /* unroll strategy */
