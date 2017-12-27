@@ -76,12 +76,17 @@ if ( handle->ofh == 7 ) {
  handle->block_upd_ifm = 16;
 }
 
-
+#if 0
 if ( handle->ofh == 28 || handle->ofh == 56 ) {
   /* Pixel block is 12.25 Kbytes */
   handle->block_upd_ofm = 32;
   handle->block_upd_ifm = 16;
 }
+
+
+  handle->block_upd_ofm = 32;
+  handle->block_upd_ifm = 16;
+#endif
 
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)

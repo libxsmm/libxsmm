@@ -185,7 +185,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       }
 
                       if (mark_weight_init == 1) {
-                        if ( (ki == 0) && (kj == 0) && (oi__ == 0) && (oj_ == ojb) && (ojb == 0) ) {
+                        if ( (ki == 0) && (kj == 0) && (oi__ == 0) && (oj_ == ojb) && (ojb == 0) && (img == my_img_start) ) {
                           n_code_segments++;
                         }
                       }
@@ -252,7 +252,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       }
 
                       if (mark_weight_init == 1) {
-                        if ( (ki == 0) && (kj == 0) && (oi__ == 0) && (oj_ == ojb) && (ojb == 0) ) {
+                        if ( (ki == 0) && (kj == 0) && (oi__ == 0) && (oj_ == ojb) && (ojb == 0) && (img == my_img_start) ) {
                           tmp_expanded_stream[tmp_stream_index] = WEIGHT_INIT;
                           tmp_stream_index++;
                         }
@@ -353,7 +353,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         }
 
                         if (mark_weight_init == 1) {
-                          if ( (ki == 0) && (kj == 0) && (oi__ == 0) && (oj_ == ojb) && (ojb == 0) ) {
+                          if ( (ki == 0) && (kj == 0) && (oi__ == 0) && (oj_ == ojb) && (ojb == 0) && (img == my_img_start) ) {
                             encoded_code_segments[encoded_stream_index].aux_index = ( ( (ofm1-ofmb) * LIBXSMM_MIN(handle->block_upd_ifm, handle->blocksifm) ) + (ifm1-ifmb) ) * handle->desc.R * handle->desc.S * IFMBLOCK * handle->ofmblock;
                             encoded_stream_index++;
                           }

@@ -470,6 +470,9 @@ int main(int argc, char* argv[])
     pad_w_out = pad_w; 
   }
 
+  pad_h_out = 0;
+  pad_w_out = 0;
+
   /* deriving some values for naive code */
   ofh = (ifh + 2 * pad_h - kh) / stride_h + 1;
   ofw = (ifw + 2 * pad_w - kw) / stride_w + 1;
