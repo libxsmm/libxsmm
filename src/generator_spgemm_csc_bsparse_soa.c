@@ -183,6 +183,8 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
   l_max_rows++;
 
   /* cacheblocking strategy for B */
+  l_k_chunks = 1;
+#if 0
   if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
     if ( (28*1024/8 - l_soa_width*(l_max_cols+i_xgemm_desc->lda)) > 0 )
       l_k_chunks = i_column_idx[i_xgemm_desc->n] / (28*1024/8 - l_soa_width*(l_max_cols+i_xgemm_desc->lda)) + 1;
@@ -194,11 +196,13 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
     else
       l_k_chunks = 1;
   }
+#endif
   l_k_chunksize = ( (l_max_rows % l_k_chunks) == 0 ) ? (l_max_rows / l_k_chunks) : (l_max_rows / l_k_chunks) + 1;
 
   /* unroll strategy */
   l_m_unroll_num = 1;
   l_m_peeling = 0;
+#if 0
   if ( strcmp(i_arch, "knl") == 0 ||
        strcmp(i_arch, "skx") == 0 ||
        ( strcmp(i_arch, "knm") == 0 && LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) ) {
@@ -217,15 +221,18 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
       }
     }
   }
+#endif
 
   /* reorder strategy */
   l_reorder_enabled = 0;
+#if 0
   if ( ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) &&
        ( strcmp(i_arch, "knl") == 0 ||
          strcmp(i_arch, "skx") == 0 ||
          strcmp(i_arch, "knm") == 0   )                            ) {
     l_reorder_enabled = 1;
   }
+#endif
 
   /* open asm */
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
