@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2014-2017, Intel Corporation                                **
+** Copyright (c) 2014-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -68,7 +68,7 @@
 #if defined(__GNUC__)
 # if !defined(LIBXSMM_GCCATOMICS)
     /* note: the following version check does *not* prevent non-GNU compilers to adopt GCC's atomics */
-#   if (LIBXSMM_VERSION3(4, 7, 4) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
+#   if LIBXSMM_VERSION3(4, 7, 4) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
 #     define LIBXSMM_GCCATOMICS 1
 #   else
 #     define LIBXSMM_GCCATOMICS 0
@@ -84,7 +84,10 @@
 #define LIBXSMM_NONATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_NONATOMIC_STORE(DST_PTR, 0, KIND)
 #define LIBXSMM_NONATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) += VALUE)
 #define LIBXSMM_NONATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) -= VALUE)
-#define LIBXSMM_NONATOMIC_SET(DST, VALUE) ((DST) = (VALUE))
+#define LIBXSMM_NONATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) (LIBXSMM_NONATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND), (*(DST_PTR) - (VALUE)))
+#define LIBXSMM_NONATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) (LIBXSMM_NONATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND), (*(DST_PTR) + (VALUE)))
+#define LIBXSMM_NONATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) ((NEWVAL) == (*(DST_PTR) == (OLDVAL) ? (*(DST_PTR) = (NEWVAL)) : (OLDVAL)))
+#define LIBXSMM_NONATOMIC_SET(DST_PTR, VALUE) (*(DST_PTR) = (VALUE))
 
 #if !defined(LIBXSMM_NO_SYNC) && defined(LIBXSMM_GCCATOMICS)
 # if (0 != LIBXSMM_GCCATOMICS)
@@ -92,6 +95,10 @@
 #   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) __atomic_store_n(DST_PTR, VALUE, KIND)
 #   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) =*/ __atomic_add_fetch(DST_PTR, VALUE, KIND)
 #   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) =*/ __atomic_sub_fetch(DST_PTR, VALUE, KIND)
+#   define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) /**(DST_PTR) =*/ __atomic_fetch_add(DST_PTR, VALUE, KIND)
+#   define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) /**(DST_PTR) =*/ __atomic_fetch_sub(DST_PTR, VALUE, KIND)
+#   define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __atomic_compare_exchange_n(DST_PTR, &(OLDVAL), NEWVAL, \
+                                                                              0/*false*/, KIND, LIBXSMM_ATOMIC_RELAXED)
 # else
 #   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
 #   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) while (*(DST_PTR) != (VALUE)) \
@@ -105,6 +112,9 @@
 #   endif
 #   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_add_and_fetch(DST_PTR, VALUE)
 #   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_sub_and_fetch(DST_PTR, VALUE)
+#   define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_fetch_and_add(DST_PTR, VALUE)
+#   define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) /**(DST_PTR) = */__sync_fetch_and_sub(DST_PTR, VALUE)
+#   define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __sync_bool_compare_and_swap(DST_PTR, OLDVAL, NEWVAL)
 # endif
 # define LIBXSMM_SYNC_BARRIER __asm__ __volatile__ ("" ::: "memory")
 # define LIBXSMM_SYNCHRONIZE __sync_synchronize()
@@ -117,6 +127,9 @@
 # define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) (*(DST_PTR) = VALUE)
 # define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) += VALUE)
 # define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) (*(DST_PTR) -= VALUE)
+# define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) *(DST_PTR); LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND)
+# define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) *(DST_PTR); LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND)
+# define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) (((LONG)(NEWVAL)) == InterlockedCompareExchange((volatile LONG*)(DST_PTR), NEWVAL, OLDVAL))
 # define LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, VALUE) while ((VALUE) == (LOCK)); LIBXSMM_SYNC_PAUSE
 # define LIBXSMM_ATOMIC_SYNC_SET(LOCK) { int libxsmm_sync_set_i_; \
     do { LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, 1); \
@@ -131,6 +144,9 @@
 # define LIBXSMM_ATOMIC_STORE LIBXSMM_NONATOMIC_STORE
 # define LIBXSMM_ATOMIC_ADD_FETCH LIBXSMM_NONATOMIC_ADD_FETCH
 # define LIBXSMM_ATOMIC_SUB_FETCH LIBXSMM_NONATOMIC_SUB_FETCH
+# define LIBXSMM_ATOMIC_FETCH_ADD LIBXSMM_NONATOMIC_FETCH_ADD
+# define LIBXSMM_ATOMIC_FETCH_SUB LIBXSMM_NONATOMIC_FETCH_SUB
+# define LIBXSMM_ATOMIC_CMPSWP LIBXSMM_NONATOMIC_CMPSWP
 # define LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, VALUE) LIBXSMM_UNUSED(LOCK)
 # define LIBXSMM_ATOMIC_SYNC_SET(LOCK) LIBXSMM_UNUSED(LOCK)
 # define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK) LIBXSMM_UNUSED(LOCK)
@@ -141,7 +157,7 @@
 # define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE(DST_PTR, 0, KIND)
 #endif
 #if !defined(LIBXSMM_ATOMIC_SET) /* TODO */
-# define LIBXSMM_ATOMIC_SET(DST, VALUE) (*(DST) = (VALUE))
+# define LIBXSMM_ATOMIC_SET(DST_PTR, VALUE) LIBXSMM_NONATOMIC_SET(DST_PTR, VALUE)
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
