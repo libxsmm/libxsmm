@@ -240,25 +240,51 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
 
     if (handle->avoid_output_trans == 0 ) {
       const __m512i perm_index = _mm512_set_epi16(31,15, 30,14, 29,13, 28,12, 27,11 ,26,10, 25,9, 24,8, 23,7, 22,6, 21,5, 20,4, 19,3, 18,2, 17,1, 16,0); 
-      int ifm1, ij, ii, ofm1;    
+      int ifm1, ij, ii, ofm1; 
+      int OFWP = handle->ofwp+handle->output_lp_padding;    
       element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
-      LIBXSMM_VLA_DECL(6, element_output_type, tr_output, (element_output_type*)handle->scratch6 , handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
+      LIBXSMM_VLA_DECL(6, element_output_type, tr_output, (element_output_type*)handle->scratch6 , handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
       LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
-
 
       int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
       int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
       int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
 
-      for (img = my_img_start; img < my_img_end; img++) {
-        for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
-          for (ij = 0; ij < handle->ofhp; ij++) {
-            for (ii = 0; ii < handle->ofwp; ii+=2) {
-              element_output_type *addr =  &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
-              element_output_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
-              __m512i cl =  _mm512_loadu_si512(addr);
+      if (handle->ofwp % 2 == 0) { 
+        for (img = my_img_start; img < my_img_end; img++) {
+          for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
+            for (ij = 0; ij < handle->ofhp; ij++) {
+              for (ii = 0; ii < handle->ofwp; ii+=2) {
+                element_output_type *addr =  &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
+                element_output_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
+                __m512i cl =  _mm512_loadu_si512(addr);
+                __m512i permuted_reg =  _mm512_permutexvar_epi16(perm_index, cl);
+                _mm512_store_si512(dst_addr, permuted_reg);
+              }
+            }
+          }
+        }
+      } else {
+        for (img = my_img_start; img < my_img_end; img++) {
+          for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
+            for (ij = 0; ij < handle->ofhp; ij++) {
+              for (ii = 0; ii < handle->ofwp-1; ii+=2) {
+                element_output_type *addr =  &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
+                element_output_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
+                __m512i cl =  _mm512_loadu_si512(addr);
+                __m512i permuted_reg =  _mm512_permutexvar_epi16(perm_index, cl);
+                _mm512_store_si512(dst_addr, permuted_reg);
+              }
+
+              element_output_type *addr =  &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, handle->ofwp-1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
+              element_output_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
+              __m256i half_cl =  _mm256_loadu_si256(addr);
+              __m256i zero_pixel =  _mm256_xor_si256(zero_pixel, zero_pixel);
+              __m512i cl  =  _mm512_inserti64x4(cl, half_cl, 0);
+              cl = _mm512_inserti64x4(cl, zero_pixel, 1);
               __m512i permuted_reg =  _mm512_permutexvar_epi16(perm_index, cl);
               _mm512_store_si512(dst_addr, permuted_reg);
+
             }
           }
         }
@@ -472,23 +498,50 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
 
     if (handle->avoid_output_trans == 0) {
       const __m512i perm_index = _mm512_set_epi16(31,15, 30,14, 29,13, 28,12, 27,11 ,26,10, 25,9, 24,8, 23,7, 22,6, 21,5, 20,4, 19,3, 18,2, 17,1, 16,0); 
-      int ifm1, ij, ii, ofm1;    
+      int ifm1, ij, ii, ofm1;   
+      int OFWP = handle->ofwp+handle->output_lp_padding;     
       element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
       LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); 
-      LIBXSMM_VLA_DECL(6, element_output_type, tr_output, (element_output_type*)handle->scratch6 , handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
+      LIBXSMM_VLA_DECL(6, element_output_type, tr_output, (element_output_type*)handle->scratch6 , handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
 
-      for (img = my_img_start; img < my_img_end; img++) {
-        for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
-          for (ij = 0; ij < handle->ofhp; ij++) {
-            for (ii = 0; ii < handle->ofwp; ii+=2) {
-              element_output_type *addr =  &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
-              element_output_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
-              __m512i cl =  _mm512_loadu_si512(addr);
-              __m512i permuted_reg =  _mm512_permutexvar_epi16(perm_index, cl);
-              _mm512_store_si512(dst_addr, permuted_reg);
+      if (handle->ofwp % 2 == 0) { 
+        for (img = my_img_start; img < my_img_end; img++) {
+          for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
+            for (ij = 0; ij < handle->ofhp; ij++) {
+              for (ii = 0; ii < handle->ofwp; ii+=2) {
+                element_output_type *addr =  &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
+                element_output_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
+                __m512i cl =  _mm512_loadu_si512(addr);
+                __m512i permuted_reg =  _mm512_permutexvar_epi16(perm_index, cl);
+                _mm512_store_si512(dst_addr, permuted_reg);
+              }
             }
           }
-        }  
+        }
+      } else {
+        for (img = my_img_start; img < my_img_end; img++) {
+          for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
+            for (ij = 0; ij < handle->ofhp; ij++) {
+              for (ii = 0; ii < handle->ofwp-1; ii+=2) {
+                element_output_type *addr =  &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
+                element_output_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
+                __m512i cl =  _mm512_loadu_si512(addr);
+                __m512i permuted_reg =  _mm512_permutexvar_epi16(perm_index, cl);
+                _mm512_store_si512(dst_addr, permuted_reg);
+              }
+
+              element_output_type *addr =  &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, handle->ofwp-1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
+              element_output_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
+              __m256i half_cl =  _mm256_loadu_si256(addr);
+              __m256i zero_pixel =  _mm256_xor_si256(zero_pixel, zero_pixel);
+              __m512i cl  =  _mm512_inserti64x4(cl, half_cl, 0);
+              cl = _mm512_inserti64x4(cl, zero_pixel, 1);
+              __m512i permuted_reg =  _mm512_permutexvar_epi16(perm_index, cl);
+              _mm512_store_si512(dst_addr, permuted_reg);
+
+            }
+          }
+        }
       }
     }
   } else {
