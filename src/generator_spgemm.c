@@ -281,7 +281,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       /* mute static analysis about garbage content */
       memset(l_tmp, 0, l_row_count * l_column_count * sizeof(double));
 
-      printf("CSC matrix data structure we just read:\n");      
+      printf("CSC matrix data structure we just read:\n");
       printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
 
       if (l_tmp == NULL) {

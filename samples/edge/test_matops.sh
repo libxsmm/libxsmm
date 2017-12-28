@@ -20,16 +20,16 @@ MODES=35
 PREC=f64
 
 # test flux matrices, CSR
-for i in `ls mats/f*3D_${ORDER}_csr.mtx`; do ${SDE} ./bsparse_srsoa_${PREC} ${MODES} ${REPS} $i; done
+for i in `ls mats/tet4_${ORDER}_flux*_csr.mtx`; do ${SDE} ./bsparse_srsoa_${PREC} ${MODES} ${REPS} $i; done
 # test stiffness matrices, CSR
-for i in `ls mats/k*3D_${ORDER}_csr.mtx`; do ${SDE} ./bsparse_srsoa_${PREC} ${MODES} ${REPS} $i; done
+for i in `ls mats/tet4_${ORDER}_stiff*_csr.mtx`; do ${SDE} ./bsparse_srsoa_${PREC} ${MODES} ${REPS} $i; done
 # test flux matrices, CSC
-for i in `ls mats/f*3D_${ORDER}_csc.mtx`; do ${SDE} ./bsparse_scsoa_${PREC} ${MODES} ${REPS} $i; done
+for i in `ls mats/tet4_${ORDER}_flux*_csc.mtx`; do ${SDE} ./bsparse_scsoa_${PREC} ${MODES} ${REPS} $i; done
 # test stiffness matrices, CSC
-for i in `ls mats/k*3D_${ORDER}_csc.mtx`; do ${SDE} ./bsparse_scsoa_${PREC} ${MODES} ${REPS} $i; done
+for i in `ls mats/tet4_${ORDER}_stiff*_csc.mtx`; do ${SDE} ./bsparse_scsoa_${PREC} ${MODES} ${REPS} $i; done
 # test star matrices
-${SDE} ./asparse_srsoa_${PREC} ${MODES} ${REPS} mats/starMatrix_3D_csr.mtx
+${SDE} ./asparse_srsoa_${PREC} ${MODES} ${REPS} mats/tet4_starMatrix_csr.mtx
 # test flux matrices
-${SDE} ./asparse_srsoa_${PREC} ${MODES} ${REPS} mats/fluxMatrix_3D_csr_sp.mtx
-${SDE} ./asparse_srsoa_${PREC} ${MODES} ${REPS} mats/fluxMatrix_3D_csr_de.mtx
+${SDE} ./asparse_srsoa_${PREC} ${MODES} ${REPS} mats/tet4_fluxMatrix_csr_sp.mtx
+${SDE} ./asparse_srsoa_${PREC} ${MODES} ${REPS} mats/tet4_fluxMatrix_csr_de.mtx
 
