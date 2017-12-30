@@ -382,6 +382,3 @@ static edge_mat_desc libxsmm_sparse_csc_reader_desc( const char*    i_csc_file_i
   return desc;
 }
 
-
-
-

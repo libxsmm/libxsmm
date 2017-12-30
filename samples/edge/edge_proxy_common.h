@@ -53,3 +53,4 @@ void edge_sparse_csr_reader_float( const char*           i_csr_file_in,
                                    unsigned int*         o_element_count );
 
 #endif /* EDGE_COMMON_H */
+
