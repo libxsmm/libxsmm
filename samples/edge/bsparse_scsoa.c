@@ -378,7 +378,7 @@ int main(int argc, char* argv[]) {
   }
   printf("max error: %f\n", l_max_error);
 
-  printf("PERFDUMP,%s,%i,%i,%i,%f,%f,%f\n", l_csc_file, REPS, K, N, l_max_error, l_total, ((double)((double)REPS * (double)M * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9) );
+  printf("PERFDUMP,%s,%i,%i,%i,%i,%i,%i,%f,%f,%f\n", l_csc_file, REPS, M, N, K, l_elements, M * l_elements * N_CRUNS * 2, l_max_error, l_total, ((double)((double)REPS * (double)M * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9) );
 
   /* free */
   libxsmm_free( l_b_de );
