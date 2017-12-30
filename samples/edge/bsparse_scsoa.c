@@ -33,6 +33,7 @@
 
 #include "common_edge_proxy.h"
 
+LIBXSMM_INLINE
 void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsigned int **colptr, unsigned int **rowidx, REALTYPE **values) {
   REALTYPE* cm_dense = NULL;
   REALTYPE* cm_dense_data = NULL;
@@ -57,7 +58,7 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
   /* set all values in copy to 1 or 0 */
   for ( j = 0; j < n; ++j ) {
     for ( i = 0; i < m; ++i ) {
-      cm_dense[(j*m)+i]      = ( rm_dense_data[(i*n)+j] == 0.0 ) ? 0.0 : 1.0;
+      cm_dense[(j*m)+i]      = (REALTYPE)(LIBXSMM_FEQ(rm_dense_data[(i*n)+j], 0) ? 0 : 1);
       cm_dense_data[(j*m)+i] = rm_dense_data[(i*n)+j];
     }
   }
@@ -87,10 +88,10 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
       if ( i >= m-3 ) continue;
       l_found_qmadd = 0;
       for ( j = l_n_processed; j < l_n_limit - l_n_processed; ++j ) {
-        if ( (cm_dense[(j*m)+(i+0)] == (REALTYPE)1.0) &&
-             (cm_dense[(j*m)+(i+1)] == (REALTYPE)1.0) &&
-             (cm_dense[(j*m)+(i+2)] == (REALTYPE)1.0) &&
-             (cm_dense[(j*m)+(i+3)] == (REALTYPE)1.0)    ) {
+        if ( LIBXSMM_FEQ(cm_dense[(j*m)+(i+0)], 1) &&
+             LIBXSMM_FEQ(cm_dense[(j*m)+(i+1)], 1) &&
+             LIBXSMM_FEQ(cm_dense[(j*m)+(i+2)], 1) &&
+             LIBXSMM_FEQ(cm_dense[(j*m)+(i+3)], 1)    ) {
           cm_dense[(j*m)+(i+0)] = (REALTYPE)10.0;
           cm_dense[(j*m)+(i+1)] = (REALTYPE)10.0;
           cm_dense[(j*m)+(i+2)] = (REALTYPE)10.0;
@@ -102,10 +103,10 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
       /* -> let's pad them to 4 nnz */
       if (l_found_qmadd == 1) {
         for ( j = l_n_processed; j < l_n_limit - l_n_processed; ++j ) {
-          if ( (cm_dense[(j*m)+(i+0)] +
-                cm_dense[(j*m)+(i+1)] +
-                cm_dense[(j*m)+(i+2)] +
-                cm_dense[(j*m)+(i+3)]) == (REALTYPE)3.0 ) {
+          if ( LIBXSMM_FEQ( cm_dense[(j*m)+(i+0)] +
+                            cm_dense[(j*m)+(i+1)] +
+                            cm_dense[(j*m)+(i+2)] +
+                            cm_dense[(j*m)+(i+3)], 3) ) {
             cm_dense[(j*m)+(i+0)] = (REALTYPE)10.0;
             cm_dense[(j*m)+(i+1)] = (REALTYPE)10.0;
             cm_dense[(j*m)+(i+2)] = (REALTYPE)10.0;
@@ -121,17 +122,17 @@ void qfma_fill_in( REALTYPE* rm_dense_data, unsigned int m, unsigned int n, unsi
       l_found_qmadd = 0;
       /* first check if already a qmadd in that row */
       for ( j = l_n_processed; j < l_n_limit - l_n_processed; ++j ) {
-        if ( cm_dense[(j*m)+(i+0)] == (REALTYPE)10.0 ) {
+        if ( LIBXSMM_FEQ(cm_dense[(j*m)+(i+0)], 10) ) {
           l_found_qmadd = 1;
         }
       }
       /* we are in a potential candidate row for padding 0 for qmadd */
       if ( l_found_qmadd == 0 ) {
         for ( j = l_n_processed; j < l_n_limit - l_n_processed; ++j ) {
-          if ( (cm_dense[(j*m)+(i+0)] +
-                cm_dense[(j*m)+(i+1)] +
-                cm_dense[(j*m)+(i+2)] +
-                cm_dense[(j*m)+(i+3)]) == (REALTYPE)3.0 ) {
+          if ( LIBXSMM_FEQ( cm_dense[(j*m)+(i+0)] +
+                            cm_dense[(j*m)+(i+1)] +
+                            cm_dense[(j*m)+(i+2)] +
+                            cm_dense[(j*m)+(i+3)], 3) ) {
             cm_dense[(j*m)+(i+0)] = (REALTYPE)10.0;
             cm_dense[(j*m)+(i+1)] = (REALTYPE)10.0;
             cm_dense[(j*m)+(i+2)] = (REALTYPE)10.0;
@@ -378,7 +379,7 @@ int main(int argc, char* argv[]) {
   }
   printf("max error: %f\n", l_max_error);
 
-  printf("PERFDUMP,%s,%i,%i,%i,%i,%i,%i,%f,%f,%f\n", l_csc_file, REPS, M, N, K, l_elements, M * l_elements * N_CRUNS * 2, l_max_error, l_total, ((double)((double)REPS * (double)M * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9) );
+  printf("PERFDUMP,%s,%u,%u,%u,%u,%u,%u,%f,%f,%f\n", l_csc_file, REPS, M, N, K, l_elements, M * l_elements * N_CRUNS * 2, l_max_error, l_total, ((double)((double)REPS * (double)M * (double)l_elements * (double)N_CRUNS) * 2.0) / (l_total * 1.0e9) );
 
   /* free */
   libxsmm_free( l_b_de );
