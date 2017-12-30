@@ -200,7 +200,7 @@ int main(int argc, char* argv[]) {
   unsigned int l_rowcount = mat_desc.row_count;
   unsigned int l_colcount = mat_desc.col_count;
   unsigned int l_elements = mat_desc.num_elements;
-  
+
   REALTYPE* l_a = (REALTYPE*)libxsmm_aligned_malloc(K * M * N_CRUNS * sizeof(REALTYPE), 64);
   REALTYPE* l_b_de = (REALTYPE*)libxsmm_aligned_malloc(K * N * sizeof(REALTYPE), 64);
   REALTYPE* l_b_sp = NULL;
@@ -239,18 +239,18 @@ int main(int argc, char* argv[]) {
 
   if (K != l_rowcount) {
     fprintf( stderr, "arguments K needs to match number of rows of the sparse matrix!\n" );
-    exit(-1);    
+    exit(-1);
   }
 
   if (N != l_colcount) {
     fprintf( stderr, "arguments N needs to match number of columns of the sparse matrix!\n" );
-    exit(-1);    
+    exit(-1);
   }
 
   if (M != 9) {
     fprintf( stderr, "arguments M needs to match 9!\n" );
-    exit(-1);    
-  }    
+    exit(-1);
+  }
 
   /* touch A */
   for ( l_i = 0; l_i < M; l_i++) {

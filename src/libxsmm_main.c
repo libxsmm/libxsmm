@@ -1126,7 +1126,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.srsoa->gemm->prefetch);
           const char *const tname = internal_get_typename(request->descriptor.srsoa->gemm->datatype);
-          const unsigned int nnz = ((unsigned int)request->descriptor.srsoa->gemm->lda == 0) ? 
+          const unsigned int nnz = ((unsigned int)request->descriptor.srsoa->gemm->lda == 0) ?
             request->descriptor.srsoa->row_ptr[request->descriptor.srsoa->gemm->m] : request->descriptor.srsoa->row_ptr[request->descriptor.srsoa->gemm->k];
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_nnz%u.srsoa", target_arch, tname,
@@ -1151,7 +1151,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.scsoa->gemm->prefetch);
           const char *const tname = internal_get_typename(request->descriptor.scsoa->gemm->datatype);
-          const unsigned int nnz = ((unsigned int)request->descriptor.srsoa->gemm->lda == 0) ? 
+          const unsigned int nnz = ((unsigned int)request->descriptor.srsoa->gemm->lda == 0) ?
             request->descriptor.scsoa->column_ptr[request->descriptor.scsoa->gemm->k] : request->descriptor.scsoa->column_ptr[request->descriptor.scsoa->gemm->n];
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_nnz%u.scsoa", target_arch, tname,
