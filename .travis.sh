@@ -149,8 +149,10 @@ then
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
            [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ]; \
         then
+          LICSDIR=$(which icc | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/" 2> /dev/null)
           ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
           ${CP} -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2> /dev/null
+          ${CP} -u ${LICSDIR}/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2> /dev/null
           echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
           echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
         fi
