@@ -621,6 +621,8 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx512_reorder(const libxsmm_gemm_
 
   unsigned int *l_row_schedule;
 
+  LIBXSMM_UNUSED(i_xgemm_desc);
+
   l_merged = (unsigned int *) malloc( (i_k_limit - i_k_processed) * sizeof(unsigned int) );
   l_write_set = (unsigned int *) malloc( (i_k_limit - i_k_processed) * sizeof(unsigned int) );
   l_row_size = (unsigned int *) malloc( (i_k_limit - i_k_processed) * sizeof(unsigned int) );

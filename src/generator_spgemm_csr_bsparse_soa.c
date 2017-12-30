@@ -101,7 +101,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
   /* reordering for fma */
   unsigned int l_r;
   unsigned int l_reorder_enabled;
-  unsigned int l_num_active_rows;
+  unsigned int l_num_active_rows = 0;
   unsigned int *l_row_schedule = 0;
 
   libxsmm_micro_kernel_config l_micro_kernel_config = { 0 };

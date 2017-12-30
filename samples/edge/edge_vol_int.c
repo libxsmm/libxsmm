@@ -145,13 +145,13 @@ int main(int argc, char* argv[])
 
   #pragma omp parallel for private(i,j)
   for ( i = 0; i < (int)num_elems; i++ ) {
-    for ( j = 0; j < elem_size; j++) {
+    for ( j = 0; j < (int)elem_size; j++) {
       q[i*elem_size + j] = drand48();
     }
   }
   #pragma omp parallel for private(i,j)
   for ( i = 0; i < (int)num_elems; i++ ) {
-    for ( j = 0; j < elem_size; j++) {
+    for ( j = 0; j < (int)elem_size; j++) {
       qt[i*elem_size + j] = drand48();
     }
   }
@@ -200,13 +200,13 @@ int main(int argc, char* argv[])
   /* benchmark volumne integration */
   #pragma omp parallel for private(i,j)
   for ( i = 0; i < (int)num_elems; i++ ) {
-    for ( j = 0; j < elem_size; j++) {
+    for ( j = 0; j < (int)elem_size; j++) {
       q[i*elem_size + j] = drand48();
     }
   }
   #pragma omp parallel for private(i,j)
   for ( i = 0; i < (int)num_elems; i++ ) {
-    for ( j = 0; j < elem_size; j++) {
+    for ( j = 0; j < (int)elem_size; j++) {
       qt[i*elem_size + j] = drand48();
     }
   }
@@ -218,7 +218,7 @@ int main(int argc, char* argv[])
       LIBXSMM_ALIGNED(double tp[20*8*9], LIBXSMM_ALIGNMENT);
 
       #pragma omp for private(j)
-      for ( j = 0; j < num_elems; j++ ) {
+      for ( j = 0; j < (int)num_elems; j++ ) {
         st_kernel( mat_st_values, qt+(j*elem_size), tp );
         a_kernel( tp, mat_a_values, q+(j*elem_size) );
 
