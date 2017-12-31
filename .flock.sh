@@ -39,6 +39,7 @@ else
 fi
 
 shift
+cd ${DIR}
 if [ "" != "${FLOCK}" ]; then
   ${FLOCK} ${DIR} bash -c "$*"
 else
