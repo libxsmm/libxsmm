@@ -561,9 +561,9 @@ $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py $(SR
 
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
 ifneq (,$(strip $(SRCFILES_KERNELS)))
-	$(eval MVALUE := $(shell echo $(notdir $@) | cut -d_ -f2))
-	$(eval NVALUE := $(shell echo $(notdir $@) | cut -d_ -f3))
-	$(eval KVALUE := $(shell echo $(notdir $@) | cut -d_ -f4))
+	$(eval MVALUE := $(shell echo $(basename $(notdir $@)) | cut -d_ -f2))
+	$(eval NVALUE := $(shell echo $(basename $(notdir $@)) | cut -d_ -f3))
+	$(eval KVALUE := $(shell echo $(basename $(notdir $@)) | cut -d_ -f4))
 	$(eval MNVALUE := $(MVALUE))
 	$(eval NMVALUE := $(NVALUE))
 	@echo "#include <libxsmm.h>" > $@
