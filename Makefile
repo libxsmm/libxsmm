@@ -954,7 +954,7 @@ endif
 .PHONY: samples
 samples: cp2k nek smm wrap
 	@find $(SPLDIR) -type f -name Makefile | grep -v /pyfr/ | grep -v /lstm/ \
-		$(patsubst %, | grep -v /%/,$^) | xargs -I {} dirname {} | xargs -I {} $(FLOCK) {} \
+		$(patsubst %, | grep -v /%/,$^) | xargs -I {} $(FLOCK) {} \
 		"cd {}; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) DEPSTATIC=$(STATIC) \
 		SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
@@ -1527,13 +1527,13 @@ endif
 
 .PHONY: clean-all
 clean-all: clean
-	@find $(ROOTDIR) -type f -name Makefile -exec dirname {} \; | xargs -I {} $(FLOCK) {} \
-		"cd {}; $(MAKE) --no-print-directory clean 2> /dev/null || true"
+	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
+		"cd {}; $(MAKE) --no-print-directory clean 2> /dev/null || true" \;
 
 .PHONY: realclean-all
 realclean-all: realclean
-	@find $(ROOTDIR) -type f -name Makefile -exec dirname {} \; | xargs -I {} $(FLOCK) {} \
-		"cd {}; $(MAKE) --no-print-directory realclean 2> /dev/null || true"
+	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
+		"cd {}; $(MAKE) --no-print-directory realclean 2> /dev/null || true" \;
 
 # Dummy prefix
 ifneq (,$(strip $(PREFIX)))

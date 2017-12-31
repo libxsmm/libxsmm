@@ -31,7 +31,12 @@
 #############################################################################
 
 FLOCK=$(which flock 2> /dev/null)
-DIR=$1
+
+if [ -f $1 ]; then
+  DIR=$(dirname $1)
+else
+  DIR=$1
+fi
 
 shift
 if [ "" != "${FLOCK}" ]; then
