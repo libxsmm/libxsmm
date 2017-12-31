@@ -419,7 +419,7 @@
 #if defined(__GNUC__)
 # define LIBXSMM_ATTRIBUTE_CTOR LIBXSMM_ATTRIBUTE(constructor)
 # define LIBXSMM_ATTRIBUTE_DTOR LIBXSMM_ATTRIBUTE(destructor)
-# if !defined(LIBXSMM_CTOR) && !defined(LIBXSMM_BUILD_EXT)
+# if !defined(LIBXSMM_CTOR) && !(defined(__STATIC) && defined(LIBXSMM_BUILD))
 #   define LIBXSMM_CTOR
 # endif
 #else
