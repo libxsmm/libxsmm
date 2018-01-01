@@ -382,14 +382,14 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
                                 "  %s/*alpha*/, %p/*a*/, %" PRIi64 "/*lda*/,\n"
                                 "              %p/*b*/, %" PRIi64 "/*ldb*/,\n"
                                 "   %s/*beta*/, %p/*c*/, %" PRIi64 "/*ldc*/)",
-          typeprefix, ctransa, ctransa, (long long)*m, (long long)nn, (long long)kk,
-          string_a, a, (long long)ilda, b, (long long)ildb, string_b, c, (long long)ildc);
+          typeprefix, ctransa, ctransa, (intptr_t)*m, (intptr_t)nn, (intptr_t)kk,
+          string_a, a, (intptr_t)ilda, b, (intptr_t)ildb, string_b, c, (intptr_t)ildc);
       }
       else {
         fprintf((FILE*)ostream, "%cgemm(trans=%c%c mnk=%" PRIi64 ",%" PRIi64 ",%" PRIi64
                                                  " ldx=%" PRIi64 ",%" PRIi64 ",%" PRIi64 " a,b=%s,%s)",
-          typeprefix, ctransa, ctransa, (long long)*m, (long long)nn, (long long)kk,
-          (long long)ilda, (long long)ildb, (long long)ildc, string_a, string_b);
+          typeprefix, ctransa, ctransa, (intptr_t)*m, (intptr_t)nn, (intptr_t)kk,
+          (intptr_t)ilda, (intptr_t)ildb, (intptr_t)ildc, string_a, string_b);
       }
     }
     else { /* dump A, B, and C matrices into MHD files */

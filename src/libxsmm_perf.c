@@ -298,7 +298,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_dump_code(const void* memory, size_t si
     assert(res == 4); /* Expected 4 items written above */
 
 #else
-    fprintf(fp, "%" PRIx64 " %lx %s\n", (unsigned long long)((uintptr_t)memory), (unsigned long)size, name);
+    fprintf(fp, "%" PRIxPTR " %lx %s\n", (uintptr_t)memory, (unsigned long)size, name);
     fflush(fp);
 #endif
   }

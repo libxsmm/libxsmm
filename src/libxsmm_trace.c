@@ -302,7 +302,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 #   if defined(__MINGW32__)
               sprintf(buffer, "%p", *symbol);
 #   else
-              sprintf(buffer, "0x%" PRIx64, (unsigned long long)*symbol);
+              sprintf(buffer, "0x%" PRIxPTR, (uintptr_t)*symbol);
 #   endif
               fname = buffer;
             }

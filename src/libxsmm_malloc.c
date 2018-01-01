@@ -754,8 +754,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM ERROR: memory allocation error for size %" PRIu64 " with flag=%i!\n",
-            (unsigned long long)alloc_size, flags);
+          fprintf(stderr, "LIBXSMM ERROR: memory allocation error for size %" PRIu64 " with flag=%i!\n", (uintptr_t)alloc_size, flags);
         }
         result = EXIT_FAILURE;
       }
