@@ -166,7 +166,7 @@
 #if !defined(LIBXSMM_NO_SYNC)
   /** Default lock-kind */
 # define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
-# if !defined(LIBXSMM_LOCK_SYSTEM)
+# if !defined(LIBXSMM_LOCK_SYSTEM) || defined(__MINGW32__)
 #   define LIBXSMM_LOCK_SYSTEM
 # endif
   /* OpenMP based locks need to stay disabled unless both
@@ -209,10 +209,13 @@
 #   if defined(_WIN32) \
     /* Cygwin's Pthread implementation appears to be broken; use Win32 */ \
     || defined(__CYGWIN__)
-#     if defined(__CYGWIN__) /* hack: make SRW-locks available */
+#     if defined(__CYGWIN__) || defined(__MINGW32__) /* hack: make SRW-locks available */
 #       if defined(_WIN32_WINNT)
-#         define LIBXSMM_WIN32_WINNT _WIN32_WINNT
+#         define LIBXSMM_WIN32_WINNT (_WIN32_WINNT)
 #         undef _WIN32_WINNT
+#         if !defined(NTDDI_VERSION)
+#           define NTDDI_VERSION 0x0600
+#         endif
 #         define _WIN32_WINNT (LIBXSMM_WIN32_WINNT | 0x0600)
 #       else
 #         define _WIN32_WINNT 0x0600

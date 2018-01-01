@@ -38,6 +38,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <inttypes.h>
 #include <assert.h>
 #include <stdlib.h>
 # if (!defined(_BSD_SOURCE) || 0 == _BSD_SOURCE) && (!defined(_SVID_SOURCE) || 0 == _SVID_SOURCE) && \
@@ -298,7 +299,11 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
               fname = value->Name;
             }
             else if (0 > tid) { /* fall-back allowing unresolved symbol names */
-              sprintf(buffer, "0x%llx", (unsigned long long)*symbol);
+#   if defined(__MINGW32__)
+              sprintf(buffer, "%p", *symbol);
+#   else
+              sprintf(buffer, "0x%" PRIx64, (unsigned long long)*symbol);
+#   endif
               fname = buffer;
             }
             if (depth) *depth = i - min_n;

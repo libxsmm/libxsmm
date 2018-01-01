@@ -35,6 +35,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -377,15 +378,16 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
   if (0 != typeprefix) {
     if (0 != ostream) { /* print information about GEMM call */
       if (0 != a && 0 != b && 0 != c) {
-        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %lli/*m*/, %lli/*n*/, %lli/*k*/,\n"
-                                "  %s/*alpha*/, %p/*a*/, %lli/*lda*/,\n"
-                                "              %p/*b*/, %lli/*ldb*/,\n"
-                                "   %s/*beta*/, %p/*c*/, %lli/*ldc*/)",
+        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %" PRIi64 "/*m*/, %" PRIi64 "/*n*/, %" PRIi64 "/*k*/,\n"
+                                "  %s/*alpha*/, %p/*a*/, %" PRIi64 "/*lda*/,\n"
+                                "              %p/*b*/, %" PRIi64 "/*ldb*/,\n"
+                                "   %s/*beta*/, %p/*c*/, %" PRIi64 "/*ldc*/)",
           typeprefix, ctransa, ctransa, (long long)*m, (long long)nn, (long long)kk,
           string_a, a, (long long)ilda, b, (long long)ildb, string_b, c, (long long)ildc);
       }
       else {
-        fprintf((FILE*)ostream, "%cgemm(trans=%c%c mnk=%lli,%lli,%lli ldx=%lli,%lli,%lli a,b=%s,%s)",
+        fprintf((FILE*)ostream, "%cgemm(trans=%c%c mnk=%" PRIi64 ",%" PRIi64 ",%" PRIi64
+                                                 " ldx=%" PRIi64 ",%" PRIi64 ",%" PRIi64 " a,b=%s,%s)",
           typeprefix, ctransa, ctransa, (long long)*m, (long long)nn, (long long)kk,
           (long long)ilda, (long long)ildb, (long long)ildc, string_a, string_b);
       }

@@ -39,7 +39,7 @@
 # define LIBXSMM_SYNC_FUTEX
 #endif
 
-#if !defined(LIBXSMM_SYNC_SYSTEM) && 0
+#if !defined(LIBXSMM_SYNC_SYSTEM) || defined(__MINGW32__)
 # define LIBXSMM_SYNC_SYSTEM
 #endif
 
@@ -51,6 +51,7 @@
 #include <stdio.h>
 #include <math.h>
 #if defined(_WIN32)
+# include <windows.h>
 # include <process.h>
 #else
 # if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
@@ -347,7 +348,7 @@ LIBXSMM_API_DEFINITION libxsmm_mutex* libxsmm_mutex_create(void)
 LIBXSMM_API_DEFINITION void libxsmm_mutex_destroy(const libxsmm_mutex* mutex)
 {
 #if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
-  LIBXSMM_LOCK_DESTROY(LIBXSMM_LOCK_MUTEX, &mutex->impl);
+  LIBXSMM_LOCK_DESTROY(LIBXSMM_LOCK_MUTEX, (LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_MUTEX)*)&mutex->impl);
 #endif
   free((libxsmm_mutex*)mutex);
 }
@@ -508,7 +509,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_release(libxsmm_mutex* mutex)
 }
 
 
-#if !defined(LIBXSMM_NO_SYNC) && (!defined(LIBXSMM_LOCK_SYSTEM) || !defined(LIBXSMM_SYNC_SYSTEM))
+#if !defined(LIBXSMM_NO_SYNC) && !(defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM))
 typedef union LIBXSMM_RETARGETABLE internal_sync_counter {
   struct {
     uint16_t writer;
@@ -552,13 +553,13 @@ LIBXSMM_API_DEFINITION libxsmm_rwlock* libxsmm_rwlock_create(void)
 LIBXSMM_API_DEFINITION void libxsmm_rwlock_destroy(const libxsmm_rwlock* rwlock)
 {
 #if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
-  LIBXSMM_LOCK_DESTROY(LIBXSMM_LOCK_RWLOCK, &rwlock->impl);
+  LIBXSMM_LOCK_DESTROY(LIBXSMM_LOCK_RWLOCK, (LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_RWLOCK)*)&rwlock->impl);
 #endif
   free((libxsmm_rwlock*)rwlock);
 }
 
 
-#if !defined(LIBXSMM_NO_SYNC) && (!defined(LIBXSMM_LOCK_SYSTEM) || !defined(LIBXSMM_SYNC_SYSTEM))
+#if !defined(LIBXSMM_NO_SYNC) && !(defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM))
 LIBXSMM_API_INLINE int internal_rwlock_trylock(libxsmm_rwlock* rwlock, internal_sync_counter* prev)
 {
   internal_sync_counter next;
@@ -631,7 +632,7 @@ LIBXSMM_API_DEFINITION void libxsmm_rwlock_release(libxsmm_rwlock* rwlock)
 }
 
 
-#if !defined(LIBXSMM_NO_SYNC) && (!defined(LIBXSMM_LOCK_SYSTEM) || !defined(LIBXSMM_SYNC_SYSTEM))
+#if !defined(LIBXSMM_NO_SYNC) && !(defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM))
 LIBXSMM_API_INLINE int internal_rwlock_tryread(libxsmm_rwlock* rwlock, internal_sync_counter* prev)
 {
 #if !defined(LIBXSMM_NO_SYNC)
