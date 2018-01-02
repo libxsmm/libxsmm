@@ -1586,6 +1586,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   handle->blocksimg_blocking = 1;
                   descriptor.blocks_img = 1;
                   handle->reduce_weights = 1; 
+                  descriptor.use_nts = 0;
                 } else {
                   int spread_out = 0;
                   if (handle->ofh == 7 && handle->desc.threads % 4 == 0) {

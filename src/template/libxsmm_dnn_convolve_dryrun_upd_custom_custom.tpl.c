@@ -67,7 +67,7 @@ if ( handle->ofh == 28 ) {
 if ( handle->ofh == 14 || handle->ofh == 28 || handle->ofh == 56 ) {
   /* Pixel block is 12.25 Kbytes */
  handle->block_upd_ofm = 8;
- handle->block_upd_ifm = 16;
+ handle->block_upd_ifm = 32;
 }
 
 if ( handle->ofh == 7 ) {
@@ -75,6 +75,9 @@ if ( handle->ofh == 7 ) {
  handle->block_upd_ofm = 8;
  handle->block_upd_ifm = 16;
 }
+
+ handle->block_upd_ofm = 64;
+ handle->block_upd_ifm = 64;
 
 #if 0
 if ( handle->ofh == 28 || handle->ofh == 56 ) {
