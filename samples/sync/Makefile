@@ -55,7 +55,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)
+XFILES := $(OUTDIR)/$(OUTNAME)_barrier $(OUTDIR)/$(OUTNAME)_lock
 
 .PHONY: all
 all: $(XFILES)
@@ -63,11 +63,15 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(OBJECTS) \
-		$(MAINLIB) \
+$(OUTDIR)/$(OUTNAME)_barrier: $(OUTDIR)/.make $(BLDDIR)/barrier-c.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/barrier-c.o $(MAINLIB) \
 		$(call abslib,$(LIBNAME)noblas.$(LIBEXT)) \
-		$(BLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/$(OUTNAME)_lock: $(OUTDIR)/.make $(BLDDIR)/lock-c.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/lock-c.o $(MAINLIB) \
+		$(call abslib,$(LIBNAME)noblas.$(LIBEXT)) \
+		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

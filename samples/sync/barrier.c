@@ -41,11 +41,11 @@
 int main(int argc, char* argv[])
 {
   int num_cores, threads_per_core, num_threads, num_iterations = 50000;
-  unsigned long long tstart, tend;
+  libxsmm_timer_tickint start;
   libxsmm_barrier* barrier;
 
   if (3 > argc || 4 < argc) {
-    fprintf(stderr, "Usage:\n  %s <cores> <threadspercore> [<iterations>]\n", argv[0]);
+    fprintf(stderr, "Usage:\n  %s <cores> <threads-per-core> [<iterations>]\n", argv[0]);
     return -1;
   }
 
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
     libxsmm_barrier_init(barrier, tid);
   }
 
-  tstart = libxsmm_timer_tick();
+  start = libxsmm_timer_tick();
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(num_threads)
 #endif
@@ -95,11 +95,10 @@ int main(int argc, char* argv[])
       libxsmm_barrier_wait(barrier, tid);
     }
   }
-  tend = libxsmm_timer_tick();
 
   printf("libxsmm_barrier_wait(): %llu cycles (%d threads)\n",
-    /* calculate performance and report */
-    (tend - tstart) / num_iterations, num_threads);
+    libxsmm_timer_diff(start, libxsmm_timer_tick()) / num_iterations,
+    num_threads);
 
   libxsmm_barrier_release(barrier);
 
