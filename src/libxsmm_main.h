@@ -82,7 +82,7 @@
 #endif
 
 /* Helper macro to eventually (if defined) call libxsmm_init */
-#if !defined(LIBXSMM_CTOR) && !defined(LIBXSMM_INIT)
+#if !defined(LIBXSMM_INIT) && !defined(LIBXSMM_CTOR)
 # define LIBXSMM_INIT libxsmm_init();
 #elif !defined(LIBXSMM_INIT)
 # define LIBXSMM_INIT

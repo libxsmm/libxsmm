@@ -278,6 +278,9 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       unsigned int l_n;
       unsigned int l_m;
 
+      /* mute static analysis about garbage content */
+      memset(l_tmp, 0, l_row_count * l_column_count * sizeof(double));
+
       printf("CSC matrix data structure we just read:\n");
       printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);
 
@@ -340,6 +343,9 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       double *const l_tmp = (double*)malloc(l_row_count * l_column_count * sizeof(double));
       unsigned int l_n;
       unsigned int l_m;
+
+      /* mute static analysis about garbage content */
+      memset(l_tmp, 0, l_row_count * l_column_count * sizeof(double));
 
       printf("CSR matrix data structure we just read:\n");
       printf("rows: %u, columns: %u, elements: %u\n", l_row_count, l_column_count, l_element_count);

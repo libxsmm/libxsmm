@@ -58,14 +58,6 @@
 
         WRITE(*, "(A,I0,A)") "Dispatching ", size," calls..."
 
-        ! first invocation may initialize some internals (libxsmm_init),
-        ! or actually generate code (code gen. time is out of scope)
-        ! NOTE: libxsmm_xmmdispatch must be called with all arguments
-        ! when relying on FORTRAN 77.
-        !
-        CALL libxsmm_xmmdispatch(function, PRECISION, M, N, K,          &
-     &    LDA, LDB, LDC, Alpha, Beta, Flags, Prefetch)
-
         ! run non-inline function to measure call overhead of an "empty" function
         ! subsequent calls (see above) of libxsmm_init are not doing any work
         !
@@ -75,6 +67,14 @@
         END DO
         CALL CPU_TIME(dcall)
         dcall = dcall - start
+
+        ! first invocation may initialize some internals (libxsmm_init),
+        ! or actually generate code (code gen. time is out of scope)
+        ! NOTE: libxsmm_xmmdispatch must be called with all arguments
+        ! when relying on FORTRAN 77.
+        !
+        CALL libxsmm_xmmdispatch(function, PRECISION, M, N, K,          &
+     &    LDA, LDB, LDC, Alpha, Beta, Flags, Prefetch)
 
         CALL CPU_TIME(start)
         DO i = 1, size

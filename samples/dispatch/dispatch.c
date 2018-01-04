@@ -82,13 +82,6 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    /* first invocation may initialize some internals (libxsmm_init),
-     * or actually generate code (code gen. time is out of scope)
-     */
-    libxsmm_dmmdispatch(23, 23, 23,
-      NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
-      NULL/*flags*/, NULL/*prefetch*/);
-
     /* run non-inline function to measure call overhead of an "empty" function */
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)
@@ -98,6 +91,13 @@ int main(int argc, char* argv[])
       libxsmm_init(); /* subsequent calls are not doing any work */
     }
     dcall = libxsmm_timer_duration(start, libxsmm_timer_tick());
+
+    /* first invocation may initialize some internals (libxsmm_init),
+     * or actually generate code (code gen. time is out of scope)
+     */
+    libxsmm_dmmdispatch(23, 23, 23,
+      NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
+      NULL/*flags*/, NULL/*prefetch*/);
 
     start = libxsmm_timer_tick();
 #if defined(_OPENMP)

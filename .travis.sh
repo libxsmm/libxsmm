@@ -142,6 +142,13 @@ then
         fi
       fi
 
+      # make execution environment locally available (always)
+      if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
+         [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ]; \
+      then
+        source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env
+      fi
+
       # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
@@ -149,19 +156,15 @@ then
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
            [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ]; \
         then
+          LICSDIR=$(which icc 2> /dev/null | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
           ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
           ${CP} -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2> /dev/null
+          ${CP} -u ${LICSDIR}/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2> /dev/null
           echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
           echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
         fi
         # record the actual test case
         echo "${TEST} 2>&1" >> ${TESTSCRIPT}
-      else # make execution environment locally available
-        if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-           [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ]; \
-        then
-          source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env
-        fi
       fi
 
       # run the prepared test case/script

@@ -35,6 +35,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -377,17 +378,18 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
   if (0 != typeprefix) {
     if (0 != ostream) { /* print information about GEMM call */
       if (0 != a && 0 != b && 0 != c) {
-        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %lli/*m*/, %lli/*n*/, %lli/*k*/,\n"
-                                "  %s/*alpha*/, %p/*a*/, %lli/*lda*/,\n"
-                                "              %p/*b*/, %lli/*ldb*/,\n"
-                                "   %s/*beta*/, %p/*c*/, %lli/*ldc*/)",
-          typeprefix, ctransa, ctransa, (long long)*m, (long long)nn, (long long)kk,
-          string_a, a, (long long)ilda, b, (long long)ildb, string_b, c, (long long)ildc);
+        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %" PRIiPTR "/*m*/, %" PRIiPTR "/*n*/, %" PRIiPTR "/*k*/,\n"
+                                "  %s/*alpha*/, %p/*a*/, %" PRIiPTR "/*lda*/,\n"
+                                "              %p/*b*/, %" PRIiPTR "/*ldb*/,\n"
+                                "   %s/*beta*/, %p/*c*/, %" PRIiPTR "/*ldc*/)",
+          typeprefix, ctransa, ctransa, (intptr_t)*m, (intptr_t)nn, (intptr_t)kk,
+          string_a, a, (intptr_t)ilda, b, (intptr_t)ildb, string_b, c, (intptr_t)ildc);
       }
       else {
-        fprintf((FILE*)ostream, "%cgemm(trans=%c%c mnk=%lli,%lli,%lli ldx=%lli,%lli,%lli a,b=%s,%s)",
-          typeprefix, ctransa, ctransa, (long long)*m, (long long)nn, (long long)kk,
-          (long long)ilda, (long long)ildb, (long long)ildc, string_a, string_b);
+        fprintf((FILE*)ostream, "%cgemm(trans=%c%c mnk=%" PRIiPTR ",%" PRIiPTR ",%" PRIiPTR
+                                                 " ldx=%" PRIiPTR ",%" PRIiPTR ",%" PRIiPTR " a,b=%s,%s)",
+          typeprefix, ctransa, ctransa, (intptr_t)*m, (intptr_t)nn, (intptr_t)kk,
+          (intptr_t)ilda, (intptr_t)ildb, (intptr_t)ildc, string_a, string_b);
       }
     }
     else { /* dump A, B, and C matrices into MHD files */

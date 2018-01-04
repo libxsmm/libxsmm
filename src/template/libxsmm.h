@@ -462,7 +462,7 @@ template<> class LIBXSMM_RETARGETABLE libxsmm_mmfunction<float> {
 public:
   libxsmm_mmfunction(): m_function(0)
 #if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
-    , m_alpha(LIBXSMM_ALPHA), m_beta(LIBXSMM_BETA), m_m(0), m_n(0), m_k(0), m_lda(0), m_ldb(0), m_ldc(0), m_flags(LIBXSMM_FLAGS)
+    , m_alpha(0), m_beta(0), m_m(0), m_n(0), m_k(0), m_lda(0), m_ldb(0), m_ldc(0), m_flags(0)
 #endif
   {}
   libxsmm_mmfunction(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int flags = LIBXSMM_FLAGS)
@@ -515,7 +515,7 @@ public:
   }
   operator const void*() const {
 #if defined(LIBXSMM_FALLBACK_SMMFUNCTION)
-    return this;
+    return (0 != m_alpha || 0 != m_beta || 0 != m_m || 0 != m_n || 0 != m_k || 0 != m_lda || 0 != m_ldb || 0 != m_ldc || 0 != m_flags) ? this : 0;
 #else
     return 0 != m_function ? this : 0;
 #endif
@@ -555,7 +555,7 @@ template<> class LIBXSMM_RETARGETABLE libxsmm_mmfunction<double> {
 public:
   libxsmm_mmfunction(): m_function(0)
 #if defined(LIBXSMM_FALLBACK_DMMFUNCTION)
-    , m_alpha(LIBXSMM_ALPHA), m_beta(LIBXSMM_BETA), m_m(0), m_n(0), m_k(0), m_lda(0), m_ldb(0), m_ldc(0), m_flags(LIBXSMM_FLAGS)
+    , m_alpha(0), m_beta(0), m_m(0), m_n(0), m_k(0), m_lda(0), m_ldb(0), m_ldc(0), m_flags(0)
 #endif
   {}
   libxsmm_mmfunction(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int flags = LIBXSMM_FLAGS)
@@ -608,7 +608,7 @@ public:
   }
   operator const void*() const {
 #if defined(LIBXSMM_FALLBACK_DMMFUNCTION)
-    return this;
+    return (0 != m_alpha || 0 != m_beta || 0 != m_m || 0 != m_n || 0 != m_k || 0 != m_lda || 0 != m_ldb || 0 != m_ldc || 0 != m_flags) ? this : 0;
 #else
     return 0 != m_function ? this : 0;
 #endif

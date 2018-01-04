@@ -31,11 +31,17 @@
 #############################################################################
 
 FLOCK=$(which flock 2> /dev/null)
-DIR=$1
+
+if [ -f $1 ]; then
+  ABSDIR=$(cd $(dirname $1); pwd -P)
+else
+  ABSDIR=$(cd $1; pwd -P)
+fi
 
 shift
+cd ${ABSDIR}
 if [ "" != "${FLOCK}" ]; then
-  ${FLOCK} ${DIR} bash -c "$*"
+  ${FLOCK} ${ABSDIR} bash -c "$*"
 else
   eval "$*"
 fi
