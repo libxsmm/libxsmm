@@ -94,8 +94,8 @@ if ( handle->ofh == 28 || handle->ofh == 56 ) {
 }
 
 
- handle->block_upd_ofm = 64;
- handle->block_upd_ifm = 64;
+handle->block_upd_ofm = 64;
+handle->block_upd_ifm = 64;
 
 
 #if defined(_OPENMP)
