@@ -236,7 +236,7 @@ if (n_segments) {
     if (instr == WEIGHT_INIT) {
       offset_w = code_stream[pc].aux_index;
       for ( j = offset_w; j < offset_w + handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; j += 16) {
-        LIBXSMM_PRAGMA_VALIGNED
+          LIBXSMM_PRAGMA_VALIGNED
           LIBXSMM_PRAGMA_SIMD
           for ( k = 0; k < 16; ++k ) {
             weight_base[j + k] = (element_filter_type) 0;
@@ -249,7 +249,6 @@ if (n_segments) {
       offset_w *= handle->desc.R * handle->desc.S * handle->ifmblock;
       offset_s = code_stream[pc].aux_index;
       for ( j = 0; j < handle->desc.R*handle->desc.S*handle->ifmblock; j++ ) {
-        LIBXSMM_PRAGMA_NONTEMPORAL
           LIBXSMM_PRAGMA_VALIGNED
           LIBXSMM_PRAGMA_SIMD
           for ( k = 0; k < 16; k++ ) {
@@ -296,7 +295,7 @@ if (handle->upd_use_external_reduce == 0) {
       weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
     }
     if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
-      _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
+      _mm512_store_ps(&weight_ptr[j*16], weight_sum);
     } else {
       _mm512_store_ps(&weight_ptr[j*16], _mm512_add_ps(weight_sum, _mm512_load_ps(&weight_ptr[j*16])));
     }

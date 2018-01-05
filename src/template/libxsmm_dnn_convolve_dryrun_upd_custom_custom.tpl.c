@@ -193,8 +193,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int my_img_start = LIBXSMM_MIN( tile_id * img_per_tile, handle->desc.N);
   int my_img_end = LIBXSMM_MIN( (tile_id+1) * img_per_tile, handle->desc.N);
 
+
   int my_in_tile_id = ltid % group_size;
-  int ifms_per_thread = BLOCKSIFM/group_size;
+  int ifms_per_thread = (BLOCKSIFM+group_size-1)/group_size;
   int ofms_per_thread;
   my_ifm_start = LIBXSMM_MIN( my_in_tile_id * ifms_per_thread, BLOCKSIFM  );
   my_ifm_end = LIBXSMM_MIN( (my_in_tile_id+1) * ifms_per_thread, BLOCKSIFM  );
