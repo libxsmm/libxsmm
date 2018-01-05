@@ -34,8 +34,9 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include "perf_jitdump.h"
-#include <stdio.h>
+#include <inttypes.h>
 #include <stdlib.h>
+#include <stdio.h>
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
 # include <sys/mman.h>
 # include <string.h>
@@ -297,7 +298,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_dump_code(const void* memory, size_t si
     assert(res == 4); /* Expected 4 items written above */
 
 #else
-    fprintf(fp, "%llx %lx %s\n", (unsigned long long)((uintptr_t)memory), (unsigned long)size, name);
+    fprintf(fp, "%" PRIxPTR " %lx %s\n", (uintptr_t)memory, (unsigned long)size, name);
     fflush(fp);
 #endif
   }

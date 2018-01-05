@@ -34,23 +34,23 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-#include <sys/time.h>
 
-#define N_QUANTITIES 9
+#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
+# define drand48() ((double)rand() / RAND_MAX)
+# define srand48 srand
+#endif
 
 #if defined(__EDGE_EXECUTE_F32__)
 #define REALTYPE float
-#define N_CRUNS 16
-/*#define N_CRUNS 8*/
 #else
 #define REALTYPE double
-#define N_CRUNS 8
-/*#define N_CRUNS 4*/
 #endif
 
-static double sec(struct timeval start, struct timeval end) {
-  return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
-}
+typedef struct edge_mat_desc {
+  unsigned int row_count;
+  unsigned int col_count;
+  unsigned int num_elements;
+} edge_mat_desc;
 
 static void libxsmm_sparse_csr_reader( const char*    i_csr_file_in,
                                 unsigned int**        o_row_idx,
@@ -284,5 +284,101 @@ static void libxsmm_sparse_csc_reader( const char*    i_csc_file_in,
   if ( l_column_idx_id != NULL ) {
     free( l_column_idx_id );
   }
+}
+
+static edge_mat_desc libxsmm_sparse_csr_reader_desc( const char*    i_csr_file_in ) {
+  FILE *l_csr_file_handle;
+  const unsigned int l_line_length = 512;
+  char l_line[512/*l_line_length*/+1];
+  unsigned int l_header_read = 0;
+  unsigned int l_row_count = 0;
+  unsigned int l_col_count = 0;
+  unsigned int l_num_elements = 0;
+  edge_mat_desc desc;
+
+  desc.row_count = 0;
+  desc.col_count = 0;
+  desc.num_elements = 0;
+
+  l_csr_file_handle = fopen( i_csr_file_in, "r" );
+  if ( l_csr_file_handle == NULL ) {
+    fprintf( stderr, "cannot open CSR file!\n" );
+    return desc;
+  }
+
+  while (fgets(l_line, l_line_length, l_csr_file_handle) != NULL) {
+    if ( strlen(l_line) == l_line_length ) {
+      fprintf( stderr, "could not read file length!\n" );
+      return desc;
+    }
+    /* check if we are still reading comments header */
+    if ( l_line[0] == '%' ) {
+      continue;
+    } else {
+      /* if we are the first line after comment header, we allocate our data structures */
+      if ( l_header_read == 0 ) {
+        if ( sscanf(l_line, "%u %u %u", &l_row_count, &l_col_count, &l_num_elements) == 3 ) {
+          l_header_read = 1;
+          desc.row_count = l_row_count;
+          desc.col_count = l_col_count;
+          desc.num_elements = l_num_elements;
+        } else {
+          fprintf( stderr, "could not csr descripton!\n" );
+          return desc;
+        }
+      } else {
+      }
+    }
+  }
+
+  return desc;
+}
+
+static edge_mat_desc libxsmm_sparse_csc_reader_desc( const char*    i_csc_file_in ) {
+  FILE *l_csc_file_handle;
+  const unsigned int l_line_length = 512;
+  char l_line[512/*l_line_length*/+1];
+  unsigned int l_header_read = 0;
+  unsigned int l_row_count = 0;
+  unsigned int l_col_count = 0;
+  unsigned int l_num_elements = 0;
+  edge_mat_desc desc;
+
+  desc.row_count = 0;
+  desc.col_count = 0;
+  desc.num_elements = 0;
+
+  l_csc_file_handle = fopen( i_csc_file_in, "r" );
+  if ( l_csc_file_handle == NULL ) {
+    fprintf( stderr, "cannot open CSC file!\n" );
+    return desc;
+  }
+
+  while (fgets(l_line, l_line_length, l_csc_file_handle) != NULL) {
+    if ( strlen(l_line) == l_line_length ) {
+      fprintf( stderr, "could not read file length!\n" );
+      return desc;
+    }
+    /* check if we are still reading comments header */
+    if ( l_line[0] == '%' ) {
+      continue;
+    } else {
+      /* if we are the first line after comment header, we allocate our data structures */
+      if ( l_header_read == 0 ) {
+        if ( sscanf(l_line, "%u %u %u", &l_row_count, &l_col_count, &l_num_elements) == 3 ) {
+          l_header_read = 1;
+          desc.row_count = l_row_count;
+          desc.col_count = l_col_count;
+          desc.num_elements = l_num_elements;
+        } else {
+          fprintf( stderr, "could not csc descripton!\n" );
+          return desc;
+        }
+      } else {
+      }
+    }
+  }
+
+  return desc;
 }
 

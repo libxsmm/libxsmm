@@ -59,7 +59,7 @@ LIBXSMM_API int libxsmm_mhd_element_comparison(void* dst, libxsmm_mhd_elemtype d
 
 
 /** Returns the name and size of the element type; result may be NULL/0 in case of an unknown type. */
-LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t typesize[], const char** ctypename);
+LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t* typesize, const char** ctypename);
 
 /** Returns the type of the element for a given type-name. */
 LIBXSMM_API libxsmm_mhd_elemtype libxsmm_mhd_typeinfo(const char elemname[]);
@@ -94,18 +94,18 @@ LIBXSMM_API int libxsmm_mhd_read_header(
 
 
 /**
-* Loads the data file, and optionally allows data conversion.
-* Conversion is performed such that values are clamped to fit
-* into the destination.
-*/
+ * Loads the data file, and optionally allows data conversion.
+ * Conversion is performed such that values are clamped to fit
+ * into the destination.
+ */
 LIBXSMM_API int libxsmm_mhd_read(
   /* Filename referring to the data. */
   const char filename[],
-  /** Offset within pitched buffer (NULL: no offset). */
+  /* Offset within pitched buffer (NULL: no offset). */
   const size_t offset[],
-  /** Image dimensions (extents). */
+  /* Image dimensions (extents). */
   const size_t size[],
-  /** Leading buffer dimensions (NULL: same as size). */
+  /* Leading buffer dimensions (NULL: same as size). */
   const size_t pitch[],
   /* Dimensionality (number of entries in size). */
   size_t ndims,
@@ -137,27 +137,27 @@ LIBXSMM_API int libxsmm_mhd_read(
  * The file is suitable for visual inspection using e.g., ITK-SNAP or ParaView.
  */
 LIBXSMM_API int libxsmm_mhd_write(const char filename[],
-  /** Offset within pitched buffer (NULL: no offset). */
+  /* Offset within pitched buffer (NULL: no offset). */
   const size_t offset[],
-  /** Image dimensions (extents). */
+  /* Image dimensions (extents). */
   const size_t size[],
-  /** Leading buffer dimensions (NULL: same as size). */
+  /* Leading buffer dimensions (NULL: same as size). */
   const size_t pitch[],
-  /** Dimensionality i.e., number of entries in data_size/size. */
+  /* Dimensionality i.e., number of entries in data_size/size. */
   size_t ndims,
-  /** Number of pixel components. */
+  /* Number of pixel components. */
   size_t ncomponents,
-  /** Storage type. */
+  /* Storage type. */
   libxsmm_mhd_elemtype type,
-  /** Raw data to be saved. */
+  /* Raw data to be saved. */
   const void* data,
-  /** Size of the header; can be a NULL-argument (optional). */
+  /* Size of the header; can be a NULL-argument (optional). */
   size_t* header_size,
-  /** Extension header data; can be NULL. */
+  /* Extension header data; can be NULL. */
   const char extension_header[],
-  /** Extension data stream; can be NULL. */
+  /* Extension data stream; can be NULL. */
   const void* extension,
-  /** Extension data size; can be NULL. */
+  /* Extension data size; can be NULL. */
   size_t extension_size);
 
 #endif /*LIBXSMM_MHD_H*/

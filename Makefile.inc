@@ -667,10 +667,12 @@ ifneq (0,$(INTEL))
       CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
       FCFLAGS := -g -traceback $(FCFLAGS)
     endif
+    ifeq (0,$(COMPATIBLE))
     ifneq (0,$(DEPSTATIC))
     ifneq (Darwin,$(UNAME))
     ifneq (Windows_NT,$(UNAME))
       LDFLAGS += -Wl,--export-dynamic
+    endif
     endif
     endif
     endif
@@ -874,10 +876,12 @@ else # GCC assumed
       CFLAGS := -g3 -gdwarf-2 $(CFLAGS)
       FCFLAGS := -g $(FCFLAGS)
     endif
+    ifeq (0,$(COMPATIBLE))
     ifneq (0,$(DEPSTATIC))
     ifneq (Darwin,$(UNAME))
     ifneq (Windows_NT,$(UNAME))
       LDFLAGS += -Wl,--export-dynamic
+    endif
     endif
     endif
     endif
