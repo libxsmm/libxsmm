@@ -106,6 +106,33 @@ libxsmm_timer_tickint libxsmm_timer_tick(void)
 }
 
 
+LIBXSMM_API_DEFINITION libxsmm_timer_tickint libxsmm_timer_sleep(libxsmm_timer_tickint start, libxsmm_timer_tickint duration)
+{
+  const libxsmm_timer_tickint end = start + duration;
+  libxsmm_timer_tickint tick = end;
+  for (;;) {
+    LIBXSMM_SYNC_PAUSE;
+    tick = libxsmm_timer_tick();
+#if !defined(LIBXSMM_NO_SYNC)
+    if (tick < end) {
+# if defined(_WIN32)
+#   if 1
+      YieldProcessor();
+#   else
+      Sleep(0);
+#   endif
+# else
+      pthread_yield();
+# endif
+    }
+    else
+#endif
+    break;
+  }
+  return tick;
+}
+
+
 LIBXSMM_API_DEFINITION double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
 {
   double result = (double)LIBXSMM_DIFF(tick0, tick1);

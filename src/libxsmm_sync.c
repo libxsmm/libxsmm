@@ -26,20 +26,20 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Hans Pabst (Intel Corp.)
+/*  Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 /* Mutex and RW-lock implementation based on work by Karl Malbrain:
 ** https://github.com/malbrain/mutex, and https://github.com/malbrain/rwlock/
 ******************************************************************************/
 #include <libxsmm_sync.h>
-#include <libxsmm_intrinsics_x86.h>
+#include <libxsmm_timer.h>
 #include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
 # define LIBXSMM_SYNC_FUTEX
 #endif
 
-#if !defined(LIBXSMM_SYNC_SYSTEM) || defined(__MINGW32__)
+#if !defined(LIBXSMM_SYNC_SYSTEM) && defined(__MINGW32__)
 # define LIBXSMM_SYNC_SYSTEM
 #endif
 
@@ -307,9 +307,109 @@ enum {
   INTERNAL_SYNC_MUTEX_STATE_LOCKED,
   INTERNAL_SYNC_MUTEX_STATE_CONTESTED,
   INTERNAL_SYNC_RWLOCK_READINC = 0x10000/*(USHRT_MAX+1)*/,
+  INTERNAL_SYNC_MINSLEEP = 1024,
   INTERNAL_SYNC_FUTEX = 202
 };
 #endif
+
+
+#if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
+typedef LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_SPINLOCK) libxsmm_spinlock_state;
+#else
+typedef unsigned int libxsmm_spinlock_state;
+#endif
+
+struct LIBXSMM_RETARGETABLE libxsmm_spinlock {
+#if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
+  libxsmm_spinlock_state impl;
+#else
+  volatile libxsmm_spinlock_state state;
+#endif
+};
+
+
+LIBXSMM_API_DEFINITION libxsmm_spinlock* libxsmm_spinlock_create(void)
+{
+  libxsmm_spinlock *const result = (libxsmm_spinlock*)malloc(sizeof(libxsmm_spinlock));
+  if (0 != result) {
+#if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
+    LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK_SPINLOCK) attr;
+    LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK_SPINLOCK, &attr);
+    LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_SPINLOCK, &result->impl, &attr);
+    LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK_SPINLOCK, &attr);
+#else
+    result->state = 1;
+#endif
+  }
+  return result;
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_spinlock_destroy(const libxsmm_spinlock* spinlock)
+{
+#if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
+  LIBXSMM_LOCK_DESTROY(LIBXSMM_LOCK_SPINLOCK, (LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_SPINLOCK)*)&spinlock->impl);
+#endif
+  free((libxsmm_spinlock*)spinlock);
+}
+
+
+LIBXSMM_API_DEFINITION int libxsmm_spinlock_trylock(libxsmm_spinlock* spinlock)
+{
+#if !defined(LIBXSMM_NO_SYNC)
+  assert(0 != spinlock);
+# if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
+  return LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
+# else
+  return LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK) + LIBXSMM_ATOMIC_SUB_FETCH(&spinlock->state, 1, LIBXSMM_ATOMIC_SEQ_CST);
+# endif
+#else
+  LIBXSMM_UNUSED(spinlock);
+  return LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK);
+#endif
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_spinlock_acquire(libxsmm_spinlock* spinlock)
+{
+#if !defined(LIBXSMM_NO_SYNC)
+# if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
+  assert(0 != spinlock);
+  LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
+# else
+  const libxsmm_timer_tickint s = libxsmm_spinlock_trylock(spinlock);
+  libxsmm_timer_tickint sleep = INTERNAL_SYNC_MINSLEEP;
+  if (0 != s) {
+    while (0 != spinlock->state) {
+      const libxsmm_timer_tickint t = libxsmm_timer_tick();
+      if (INTERNAL_SYNC_MINSLEEP < sleep) {
+        libxsmm_timer_sleep(t, sleep);
+      }
+      else {
+        sleep = (libxsmm_timer_sleep(t, sleep) - t) * 2;
+      }
+    }
+  }
+# endif
+#else
+  LIBXSMM_UNUSED(spinlock);
+#endif
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_spinlock_release(libxsmm_spinlock* spinlock)
+{
+#if !defined(LIBXSMM_NO_SYNC)
+  assert(0 != spinlock);
+# if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
+  LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
+# else
+  LIBXSMM_ATOMIC_STORE(&spinlock->state, 1, LIBXSMM_ATOMIC_SEQ_CST);
+# endif
+#else
+  LIBXSMM_UNUSED(spinlock);
+#endif
+}
 
 
 #if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
@@ -337,8 +437,9 @@ LIBXSMM_API_DEFINITION libxsmm_mutex* libxsmm_mutex_create(void)
     LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK_MUTEX) attr;
     LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK_MUTEX, &attr);
     LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_MUTEX, &result->impl, &attr);
+    LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK_MUTEX, &attr);
 #else
-    memset(result, 0, sizeof(libxsmm_mutex));
+    result->state = 0;
 #endif
   }
   return result;
@@ -352,68 +453,6 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_destroy(const libxsmm_mutex* mutex)
 #endif
   free((libxsmm_mutex*)mutex);
 }
-
-
-#if !defined(LIBXSMM_NO_SYNC)
-LIBXSMM_API_INLINE int internal_sync_cycle(unsigned int* cnt)
-{
-  volatile unsigned int idx;
-
-  assert(0 != cnt);
-  if (0 == *cnt) {
-    *cnt = 8;
-  }
-#if 1
-  else if (*cnt < (1024 * 1024)) {
-    *cnt += *cnt / 4;
-  }
-#else
-  else if (*cnt < 8192) {
-    *cnt += *cnt / 8;
-  }
-#endif
-  if (*cnt < 1024) {
-    for (idx = 0; idx < *cnt; ++idx) LIBXSMM_SYNC_PAUSE;
-  }
-  else {
-    return 1;
-  }
-
-  return 0;
-}
-#endif
-
-
-#if !defined(LIBXSMM_NO_SYNC)
-LIBXSMM_API_INLINE void internal_sync_sleep(unsigned int cnt)
-{
-#if defined(_WIN32)
-  LARGE_INTEGER freq, next;
-  unsigned int interval, i;
-  double scale;
-
-  QueryPerformanceFrequency(&freq);
-  QueryPerformanceCounter(&next);
-  scale = 1E9 / freq.QuadPart;
-
-  for (i = 0; i < cnt; i += interval) {
-    const LARGE_INTEGER start = next;
-#if 1
-    YieldProcessor();
-#else
-    Sleep(0);
-#endif
-    QueryPerformanceCounter(&next);
-    interval = (unsigned int)((next.QuadPart - start.QuadPart) * scale);
-  }
-#else
-  struct timespec ts;
-  ts.tv_sec = 0;
-  ts.tv_nsec = cnt;
-  nanosleep(&ts, NULL);
-#endif
-}
-#endif
 
 
 LIBXSMM_API_DEFINITION int libxsmm_mutex_trylock(libxsmm_mutex* mutex)
@@ -447,12 +486,18 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
   assert(0 != mutex);
   LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_MUTEX, &mutex->impl);
 # else
-  unsigned int spin_count = 0;
+  libxsmm_timer_tickint sleep = INTERNAL_SYNC_MINSLEEP;
 #   if defined(_WIN32)
   assert(0 != mutex);
   while (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX) != libxsmm_mutex_trylock(mutex)) {
     while (0 != (mutex->state & 1)) {
-      if (0 != internal_sync_cycle(&spin_count)) internal_sync_sleep(spin_count);
+      const libxsmm_timer_tickint t = libxsmm_timer_tick();
+      if (INTERNAL_SYNC_MINSLEEP < sleep) {
+        libxsmm_timer_sleep(t, sleep);
+      }
+      else {
+        sleep = (libxsmm_timer_sleep(t, sleep) - t) * 2;
+      }
     }
   }
 #   else
@@ -542,6 +587,7 @@ LIBXSMM_API_DEFINITION libxsmm_rwlock* libxsmm_rwlock_create(void)
     LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK_RWLOCK) attr;
     LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK_RWLOCK, &attr);
     LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_RWLOCK, &result->impl, &attr);
+    LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK_RWLOCK, &attr);
 #else
     memset(result, 0, sizeof(libxsmm_rwlock));
 #endif
@@ -603,9 +649,15 @@ LIBXSMM_API_DEFINITION void libxsmm_rwlock_acquire(libxsmm_rwlock* rwlock)
 # else
   internal_sync_counter prev;
   if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) != internal_rwlock_trylock(rwlock, &prev)) {
-    unsigned int spin_count = 0;
+    libxsmm_timer_tickint sleep = INTERNAL_SYNC_MINSLEEP;
     while (rwlock->completions.bits != prev.bits) {
-      if (0 != internal_sync_cycle(&spin_count)) internal_sync_sleep(spin_count);
+      const libxsmm_timer_tickint t = libxsmm_timer_tick();
+      if (INTERNAL_SYNC_MINSLEEP < sleep) {
+        libxsmm_timer_sleep(t, sleep);
+      }
+      else {
+        sleep = (libxsmm_timer_sleep(t, sleep) - t) * 2;
+      }
     }
   }
 # endif
@@ -679,9 +731,15 @@ LIBXSMM_API_DEFINITION void libxsmm_rwlock_acqread(libxsmm_rwlock* rwlock)
 # else
   internal_sync_counter prev;
   if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) != internal_rwlock_tryread(rwlock, &prev)) {
-    unsigned int spin_count = 0;
+    libxsmm_timer_tickint sleep = INTERNAL_SYNC_MINSLEEP;
     while (rwlock->completions.kind.writer != prev.kind.writer) {
-      if (0 != internal_sync_cycle(&spin_count)) internal_sync_sleep(spin_count);
+      const libxsmm_timer_tickint t = libxsmm_timer_tick();
+      if (INTERNAL_SYNC_MINSLEEP < sleep) {
+        libxsmm_timer_sleep(t, sleep);
+      }
+      else {
+        sleep = (libxsmm_timer_sleep(t, sleep) - t) * 2;
+      }
     }
   }
 # endif
