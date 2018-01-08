@@ -135,7 +135,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
   }
 
-  if ( (handle->use_thread_private_jit > 0) && ( (handle->desc.R == 1 && handle->desc.S == 1) || (handle->desc.u == 1 && handle->desc.v == 1) ) )  {
+  if ( (handle->use_thread_private_jit > 0) && ( (handle->desc.R == 1 && handle->desc.S == 1) || (handle->desc.u == 1 && handle->desc.v == 1) ) && !((handle->desc.R > 1 && handle->desc.pad_h == 0) || (handle->desc.S > 1 && handle->desc.pad_w == 0)) )  {
     handle->exploit_duality = 1;  
   } else {
     handle->exploit_duality = 0;
@@ -949,7 +949,20 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         fwd_equivalent_descriptor.kh = handle->desc.R;
         fwd_equivalent_descriptor.kw = handle->desc.S;
         fwd_equivalent_descriptor.unroll_kw = 1;
-        fwd_equivalent_descriptor.unroll_kh = 1;
+        fwd_equivalent_descriptor.unroll_kh = 0;
+        if (handle->desc.R == 1 && handle->desc.S == 1) {
+          fwd_equivalent_descriptor.unroll_kh = 1;
+          fwd_equivalent_descriptor.unroll_kw = 1;
+        } else if (handle->desc.R > 1 && handle->desc.S == 1 ) {
+          fwd_equivalent_descriptor.unroll_kh = 1;
+          fwd_equivalent_descriptor.unroll_kw = 0;
+        } else if (handle->desc.R == 1 && handle->desc.S > 1 ) {
+          fwd_equivalent_descriptor.unroll_kh = 1;
+          fwd_equivalent_descriptor.unroll_kw = 1;
+        } else {
+          fwd_equivalent_descriptor.unroll_kh = 0;
+          fwd_equivalent_descriptor.unroll_kw = 1;
+        }
         fwd_equivalent_descriptor.stride_h = 1;
         fwd_equivalent_descriptor.stride_w = 1;
         fwd_equivalent_descriptor.blocks_ofm = handle->blocksifm;
@@ -958,8 +971,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         fwd_equivalent_descriptor.ifm_block = handle->ofmblock_lp;
         fwd_equivalent_descriptor.ofh_padded = handle->ifhp;
         fwd_equivalent_descriptor.ofw_padded = handle->ifwp;
-        fwd_equivalent_descriptor.ofh_rb = handle->bwd_ofh_rb;
-        fwd_equivalent_descriptor.ofw_rb = handle->bwd_ofw_rb;
+        fwd_equivalent_descriptor.ofh_rb = handle->fwd_ofh_rb;
+        fwd_equivalent_descriptor.ofw_rb = handle->fwd_ofw_rb;
         fwd_equivalent_descriptor.fm_lp_block = handle->fm_lp_block;
         fwd_equivalent_descriptor.datatype = handle->datatype_in;
         fwd_equivalent_descriptor.datatype_itm = handle->datatype_out;
@@ -1038,7 +1051,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
             /* TODO: Decide the unroll factor and register blocking using some heuristics as above */
             descriptor.unroll_kh = 0;
             descriptor.unroll_kw = 1;
-            if ( handle->fwd_ofw_rb != 7 ) {
+            if ( handle->ofw != 7 ) {
               descriptor.ofh_rb = handle->fwd_ofh_rb;
               handle->bwd_ofh_rb = handle->fwd_ofh_rb;
               descriptor.ofw_rb = handle->fwd_ofw_rb;
@@ -1091,7 +1104,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
             /*if (handle->use_thread_private_jit > 0) {*/
             if (handle->exploit_duality == 1) {
               fwd_equivalent_descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-              if ( handle->bwd_ofw_rb != 7) {
+              if ( handle->ofw != 7) {
                 handle->code_bwd[4].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
               } else {
                 int hrb_save =  fwd_equivalent_descriptor.ofh_rb;
@@ -1247,8 +1260,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               mirror_handle->block_fwd_ofm = handle->block_fwd_ifm;
               mirror_handle->blocksifm = handle->blocksofm;
               mirror_handle->blocksifm_lp = handle->blocksofm_lp;        
-              mirror_handle->ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.S) / handle->desc.v + 1;
-              mirror_handle->ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.R) / handle->desc.u + 1;
+              mirror_handle->ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.R) / handle->desc.v + 1;
+              mirror_handle->ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.S) / handle->desc.u + 1;
               mirror_handle->ifmblock = handle->ofmblock_lp;
               mirror_handle->ofmblock = handle->ifmblock_hp;
               mirror_handle->compute_fwd_indices_ptrs =  handle->compute_bwd_indices_ptrs;
