@@ -40,18 +40,18 @@
 #endif
 
 
-libxsmm_timer_tickint work(libxsmm_timer_tickint start, libxsmm_timer_tickint amount);
-libxsmm_timer_tickint work(libxsmm_timer_tickint start, libxsmm_timer_tickint amount)
+libxsmm_timer_tickint work(libxsmm_timer_tickint start, libxsmm_timer_tickint duration);
+libxsmm_timer_tickint work(libxsmm_timer_tickint start, libxsmm_timer_tickint duration)
 {
-  const libxsmm_timer_tickint t1 = start + amount;
-  libxsmm_timer_tickint t0 = start;
+  const libxsmm_timer_tickint end = start + duration;
+  libxsmm_timer_tickint tick = start;
   do {
     libxsmm_timer_tickint i, s = 0;
-    for (i = 0; i < ((t1 - t0) / 4); ++i) s += i;
-    t0 = libxsmm_timer_tick();
+    for (i = 0; i < ((end - tick) / 4); ++i) s += i;
+    tick = libxsmm_timer_tick();
   }
-  while(t0 < t1);
-  return t0;
+  while(tick < end);
+  return tick;
 }
 
 
