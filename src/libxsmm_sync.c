@@ -509,9 +509,9 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
     for (state = mutex->state; INTERNAL_SYNC_MUTEX_STATE_FREE != state; state = mutex->state) {
       const libxsmm_timer_tickint t = libxsmm_timer_tick();
       if (INTERNAL_SYNC_MINSLEEP < sleep) {
-        libxsmm_timer_sleep(t, sleep);
 #     if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
         /*const*/ libxsmm_mutex_state state_locked = INTERNAL_SYNC_MUTEX_STATE_LOCKED;
+        libxsmm_timer_sleep(t, sleep);
         if (INTERNAL_SYNC_MUTEX_STATE_LOCKED != state || LIBXSMM_ATOMIC_CMPSWP(&mutex->state,
           state_locked, INTERNAL_SYNC_MUTEX_STATE_CONTESTED, LIBXSMM_ATOMIC_RELAXED))
         {
@@ -519,6 +519,8 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
           state_new = INTERNAL_SYNC_MUTEX_STATE_CONTESTED;
         }
         break;
+#     else
+        libxsmm_timer_sleep(t, sleep);
 #     endif
       }
       else {
