@@ -29,7 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_timer.h>
-#include <libxsmm_intrinsics_x86.h>
+#include <libxsmm_sync.h>
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -115,7 +115,7 @@ LIBXSMM_API_DEFINITION libxsmm_timer_tickint libxsmm_timer_sleep(libxsmm_timer_t
     tick = libxsmm_timer_tick();
 #if !defined(LIBXSMM_NO_SYNC)
     if (tick < end) {
-# if defined(_WIN32)
+# if defined(LIBXSMM_WIN32_THREADS)
 #   if 1
       YieldProcessor();
 #   else

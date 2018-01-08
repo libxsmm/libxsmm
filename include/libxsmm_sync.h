@@ -166,8 +166,12 @@
 #if !defined(LIBXSMM_NO_SYNC)
   /** Default lock-kind */
 # define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
-# if !defined(LIBXSMM_LOCK_SYSTEM) && defined(__MINGW32__)
-#   define LIBXSMM_LOCK_SYSTEM
+# if !defined(LIBXSMM_LOCK_SYSTEM)
+#   if defined(__MINGW32__)
+#     define LIBXSMM_LOCK_SYSTEM
+#   elif 1
+#     define LIBXSMM_LOCK_SYSTEM
+#   endif
 # endif
   /* OpenMP based locks need to stay disabled unless both
    * libxsmm and libxsmmext are built with OpenMP support.
@@ -205,22 +209,22 @@
 #   define LIBXSMM_LOCK_ATTR_TYPE(KIND) LIBXSMM_CONCATENATE(LIBXSMM_LOCK_ATTR_TYPE_, KIND)
 #   define LIBXSMM_LOCK_ATTR_INIT(KIND, ATTR) LIBXSMM_CONCATENATE(LIBXSMM_LOCK_ATTR_INIT_, KIND)(ATTR)
 #   define LIBXSMM_LOCK_ATTR_DESTROY(KIND, ATTR) LIBXSMM_CONCATENATE(LIBXSMM_LOCK_ATTR_DESTROY_, KIND)(ATTR)
-    /* implementation */
-#   if defined(_WIN32) \
-    /* Cygwin's Pthread implementation appears to be broken; use Win32 */ \
-    || defined(__CYGWIN__)
+    /* Cygwin's Pthread implementation appears to be broken; use Win32 */
+#   if !defined(LIBXSMM_WIN32_THREADS) && (defined(_WIN32) || defined(__CYGWIN__))
+#     define LIBXSMM_WIN32_THREADS _WIN32_WINNT
 #     if defined(__CYGWIN__) || defined(__MINGW32__) /* hack: make SRW-locks available */
 #       if defined(_WIN32_WINNT)
-#         define LIBXSMM_WIN32_WINNT (_WIN32_WINNT)
 #         undef _WIN32_WINNT
 #         if !defined(NTDDI_VERSION)
 #           define NTDDI_VERSION 0x0600
 #         endif
-#         define _WIN32_WINNT (LIBXSMM_WIN32_WINNT | 0x0600)
+#         define _WIN32_WINNT ((LIBXSMM_WIN32_THREADS) | 0x0600)
 #       else
 #         define _WIN32_WINNT 0x0600
 #       endif
 #     endif
+#   endif    
+#   if defined(LIBXSMM_WIN32_THREADS)
 #     include <windows.h>
 #     define LIBXSMM_LOCK_SPINLOCK spin
 #     define LIBXSMM_LOCK_MUTEX mutex
