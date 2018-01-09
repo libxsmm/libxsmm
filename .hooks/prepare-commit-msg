@@ -29,7 +29,7 @@ then
     PATTERNS="$(${CAT} ${CODEFILE} 2> /dev/null)"
   fi
   PATTERNS+=$(${ECHO} -e "\nMakefile*")
-  for FILENAME in $(${GIT} diff --cached --name-only); do
+  for FILENAME in $(${GIT} diff --name-only); do
     if [[ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e '^.hooks/..*' 2> /dev/null)" ]]; then
       exit 0
     fi
