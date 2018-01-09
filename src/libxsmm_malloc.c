@@ -754,7 +754,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM ERROR: memory allocation error for size %" PRIiPTR " with flag=%i!\n", (uintptr_t)alloc_size, flags);
+          fprintf(stderr, "LIBXSMM ERROR: memory allocation error for size %" PRIuPTR " with flag=%i!\n", (uintptr_t)alloc_size, flags);
         }
         result = EXIT_FAILURE;
       }
@@ -780,7 +780,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
 {
   /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory);
   int result = EXIT_SUCCESS;
+#if !defined(_WIN32) || !defined(LIBXSMM_BUILD) || !defined(LIBXSMM_MALLOC_NOCRC)
   static int error_once = 0;
+#endif
   if (0 != info) {
     void *const buffer = info->pointer;
 #if !defined(LIBXSMM_BUILD) /* sanity check */
