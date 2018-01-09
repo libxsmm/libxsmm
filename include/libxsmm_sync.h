@@ -61,8 +61,10 @@
 # define LIBXSMM_SYNC_PAUSE _mm_delay_32(8/*delay*/)
 #elif !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY)
 # define LIBXSMM_SYNC_PAUSE _mm_pause()
+#elif defined(__GNUC__)
+# define LIBXSMM_SYNC_PAUSE __builtin_ia32_pause()
 #else
-# define LIBXSMM_SYNC_PAUSE LIBXSMM_FLOCK(stdout); LIBXSMM_FUNLOCK(stdout)
+# define LIBXSMM_SYNC_PAUSE
 #endif
 
 #if defined(__GNUC__)
@@ -223,7 +225,7 @@
 #         define _WIN32_WINNT 0x0600
 #       endif
 #     endif
-#   endif    
+#   endif
 #   if defined(LIBXSMM_WIN32_THREADS)
 #     include <windows.h>
 #     define LIBXSMM_LOCK_SPINLOCK spin
