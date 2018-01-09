@@ -356,11 +356,13 @@ LIBXSMM_API_DEFINITION void libxsmm_spinlock_destroy(const libxsmm_spinlock* spi
 LIBXSMM_API_DEFINITION int libxsmm_spinlock_trylock(libxsmm_spinlock* spinlock)
 {
 #if !defined(LIBXSMM_NO_SYNC)
-  assert(0 != spinlock);
 # if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
+  assert(0 != spinlock);
   return LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
 # else
-  return 0/*false*/ == LIBXSMM_ATOMIC_CMPSWP(&spinlock->state, 0, 1, LIBXSMM_ATOMIC_RELAXED)
+  /*const*/ libxsmm_spinlock_state zero = 0;
+  assert(0 != spinlock);
+  return 0/*false*/ == LIBXSMM_ATOMIC_CMPSWP(&spinlock->state, zero, 1, LIBXSMM_ATOMIC_RELAXED)
     ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK) + 1) /* not acquired */
     : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK));
 # endif
