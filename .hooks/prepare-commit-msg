@@ -22,24 +22,26 @@ MSG_KIND=$2
 # disable wildcard expansion
 set -o noglob
 
-if [ "message" = "${MSG_KIND}" ] && [ "" != "${MSG_FILE}" ] && \
-   [ "0" != "$(${GREP} -qs -F "${MSG_TAG}" ${MSG_FILE}; ${ECHO} $?)" ];
-then
-  if [ -e ${CODEFILE} ]; then
-    PATTERNS="$(${CAT} ${CODEFILE} 2> /dev/null)"
-  fi
-  PATTERNS+=$(${ECHO} -e "\nMakefile*")
-  for FILENAME in $(${GIT} diff --name-only); do
-    if [[ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e '^.hooks/..*' 2> /dev/null)" ]]; then
-      exit 0
+if ! ${GIT} diff --cached --quiet; then # real commit (no amend)
+  if [ "message" = "${MSG_KIND}" ] && [ "" != "${MSG_FILE}" ] && \
+     [ "0" != "$(${GREP} -qs -F "${MSG_TAG}" ${MSG_FILE}; ${ECHO} $?)" ];
+  then
+    if [ -e ${CODEFILE} ]; then
+      PATTERNS="$(${CAT} ${CODEFILE} 2> /dev/null)"
     fi
-    BASENAME=$(basename ${FILENAME})
-    for PATTERN in ${PATTERNS}; do
-      if [[ ${BASENAME} = ${PATTERN} ]]; then
+    PATTERNS+=$(${ECHO} -e "\nMakefile*")
+    for FILENAME in $(${GIT} diff --cached --name-only); do
+      if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e '^.hooks/..*' 2> /dev/null)" ]; then
         exit 0
       fi
+      BASENAME=$(basename ${FILENAME})
+      for PATTERN in ${PATTERNS}; do
+        if [ ${BASENAME} = ${PATTERN} ]; then
+          exit 0
+        fi
+      done
     done
-  done
-  ${ECHO} "${MSG_TAG}" >> ${MSG_FILE}
+    ${ECHO} "${MSG_TAG}" >> ${MSG_FILE}
+  fi
 fi
 
