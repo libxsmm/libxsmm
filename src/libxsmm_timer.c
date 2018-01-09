@@ -122,7 +122,7 @@ LIBXSMM_API_DEFINITION libxsmm_timer_tickint libxsmm_timer_sleep(libxsmm_timer_t
       Sleep(0);
 #   endif
 # else
-      pthread_yield();
+      LIBXSMM_PTHREAD_CALL(pthread_yield)();
 # endif
     }
     else

@@ -57,25 +57,19 @@
 # endif
 #endif
 
+#if !defined(LIBXSMM_GCC_BASELINE) && defined(__GNUC__) && \
+  LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
+# define LIBXSMM_GCC_BASELINE
+#endif
+
 #if defined(__MIC__)
 # define LIBXSMM_SYNC_PAUSE _mm_delay_32(8/*delay*/)
 #elif !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY)
 # define LIBXSMM_SYNC_PAUSE _mm_pause()
-#elif defined(__GNUC__)
+#elif defined(LIBXSMM_GCC_BASELINE)
 # define LIBXSMM_SYNC_PAUSE __builtin_ia32_pause()
 #else
 # define LIBXSMM_SYNC_PAUSE
-#endif
-
-#if defined(__GNUC__)
-# if !defined(LIBXSMM_GCCATOMICS)
-    /* note: the following version check does *not* prevent non-GNU compilers to adopt GCC's atomics */
-#   if LIBXSMM_VERSION3(4, 7, 4) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
-#     define LIBXSMM_GCCATOMICS 1
-#   else
-#     define LIBXSMM_GCCATOMICS 0
-#   endif
-# endif
 #endif
 
 #define LIBXSMM_ATOMIC_RELAXED __ATOMIC_RELAXED
@@ -91,8 +85,8 @@
 #define LIBXSMM_NONATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) ((NEWVAL) == (*(DST_PTR) == (OLDVAL) ? (*(DST_PTR) = (NEWVAL)) : (OLDVAL)))
 #define LIBXSMM_NONATOMIC_SET(DST_PTR, VALUE) (*(DST_PTR) = (VALUE))
 
-#if !defined(LIBXSMM_NO_SYNC) && defined(LIBXSMM_GCCATOMICS)
-# if (0 != LIBXSMM_GCCATOMICS)
+#if !defined(LIBXSMM_NO_SYNC) && defined(__GNUC__)
+# if defined(LIBXSMM_GCC_BASELINE)
 #   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_n(SRC_PTR, KIND)
 #   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) __atomic_store_n(DST_PTR, VALUE, KIND)
 #   define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) /**(DST_PTR) =*/ __atomic_add_fetch(DST_PTR, VALUE, KIND)
@@ -101,7 +95,7 @@
 #   define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) /**(DST_PTR) =*/ __atomic_fetch_sub(DST_PTR, VALUE, KIND)
 #   define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __atomic_compare_exchange_n(DST_PTR, &(OLDVAL), NEWVAL, \
                                                                               0/*false*/, KIND, LIBXSMM_ATOMIC_RELAXED)
-# else
+# else /* GCC legacy atomics */
 #   define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
 #   define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) while (*(DST_PTR) != (VALUE)) \
       if (0/*false*/ != __sync_bool_compare_and_swap(DST_PTR, *(DST_PTR), VALUE)) break
@@ -120,7 +114,7 @@
 # endif
 # define LIBXSMM_SYNC_BARRIER __asm__ __volatile__ ("" ::: "memory")
 # define LIBXSMM_SYNCHRONIZE __sync_synchronize()
-    /* TODO: distinct implementation of LIBXSMM_ATOMIC_SYNC_* wrt LIBXSMM_GCCATOMICS */
+    /* TODO: distinct implementation of LIBXSMM_ATOMIC_SYNC_* wrt GCC's legacy/standard atomics */
 # define LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, VALUE) while ((VALUE) == (LOCK)); LIBXSMM_SYNC_PAUSE
 # define LIBXSMM_ATOMIC_SYNC_SET(LOCK) do { LIBXSMM_ATOMIC_SYNC_CHECK(LOCK, 1); } while(0 != __sync_lock_test_and_set(&(LOCK), 1))
 # define LIBXSMM_ATOMIC_SYNC_UNSET(LOCK) __sync_lock_release(&(LOCK))
@@ -282,8 +276,10 @@
 #     include <pthread.h>
 #     if defined(__APPLE__) && defined(__MACH__)
 #       define LIBXSMM_LOCK_SPINLOCK mutex
+#       define LIBXSMM_PTHREAD_CALL(FN) FN##_np
 #     else
 #       define LIBXSMM_LOCK_SPINLOCK spin
+#       define LIBXSMM_PTHREAD_CALL(FN) FN
 #     endif
 #     define LIBXSMM_LOCK_MUTEX mutex
 #     define LIBXSMM_LOCK_RWLOCK rwlock
