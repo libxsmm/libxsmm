@@ -28,8 +28,7 @@
 ******************************************************************************/
 /*  Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-/* Mutex and RW-lock implementation based on work by Karl Malbrain:
-** https://github.com/malbrain/mutex, and https://github.com/malbrain/rwlock/
+/* Lock primitives inspired by Karl Malbrain, Concurrency Kit, and TF/sync.
 ******************************************************************************/
 #include <libxsmm_sync.h>
 #include <libxsmm_timer.h>
@@ -361,7 +360,7 @@ LIBXSMM_API_DEFINITION int libxsmm_spinlock_trylock(libxsmm_spinlock* spinlock)
 # if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
   return LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
 # else
-  return 1 != LIBXSMM_ATOMIC_ADD_FETCH(&spinlock->state, 1, LIBXSMM_ATOMIC_SEQ_CST)
+  return 0/*false*/ == LIBXSMM_ATOMIC_CMPSWP(&spinlock->state, 0, 1, LIBXSMM_ATOMIC_RELAXED)
     ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK) + 1) /* not acquired */
     : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK));
 # endif
@@ -375,13 +374,15 @@ LIBXSMM_API_DEFINITION int libxsmm_spinlock_trylock(libxsmm_spinlock* spinlock)
 LIBXSMM_API_DEFINITION void libxsmm_spinlock_acquire(libxsmm_spinlock* spinlock)
 {
 #if !defined(LIBXSMM_NO_SYNC)
-  assert(0 != spinlock);
 # if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
+  assert(0 != spinlock);
   LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
 # else
-  if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK) != libxsmm_spinlock_trylock(spinlock)) {
-    libxsmm_timer_tickint sleep = INTERNAL_SYNC_MINSLEEP;
-    while (1 < spinlock->state) {
+  libxsmm_timer_tickint sleep = INTERNAL_SYNC_MINSLEEP;
+  assert(0 != spinlock);
+  for (;;) {
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&spinlock->state, 1, LIBXSMM_ATOMIC_RELAXED)) break;
+    while (0 != spinlock->state) {
       const libxsmm_timer_tickint t = libxsmm_timer_tick();
       if (INTERNAL_SYNC_MINSLEEP < sleep) {
         libxsmm_timer_sleep(t, sleep);
@@ -391,6 +392,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spinlock_acquire(libxsmm_spinlock* spinlock)
       }
     }
   }
+  LIBXSMM_SYNC_BARRIER;
 # endif
 #else
   LIBXSMM_UNUSED(spinlock);
@@ -405,7 +407,8 @@ LIBXSMM_API_DEFINITION void libxsmm_spinlock_release(libxsmm_spinlock* spinlock)
 # if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
 # else
-  LIBXSMM_ATOMIC_STORE_ZERO(&spinlock->state, LIBXSMM_ATOMIC_SEQ_CST);
+  LIBXSMM_SYNC_BARRIER;
+  spinlock->state = 0;
 # endif
 #else
   LIBXSMM_UNUSED(spinlock);
@@ -470,7 +473,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mutex_trylock(libxsmm_mutex* mutex)
   assert(0 != mutex);
   return 0/*false*/ == LIBXSMM_ATOMIC_CMPSWP(&mutex->state,
     state_free, INTERNAL_SYNC_MUTEX_STATE_LOCKED, LIBXSMM_ATOMIC_RELAXED)
-    ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX) + 1)
+    ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX) + 1) /* not acquired */
     : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX));
 # endif
 #else
