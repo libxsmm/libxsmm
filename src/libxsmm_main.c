@@ -518,7 +518,7 @@ LIBXSMM_API_INLINE void internal_init(void)
 # endif
 #endif
   if (0 == internal_registry) { /* double-check after acquiring the lock(s) */
-    assert(0 == internal_registry_keys && 0 == internal_registry); /* should never happen */
+    assert(0 == internal_registry_keys); /* should never happen */
     libxsmm_xset_default_allocator(0/*lock*/, 0/*context*/, null_malloc_fn, null_free_fn);
     libxsmm_xset_scratch_allocator(0/*lock*/, 0/*context*/, null_malloc_fn, null_free_fn);
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))

@@ -65,7 +65,7 @@ if __name__ == "__main__":
                       " func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" +
                       mnkstr + ";")
                 print("  internal_register_static_code(" +
-                      "&desc, indx, hash, func, result);")
+                      "&desc, indx, hash, func, new_registry);")
                 print("}")
         for mnk in mnklist:
             mstr, nstr, kstr, mnkstr = \
@@ -85,7 +85,7 @@ if __name__ == "__main__":
                       " func.smm = (libxsmm_smmfunction)libxsmm_smm_" +
                       mnkstr + ";")
                 print("  internal_register_static_code(" +
-                      "&desc, indx, hash, func, result);")
+                      "&desc, indx, hash, func, new_registry);")
                 print("}")
         print("#if defined(_MSC_VER)")
         print("# pragma warning(pop)")
