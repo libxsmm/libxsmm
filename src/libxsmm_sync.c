@@ -338,7 +338,7 @@ LIBXSMM_API_DEFINITION libxsmm_spinlock* libxsmm_spinlock_create(void)
     LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_SPINLOCK, &result->impl, &attr);
     LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK_SPINLOCK, &attr);
 #else
-    result->state = 1;
+    result->state = 0;
 #endif
   }
   return result;
@@ -361,7 +361,9 @@ LIBXSMM_API_DEFINITION int libxsmm_spinlock_trylock(libxsmm_spinlock* spinlock)
 # if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
   return LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
 # else
-  return LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK) + LIBXSMM_ATOMIC_SUB_FETCH(&spinlock->state, 1, LIBXSMM_ATOMIC_SEQ_CST);
+  return 1 != LIBXSMM_ATOMIC_ADD_FETCH(&spinlock->state, 1, LIBXSMM_ATOMIC_SEQ_CST)
+    ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK) + 1) /* not acquired */
+    : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK));
 # endif
 #else
   LIBXSMM_UNUSED(spinlock);
@@ -373,14 +375,13 @@ LIBXSMM_API_DEFINITION int libxsmm_spinlock_trylock(libxsmm_spinlock* spinlock)
 LIBXSMM_API_DEFINITION void libxsmm_spinlock_acquire(libxsmm_spinlock* spinlock)
 {
 #if !defined(LIBXSMM_NO_SYNC)
-# if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
   assert(0 != spinlock);
+# if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
 # else
-  const libxsmm_timer_tickint s = libxsmm_spinlock_trylock(spinlock);
-  libxsmm_timer_tickint sleep = INTERNAL_SYNC_MINSLEEP;
-  if (0 != s) {
-    while (0 != spinlock->state) {
+  if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK) != libxsmm_spinlock_trylock(spinlock)) {
+    libxsmm_timer_tickint sleep = INTERNAL_SYNC_MINSLEEP;
+    while (1 < spinlock->state) {
       const libxsmm_timer_tickint t = libxsmm_timer_tick();
       if (INTERNAL_SYNC_MINSLEEP < sleep) {
         libxsmm_timer_sleep(t, sleep);
@@ -404,7 +405,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spinlock_release(libxsmm_spinlock* spinlock)
 # if defined(LIBXSMM_LOCK_SYSTEM) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
 # else
-  LIBXSMM_ATOMIC_STORE(&spinlock->state, 1, LIBXSMM_ATOMIC_SEQ_CST);
+  LIBXSMM_ATOMIC_STORE_ZERO(&spinlock->state, LIBXSMM_ATOMIC_SEQ_CST);
 # endif
 #else
   LIBXSMM_UNUSED(spinlock);
@@ -622,7 +623,7 @@ LIBXSMM_API_INLINE int internal_rwlock_trylock(libxsmm_rwlock* rwlock, internal_
   }
   while (0/*false*/ == LIBXSMM_ATOMIC_CMPSWP(&rwlock->requests.bits, prev->bits, next.bits, LIBXSMM_ATOMIC_RELAXED));
   return rwlock->completions.bits != prev->bits
-    ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) + 1)
+    ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) + 1) /* not acquired */
     : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK));
 }
 #endif
@@ -700,7 +701,7 @@ LIBXSMM_API_INLINE int internal_rwlock_tryread(libxsmm_rwlock* rwlock, internal_
   prev->bits = LIBXSMM_ATOMIC_FETCH_ADD(&rwlock->requests.bits, INTERNAL_SYNC_RWLOCK_READINC, LIBXSMM_ATOMIC_SEQ_CST);
 # endif
   return rwlock->completions.kind.writer != prev->kind.writer
-    ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) + 1)
+    ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) + 1) /* not acquired */
     : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK));
 #else
   LIBXSMM_UNUSED(rwlock); LIBXSMM_UNUSED(prev);

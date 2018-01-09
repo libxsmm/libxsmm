@@ -159,8 +159,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if !defined(LIBXSMM_NO_SYNC)
-  /** Default lock-kind */
+#if !defined(LIBXSMM_NO_SYNC) /** Default lock-kind */
 # define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
 # if !defined(LIBXSMM_LOCK_SYSTEM)
 #   if defined(__MINGW32__)
