@@ -1432,7 +1432,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 descriptor.ofw_unroll = 0;
               }
 
-              if (handle->desc.R != 1 && handle->desc.S != 1 && (handle->desc.u != 1 || handle->desc.v != 1)) {
+              if (handle->desc.R != 1 && handle->desc.S != 1 && libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (handle->desc.u != 1 || handle->desc.v != 1)) {
                 descriptor.use_fastpath = 0;
                 handle->use_fastpath = 0;
               } else {
@@ -1440,7 +1440,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 handle->use_fastpath = 1;
               }
 
-              descriptor.ofw_rb = 14;
+              descriptor.ofw_rb = 14; 
               descriptor.ofh_rb = 4;
               handle->upd_ofh_rb = descriptor.ofh_rb;
               handle->upd_ofw_rb = descriptor.ofw_rb;
