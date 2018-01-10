@@ -68,7 +68,6 @@ int main(int argc, char* argv[])
   const int work_w = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : work_r, 1);
   const int nrepeat = LIBXSMM_MAX(5 < argc ? atoi(argv[5]) : 100000, 1);
   const int nw = 0 < wratioperc ? (100 / wratioperc) : (nrepeat + 1);
-  assert(0 < (nthreads * nrepeat));
 
   /* declare attribute and lock */
   LIBXSMM_LOCK_ATTR_TYPE(LOCK_KIND) attr;
@@ -79,6 +78,7 @@ int main(int argc, char* argv[])
   LIBXSMM_LOCK_INIT(LOCK_KIND, &lock, &attr);
   LIBXSMM_LOCK_ATTR_DESTROY(LOCK_KIND, &attr);
 
+  assert(0 < (nthreads * nrepeat));
   fprintf(stdout, "Latency and throughput for nthreads=%i wratio=%i%% work_r=%i work_w=%i nrepeat=%i\n",
     nthreads, wratioperc, work_r, work_w, nrepeat);
 
