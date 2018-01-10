@@ -52,6 +52,14 @@
 #define LIBXSMM_SYNC LIBXSMM_CONFIG_SYNC
 #define LIBXSMM_JIT LIBXSMM_CONFIG_JIT
 
+#if (0 != (__x86_64__)) || (4 < (__SIZEOF_PTRDIFF_T__)) || \
+    (defined(__SIZE_MAX__) && (4294967295U < (__SIZE_MAX__))) || \
+    (defined(__GNUC__) && defined(_CRAYC)) || defined(_WIN64)
+# define LIBXSMM_BITS 64
+#else
+# define LIBXSMM_BITS 32
+#endif
+
 #define LIBXSMM_STRINGIFY2(SYMBOL) #SYMBOL
 #define LIBXSMM_STRINGIFY(SYMBOL) LIBXSMM_STRINGIFY2(SYMBOL)
 #define LIBXSMM_TOSTRING(SYMBOL) LIBXSMM_STRINGIFY(SYMBOL)
