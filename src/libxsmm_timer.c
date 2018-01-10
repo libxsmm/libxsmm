@@ -29,7 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_timer.h>
-#include <libxsmm_sync.h>
+#include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -103,33 +103,6 @@ libxsmm_timer_tickint libxsmm_timer_tick(void)
     result = internal_timer_tick();
   }
   return result;
-}
-
-
-LIBXSMM_API_DEFINITION libxsmm_timer_tickint libxsmm_timer_sleep(libxsmm_timer_tickint start, libxsmm_timer_tickint duration)
-{
-  const libxsmm_timer_tickint end = start + duration;
-  libxsmm_timer_tickint tick = end;
-  for (;;) {
-    LIBXSMM_SYNC_PAUSE;
-    tick = libxsmm_timer_tick();
-#if !defined(LIBXSMM_NO_SYNC)
-    if (tick < end) {
-# if defined(LIBXSMM_WIN32_THREADS)
-#   if 1
-      YieldProcessor();
-#   else
-      Sleep(0);
-#   endif
-# else
-      LIBXSMM_PTHREAD_CALL(pthread_yield)();
-# endif
-    }
-    else
-#endif
-    break;
-  }
-  return tick;
 }
 
 

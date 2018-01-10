@@ -47,12 +47,6 @@ LIBXSMM_API_INLINE libxsmm_timer_tickint libxsmm_timer_diff(libxsmm_timer_tickin
   return LIBXSMM_DIFF(tick0, tick1);
 }
 
-/**
- * Sleep for the given duration of pseudo cycles, which may yield the current thread's worker to the OS.
- * An initial timer-tick is given (start), and the final tick after sleep is returned.
- */
-LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_sleep(libxsmm_timer_tickint start, libxsmm_timer_tickint duration);
-
 /** Returns the duration (in seconds) between two values received by libxsmm_timer_tick. */
 LIBXSMM_API double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1);
 
