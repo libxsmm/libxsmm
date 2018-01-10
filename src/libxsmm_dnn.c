@@ -2393,9 +2393,15 @@ LIBXSMM_API_DEFINITION short libxsmm_internal_quantize_scalar_no_scf( float inpu
     if (round_mode == LIBXSMM_DNN_QUANT_BIAS_ROUND) {
       /* biased rounding towards next bigger number */
       /* first let's determine in the original number if we need a bias rounding, @TODO need fix for F64 */
-      int bias_needed = (mant & (0x3 << rhs));
+      int bias_needed = (mant & (0x3 << (rhs-2)));
       /* apply bias */
       if (bias_needed > 0) {
+        qvalue++;
+      }
+    } else if (round_mode == LIBXSMM_DNN_QUANT_NEAREST_ROUND) {
+      int nearest_needed = (mant & (0x1 << (rhs-1)));
+      /* apply rounding */
+      if ((nearest_needed > 0) && (rhs > 1)) {
         qvalue++;
       }
     } else if (round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND) {
