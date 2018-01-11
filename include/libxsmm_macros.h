@@ -56,7 +56,9 @@
     (defined(__SIZE_MAX__) && (4294967295U < (__SIZE_MAX__))) || \
     (defined(__GNUC__) && defined(_CRAYC)) || defined(_WIN64)
 # define LIBXSMM_BITS 64
-#else
+#elif defined(NDEBUG) /* not for production use! */
+# error LIBXSMM is only supported on a 64-bit platform!
+#else /* JIT-generated code (among other issues) is not supported! */
 # define LIBXSMM_BITS 32
 #endif
 
@@ -173,15 +175,6 @@
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N)
 # define LIBXSMM_CDECL
-#endif
-
-#if defined(_MSC_VER)
-# define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message(MSG))
-#elif LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
-   && LIBXSMM_VERSION3(5, 0, 0) >  LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
-# define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message MSG)
-#else
-# define LIBXSMM_MESSAGE(MSG)
 #endif
 
 #if !defined(LIBXSMM_OPENMP_SIMD) && (defined(_OPENMP) && (201307 <= _OPENMP)) /*OpenMP 4.0*/
