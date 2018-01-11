@@ -36,6 +36,7 @@ MKTEMP=${HERE}/.mktmp.sh
 MKDIR=$(which mkdir 2> /dev/null)
 CHMOD=$(which chmod 2> /dev/null)
 UNAME=$(which uname 2> /dev/null)
+SYNC=$(which sync 2> /dev/null)
 SORT=$(which sort 2> /dev/null)
 GREP=$(which grep 2> /dev/null)
 SED=$(which sed 2> /dev/null)
@@ -167,8 +168,12 @@ then
           echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
           echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
         fi
-        # record the actual test case
+        # record the current test case
         echo "${TEST} 2>&1" >> ${TESTSCRIPT}
+
+        if [ "" != "${SYNC}" ]; then # flush asynchronous NFS mount
+          ${SYNC}
+        fi
       fi
 
       # run the prepared test case/script
