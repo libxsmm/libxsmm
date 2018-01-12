@@ -52,10 +52,15 @@
 #define LIBXSMM_X86_AVX512_ICL   1022
 
 
-/** Returns the target architecture and instruction set extension (code path). */
+/**
+ * Returns the target architecture and instruction set extensions, but *not* necessarily the
+ * code path as used by LIBXSMM. To determine (or manually adjust) the code path in use, one
+ * needs to rely on libxsmm_get_target_archid/libxsmm_get_target_arch (to manually adjust
+ * the coda path use libxsmm_set_target_archid/libxsmm_set_target_arch).
+ */
 LIBXSMM_API int libxsmm_cpuid_x86(void);
 
-/** Returns the target architecture and instruction set extension (code path). */
+/** Similar to libxsmm_cpuid_x86, but conceptually not x86-specific. */
 LIBXSMM_API int libxsmm_cpuid(void);
 
 #endif /*LIBXSMM_CPUID_H*/
