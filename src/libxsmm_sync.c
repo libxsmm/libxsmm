@@ -355,7 +355,7 @@ LIBXSMM_API_DEFINITION libxsmm_spinlock* libxsmm_spinlock_create(void)
     LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK_SPINLOCK, &attr);
     LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_SPINLOCK, &result->impl, &attr);
     LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK_SPINLOCK, &attr);
-#else
+#elif !defined(LIBXSMM_NO_SYNC)
     result->state = INTERNAL_SYNC_LOCK_FREE;
 #endif
   }
@@ -455,7 +455,7 @@ LIBXSMM_API_DEFINITION libxsmm_mutex* libxsmm_mutex_create(void)
     LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK_MUTEX, &attr);
     LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_MUTEX, &result->impl, &attr);
     LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK_MUTEX, &attr);
-#else
+#elif !defined(LIBXSMM_NO_SYNC)
     result->state = INTERNAL_SYNC_LOCK_FREE;
 #endif
   }
@@ -480,7 +480,8 @@ LIBXSMM_API_DEFINITION int libxsmm_mutex_trylock(libxsmm_mutex* mutex)
   return LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_MUTEX, &mutex->impl);
 # elif defined(_WIN32)
   assert(0 != mutex);
-  return LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX) + (_InterlockedOr8(&mutex->state, 1) & 1);
+  return LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX) + (1 & /* bit-test/set lock-state */
+    LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_OR, 8)(&mutex->state, 1, LIBXSMM_ATOMIC_SEQ_CST));
 # else
   /*const*/ libxsmm_mutex_state lock_free = INTERNAL_SYNC_LOCK_FREE;
   assert(0 != mutex);
