@@ -754,7 +754,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM ERROR: memory allocation error for size %" PRIiPTR " with flag=%i!\n", (uintptr_t)alloc_size, flags);
+          fprintf(stderr, "LIBXSMM ERROR: memory allocation error for size %" PRIuPTR " with flag=%i!\n", (uintptr_t)alloc_size, flags);
         }
         result = EXIT_FAILURE;
       }
@@ -780,7 +780,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
 {
   /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory);
   int result = EXIT_SUCCESS;
+#if !defined(_WIN32) || !defined(LIBXSMM_BUILD) || !defined(LIBXSMM_MALLOC_NOCRC)
   static int error_once = 0;
+#endif
   if (0 != info) {
     void *const buffer = info->pointer;
 #if !defined(LIBXSMM_BUILD) /* sanity check */
@@ -1176,8 +1178,8 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
         assert(used_size <= pool_size);
 
         if (req_size <= pool_size) { /* fast path: draw from pool-buffer */
-          char* head;
-          head = (char*)LIBXSMM_ATOMIC_ADD_FETCH((uintptr_t*)&pool->instance.head, alloc_size, LIBXSMM_ATOMIC_SEQ_CST);
+          void *const headptr = &pool->instance.head;
+          char *const head = (char*)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_ADD_FETCH, LIBXSMM_BITS)((uintptr_t*)headptr, alloc_size, LIBXSMM_ATOMIC_SEQ_CST);
           result = LIBXSMM_ALIGN(head - alloc_size, align_size);
         }
         else { /* fall-back to local memory allocation */

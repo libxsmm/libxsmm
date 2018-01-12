@@ -100,6 +100,6 @@ script:
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-    make -e PEDANTIC=2 AVX=3 MIC=0 test-cpp && make -e PEDANTIC=2 AVX=2 test-cpp && make -e PEDANTIC=2 AVX=1 VLA=0 test-cpp
+    make -e PEDANTIC=2 AVX=3 MIC=0 OMP=1 test-cpp && make -e PEDANTIC=2 AVX=2 THREADS=0 test-cpp && make -e PEDANTIC=2 AVX=1 VLA=0 test-cpp
     2>&1) | tee .travis.log && eval ${POSTPROC}
 

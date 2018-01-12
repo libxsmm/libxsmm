@@ -68,7 +68,7 @@ LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_DEFAULT) internal_gemm_lock[
 
 LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(const char* caller)
 {
-  static libxsmm_sgemm_function original = 0;
+  static volatile libxsmm_sgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(float, original, caller);
   assert(0 != original);
   return original;
@@ -77,7 +77,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original
 
 LIBXSMM_API_DEFINITION LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(const char* caller)
 {
-  static libxsmm_dgemm_function original = 0;
+  static volatile libxsmm_dgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(double, original, caller);
   assert(0 != original);
   return original;
@@ -169,7 +169,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 #if defined(LIBXSMM_GEMM_MMBATCH)
   if (0 != libxsmm_gemm_batcharray) {
     void* extra = 0;
-    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, 0/*size*/, 0/*flags*/, &extra)) {
+    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, 0/*size*/, 0/*flags*/, &extra) && 0 != extra) {
       const libxsmm_mmbatch_flush_function flush = *(libxsmm_mmbatch_flush_function*)extra;
       if (0 != flush) flush();
     }
@@ -378,18 +378,18 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_print(void* ostream,
   if (0 != typeprefix) {
     if (0 != ostream) { /* print information about GEMM call */
       if (0 != a && 0 != b && 0 != c) {
-        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %" PRIiPTR "/*m*/, %" PRIiPTR "/*n*/, %" PRIiPTR "/*k*/,\n"
-                                "  %s/*alpha*/, %p/*a*/, %" PRIiPTR "/*lda*/,\n"
-                                "              %p/*b*/, %" PRIiPTR "/*ldb*/,\n"
-                                "   %s/*beta*/, %p/*c*/, %" PRIiPTR "/*ldc*/)",
-          typeprefix, ctransa, ctransa, (intptr_t)*m, (intptr_t)nn, (intptr_t)kk,
-          string_a, a, (intptr_t)ilda, b, (intptr_t)ildb, string_b, c, (intptr_t)ildc);
+        fprintf((FILE*)ostream, "%cgemm('%c', '%c', %" PRIuPTR "/*m*/, %" PRIuPTR "/*n*/, %" PRIuPTR "/*k*/,\n"
+                                "  %s/*alpha*/, %p/*a*/, %" PRIuPTR "/*lda*/,\n"
+                                "              %p/*b*/, %" PRIuPTR "/*ldb*/,\n"
+                                "   %s/*beta*/, %p/*c*/, %" PRIuPTR "/*ldc*/)",
+          typeprefix, ctransa, ctransa, (uintptr_t)*m, (uintptr_t)nn, (uintptr_t)kk,
+          string_a, a, (uintptr_t)ilda, b, (uintptr_t)ildb, string_b, c, (uintptr_t)ildc);
       }
       else {
-        fprintf((FILE*)ostream, "%cgemm(trans=%c%c mnk=%" PRIiPTR ",%" PRIiPTR ",%" PRIiPTR
-                                                 " ldx=%" PRIiPTR ",%" PRIiPTR ",%" PRIiPTR " a,b=%s,%s)",
-          typeprefix, ctransa, ctransa, (intptr_t)*m, (intptr_t)nn, (intptr_t)kk,
-          (intptr_t)ilda, (intptr_t)ildb, (intptr_t)ildc, string_a, string_b);
+        fprintf((FILE*)ostream, "%cgemm(trans=%c%c mnk=%" PRIuPTR ",%" PRIuPTR ",%" PRIuPTR
+                                                 " ldx=%" PRIuPTR ",%" PRIuPTR ",%" PRIuPTR " a,b=%s,%s)",
+          typeprefix, ctransa, ctransa, (uintptr_t)*m, (uintptr_t)nn, (uintptr_t)kk,
+          (uintptr_t)ilda, (uintptr_t)ildb, (uintptr_t)ildc, string_a, string_b);
       }
     }
     else { /* dump A, B, and C matrices into MHD files */

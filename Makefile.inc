@@ -39,16 +39,19 @@ ifeq (Windows_NT,$(OS))
   # Cygwin based
   DLIBEXT ?= dll
   SLIBEXT ?= lib
-else
-  UNAME ?= $(shell uname)
-  ENV ?= env
-  ifneq (Darwin,$(UNAME))
-    DLIBEXT ?= so
-    SLIBEXT ?= a
-  else
-    DLIBEXT ?= dylib
-    SLIBEXT ?= a
+endif
+CP ?= $(shell which cp 2> /dev/null)
+UNAME ?= $(shell uname)
+ENV ?= env
+ifneq (Darwin,$(UNAME))
+  ifneq (,$(strip $(CP)))
+    CP += -u
   endif
+  DLIBEXT ?= so
+  SLIBEXT ?= a
+else
+  DLIBEXT ?= dylib
+  SLIBEXT ?= a
 endif
 
 # Regular expression to match "main" (good-enough pattern)
