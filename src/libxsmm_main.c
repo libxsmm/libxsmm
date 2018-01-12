@@ -761,7 +761,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_RWLOCK, &internal_reglock);
 # endif
 #endif
-    registry = (libxsmm_code_pointer*)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(&internal_registry, LIBXSMM_ATOMIC_RELAXED);;
+    registry = (libxsmm_code_pointer*)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(&internal_registry, LIBXSMM_ATOMIC_RELAXED);
 
     if (0 != registry) {
       libxsmm_kernel_info *const registry_keys = internal_registry_keys;
@@ -832,7 +832,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
         }
       }
       /* make internal registry globally unavailable */
-      LIBXSMM_ATOMIC_STORE_ZERO(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
+      LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
       internal_registry_keys = 0;
       free(registry_keys);
       free(registry);
