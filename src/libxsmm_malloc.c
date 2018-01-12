@@ -1178,8 +1178,8 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
         assert(used_size <= pool_size);
 
         if (req_size <= pool_size) { /* fast path: draw from pool-buffer */
-          char* head;
-          head = (char*)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_ADD_FETCH, LIBXSMM_BITS)((uintptr_t*)&pool->instance.head, alloc_size, LIBXSMM_ATOMIC_SEQ_CST);
+          void *const headptr = &pool->instance.head;
+          char *const head = (char*)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_ADD_FETCH, LIBXSMM_BITS)((uintptr_t*)headptr, alloc_size, LIBXSMM_ATOMIC_SEQ_CST);
           result = LIBXSMM_ALIGN(head - alloc_size, align_size);
         }
         else { /* fall-back to local memory allocation */
