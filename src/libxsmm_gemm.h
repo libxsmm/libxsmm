@@ -315,7 +315,7 @@
     } libxsmm_gemm_wrapper_blas_; \
     libxsmm_gemm_wrapper_blas_.LIBXSMM_TPREFIX(TYPE,f) = (SYMBOL); \
     if (libxsmm_gemm_wrapper_blas_.pv != (CALLER)) { \
-      LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_gemm_wrapper_blas_.pf, LIBXSMM_ATOMIC_RELAXED); \
+      LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&(ORIGINAL), libxsmm_gemm_wrapper_blas_.pf, LIBXSMM_ATOMIC_RELAXED); \
     } \
   }
 # define LIBXSMM_GEMV_WRAPPER_BLAS(TYPE, ORIGINAL, CALLER, SYMBOL) if (0 == (ORIGINAL)) { \
@@ -331,7 +331,7 @@
     } libxsmm_gemv_wrapper_blas_; \
     libxsmm_gemv_wrapper_blas_.LIBXSMM_TPREFIX(TYPE,f) = (SYMBOL); \
     if (libxsmm_gemv_wrapper_blas_.pv != (CALLER)) { \
-      LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_gemv_wrapper_blas_.pf, LIBXSMM_ATOMIC_RELAXED); \
+      LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&(ORIGINAL), libxsmm_gemv_wrapper_blas_.pf, LIBXSMM_ATOMIC_RELAXED); \
     } \
   }
 #else

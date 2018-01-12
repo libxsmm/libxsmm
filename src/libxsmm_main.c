@@ -664,7 +664,7 @@ LIBXSMM_API_INLINE void internal_init(void)
           }
           {
             void *const pv_registry = &internal_registry;
-            LIBXSMM_ATOMIC_STORE((void**)pv_registry, (void*)new_registry, LIBXSMM_ATOMIC_SEQ_CST);
+            LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)((void**)pv_registry, (void*)new_registry, LIBXSMM_ATOMIC_SEQ_CST);
           }
         }
         else {
@@ -1536,7 +1536,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
             if (EXIT_SUCCESS == libxsmm_build(&request, i, &flux_entry) && 0 != flux_entry.ptr_const) {
               internal_registry_keys[i].xgemm = *descriptor;
 # if (0 < INTERNAL_REGLOCK_MAXN)
-              LIBXSMM_ATOMIC_STORE(&internal_registry[i].pmm, flux_entry.pmm, LIBXSMM_ATOMIC_RELAXED);
+              LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&internal_registry[i].pmm, flux_entry.pmm, LIBXSMM_ATOMIC_RELAXED);
 # else
               internal_registry[i].pmm = flux_entry.pmm;
 # endif

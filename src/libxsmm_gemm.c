@@ -169,7 +169,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_finalize(void)
 #if defined(LIBXSMM_GEMM_MMBATCH)
   if (0 != libxsmm_gemm_batcharray) {
     void* extra = 0;
-    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, 0/*size*/, 0/*flags*/, &extra)) {
+    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, 0/*size*/, 0/*flags*/, &extra) && 0 != extra) {
       const libxsmm_mmbatch_flush_function flush = *(libxsmm_mmbatch_flush_function*)extra;
       if (0 != flush) flush();
     }

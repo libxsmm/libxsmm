@@ -126,7 +126,7 @@ LIBXSMM_API_DEFINITION libxsmm_barrier* libxsmm_barrier_create(int ncores, int n
   barrier->cores = (internal_sync_core_tag**)libxsmm_aligned_malloc(
     barrier->ncores * sizeof(internal_sync_core_tag*), LIBXSMM_CACHELINE);
 
-  LIBXSMM_ATOMIC_SET(&barrier->threads_waiting, barrier->nthreads);
+  barrier->threads_waiting = barrier->nthreads; /* atomic */
   barrier->init_done = 0;
 #else
   LIBXSMM_UNUSED(ncores); LIBXSMM_UNUSED(nthreads_per_core);
@@ -181,7 +181,7 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int t
 
   /* barrier to let all the allocations complete */
   if (0 == LIBXSMM_ATOMIC_SUB_FETCH(&barrier->threads_waiting, 1, LIBXSMM_ATOMIC_RELAXED)) {
-    LIBXSMM_ATOMIC_SET(&barrier->threads_waiting, barrier->nthreads);
+    barrier->threads_waiting = barrier->nthreads; /* atomic */
     barrier->init_done = 1;
   }
   else {
@@ -206,7 +206,7 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_init(libxsmm_barrier* barrier, int t
 
   /* barrier to let initialization complete */
   if (0 == LIBXSMM_ATOMIC_SUB_FETCH(&barrier->threads_waiting, 1, LIBXSMM_ATOMIC_RELAXED)) {
-    LIBXSMM_ATOMIC_SET(&barrier->threads_waiting, barrier->nthreads);
+    barrier->threads_waiting = barrier->nthreads; /* atomic */
     barrier->init_done = 2;
   }
   else {
@@ -226,7 +226,7 @@ void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
   internal_sync_core_tag *const core = thread->core;
 
   /* first let's execute a memory fence */
-  LIBXSMM_SYNCHRONIZE;
+  LIBXSMM_ATOMIC_SYNC(LIBXSMM_ATOMIC_SEQ_CST);
 
   /* first signal this thread's arrival */
   core->thread_senses[thread->core_tid] = (uint8_t)(0 == core->thread_senses[thread->core_tid] ? 1 : 0);
@@ -323,8 +323,8 @@ LIBXSMM_API_DEFINITION void libxsmm_barrier_destroy(const libxsmm_barrier* barri
 #if !defined(LIBXSMM_NO_SYNC)
 enum {
   INTERNAL_SYNC_MUTEX_STATE_FREE = 0,
-  INTERNAL_SYNC_MUTEX_STATE_LOCKED,
-  INTERNAL_SYNC_MUTEX_STATE_CONTESTED,
+  INTERNAL_SYNC_MUTEX_STATE_LOCKED = 1,
+  INTERNAL_SYNC_MUTEX_STATE_CONTESTED = 2,
   INTERNAL_SYNC_RWLOCK_READINC = 0x10000/*(USHRT_MAX+1)*/,
   INTERNAL_SYNC_FUTEX = 202
 };
@@ -405,7 +405,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spinlock_acquire(libxsmm_spinlock* spinlock)
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&spinlock->state, 1, LIBXSMM_ATOMIC_RELAXED)) break;
     while (0 != spinlock->state) LIBXSMM_SYNC_CYCLE(counter, LIBXSMM_SYNC_NPAUSE);
   }
-  LIBXSMM_SYNC_BARRIER;
+  LIBXSMM_ATOMIC_SYNC(LIBXSMM_ATOMIC_SEQ_CST);
 # endif
 #else
   LIBXSMM_UNUSED(spinlock);
@@ -420,7 +420,7 @@ LIBXSMM_API_DEFINITION void libxsmm_spinlock_release(libxsmm_spinlock* spinlock)
 # if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
 # else
-  LIBXSMM_SYNC_BARRIER;
+  LIBXSMM_ATOMIC_SYNC(LIBXSMM_ATOMIC_SEQ_CST);
   spinlock->state = 0;
 # endif
 #else
@@ -547,7 +547,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_release(libxsmm_mutex* mutex)
 # if defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_MUTEX, &mutex->impl);
 # else
-  LIBXSMM_SYNC_BARRIER;
+  LIBXSMM_ATOMIC_SYNC(LIBXSMM_ATOMIC_SEQ_CST);
 #   if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
   if (INTERNAL_SYNC_MUTEX_STATE_CONTESTED == LIBXSMM_ATOMIC_FETCH_SUB(&mutex->state, 1, LIBXSMM_ATOMIC_RELAXED)) {
     mutex->state = INTERNAL_SYNC_MUTEX_STATE_FREE;
