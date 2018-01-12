@@ -109,8 +109,12 @@
 #   define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) __atomic_sub_fetch(DST_PTR, VALUE, KIND)
 #   define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) __atomic_fetch_add(DST_PTR, VALUE, KIND)
 #   define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) __atomic_fetch_sub(DST_PTR, VALUE, KIND)
+#   if 0 /* avoid to manually prevent the side-effect of the atomic when inside of a loop. */
 #   define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __atomic_compare_exchange_n(DST_PTR, &(OLDVAL), NEWVAL, \
                                                                               0/*false*/, KIND, LIBXSMM_ATOMIC_RELAXED)
+#   else /* GCC legacy atomics */
+#   define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __sync_bool_compare_and_swap(DST_PTR, OLDVAL, NEWVAL)
+#   endif
 #   define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, KIND) while (0 != __atomic_test_and_set(DST_PTR, KIND)) LIBXSMM_SYNC_PAUSE
 #   define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) __atomic_clear(DST_PTR, KIND)
 #   define LIBXSMM_ATOMIC_SYNC(KIND) __atomic_thread_fence(KIND)

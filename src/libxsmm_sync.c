@@ -478,17 +478,10 @@ LIBXSMM_API_DEFINITION int libxsmm_mutex_trylock(libxsmm_mutex* mutex)
 # if defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && defined(LIBXSMM_SYNC_SYSTEM)
   assert(0 != mutex);
   return LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_MUTEX, &mutex->impl);
-# elif defined(_WIN32)
+# else
   assert(0 != mutex);
   return LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX) + (1 & /* bit-test/set lock-state */
     LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_OR, 8)(&mutex->state, 1, LIBXSMM_ATOMIC_SEQ_CST));
-# else
-  /*const*/ libxsmm_mutex_state lock_free = INTERNAL_SYNC_LOCK_FREE;
-  assert(0 != mutex);
-  return 0/*false*/ == LIBXSMM_ATOMIC_CMPSWP(&mutex->state,
-    lock_free, INTERNAL_SYNC_LOCK_LOCKED, LIBXSMM_ATOMIC_RELAXED)
-    ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX) + 1) /* not acquired */
-    : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX));
 # endif
 #else
   LIBXSMM_UNUSED(mutex);
@@ -511,7 +504,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
     while (0 != (mutex->state & 1)) LIBXSMM_SYNC_CYCLE(counter, LIBXSMM_SYNC_NPAUSE);
   }
 #   else
-  /*const*/ libxsmm_mutex_state lock_free = INTERNAL_SYNC_LOCK_FREE;
+  libxsmm_mutex_state lock_free = INTERNAL_SYNC_LOCK_FREE;
   int lock_state = INTERNAL_SYNC_LOCK_LOCKED;
   assert(0 != mutex);
   while (0/*false*/ == LIBXSMM_ATOMIC_CMPSWP(&mutex->state, lock_free, lock_state, LIBXSMM_ATOMIC_RELAXED)) {
@@ -532,6 +525,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
       LIBXSMM_SYNC_CYCLE(counter, LIBXSMM_SYNC_NPAUSE);
 #     endif
     }
+    lock_free = INTERNAL_SYNC_LOCK_FREE;
   }
 #   endif
 # endif
