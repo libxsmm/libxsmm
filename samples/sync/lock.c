@@ -64,9 +64,9 @@ int main(int argc, char* argv[])
 #endif
   const int nthreads = LIBXSMM_MAX(1 < argc ? atoi(argv[1]) : max_nthreads, 1);
   const int wratioperc = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 5, 0, 100);
-  const int work_r = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 50, 1);
-  const int work_w = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : work_r, 1);
-  const int nrepeat = LIBXSMM_MAX(5 < argc ? atoi(argv[5]) : 100000, 1);
+  const int work_r = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 100, 1);
+  const int work_w = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : (10 * work_r), 1);
+  const int nrepeat = LIBXSMM_MAX(5 < argc ? atoi(argv[5]) : 10000, 1);
   const int nw = 0 < wratioperc ? (100 / wratioperc) : (nrepeat + 1);
 
   /* declare attribute and lock */
