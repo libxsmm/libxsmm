@@ -52,9 +52,10 @@
 #define LIBXSMM_SYNC LIBXSMM_CONFIG_SYNC
 #define LIBXSMM_JIT LIBXSMM_CONFIG_JIT
 
-#if (0 != (__x86_64__)) || (4 < (__SIZEOF_PTRDIFF_T__)) || \
+#if (defined(__SIZEOF_PTRDIFF_T__) && 4 < (__SIZEOF_PTRDIFF_T__)) || \
     (defined(__SIZE_MAX__) && (4294967295U < (__SIZE_MAX__))) || \
-    (defined(__GNUC__) && defined(_CRAYC)) || defined(_WIN64)
+    (defined(__GNUC__) && defined(_CRAYC)) || defined(_WIN64) || \
+    (defined(__x86_64__) && 0 != (__x86_64__))
 # define LIBXSMM_BITS 64
 #elif defined(NDEBUG) /* not for production use! */
 # error LIBXSMM is only supported on a 64-bit platform!
