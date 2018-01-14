@@ -63,26 +63,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if defined(LIBXSMM_NO_SYNC)
-# define LIBXSMM_SYNC_CYCLE(COUNTER, NPAUSE)
-#else
-# if !defined(LIBXSMM_SYNC_NPAUSE)
-#   define LIBXSMM_SYNC_NPAUSE 1000
-# endif
-# if defined(LIBXSMM_WIN32_THREADS)
-#   define LIBXSMM_SYNC_YIELD YieldProcessor
-# else
-#   define LIBXSMM_SYNC_YIELD LIBXSMM_PTHREAD_CALL(pthread_yield)
-# endif
-# define LIBXSMM_SYNC_CYCLE_ELSE(COUNTER, NPAUSE, ELSE) if (((COUNTER)++) < (NPAUSE)) { \
-    LIBXSMM_SYNC_PAUSE; \
-  } \
-  else { \
-    LIBXSMM_SYNC_YIELD(); ELSE \
-  }
-# define LIBXSMM_SYNC_CYCLE(COUNTER, NPAUSE) LIBXSMM_SYNC_CYCLE_ELSE(COUNTER, NPAUSE, ;)
-#endif
-
 
 typedef struct LIBXSMM_RETARGETABLE internal_sync_core_tag { /* per-core */
   uint8_t id;

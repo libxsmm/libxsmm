@@ -90,7 +90,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
         else {
           if (o_i2 != i2 || o_j2 != j2) {
             libxsmm_bgemm_lock *const lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
-            LIBXSMM_ATOMIC_ACQUIRE(&lock->state, LIBXSMM_ATOMIC_RELAXED);
+            LIBXSMM_ATOMIC_ACQUIRE(&lock->state, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
             for (ki = 0; ki < handle->bn; ++ki) {
               LIBXSMM_PRAGMA_SIMD
               for (kj = 0; kj < handle->bm; ++kj) {
@@ -139,7 +139,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
           o_j2 = j2;
 
           lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
-          LIBXSMM_ATOMIC_ACQUIRE(&lock->state, LIBXSMM_ATOMIC_RELAXED);
+          LIBXSMM_ATOMIC_ACQUIRE(&lock->state, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
           for (ki = 0; ki < handle->bn; ++ki) {
             LIBXSMM_PRAGMA_SIMD
             for (kj = 0; kj < handle->bm; ++kj) {
