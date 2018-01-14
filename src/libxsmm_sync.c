@@ -385,8 +385,7 @@ LIBXSMM_API_DEFINITION int libxsmm_spinlock_trylock(libxsmm_spinlock* spinlock)
     ? (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK) + 1) /* not acquired */
     : (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK));
 # else
-  return LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK) + (1 & /* bit-test/set lock-state */
-    LIBXSMM_ATOMIC_FETCH_OR(&spinlock->state, 1, LIBXSMM_ATOMIC_RELAXED));
+  return LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_SPINLOCK) + LIBXSMM_ATOMIC_TRYLOCK(&spinlock->state, LIBXSMM_ATOMIC_RELAXED);
 # endif
 #else
   LIBXSMM_UNUSED(spinlock);
@@ -478,13 +477,11 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_destroy(const libxsmm_mutex* mutex)
 LIBXSMM_API_DEFINITION int libxsmm_mutex_trylock(libxsmm_mutex* mutex)
 {
 #if !defined(LIBXSMM_NO_SYNC)
-# if defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && defined(LIBXSMM_SYNC_SYSTEM)
   assert(0 != mutex);
+# if defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && defined(LIBXSMM_SYNC_SYSTEM)
   return LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_MUTEX, &mutex->impl);
 # else
-  assert(0 != mutex);
-  return LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX) + (1 & /* bit-test/set lock-state */
-    LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_OR, 8)(&mutex->state, 1, LIBXSMM_ATOMIC_SEQ_CST));
+  return LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX) + LIBXSMM_ATOMIC_TRYLOCK(&mutex->state, LIBXSMM_ATOMIC_RELAXED);
 # endif
 #else
   LIBXSMM_UNUSED(mutex);
