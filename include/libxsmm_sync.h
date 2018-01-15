@@ -147,7 +147,7 @@
 #     else /* GCC legacy atomics */
 #     define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __sync_bool_compare_and_swap(DST_PTR, OLDVAL, NEWVAL)
 #     endif
-#     define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) { unsigned int libxsmm_atomic_acquire_counter_ = 0; \
+#     define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) { int libxsmm_atomic_acquire_counter_ = 0; \
               while (0 != __atomic_test_and_set(DST_PTR, KIND)) LIBXSMM_SYNC_CYCLE(libxsmm_atomic_acquire_counter_, NPAUSE); \
               assert(1 == *(DST_PTR)); }
 #     define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { assert(1 == *(DST_PTR)); __atomic_clear(DST_PTR, KIND); }
@@ -163,7 +163,7 @@
 #     define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) __sync_fetch_and_add(DST_PTR, VALUE)
 #     define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) __sync_fetch_and_sub(DST_PTR, VALUE)
 #     define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __sync_bool_compare_and_swap(DST_PTR, OLDVAL, NEWVAL)
-#     define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) { unsigned int libxsmm_atomic_acquire_counter_ = 0; \
+#     define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) { int libxsmm_atomic_acquire_counter_ = 0; \
               while (0 != __sync_lock_test_and_set(DST_PTR, 1)) LIBXSMM_SYNC_CYCLE(libxsmm_atomic_acquire_counter_, NPAUSE); \
               assert(1 == *(DST_PTR)); }
 #     define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { assert(1 == *(DST_PTR)); __sync_lock_release(DST_PTR); }
@@ -198,7 +198,7 @@
 #   define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) (((LONG)(OLDVAL)) == InterlockedCompareExchange((volatile LONG*)(DST_PTR), NEWVAL, OLDVAL))
 #   define LIBXSMM_ATOMIC_CMPSWP8(DST_PTR, OLDVAL, NEWVAL, KIND) ((OLDVAL) == _InterlockedCompareExchange8((volatile char*)(DST_PTR), NEWVAL, OLDVAL))
 #   define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_OR, 8)(DST_PTR, 1, LIBXSMM_ATOMIC_RELAXED)
-#   define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) { unsigned int libxsmm_atomic_acquire_counter_ = 0; \
+#   define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) { int libxsmm_atomic_acquire_counter_ = 0; \
             while (0/*false*/ == LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_CMPSWP, 8)(DST_PTR, 0, 1, KIND)) LIBXSMM_SYNC_CYCLE(libxsmm_atomic_acquire_counter_, NPAUSE); \
             assert(1 == *(DST_PTR)); }
 #   define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { assert(1 == *(DST_PTR)); LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, 8)(DST_PTR, KIND); }
