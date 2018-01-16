@@ -72,7 +72,7 @@ MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basena
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
 XFILES := $(OUTDIR)/autobatch \
   $(OUTDIR)/dgemm-blas $(OUTDIR)/dgemm-wrap \
-  $(OUTDIR)/dgemv-blas $(OUTDIR)/dgemv-wrap
+  $(NULL) #$(OUTDIR)/dgemv-blas $(OUTDIR)/dgemv-wrap
 
 .PHONY: all
 all: $(XFILES)
