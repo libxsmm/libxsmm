@@ -147,7 +147,7 @@ MKTEMP = $(DEPDIR)/.mktmp.sh
 FLOCK = $(DEPDIR)/.flock.sh
 
 # PYMOD=1: enable Python module development
-PYMOD ?= 1
+PYMOD ?= 0
 
 # Debugging and symbols (e.g., when profiling)
 SYM ?= 0
