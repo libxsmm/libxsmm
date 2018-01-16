@@ -39,18 +39,11 @@ FCFLAGS := $(CFLAGS)
 DFLAGS = -DLIBXSMM_BUILD
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
-# Python interpreter
-PYTHON ?= python
-
-# Version numbers according to interface (version.txt)
-VERSION_MAJOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 1)
-VERSION_MINOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 2)
-
 # THRESHOLD problem size (M x N x K) determining when to use BLAS
 # A value of zero (0) populates a default threshold
 THRESHOLD ?= 0
 
-# Generates M,N,K-combinations for each comma separated group e.g., "1, 2, 3" gnerates (1,1,1), (2,2,2),
+# Generates M,N,K-combinations for each comma separated group e.g., "1, 2, 3" generates (1,1,1), (2,2,2),
 # and (3,3,3). This way a heterogeneous set can be generated e.g., "1 2, 3" generates (1,1,1), (1,1,2),
 # (1,2,1), (1,2,2), (2,1,1), (2,1,2) (2,2,1) out of the first group, and a (3,3,3) for the second group
 # To generate a series of square matrices one can specify e.g., make MNK=$(echo $(seq -s, 1 5))
@@ -209,6 +202,10 @@ EXCLUDE_STATE = BLAS_WARNING PREFIX
 
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
+
+# Version numbers according to interface (version.txt)
+VERSION_MAJOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 1)
+VERSION_MINOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 2)
 
 # target library for a broad range of systems
 ifneq (0,$(JIT))

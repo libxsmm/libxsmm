@@ -40,9 +40,17 @@ ifeq (Windows_NT,$(OS))
   DLIBEXT ?= dll
   SLIBEXT ?= lib
 endif
+
+# Python interpreter per PYTHON=/path/to/python
+PYTHON ?= $(shell which python 2> /dev/null)
+
+# Command line utilities
+#PKGCFG ?= $(shell which pkg-config 2> /dev/null)
 CP ?= $(shell which cp 2> /dev/null)
 UNAME ?= $(shell uname)
+MAKE ?= make
 ENV ?= env
+
 ifneq (Darwin,$(UNAME))
   ifneq (,$(strip $(CP)))
     CP += -u
@@ -134,12 +142,12 @@ else
   LIBEXT ?= $(DLIBEXT)
 endif
 
-# Utilities
+# Internal utilities
 MKTEMP = $(DEPDIR)/.mktmp.sh
 FLOCK = $(DEPDIR)/.flock.sh
 
-# In case it is not defined
-MAKE ?= make
+# PYMOD=1: enable Python module development
+PYMOD ?= 1
 
 # Debugging and symbols (e.g., when profiling)
 SYM ?= 0
@@ -162,14 +170,15 @@ IPO ?= 0
 
 # ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
 ILP64 ?= 0
-BLAS ?= 0
 
 # Separate control on how to link against the BLAS library
 BLAS_STATIC ?= $(DEPSTATIC)
 ifneq (0,$(BLAS_STATIC))
   BLASLIBEXT ?= $(SLIBEXT)
+  BLAS ?= $(BLAS_STATIC)
 else
   BLASLIBEXT ?= $(DLIBEXT)
+  BLAS ?= 0
 endif
 
 # Explicitly disables BLAS by user's intervention
@@ -216,6 +225,13 @@ else
   abslibpath = $(call absliblpath,$1)
 endif
 
+BRACE_OPEN := (
+BRACE_CLOSE := )
+
+libpath = $(strip $(if $1, \
+  $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL), \
+    $(subst //,/,$(shell $1 $2 -l$3 -Wl,--verbose 2> /dev/null | grep "$3" | tail -n1 | grep -o "\/[^ $(BRACE_CLOSE)]*"))), \
+  $(NULL)))
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
 LIBDEP = $(LIBNAME).$(LIBEXT)
@@ -244,6 +260,16 @@ endif
 # Pickup OpenMP library name if passed as OMP=libname|name
 ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
   OMPRT = $(patsubst lib%,%,$(OMP))
+endif
+
+ifeq (0,$(STATIC))
+ifneq (0,$(PYMOD))
+  PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+  PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d"." -f1,2)
+  IFLAGS += -I/usr/include/python$(PYVERSION)
+  LDFLAGS += -lpython$(PYVERSION)
+  DFLAGS += -D__PYTHON
+endif
 endif
 
 # Assemble PIC flag
@@ -722,14 +748,9 @@ ifneq (0,$(INTEL))
   endif
 else # GCC assumed
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
-  LIBGFORTRAN = $(shell $(FLD) $(SLDFLAGS) -lgfortran -Wl,-t 2> /dev/null | grep gfortran)
-  ifneq (,$(shell echo "$(LIBGFORTRAN)"))
-    ifneq (,$(shell echo "$(LIBGFORTRAN)" | grep succeeded))
-      LIBGFORTRAN := $(abspath $(shell echo "$(LIBGFORTRAN)" | grep succeeded | sed "s/..* (\(..*\)).*/\1/" | head -n1))
-    else
-      LIBGFORTRAN := $(abspath $(shell echo "$(LIBGFORTRAN)" | sed "s/..* (\(..*\)).*/\1/" | head -n1))
-    endif
-    LDFLAGS := $(LDFLAGS) $(call abslibpath,$(LIBGFORTRAN))
+  LIBGFORTRAN = $(call libpath,$(FLD) $(SLDFLAGS),$(NULL),gfortran)
+  ifneq (,$(strip $(LIBGFORTRAN)))
+    LDFLAGS += $(call abslibpath,$(LIBGFORTRAN))
     CXXLDFLAGS += $(XLIB_BEGIN) -lc $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
   else
@@ -1082,14 +1103,9 @@ ifeq (Darwin,$(UNAME))
 endif
 
 ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
-  OMPLIBFILE := $(shell $(LD) $(SLDFLAGS) -l$(OMPRT) -Wl,-t 2> /dev/null | grep $(OMPRT))
-  ifneq (,$(shell echo "$(OMPLIBFILE)" | grep succeeded))
-    OMPLIBFILE := $(abspath $(shell echo "$(OMPLIBFILE)" | grep succeeded | sed "s/..* (\(..*\)).*/\1/" | head -n1))
-  else ifneq (,$(OMPLIBFILE))
-    OMPLIBFILE := $(abspath $(shell echo "$(OMPLIBFILE)" | sed "s/..* (\(..*\)).*/\1/" | head -n1))
-  endif
+  OMPLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(NULL),$(OMPRT))
   ifneq (,$(strip $(OMPLIBFILE)))
-    OMPLIB = $(strip $(call abslib,$(OMPLIBFILE)))
+    OMPLIB = $(call abslib,$(OMPLIBFILE))
   else
     OMPLIB = -l$(OMPRT)
   endif
@@ -1252,12 +1268,15 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_THREADS = p
       endif
     endif
+    ifeq (0,$(BLAS_STATIC)) # shared
+      BLASLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
+    else # static
+      BLASLIBFILE = $(call libpath,$(LD) -static,$(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
+    endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
-    OPENBLAS = $(shell $(LD) $(SLDFLAGS) $(call abslibpath,$(BLASDIR)) -lopenblas$(BLAS_THREADS)$(BLAS_BITS) 2>&1 | \
-      grep -q "\-lopenblas$(BLAS_THREADS)$(BLAS_BITS)"; echo "$$?")
+    OPENBLAS = $(if $(BLASLIBFILE),1,0)
 
-    ifneq (0,$(OPENBLAS))
-      BLAS_LDFLAGS += -lopenblas$(BLAS_THREADS)$(BLAS_BITS)
+    ifneq (0,$(OPENBLAS)) # OpenBLAS
       # OpenBLAS also carries the CBLAS bits
       BLAS_DFLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
       ifneq (,$(wildcard /usr/include/openblas/f77blas.h))
@@ -1265,21 +1284,32 @@ else ifneq (0,$(BLAS)) # generic
       else ifneq (,$(wildcard $(BLASDIR)/../include/openblas/f77blas.h))
         BLAS_DFLAGS += -D__OPENBLAS77
       endif
-    else
+    else # BLAS (reference)
       BLAS_DFLAGS += -D__BLAS
-      ifneq (Windows_NT,$(UNAME))
-        BLAS_LDFLAGS += -lblas$(BLAS_BITS)
-      else
-        BLAS_LDFLAGS += -lblas$(BLAS_BITS).dll
+      ifeq (Windows_NT,$(UNAME)) # no particular action about static linkage (use DLL)
+        BLASLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(BLASDIR),blas$(BLAS_BITS).dll)
+      else ifeq (0,$(BLAS_STATIC)) # potentially shared
+        BLASLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(BLASDIR),blas$(BLAS_BITS))
+      else # static
+        BLASLIBFILE = $(call libpath,$(LD) -static,$(BLASDIR),blas$(BLAS_BITS))
       endif
-      ifneq (0,$(STATIC))
-      ifneq (,$(LIBGFORTRAN))
-        BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
+    endif
+    ifneq (,$(BLASLIBFILE))
+      ifeq (0,$(BLAS_STATIC)) # shared
+        BLAS_LDFLAGS += $(call abslib,$(BLASLIBFILE))
+      else # static
+        BLAS_LDFLAGS += $(BLASLIBFILE)
       endif
-      endif
-      QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
-      ifneq (0,$(QUADMATH))
-        BLAS_CLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
+      ifeq (0,$(OPENBLAS)) # BLAS (reference)
+        ifneq (0,$(STATIC))
+        ifneq (,$(LIBGFORTRAN))
+          BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
+        endif
+        endif
+        QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
+        ifneq (0,$(QUADMATH))
+          BLAS_CLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
+        endif
       endif
     endif
   else # BLAS library is specified via BLASLIB
