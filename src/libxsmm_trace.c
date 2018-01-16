@@ -312,7 +312,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 # else
 #   if defined(LIBXSMM_NO_SYNC)
           static char raw_c;
-          char *const raw_value = &raw_c;
+          char */*const*/ raw_value = &raw_c; /* const: avoid warning (below / constant control-flow) */
 #   else
           char *const raw_value = (char*)pthread_getspecific(internal_trace_key);
 #   endif

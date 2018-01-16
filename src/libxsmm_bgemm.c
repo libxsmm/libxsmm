@@ -52,7 +52,7 @@
 
 typedef union LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
   char pad[LIBXSMM_CACHELINE];
-  volatile char instance;
+  volatile char state;
 } libxsmm_bgemm_lock;
 
 struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
