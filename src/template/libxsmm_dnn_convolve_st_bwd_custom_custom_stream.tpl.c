@@ -128,16 +128,40 @@ if (handle->datatype_in != handle->datatype_out) {
       n_convs = code_stream[pc].n_convs;
       if (instr == IMG_LOOP_INIT) {
         img = code_stream[pc].aux_index;
-      } else if ( instr == IFM_LOOP_CLOSE) {
+      }
+
+      if ( instr == IFM_LOOP_CLOSE) {
         ifm1 = code_stream[pc].aux_index;
         ifm1lpblock = ifm1;
         if ( handle->padding_flag == 1 ) {
-         input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
+          input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
           jitted_matcopyback(copy_ptr, NULL, input_ptr, NULL, NULL);
         } else {
 #include "libxsmm_dnn_zero_rim_st_input_custom.tpl.c"
         }
-      } else if ( instr == IFM_LOOP_INIT )  {
+        if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) { 
+          LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+          LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);  
+          element_input_type *orig_input_ptr;
+          element_input_type *del_input_ptr;
+          __m512 zero_reg  = _mm512_setzero_ps();  
+          __m512 orig_reg;
+          __mmask16 mask; 
+          orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+          del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+          for (ij = 0; ij < handle->desc.H; ij++) {
+            for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
+              orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
+              mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
+              _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
+            }
+            orig_input_ptr += handle->ifwp * 16;
+            del_input_ptr += handle->ifwp *16;
+          }
+        }        
+      }
+
+      if ( instr == IFM_LOOP_INIT )  {
         ifm1 = code_stream[pc].aux_index;
         input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
         if (ifm1+1 != handle->blocksifm * handle->fm_lp_block) {
@@ -148,9 +172,8 @@ if (handle->datatype_in != handle->datatype_out) {
           prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, del_input, img+1, 0, 0, 0, 0, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
         }
         jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
-      } else {
-
       }
+
       /* Run the stream of convolutions for this segment */
       for (conv_i = 0; conv_i < n_convs; conv_i++) {
         offset_i = stream[i];
@@ -168,4 +191,4 @@ if (handle->datatype_in != handle->datatype_out) {
 
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
-  }
+}
