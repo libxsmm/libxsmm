@@ -264,9 +264,10 @@ endif
 
 ifeq (0,$(STATIC))
 ifneq (0,$(PYMOD))
+  PYDIR = $(dir $(shell which $(PYTHON) 2> /dev/null))
   PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
   PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d"." -f1,2)
-  IFLAGS += -I/usr/include/python$(PYVERSION)
+  IFLAGS += -I$(PYDIR)/../include/python$(PYVERSION)
   LDFLAGS += -lpython$(PYVERSION)
   DFLAGS += -D__PYTHON
 endif
