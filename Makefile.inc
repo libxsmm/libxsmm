@@ -89,6 +89,9 @@ TRACE ?= 0
 # or used to scale the problem size
 TESTSIZE ?= 1
 
+# PYMOD=1: enable Python module development
+PYMOD ?= 0
+
 # Static or shared binary
 STATIC ?= 0
 
@@ -124,30 +127,9 @@ else
   LIBNAME ?= $(DEPDIR)/lib/libxsmm
 endif
 
-# Secondary static
-ifneq (file,$(origin STATIC)) # prefer user override/preference (in any case)
-  DEPSTATIC ?= $(STATIC)
-else ifneq (,$(wildcard $(LIBNAME).$(SLIBEXT))) # prefer static (library exists)
-  DEPSTATIC ?= 1
-else ifneq (0,$(STATIC))
-  DEPSTATIC ?= $(STATIC)
-else
-  DEPSTATIC ?= 0
-endif
-
-# Library extension
-ifneq (0,$(DEPSTATIC))
-  LIBEXT ?= $(SLIBEXT)
-else
-  LIBEXT ?= $(DLIBEXT)
-endif
-
 # Internal utilities
 MKTEMP = $(DEPDIR)/.mktmp.sh
 FLOCK = $(DEPDIR)/.flock.sh
-
-# PYMOD=1: enable Python module development
-PYMOD ?= 0
 
 # Debugging and symbols (e.g., when profiling)
 SYM ?= 0
@@ -170,27 +152,6 @@ IPO ?= 0
 
 # ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
 ILP64 ?= 0
-
-# Separate control on how to link against the BLAS library
-BLAS_STATIC ?= $(DEPSTATIC)
-ifneq (0,$(BLAS_STATIC))
-  BLASLIBEXT ?= $(SLIBEXT)
-  BLAS ?= $(BLAS_STATIC)
-else
-  BLASLIBEXT ?= $(DLIBEXT)
-  BLAS ?= 0
-endif
-
-# Explicitly disables BLAS by user's intervention
-# Makefile defines what happens (perhaps nothing)
-NOBLAS ?= 0
-DNOBLAS = -D__BLAS=0
-ifneq (,$(filter environment% override command%,$(origin BLAS)))
-ifeq (0,$(BLAS))
-  BLAS_DFLAGS += $(DNOBLAS)
-  NOBLAS = 1
-endif
-endif
 
 # TBB enabled (1) or disabled (0)
 # availability depends on TBBROOT
@@ -234,6 +195,75 @@ libpath = $(strip $(if $1, \
   $(NULL)))
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
+# Embedd soname into shared library
+ifneq (Darwin,$(UNAME))
+  soname = -Wl,-soname=$(subst $(NULL) ,.,$(strip $(notdir $1) $2 $3 $4))
+else
+  soname = # TODO
+endif
+
+# Pickup OpenMP library name if passed as OMP=libname|name
+ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
+  OMPRT = $(patsubst lib%,%,$(OMP))
+endif
+
+ifneq (0,$(PYMOD))
+  PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+  PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d"." -f1,2)
+  PYROOT = $(abspath $(dir $(shell which $(PYTHON) 2> /dev/null))/..)
+  PYINC = $(wildcard $(PYROOT)/include/python$(PYVERSION)/Python.h)
+  ifneq (,$(PYINC))
+    LDFLAGS += -lpython$(PYVERSION)
+    IFLAGS += -I$(dir $(PYINC))
+    DFLAGS += -D__PYTHON
+    # Avoid (unresolved) BLAS (alternative: BLAS=1|2)
+    ifeq (,$(filter environment% override command%,$(origin BLAS)))
+      override BLAS = 0
+    endif
+    # Enable shared library (req. for Python module)
+    STATIC = 0
+  endif
+endif
+
+# Explicitly disables BLAS by user's intervention
+# Makefile defines what happens (perhaps nothing)
+NOBLAS ?= 0
+DNOBLAS = -D__BLAS=0
+ifneq (,$(filter environment% override command%,$(origin BLAS)))
+ifeq (0,$(BLAS))
+  BLAS_DFLAGS += $(DNOBLAS)
+  NOBLAS = 1
+endif
+endif
+
+# Secondary static
+ifneq (file,$(origin STATIC)) # prefer user override/preference (in any case)
+  DEPSTATIC ?= $(STATIC)
+else ifneq (,$(wildcard $(LIBNAME).$(SLIBEXT))) # prefer static (library exists)
+  DEPSTATIC ?= 1
+else ifneq (0,$(STATIC))
+  DEPSTATIC ?= $(STATIC)
+else
+  DEPSTATIC ?= 0
+endif
+
+# Library extension
+ifneq (0,$(DEPSTATIC))
+  LIBEXT ?= $(SLIBEXT)
+else
+  LIBEXT ?= $(DLIBEXT)
+endif
+
+# Separate control on how to link against the BLAS library
+BLAS_STATIC ?= $(DEPSTATIC)
+ifneq (0,$(BLAS_STATIC))
+  BLASLIBEXT ?= $(SLIBEXT)
+  BLAS ?= $(BLAS_STATIC)
+else
+  BLASLIBEXT ?= $(DLIBEXT)
+  BLAS ?= 0
+endif
+
 LIBDEP = $(LIBNAME).$(LIBEXT)
 MAINLIB = $(call abslib,$(LIBDEP))
 
@@ -249,29 +279,6 @@ else
   NOBLASLIB = $(NULL)
 endif
 BLASLIB ?= $(NOBLASLIB)
-
-# Embedd soname into shared library
-ifneq (Darwin,$(UNAME))
-  soname = -Wl,-soname=$(subst $(NULL) ,.,$(strip $(notdir $1) $2 $3 $4))
-else
-  soname = # TODO
-endif
-
-# Pickup OpenMP library name if passed as OMP=libname|name
-ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
-  OMPRT = $(patsubst lib%,%,$(OMP))
-endif
-
-ifeq (0,$(STATIC))
-ifneq (0,$(PYMOD))
-  PYDIR = $(dir $(shell which $(PYTHON) 2> /dev/null))
-  PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
-  PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d"." -f1,2)
-  IFLAGS += -I$(PYDIR)/../include/python$(PYVERSION)
-  LDFLAGS += -lpython$(PYVERSION)
-  DFLAGS += -D__PYTHON
-endif
-endif
 
 # Assemble PIC flag
 ifneq (,$(strip $(PIC)))
