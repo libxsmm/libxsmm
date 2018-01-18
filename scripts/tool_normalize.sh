@@ -42,6 +42,7 @@ ICONV=$(which iconv 2> /dev/null)
 ECHO=$(which echo 2> /dev/null)
 GIT=$(which git 2> /dev/null)
 SED=$(which sed 2> /dev/null)
+TR=$(which tr 2> /dev/null)
 CP=$(which cp 2> /dev/null)
 RM=$(which rm 2> /dev/null)
 
@@ -49,7 +50,9 @@ if [ -e ${CODEFILE} ]; then
   PATTERNS="$(cat ${CODEFILE})"
 fi
 
-if [ "" != "${ICONV}" ] && [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && [ "" != "${CP}" ] && [ "" != "${RM}" ]; then
+if [ "" != "${ICONV}" ] && [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && \
+   [ "" != "${SED}" ] && [ "" != "${TR}" ] && \
+   [ "" != "${CP}" ] && [ "" != "${RM}" ]; then
   TMPF=$(${MKTEMP} .libxsmm_XXXXXX.txt)
 
   # disable glob in Shell
@@ -57,10 +60,14 @@ if [ "" != "${ICONV}" ] && [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && [ "" != 
   # Search the content of the diffs matching the given file types
   for PATTERN in ${PATTERNS}; do
     for FILE in $("${GIT}" ls-files ${PATTERN}); do
-      if [ "" != "$(${SED} -n /[${BANNED_CHARS}]/p ${FILE} 2> /dev/null)" ]; then
+      BANNED=$(${SED} -n "/[${BANNED_CHARS}]/p" ${FILE} 2> /dev/null)
+      DOSEOL=$(${SED} -n "/\r$/p" ${FILE} 2> /dev/null | ${TR} -d "\n")
+      if [ "" != "${BANNED}" ]; then
         ${ECHO} "Warning: ${FILE} contains banned characters!"
       fi
-      #${ICONV} -t ASCII ${FILE} | ${SED} -e "N;s/\r\n$/\n/" -e "N;s/\r$/\n/" | ${SED} -e "s/\s\s*$//" > ${TMPF}
+      if [ "" != "${DOSEOL}" ]; then
+        ${ECHO} "Warning: ${FILE} uses non-UNIX line endings!"
+      fi
       ${ICONV} -t ASCII ${FILE} | ${SED} -e "s/\s\s*$//" > ${TMPF}
       ${CP} ${TMPF} ${FILE}
     done
