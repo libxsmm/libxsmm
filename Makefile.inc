@@ -221,7 +221,7 @@ ifneq (0,$(PYMOD))
       override BLAS = 0
     endif
     # Enable shared library (req. for Python module)
-    STATIC = 0
+    override STATIC = 0
   endif
 endif
 
@@ -258,11 +258,12 @@ endif
 BLAS_STATIC ?= $(DEPSTATIC)
 ifneq (0,$(BLAS_STATIC))
   BLASLIBEXT ?= $(SLIBEXT)
-  BLAS ?= $(BLAS_STATIC)
 else
   BLASLIBEXT ?= $(DLIBEXT)
-  BLAS ?= 0
 endif
+
+# BLAS is not used by default
+BLAS ?= 0
 
 LIBDEP = $(LIBNAME).$(LIBEXT)
 MAINLIB = $(call abslib,$(LIBDEP))
@@ -1308,16 +1309,18 @@ else ifneq (0,$(BLAS)) # generic
       else # static
         BLAS_LDFLAGS += $(BLASLIBFILE)
       endif
-      ifeq (0,$(OPENBLAS)) # BLAS (reference)
-        ifneq (0,$(STATIC))
-        ifneq (,$(LIBGFORTRAN))
-          BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
-        endif
-        endif
-        QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
-        ifneq (0,$(QUADMATH))
-          BLAS_CLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
-        endif
+    else # fall-back
+      BLAS_LDFLAGS += -lblas
+    endif
+    ifeq (0,$(OPENBLAS)) # BLAS (reference)
+      ifneq (0,$(STATIC))
+      ifneq (,$(LIBGFORTRAN))
+        BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
+      endif
+      endif
+      QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
+      ifneq (0,$(QUADMATH))
+        BLAS_CLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
       endif
     endif
   else # BLAS library is specified via BLASLIB
