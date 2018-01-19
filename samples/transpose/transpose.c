@@ -211,13 +211,6 @@ int main(int argc, char* argv[])
           result = OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
           duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
-#if !defined(USE_SELF_VALIDATION)
-        if (0 != c) { /* check */
-          start = libxsmm_timer_tick();
-          OTRANS_GOLD(&km, &kn, a, &kldi, c, &kldo);
-          duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
-        }
-#endif
       }
       else {
         assert(('i' == t || 'I' == t) && kldo == kldi);
@@ -237,32 +230,51 @@ int main(int argc, char* argv[])
           result = ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
           duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
+      }
+    }
+
 #if !defined(USE_SELF_VALIDATION)
-        if (0 != c) { /* check */
+    if (0 != c) { /* check */
+      for (k = (0 == r ? -1 : 0); k < s && EXIT_SUCCESS == result; ++k) {
+        if (0 < r) {
+          const libxsmm_blasint rldi = randstart(lower, ldi);
+          km = randstart(lower, m);
+          kldi = LIBXSMM_MAX(rldi, km);
+          if (('o' == t || 'O' == t)) {
+            const libxsmm_blasint rldo = randstart(lower, ldo);
+            kn = randstart(lower, n);
+            kldo = LIBXSMM_MAX(rldo, kn);
+            /* trigger JIT-generated code */
+            OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          }
+          else {
+#if 0 /* TODO: enable when in-place transpose is fully supported */
+            kn = randstart(lower, n);
+#else
+            kn = km;
+#endif
+            kldo = kldi;
+            /* trigger JIT-generated code */
+            ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
+          }
+        }
+        size += (size_t)(km * kn * sizeof(ELEM_TYPE));
+
+        if (('o' == t || 'O' == t)) {
+          start = libxsmm_timer_tick();
+          OTRANS_GOLD(&km, &kn, a, &kldi, c, &kldo);
+          duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
+        }
+        else {
+          assert(('i' == t || 'I' == t) && kldo == kldi);
           memcpy(c, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
           start = libxsmm_timer_tick();
           ITRANS_GOLD(&km, &kn, c, &kldi, &kldo);
           duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
         }
-#endif
       }
-#if defined(USE_SELF_VALIDATION)
-      if (0 == env_check || 0 != atoi(env_check)) { /* check */
-        for (i = 0; i < km; ++i) {
-          libxsmm_blasint j;
-          for (j = 0; j < kn; ++j) {
-            const ELEM_TYPE u = b[i*kldo+j];
-            const ELEM_TYPE v = a[j*kldi+i];
-            if (0 == LIBXSMM_FEQ(u, v)) {
-              i += km; /* leave outer loop as well */
-              result = EXIT_FAILURE;
-              break;
-            }
-          }
-        }
-      }
-#endif
     }
+#endif
 
     if (EXIT_SUCCESS == result) {
       if (0 < duration) {
