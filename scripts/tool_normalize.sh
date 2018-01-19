@@ -38,6 +38,7 @@ REPO=${HERE}/..
 CODEFILE=${REPO}/.codefile
 MKTEMP=${REPO}/.mktmp.sh
 
+FLAKE8=$(which flake8 2> /dev/null)
 ICONV=$(which iconv 2> /dev/null)
 ECHO=$(which echo 2> /dev/null)
 GIT=$(which git 2> /dev/null)
@@ -48,6 +49,10 @@ RM=$(which rm 2> /dev/null)
 
 if [ -e ${CODEFILE} ]; then
   PATTERNS="$(cat ${CODEFILE})"
+fi
+
+if [ "" != "${FLAKE8}" ] && [ "0" != "$(${FLAKE8} ${HERE}/*.py 2>&1 >/dev/null ; echo $?)" ]; then
+  ${ECHO} "Warning: some Python scripts do not pass flake8 check (${HERE})!"
 fi
 
 if [ "" != "${ICONV}" ] && [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && \
