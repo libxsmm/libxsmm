@@ -51,8 +51,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
   assert(typesize <= 255);
   if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && m <= ldo) {
 #if defined(_OPENMP)
-    const unsigned int size = (unsigned int)(1U * m * n);
-    if ((LIBXSMM_TRANS_THRESHOLD) < size) { /* consider problem-size (threshold) */
+    if (0 == LIBXSMM_TRANS_NO_BYPASS_DIMS(m, ldo)) { /* consider problem-size (threshold) */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
       if (0 == omp_get_active_level())
 # else
@@ -144,8 +143,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
   if (0 != out && 0 != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo) {
     if (out != in) {
 #if defined(_OPENMP)
-      const unsigned int size = (unsigned int)(1U * m * n);
-      if ((LIBXSMM_TRANS_THRESHOLD) < size) { /* consider problem-size (threshold) */
+      if (0 == LIBXSMM_TRANS_NO_BYPASS_DIMS(m, ldo)) { /* consider problem-size (threshold) */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         if (0 == omp_get_active_level())
 # else

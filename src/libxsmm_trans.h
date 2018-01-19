@@ -41,9 +41,7 @@
 # endif
 #endif
 
-#if !defined(LIBXSMM_TRANS_THRESHOLD)
-# define LIBXSMM_TRANS_THRESHOLD ((LIBXSMM_MAX_M) * (LIBXSMM_MAX_N))
-#endif
+#define LIBXSMM_TRANS_NO_BYPASS_DIMS(M, LDO) ((M) <= (LIBXSMM_MAX_M) && (LDO) <= (LIBXSMM_MAX_N))
 
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \

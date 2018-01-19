@@ -245,8 +245,8 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_thread(void* out, const void* in, unsi
       libxsmm_xtransfunction xtrans = 0;
       libxsmm_transpose_descriptor descriptor = { 0 };
       const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
-      const unsigned int size = (unsigned int)(1U * m * n);
-      if ((LIBXSMM_TRANS_THRESHOLD) < size) { /* tiled transpose */
+      const unsigned int size = (unsigned int)(1U * ldi * ldo);
+      if (0 == LIBXSMM_TRANS_NO_BYPASS_DIMS(m, ldo)) { /* tiled transpose */
         const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
         libxsmm_blasint m0 = 0, n0 = 0, m1 = m, n1 = n;
         int mtasks;
