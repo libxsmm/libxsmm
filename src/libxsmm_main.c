@@ -70,6 +70,10 @@
 # define LIBXSMM_CAPACITY_CACHE 4
 #endif
 
+#if !defined(LIBXSMM_CODE_MAXSIZE)
+# define LIBXSMM_CODE_MAXSIZE 131072
+#endif
+
 /* flag fused into the memory address of a code version in case of non-JIT */
 #define LIBXSMM_CODE_STATIC (1ULL << (8 * sizeof(void*) - 1))
 /* flag fused into the memory address of a code version in case of collision */
@@ -1077,12 +1081,12 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
 
   /* large enough temporary buffer for generated code */
 #if defined(NDEBUG)
-  char jit_buffer[131072];
+  char jit_buffer[LIBXSMM_CODE_MAXSIZE];
   generated_code.generated_code = jit_buffer;
   generated_code.buffer_size = sizeof(jit_buffer);
 #else
-  generated_code.generated_code = malloc(131072);
-  generated_code.buffer_size = (0 != generated_code.generated_code ? 131072 : 0);
+  generated_code.generated_code = malloc(LIBXSMM_CODE_MAXSIZE);
+  generated_code.buffer_size = (0 != generated_code.generated_code ? LIBXSMM_CODE_MAXSIZE : 0);
 #endif
   /* setup code generation */
   generated_code.code_type = 2;
