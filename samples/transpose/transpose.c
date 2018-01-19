@@ -54,6 +54,10 @@
 # define ELEM_TYPE double
 #endif
 
+#if !defined(RAND_SEED)
+# define RAND_SEED 25071975
+#endif
+
 #if (defined(_OPENMP) || (defined(__BLAS) && 1 < (__BLAS)))
 # if !defined(OTRANS_THREAD) && defined(_OPENMP) && 0
 #   define OTRANS_THREAD libxsmm_otrans_thread
@@ -64,11 +68,8 @@
 #endif
 #define ITRANS libxsmm_itrans
 
-#if !defined(USE_SELF_VALIDATION) && \
-  ((!LIBXSMM_EQUAL(ELEM_TYPE, float) && !LIBXSMM_EQUAL(ELEM_TYPE, double)) || (0 == __BLAS))
-# define USE_SELF_VALIDATION
-#endif
-#if !defined(USE_SELF_VALIDATION)
+#if defined(__BLAS) && (0 != __BLAS) && \
+  (LIBXSMM_EQUAL(ELEM_TYPE, float) || LIBXSMM_EQUAL(ELEM_TYPE, double))
 # if defined(__MKL)
 #   define OTRANS_GOLD(M, N, A, LDI, B, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, omatcopy))('C', 'T', \
@@ -76,6 +77,9 @@
 #   define ITRANS_GOLD(M, N, A, LDI, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, imatcopy))('C', 'T', \
         (size_t)(*(M)), (size_t)(*(N)), (ELEM_TYPE)1, A, (size_t)(*(LDI)), (size_t)(*(LDO)))
+#   if !defined(USE_REFERENCE)
+#     define USE_REFERENCE
+#   endif
 # elif defined(__OPENBLAS77)
 #   define OTRANS_GOLD(M, N, A, LDI, B, LDO) { \
       /*const*/char otrans_gold_tc_ = 'C', otrans_gold_tt_ = 'T'; \
@@ -91,8 +95,9 @@
         (libxsmm_blasint*)(M), (libxsmm_blasint*)(N), &itrans_gold_alpha_, A, \
         (libxsmm_blasint*)(LDI), (libxsmm_blasint*)(LDO)); \
     }
-# else
-#   define USE_SELF_VALIDATION
+#   if !defined(USE_REFERENCE)
+#     define USE_REFERENCE
+#   endif
 # endif
 #endif
 
@@ -105,7 +110,9 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE ELEM_TYPE initial_value(libxsmm_blasint i, l
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_blasint randstart(libxsmm_blasint start, libxsmm_blasint value)
 {
-  return (rand() % LIBXSMM_MAX(value - start, 1)) + LIBXSMM_MAX(start, 1);
+  const libxsmm_blasint s = (start < value ? start : 0), r = LIBXSMM_MIN(s + (rand() % (value - s)) + 1, value);
+  assert(0 < r && s <= r && r <= value);
+  return r;
 }
 
 
@@ -136,16 +143,13 @@ int main(int argc, char* argv[])
   {
     const char *const env_tasks = getenv("TASKS"), *const env_check = getenv("CHECK");
     const int tasks = (0 == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
+    const int check = (0 == env_check || 0 == *env_check) ? 1/*default*/ : atoi(env_check);
     ELEM_TYPE *const a = (ELEM_TYPE*)libxsmm_malloc((size_t)(ldi * (('o' == t || 'O' == t) ? n : ldo) * sizeof(ELEM_TYPE)));
     ELEM_TYPE *const b = (ELEM_TYPE*)libxsmm_malloc((size_t)(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE)));
-#if !defined(USE_SELF_VALIDATION) /* check against an alternative/external implementation */
-    ELEM_TYPE *const c = (ELEM_TYPE*)((0 == env_check || 0 != atoi(env_check))
-      ? libxsmm_malloc((size_t)(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE)))
-      : 0);
-    double duration2 = 0;
+    libxsmm_timer_tickint start, duration = 0;
+#if defined(USE_REFERENCE) /* benchmark against a reference */
+    libxsmm_timer_tickint duration2 = 0;
 #endif
-    double duration = 0;
-    unsigned long long start;
     libxsmm_blasint i;
     size_t size = 0;
 #if defined(MKL_ENABLE_AVX512)
@@ -166,6 +170,7 @@ int main(int argc, char* argv[])
       }
     }
 
+    srand(RAND_SEED);
     for (k = (0 == r ? -1 : 0); k < s && EXIT_SUCCESS == result; ++k) {
       if (0 < r) {
         const libxsmm_blasint rldi = randstart(lower, ldi);
@@ -200,7 +205,7 @@ int main(int argc, char* argv[])
 #else
           result = OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
 #endif
-          duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
+          duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
           start = libxsmm_timer_tick();
@@ -209,7 +214,7 @@ int main(int argc, char* argv[])
 #         pragma omp single nowait
 #endif
           result = OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
-          duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
+          duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
         }
       }
       else {
@@ -219,7 +224,7 @@ int main(int argc, char* argv[])
         if (2 > tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
           result = ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
-          duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
+          duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
           start = libxsmm_timer_tick();
@@ -228,82 +233,102 @@ int main(int argc, char* argv[])
 #         pragma omp single
 #endif
           result = ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
-          duration += libxsmm_timer_duration(start, libxsmm_timer_tick());
+          duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
+        }
+      }
+      if (0 != check) { /* check */
+        for (i = 0; i < km; ++i) {
+          libxsmm_blasint j;
+          for (j = 0; j < kn; ++j) {
+            const ELEM_TYPE u = b[i*kldo+j];
+            const ELEM_TYPE v = a[j*kldi+i];
+            if (0 == LIBXSMM_FEQ(u, v)) {
+              i += km; /* leave outer loop as well */
+              result = EXIT_FAILURE;
+              break;
+            }
+          }
         }
       }
     }
 
-#if !defined(USE_SELF_VALIDATION)
-    if (0 != c) { /* check */
-      for (k = (0 == r ? -1 : 0); k < s && EXIT_SUCCESS == result; ++k) {
-        if (0 < r) {
-          const libxsmm_blasint rldi = randstart(lower, ldi);
-          km = randstart(lower, m);
-          kldi = LIBXSMM_MAX(rldi, km);
-          if (('o' == t || 'O' == t)) {
-            const libxsmm_blasint rldo = randstart(lower, ldo);
-            kn = randstart(lower, n);
-            kldo = LIBXSMM_MAX(rldo, kn);
-            /* trigger JIT-generated code */
-            OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
-          }
-          else {
-#if 0 /* TODO: enable when in-place transpose is fully supported */
-            kn = randstart(lower, n);
-#else
-            kn = km;
-#endif
-            kldo = kldi;
-            /* trigger JIT-generated code */
-            ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
-          }
-        }
-        size += (size_t)(km * kn * sizeof(ELEM_TYPE));
-
+#if defined(USE_REFERENCE)
+    srand(RAND_SEED); /* reproduce the same sequence as above */
+    for (k = (0 == r ? -1 : 0); k < s && EXIT_SUCCESS == result; ++k) {
+      if (0 < r) {
+        const libxsmm_blasint rldi = randstart(lower, ldi);
+        km = randstart(lower, m);
+        kldi = LIBXSMM_MAX(rldi, km);
         if (('o' == t || 'O' == t)) {
-          start = libxsmm_timer_tick();
-          OTRANS_GOLD(&km, &kn, a, &kldi, c, &kldo);
-          duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
+          const libxsmm_blasint rldo = randstart(lower, ldo);
+          kn = randstart(lower, n);
+          kldo = LIBXSMM_MAX(rldo, kn);
+          /* trigger JIT-generated code */
+          OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
         }
         else {
-          assert(('i' == t || 'I' == t) && kldo == kldi);
-          memcpy(c, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
-          start = libxsmm_timer_tick();
-          ITRANS_GOLD(&km, &kn, c, &kldi, &kldo);
-          duration2 += libxsmm_timer_duration(start, libxsmm_timer_tick());
+#if 0 /* TODO: enable when in-place transpose is fully supported */
+          kn = randstart(lower, n);
+#else
+          kn = km;
+#endif
+          kldo = kldi;
+          /* trigger JIT-generated code */
+          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
+        }
+      }
+
+      if (('o' == t || 'O' == t)) {
+        start = libxsmm_timer_tick();
+        OTRANS_GOLD(&km, &kn, a, &kldi, b, &kldo);
+        duration2 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+      }
+      else {
+        assert(('i' == t || 'I' == t) && kldo == kldi);
+        memcpy(b, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
+        start = libxsmm_timer_tick();
+        ITRANS_GOLD(&km, &kn, b, &kldi, &kldo);
+        duration2 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+      }
+      if (1 < check || 0 > check) { /* check */
+        for (i = 0; i < km; ++i) {
+          libxsmm_blasint j;
+          for (j = 0; j < kn; ++j) {
+            const ELEM_TYPE u = b[i*kldo+j];
+            const ELEM_TYPE v = a[j*kldi+i];
+            if (0 == LIBXSMM_FEQ(u, v)) {
+              i += km; /* leave outer loop as well */
+              result = EXIT_FAILURE;
+              break;
+            }
+          }
         }
       }
     }
 #endif
 
     if (EXIT_SUCCESS == result) {
+      const double d = libxsmm_timer_duration(0, duration);
       if (0 < duration) {
         /* out-of-place transpose bandwidth assumes RFO */
         fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size
-          * ((('o' == t || 'O' == t)) ? 3 : 2) / (duration * (1 << 30)));
+          * ((('o' == t || 'O' == t)) ? 3 : 2) / (d * (1 << 30)));
       }
       fprintf(stdout, "\tduration: %.0f ms\n", 1000.0
-          * (0 == lower ? (duration / (0 == r ? (s + 1) : s)) : duration));
-#if !defined(USE_SELF_VALIDATION)
-      if (0 < duration2 && 0 != c) {
-        fprintf(stdout, "\treference: %.1fx\n", duration / duration2);
+          * (0 == lower ? (d / (0 == r ? (s + 1) : s)) : d));
+#if defined(USE_REFERENCE)
+      if (0 < duration2) {
+        fprintf(stdout, "\treference: %.1fx\n", (1.0 * duration) / duration2);
       }
 #endif
     }
-    else if ((0 == env_check || 0 != atoi(env_check))) { /* check */
-      fprintf(stderr, "Error: "
-#if defined(USE_SELF_VALIDATION)
-        "self-"
-#endif
-        "validation failed for m=%lli, n=%lli, ldi=%lli, and ldo=%lli!\n",
-          (long long)km, (long long)kn, (long long)kldi, (long long)kldo);
+    else if (0 != check) { /* check */
+      fprintf(stderr, "Error: validation failed for m=%lli, n=%lli, ldi=%lli, and ldo=%lli!\n",
+        (long long)km, (long long)kn, (long long)kldi, (long long)kldo);
     }
 
     libxsmm_free(a);
     libxsmm_free(b);
-#if !defined(USE_SELF_VALIDATION)
-    libxsmm_free(c);
-#endif
   }
   return result;
 }
