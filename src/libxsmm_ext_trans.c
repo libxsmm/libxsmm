@@ -66,6 +66,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
       }
       else { /* assume external parallelization */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
+        const unsigned int size = (unsigned int)(1U * m * n);
         const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
         const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
         libxsmm_matcopy_descriptor descriptor = { 0 };
@@ -158,6 +159,7 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
         }
         else { /* assume external parallelization */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
+          const unsigned int size = (unsigned int)(1U * m * n);
           const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
           const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
           libxsmm_transpose_descriptor descriptor = { 0 };
