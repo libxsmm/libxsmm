@@ -41,7 +41,7 @@
 # include <mkl_trans.h>
 # include <mkl_service.h>
 #elif defined(__OPENBLAS77)
-# include <openblas/f77blas.h>
+# include <f77blas.h>
 #endif
 #if defined(_OPENMP)
 # include <omp.h>
@@ -76,7 +76,7 @@
 #   define ITRANS_GOLD(M, N, A, LDI, LDO) \
       LIBXSMM_CONCATENATE(mkl_, LIBXSMM_TPREFIX(ELEM_TYPE, imatcopy))('C', 'T', \
         (size_t)(*(M)), (size_t)(*(N)), (ELEM_TYPE)1, A, (size_t)(*(LDI)), (size_t)(*(LDO)))
-# elif defined(__OPENBLAS)
+# elif defined(__OPENBLAS77)
 #   define OTRANS_GOLD(M, N, A, LDI, B, LDO) { \
       /*const*/char otrans_gold_tc_ = 'C', otrans_gold_tt_ = 'T'; \
       /*const*/ELEM_TYPE otrans_gold_alpha_ = 1; \
