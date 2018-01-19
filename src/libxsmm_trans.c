@@ -145,7 +145,6 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_thread(void* out, const void* in, uns
         m0 = mtid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
         n0 = ntid * nc; n1 = LIBXSMM_MIN(n0 + nc, n);
       }
-      assert(((tid + 1) != nthreads) || (m1 == m && n1 == n));
       if (0 != prefetch && 0 != *prefetch) { /* prefetch */
         LIBXSMM_XCOPY(
           LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
@@ -272,7 +271,6 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_thread(void* out, const void* in, unsi
           m0 = mtid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
           n0 = ntid * nc; n1 = LIBXSMM_MIN(n0 + nc, n);
         }
-        assert(((tid + 1) != nthreads) || (m1 == m && n1 == n));
         LIBXSMM_XCOPY(
           LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
           LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans, out, in,
