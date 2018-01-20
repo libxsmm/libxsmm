@@ -22,7 +22,7 @@ OUTDIR = .
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
-DFLAGS = $(NULL)
+DFLAGS = -DLIBXSMM_GEMM_CONST
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
 # Fortran code here does not allow for PEDANTIC=2
