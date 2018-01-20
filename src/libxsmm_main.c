@@ -159,7 +159,9 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 # endif
 # if (0 < INTERNAL_REGLOCK_MAXN)
 LIBXSMM_API_VARIABLE union LIBXSMM_RETARGETABLE {
+# if LIBXSMM_LOCK_TYPE_ISPOD(LIBXSMM_LOCK_DEFAULT)
   char pad[LIBXSMM_CACHELINE];
+# endif
   LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_DEFAULT) state;
 } internal_reglock[INTERNAL_REGLOCK_MAXN];
 # else /* RW-lock */

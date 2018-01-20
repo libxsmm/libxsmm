@@ -63,7 +63,9 @@
 # endif
 LIBXSMM_API_VARIABLE unsigned int internal_gemm_nlocks; /* populated number of locks */
 LIBXSMM_API_VARIABLE union LIBXSMM_RETARGETABLE {
+# if LIBXSMM_LOCK_TYPE_ISPOD(LIBXSMM_LOCK_DEFAULT)
   char pad[LIBXSMM_CACHELINE];
+# endif
   LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_DEFAULT) state;
 } internal_gemm_lock[LIBXSMM_GEMM_MAXNLOCKS];
 #endif
