@@ -1,4 +1,4 @@
-# LIBXSMM<img style="float:right" src="./libxsmm.png">
+# LIBXSMM
 
 
 

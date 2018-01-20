@@ -1,4 +1,4 @@
-# LIBXSMM<img style="float:right" src="./libxsmm.png">
+# LIBXSMM
 
 [![License](https://img.shields.io/badge/license-BSD3-blue.svg)](LICENSE.md) [![Travis CI](https://travis-ci.org/hfp/libxsmm.svg?branch=master "Master branch build status")](https://github.com/hfp/libxsmm/wiki/Status) [![ReadtheDocs](https://readthedocs.org/projects/libxsmm/badge/?version=latest "Read the Docs")](http://libxsmm.readthedocs.io/)
 
