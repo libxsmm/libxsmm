@@ -41,7 +41,7 @@
 # endif
 #endif
 
-#define LIBXSMM_TRANS_NO_BYPASS_DIMS(M, LDO) ((M) <= (LIBXSMM_MAX_M) && (LDO) <= (LIBXSMM_MAX_N))
+#define LIBXSMM_TRANS_NO_BYPASS_DIMS(M, N, LDO) (((unsigned int)(1U * (M) * (N))) <= ((LIBXSMM_AVG_M) * (LIBXSMM_AVG_N)))
 
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \

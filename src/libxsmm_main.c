@@ -1923,7 +1923,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
 LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor)
 {
   libxsmm_xtransfunction result = { 0 };
-  if (0 != descriptor && 0 != LIBXSMM_TRANS_NO_BYPASS_DIMS(descriptor->m, descriptor->ldo)) {
+  if (0 != descriptor && 0 != LIBXSMM_TRANS_NO_BYPASS_DIMS(descriptor->m, descriptor->n, descriptor->ldo)) {
     libxsmm_kernel_info query = { { 0 } };
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
     LIBXSMM_INIT
