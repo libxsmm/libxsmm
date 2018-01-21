@@ -42,6 +42,9 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(MAX_KERNEL_SIZE)
+# define MAX_KERNEL_SIZE 64
+#endif
 
 /**
  * This (micro-)benchmark optionally takes a number of dispatches to be performed.
@@ -86,7 +89,7 @@ int main(int argc, char* argv[])
 
     assert(0 != r);
     /* generate a set of random numbers outside of any parallel region */
-    for (i = 0; i < (3/*m,n,k*/ * size); ++i) r[i] = rand();
+    for (i = 0; i < (3/*m,n,k*/ * size); ++i) r[i] = (rand() % (MAX_KERNEL_SIZE)) + 1;
 
     /* run non-inline function to measure call overhead of an "empty" function */
     start = libxsmm_timer_tick();
