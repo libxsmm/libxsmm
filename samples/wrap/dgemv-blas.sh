@@ -33,8 +33,8 @@ if [ "-mic" != "$1" ]; then
   if [ "" != "$(${LDD} ${HERE}/${NAME} 2> /dev/null | ${GREP} libiomp5\.)" ]; then
     ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../../lib \
       DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../../lib \
-      KMP_AFFINITY=compact,granularity=fine,1 \
-      MIC_KMP_AFFINITY=compact,granularity=fine \
+      KMP_AFFINITY=scatter,granularity=fine,1 \
+      MIC_KMP_AFFINITY=scatter,granularity=fine \
       MIC_KMP_HW_SUBSET=$((MICCORES-1))c${MICTPERC}t \
       MIC_ENV_PREFIX=MIC \
       OFFLOAD_INIT=on_start \

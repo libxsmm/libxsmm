@@ -70,6 +70,10 @@
 # define LIBXSMM_CAPACITY_CACHE 4
 #endif
 
+#if !defined(LIBXSMM_CODE_MAXSIZE)
+# define LIBXSMM_CODE_MAXSIZE 131072
+#endif
+
 /* flag fused into the memory address of a code version in case of non-JIT */
 #define LIBXSMM_CODE_STATIC (1ULL << (8 * sizeof(void*) - 1))
 /* flag fused into the memory address of a code version in case of collision */
@@ -155,7 +159,9 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 # endif
 # if (0 < INTERNAL_REGLOCK_MAXN)
 LIBXSMM_API_VARIABLE union LIBXSMM_RETARGETABLE {
+# if LIBXSMM_LOCK_TYPE_ISPOD(LIBXSMM_LOCK_DEFAULT)
   char pad[LIBXSMM_CACHELINE];
+# endif
   LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_DEFAULT) state;
 } internal_reglock[INTERNAL_REGLOCK_MAXN];
 # else /* RW-lock */
@@ -1077,12 +1083,12 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
 
   /* large enough temporary buffer for generated code */
 #if defined(NDEBUG)
-  char jit_buffer[131072];
+  char jit_buffer[LIBXSMM_CODE_MAXSIZE];
   generated_code.generated_code = jit_buffer;
   generated_code.buffer_size = sizeof(jit_buffer);
 #else
-  generated_code.generated_code = malloc(131072);
-  generated_code.buffer_size = (0 != generated_code.generated_code ? 131072 : 0);
+  generated_code.generated_code = malloc(LIBXSMM_CODE_MAXSIZE);
+  generated_code.buffer_size = (0 != generated_code.generated_code ? LIBXSMM_CODE_MAXSIZE : 0);
 #endif
   /* setup code generation */
   generated_code.code_type = 2;
@@ -1917,9 +1923,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
 LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor)
 {
   libxsmm_xtransfunction result = { 0 };
-  if (0 != descriptor && /* basic sanity check against LIBXSMM_TRANS_THRESHOLD */
-     (descriptor->m * descriptor->n) <= (LIBXSMM_TRANS_THRESHOLD))
-  {
+  if (0 != descriptor && 0 != LIBXSMM_TRANS_NO_BYPASS_DIMS(descriptor->m, descriptor->n, descriptor->ldo)) {
     libxsmm_kernel_info query = { { 0 } };
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
     LIBXSMM_INIT

@@ -27,14 +27,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="lock.c" />
+    <ClCompile Include="sync_barrier.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>lock</ProjectName>
-    <ProjectGuid>{B8E97739-2AC9-4F26-92BD-6B8205E1119A}</ProjectGuid>
+    <ProjectName>sync_barrier</ProjectName>
+    <ProjectGuid>{3920347F-E161-41D8-87D5-F7A516E1E234}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

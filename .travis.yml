@@ -10,7 +10,7 @@ matrix:
     env: OPT=1 LIBXSMM_TARGET=0
   - os: linux
     compiler: gcc
-    env: DBG=1
+    env: DBG=1 PYTHON=python3
   - os: linux
     compiler: clang
     env: DBG=1
@@ -34,6 +34,7 @@ addons:
     - gfortran
     - libblas-dev
     - liblapack-dev
+    - python3
     - sshpass
 
 before_install:
