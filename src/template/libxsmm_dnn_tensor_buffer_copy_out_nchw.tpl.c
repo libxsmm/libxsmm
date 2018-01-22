@@ -50,6 +50,8 @@ if (tensor->layout->custom_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
 #endif
   int C = fmb * bfm * lpb;
 
+/*  printf(" layout act copy out  N %i fmb %i H %i W %i bfm %i lpb %i \n", N, fmb, H, W, bfm, lpb);*/
+
   LIBXSMM_VLA_DECL(6, const element_type, handle_data_1, (const element_type*)tensor->data, fmb, H, W, bfm, lpb);
   LIBXSMM_VLA_DECL(4, element_type, user_data, (element_type*)data, C, H, W);
 
