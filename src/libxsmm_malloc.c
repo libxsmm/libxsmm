@@ -658,10 +658,19 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
           buffer = mmap(0, alloc_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | xflags, -1, 0);
         }
         else {
-          static LIBXSMM_TLS int fallback = -1;
+          static /*LIBXSMM_TLS*/ int fallback = -1;
           if (0 > fallback) { /* initialize fall-back allocation method */
             const char *const env = getenv("LIBXSMM_SE");
-            fallback = (0 == env || 0 == *env || 0 != atoi(env)) ? LIBXSMM_MALLOC_FALLBACK : 4;
+            FILE *const selinux = fopen("/sys/fs/selinux/enforce", "rb");
+            int selinux_enforced = 0;
+            if (0 != selinux) {
+              selinux_enforced = 1; /* conservative assumption in case of an error */
+              fread(&selinux_enforced, sizeof(int), 1/*count*/, selinux);
+              fclose(selinux);
+            }
+            fallback = ((0 == env || 0 == *env)
+              ? (0 == selinux_enforced ? 4 : LIBXSMM_MALLOC_FALLBACK)
+              : (0 == atoi(env) ? 4 : LIBXSMM_MALLOC_FALLBACK));
           }
           if (0 == fallback) {
             buffer = internal_xmap("/tmp", alloc_size, xflags, &reloc);
