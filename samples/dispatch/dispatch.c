@@ -110,18 +110,21 @@ int main(int argc, char* argv[])
       NULL/*flags*/, NULL/*prefetch*/);
 
 #if defined(_OPENMP)
-#   pragma omp parallel for num_threads(nthreads) default(none) private(i)
+#   pragma omp parallel for num_threads(nthreads) private(i)
 #endif
     for (i = 0; i < size; ++i) {
       const libxsmm_timer_tickint t0 = libxsmm_timer_tick();
       libxsmm_dmmdispatch(23, 23, 23,
         NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
         NULL/*flags*/, NULL/*prefetch*/);
+#if defined(_OPENMP)
+#     pragma omp atomic
+#endif
       tdisp += libxsmm_timer_diff(t0, libxsmm_timer_tick());
     }
 
 #if defined(_OPENMP)
-#   pragma omp parallel for num_threads(nthreads) default(none) private(i)
+#   pragma omp parallel for num_threads(nthreads) private(i)
 #endif
     for (i = 0; i < size; ++i) {
       const int j = 3 * i;
@@ -129,6 +132,9 @@ int main(int argc, char* argv[])
       libxsmm_dmmdispatch(r[j], r[j+1], r[j+2],
         NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
         NULL/*flags*/, NULL/*prefetch*/);
+#if defined(_OPENMP)
+#     pragma omp atomic
+#endif
       tcgen += libxsmm_timer_diff(t0, libxsmm_timer_tick());
     }
 
