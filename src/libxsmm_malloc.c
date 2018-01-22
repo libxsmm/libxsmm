@@ -664,8 +664,9 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
             FILE *const selinux = fopen("/sys/fs/selinux/enforce", "rb");
             int selinux_enforced = 0;
             if (0 != selinux) {
-              selinux_enforced = 1; /* conservative assumption in case of an error */
-              fread(&selinux_enforced, sizeof(int), 1/*count*/, selinux);
+              if (1 != fread(&selinux_enforced, sizeof(int), 1/*count*/, selinux)) {
+                selinux_enforced = 1; /* conservative assumption in case of an error */
+              }
               fclose(selinux);
             }
             fallback = ((0 == env || 0 == *env)
