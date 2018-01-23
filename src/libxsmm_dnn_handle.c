@@ -181,8 +181,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)
         && ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
       handle->ifmblock = (handle->desc.C >=16) ? 4 : (handle->desc.C/4);
-      handle->ofmblock = (handle->desc.K >=16) ? 4 : (handle->desc.K/4);
+      handle->ofmblock = (handle->desc.K >=16) ? 16 : (handle->desc.K/4);
       handle->fm_lp_block = 4;
+      handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
+      handle->ofmblock_lp = handle->ofmblock / handle->fm_lp_block;
       if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
         noarch = 1;
@@ -235,42 +237,18 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
 
     if (handle->use_lp_kernel == 1) {
-      if (handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block > 256) {
-        handle->blocksifm_blocking = 16;
-        while ( handle->desc.C%(handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block) != 0  ) {
-          handle->blocksifm_blocking--;
+      if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
+        /* Restrict acc chain for overflow handling only if combo is int16/int32  */
+        if (handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block > 256) {
+          handle->blocksifm_blocking = 16;
+          while ( handle->desc.C%(handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block) != 0  ) {
+            handle->blocksifm_blocking--;
+          }
         }
       }
     }
 
     /* Ditto for ofms in BWD  */
-#if 0
-    if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) ) {
-      if ( ((handle->ofmblock*handle->)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*512) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 512;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*256) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 256;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*128) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 128;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*64) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 64;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*32) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 32;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*16) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 16;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*8) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 8;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*4) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 4;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) && (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*2) == 0) && (handle->desc.R == 1) && (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 2;
-      } else {
-        handle->blocksofm_blocking = 1;
-      }
-    } else {
-      handle->blocksofm_blocking = 1;
-    }
-#else
     if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) ) {
       if ( ((handle->ofmblock)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*512) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 512;
@@ -296,17 +274,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     } else {
       handle->blocksofm_blocking = 1;
     }
-#endif
 
     if ( (handle->desc.C == 256 && handle->desc.K == 1024) || (handle->desc.C == 512 && handle->desc.K == 2048) ||  (handle->desc.C == 1024 && handle->desc.K == 2048) ) {
       handle->blocksofm_blocking = 8;
     }
 
     if (handle->use_lp_kernel == 1) {
-      if (handle->blocksofm_blocking * handle->ofmblock > 256) {
-        handle->blocksofm_blocking = 16;
-        while ( handle->desc.K%(handle->blocksofm_blocking * handle->ofmblock * handle->fm_lp_block) != 0  ) {
-          handle->blocksofm_blocking--;
+      if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
+        /* Restrict acc chain for overflow handling only if combo is int16/int32  */
+        if (handle->blocksofm_blocking * handle->ofmblock > 256) {
+          handle->blocksofm_blocking = 16;
+          while ( handle->desc.K%(handle->blocksofm_blocking * handle->ofmblock * handle->fm_lp_block) != 0  ) {
+            handle->blocksofm_blocking--;
+          }
         }
       }
     } 
