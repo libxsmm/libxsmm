@@ -32,11 +32,8 @@
 #include <libxsmm_generator.h>
 #include "generator_common.h"
 #include "generator_convolution_common.h"
-#include "generator_convolution_forward_avx2.h"
 #include "generator_convolution_forward_avx512.h"
-#include "generator_convolution_backward_avx2.h"
 #include "generator_convolution_backward_avx512.h"
-#include "generator_convolution_weight_update_avx2.h"
 #include "generator_convolution_weight_update_avx512.h"
 
 #include <stdlib.h>
@@ -59,8 +56,6 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
          (strcmp(i_arch, "skx") == 0) ||
          (strcmp(i_arch, "icl") == 0) ) {
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
-    } else if ( (strcmp(i_arch, "hsw") == 0) ) {
-      libxsmm_generator_convolution_forward_avx2_kernel( io_generated_code, i_conv_desc, i_arch );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
@@ -120,8 +115,6 @@ void libxsmm_generator_convolution_backward_kernel( libxsmm_generated_code*     
          (strcmp(i_arch, "skx") == 0) ||
          (strcmp(i_arch, "icl") == 0)   ) {
       libxsmm_generator_convolution_backward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
-    } else if ( (strcmp(i_arch, "hsw") == 0) ) {
-      libxsmm_generator_convolution_backward_avx2_kernel( io_generated_code, i_conv_desc, i_arch );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
@@ -151,14 +144,7 @@ void libxsmm_generator_convolution_weight_update_kernel( libxsmm_generated_code*
          (strcmp(i_arch, "knm") == 0) ||
          (strcmp(i_arch, "skx") == 0) ||
          (strcmp(i_arch, "icl") == 0)   ) {
-      if ( 0/*((i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0) ||*/
-           /*((i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0)*/ ) {
-        libxsmm_generator_convolution_weight_update_avx2_kernel( io_generated_code, i_conv_desc, i_arch );
-      } else {
-        libxsmm_generator_convolution_weight_update_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
-      }
-    } else if ( (strcmp(i_arch, "hsw") == 0) ) {
-      libxsmm_generator_convolution_weight_update_avx2_kernel( io_generated_code, i_conv_desc, i_arch );
+      libxsmm_generator_convolution_weight_update_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
