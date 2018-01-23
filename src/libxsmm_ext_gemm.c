@@ -239,7 +239,8 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
           LIBXSMM_GEMM_EXT_MMBATCH_PREFETCH))
         {
           const unsigned int max_batchsize = (unsigned int)((LIBXSMM_GEMM_BATCHSCALE) * libxsmm_gemm_batchsize);
-          const unsigned int max_size = (0 != internal_ext_gemm_batchsize ? (((internal_ext_gemm_batchsize - 1) % max_batchsize) + 1) : 0);
+          const unsigned int batchsize = LIBXSMM_ATOMIC_LOAD(&internal_ext_gemm_batchsize, LIBXSMM_ATOMIC_RELAXED);
+          const unsigned int max_size = (0 != batchsize ? (((batchsize - 1) % max_batchsize) + 1) : 0);
           libxsmm_gemm_batchitem* batcharray = libxsmm_gemm_batcharray;
           unsigned int size = max_size;
           if (libxsmm_gemm_batchsize < max_size) {
@@ -352,7 +353,8 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
           LIBXSMM_GEMM_EXT_MMBATCH_PREFETCH))
         {
           const unsigned int max_batchsize = (unsigned int)((LIBXSMM_GEMM_BATCHSCALE) * libxsmm_gemm_batchsize);
-          const unsigned int max_size = (0 != internal_ext_gemm_batchsize ? (((internal_ext_gemm_batchsize - 1) % max_batchsize) + 1) : 0);
+          const unsigned int batchsize = LIBXSMM_ATOMIC_LOAD(&internal_ext_gemm_batchsize, LIBXSMM_ATOMIC_RELAXED);
+          const unsigned int max_size = (0 != batchsize ? (((batchsize - 1) % max_batchsize) + 1) : 0);
           libxsmm_gemm_batchitem* batcharray = libxsmm_gemm_batcharray;
           unsigned int size = max_size;
           if (libxsmm_gemm_batchsize < max_size) {
@@ -723,6 +725,10 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
   const void* alpha, const void* beta)
 {
 #if defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD_EXT)
+# if defined(_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable: 26115) /* try-lock is treated incorrectly by static analysis */
+# endif
   LIBXSMM_INIT
   if (0 != libxsmm_gemm_batcharray /* batch-recording available, but not yet running */
     /* currently, batch recording is only enabled if all values are present (no complex filtering) */
@@ -772,6 +778,9 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
     }
     LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_DEFAULT, &libxsmm_gemm_batchlock);
   }
+# if defined(_MSC_VER)
+#   pragma warning(pop)
+# endif
 #else
   LIBXSMM_UNUSED(precision); LIBXSMM_UNUSED(flags);
   LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
@@ -784,6 +793,10 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precisi
 LIBXSMM_API_DEFINITION void libxsmm_mmbatch_end(void)
 {
 #if defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD_EXT)
+# if defined(_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable: 26115) /* try-lock is treated incorrectly by static analysis */
+# endif
   if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_DEFAULT) == LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_DEFAULT, &libxsmm_gemm_batchlock)) {
     const unsigned int max_batchsize = (unsigned int)((LIBXSMM_GEMM_BATCHSCALE) * libxsmm_gemm_batchsize);
     const libxsmm_gemm_descriptor flushdesc = libxsmm_gemm_batchdesc;
@@ -808,6 +821,9 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_end(void)
     }
     LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_DEFAULT, &libxsmm_gemm_batchlock);
   }
+# if defined(_MSC_VER)
+#   pragma warning(pop)
+# endif
 #endif
 }
 
