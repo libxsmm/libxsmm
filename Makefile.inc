@@ -1389,7 +1389,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
   $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL \
     $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE abslib soname extname objname,$V), \
     $V=$($V)?)))
-.state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(abspath .))
+.state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
 %/.make:
 	@mkdir -p $(basename $@)
