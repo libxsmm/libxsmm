@@ -172,30 +172,50 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
         }
       }
     } else {
-      int icb, okb, t1, t2, t3;
-      const __m512i permute_index = _mm512_set_epi32(15,13,11,9,7,5,3,1,14,12,10,8,6,4,2,0);
-      const  __m256i scatter_index = _mm256_set_epi32(7*32, 6*32, 5*32, 4*32,  3*32, 2*32, 1*32, 0*32);
-      for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-        icb = ifm1ofm1 / oKB;
-        okb = ifm1ofm1 % oKB;
-        for (kj=0; kj < handle->desc.R; kj++) {
-          for (ki=0; ki < handle->desc.S; ki++) {
-            for (t1 = 0; t1 < 8; t1++) {
-              __m512i cur_cache_line = _mm512_loadu_si512(&LIBXSMM_VLA_ACCESS(7, wt, okb, icb, kj, ki, t1, 0, 0, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block));
-              __m512i permuted_cache_line = _mm512_permutevar_epi32(permute_index, cur_cache_line);
-              __m256i lo_half = _mm512_extracti64x4_epi64(permuted_cache_line, 0);
-              __m256i hi_half = _mm512_extracti64x4_epi64(permuted_cache_line, 1);
-              __m256i lo_zipped = _mm256_unpacklo_epi16(lo_half, hi_half);
-              __m256i hi_zipped = _mm256_unpackhi_epi16(lo_half, hi_half);
-              __m128i part0 = _mm256_extractf128_si256(lo_zipped,0);
-              __m128i part2 = _mm256_extractf128_si256(lo_zipped,1);
-              __m128i part1 = _mm256_extractf128_si256(hi_zipped,0);
-              __m128i part3 =  _mm256_extractf128_si256(hi_zipped,1);
-              __m512i compact = _mm512_inserti32x4 (compact, part0, 0);
-              compact = _mm512_inserti32x4 (compact, part1, 1);
-              compact = _mm512_inserti32x4 (compact, part2, 2);
-              compact = _mm512_inserti32x4 (compact, part3, 3);
-              _mm512_i32scatter_epi64(&LIBXSMM_VLA_ACCESS(7, tr_wt2, icb, okb, handle->desc.R-1-kj , handle->desc.S-1-ki, 0, 2*t1, 0, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block) , scatter_index, compact, 2);
+      if  (( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)) && ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0))  {
+        for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+          ifm1 = ifm1ofm1 / oKB;
+          ofm1 = ifm1ofm1 % oKB;
+          int fm_lp_ind;
+          for (kj=0; kj < handle->desc.R; kj++) {
+            for (ki=0; ki < handle->desc.S; ki++) {
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+                for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+                  for (fm_lp_ind = 0; fm_lp_ind < handle->fm_lp_block; fm_lp_ind++) {
+                    LIBXSMM_VLA_ACCESS(7, tr_wt2, ifm1, ofm1, handle->desc.R-1-kj , handle->desc.S-1-ki, ofm2/handle->fm_lp_block, ifm2*handle->fm_lp_block+fm_lp_ind, ofm2%handle->fm_lp_block, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block) =
+                      LIBXSMM_VLA_ACCESS(7, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, fm_lp_ind, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else {
+        int icb, okb, t1, t2, t3;
+        const __m512i permute_index = _mm512_set_epi32(15,13,11,9,7,5,3,1,14,12,10,8,6,4,2,0);
+        const  __m256i scatter_index = _mm256_set_epi32(7*32, 6*32, 5*32, 4*32,  3*32, 2*32, 1*32, 0*32);
+        for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+          icb = ifm1ofm1 / oKB;
+          okb = ifm1ofm1 % oKB;
+          for (kj=0; kj < handle->desc.R; kj++) {
+            for (ki=0; ki < handle->desc.S; ki++) {
+              for (t1 = 0; t1 < 8; t1++) {
+                __m512i cur_cache_line = _mm512_loadu_si512(&LIBXSMM_VLA_ACCESS(7, wt, okb, icb, kj, ki, t1, 0, 0, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block));
+                __m512i permuted_cache_line = _mm512_permutevar_epi32(permute_index, cur_cache_line);
+                __m256i lo_half = _mm512_extracti64x4_epi64(permuted_cache_line, 0);
+                __m256i hi_half = _mm512_extracti64x4_epi64(permuted_cache_line, 1);
+                __m256i lo_zipped = _mm256_unpacklo_epi16(lo_half, hi_half);
+                __m256i hi_zipped = _mm256_unpackhi_epi16(lo_half, hi_half);
+                __m128i part0 = _mm256_extractf128_si256(lo_zipped,0);
+                __m128i part2 = _mm256_extractf128_si256(lo_zipped,1);
+                __m128i part1 = _mm256_extractf128_si256(hi_zipped,0);
+                __m128i part3 =  _mm256_extractf128_si256(hi_zipped,1);
+                __m512i compact = _mm512_inserti32x4 (compact, part0, 0);
+                compact = _mm512_inserti32x4 (compact, part1, 1);
+                compact = _mm512_inserti32x4 (compact, part2, 2);
+                compact = _mm512_inserti32x4 (compact, part3, 3);
+                _mm512_i32scatter_epi64(&LIBXSMM_VLA_ACCESS(7, tr_wt2, icb, okb, handle->desc.R-1-kj , handle->desc.S-1-ki, 0, 2*t1, 0, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block) , scatter_index, compact, 2);
+              }
             }
           }
         }

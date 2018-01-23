@@ -1231,7 +1231,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
       unsigned int reg_X;
       unsigned int store_offset;
 
-      if ( use_lp_kernel == 1 ) {
+      if ( use_lp_kernel == 1 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
         libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
         unsigned int rsp_offset;
         /* Scale factor offset in rsp */
