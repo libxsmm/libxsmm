@@ -398,7 +398,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
       for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
         for ( l_k = 0; l_k < l_reg_per_block; l_k++ ) {
 
-          if ((i_conv_desc->use_nts == 0) && (use_lp_kernel == 0)) {
+          if ((i_conv_desc->use_nts == 0) && (use_lp_kernel == 0 || (i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32))) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                               i_conv_kernel_config->instruction_set,
                                               i_conv_kernel_config->vmove_instruction,

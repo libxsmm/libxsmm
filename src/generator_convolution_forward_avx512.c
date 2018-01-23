@@ -1068,7 +1068,45 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
                   0,
                   i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb) );
             }
-          } else {
+          } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32
+              && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
+          /* broadcast in quadruples of 8 bit values */
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              i_conv_kernel_config->vbcst_instruction,
+              l_input_reg,
+              l_input_idx, l_scale,
+              l_disp,
+              i_conv_kernel_config->vector_name,
+              1, 0, 0 );
+
+          /* 8/16bit integer MADD with horizontal add */
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              i_conv_kernel_config->vfma_instruction,
+              i_conv_kernel_config->vector_name,
+              0,
+              1,
+              2 );
+
+          /* 16/32bit integer MADD with horizontal add */
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VPMADDWD,
+              i_conv_kernel_config->vector_name,
+              2,
+              3,
+              2 );
+
+          /* 32bit integer accumulation without saturation into running result buffer */
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              i_conv_kernel_config->vadd_instruction,
+              i_conv_kernel_config->vector_name,
+              2,
+              i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb),
+              i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_conv_desc->ofh_rb) + l_n + (l_m*i_conv_desc->ofw_rb) );
+        } else {
             /* shouldn't happen */
           }
         } else {
@@ -1318,6 +1356,44 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
                   0,
                   i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_x_rows) + l_n + (l_m*i_conv_desc->ofw_rb) );
             }
+          } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32
+                && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
+            /* broadcast in quadruples of 8 bit values */
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_conv_kernel_config->instruction_set,
+                i_conv_kernel_config->vbcst_instruction,
+                l_input_reg,
+                l_input_idx, l_scale,
+                l_disp,
+                i_conv_kernel_config->vector_name,
+                1, 0, 0 );
+
+            /* 8/16bit integer MADD with horizontal add */
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                i_conv_kernel_config->instruction_set,
+                i_conv_kernel_config->vfma_instruction,
+                i_conv_kernel_config->vector_name,
+                0,
+                1,
+                2 );
+
+            /* 16/32bit integer MADD with horizontal add */
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                i_conv_kernel_config->instruction_set,
+                LIBXSMM_X86_INSTR_VPMADDWD,
+                i_conv_kernel_config->vector_name,
+                2,
+                3,
+                2 );
+
+            /* 32bit integer accumulation without saturation into running result buffer */
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                i_conv_kernel_config->instruction_set,
+                i_conv_kernel_config->vadd_instruction,
+                i_conv_kernel_config->vector_name,
+                2,
+                i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_x_rows) + l_n + (l_m*i_conv_desc->ofw_rb),
+                i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*i_x_rows) + l_n + (l_m*i_conv_desc->ofw_rb) );
           } else {
             /* shouldn't happen */
           }
