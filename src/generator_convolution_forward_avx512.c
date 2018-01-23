@@ -1249,8 +1249,8 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
   unsigned int l_n;
   unsigned int l_k;
   unsigned int l_input_reg;
-  unsigned int l_input_idx;
-  unsigned int l_scale;
+  unsigned int l_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
+  unsigned int l_scale = 0;
   unsigned int l_disp;
   unsigned int l_displacement_k = 0;
   unsigned int l_k_updates = 0;
