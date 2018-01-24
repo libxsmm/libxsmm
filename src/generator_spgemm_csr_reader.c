@@ -60,6 +60,7 @@ void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
 
   while (fgets(l_line, l_line_length, l_csr_file_handle) != NULL) {
     if ( strlen(l_line) == l_line_length ) {
+      free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_row_idx_id);
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSR_READ_LEN );
       return;
     }
@@ -110,6 +111,7 @@ void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
         double l_value = 0;
         /* read a line of content */
         if ( sscanf(l_line, "%u %u %lf", &l_row, &l_column, &l_value) != 3 ) {
+          free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_row_idx_id);
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSR_READ_ELEMS );
           return;
         }
