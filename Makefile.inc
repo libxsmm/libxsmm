@@ -892,6 +892,8 @@ else # GCC assumed
   endif
   ifeq (Windows_NT,$(UNAME))
     LDFLAGS += $(XLIB_BEGIN) -ldbghelp $(XLIB_END)
+  else ifeq (FreeBSD,$(UNAME))
+    LDFLAGS += $(XLIB_BEGIN) -lexecinfo $(XLIB_END)
   endif
   ifneq (0,$(SYM))
     ifeq (1,$(SYM))
