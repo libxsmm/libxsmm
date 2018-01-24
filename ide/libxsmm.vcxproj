@@ -206,6 +206,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>libxsmm</ProjectName>
     <ProjectGuid>{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}</ProjectGuid>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">
@@ -337,7 +338,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(MKLROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -379,7 +380,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(MKLROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <ProjectReference />
@@ -423,7 +424,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
     <ProjectReference />
@@ -466,7 +467,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <ProjectReference />
@@ -502,7 +503,7 @@
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(MKLROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
     <ProjectReference />
@@ -540,7 +541,7 @@
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
     <ProjectReference />
