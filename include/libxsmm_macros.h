@@ -505,6 +505,10 @@
 #     define __STATIC
 #   endif
 # endif
+#else
+# if !defined(__STDC_FORMAT_MACROS)
+#   define __STDC_FORMAT_MACROS
+# endif
 #endif
 #if defined(__GNUC__)
 # if !defined(_GNU_SOURCE)
