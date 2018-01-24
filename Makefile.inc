@@ -135,11 +135,14 @@ FLOCK = $(DEPDIR)/.flock.sh
 SYM ?= 0
 DBG ?= 0
 
-# Threading runtime
-OMP ?= 0
-
 # THREADS refers to foundational TRT (and not necessarily Posix Threads)
 THREADS ?= 1
+
+# Threading runtime
+ifeq (0,$(THREADS))
+  override OMP = 0
+endif
+OMP ?= 0
 
 # SIMD code generation
 SIMD ?= 1
@@ -1220,7 +1223,10 @@ ifeq (1,$(MKL)) # sequential
       --end-group"
     endif
   endif
-  BLAS_LDFLAGS += -lpthread -lm $(LIBDL)
+  ifneq (0,$(THREADS))
+    BLAS_LDFLAGS += -lm $(LIBDL)
+  endif
+  BLAS_LDFLAGS += -lm $(LIBDL)
   ifneq (0,$(OFFLOAD))
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
   endif
@@ -1261,7 +1267,10 @@ else ifneq (0,$(MKL)) # multi-threaded
   ifeq (0,$(OMP))
     BLAS_LDFLAGS += $(OMPLIB)
   endif
-  BLAS_LDFLAGS += -lpthread -lm $(LIBDL)
+  ifneq (0,$(THREADS))
+    BLAS_LDFLAGS += -lpthread
+  endif
+  BLAS_LDFLAGS += -lm $(LIBDL)
   ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
