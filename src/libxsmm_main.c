@@ -85,7 +85,7 @@
   HASH = libxsmm_crc32(DESCRIPTOR, LIBXSMM_GEMM_DESCRIPTOR_SIZE, 25071975/*seed*/); \
   INDX = LIBXSMM_HASH_MOD(HASH, LIBXSMM_CAPACITY_REGISTRY)
 
-typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   unsigned int ntry, ncol, njit, nsta;
 } internal_statistic_type;
 
@@ -159,12 +159,12 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 # endif
 # if (0 < INTERNAL_REGLOCK_MAXN)
 #   if LIBXSMM_LOCK_TYPE_ISPOD(LIBXSMM_REGLOCK)
-typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
   char pad[LIBXSMM_CACHELINE];
   LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK) state;
 } internal_reglocktype;
 #   else
-typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
   LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK) state;
 } internal_reglocktype;
 #   endif

@@ -50,12 +50,12 @@
 #endif
 
 
-typedef union LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
   char pad[LIBXSMM_CACHELINE];
   volatile char state;
 } libxsmm_bgemm_lock;
 
-struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
   union { double d; float s; int w; } alpha, beta;
   libxsmm_xmmfunction kernel_pf;
   libxsmm_xmmfunction kernel;

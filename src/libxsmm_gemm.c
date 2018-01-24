@@ -62,13 +62,13 @@
 #   define LIBXSMM_GEMM_LOCKFWD
 # endif
 # if LIBXSMM_LOCK_TYPE_ISPOD(LIBXSMM_GEMM_LOCK)
-typedef union LIBXSMM_RETARGETABLE internal_gemm_locktype {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_gemm_locktype {
   char pad[LIBXSMM_CACHELINE];
   LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) state;
 } internal_gemm_locktype;
 
 # else
-typedef union LIBXSMM_RETARGETABLE internal_gemm_locktype {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_gemm_locktype {
   LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) state;
 } internal_gemm_locktype;
 # endif

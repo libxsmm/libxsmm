@@ -80,7 +80,7 @@
  * This structure must be ordered by the size of the members (packed).
  * The size of the structure matches LIBXSMM_GEMM_DESCRIPTOR_SIZE.
  */
-typedef struct libxsmm_gemm_descriptor {
+LIBXSMM_EXTERN_C typedef struct libxsmm_gemm_descriptor {
   /** Leading dimensions are general offsets. */
   unsigned int lda, ldb, ldc;
   /** Extents of the matrix. */
@@ -104,7 +104,7 @@ typedef enum libxsmm_matcopy_flags {
 } libxsmm_matcopy_flags;
 
 /** Structure storing the matcopy argument description. */
-typedef struct libxsmm_matcopy_descriptor { /* 20 Byte */
+LIBXSMM_EXTERN_C typedef struct libxsmm_matcopy_descriptor { /* 20 Byte */
   /** M, N, and LDx I/O */
   unsigned int m, n, ldi, ldo;
   /** Size of an individual data element */
@@ -118,7 +118,7 @@ typedef struct libxsmm_matcopy_descriptor { /* 20 Byte */
 } libxsmm_matcopy_descriptor;
 
 /** Structure storing the transpose argument description. */
-typedef struct libxsmm_transpose_descriptor { /* 13 Byte */
+LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_descriptor { /* 13 Byte */
   /** M, N, and LDO */
   unsigned int m, n, ldo;
   /** Size of an individual data element */
@@ -126,7 +126,7 @@ typedef struct libxsmm_transpose_descriptor { /* 13 Byte */
 } libxsmm_transpose_descriptor;
 
 /** Structure referring to the generated code with some attached information. */
-typedef struct libxsmm_generated_code {
+LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
   void* generated_code;       /** pointer to memory which can contain strings or binary code */
   unsigned int buffer_size;   /** total size if the buffer generated_code */
   unsigned int code_size;     /** size of bytes used in generated_code */

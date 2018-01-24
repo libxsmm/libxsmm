@@ -63,10 +63,10 @@
 
 
 /** Function type representing the gemm_diff functionality. */
-typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diff_function)(
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diff_function)(
   const libxsmm_gemm_descriptor*, const libxsmm_gemm_descriptor*);
 /** Function type representing the gemm_diffn functionality. */
-typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diffn_function)(
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_gemm_diffn_function)(
   const libxsmm_gemm_descriptor*, const void*, unsigned int, unsigned int, int);
 
 

@@ -464,7 +464,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(__wrap_dgemm)(
 LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, float);
 LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, double);
 
-typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
   struct {
     const void *a, *b;
     void *c;
@@ -491,7 +491,7 @@ LIBXSMM_API int libxsmm_smmbatch_blas(const char* transa, const char* transb, li
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-typedef void (*libxsmm_mmbatch_flush_function)(void);
+LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
 
 /** Configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_API_VARIABLE(/*const*/ unsigned int (*libxsmm_gemm_tile)[3/*M,N,K*/][8/*size-range*/]);

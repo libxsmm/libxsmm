@@ -77,11 +77,11 @@
 LIBXSMM_EXTERN unsigned int iJIT_GetNewMethodID(void);
 LIBXSMM_EXTERN /*iJIT_IsProfilingActiveFlags*/int iJIT_IsProfilingActive(void);
 LIBXSMM_EXTERN int iJIT_NotifyEvent(/*iJIT_JVM_EVENT*/int event_type, void *EventSpecificData);
-typedef struct LineNumberInfo {
+LIBXSMM_EXTERN_C typedef struct LineNumberInfo {
   unsigned int Offset;
   unsigned int LineNumber;
 } LineNumberInfo;
-typedef struct iJIT_Method_Load_V2 {
+LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
   unsigned int method_id;
   char* method_name;
   void* method_load_address;
@@ -155,7 +155,7 @@ typedef struct iJIT_Method_Load_V2 {
 #endif
 
 
-typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
   libxsmm_free_function free;
   void *context, *pointer, *reloc;
   size_t size;
@@ -168,7 +168,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
 #endif
 } internal_malloc_info_type;
 
-typedef union LIBXSMM_RETARGETABLE internal_malloc_pool_type {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_malloc_pool_type {
   char pad[LIBXSMM_CACHELINE];
   struct {
     char *buffer, *head;

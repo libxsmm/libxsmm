@@ -64,7 +64,7 @@
 #endif
 
 
-typedef struct LIBXSMM_RETARGETABLE internal_sync_core_tag { /* per-core */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_sync_core_tag { /* per-core */
   uint8_t id;
   volatile uint8_t core_sense;
   volatile uint8_t* thread_senses;
@@ -74,7 +74,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_sync_core_tag { /* per-core */
   uint8_t sense;
 } internal_sync_core_tag;
 
-typedef struct LIBXSMM_RETARGETABLE internal_sync_thread_tag { /* per-thread */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_sync_thread_tag { /* per-thread */
   int core_tid;
   internal_sync_core_tag *core;
 } internal_sync_thread_tag;
@@ -539,7 +539,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_release(libxsmm_mutex* mutex)
 
 
 #if !defined(LIBXSMM_NO_SYNC) && !(defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM))
-typedef union LIBXSMM_RETARGETABLE internal_sync_counter {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_sync_counter {
   struct {
     uint16_t writer;
     uint16_t reader;
@@ -549,7 +549,7 @@ typedef union LIBXSMM_RETARGETABLE internal_sync_counter {
 #endif
 
 
-struct LIBXSMM_RETARGETABLE libxsmm_rwlock {
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_rwlock {
 #if !defined(LIBXSMM_NO_SYNC)
 # if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_RWLOCK) impl;

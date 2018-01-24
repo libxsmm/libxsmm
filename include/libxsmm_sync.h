@@ -539,7 +539,7 @@
 
 
 /** Opaque type which represents a barrier. */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_barrier libxsmm_barrier;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_barrier libxsmm_barrier;
 
 /** Create barrier from one of the threads. */
 LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per_core);
@@ -553,7 +553,7 @@ LIBXSMM_API void libxsmm_barrier_destroy(const libxsmm_barrier* barrier);
 #define libxsmm_barrier_release libxsmm_barrier_destroy
 
 /** Spin-lock, which eventually differs from LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_SPINLOCK). */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_spinlock libxsmm_spinlock;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_spinlock libxsmm_spinlock;
 LIBXSMM_API libxsmm_spinlock* libxsmm_spinlock_create(void);
 LIBXSMM_API void libxsmm_spinlock_destroy(const libxsmm_spinlock* spinlock);
 LIBXSMM_API int libxsmm_spinlock_trylock(libxsmm_spinlock* spinlock);
@@ -561,7 +561,7 @@ LIBXSMM_API void libxsmm_spinlock_acquire(libxsmm_spinlock* spinlock);
 LIBXSMM_API void libxsmm_spinlock_release(libxsmm_spinlock* spinlock);
 
 /** Mutual-exclusive lock (Mutex), which eventually differs from LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_MUTEX). */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_mutex libxsmm_mutex;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mutex libxsmm_mutex;
 LIBXSMM_API libxsmm_mutex* libxsmm_mutex_create(void);
 LIBXSMM_API void libxsmm_mutex_destroy(const libxsmm_mutex* mutex);
 LIBXSMM_API int libxsmm_mutex_trylock(libxsmm_mutex* mutex);
@@ -569,7 +569,7 @@ LIBXSMM_API void libxsmm_mutex_acquire(libxsmm_mutex* mutex);
 LIBXSMM_API void libxsmm_mutex_release(libxsmm_mutex* mutex);
 
 /** Reader-Writer lock (RW-lock), which eventually differs from LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_RWLOCK). */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_rwlock libxsmm_rwlock;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_rwlock libxsmm_rwlock;
 LIBXSMM_API libxsmm_rwlock* libxsmm_rwlock_create(void);
 LIBXSMM_API void libxsmm_rwlock_destroy(const libxsmm_rwlock* rwlock);
 LIBXSMM_API int libxsmm_rwlock_trylock(libxsmm_rwlock* rwlock);

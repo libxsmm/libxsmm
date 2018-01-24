@@ -95,7 +95,7 @@
 # define LIBXSMM_INIT
 #endif
 
-typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   void (*ptr_fn)(LIBXSMM_VARIADIC);
   const void* ptr_const;
   void* pmm;
@@ -109,21 +109,21 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
 #endif
 } libxsmm_code_pointer;
 
-typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
   const unsigned int* column_idx;
   const void* values;
 } libxsmm_csr_soa_descriptor;
 
-typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csc_soa_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csc_soa_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* column_ptr;
   const unsigned int* row_idx;
   const void* values;
 } libxsmm_csc_soa_descriptor;
 
-typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
   const unsigned int* column_idx;
@@ -131,20 +131,20 @@ typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor
 } libxsmm_csr_reg_descriptor;
 
 /** Structure which describes all tensors in LIBXSMM's DNN module */
-struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor {
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor {
   libxsmm_dnn_tensor_datalayout* layout;           /* data-layout descriptor */
   void* data;                                      /* pointer to data */
   char exp;                                        /* fix point exponent for this tensor */
 };
 
 /* Structure to record segment in stream of code  */
-typedef struct LIBXSMM_RETARGETABLE segment_t {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE segment_t {
   int segment_type;
   int n_convs;
   int aux_index;
 } segment_t;
 
-struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_datatype datatype;
   libxsmm_dnn_datatype datatype_itm;
   libxsmm_dnn_conv_desc desc;
@@ -319,7 +319,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_TRANS
 } libxsmm_build_kind;
 
-typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const libxsmm_csr_soa_descriptor* srsoa;
   const libxsmm_csc_soa_descriptor* scsoa;
@@ -332,7 +332,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_transpose_descriptor* trans;
 } libxsmm_build_descriptor;
 
-typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
   libxsmm_build_descriptor descriptor;
   libxsmm_build_kind kind;
 } libxsmm_build_request;
@@ -393,7 +393,7 @@ LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
-typedef union LIBXSMM_RETARGETABLE libxsmm_kernel_info {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_kernel_info {
   libxsmm_gemm_descriptor xgemm;
   libxsmm_matcopy_descriptor mcopy;
   libxsmm_transpose_descriptor trans;
