@@ -188,9 +188,10 @@ typedef union LIBXSMM_RETARGETABLE internal_malloc_pool_type {
 /** Scratch pool, which supports up to MAX_NSCRATCH allocation sites. */
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
 /* LIBXSMM_ALIGNED appears to contradict LIBXSMM_API_VARIABLE, and causes multiple defined symbols (if below is seen in multiple translation units) */
-LIBXSMM_API_VARIABLE char internal_malloc_pool_buffer[(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)*sizeof(internal_malloc_pool_type)+(LIBXSMM_CACHELINE)-1];
+LIBXSMM_API_VARIABLE(char internal_malloc_pool_buffer[(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)*sizeof(internal_malloc_pool_type)+(LIBXSMM_CACHELINE)-1]);
 #endif
-LIBXSMM_API_VARIABLE size_t internal_malloc_scratch_size, internal_malloc_scratch_nmallocs;
+LIBXSMM_API_VARIABLE(size_t internal_malloc_scratch_nmallocs);
+LIBXSMM_API_VARIABLE(size_t internal_malloc_scratch_size);
 
 
 LIBXSMM_API_DEFINITION size_t libxsmm_gcd(size_t a, size_t b)

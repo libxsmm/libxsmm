@@ -50,13 +50,13 @@
 
 
 /* function pointer for the CPUID-dispatched implementation */
-LIBXSMM_API_VARIABLE void (*internal_fwd_input_transform_custom_custom_alpha6)(const float*, float*, float*, const libxsmm_dnn_layer*);
-LIBXSMM_API_VARIABLE void (*internal_fwd_input_transform_nhwc_custom_alpha6)(const float*, float*, float*, const libxsmm_dnn_layer*);
-LIBXSMM_API_VARIABLE void (*internal_fwd_weight_transform_alpha6)(float*, float*, const libxsmm_dnn_layer*);
-LIBXSMM_API_VARIABLE void (*internal_fwd_output_transform_custom_custom_alpha6)(float*, float*, float*, float[][16], const libxsmm_dnn_layer*);
-LIBXSMM_API_VARIABLE void (*internal_fwd_output_transform_nhwc_custom_alpha6)(float*, float*, float*, float[][16], const libxsmm_dnn_layer*);
-LIBXSMM_API_VARIABLE void (*internal_dnn_convolve_winograd_st_fwd_custom_custom_alpha6)(libxsmm_dnn_layer*, int, int);
-LIBXSMM_API_VARIABLE void (*internal_dnn_convolve_winograd_st_fwd_nhwc_custom_alpha6)(libxsmm_dnn_layer*, int, int);
+LIBXSMM_API_VARIABLE(void (*internal_fwd_input_transform_custom_custom_alpha6)(const float*, float*, float*, const libxsmm_dnn_layer*));
+LIBXSMM_API_VARIABLE(void (*internal_fwd_input_transform_nhwc_custom_alpha6)(const float*, float*, float*, const libxsmm_dnn_layer*));
+LIBXSMM_API_VARIABLE(void (*internal_fwd_weight_transform_alpha6)(float*, float*, const libxsmm_dnn_layer*));
+LIBXSMM_API_VARIABLE(void (*internal_fwd_output_transform_custom_custom_alpha6)(float*, float*, float*, float[][16], const libxsmm_dnn_layer*));
+LIBXSMM_API_VARIABLE(void (*internal_fwd_output_transform_nhwc_custom_alpha6)(float*, float*, float*, float[][16], const libxsmm_dnn_layer*));
+LIBXSMM_API_VARIABLE(void (*internal_dnn_convolve_winograd_st_fwd_custom_custom_alpha6)(libxsmm_dnn_layer*, int, int));
+LIBXSMM_API_VARIABLE(void (*internal_dnn_convolve_winograd_st_fwd_nhwc_custom_alpha6)(libxsmm_dnn_layer*, int, int));
 
 
 LIBXSMM_API_INLINE void internal_fwd_input_transform_custom_custom_alpha6_default(
