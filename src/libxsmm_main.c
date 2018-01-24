@@ -62,10 +62,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-/* LIBXSMM_CAPACITY_REGISTRY is POT */
-/*#define LIBXSMM_HASH_MOD(N, NGEN) ((N) % (NGEN))*/
-#define LIBXSMM_HASH_MOD(N, NPOT) LIBXSMM_MOD2(N, NPOT)
-
 #if !defined(LIBXSMM_CAPACITY_CACHE)
 # define LIBXSMM_CAPACITY_CACHE 4
 #endif
@@ -74,16 +70,22 @@
 # define LIBXSMM_CODE_MAXSIZE 131072
 #endif
 
+#if !defined(LIBXSMM_HASH_SEED)
+# define LIBXSMM_HASH_SEED 25071975
+#endif
+
+#if 0
+# define LIBXSMM_HASH_MOD(N, NGEN) ((N) % (NGEN))
+#else /* LIBXSMM_CAPACITY_REGISTRY is POT */
+# define LIBXSMM_HASH_MOD(N, NPOT) LIBXSMM_MOD2(N, NPOT)
+#endif
+
 /* flag fused into the memory address of a code version in case of non-JIT */
 #define LIBXSMM_CODE_STATIC (1ULL << (8 * sizeof(void*) - 1))
 /* flag fused into the memory address of a code version in case of collision */
 #if 0 /* disabled due to no performance advantage */
 # define LIBXSMM_HASH_COLLISION (1ULL << (8 * sizeof(void*) - 2))
 #endif
-
-#define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, DESCRIPTOR) \
-  HASH = libxsmm_crc32(DESCRIPTOR, LIBXSMM_GEMM_DESCRIPTOR_SIZE, 25071975/*seed*/); \
-  INDX = LIBXSMM_HASH_MOD(HASH, LIBXSMM_CAPACITY_REGISTRY)
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   unsigned int ntry, ncol, njit, nsta;
@@ -1490,8 +1492,10 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 #endif
   {
     assert(0 != internal_registry);
-    /* check if the requested xGEMM is already JITted */
-    LIBXSMM_HASH_FUNCTION_CALL(hash, i = i0, descriptor);
+    /* calculate registry location (and check if the requested code is already JITted) */
+    hash = libxsmm_crc32(descriptor, LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);
+    i = i0 = LIBXSMM_HASH_MOD(hash, LIBXSMM_CAPACITY_REGISTRY);
+
     while (0 != diff) {
 #if (0 < INTERNAL_REGLOCK_MAXN) || defined(LIBXSMM_NO_SYNC) /* read registered code */
       flux_entry.pmm = (void*)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(&internal_registry[i].pmm, LIBXSMM_ATOMIC_RELAXED);
