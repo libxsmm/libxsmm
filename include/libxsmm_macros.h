@@ -506,14 +506,14 @@
 #   endif
 # endif
 #else
-# if !defined(__STDC_FORMAT_MACROS)
-#   define __STDC_FORMAT_MACROS
-# endif
 #endif
 #if defined(__GNUC__)
 # if !defined(_GNU_SOURCE)
 #   define _GNU_SOURCE
 # endif
+#endif
+#if !defined(__STDC_FORMAT_MACROS)
+# define __STDC_FORMAT_MACROS
 #endif
 #if defined(__clang__) && !defined(__extern_always_inline)
 # define __extern_always_inline LIBXSMM_INLINE
