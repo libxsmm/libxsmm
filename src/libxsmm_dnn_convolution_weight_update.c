@@ -278,7 +278,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
 
               element_output_type *addr =  &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, handle->ofwp-1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
               element_output_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-              __m256i half_cl =  _mm256_loadu_si256(addr);
+              __m256i half_cl =  _mm256_loadu_si256((const union __m256i *)addr);
               __m256i zero_pixel =  _mm256_xor_si256(zero_pixel, zero_pixel);
               __m512i cl  =  _mm512_inserti64x4(cl, half_cl, 0);
               cl = _mm512_inserti64x4(cl, zero_pixel, 1);
@@ -532,7 +532,7 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
 
               element_output_type *addr =  &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, handle->ofwp-1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
               element_output_type *dst_addr =  &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-              __m256i half_cl =  _mm256_loadu_si256(addr);
+              __m256i half_cl =  _mm256_loadu_si256((const union __m256i *)addr);
               __m256i zero_pixel =  _mm256_xor_si256(zero_pixel, zero_pixel);
               __m512i cl  =  _mm512_inserti64x4(cl, half_cl, 0);
               cl = _mm512_inserti64x4(cl, zero_pixel, 1);

@@ -434,3 +434,7 @@ if (handle->reduce_weights) {
   }
 }
 libxsmm_barrier_wait(handle->barrier, ltid);
+
+#undef WEIGHT_INIT
+#undef UPDATE_KERNEL
+#undef WEIGHT_COPY

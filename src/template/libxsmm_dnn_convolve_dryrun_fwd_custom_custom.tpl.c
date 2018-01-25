@@ -707,3 +707,15 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   total_calls = local_entries/3;
 
 }
+
+#undef IMG_LOOP_INIT
+#undef OFM_LOOP_INIT
+#undef OFM_LOOP_CLOSE
+#undef CONVOLUTION_KERNEL
+#undef IFM_LOOP_CLOSE_S
+#undef MIXED
+#undef KHWC
+#undef HWKC
+#undef CHWK
+#undef HWCK
+

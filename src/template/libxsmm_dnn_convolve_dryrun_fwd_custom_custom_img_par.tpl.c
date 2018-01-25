@@ -28,6 +28,17 @@
  ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
  ******************************************************************************/
+#define IMG_LOOP_INIT 0
+#define OFM_LOOP_INIT 1
+#define OFM_LOOP_CLOSE 2
+#define CONVOLUTION_KERNEL 3
+#define IFM_LOOP_CLOSE_S 4
+
+#define MIXED 0
+#define KHWC 1
+#define HWKC 2
+#define CHWK 3
+#define HWCK 4
 
 int block_j = 14;
 int blockifm = 8;
@@ -300,3 +311,14 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     }
   }
 }
+
+#undef IMG_LOOP_INIT
+#undef OFM_LOOP_INIT
+#undef OFM_LOOP_CLOSE
+#undef CONVOLUTION_KERNEL
+#undef IFM_LOOP_CLOSE_S
+#undef MIXED
+#undef KHWC
+#undef HWKC
+#undef CHWK
+#undef HWCK

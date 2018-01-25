@@ -331,3 +331,9 @@ if (handle->upd_use_external_reduce == 0) {
   }
 }
 libxsmm_barrier_wait(handle->barrier, ltid);
+
+#undef WEIGHT_INIT
+#undef UPDATE_KERNEL
+#undef WEIGHT_COPY
+#undef TRANSPOSE_EXEC
+#undef LIBXSMM_UPD_STREAMS_TRANSPOSE_IFMB_SHIFT

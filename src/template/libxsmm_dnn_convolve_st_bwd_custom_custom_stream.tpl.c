@@ -192,3 +192,8 @@ if (handle->datatype_in != handle->datatype_out) {
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
+
+#undef IMG_LOOP_INIT
+#undef IFM_LOOP_INIT
+#undef IFM_LOOP_CLOSE
+#undef CONVOLUTION_KERNEL

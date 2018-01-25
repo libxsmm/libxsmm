@@ -363,3 +363,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   }
 }
 
+#undef IMG_LOOP_INIT
+#undef IFM_LOOP_INIT
+#undef IFM_LOOP_CLOSE
+#undef CONVOLUTION_KERNEL
+#undef MIXED
+#undef HWKC

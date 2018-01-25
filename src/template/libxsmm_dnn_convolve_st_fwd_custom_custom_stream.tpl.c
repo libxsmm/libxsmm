@@ -547,3 +547,10 @@ if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
+#undef IMG_LOOP_INIT
+#undef OFM_LOOP_INIT
+#undef OFM_LOOP_CLOSE
+#undef CONVOLUTION_KERNEL
+#undef IFM_LOOP_CLOSE_S
+#undef FP64_BN_STATS
+
