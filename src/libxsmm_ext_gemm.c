@@ -44,9 +44,9 @@
 # if !defined(LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH)
 #   define LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH 8/*POT*/
 # endif
-LIBXSMM_API_VARIABLE(libxsmm_gemm_descriptor internal_ext_gemm_batchdesc[LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH]);
-LIBXSMM_API_VARIABLE(unsigned int internal_ext_gemm_batchdepth);
-LIBXSMM_API_VARIABLE(unsigned int internal_ext_gemm_batchsize);
+LIBXSMM_API_VARIABLE_EXT(libxsmm_gemm_descriptor internal_ext_gemm_batchdesc[LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH]);
+LIBXSMM_API_VARIABLE_EXT(unsigned int internal_ext_gemm_batchdepth);
+LIBXSMM_API_VARIABLE_EXT(unsigned int internal_ext_gemm_batchsize);
 #endif
 
 
