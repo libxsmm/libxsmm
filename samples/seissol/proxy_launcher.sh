@@ -145,9 +145,9 @@ if [ "${GENCODE}" == '1' ]; then
   cd ${SEISSOL_KERNELS_ROOT}/preprocessing
   rm -rf generated_code/*
   if [ "${CONF}" == 'default' ]; then
-    python scripts/offlineAssembly.py --generateMatrixKernels ./matrices ./${SEISSOL_KERNELS_CONFIG} ${LIBXSMM_ROOT}/bin/libxsmm_gemm_generator ./generated_code > /dev/null
+    python scripts/offlineAssembly.py --generateMatrixKernels ./matrices ./${SEISSOL_KERNELS_CONFIG} ${LIBXSMM_ROOT}/bin/libxsmm_gemm_generator ./generated_code >/dev/null
   else
-    python scripts/offlineAssembly.py --generateMatrixKernels ./matrices ./../auto_tuning/sparse_dense/${GENCONF} ${LIBXSMM}/bin/libxsmm_gemm_generator ./generated_code > /dev/null
+    python scripts/offlineAssembly.py --generateMatrixKernels ./matrices ./../auto_tuning/sparse_dense/${GENCONF} ${LIBXSMM}/bin/libxsmm_gemm_generator ./generated_code >/dev/null
   fi
 
   cd ${SEISSOL_PROXY_ROOT}

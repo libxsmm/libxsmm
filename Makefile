@@ -464,20 +464,20 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
-	@$(CP) $(ROOTDIR)/include/libxsmm_bgemm.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_dnn.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_fsspmdm.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_intrinsics_x86.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_malloc.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_mhd.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_spmdm.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_bgemm.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_dnn.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_fsspmdm.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_intrinsics_x86.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_malloc.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_mhd.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_spmdm.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2>/dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_config.py $(SRCDIR)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
@@ -1509,12 +1509,12 @@ endif
 .PHONY: clean-all
 clean-all: clean
 	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
-		"$(MAKE) --no-print-directory clean 2> /dev/null || true" \;
+		"$(MAKE) --no-print-directory clean 2>/dev/null || true" \;
 
 .PHONY: realclean-all
 realclean-all: realclean
 	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
-		"$(MAKE) --no-print-directory realclean 2> /dev/null || true" \;
+		"$(MAKE) --no-print-directory realclean 2>/dev/null || true" \;
 
 # Dummy prefix
 ifneq (,$(strip $(PREFIX)))
@@ -1529,16 +1529,16 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing binaries..."
 	@mkdir -p $(INSTALL_ROOT)/$(POUTDIR) $(INSTALL_ROOT)/$(PBINDIR) $(INSTALL_ROOT)/$(PINCDIR)
-	@$(CP) -v $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmgen.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmext.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmf.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmf.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmm.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmm.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmgen.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmext.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmf.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmf.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmm.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmm.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@if [ -e $(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 		$(CP) -v $(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
@@ -1573,13 +1573,13 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	fi
 	@echo
 	@echo "LIBXSMM installing interface..."
-	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@$(CP) -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR) 2> /dev/null || true
+	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/libxsmm*.h $(INSTALL_ROOT)/$(PINCDIR)
 	@$(CP) -v $(INCDIR)/libxsmm.f $(INSTALL_ROOT)/$(PINCDIR)
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
-	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
 endif
 
 .PHONY: install
@@ -1601,15 +1601,15 @@ install-all: install samples
 ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing samples..."
-	@$(CP) -v $(addprefix $(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/wrap/,dgemm-blas dgemm-blas.sh dgemm-wrap dgemm-wrap.sh dgemm-test.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/dispatch/,dispatch dispatch.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/nek/,axhm grad rstr *.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/smm/,smm smm.sh smm-perf* smmf-perf.sh smm-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/smm/,specialized specialized.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/smm/,dispatched dispatched.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/smm/,inlined inlined.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/smm/,blas blas.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/wrap/,dgemm-blas dgemm-blas.sh dgemm-wrap dgemm-wrap.sh dgemm-test.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/dispatch/,dispatch dispatch.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/nek/,axhm grad rstr *.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/smm/,smm smm.sh smm-perf* smmf-perf.sh smm-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/smm/,specialized specialized.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/smm/,dispatched dispatched.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/smm/,inlined inlined.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/smm/,blas blas.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
 endif
 
 .PHONY: install-dev
@@ -1618,7 +1618,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing tests..."
 	@mkdir -p $(INSTALL_ROOT)/$(PTSTDIR)
-	@$(CP) -v $(basename $(wildcard ${TSTDIR}/*.c)) $(INSTALL_ROOT)/$(PTSTDIR) 2> /dev/null || true
+	@$(CP) -v $(basename $(wildcard ${TSTDIR}/*.c)) $(INSTALL_ROOT)/$(PTSTDIR) 2>/dev/null || true
 endif
 
 .PHONY: install-artifacts

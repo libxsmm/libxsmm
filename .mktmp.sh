@@ -30,9 +30,9 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-MKTEMP=$(which mktemp 2> /dev/null)
-ECHO=$(which echo 2> /dev/null)
-MV=$(which mv 2> /dev/null)
+MKTEMP=$(which mktemp 2>/dev/null)
+ECHO=$(which echo 2>/dev/null)
+MV=$(which mv 2>/dev/null)
 
 if [ "" != "${MKTEMP}" ] && [ "" != "${ECHO}" ] && [ "" != "${MV}" ]; then
   TEMPLATE=${1/XXXXXX/}.XXXXXX

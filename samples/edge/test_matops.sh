@@ -5,7 +5,7 @@ SDE64_BIN=/swtools/sde/kits/latest/sde64
 SDE64_ARCH="-knl"
 SDE64_FLAGS="-ptr_check -null_check -ptr_raise"
 SDE=${SDE64_BIN}" "${SDE64_FLAGS}" "${SDE64_ARCH}" -- "
-GREP=$(which grep 2> /dev/null)
+GREP=$(which grep 2>/dev/null)
 
 #on an AVX512 pfatform we can run natively
 CPUFLAGS=$(if [ "" != "${GREP}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | cut -d: -f2-; fi)

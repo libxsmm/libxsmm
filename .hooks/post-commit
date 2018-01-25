@@ -3,10 +3,10 @@
 LOCKFILE=${GIT_DIR}/.commit
 DOCDIR=documentation
 
-GREP=$(which grep 2> /dev/null)
-SED=$(which sed 2> /dev/null)
-GIT=$(which git 2> /dev/null)
-RM=$(which rm 2> /dev/null)
+GREP=$(which grep 2>/dev/null)
+SED=$(which sed 2>/dev/null)
+GIT=$(which git 2>/dev/null)
+RM=$(which rm 2>/dev/null)
 
 if [ -e ${LOCKFILE}-version ] && \
    [ "" != "${RM}" ]; \
@@ -17,6 +17,6 @@ then
   .hooks/version.sh > version.txt
   # quietly amend the previous commit
   ${GIT} add version.txt
-  ${GIT} commit --amend -C HEAD --no-verify > /dev/null
+  ${GIT} commit --amend -C HEAD --no-verify >/dev/null
 fi
 
