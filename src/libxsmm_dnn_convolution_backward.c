@@ -88,19 +88,30 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
       typedef float element_output_type;
       typedef float element_filter_type;
       typedef libxsmm_sconvfunction libxsmm_convfunction;
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom.tpl.c"
+      if ( handle->exploit_duality == 1  ) {
+#include "template/libxsmm_dnn_convolve_st_bwd_via_fwd_custom_custom_stream.tpl.c"
+      } else {
+#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_stream.tpl.c"
+      }
     } else if (handle->datatype_in ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
+#if 0
       typedef int element_input_type;
       typedef short element_output_type;
       typedef short element_filter_type;
       typedef libxsmm_wconvfunction_bwd libxsmm_convfunction;
 #include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_1.tpl.c"
+#endif
     } else if (handle->datatype_in ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef float element_input_type;
       typedef short element_output_type;
       typedef short element_filter_type;
       typedef libxsmm_wsconvfunction libxsmm_convfunction;
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom.tpl.c"
+      if ( handle->exploit_duality == 1  ) {
+#include "template/libxsmm_dnn_convolve_st_bwd_via_fwd_custom_custom_stream.tpl.c"
+      } else {
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        return status;
+      }
     } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I16 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
 #if 0
       typedef unsigned short element_input_type;
@@ -113,8 +124,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
       typedef int element_input_type;
       typedef unsigned char element_output_type;
       typedef char element_filter_type;
-      typedef libxsmm_budconvfunction_bwd libxsmm_convfunction;
- #include "template/libxsmm_dnn_convolve_st_bwd_custom_custom.tpl.c"
+      typedef libxsmm_budconvfunction libxsmm_convfunction;
+      if ( handle->exploit_duality == 1  ) {
+#include "template/libxsmm_dnn_convolve_st_bwd_via_fwd_custom_custom_stream.tpl.c"
+      } else {
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        return status;
+      }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;

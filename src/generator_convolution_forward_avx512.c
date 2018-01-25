@@ -727,7 +727,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
                                                    0,
                                                    i_conv_kernel_config->vector_reg_count - l_reg_block + l_n );
         } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) || 
-                    (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32)    ) {
+                    (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32)) {
           if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {     
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                                i_conv_kernel_config->instruction_set,
