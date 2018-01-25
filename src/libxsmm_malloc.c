@@ -77,11 +77,11 @@
 LIBXSMM_EXTERN unsigned int iJIT_GetNewMethodID(void);
 LIBXSMM_EXTERN /*iJIT_IsProfilingActiveFlags*/int iJIT_IsProfilingActive(void);
 LIBXSMM_EXTERN int iJIT_NotifyEvent(/*iJIT_JVM_EVENT*/int event_type, void *EventSpecificData);
-typedef struct LineNumberInfo {
+LIBXSMM_EXTERN_C typedef struct LineNumberInfo {
   unsigned int Offset;
   unsigned int LineNumber;
 } LineNumberInfo;
-typedef struct iJIT_Method_Load_V2 {
+LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
   unsigned int method_id;
   char* method_name;
   void* method_load_address;
@@ -155,7 +155,7 @@ typedef struct iJIT_Method_Load_V2 {
 #endif
 
 
-typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
   libxsmm_free_function free;
   void *context, *pointer, *reloc;
   size_t size;
@@ -168,7 +168,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
 #endif
 } internal_malloc_info_type;
 
-typedef union LIBXSMM_RETARGETABLE internal_malloc_pool_type {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_malloc_pool_type {
   char pad[LIBXSMM_CACHELINE];
   struct {
     char *buffer, *head;
@@ -188,9 +188,10 @@ typedef union LIBXSMM_RETARGETABLE internal_malloc_pool_type {
 /** Scratch pool, which supports up to MAX_NSCRATCH allocation sites. */
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
 /* LIBXSMM_ALIGNED appears to contradict LIBXSMM_API_VARIABLE, and causes multiple defined symbols (if below is seen in multiple translation units) */
-LIBXSMM_API_VARIABLE char internal_malloc_pool_buffer[(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)*sizeof(internal_malloc_pool_type)+(LIBXSMM_CACHELINE)-1];
+LIBXSMM_API_VARIABLE(char internal_malloc_pool_buffer[(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)*sizeof(internal_malloc_pool_type)+(LIBXSMM_CACHELINE)-1]);
 #endif
-LIBXSMM_API_VARIABLE size_t internal_malloc_scratch_size, internal_malloc_scratch_nmallocs;
+LIBXSMM_API_VARIABLE(size_t internal_malloc_scratch_nmallocs);
+LIBXSMM_API_VARIABLE(size_t internal_malloc_scratch_size);
 
 
 LIBXSMM_API_DEFINITION size_t libxsmm_gcd(size_t a, size_t b)

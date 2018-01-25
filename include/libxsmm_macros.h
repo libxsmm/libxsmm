@@ -77,10 +77,9 @@
 #define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) ((MAJOR) * 100000000 + (MINOR) * 1000000 + (UPDATE) * 10000 + (PATCH))
 
 #if defined(__cplusplus)
-# define LIBXSMM_API_INLINE LIBXSMM_EXTERN LIBXSMM_INLINE LIBXSMM_RETARGETABLE
-# define LIBXSMM_API_INTERN LIBXSMM_EXTERN LIBXSMM_RETARGETABLE
 # define LIBXSMM_VARIADIC ...
 # define LIBXSMM_EXTERN extern "C"
+# define LIBXSMM_EXTERN_C LIBXSMM_EXTERN
 # define LIBXSMM_INLINE_KEYWORD inline
 # define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
 # if defined(__GNUC__)
@@ -91,10 +90,9 @@
 #   define LIBXSMM_CALLER __FUNCNAME__
 # endif
 #else
-# define LIBXSMM_API_INLINE LIBXSMM_INLINE LIBXSMM_RETARGETABLE
-# define LIBXSMM_API_INTERN LIBXSMM_RETARGETABLE
 # define LIBXSMM_VARIADIC
 # define LIBXSMM_EXTERN extern
+# define LIBXSMM_EXTERN_C
 # if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 #   define LIBXSMM_CALLER __func__
@@ -117,23 +115,29 @@
 # define LIBXSMM_CALLER NULL
 #endif
 
-#define LIBXSMM_VARIABLE LIBXSMM_RETARGETABLE
-#if defined(LIBXSMM_BUILD_EXT)
-# define LIBXSMM_API_VARIABLE LIBXSMM_EXTERN LIBXSMM_VARIABLE
+#if defined(LIBXSMM_OFFLOAD_BUILD) && \
+  defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
+# define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
+# define LIBXSMM_NO_OFFLOAD(RTYPE, FN, ...) ((RTYPE (*)(LIBXSMM_VARIADIC))(FN))(__VA_ARGS__)
+# if !defined(LIBXSMM_OFFLOAD_TARGET)
+#   define LIBXSMM_OFFLOAD_TARGET mic
+# endif
 #else
-# define LIBXSMM_API_VARIABLE LIBXSMM_VARIABLE
+# define LIBXSMM_OFFLOAD(A)
+# define LIBXSMM_NO_OFFLOAD(RTYPE, FN, ...) (FN)(__VA_ARGS__)
 #endif
+#define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
 #if !defined(LIBXSMM_INTERNAL_API)
-# if defined(__cplusplus)
-#   define LIBXSMM_INTERNAL_API extern "C"
-# else
-#   define LIBXSMM_INTERNAL_API
-# endif
+# define LIBXSMM_INTERNAL_API LIBXSMM_EXTERN_C
 #endif
 #if !defined(LIBXSMM_INTERNAL_API_DEFINITION)
 # define LIBXSMM_INTERNAL_API_DEFINITION LIBXSMM_INTERNAL_API
 #endif
+
+#define LIBXSMM_API_INLINE LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INLINE
+#define LIBXSMM_API_INTERN LIBXSMM_INTERNAL_API LIBXSMM_RETARGETABLE
+#define LIBXSMM_API_VARIABLE(VARDECL) LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE VARDECL; LIBXSMM_RETARGETABLE VARDECL
 
 #define LIBXSMM_API LIBXSMM_INTERNAL_API LIBXSMM_RETARGETABLE
 #define LIBXSMM_API_DEFINITION LIBXSMM_INTERNAL_API_DEFINITION LIBXSMM_RETARGETABLE
@@ -442,16 +446,20 @@
 
 #if defined(_WIN32)
 # define LIBXSMM_SNPRINTF(S, N, ...) _snprintf_s(S, N, _TRUNCATE, __VA_ARGS__)
-# define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
-# define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
 # define setenv(NAME, VALUE, OVERWRITE) _putenv(NAME "=" VALUE)
+#elif defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
+# define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
 #else
-# if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
-#   define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
-# else
-#   define LIBXSMM_SNPRINTF(S, N, ...) sprintf(S, __VA_ARGS__); LIBXSMM_UNUSED(N)
-# endif
-# if !defined(__CYGWIN__)
+# define LIBXSMM_SNPRINTF(S, N, ...) sprintf(S, __VA_ARGS__); LIBXSMM_UNUSED(N)
+#endif
+#if defined(LIBXSMM_NO_SYNC)
+# define LIBXSMM_FLOCK(FILE)
+# define LIBXSMM_FUNLOCK(FILE)
+#else
+# if defined(_WIN32)
+#   define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
+#   define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
+# elif !defined(__CYGWIN__)
 #   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
 #   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
 # else /* Only available with __CYGWIN__ *and* C++0x. */
@@ -497,11 +505,15 @@
 #     define __STATIC
 #   endif
 # endif
+#else
 #endif
 #if defined(__GNUC__)
 # if !defined(_GNU_SOURCE)
 #   define _GNU_SOURCE
 # endif
+#endif
+#if !defined(__STDC_FORMAT_MACROS)
+# define __STDC_FORMAT_MACROS
 #endif
 #if defined(__clang__) && !defined(__extern_always_inline)
 # define __extern_always_inline LIBXSMM_INLINE
@@ -520,19 +532,6 @@
   || (defined(__INTEL_COMPILER) && defined(__INTEL_COMPILER_UPDATE) && (1801 > ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE)))))
 # define _Float128 __float128
 #endif
-
-#if defined(LIBXSMM_OFFLOAD_BUILD) && \
-  defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
-# define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
-# define LIBXSMM_NO_OFFLOAD(RTYPE, FN, ...) ((RTYPE (*)(LIBXSMM_VARIADIC))(FN))(__VA_ARGS__)
-# if !defined(LIBXSMM_OFFLOAD_TARGET)
-#   define LIBXSMM_OFFLOAD_TARGET mic
-# endif
-#else
-# define LIBXSMM_OFFLOAD(A)
-# define LIBXSMM_NO_OFFLOAD(RTYPE, FN, ...) (FN)(__VA_ARGS__)
-#endif
-#define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))

@@ -95,7 +95,7 @@ To use the header-only form, 'libxsmm_source.h' needs to be *generated*. The bui
 make header-only
 ```
 
-**NOTE**: Differences between C and C++ makes a header-only implementation (which is portable between both languages) considerably "techy". Mixing C and C++ translation units (which rely on the header-only form of the library) is **not** supported. Also remember: to build an application now shares the same build settings with LIBXSMM! This is important not only to omit debug code inside of LIBXSMM (use `-DNDEBUG`).
+**NOTE**: building an application now applies the same build settings to LIBXSMM! For instance, to omit debug code inside of LIBXSMM `NDEBUG` must be defined (`-DNDEBUG`).
 
 ### Installation
 

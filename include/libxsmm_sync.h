@@ -156,9 +156,8 @@
 #     define LIBXSMM_ATOMIC_SYNC(KIND) __atomic_thread_fence(KIND)
 #   else /* GCC legacy atomics */
 #     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
-#     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) while (*(DST_PTR) != (VALUE)) \
-        if (0/*false*/ != __sync_bool_compare_and_swap(DST_PTR, *(DST_PTR), VALUE)) break
-#     define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) __sync_and_and_fetch(DST_PTR, 0)
+#     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) __sync_bool_compare_and_swap(DST_PTR, *(DST_PTR), VALUE)
+#     define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) if(__sync_and_and_fetch(DST_PTR, 0))
 #     define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) __sync_fetch_and_or(DST_PTR, VALUE)
 #     define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) __sync_add_and_fetch(DST_PTR, VALUE)
 #     define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) __sync_sub_and_fetch(DST_PTR, VALUE)
@@ -539,7 +538,7 @@
 
 
 /** Opaque type which represents a barrier. */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_barrier libxsmm_barrier;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_barrier libxsmm_barrier;
 
 /** Create barrier from one of the threads. */
 LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per_core);
@@ -553,7 +552,7 @@ LIBXSMM_API void libxsmm_barrier_destroy(const libxsmm_barrier* barrier);
 #define libxsmm_barrier_release libxsmm_barrier_destroy
 
 /** Spin-lock, which eventually differs from LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_SPINLOCK). */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_spinlock libxsmm_spinlock;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_spinlock libxsmm_spinlock;
 LIBXSMM_API libxsmm_spinlock* libxsmm_spinlock_create(void);
 LIBXSMM_API void libxsmm_spinlock_destroy(const libxsmm_spinlock* spinlock);
 LIBXSMM_API int libxsmm_spinlock_trylock(libxsmm_spinlock* spinlock);
@@ -561,7 +560,7 @@ LIBXSMM_API void libxsmm_spinlock_acquire(libxsmm_spinlock* spinlock);
 LIBXSMM_API void libxsmm_spinlock_release(libxsmm_spinlock* spinlock);
 
 /** Mutual-exclusive lock (Mutex), which eventually differs from LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_MUTEX). */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_mutex libxsmm_mutex;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mutex libxsmm_mutex;
 LIBXSMM_API libxsmm_mutex* libxsmm_mutex_create(void);
 LIBXSMM_API void libxsmm_mutex_destroy(const libxsmm_mutex* mutex);
 LIBXSMM_API int libxsmm_mutex_trylock(libxsmm_mutex* mutex);
@@ -569,7 +568,7 @@ LIBXSMM_API void libxsmm_mutex_acquire(libxsmm_mutex* mutex);
 LIBXSMM_API void libxsmm_mutex_release(libxsmm_mutex* mutex);
 
 /** Reader-Writer lock (RW-lock), which eventually differs from LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_RWLOCK). */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_rwlock libxsmm_rwlock;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_rwlock libxsmm_rwlock;
 LIBXSMM_API libxsmm_rwlock* libxsmm_rwlock_create(void);
 LIBXSMM_API void libxsmm_rwlock_destroy(const libxsmm_rwlock* rwlock);
 LIBXSMM_API int libxsmm_rwlock_trylock(libxsmm_rwlock* rwlock);

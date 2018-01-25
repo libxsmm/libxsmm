@@ -64,7 +64,7 @@
 #endif
 
 
-typedef struct LIBXSMM_RETARGETABLE internal_sync_core_tag { /* per-core */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_sync_core_tag { /* per-core */
   uint8_t id;
   volatile uint8_t core_sense;
   volatile uint8_t* thread_senses;
@@ -74,7 +74,7 @@ typedef struct LIBXSMM_RETARGETABLE internal_sync_core_tag { /* per-core */
   uint8_t sense;
 } internal_sync_core_tag;
 
-typedef struct LIBXSMM_RETARGETABLE internal_sync_thread_tag { /* per-thread */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_sync_thread_tag { /* per-thread */
   int core_tid;
   internal_sync_core_tag *core;
 } internal_sync_thread_tag;
@@ -484,11 +484,10 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
     while (0 != (mutex->state & 1)) LIBXSMM_SYNC_CYCLE(counter, LIBXSMM_SYNC_NPAUSE);
   }
 #   else
-  libxsmm_mutex_state lock_free = INTERNAL_SYNC_LOCK_FREE;
-  int lock_state = INTERNAL_SYNC_LOCK_LOCKED;
+  libxsmm_mutex_state lock_free = INTERNAL_SYNC_LOCK_FREE, lock_state = INTERNAL_SYNC_LOCK_LOCKED;
   assert(0 != mutex);
   while (0/*false*/ == LIBXSMM_ATOMIC_CMPSWP(&mutex->state, lock_free, lock_state, LIBXSMM_ATOMIC_RELAXED)) {
-    int state;
+    libxsmm_mutex_state state;
     for (state = mutex->state; INTERNAL_SYNC_LOCK_FREE != state; state = mutex->state) {
 #     if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
       LIBXSMM_SYNC_CYCLE_ELSE(counter, LIBXSMM_SYNC_NPAUSE, {
@@ -539,7 +538,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_release(libxsmm_mutex* mutex)
 
 
 #if !defined(LIBXSMM_NO_SYNC) && !(defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM))
-typedef union LIBXSMM_RETARGETABLE internal_sync_counter {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_sync_counter {
   struct {
     uint16_t writer;
     uint16_t reader;
@@ -549,7 +548,7 @@ typedef union LIBXSMM_RETARGETABLE internal_sync_counter {
 #endif
 
 
-struct LIBXSMM_RETARGETABLE libxsmm_rwlock {
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_rwlock {
 #if !defined(LIBXSMM_NO_SYNC)
 # if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_RWLOCK) impl;

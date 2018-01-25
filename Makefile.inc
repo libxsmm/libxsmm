@@ -135,11 +135,14 @@ FLOCK = $(DEPDIR)/.flock.sh
 SYM ?= 0
 DBG ?= 0
 
-# Threading runtime
-OMP ?= 0
-
 # THREADS refers to foundational TRT (and not necessarily Posix Threads)
 THREADS ?= 1
+
+# Threading runtime
+ifeq (0,$(THREADS))
+  override OMP = 0
+endif
+OMP ?= 0
 
 # SIMD code generation
 SIMD ?= 1
@@ -892,6 +895,8 @@ else # GCC assumed
   endif
   ifeq (Windows_NT,$(UNAME))
     LDFLAGS += $(XLIB_BEGIN) -ldbghelp $(XLIB_END)
+  else ifeq (FreeBSD,$(UNAME))
+    LDFLAGS += $(XLIB_BEGIN) -lexecinfo $(XLIB_END)
   endif
   ifneq (0,$(SYM))
     ifeq (1,$(SYM))
@@ -1218,7 +1223,10 @@ ifeq (1,$(MKL)) # sequential
       --end-group"
     endif
   endif
-  BLAS_LDFLAGS += -lpthread -lm $(LIBDL)
+  ifneq (0,$(THREADS))
+    BLAS_LDFLAGS += -lm $(LIBDL)
+  endif
+  BLAS_LDFLAGS += -lm $(LIBDL)
   ifneq (0,$(OFFLOAD))
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
   endif
@@ -1259,7 +1267,10 @@ else ifneq (0,$(MKL)) # multi-threaded
   ifeq (0,$(OMP))
     BLAS_LDFLAGS += $(OMPLIB)
   endif
-  BLAS_LDFLAGS += -lpthread -lm $(LIBDL)
+  ifneq (0,$(THREADS))
+    BLAS_LDFLAGS += -lpthread
+  endif
+  BLAS_LDFLAGS += -lm $(LIBDL)
   ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
@@ -1389,7 +1400,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
   $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL \
     $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE abslib soname extname objname,$V), \
     $V=$($V)?)))
-.state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh $(abspath .))
+.state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
 %/.make:
 	@mkdir -p $(basename $@)

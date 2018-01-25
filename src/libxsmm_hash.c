@@ -132,8 +132,8 @@
 #endif
 
 typedef uint32_t internal_crc32_entry_type[256];
-LIBXSMM_API_VARIABLE const internal_crc32_entry_type* internal_crc32_table;
-LIBXSMM_API_VARIABLE libxsmm_hash_function internal_hash_function;
+LIBXSMM_API_VARIABLE(const internal_crc32_entry_type* internal_crc32_table);
+LIBXSMM_API_VARIABLE(libxsmm_hash_function internal_hash_function);
 
 
 LIBXSMM_API_INLINE unsigned int internal_crc32_u8(unsigned int seed, unsigned char value)
