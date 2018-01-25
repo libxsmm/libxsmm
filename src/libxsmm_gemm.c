@@ -594,6 +594,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, 
 # if defined(LIBXSMM_GEMM_LOCKFWD)
           LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK)* lock0 = 0;
 # endif
+          LIBXSMM_ASSERT(0 != lock);
           for (i = begin; i < end1; i = ni) {
             ni = i + 1; ii = ni * index_stride; ic = (0 != sc ? (*((const libxsmm_blasint*)(sc + ii)) - index_base) : 0);
             {
@@ -673,6 +674,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, 
 # if defined(LIBXSMM_GEMM_LOCKFWD)
           LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK)* lock0 = 0;
 # endif
+          LIBXSMM_ASSERT(0 != lock);
           for (i = begin; i < end1; i = ni) {
             ni = i + 1;
 # if defined(LIBXSMM_GEMM_CHECK)
