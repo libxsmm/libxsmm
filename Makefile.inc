@@ -200,9 +200,14 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
 # Embedd soname into shared library
 ifneq (Darwin,$(UNAME))
-  soname = -Wl,-soname=$(subst $(NULL) ,.,$(strip $(notdir $1) $2 $3 $4))
-else
-  soname = # TODO
+  soname = -shared -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5) \
+           $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5)) \
+           $(shell cd $(dir $1) && ln -fs $(notdir $1.$5) $(notdir $1))
+else # osx
+  soname = -shared -o $(basename $1).$2$(suffix $1) \
+           -install_name $(notdir $(basename $1).$2$(suffix $1)) \
+           -current_version $2.$3.$4 -compatibility_version $5 \
+           $(shell cd $(dir $1) && ln -fs $(notdir $(basename $1).$2$(suffix $1)) $(notdir $1))
 endif
 
 # Pickup OpenMP library name if passed as OMP=libname|name
