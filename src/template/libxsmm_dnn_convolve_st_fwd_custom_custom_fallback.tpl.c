@@ -48,18 +48,11 @@ element_input_type* out_lp = 0;
 
 /* select pointer based on precision */
 if (handle->datatype_in != handle->datatype_out) {
-#if 0
-  out = ((element_output_type*)handle->scratch6) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
-  out_lp = ((element_input_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
-} else {
-#endif
   out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
-  out_lp = 0;
 }
 
 { /* open new scope for additional variable declarations (C89) */
   LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-  LIBXSMM_VLA_DECL(5, element_input_type, output_lp, out_lp, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
   LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
   LIBXSMM_VLA_DECL(6, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 #if defined(INPUT_PADDING)
@@ -91,17 +84,6 @@ if (handle->datatype_in != handle->datatype_out) {
         temp_ptr += handle->ofmblock;
       }
     }
-    /* up-convert */
-    if (handle->datatype_in != handle->datatype_out) {
-      for (oj = 0; oj < handle->ofh; ++oj) {
-        for (oi = 0; oi < handle->ofw; ++oi) {
-          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-            LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) = (element_output_type)
-              (LIBXSMM_VLA_ACCESS(  5, output_lp, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
-          }
-        }
-      }
-    }
     for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
 #if defined(INPUT_PADDING)
       for (oj = 0; oj < handle->ifhp; ++oj) {
@@ -124,23 +106,12 @@ if (handle->datatype_in != handle->datatype_out) {
       }
       for (oj = 0; oj < handle->ofh; ++oj) {
         ij = oj * handle->desc.u;
-        for (oi = 0; oi < handle->ofw; ++oi) {
-          ii = oi * handle->desc.v;
-          for (kj = 0; kj < handle->desc.R; ++kj) {
-            for (ki = 0; ki< handle->desc.S; ++ki) {
-              for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-
-                  LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) += (element_output_type)(
-#if defined(INPUT_PADDING)
-                    LIBXSMM_VLA_ACCESS(3, input_buffer, ij + kj, ii + ki, ifm2, padded_w, handle->ifmblock)
-#else
-                    LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij + kj, ii + ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock)
-#endif
-                  * LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock));
-                }
-              }
-            }
+        ii = 0; oi = 0;
+        for (kj = 0; kj < handle->desc.R; ++kj) {
+          for (ki = 0; ki< handle->desc.S; ++ki) {
+            gemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0,        handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
+                         &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij + kj, ii + ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
+                         &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0,           handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) );
           }
         }
       }
@@ -156,17 +127,6 @@ if (handle->datatype_in != handle->datatype_out) {
           temp_ptr[ofm2] = (element_output_type)(temp_ptr[ofm2] < 0 ? 0 : temp_ptr[ofm2]);
         }
         temp_ptr += handle->ofmblock;
-      }
-    }
-    /* down-convert */
-    if (handle->datatype_in != handle->datatype_out) {
-      for (oj = 0; oj < handle->ofh; ++oj) {
-        for (oi = 0; oi < handle->ofw; ++oi) {
-          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-            LIBXSMM_VLA_ACCESS(  5, output_lp, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) = (element_input_type)
-              (LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
-          }
-        }
       }
     }
   }
