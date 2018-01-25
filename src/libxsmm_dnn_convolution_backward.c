@@ -84,9 +84,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
   }
   else {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-#if 0
-      if (handle->desc.N*handle->blocksifm >= handle->desc.threads) {
-#endif
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
