@@ -99,7 +99,9 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
 
   while (fgets(l_line, l_line_length, l_csc_file_handle) != NULL) {
     if ( strlen(l_line) == l_line_length ) {
+      free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_column_idx_id);
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_READ_LEN );
+      fclose( l_csc_file_handle ); /* close mtx file */
       return;
     }
     /* check if we are still reading comments header */
@@ -122,6 +124,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
                ( l_column_idx_id == NULL ) ) {
             free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_column_idx_id);
             LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_ALLOC_DATA );
+            fclose( l_csc_file_handle ); /* close mtx file */
             return;
           }
 
@@ -141,6 +144,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
           l_header_read = 1;
         } else {
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_READ_DESC );
+          fclose( l_csc_file_handle ); /* close mtx file */
           return;
         }
       /* now we read the actual content */
@@ -151,6 +155,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
         if ( sscanf(l_line, "%u %u %lf", &l_row, &l_column, &l_value) != 3 ) {
           free(*o_row_idx); free(*o_column_idx); free(*o_values); free(l_column_idx_id);
           LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CSC_READ_ELEMS );
+          fclose( l_csc_file_handle ); /* close mtx file */
           return;
         }
         /* adjust numbers to zero termination */
