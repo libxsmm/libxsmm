@@ -152,6 +152,30 @@ if (handle->reduce_weights == 0) {
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
+/* If padding is requested, copy the entire minibatch upfront (only if trnaspose is not requested, otherwise we combine trnaspose with padding) */
+if (handle->padding_flag == 1) {
+  /* Initialize in parallel scratch5 to zero */
+  for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
+    img = imgifm1/BLOCKSIFM;
+    ifm1 = imgifm1%BLOCKSIFM;
+    copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, 0, 0, 0, BLOCKSIFM, padded_h, padded_w, handle->ifmblock);
+    jitted_matzero(NULL, NULL, copy_ptr, NULL, NULL);
+  }
+  libxsmm_barrier_wait(handle->barrier, ltid);
+
+  if ( handle->trans_ofw_ifm == 0 ) {
+    for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
+      img = imgifm1/BLOCKSIFM;
+      ifm1 = imgifm1%BLOCKSIFM;
+      input_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
+      copy_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_padded, img, ifm1, handle->desc.pad_h, handle->desc.pad_w, 0, BLOCKSIFM, padded_h, padded_w, handle->ifmblock);
+      prefetch_ptr = (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input_nopad, (imgifm1-1)/BLOCKSIFM, (imgifm1-1)%BLOCKSIFM, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
+      jitted_matcopy(input_ptr, NULL, copy_ptr, NULL, prefetch_ptr);
+    }
+    libxsmm_barrier_wait(handle->barrier, ltid);
+  }
+}
+
 if ( handle->trans_ofw_ifm > 0 ) {
   if (handle->padding_flag == 1) {
     input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);

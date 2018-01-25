@@ -181,8 +181,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)
         && ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
       handle->ifmblock = (handle->desc.C >=16) ? 4 : (handle->desc.C/4);
-      handle->ofmblock = (handle->desc.K >=16) ? 4 : (handle->desc.K/4);
+      handle->ofmblock = (handle->desc.K >=16) ? 16 : (handle->desc.K/4);
       handle->fm_lp_block = 4;
+      handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
+      handle->ofmblock_lp = handle->ofmblock / handle->fm_lp_block;
       if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
         noarch = 1;
@@ -235,42 +237,18 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
 
     if (handle->use_lp_kernel == 1) {
-      if (handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block > 256) {
-        handle->blocksifm_blocking = 16;
-        while ( handle->desc.C%(handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block) != 0  ) {
-          handle->blocksifm_blocking--;
+      if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
+        /* Restrict acc chain for overflow handling only if combo is int16/int32  */
+        if (handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block > 256) {
+          handle->blocksifm_blocking = 16;
+          while ( handle->desc.C%(handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block) != 0  ) {
+            handle->blocksifm_blocking--;
+          }
         }
       }
     }
 
     /* Ditto for ofms in BWD  */
-#if 0
-    if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) ) {
-      if ( ((handle->ofmblock*handle->)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*512) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 512;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*256) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 256;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*128) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 128;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*64) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 64;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*32) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 32;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*16) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 16;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*8) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 8;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) &&  (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*4) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 4;
-      } else if ( ((handle->ofmblock*handle->fm_lp_block)%16  == 0) && (handle->desc.K%(handle->ofmblock*handle->fm_lp_block*2) == 0) && (handle->desc.R == 1) && (handle->desc.S == 1) ) {
-        handle->blocksofm_blocking = 2;
-      } else {
-        handle->blocksofm_blocking = 1;
-      }
-    } else {
-      handle->blocksofm_blocking = 1;
-    }
-#else
     if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) ) {
       if ( ((handle->ofmblock)%16 == 0) &&  (handle->desc.K%(handle->ofmblock*512) == 0) && (handle->desc.R == 1) &&  (handle->desc.S == 1) ) {
         handle->blocksofm_blocking = 512;
@@ -296,17 +274,19 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     } else {
       handle->blocksofm_blocking = 1;
     }
-#endif
 
     if ( (handle->desc.C == 256 && handle->desc.K == 1024) || (handle->desc.C == 512 && handle->desc.K == 2048) ||  (handle->desc.C == 1024 && handle->desc.K == 2048) ) {
       handle->blocksofm_blocking = 8;
     }
 
     if (handle->use_lp_kernel == 1) {
-      if (handle->blocksofm_blocking * handle->ofmblock > 256) {
-        handle->blocksofm_blocking = 16;
-        while ( handle->desc.K%(handle->blocksofm_blocking * handle->ofmblock * handle->fm_lp_block) != 0  ) {
-          handle->blocksofm_blocking--;
+      if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
+        /* Restrict acc chain for overflow handling only if combo is int16/int32  */
+        if (handle->blocksofm_blocking * handle->ofmblock > 256) {
+          handle->blocksofm_blocking = 16;
+          while ( handle->desc.K%(handle->blocksofm_blocking * handle->ofmblock * handle->fm_lp_block) != 0  ) {
+            handle->blocksofm_blocking--;
+          }
         }
       }
     } 
@@ -1267,7 +1247,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                     handle->avoid_output_trans = 0;    
                   }
                   descriptor.avoid_output_trans = handle->avoid_output_trans;
-                  if (handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.u == 1 && handle->desc.v == 1) {
+                  if ( ((handle->desc.R == 1 && handle->desc.S == 1) || handle->padding_flag == 0) && handle->desc.u == 1 && handle->desc.v == 1) {
                     handle->avoid_input_trans = 1;
                   } else {
                     handle->avoid_input_trans = 0;
@@ -1285,7 +1265,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 handle->output_lp_padding = 0;
                 int enforce_sfma_kernel = 0;
 
-                if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || ( (handle->desc.R!=1 || handle->desc.S!=1) && (handle->desc.u!=1 || handle->desc.v!=1) )  ) {
+                if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || ( (handle->desc.R!=1 || handle->desc.S!=1) && (handle->desc.u!=1 || handle->desc.v!=1) )) && (handle->use_lp_kernel == 0)  ) {
                   enforce_sfma_kernel = 1;
                 }
 
@@ -1529,13 +1509,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           if ((handle->ifmblock == 1) || (handle->blocksifm_lp * handle->blocksofm < handle->desc.threads) ) {
             handle->use_thread_private_filter = 1;
             /* determine if we will transpose input  */
-            if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0 ) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  && handle->use_lp_kernel == 1 && (handle->desc.R !=1 || handle->desc.S != 1 || handle->desc.u != 1 || handle->desc.v != 1 || handle->desc.W%2 != 0 )) ) ) {
+            if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0 ) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  && handle->use_lp_kernel == 1 && ( ((handle->desc.R !=1 || handle->desc.S != 1) && handle->padding_flag == 1) || handle->desc.u != 1 || handle->desc.v != 1 || handle->desc.W%2 != 0 )) ) ) {
               handle->trans_ofw_ifm = 1;
             }
           } else {
             handle->use_thread_private_filter = 0;
             /* determine if we will transpose input  */
-            if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC)  || (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  && handle->use_lp_kernel == 1 && (handle->desc.R !=1 || handle->desc.S !=1 || handle->desc.u != 1 || handle->desc.v != 1 ||  handle->desc.W%2 != 0 )) ) ) {
+            if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC)  || (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  && handle->use_lp_kernel == 1 && (((handle->desc.R !=1 || handle->desc.S != 1) && handle->padding_flag == 1) || handle->desc.u != 1 || handle->desc.v != 1 ||  handle->desc.W%2 != 0 )) ) ) {
               handle->trans_ofw_ifm = 1;
               if ( handle->desc.R !=1 && handle->desc.S != 1 && ( handle->desc.u !=1 || handle->desc.v != 1 )  ) {
                 handle->trans_ofw_ifm = 0;
@@ -1615,10 +1595,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         if ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < handle->desc.threads) || (handle->use_thread_private_jit)) {
           handle->upd_use_thread_fil = 1;
           handle->scratch4 = 0;
-          handle->scratch4_size = handle->desc.threads * handle->blocksifm_lp * handle->ifmblock * handle->blocksofm * handle->ofmblock
-            * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_out);
-          handle->scratch4_size += handle->desc.threads *  handle->blocksofm *  handle->blocksifm * handle->desc.R
-            * handle->desc.S * handle->ifmblock * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_out);
+          handle->scratch4_size = 2 * handle->desc.threads * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_out);
+         // handle->scratch4_size += 32*handle->desc.threads *  handle->blocksofm *  handle->blocksifm * handle->desc.R
+         //   * handle->desc.S * handle->ifmblock * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_out);
 
           /* enable external reduce of filter scratch */
           if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE) > 0 ) {

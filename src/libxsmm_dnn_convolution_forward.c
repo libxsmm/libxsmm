@@ -147,7 +147,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
         typedef int element_output_type;
         typedef char element_filter_type;
         typedef libxsmm_budconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
 #if 0
       }
       else {

@@ -52,7 +52,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
   }
 
   /* check if we have a kernel JITed */
-  if (handle->code_bwd[0].xconv.sconv == 0) {
+  if (handle->code_bwd[0].xconv.sconv == 0 && handle->code_bwd[3].xconv.sconv != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef float element_input_type;
       typedef float element_output_type;
@@ -110,14 +110,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
 #include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_1.tpl.c"
 #endif
     } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
-#if 0
-      typedef unsigned int element_input_type;
-      typedef char element_output_type;
+      typedef int element_input_type;
+      typedef unsigned char element_output_type;
       typedef char element_filter_type;
       typedef libxsmm_budconvfunction_bwd libxsmm_convfunction;
-      if (handle->padding_flag == 1) {
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_1.tpl.c"
-#endif
+ #include "template/libxsmm_dnn_convolve_st_bwd_custom_custom.tpl.c"
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;

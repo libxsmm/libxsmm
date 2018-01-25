@@ -125,7 +125,6 @@ if(tp_func == 0) {
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
-#if 0
 /* If padding is requested, copy the entire minibatch upfront (only if trnaspose is not requested, otherwise we combine trnaspose with padding) */
 if (handle->padding_flag == 1) {
   /* Initialize in parallel scratch5 to zero */
@@ -149,20 +148,20 @@ if (handle->padding_flag == 1) {
     libxsmm_barrier_wait(handle->barrier, ltid);
   }
 }
-#endif
 
 /* Initialize base pointers */
 if (handle->padding_flag == 1) {
   if (handle->trans_ofw_ifm > 0) {
     input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
     input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
+    memset( input_zero, 0, BLOCKSIFM * padded_h * ifwp_extended * handle->ifmblock * sizeof(element_input_type) );
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(5, input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, padded_w, handle->ifmblock);
     input_zero = &LIBXSMM_VLA_ACCESS(5, input_padded, ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, padded_w, handle->ifmblock);
   }
   /* we need to set the scratch to zero */
   /* @TODO: we need to find a better/faster code here */
-  memset( input_zero, 0, BLOCKSIFM * padded_h * ifwp_extended * handle->ifmblock * sizeof(element_input_type) );
+
 } else {
   if (handle->trans_ofw_ifm > 0) {
     input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, dst_ifhp, handle->ifmblock, ifwp_extended);
