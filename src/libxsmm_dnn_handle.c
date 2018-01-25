@@ -1619,15 +1619,35 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
         }
       }
     } else {
-      /* this is the fallback code for all platforms and all formats */
-      handle->use_thread_private_jit = 0;
-      handle->ifmblock = (handle->desc.C >=16) ? 16 : handle->desc.C;
-      handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K;
+      /* @TODO let's make these env variable to study */
+      int tmp_max_c_block = 16;
+      int tmp_max_k_block = 16;
+      int tmp_block = 0;
+
+      if ( handle->desc.C < tmp_max_c_block ) {
+        handle->ifmblock = handle->desc.C;
+      } else {
+        for ( tmp_block = 1 ; tmp_block <= tmp_max_c_block; tmp_block *= 2 ) {
+          if ( handle->desc.C % tmp_block == 0 ) handle->ifmblock = tmp_block;
+        }
+      }
+      handle->blocksifm = handle->desc.C / handle->ifmblock;
+
+      if ( handle->desc.K < tmp_max_k_block ) {
+        handle->ofmblock = handle->desc.K;
+      } else {
+        for ( tmp_block = 1 ; tmp_block <= tmp_max_k_block; tmp_block *= 2 ) {
+          if ( handle->desc.K % tmp_block == 0 ) handle->ofmblock = tmp_block;
+        }
+      }
+      handle->blocksofm = handle->desc.K / handle->ofmblock;
+           
       handle->fwd_ofh_rb = 1;
       handle->fwd_ofw_rb = handle->ofw;
       handle->bwd_ofh_rb = 1;
       handle->bwd_ofw_rb = handle->ofw;
       handle->fm_lp_block = 1;
+      handle->use_thread_private_jit = 0;
 
       /* Adjust blocking factors if custom_2 format is requested */
       if ((handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2)) {

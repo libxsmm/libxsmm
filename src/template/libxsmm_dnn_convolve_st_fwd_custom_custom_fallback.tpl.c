@@ -43,11 +43,9 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 
 /* regular/high precision */
 element_output_type* out = 0;
-/* low precision */
-element_input_type* out_lp = 0;
 
 /* select pointer based on precision */
-if (handle->datatype_in != handle->datatype_out) {
+if (handle->datatype_in == handle->datatype_out) {
   out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 }
 
