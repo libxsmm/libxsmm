@@ -620,17 +620,20 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
         }
 #else /* !defined(_WIN32) */
 # if defined(MAP_HUGETLB)
-        static int hugefail = 0;
+        static int hugetlb = 1;
+# endif
+# if defined(MAP_32BIT)
+        static int map32 = 1;
 # endif
         int xflags = 0
 # if defined(MAP_NORESERVE)
-          | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? MAP_NORESERVE : 0)
+          | (((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) < size) ? 0 : MAP_NORESERVE)
 # endif
-# if defined(MAP_32BIT) && /*may fail*/0
-          | ((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size ? MAP_32BIT : 0)
+# if defined(MAP_32BIT)
+          | (((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) < size || 0 == map32) ? 0 : MAP_32BIT)
 # endif
 # if defined(MAP_HUGETLB) /* may fail depending on system settings */
-          | (((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) > size || 0 != hugefail) ? 0 : MAP_HUGETLB)
+          | (((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) < size && 0 != hugetlb) ? MAP_HUGETLB : 0)
 # endif
 # if defined(MAP_UNINITIALIZED) /* unlikely to be available */
           | MAP_UNINITIALIZED
@@ -679,31 +682,60 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
           }
           if (0 == fallback) {
             buffer = internal_xmap("/tmp", alloc_size, xflags, &reloc);
+            if (alloc_failed == buffer) {
+              if (0 != (MAP_32BIT & xflags)) {
+                buffer = internal_xmap("/tmp", alloc_size, xflags & ~MAP_32BIT, &reloc);
+              }
+              if (alloc_failed != buffer) map32 = 0; else fallback = 1;
+            }
             if (alloc_failed == buffer) fallback = 1;
           }
           if (1 <= fallback) { /* continue with fall-back */
             if (1 == fallback) { /* 2nd try */
               buffer = internal_xmap(".", alloc_size, xflags, &reloc);
-              if (alloc_failed == buffer) fallback = 2;
+              if (alloc_failed == buffer) {
+                if (0 != (MAP_32BIT & xflags)) {
+                  buffer = internal_xmap(".", alloc_size, xflags & ~MAP_32BIT, &reloc);
+                }
+                if (alloc_failed != buffer) map32 = 0; else fallback = 2;
+              }
             }
             if (2 <= fallback) { /* continue with fall-back */
               if (2 == fallback) { /* 3rd try */
-                buffer = internal_xmap(getenv("HOME"), alloc_size, xflags, &reloc);
-                if (alloc_failed == buffer) fallback = 3;
+                const char *const envloc = getenv("HOME");
+                buffer = internal_xmap(envloc, alloc_size, xflags, &reloc);
+                if (alloc_failed == buffer) {
+                  if (0 != (MAP_32BIT & xflags)) {
+                    buffer = internal_xmap(envloc, alloc_size, xflags & ~MAP_32BIT, &reloc);
+                  }
+                  if (alloc_failed != buffer) map32 = 0; else fallback = 3;
+                }
               }
               if (3 <= fallback) { /* continue with fall-back */
                 if (3 == fallback) { /* 4th try */
-                  buffer = internal_xmap(getenv("JITDUMPDIR"), alloc_size, xflags, &reloc);
-                  if (alloc_failed == buffer) fallback = 4;
+                  const char *const envloc = getenv("JITDUMPDIR");
+                  buffer = internal_xmap(envloc, alloc_size, xflags, &reloc);
+                  if (alloc_failed == buffer) {
+                    if (0 != (MAP_32BIT & xflags)) {
+                      buffer = internal_xmap(envloc, alloc_size, xflags & ~MAP_32BIT, &reloc);
+                    }
+                    if (alloc_failed != buffer) map32 = 0; else fallback = 4;
+                  }
                 }
                 if (4 <= fallback) { /* continue with fall-back */
                   if (4 == fallback) { /* 5th try */
                     buffer = mmap(0, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
                       MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | xflags, -1, 0);
-                    if (alloc_failed == buffer) fallback = 5;
+                    if (alloc_failed == buffer) {
+                      if (0 != (MAP_32BIT & xflags)) {
+                        buffer = mmap(0, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
+                          MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | (xflags & ~MAP_32BIT), -1, 0);
+                      }
+                      if (alloc_failed != buffer) map32 = 0; else fallback = 5;
+                    }
                   }
                   if (5 == fallback && alloc_failed != buffer) { /* final */
-                    buffer = alloc_failed; /* trigger fall-back */
+                    buffer = alloc_failed; /* trigger final fall-back */
                   }
                 }
               }
@@ -718,7 +750,13 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
 # if defined(MAP_HUGETLB) /* no further attempts to rely on huge pages */
           if (0 != (xflags & MAP_HUGETLB)) {
             flags &= ~LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
-            hugefail = 1;
+            hugetlb = 0;
+          }
+# endif
+# if defined(MAP_32BIT) /* no further attempts to map to 32-bit */
+          if (0 != (xflags & MAP_32BIT)) {
+            flags &= ~LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
+            map32 = 0;
           }
 # endif
           if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) { /* fall-back allocation */

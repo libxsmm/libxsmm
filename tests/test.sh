@@ -33,7 +33,7 @@ ${ECHO} "============="
 
 # good-enough pattern to match a main function, and to test this translation unit
 if [ "" = "$*" ]; then
-  TESTS=$(${GREP} -l "main\s*(.*)" ${HERE}/*.c 2> /dev/null)
+  TESTS=$(${GREP} -l "main\s*(.*)" ${HERE}/*.c 2>/dev/null)
 else
   TESTS=$*
 fi
@@ -44,7 +44,7 @@ for TEST in ${TESTS}; do
   ${ECHO} -n "${NTEST} of ${NMAX} (${NAME})... "
   if [ "0" != "$(${ECHO} ${TESTS_DISABLED} | ${GREP} -q ${NAME}; ${ECHO} $?)" ]; then
     ERROR=$({
-    if [ "" != "$(${LDD} ${HERE}/${NAME} 2> /dev/null | ${GREP} libiomp5\.)" ]; then
+    if [ "" != "$(${LDD} ${HERE}/${NAME} 2>/dev/null | ${GREP} libiomp5\.)" ]; then
       ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
         DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../lib \
         KMP_AFFINITY=scatter,granularity=fine,1 \
@@ -57,7 +57,7 @@ for TEST in ${TESTS}; do
         DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../lib \
         OMP_PROC_BIND=TRUE \
       ${TOOL_COMMAND} ${HERE}/${NAME}
-    fi > /dev/null; } 2>&1)
+    fi >/dev/null; } 2>&1)
     RESULT=$?
   else
     ERROR="Test is disabled"

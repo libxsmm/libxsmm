@@ -8,7 +8,7 @@ if [ "" = "${GIT_DIR}" ]; then
   GIT_DIR=${HERE}/../.git
 fi
 
-GIT=$(which git 2> /dev/null)
+GIT=$(which git 2>/dev/null)
 ROOTDIR=$(cd ${GIT_DIR}/..; pwd -P)
 CODEFILE=${ROOTDIR}/.codefile
 MSG_TAG="[skip ci]"
@@ -16,9 +16,9 @@ MSG_FILE=$1
 MSG_KIND=$2
 
 if [ "" != "${GIT}" ] && ! ${GIT} diff --cached --quiet; then # real commit (no amend)
-  ECHO=$(which echo 2> /dev/null)
-  GREP=$(which grep 2> /dev/null)
-  CAT=$(which cat 2> /dev/null)
+  ECHO=$(which echo 2>/dev/null)
+  GREP=$(which grep 2>/dev/null)
+  CAT=$(which cat 2>/dev/null)
 
   if [ "" != "${ECHO}" ] && [ "" != "${GREP}" ] && [ "" != "${CAT}" ] && \
      [ "message" = "${MSG_KIND}" ] && [ "" != "${MSG_FILE}" ] && \
@@ -27,12 +27,12 @@ if [ "" != "${GIT}" ] && ! ${GIT} diff --cached --quiet; then # real commit (no 
     set -o noglob # disable wildcard expansion
 
     if [ -e ${CODEFILE} ]; then
-      PATTERNS="$(${CAT} ${CODEFILE} 2> /dev/null)"
+      PATTERNS="$(${CAT} ${CODEFILE} 2>/dev/null)"
     fi
     PATTERNS+=$(${ECHO} -e "\nMakefile*")
 
     for FILENAME in $(${GIT} diff --cached --name-only); do
-      if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e '^.hooks/..*' 2> /dev/null)" ]; then
+      if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e '^.hooks/..*' 2>/dev/null)" ]; then
         exit 0
       fi
       BASENAME=$(basename ${FILENAME})

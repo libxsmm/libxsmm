@@ -38,14 +38,14 @@ REPO=${HERE}/..
 CODEFILE=${REPO}/.codefile
 MKTEMP=${REPO}/.mktmp.sh
 
-FLAKE8=$(which flake8 2> /dev/null)
-ICONV=$(which iconv 2> /dev/null)
-ECHO=$(which echo 2> /dev/null)
-GIT=$(which git 2> /dev/null)
-SED=$(which sed 2> /dev/null)
-TR=$(which tr 2> /dev/null)
-CP=$(which cp 2> /dev/null)
-RM=$(which rm 2> /dev/null)
+FLAKE8=$(which flake8 2>/dev/null)
+ICONV=$(which iconv 2>/dev/null)
+ECHO=$(which echo 2>/dev/null)
+GIT=$(which git 2>/dev/null)
+SED=$(which sed 2>/dev/null)
+TR=$(which tr 2>/dev/null)
+CP=$(which cp 2>/dev/null)
+RM=$(which rm 2>/dev/null)
 
 if [ -e ${CODEFILE} ]; then
   PATTERNS="$(cat ${CODEFILE})"
@@ -65,8 +65,8 @@ if [ "" != "${ICONV}" ] && [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && \
   # Search the content of the diffs matching the given file types
   for PATTERN in ${PATTERNS}; do
     for FILE in $("${GIT}" ls-files ${PATTERN}); do
-      BANNED=$(${SED} -n "/[${BANNED_CHARS}]/p" ${FILE} 2> /dev/null)
-      DOSEOL=$(${SED} -n "/\r$/p" ${FILE} 2> /dev/null | ${TR} -d "\n")
+      BANNED=$(${SED} -n "/[${BANNED_CHARS}]/p" ${FILE} 2>/dev/null)
+      DOSEOL=$(${SED} -n "/\r$/p" ${FILE} 2>/dev/null | ${TR} -d "\n")
       if [ "" != "${BANNED}" ]; then
         ${ECHO} "Warning: ${FILE} contains banned characters!"
       fi

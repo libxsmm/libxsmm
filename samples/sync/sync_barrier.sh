@@ -20,9 +20,9 @@ else
   fi
 fi
 
-MICINFO=$(which micinfo 2> /dev/null)
+MICINFO=$(which micinfo 2>/dev/null)
 if [ "" != "${MICINFO}" ]; then
-  MICCORES=$(${MICINFO} 2> /dev/null | sed -n "0,/\s\+Total No of Active Cores :\s\+\([0-9]\+\)/s//\1/p")
+  MICCORES=$(${MICINFO} 2>/dev/null | sed -n "0,/\s\+Total No of Active Cores :\s\+\([0-9]\+\)/s//\1/p")
 fi
 if [ "" = "${MICCORES}" ]; then
   MICCORES=61
@@ -30,7 +30,7 @@ fi
 MICTPERC=3
 
 if [ "-mic" != "$1" ]; then
-  if [ "" != "$(${LDD} ${HERE}/${NAME} 2> /dev/null | ${GREP} libiomp5\.)" ]; then
+  if [ "" != "$(${LDD} ${HERE}/${NAME} 2>/dev/null | ${GREP} libiomp5\.)" ]; then
     ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../../lib \
       DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../../lib \
       KMP_AFFINITY=compact,granularity=fine,1 \

@@ -46,7 +46,7 @@ fi
 STATEFILE=${DEST}/.state
 STATE=$(${TR} '?' '\n' | ${SED} -e 's/^  *//')
 
-if [ ! -e ${STATEFILE} ] || [ 0 != $(${ECHO} "${STATE}" | diff -q ${STATEFILE} - > /dev/null; ${ECHO} $?) ]; then
+if [ ! -e ${STATEFILE} ] || [ 0 != $(${ECHO} "${STATE}" | diff -q ${STATEFILE} - >/dev/null; ${ECHO} $?) ]; then
   ${ECHO} "${STATE}" > ${STATEFILE}
   ${ECHO} $0
   ${TOUCH} $0

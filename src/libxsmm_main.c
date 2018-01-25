@@ -844,7 +844,8 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 #endif
             if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, &size, 0/*flags*/, &buffer)) {
               libxsmm_xfree(code.ptr_const);
-              internal_registry_nbytes += (unsigned int)(size + (((char*)code.ptr_const) - (char*)buffer));
+              /* round-up size (it is fine to assume 4 KB pages since it is likely more accurate than not rounding up) */
+              internal_registry_nbytes += (unsigned int)LIBXSMM_UP2(size + (((char*)code.ptr_const) - (char*)buffer), 4096/*4KB*/);
             }
           }
         }

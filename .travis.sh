@@ -31,25 +31,25 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
-#MKTEMP=$(which mktemp 2> /dev/null)
+#MKTEMP=$(which mktemp 2>/dev/null)
 MKTEMP=${HERE}/.mktmp.sh
-MKDIR=$(which mkdir 2> /dev/null)
-CHMOD=$(which chmod 2> /dev/null)
-UNAME=$(which uname 2> /dev/null)
-SYNC=$(which sync 2> /dev/null)
-SORT=$(which sort 2> /dev/null)
-GREP=$(which grep 2> /dev/null)
-SED=$(which sed 2> /dev/null)
-TR=$(which tr 2> /dev/null)
-WC=$(which wc 2> /dev/null)
-RM=$(which rm 2> /dev/null)
-CP=$(which cp 2> /dev/null)
+MKDIR=$(which mkdir 2>/dev/null)
+CHMOD=$(which chmod 2>/dev/null)
+UNAME=$(which uname 2>/dev/null)
+SYNC=$(which sync 2>/dev/null)
+SORT=$(which sort 2>/dev/null)
+GREP=$(which grep 2>/dev/null)
+SED=$(which sed 2>/dev/null)
+TR=$(which tr 2>/dev/null)
+WC=$(which wc 2>/dev/null)
+RM=$(which rm 2>/dev/null)
+CP=$(which cp 2>/dev/null)
 
 if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && \
    [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${WC}" ] && \
    [ "" != "${RM}" ] && [ "" != "${CP}" ]; \
 then
-  HOST=$(hostname -s 2> /dev/null)
+  HOST=$(hostname -s 2>/dev/null)
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
     export TRAVIS_BUILD_DIR=${BUILDKITE_BUILD_CHECKOUT_PATH}
   fi
@@ -120,7 +120,7 @@ then
     TESTSCRIPT=$(${MKTEMP} ${HERE}/.libxsmm_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 ${SRUN_FLAGS} ${SRUN_CPUS_PER_TASK_FLAG} \
-      --partition=\${PARTITION} --preserve-env --pty ${TESTSCRIPT} 2\> /dev/null"
+      --partition=\${PARTITION} --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
   else # avoid temporary script in case of non-batch execution
     LAUNCH=\${TEST}
   fi
@@ -161,10 +161,10 @@ then
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
            [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ]; \
         then
-          LICSDIR=$(which icc 2> /dev/null | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
+          LICSDIR=$(which icc 2>/dev/null | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
           ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
-          ${CP} -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2> /dev/null
-          ${CP} -u ${LICSDIR}/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2> /dev/null
+          ${CP} -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
+          ${CP} -u ${LICSDIR}/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
           echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
           echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
         fi
