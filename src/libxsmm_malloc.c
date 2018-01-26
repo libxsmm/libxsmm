@@ -683,21 +683,26 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
           if (0 == fallback) {
             buffer = internal_xmap("/tmp", alloc_size, xflags, &reloc);
             if (alloc_failed == buffer) {
+# if defined(MAP_32BIT)
               if (0 != (MAP_32BIT & xflags)) {
                 buffer = internal_xmap("/tmp", alloc_size, xflags & ~MAP_32BIT, &reloc);
               }
-              if (alloc_failed != buffer) map32 = 0; else fallback = 1;
+              if (alloc_failed != buffer) map32 = 0; else
+# endif
+              fallback = 1;
             }
-            if (alloc_failed == buffer) fallback = 1;
           }
           if (1 <= fallback) { /* continue with fall-back */
             if (1 == fallback) { /* 2nd try */
               buffer = internal_xmap(".", alloc_size, xflags, &reloc);
               if (alloc_failed == buffer) {
+# if defined(MAP_32BIT)
                 if (0 != (MAP_32BIT & xflags)) {
                   buffer = internal_xmap(".", alloc_size, xflags & ~MAP_32BIT, &reloc);
                 }
-                if (alloc_failed != buffer) map32 = 0; else fallback = 2;
+                if (alloc_failed != buffer) map32 = 0; else
+# endif
+                fallback = 2;
               }
             }
             if (2 <= fallback) { /* continue with fall-back */
@@ -705,10 +710,13 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
                 const char *const envloc = getenv("HOME");
                 buffer = internal_xmap(envloc, alloc_size, xflags, &reloc);
                 if (alloc_failed == buffer) {
+# if defined(MAP_32BIT)
                   if (0 != (MAP_32BIT & xflags)) {
                     buffer = internal_xmap(envloc, alloc_size, xflags & ~MAP_32BIT, &reloc);
                   }
-                  if (alloc_failed != buffer) map32 = 0; else fallback = 3;
+                  if (alloc_failed != buffer) map32 = 0; else
+# endif
+                  fallback = 3;
                 }
               }
               if (3 <= fallback) { /* continue with fall-back */
@@ -716,10 +724,13 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
                   const char *const envloc = getenv("JITDUMPDIR");
                   buffer = internal_xmap(envloc, alloc_size, xflags, &reloc);
                   if (alloc_failed == buffer) {
+# if defined(MAP_32BIT)
                     if (0 != (MAP_32BIT & xflags)) {
                       buffer = internal_xmap(envloc, alloc_size, xflags & ~MAP_32BIT, &reloc);
                     }
-                    if (alloc_failed != buffer) map32 = 0; else fallback = 4;
+                    if (alloc_failed != buffer) map32 = 0; else
+# endif
+                    fallback = 4;
                   }
                 }
                 if (4 <= fallback) { /* continue with fall-back */
@@ -727,11 +738,14 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
                     buffer = mmap(0, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
                       MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | xflags, -1, 0);
                     if (alloc_failed == buffer) {
+# if defined(MAP_32BIT)
                       if (0 != (MAP_32BIT & xflags)) {
                         buffer = mmap(0, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
                           MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | (xflags & ~MAP_32BIT), -1, 0);
                       }
-                      if (alloc_failed != buffer) map32 = 0; else fallback = 5;
+                      if (alloc_failed != buffer) map32 = 0; else
+# endif
+                      fallback = 5;
                     }
                   }
                   if (5 == fallback && alloc_failed != buffer) { /* final */

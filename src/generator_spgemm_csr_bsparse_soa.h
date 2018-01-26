@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2017, Intel Corporation                                **
+** Copyright (c) 2015-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -51,17 +51,6 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
                                                           const unsigned int*             i_row_idx,
                                                           const unsigned int*             i_column_idx,
                                                           const void*                     i_values );
-
-LIBXSMM_INTERNAL_API
-void libxsmm_generator_spgemm_csr_bsparse_soa_avx512_reorder(const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                             const unsigned int*             i_row_idx,
-                                                             const unsigned int*             i_column_idx,
-                                                             const unsigned int              i_k_processed,
-                                                             const unsigned int              i_k_limit,
-                                                             const unsigned int              i_n_processed,
-                                                             const unsigned int              i_n_limit,
-                                                             unsigned int**                  o_row_schedule,
-                                                             unsigned int*                   o_num_active_rows );
 
 #endif /* GENERATOR_SPGEMM_CSR_BSPARSE_SOA_H */
 
