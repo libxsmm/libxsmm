@@ -10,7 +10,7 @@ matrix:
     env: OPT=1 LIBXSMM_TARGET=0
   - os: linux
     compiler: gcc
-    env: DBG=1
+    env: DBG=1 PYTHON=python3
   - os: linux
     compiler: clang
     env: DBG=1
@@ -34,6 +34,7 @@ addons:
     - gfortran
     - libblas-dev
     - liblapack-dev
+    - python3
     - sshpass
 
 before_install:
@@ -56,7 +57,7 @@ before_script:
 
 script:
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-    make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 TRACE=1 STATIC=0 ABSLIBS=1 ECFLAGS="-DREAL_TYPE=double" install-artifacts tests &&
+    make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 TRACE=1 STATIC=0 ABSLIBS=1 EFLAGS="-DREAL_TYPE=double" install-artifacts tests &&
     if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/blas 2> blas-trace-${COVID}.txt;
       env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/malloc 2> malloc-trace-${COVID}.txt;
@@ -64,7 +65,7 @@ script:
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-    make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 TRACE=1 MNK="19 27, 23" ECFLAGS="-DLIBXSMM_MALLOC_MMAP" install-artifacts test-cp2k
+    make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 TRACE=1 MNK="19 27, 23" EFLAGS="-DLIBXSMM_MALLOC_MMAP" install-artifacts test-cp2k
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
@@ -72,7 +73,7 @@ script:
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-    make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 STATIC=0 ECFLAGS="-DLIBXSMM_CAPACITY_REGISTRY=32" install-artifacts tests
+    make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 STATIC=0 EFLAGS="-DLIBXSMM_CAPACITY_REGISTRY=32" install-artifacts tests
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
@@ -80,11 +81,11 @@ script:
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-    make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 ECFLAGS="-DELEM_TYPE=char" install-artifacts tests
+    make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 EFLAGS="-DELEM_TYPE=char" install-artifacts tests
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-    make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 SSE=0 AVX=0 JIT=0 ECFLAGS="-DELEM_TYPE=short" install-artifacts tests
+    make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 SYM=1 SSE=0 AVX=0 JIT=0 EFLAGS="-DELEM_TYPE=short" install-artifacts tests
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
@@ -100,6 +101,6 @@ script:
     2>&1) | tee .travis.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-    make -e PEDANTIC=2 AVX=3 MIC=0 test-cpp && make -e PEDANTIC=2 AVX=2 test-cpp && make -e PEDANTIC=2 AVX=1 VLA=0 test-cpp
+    make -e PEDANTIC=2 AVX=3 MIC=0 OMP=1 test-cpp && make -e PEDANTIC=2 AVX=2 THREADS=0 test-cpp && make -e PEDANTIC=2 AVX=1 VLA=0 test-cpp
     2>&1) | tee .travis.log && eval ${POSTPROC}
 

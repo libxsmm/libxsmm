@@ -29,7 +29,7 @@ ${ECHO} "num=${NUM}"
 ${ECHO} "min=${MIN}"
 ${ECHO} "max=${MAX}"
 
-BC=$(which bc 2> /dev/null)
+BC=$(which bc 2>/dev/null)
 if [ "" != "${BC}" ]; then
   AVG=$(${ECHO} "$(${ECHO} -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
   NUM2=$((NUM / 2))
@@ -53,7 +53,7 @@ elif [ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot ]; then
   WGNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot
   GNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/gnuplot
 else
-  GNUPLOT=$(which gnuplot 2> /dev/null)
+  GNUPLOT=$(which gnuplot 2>/dev/null)
   WGNUPLOT=${GNUPLOT}
 fi
 

@@ -28,6 +28,7 @@ IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include -I$(DEPDIR)/src
 BLAS ?= 1
 OMP ?= 1
 SYM ?= 1
+MIX ?= 1
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
@@ -35,22 +36,22 @@ include $(DEPDIR)/Makefile.inc
 OUTNAME := $(shell basename $(ROOTDIR))
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
            $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh)
-CPPSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cpp 2> /dev/null | tr "\n" " ")
-CPPSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cpp 2> /dev/null | tr "\n" " ")
-CXXSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cxx 2> /dev/null | tr "\n" " ")
-CXXSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cxx 2> /dev/null | tr "\n" " ")
-CCXSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cc  2> /dev/null | tr "\n" " ")
-CCXSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cc  2> /dev/null | tr "\n" " ")
-CSOURCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.c   2> /dev/null | tr "\n" " ")
-CSOURCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.c   2> /dev/null | tr "\n" " ")
-FXXSRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.f   2> /dev/null | tr "\n" " ")
-FXXSRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.f   2> /dev/null | tr "\n" " ")
-F77SRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.F   2> /dev/null | tr "\n" " ")
-F77SRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.F   2> /dev/null | tr "\n" " ")
-F90SRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.f90 2> /dev/null | tr "\n" " ") \
-           $(shell grep -L $(FMAIN) $(SRCDIR)/*.F90 2> /dev/null | tr "\n" " ")
-F90SRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.f90 2> /dev/null | tr "\n" " ") \
-           $(shell grep -l $(FMAIN) $(SRCDIR)/*.F90 2> /dev/null | tr "\n" " ")
+CPPSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cpp 2>/dev/null | tr "\n" " ")
+CPPSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cpp 2>/dev/null | tr "\n" " ")
+CXXSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cxx 2>/dev/null | tr "\n" " ")
+CXXSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cxx 2>/dev/null | tr "\n" " ")
+CCXSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cc  2>/dev/null | tr "\n" " ")
+CCXSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cc  2>/dev/null | tr "\n" " ")
+CSOURCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.c   2>/dev/null | tr "\n" " ")
+CSOURCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.c   2>/dev/null | tr "\n" " ")
+FXXSRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.f   2>/dev/null | tr "\n" " ")
+FXXSRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.f   2>/dev/null | tr "\n" " ")
+F77SRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.F   2>/dev/null | tr "\n" " ")
+F77SRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.F   2>/dev/null | tr "\n" " ")
+F90SRCS := $(shell grep -L $(FMAIN) $(SRCDIR)/*.f90 2>/dev/null | tr "\n" " ") \
+           $(shell grep -L $(FMAIN) $(SRCDIR)/*.F90 2>/dev/null | tr "\n" " ")
+F90SRCX := $(shell grep -l $(FMAIN) $(SRCDIR)/*.f90 2>/dev/null | tr "\n" " ") \
+           $(shell grep -l $(FMAIN) $(SRCDIR)/*.F90 2>/dev/null | tr "\n" " ")
 MODULES := $(addsuffix    .mod,$(basename $(FXXSRCS) $(F77SRCS) $(F90SRCS))) \
            $(addsuffix .modmic,$(basename $(FXXSRCS) $(F77SRCS) $(F90SRCS)))
 OBJECTS := $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS))
@@ -129,26 +130,34 @@ $(foreach SRC, $(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX),$(eval $(call DEFINE_
 $(foreach SRC, $(FXXSRCX) $(F77SRCX) $(F90SRCX),$(eval $(call DEFINE_LINK_FC_RULE, \
   $(basename $(notdir $(SRC))), $(call objname, $(SRC)))))
 
+ifeq (0,$(MIX))
 $(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o
 	$(LD) -o $@ $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+else
+$(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly_aux-c.o
+	@ln -fs headeronly.c headeronly.cpp
+	$(CXX) -o $@ $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) headeronly.cpp \
+		$(BLDDIR)/headeronly_aux-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	@rm -f headeronly.cpp
+endif
 
-$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
+$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc #$(DEPDIR)/include/libxsmm_source.h
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
 
 $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
 
-$(BLDDIR)/%-f.o: $(SRCDIR)/%.f .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
+#$(BLDDIR)/%-f.o: $(SRCDIR)/%.f .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
+#	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
 
-$(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
+#$(BLDDIR)/%-f90.o: $(SRCDIR)/%.f90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
+#	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
 
-$(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
+#$(BLDDIR)/%-f90.o: $(SRCDIR)/%.F90 .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
+#	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
 
-$(BLDDIR)/%-f77.o: $(SRCDIR)/%.F .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
+#$(BLDDIR)/%-f77.o: $(SRCDIR)/%.F .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc $(DEPDIR)/include/libxsmm_source.h
+#	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
 
 .PHONY: clean
 clean:

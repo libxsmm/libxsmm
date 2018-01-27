@@ -127,7 +127,7 @@ typedef enum libxsmm_gemm_prefetch_type {
 } libxsmm_gemm_prefetch_type;
 
 /** DEPRECATED: provided for compatibility with older codes. */
-typedef libxsmm_gemm_prefetch_type libxsmm_prefetch_type;
+typedef libxsmm_gemm_prefetch_type libxsmm_prefetch_type; /* type-alias */
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_convolution_prefetch_type {
@@ -228,7 +228,7 @@ typedef enum libxsmm_dnn_conv_option {
 } libxsmm_dnn_conv_option;
 
 /** Structure storing the convolution argument description. */
-typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int kh;                              /* kernel height */
   unsigned int kw;                              /* kernel width */
   unsigned int unroll_kh;                       /* kernel height, unrolled */
@@ -256,7 +256,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
 } libxsmm_convolution_forward_descriptor;
 
 /** Backward convolution argument descriptor (similar to forward descriptor). */
-typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
   unsigned int kh;                              /* kernel height */
   unsigned int kw;                              /* kernel width */
   unsigned int unroll_kh;                       /* kernel height, unrolled */
@@ -283,7 +283,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_descriptor {
 } libxsmm_convolution_backward_descriptor;
 
 /** Structure storing the convolution weight update argument description. */
-typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
   unsigned int kw;                              /* kernel width */
   unsigned int unroll_kw;                       /* kernel width, unrolled */
   unsigned int kh;                              /* kernel height */
@@ -317,7 +317,7 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
 /**
  * Structure storing the convolution winograd argument description.
  */
-typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
   /** alpha determines the tile size */
   unsigned int alpha;
   /** number of itiles */
@@ -337,13 +337,13 @@ typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
 } libxsmm_convolution_winograd_descriptor;
 
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */
-typedef LIBXSMM_RETARGETABLE void(*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (low-precision). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmmfunction)(const short* a, const short* b, int* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmmfunction)(const short* a, const short* b, int* c, ...);
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   void (*xmm)(const void* a, const void* b, void* c, ...);
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wmmfunction wmm;
 } libxsmm_xmmfunction;
@@ -361,13 +361,17 @@ typedef enum libxsmm_kernel_kind {
 } libxsmm_kernel_kind;
 
 /** Specialized function for matrix-copy (weak-typed). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmatcopyfunction)(const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmatcopyfunction)(
+  const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);
 
 /** Specialized function for transpose (weak-typed). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(
+  const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo);
 
 /** Structure to receive information about the code registry status (libxsmm_get_registry_info). */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info { size_t capacity, size, nbytes, nstatic, ncache; } libxsmm_registry_info;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info {
+  size_t capacity, size, nbytes, nstatic, ncache;
+} libxsmm_registry_info;
 
 #endif /*LIBXSMM_TYPEDEFS_H*/
 

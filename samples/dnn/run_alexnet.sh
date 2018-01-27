@@ -1,8 +1,8 @@
 #!/bin/bash
 
-SORT=$(which sort 2> /dev/null)
-GREP=$(which grep 2> /dev/null)
-WC=$(which wc 2> /dev/null)
+SORT=$(which sort 2>/dev/null)
+GREP=$(which grep 2>/dev/null)
+WC=$(which wc 2>/dev/null)
 
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
   if [ "" = "${CHECK_DNN_MB}" ]; then CHECK_DNN_MB=256; fi

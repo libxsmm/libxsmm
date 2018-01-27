@@ -35,17 +35,17 @@
 
 
 /** Function types accepted for memory allocation (see libxsmm_*_allocator). */
-typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_ctx)(void* /*context*/, size_t /*size*/);
-typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_fun)(size_t /*size*/);
-typedef union LIBXSMM_RETARGETABLE libxsmm_malloc_function {
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_ctx)(void* /*context*/, size_t /*size*/);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_fun)(size_t /*size*/);
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_malloc_function {
   libxsmm_malloc_ctx ctx_form;
   libxsmm_malloc_fun function;
 } libxsmm_malloc_function;
 
 /** Function types accepted for releasing memory (see libxsmm_*_allocator). */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_ctx)(void* /*context*/, void* /*buffer*/);
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_fun)(void* /*buffer*/);
-typedef union LIBXSMM_RETARGETABLE libxsmm_free_function {
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_ctx)(void* /*context*/, void* /*buffer*/);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_fun)(void* /*buffer*/);
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_free_function {
   libxsmm_free_ctx ctx_form;
   libxsmm_free_fun function;
 } libxsmm_free_function;
@@ -123,7 +123,7 @@ LIBXSMM_API void libxsmm_free(const void* memory);
 LIBXSMM_API void libxsmm_release_scratch(void);
 
 /** Information about a buffer (default memory domain). */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_malloc_info {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_malloc_info {
   /** Size of the buffer. */
   size_t size;
 } libxsmm_malloc_info;
@@ -132,7 +132,7 @@ typedef struct LIBXSMM_RETARGETABLE libxsmm_malloc_info {
 LIBXSMM_API int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info* info);
 
 /** Information about the scratch memory domain. */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
   /** Total size of all scratch memory pools. */
   size_t size;
   /** Pending allocations (not released). */

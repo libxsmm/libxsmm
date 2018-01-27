@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_SPMDM_H
 #define LIBXSMM_SPMDM_H
 
-#include <libxsmm_macros.h>
+#include "libxsmm_macros.h"
 
 
 typedef enum libxsmm_spmdm_datatype {
@@ -39,7 +39,7 @@ typedef enum libxsmm_spmdm_datatype {
   LIBXSMM_SPMDM_DATATYPE_BFLOAT16
 } libxsmm_spmdm_datatype;
 
-typedef struct libxsmm_spmdm_handle {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_spmdm_handle {
   /* The following are the matrix multiply dimensions: A (sparse): m X k, B (dense): k X n, Output C (dense): m X n */
   int m;
   int n;
@@ -61,9 +61,9 @@ typedef struct libxsmm_spmdm_handle {
 
 /**
  * This stores a single sparse splice (or block) of sparse matrix A using a CSR representation (rowidx, colidx, and values
- * Each splice corresponds to a bm X bk region of A, and stores local indices
+ * Each splice corresponds to a bm X bk region of A, and stores local indexes
  */
-typedef struct libxsmm_CSR_sparseslice {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_CSR_sparseslice {
   /* Since bm and bk are assumed to be <=256, a 16-bit integer is enough to store the local rowidx, colidx */
   uint16_t * rowidx;
   uint16_t * colidx;

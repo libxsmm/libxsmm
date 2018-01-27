@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2010
+VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmm", "libxsmm.vcxproj", "{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}"
 EndProject
@@ -181,12 +181,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bsparse_srsoa", "..\samples
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sync", "sync", "{51DD2FE2-BB67-4D08-BDD0-9FD0D6BBE20D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "barrier", "..\samples\sync\barrier.vcxproj", "{3920347F-E161-41D8-87D5-F7A516E1E234}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sync_barrier", "..\samples\sync\sync_barrier.vcxproj", "{3920347F-E161-41D8-87D5-F7A516E1E234}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lock", "..\samples\sync\lock.vcxproj", "{B8E97739-2AC9-4F26-92BD-6B8205E1119A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sync_lock", "..\samples\sync\sync_lock.vcxproj", "{B8E97739-2AC9-4F26-92BD-6B8205E1119A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection

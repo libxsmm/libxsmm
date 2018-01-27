@@ -122,21 +122,21 @@ typedef LIBXSMM_BLASINT libxsmm_blasint;
 #endif
 
 /** GEMM: fall-back prototype functions served by any compliant LAPACK/BLAS. */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
 
 /** GEMV: fall-back prototype functions served by any compliant LAPACK/BLAS. */
-typedef LIBXSMM_RETARGETABLE void(*libxsmm_sgemv_function)(
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_sgemv_function)(
   const char*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-typedef LIBXSMM_RETARGETABLE void(*libxsmm_dgemv_function)(
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_dgemv_function)(
   const char*, const libxsmm_blasint*, const libxsmm_blasint*,
   const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
@@ -410,7 +410,7 @@ LIBXSMM_API void libxsmm_gemm_print(void* ostream,
  * Structure of differences with matrix norms according
  * to http://www.netlib.org/lapack/lug/node75.html).
  */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
   /** One-norm */         double norm1_abs, norm1_rel;
   /** Infinity-norm */    double normi_abs, normi_rel;
   /** Froebenius-norm */  double normf_rel;

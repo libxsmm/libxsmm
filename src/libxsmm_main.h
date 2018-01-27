@@ -68,6 +68,13 @@
 # define LIBXSMM_MALLOC_SCRATCH_INTERNAL ((const void*)(LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE))
 #endif
 
+#if !defined(LIBXSMM_LOCK)
+# define LIBXSMM_LOCK LIBXSMM_LOCK_DEFAULT
+#endif
+#if !defined(LIBXSMM_REGLOCK)
+# define LIBXSMM_REGLOCK LIBXSMM_LOCK_DEFAULT
+#endif
+
 #if !defined(LIBXSMM_EXT_MIN_NTASKS)
 # define LIBXSMM_MIN_NTASKS(NT) 1
 #endif
@@ -88,7 +95,7 @@
 # define LIBXSMM_INIT
 #endif
 
-typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   void (*ptr_fn)(LIBXSMM_VARIADIC);
   const void* ptr_const;
   void* pmm;
@@ -102,21 +109,21 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
 #endif
 } libxsmm_code_pointer;
 
-typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
   const unsigned int* column_idx;
   const void* values;
 } libxsmm_csr_soa_descriptor;
 
-typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csc_soa_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csc_soa_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* column_ptr;
   const unsigned int* row_idx;
   const void* values;
 } libxsmm_csc_soa_descriptor;
 
-typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
   const unsigned int* column_idx;
@@ -124,20 +131,20 @@ typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor
 } libxsmm_csr_reg_descriptor;
 
 /** Structure which describes all tensors in LIBXSMM's DNN module */
-struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor {
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor {
   libxsmm_dnn_tensor_datalayout* layout;           /* data-layout descriptor */
   void* data;                                      /* pointer to data */
   char exp;                                        /* fix point exponent for this tensor */
 };
 
 /* Structure to record segment in stream of code  */
-typedef struct LIBXSMM_RETARGETABLE segment_t {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE segment_t {
   int segment_type;
   int n_convs;
   int aux_index;
 } segment_t;
 
-struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_datatype datatype;
   libxsmm_dnn_datatype datatype_itm;
   libxsmm_dnn_conv_desc desc;
@@ -312,7 +319,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_TRANS
 } libxsmm_build_kind;
 
-typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const libxsmm_csr_soa_descriptor* srsoa;
   const libxsmm_csc_soa_descriptor* scsoa;
@@ -325,7 +332,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_transpose_descriptor* trans;
 } libxsmm_build_descriptor;
 
-typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
   libxsmm_build_descriptor descriptor;
   libxsmm_build_kind kind;
 } libxsmm_build_request;
@@ -349,17 +356,17 @@ LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
 LIBXSMM_API size_t libxsmm_alignment(size_t size, size_t alignment);
 
 /** Same as libxsmm_set_default_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_DEFAULT)* lock,
+LIBXSMM_API int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Same as libxsmm_get_default_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_DEFAULT)* lock,
+LIBXSMM_API int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /** Same as libxsmm_set_scratch_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_DEFAULT)* lock,
+LIBXSMM_API int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Same as libxsmm_get_scratch_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_DEFAULT)* lock,
+LIBXSMM_API int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /** Retrieve internal information about a buffer (default memory domain). */
@@ -386,7 +393,7 @@ LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
-typedef union LIBXSMM_RETARGETABLE libxsmm_kernel_info {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_kernel_info {
   libxsmm_gemm_descriptor xgemm;
   libxsmm_matcopy_descriptor mcopy;
   libxsmm_transpose_descriptor trans;
@@ -406,39 +413,39 @@ LIBXSMM_API void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API void libxsmm_dnn_finalize(void);
 
 /** Default attribute of internal locks. */
-LIBXSMM_API_VARIABLE LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK_DEFAULT) libxsmm_lock_attr_default;
+LIBXSMM_API_VARIABLE(LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK) libxsmm_lock_attr_default);
 /** Global lock; create an own lock for an independent domain. */
-LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_DEFAULT) libxsmm_lock_global;
+LIBXSMM_API_VARIABLE(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
 /** Function used to allocate default memory. */
-LIBXSMM_API_VARIABLE libxsmm_malloc_function libxsmm_default_malloc_fn;
+LIBXSMM_API_VARIABLE(libxsmm_malloc_function libxsmm_default_malloc_fn);
 /** Function used to allocate scratch memory. */
-LIBXSMM_API_VARIABLE libxsmm_malloc_function libxsmm_scratch_malloc_fn;
+LIBXSMM_API_VARIABLE(libxsmm_malloc_function libxsmm_scratch_malloc_fn);
 /** Function used to release default memory. */
-LIBXSMM_API_VARIABLE libxsmm_free_function libxsmm_default_free_fn;
+LIBXSMM_API_VARIABLE(libxsmm_free_function libxsmm_default_free_fn);
 /** Function used to release scratch memory. */
-LIBXSMM_API_VARIABLE libxsmm_free_function libxsmm_scratch_free_fn;
+LIBXSMM_API_VARIABLE(libxsmm_free_function libxsmm_scratch_free_fn);
 /** If non-NULL, this context used for the context-form of the malloc/free function. */
-LIBXSMM_API_VARIABLE void* libxsmm_default_allocator_context;
+LIBXSMM_API_VARIABLE(void* libxsmm_default_allocator_context);
 /** If non-NULL, this context used for the context-form of the malloc/free function. */
-LIBXSMM_API_VARIABLE void* libxsmm_scratch_allocator_context;
+LIBXSMM_API_VARIABLE(void* libxsmm_scratch_allocator_context);
 /** Number of discovered threads (per libxsmm_get_tid) */
-LIBXSMM_API_VARIABLE unsigned int libxsmm_threads_count;
+LIBXSMM_API_VARIABLE(unsigned int libxsmm_threads_count);
 /** Number of scratch memory pools used; clamped against internal maximum. */
-LIBXSMM_API_VARIABLE unsigned int libxsmm_scratch_pools;
+LIBXSMM_API_VARIABLE(unsigned int libxsmm_scratch_pools);
 /** Maximum total size of the scratch memory domain. */
-LIBXSMM_API_VARIABLE size_t libxsmm_scratch_limit;
+LIBXSMM_API_VARIABLE(size_t libxsmm_scratch_limit);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
-LIBXSMM_API_VARIABLE double libxsmm_scratch_scale;
+LIBXSMM_API_VARIABLE(double libxsmm_scratch_scale);
 /** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
-LIBXSMM_API_VARIABLE double libxsmm_timer_scale;
+LIBXSMM_API_VARIABLE(double libxsmm_timer_scale);
 /** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
-LIBXSMM_API_VARIABLE int libxsmm_verbosity;
+LIBXSMM_API_VARIABLE(int libxsmm_verbosity);
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
-LIBXSMM_API_VARIABLE int libxsmm_target_archid;
+LIBXSMM_API_VARIABLE(int libxsmm_target_archid);
 /** Determines whether a threaded implementation is synchronized or not. */
-LIBXSMM_API_VARIABLE int libxsmm_nosync;
+LIBXSMM_API_VARIABLE(int libxsmm_nosync);
 /** Number of threads per core. */
-LIBXSMM_API_VARIABLE int libxsmm_nt;
+LIBXSMM_API_VARIABLE(int libxsmm_nt);
 
 #endif /*LIBXSMM_MAIN_H*/
 

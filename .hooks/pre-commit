@@ -4,49 +4,49 @@ LOCKFILE=${GIT_DIR}/.commit
 CODEFILE=.codefile
 BANNED_CHARS="\t"
 
-TOUCH=$(which touch 2> /dev/null)
-ECHO=$(which echo 2> /dev/null)
-GREP=$(which grep 2> /dev/null)
-GIT=$(which git 2> /dev/null)
-#SED=$(which sed 2> /dev/null)
-RM=$(which rm 2> /dev/null)
+TOUCH=$(which touch 2>/dev/null)
+ECHO=$(which echo 2>/dev/null)
+GREP=$(which grep 2>/dev/null)
+GIT=$(which git 2>/dev/null)
+#SED=$(which sed 2>/dev/null)
+RM=$(which rm 2>/dev/null)
 
 if [ "" != "${GIT}" ]; then
   if [ "" != "${ECHO}" ] && [ "" != "${SED}" ] && [ "" != "${GREP}" ] && \
-     [ "" != "$(${GIT} rev-parse --verify HEAD 2> /dev/null)" ]; \
+     [ "" != "$(${GIT} rev-parse --verify HEAD 2>/dev/null)" ]; \
   then
     if [ -e ${CODEFILE} ]; then
       # transform wildcard-style patterns to regular expressions
-      PATTERNS="$(${SED} -e 's/\./\\./g' -e 's/\*/..*/g' -e 's/?/./g' -e 's/$/\$/g' ${CODEFILE} 2> /dev/null)"
+      PATTERNS="$(${SED} -e 's/\./\\./g' -e 's/\*/..*/g' -e 's/?/./g' -e 's/$/\$/g' ${CODEFILE} 2>/dev/null)"
     fi
     IFS_BACKUP="${IFS}"
     IFS=""
     while read -r LINE; do
       IFS="${IFS_BACKUP}"
       # determine the filename of the patch snippet
-      MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^diff --git a\/\(..*\) b..*$/\1/p" 2> /dev/null)
+      MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^diff --git a\/\(..*\) b..*$/\1/p" 2>/dev/null)
       if [ "" != "${MATCH}" ]; then
         FILENAME=${MATCH}
         LOCATION=""
       elif [ "" != "${FILENAME}" ]; then
         # determine the line number of the change
-        MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^@@ -..* +\([0-9][0-9]*\),..*$/\1/p" 2> /dev/null)
+        MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^@@ -..* +\([0-9][0-9]*\),..*$/\1/p" 2>/dev/null)
         if [ "" != "${MATCH}" ]; then LOCATION=":${MATCH}"; fi
         # check against banned characters
-        if [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*[${BANNED_CHARS}]..*$/p" 2> /dev/null)" ]; then
+        if [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*[${BANNED_CHARS}]..*$/p" 2>/dev/null)" ]; then
           # check if problem is with a permitted file type
           for PATTERN in ${PATTERNS}; do
-            MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2> /dev/null)
+            MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
             if [ "" != "${MATCH}" ]; then # print an error message and exit
               >&2 ${ECHO} "Error: ${FILENAME}${LOCATION} contains banned character(s)!"
               exit 1
             fi
           done
         # check against trailing whitespace(s)
-        elif [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*\s\s*$/p" 2> /dev/null)" ]; then
+        elif [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*\s\s*$/p" 2>/dev/null)" ]; then
           # check if problem is with a permitted file type
           for PATTERN in ${PATTERNS}; do
-            MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2> /dev/null)
+            MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
             if [ "" != "${MATCH}" ]; then # print an error message and exit
               >&2 ${ECHO} "Error: ${FILENAME}${LOCATION} has trailing whitespace(s)!"
               #exit 1
@@ -64,7 +64,7 @@ EOD
   fi
 
   if [ "" != "${TOUCH}" ] && [ "" != "${GREP}" ] && [ "" != "${RM}" ]; then
-    if [ "" = "$(${GIT} diff --cached --name-status | ${GREP} version.txt)" ]; then
+    if [ "" = "$(${GIT} diff --cached --name-only | ${GREP} version.txt)" ]; then
       # trigger updating the version file
       ${TOUCH} ${LOCKFILE}-version
     else # cleanup

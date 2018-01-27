@@ -33,11 +33,11 @@
 RPT=inspector
 KIND=mi1
 
-BASENAME=$(which basename 2> /dev/null)
-TOOL=$(which inspxe-cl 2> /dev/null)
-GREP=$(which grep 2> /dev/null)
-SED=$(which sed 2> /dev/null)
-RM=$(which rm 2> /dev/null)
+BASENAME=$(which basename 2>/dev/null)
+TOOL=$(which inspxe-cl 2>/dev/null)
+GREP=$(which grep 2>/dev/null)
+SED=$(which sed 2>/dev/null)
+RM=$(which rm 2>/dev/null)
 
 if [ "${TOOL_ENABLED}" = "" ] || [ "${TOOL_ENABLED}" != "0" ]; then
   if [ "" != "$1" ] && [ "" != "${BASENAME}" ] && [ "" != "${TOOL}" ] \

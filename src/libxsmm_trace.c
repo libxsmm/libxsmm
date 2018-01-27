@@ -107,12 +107,12 @@ LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
-LIBXSMM_API_VARIABLE volatile LONG internal_trace_initialized /*= -1*/;
+LIBXSMM_API_VARIABLE(volatile LONG internal_trace_initialized);
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
-LIBXSMM_API_VARIABLE volatile int internal_trace_initialized /*= -1*/;
+LIBXSMM_API_VARIABLE(volatile int internal_trace_initialized);
 #if !defined(LIBXSMM_NO_SYNC)
-LIBXSMM_API_VARIABLE pthread_key_t internal_trace_key /*= 0*/;
+LIBXSMM_API_VARIABLE(pthread_key_t internal_trace_key);
 #endif
 LIBXSMM_API void internal_delete(void* value);
 LIBXSMM_API_DEFINITION void internal_delete(void* value)
@@ -143,9 +143,9 @@ LIBXSMM_API_DEFINITION void internal_delete(void* value)
 #endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
 
 
-LIBXSMM_API_VARIABLE int internal_trace_mindepth;
-LIBXSMM_API_VARIABLE int internal_trace_threadid;
-LIBXSMM_API_VARIABLE int internal_trace_maxnsyms;
+LIBXSMM_API_VARIABLE(int internal_trace_mindepth);
+LIBXSMM_API_VARIABLE(int internal_trace_threadid);
+LIBXSMM_API_VARIABLE(int internal_trace_maxnsyms);
 
 
 LIBXSMM_API
@@ -312,7 +312,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 # else
 #   if defined(LIBXSMM_NO_SYNC)
           static char raw_c;
-          char *const raw_value = &raw_c;
+          char */*const*/ raw_value = &raw_c; /* const: avoid warning (below / constant control-flow) */
 #   else
           char *const raw_value = (char*)pthread_getspecific(internal_trace_key);
 #   endif

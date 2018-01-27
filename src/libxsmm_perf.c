@@ -75,10 +75,10 @@
 #endif
 
 
-LIBXSMM_API_VARIABLE FILE * fp;
+LIBXSMM_API_VARIABLE(FILE* internal_perf_fp);
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
-LIBXSMM_API_VARIABLE void* marker_addr;
-LIBXSMM_API_VARIABLE int code_index /*= 0*/;
+LIBXSMM_API_VARIABLE(void* internal_perf_marker);
+LIBXSMM_API_VARIABLE(int internal_perf_codeidx);
 #endif
 
 
@@ -150,17 +150,17 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
     LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to get page size\n");
     goto error;
   }
-  marker_addr = mmap(NULL, page_size, PROT_READ|PROT_EXEC, MAP_PRIVATE, fd, 0);
-  if (marker_addr == MAP_FAILED) {
+  internal_perf_marker = mmap(NULL, page_size, PROT_READ|PROT_EXEC, MAP_PRIVATE, fd, 0);
+  if (internal_perf_marker == MAP_FAILED) {
     LIBXSMM_PERF_ERROR("LIBXSMM ERROR: mmap failed.\n");
     goto error;
   }
 
   /* initialize code index */
-  code_index = 0;
+  internal_perf_codeidx = 0;
 
-  fp = fdopen(fd, "wb+");
-  if (fp == NULL) {
+  internal_perf_fp = fdopen(fd, "wb+");
+  if (internal_perf_fp == NULL) {
     LIBXSMM_PERF_ERROR("LIBXSMM ERROR: fdopen failed.\n");
     goto error;
   }
@@ -174,7 +174,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
   header.timestamp  = libxsmm_timer_tick_rdtsc();
   header.flags      = JITDUMP_FLAGS_ARCH_TIMESTAMP;
 
-  res = fwrite(&header, sizeof(header), 1, fp);
+  res = fwrite(&header, sizeof(header), 1, internal_perf_fp);
   if (res != 1) {
     LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to write header.\n");
     goto error;
@@ -182,8 +182,8 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
 
 #else
   LIBXSMM_SNPRINTF(file_name, sizeof(file_name), "/tmp/perf-%u.map", pid);
-  fp = fopen(file_name, "w+");
-  if (fp == NULL) {
+  internal_perf_fp = fopen(file_name, "w+");
+  if (internal_perf_fp == NULL) {
     LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to open map file\n");
     goto error;
   }
@@ -192,9 +192,9 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
   return;
 
 error:
-  if (fp != NULL) {
-    fclose(fp);
-    fp = NULL;
+  if (internal_perf_fp != NULL) {
+    fclose(internal_perf_fp);
+    internal_perf_fp = NULL;
   }
   assert(0);
 }
@@ -206,7 +206,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_finalize(void)
   int res, page_size;
   struct jitdump_record_header hdr;
 
-  if (fp == NULL) {
+  if (internal_perf_fp == NULL) {
     LIBXSMM_PERF_ERROR("LIBXSMM ERROR: jit dump file not opened\n");
     goto error;
   }
@@ -215,7 +215,7 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_finalize(void)
   hdr.id = JITDUMP_CODE_CLOSE;
   hdr.total_size = sizeof(hdr);
   hdr.timestamp = libxsmm_timer_tick_rdtsc();
-  res = fwrite(&hdr, sizeof(hdr), 1, fp);
+  res = fwrite(&hdr, sizeof(hdr), 1, internal_perf_fp);
 
   if (res != 1) {
     LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to write JIT_CODE_CLOSE record\n");
@@ -227,14 +227,14 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_finalize(void)
     LIBXSMM_PERF_ERROR("LIBXSMM ERROR: failed to get page_size\n");
     goto error;
   }
-  munmap(marker_addr, page_size);
-  fclose(fp);
+  munmap(internal_perf_marker, page_size);
+  fclose(internal_perf_fp);
   return;
 
 error:
   assert(0);
 #else
-  fclose(fp);
+  fclose(internal_perf_fp);
 #endif
 }
 
@@ -252,10 +252,10 @@ LIBXSMM_API_INLINE unsigned int internal_perf_get_tid(void)
 
 LIBXSMM_API_DEFINITION void libxsmm_perf_dump_code(const void* memory, size_t size, const char* name)
 {
-  assert(fp != NULL);
+  assert(internal_perf_fp != NULL);
   assert(name && *name);
   assert(memory != NULL && size != 0);
-  if (fp != NULL) {
+  if (internal_perf_fp != NULL) {
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
     int res;
     struct jitdump_record_header hdr;
@@ -275,31 +275,26 @@ LIBXSMM_API_DEFINITION void libxsmm_perf_dump_code(const void* memory, size_t si
     rec.pid = (uint32_t) libxsmm_get_pid();
     rec.tid = (uint32_t) internal_perf_get_tid();
 
-#if !defined(LIBXSMM_NO_SYNC)
-    flockfile(fp);
-#endif
+    LIBXSMM_FLOCK(internal_perf_fp);
 
     /* This will be unique as we hold the file lock. */
-    rec.code_index = code_index++;
+    rec.internal_perf_codeidx = internal_perf_codeidx++;
 
     /* Count number of written items to check for errors. */
     res = 0;
-    res += fwrite_unlocked(&hdr, sizeof(hdr), 1, fp);
-    res += fwrite_unlocked(&rec, sizeof(rec), 1, fp);
-    res += fwrite_unlocked(name, name_len, 1, fp);
-    res += fwrite_unlocked((const void*) memory, size, 1, fp);
+    res += fwrite_unlocked(&hdr, sizeof(hdr), 1, internal_perf_fp);
+    res += fwrite_unlocked(&rec, sizeof(rec), 1, internal_perf_fp);
+    res += fwrite_unlocked(name, name_len, 1, internal_perf_fp);
+    res += fwrite_unlocked((const void*) memory, size, 1, internal_perf_fp);
 
-#if !defined(LIBXSMM_NO_SYNC)
-    funlockfile(fp);
-#endif
-
-    fflush(fp);
+    LIBXSMM_FUNLOCK(internal_perf_fp);
+    fflush(internal_perf_fp);
 
     assert(res == 4); /* Expected 4 items written above */
 
 #else
-    fprintf(fp, "%" PRIxPTR " %lx %s\n", (uintptr_t)memory, (unsigned long)size, name);
-    fflush(fp);
+    fprintf(internal_perf_fp, "%" PRIxPTR " %lx %s\n", (uintptr_t)memory, (unsigned long)size, name);
+    fflush(internal_perf_fp);
 #endif
   }
 }
