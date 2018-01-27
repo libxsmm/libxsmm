@@ -1255,7 +1255,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_sse = 1;
           l_insert_extra_byte = 0x66;
           l_third = 0x18;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MOVUPD:
           l_sse = 1;
           l_insert_extra_byte = 0x66;
@@ -1266,7 +1266,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           break;
        case LIBXSMM_X86_INSTR_MOVUPS:
           l_sse = 1;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MOVSD:
           l_sse = 1;
           l_insert_extra_byte = 0xF2;
@@ -1280,68 +1280,68 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_sse = 1;
           l_insert_extra_byte = 0x66;
           l_third = 0x47;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_XORPS:
           l_sse = 1;
           l_third = 0x47;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MULPD:
           l_sse = 1;
           l_insert_extra_byte = 0x66;
           l_third = 0x49;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MULPS:
           l_sse = 1;
           l_third = 0x49;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_ADDPD:
           l_sse = 1;
           l_insert_extra_byte = 0x66;
           l_third = 0x48;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_ADDPS:
           l_sse = 1;
           l_third = 0x48;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_SUBPD:
           l_sse = 1;
           l_insert_extra_byte = 0x66;
           l_third = 0x4c;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_SUBPS:
           l_sse = 1;
           l_third = 0x4c;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MULSD:
           l_sse = 1;
           l_insert_extra_byte = 0xF2;
           l_third = 0x49;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MULSS:
           l_sse = 1;
           l_insert_extra_byte = 0xF3;
           l_third = 0x49;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_ADDSD:
           l_sse = 1;
           l_insert_extra_byte = 0xF2;
           l_third = 0x48;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_ADDSS:
           l_sse = 1;
           l_insert_extra_byte = 0xF3;
           l_third = 0x48;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_SUBSD:
           l_sse = 1;
           l_insert_extra_byte = 0xF2;
           l_third = 0x4c;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_SUBSS:
           l_sse = 1;
           l_insert_extra_byte = 0xF3;
           l_third = 0x4c;
-          break; 
+          break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Unknown instruction type: %u\n", i_vec_instr);
           exit(-1);
@@ -1362,7 +1362,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
              if ( l_bytes < 5 ) l_bytes = 5;
           }
        } else l_bytes = 6;
-   
+
        if ( l_bytes == 4 )
        {
           buf[i++] = 0xc5;
@@ -2052,93 +2052,93 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           l_sse3 = 1;
           l_insert_extra_byte = 0x66;
           l_fpadj = 0x18;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MOVUPD:
           l_sse3 = 1;
           l_insert_extra_byte = 0x66;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MOVAPS:
           l_sse3 = 1;
           l_fpadj = 0x18;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MOVUPS:
           l_sse3 = 1;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MOVSD:
           l_sse3 = 1;
           l_insert_extra_byte = 0xF2;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MOVDDUP:
           l_sse3 = 1;
           l_insert_extra_byte = 0xF2;
           l_fpadj = 2;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_XORPD:
           l_sse3 = 1;
           l_insert_extra_byte = 0x66;
           l_fpadj = 0x47;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_XORPS:
           l_sse3 = 1;
           l_fpadj = 0x47;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MULPD:
           l_sse3 = 1;
           l_insert_extra_byte = 0x66;
           l_fpadj = 0x49;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MULSS:
           l_sse3 = 1;
           l_insert_extra_byte = 0xF3;
           l_fpadj = 0x49;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MULPS:
           l_sse3 = 1;
           l_fpadj = 0x49;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_ADDPD:
           l_sse3 = 1;
           l_insert_extra_byte = 0x66;
           l_fpadj = 0x48;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_ADDSS:
           l_sse3 = 1;
           l_insert_extra_byte = 0xF3;
           l_fpadj = 0x48;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_ADDPS:
           l_sse3 = 1;
           l_fpadj = 0x48;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_ADDSD:
           l_sse3 = 1;
           l_insert_extra_byte = 0xF2;
           l_fpadj = 0x48;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_SUBPD:
           l_sse3 = 1;
           l_insert_extra_byte = 0x66;
           l_fpadj = 0x4c;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_SUBSS:
           l_sse3 = 1;
           l_insert_extra_byte = 0xF3;
           l_fpadj = 0x4c;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_SUBPS:
           l_sse3 = 1;
           l_fpadj = 0x4c;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_SUBSD:
           l_sse3 = 1;
           l_insert_extra_byte = 0xF2;
           l_fpadj = 0x4c;
-          break; 
+          break;
        case LIBXSMM_X86_INSTR_MULSD:
           l_sse3 = 1;
           l_insert_extra_byte = 0xF2;
           l_fpadj = 0x49;
-          break; 
+          break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_mem: Unknown instruction type: %u\n", i_vec_instr);
           exit(-1);
@@ -2277,7 +2277,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           force the single byte of zero to appear. */
        l_forced_offset = 1;
     }
-  
+
     i += internal_x86_instructions_add_offset( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
 
     io_generated_code->code_size = i;
