@@ -781,6 +781,8 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
     int l_fpadj=0;
     int l_fpadj2=0;
     int l_bytes=4;
+    int l_sse = 0;
+    int l_insert_extra_byte = 0;
 
     if ( l_maxsize - i < 20 )
     {
@@ -1249,64 +1251,176 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_second += 0x01;
           l_third += 0x01;
           break;
+       case LIBXSMM_X86_INSTR_MOVAPD:
+          l_sse = 1;
+          l_insert_extra_byte = 0x66;
+          l_third = 0x18;
+          break; 
+       case LIBXSMM_X86_INSTR_MOVUPD:
+          l_sse = 1;
+          l_insert_extra_byte = 0x66;
+          break;
+       case LIBXSMM_X86_INSTR_MOVAPS:
+          l_sse = 1;
+          l_third = 0x18;
+          break;
+       case LIBXSMM_X86_INSTR_MOVUPS:
+          l_sse = 1;
+          break; 
+       case LIBXSMM_X86_INSTR_MOVSD:
+          l_sse = 1;
+          l_insert_extra_byte = 0xF2;
+          break;
+       case LIBXSMM_X86_INSTR_MOVDDUP:
+          l_sse = 1;
+          l_third = 2;
+          l_insert_extra_byte = 0xF2;
+          break;
+       case LIBXSMM_X86_INSTR_XORPD:
+          l_sse = 1;
+          l_insert_extra_byte = 0x66;
+          l_third = 0x47;
+          break; 
+       case LIBXSMM_X86_INSTR_XORPS:
+          l_sse = 1;
+          l_third = 0x47;
+          break; 
+       case LIBXSMM_X86_INSTR_MULPD:
+          l_sse = 1;
+          l_insert_extra_byte = 0x66;
+          l_third = 0x49;
+          break; 
+       case LIBXSMM_X86_INSTR_MULPS:
+          l_sse = 1;
+          l_third = 0x49;
+          break; 
+       case LIBXSMM_X86_INSTR_ADDPD:
+          l_sse = 1;
+          l_insert_extra_byte = 0x66;
+          l_third = 0x48;
+          break; 
+       case LIBXSMM_X86_INSTR_ADDPS:
+          l_sse = 1;
+          l_third = 0x48;
+          break; 
+       case LIBXSMM_X86_INSTR_SUBPD:
+          l_sse = 1;
+          l_insert_extra_byte = 0x66;
+          l_third = 0x4c;
+          break; 
+       case LIBXSMM_X86_INSTR_SUBPS:
+          l_sse = 1;
+          l_third = 0x4c;
+          break; 
+       case LIBXSMM_X86_INSTR_MULSD:
+          l_sse = 1;
+          l_insert_extra_byte = 0xF2;
+          l_third = 0x49;
+          break; 
+       case LIBXSMM_X86_INSTR_MULSS:
+          l_sse = 1;
+          l_insert_extra_byte = 0xF3;
+          l_third = 0x49;
+          break; 
+       case LIBXSMM_X86_INSTR_ADDSD:
+          l_sse = 1;
+          l_insert_extra_byte = 0xF2;
+          l_third = 0x48;
+          break; 
+       case LIBXSMM_X86_INSTR_ADDSS:
+          l_sse = 1;
+          l_insert_extra_byte = 0xF3;
+          l_third = 0x48;
+          break; 
+       case LIBXSMM_X86_INSTR_SUBSD:
+          l_sse = 1;
+          l_insert_extra_byte = 0xF2;
+          l_third = 0x4c;
+          break; 
+       case LIBXSMM_X86_INSTR_SUBSS:
+          l_sse = 1;
+          l_insert_extra_byte = 0xF3;
+          l_third = 0x4c;
+          break; 
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_reg: Unknown instruction type: %u\n", i_vec_instr);
           exit(-1);
     }
-    if ( i_vector_name == 'x' ) l_xreg = -4;
     l_reg0 = l_vreg0 % 8;
     l_reg1 = l_vreg1 % 8;
     l_reg2 = l_vreg2 % 8;
-    if ( l_vreg2 >= 8 ) { l_second -= 0x80; }
-    if ( l_vreg1 >= 8 ) { l_third  -= 0x40; }
-    if ( (i_vector_name!='z') && (l_vreg0<=15) &&
-         (l_vreg1<=15) && (l_vreg2<=15) )
+    if ( !l_sse )
     {
-       if ( l_vreg0 >= 8 )
+       if ( i_vector_name == 'x' ) l_xreg = -4;
+       if ( l_vreg2 >= 8 ) { l_second -= 0x80; }
+       if ( l_vreg1 >= 8 ) { l_third  -= 0x40; }
+       if ( (i_vector_name!='z') && (l_vreg0<=15) &&
+            (l_vreg1<=15) && (l_vreg2<=15) )
        {
-          if ( l_bytes < 5 ) l_bytes = 5;
-       }
-    } else l_bytes = 6;
-
-    if ( l_bytes == 4 )
-    {
-       buf[i++] = 0xc5;
-       buf[i++] = (unsigned char)(0xfd - 8*l_reg1   + l_third + l_second + l_xreg + l_fpadj2);
-       buf[i++] = (unsigned char)(0x59 + l_fpadj);
-       buf[i++] = (unsigned char)(0xc0 + l_reg0    + 8*l_reg2);
-    } else if ( l_bytes == 5 )
-    {
-       buf[i++] = 0xc4;
-       buf[i++] = (unsigned char)(0xc1 + l_second);
-       buf[i++] = (unsigned char)(0x7d - 8*l_reg1   + l_third + l_xreg + l_fpadj2);
-       buf[i++] = (unsigned char)(0x59 + l_fpadj);
-       buf[i++] = (unsigned char)(0xc0 + l_reg0    + 8*l_reg2);
-    } else if ( l_bytes == 6 )
-    {
-       if ( l_vreg0 >= 8 ) { l_second -= 0x20; }
-       if ( l_vreg0 >= 16 )
+          if ( l_vreg0 >= 8 )
+          {
+             if ( l_bytes < 5 ) l_bytes = 5;
+          }
+       } else l_bytes = 6;
+   
+       if ( l_bytes == 4 )
        {
-          l_second -= 0x20;
-          if ( i_vector_name=='x' ) l_fourth -= 0x40;
-          if ( i_vector_name=='y' ) l_fourth -= 0x20;
-       }
-       if ( l_vreg0 >= 24 ) { l_second -= 0x20; }
-       if ( l_vreg1 >= 16 )
+          buf[i++] = 0xc5;
+          buf[i++] = (unsigned char)(0xfd - 8*l_reg1   + l_third + l_second + l_xreg + l_fpadj2);
+          buf[i++] = (unsigned char)(0x59 + l_fpadj);
+          buf[i++] = (unsigned char)(0xc0 + l_reg0    + 8*l_reg2);
+       } else if ( l_bytes == 5 )
        {
-          l_third += 0x40;
-          l_fourth -= 0x08;
-          if ( i_vector_name=='x' ) l_fourth -= 0x40;
-          if ( i_vector_name=='y' ) l_fourth -= 0x20;
+          buf[i++] = 0xc4;
+          buf[i++] = (unsigned char)(0xc1 + l_second);
+          buf[i++] = (unsigned char)(0x7d - 8*l_reg1   + l_third + l_xreg + l_fpadj2);
+          buf[i++] = (unsigned char)(0x59 + l_fpadj);
+          buf[i++] = (unsigned char)(0xc0 + l_reg0    + 8*l_reg2);
+       } else if ( l_bytes == 6 )
+       {
+          if ( l_vreg0 >= 8 ) { l_second -= 0x20; }
+          if ( l_vreg0 >= 16 )
+          {
+             l_second -= 0x20;
+             if ( i_vector_name=='x' ) l_fourth -= 0x40;
+             if ( i_vector_name=='y' ) l_fourth -= 0x20;
+          }
+          if ( l_vreg0 >= 24 ) { l_second -= 0x20; }
+          if ( l_vreg1 >= 16 )
+          {
+             l_third += 0x40;
+             l_fourth -= 0x08;
+             if ( i_vector_name=='x' ) l_fourth -= 0x40;
+             if ( i_vector_name=='y' ) l_fourth -= 0x20;
+          }
+          if ( l_vreg1 >= 24 ) { l_third -= 0x40; }
+          if ( l_vreg2 >= 16 ) { l_second += 0x70; }
+          if ( l_vreg2 >= 24 ) { l_second -= 0x80; }
+          buf[i++] = 0x62;
+          buf[i++] = (unsigned char)(0xf1 + l_second);
+          buf[i++] = (unsigned char)(0xfd - 8*l_reg1   + l_third + l_fpadj2);
+          buf[i++] = (unsigned char)(0x48 + l_fourth);
+          buf[i++] = (unsigned char)(0x59 + l_fpadj);
+          buf[i++] = (unsigned char)(0xc0 + l_reg0    + 8*l_reg2);
        }
-       if ( l_vreg1 >= 24 ) { l_third -= 0x40; }
-       if ( l_vreg2 >= 16 ) { l_second += 0x70; }
-       if ( l_vreg2 >= 24 ) { l_second -= 0x80; }
-       buf[i++] = 0x62;
-       buf[i++] = (unsigned char)(0xf1 + l_second);
-       buf[i++] = (unsigned char)(0xfd - 8*l_reg1   + l_third + l_fpadj2);
-       buf[i++] = (unsigned char)(0x48 + l_fourth);
-       buf[i++] = (unsigned char)(0x59 + l_fpadj);
-       buf[i++] = (unsigned char)(0xc0 + l_reg0    + 8*l_reg2);
+    } else {
+       int l_vecgrp0 = 0;
+       int l_vecgrp1 = 0;
+       if ( (l_vreg0 >= 8) && (l_vreg0 <=15) ) l_vecgrp0 = 1;
+       if ( (l_vreg1 >= 8) && (l_vreg1 <=15) ) l_vecgrp1 = 1;
+       if ( l_insert_extra_byte != 0 )
+       {
+          buf[i++] = (unsigned char)(l_insert_extra_byte);
+       }
+       if ( (l_vecgrp0 >= 1) || (l_vecgrp1 >= 1) )     {
+          int l_extra_byte = 0;
+          if ( l_vecgrp0 >= 1 ) l_extra_byte += 1;
+          if ( l_vecgrp1 >= 1 ) l_extra_byte += 4;
+          buf[i++] = (unsigned char)(0x40 + l_extra_byte);
+       }
+       buf[i++] = (unsigned char)(0x0f);
+       buf[i++] = (unsigned char)(0x10 + l_third);
+       buf[i++] = (unsigned char)(0xc0 + l_reg0 + l_reg1*8);
     }
 
     io_generated_code->code_size = i;
@@ -1461,6 +1575,8 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
     int l_forced_offset=0;
     int l_sizereg=64;
     int l_scaleadj=0;
+    int l_sse3 = 0;
+    int l_insert_extra_byte = 0;
     /* int l_iregoff = 0; */
 
     int l_broadcast = (int)i_use_broadcast;
@@ -1932,6 +2048,97 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
              exit(-1);
           }
           break;
+       case LIBXSMM_X86_INSTR_MOVAPD:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0x66;
+          l_fpadj = 0x18;
+          break; 
+       case LIBXSMM_X86_INSTR_MOVUPD:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0x66;
+          break; 
+       case LIBXSMM_X86_INSTR_MOVAPS:
+          l_sse3 = 1;
+          l_fpadj = 0x18;
+          break; 
+       case LIBXSMM_X86_INSTR_MOVUPS:
+          l_sse3 = 1;
+          break; 
+       case LIBXSMM_X86_INSTR_MOVSD:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0xF2;
+          break; 
+       case LIBXSMM_X86_INSTR_MOVDDUP:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0xF2;
+          l_fpadj = 2;
+          break; 
+       case LIBXSMM_X86_INSTR_XORPD:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0x66;
+          l_fpadj = 0x47;
+          break; 
+       case LIBXSMM_X86_INSTR_XORPS:
+          l_sse3 = 1;
+          l_fpadj = 0x47;
+          break; 
+       case LIBXSMM_X86_INSTR_MULPD:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0x66;
+          l_fpadj = 0x49;
+          break; 
+       case LIBXSMM_X86_INSTR_MULSS:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0xF3;
+          l_fpadj = 0x49;
+          break; 
+       case LIBXSMM_X86_INSTR_MULPS:
+          l_sse3 = 1;
+          l_fpadj = 0x49;
+          break; 
+       case LIBXSMM_X86_INSTR_ADDPD:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0x66;
+          l_fpadj = 0x48;
+          break; 
+       case LIBXSMM_X86_INSTR_ADDSS:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0xF3;
+          l_fpadj = 0x48;
+          break; 
+       case LIBXSMM_X86_INSTR_ADDPS:
+          l_sse3 = 1;
+          l_fpadj = 0x48;
+          break; 
+       case LIBXSMM_X86_INSTR_ADDSD:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0xF2;
+          l_fpadj = 0x48;
+          break; 
+       case LIBXSMM_X86_INSTR_SUBPD:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0x66;
+          l_fpadj = 0x4c;
+          break; 
+       case LIBXSMM_X86_INSTR_SUBSS:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0xF3;
+          l_fpadj = 0x4c;
+          break; 
+       case LIBXSMM_X86_INSTR_SUBPS:
+          l_sse3 = 1;
+          l_fpadj = 0x4c;
+          break; 
+       case LIBXSMM_X86_INSTR_SUBSD:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0xF2;
+          l_fpadj = 0x4c;
+          break; 
+       case LIBXSMM_X86_INSTR_MULSD:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0xF2;
+          l_fpadj = 0x49;
+          break; 
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_mem: Unknown instruction type: %u\n", i_vec_instr);
           exit(-1);
@@ -1958,6 +2165,8 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
             exit(-1);
        }
     }
+    if ( !l_sse3 )
+    {
     if ( (i_gp_reg_base >= 8) && (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF) )
     {
        if ( l_bytes < 5 ) l_bytes = 5;
@@ -2068,11 +2277,64 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           force the single byte of zero to appear. */
        l_forced_offset = 1;
     }
+  
     i += internal_x86_instructions_add_offset( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
 
     io_generated_code->code_size = i;
     /* *loc = i; */
-
+    } else {
+        /* SSE3 code */
+        int l_vecgrp0 = 0;
+        int l_vecval0 = i_vec_reg_number_0 % 8 ;
+        int l_place1=i+2;
+        int l_regbas0 = i_gp_reg_base % 8;
+        int l_regidx =  i_gp_reg_idx % 8;
+        int l_gp8 = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
+        if ( (i_vec_reg_number_0>=8) && (i_vec_reg_number_0<=15) ) l_vecgrp0=1;
+        if ( l_insert_extra_byte != 0 )
+        {
+            buf[i++]= (unsigned char)(l_insert_extra_byte);
+            ++l_place1;
+        }
+        if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
+        {
+            int l_sse_preamble2 = 64;
+            if ( l_gp8 || (l_vecgrp0>=1) )
+            {
+               if (l_gp8) l_sse_preamble2 += 1;
+               if (l_vecgrp0 >=1) l_sse_preamble2 += 4;
+               buf[i++] = (unsigned char)(l_sse_preamble2);
+               ++l_place1;
+            }
+            buf[i++] = (unsigned char)(0x0f);
+            buf[i++] = (unsigned char)(0x10 + l_fpadj);
+            buf[i++] = (unsigned char)(0x00 + l_regbas0 + l_vecval0*8);
+            if ( l_regbas0 == 4 ) buf[i++]=0x24;
+        } else {
+            int l_sse_preamble2 = 64;
+            int l_ix8 = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
+            if ( l_gp8 || l_ix8 || (l_vecgrp0>=1) )
+            {
+                if (l_gp8) l_sse_preamble2 += 1;
+                if (l_ix8) l_sse_preamble2 += 2;
+                if (l_vecgrp0 >=1) l_sse_preamble2 += 4;
+                buf[i++] = (unsigned char)(l_sse_preamble2);
+                ++l_place1;
+            }
+            buf[i++] = (unsigned char)(0x0f);
+            buf[i++] = (unsigned char)(0x10 + l_fpadj);
+            buf[i++] = (unsigned char)(0x04 + l_vecval0*8);
+            buf[i++] = (unsigned char)(0x00 + l_scaleadj + l_regbas0 + l_regidx*8);
+        }
+        int l_forced_offset = 0;
+        if ( (l_regbas0 == 5) && (i_displacement==0) )
+        {
+            l_forced_offset = 1;
+        }
+        i += internal_x86_instructions_add_offset( l_place1, i, i_displacement, l_forced_offset, 1, buf );
+        /* *loc = i; */
+        io_generated_code->code_size = i;
+     }
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -2548,6 +2810,26 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
           buf[i++] = (unsigned char)(0x7d - l_oddgrp1 * 0x40 - l_vecval1*8);
           buf[i++] = (unsigned char)(0x06);
           buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval2*8);
+          break;
+       case LIBXSMM_X86_INSTR_SHUFPS:
+          if ( (i_vector_name!='x') && (i_vector_name!='X') )
+          {
+             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: SHUFPS only works for xmm\n");
+             exit(-1);
+          }
+          l_vecgrp0 = 0;
+          l_vecgrp1 = 0;
+          if ( (i_vec_reg_number_0>=8) && (i_vec_reg_number_0<=15) ) l_vecgrp0 =1;
+          if ( (i_vec_reg_number_1>=8) && (i_vec_reg_number_1<=15) ) l_vecgrp1 =1;
+          if ( (l_vecgrp0 >= 1) || (l_vecgrp1 >= 1) )     {
+             int l_extra_byte = 0;
+             if ( l_vecgrp0 >= 1 ) l_extra_byte += 1;
+             if ( l_vecgrp1 >= 1 ) l_extra_byte += 4;
+             buf[i++] = (unsigned char)(0x40 + l_extra_byte);
+          }
+          buf[i++] = (unsigned char)(0x0f + l_oddgrp0 * 0x00);
+          buf[i++] = (unsigned char)(0xc6);
+          buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval1*8);
           break;
        case LIBXSMM_X86_INSTR_VSHUFPS:
           if ( (i_vector_name!='y') && (i_vector_name!='Y') )
