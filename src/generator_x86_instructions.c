@@ -2290,6 +2290,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
         int l_regbas0 = i_gp_reg_base % 8;
         int l_regidx =  i_gp_reg_idx % 8;
         int l_gp8 = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
+        int l_forced_offset = 0;
         if ( (i_vec_reg_number_0>=8) && (i_vec_reg_number_0<=15) ) l_vecgrp0=1;
         if ( l_insert_extra_byte != 0 )
         {
@@ -2326,7 +2327,6 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
             buf[i++] = (unsigned char)(0x04 + l_vecval0*8);
             buf[i++] = (unsigned char)(0x00 + l_scaleadj + l_regbas0 + l_regidx*8);
         }
-        int l_forced_offset = 0;
         if ( (l_regbas0 == 5) && (i_displacement==0) )
         {
             l_forced_offset = 1;
