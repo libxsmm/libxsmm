@@ -1401,6 +1401,21 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         }
       }
     } break;
+    case LIBXSMM_BUILD_KIND_COMPACT_TRSM: { /* compact trsm kernel */
+      assert(0 != request->descriptor.compact_trsm);
+      unsigned int *typesize = (unsigned int *) request->descriptor.compact_trsm->typesize;
+      if (4 == *typesize || 8 == *typesize) {
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_compact_trsm_kernel, &generated_code, request->descriptor.compact_trsm, target_arch);
+# if !defined(LIBXSMM_VTUNE)
+        if (0 > libxsmm_verbosity)
+# endif
+        {
+          const char *const tsizename = internal_get_typesize_string(request->descriptor.trans->typesize);
+          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_.compact_trsm", target_arch, tsizename );
+        }
+      }
+    } break;
 # if !defined(NDEBUG) /* library code is expected to be mute */
     default: { /* unknown kind */
       static int error_once = 0;
@@ -1945,6 +1960,35 @@ LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxs
     result = internal_find_code(&query.xgemm).xtrans;
   }
   return result;
+}
+
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_compact_trsm ( const libxsmm_gemm_descriptor* descriptor,
+  const unsigned int *layout, const char *side, const char *uplo,
+  const char *transa, const char *diag, const unsigned int *typesize )
+{
+  printf("Inside libxsmm_create_compact_trsm with %c%c%c%c M=%d N=%d\n",*side,*uplo,*transa,*diag,descriptor->m,descriptor->n);
+  libxsmm_code_pointer result = { 0 };
+  if (0 != descriptor && 0 != layout && 0 != side && 0 != uplo && 0 != transa && 0 != diag ) {
+    libxsmm_compact_trsm_descriptor compact_trsm;
+    libxsmm_build_request request;
+#if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
+    libxsmm_gemm_descriptor gemm = *descriptor;
+    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_PREFETCH_NONE);
+    descriptor = &gemm;
+#endif
+    LIBXSMM_INIT
+    compact_trsm.gemm = descriptor;
+    compact_trsm.layout = layout;
+    compact_trsm.side = side;
+    compact_trsm.uplo = uplo;
+    compact_trsm.transa = transa;
+    compact_trsm.diag = diag;
+    compact_trsm.typesize = typesize;
+    request.descriptor.compact_trsm = &compact_trsm;
+    request.kind = LIBXSMM_BUILD_KIND_COMPACT_TRSM;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);
+  }
+  return result.xgemm;
 }
 
 

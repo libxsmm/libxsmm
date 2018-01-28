@@ -125,6 +125,14 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_descriptor { /* 13 Byte */
   unsigned char typesize;
 } libxsmm_transpose_descriptor;
 
+/** Structure storing the compact trsm argument description. */
+LIBXSMM_EXTERN_C typedef struct libxsmm_compact_trsm_descriptor1 { /* ?? Byte */
+  unsigned int layout;
+  char side, uplo, trans, diag;
+  unsigned int m, n, lda, ldb;
+  unsigned char typesize;
+} libxsmm_compact_trsm_descriptor1;
+
 /** Structure referring to the generated code with some attached information. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
   void* generated_code;       /** pointer to memory which can contain strings or binary code */
@@ -232,6 +240,11 @@ LIBXSMM_INTERNAL_API
 void libxsmm_generator_transpose_kernel( libxsmm_generated_code*                        io_generated_code,
                                          const libxsmm_transpose_descriptor*            i_trans_desc,
                                          const char*                                    i_arch );
+
+LIBXSMM_INTERNAL_API
+void libxsmm_generator_compact_trsm_kernel ( libxsmm_generated_code*                    io_generated_code,
+                                             const libxsmm_compact_trsm_descriptor1*    i_compact_trsm_desc,
+                                             const char*                                i_arch );
 
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API

@@ -104,10 +104,24 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wmm, or void-function */
   libxsmm_xmatcopyfunction xmatcopy;
   libxsmm_xtransfunction xtrans;
+#ifdef ADD_THIS_LATER_FOR_DISPATCHING
+  libxsmm_xcompact_trsmfunction xcompact_trsm;
+#endif
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)
   libxsmm_xconvfunction xconv;
 #endif
 } libxsmm_code_pointer;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_compact_trsm_descriptor {
+  const libxsmm_gemm_descriptor* gemm;
+  const char* side;
+  const char* uplo;
+  const char* transa;
+  const char* diag;
+  const unsigned int* layout;
+  const unsigned int* typesize;
+} libxsmm_compact_trsm_descriptor;
+
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
   const libxsmm_gemm_descriptor* gemm;
@@ -330,6 +344,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_convolution_winograd_descriptor* cwino;
   const libxsmm_matcopy_descriptor* matcopy;
   const libxsmm_transpose_descriptor* trans;
+  const libxsmm_compact_trsm_descriptor* compact_trsm;
 } libxsmm_build_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
