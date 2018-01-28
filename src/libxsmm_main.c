@@ -110,7 +110,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 
 #if defined(_DEBUG)
 # define INTERNAL_DISPATCH_DEBUG(RESULT, TYPE, FLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA) \
-  if (0 != libxsmm_verbosity && ((INT_MAX) - 1) != libxsmm_verbosity && 0 != (RESULT).pmm) { \
+  if (0 != libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != (RESULT).pmm) { \
     const libxsmm_blasint internal_dispatch_debug_m_ = M, internal_dispatch_debug_n_ = N, internal_dispatch_debug_k_ = K; \
     const libxsmm_blasint internal_dispatch_debug_lda_ = (0 == (PLDA) ? M : *(PLDA)); \
     const libxsmm_blasint internal_dispatch_debug_ldb_ = (0 == (PLDB) ? K : *(PLDB)); \
@@ -601,7 +601,7 @@ LIBXSMM_API_INLINE void internal_init(void)
       }
 #if !defined(NDEBUG)
       else {
-        libxsmm_verbosity = INT_MAX - 1; /* quiet -> verbose */
+        libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
       }
 #endif
     }

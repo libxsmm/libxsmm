@@ -172,7 +172,7 @@
 # define LIBXSMM_TILED_XGEMM_FALLBACK_PRINT(TYPE, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #else
 # define LIBXSMM_TILED_XGEMM_FALLBACK_PRINT(TYPE, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-    if (((INT_MAX) - 1) != libxsmm_verbosity \
+    if (INT_MAX != libxsmm_verbosity \
       && (unsigned int)LIBXSMM_ABS(libxsmm_verbosity) > libxsmm_update_mmstatistic(LIBXSMM_GEMM_PRECISION(TYPE), MM, NN, KK, 1/*try*/, 0)) \
     { \
       const char libxsmm_tiled_xgemm_transa_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'); \
