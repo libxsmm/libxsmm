@@ -641,13 +641,13 @@ LIBXSMM_API_INLINE void internal_init(void)
 #endif
         for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) new_registry[i].pmm = 0;
         /* omit registering code if JIT is enabled and if an ISA extension is found
-          * which is beyond the static code path used to compile the library
-          */
+         * which is beyond the static code path used to compile the library
+         */
 #if defined(LIBXSMM_BUILD)
 # if (0 != LIBXSMM_JIT) && !defined(__MIC__)
         /* check if target arch. permits execution (arch. may be overridden) */
         if (LIBXSMM_STATIC_TARGET_ARCH <= libxsmm_target_archid &&
-          (LIBXSMM_X86_AVX > libxsmm_target_archid /* JIT code gen. is not available */
+           (LIBXSMM_X86_AVX > libxsmm_target_archid /* JIT code gen. is not available */
             /* condition allows to avoid JIT (if static code is good enough) */
             || LIBXSMM_STATIC_TARGET_ARCH == libxsmm_target_archid))
 # endif
@@ -961,10 +961,14 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     else if (0 == strcmp("snb", arch) || 0 == strcmp("avx", arch)) {
       target_archid = LIBXSMM_X86_AVX;
     }
-    else if (0 == strcmp("wsm", arch) || 0 == strcmp("nhm", arch) || 0 == strcmp("sse4", arch) || 0 == strcmp("sse4_2", arch) || 0 == strcmp("sse4.2", arch)) {
+    else if (0 == strcmp("wsm", arch) || 0 == strcmp("nhm", arch)
+          || 0 == strcmp("sse", arch) || 0 == strcmp("sse4", arch)
+          || 0 == strcmp("sse4_2", arch)
+          || 0 == strcmp("sse4.2", arch))
+    {
       target_archid = LIBXSMM_X86_SSE4;
     }
-    else if (0 == strcmp("sse", arch) || 0 == strcmp("sse3", arch)) {
+    else if (0 == strcmp("sse3", arch)) {
       target_archid = LIBXSMM_X86_SSE3;
     }
     else if (0 == strcmp("x86", arch) || 0 == strcmp("sse2", arch)) {
