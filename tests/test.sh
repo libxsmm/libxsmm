@@ -43,6 +43,7 @@ for TEST in ${TESTS}; do
   NAME=$(basename ${TEST} .c)
   ${ECHO} -n "${NTEST} of ${NMAX} (${NAME})... "
   if [ "0" != "$(${ECHO} ${TESTS_DISABLED} | ${GREP} -q ${NAME}; ${ECHO} $?)" ]; then
+    cd ${HERE}
     ERROR=$({
     if [ "" != "$(${LDD} ${HERE}/${NAME} 2>/dev/null | ${GREP} libiomp5\.)" ]; then
       ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \

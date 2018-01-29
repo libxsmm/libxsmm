@@ -2290,7 +2290,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
         int l_regbas0 = i_gp_reg_base % 8;
         int l_regidx =  i_gp_reg_idx % 8;
         int l_gp8 = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
-        int l_forced_offset = 0;
+        assert(0 == l_forced_offset);
         if ( (i_vec_reg_number_0>=8) && (i_vec_reg_number_0<=15) ) l_vecgrp0=1;
         if ( l_insert_extra_byte != 0 )
         {
@@ -2822,10 +2822,10 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
           if ( (i_vec_reg_number_0>=8) && (i_vec_reg_number_0<=15) ) l_vecgrp0 =1;
           if ( (i_vec_reg_number_1>=8) && (i_vec_reg_number_1<=15) ) l_vecgrp1 =1;
           if ( (l_vecgrp0 >= 1) || (l_vecgrp1 >= 1) )     {
-             int l_extra_byte = 0;
-             if ( l_vecgrp0 >= 1 ) l_extra_byte += 1;
-             if ( l_vecgrp1 >= 1 ) l_extra_byte += 4;
-             buf[i++] = (unsigned char)(0x40 + l_extra_byte);
+             int i_extra_byte = 0;
+             if ( l_vecgrp0 >= 1 ) i_extra_byte += 1;
+             if ( l_vecgrp1 >= 1 ) i_extra_byte += 4;
+             buf[i++] = (unsigned char)(0x40 + i_extra_byte);
           }
           buf[i++] = (unsigned char)(0x0f + l_oddgrp0 * 0x00);
           buf[i++] = (unsigned char)(0xc6);
