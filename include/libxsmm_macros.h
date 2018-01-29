@@ -538,7 +538,11 @@
 /* _Float128 was introduced with GNU GCC 7.0. */
 #if !defined(_Float128) && defined(__GNUC__) && !defined(__cplusplus) \
   && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
-  || (defined(__INTEL_COMPILER) && defined(__INTEL_COMPILER_UPDATE) && (1801 > ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE)))))
+  || (defined(__INTEL_COMPILER) && defined(__INTEL_COMPILER_UPDATE) && ( \
+        ((1800 <= ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE))) \
+      && (1801  > ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE)))) || \
+        ((1706  > ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE))) \
+      &&    (0 != ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE)))))))
 # define _Float128 __float128
 #endif
 
