@@ -627,75 +627,72 @@ LIBXSMM_API_INLINE void internal_init(void)
       }
     }
     if (EXIT_SUCCESS == init_code) {
-      init_code = libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
-      if (EXIT_SUCCESS == init_code)
 #endif
-      {
-        libxsmm_code_pointer *const new_registry = (libxsmm_code_pointer*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_code_pointer));
-        internal_registry_keys = (libxsmm_kernel_info*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_kernel_info));
-        if (0 != new_registry && 0 != internal_registry_keys) {
-          const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
-          libxsmm_gemm_diff_init(libxsmm_target_archid);
-          libxsmm_trans_init(libxsmm_target_archid);
-          libxsmm_hash_init(libxsmm_target_archid);
-          libxsmm_dnn_init(libxsmm_target_archid);
+      libxsmm_code_pointer *const new_registry = (libxsmm_code_pointer*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_code_pointer));
+      internal_registry_keys = (libxsmm_kernel_info*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_kernel_info));
+      if (0 != new_registry && 0 != internal_registry_keys) {
+        const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
+        libxsmm_gemm_diff_init(libxsmm_target_archid);
+        libxsmm_trans_init(libxsmm_target_archid);
+        libxsmm_hash_init(libxsmm_target_archid);
+        libxsmm_dnn_init(libxsmm_target_archid);
 #if defined(LIBXSMM_PERF)
-          libxsmm_perf_init();
+        libxsmm_perf_init();
 #endif
-          for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) new_registry[i].pmm = 0;
-          /* omit registering code if JIT is enabled and if an ISA extension is found
-           * which is beyond the static code path used to compile the library
-           */
+        for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) new_registry[i].pmm = 0;
+        /* omit registering code if JIT is enabled and if an ISA extension is found
+          * which is beyond the static code path used to compile the library
+          */
 #if defined(LIBXSMM_BUILD)
 # if (0 != LIBXSMM_JIT) && !defined(__MIC__)
-          /* check if target arch. permits execution (arch. may be overridden) */
-          if (LIBXSMM_STATIC_TARGET_ARCH <= libxsmm_target_archid &&
-            (LIBXSMM_X86_AVX > libxsmm_target_archid /* JIT code gen. is not available */
-              /* condition allows to avoid JIT (if static code is good enough) */
-              || LIBXSMM_STATIC_TARGET_ARCH == libxsmm_target_archid))
+        /* check if target arch. permits execution (arch. may be overridden) */
+        if (LIBXSMM_STATIC_TARGET_ARCH <= libxsmm_target_archid &&
+          (LIBXSMM_X86_AVX > libxsmm_target_archid /* JIT code gen. is not available */
+            /* condition allows to avoid JIT (if static code is good enough) */
+            || LIBXSMM_STATIC_TARGET_ARCH == libxsmm_target_archid))
 # endif
-          { /* opening a scope for eventually declaring variables */
-            /* setup the dispatch table for the statically generated code */
+        { /* opening a scope for eventually declaring variables */
+          /* setup the dispatch table for the statically generated code */
 #           include <libxsmm_dispatch.h>
-          }
+        }
 #endif
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
-          libxsmm_gemm_auto_prefetch_default = INTERNAL_PREFETCH;
+        libxsmm_gemm_auto_prefetch_default = INTERNAL_PREFETCH;
 #else
-          libxsmm_gemm_auto_prefetch_default = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
-            /* avoid special prefetch if static code is present, since such code uses INTERNAL_PREFETCH */
-            ? (((LIBXSMM_X86_AVX512 >= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid))
-              ? LIBXSMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_PREFETCH_BL2_VIA_C)
-            : INTERNAL_PREFETCH;
+        libxsmm_gemm_auto_prefetch_default = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
+          /* avoid special prefetch if static code is present, since such code uses INTERNAL_PREFETCH */
+          ? (((LIBXSMM_X86_AVX512 >= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid))
+            ? LIBXSMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_PREFETCH_BL2_VIA_C)
+          : INTERNAL_PREFETCH;
 #endif
-          libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
-          if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
-            const int uid = atoi(env);
-            if (0 <= uid) {
-              libxsmm_gemm_auto_prefetch_default = libxsmm_gemm_uid2prefetch(uid);
-              libxsmm_gemm_auto_prefetch = libxsmm_gemm_auto_prefetch_default;
-              internal_gemm_auto_prefetch_locked = 1;
-            }
-          }
-          libxsmm_gemm_init(libxsmm_target_archid);
-          if (0 == internal_teardown) {
-            atexit(internal_finalize);
-          }
-          {
-            void *const pv_registry = &internal_registry;
-            LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)((void**)pv_registry, (void*)new_registry, LIBXSMM_ATOMIC_SEQ_CST);
+        libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
+        if (0 != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
+          const int uid = atoi(env);
+          if (0 <= uid) {
+            libxsmm_gemm_auto_prefetch_default = libxsmm_gemm_uid2prefetch(uid);
+            libxsmm_gemm_auto_prefetch = libxsmm_gemm_auto_prefetch_default;
+            internal_gemm_auto_prefetch_locked = 1;
           }
         }
-        else {
-          if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-            fprintf(stderr, "LIBXSMM ERROR: failed to allocate code registry!\n");
-          }
-          free(internal_registry_keys);
-          free(new_registry);
+        libxsmm_gemm_init(libxsmm_target_archid);
+        if (0 == internal_teardown) {
+          atexit(internal_finalize);
+        }
+        {
+          void *const pv_registry = &internal_registry;
+          LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)((void**)pv_registry, (void*)new_registry, LIBXSMM_ATOMIC_SEQ_CST);
         }
       }
+      else {
+        if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+          fprintf(stderr, "LIBXSMM ERROR: failed to allocate code registry!\n");
+        }
+        free(internal_registry_keys);
+        free(new_registry);
+      }
 #if defined(LIBXSMM_TRACE)
-      else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      init_code = libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
+      if (EXIT_SUCCESS != init_code && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
         fprintf(stderr, "LIBXSMM ERROR: failed to initialize TRACE (error #%i)!\n", init_code);
       }
     }
