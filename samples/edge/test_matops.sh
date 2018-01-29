@@ -13,10 +13,17 @@ if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512f)" ]; then
   SDE=
 fi
 
-#iterastions and order
-REPS=1
-PDEG=5
-PREC=f32
+#iterastions, order and precision
+if [ $# -eq 3 ]
+then
+  REPS=$1
+  PDEG=$2
+  PREC=$3
+else
+  REPS=10000
+  PDEG=5
+  PREC=f64
+fi
 
 if [[ $PDEG == "1" ]]
 then
@@ -60,6 +67,7 @@ else
   return -2
 fi
 
+# number of quantities is always 9
 M=9
 
 # test flux matrices, CSR
