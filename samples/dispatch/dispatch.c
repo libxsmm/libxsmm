@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
   const int nthreads = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 1/*default*/, 1, max_nthreads);
   const int maxksize = LIBXSMM_CLMP(3 < argc ? atoi(argv[3]) : 64/*default*/, 1, LIBXSMM_MAX_M);
   const int minksize = LIBXSMM_CLMP(4 < argc ? atoi(argv[4]) : 4/*default*/, 1, maxksize);
-  libxsmm_timer_tickint tdisp = 0, tcgen = 0, tcall, start;
+  libxsmm_timer_tickint tdsp0 = 0, tdsp1 = 0, tcgen = 0, tcall;
   const int krange = maxksize - minksize;
   int ncgens = size;
 
@@ -96,11 +96,11 @@ int main(int argc, char* argv[])
     }
 
     /* run non-inline function to measure call overhead of an "empty" function */
-    start = libxsmm_timer_tick();
+    tcall = libxsmm_timer_tick();
     for (i = 0; i < size; ++i) {
       libxsmm_init(); /* subsequent calls are not doing any work */
     }
-    tcall = libxsmm_timer_diff(start, libxsmm_timer_tick());
+    tcall = libxsmm_timer_diff(tcall, libxsmm_timer_tick());
 
     /* first invocation may initialize some internals (libxsmm_init),
      * or actually generate code (code gen. time is out of scope)
@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #     pragma omp atomic
 #endif
-      tdisp += libxsmm_timer_diff(t0, libxsmm_timer_tick());
+      tdsp1 += libxsmm_timer_diff(t0, libxsmm_timer_tick());
     }
 
 #if defined(_OPENMP)
@@ -137,23 +137,40 @@ int main(int argc, char* argv[])
 #endif
       tcgen += libxsmm_timer_diff(t0, libxsmm_timer_tick());
     }
-#if 1
+
     /* correct for duplicated code generation requests */
     if (EXIT_SUCCESS == libxsmm_get_registry_info(&reginfo)) {
       ncgens = (int)(reginfo.size - 1/*initial code gen.*/);
-      tcgen -= tdisp * (size - ncgens) / size;
+      tcgen -= tdsp1 * (size - ncgens) / size;
     }
+
+#if defined(_OPENMP)
+#   pragma omp parallel for num_threads(nthreads) private(i)
 #endif
-    free(r);
+    for (i = 0; i < size; ++i) {
+      const int j = 3 * i;
+      const libxsmm_timer_tickint t0 = libxsmm_timer_tick();
+      libxsmm_dmmdispatch(r[j], r[j + 1], r[j + 2],
+        NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
+        NULL/*flags*/, NULL/*prefetch*/);
+#if defined(_OPENMP)
+#     pragma omp atomic
+#endif
+      tdsp0 += libxsmm_timer_diff(t0, libxsmm_timer_tick());
+    }
+
+    free(r); /* release random numbers */
   }
 
   if (0 < size) {
     const double dcall = libxsmm_timer_duration(0, tcall) / size;
-    const double ddisp = libxsmm_timer_duration(0, tdisp) / size;
+    const double ddsp0 = libxsmm_timer_duration(0, tdsp0) / size;
+    const double ddsp1 = libxsmm_timer_duration(0, tdsp1) / size;
     const double dcgen = libxsmm_timer_duration(0, tcgen) / size;
-    if (0 < tcall && 0 < tdisp && 0 < tcgen) {
-      fprintf(stdout, "\tfn-call (empty): %.0f ns (%.0f MHz)\n", 1E9 * dcall, 1E-6 / dcall);
-      fprintf(stdout, "\tdispatch (ro): %.0f ns (%.0f MHz)\n", 1E9 * ddisp, 1E-6 / ddisp);
+    if (0 < tcall && 0 < tdsp0 && 0 < tdsp1 && 0 < tcgen) {
+      fprintf(stdout, "\tfunction-call (empty): %.0f ns (%.0f MHz)\n", 1E9 * dcall, 1E-6 / dcall);
+      fprintf(stdout, "\tdispatch (ro/cached): %.0f ns (%.0f MHz)\n", 1E9 * ddsp1, 1E-6 / ddsp1);
+      fprintf(stdout, "\tdispatch (ro): %.0f ns (%.0f MHz)\n", 1E9 * ddsp0, 1E-6 / ddsp0);
       fprintf(stdout, "\tcode-gen (rw): %.0f us (%.0f kHz)\n", 1E6 * dcgen, 1E-3 / dcgen);
     }
   }
