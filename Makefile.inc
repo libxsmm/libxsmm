@@ -534,7 +534,7 @@ ifeq (0,$(SSE))
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
     AVX ?= 3
     SSE = 0
-    ifneq (0,$(words $(filter avx512er,$(CPUFLAGS)))) # KNL
+    ifeq (2,$(words $(filter avx512pf avx512er,$(CPUFLAGS)))) # KNL
       MIC ?= 1
     else # SKX
       MIC ?= 0
