@@ -462,19 +462,21 @@ endif
 
 # native GCC?
 GCC ?= 0
-ifneq (,$(findstring gcc,$(CC_NAME)))
+ifeq (0,$(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
   GCC = 1
 else ifeq (GCC,$(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
   GCC = 1
-else ifeq (0,$(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
-  GCC = 1
+else ifneq (pgcc,$(CC_NAME))
+  ifneq (,$(findstring pgcc,$(CC_NAME)))
+    GCC = 1
+  endif
 endif
 ifeq (1,$(GCC))
-  ifneq (,$(findstring g++,$(CXX_NAME)))
+  ifeq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
     GCC = 2
   else ifeq (GCC,$(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
     GCC = 2
-  else ifeq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
+  else ifneq (,$(findstring g++,$(CXX_NAME)))
     GCC = 2
   endif
   ifeq (2,$(GCC))
