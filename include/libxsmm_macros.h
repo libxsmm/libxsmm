@@ -408,7 +408,7 @@
 #endif
 
 #if !defined(LIBXSMM_UNUSED)
-# if 0 /*defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)*/
+# if defined(__PGI)
 #   define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))
 # else
 #   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)

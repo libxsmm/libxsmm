@@ -39,7 +39,7 @@
 #     define LIBXSMM_NO_TLS
 #     define LIBXSMM_TLS
 #   else
-#     if (defined(_WIN32) && !defined(__GNUC__)) || defined(__PGI)
+#     if (defined(_WIN32) && !defined(__GNUC__)) || (defined(__PGI) && !defined(__cplusplus))
 #       define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
 #     elif defined(__GNUC__) || defined(_CRAYC)
 #       define LIBXSMM_TLS __thread
@@ -66,7 +66,7 @@
 # define LIBXSMM_SYNC_PAUSE _mm_delay_32(8/*delay*/)
 #elif !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY)
 # define LIBXSMM_SYNC_PAUSE _mm_pause()
-#elif defined(LIBXSMM_GCC_BASELINE)
+#elif defined(LIBXSMM_GCC_BASELINE) && !defined(__PGI)
 # define LIBXSMM_SYNC_PAUSE __builtin_ia32_pause()
 #else
 # define LIBXSMM_SYNC_PAUSE
@@ -132,7 +132,7 @@
 #   define LIBXSMM_SYNC_CYCLE_DECL(NAME)
 # endif
 # define LIBXSMM_SYNC_CYCLE(COUNTER, NPAUSE) LIBXSMM_SYNC_CYCLE_ELSE(COUNTER, NPAUSE, ;)
-# if defined(__GNUC__)
+# if defined(__GNUC__) || defined(__PGI)
 #   define LIBXSMM_ATOMIC(FN, BITS) FN
 #   if defined(LIBXSMM_GCC_BASELINE)
 #     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_n(SRC_PTR, KIND)

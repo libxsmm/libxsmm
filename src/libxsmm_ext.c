@@ -57,7 +57,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char* tran
 
 #elif (1 == LIBXSMM_NO_BLAS)
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__PGI)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
@@ -78,7 +78,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* tran
 }
 
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__PGI)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
