@@ -143,7 +143,9 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
         LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &libxsmm_gemm_batchlock, &libxsmm_lock_attr_default);
         libxsmm_gemm_batchsize = batchsize;
       }
-      if ((3 <= libxsmm_verbosity || 0 > libxsmm_verbosity) && (0 == env_w || 0 == *env_w)) { /* enables the auto-batch statistic */
+      if (((3 <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity) || 0 > libxsmm_verbosity)
+        && (0 == env_w || 0 == *env_w))
+      { /* enable auto-batch statistic */
         libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC;
       }
     }

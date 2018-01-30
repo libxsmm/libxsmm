@@ -1,4 +1,5 @@
-barrier/barrier
+sync/sync_barrier
+sync/sync_lock
 bgemm/bgemm
 dispatch/dispatch
 dispatch/dispatchf
