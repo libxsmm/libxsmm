@@ -408,7 +408,7 @@
 #endif
 
 #if !defined(LIBXSMM_UNUSED)
-# if defined(__PGI)
+# if 0
 #   define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))
 # else
 #   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
