@@ -476,7 +476,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   const char *const check = getenv("LIBXSMM_CHECK");
   float *const d = (float*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
-      || 0 == check || 0 == *check || 0 == check[0]) ? 0
+      || 0 == check || 0 == *check || 0 == check[0]) ? NULL
     : libxsmm_aligned_scratch((size_t)((*m) * nn * sizeof(float)), 0/*auto-aligned*/));
   if (0 != d) {
     libxsmm_blasint i, j;
@@ -517,7 +517,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   const char *const check = getenv("LIBXSMM_CHECK");
   double *const d = (double*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
-      || 0 == check || 0 == *check || 0 == check[0]) ? 0
+      || 0 == check || 0 == *check || 0 == check[0]) ? NULL
     : libxsmm_aligned_scratch((size_t)((*m) * nn * sizeof(double)), 0/*auto-aligned*/));
   if (0 != d) {
     libxsmm_blasint i, j;
