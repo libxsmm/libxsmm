@@ -87,15 +87,15 @@ int main(int argc, char* argv[])
   try {
     typedef REAL_TYPE T;
     const libxsmm_blasint benchmark = 1 < argc ? std::atoi(argv[1]) : 0;
-    const libxsmm_blasint m = (2 < argc ? std::atoi(argv[2]) : 23);
-    const libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
-    const libxsmm_blasint n = (3 < argc ? std::atoi(argv[3]) : k);
+    LIBXSMM_GEMM_CONST libxsmm_blasint m = (2 < argc ? std::atoi(argv[2]) : 23);
+    LIBXSMM_GEMM_CONST libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
+    LIBXSMM_GEMM_CONST libxsmm_blasint n = (3 < argc ? std::atoi(argv[3]) : k);
     const libxsmm_blasint q = (5 < argc ? std::atoi(argv[5]) : 0/*auto*/);
     const libxsmm_blasint nrepeat = (6 < argc ? std::atoi(argv[6]) : (0 >= q ? 13 : 1));
 
-    const libxsmm_blasint lda = m, ldb = k, ldc = m;
-    const char transa = 'N', transb = 'N';
-    const T alpha = 1, beta = 1;
+    LIBXSMM_GEMM_CONST libxsmm_blasint lda = m, ldb = k, ldc = m;
+    LIBXSMM_GEMM_CONST char transa = 'N', transb = 'N';
+    LIBXSMM_GEMM_CONST T alpha = 1, beta = 1;
 
     const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
     const libxsmm_blasint max_size = ((2ULL << 30/*2 GB*/) / ((asize + bsize + csize) * sizeof(T)));
