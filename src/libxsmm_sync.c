@@ -38,7 +38,7 @@
 # define LIBXSMM_SYNC_FUTEX
 #endif
 
-#if !defined(LIBXSMM_SYNC_SYSTEM) && defined(__MINGW32__)
+#if !defined(LIBXSMM_SYNC_SYSTEM) && (defined(__MINGW32__) || defined(__PGI))
 # define LIBXSMM_SYNC_SYSTEM
 #endif
 

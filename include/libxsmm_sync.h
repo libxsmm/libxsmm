@@ -239,21 +239,21 @@
 #if !defined(LIBXSMM_NO_SYNC) /** Default lock-kind */
 # define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
 # if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
-#   if defined(__MINGW32__)
+#   if defined(__MINGW32__) || defined(__PGI)
 #     define LIBXSMM_LOCK_SYSTEM_SPINLOCK
 #   elif 1
 #     define LIBXSMM_LOCK_SYSTEM_SPINLOCK
 #   endif
 # endif
 # if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
-#   if defined(__MINGW32__)
+#   if defined(__MINGW32__) || defined(__PGI)
 #     define LIBXSMM_LOCK_SYSTEM_MUTEX
 #   elif 1
 #     define LIBXSMM_LOCK_SYSTEM_MUTEX
 #   endif
 # endif
 # if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
-#   if defined(__MINGW32__)
+#   if defined(__MINGW32__) || defined(__PGI)
 #     define LIBXSMM_LOCK_SYSTEM_RWLOCK
 #   elif 1
 #     define LIBXSMM_LOCK_SYSTEM_RWLOCK
