@@ -137,7 +137,7 @@
 #     else /* GCC legacy atomics */
 #     define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __sync_bool_compare_and_swap(DST_PTR, OLDVAL, NEWVAL)
 #     endif
-#     define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) __atomic_test_and_set(DST_PTR, KIND)
+#     define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (!__atomic_test_and_set(DST_PTR, KIND))
 #     if defined(__PGI) /* ICE: __atomic_clear not implemented */
 #       define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT(0 != *(DST_PTR) && "LIBXSMM_ATOMIC_RELEASE"); \
                 LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND); }
