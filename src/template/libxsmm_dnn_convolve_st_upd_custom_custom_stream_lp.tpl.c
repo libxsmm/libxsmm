@@ -190,7 +190,33 @@ if (pixels_lp !=4) {
   }
 } else {
   /* Scalar C code for input and output transpose when int8 <=> pixels_lp == 4 ...*/
+  int img = ltid, ifm1, ij, ifm2, ii;
+  int ofm1, ofm2, k, lp;
+  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+    for (ij = 0; ij < handle->ifhp; ++ij) {
+      for (ii = 0; ii < handle->ifwp; ++ii) {
+        for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+          for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+            LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, ifm2*handle->fm_lp_block+lp, ii, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended) =
+            LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+          }
+        }
+      }
+    }
+  }
 
+  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
+    for (ij = 0; ij < handle->ofhp; ++ij) {
+      for (ii = 0; ii < handle->ofwp; ++ii) {
+        for (ofm2 = 0; ofm2 < handle->ofmblock_lp; ++ofm2) {
+          for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+            LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/pixels_lp, ofm2*handle->fm_lp_block+lp, ii%pixels_lp, BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp) =
+            LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, ofm2, lp,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); 
+          }
+        }
+      }
+    }
+  }  
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
