@@ -28,23 +28,22 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
+#include "edge_proxy_common.h"
+#include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <libxsmm.h>
 
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
 
-#include "edge_proxy_common.h"
-
 #if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
 # define drand48() ((double)rand() / RAND_MAX)
 # define srand48 srand
 #endif
+
 
 int main(int argc, char* argv[])
 {
@@ -135,7 +134,7 @@ int main(int argc, char* argv[])
   printf("allocating and initializing fake data... \n");
   printf("   q: %f MiB\n", ((double)(num_elems*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
   printf("  qt: %f MiB\n", ((double)(num_elems*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
-#ifdef _OPENMP
+#if defined(_OPENMP)
   printf("   t: %f MiB\n", ((double)(omp_get_max_threads()*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
 #else
   printf("   t: %f MiB\n", ((double)(num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
@@ -143,13 +142,17 @@ int main(int argc, char* argv[])
   q = (double*)libxsmm_aligned_malloc( num_elems*num_modes*num_quants*num_cfr*sizeof(double), 2097152);
   qt = (double*)libxsmm_aligned_malloc( num_elems*num_modes*num_quants*num_cfr*sizeof(double), 2097152);
 
-  #pragma omp parallel for private(i,j)
+#if defined(_OPENMP)
+# pragma omp parallel for private(i,j)
+#endif
   for ( i = 0; i < (int)num_elems; i++ ) {
     for ( j = 0; j < (int)elem_size; j++) {
       q[i*elem_size + j] = drand48();
     }
   }
-  #pragma omp parallel for private(i,j)
+#if defined(_OPENMP)
+# pragma omp parallel for private(i,j)
+#endif
   for ( i = 0; i < (int)num_elems; i++ ) {
     for ( j = 0; j < (int)elem_size; j++) {
       qt[i*elem_size + j] = drand48();
@@ -198,13 +201,17 @@ int main(int argc, char* argv[])
   printf("done!\n\n");
 
   /* benchmark volumne integration */
-  #pragma omp parallel for private(i,j)
+#if defined(_OPENMP)
+# pragma omp parallel for private(i,j)
+#endif
   for ( i = 0; i < (int)num_elems; i++ ) {
     for ( j = 0; j < (int)elem_size; j++) {
       q[i*elem_size + j] = drand48();
     }
   }
-  #pragma omp parallel for private(i,j)
+#if defined(_OPENMP)
+# pragma omp parallel for private(i,j)
+#endif
   for ( i = 0; i < (int)num_elems; i++ ) {
     for ( j = 0; j < (int)elem_size; j++) {
       qt[i*elem_size + j] = drand48();
@@ -213,11 +220,15 @@ int main(int argc, char* argv[])
 
   l_start = libxsmm_timer_tick();
   for ( i = 0; i < (int)num_reps; i++) {
-    #pragma omp parallel private(i, j)
+#if defined(_OPENMP)
+#   pragma omp parallel private(i, j)
+#endif
     {
       LIBXSMM_ALIGNED(double tp[20*8*9], LIBXSMM_ALIGNMENT);
 
-      #pragma omp for private(j)
+#if defined(_OPENMP)
+#     pragma omp for private(j)
+#endif
       for ( j = 0; j < (int)num_elems; j++ ) {
         st_kernel( mat_st_values, qt+(j*elem_size), tp );
         a_kernel( tp, mat_a_values, q+(j*elem_size) );
@@ -236,8 +247,6 @@ int main(int argc, char* argv[])
   printf("%f GFLOPS for vol (asm)\n", ((double)((double)num_elems * (double)num_reps * 3.0 * ((double)num_quants + (double)num_modes) * (double)mat_st_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
   printf("%f GiB/s for vol (asm)\n", (double)((double)num_elems * (double)elem_size * 8.0 * 3.0 * (double)num_reps) / (l_total * 1024.0*1024.0*1024.0) );
   printf("done!\n\n");
-
-
 
   /* some empty lines at the end */
   printf("\n\n");
