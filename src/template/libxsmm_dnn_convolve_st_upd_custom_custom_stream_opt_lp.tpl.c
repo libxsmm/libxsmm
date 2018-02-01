@@ -108,8 +108,6 @@ libxsmm_xmatcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
 libxsmm_xmatcopyfunction jitted_matzero_weights = handle->matcopy_upd[2].xmatcopy;
 libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 || handle->ifmblock == 1 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
 
-printf("trans is %d, ofwp is %d ofhp is %d OFWP is %d\n", handle->trans_ofw_ifm, handle->ofwp, handle->ofhp, OFWP);
-
 transposer tp_func;
 if ( handle->trans_ofw_ifm > 0 && pixels_lp != 4 ) {
   if (handle->padding_flag == 1) {

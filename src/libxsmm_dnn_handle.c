@@ -1288,7 +1288,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                       padding_target = 2;
                     } else {
                       padding_target = 4;
-                      output_lp_padding = (handle->ofwp%4 == 0) ? 0 : padding_target - handle->ofwp % 4;
+                      output_lp_padding = (handle->ofwp % 4 == 0) ? 0 : padding_target - handle->ofwp % 4;
                     }
                   }
                   handle->output_lp_padding = output_lp_padding;
@@ -1337,7 +1337,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   if (handle->padding_flag == 1) {
                     kernel_ofw_compute = handle->ofwp+output_lp_padding;
                   } else {
-                    kernel_ofw_compute = handle->ofw+output_lp_padding;
+                    kernel_ofw_compute = handle->ofwp+output_lp_padding;
                   }
                 }
 

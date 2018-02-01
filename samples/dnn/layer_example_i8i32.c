@@ -762,6 +762,7 @@ int main(int argc, char* argv[])
     libxsmm_matdiff_reduce(&diff, &norms_upd);
   }
 
+return ;
 
   if ((type == 'A' || type == 'F') && LIBXSMM_FEQ(0, check)) {
     printf("##########################################\n");
