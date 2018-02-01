@@ -106,7 +106,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
   }
   l_conv_kernel_config.vector_length_wt = 16;
   l_conv_kernel_config.datatype_size_wt = 4;
-  l_conv_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVAPS;
+  l_conv_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
   l_conv_kernel_config.vfma_instruction = LIBXSMM_X86_INSTR_VFMADD231PS;
   l_conv_kernel_config.vxor_instruction = LIBXSMM_X86_INSTR_VPXORD;
   l_conv_kernel_config.vadd_instruction = LIBXSMM_X86_INSTR_VADDPS;

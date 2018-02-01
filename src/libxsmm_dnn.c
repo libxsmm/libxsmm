@@ -1366,7 +1366,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsm
                                                                                                                typedef float element_type;
 #include "template/libxsmm_dnn_tensor_filter_copy_out_kcrs.tpl.c"
                                                                                                              } break;
-                                                                              case LIBXSMM_DNN_DATATYPE_I16: {
+
+                                                                                   case LIBXSMM_DNN_DATATYPE_I32: {
+                                                                                                                   typedef int element_type;
+#include "template/libxsmm_dnn_tensor_filter_copy_out_kcrs.tpl.c"
+                                                                                                                 } break;
+                                                                                   case LIBXSMM_DNN_DATATYPE_I16: {
                                                                                                                typedef short  element_type;
 #define LIBXSMM_DNN_COPY_LOW_PRECISION
 #include "template/libxsmm_dnn_tensor_filter_copy_out_kcrs.tpl.c"
