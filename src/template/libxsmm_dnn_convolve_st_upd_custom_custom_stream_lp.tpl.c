@@ -64,8 +64,9 @@ const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 /* Pointer related variables for output and weight */
+int pixels_lp = handle->fm_lp_block; 
 element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
-LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
+LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
 LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
 LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->grad_filter->data, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock_hp, handle->ofmblock);
 element_filter_type* remote_weight_ptr = 0;
@@ -161,30 +162,35 @@ if (handle->reduce_weights == 0) {
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-if (handle->padding_flag == 1) {
-  int img = ltid, ifm1, ij, ifm2, ii;
-  int ofm1, ofm2, k, lp;
-  int FM;
-  int W;  
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (ij = 0; ij < handle->ifhp; ++ij) {
-      for (ii = 0; ii < handle->ifwp; ++ii) {
-        for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-          for (lp = 0; lp < handle->fm_lp_block; ++lp) {
-            LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij+handle->desc.pad_h, ifm2*handle->fm_lp_block+lp, ii+handle->desc.pad_w, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended) =
-              LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+if (pixels_lp !=4) {
+  if (handle->padding_flag == 1) {
+    int img = ltid, ifm1, ij, ifm2, ii;
+    int ofm1, ofm2, k, lp;
+    int FM;
+    int W;  
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+      for (ij = 0; ij < handle->ifhp; ++ij) {
+        for (ii = 0; ii < handle->ifwp; ++ii) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+              LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij+handle->desc.pad_h, ifm2*handle->fm_lp_block+lp, ii+handle->desc.pad_w, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended) =
+                LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            }
           }
         }
       }
-    }
-  }  
-  #include "output_lp_transposer.tpl.c"
-} else {
-  if (handle->resize_input == 0) {
-    lp_transpose_input_and_output(ltid, handle);
+    }  
+#include "output_lp_transposer.tpl.c"
   } else {
-    lp_transpose_and_resize_input_and_output(ltid, handle);
+    if (handle->resize_input == 0) {
+      lp_transpose_input_and_output(ltid, handle);
+    } else {
+      lp_transpose_and_resize_input_and_output(ltid, handle);
+    }
   }
+} else {
+  /* Scalar C code for input and output transpose when int8 <=> pixels_lp == 4 ...*/
+
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
@@ -200,18 +206,18 @@ if (handle->reduce_weights) {
 //LIBXSMM_VLA_DECL(6, element_output_type, lp_output, (element_output_type*)handle->grad_output->data, BLOCKSOFM, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
 
 if (handle->trans_ofw_ifm == 1) {
- if (handle->padding_flag == 1) {
-   input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended);
- } else {
-   input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended);
- }
+  if (handle->padding_flag == 1) {
+    input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended);
+  } else {
+    input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended);
+  }
 } else {
   if (handle->avoid_input_trans == 1) {
-    LIBXSMM_VLA_DECL(6, element_input_type, lp_input, (element_input_type*)handle->reg_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);
-    input_base = &LIBXSMM_VLA_ACCESS(6, lp_input, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);
+    LIBXSMM_VLA_DECL(6, element_input_type, lp_input, (element_input_type*)handle->reg_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp/pixels_lp, handle->ifmblock_hp, pixels_lp);
+    input_base = &LIBXSMM_VLA_ACCESS(6, lp_input, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp/pixels_lp, handle->ifmblock_hp, pixels_lp);
   } else {
-    LIBXSMM_VLA_DECL(6, element_input_type, lp_input, (element_input_type*)handle->scratch3, handle->blocksifm, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);
-    input_base = &LIBXSMM_VLA_ACCESS(6, lp_input, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);
+    LIBXSMM_VLA_DECL(6, element_input_type, lp_input, (element_input_type*)handle->scratch3, handle->blocksifm, handle->ifhp, handle->ifwp/pixels_lp, handle->ifmblock_hp, pixels_lp);
+    input_base = &LIBXSMM_VLA_ACCESS(6, lp_input, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp/pixels_lp, handle->ifmblock_hp, pixels_lp);
   }
 }
 
@@ -223,11 +229,11 @@ output_base = &LIBXSMM_VLA_ACCESS(6, lp_output, 0, 0, 0, 0, 0, 0, handle->blocks
 #else
 if (handle->avoid_output_trans) {
   element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
-  LIBXSMM_VLA_DECL(6, element_output_type, lp_output, out, BLOCKSOFM, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
-  output_base = &LIBXSMM_VLA_ACCESS(6, lp_output, 0, 0, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
+  LIBXSMM_VLA_DECL(6, element_output_type, lp_output, out, BLOCKSOFM, handle->ofhp, handle->ofwp/pixels_lp, handle->ofmblock, pixels_lp);
+  output_base = &LIBXSMM_VLA_ACCESS(6, lp_output, 0, 0, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp/pixels_lp, handle->ofmblock, pixels_lp);
 } else {
-  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-  output_base = &LIBXSMM_VLA_ACCESS(6, tr_output, 0, 0, 0, 0, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
+  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
+  output_base = &LIBXSMM_VLA_ACCESS(6, tr_output, 0, 0, 0, 0, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
 }
 #endif
 
@@ -334,4 +340,3 @@ if (handle->reduce_weights) {
 #undef __AVX512F__
   }
 }
-
