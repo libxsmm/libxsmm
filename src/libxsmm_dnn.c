@@ -2424,21 +2424,34 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_quantize( float* in_buffer, short* out_b
   /* in case we are using FP-Mul based quatization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
-    int max = libxsmm_internal_get_max( in_buffer, length );
+    float max = libxsmm_internal_get_max( in_buffer, length );
     int maxexp = 0;
     float scfq = 0.0f;  
     frexpf(max, &maxexp);
-    maxexp -= (16-add_shift);
-    scfq = (float)pow(2.0, (double)-maxexp); 
+    maxexp -= (15-add_shift);
+    scfq = (float)pow(2.0, (double)-maxexp);
 
+    if ( length % 16 == 0 ) {
+      __m512 vscfq = _mm512_set1_ps(scfq);
 #ifdef _OPENMP
 #pragma omp parallel for private(i)
 #endif
-    for( i = 0; i < length; ++i ) {
-      out_buffer[i] = (short)round(in_buffer[i]*scfq);
-    }    
-
-    *scf = -maxexp;
+      for( i = 0; i < length; i+=16 ) {
+        _mm256_stream_si256( (__m256i *)&(out_buffer[i]), _mm512_quantize_near_ps_epi16( &(in_buffer[i]), vscfq ) );
+      }
+    } else {
+#ifdef _OPENMP
+#pragma omp parallel for private(i)
+#endif
+      for( i = 0; i < length; ++i ) {
+        out_buffer[i] = (short)round(in_buffer[i]*scfq);
+      }
+    }
+    /* @TODO, we need to potentialy fix this unsigned char problem */
+    if (maxexp > 0) {
+      printf("error quant fil\n");
+    }
+    *scf = (unsigned char)(-maxexp);
   } else {
     /* get max exponent */
     unsigned char max_exp = libxsmm_internal_get_max_exp( in_buffer, length );
@@ -2473,38 +2486,49 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_quantize_act( float* in_buffer, short* o
   /* in case we are using FP-Mul based quatization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
-    int max = libxsmm_internal_get_max( in_buffer, N*C*H*W );
+    float max = libxsmm_internal_get_max( in_buffer, N*C*H*W );
     int maxexp = 0;
     float scfq = 0.0f;  
     frexpf(max, &maxexp);
-    maxexp -= (16-add_shift);
-    scfq = (float)pow(2.0, (double)-maxexp); 
-    
-    /*__m512 vsfq = _mm512_set1_ps(scfq);*/
+    maxexp -= (15-add_shift);
+    scfq = (float)pow(2.0, (double)-maxexp);
 
+    if ( (cblk_f32 == 16) && (cblk_i16*lp_blk == 16) ) {
+      __m512 vscfq = _mm512_set1_ps(scfq);
+#ifdef _OPENMP
+#pragma omp parallel for private(i1)
+#endif
+      for( i1 = 0; i1 < N*C*H*W; i1+=16 ) {
+        _mm256_stream_si256( (__m256i *)&(out_buffer[i1]), _mm512_quantize_near_ps_epi16( &(in_buffer[i1]), vscfq ) );
+      }
+    } else {
 #ifdef _OPENMP
 #pragma omp parallel for private(i1, i2, i3, i4, i5, i6) collapse(4)
 #endif
-    for( i1 = 0; i1 < N; ++i1 ) {
-      for( i2 = 0; i2 < cblk; ++i2 ) {
-        for( i3 = 0; i3 < H; ++i3 ) {
-          for( i4 = 0; i4 < W; ++i4 ) {
-            for( i5 = 0; i5 < cblk_i16; ++i5 ) {
-              for( i6 = 0; i6 < lp_blk; ++i6 ) {
-                int fi1 = i1;
-                int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)/cblk_f32;
-                int fi3 = i3;
-                int fi4 = i4;
-                int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)%cblk_f32;
-                out[i1][i2][i3][i4][i5][i6] = (short)round(in[fi1][fi2][fi3][fi4][fi5] * scfq);
+      for( i1 = 0; i1 < N; ++i1 ) {
+        for( i2 = 0; i2 < cblk; ++i2 ) {
+          for( i3 = 0; i3 < H; ++i3 ) {
+            for( i4 = 0; i4 < W; ++i4 ) {
+              for( i5 = 0; i5 < cblk_i16; ++i5 ) {
+                for( i6 = 0; i6 < lp_blk; ++i6 ) {
+                  int fi1 = i1;
+                  int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)/cblk_f32;
+                  int fi3 = i3;
+                  int fi4 = i4;
+                  int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)%cblk_f32;
+                  out[i1][i2][i3][i4][i5][i6] = (short)round(in[fi1][fi2][fi3][fi4][fi5] * scfq);
+                }
               }
             }
           }
         }
       }
     }
-
-    *scf = -maxexp;
+    /* @TODO, we need to potentialy fix this unsigned char problem */
+    if (maxexp > 0) {
+      printf("error quant act\n");
+    }
+    *scf = (unsigned char)(-maxexp);
   } else {
     /* get max exponent */
     unsigned char max_exp = libxsmm_internal_get_max_exp( in_buffer, N*C*H*W );
@@ -2558,39 +2582,68 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_quantize_fil( float* in_buffer, short* o
   /* in case we are using FP-Mul based quatization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
-    int max = libxsmm_internal_get_max( in_buffer, K*C*R*S );
+    float max = libxsmm_internal_get_max( in_buffer, K*C*R*S );
     int maxexp = 0;
     float scfq = 0.0f;  
     frexpf(max, &maxexp);
-    maxexp -= (16-add_shift);
-    scfq = (float)pow(2.0, (double)-maxexp); 
+    maxexp -= (15-add_shift);
+    scfq = (float)pow(2.0, (double)-maxexp);
 
+    if ( (kblk_f32 == 16) && (cblk_f32 == 16) && (kblk_i16 == 16) && (cblk_i16*lp_blk == 16) ) {
+      const __m512 vscfq = _mm512_set1_ps(scfq);
+      const __m512i permute_compact_idx = _mm512_set_epi32(15,14,13,12,7,6,5,4,11,10,9,8,3,2,1,0);
+#ifdef _OPENMP
+#pragma omp parallel for private(i1, i2, i3, i4, i5) collapse(4)
+#endif
+      for( i1 = 0; i1 < kblk; ++i1 ) {
+        for( i2 = 0; i2 < cblk; ++i2 ) {
+          for( i3 = 0; i3 < R; ++i3 ) {
+            for( i4 = 0; i4 < S; ++i4 ) {
+              for( i5 = 0; i5 < 16; i5+=2 ) {
+                __m256i even_ch = _mm512_quantize_near_ps_epi16( &(in[i1][i2][i3][i4][i5+0][0]), vscfq );
+                __m256i odd_ch  = _mm512_quantize_near_ps_epi16( &(in[i1][i2][i3][i4][i5+1][0]), vscfq );
+                __m256i compressed_lo  = _mm256_unpacklo_epi16(even_ch, odd_ch);
+                __m256i compressed_hi  = _mm256_unpackhi_epi16(even_ch, odd_ch);
+                __m512i compact =  _mm512_inserti64x4( _mm512_setzero_si512(), compressed_lo, 0);
+                compact =  _mm512_inserti64x4(compact, compressed_hi, 1);
+                compact =  _mm512_permutevar_epi32(permute_compact_idx, compact);
+                _mm512_stream_si512(&(out[i1][i2][i3][i4][i5/2][0][0]), compact);
+              }
+            }
+          }
+        }
+      }
+    } else {
 #ifdef _OPENMP
 #pragma omp parallel for private(i1, i2, i3, i4, i5, i6, i7) collapse(4)
 #endif
-    for( i1 = 0; i1 < kblk; ++i1 ) {
-      for( i2 = 0; i2 < cblk; ++i2 ) {
-        for( i3 = 0; i3 < R; ++i3 ) {
-          for( i4 = 0; i4 < S; ++i4 ) {
-            for( i5 = 0; i5 < cblk_i16; ++i5 ) {
-              for( i6 = 0; i6 < kblk_i16; ++i6 ) {
-                for( i7 = 0; i7 < lp_blk; ++i7 ) {
-                  int fi1 = ((i1*kblk_i16)+i6)/kblk_f32;
-                  int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)/cblk_f32;
-                  int fi3 = i3;
-                  int fi4 = i4;
-                  int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)%cblk_f32;
-                  int fi6 = ((i1*kblk_i16)+i6)%kblk_f32;
-                  out[i1][i2][i3][i4][i5][i6][i7] = (short)round(in[fi1][fi2][fi3][fi4][fi5][fi6]*scfq);
+      for( i1 = 0; i1 < kblk; ++i1 ) {
+        for( i2 = 0; i2 < cblk; ++i2 ) {
+          for( i3 = 0; i3 < R; ++i3 ) {
+            for( i4 = 0; i4 < S; ++i4 ) {
+              for( i5 = 0; i5 < cblk_i16; ++i5 ) {
+                for( i6 = 0; i6 < kblk_i16; ++i6 ) {
+                  for( i7 = 0; i7 < lp_blk; ++i7 ) {
+                    int fi1 = ((i1*kblk_i16)+i6)/kblk_f32;
+                    int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)/cblk_f32;
+                    int fi3 = i3;
+                    int fi4 = i4;
+                    int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)%cblk_f32;
+                    int fi6 = ((i1*kblk_i16)+i6)%kblk_f32;
+                    out[i1][i2][i3][i4][i5][i6][i7] = (short)round(in[fi1][fi2][fi3][fi4][fi5][fi6]*scfq);
+                  }
                 }
               }
             }
           }
         }
       }
-    } 
-
-    *scf = -maxexp;
+    }
+    /* @TODO, we need to potentialy fix this unsigned char problem */
+    if (maxexp > 0) {
+      printf("error quant fil\n");
+    }
+    *scf = (unsigned char)(-maxexp);
   } else {
     /* get max exponent */
     unsigned char max_exp = libxsmm_internal_get_max_exp( in_buffer, K*C*R*S );
