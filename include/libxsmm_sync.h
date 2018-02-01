@@ -149,7 +149,7 @@
 #   else /* GCC legacy atomics */
 #     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
 #     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) { \
-              LIBXSMM_ATOMIC_SYNC_NOFENCE(KIND); *(DST_PTR) = VALUE;
+              LIBXSMM_ATOMIC_SYNC_NOFENCE(KIND); *(DST_PTR) = VALUE; \
               LIBXSMM_ATOMIC_SYNC_NOFENCE(KIND); }
 #     define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) do {} while (__sync_and_and_fetch(DST_PTR, 0))
 #     define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) __sync_fetch_and_or(DST_PTR, VALUE)
