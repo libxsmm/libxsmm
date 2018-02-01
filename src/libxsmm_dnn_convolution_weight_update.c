@@ -1505,6 +1505,20 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
           }
         }
       }
+    } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
+      if (handle->upd_use_thread_fil > 0) {
+        typedef unsigned char element_input_type;
+        typedef unsigned char element_output_type;
+        typedef int element_filter_type;
+        typedef libxsmm_uwsconvfunction libxsmm_convfunction;
+        if (handle->use_fastpath) {
+          if ( handle->use_hybrid_wu_parallelism == 1) {
+#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
+          } else {
+#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
+          }
+        }
+      }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
