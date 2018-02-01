@@ -171,7 +171,9 @@ ifneq (0,$(OMP))
 endif
 
 ifneq (,$(MKL))
+ifneq (0,$(MKL))
   BLAS = $(MKL)
+endif
 endif
 
 BLAS_WARNING ?= 0
