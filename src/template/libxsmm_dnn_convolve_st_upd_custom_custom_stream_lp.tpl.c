@@ -300,7 +300,11 @@ if (handle->reduce_weights) {
 #ifdef __AVX512F__
       __m512 weight_sum = _mm512_setzero_ps();
       for ( i = 0; i < handle->weight_copies; i++ ) {
-        weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
+        if (pixels_lp == 4) {
+          weight_sum = _mm512_add_epi32(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
+        } else {
+          weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
+        }
       }
       _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
       max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(weight_sum));
@@ -366,3 +370,4 @@ if (handle->reduce_weights) {
 #undef __AVX512F__
   }
 }
+
