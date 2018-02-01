@@ -30,9 +30,6 @@
 ******************************************************************************/
 #include <libxsmm_source.h>
 #include <stdlib.h>
-#if defined(_DEBUG)
-# include <stdio.h>
-#endif
 
 
 LIBXSMM_EXTERN libxsmm_dmmfunction dmmdispatch(int m, int n, int k);
@@ -45,13 +42,10 @@ int main(void)
     NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
     NULL/*flags*/, NULL/*prefetch*/);
   const libxsmm_dmmfunction fb = dmmdispatch(m, n, k);
-#if defined(_DEBUG)
+  int result = EXIT_SUCCESS;
   if (fa != fb) {
-    union { libxsmm_xmmfunction xmm; void* pmm; } a, b;
-    a.xmm.dmm = fa; b.xmm.dmm = fb;
-    fprintf(stderr, "Error: %p != %p\n", a.pmm, b.pmm);
+    result = EXIT_FAILURE;
   }
-#endif
-  return fa == fb ? EXIT_SUCCESS : EXIT_FAILURE;
+  return result;
 }
 
