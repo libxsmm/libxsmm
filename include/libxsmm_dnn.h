@@ -255,6 +255,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_intfloat {
 #define LIBXSMM_DNN_QUANT_BIAS_ROUND     80001
 #define LIBXSMM_DNN_QUANT_STOCH_ROUND    80002
 #define LIBXSMM_DNN_QUANT_NEAREST_ROUND  80003
+#define LIBXSMM_DNN_QUANT_FPHW_ROUND     80004
 
 /** get string of error code */
 LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code);

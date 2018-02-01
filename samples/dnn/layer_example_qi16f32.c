@@ -876,13 +876,13 @@ int main(int argc, char* argv[])
 #endif
 
     /* quantize input, filter, and Bias */
-    libxsmm_dnn_quantize( naive_input_save, i16_naive_input,  nImg*nIfm*ifhp*ifwp, 2, &scf_input,  LIBXSMM_DNN_QUANT_BIAS_ROUND );
-    libxsmm_dnn_quantize( naive_filter,     i16_naive_filter, nIfm*nOfm*kw*kh    , 2, &scf_filter, LIBXSMM_DNN_QUANT_BIAS_ROUND );
+    libxsmm_dnn_quantize( naive_input_save, i16_naive_input,  nImg*nIfm*ifhp*ifwp, 2, &scf_input,  LIBXSMM_DNN_QUANT_FPHW_ROUND );
+    libxsmm_dnn_quantize( naive_filter,     i16_naive_filter, nIfm*nOfm*kw*kh    , 2, &scf_filter, LIBXSMM_DNN_QUANT_FPHW_ROUND );
 
 #ifdef USE_FORMATED_QUANT
     /* quantize and copy into LIBXSMM format */
-    libxsmm_dnn_quantize_act( naive_input_save, input_libxsmm,  nImg, nIfm, ifhp, ifwp, 1, 8, 2, 2, &scf_input,  LIBXSMM_DNN_QUANT_BIAS_ROUND );
-    libxsmm_dnn_quantize_fil( naive_filter,     filter_libxsmm, nOfm, nIfm, kw, kh, 1, 8, 1, 16, 2, 2, &scf_filter, LIBXSMM_DNN_QUANT_BIAS_ROUND );
+    libxsmm_dnn_quantize_act( naive_input_save, input_libxsmm,  nImg, nIfm, ifhp, ifwp, 1, 8, 2, 2, &scf_input,  LIBXSMM_DNN_QUANT_FPHW_ROUND );
+    libxsmm_dnn_quantize_fil( naive_filter,     filter_libxsmm, nOfm, nIfm, kw, kh, 1, 8, 1, 16, 2, 2, &scf_filter, LIBXSMM_DNN_QUANT_FPHW_ROUND );
 #endif
 
     /* set scaling factors into tensors */
@@ -1100,7 +1100,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
 
       /* quantize input, filter, and Bias */
-      libxsmm_dnn_quantize( naive_output_bp, i16_naive_doutput, nImg*nOfm*ofhp*ofwp, 2, &scf_doutput,  LIBXSMM_DNN_QUANT_BIAS_ROUND );
+      libxsmm_dnn_quantize( naive_output_bp, i16_naive_doutput, nImg*nOfm*ofhp*ofwp, 2, &scf_doutput,  LIBXSMM_DNN_QUANT_FPHW_ROUND );
   
       /* set scaling factors into tensors */
       libxsmm_dnn_set_qtensor_scf( libxsmm_doutput,  scf_doutput );
@@ -1197,8 +1197,8 @@ int main(int argc, char* argv[])
       printf("#   Correctness - UPD (custom-Storage)   #\n");
       printf("##########################################\n");
       /* quantize input, filter, and Bias */
-      libxsmm_dnn_quantize( naive_input_save, i16_naive_input,   nImg*nIfm*ifhp*ifwp, 2, &scf_input,    LIBXSMM_DNN_QUANT_BIAS_ROUND );
-      libxsmm_dnn_quantize( naive_output_wu,  i16_naive_doutput, nImg*nOfm*ofhp*ofwp, 2, &scf_doutput,  LIBXSMM_DNN_QUANT_BIAS_ROUND );
+      libxsmm_dnn_quantize( naive_input_save, i16_naive_input,   nImg*nIfm*ifhp*ifwp, 2, &scf_input,    LIBXSMM_DNN_QUANT_FPHW_ROUND );
+      libxsmm_dnn_quantize( naive_output_wu,  i16_naive_doutput, nImg*nOfm*ofhp*ofwp, 2, &scf_doutput,  LIBXSMM_DNN_QUANT_FPHW_ROUND );
   
       /* set scaling factors into tensors */
       libxsmm_dnn_set_qtensor_scf( libxsmm_input,  scf_input );
