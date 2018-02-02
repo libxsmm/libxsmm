@@ -47,6 +47,7 @@ PYTHON ?= $(shell which python 2>/dev/null)
 # Command line utilities
 #PKGCFG ?= $(shell which pkg-config 2>/dev/null)
 CP ?= $(shell which cp 2>/dev/null)
+MV ?= $(shell which mv 2>/dev/null)
 UNAME ?= $(shell uname)
 MAKE ?= make
 ENV ?= env
