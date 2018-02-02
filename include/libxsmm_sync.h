@@ -78,7 +78,7 @@
 #if !defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP) && 0
 # define LIBXSMM_ATOMIC_TRYLOCK_CMPSWP
 #endif
-#if !defined(LIBXSMM_ATOMIC_ZERO_STORE) && 0
+#if !defined(LIBXSMM_ATOMIC_ZERO_STORE) && defined(_CRAYC)
 # define LIBXSMM_ATOMIC_ZERO_STORE
 #endif
 #if defined(__ATOMIC_RELAXED)
