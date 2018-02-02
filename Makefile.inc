@@ -1107,14 +1107,12 @@ else
 endif
 CINFO = C / C++: $(if $(CTARGET),$(CTARGET),<compiler default>)
 
-#ifneq (0,$(DEPSTATIC))
-  ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
-    LIBRT = -lrt
-  endif
-  ifneq (0,$(shell $(LD) $(SLDFLAGS) -ldl 2>&1 | grep -q "\-ldl"; echo "$$?"))
-    LIBDL = -ldl
-  endif
-#endif
+ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
+  LIBRT = -lrt
+endif
+ifneq (0,$(shell $(LD) $(SLDFLAGS) -ldl 2>&1 | grep -q "\-ldl"; echo "$$?"))
+  LIBDL = -ldl
+endif
 ifneq (,$(strip $(LIBRT) $(LIBDL)))
   LDFLAGS += $(XLIB_BEGIN) $(LIBRT) $(LIBDL) $(XLIB_END)
 endif
