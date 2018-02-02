@@ -267,7 +267,7 @@
 #   if !defined(LIBXSMM_SYNC_NPAUSE)
 #     define LIBXSMM_SYNC_NPAUSE 0
 #   endif
-# else
+# else /* consider to enable LIBXSMM_SYNC_SYSTEM */
 #   error LIBXSMM is missing atomic compiler builtins!
 # endif
 # if (0 < LIBXSMM_SYNC_NPAUSE)
