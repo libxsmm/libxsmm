@@ -40,7 +40,8 @@ int main(void)
   int mh = 1051981, hp, tmp;
 
   LIBXSMM_NONATOMIC_STORE(&hp, 25071975, kind);
-  if (LIBXSMM_NONATOMIC_LOAD(&hp, kind) != LIBXSMM_ATOMIC_LOAD(&hp, kind)) {
+  tmp = LIBXSMM_NONATOMIC_LOAD(&hp, kind);
+  if (tmp != LIBXSMM_ATOMIC_LOAD(&hp, kind)) {
     result = EXIT_FAILURE;
   }
   if (mh != LIBXSMM_NONATOMIC_SUB_FETCH(&hp, 24019994, kind)) {
