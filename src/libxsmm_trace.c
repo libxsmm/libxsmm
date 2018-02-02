@@ -31,8 +31,8 @@
 #include "libxsmm_trace.h"
 #include <libxsmm_sync.h>
 
-#if !defined(LIBXSMM_TRACE_DLINFO)
-/*# define LIBXSMM_TRACE_DLINFO*/
+#if !defined(LIBXSMM_TRACE_DLINFO) && 0
+# define LIBXSMM_TRACE_DLINFO
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
