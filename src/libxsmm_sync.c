@@ -38,10 +38,6 @@
 # define LIBXSMM_SYNC_FUTEX
 #endif
 
-#if !defined(LIBXSMM_SYNC_SYSTEM) && (defined(__MINGW32__) || defined(__PGI))
-# define LIBXSMM_SYNC_SYSTEM
-#endif
-
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
@@ -477,14 +473,15 @@ LIBXSMM_API_DEFINITION void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
   assert(0 != mutex);
   LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_MUTEX, &mutex->impl);
 # else
-  LIBXSMM_SYNC_CYCLE_DECL(counter);
 #   if defined(_WIN32)
+  LIBXSMM_SYNC_CYCLE_DECL(counter);
   assert(0 != mutex);
   while (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX) != libxsmm_mutex_trylock(mutex)) {
     while (0 != (mutex->state & 1)) LIBXSMM_SYNC_CYCLE(counter, LIBXSMM_SYNC_NPAUSE);
   }
 #   else
   libxsmm_mutex_state lock_free = INTERNAL_SYNC_LOCK_FREE, lock_state = INTERNAL_SYNC_LOCK_LOCKED;
+  LIBXSMM_SYNC_CYCLE_DECL(counter);
   assert(0 != mutex);
   while (0/*false*/ == LIBXSMM_ATOMIC_CMPSWP(&mutex->state, lock_free, lock_state, LIBXSMM_ATOMIC_RELAXED)) {
     libxsmm_mutex_state state;

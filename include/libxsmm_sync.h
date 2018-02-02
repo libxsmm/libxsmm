@@ -72,6 +72,9 @@
 # define LIBXSMM_SYNC_PAUSE
 #endif
 
+#if !defined(LIBXSMM_SYNC_SYSTEM) && (defined(__MINGW32__) || defined(__PGI))
+# define LIBXSMM_SYNC_SYSTEM
+#endif
 #if !defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP) && 0
 # define LIBXSMM_ATOMIC_TRYLOCK_CMPSWP
 #endif
@@ -133,7 +136,7 @@
 #   define LIBXSMM_SYNC_NPAUSE 0
 # endif
 #else
-# if defined(__GNUC__) && !defined(__PGI)
+# if defined(__GNUC__) && !defined(LIBXSMM_SYNC_SYSTEM)
 #   define LIBXSMM_ATOMIC(FN, BITS) FN
 #   if defined(LIBXSMM_GCC_BASELINE)
 #     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_n(SRC_PTR, KIND)
@@ -198,7 +201,7 @@
 #   if !defined(LIBXSMM_SYNC_NPAUSE)
 #     define LIBXSMM_SYNC_NPAUSE 4096
 #   endif
-# elif defined(_WIN32)
+# elif defined(_WIN32) && !defined(LIBXSMM_SYNC_SYSTEM)
 #   define LIBXSMM_ATOMIC(FN, BITS) LIBXSMM_CONCATENATE(LIBXSMM_ATOMIC, BITS)(FN)
 #   define LIBXSMM_ATOMIC8(FN) LIBXSMM_CONCATENATE(FN, 8)
 #   define LIBXSMM_ATOMIC16(FN) LIBXSMM_CONCATENATE(FN, 16)
@@ -246,7 +249,7 @@
 #   if !defined(LIBXSMM_SYNC_NPAUSE)
 #     define LIBXSMM_SYNC_NPAUSE 4096
 #   endif
-# elif !defined(_DEBUG) /* dangerous fall-back */
+# elif defined(LIBXSMM_SYNC_SYSTEM) /* fall-back */
 #   define LIBXSMM_ATOMIC(FN, BITS) FN
 #   define LIBXSMM_ATOMIC_LOAD LIBXSMM_NONATOMIC_LOAD
 #   define LIBXSMM_ATOMIC_STORE LIBXSMM_NONATOMIC_STORE
@@ -288,21 +291,21 @@
 #if !defined(LIBXSMM_NO_SYNC) /** Default lock-kind */
 # define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
 # if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
-#   if defined(__MINGW32__) || defined(__PGI)
+#   if defined(LIBXSMM_SYNC_SYSTEM)
 #     define LIBXSMM_LOCK_SYSTEM_SPINLOCK
 #   elif 1
 #     define LIBXSMM_LOCK_SYSTEM_SPINLOCK
 #   endif
 # endif
 # if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
-#   if defined(__MINGW32__) || defined(__PGI)
+#   if defined(LIBXSMM_SYNC_SYSTEM)
 #     define LIBXSMM_LOCK_SYSTEM_MUTEX
 #   elif 1
 #     define LIBXSMM_LOCK_SYSTEM_MUTEX
 #   endif
 # endif
 # if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
-#   if defined(__MINGW32__) || defined(__PGI)
+#   if defined(LIBXSMM_SYNC_SYSTEM)
 #     define LIBXSMM_LOCK_SYSTEM_RWLOCK
 #   elif 1
 #     define LIBXSMM_LOCK_SYSTEM_RWLOCK
