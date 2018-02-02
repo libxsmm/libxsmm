@@ -481,15 +481,17 @@ ifeq (1,$(GCC))
     GCC = 2
   endif
   ifeq (2,$(GCC))
-    ifneq (,$(findstring gfortran,$(FC_NAME)))
+  ifneq (,$(strip $(FC)))
+    ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
       GCC = 3
-    else ifneq (,$(strip $(FC)))
-      ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
-        GCC = 3
-      else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
+    else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
+      GCC = 3
+    else ifneq (pgfortran,$(CC_NAME))
+      ifneq (,$(findstring gfortran,$(FC_NAME)))
         GCC = 3
       endif
     endif
+  endif
   endif
 endif
 
