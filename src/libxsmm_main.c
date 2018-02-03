@@ -729,9 +729,6 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
       const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
       LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK) attr_global;
-      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK, &attr_global);
-      LIBXSMM_LOCK_INIT(LIBXSMM_LOCK, &libxsmm_lock_global, &attr_global);
-      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK, &attr_global);
 # if (0 < INTERNAL_REGLOCK_MAXN)
       int i;
       LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REGNLOCK) attr;
@@ -742,7 +739,11 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       LIBXSMM_LOCK_INIT(LIBXSMM_REG1LOCK, &internal_reglock, &attr);
       LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REG1LOCK, &attr);
 # endif
-      if (0 == env_trylock || 0 == *env_trylock) { /* LIBXSMM_TRYLOCK not present in environment */
+      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK, &attr_global);
+      LIBXSMM_LOCK_INIT(LIBXSMM_LOCK, &libxsmm_lock_global, &attr_global);
+      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK, &attr_global);
+      /* control number of locks needed; LIBXSMM_TRYLOCK implies only 1 lock */
+      if (0 == env_trylock || 0 == *env_trylock) { /* no LIBXSMM_TRYLOCK */
         internal_reglock_count = INTERNAL_REGLOCK_MAXN;
       }
       else { /* LIBXSMM_TRYLOCK environment variable specified */
