@@ -733,8 +733,9 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       LIBXSMM_LOCK_INIT(LIBXSMM_LOCK, &libxsmm_lock_global, &attr_global);
       LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK, &attr_global);
 # if (0 < INTERNAL_REGLOCK_MAXN)
-      LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REGNLOCK) attr;
       int i;
+      LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REGNLOCK) attr;
+      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_REGNLOCK, &attr);
 # else
       LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REG1LOCK) attr;
       LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_REG1LOCK, &attr);
@@ -751,6 +752,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 # if (0 < INTERNAL_REGLOCK_MAXN)
       assert(1 <= internal_reglock_count);
       for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_REGNLOCK, &internal_reglock[i].state, &attr);
+      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGNLOCK, &attr);
 # endif
       once = 1;
     }
