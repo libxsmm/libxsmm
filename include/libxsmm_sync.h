@@ -290,26 +290,14 @@
 #endif
 #if !defined(LIBXSMM_NO_SYNC) /** Default lock-kind */
 # define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
-# if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
-#   if defined(LIBXSMM_SYNC_SYSTEM)
-#     define LIBXSMM_LOCK_SYSTEM_SPINLOCK
-#   elif 1
-#     define LIBXSMM_LOCK_SYSTEM_SPINLOCK
-#   endif
+# if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
+#   define LIBXSMM_LOCK_SYSTEM_SPINLOCK
 # endif
-# if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
-#   if defined(LIBXSMM_SYNC_SYSTEM)
-#     define LIBXSMM_LOCK_SYSTEM_MUTEX
-#   elif !defined(_MSC_VER)
-#     define LIBXSMM_LOCK_SYSTEM_MUTEX
-#   endif
+# if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && (defined(LIBXSMM_SYNC_SYSTEM) || !defined(_MSC_VER))
+#   define LIBXSMM_LOCK_SYSTEM_MUTEX
 # endif
-# if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
-#   if defined(LIBXSMM_SYNC_SYSTEM)
-#     define LIBXSMM_LOCK_SYSTEM_RWLOCK
-#   elif 1
-#     define LIBXSMM_LOCK_SYSTEM_RWLOCK
-#   endif
+# if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
+#   define LIBXSMM_LOCK_SYSTEM_RWLOCK
 # endif
   /* Lock type, initialization, destruction, (try-)lock, unlock, etc */
 # define LIBXSMM_LOCK_ACQUIRED(KIND) LIBXSMM_CONCATENATE(LIBXSMM_LOCK_ACQUIRED_, KIND)

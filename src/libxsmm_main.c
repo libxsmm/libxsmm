@@ -182,7 +182,6 @@ LIBXSMM_API_VARIABLE(internal_reglocktype internal_reglock[INTERNAL_REGLOCK_MAXN
 #       define LIBXSMM_REG1LOCK LIBXSMM_LOCK_RWLOCK
 #     endif
 #   endif
-LIBXSMM_API_VARIABLE(LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REG1LOCK) internal_reglock_attr);
 LIBXSMM_API_VARIABLE(LIBXSMM_LOCK_TYPE(LIBXSMM_REG1LOCK) internal_reglock);
 # endif
 #endif
@@ -521,10 +520,8 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     int i; for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_DESTROY(LIBXSMM_REGNLOCK, &internal_reglock[i].state);
 # else
     LIBXSMM_LOCK_DESTROY(LIBXSMM_REG1LOCK, &internal_reglock);
-    LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REG1LOCK, &internal_reglock_attr);
 # endif
     LIBXSMM_LOCK_DESTROY(LIBXSMM_LOCK, &libxsmm_lock_global);
-    LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK, &libxsmm_lock_attr_default);
   }
 #endif
 }
@@ -731,11 +728,19 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     static int counter = 0, once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
       const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
+      LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK) attr_global;
+      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK, &attr_global);
+      LIBXSMM_LOCK_INIT(LIBXSMM_LOCK, &libxsmm_lock_global, &attr_global);
+      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK, &attr_global);
 # if (0 < INTERNAL_REGLOCK_MAXN)
+      LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REGNLOCK) attr;
       int i;
+# else
+      LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REG1LOCK) attr;
+      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_REG1LOCK, &attr);
+      LIBXSMM_LOCK_INIT(LIBXSMM_REG1LOCK, &internal_reglock, &attr);
+      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REG1LOCK, &attr);
 # endif
-      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK, &libxsmm_lock_attr_default);
-      LIBXSMM_LOCK_INIT(LIBXSMM_LOCK, &libxsmm_lock_global, &libxsmm_lock_attr_default);
       if (0 == env_trylock || 0 == *env_trylock) { /* LIBXSMM_TRYLOCK not present in environment */
         internal_reglock_count = INTERNAL_REGLOCK_MAXN;
       }
@@ -745,10 +750,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       }
 # if (0 < INTERNAL_REGLOCK_MAXN)
       assert(1 <= internal_reglock_count);
-      for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_REGNLOCK, &internal_reglock[i].state, &libxsmm_lock_attr_default);
-# else
-      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_REG1LOCK, &internal_reglock_attr);
-      LIBXSMM_LOCK_INIT(LIBXSMM_REG1LOCK, &internal_reglock, &internal_reglock_attr);
+      for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_REGNLOCK, &internal_reglock[i].state, &attr);
 # endif
       once = 1;
     }

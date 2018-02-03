@@ -409,8 +409,6 @@ LIBXSMM_API unsigned long long libxsmm_timer_tick_rdtsc(void);
 LIBXSMM_API void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API void libxsmm_dnn_finalize(void);
 
-/** Default attribute of internal locks. */
-LIBXSMM_API_VARIABLE(LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK) libxsmm_lock_attr_default);
 /** Global lock; create an own lock for an independent domain. */
 LIBXSMM_API_VARIABLE(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
 /** Function used to allocate default memory. */
