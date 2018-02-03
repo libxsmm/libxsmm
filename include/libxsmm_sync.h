@@ -300,7 +300,7 @@
 # if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
 #   if defined(LIBXSMM_SYNC_SYSTEM)
 #     define LIBXSMM_LOCK_SYSTEM_MUTEX
-#   elif 1
+#   elif !defined(_MSC_VER)
 #     define LIBXSMM_LOCK_SYSTEM_MUTEX
 #   endif
 # endif

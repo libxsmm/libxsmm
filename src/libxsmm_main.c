@@ -153,10 +153,10 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 
 #if !defined(LIBXSMM_NO_SYNC)
 # if !defined(INTERNAL_REGLOCK_MAXN)
-#   if 0 /* RW-lock */
-#   define INTERNAL_REGLOCK_MAXN 0
+#   if defined(_MSC_VER)
+#     define INTERNAL_REGLOCK_MAXN 0
 #   else
-#   define INTERNAL_REGLOCK_MAXN 256
+#     define INTERNAL_REGLOCK_MAXN 256
 #   endif
 # endif
 # if (0 < INTERNAL_REGLOCK_MAXN)
@@ -176,7 +176,11 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
 LIBXSMM_API_VARIABLE(internal_reglocktype internal_reglock[INTERNAL_REGLOCK_MAXN]);
 # else /* RW-lock */
 #   if !defined(LIBXSMM_REG1LOCK)
-#     define LIBXSMM_REG1LOCK LIBXSMM_LOCK_RWLOCK
+#     if defined(_MSC_VER)
+#       define LIBXSMM_REG1LOCK LIBXSMM_LOCK_MUTEX
+#     else
+#       define LIBXSMM_REG1LOCK LIBXSMM_LOCK_RWLOCK
+#     endif
 #   endif
 LIBXSMM_API_VARIABLE(LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REG1LOCK) internal_reglock_attr);
 LIBXSMM_API_VARIABLE(LIBXSMM_LOCK_TYPE(LIBXSMM_REG1LOCK) internal_reglock);
