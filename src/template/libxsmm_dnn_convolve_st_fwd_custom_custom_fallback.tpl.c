@@ -44,6 +44,12 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 /* regular/high precision */
 element_output_type* out = 0;
 
+/* padding via stack allocated buffers */
+const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
+const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
+element_input_type input_scratch_padding[padded_h*padded_w*handle->ifmblock]; /* this is a [H][W][c-block] tensor */
+for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
+
 /* select pointer based on precision */
 if (handle->datatype_in == handle->datatype_out) {
   out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
@@ -53,15 +59,7 @@ if (handle->datatype_in == handle->datatype_out) {
   LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
   LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
   LIBXSMM_VLA_DECL(6, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
-#if defined(INPUT_PADDING)
-  /* Variables and initializations related to padding */
-  const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
-  const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
-  LIBXSMM_VLA_DECL(3, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * padded_h * padded_w * handle->ifmblock, padded_w, handle->ifmblock);
-  /* Reset input padding buffer to zero (in case it is not set to zero due to fwd/bwd computations) */
-  memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock), 0, padded_w * padded_h * handle->ifmblock * sizeof(element_input_type));
-#endif
-
+  LIBXSMM_VLA_DECL(3, element_input_type, input_padded, input_scratch_padding, padded_w, handle->ifmblock);
 
   /* perform convolution */
   for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) {
@@ -83,16 +81,6 @@ if (handle->datatype_in == handle->datatype_out) {
       }
     }
     for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-#if defined(INPUT_PADDING)
-      for (oj = 0; oj < handle->ifhp; ++oj) {
-        for (oi = 0; oi < handle->ifwp; ++oi) {
-          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-            LIBXSMM_VLA_ACCESS(3, input_buffer, oj + handle->desc.pad_h, oi + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
-              LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-          }
-        }
-      }
-#endif
       /* reset result buffer to zero when intent is to overwrite when first block
          of input channels should be convoluted */
       if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
@@ -102,14 +90,41 @@ if (handle->datatype_in == handle->datatype_out) {
           temp_ptr[oj] = (element_output_type)0;
         }
       }
-      for (oj = 0; oj < handle->ofh; ++oj) {
-        ij = oj * handle->desc.u;
-        ii = 0; oi = 0;
-        for (kj = 0; kj < handle->desc.R; ++kj) {
-          for (ki = 0; ki< handle->desc.S; ++ki) {
-            gemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0,        handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
-                         &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij + kj, ii + ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
-                         &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0,           handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) );
+      /* check if we need padding, for now we do physical padding on the fly, however we can play with N parameter of the GEMM */
+      /* @TODO: add variant which deals with multiple GEMMS by varying N to deal with padding */
+      if ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) {
+        for (oj = 0; oj < handle->ofh; ++oj) {
+          ij = oj * handle->desc.u;
+          ii = 0; oi = 0;
+          for (kj = 0; kj < handle->desc.R; ++kj) {
+            for (ki = 0; ki< handle->desc.S; ++ki) {
+              gemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0,        handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
+                           &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij + kj, ii + ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
+                           &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0,           handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) );
+            }
+          }
+        }
+      } else {
+        /* copy into stack buffer for physial padding */
+        for (oj = 0; oj < handle->ifhp; ++oj) {
+          for (oi = 0; oi < handle->ifwp; ++oi) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(3, input_padded, oj + handle->desc.pad_h, oi + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
+                LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            }
+          }
+        }
+
+        /* run convolution */
+        for (oj = 0; oj < handle->ofh; ++oj) {
+          ij = oj * handle->desc.u;
+          ii = 0; oi = 0;
+          for (kj = 0; kj < handle->desc.R; ++kj) {
+            for (ki = 0; ki< handle->desc.S; ++ki) {
+              gemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0,        handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
+                           &LIBXSMM_VLA_ACCESS(3,  input_padded,  ij + kj, ii + ki, 0, padded_w, handle->ifmblock),
+                           &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0,           handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) );
+            }
           }
         }
       }
@@ -118,7 +133,7 @@ if (handle->datatype_in == handle->datatype_out) {
     if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU) > 0) ) {
       element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
 
-      /* @TODO check these loops for physical output padding */
+      /* @TODO: we assume that the potentially existing output padding was set to 0 prior to the convolution call */
       for (oj = 0; oj < handle->ofhp*handle->ofwp; ++oj) {
         LIBXSMM_PRAGMA_SIMD
         for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
