@@ -80,19 +80,19 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *L
 
 int main(int argc, char* argv[])
 {
-  const libxsmm_blasint m = LIBXSMM_DEFAULT(512, 1 < argc ? atoi(argv[1]) : 0);
-  const libxsmm_blasint k = LIBXSMM_DEFAULT(m, 3 < argc ? atoi(argv[3]) : 0);
-  const libxsmm_blasint n = LIBXSMM_DEFAULT(k, 2 < argc ? atoi(argv[2]) : 0);
-  const libxsmm_blasint lda = LIBXSMM_DEFAULT(m, 4 < argc ? atoi(argv[4]) : 0);
-  const libxsmm_blasint ldb = LIBXSMM_DEFAULT(k, 5 < argc ? atoi(argv[5]) : 0);
-  const libxsmm_blasint ldc = LIBXSMM_DEFAULT(m, 6 < argc ? atoi(argv[6]) : 0);
-  const REAL_TYPE alpha = (REAL_TYPE)(7 < argc ? atof(argv[7]) : 1.0);
-  const REAL_TYPE beta  = (REAL_TYPE)(8 < argc ? atof(argv[8]) : 1.0);
+  LIBXSMM_GEMM_CONST libxsmm_blasint m = LIBXSMM_DEFAULT(512, 1 < argc ? atoi(argv[1]) : 0);
+  LIBXSMM_GEMM_CONST libxsmm_blasint k = LIBXSMM_DEFAULT(m, 3 < argc ? atoi(argv[3]) : 0);
+  LIBXSMM_GEMM_CONST libxsmm_blasint n = LIBXSMM_DEFAULT(k, 2 < argc ? atoi(argv[2]) : 0);
+  LIBXSMM_GEMM_CONST libxsmm_blasint lda = LIBXSMM_DEFAULT(m, 4 < argc ? atoi(argv[4]) : 0);
+  LIBXSMM_GEMM_CONST libxsmm_blasint ldb = LIBXSMM_DEFAULT(k, 5 < argc ? atoi(argv[5]) : 0);
+  LIBXSMM_GEMM_CONST libxsmm_blasint ldc = LIBXSMM_DEFAULT(m, 6 < argc ? atoi(argv[6]) : 0);
+  LIBXSMM_GEMM_CONST REAL_TYPE alpha = (REAL_TYPE)(7 < argc ? atof(argv[7]) : 1.0);
+  LIBXSMM_GEMM_CONST REAL_TYPE beta  = (REAL_TYPE)(8 < argc ? atof(argv[8]) : 1.0);
+  LIBXSMM_GEMM_CONST char transa = 'N', transb = 'N';
   const int nrepeat = LIBXSMM_DEFAULT(
     LIBXSMM_MAX(13 / LIBXSMM_MAX(1, libxsmm_cbrt_u64(1ULL * m * n * k) >> 10), 3),
     9 < argc ? atoi(argv[9]) : 0);
   const double gflops = 2.0 * m * n * k * 1E-9;
-  const char transa = 'N', transb = 'N';
   int result = EXIT_SUCCESS;
 #if defined(CHECK)
   const char *const env_check = getenv("CHECK");

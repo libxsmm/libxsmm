@@ -30,7 +30,7 @@ CALL libxsmm_?gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 CALL libxsmm_gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 ```
 
-For convenience, a BLAS-based dense matrix multiplication (`libxsmm_blas_gemm`) is provided for all supported languages which is simply re-exposing the underlying GEMM/BLAS implementation. The BLAS-based GEMM might be useful for validation/benchmark purposes, and more important as a fallback when building an application-specific dispatch mechanism.
+For convenience, a BLAS-based dense matrix multiplication (`libxsmm_blas_gemm`) is provided for all supported languages. This is re-exposing the underlying GEMM/BLAS implementation. To remove any BLAS-dependency, please follow the [Link Instructions](index.md#link-instructions). A BLAS-based GEMM can be useful for validation/benchmark purposes, and more important as a fallback when building an application-specific dispatch mechanism.
 
 ```C
 /** Dense matrix multiplication (single/double-precision). */
@@ -195,7 +195,7 @@ gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ \
           /path/to/your_regular_blas.a
 ```
 
-**NOTE**: The static link-time wrapper technique may only work with a GCC tool chain (GNU Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU GCC, Intel&#160;Compiler, and Clang. However, this does not work under Microsoft Windows (even when using the GNU tool chain or Cygwin), and it may not work under OS&#160;X (Compiler&#160;6.1 or earlier, later versions have not been tested).
+**NOTE**: The static link-time wrapper technique may only work with a GCC tool chain (GNU&#160;Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU&#160;GCC, Intel&#160;Compiler, and Clang. However, this does not work under Microsoft Windows (even when using the GNU tool chain or Cygwin), and it may not work under OS&#160;X (Compiler&#160;6.1 or earlier, later versions have not been tested).
 
 #### Dynamic Linkage
 

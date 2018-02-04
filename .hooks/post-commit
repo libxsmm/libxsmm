@@ -1,7 +1,6 @@
 #!/bin/sh
 
 LOCKFILE=${GIT_DIR}/.commit
-DOCDIR=documentation
 
 GREP=$(which grep 2>/dev/null)
 SED=$(which sed 2>/dev/null)

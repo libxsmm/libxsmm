@@ -38,12 +38,13 @@ TOOL=$(which inspxe-cl 2>/dev/null)
 ECHO=$(which echo 2>/dev/null)
 GREP=$(which grep 2>/dev/null)
 SED=$(which sed 2>/dev/null)
+TR=$(which tr 2>/dev/null)
 RM=$(which rm 2>/dev/null)
 
 if [ "${TOOL_ENABLED}" = "" ] || [ "${TOOL_ENABLED}" != "0" ]; then
-  if [ "" != "$1" ] && [ "" != "${BASENAME}" ] && [ "" != "${TOOL}" ] \
-                    && [ "" != "${GREP}" ]     && [ "" != "${SED}" ] \
-                    && [ "" != "${ECHO}" ]     && [ "" != "${RM}" ];
+  if [ "" != "$1" ]    && [ "" != "${BASENAME}" ] && [ "" != "${TOOL}" ] && \
+     [ "" != "${TR}" ] && [ "" != "${GREP}" ]     && [ "" != "${SED}" ]  && \
+                          [ "" != "${ECHO}" ]     && [ "" != "${RM}" ];
   then
     HERE=$(cd $(dirname $0); pwd -P)
     if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
@@ -74,15 +75,13 @@ if [ "${TOOL_ENABLED}" = "" ] || [ "${TOOL_ENABLED}" != "0" ]; then
       if [ "" = "${TOOL_REPORT_ONLY}" ] && [ "0" != "$((2<RESULT2))" ]; then
         FN=$(${GREP} 'Function' ${DIR}/${RPTNAME}.txt | \
              ${SED} -e 's/..* Function \(..*\):..*/\1/')
+        XFLT=$(echo ${TOOL_XFILTER} | ${TR} -s " " | ${TR} " " "|")
+        YFLT=$(echo ${TOOL_FILTER} | ${TR} -s " " | ${TR} " " "|")
+        MATCH=${FN}
 
-        if [ "" = "${TOOL_XFILTER}" ] || \
-           [ "" != "$(${ECHO} "${FN}" | ${GREP} -v ${TOOL_XFILTER})" ];
-        then
-          if [ "" = "${TOOL_FILTER}" ] || \
-           [ "" != "$(${ECHO} "${FN}" | ${GREP} ${TOOL_FILTER})" ];
-          then
-            RESULT=${RESULT2}
-          fi
+        if [ "" != "${XFLT}" ]; then MATCH=$(${ECHO} "${MATCH}" | ${GREP} -Ev ${XFLT}); fi
+        if [ "" = "${YFLT}" ] || [ "" != "$(${ECHO} "${MATCH}" | ${GREP} -E ${YFLT})" ]; then
+          RESULT=${RESULT2}
         fi
       fi
     fi

@@ -84,7 +84,7 @@ then
   then
     CRUN=8
   elif [[ $VLEN == "64" ]]
-  then 
+  then
     CRUN=16
   else
     echo "VLEN need to be either 32/64"
@@ -114,7 +114,7 @@ then
   if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512f)" ]; then
     SDE=
   fi
-fi 
+fi
 
 # number of quantities is always 9
 M=9
