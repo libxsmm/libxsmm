@@ -41,19 +41,14 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
-/* regular/high precision */
-element_output_type* out = 0;
+/* offset output pointer in case of physical output padding */
+element_output_type* out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 
 /* padding via stack allocated buffers */
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 element_input_type input_scratch_padding[padded_h*padded_w*handle->ifmblock]; /* this is a [H][W][c-block] tensor */
 for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
-
-/* select pointer based on precision */
-if (handle->datatype_in == handle->datatype_out) {
-  out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
-}
 
 { /* open new scope for additional variable declarations (C89) */
   LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
@@ -93,6 +88,7 @@ if (handle->datatype_in == handle->datatype_out) {
       /* check if we need padding, for now we do physical padding on the fly, however we can play with N parameter of the GEMM */
       /* @TODO: add variant which deals with multiple GEMMS by varying N to deal with padding */
       if ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) {
+        /* run convolution */
         for (oj = 0; oj < handle->ofh; ++oj) {
           ij = oj * handle->desc.u;
           ii = 0; oi = 0;
