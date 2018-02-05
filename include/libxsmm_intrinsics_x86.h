@@ -401,9 +401,11 @@
 # endif
 # if defined(__INTEL_COMPILER)
 #   define LIBXSMM_INTRINSICS_MM512_ABS_PS(A) _mm512_abs_ps(A)
+#   define LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(A, B) _mm512_permutevar_epi32(A, B)
 # else
 #   define LIBXSMM_INTRINSICS_MM512_ABS_PS(A) _mm512_castsi512_ps(_mm512_and_epi32( \
                              _mm512_castps_si512(A), _mm512_set1_epi32(0x7FFFFFFF)))
+#   define LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(A, B) _mm512_permutexvar_epi32(A, B)
 # endif
 
 #endif /*!defined(LIBXSMM_INTRINSICS_NONE)*/
