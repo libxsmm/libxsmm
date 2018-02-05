@@ -29,9 +29,10 @@
 /* Rajkishore Barik, Ankush Mandal, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-int imgifm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2, ifmlp, ofmlp;
+int imgifm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2, ifm1ofm1;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
+
 /* number of tasks that could be run in parallel */
 const int work = handle->desc.N * handle->blocksifm;
 /* compute chunck size */
@@ -40,139 +41,155 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
-/* Input tensor declaration */
-/* regular/high precision */
-element_input_type* del_in = 0;
-/* low precision */
-element_output_type* del_in_lp = 0;
-/* select pointer based on precision */
-if (handle->datatype_in != handle->datatype_out) {
-#if 0
-  del_in = ((element_input_type*)handle->scratch7);
-  del_in_lp = ((element_output_type*)handle->grad_input->data);
-} else {
-#endif
-  del_in = ((element_input_type*)handle->grad_input->data);
-  del_in_lp = 0;
-}
-{/* open new scope for additional variable declarations (C89) */
-LIBXSMM_VLA_DECL(5, element_input_type, del_input, del_in, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
-LIBXSMM_VLA_DECL(6, element_output_type, del_input_lp, del_in_lp, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block;
-LIBXSMM_VLA_DECL(6, const element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
-LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
+/* number of tasks for transpose that could be run in parallel */
+int transpose_work = handle->blocksifm * handle->blocksofm;
+/* compute chunck size */
+const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (transpose_work / handle->desc.threads) : ((transpose_work / handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;
+const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
 
-#if defined(INPUT_PADDING)
-/* Variables and initializations related to padding */
-const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
-const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
-LIBXSMM_VLA_DECL(3, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * padded_h * padded_w * handle->ifmblock, padded_w, handle->ifmblock);
-/* Reset input padding buffer to zero (in case it is not set to zero due to fwd/bwd computations) */
-memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock), 0, padded_w * padded_h * handle->ifmblock * sizeof(element_input_type));
-#endif
+/* offset pointer in case of physcial padding */
+element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
+element_input_type* in  = ((element_output_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * handle->ifmblock;
+
+/* Weight and transpose_weight tensor declaration */
+LIBXSMM_VLA_DECL(6, element_filter_type, wt, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+LIBXSMM_VLA_DECL(6, element_filter_type, tr_wt, (element_filter_type*)handle->scratch1, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
+/* define weight pointer which has the correct format */
+element_filter_type* weight_base = 0;
+
+/* padding via stack allocated buffers */
+const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
+const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
+element_input_type del_input_scratch_padding[padded_h*padded_w*handle->ifmblock]; /* this is a [H][W][c-block] tensor */
+for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { del_input_scratch_padding[ii] = (element_input_type)0; }
+
+/* transpose filters, if requested */
+if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) {
+  weight_base = (element_filter_type*)handle->reg_filter_tr->data;
+} else {
+  /* lazy barrier init */
+  libxsmm_barrier_init(handle->barrier, ltid);
+
+  for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+    ofm1 = ifm1ofm1 / handle->blocksifm;
+    ifm1 = ifm1ofm1 % handle->blocksifm;
+    for (kj=0; kj < handle->desc.R; kj++) {
+      for (ki=0; ki < handle->desc.S; ki++) {
+        for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj , handle->desc.S-1-ki, ofm2, ifm2, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock) =
+                  LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+          }
+        }
+      }
+    }
+  }
+  weight_base = (element_filter_type*)handle->scratch1;
+
+  /* wait for transpose to finish */
+  libxsmm_barrier_wait(handle->barrier, ltid);
+}
+
+{/* open new scope for additional variable declarations (C89) */
+LIBXSMM_VLA_DECL(5, element_input_type, del_input, (element_output_type*)handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+LIBXSMM_VLA_DECL(3, element_input_type, del_input_padded, del_input_scratch_padding, padded_w, handle->ifmblock);
+LIBXSMM_VLA_DECL(5, const element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+LIBXSMM_VLA_DECL(6, const element_filter_type, weight, weight_base, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
 
 for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
   img = imgifm1 / handle->blocksifm;
   ifm1 = imgifm1 % handle->blocksifm;
 
-  for (ifmlp = 0; ifmlp < handle->fm_lp_block; ++ifmlp) {
-    /* upconvert for low precision */
-    if (handle->datatype_in != handle->datatype_out) {
-      for (ij = 0; ij < handle->ifhp; ++ij) {
-        for (ii = 0; ii < handle->ifwp; ++ii) {
-          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-            LIBXSMM_VLA_ACCESS(5, del_input, img, (ifm1 * handle->fm_lp_block) + ifmlp, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock) = (element_input_type)(LIBXSMM_VLA_ACCESS(6, del_input_lp, img, ifm1, ij, ii, ((handle->ifmblock/handle->fm_lp_block)*ifmlp)+(ifm2/handle->fm_lp_block), (ifm2%handle->fm_lp_block), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block));
-          }
-        }
-      }
-    }/* end of upconvert for low precision */
+  /* check if we need padding, for now we do physical padding on the fly, however we can play with N parameter of the GEMM */
+  /* @TODO: add variant which deals with multiple GEMMS by varying N to deal with padding */
+  if ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) {
 
-    /* input padding copy */
-#if defined(INPUT_PADDING)
     /* reset result buffer to zero when intent is to overwrite when first block
        of input channels should be convoluted */
     if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
-      element_input_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock));
+      element_input_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock));
       LIBXSMM_PRAGMA_SIMD
-      for (ij = 0; ij < padded_h*padded_w*handle->ifmblock; ij++) {
-        temp_ptr[ij] = (element_output_type)0;
-      }
-    } else {
-      for (ij = 0; ij < handle->ifhp; ij++) {
-        for (ii = 0; ii < handle->ifwp; ii++) {
-          LIBXSMM_PRAGMA_SIMD
-          for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-              LIBXSMM_VLA_ACCESS(3, input_buffer, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
-                LIBXSMM_VLA_ACCESS(5, del_input, img, (ifm1 * handle->fm_lp_block) + ifmlp, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
-          }
-        }
+      for (ij = 0; ij < handle->ifhp*handle->ifwp*handle->ifmblock; ij++) {
+        temp_ptr[ij] = (element_input_type)0;
       }
     }
-#else
-    /* reset result buffer to zero when intent is to overwrite when first block
-       of input channels should be convoluted */
-    if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
-      element_input_type* temp_ptr = &(LIBXSMM_VLA_ACCESS(  5, del_input, img, ifm1, 0, 0, 0, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock));
-      LIBXSMM_PRAGMA_SIMD
-      for (ij = 0; ij < handle->ifhp*handle->ifwp*handle->ifmblock*handle->fm_lp_block; ij++) {
-        temp_ptr[ij] = (element_output_type)0;
-      }
-    }
-#endif
 
+    /* run convolution */
     for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
       for ( oj = 0; oj < handle->ofh; ++oj) {
         ij = oj * handle->desc.u;
-        for (oi = 0; oi < handle->ofw; ++oi) {
-          ii = oi * handle->desc.v;
-          for (kj = 0; kj < handle->desc.R; ++kj) {
-            for (ki = 0; ki < handle->desc.S; ++ki) {
-              for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-                for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                  for (ofmlp = 0; ofmlp < handle->fm_lp_block; ++ofmlp) {
-#if defined(INPUT_PADDING)
-                    LIBXSMM_VLA_ACCESS(3, input_buffer, ij+kj, ii+ki, ifm2, padded_w, handle->ifmblock)
-#else
-                    LIBXSMM_VLA_ACCESS(5, del_input, img, (ifm1 * handle->fm_lp_block) + ifmlp, ij+kj, ii+ki, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock)
-#endif
-                    += (element_input_type)(
-                      LIBXSMM_VLA_ACCESS(6, output, img, ofm1, oj, oi, ofm2, ofmlp, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block)
-                    * LIBXSMM_VLA_ACCESS(7, weight, (ofm1 * handle->fm_lp_block) + ofmlp, ifm1, kj, ki, ifm2, ofm2, ifmlp, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block));
-                  }
-                }
-              }
+        oi = 0; ii = 0;
+        for (kj = 0; kj < handle->desc.R; ++kj) {
+          for (ki = 0; ki < handle->desc.S; ++ki) {
+            gemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 0,        handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
+                         &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0,           handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                         &LIBXSMM_VLA_ACCESS(5, del_input,  img, ifm1, ij + kj, ii + ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock) );
+          }
+        }
+      }
+    }
+
+    /* zero rim in case of physical padding.... this code is extremly stupid and crappy as it requires a complicated if... */
+    if (handle->desc.pad_h_in > 0 || handle->desc.pad_w_in > 0) {
+      for ( ij = 0; ij < handle->ifhp; ij++ ) {
+        for ( ii = 0; ii < handle->ifwp; ii++ ) {
+          if ( (ij < handle->desc.pad_h_in) || (ij >= (handle->desc.H+handle->desc.pad_h_in)) ||
+               (ii < handle->desc.pad_w_in) || (ii >= (handle->desc.W+handle->desc.pad_w_in)) ) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock) = (element_input_type)0;
             }
+          }
+        }
+      }
+    }
+  } else {
+    /* reset result buffer to zero when intent is to overwrite when first block
+       of input channels should be convoluted */
+    if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+      LIBXSMM_PRAGMA_SIMD
+      for (ij = 0; ij < padded_h*padded_w*handle->ifmblock; ij++) {
+        del_input_scratch_padding[ij] = (element_output_type)0;
+      }
+    } else {
+      for (ij = 0; ij < handle->desc.H; ij++) {
+        for (ii = 0; ii < handle->desc.W; ii++) {
+          LIBXSMM_PRAGMA_SIMD
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+              LIBXSMM_VLA_ACCESS(3, del_input_padded, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
+                LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+          }
+        }
+      }
+    }
+
+    /* run convolution */
+    for (ofm1 = 0; ofm1 < handle->blocksofm; ++ofm1) {
+      for ( oj = 0; oj < handle->ofh; ++oj) {
+        ij = oj * handle->desc.u;
+        oi = 0; ii = 0;
+        for (kj = 0; kj < handle->desc.R; ++kj) {
+          for (ki = 0; ki < handle->desc.S; ++ki) {
+            gemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 0,        handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock),
+                         &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0,           handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                         &LIBXSMM_VLA_ACCESS(3, del_input_padded, ij + kj, ii + ki, 0, padded_w, handle->ifmblock) );
           }
         }
       }
     }
 
     /* input padding copy back */
-#if defined(INPUT_PADDING)
-    for (ij = 0; ij < handle->ifhp; ij++) {
-      for (ii = 0; ii < handle->ifwp; ii++) {
+    for (ij = 0; ij < handle->desc.H; ij++) {
+      for (ii = 0; ii < handle->desc.W; ii++) {
+        LIBXSMM_PRAGMA_SIMD
         for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-          LIBXSMM_VLA_ACCESS(5, del_input, img, (ifm1 * handle->fm_lp_block) + ifmlp, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock) =
-            LIBXSMM_VLA_ACCESS(3, input_buffer, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock);
+          LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock) =
+            LIBXSMM_VLA_ACCESS(3, del_input_padded, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock);
         }
       }
     }
-#else
-#include "libxsmm_dnn_zero_rim_st_input_custom_fallback.tpl.c"
-#endif
-
-    /* down-convert for low precision */
-    if (handle->datatype_in != handle->datatype_out) {
-      for (ij = 0; ij < handle->ifhp; ++ij) {
-        for (ii = 0; ii < handle->ifwp; ++ii) {
-          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-            LIBXSMM_VLA_ACCESS(6, del_input_lp, img, ifm1, ij, ii, ((handle->ifmblock/handle->fm_lp_block)*ifmlp)+(ifm2/handle->fm_lp_block), (ifm2%handle->fm_lp_block), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block) = (element_output_type)(LIBXSMM_VLA_ACCESS(5, del_input, img, (ifm1 * handle->fm_lp_block) + ifmlp, ij, ii, ifm2, handle->blocksifm*handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock));
-          }
-        }
-      }
-    } /* end of downconvert for low precision */
-
-  } /* end of ifmlp loop */
+  }
 } /* end of imgifm1 loop */
 
 } /* end of new scope for additional variable declarations (C89) */

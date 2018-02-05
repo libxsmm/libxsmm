@@ -26,7 +26,8 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Rajkishore Barik, Ankush Mandal, Evangelos Georganas (Intel Corp.)
+/* Alexander Heinecke, Rajkishore Barik, 
+** Ankush Mandal, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_handle.h"
 #include "libxsmm_main.h"
@@ -1691,10 +1692,18 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       handle->code_upd[4].xconv.sconv = 0;
       handle->code_upd[5].xconv.sconv = 0;
 
-      handle->barrier = 0;
+      /* prepare barrier */
+      handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
 
+      /* backward transpose filters, as we want to call small GEMMs we need that scratch */
       handle->scratch1 = 0;
-      handle->scratch1_size = 0;
+      handle->scratch1_size = handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
+        * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_in);
+      if (handle->fm_lp_block > 1) {
+        /* If low precision, we need extra buffer to store intermediate weight tensor */
+        handle->scratch1_size *= 2;
+      }
+
       handle->scratch3 = 0;
       handle->scratch3_size = 0;
       handle->scratch4 = 0;

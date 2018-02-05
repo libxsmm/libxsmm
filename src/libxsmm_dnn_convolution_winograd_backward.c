@@ -31,6 +31,7 @@
 #include "libxsmm_dnn_convolution_winograd_backward.h"
 #include "libxsmm_main.h"
 #include <libxsmm_intrinsics_x86.h>
+#include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -361,9 +362,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_cu
   /* check if we have a kernel JITed */
   if (handle->code_bwd[0].xconv.sconv == 0) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) {
+      const int ldx = (int)(handle->desc.v*handle->ifmblock); 
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
+      typedef libxsmm_smmfunction gemm_function;
+      /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, NULL, NULL, &ldx, NULL, NULL, NULL, NULL);
 # include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback.tpl.c"
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -442,9 +447,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_nh
   /* check if we have a kernel JITed */
   if (handle->code_bwd[0].xconv.sconv == 0) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) {
+      const int ldx = (int)(handle->desc.v*handle->ifmblock); 
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
+      typedef libxsmm_smmfunction gemm_function;
+      /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, NULL, NULL, &ldx, NULL, NULL, NULL, NULL);
 # include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom_fallback.tpl.c"
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
