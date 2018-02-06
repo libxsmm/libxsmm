@@ -811,7 +811,7 @@ else # GCC assumed
     FPEDANTIC += $(FWARNEXTRA)
     ifeq (1,$(PEDANTIC))
       CSTD = -std=c99
-      CXXFLAGS += $(CPEDANTIC) -Wno-long-long
+      CXXFLAGS += $(CPEDANTIC) -Wno-long-long -Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += -ffree-form
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
@@ -825,7 +825,7 @@ else # GCC assumed
       else # Clang may run into ICEs under OSX
         CSTD = -std=c99
       endif
-      CXXFLAGS += $(CPEDANTIC) -Wno-long-long
+      CXXFLAGS += $(CPEDANTIC) -Wno-long-long -Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += $(FSTD) $(FPEDANTIC)
     else ifeq (0,$(COMPATIBLE))
