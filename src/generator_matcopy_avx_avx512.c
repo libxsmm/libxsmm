@@ -81,7 +81,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
                                                   const char*                         i_arch ) {
   libxsmm_matcopy_kernel_config l_kernel_config = { 0/*avoid warning "maybe used uninitialized" */ };
   libxsmm_matcopy_gp_reg_mapping l_gp_reg_mapping = { 0/*avoid warning "maybe used uninitialized" */ };
-  libxsmm_loop_label_tracker l_loop_label_tracker = { {0}/*avoid warning "maybe used uninitialized" */ };
+  libxsmm_loop_label_tracker l_loop_label_tracker = { 0/*avoid warning "maybe used uninitialized" */ };
   unsigned int m_trips, remaining_unrolled, remaining, i;
 
   /* define loop_label_tracker */
