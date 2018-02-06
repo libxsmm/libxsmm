@@ -446,11 +446,15 @@ else
 endif
 
 # compiler names
-CXX_NAME = $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d" " -f1)
+CXX_NAME = $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 \
+           | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" \
+           | rev | cut -d" " -f1 | rev)
 ifeq (,$(strip $(CXX_NAME)))
   CXX_NAME = $(basename $(notdir $(CXX)))
 endif
-CC_NAME = $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d" " -f1)
+CC_NAME = $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 \
+          | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" \
+          | rev | cut -d" " -f1 | rev)
 ifeq (,$(strip $(CC_NAME)))
   CC_NAME = $(basename $(notdir $(CC)))
 endif
