@@ -94,6 +94,7 @@ endif
 $(OUTDIR)/autobatch: $(BLDDIR)/autobatch-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
 
+ifeq (0,$(NOBLAS))
 $(OUTDIR)/dgemm-blas: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 ifeq (Darwin,$(UNAME))
@@ -102,6 +103,9 @@ ifneq (0,$(XWRAP))
 	$(info The static link-time wrapper mechanism is not supported under OS X!)
 	$(info ================================================================================)
 endif
+endif
+else
+.PHONY: $(OUTDIR)/dgemm-blas
 endif
 
 $(OUTDIR)/dgemv-blas: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make

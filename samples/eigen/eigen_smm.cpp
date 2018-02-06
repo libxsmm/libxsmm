@@ -32,8 +32,8 @@
 /** This sample uses LIBXSMM's header-only implementation. */
 #include <libxsmm_source.h>
 
-#if !defined(__EIGEN)
-/*# define __EIGEN*/
+#if !defined(__EIGEN) && 0
+# define __EIGEN
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2024
+VisualStudioVersion = 15.0.27130.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmm", "libxsmm.vcxproj", "{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}"
 EndProject
@@ -190,6 +190,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sync_lock", "..\samples\syn
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "atomics", "..\tests\atomics.vcxproj", "{E29F73D9-3474-4C67-800A-075D5EC7C2AB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -645,6 +647,18 @@ Global
 		{B8E97739-2AC9-4F26-92BD-6B8205E1119A}.symbols|Win32.Build.0 = symbols|Win32
 		{B8E97739-2AC9-4F26-92BD-6B8205E1119A}.symbols|x64.ActiveCfg = symbols|x64
 		{B8E97739-2AC9-4F26-92BD-6B8205E1119A}.symbols|x64.Build.0 = symbols|x64
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB}.debug|Win32.ActiveCfg = debug|Win32
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB}.debug|Win32.Build.0 = debug|Win32
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB}.debug|x64.ActiveCfg = debug|x64
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB}.debug|x64.Build.0 = debug|x64
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB}.release|Win32.ActiveCfg = release|Win32
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB}.release|Win32.Build.0 = release|Win32
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB}.release|x64.ActiveCfg = release|x64
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB}.release|x64.Build.0 = release|x64
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB}.symbols|Win32.ActiveCfg = symbols|Win32
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB}.symbols|Win32.Build.0 = symbols|Win32
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB}.symbols|x64.ActiveCfg = symbols|x64
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -691,6 +705,7 @@ Global
 		{51DD2FE2-BB67-4D08-BDD0-9FD0D6BBE20D} = {E0C8F9A7-ABF4-4366-B2A7-31F06F01E6B3}
 		{3920347F-E161-41D8-87D5-F7A516E1E234} = {51DD2FE2-BB67-4D08-BDD0-9FD0D6BBE20D}
 		{B8E97739-2AC9-4F26-92BD-6B8205E1119A} = {51DD2FE2-BB67-4D08-BDD0-9FD0D6BBE20D}
+		{E29F73D9-3474-4C67-800A-075D5EC7C2AB} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DD13D8C2-5B0F-431B-897A-AA0FE5BDFCB2}

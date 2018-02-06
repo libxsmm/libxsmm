@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2018, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -32,20 +32,42 @@
 #include <stdlib.h>
 
 
-LIBXSMM_EXTERN libxsmm_dmmfunction dmmdispatch(int m, int n, int k);
-
-
 int main(void)
 {
-  const int m = LIBXSMM_MAX_M, n = LIBXSMM_MAX_N, k = LIBXSMM_MAX_K;
-  const libxsmm_dmmfunction fa = libxsmm_dmmdispatch(m, n, k,
-    NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
-    NULL/*flags*/, NULL/*prefetch*/);
-  const libxsmm_dmmfunction fb = dmmdispatch(m, n, k);
+  LIBXSMM_ATOMIC_LOCKTYPE lock = 0/*unlocked*/;
+  const int kind = LIBXSMM_ATOMIC_RELAXED;
   int result = EXIT_SUCCESS;
-  if (fa != fb) {
+  int mh = 1051981, hp, tmp;
+
+  LIBXSMM_NONATOMIC_STORE(&hp, 25071975, kind);
+  tmp = LIBXSMM_NONATOMIC_LOAD(&hp, kind);
+  if (tmp != LIBXSMM_ATOMIC_LOAD(&hp, kind)) {
     result = EXIT_FAILURE;
   }
+  if (mh != LIBXSMM_NONATOMIC_SUB_FETCH(&hp, 24019994, kind)) {
+    result = EXIT_FAILURE;
+  }
+  if (mh != LIBXSMM_ATOMIC_FETCH_ADD(&hp, 24019994, kind)) {
+    result = EXIT_FAILURE;
+  }
+  LIBXSMM_ATOMIC_STORE(&tmp, mh, kind);
+  if (25071975 != LIBXSMM_NONATOMIC_FETCH_OR(&hp, tmp, kind)) {
+    result = EXIT_FAILURE;
+  }
+  if ((25071975 | mh) != hp) {
+    result = EXIT_FAILURE;
+  }
+  /* check if non-atomic and atomic are compatible */
+  if (LIBXSMM_NONATOMIC_TRYLOCK(&lock, kind)) {
+    if (LIBXSMM_ATOMIC_TRYLOCK(&lock, kind)) {
+      result = EXIT_FAILURE;
+    }
+    LIBXSMM_NONATOMIC_RELEASE(&lock, kind);
+  }
+  else {
+    result = EXIT_FAILURE;
+  }
+
   return result;
 }
 

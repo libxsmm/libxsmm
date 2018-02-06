@@ -6,14 +6,20 @@ The first code sample given for LIBXSMM was a performance reproducer exercising 
 
 ## Dispatch (Microbenchmark)
 
-This code sample attempts to benchmark the performance of the dispatch mechanism. This mechanism is relevant when replacing GEMM calls (see [Call Wrapper](https://github.com/hfp/libxsmm#call-wrapper) section of the reference documentation), or generally when calling LIBXSMM's `libxsmm_?gemm` functions.
+This code sample benchmarks the performance of (1)&#160;the dispatch mechanism, and (2)&#160;the time needed to JIT-generate code for the first time. Both mechanisms are relevant when replacing GEMM calls (see [Call Wrapper](https://github.com/hfp/libxsmm#call-wrapper) section of the reference documentation), or in any case of calling LIBXSMM's native [GEMM functionality](http://libxsmm.readthedocs.io/libxsmm_mm/).
 
 **Command Line Interface (CLI)**
 
-* Optionally takes the number of dispatches to be performed
-* Measures the duration needed to find the requested kernel
-* Excludes the time needed to generate the kernel
-* Shows time needed in relation to an empty function call
+* Optionally takes the number of dispatches/code-generations (default:&#160;10000).
+* Optionally takes the number of threads (default:&#160;1).
+
+
+**Measurements (Benchmark)**
+* Duration of an empty function call (serves as a reference timing).
+* Duration to find an already generated kernel (cached/non-cached).
+* Duration to JIT-generate a GEMM kernel.
+
+In case of a multi-threaded benchmark, the timings represent a highly contended request (worst case). For thread-scaling, it can be observed that read-only accesses (code dispatch) stay roughly with a constant duration whereas write-accesses (code generation) are serialized and hence the duration scales linearly with the number of threads.
 
 ## Image Convolution
 
@@ -387,9 +393,9 @@ The tuning script uses the environment variables `LIBXSMM_TRANS_M` and `LIBXSMM_
 
 ## Wrapped DGEMM
 
-This code sample is calling DGEMM and there is no dependency on the LIBXSMM API as it only relies on LAPACK/BLAS interface. Two variants are linked when building the source code: (1) code which is dynamically linked against LAPACK/BLAS, (2) code which is linked using `--wrap=`*symbol* as possible when using a GNU GCC compatible tool chain. For more information, see the [Call Wrapper](https://github.com/hfp/libxsmm#call-wrapper) section of the reference documentation.
+This code sample is calling DGEMM and there is no dependency on the LIBXSMM API as it only relies on LAPACK/BLAS interface. Two variants are linked when building the source code: (1) code which is dynamically linked against LAPACK/BLAS, (2) code which is linked using `--wrap=`*symbol* as possible when using a GNU&#160;GCC compatible tool chain. For more information, see the [Call Wrapper](https://github.com/hfp/libxsmm#call-wrapper) section of the reference documentation.
 
-The code will execute in three flavors when running `dgemm-test.sh`: (1) code variant which is dynamically linked against the originally supplied LAPACK/BLAS library, (2) code variant which is linked using the wrapper mechanism of the GNU GCC tool chain, and (3) the first code but using the LD_PRELOAD mechanism (available under Linux).
+The code will execute in three flavors when running `dgemm-test.sh`: (1) code variant which is dynamically linked against the originally supplied LAPACK/BLAS library, (2) code variant which is linked using the wrapper mechanism of the GNU&#160;GCC tool chain, and (3) the first code but using the LD_PRELOAD mechanism (available under Linux).
 
 **Command Line Interface (CLI)**
 

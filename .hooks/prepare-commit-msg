@@ -35,6 +35,9 @@ if [ "" != "${GIT}" ] && ! ${GIT} diff --cached --quiet; then # real commit (no 
       if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e '^.hooks/..*' 2>/dev/null)" ]; then
         exit 0
       fi
+      if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e 'version.txt' 2>/dev/null)" ]; then
+        exit 0
+      fi
       BASENAME=$(basename ${FILENAME})
       for PATTERN in ${PATTERNS}; do
         if [[ ${BASENAME} = ${PATTERN} ]]; then # must use double-braces

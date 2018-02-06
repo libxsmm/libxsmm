@@ -31,8 +31,8 @@
 #include "libxsmm_trace.h"
 #include <libxsmm_sync.h>
 
-#if !defined(LIBXSMM_TRACE_DLINFO)
-/*# define LIBXSMM_TRACE_DLINFO*/
+#if !defined(LIBXSMM_TRACE_DLINFO) && 0
+# define LIBXSMM_TRACE_DLINFO
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -190,7 +190,7 @@ LIBXSMM_API_DEFINITION int libxsmm_trace_finalize(void)
 {
   int result;
 #if defined(LIBXSMM_TRACE)
-  if (0 == internal_trace_initialized) {
+  if (0 <= internal_trace_initialized) {
     internal_trace_initialized = -1; /* disable */
 # if defined(_WIN32) || defined(__CYGWIN__)
     result = (FALSE != SymCleanup(GetCurrentProcess()) ? EXIT_SUCCESS : GetLastError());
@@ -473,7 +473,7 @@ LIBXSMM_API_INTERN void __cyg_profile_func_enter(void* this_fn, void* call_site)
     /* inherit global settings from libxsmm_trace_init */
     NULL, NULL, NULL);
 # else
-  if (0 == internal_trace_initialized && 0 != internal_trace_maxnsyms) {
+  if (0 <= internal_trace_initialized && 0 != internal_trace_maxnsyms) {
 #   if 1
     Dl_info info;
 #   else

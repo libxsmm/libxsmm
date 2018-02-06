@@ -13,10 +13,11 @@ ENV=$(which env)
 #TESTS_DISABLED="headeronly"
 
 if [ "Windows_NT" = "${OS}" ]; then
+  # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")
+  export PATH=${PATH}:${HERE}/../lib:/usr/x86_64-w64-mingw32/sys-root/mingw/bin
   # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
   LDD=$(which cygcheck)
-  # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")
-  export PATH=${PATH}:${HERE}/../lib
+  EXE=.exe
 else
   if [ "" != "$(which ldd)" ]; then
     LDD=ldd
@@ -43,20 +44,21 @@ for TEST in ${TESTS}; do
   NAME=$(basename ${TEST} .c)
   ${ECHO} -n "${NTEST} of ${NMAX} (${NAME})... "
   if [ "0" != "$(${ECHO} ${TESTS_DISABLED} | ${GREP} -q ${NAME}; ${ECHO} $?)" ]; then
+    cd ${HERE}
     ERROR=$({
-    if [ "" != "$(${LDD} ${HERE}/${NAME} 2>/dev/null | ${GREP} libiomp5\.)" ]; then
+    if [ "" != "$(${LDD} ${HERE}/${NAME}${EXE} 2>/dev/null | ${GREP} libiomp5\.)" ]; then
       ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
         DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../lib \
         KMP_AFFINITY=scatter,granularity=fine,1 \
         MIC_KMP_AFFINITY=scatter,granularity=fine \
         MIC_ENV_PREFIX=MIC \
         OFFLOAD_INIT=on_start \
-      ${TOOL_COMMAND} ${HERE}/${NAME}
+      ${TOOL_COMMAND} ${HERE}/${NAME}${EXE}
     else
       ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
         DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../lib \
         OMP_PROC_BIND=TRUE \
-      ${TOOL_COMMAND} ${HERE}/${NAME}
+      ${TOOL_COMMAND} ${HERE}/${NAME}${EXE}
     fi >/dev/null; } 2>&1)
     RESULT=$?
   else

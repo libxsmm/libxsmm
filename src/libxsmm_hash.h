@@ -33,8 +33,8 @@
 
 #include <libxsmm.h>
 
-#if !defined(LIBXSMM_HASH_SW)
-/*# define LIBXSMM_HASH_SW*/
+#if !defined(LIBXSMM_HASH_SW) && 0
+# define LIBXSMM_HASH_SW
 #endif
 
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_HASH_NOINLINE)

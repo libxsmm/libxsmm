@@ -1,8 +1,14 @@
 ## Customization
 
+### Overview
+
+By default, only non-coprocessor targets are built since both KNC/self-hosted ("native") and KNC/offload are considered legacy (OFFLOAD=0 and KNC=0). In general, the subfolders of the 'lib' directory are separating the build targets where a 'mic' folder contains the native library (KNC=1) targeting the Intel&#160;Xeon&#160;Phi coprocessor ("KNC"), and the 'intel64' folder contains either the hybrid archive made of CPU/host as well as coprocessor code (OFFLOAD=1, which also implies KNC=1), or an archive which is only containing the CPU code (default). To remove any BLAS-dependency, please follow the [Link Instructions](index.md#link-instructions).
+
+**NOTE**: The build system considers a set of given key-value pairs as a single unique build, and triggers a rebuild for a distinct set of flags!
+
 ### Static Specialization
 
-By default, LIBXSMM uses the [JIT backend](#jit-backend) which is automatically building optimized code. Matrix multiplication kernels can be also statically specialized at compile-time of the library (M, N, and K values). This mechanism also affects the interface of the library because function prototypes are included into both the C and FORTRAN interface.
+By default, LIBXSMM uses the [JIT backend](index.md#jit-backend) which is automatically building optimized code (JIT=1). Matrix multiplication kernels can be also statically specialized at compile-time of the library (M, N, and K values). This mechanism also extends the interface of the library because function prototypes are included into both the C and FORTRAN interface.
 
 ```bash
 make M="2 4" N="1" K="$(echo $(seq 2 5))"
@@ -15,7 +21,7 @@ The above example is generating the following set of (M,N,K) triplets:
 (4,1,2), (4,1,3), (4,1,4), (4,1,5)
 ```
 
-The index sets are in a loop-nest relationship (M(N(K))) when generating the indices. Moreover, an empty index set resolves to the next non-empty outer index set of the loop nest (including to wrap around from the M to K set). An empty index set does not participate in the loop-nest relationship. Here is an example of generating multiplication routines which are "squares" with respect to M and N (N inherits the current value of the "M loop"):
+The index sets are in a loop-nest relationship (M(N(K))) when generating the indexes. Moreover, an empty index set resolves to the next non-empty outer index set of the loop nest (including to wrap around from the M to K set). An empty index set does not participate in the loop-nest relationship. Here is an example of generating multiplication routines which are "squares" with respect to M and N (N inherits the current value of the "M loop"):
 
 ```bash
 make M="$(echo $(seq 2 5))" K="$(echo $(seq 2 5))"

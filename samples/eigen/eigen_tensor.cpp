@@ -93,9 +93,9 @@ int main(int argc, char* argv[])
     LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
     throw std::runtime_error("Eigen or Eigen/unsupported not found!");
 #else
-    const libxsmm_blasint m = (1 < argc ? std::atoi(argv[1]) : 512);
-    const libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
-    const libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
+    LIBXSMM_GEMM_CONST libxsmm_blasint m = (1 < argc ? std::atoi(argv[1]) : 512);
+    LIBXSMM_GEMM_CONST libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
+    LIBXSMM_GEMM_CONST libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
     const int nrepeat = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 13 / LIBXSMM_MAX(1, libxsmm_cbrt_u64(1ULL * m * n * k) >> 10), 3);
     const char *const env_check = getenv("CHECK"), *const env_nthreads = getenv("NTHREADS");
     const double check = (0 == env_check ? 1.0 : LIBXSMM_ABS(atof(env_check)));
@@ -115,8 +115,8 @@ int main(int argc, char* argv[])
 # endif
       Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
       Eigen::Tensor<REAL_TYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n), td(m, n);
-      const char transa = 'N', transb = 'N';
-      const REAL_TYPE alpha = 1, beta = 0;
+      LIBXSMM_GEMM_CONST char transa = 'N', transb = 'N';
+      LIBXSMM_GEMM_CONST REAL_TYPE alpha = 1, beta = 0;
       libxsmm_matdiff_info diff;
       unsigned long long start;
       double d1, d2;

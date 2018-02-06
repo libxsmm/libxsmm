@@ -110,8 +110,10 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
       { {  41, 119, 102, 106, 106, 106, 106, 106 }, {  32,  65, 108, 130, 130, 130, 130, 130 }, {  73,  90,  86,  89,  89,  89,  89,  89 } } }  /* SP */
   };
   const unsigned int config = (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid ? 2 : ((LIBXSMM_X86_AVX512_MIC <= archid && LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid) ? 1 : 0));
+  LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr;
   unsigned int i;
 
+  LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_GEMM_LOCK, &attr);
   { /* setup prefetch strategy for tiled GEMMs */
     const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH");
     const int tiled_prefetch_default = LIBXSMM_PREFETCH_AL2_AHEAD;
@@ -123,7 +125,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
     const char *const env_locks = getenv("LIBXSMM_GEMM_NLOCKS");
     const int nlocks = ((0 == env_locks || 0 == *env_locks) ? -1/*default*/ : atoi(env_locks));
     internal_gemm_nlocks = LIBXSMM_UP2POT(0 > nlocks ? (LIBXSMM_GEMM_MAXNLOCKS) : LIBXSMM_MIN(nlocks, LIBXSMM_GEMM_MAXNLOCKS));
-    for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &internal_gemm_lock[i].state, &libxsmm_lock_attr_default);
+    for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &internal_gemm_lock[i].state, &attr);
   }
 #endif
 #if defined(LIBXSMM_GEMM_MMBATCH)
@@ -140,10 +142,12 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
         (size_t)((LIBXSMM_GEMM_BATCHSCALE) * sizeof(libxsmm_gemm_batchitem) * batchsize),
         0, LIBXSMM_MALLOC_FLAG_SCRATCH, &extra, sizeof(extra)))
       {
-        LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &libxsmm_gemm_batchlock, &libxsmm_lock_attr_default);
+        LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &libxsmm_gemm_batchlock, &attr);
         libxsmm_gemm_batchsize = batchsize;
       }
-      if ((3 <= libxsmm_verbosity || 0 > libxsmm_verbosity) && (0 == env_w || 0 == *env_w)) { /* enables the auto-batch statistic */
+      if (((3 <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity) || 0 > libxsmm_verbosity)
+        && (0 == env_w || 0 == *env_w))
+      { /* enable auto-batch statistic */
         libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC;
       }
     }
@@ -169,6 +173,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_init(int archid)
     const char *const env_t = getenv("LIBXSMM_GEMM_TASKS");
     libxsmm_gemm_tasks = ((0 == env_t || 0 == *env_t) ? 0/*disabled*/ : atoi(env_t));
   }
+  LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_GEMM_LOCK, &attr);
 }
 
 
@@ -474,7 +479,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm(const char* transa, const char* transb
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   const char *const check = getenv("LIBXSMM_CHECK");
   float *const d = (float*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
-      || 0 == check || 0 == *check || 0 == check[0]) ? 0
+      || 0 == check || 0 == *check || 0 == check[0]) ? NULL
     : libxsmm_aligned_scratch((size_t)((*m) * nn * sizeof(float)), 0/*auto-aligned*/));
   if (0 != d) {
     libxsmm_blasint i, j;
@@ -515,7 +520,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 #if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
   const char *const check = getenv("LIBXSMM_CHECK");
   double *const d = (double*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
-      || 0 == check || 0 == *check || 0 == check[0]) ? 0
+      || 0 == check || 0 == *check || 0 == check[0]) ? NULL
     : libxsmm_aligned_scratch((size_t)((*m) * nn * sizeof(double)), 0/*auto-aligned*/));
   if (0 != d) {
     libxsmm_blasint i, j;

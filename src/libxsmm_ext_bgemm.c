@@ -43,8 +43,8 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_BGEMM_BARRIER)
-/*# define LIBXSMM_BGEMM_BARRIER*/
+#if !defined(LIBXSMM_BGEMM_BARRIER) && 0
+# define LIBXSMM_BGEMM_BARRIER
 #endif
 
 

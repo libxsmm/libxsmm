@@ -133,7 +133,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
         padded_h, padded_w, handle->ofmblock_lp, handle->fm_lp_block);
     /* we need to set the scratch to zero */
     /* @TODO: we need to find a better/faster code here, e.g. just setting the rim */
-    memset( input_base, 0, BLOCKSIFM * padded_h * padded_w * handle->ifmblock_hp * sizeof(element_output_type) );
+    memset( input_base, 0, BLOCKSOFM * padded_h * padded_w * handle->ofmblock * sizeof(element_output_type) );
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(6, del_out, 0, 0, 0, 0, 0, 0,
         BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
