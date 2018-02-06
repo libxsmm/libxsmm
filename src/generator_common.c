@@ -754,11 +754,7 @@ void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker ) {
-  unsigned int l_i;
-  for ( l_i = 0; l_i < 32; l_i++) {
-    io_loop_label_tracker->label_address[l_i] = 0;
-  }
-  io_loop_label_tracker->label_count = 0;
+  memset(io_loop_label_tracker, 0, sizeof(*io_loop_label_tracker));
 }
 
 LIBXSMM_INTERNAL_API_DEFINITION

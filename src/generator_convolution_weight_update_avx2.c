@@ -83,7 +83,7 @@ Example for ofm_block = 32, ifm_block%2 == 0
     _mm256_store_ps( &weight[ofm1][ifm1][kj][ki][ifm2+1][24], acc13 );
   }
 *****/
-  libxsmm_convolution_kernel_config l_conv_kernel_config = { 0 };
+  libxsmm_convolution_kernel_config l_conv_kernel_config;
   libxsmm_convolution_weight_update_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker l_loop_label_tracker;
 

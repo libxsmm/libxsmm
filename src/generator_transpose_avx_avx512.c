@@ -590,7 +590,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
                 const libxsmm_transpose_descriptor* i_trans_desc,
                 const char*                         i_arch )
 {
-  libxsmm_transpose_gp_reg_mapping l_gp_reg_mapping = { 0/*avoid warning "maybe used uninitialized" */ };
+  libxsmm_transpose_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker l_loop_label_tracker /*= { 0 }*/;
 
   /* avx512 just represents whether we want to use zmm registers or not     *
@@ -602,6 +602,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define gp register mapping */
+  memset(&l_gp_reg_mapping, 0, sizeof(l_gp_reg_mapping));
 #if defined(_WIN32) || defined(__CYGWIN__)
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_lda = LIBXSMM_X86_GP_REG_RDX;

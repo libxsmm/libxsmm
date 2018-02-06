@@ -1107,10 +1107,11 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
   int result = EXIT_SUCCESS;
 #if !defined(__MIC__)
   const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
-  libxsmm_generated_code generated_code = { 0 };
+  libxsmm_generated_code generated_code;
   char jit_name[256] = { 0 };
 
   /* large enough temporary buffer for generated code */
+  memset(&generated_code, 0, sizeof(generated_code)); /* avoid warning "maybe used uninitialized" */
 #if defined(NDEBUG)
   char jit_buffer[LIBXSMM_CODE_MAXSIZE];
   generated_code.generated_code = jit_buffer;
@@ -1935,11 +1936,13 @@ LIBXSMM_PRAGMA_OPTIMIZE_ON
 
 LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor)
 {
-  libxsmm_xmatcopyfunction result = { 0 };
+  libxsmm_xmatcopyfunction result;
+  memset(&result, 0, sizeof(result)); /* avoid warning "maybe used uninitialized" */
   if (0 != descriptor) {
-    libxsmm_kernel_info query = { { 0 } };
+    libxsmm_kernel_info query;
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->flags) < sizeof(query));
     LIBXSMM_INIT
+    memset(&query, 0, sizeof(query)); /* avoid warning "maybe used uninitialized" */
     query.mcopy = *descriptor;
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
     query.mcopy.prefetch = 0;
@@ -1953,11 +1956,13 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
 
 LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor)
 {
-  libxsmm_xtransfunction result = { 0 };
+  libxsmm_xtransfunction result;
+  memset(&result, 0, sizeof(result)); /* avoid warning "maybe used uninitialized" */
   if (0 != descriptor && 0 != LIBXSMM_TRANS_NO_BYPASS_DIMS(descriptor->m, descriptor->n, descriptor->ldo)) {
-    libxsmm_kernel_info query = { { 0 } };
+    libxsmm_kernel_info query;
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
     LIBXSMM_INIT
+    memset(&query, 0, sizeof(query)); /* avoid warning "maybe used uninitialized" */
     query.trans = *descriptor;
     query.xgemm.iflags = LIBXSMM_KERNEL_KIND_TCOPY;
     result = internal_find_code(&query.xgemm).xtrans;

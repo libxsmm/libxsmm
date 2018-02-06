@@ -44,6 +44,7 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
                                                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                                   const char*                    i_arch,
                                                                   const unsigned int             i_use_masking_a_c ) {
+  memset(io_micro_kernel_config, 0, sizeof(*io_micro_kernel_config)); /* avoid warning "maybe used uninitialized" */
   if ( strcmp( i_arch, "wsm" ) == 0 ) {
     io_micro_kernel_config->instruction_set = LIBXSMM_X86_SSE3;
     io_micro_kernel_config->vector_reg_count = 16;
