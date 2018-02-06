@@ -69,9 +69,10 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_omp(void* out, const void* in, unsign
         const unsigned int size = (unsigned int)(1U * m * n);
         const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
         const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
-        libxsmm_matcopy_descriptor descriptor = { 0 };
+        libxsmm_matcopy_descriptor descriptor;
         libxsmm_xmatcopyfunction xmatcopy = 0;
         LIBXSMM_INIT
+        memset(&descriptor, 0, sizeof(descriptor));
         descriptor.m = LIBXSMM_MIN(libxsmm_trans_tile[tindex][0/*M*/][index], (unsigned int)m);
         descriptor.n = LIBXSMM_MIN(libxsmm_trans_tile[tindex][1/*N*/][index], (unsigned int)n);
         descriptor.prefetch = (unsigned char)((0 == prefetch || 0 == *prefetch) ? 0 : 1);
@@ -162,9 +163,10 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_omp(void* out, const void* in, unsigne
           const unsigned int size = (unsigned int)(1U * m * n);
           const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
           const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
-          libxsmm_transpose_descriptor descriptor = { 0 };
+          libxsmm_transpose_descriptor descriptor;
           libxsmm_xtransfunction xtrans = 0;
           LIBXSMM_INIT
+          memset(&descriptor, 0, sizeof(descriptor));
           descriptor.m = LIBXSMM_MIN(libxsmm_trans_tile[tindex][0/*M*/][index], (unsigned int)m);
           descriptor.n = LIBXSMM_MIN(libxsmm_trans_tile[tindex][1/*N*/][index], (unsigned int)n);
           if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose */

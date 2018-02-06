@@ -219,12 +219,13 @@ int main(int argc, char* argv[])
         ~raii_expect() { delete[] expect; }
       } expect_buffer(LIBXSMM_FEQ(0, check) ? 0 : csize);
       T *const expect = (0 == expect_buffer.expect ? c : expect_buffer.expect);
-      libxsmm_matdiff_info d, diff = { 0 };
+      libxsmm_matdiff_info d, diff;
       const T zero = 0;
 
       // eventually JIT-compile the requested kernel
       const libxsmm_mmfunction<T> xmm(LIBXSMM_FLAGS, m, n, k, LIBXSMM_PREFETCH);
 
+      memset(&diff, 0, sizeof(diff));
       { // LAPACK/BLAS3 (warmup BLAS Library)
         std::fill_n(expect, csize, zero);
 #if defined(_OPENMP)

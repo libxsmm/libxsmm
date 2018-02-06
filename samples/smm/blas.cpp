@@ -216,7 +216,8 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         if (0 == benchmark) { /* Gold result is available */
-          libxsmm_matdiff_info diff = { 0 };
+          libxsmm_matdiff_info diff;
+          memset(&diff, 0, sizeof(diff));
           for (libxsmm_blasint h = 0; h < s; ++h) {
             const T *const u = c + h * csize, *const v = c_array[h];
             libxsmm_matdiff_info dv;

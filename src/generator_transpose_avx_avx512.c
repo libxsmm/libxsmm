@@ -591,7 +591,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
                 const char*                         i_arch )
 {
   libxsmm_transpose_gp_reg_mapping l_gp_reg_mapping;
-  libxsmm_loop_label_tracker l_loop_label_tracker /*= { 0 }*/;
+  libxsmm_loop_label_tracker l_loop_label_tracker;
 
   /* avx512 just represents whether we want to use zmm registers or not     *
    *      A value of 0 says not, a value of 1 targets AVX512_CORE, a value  *
