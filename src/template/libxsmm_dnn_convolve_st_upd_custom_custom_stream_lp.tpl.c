@@ -192,19 +192,38 @@ if (pixels_lp !=4) {
   /* Scalar C code for input and output transpose when int8 <=> pixels_lp == 4 ...*/
   int img = ltid, ifm1, ij, ifm2, ii;
   int ofm1, ofm2, k, lp;
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (ij = 0; ij < handle->ifhp; ++ij) {
-      for (ii = 0; ii < handle->ifwp; ++ii) {
-        for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-          for (lp = 0; lp < handle->fm_lp_block; ++lp) {
-            LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, ifm2*handle->fm_lp_block+lp, ii, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended) =
-            LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+
+  if (handle->resize_input == 0) {
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+      for (ij = 0; ij < handle->ifhp; ++ij) {
+        for (ii = 0; ii < handle->ifwp; ++ii) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+              LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, ifm2*handle->fm_lp_block+lp, ii, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended) =
+                LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            }
           }
         }
       }
     }
-  }
-
+  }  else {
+    int dst_i, dst_j, src_i, src_j, fm;
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+      for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
+        src_j =  dst_j * handle->desc.v;
+        for (dst_i=0; dst_i < handle->ifwp_resized; dst_i++) {
+          src_i = dst_i * handle->desc.u;
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+              LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, dst_j, ifm2*handle->fm_lp_block+lp, dst_i, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended) =
+                LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, src_j, src_i, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            }
+          }
+        }
+      }
+    }  
+  }  
+  
   for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
     for (ij = 0; ij < handle->ofhp; ++ij) {
       for (ii = 0; ii < handle->ofwp; ++ii) {
@@ -337,17 +356,28 @@ if (handle->reduce_weights) {
 #undef __AVX512F__
   } else {
 #define __AVX512F__
+    __m512 weight_sum;
+    __m512i weight_sumi;
+
     for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 #ifdef __AVX512F__
-      __m512 weight_sum = _mm512_setzero_ps();
+      if (pixels_lp == 4) {
+        weight_sumi = _mm512_setzero_epi32();
+      } else {
+        weight_sum = _mm512_setzero_ps();
+      }
       for ( i = 0; i < handle->weight_copies; i++ ) {
         if (pixels_lp == 4) {
-          weight_sum = _mm512_add_epi32(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
+          weight_sumi = _mm512_add_epi32(weight_sumi, _mm512_load_epi32(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
         } else {
           weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
         }
       }
-      _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
+      if (pixels_lp == 4) {
+        _mm512_store_epi32(&weight_ptr[j*16], weight_sumi);
+      } else {
+        _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
+      }
 #else
       element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
       LIBXSMM_PRAGMA_VALIGNED

@@ -367,7 +367,7 @@ int main(int argc, char* argv[])
   int *output_libxsmm;
   int *dinput_libxsmm;
   int *naive_filter_wu;
-  char *dfilter_libxsmm;
+  int *dfilter_libxsmm;
   unsigned char *doutput_libxsmm;
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
@@ -533,7 +533,7 @@ int main(int argc, char* argv[])
   filter_libxsmm        = (char*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(char), 2097152);
   output_libxsmm        = (int*) libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(int), 2097152);
   dinput_libxsmm         = (int*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(int), 2097152);
-  dfilter_libxsmm        = (char*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(char), 2097152);
+  dfilter_libxsmm        = (int*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(int), 2097152);
   doutput_libxsmm        = (unsigned char*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(unsigned char), 2097152);
 
   /* initialize data */
@@ -553,12 +553,12 @@ int main(int argc, char* argv[])
   copy_buf_uint8(naive_output_bp, naive_output_save, nImg*nOfm*ofhp*ofwp);
   init_buf_int8(naive_filter,         nOfm*nIfm*kh*kw, 0, 0);
   zero_buf_int32(naive_output_fp,      nImg*nOfm*ofhp*ofwp);
-  zero_buf_int32(output_libxsmm, nImg*nOfm*ofhp*ofwp);
+  zero_buf_int32(naive_input_bp,      nImg*nIfm*ifhp*ifwp);
+  zero_buf_int32(naive_filter_wu,     nOfm*nIfm*kh*kw);
+  zero_buf_int32(output_libxsmm,      nImg*nOfm*ofhp*ofwp);
+  zero_buf_int32(dinput_libxsmm,      nImg*nIfm*ifhp*ifwp);
   zero_buf_int32(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
   zero_buf_int32(naive_libxsmm_input,  nImg*nIfm*ifhp*ifwp);
-  zero_buf_int32(naive_input_bp,      nImg*nIfm*ifhp*ifwp);
-  zero_buf_int32(dinput_libxsmm,      nImg*nIfm*ifhp*ifwp);
-  zero_buf_int32(naive_filter_wu,     nOfm*nIfm*kh*kw);
   zero_buf_int32(naive_libxsmm_filter, nOfm*nIfm*kh*kw);
   
   printf("##########################################\n");
@@ -647,12 +647,12 @@ int main(int argc, char* argv[])
   /* we can also use the layout functions and set the data on our
      own external to the library, @TODO, we plan to add an example here */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input, (void*)naive_input_save, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_doutput, (void*)naive_output_save, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );  
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter, (void*)naive_filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-  /*CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_tensor( libxsmm_output ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_doutput, (void*)naive_output_save, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_tensor( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_tensor( libxsmm_dinput ) );
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_tensor( libxsmm_dfilter ) );*/
-
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_tensor( libxsmm_dfilter ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter, (void*)naive_filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+  
   /* bind buffers and filter to handle */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_input, LIBXSMM_DNN_REGULAR_INPUT ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_dinput, LIBXSMM_DNN_GRADIENT_INPUT ) );
@@ -762,8 +762,6 @@ int main(int argc, char* argv[])
     libxsmm_matdiff_reduce(&diff, &norms_upd);
   }
 
-return ;
-
   if ((type == 'A' || type == 'F') && LIBXSMM_FEQ(0, check)) {
     printf("##########################################\n");
     printf("#   Performance - FWD (custom-Storage)   #\n");
@@ -827,6 +825,39 @@ return ;
         ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (lpOps*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
         norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
   }
+
+   if (((type == 'A' || type == 'U') && (nIfm > 3)) && LIBXSMM_FEQ(0, check)) {
+    printf("##########################################\n");
+    printf("#   Performance - UPD (custom-Storage)   #\n");
+    printf("##########################################\n");
+    /* run LIBXSMM convolution for performance */
+    l_start = libxsmm_timer_tick();
+    for (i = 0; i < iters; ++i) {
+#if defined(_OPENMP)
+#     pragma omp parallel
+#endif
+      {
+#if defined(_OPENMP)
+        const int tid = omp_get_thread_num();
+#else
+        const int tid = 0;
+#endif
+        libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid );
+      }
+    }
+    l_end = libxsmm_timer_tick();
+    l_total = libxsmm_timer_duration(l_start, l_end);
+    lpOps = (double)nImg * (double)nIfm * (double)nOfm * (double)ofh * (double)ofw * (double)(2 * kh * kw) * (double)iters;
+
+    printf("GOP  = %.5g\n", lpOps*1e-9/(double)iters);
+    printf("wu time = %.5g\n", ((double)(l_total/iters)));
+    printf("GOPS  = %.5g\n", (lpOps*1e-9)/l_total);
+
+    printf("PERFDUMP,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
+        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (lpOps*1e-9)/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+        norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
+  }
+
 
   /* clean-up */
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL ) );

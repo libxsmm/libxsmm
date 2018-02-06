@@ -193,17 +193,36 @@ if (pixels_lp != 4) {
   /* Scalar C code for input and output transpose when int8 <=> pixels_lp == 4 ...*/
   int img = ltid, ifm1, ij, ifm2, ii;
   int ofm1, ofm2, k, lp;
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (ij = 0; ij < handle->ifhp; ++ij) {
-      for (ii = 0; ii < handle->ifwp; ++ii) {
-        for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-          for (lp = 0; lp < handle->fm_lp_block; ++lp) {
-            LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, ifm2*handle->fm_lp_block+lp, ii, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended) =
-            LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+
+  if (handle->resize_input == 0) {
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+      for (ij = 0; ij < handle->ifhp; ++ij) {
+        for (ii = 0; ii < handle->ifwp; ++ii) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+              LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, ifm2*handle->fm_lp_block+lp, ii, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended) =
+                LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            }
           }
         }
       }
     }
+  }  else {
+    int dst_i, dst_j, src_i, src_j, fm;
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+      for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
+        src_j =  dst_j * handle->desc.v;
+        for (dst_i=0; dst_i < handle->ifwp_resized; dst_i++) {
+          src_i = dst_i * handle->desc.u;
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+              LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, dst_j, ifm2*handle->fm_lp_block+lp, dst_i, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended) =
+                LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, src_j, src_i, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            }
+          }
+        }
+      }
+    }  
   }
 
   for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
