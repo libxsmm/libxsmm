@@ -45,7 +45,7 @@
 LIBXSMM_API PyObject* libxsmmpy_get_target_arch(PyObject* self, PyObject* args);
 LIBXSMM_API_DEFINITION PyObject* libxsmmpy_get_target_arch(PyObject* self, PyObject* args)
 {
-  LIBXSMM_UNUSED(args);
+  LIBXSMM_UNUSED(self); LIBXSMM_UNUSED(args);
   return PyString_InternFromString(libxsmm_get_target_arch());
 }
 
@@ -54,6 +54,7 @@ LIBXSMM_API_DEFINITION PyObject* libxsmmpy_set_target_arch(PyObject* self, PyObj
 {
   int ivalue = LIBXSMM_TARGET_ARCH_UNKNOWN;
   char* svalue = NULL;
+  LIBXSMM_UNUSED(self);
   if (0 != PyArg_ParseTuple(args, "s", &svalue)) {
     libxsmm_set_target_arch(svalue);
   }
@@ -70,7 +71,7 @@ LIBXSMM_API_DEFINITION PyObject* libxsmmpy_set_target_arch(PyObject* self, PyObj
 LIBXSMM_API PyObject* libxsmmpy_get_target_archid(PyObject* self, PyObject* args);
 LIBXSMM_API_DEFINITION PyObject* libxsmmpy_get_target_archid(PyObject* self, PyObject* args)
 {
-  LIBXSMM_UNUSED(args);
+  LIBXSMM_UNUSED(self); LIBXSMM_UNUSED(args);
   return Py_BuildValue("i", libxsmm_get_target_archid());
 }
 
@@ -78,6 +79,7 @@ LIBXSMM_API PyObject* libxsmmpy_set_target_archid(PyObject* self, PyObject* args
 LIBXSMM_API_DEFINITION PyObject* libxsmmpy_set_target_archid(PyObject* self, PyObject* args)
 {
   int value = LIBXSMM_TARGET_ARCH_UNKNOWN;
+  LIBXSMM_UNUSED(self);
   if (0 != PyArg_ParseTuple(args, "i", &value)) {
     libxsmm_set_target_archid(value);
   }
@@ -91,7 +93,7 @@ LIBXSMM_API_DEFINITION PyObject* libxsmmpy_set_target_archid(PyObject* self, PyO
 LIBXSMM_API PyObject* libxsmmpy_get_verbosity(PyObject* self, PyObject* args);
 LIBXSMM_API_DEFINITION PyObject* libxsmmpy_get_verbosity(PyObject* self, PyObject* args)
 {
-  LIBXSMM_UNUSED(args);
+  LIBXSMM_UNUSED(self); LIBXSMM_UNUSED(args);
   return Py_BuildValue("i", libxsmm_get_verbosity());
 }
 
@@ -99,6 +101,7 @@ LIBXSMM_API PyObject* libxsmmpy_set_verbosity(PyObject* self, PyObject* args);
 LIBXSMM_API_DEFINITION PyObject* libxsmmpy_set_verbosity(PyObject* self, PyObject* args)
 {
   int value = 0;
+  LIBXSMM_UNUSED(self);
   if (0 != PyArg_ParseTuple(args, "i", &value)) {
     libxsmm_set_verbosity(value);
   }
