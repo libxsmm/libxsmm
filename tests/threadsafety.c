@@ -51,7 +51,7 @@ int main(void)
   const char *const target_arch = libxsmm_get_target_arch();
   libxsmm_generated_code generated_code;
   libxsmm_registry_info registry_info;
-  const int prefetch = LIBXSMM_PREFETCH_AUTO;
+  const int prefetch = LIBXSMM_PREFETCH_NONE;
   const int max_shape = LIBXSMM_AVG_M;
   const int flags = LIBXSMM_FLAGS;
   int nkernels = MAX_NKERNELS;
