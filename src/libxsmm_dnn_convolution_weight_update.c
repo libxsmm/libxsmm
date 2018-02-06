@@ -1510,7 +1510,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
         typedef unsigned char element_input_type;
         typedef unsigned char element_output_type;
         typedef int element_filter_type;
-        typedef libxsmm_uwsconvfunction libxsmm_convfunction;
+        typedef libxsmm_bdbconvfunction libxsmm_convfunction;
         if (handle->use_fastpath) {
           if ( handle->use_hybrid_wu_parallelism == 1) {
 #include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
