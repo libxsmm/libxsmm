@@ -797,10 +797,11 @@ else # GCC assumed
     CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
     CFLAGS += -Wall -Wno-unused-function -Wno-attributes
     FSTD = -std=f2003
-    CPEDANTIC += -pedantic -Wno-overlength-strings -Wno-variadic-macros
-    FPEDANTIC += -pedantic -Wunused-variable \
+    CPEDANTIC += -pedantic -Wextra -Wshadow \
+                 -Wno-overlength-strings -Wno-variadic-macros
+    FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wcharacter-truncation -Wline-truncation \
-                 -Wconversion -Wconversion-extra -Wextra \
+                 -Wconversion -Wconversion-extra \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wintrinsics-std -Wreal-q-constant
     ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
