@@ -49,7 +49,7 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K)
 #endif
 
-#if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
+#if (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)) /* TODO: full support for Windows calling convention */
 # define LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH) LIBXSMM_UNUSED(PREFETCH); \
             (DESCRIPTOR).prefetch = (unsigned short)(LIBXSMM_PREFETCH_NONE)
 #else
@@ -70,7 +70,7 @@
 
 /** Declare and construct a GEMM descriptor. */
 #define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, DATA_TYPE, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
-  libxsmm_gemm_descriptor DESCRIPTOR = { 0 }; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE, \
+  libxsmm_gemm_descriptor DESCRIPTOR; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE, \
     FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
 
 #define LIBXSMM_GEMM_DESCRIPTOR_SIZE 32

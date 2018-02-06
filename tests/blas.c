@@ -86,7 +86,7 @@ int main(void)
   const int begin = 3, end = sizeof(m) / sizeof(*m);
   libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0;
   REAL_TYPE *a = 0, *b = 0, *c = 0, *d = 0;
-  libxsmm_matdiff_info diff = { 0 };
+  libxsmm_matdiff_info diff;
   int test;
 
   for (test = begin; test < end; ++test) {
@@ -107,6 +107,7 @@ int main(void)
   init(24, b, max_size_b, 1, max_size_b, 1.0);
   init( 0, c, max_size_c, 1, max_size_c, 1.0);
   init( 0, d, max_size_c, 1, max_size_c, 1.0);
+  memset(&diff, 0, sizeof(diff));
 
   for (test = begin; test < end; ++test) {
     libxsmm_matdiff_info diff_test;
