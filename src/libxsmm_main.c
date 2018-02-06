@@ -1111,12 +1111,13 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
   char jit_name[256] = { 0 };
 
   /* large enough temporary buffer for generated code */
-  memset(&generated_code, 0, sizeof(generated_code)); /* avoid warning "maybe used uninitialized" */
 #if defined(NDEBUG)
   char jit_buffer[LIBXSMM_CODE_MAXSIZE];
+  memset(&generated_code, 0, sizeof(generated_code)); /* avoid warning "maybe used uninitialized" */
   generated_code.generated_code = jit_buffer;
   generated_code.buffer_size = sizeof(jit_buffer);
 #else
+  memset(&generated_code, 0, sizeof(generated_code)); /* avoid warning "maybe used uninitialized" */
   generated_code.generated_code = malloc(LIBXSMM_CODE_MAXSIZE);
   generated_code.buffer_size = (0 != generated_code.generated_code ? LIBXSMM_CODE_MAXSIZE : 0);
 #endif
