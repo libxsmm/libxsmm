@@ -190,6 +190,7 @@ LIBXSMM_API_DEFINITION int libxsmm_trace_finalize(void)
 {
   int result;
 #if defined(LIBXSMM_TRACE)
+  result = EXIT_SUCCESS;
   if (0 <= internal_trace_initialized) {
     internal_trace_initialized = -1; /* disable */
 # if defined(_WIN32) || defined(__CYGWIN__)
@@ -197,9 +198,6 @@ LIBXSMM_API_DEFINITION int libxsmm_trace_finalize(void)
 # elif !defined(LIBXSMM_NO_SYNC)
     result = pthread_key_delete(internal_trace_key);
 # endif
-  }
-  else {
-    result = EXIT_SUCCESS;
   }
 #else
   result = EXIT_FAILURE;
