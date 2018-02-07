@@ -2129,7 +2129,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
   int unrolled_ofms = ( i_conv_desc->ifm_block != 3 ) ? 1 : 4;
 
   /* adding to C, so let's load C */
-  if ( (i_conv_desc->use_nts == 0) && (use_lp_kernel == 0) ) {
+  if ( (i_conv_desc->use_nts == 0) && (use_lp_kernel == 0 || i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) ) {
     for ( l_j = 0; l_j < i_conv_desc->ifm_block_hp; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
         for (eq_index = 0; eq_index < unrolled_ofms; eq_index++) {
@@ -2251,7 +2251,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
   int eq_index;
   int unrolled_ofms = ( i_conv_desc->ifm_block != 3 ) ? 1 : 4;
 
-  if ( use_lp_kernel == 1 ) {
+  if ( use_lp_kernel == 1 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
     unsigned int rsp_offset = 48 ;
     libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -2276,7 +2276,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
     for ( l_j = 0; l_j < i_conv_desc->ifm_block_hp; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
         for (eq_index = 0; eq_index < unrolled_ofms; eq_index++) {
-          if (use_lp_kernel == 0) {
+          if (use_lp_kernel == 0 || i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_conv_kernel_config->instruction_set,
                 i_conv_kernel_config->vmove_instruction,
@@ -2327,7 +2327,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
   } else {
     for ( l_j = 0; l_j < i_conv_desc->ifm_block_hp; l_j++ ) {
       for ( l_k = 0; l_k < l_reg_per_block; l_k++, reg_count++ ) {
-        if (use_lp_kernel == 1) {
+        if (use_lp_kernel == 1  && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
           /* Convert result to F32  */
           libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
               i_conv_kernel_config->instruction_set,

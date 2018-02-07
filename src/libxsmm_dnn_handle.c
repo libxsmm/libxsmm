@@ -1235,13 +1235,14 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               descriptor.transpose_ofw_ifm = 0;
               handle->use_hybrid_wu_parallelism = 0;
 
-              if ( handle->use_lp_kernel == 1 && (libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) ) {
+              if ( handle->use_lp_kernel == 1 && (libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE && handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16)) ) {
                 handle->use_vperm_transposes = 1;
               } else {
                 handle->use_vperm_transposes = 0;
               }
 
-              if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) {
+              if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) {
+                if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) {
                   if (handle->ofwp % 2 == 0) {
                     handle->avoid_output_trans = 1;
                   } else {
@@ -1253,6 +1254,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   } else {
                     handle->avoid_input_trans = 0;
                   }
+                }
+              } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
+                if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) {
+                  handle->avoid_output_trans = 0;
+                  handle->avoid_input_trans = 0;
+                }
               }
 
               if (handle->use_fastpath == 1) {
@@ -1276,10 +1283,15 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   padding_target = 4;
                 } else {
                   padding_target = 8;
-                  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) {
-                    padding_target = 2;
-                  }
                   output_lp_padding = handle->ofwp%2;
+                  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) {
+                    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) {
+                      padding_target = 2;
+                    } else {
+                      padding_target = 4;
+                      output_lp_padding = (handle->ofwp % 4 == 0) ? 0 : padding_target - handle->ofwp % 4;
+                    }
+                  }
                   handle->output_lp_padding = output_lp_padding;
                 }
 
@@ -1326,7 +1338,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   if (handle->padding_flag == 1) {
                     kernel_ofw_compute = handle->ofwp+output_lp_padding;
                   } else {
-                    kernel_ofw_compute = handle->ofw+output_lp_padding;
+                    kernel_ofw_compute = handle->ofwp+output_lp_padding;
                   }
                 }
 
@@ -1470,7 +1482,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 handle->matcopy_upd[0].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
                 handle->matcopy_upd[1].xmatcopy = libxsmm_xmatcopydispatch(&matzero_descriptor);
               }
-
               descriptor.transpose_ofw_ifm = 0;
               descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
               if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
@@ -1522,6 +1533,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 handle->trans_ofw_ifm = 0;
               }
             }
+          }
+
+          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  && handle->use_lp_kernel == 1 && handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8){
+            handle->trans_ofw_ifm = 1;
           }
 
           if (handle->use_fastpath == 0 || handle->enforce_sfma_kernel == 1) {

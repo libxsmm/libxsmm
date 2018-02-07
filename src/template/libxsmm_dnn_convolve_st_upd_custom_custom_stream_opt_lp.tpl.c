@@ -60,8 +60,9 @@ const int copy_thr_begin = (ltid * copychunksize < copywork) ? (ltid * copychunk
 const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) * copychunksize) : copywork;
 
 /* Pointer related variables for output and weight */
+int pixels_lp = handle->fm_lp_block; 
 element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
-LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
+LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
 LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
 element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->data;
 element_filter_type* per_thread_weight_ptr = ((element_filter_type*)handle->scratch4) + (ltid*LIBXSMM_MIN(handle->block_upd_ofm,BLOCKSOFM)*LIBXSMM_MIN(handle->block_upd_ifm,BLOCKSIFM)*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock*handle->fm_lp_block);
@@ -108,12 +109,13 @@ libxsmm_xmatcopyfunction jitted_matzero_weights = handle->matcopy_upd[2].xmatcop
 libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 || handle->ifmblock == 1 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
 
 transposer tp_func;
-if ( handle->trans_ofw_ifm > 0 ) {
+if ( handle->trans_ofw_ifm > 0 && pixels_lp != 4 ) {
   if (handle->padding_flag == 1) {
     tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
   }
-  else
+  else {
     tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
+  }
 }
 
 /* lazy barrier init */
@@ -161,30 +163,80 @@ if (handle->reduce_weights == 0) {
 #endif
 
 /* LP transformations */
-if (handle->padding_flag == 1) {
+if (pixels_lp != 4) {
+  if (handle->padding_flag == 1) {
+    int img = ltid, ifm1, ij, ifm2, ii;
+    int ofm1, ofm2, k, lp;
+    int FM;
+    int W;  
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+      for (ij = 0; ij < handle->ifhp; ++ij) {
+        for (ii = 0; ii < handle->ifwp; ++ii) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+              LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij+handle->desc.pad_h, ifm2*handle->fm_lp_block+lp, ii+handle->desc.pad_w, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended) =
+                LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            }
+          }
+        }
+      }
+    }  
+#include "output_lp_transposer.tpl.c"
+  } else {
+    if (handle->resize_input == 0) {
+      lp_transpose_input_and_output(ltid, handle);
+    } else {
+      lp_transpose_and_resize_input_and_output(ltid, handle);
+    }
+  }
+} else {
+  /* Scalar C code for input and output transpose when int8 <=> pixels_lp == 4 ...*/
   int img = ltid, ifm1, ij, ifm2, ii;
   int ofm1, ofm2, k, lp;
-  int FM;
-  int W;  
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (ij = 0; ij < handle->ifhp; ++ij) {
-      for (ii = 0; ii < handle->ifwp; ++ii) {
-        for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+
+  if (handle->resize_input == 0) {
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+      for (ij = 0; ij < handle->ifhp; ++ij) {
+        for (ii = 0; ii < handle->ifwp; ++ii) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+              LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, ifm2*handle->fm_lp_block+lp, ii, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended) =
+                LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            }
+          }
+        }
+      }
+    }
+  }  else {
+    int dst_i, dst_j, src_i, src_j, fm;
+    for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
+      for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
+        src_j =  dst_j * handle->desc.v;
+        for (dst_i=0; dst_i < handle->ifwp_resized; dst_i++) {
+          src_i = dst_i * handle->desc.u;
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            for (lp = 0; lp < handle->fm_lp_block; ++lp) {
+              LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, dst_j, ifm2*handle->fm_lp_block+lp, dst_i, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended) =
+                LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, src_j, src_i, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            }
+          }
+        }
+      }
+    }  
+  }
+
+  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
+    for (ij = 0; ij < handle->ofhp; ++ij) {
+      for (ii = 0; ii < handle->ofwp; ++ii) {
+        for (ofm2 = 0; ofm2 < handle->ofmblock_lp; ++ofm2) {
           for (lp = 0; lp < handle->fm_lp_block; ++lp) {
-            LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij+handle->desc.pad_h, ifm2*handle->fm_lp_block+lp, ii+handle->desc.pad_w, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended) =
-              LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, ii, ifm2, lp, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
+            LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/pixels_lp, ofm2*handle->fm_lp_block+lp, ii%pixels_lp, BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp) =
+            LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, ofm2, lp,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); 
           }
         }
       }
     }
   }  
-#include "output_lp_transposer.tpl.c"
-} else {
-  if (handle->resize_input == 0) {
-    lp_transpose_input_and_output(ltid, handle);
-  } else {
-    lp_transpose_and_resize_input_and_output(ltid, handle);
-  }
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
@@ -198,19 +250,19 @@ if (handle->ofh == 28 || handle->ofh == 56 || handle->ofh == 14)
 
 /*if (handle->reduce_weights) {
   weight_base = &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid/(handle->desc.threads/handle->weight_copies), 0, handle->weight_copies, handle->ofmblock); 
-} else {
+  } else {
   weight_base = weight_ptr;
-}*/
+  }*/
 
 if ( !handle->reduce_weights  ) {
   weight_base = weight_ptr;
 }
 
-output_base = &LIBXSMM_VLA_ACCESS(6, tr_output, 0, 0, 0, 0, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
+output_base = &LIBXSMM_VLA_ACCESS(6, tr_output, 0, 0, 0, 0, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
 
 
-LIBXSMM_VLA_DECL(6, element_input_type, lp_input, (element_input_type*)handle->reg_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);
-LIBXSMM_VLA_DECL(6, element_output_type, lp_output, (element_output_type*)handle->grad_output->data, BLOCKSOFM, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
+LIBXSMM_VLA_DECL(6, element_input_type, lp_input, (element_input_type*)handle->reg_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp/pixels_lp, handle->ifmblock_hp, pixels_lp);
+LIBXSMM_VLA_DECL(6, element_output_type, lp_output, (element_output_type*)handle->grad_output->data, BLOCKSOFM, handle->ofhp, handle->ofwp/pixels_lp, handle->ofmblock, pixels_lp);
 
 if (handle->trans_ofw_ifm == 1) {
   if (handle->padding_flag == 1) {
@@ -220,11 +272,11 @@ if (handle->trans_ofw_ifm == 1) {
   }
 } else {
   if (handle->avoid_input_trans == 1) {
-    LIBXSMM_VLA_DECL(6, element_input_type, lp_input, (element_input_type*)handle->reg_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);
-    input_base = &LIBXSMM_VLA_ACCESS(6, lp_input, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);
+    LIBXSMM_VLA_DECL(6, element_input_type, lp_input, (element_input_type*)handle->reg_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp/pixels_lp, handle->ifmblock_hp, pixels_lp);
+    input_base = &LIBXSMM_VLA_ACCESS(6, lp_input, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp/pixels_lp, handle->ifmblock_hp, pixels_lp);
   } else {
-    LIBXSMM_VLA_DECL(6, element_input_type, lp_input, (element_input_type*)handle->scratch3, handle->blocksifm, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);
-    input_base = &LIBXSMM_VLA_ACCESS(6, lp_input, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);
+    LIBXSMM_VLA_DECL(6, element_input_type, lp_input, (element_input_type*)handle->scratch3, handle->blocksifm, handle->ifhp, handle->ifwp/pixels_lp, handle->ifmblock_hp, pixels_lp);
+    input_base = &LIBXSMM_VLA_ACCESS(6, lp_input, 0, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp/pixels_lp, handle->ifmblock_hp, pixels_lp);
   }
 }
 
@@ -241,11 +293,11 @@ if (handle->use_vperm_transposes == 1) {
 
 if (handle->avoid_output_trans) {
   element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
-  LIBXSMM_VLA_DECL(6, element_output_type, lp_output, out, BLOCKSOFM, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
-  output_base = &LIBXSMM_VLA_ACCESS(6, lp_output, 0, 0, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
+  LIBXSMM_VLA_DECL(6, element_output_type, lp_output, out, BLOCKSOFM, handle->ofhp, handle->ofwp/pixels_lp, handle->ofmblock, pixels_lp);
+  output_base = &LIBXSMM_VLA_ACCESS(6, lp_output, 0, 0, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp/pixels_lp, handle->ofmblock, pixels_lp);
 } else {
-  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-  output_base = &LIBXSMM_VLA_ACCESS(6, tr_output, 0, 0, 0, 0, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
+  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
+  output_base = &LIBXSMM_VLA_ACCESS(6, tr_output, 0, 0, 0, 0, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
 }
 
 i = 0;
@@ -253,6 +305,7 @@ instr = handle->n_entries_upd[ltid];
 n_segments = handle->n_upd_code_segments[ltid];
 
 float scale_factor __attribute__((aligned(64)));
+
 if (handle->use_lp_kernel == 1) {
   scale_factor = (float) pow(2.0, -1.0*((double)(handle->reg_input->scf + handle->grad_output->scf)));
 }
@@ -386,47 +439,93 @@ if (handle->reduce_weights) {
     /* Perform reduction because we used thread private filters... */
     if (handle->upd_use_external_reduce == 0) {
       libxsmm_barrier_wait(handle->barrier, ltid);
-      for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
+      if (pixels_lp == 4) {
+        for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 #ifdef __AVX512F__
-        __m512 weight_sum = _mm512_setzero_ps();
-        for ( i = 0; i < handle->desc.threads; i++ ) {
-          weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
-        }
-        if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
-          _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
-        } else {
-          __m512 new_result = _mm512_add_ps(weight_sum, _mm512_load_ps(&weight_ptr[j*16]));
-          _mm512_store_ps(&weight_ptr[j*16], new_result);
-        }
-#else
-        element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
-        LIBXSMM_PRAGMA_VALIGNED
-          LIBXSMM_PRAGMA_SIMD
-          for ( k = 0; k < 16; k++ ) {
-            weight_sum[k] = (element_filter_type) 0;
+          __m512i weight_sum = _mm512_setzero_epi32();
+          for ( i = 0; i < handle->desc.threads; i++ ) {
+            weight_sum = _mm512_add_epi32(weight_sum, _mm512_load_epi32(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
           }
-        for ( i = 0; i < handle->desc.threads; i++ ) {
+          if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+            _mm512_store_epi32(&weight_ptr[j*16], weight_sum);
+          } else {
+            __m512i new_result = _mm512_add_epi32(weight_sum, _mm512_load_epi32(&weight_ptr[j*16]));
+            _mm512_store_epi32(&weight_ptr[j*16], new_result);
+          }
+#else
+          element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
           LIBXSMM_PRAGMA_VALIGNED
             LIBXSMM_PRAGMA_SIMD
             for ( k = 0; k < 16; k++ ) {
-              weight_sum[k] += LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, k, handle->desc.threads, 16);
+              weight_sum[k] = (element_filter_type) 0;
             }
-        }
-        if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
-          LIBXSMM_PRAGMA_NONTEMPORAL
+          for ( i = 0; i < handle->desc.threads; i++ ) {
             LIBXSMM_PRAGMA_VALIGNED
-            LIBXSMM_PRAGMA_SIMD
-            for ( k = 0; k < 16; k++ ) {
-              weight_ptr[j*16 + k] = weight_sum[k];
-            }
-        } else {
+              LIBXSMM_PRAGMA_SIMD
+              for ( k = 0; k < 16; k++ ) {
+                weight_sum[k] += LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, k, handle->desc.threads, 16);
+              }
+          }
+          if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+            LIBXSMM_PRAGMA_NONTEMPORAL
+              LIBXSMM_PRAGMA_VALIGNED
+              LIBXSMM_PRAGMA_SIMD
+              for ( k = 0; k < 16; k++ ) {
+                weight_ptr[j*16 + k] = weight_sum[k];
+              }
+          } else {
+            LIBXSMM_PRAGMA_VALIGNED
+              LIBXSMM_PRAGMA_SIMD
+              for ( k = 0; k < 16; k++ ) {
+                weight_ptr[j*16 + k] += weight_sum[k];
+              }
+          }
+#endif
+        }
+      } else {
+        for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
+#ifdef __AVX512F__
+          __m512 weight_sum = _mm512_setzero_ps();
+          for ( i = 0; i < handle->desc.threads; i++ ) {
+            weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
+          }
+          if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+            _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
+          } else {
+            __m512 new_result = _mm512_add_ps(weight_sum, _mm512_load_ps(&weight_ptr[j*16]));
+            _mm512_store_ps(&weight_ptr[j*16], new_result);
+          }
+#else
+          element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
           LIBXSMM_PRAGMA_VALIGNED
             LIBXSMM_PRAGMA_SIMD
             for ( k = 0; k < 16; k++ ) {
-              weight_ptr[j*16 + k] += weight_sum[k];
+              weight_sum[k] = (element_filter_type) 0;
             }
-        }
+          for ( i = 0; i < handle->desc.threads; i++ ) {
+            LIBXSMM_PRAGMA_VALIGNED
+              LIBXSMM_PRAGMA_SIMD
+              for ( k = 0; k < 16; k++ ) {
+                weight_sum[k] += LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, k, handle->desc.threads, 16);
+              }
+          }
+          if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+            LIBXSMM_PRAGMA_NONTEMPORAL
+              LIBXSMM_PRAGMA_VALIGNED
+              LIBXSMM_PRAGMA_SIMD
+              for ( k = 0; k < 16; k++ ) {
+                weight_ptr[j*16 + k] = weight_sum[k];
+              }
+          } else {
+            LIBXSMM_PRAGMA_VALIGNED
+              LIBXSMM_PRAGMA_SIMD
+              for ( k = 0; k < 16; k++ ) {
+                weight_ptr[j*16 + k] += weight_sum[k];
+              }
+          }
 #endif
+        }
+
       }
     }
     libxsmm_barrier_wait(handle->barrier, ltid);
@@ -438,3 +537,4 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 #undef WEIGHT_INIT
 #undef UPDATE_KERNEL
 #undef WEIGHT_COPY
+
