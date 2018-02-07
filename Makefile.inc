@@ -36,7 +36,7 @@ endif
 ifeq (Windows_NT,$(OS))
   UNAME ?= Windows_NT
   ENV ?= $(NULL)
-  # Cygwin based
+  # Cygwin/MinGW based
   DLIBEXT ?= dll
   SLIBEXT ?= lib
 endif
@@ -528,6 +528,19 @@ else
   GXX_VERSION = 0
 endif
 
+ifeq (Windows_NT,$(UNAME))
+ifeq (MINGW64,$(MSYSTEM))
+  MINGW = 64
+else ifeq (MINGW32,$(MSYSTEM))
+  MINGW = 32
+else ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__MINGW64__"; echo "$$?"))
+  MINGW = 64
+else ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__MINGW32__"; echo "$$?"))
+  MINGW = 32
+endif
+endif
+MINGW ?= 0
+
 # Too many ICEs with Clang hence we want to know if we are on Clang
 ifeq (0,$(GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
@@ -797,6 +810,10 @@ else # GCC assumed
     CFLAGS += $(PICFLAG)
     FCFLAGS += $(PICFLAG)
     LDFLAGS += $(PICFLAG)
+  else ifneq (0,$(MINGW))
+    CXXFLAGS += -fno-asynchronous-unwind-tables
+    CFLAGS += -fno-asynchronous-unwind-tables
+    FCFLAGS += -fno-asynchronous-unwind-tables
   endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((40700 <= $(GXX_VERSION)))"))
