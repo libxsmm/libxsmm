@@ -195,7 +195,7 @@ BRACE_CLOSE := )
 
 libpath = $(strip $(if $1, \
   $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL), \
-    $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>/dev/null | grep "$3" | tail -n1 | grep -o "[^ $(BRACE_CLOSE)]*" | grep "\/")))), \
+    $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>/dev/null | grep "$3" | tail -n1 | grep -o "[^ ()]*" | grep "\/")))), \
   $(NULL)))
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
