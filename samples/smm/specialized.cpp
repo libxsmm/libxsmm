@@ -176,11 +176,10 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize_batched / (duration * (1 << 30)));
         }
-        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration); // -fallthrough
-      } /*break;*/
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+      } /* fallthrough */
 
-      // batched/indirect
-      case 1: { // -fallthrough
+      case 1: { // batched/indirect
         fprintf(stdout, "Indirect (A,B,C)...\n");
         for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a + i * asize; b_array[i] = b + i * bsize; c_array[i] = d + i * csize;
@@ -241,10 +240,9 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
-      // indirect A and C
-      case 3: { // -fallthrough
+      case 3: { // indirect A and C
         fprintf(stdout, "Indirect (A,C)...\n");
         for (libxsmm_blasint i = 0; i < s; ++i) { a_array[i] = a + i * asize; b_array[i] = b; c_array[i] = d + i * csize; }
         const libxsmm_blasint ptrsize = sizeof(T*);
@@ -301,10 +299,9 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
-      // indirect B and C
-      case 5: { // -fallthrough
+      case 5: { // indirect B and C
         fprintf(stdout, "Indirect (B,C)...\n");
         for (libxsmm_blasint i = 0; i < s; ++i) { a_array[i] = a; b_array[i] = b + i * bsize; c_array[i] = d + i * csize; }
         const libxsmm_blasint ptrsize = sizeof(T*);
@@ -366,10 +363,9 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
-      // indirect A and B
-      case 7: { // -fallthrough
+      case 7: { // indirect A and B
         fprintf(stdout, "Indirect (A,B)...\n");
 #if defined(_OPENMP)
 #       pragma omp parallel for schedule(static)
@@ -429,10 +425,9 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
-      // indirect cached
-      case 9: { // -fallthrough
+      case 9: { // indirect cached
         fprintf(stdout, "Indirect cached...\n");
 #if defined(_OPENMP)
 #       pragma omp parallel for schedule(static)
