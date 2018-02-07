@@ -51,9 +51,9 @@ LIBXSMM_VLA_DECL(3, element_input_type, input_buffer, ((element_input_type*)hand
 /* regular/high precision */
 element_input_type* del_in = 0;
 if (handle->datatype_in != handle->datatype_out) {
-  del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock);
+  del_in = ((element_input_type*)handle->grad_input->data) /* + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock)*/;
 } else {
-  del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock); 
+  del_in = ((element_input_type*)handle->grad_input->data) /* + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock)*/; 
 }
 { /* open new scope for additional variable declarations (C89) */
   LIBXSMM_VLA_DECL(5, element_input_type, del_input, del_in, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
