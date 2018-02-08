@@ -17,7 +17,7 @@ matrix:
     env: DBG=1 PYTHON=python3
   - os: linux
     compiler: clang
-    env: DBG=1
+    env: DBG=1 LIBXSMM_TARGET=sse3
   - os: osx
     osx_image: xcode9.1
     compiler: clang
