@@ -516,6 +516,10 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_sse3 = 1;
           l_insert_extra_byte = 0xF2;
           break;
+       case LIBXSMM_X86_INSTR_MOVSS:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0xF3;
+          break;
        case LIBXSMM_X86_INSTR_MOVDDUP:
           l_sse3 = 1;
           l_insert_extra_byte = 0xF2;
@@ -1370,6 +1374,10 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_sse = 1;
           l_insert_extra_byte = 0xF2;
           break;
+       case LIBXSMM_X86_INSTR_MOVSS:
+          l_sse = 1;
+          l_insert_extra_byte = 0xF3;
+          break;
        case LIBXSMM_X86_INSTR_MOVDDUP:
           l_sse = 1;
           l_third = 2;
@@ -2166,6 +2174,10 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_MOVSD:
           l_sse3 = 1;
           l_insert_extra_byte = 0xF2;
+          break;
+       case LIBXSMM_X86_INSTR_MOVSS:
+          l_sse3 = 1;
+          l_insert_extra_byte = 0xF3;
           break;
        case LIBXSMM_X86_INSTR_MOVDDUP:
           l_sse3 = 1;
