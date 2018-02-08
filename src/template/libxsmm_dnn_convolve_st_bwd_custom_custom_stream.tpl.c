@@ -119,8 +119,9 @@ if (handle->datatype_in != handle->datatype_out) {
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
-
-  memset( &LIBXSMM_VLA_ACCESS(5, del_input, ltid, 0, 0, 0, 0,handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock), 0, handle->blocksifm*handle->ifhp*handle->ifwp*handle->ifmblock*sizeof(element_input_type));
+  if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {  
+    memset( &LIBXSMM_VLA_ACCESS(5, del_input, ltid, 0, 0, 0, 0,handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock), 0, handle->blocksifm*handle->ifhp*handle->ifwp*handle->ifmblock*sizeof(element_input_type));
+  }
 
   if (1) {
     for (pc = 0; pc < n_segments; pc++) {

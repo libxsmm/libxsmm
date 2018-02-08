@@ -170,9 +170,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     }
     for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
       for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
-        for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
-          for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
-            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ++ofm1) {
+        for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
+          for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ++ofm1) {
+            for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {         
               for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
                 for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
                   local_entries += 3;
@@ -217,7 +217,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 2097152);
     handle->bwd_code_segments[ltid] = encoded_code_segments;
   } else {
-   encoded_code_segments = NULL;
+    encoded_code_segments = NULL;
   }
   local_entries = 0;
 
@@ -229,9 +229,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     }
     for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
       for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
-        for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
-          for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
-            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ++ofm1) {
+        for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
+          for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ++ofm1) {
+            for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
               for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
                 for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
                   ij = oj * handle->desc.u;
@@ -311,9 +311,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       }
       for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
         for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
-          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
-            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
-              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ++ofm1) {
+          for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
+            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ++ofm1) {
+              for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
                 for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
                   for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
                     ij = oj * handle->desc.u;
