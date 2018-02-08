@@ -654,7 +654,7 @@ LIBXSMM_API_INLINE void internal_init(void)
 # if (0 != LIBXSMM_JIT) && !defined(__MIC__)
         /* check if target arch. permits execution (arch. may be overridden) */
         if (LIBXSMM_STATIC_TARGET_ARCH <= libxsmm_target_archid &&
-           (LIBXSMM_X86_SSE3 > libxsmm_target_archid /* JIT code gen. is not available */
+           (LIBXSMM_X86_SSE4 > libxsmm_target_archid /* JIT code gen. is not available */
             /* condition allows to avoid JIT (if static code is good enough) */
             || LIBXSMM_STATIC_TARGET_ARCH == libxsmm_target_archid))
 # endif
@@ -1470,7 +1470,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
   /* libxsmm_get_target_arch also serves as a runtime check whether JIT is available or not */
-  if (LIBXSMM_X86_SSE3 <= libxsmm_target_archid) result = EXIT_FAILURE;
+  if (LIBXSMM_X86_SSE4 <= libxsmm_target_archid) result = EXIT_FAILURE;
 #endif
   return result;
 }
@@ -1559,7 +1559,8 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
         assert(0 == mode || 1 < mode);
 #if (0 != LIBXSMM_JIT)
         if (LIBXSMM_X86_AVX <= libxsmm_target_archid || /* check if JIT is supported (CPUID) */
-           (LIBXSMM_X86_SSE3 <= libxsmm_target_archid && LIBXSMM_BUILD_KIND_GEMM == descriptor->iflags))
+           (LIBXSMM_X86_SSE4 <= libxsmm_target_archid && LIBXSMM_BUILD_KIND_GEMM == descriptor->iflags
+         /* TODO: fix this when MOVSS is available */ && LIBXSMM_GEMM_PRECISION_F64 == descriptor->datatype))
         {
           assert(0 != mode || 0 == flux_entry.ptr_const/*code version does not exist*/);
           INTERNAL_FIND_CODE_LOCK(lock, i, diff, flux_entry.pmm); /* lock the registry entry */
