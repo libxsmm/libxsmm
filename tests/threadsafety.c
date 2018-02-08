@@ -43,11 +43,14 @@
 #if !defined(USE_VERBOSE)
 # define USE_VERBOSE
 #endif
+#if !defined(REAL_TYPE)
+# define REAL_TYPE float
+#endif
 
 
 int main(void)
 {
-  union { libxsmm_smmfunction s; void* p; } f[MAX_NKERNELS];
+  union { LIBXSMM_MMFUNCTION_TYPE(REAL_TYPE) f; void* p; } f[MAX_NKERNELS];
   const char *const target_arch = libxsmm_get_target_arch();
   libxsmm_generated_code generated_code;
   libxsmm_registry_info registry_info;
@@ -95,7 +98,7 @@ int main(void)
     const libxsmm_blasint m = r[3*i+0] % max_shape + 1;
     const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
     const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
-    f[i].s = libxsmm_smmdispatch(m, n, k,
+    f[i].f = LIBXSMM_MMDISPATCH_SYMBOL(REAL_TYPE)(m, n, k,
       NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
       &flags, &prefetch);
   }
@@ -109,7 +112,7 @@ int main(void)
       const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
       union { libxsmm_xmmfunction x; void* p; } fi;
-      LIBXSMM_GEMM_DESCRIPTOR_TYPE(descriptor, LIBXSMM_GEMM_PRECISION(float), flags,
+      LIBXSMM_GEMM_DESCRIPTOR_TYPE(descriptor, LIBXSMM_GEMM_PRECISION(REAL_TYPE), flags,
         m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, LIBXSMM_ALPHA, LIBXSMM_BETA, prefetch);
       fi.x = libxsmm_xmmdispatch(&descriptor);
 

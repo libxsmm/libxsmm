@@ -595,7 +595,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     {
        /* Registers like rbp/r13 when you have a displacement of 0, we need
           force the single byte of zero to appear. */
-       l_forced_offset=1;
+       l_forced_offset = 1;
     }
 
     if ( l_bytes == 4 )
@@ -672,7 +672,9 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
             buf[i++] = (unsigned char)(0x00 + l_regbas0 + l_vecval0*8);
             if ( l_regbas0 == 4 ) buf[i++]=0x24;
         } else {
-            if ( i_scale == 1 ) l_scaleadj = 0x00;
+          int l_ix8 = ((i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ? 1 : 0);
+          int l_sse_preamble2 = 64;
+          if ( i_scale == 1 ) l_scaleadj = 0x00;
             else if ( i_scale == 2 ) l_scaleadj = 0x40;
             else if ( i_scale == 4 ) l_scaleadj = 0x80;
             else if ( i_scale == 8 ) l_scaleadj = 0xc0;
@@ -681,8 +683,6 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                fprintf(stderr, "libxsmm_instruction_vec_move sse3 section: cannot handle i_scale=%u parameter\n", i_scale);
                exit(-1);
             }
-            int l_sse_preamble2 = 64;
-            int l_ix8 = ((i_gp_reg_idx > 7)&&(i_gp_reg_idx<=15)?1:0);
             if ( l_gp8 || l_ix8 || (l_vecgrp0>=1) )
             {
                 if (l_gp8) l_sse_preamble2 += 1;
@@ -696,7 +696,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
             buf[i++] = (unsigned char)(0x04 + l_vecval0*8);
             buf[i++] = (unsigned char)(0x00 + l_scaleadj + l_regbas0 + l_regidx*8);
         }
-        int l_forced_offset = 0;
+        l_forced_offset = 0;
         if ( (l_regbas0 == 5) && (i_displacement==0) )
         {
             l_forced_offset = 1;

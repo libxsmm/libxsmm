@@ -1,11 +1,9 @@
+atomics
 blas
-descriptor
 diff
-dispatch
 gemmflags
 hash
 headeronly
-init
 malloc
 matcopy
 matdiff
