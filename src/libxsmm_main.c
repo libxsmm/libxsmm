@@ -779,7 +779,8 @@ void libxsmm_finalize(void);
 
 LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 {
-  uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
+  void *const regaddr = &internal_registry;
+  uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
   libxsmm_code_pointer* registry = (libxsmm_code_pointer*)regptr;
   if (0 != registry) {
     int i;
@@ -792,7 +793,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_REG1LOCK, &internal_reglock);
 # endif
 #endif
-    regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)&internal_registry, LIBXSMM_ATOMIC_RELAXED);
+    regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_RELAXED);
     registry = (libxsmm_code_pointer*)regptr;
 
     if (0 != registry) {
@@ -1519,7 +1520,8 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 
     while (0 != diff) {
 #if (0 < INTERNAL_REGLOCK_MAXN) || defined(LIBXSMM_NO_SYNC) /* read registered code */
-      flux_entry.uval = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)&internal_registry[i].pmm, LIBXSMM_ATOMIC_RELAXED);
+      void *const fluxaddr = &internal_registry[i].pmm;
+      flux_entry.uval = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)fluxaddr, LIBXSMM_ATOMIC_RELAXED);
 #else
       LIBXSMM_LOCK_ACQREAD(LIBXSMM_REG1LOCK, &internal_reglock);
       flux_entry.pmm = internal_registry[i].pmm; /* read registered code */
