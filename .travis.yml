@@ -5,6 +5,7 @@ language: cpp
 branches:
   except:
   - develop
+  - results
 
 matrix:
   fast_finish: true
