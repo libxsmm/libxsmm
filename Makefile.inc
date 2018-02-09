@@ -601,10 +601,12 @@ else
     COMPATIBLE ?= 1
   endif
   ifneq (0,$(COMPATIBLE))
-  ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
-    LDFLAGS += -hsystem_alloc
-    CRAY ?= 1
-  endif
+    ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
+      LDFLAGS += -hsystem_alloc
+      CRAY ?= 1
+    else
+      PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | if grep -q "PGI"; then echo "1"; fi)
+    endif
   endif
 endif
 CRAY ?= 0
@@ -1047,13 +1049,25 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     endif
     endif
     ifeq (,$(CTARGET)) # fall-back to AVX2
-      CTARGET = -march=core-avx2
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__
+        CTARGET = -tp=haswell
+      endif
+      CTARGET ?= -march=core-avx2
     endif
   else ifeq (1,$(AVX))
-    CTARGET = -mavx
+    ifneq (0,$(PGI))
+      #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__
+      CTARGET = -tp=sandybridge
+    endif
+    CTARGET ?= -mavx
   else ifneq (0,$(SSE))
     ifeq (1,$(SSE)) # default
-      CTARGET = -msse4.2
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__
+        CTARGET = -tp=nehalem
+      endif
+      CTARGET ?= -msse4.2
     else ifeq (2,$(SSE))
       # implicitly present (64-bit ABI)
     else ifeq (3,$(SSE))
@@ -1064,7 +1078,11 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
         CTARGET = -msse4.2
       endif
     else ifeq (4,$(SSE))
-      CTARGET = -msse4.2
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__
+        CTARGET = -tp=nehalem
+      endif
+      CTARGET ?= -msse4.2
     else # perhaps better to use TARGET flag directly
       CTARGET = -msse$(SSE)
     endif

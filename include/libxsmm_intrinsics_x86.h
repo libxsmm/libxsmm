@@ -40,8 +40,8 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 
-/** PGI's own intrinsic header file(s) appear to be broken with PGI C++. */
-#if !defined(LIBXSMM_INTRINSICS_NONE) && (defined(__PGI) && defined(__cplusplus))
+/** PGI's intrinsic headers do not compile, __SSE4_x__/__AVX__ etc. are never defined (-tp=haswell, etc.) */
+#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(__PGI)
 # define LIBXSMM_INTRINSICS_NONE
 #endif
 
@@ -109,7 +109,7 @@
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     include <immintrin.h>
-#   elif (LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
+#   elif (LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) && !defined(__PGI)
       /* AVX-512 pseudo intrinsics are missing e.g., reductions */
 #     if !defined(LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS)
 #       define LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS
@@ -120,7 +120,7 @@
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     endif
 #     include <immintrin.h>
-#   elif (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
+#   elif (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) && !defined(__PGI)
       /* AVX-512 pseudo intrinsics are missing e.g., reductions */
 #     if !defined(LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS)
 #       define LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS
@@ -174,18 +174,19 @@
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
 #     else /* fall-back */
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_STATIC_TARGET_ARCH
-#       if !defined(LIBXSMM_INTRINSICS_NONE)
+#       if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(__PGI)
 #         define LIBXSMM_INTRINSICS_NONE
 #       endif
 #     endif
-#     if !defined(LIBXSMM_INTRINSICS_LEGACY) && (LIBXSMM_STATIC_TARGET_ARCH < LIBXSMM_X86_AVX2/*workaround*/)
+#     if !defined(LIBXSMM_INTRINSICS_LEGACY) && !defined(__PGI) \
+        && (LIBXSMM_STATIC_TARGET_ARCH < LIBXSMM_X86_AVX2/*workaround*/)
 #       define LIBXSMM_INTRINSICS_LEGACY
 #     endif
-#     if !defined(LIBXSMM_INTRINSICS_PATCH)
-#       define LIBXSMM_INTRINSICS_PATCH
+#     if !defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(__PGI)
+#       define LIBXSMM_INTRINSICS_INCLUDE
 #     endif
 #   endif /* GCC/legacy incl. Clang */
-#   if defined(LIBXSMM_INTRINSICS_PATCH) && !defined(LIBXSMM_INTRINSICS_NONE)
+#   if defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(LIBXSMM_INTRINSICS_NONE)
 #     if !defined(__SSE3__)
 #       define __SSE3__ 1
 #     endif
@@ -278,7 +279,7 @@
 #     if (LIBXSMM_X86_AVX512_ICL > (LIBXSMM_STATIC_TARGET_ARCH))
 #       undef __AVX512VNNI__
 #     endif
-#   endif /*defined(LIBXSMM_INTRINSICS_PATCH)*/
+#   endif /*defined(LIBXSMM_INTRINSICS_INCLUDE)*/
 #   if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
 #     error "LIBXSMM_MAX_STATIC_TARGET_ARCH not defined!"
 #   endif
@@ -336,7 +337,8 @@
 #       define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     endif
 #   endif /*!defined(LIBXSMM_INTRINSICS)*/
-# elif defined(LIBXSMM_STATIC_TARGET_ARCH)
+# elif defined(LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_INTRINSICS_INCLUDE)
+#   define LIBXSMM_INTRINSICS_INCLUDE
 #   include <immintrin.h>
 # endif /*defined(LIBXSMM_STATIC_TARGET_ARCH)*/
 #endif /*!defined(LIBXSMM_INTRINSICS_NONE)*/
@@ -350,7 +352,7 @@
 #endif
 
 /** Include basic x86 intrinsics such as __rdtsc. */
-#if defined(LIBXSMM_INTRINSICS) && !defined(LIBXSMM_INTRINSICS_NONE)
+#if defined(LIBXSMM_INTRINSICS_INCLUDE)
 # if defined(_WIN32)
 #   include <intrin.h>
 # else
@@ -360,7 +362,9 @@
 # if defined(__SSE3__)
 #   include <pmmintrin.h>
 # endif
-#else
+#endif
+
+#if !defined(LIBXSMM_INTRINSICS)
 # if !defined(LIBXSMM_INTRINSICS_NONE)
 #   define LIBXSMM_INTRINSICS_NONE
 # endif
@@ -373,7 +377,7 @@
 # else
 #   include <mm_malloc.h>
 # endif
-/** Intrinsic-specific fixups */
+/** Intrinsic-specific fix-ups */
 # if defined(__clang__)
 #   define LIBXSMM_INTRINSICS_LDDQU_SI128(A) _mm_loadu_si128(A)
 # else
@@ -407,7 +411,6 @@
                              _mm512_castps_si512(A), _mm512_set1_epi32(0x7FFFFFFF)))
 #   define LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(A, B) _mm512_permutexvar_epi32(A, B)
 # endif
-
 #endif /*!defined(LIBXSMM_INTRINSICS_NONE)*/
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
