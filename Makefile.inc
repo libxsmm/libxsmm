@@ -201,7 +201,7 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
 # Embedd soname into shared library
 ifneq (Darwin,$(UNAME))
-  ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null; echo "$$?"))
+  ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
     soname = -shared -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5) \
              $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5)) \
              $(shell cd $(dir $1) && ln -fs $(notdir $1.$5) $(notdir $1))
