@@ -12,13 +12,13 @@ matrix:
   include:
   - os: linux
     compiler: gcc
-    env: OPT=1 LIBXSMM_TARGET=0
+    env: OPT=1 PYTHON=python3
   - os: linux
     compiler: gcc
-    env: DBG=1 PYTHON=python3
+    env: DBG=1 LIBXSMM_TARGET=sse
   - os: linux
     compiler: clang
-    env: DBG=1 LIBXSMM_TARGET=sse
+    env: DBG=1 LIBXSMM_TARGET=0
   - os: osx
     osx_image: xcode9.1
     compiler: clang
