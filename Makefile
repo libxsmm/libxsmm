@@ -1230,7 +1230,7 @@ endif
 	@chmod +x $@
 
 .PHONY: test
-test: test-cp2k
+test: tests
 
 .PHONY: perf
 perf: perf-cp2k
