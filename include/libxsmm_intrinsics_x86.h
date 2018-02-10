@@ -98,16 +98,19 @@
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     endif
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
+#     define LIBXSMM_INTRINSICS_INCLUDE
 #     include <immintrin.h>
 #   elif defined(_CRAYC) && defined(__GNUC__)
       /* TODO: version check e.g., LIBXSMM_VERSION2(11, 5) <= LIBXSMM_VERSION2(_RELEASE, _RELEASE_MINOR) */
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
+#     define LIBXSMM_INTRINSICS_INCLUDE
 #     include <immintrin.h>
 #   elif defined(_MSC_VER) && !defined(__clang__)
       /* TODO: compiler version check for LIBXSMM_MAX_STATIC_TARGET_ARCH */
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
+#     define LIBXSMM_INTRINSICS_INCLUDE
 #     include <immintrin.h>
 #   elif (LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) && !defined(__PGI)
       /* AVX-512 pseudo intrinsics are missing e.g., reductions */
@@ -119,6 +122,7 @@
 #     else /* Error: invalid register for .seh_savexmm */
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     endif
+#     define LIBXSMM_INTRINSICS_INCLUDE
 #     include <immintrin.h>
 #   elif (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) && !defined(__PGI)
       /* AVX-512 pseudo intrinsics are missing e.g., reductions */
@@ -134,6 +138,7 @@
 #     else /* Error: invalid register for .seh_savexmm */
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     endif
+#     define LIBXSMM_INTRINSICS_INCLUDE
 #     include <immintrin.h>
 #   else /* GCC/legacy incl. Clang */
 #     if defined(__clang__) && !(defined(__APPLE__) && defined(__MACH__)) \
