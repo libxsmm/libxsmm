@@ -33,6 +33,14 @@
 
 #include "libxsmm_macros.h"
 
+/** Helper macros for type postfixes. */
+#define LIBXSMM_TPOSTFIX_NAME(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TPOSTFIX_, TYPE)
+#define LIBXSMM_TPOSTFIX(TYPE, SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, LIBXSMM_TPOSTFIX_NAME(TYPE))
+#define LIBXSMM_TPOSTFIX_double F64
+#define LIBXSMM_TPOSTFIX_float F32
+#define LIBXSMM_TPOSTFIX_int I32
+#define LIBXSMM_TPOSTFIX_short I16
+
 #define LIBXSMM_TYPESIZE(ENUM) ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F64 ? 8 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F32 ? 4 : ( \
@@ -40,6 +48,16 @@
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I16 ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I8  ? 1 : ( \
   0/*invalid*/))))))
+
+/* Construct an enumerator (libxsmm_datatype) from a built-in type (float, double, etc.). */
+#define LIBXSMM_DATATYPE(TYPE) LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_DATATYPE_)
+/* Get input or output precision */
+#define LIBXSMM_GEMM_GET_PRECINP(SRC) ((SRC) & 0x0F)
+#define LIBXSMM_GEMM_GET_PRECOUT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GEMM_GET_PRECINP(SRC) : ((SRC) >> 4))
+/* Set input and output precision */
+#define LIBXSMM_GEMM_SET_PRECISION(DST, PRECINP, PRECOUT) DST = ((PRECINP) == (PRECOUT)) ? (PRECINP) : ((PRECINP) | ((PRECOUT) << 4))
+/* Construct an enumerator (libxsmm_gemm_precision) from a built-in type (float, double, etc.). */
+#define LIBXSMM_GEMM_PRECISION(TYPE) LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_GEMM_PRECISION_)
 
 
 /** Enumerates element/data types. */
