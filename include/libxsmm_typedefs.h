@@ -51,14 +51,14 @@
 
 /* Get input or output precision */
 #define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
-#define LIBXSMM_GETENUM_OUT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GEMM_GET_PRECINP(SRC) : ((SRC) >> 4))
+#define LIBXSMM_GETENUM_OUT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GETENUM_INP(SRC) : ((SRC) >> 4))
 /* Get/Set input and output precision */
 #define LIBXSMM_GETENUM(INP, OUT) (((INP) == (OUT)) ? (INP) : ((INP) | ((OUT) << 4)))
 #define LIBXSMM_SETENUM(DST, INP, OUT) DST = LIBXSMM_GETENUM(INP, OUT)
 
 /* Construct an enumerator (libxsmm_datatype) from a built-in type (float, double, etc.). */
 #define LIBXSMM_DATATYPE(TYPE) LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_DATATYPE_)
-/* Construct a typeid from built-in input/output types (float, double, etc.). */
+/* Construct a type-id from built-in input/output types (float, double, etc.). */
 #define LIBXSMM_DATATYPE2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE))
 
 /* Construct an enumerator (libxsmm_gemm_precision) from a built-in type (float, double, etc.). */
