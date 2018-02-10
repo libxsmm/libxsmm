@@ -49,15 +49,23 @@
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I8  ? 1 : ( \
   0/*invalid*/))))))
 
+/* Get input or output precision */
+#define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
+#define LIBXSMM_GETENUM_OUT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GEMM_GET_PRECINP(SRC) : ((SRC) >> 4))
+/* Get/Set input and output precision */
+#define LIBXSMM_GETENUM(INP, OUT) (((INP) == (OUT)) ? (INP) : ((INP) | ((OUT) << 4)))
+#define LIBXSMM_SETENUM(DST, INP, OUT) DST = LIBXSMM_GETENUM(INP, OUT)
+
 /* Construct an enumerator (libxsmm_datatype) from a built-in type (float, double, etc.). */
 #define LIBXSMM_DATATYPE(TYPE) LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_DATATYPE_)
-/* Get input or output precision */
-#define LIBXSMM_GEMM_GET_PRECINP(SRC) ((SRC) & 0x0F)
-#define LIBXSMM_GEMM_GET_PRECOUT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GEMM_GET_PRECINP(SRC) : ((SRC) >> 4))
-/* Set input and output precision */
-#define LIBXSMM_GEMM_SET_PRECISION(DST, PRECINP, PRECOUT) DST = ((PRECINP) == (PRECOUT)) ? (PRECINP) : ((PRECINP) | ((PRECOUT) << 4))
+/* Construct a typeid from built-in input/output types (float, double, etc.). */
+#define LIBXSMM_DATATYPE2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE))
+
 /* Construct an enumerator (libxsmm_gemm_precision) from a built-in type (float, double, etc.). */
 #define LIBXSMM_GEMM_PRECISION(TYPE) LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_GEMM_PRECISION_)
+/* Construct GEMM-precision from built-in input/output types (float, double, etc.). */
+#define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_GEMM_PRECISION(ITYPE), \
+                                                              LIBXSMM_GEMM_PRECISION(OTYPE))
 
 
 /** Enumerates element/data types. */
