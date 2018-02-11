@@ -70,7 +70,8 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
   for (img = 0; img < handle->desc.N; ++img) {
     /* we can only run GEMM based code for update in case of 1x1 convolutions or
        if the kernel size is bigger 1 and there is no stride */
-    if ( ((handle->desc.R == 1) && (handle->desc.S == 1)) || ((handle->desc.u == 1) && (handle->desc.v == 1)) ) {
+    if (    ( (handle->desc.R == 1) && (handle->desc.S == 1) && (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) 
+         || ( (handle->desc.u == 1) && (handle->desc.v == 1) ) ) {
       /* first we need to transpose in order to use a GEMM 
          we also do, if needed, padding for the input activations */
       if ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) {
