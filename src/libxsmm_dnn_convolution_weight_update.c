@@ -31,6 +31,7 @@
 #include "libxsmm_dnn_convolution_weight_update.h"
 #include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
+#include <libxsmm.h>
 #include "stdio.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -1475,9 +1476,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
   /* check if we have a kernel JITed */
   if (handle->code_upd[0].xconv.sconv == 0) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      const int ldx = (int)(handle->desc.W+(2*handle->desc.pad_w)); 
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
+      typedef libxsmm_smmfunction gemm_function;
+      /* let's do a ofmblock x ifmblock x ofw_rb GEMM :-) or in other words M=nbOfm, N=nbIfm, K=ofw (col-major) */
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->ofw, NULL, &ldx, NULL, NULL, NULL, NULL, NULL);
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_fallback.tpl.c"
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;

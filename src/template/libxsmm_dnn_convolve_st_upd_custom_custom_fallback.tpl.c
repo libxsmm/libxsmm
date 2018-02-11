@@ -40,20 +40,18 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
+/* transpose + padding via stack allocated buffers */
+const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
+const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
+element_input_type input_scratch[padded_h*padded_w*handle->ifmblock]; /* this is a [H][c-block][W] or [H][c-block][W] tensor */
+for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch[ii] = (element_input_type)0; }
+
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, const element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
 LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->grad_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
-
-#if defined(INPUT_PADDING)
-/* Variables and initializations related to padding */
-int iii;
-const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
-const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
-LIBXSMM_VLA_DECL(3, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * padded_h * padded_w * handle->ifmblock, padded_w, handle->ifmblock);
-/* Reset input padding buffer to zero (in case it is not due to fwd/bwd computations) */
-memset(&LIBXSMM_VLA_ACCESS(3, input_buffer, 0, 0, 0, padded_w, handle->ifmblock), 0, padded_w * padded_h * handle->ifmblock * sizeof(element_input_type));
-#endif
+LIBXSMM_VLA_DECL(3, element_input_type, input_trans, input_scratch, handle->ifmblock, padded_w);
+LIBXSMM_VLA_DECL(3, element_input_type, input_padded, input_scratch, padded_w, handle->ifmblock);
 
 for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
   ofm1 = ofm1ifm1 / handle->blocksifm;
@@ -70,31 +68,90 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
   }
 
   for (img = 0; img < handle->desc.N; ++img) {
-#if defined(INPUT_PADDING)
-    for (oj = 0; oj < handle->ifhp; ++oj) {
-      for (oi = 0; oi < handle->ifwp; ++oi) {
-        for (iii = 0; iii < handle->ifmblock; ++iii) {
-          LIBXSMM_VLA_ACCESS(3, input_buffer, oj + handle->desc.pad_h , oi + handle->desc.pad_w, iii, padded_w, handle->ifmblock) =
-            LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, iii, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+    /* we can only run GEMM based code for update in case of 1x1 convolutions or
+       if the kernel size is bigger 1 and there is no stride */
+    if ( ((handle->desc.R == 1) && (handle->desc.S == 1)) || ((handle->desc.u == 1) && (handle->desc.v == 1)) ) {
+      /* first we need to transpose in order to use a GEMM 
+         we also do, if needed, padding for the input activations */
+      if ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) {
+        for (ij = 0; ij < handle->ifhp/handle->desc.u; ++ij) {
+          for (ii = 0; ii < handle->ifwp/handle->desc.v; ++ii) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(3, input_trans, ij, ifm2, ii, handle->ifmblock, padded_w) =
+                LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij*handle->desc.u, ii*handle->desc.v, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            }
+          }
+        }
+      } else {
+        for (ij = 0; ij < handle->desc.H/handle->desc.u; ++ij) {
+          for (ii = 0; ii < handle->desc.W/handle->desc.v; ++ii) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(3, input_trans, ij + handle->desc.pad_h, ifm2, ii + handle->desc.pad_w, handle->ifmblock, padded_w) =
+                LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij*handle->desc.u, ii*handle->desc.v, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            }
+          }
         }
       }
-    }
-#endif
-    for (oj = 0; oj < handle->ofh; ++oj) {
-      ij = oj * handle->desc.u;
-      for (oi = 0; oi < handle->ofw; ++oi) {
-        ii = oi * handle->desc.v;
+
+      for (oj = 0; oj < handle->ofh; ++oj) {
+        ij = oj; oi = 0; ii = 0;
         for (kj = 0; kj < handle->desc.R; ++kj) {
           for (ki = 0; ki < handle->desc.S; ++ki) {
+            /* let's do a 16x16xofw GEMM :-): M=nbOfm, N=nbIfm, K=ofw (col-major) */
+            gemm_kernel( &LIBXSMM_VLA_ACCESS(5,      output,  img, ofm1, oj,      0,  0,     handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                         &LIBXSMM_VLA_ACCESS(3, input_trans,             ij + kj, 0,  ki,    handle->ifmblock, padded_w),
+                         &LIBXSMM_VLA_ACCESS(6,      weight, ofm1, ifm1, kj,      ki, 0, 0,  handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) );
+          }
+        }
+      }
+    } else {
+      /* if we have physically padded buffer, we can directly operate on the input data */
+      if ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) {
+        /* now we run a strided vector operation */
+        for (oj = 0; oj < handle->ofh; ++oj) {
+          ij = oj * handle->desc.u;
+          for (kj = 0; kj < handle->desc.R; ++kj) {
+            for (ki = 0; ki < handle->desc.S; ++ki) {
+              for (oi = 0; oi < handle->ofw; ++oi) {
+                ii = oi * handle->desc.v;
+                for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+                  LIBXSMM_PRAGMA_SIMD
+                  for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+                    LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) +=
+                        LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij+kj, ii+ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock)
+                      * LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi,  ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else {
+        /* padding is needed */
+        for (ij = 0; ij < handle->desc.H; ++ij) {
+          for (ii = 0; ii < handle->desc.W; ++ii) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-                LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) += (element_filter_type)(
-#if defined(INPUT_PADDING)
-                    LIBXSMM_VLA_ACCESS(3,  input_buffer, ij + kj, ii + ki, ifm2, padded_w, handle->ifmblock)
-#else
-                    LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij + kj, ii + ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock)
-#endif
-                  * LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+              LIBXSMM_VLA_ACCESS(3, input_padded, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
+                LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            }
+          }
+        }
+
+        /* now we run a strided vector operation */
+        for (oj = 0; oj < handle->ofh; ++oj) {
+          ij = oj * handle->desc.u;
+          for (kj = 0; kj < handle->desc.R; ++kj) {
+            for (ki = 0; ki < handle->desc.S; ++ki) {
+              for (oi = 0; oi < handle->ofw; ++oi) {
+                ii = oi * handle->desc.v;
+                for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+                  LIBXSMM_PRAGMA_SIMD
+                  for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+                    LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) +=
+                        LIBXSMM_VLA_ACCESS(3, input_padded,       ij+kj, ii+ki, ifm2, padded_w, handle->ifmblock)
+                      * LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi,  ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                  }
+                }
               }
             }
           }
