@@ -699,7 +699,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
 
     /* apply additional register block to hide FMA latencies */
     l_reg_block = i_conv_desc->ofw_rb;
-    if ( i_conv_desc->ofw_rb <= 14 ) {
+    if ( i_conv_desc->ofw_rb <= 14 && step_size > 1) {
       l_accs = (i_conv_desc->ofw_rb < 9) ? 3 : 2;
       l_reg_block = (((l_k%(4*l_accs))/4)+1)*i_conv_desc->ofw_rb;
     }
