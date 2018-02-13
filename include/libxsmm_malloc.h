@@ -232,14 +232,13 @@ struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
   {
     libxsmm_malloc_function malloc_fn;
     libxsmm_free_function free_fn;
-    if (0 != malloc_fun) { /* prefer/adopt global malloc/free functions */
+    if (0 != context) { /* adopt context form */
       malloc_fn.function = malloc_fun; free_fn.function = free_fun;
-      context = 0; /* global malloc/free functions */
     }
-    else {
+    else { /* adopt global form */
       malloc_fn.ctx_form = malloc_ctx; free_fn.ctx_form = free_ctx;
     }
-    libxsmm_set_default_allocator(context, malloc_fn, free_fn);
+    libxsmm_set_scratch_allocator(context, malloc_fn, free_fn);
   }
   static void get(void*& context,
     libxsmm_malloc_function& malloc_fn, libxsmm_free_function& free_fn)
@@ -281,32 +280,22 @@ public:
       libxsmm_tf_allocator::free)
   {}
 
-private:
-  template<typename allocator_type> /* break interface dependency with TF */
-  static void* allocate(allocator_type* allocator, size_t size) {
-    /* no waste with (useless) alignment; raw result is re-aligned anyways */
-    return 0 != allocator ? allocator->AllocateRaw(1/*alignment*/, size) : 0;
-  }
-
-  template<typename allocator_type> /* break interface dependency with TF */
-  static void deallocate(allocator_type* allocator, void* buffer) {
-    /* no waste with (useless) alignment; raw result is re-aligned anyways */
-    if (0 != allocator) allocator->DeallocateRaw(buffer);
-  }
-
+  /** Global form of allocating memory (malloc signature). */
   static void* malloc(size_t size) {
-    return allocate(tensorflow::cpu_allocator(), size);
+    return libxsmm_tf_allocator::allocate(tensorflow::cpu_allocator(), size);
   }
 
+  /** Global form of deallocating memory (free signature). */
   static void free(void* buffer) {
-    deallocate(tensorflow::cpu_allocator(), buffer);
+    libxsmm_tf_allocator::deallocate(tensorflow::cpu_allocator(), buffer);
   }
 
+  /** Context based form of allocating memory. */
   template<typename context_type> static void* malloc_ctx(void* context, size_t size) {
     typedef typename context_type::WrappedAllocator::first_type allocator_ptr;
     context_type *const tf_context = static_cast<context_type*>(context);
+    allocator_ptr allocator = 0;
     if (0 != tf_context && 0 != tf_context->device()) {
-      allocator_ptr allocator = 0;
       if (0 < tf_context->num_outputs()) {
         allocator = tf_context->device()->GetStepAllocator(
           tf_context->output_alloc_attr(0),
@@ -317,16 +306,16 @@ private:
           tf_context->input_alloc_attr(0),
           tf_context->resource_manager());
       }
-      /* no waste with (useless) alignment; raw result is re-aligned anyways */
-      return 0 != allocator ? allocator->AllocateRaw(1/*alignment*/, size) : 0;
     }
+    return libxsmm_tf_allocator::allocate(allocator, size);
   }
 
+  /** Context based form of deallocating memory. */
   template<typename context_type> static void free_ctx(void* context, void* buffer) {
     typedef typename context_type::WrappedAllocator::first_type allocator_ptr;
     context_type *const tf_context = static_cast<context_type*>(context);
+    allocator_ptr allocator = 0;
     if (0 != tf_context && 0 != tf_context->device()) {
-      allocator_ptr allocator = 0;
       if (0 < tf_context->num_outputs()) {
         allocator = tf_context->device()->GetStepAllocator(
           tf_context->output_alloc_attr(0),
@@ -337,8 +326,29 @@ private:
           tf_context->input_alloc_attr(0),
           tf_context->resource_manager());
       }
-      if (0 != allocator) { allocator->DeallocateRaw(buffer); }
     }
+    libxsmm_tf_allocator::deallocate(allocator, buffer);
+  }
+
+private:
+  template<typename allocator_ptr> /* break interface dependency with TF */
+  static void* allocate(allocator_ptr allocator, size_t size) {
+    void* result;
+    if (0 != allocator) {
+    /* no (useless) waste with alignment; raw result is re-aligned anyways */
+      result = allocator->AllocateRaw(1/*alignment*/, size);
+    }
+    else {
+      LIBXSMM_ASSERT(0 == *"LIBXSMM ERROR: memory allocator is missing!");
+      result = 0;
+    }
+    return result;
+  }
+
+  template<typename allocator_ptr> /* break interface dependency with TF */
+  static void deallocate(allocator_ptr allocator, void* buffer) {
+    LIBXSMM_ASSERT(0 != allocator && *"LIBXSMM ERROR: memory allocator is missing!");
+    if (0 != allocator) allocator->DeallocateRaw(buffer);
   }
 };
 

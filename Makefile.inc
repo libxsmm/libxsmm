@@ -610,6 +610,7 @@ else
   endif
 endif
 CRAY ?= 0
+PGI ?= 0
 
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
