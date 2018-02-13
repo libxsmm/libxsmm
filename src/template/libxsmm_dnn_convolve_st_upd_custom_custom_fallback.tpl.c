@@ -40,18 +40,28 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
-/* transpose + padding via stack allocated buffers */
+/* transpose + padding via stack allocated buffers for input */
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 element_input_type input_scratch[padded_h*padded_w*handle->ifmblock]; /* this is a [H][c-block][W] or [H][c-block][W] tensor */
 for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch[ii] = (element_input_type)0; }
 
+/* tranpsose via stack allocated buffers for output and weights to control stride-GEMM issue 
+   idea: we transpose grad_output and transpose filters when done */
+element_output_type output_scratch[handle->ofhp*handle->ofwp*handle->ofmblock];
+for ( oi = 0; oi < handle->ofhp*handle->ofwp*handle->ofmblock; ++oi ) { output_scratch[oi] = (element_output_type)0; }
+element_filter_type filter_scratch[handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock];
+for ( oi = 0; oi < handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; ++oi ) { filter_scratch[oi] = (element_filter_type)0; }
+
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, const element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+LIBXSMM_VLA_DECL(5, const element_output_type, output_padded, handle->grad_output->data, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
 LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->grad_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 LIBXSMM_VLA_DECL(3, element_input_type, input_trans, input_scratch, handle->ifmblock, padded_w);
 LIBXSMM_VLA_DECL(3, element_input_type, input_padded, input_scratch, padded_w, handle->ifmblock);
+LIBXSMM_VLA_DECL(3, element_output_type, output_trans, output_scratch, handle->ofmblock, handle->ofwp);
+LIBXSMM_VLA_DECL(4, element_filter_type, weight_local, filter_scratch, handle->desc.S, handle->ofmblock, handle->ifmblock);
 
 for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
   ofm1 = ofm1ifm1 / handle->blocksifm;
@@ -106,34 +116,20 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
         }
       }
     } else {
+      /* we need to set local weight copy to 0 */
+      LIBXSMM_PRAGMA_SIMD
+      for (oi = 0; oi < handle->desc.R*handle->desc.S*handle->ofmblock*handle->ifmblock; ++oi) {
+        filter_scratch[oi] = (element_filter_type)0;
+      }
+
       /* if we have physically padded buffer, we can directly operate on the input data */
       if ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) {
-        /* now we run a strided vector operation */
-        for (oj = 0; oj < handle->ofh; ++oj) {
-          ij = oj * handle->desc.u;
-          for (kj = 0; kj < handle->desc.R; ++kj) {
-            for (ki = 0; ki < handle->desc.S; ++ki) {
-              for (oi = 0; oi < handle->ofw; ++oi) {
-                ii = oi * handle->desc.v;
-                for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                  LIBXSMM_PRAGMA_SIMD
-                  for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-                    LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) +=
-                        LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij+kj, ii+ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock)
-                      * LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi,  ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                  }
-                }
-              }
-            }
-          }
-        }
-      } else {
-        /* padding is needed */
-        for (ij = 0; ij < handle->desc.H; ++ij) {
-          for (ii = 0; ii < handle->desc.W; ++ii) {
-            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              LIBXSMM_VLA_ACCESS(3, input_padded, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
-                LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+        /* we now transpose output to compute transposed filters */
+        for (oj = 0; oj < handle->ofhp; ++oj) {
+          for (oi = 0; oi < handle->ofwp; ++oi) {
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+              LIBXSMM_VLA_ACCESS(3, output_trans, oj, ofm2, oi, handle->ofmblock, handle->ofwp) =
+                LIBXSMM_VLA_ACCESS(5,  output_padded, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
             }
           }
         }
@@ -141,19 +137,57 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
         /* now we run a strided vector operation */
         for (oj = 0; oj < handle->ofh; ++oj) {
           ij = oj * handle->desc.u;
+          oi = 0, ii = 0;
           for (kj = 0; kj < handle->desc.R; ++kj) {
             for (ki = 0; ki < handle->desc.S; ++ki) {
-              for (oi = 0; oi < handle->ofw; ++oi) {
-                ii = oi * handle->desc.v;
-                for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                  LIBXSMM_PRAGMA_SIMD
-                  for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-                    LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) +=
-                        LIBXSMM_VLA_ACCESS(3, input_padded,       ij+kj, ii+ki, ifm2, padded_w, handle->ifmblock)
-                      * LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi,  ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                  }
-                }
-              }
+              gemm_kernel_alt( &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij+kj, ii+ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
+                               &LIBXSMM_VLA_ACCESS(3, output_trans, oj+handle->desc.pad_h_out, 0, oi+handle->desc.pad_w_out, handle->ofmblock, handle->ofwp ),
+                               &LIBXSMM_VLA_ACCESS(4, weight_local, kj, ki, 0, 0, handle->desc.S, handle->ofmblock, handle->ifmblock) );
+            }
+          }
+        }
+      } else {
+        /* padding is needed, we first padded input */
+        for (ij = 0; ij < handle->desc.H; ++ij) {
+          for (ii = 0; ii < handle->desc.W; ++ii) {
+            LIBXSMM_PRAGMA_SIMD
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(3, input_padded, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
+                LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            }
+          }
+        }
+
+        /* we now transpose output to compute transposed filters */
+        for (oj = 0; oj < handle->ofh; ++oj) {
+          for (oi = 0; oi < handle->ofw; ++oi) {
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+              LIBXSMM_VLA_ACCESS(3, output_trans, oj, ofm2, oi, handle->ofmblock, handle->ofwp) =
+                LIBXSMM_VLA_ACCESS(5,  output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+            }
+          }
+        }
+
+        /* now we run a strided vector operation */
+        for (oj = 0; oj < handle->ofh; ++oj) {
+          ij = oj * handle->desc.u;
+          oi = 0, ii = 0;
+          for (kj = 0; kj < handle->desc.R; ++kj) {
+            for (ki = 0; ki < handle->desc.S; ++ki) {
+              gemm_kernel_alt( &LIBXSMM_VLA_ACCESS(3, input_padded,       ij+kj, ii+ki, 0, padded_w, handle->ifmblock),
+                               &LIBXSMM_VLA_ACCESS(3, output_trans,       oj, 0, oi, handle->ofmblock, handle->ofwp ),
+                               &LIBXSMM_VLA_ACCESS(4, weight_local, kj, ki, 0, 0, handle->desc.S, handle->ofmblock, handle->ifmblock) );
+            }
+          }
+        }
+      }
+      /* transpose filter back and update the master copy */
+      for (kj = 0; kj < handle->desc.R; ++kj) {
+        for (ki = 0; ki < handle->desc.S; ++ki) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+              LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) +=
+                LIBXSMM_VLA_ACCESS(4, weight_local, kj, ki, ofm2, ifm2, handle->desc.S, handle->ofmblock, handle->ifmblock);
             }
           }
         }
