@@ -866,8 +866,58 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
   }
 #endif
 
+  /* in case of IGEMM just do some potentail conversion to FP */
+/*#define LIBXSMM_WGEMM_USE_FP32_OUTPUT*/
+#ifdef LIBXSMM_WGEMM_USE_FP32_OUTPUT
+  /* let convert the int32 accumulator into a FP32 values */
+  if ( ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) ||
+       (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL) ) && (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype) ) {
+    /* load address of scaling factor from stack */
+    libxsmm_x86_instruction_alu_mem( io_generated_code,
+                                     i_micro_kernel_config->alu_mov_instruction,
+                                     LIBXSMM_X86_GP_REG_RSP,
+                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                     48,
+                                     i_gp_reg_mapping->gp_reg_help_1,
+                                     0 );
+    /* broadcast scaling factor into a vector register */
+    libxsmm_x86_instruction_vec_move( io_generated_code,
+                                      i_micro_kernel_config->instruction_set,
+                                      LIBXSMM_X86_INSTR_VBROADCASTSS,
+                                      i_gp_reg_mapping->gp_reg_help_1,
+                                      LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                      0,
+                                      i_micro_kernel_config->vector_name, 0,
+                                      0, 0 );
+    /* loop over the accumulator, convert and scale */
+    for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
+      for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
+        /* convert current accumulator register into FP32 */
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_micro_kernel_config->instruction_set,
+                                                 LIBXSMM_X86_INSTR_VCVTDQ2PS,
+                                                 i_micro_kernel_config->vector_name,
+                                                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
+                                                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
+                                                 LIBXSMM_X86_VEC_REG_UNDEF );        
+        /* scale it */
+        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                 i_micro_kernel_config->instruction_set,
+                                                 LIBXSMM_X86_INSTR_VFMADD213PS,
+                                                 0,
+                                                 i_gp_reg_mapping->gp_reg_c,
+                                                 LIBXSMM_X86_GP_REG_UNDEF,
+                                                 0,
+                                                 ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size),
+                                                 i_micro_kernel_config->vector_name, 
+                                                 0, 
+                                                 l_vec_reg_acc_start + l_m + (l_m_blocking * l_n));
+      }
+    }
+  }
+#endif
+
   /* storing C accumulator */
-  /* adding to C, so let's load C */
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
     for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
