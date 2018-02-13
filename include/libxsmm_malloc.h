@@ -232,14 +232,13 @@ struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
   {
     libxsmm_malloc_function malloc_fn;
     libxsmm_free_function free_fn;
-    if (0 != malloc_fun) { /* prefer/adopt global malloc/free functions */
+    if (0 != context) { /* adopt context form */
       malloc_fn.function = malloc_fun; free_fn.function = free_fun;
-      context = 0; /* global malloc/free functions */
     }
-    else {
+    else { /* adopt global form */
       malloc_fn.ctx_form = malloc_ctx; free_fn.ctx_form = free_ctx;
     }
-    libxsmm_set_default_allocator(context, malloc_fn, free_fn);
+    libxsmm_set_scratch_allocator(context, malloc_fn, free_fn);
   }
   static void get(void*& context,
     libxsmm_malloc_function& malloc_fn, libxsmm_free_function& free_fn)
