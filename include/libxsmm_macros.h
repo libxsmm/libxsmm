@@ -305,7 +305,8 @@
 #define LIBXSMM_SQRT2(N) ((unsigned int)(1ULL << (LIBXSMM_LOG2(((N) << 1) - 1) >> 1)))
 #define LIBXSMM_HASH2(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 /** Compares floating point values but avoids warning about unreliable comparison. */
-#define LIBXSMM_FEQ(A, B) (!((A) < (B) || (A) > (B)))
+#define LIBXSMM_NEQ(A, B) ((A) < (B) || (A) > (B))
+#define LIBXSMM_FEQ(A, B) (!LIBXSMM_NEQ(A, B))
 
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
 #define LIBXSMM_DEFAULT(DEFAULT, VALUE) (0 < (VALUE) ? (VALUE) : (DEFAULT))
