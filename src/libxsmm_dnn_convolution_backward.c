@@ -53,7 +53,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
   }
 
   /* check if we have a kernel JITed */
-  if ( handle->code_bwd[0].xconv.sconv == 0 ) {
+  if ( handle->code_bwd[0].xconv.sconv == 0 && handle->code_bwd[3].xconv.sconv != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       const int ldx = (int)(handle->desc.v*handle->ifmblock); 
       typedef float element_input_type;
