@@ -726,33 +726,35 @@ int main(int argc, char* argv[])
   zero_buf_i16( doutput_libxsmm  , nImg*nOfm*ofhp*ofwp );
   zero_buf_i16( filtertr_libxsmm , nOfm*nIfm*kh*kw );
 
-  printf("##########################################\n");
-  printf("#         Computing Reference ...        #\n");
-  printf("##########################################\n");
-  if (type == 'A' || type == 'F') {
+  if (0 == LIBXSMM_FEQ(0, check)) {
+    printf("##########################################\n");
+    printf("#         Computing Reference ...        #\n");
+    printf("##########################################\n");
+    if (type == 'A' || type == 'F') {
 #ifdef USE_OVERWRITE
-    zero_buf(naive_output,    nImg*nOfm*ofhp*ofwp);
+      zero_buf(naive_output,    nImg*nOfm*ofhp*ofwp);
 #endif
-    naive_conv_fp(&naive_param, naive_input, naive_output, naive_filter, naive_bias);
-  }
-  if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
+      naive_conv_fp(&naive_param, naive_input, naive_output, naive_filter, naive_bias);
+    }
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
 #ifdef USE_OVERWRITE
-    zero_buf(naive_input,         nImg*nIfm*ifhp*ifwp);
+      zero_buf(naive_input,         nImg*nIfm*ifhp*ifwp);
 #endif
-    naive_conv_bp(&naive_param, naive_input, naive_output_bp, naive_filter, naive_input_save);
-  }
-  if (type == 'A' || type == 'U') {
-    /* NB: We reuse naive_input_save for weight update because the input should not
-     * have been modified between forward propagation and weight update; it further
-     * helps in exploiting reuse to converted data. */
+      naive_conv_bp(&naive_param, naive_input, naive_output_bp, naive_filter, naive_input_save);
+    }
+    if (type == 'A' || type == 'U') {
+      /* NB: We reuse naive_input_save for weight update because the input should not
+       * have been modified between forward propagation and weight update; it further
+       * helps in exploiting reuse to converted data. */
 #ifdef USE_OVERWRITE
-    zero_buf(naive_filter_wu,          nOfm*nIfm*kh*kw);
+      zero_buf(naive_filter_wu,          nOfm*nIfm*kh*kw);
 #endif
-    naive_conv_wu(&naive_param, naive_input_save, naive_output_wu, naive_filter_wu);
+      naive_conv_wu(&naive_param, naive_input_save, naive_output_wu, naive_filter_wu);
+    }
+    printf("##########################################\n");
+    printf("#      Computing Reference ... done      #\n");
+    printf("##########################################\n");
   }
-  printf("##########################################\n");
-  printf("#      Computing Reference ... done      #\n");
-  printf("##########################################\n");
 
   if (format == 'A' || format == 'L') {
     printf("\n");
@@ -938,7 +940,7 @@ int main(int argc, char* argv[])
     /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
     init_buf( (float*)scratch, scratch_size/4, 0, 0 );
 
-    if (type == 'A' || type == 'F') {
+    if ((type == 'A' || type == 'F') && 0 == LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("#   Correctness - FWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -1094,7 +1096,7 @@ int main(int argc, char* argv[])
 #endif
     }
 
-    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) && 0 == LIBXSMM_FEQ(0, check) ) {
       printf("##########################################\n");
       printf("#   Correctness - BWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -1192,7 +1194,7 @@ int main(int argc, char* argv[])
 #endif
     }
 
-    if (type == 'A' || type == 'U') {
+    if ((type == 'A' || type == 'U') && 0 == LIBXSMM_FEQ(0, check)) {
       printf("##########################################\n");
       printf("#   Correctness - UPD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -1291,7 +1293,7 @@ int main(int argc, char* argv[])
 #endif
     }
 
-    if ((type == 'A' || type == 'F') && LIBXSMM_FEQ(0, check)) {
+    if (type == 'A' || type == 'F') {
       printf("##########################################\n");
       printf("#   Performance - FWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -1323,7 +1325,7 @@ int main(int argc, char* argv[])
         norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
     }
 
-    if ( (type == 'A' || type == 'B') && (nIfm > 3) && LIBXSMM_FEQ(0, check) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
       printf("##########################################\n");
       printf("#   Performance - BWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -1356,7 +1358,7 @@ int main(int argc, char* argv[])
         norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
 
-    if ((type == 'A' || type == 'U') && LIBXSMM_FEQ(0, check)) {
+    if (type == 'A' || type == 'U') {
       printf("##########################################\n");
       printf("#   Performance - UPD (custom-Storage)   #\n");
       printf("##########################################\n");
