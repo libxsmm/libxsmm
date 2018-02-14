@@ -36,6 +36,7 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -121,9 +122,10 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_thread(void* out, const void* in, uns
     LIBXSMM_INIT
     if (1 < nthreads) {
       libxsmm_blasint m0 = 0, n0 = 0, m1 = m, n1 = n;
-      libxsmm_matcopy_descriptor descriptor = { 0 };
+      libxsmm_matcopy_descriptor descriptor;
       const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1U * m * n) >> 10, 7);
       int mtasks;
+      memset(&descriptor, 0, sizeof(descriptor)); /* avoid warning "maybe used uninitialized" */
       descriptor.m = LIBXSMM_MIN(libxsmm_trans_tile[tindex][0/*M*/][index], (unsigned int)m);
       descriptor.n = LIBXSMM_MIN(libxsmm_trans_tile[tindex][1/*N*/][index], (unsigned int)n);
       if (0 != (1 & libxsmm_trans_jit)) { /* JIT'ted matcopy permitted */
@@ -161,7 +163,8 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_thread(void* out, const void* in, uns
     else {
       assert(0 == tid && 1 == nthreads);
       if (0 != (1 & libxsmm_trans_jit)) { /* JIT'ted matcopy permitted */
-        libxsmm_matcopy_descriptor descriptor = { 0 };
+        libxsmm_matcopy_descriptor descriptor;
+        memset(&descriptor, 0, sizeof(descriptor)); /* avoid warning "maybe used uninitialized" */
         descriptor.prefetch = (unsigned char)((0 == prefetch || 0 == *prefetch) ? 0 : 1);
         descriptor.flags = (unsigned char)(0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
         descriptor.ldi = (unsigned int)ldi; descriptor.ldo = (unsigned int)ldo; descriptor.unroll_level = 2;
@@ -243,13 +246,14 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_thread(void* out, const void* in, unsi
     LIBXSMM_INIT
     if (out != in) {
       libxsmm_xtransfunction xtrans = 0;
-      libxsmm_transpose_descriptor descriptor = { 0 };
+      libxsmm_transpose_descriptor descriptor;
       const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
       const unsigned int size = (unsigned int)(1U * m * n);
       if (0 == LIBXSMM_TRANS_NO_BYPASS_DIMS(m, n, ldo)) { /* tiled transpose */
         const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
         libxsmm_blasint m0 = 0, n0 = 0, m1 = m, n1 = n;
         int mtasks;
+        memset(&descriptor, 0, sizeof(descriptor)); /* avoid warning "maybe used uninitialized" */
         descriptor.m = LIBXSMM_MIN(libxsmm_trans_tile[tindex][0/*M*/][index], (unsigned int)m);
         descriptor.n = LIBXSMM_MIN(libxsmm_trans_tile[tindex][1/*N*/][index], (unsigned int)n);
         if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose permitted? */

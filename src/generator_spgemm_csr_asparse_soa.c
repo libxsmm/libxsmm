@@ -78,7 +78,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
   unsigned int l_n_max_block = 0;
   unsigned int l_n_loop = 0;
 
-  libxsmm_micro_kernel_config l_micro_kernel_config = { 0 };
+  libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 

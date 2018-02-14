@@ -36,7 +36,7 @@ endif
 ifeq (Windows_NT,$(OS))
   UNAME ?= Windows_NT
   ENV ?= $(NULL)
-  # Cygwin based
+  # Cygwin/MinGW based
   DLIBEXT ?= dll
   SLIBEXT ?= lib
 endif
@@ -195,15 +195,19 @@ BRACE_CLOSE := )
 
 libpath = $(strip $(if $1, \
   $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL), \
-    $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>/dev/null | grep "$3" | tail -n1 | grep -o "\/[^ $(BRACE_CLOSE)]*")))), \
+    $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>/dev/null | grep "$3" | tail -n1 | grep -o "[^ ()]*" | grep "\/")))), \
   $(NULL)))
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
 # Embedd soname into shared library
 ifneq (Darwin,$(UNAME))
-  soname = -shared -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5) \
-           $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5)) \
-           $(shell cd $(dir $1) && ln -fs $(notdir $1.$5) $(notdir $1))
+  ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
+    soname = -shared -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5) \
+             $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5)) \
+             $(shell cd $(dir $1) && ln -fs $(notdir $1.$5) $(notdir $1))
+  else # MinGW
+    soname = -shared -o $1 -Wl,-soname=$(strip $(notdir $1).$5)
+  endif
 else # osx
   soname = -shared -o $(basename $1).$2$(suffix $1) \
            -install_name $(notdir $(basename $1).$2$(suffix $1)) \
@@ -446,11 +450,15 @@ else
 endif
 
 # compiler names
-CXX_NAME = $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d" " -f1)
+CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 \
+           | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" \
+           | rev | cut -d" " -f1 | rev))
 ifeq (,$(strip $(CXX_NAME)))
   CXX_NAME = $(basename $(notdir $(CXX)))
 endif
-CC_NAME = $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d" " -f1)
+CC_NAME = $(basename $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 \
+          | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" \
+          | rev | cut -d" " -f1 | rev))
 ifeq (,$(strip $(CC_NAME)))
   CC_NAME = $(basename $(notdir $(CC)))
 endif
@@ -520,6 +528,19 @@ else
   GXX_VERSION = 0
 endif
 
+ifeq (Windows_NT,$(UNAME))
+ifeq (MINGW64,$(MSYSTEM))
+  MINGW = 64
+else ifeq (MINGW32,$(MSYSTEM))
+  MINGW = 32
+else ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__MINGW64__"; echo "$$?"))
+  MINGW = 64
+else ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__MINGW32__"; echo "$$?"))
+  MINGW = 32
+endif
+endif
+MINGW ?= 0
+
 # Too many ICEs with Clang hence we want to know if we are on Clang
 ifeq (0,$(GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
@@ -580,13 +601,16 @@ else
     COMPATIBLE ?= 1
   endif
   ifneq (0,$(COMPATIBLE))
-  ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
-    LDFLAGS += -hsystem_alloc
-    CRAY ?= 1
-  endif
+    ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
+      LDFLAGS += -hsystem_alloc
+      CRAY ?= 1
+    else
+      PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | if grep -q "PGI"; then echo "1"; fi)
+    endif
   endif
 endif
 CRAY ?= 0
+PGI ?= 0
 
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
@@ -789,6 +813,10 @@ else # GCC assumed
     CFLAGS += $(PICFLAG)
     FCFLAGS += $(PICFLAG)
     LDFLAGS += $(PICFLAG)
+  else ifneq (0,$(MINGW))
+    CXXFLAGS += -fno-asynchronous-unwind-tables
+    CFLAGS += -fno-asynchronous-unwind-tables
+    FCFLAGS += -fno-asynchronous-unwind-tables
   endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((40700 <= $(GXX_VERSION)))"))
@@ -797,10 +825,11 @@ else # GCC assumed
     CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
     CFLAGS += -Wall -Wno-unused-function -Wno-attributes
     FSTD = -std=f2003
-    CPEDANTIC += -pedantic -Wno-overlength-strings -Wno-variadic-macros
-    FPEDANTIC += -pedantic -Wunused-variable \
+    CPEDANTIC += -pedantic -Wextra -Wshadow \
+                 -Wno-overlength-strings -Wno-variadic-macros
+    FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wcharacter-truncation -Wline-truncation \
-                 -Wconversion -Wconversion-extra -Wextra \
+                 -Wconversion -Wconversion-extra \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wintrinsics-std -Wreal-q-constant
     ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
@@ -810,7 +839,7 @@ else # GCC assumed
     FPEDANTIC += $(FWARNEXTRA)
     ifeq (1,$(PEDANTIC))
       CSTD = -std=c99
-      CXXFLAGS += $(CPEDANTIC) -Wno-long-long
+      CXXFLAGS += $(CPEDANTIC) -Wno-long-long #-Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += -ffree-form
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
@@ -824,11 +853,11 @@ else # GCC assumed
       else # Clang may run into ICEs under OSX
         CSTD = -std=c99
       endif
-      CXXFLAGS += $(CPEDANTIC) -Wno-long-long
+      CXXFLAGS += $(CPEDANTIC) -Wno-long-long #-Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += $(FSTD) $(FPEDANTIC)
     else ifeq (0,$(COMPATIBLE))
-      CPEDANTIC += -Wno-long-long
+      CPEDANTIC += -Wno-long-long #-Wno-missing-field-initializers
       FCFLAGS += -ffree-form
       CSTD = -std=c89
     endif
@@ -1001,17 +1030,17 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
     ifeq (3,$(AVX))
     ifneq (0,$(shell echo "$$((0 == $(CLANG) || 40000 <= $(CC_VERSION) || 0 == $(CC_VERSION)))"))
-    ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo $$?))
+    ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
       CTARGET = -mavx512f -mavx512cd
       # fix for Clang
       CTARGET += -mfma
       ifneq (,$(MIC)) # specified
         ifneq (0,$(MIC)) # MIC
-          ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo $$?))
+          ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo "$$?"))
             CTARGET += -mavx512pf -mavx512er
           endif
         else # SKX
-          ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo $$?))
+          ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
             CTARGET += -mavx512dq -mavx512bw -mavx512vl
             #CTARGET += -mavx512ifma -mavx512vbmi
           endif
@@ -1021,13 +1050,25 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     endif
     endif
     ifeq (,$(CTARGET)) # fall-back to AVX2
-      CTARGET = -march=core-avx2
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__
+        CTARGET = -tp=haswell
+      endif
+      CTARGET ?= -march=core-avx2
     endif
   else ifeq (1,$(AVX))
-    CTARGET = -mavx
+    ifneq (0,$(PGI))
+      #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__
+      CTARGET = -tp=sandybridge
+    endif
+    CTARGET ?= -mavx
   else ifneq (0,$(SSE))
     ifeq (1,$(SSE)) # default
-      CTARGET = -msse4.2
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__
+        CTARGET = -tp=nehalem
+      endif
+      CTARGET ?= -msse4.2
     else ifeq (2,$(SSE))
       # implicitly present (64-bit ABI)
     else ifeq (3,$(SSE))
@@ -1038,7 +1079,11 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
         CTARGET = -msse4.2
       endif
     else ifeq (4,$(SSE))
-      CTARGET = -msse4.2
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__
+        CTARGET = -tp=nehalem
+      endif
+      CTARGET ?= -msse4.2
     else # perhaps better to use TARGET flag directly
       CTARGET = -msse$(SSE)
     endif
@@ -1057,7 +1102,7 @@ endif
 ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
   echo "int main(void) { return 0; }" > $${CINFILE}; \
   CTEST=$$($(CC) $(CTARGET) -c $${CINFILE} 2>&1); \
-  if [ "" = "$${CTEST}" ]; then echo $$?; else echo 1; fi; \
+  if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
   rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
 # revoke target flags
   CTARGET = $(NULL)
@@ -1068,7 +1113,7 @@ ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-f.f); \
   echo "      PROGRAM test" > $${FINFILE}; \
   echo "      END PROGRAM" >> $${FINFILE}; \
   FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
-  if [ "" = "$${FTEST}" ]; then echo $$?; else echo 1; fi; \
+  if [ "" = "$${FTEST}" ]; then echo "$$?"; else echo "1"; fi; \
   rm -f /tmp/.libxsmm_??????-f.f .libxsmm_??????-f.o* 2>/dev/null))
 # inherit CTARGET flags
   FTARGET = $(CTARGET)
@@ -1411,7 +1456,8 @@ objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG
 STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
   $(filter-out environment% default automatic,$(origin $V)), \
   $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL \
-    $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE abslibfile abslibpath absliblpath abslibrpath \
+    $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP \
+    abslibfile abslibpath absliblpath abslibrpath \
     libpath abslib soname extname objname,$V), \
     $V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)

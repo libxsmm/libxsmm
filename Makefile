@@ -104,6 +104,14 @@ ifneq (0,$(BETA))
 endif
 endif
 
+# determines if WGEMM should produce FP32
+# @TODO this is kind of hacky and we should find a better solutions
+WGEMM_FP32 ?= 0
+
+ifneq (0,$(WGEMM_FP32))
+  DFLAGS += -DLIBXSMM_WGEMM_USE_FP32_OUTPUT
+endif
+
 # Determines if the library is thread-safe
 THREADS ?= 1
 
@@ -1230,7 +1238,7 @@ endif
 	@chmod +x $@
 
 .PHONY: test
-test: test-cp2k
+test: tests
 
 .PHONY: perf
 perf: perf-cp2k
@@ -1337,7 +1345,7 @@ $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 	@$(FLOCK) $(SPLDIR)/nek "./rstr-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
 endif
 
-$(DOCDIR)/index.md: $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
+$(DOCDIR)/index.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
 	@sed $(ROOTDIR)/README.md \
 		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/\[\[..*\](..*)\]//g' \
@@ -1354,11 +1362,21 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		> $(TMPFILE)
-	@cd $(ROOTDIR)/documentation && iconv -t utf-8 index.md \
-		libxsmm_mm.md libxsmm_dnn.md libxsmm_aux.md \
-		libxsmm_prof.md libxsmm_tune.md libxsmm_be.md \
+	@cd $(ROOTDIR)/documentation && ( \
+		iconv -t utf-8 index.md && echo && \
+		echo "# LIBXSMM Domains" && \
+		iconv -t utf-8 libxsmm_mm.md && echo && \
+		iconv -t utf-8 libxsmm_dnn.md && echo && \
+		iconv -t utf-8 libxsmm_aux.md && echo && \
+		iconv -t utf-8 libxsmm_prof.md && echo && \
+		iconv -t utf-8 libxsmm_tune.md && echo && \
+		iconv -t utf-8 libxsmm_be.md && echo && \
+		echo "# Appendix" && \
+		echo "## Compatibility" && \
+		wget -q -O - https://raw.githubusercontent.com/wiki/hfp/libxsmm/Compatibility.md 2>/dev/null && echo && \
+		echo "## Validation" && \
+		wget -q -O - https://raw.githubusercontent.com/wiki/hfp/libxsmm/Validation.md 2>/dev/null; ) \
 	| sed \
-		-e 's/## Matrix Multiplication$$/# LIBXSMM Domains\n## Matrix Multiplication/' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \

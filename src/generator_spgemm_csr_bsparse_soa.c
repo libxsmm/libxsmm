@@ -84,7 +84,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
   unsigned int l_found_mul = 0;
   unsigned int l_max_reg_block = 0;
 
-  libxsmm_micro_kernel_config l_micro_kernel_config = { 0 };
+  libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
