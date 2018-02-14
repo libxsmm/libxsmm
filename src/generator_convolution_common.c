@@ -1973,6 +1973,7 @@ void libxsmm_reset_x86_convolution_weight_update_gp_reg_mapping( libxsmm_convolu
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_init_convolution_kernel_config( libxsmm_convolution_kernel_config* io_conv_kernel_config ) {
+  memset(io_conv_kernel_config, 0, sizeof(*io_conv_kernel_config)); /* avoid warning "maybe used uninitialized" */
   io_conv_kernel_config->instruction_set = LIBXSMM_X86_INSTR_UNDEF;
   io_conv_kernel_config->vector_reg_count = 0;
   io_conv_kernel_config->vector_length_in = 0;

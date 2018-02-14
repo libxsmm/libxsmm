@@ -654,7 +654,7 @@ LIBXSMM_API_INLINE void internal_init(void)
 # if (0 != LIBXSMM_JIT) && !defined(__MIC__)
         /* check if target arch. permits execution (arch. may be overridden) */
         if (LIBXSMM_STATIC_TARGET_ARCH <= libxsmm_target_archid &&
-           (LIBXSMM_X86_AVX > libxsmm_target_archid /* JIT code gen. is not available */
+           (LIBXSMM_X86_SSE4 > libxsmm_target_archid /* JIT code gen. is not available */
             /* condition allows to avoid JIT (if static code is good enough) */
             || LIBXSMM_STATIC_TARGET_ARCH == libxsmm_target_archid))
 # endif
@@ -779,7 +779,8 @@ void libxsmm_finalize(void);
 
 LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 {
-  uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
+  void *const regaddr = &internal_registry;
+  uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
   libxsmm_code_pointer* registry = (libxsmm_code_pointer*)regptr;
   if (0 != registry) {
     int i;
@@ -792,7 +793,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_REG1LOCK, &internal_reglock);
 # endif
 #endif
-    regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)&internal_registry, LIBXSMM_ATOMIC_RELAXED);
+    regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_RELAXED);
     registry = (libxsmm_code_pointer*)regptr;
 
     if (0 != registry) {
@@ -1107,15 +1108,17 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
   int result = EXIT_SUCCESS;
 #if !defined(__MIC__)
   const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
-  libxsmm_generated_code generated_code = { 0 };
+  libxsmm_generated_code generated_code;
   char jit_name[256] = { 0 };
 
   /* large enough temporary buffer for generated code */
 #if defined(NDEBUG)
   char jit_buffer[LIBXSMM_CODE_MAXSIZE];
+  memset(&generated_code, 0, sizeof(generated_code)); /* avoid warning "maybe used uninitialized" */
   generated_code.generated_code = jit_buffer;
   generated_code.buffer_size = sizeof(jit_buffer);
 #else
+  memset(&generated_code, 0, sizeof(generated_code)); /* avoid warning "maybe used uninitialized" */
   generated_code.generated_code = malloc(LIBXSMM_CODE_MAXSIZE);
   generated_code.buffer_size = (0 != generated_code.generated_code ? LIBXSMM_CODE_MAXSIZE : 0);
 #endif
@@ -1202,7 +1205,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       assert(0 != request->descriptor.sreg && 0 != request->descriptor.sreg->gemm);
       assert(0 != request->descriptor.sreg->row_ptr && 0 != request->descriptor.sreg->column_idx && 0 != request->descriptor.sreg->values);
 #if 1
-      if (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.sreg->gemm->flags) { /* only double-precision */
+      if (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.sreg->gemm->datatype) { /* only double-precision */
 #endif
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csr_reg_kernel, &generated_code, request->descriptor.sreg->gemm, target_arch,
           request->descriptor.sreg->row_ptr, request->descriptor.sreg->column_idx,
@@ -1467,7 +1470,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
   /* libxsmm_get_target_arch also serves as a runtime check whether JIT is available or not */
-  if (LIBXSMM_X86_AVX <= libxsmm_target_archid) result = EXIT_FAILURE;
+  if (LIBXSMM_X86_SSE4 <= libxsmm_target_archid) result = EXIT_FAILURE;
 #endif
   return result;
 }
@@ -1517,7 +1520,8 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 
     while (0 != diff) {
 #if (0 < INTERNAL_REGLOCK_MAXN) || defined(LIBXSMM_NO_SYNC) /* read registered code */
-      flux_entry.uval = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)&internal_registry[i].pmm, LIBXSMM_ATOMIC_RELAXED);
+      void *const fluxaddr = &internal_registry[i].pmm;
+      flux_entry.uval = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)fluxaddr, LIBXSMM_ATOMIC_RELAXED);
 #else
       LIBXSMM_LOCK_ACQREAD(LIBXSMM_REG1LOCK, &internal_reglock);
       flux_entry.pmm = internal_registry[i].pmm; /* read registered code */
@@ -1554,7 +1558,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
       else { /* enter code generation (there is no code version yet) */
         assert(0 == mode || 1 < mode);
 #if (0 != LIBXSMM_JIT)
-        if (LIBXSMM_X86_AVX <= libxsmm_target_archid) { /* check if JIT is supported (CPUID) */
+        if (LIBXSMM_X86_AVX <= libxsmm_target_archid || /* check if JIT is supported (CPUID) */
+           (LIBXSMM_X86_SSE4 <= libxsmm_target_archid && LIBXSMM_BUILD_KIND_GEMM == descriptor->iflags))
+        {
           assert(0 != mode || 0 == flux_entry.ptr_const/*code version does not exist*/);
           INTERNAL_FIND_CODE_LOCK(lock, i, diff, flux_entry.pmm); /* lock the registry entry */
           if (0 == internal_registry[i].ptr_const) { /* double-check registry after acquiring the lock */
@@ -1881,7 +1887,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
   if (0 != descriptor && LIBXSMM_GEMM_NO_BYPASS(descriptor->flags, descriptor->alpha, descriptor->beta)) {
     libxsmm_gemm_descriptor backend_descriptor;
     LIBXSMM_INIT
-    if (0 > (int)descriptor->prefetch) {
+    if (0 != (0x8000 & descriptor->prefetch)) { /* "sign"-bit of unsigned short is set */
       backend_descriptor = *descriptor;
       LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(backend_descriptor, libxsmm_gemm_auto_prefetch);
       descriptor = &backend_descriptor;
@@ -1935,11 +1941,13 @@ LIBXSMM_PRAGMA_OPTIMIZE_ON
 
 LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor)
 {
-  libxsmm_xmatcopyfunction result = { 0 };
+  libxsmm_xmatcopyfunction result;
+  memset(&result, 0, sizeof(result)); /* avoid warning "maybe used uninitialized" */
   if (0 != descriptor) {
-    libxsmm_kernel_info query = { { 0 } };
+    libxsmm_kernel_info query;
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->flags) < sizeof(query));
     LIBXSMM_INIT
+    memset(&query, 0, sizeof(query)); /* avoid warning "maybe used uninitialized" */
     query.mcopy = *descriptor;
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
     query.mcopy.prefetch = 0;
@@ -1953,11 +1961,13 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
 
 LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor)
 {
-  libxsmm_xtransfunction result = { 0 };
+  libxsmm_xtransfunction result;
+  memset(&result, 0, sizeof(result)); /* avoid warning "maybe used uninitialized" */
   if (0 != descriptor && 0 != LIBXSMM_TRANS_NO_BYPASS_DIMS(descriptor->m, descriptor->n, descriptor->ldo)) {
-    libxsmm_kernel_info query = { { 0 } };
+    libxsmm_kernel_info query;
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
     LIBXSMM_INIT
+    memset(&query, 0, sizeof(query)); /* avoid warning "maybe used uninitialized" */
     query.trans = *descriptor;
     query.xgemm.iflags = LIBXSMM_KERNEL_KIND_TCOPY;
     result = internal_find_code(&query.xgemm).xtrans;

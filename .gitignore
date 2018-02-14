@@ -19,7 +19,7 @@ samples/*/*.sln
 samples/*/*.dat
 samples/*/*.pdf
 samples/*/*.png
-inspector
+inspector*
 site
 bin
 tmp

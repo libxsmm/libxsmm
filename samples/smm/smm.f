@@ -123,7 +123,8 @@
         DO r = 1, repetitions
           !$OMP DO
           DO i = LBOUND(a, 3), UBOUND(a, 3)
-            CALL libxsmm_blas_gemm(m=m, n=n, k=k,                       &
+            ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
+            CALL libxsmm_blas_dgemm(m=m, n=n, k=k,                      &
      &              a=a(:,:,i), b=b(:,:,i), c=tmp)
           END DO
         END DO
@@ -146,7 +147,8 @@
         DO r = 1, repetitions
           !$OMP DO
           DO i = LBOUND(a, 3), UBOUND(a, 3)
-            CALL libxsmm_blas_gemm(m=m, n=n, k=k,                       &
+            ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
+            CALL libxsmm_blas_dgemm(m=m, n=n, k=k,                      &
      &              a=a(:,:,i), b=b(:,:,i), c=tmp)
           END DO
         END DO
@@ -174,7 +176,8 @@
         DO r = 1, repetitions
           !$OMP DO
           DO i = LBOUND(a, 3), UBOUND(a, 3)
-            CALL libxsmm_gemm(m=m, n=n, k=k,                            &
+            ! PGI: cannot deduce generic procedure (libxsmm_gemm)
+            CALL libxsmm_dgemm(m=m, n=n, k=k,                           &
      &              a=a(:,:,i), b=b(:,:,i), c=tmp)
           END DO
         END DO
@@ -296,3 +299,4 @@
      &        1D3 * duration, " ms"
         END SUBROUTINE
       END PROGRAM
+

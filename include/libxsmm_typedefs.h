@@ -33,6 +33,14 @@
 
 #include "libxsmm_macros.h"
 
+/** Helper macros for type postfixes. */
+#define LIBXSMM_TPOSTFIX_NAME(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TPOSTFIX_, TYPE)
+#define LIBXSMM_TPOSTFIX(TYPE, SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, LIBXSMM_TPOSTFIX_NAME(TYPE))
+#define LIBXSMM_TPOSTFIX_double F64
+#define LIBXSMM_TPOSTFIX_float F32
+#define LIBXSMM_TPOSTFIX_int I32
+#define LIBXSMM_TPOSTFIX_short I16
+
 #define LIBXSMM_TYPESIZE(ENUM) ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F64 ? 8 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F32 ? 4 : ( \
@@ -40,6 +48,24 @@
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I16 ? 2 : ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_I8  ? 1 : ( \
   0/*invalid*/))))))
+
+/* Get input or output precision */
+#define LIBXSMM_GETENUM_INP(SRC) ((SRC) & 0x0F)
+#define LIBXSMM_GETENUM_OUT(SRC) (0 == ((SRC) >> 4) ? LIBXSMM_GETENUM_INP(SRC) : ((SRC) >> 4))
+/* Get/Set input and output precision */
+#define LIBXSMM_GETENUM(INP, OUT) (((INP) == (OUT)) ? (INP) : ((INP) | ((OUT) << 4)))
+#define LIBXSMM_SETENUM(DST, INP, OUT) DST = LIBXSMM_GETENUM(INP, OUT)
+
+/* Construct an enumerator (libxsmm_datatype) from a built-in type (float, double, etc.). */
+#define LIBXSMM_DATATYPE(TYPE) LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_DATATYPE_)
+/* Construct a type-id from built-in input/output types (float, double, etc.). */
+#define LIBXSMM_DATATYPE2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE))
+
+/* Construct an enumerator (libxsmm_gemm_precision) from a built-in type (float, double, etc.). */
+#define LIBXSMM_GEMM_PRECISION(TYPE) LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_GEMM_PRECISION_)
+/* Construct GEMM-precision from built-in input/output types (float, double, etc.). */
+#define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_GEMM_PRECISION(ITYPE), \
+                                                              LIBXSMM_GEMM_PRECISION(OTYPE))
 
 
 /** Enumerates element/data types. */
@@ -367,7 +393,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const 
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (low-precision). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmmfunction)(const short* a, const short* b, int* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmmfunction)(const short* a, const short* b, void* c, ...);
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   void (*xmm)(const void* a, const void* b, void* c, ...);

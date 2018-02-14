@@ -84,7 +84,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
   const libxsmm_blasint kk = LIBXSMM_MIN(0 == bk ? ((0 == env_k || 0 == *env_k) ? mm : atoi(env_k)) : *bk, k);
   const libxsmm_blasint nn = LIBXSMM_MIN(0 == bn ? ((0 == env_n || 0 == *env_n) ? kk : atoi(env_n)) : *bn, n);
   libxsmm_bgemm_handle handle, *result = 0;
-  libxsmm_gemm_descriptor descriptor = { 0 };
+  libxsmm_gemm_descriptor descriptor;
   static int error_once = 0;
 
   if (0 < m && 0 < n && 0 < k && 0 < mm && 0 < nn && 0 < kk) {
