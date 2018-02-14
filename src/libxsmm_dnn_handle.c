@@ -160,6 +160,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       if (handle->ofw % i == 0) break;
     }
     handle->upd_ofw_rb = i;
+    handle->blocksimg_blocking = 1;
 
     /* calculate blockings */
     if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
@@ -1355,6 +1356,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
                 while (   descriptor.ofw_rb  *  descriptor.ofh_rb > 196 ) {
                   descriptor.ofh_rb = descriptor.ofh_rb / 2;
+                }
+
+                if (descriptor.ofh_rb == 0) {
+                  descriptor.ofh_rb = 1;
                 }
 
                 while (  handle->ofh % descriptor.ofh_rb != 0 ) {
