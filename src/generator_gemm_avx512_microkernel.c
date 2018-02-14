@@ -869,7 +869,7 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
         } else if (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype) {
           libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
                                                     i_micro_kernel_config->instruction_set,
-                                                    LIBXSMM_X86_INSTR_VP4DPWSSD,
+                                                    LIBXSMM_X86_INSTR_VP4DPWSSDS,
                                                     l_b_reg,
                                                     l_b_idx,
                                                     l_scale,

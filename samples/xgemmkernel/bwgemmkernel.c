@@ -34,6 +34,10 @@
 #include <math.h>
 #include <string.h>
 
+#if 0
+#define LIBXSMM_WGEMM_USE_FP32_OUTPUT
+#endif
+
 static unsigned int g_jit_code_reps = 0;
 
 LIBXSMM_INLINE void print_help(void) {
@@ -58,8 +62,13 @@ LIBXSMM_INLINE void print_help(void) {
 LIBXSMM_INLINE
 void init_short( short*                       io_a,
                  short*                       io_b,
+#ifdef LIBXSMM_WGEMM_USE_FP32_OUTPUT
+                 float*                       io_c,
+                 float*                       io_c_gold,
+#else
                  int*                         io_c,
                  int*                         io_c_gold,
+#endif
                  const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   unsigned int l_i, l_j;
 
@@ -78,8 +87,13 @@ void init_short( short*                       io_a,
   /* touch C */
   for ( l_i = 0; l_i < (unsigned int)i_xgemm_desc->ldc; l_i++) {
     for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++) {
+#ifdef LIBXSMM_WGEMM_USE_FP32_OUTPUT
+      io_c[(l_j * i_xgemm_desc->ldc) + l_i] = 0.0f;
+      io_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] = 0.0f;
+#else
       io_c[(l_j * i_xgemm_desc->ldc) + l_i] = (int)0;
       io_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] = (int)0;
+#endif
     }
   }
 }
@@ -116,7 +130,12 @@ void init_byte( unsigned char*                io_a,
 LIBXSMM_INLINE
 void run_gold_short( const short*                   i_a,
                      const short*                   i_b,
+#ifdef LIBXSMM_WGEMM_USE_FP32_OUTPUT
+                     float*                         o_c,
+#else
                      int*                           o_c,
+#endif
+                     float*                         i_scf,
                      const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   unsigned int l_m, l_n, l_k, l_k2, l_t, l_k_block = 2;
   double l_runtime;
@@ -128,7 +147,13 @@ void run_gold_short( const short*                   i_a,
       for ( l_k = 0; l_k < (unsigned int)(i_xgemm_desc->k/l_k_block); l_k++ ) {
         for ( l_m = 0; l_m < (unsigned int)i_xgemm_desc->m; l_m++ ) {
           for ( l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+#ifdef LIBXSMM_WGEMM_USE_FP32_OUTPUT
+            int iprod = (int)i_a[(l_k * (i_xgemm_desc->lda*l_k_block)) + (l_m*l_k_block) + l_k2] * (int)i_b[(l_n * i_xgemm_desc->ldb) + (l_k*l_k_block) + l_k2];
+            float fprod = (float)iprod;
+            o_c[(l_n * i_xgemm_desc->ldc) + l_m] += fprod*(*i_scf);
+#else
             o_c[(l_n * i_xgemm_desc->ldc) + l_m] += i_a[(l_k * (i_xgemm_desc->lda*l_k_block)) + (l_m*l_k_block) + l_k2] * i_b[(l_n * i_xgemm_desc->ldb) + (l_k*l_k_block) + l_k2];
+#endif
           }
         }
       }
@@ -172,7 +197,12 @@ void run_gold_byte( const unsigned char*          i_a,
 LIBXSMM_INLINE
 void run_jit_short( const short*                     i_a,
                     const short*                     i_b,
+#ifdef LIBXSMM_WGEMM_USE_FP32_OUTPUT
+                    float*                           o_c,
+#else
                     int*                             o_c,
+#endif
+                    float*                           i_scf,
                     const int                        i_M,
                     const int                        i_N,
                     const int                        i_K,
@@ -208,11 +238,19 @@ void run_jit_short( const short*                     i_a,
 
   if ( i_prefetch == LIBXSMM_PREFETCH_NONE ) {
     for ( l_t = 0; l_t < g_jit_code_reps; l_t++ ) {
+#ifdef LIBXSMM_WGEMM_USE_FP32_OUTPUT
+      l_test_jit(i_a, i_b, o_c, NULL, NULL, NULL, i_scf);
+#else
       l_test_jit(i_a, i_b, o_c);
+#endif
     }
   } else {
     for ( l_t = 0; l_t < g_jit_code_reps; l_t++ ) {
+#ifdef LIBXSMM_WGEMM_USE_FP32_OUTPUT
+      l_test_jit(i_a, i_b, o_c, i_a, i_b, o_c, i_scf);
+#else
       l_test_jit(i_a, i_b, o_c, i_a, i_b, o_c);
+#endif
     }
   }
 
@@ -280,8 +318,13 @@ void run_jit_float( const float*                     i_a,
 #endif
 
 LIBXSMM_INLINE
+#ifdef LIBXSMM_WGEMM_USE_FP32_OUTPUT
+void max_error( const float*                   i_c,
+                const float*                   i_c_gold,
+#else
 void max_error( const int*                     i_c,
                 const int*                     i_c_gold,
+#endif
                 const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   unsigned int l_i, l_j;
   double l_max_error = 0.0;
@@ -290,6 +333,7 @@ void max_error( const int*                     i_c,
     for ( l_j = 0; l_j < (unsigned int)i_xgemm_desc->n; l_j++) {
       const double error = LIBXSMM_ABS( i_c_gold[(l_j * i_xgemm_desc->ldc) + l_i] - i_c[(l_j * i_xgemm_desc->ldc) + l_i]);
 #if 0
+      printf("Entries in row %i, column %i, gold: %i, jit: %i\n", l_i+1, l_j+1, i_c_gold[(l_j*i_xgemm_desc->ldc)+l_i], i_c[(l_j*i_xgemm_desc->ldc)+l_i]);
       printf("Entries in row %i, column %i, gold: %f, jit: %f\n", l_i+1, l_j+1, i_c_gold[(l_j*i_xgemm_desc->ldc)+l_i], i_c[(l_j*i_xgemm_desc->ldc)+l_i]);
 #endif
       if (l_max_error < error) l_max_error = error;
@@ -317,14 +361,26 @@ int main(int argc, char* argv []) {
 
   libxsmm_gemm_descriptor l_xgemm_desc;
   /* init data structures */
+#ifdef LIBXSMM_WGEMM_USE_FP32_OUTPUT
+  float* l_c_gold_w = 0;
+#else
   int* l_c_gold_w = 0;
+#endif
   short* l_a_w = 0;
   short* l_b_w;
+#ifdef LIBXSMM_WGEMM_USE_FP32_OUTPUT
+  float* l_c_w;
+#else
   int* l_c_w;
+#endif
   int* l_c_gold_b = 0;
   unsigned char* l_a_b = 0;
   char* l_b_b = 0;
   int* l_c_b = 0;
+  unsigned char exp_a = 0;
+  unsigned char exp_b = 0;
+  float l_scf = (float) pow(2.0, -1.0*((double)exp_a + (double)exp_b));
+  /*l_scf = 1000;*/
 
   /* check argument count for a valid range */
   if ( argc != 14 ) {
@@ -422,8 +478,13 @@ int main(int argc, char* argv []) {
   if ( l_short_precision == 1 ) {
     l_a_w = (short*)libxsmm_aligned_malloc(l_xgemm_desc.lda * l_xgemm_desc.k * sizeof(short), 64);
     l_b_w = (short*)libxsmm_aligned_malloc(l_xgemm_desc.ldb * l_xgemm_desc.n * sizeof(short), 64);
+#ifdef LIBXSMM_WGEMM_USE_FP32_OUTPUT
+    l_c_w = (float*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(float), 64);
+    l_c_gold_w = (float*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(float), 64);
+#else
     l_c_w = (int*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(int), 64);
     l_c_gold_w = (int*)libxsmm_aligned_malloc(l_xgemm_desc.ldc * l_xgemm_desc.n * sizeof(int), 64);
+#endif
     init_short(l_a_w, l_b_w, l_c_w, l_c_gold_w, &l_xgemm_desc);
   } else {
 #if 0
@@ -447,16 +508,16 @@ int main(int argc, char* argv []) {
 
   /* run C */
   if ( l_short_precision == 1 ) {
-    run_gold_short( l_a_w, l_b_w, l_c_gold_w, &l_xgemm_desc );
+    run_gold_short( l_a_w, l_b_w, l_c_gold_w, &l_scf, &l_xgemm_desc );
   } else {
-    /*run_gold_byte( l_a_b, l_b_b, l_c_gold_b, &l_xgemm_desc );*/
+    /*run_gold_byte( l_a_b, l_b_b, l_c_gold_b, &l_scf, &l_xgemm_desc );*/
   }
 
   /* run jit */
   if ( l_short_precision == 1 ) {
-    run_jit_short( l_a_w, l_b_w, l_c_w, l_m, l_n, l_k, l_prefetch );
+    run_jit_short( l_a_w, l_b_w, l_c_w, &l_scf, l_m, l_n, l_k, l_prefetch );
   } else {
-    /*run_jit_byte( l_a_b, l_b_b, l_c_b, l_m, l_n, l_k, l_prefetch );*/
+    /*run_jit_byte( l_a_b, l_b_b, l_c_b, &l_scf, l_m, l_n, l_k, l_prefetch );*/
   }
 
   /* test result */
