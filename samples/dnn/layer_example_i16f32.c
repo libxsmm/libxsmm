@@ -570,25 +570,26 @@ int main(int argc, char* argv[])
   zero_buf_f32(naive_libxsmm_input,  nImg*nIfm*ifhp*ifwp);
   zero_buf_f32(naive_libxsmm_filter, nOfm*nIfm*kh*kw);
 
-  printf("##########################################\n");
-  printf("#         Computing Reference ...        #\n");
-  printf("##########################################\n");
-  /* run naive convolutions */
-  if (type == 'A' || type == 'F') {
-    naive_conv_fp_int16(&naive_param, naive_input, naive_output_fp, naive_filter);
-  }
+  if (0 == LIBXSMM_FEQ(0, check)) {
+    printf("##########################################\n");
+    printf("#         Computing Reference ...        #\n");
+    printf("##########################################\n");
+    /* run naive convolutions */
+    if (type == 'A' || type == 'F') {
+      naive_conv_fp_int16(&naive_param, naive_input, naive_output_fp, naive_filter);
+    }
 
-  if (type == 'A' || type == 'B') {
-    naive_conv_bp_int16(&naive_param, naive_input_bp, naive_output_bp, naive_filter);
-  }
+    if (type == 'A' || type == 'B') {
+      naive_conv_bp_int16(&naive_param, naive_input_bp, naive_output_bp, naive_filter);
+    }
 
-  if (type == 'A' || type == 'U') {
-    naive_conv_wu_int16(&naive_param, naive_input_save, naive_output_save, naive_filter_wu);
+    if (type == 'A' || type == 'U') {
+      naive_conv_wu_int16(&naive_param, naive_input_save, naive_output_save, naive_filter_wu);
+    }
+    printf("##########################################\n");
+    printf("#      Computing Reference ... done      #\n");
+    printf("##########################################\n");
   }
-
-  printf("##########################################\n");
-  printf("#      Computing Reference ... done      #\n");
-  printf("##########################################\n");
 
   printf("\n");
   printf("##########################################\n");
@@ -732,7 +733,7 @@ int main(int argc, char* argv[])
   /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
   //init_buf_int16( (short*)scratch, scratch_size/2, 0, 0 );
 
-  if (type == 'A' || type == 'F') {
+  if ((type == 'A' || type == 'F') && 0 == LIBXSMM_FEQ(0, check)) {
     printf("##############################################\n");
     printf("#  Check Correctness - FWD (custom-Storage)  #\n");
     printf("##############################################\n");
@@ -877,7 +878,7 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  if ((type == 'A' || type == 'B') && (nIfm > 3)){
+  if ((type == 'A' || type == 'B') && (nIfm > 3) && 0 == LIBXSMM_FEQ(0, check)) {
     printf("##############################################\n");
     printf("#  Check Correctness - BWD (custom-Storage)  #\n");
     printf("##############################################\n");
@@ -935,7 +936,7 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  if ((type == 'A' || type == 'U')){
+  if ((type == 'A' || type == 'U') && 0 == LIBXSMM_FEQ(0, check)) {
     printf("##############################################\n");
     printf("#  Check Correctness - UPD (custom-Storage)  #\n");
     printf("##############################################\n");
@@ -992,7 +993,7 @@ int main(int argc, char* argv[])
 
   }
 
-  if ((type == 'A' || type == 'F') && LIBXSMM_FEQ(0, check)) {
+  if (type == 'A' || type == 'F') {
     printf("##########################################\n");
     printf("#   Performance - FWD (custom-Storage)   #\n");
     printf("##########################################\n");
@@ -1024,7 +1025,7 @@ int main(int argc, char* argv[])
         norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
   }
 
-  if (((type == 'A' || type == 'B') && (nIfm > 3)) && LIBXSMM_FEQ(0, check)) {
+  if ((type == 'A' || type == 'B') && (nIfm > 3)) {
     printf("##########################################\n");
     printf("#   Performance - BWD (custom-Storage)   #\n");
     printf("##########################################\n");
@@ -1056,7 +1057,7 @@ int main(int argc, char* argv[])
         norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
   }
 
-  if ((type == 'A' || type == 'U') && LIBXSMM_FEQ(0, check)) {
+  if (type == 'A' || type == 'U') {
     printf("##########################################\n");
     printf("#   Performance - UPD (custom-Storage)   #\n");
     printf("##########################################\n");
