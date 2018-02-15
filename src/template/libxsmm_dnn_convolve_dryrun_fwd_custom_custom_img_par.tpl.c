@@ -40,7 +40,7 @@
 #define CHWK 3
 #define HWCK 4
 
-int block_j = 14;
+int block_j = handle->ofh;
 int blockifm = 8;
 #if !defined(_OPENMP)
 int ltid;
@@ -95,7 +95,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   const int l_tidgroup = ltid / l_l1_gs;
   /* compute img and ofm1 based on group */
   my_img_start = l_tidgroup / (handle->blocksofm*handle->fm_lp_block);
-  my_img_end = my_img_start + 1;
+  my_img_end = LIBXSMM_MIN(my_img_start + 1, handle->desc.N);
   my_h_start =  l_l2_ts * (ltid % l_l1_gs);
   my_h_end = ((my_h_start + l_l2_ts) <= handle->ofh) ? (my_h_start + l_l2_ts) : handle->ofh;
   my_w_start = 0;

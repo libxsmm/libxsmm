@@ -208,7 +208,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->n_bwd_code_segments[ltid] = n_code_segments;
   expanded_size = local_entries/3 + n_code_segments;
   tmp_expanded_stream = (int*)(0 < expanded_size ? malloc(expanded_size * sizeof(int)) : 0);
-  assert(0 != tmp_expanded_stream); /* TODO: should never happen */
+  /* assert(0 != tmp_expanded_stream); */
+  /* TODO: should never happen */
 #if !defined(NDEBUG)
   memset(tmp_expanded_stream, IMG_LOOP_INIT, expanded_size * sizeof(int));
 #endif

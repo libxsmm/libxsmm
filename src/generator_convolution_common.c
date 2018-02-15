@@ -351,7 +351,8 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
 
   if ( ((i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM && i_conv_desc->ofw_rb <= 14 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) || (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1)) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) ) {
     /* determining the number of accumulators */
-    l_accs = (i_conv_desc->ofw_rb < 9) ? 3 : 2;
+    /* l_accs = (i_conv_desc->ofw_rb < 9) ? 3 : 2; */
+    l_accs = 1;
 
     /* adding to C, so let's load C and init additional accumulators */
     for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
@@ -534,7 +535,8 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
 
   if ( ((i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM && i_conv_desc->ofw_rb <= 14 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) || (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1)) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) ) {
     /* determining the number of accumulators */
-    l_accs = (i_conv_desc->ofw_rb < 9) ? 3 : 2;
+    /* l_accs = (i_conv_desc->ofw_rb < 9) ? 3 : 2; */
+    l_accs = 1;
 
     /* check if we need to calculate batch stats */
     if ( i_conv_desc->compute_batch_stats > 0 && i_conv_desc->use_nts == 1 ) {

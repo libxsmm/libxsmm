@@ -655,7 +655,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
 
   /* apply k blocking */
   if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM ) {
-    if (i_conv_desc->ifm_block != 3) {
+    if (i_conv_desc->ifm_block > 3) {
       step_size = 4;
     } else {
       step_size = 3;

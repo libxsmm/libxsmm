@@ -160,6 +160,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
       if (handle->ofw % i == 0) break;
     }
     handle->upd_ofw_rb = i;
+    handle->blocksimg_blocking = 1;
 
     /* calculate blockings */
     if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
@@ -1357,6 +1358,10 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                   descriptor.ofh_rb = descriptor.ofh_rb / 2;
                 }
 
+                if (descriptor.ofh_rb == 0) {
+                  descriptor.ofh_rb = 1;
+                }
+
                 while (  handle->ofh % descriptor.ofh_rb != 0 ) {
                   descriptor.ofh_rb--;
                 }
@@ -1430,6 +1435,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                     handle->weight_copies = handle->desc.threads/spread_out;
                     descriptor.ncopies = handle->weight_copies;  
                     handle->blocksimg_blocking = spread_out * (handle->desc.N/handle->desc.threads);
+                    if (handle->blocksimg_blocking <= 0) handle->blocksimg_blocking = 1;
                     descriptor.blocks_img = handle->blocksimg_blocking;
                     handle->reduce_weights = 1; 
                   }
