@@ -878,7 +878,6 @@ else # GCC assumed
         CXXFLAGS += -fdata-sections -ffunction-sections
         CFLAGS += -fdata-sections -ffunction-sections
         FCFLAGS += -fdata-sections -ffunction-sections
-        LDFLAGS += -Wl,--gc-sections
       endif
       ifneq (0,$(GCC))
         #CXXFLAGS += -ffast-math
@@ -1023,6 +1022,16 @@ else # GCC assumed
     FCFLAGS += -fdefault-real-8 -fdefault-double-8
   endif
   endif
+endif
+
+ifeq (0,$(DBG))
+ifeq (0,$(COMPATIBLE))
+ifneq (Darwin,$(UNAME))
+  # --gc-sections: relies on section-flags present at compile-stage
+  # -z,relro: Linux distributions may apply similar hardening
+  LDFLAGS += -Wl,--gc-sections,-z,relro
+endif
+endif
 endif
 
 ifeq (,$(CTARGET))

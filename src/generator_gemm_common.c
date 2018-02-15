@@ -919,7 +919,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                                  i_micro_kernel_config->vector_name,
                                                  l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
                                                  l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
-                                                 LIBXSMM_X86_VEC_REG_UNDEF );        
+                                                 LIBXSMM_X86_VEC_REG_UNDEF );
         /* scale it */
         if (i_xgemm_desc->beta == 1) {
           libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
@@ -930,8 +930,8 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                                    LIBXSMM_X86_GP_REG_UNDEF,
                                                    0,
                                                    ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size),
-                                                   i_micro_kernel_config->vector_name, 
-                                                   0, 
+                                                   i_micro_kernel_config->vector_name,
+                                                   0,
                                                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n));
         } else {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -940,7 +940,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                                    i_micro_kernel_config->vector_name,
                                                    0,
                                                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n),
-                                                   l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );   
+                                                   l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         }
       }
     }

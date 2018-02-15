@@ -85,7 +85,7 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   a_nnz = 0;
   for (i = 0; i < M; ++i) {
     for (j = 0; j < K; j++) {
-      if (0 == LIBXSMM_FEQ(a_dense[(i*lda) + j], 0.0)) {
+      if (LIBXSMM_NEQ(a_dense[(i*lda) + j], 0.0)) {
         a_nnz++;
       }
     }
@@ -104,7 +104,7 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     for (i = 0; i < M; i++) {
       a_csr_rowptr[i] = n;
       for (j = 0; j < K; j++) {
-        if (0 == LIBXSMM_FEQ(a_dense[(i*lda) + j], 0.0)) {
+        if (LIBXSMM_NEQ(a_dense[(i*lda) + j], 0.0)) {
           a_csr_values[n] = a_dense[(i*lda) + j];
           a_csr_colidx[n] = j;
           n++;
@@ -186,7 +186,7 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   a_nnz = 0;
   for (i = 0; i < M; ++i) {
     for (j = 0; j < K; j++) {
-      if (0 == LIBXSMM_FEQ(a_dense[(i*lda) + j], 0.0f)) {
+      if (LIBXSMM_NEQ(a_dense[(i*lda) + j], 0.0f)) {
         a_nnz++;
       }
     }
@@ -205,7 +205,7 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     for (i = 0; i < M; i++) {
       a_csr_rowptr[i] = n;
       for (j = 0; j < K; j++) {
-        if (0 == LIBXSMM_FEQ(a_dense[(i*lda) + j], 0.0f)) {
+        if (LIBXSMM_NEQ(a_dense[(i*lda) + j], 0.0f)) {
           a_csr_values[n] = a_dense[(i*lda) + j];
           a_csr_colidx[n] = j;
           n++;

@@ -190,101 +190,101 @@
 #     if !defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(__PGI)
 #       define LIBXSMM_INTRINSICS_INCLUDE
 #     endif
-#   endif /* GCC/legacy incl. Clang */
-#   if defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(LIBXSMM_INTRINSICS_NONE)
-#     if !defined(__SSE3__)
-#       define __SSE3__ 1
-#     endif
-#     if !defined(__SSSE3__)
-#       define __SSSE3__ 1
-#     endif
-#     if !defined(__SSE4_1__)
-#       define __SSE4_1__ 1
-#     endif
-#     if !defined(__SSE4_2__)
-#       define __SSE4_2__ 1
-#     endif
-#     if !defined(__AVX__)
-#       define __AVX__ 1
-#     endif
-#     if !defined(__AVX2__)
-#       define __AVX2__ 1
-#     endif
-#     if !defined(__FMA__)
-#       define __FMA__ 1
-#     endif
-#     if !defined(__AVX512F__)
-#       define __AVX512F__ 1
-#     endif
-#     if !defined(__AVX512CD__)
-#       define __AVX512CD__ 1
-#     endif
-#     if !defined(__AVX512PF__)
-#       define __AVX512PF__ 1
-#     endif
-#     if !defined(__AVX512ER__)
-#       define __AVX512ER__ 1
-#     endif
-#     if !defined(__AVX512DQ__)
-#       define __AVX512DQ__ 1
-#     endif
-#     if !defined(__AVX512BW__)
-#       define __AVX512BW__ 1
-#     endif
-#     if !defined(__AVX512VL__)
-#       define __AVX512VL__ 1
-#     endif
-#     if !defined(__AVX512VNNI__)
-#       define __AVX512VNNI__ 1
-#     endif
-#     if defined(__GNUC__) && !defined(__clang__)
-#       pragma GCC push_options
-#       if (LIBXSMM_X86_AVX < LIBXSMM_MAX_STATIC_TARGET_ARCH)
-#         pragma GCC target("avx2,fma")
-#       else
-#         pragma GCC target("avx")
+#     if defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(LIBXSMM_INTRINSICS_NONE)
+#       if !defined(__SSE3__)
+#         define __SSE3__ 1
 #       endif
-#     endif
-#     include <immintrin.h>
-#     if defined(__GNUC__) && !defined(__clang__)
-#       pragma GCC pop_options
-#     endif
-#     if (LIBXSMM_X86_SSE3 > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __SSE3__
-#     endif
-#     if (LIBXSMM_X86_SSE4 > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __SSSE3__
-#       undef __SSE4_1__
-#       undef __SSE4_2__
-#     endif
-#     if (LIBXSMM_X86_AVX > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __AVX__
-#     endif
-#     if (LIBXSMM_X86_AVX2 > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __AVX2__
-#       undef __FMA__
-#     endif
-#     if (LIBXSMM_X86_AVX512 > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __AVX512F__
-#       undef __AVX512CD__
-#     endif
-#     if (LIBXSMM_X86_AVX512_MIC > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __AVX512F__
-#       undef __AVX512CD__
-#       undef __AVX512PF__
-#       undef __AVX512ER__
-#     endif
-#     if (LIBXSMM_X86_AVX512_CORE > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __AVX512F__
-#       undef __AVX512CD__
-#       undef __AVX512DQ__
-#       undef __AVX512BW__
-#       undef __AVX512VL__
-#     endif
-#     if (LIBXSMM_X86_AVX512_ICL > (LIBXSMM_STATIC_TARGET_ARCH))
-#       undef __AVX512VNNI__
-#     endif
-#   endif /*defined(LIBXSMM_INTRINSICS_INCLUDE)*/
+#       if !defined(__SSSE3__)
+#         define __SSSE3__ 1
+#       endif
+#       if !defined(__SSE4_1__)
+#         define __SSE4_1__ 1
+#       endif
+#       if !defined(__SSE4_2__)
+#         define __SSE4_2__ 1
+#       endif
+#       if !defined(__AVX__)
+#         define __AVX__ 1
+#       endif
+#       if !defined(__AVX2__)
+#         define __AVX2__ 1
+#       endif
+#       if !defined(__FMA__)
+#         define __FMA__ 1
+#       endif
+#       if !defined(__AVX512F__)
+#         define __AVX512F__ 1
+#       endif
+#       if !defined(__AVX512CD__)
+#         define __AVX512CD__ 1
+#       endif
+#       if !defined(__AVX512PF__)
+#         define __AVX512PF__ 1
+#       endif
+#       if !defined(__AVX512ER__)
+#         define __AVX512ER__ 1
+#       endif
+#       if !defined(__AVX512DQ__)
+#         define __AVX512DQ__ 1
+#       endif
+#       if !defined(__AVX512BW__)
+#         define __AVX512BW__ 1
+#       endif
+#       if !defined(__AVX512VL__)
+#         define __AVX512VL__ 1
+#       endif
+#       if !defined(__AVX512VNNI__)
+#         define __AVX512VNNI__ 1
+#       endif
+#       if defined(__GNUC__) && !defined(__clang__)
+#         pragma GCC push_options
+#         if (LIBXSMM_X86_AVX < LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#           pragma GCC target("avx2,fma")
+#         else
+#           pragma GCC target("avx")
+#         endif
+#       endif
+#       include <immintrin.h>
+#       if defined(__GNUC__) && !defined(__clang__)
+#         pragma GCC pop_options
+#       endif
+#       if (LIBXSMM_X86_SSE3 > (LIBXSMM_STATIC_TARGET_ARCH))
+#         undef __SSE3__
+#       endif
+#       if (LIBXSMM_X86_SSE4 > (LIBXSMM_STATIC_TARGET_ARCH))
+#         undef __SSSE3__
+#         undef __SSE4_1__
+#         undef __SSE4_2__
+#       endif
+#       if (LIBXSMM_X86_AVX > (LIBXSMM_STATIC_TARGET_ARCH))
+#         undef __AVX__
+#       endif
+#       if (LIBXSMM_X86_AVX2 > (LIBXSMM_STATIC_TARGET_ARCH))
+#         undef __AVX2__
+#         undef __FMA__
+#       endif
+#       if (LIBXSMM_X86_AVX512 > (LIBXSMM_STATIC_TARGET_ARCH))
+#         undef __AVX512F__
+#         undef __AVX512CD__
+#       endif
+#       if (LIBXSMM_X86_AVX512_MIC > (LIBXSMM_STATIC_TARGET_ARCH))
+#         undef __AVX512F__
+#         undef __AVX512CD__
+#         undef __AVX512PF__
+#         undef __AVX512ER__
+#       endif
+#       if (LIBXSMM_X86_AVX512_CORE > (LIBXSMM_STATIC_TARGET_ARCH))
+#         undef __AVX512F__
+#         undef __AVX512CD__
+#         undef __AVX512DQ__
+#         undef __AVX512BW__
+#         undef __AVX512VL__
+#       endif
+#       if (LIBXSMM_X86_AVX512_ICL > (LIBXSMM_STATIC_TARGET_ARCH))
+#         undef __AVX512VNNI__
+#       endif
+#     endif /*defined(LIBXSMM_INTRINSICS_INCLUDE)*/
+#   endif /* GCC/legacy incl. Clang */
 #   if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
 #     error "LIBXSMM_MAX_STATIC_TARGET_ARCH not defined!"
 #   endif
