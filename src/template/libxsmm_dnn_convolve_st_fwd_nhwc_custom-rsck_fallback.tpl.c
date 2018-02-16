@@ -50,9 +50,14 @@ element_input_type input_scratch_padding[padded_h*padded_w*handle->ifmblock]; /*
 for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
 
 { /* open new scope for additional variable declarations (C89) */
-  LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-  LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
+  LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->reg_input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+#ifdef LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM
   LIBXSMM_VLA_DECL(6, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+#endif
+#ifdef LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_RSCK
+  LIBXSMM_VLA_DECL(6, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock);
+#endif
   LIBXSMM_VLA_DECL(3, element_input_type, input_padded, input_scratch_padding, padded_w, handle->ifmblock);
 
   /* perform convolution */
@@ -65,13 +70,13 @@ for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch_pa
       element_output_type* temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
       /* copy bias into output feature map */
       for (oj = 0; oj < handle->ofh; ++oj) {
-        element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+        element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
         for (oi = 0; oi < handle->ofw; ++oi) {
           LIBXSMM_PRAGMA_SIMD
           for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
             temp_ptr[ofm2] = temp_ptr_2[ofm2];
           }
-          temp_ptr += handle->ofmblock;
+          temp_ptr += handle->blocksofm*handle->ofmblock;
         }
       }
     }
@@ -81,13 +86,13 @@ for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch_pa
       if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
         /* set output feature map to zero */
         for (oj = 0; oj < handle->ofh; ++oj) {
-          element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+          element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
           for (oi = 0; oi < handle->ofw; ++oi) {
             LIBXSMM_PRAGMA_SIMD
             for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
               temp_ptr[ofm2] = (element_output_type)0;
             }
-            temp_ptr += handle->ofmblock;
+            temp_ptr += handle->blocksofm*handle->ofmblock;
           }
         }
       }
@@ -100,9 +105,14 @@ for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch_pa
           ii = 0; oi = 0;
           for (kj = 0; kj < handle->desc.R; ++kj) {
             for (ki = 0; ki< handle->desc.S; ++ki) {
+#ifdef LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM
               gemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
-                           &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij + kj, ii + ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
-                           &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) );
+#endif
+#ifdef LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_RSCK
+              gemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, kj, ki, ifm1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock),
+#endif
+                           &LIBXSMM_VLA_ACCESS(5,  input,  img, ij + kj, ii + ki, ifm1, 0, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock),
+                           &LIBXSMM_VLA_ACCESS(5, output,  img, oj, oi, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock) );
             }
           }
         }
@@ -110,9 +120,10 @@ for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch_pa
         /* copy into stack buffer for physial padding */
         for (oj = 0; oj < handle->ifhp; ++oj) {
           for (oi = 0; oi < handle->ifwp; ++oi) {
+            LIBXSMM_PRAGMA_SIMD
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
               LIBXSMM_VLA_ACCESS(3, input_padded, oj + handle->desc.pad_h, oi + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
-                LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                LIBXSMM_VLA_ACCESS(5,  input, img, oj, oi, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
             }
           }
         }
@@ -123,9 +134,14 @@ for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch_pa
           ii = 0; oi = 0;
           for (kj = 0; kj < handle->desc.R; ++kj) {
             for (ki = 0; ki< handle->desc.S; ++ki) {
+#ifdef LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM
               gemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
-                           &LIBXSMM_VLA_ACCESS(3,  input_padded,  ij + kj, ii + ki, 0, padded_w, handle->ifmblock),
-                           &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) );
+#endif
+#ifdef LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_RSCK
+              gemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, kj, ki, ifm1, 0, ofm1, 0, handle->desc.S, handle->blocksifm, handle->ifmblock, handle->blocksofm, handle->ofmblock),
+#endif
+                           &LIBXSMM_VLA_ACCESS(3, input_padded, ij + kj, ii + ki, 0, padded_w, handle->ifmblock),
+                           &LIBXSMM_VLA_ACCESS(5, output, img, oj, oi, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock) );
             }
           }
         }
@@ -135,13 +151,13 @@ for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch_pa
     if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU) > 0) ) {
       /* Apply relu to output feature map */
       for (oj = 0; oj < handle->ofh; ++oj) {
-        element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+        element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, oj, 0, ofm1, 0, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock));
         for (oi = 0; oi < handle->ofw; ++oi) {
           LIBXSMM_PRAGMA_SIMD
           for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
             temp_ptr[ofm2] = (element_output_type)(temp_ptr[ofm2] < 0 ? 0 : temp_ptr[ofm2]);
           }
-          temp_ptr += handle->ofmblock;
+          temp_ptr += handle->blocksofm*handle->ofmblock;
         }
       }
     }
