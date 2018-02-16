@@ -479,7 +479,7 @@ int main(int argc, char* argv[])
   char format = 'L';
 
   const char *const env_check = getenv("CHECK"), *const env_winograd = getenv("WINOGRAD");
-  const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+  const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
   const int algo_winograd = (0 == env_winograd ? 0 : atoi(env_winograd));
 
   #if defined(_OPENMP)
@@ -726,7 +726,7 @@ int main(int argc, char* argv[])
   zero_buf_i16( doutput_libxsmm  , nImg*nOfm*ofhp*ofwp );
   zero_buf_i16( filtertr_libxsmm , nOfm*nIfm*kh*kw );
 
-  if (0 == LIBXSMM_FEQ(0, check)) {
+  if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");
     printf("#         Computing Reference ...        #\n");
     printf("##########################################\n");
@@ -940,7 +940,7 @@ int main(int argc, char* argv[])
     /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
     init_buf( (float*)scratch, scratch_size/4, 0, 0 );
 
-    if ((type == 'A' || type == 'F') && 0 == LIBXSMM_FEQ(0, check)) {
+    if ((type == 'A' || type == 'F') && LIBXSMM_NEQ(0, check)) {
       printf("##########################################\n");
       printf("#   Correctness - FWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -1096,7 +1096,7 @@ int main(int argc, char* argv[])
 #endif
     }
 
-    if ( (type == 'A' || type == 'B') && (nIfm > 3) && 0 == LIBXSMM_FEQ(0, check) ) {
+    if ( (type == 'A' || type == 'B') && (nIfm > 3) && LIBXSMM_NEQ(0, check) ) {
       printf("##########################################\n");
       printf("#   Correctness - BWD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -1194,7 +1194,7 @@ int main(int argc, char* argv[])
 #endif
     }
 
-    if ((type == 'A' || type == 'U') && 0 == LIBXSMM_FEQ(0, check)) {
+    if ((type == 'A' || type == 'U') && LIBXSMM_NEQ(0, check)) {
       printf("##########################################\n");
       printf("#   Correctness - UPD (custom-Storage)   #\n");
       printf("##########################################\n");
@@ -1468,7 +1468,7 @@ int main(int argc, char* argv[])
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 100.0 : atof(env_check_scale));
-    if (0 == LIBXSMM_FEQ(0, check) && check < 100.0 * check_scale * diff.normf_rel) {
+    if (LIBXSMM_NEQ(0, check) && check < 100.0 * check_scale * diff.normf_rel) {
       fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
       exit(EXIT_FAILURE);
     }
