@@ -53,7 +53,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
   }
 
   /* check if we have a kernel JITed */
-  if ( handle->code_bwd[0].xconv.sconv == 0 && handle->code_bwd[3].xconv.sconv != 0 ) {
+  if ( handle->use_bwd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       const int ldx = (int)(handle->desc.v*handle->ifmblock); 
       typedef float element_input_type;
@@ -98,7 +98,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
       } else {
 #include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_stream.tpl.c"
       }
-    } else if (handle->datatype_in ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
+    } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
 #if 0
       typedef int element_input_type;
       typedef short element_output_type;
@@ -117,14 +117,6 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_cust
         status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
         return status;
       }
-    } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I16 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
-#if 0
-      typedef unsigned short element_input_type;
-      typedef char element_output_type;
-      typedef char element_filter_type;
-      typedef libxsmm_busconvfunction_bwd libxsmm_convfunction;
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_1.tpl.c"
-#endif
     } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
       typedef int element_input_type;
       typedef unsigned char element_output_type;
@@ -156,7 +148,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck(l
   }
 
   /* check if we have a kernel JITed */
-  if (handle->code_bwd[0].xconv.sconv == 0) {
+  if ( handle->use_bwd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef float element_input_type;
       typedef float element_output_type;
@@ -185,7 +177,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom
   }
 
   /* check if we have a kernel JITed */
-  if (handle->code_bwd[0].xconv.sconv == 0) {
+  if ( handle->use_bwd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef float element_input_type;
       typedef float element_output_type;
@@ -197,18 +189,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom
     }
   }
   else {
-#if 0
-    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      typedef float element_input_type;
-      typedef float element_output_type;
-      typedef float element_filter_type;
-      typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom.tpl.c"
-    } else {
-      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-      return status;
-    }
-#endif
+    /* shouldn't happen */
   }
 
   return status;

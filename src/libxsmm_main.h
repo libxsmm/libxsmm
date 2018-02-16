@@ -253,6 +253,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t scratchVk_size;
 
   /* JIT-generated convolution code */
+  int use_fwd_generic;
+  int use_bwd_generic;
+  int use_upd_generic;
   /*
   libxsmm_convolution_forward_descriptor       fwd_desc;
   libxsmm_convolution_forward_descriptor       bwd_desc;

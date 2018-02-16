@@ -91,6 +91,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
   }
 
+  /* let's enable generice code path by default */
+  handle->use_fwd_generic = 1;
+  handle->use_bwd_generic = 1;
+  handle->use_upd_generic = 1;
+
   /* @FIXME, we should find a better knob */
   handle->use_thread_private_jit = 1;
 
@@ -554,6 +559,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
             handle->matcopy_fwd[0].xmatcopy = libxsmm_xmatcopydispatch(&matcopy_descriptor);
           }
         }
+        /* use jit code path */
+        handle->use_fwd_generic = 0;
       } else {
         assert(0/*should not happen*/);
       }
@@ -925,6 +932,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 fwd_equivalent_descriptor.ofw_rb = wrb_save;
               }
             }
+
+            /* enable jit code */
+            handle->use_bwd_generic = 0;
 #if 0
             /* PEELED VERSION */
             for (i = LIBXSMM_MIN(24, handle->ofw); i > 1; i--) {
@@ -1515,6 +1525,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
               descriptor.transpose_ofw_ifm = 1;
               descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT_L2;
               handle->code_upd[5].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+
+              /* enable JIT code path */
+              handle->use_upd_generic = 0;
             } else {
               assert(0/*should not happen*/);
             }
@@ -1695,6 +1708,11 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
         }
       }
+
+      /* use generic code path */
+      handle->use_fwd_generic = 1;
+      handle->use_bwd_generic = 1;
+      handle->use_upd_generic = 1;
 
       handle->code_fwd[0].xconv.sconv = 0;
       handle->code_fwd[1].xconv.sconv = 0;
