@@ -41,7 +41,7 @@ const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 /* offset output pointer in case of physical output padding */
-element_output_type* out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
+element_output_type* out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->blocksofm*handle->ofmblock);
 
 /* padding via stack allocated buffers */
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
@@ -118,12 +118,12 @@ for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch_pa
         }
       } else {
         /* copy into stack buffer for physial padding */
-        for (oj = 0; oj < handle->ifhp; ++oj) {
-          for (oi = 0; oi < handle->ifwp; ++oi) {
+        for (ij = 0; ij < handle->desc.H; ++ij) {
+          for (ii = 0; ii < handle->desc.W; ++ii) {
             LIBXSMM_PRAGMA_SIMD
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-              LIBXSMM_VLA_ACCESS(3, input_padded, oj + handle->desc.pad_h, oi + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
-                LIBXSMM_VLA_ACCESS(5,  input, img, oj, oi, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+              LIBXSMM_VLA_ACCESS(3, input_padded, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
+                LIBXSMM_VLA_ACCESS(5,  input, img, ij, ii, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
             }
           }
         }
