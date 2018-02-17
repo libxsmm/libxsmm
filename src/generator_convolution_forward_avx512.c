@@ -658,7 +658,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
     if (i_conv_desc->ifm_block > 3) {
       step_size = 4;
     } else {
-      step_size = 3;
+      step_size =  i_conv_desc->ifm_block;
     }
   } else {
     step_size = 1;
