@@ -2129,7 +2129,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
   /* TODO support reductions in RSCK format */
 
   int eq_index;
-  int unrolled_ofms = ( i_conv_desc->ifm_block != 3 ) ? 1 : 4;
+  int unrolled_ofms = ( i_conv_desc->ifm_block == 3 && i_conv_desc->blocks_ofm == 4 ) ? 4 : 1;
 
   /* adding to C, so let's load C */
   if ( (i_conv_desc->use_nts == 0) && (use_lp_kernel == 0 || i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) ) {
@@ -2252,7 +2252,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
   }
   /* TODO support reductions in RSCK format */
   int eq_index;
-  int unrolled_ofms = ( i_conv_desc->ifm_block != 3 ) ? 1 : 4;
+  int unrolled_ofms = ( i_conv_desc->ifm_block == 3 && i_conv_desc->blocks_ofm == 4 ) ? 4 : 1;
 
   if ( use_lp_kernel == 1 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
