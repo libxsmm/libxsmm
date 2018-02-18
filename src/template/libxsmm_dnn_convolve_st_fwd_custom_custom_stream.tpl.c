@@ -307,7 +307,7 @@ if (n_segments) {
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                  max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+oi)));
+                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+oi)));
                 }
                 cur_vec += handle->ofwp*handle->ofmblock;
               }
@@ -414,7 +414,7 @@ if (n_segments) {
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                  max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+oi)));
+                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+oi)));
                 }
                 cur_vec += handle->ofwp*handle->ofmblock;
               }

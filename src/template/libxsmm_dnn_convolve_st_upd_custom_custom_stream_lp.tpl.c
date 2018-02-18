@@ -322,7 +322,7 @@ if (handle->reduce_weights) {
         weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
       }
       _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
-      max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(weight_sum));
+      max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(weight_sum));
 #else
       element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
       LIBXSMM_PRAGMA_VALIGNED
