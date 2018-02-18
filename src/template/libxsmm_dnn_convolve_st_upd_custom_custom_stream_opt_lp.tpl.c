@@ -392,11 +392,11 @@ if (handle->reduce_weights) {
         }
         if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
           _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
-          max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(weight_sum));
+          max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(weight_sum));
         } else {
           __m512 new_result = _mm512_add_ps(weight_sum, _mm512_load_ps(&weight_ptr[j*16]));
           _mm512_store_ps(&weight_ptr[j*16], new_result);
-          max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(new_result));
+          max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(new_result));
         }
 #else
         element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));

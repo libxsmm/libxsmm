@@ -201,9 +201,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             for (ki=0; ki < handle->desc.S; ki++) {
               for (t1 = 0; t1 < 8; t1++) {
                 __m512i cur_cache_line = _mm512_loadu_si512(&LIBXSMM_VLA_ACCESS(7, wt, okb, icb, kj, ki, t1, 0, 0, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block));
-                __m512i permuted_cache_line = _mm512_permutevar_epi32(permute_index, cur_cache_line);
-                __m256i lo_half = _mm512_extracti64x4_epi64(permuted_cache_line, 0);
-                __m256i hi_half = _mm512_extracti64x4_epi64(permuted_cache_line, 1);
+                __m512i permuted_cache_line = LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(permute_index, cur_cache_line);
+                __m256i lo_half = LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(permuted_cache_line, 0);
+                __m256i hi_half = LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(permuted_cache_line, 1);
                 __m256i lo_zipped = _mm256_unpacklo_epi16(lo_half, hi_half);
                 __m256i hi_zipped = _mm256_unpackhi_epi16(lo_half, hi_half);
                 __m128i part0 = _mm256_extractf128_si256(lo_zipped,0);
@@ -267,7 +267,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
               for ( ij = 0; ij < handle->desc.H; ij++ ) {
                 for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
-                  max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+ii)));
+                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+ii)));
                 }
                 cur_vec += handle->ifwp*handle->ifmblock;
               }
@@ -317,7 +317,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
               for ( ij = 0; ij < handle->desc.H; ij++ ) {
                 for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
-                  max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+ii)));
+                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+ii)));
                 }
                 cur_vec += handle->ifwp*handle->ifmblock;
               }
@@ -391,7 +391,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
               for ( ij = 0; ij < handle->desc.H; ij++ ) {
                 for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                  max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+ii)));
+                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+ii)));
                 }
                 cur_vec += handle->ifwp*handle->ifmblock_hp;
               }
@@ -463,7 +463,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
               for ( ij = 0; ij < handle->desc.H; ij++ ) {
                 for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                  max_abs = _mm512_max_ps(max_abs, _mm512_abs_ps(_mm512_load_ps(cur_vec+ii)));
+                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+ii)));
                 }
                 cur_vec += handle->ifwp*handle->ifmblock_hp;
               }
