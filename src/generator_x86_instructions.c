@@ -2157,35 +2157,6 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
              exit(-1);
           }
           break;
-       case LIBXSMM_X86_INSTR_MOVAPD:
-          l_sse3 = 1;
-          l_insert_extra_byte = 0x66;
-          l_fpadj = 0x18;
-          break;
-       case LIBXSMM_X86_INSTR_MOVUPD:
-          l_sse3 = 1;
-          l_insert_extra_byte = 0x66;
-          break;
-       case LIBXSMM_X86_INSTR_MOVAPS:
-          l_sse3 = 1;
-          l_fpadj = 0x18;
-          break;
-       case LIBXSMM_X86_INSTR_MOVUPS:
-          l_sse3 = 1;
-          break;
-       case LIBXSMM_X86_INSTR_MOVSD:
-          l_sse3 = 1;
-          l_insert_extra_byte = 0xF2;
-          break;
-       case LIBXSMM_X86_INSTR_MOVSS:
-          l_sse3 = 1;
-          l_insert_extra_byte = 0xF3;
-          break;
-       case LIBXSMM_X86_INSTR_MOVDDUP:
-          l_sse3 = 1;
-          l_insert_extra_byte = 0xF2;
-          l_fpadj = 2;
-          break;
        case LIBXSMM_X86_INSTR_XORPD:
           l_sse3 = 1;
           l_insert_extra_byte = 0x66;
