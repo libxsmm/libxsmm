@@ -147,6 +147,7 @@
     <ClCompile Include="..\src\libxsmm_dnn_dryruns.c" />
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
     <ClCompile Include="..\src\libxsmm_fsspmdm.c" />
+    <ClCompile Include="..\src\libxsmm_generator.c" />
     <ClCompile Include="..\src\libxsmm_hash.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>

@@ -133,12 +133,12 @@ $(foreach SRC, $(FXXSRCX) $(F77SRCX) $(F90SRCX),$(eval $(call DEFINE_LINK_FC_RUL
 ifeq (0,$(MIX))
 $(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o
 	$(LD) -o $@ $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-else
-$(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly_aux-c.o
-	@ln -fs headeronly.c headeronly.cpp
-	$(CXX) -o $@ $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) headeronly.cpp \
-		$(BLDDIR)/headeronly_aux-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-	@rm -f headeronly.cpp
+else # compile headeronly_aux.c as C++ translation unit
+$(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o
+	@ln -fs headeronly_aux.c headeronly_aux.cpp
+	$(CXX) -o $@ $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) headeronly_aux.cpp \
+		$(BLDDIR)/headeronly-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	@rm -f headeronly_aux.cpp
 endif
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc #$(DEPDIR)/include/libxsmm_source.h

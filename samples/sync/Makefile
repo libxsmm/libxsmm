@@ -65,12 +65,12 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/$(OUTNAME)_barrier: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_barrier-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_barrier-c.o $(MAINLIB) \
-		$(call abslib,$(LIBNAME)noblas.$(LIBEXT)) \
+		$(NOBLASLIB) \
 		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/$(OUTNAME)_lock: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_lock-c.o $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_lock-c.o $(MAINLIB) \
-		$(call abslib,$(LIBNAME)noblas.$(LIBEXT)) \
+		$(NOBLASLIB) \
 		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc

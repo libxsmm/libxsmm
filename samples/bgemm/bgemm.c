@@ -134,7 +134,8 @@ int main(int argc, char* argv[])
     unsigned long long start;
     double duration;
     const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
-    handle = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
+    handle = libxsmm_bgemm_handle_create(
+      LIBXSMM_GEMM_PRECISION(REAL_TYPE), LIBXSMM_GEMM_PRECISION(REAL_TYPE),
       m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
 
@@ -156,7 +157,8 @@ int main(int argc, char* argv[])
       }
 #endif
       if (!ab) {
-      libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
+      libxsmm_gemm_print(stdout,
+        LIBXSMM_GEMM_PRECISION(REAL_TYPE), LIBXSMM_GEMM_PRECISION(REAL_TYPE),
         &transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
       fprintf(stdout, "\n\n");
       }

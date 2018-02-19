@@ -33,6 +33,20 @@
 
 #include "libxsmm_macros.h"
 
+/** Check ILP64 configuration for sanity. */
+#if !defined(LIBXSMM_ILP64) || (0 == LIBXSMM_ILP64 && defined(MKL_ILP64))
+# error "Inconsistent ILP64 configuration detected!"
+#elif (0 != LIBXSMM_ILP64 && !defined(MKL_ILP64))
+# define MKL_ILP64
+#endif
+#if (0 != LIBXSMM_ILP64)
+# define LIBXSMM_BLASINT_NBITS 64
+# define LIBXSMM_BLASINT long long
+#else /* LP64 */
+# define LIBXSMM_BLASINT_NBITS 32
+# define LIBXSMM_BLASINT int
+#endif
+
 /** Helper macros for type postfixes. */
 #define LIBXSMM_TPOSTFIX_NAME(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TPOSTFIX_, TYPE)
 #define LIBXSMM_TPOSTFIX(TYPE, SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, LIBXSMM_TPOSTFIX_NAME(TYPE))
@@ -67,6 +81,33 @@
 #define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_GEMM_PRECISION(ITYPE), \
                                                               LIBXSMM_GEMM_PRECISION(OTYPE))
 
+/** Necessary size to store a descriptor/blob (GEMM, MCOPY, TRANS). */
+#define LIBXSMM_DESCRIPTOR_SIZE 32
+
+
+/** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
+typedef LIBXSMM_BLASINT libxsmm_blasint;
+
+/** Type representing sufficient storage space for descriptors (GEMM, TCOPY, MCOPY). */
+LIBXSMM_EXTERN_C typedef char libxsmm_descriptor_blob[LIBXSMM_DESCRIPTOR_SIZE];
+
+/** Structure storing arguments of GEMM-like routines. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor_type libxsmm_gemm_descriptor_type;
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
+  libxsmm_descriptor_blob* blob; libxsmm_gemm_descriptor_type* ptr;
+} libxsmm_gemm_descriptor;
+
+/** Structure storing arguments of the matrix-copy routine. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor_type libxsmm_mcopy_descriptor_type;
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor {
+  libxsmm_descriptor_blob* blob; libxsmm_mcopy_descriptor_type* ptr;
+} libxsmm_mcopy_descriptor;
+
+/** Structure storing arguments of the transpose routine. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor_type libxsmm_trans_descriptor_type;
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_trans_descriptor {
+  libxsmm_descriptor_blob* blob; libxsmm_trans_descriptor_type* ptr;
+} libxsmm_trans_descriptor;
 
 /** Enumerates element/data types. */
 typedef enum libxsmm_datatype {
@@ -81,7 +122,9 @@ typedef enum libxsmm_datatype {
 typedef enum libxsmm_gemm_precision {
   LIBXSMM_GEMM_PRECISION_F64  = LIBXSMM_DATATYPE_F64,
   LIBXSMM_GEMM_PRECISION_F32  = LIBXSMM_DATATYPE_F32,
-  LIBXSMM_GEMM_PRECISION_I16  = LIBXSMM_DATATYPE_I16
+  LIBXSMM_GEMM_PRECISION_I32  = LIBXSMM_DATATYPE_I32,
+  LIBXSMM_GEMM_PRECISION_I16  = LIBXSMM_DATATYPE_I16,
+  LIBXSMM_GEMM_PRECISION_I8   = LIBXSMM_DATATYPE_I8
 } libxsmm_gemm_precision;
 
 /** Flag enumeration which can be binary ORed. */
@@ -123,37 +166,38 @@ typedef enum libxsmm_mmbatch_flags {
 
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {
-  /** Automatically select strategy (frontend). */
-  LIBXSMM_PREFETCH_AUTO               = -1,
   /** No prefetching and no prefetch fn. signature. */
-  LIBXSMM_PREFETCH_NONE               = 0,
+  LIBXSMM_GEMM_PREFETCH_NONE               = 0,
   /** Only function prefetch signature. */
-  LIBXSMM_PREFETCH_SIGONLY            = 1,
+  LIBXSMM_GEMM_PREFETCH_SIGONLY            = 1,
   /** Prefetch PA using accesses to A. */
-  LIBXSMM_PREFETCH_AL2                = 2,
+  LIBXSMM_GEMM_PREFETCH_AL2                = 2,
   /** Prefetch PA (aggressive). */
-  LIBXSMM_PREFETCH_AL2_JPST           = 4,
+  LIBXSMM_GEMM_PREFETCH_AL2_JPST           = 4,
   /** Prefetch PB using accesses to C. */
-  LIBXSMM_PREFETCH_BL2_VIA_C          = 8,
+  LIBXSMM_GEMM_PREFETCH_BL2_VIA_C          = 8,
   /** Prefetch A ahead. */
-  LIBXSMM_PREFETCH_AL2_AHEAD          = 16,
-  LIBXSMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2,
-  LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST  = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_JPST,
-  LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_PREFETCH_BL2_VIA_C | LIBXSMM_PREFETCH_AL2_AHEAD,
+  LIBXSMM_GEMM_PREFETCH_AL2_AHEAD          = 16,
+  LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C       = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C | LIBXSMM_GEMM_PREFETCH_AL2,
+  LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_JPST  = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C | LIBXSMM_GEMM_PREFETCH_AL2_JPST,
+  LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C | LIBXSMM_GEMM_PREFETCH_AL2_AHEAD,
   /** Prefetch PA/PB/PC in L1 (using accesses to A, B, C) */
-  LIBXSMM_PREFETCH_AL1                = 32,
-  LIBXSMM_PREFETCH_BL1                = 64,
-  LIBXSMM_PREFETCH_CL1                = 128,
-  LIBXSMM_PREFETCH_AL1_BL1            = LIBXSMM_PREFETCH_AL1 | LIBXSMM_PREFETCH_BL1,
-  LIBXSMM_PREFETCH_BL1_CL1            = LIBXSMM_PREFETCH_BL1 | LIBXSMM_PREFETCH_CL1,
-  LIBXSMM_PREFETCH_AL1_CL1            = LIBXSMM_PREFETCH_AL1 | LIBXSMM_PREFETCH_CL1,
-  LIBXSMM_PREFETCH_AL1_BL1_CL1        = LIBXSMM_PREFETCH_AL1_BL1 | LIBXSMM_PREFETCH_CL1,
+  LIBXSMM_GEMM_PREFETCH_AL1                = 32,
+  LIBXSMM_GEMM_PREFETCH_BL1                = 64,
+  LIBXSMM_GEMM_PREFETCH_CL1                = 128,
+  LIBXSMM_GEMM_PREFETCH_AL1_BL1            = LIBXSMM_GEMM_PREFETCH_AL1 | LIBXSMM_GEMM_PREFETCH_BL1,
+  LIBXSMM_GEMM_PREFETCH_BL1_CL1            = LIBXSMM_GEMM_PREFETCH_BL1 | LIBXSMM_GEMM_PREFETCH_CL1,
+  LIBXSMM_GEMM_PREFETCH_AL1_CL1            = LIBXSMM_GEMM_PREFETCH_AL1 | LIBXSMM_GEMM_PREFETCH_CL1,
+  LIBXSMM_GEMM_PREFETCH_AL1_BL1_CL1        = LIBXSMM_GEMM_PREFETCH_AL1_BL1 | LIBXSMM_GEMM_PREFETCH_CL1,
   /** Backward compatibility: AL2CL2BL2_VIA_C is an alias for AL2BL2_VIA_C. */
-  LIBXSMM_PREFETCH_AL2CL2BL2_VIA_C    = LIBXSMM_PREFETCH_AL2BL2_VIA_C
+  LIBXSMM_GEMM_PREFETCH_AL2CL2BL2_VIA_C    = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C
 } libxsmm_gemm_prefetch_type;
 
-/** DEPRECATED: provided for compatibility with older codes. */
-typedef libxsmm_gemm_prefetch_type libxsmm_prefetch_type; /* type-alias */
+/** Flag enumeration which can be binary ORed. */
+typedef enum libxsmm_matcopy_flags {
+  /** If set, then use zero matrix as source */
+  LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE = 1
+} libxsmm_matcopy_flags;
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_convolution_prefetch_type {
@@ -165,17 +209,14 @@ typedef enum libxsmm_convolution_prefetch_type {
   LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 = 2,
   /** prefetch output into L1 */
   LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 = 4,
-
   /** prefetch weight into L1 */
   LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 = 8,
   /** prefetch output into L2 */
   LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2 = 16,
   /** prefetch input into L2 */
   LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2 = 32,
-
   /** combination 1: all */
   LIBXSMM_CONVOLUTION_PREFETCH_ALL = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2,
-
   /** combination 2: no weight */
   LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1,
   /** combination 3: no output */
@@ -190,21 +231,17 @@ typedef enum libxsmm_convolution_prefetch_type {
   LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT_NO_INPUT_NO_WEIGHT_L2 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1,
   /** combination 9: no output L2 no weight L2 */
   LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT_NO_WEIGHT_L2 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1  | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2,
-
   /** combination 10: no input and no output L1 */
   LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT_NO_INPUT_L1 = LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2,
-
   /** combination 11: no weight L2 */
   LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT_L2 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2,
   /** combination 12: no input L1 */
   LIBXSMM_CONVOLUTION_PREFETCH_NO_INPUT_L1 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2,
-
   /** combination 12: no input L1 no weight L2*/
   LIBXSMM_CONVOLUTION_PREFETCH_NO_INPUT_L1_NO_WEIGHT_L2 = LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L1 | LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L2
 } libxsmm_convolution_prefetch_type;
 
-
-typedef enum libxsmm_dnn_tensor_format{
+typedef enum libxsmm_dnn_tensor_format {
   /* use LIBXSMM internal format, we need to copy data into that */
   LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM = 1,
   /* use NHWC format internally, this allows no-copy operations */
@@ -331,7 +368,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_upd
   unsigned int ofh_unroll;                      /* this we use to unroll ofh loop */
   unsigned int ofw;                             /* upper bound of oi loop */
   unsigned int ofw_unroll;                      /* this we use to unroll ofw loop */
-
   unsigned int transpose_ofw_ifm;               /* transpose ofw and ifm */
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
@@ -381,18 +417,52 @@ typedef enum libxsmm_kernel_kind {
   /** Matcopy kernel kind */
   LIBXSMM_KERNEL_KIND_MCOPY   = 1,
   /** Transpose kernel kind */
-  LIBXSMM_KERNEL_KIND_TCOPY   = 2,
+  LIBXSMM_KERNEL_KIND_TRANS   = 2,
   /** Not a JIT kernel */
   LIBXSMM_KERNEL_KIND_INVALID = 3
 } libxsmm_kernel_kind;
 
 /** Specialized function for matrix-copy (weak-typed). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmatcopyfunction)(
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmcopyfunction)(
   const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo, ...);
 
 /** Specialized function for transpose (weak-typed). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(
   const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo);
+
+/** Structure to receive information about GEMM-kernels (libxsmm_get_mmkernel_info). */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mmkernel_info {
+  /** Input/output data-type */
+  libxsmm_gemm_precision iprecision, oprecision;
+  /** Prefetch strategy. */
+  libxsmm_gemm_prefetch_type prefetch;
+  /** Leading dimensions. */
+  unsigned int lda, ldb, ldc;
+  /** Extents/shape. */
+  unsigned int m, n, k;
+  /** Set of flags. */
+  int flags;
+} libxsmm_mmkernel_info;
+
+/** Structure to receive information about transpose-kernels (libxsmm_get_transkernel_info). */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_transkernel_info {
+  /** LD, M, and N. */
+  unsigned int ldo, m, n;
+  /** Size of data element. */
+  unsigned int typesize;
+} libxsmm_transkernel_info;
+
+/** Structure to receive information about matrix-copy kernels (libxsmm_get_mcopykernel_info). */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mcopykernel_info {
+  /** LDx, M, and N. */
+  unsigned int ldi, ldo, m, n;
+  /** Size of data element. */
+  unsigned int typesize;
+  /** Boolean value. */
+  int prefetch;
+  /** Set of flags. */
+  int flags;
+} libxsmm_mcopykernel_info;
 
 /** Structure to receive information about the code registry status (libxsmm_get_registry_info). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_registry_info {

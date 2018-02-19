@@ -71,17 +71,20 @@ int main(int argc, char* argv[])
   double* mat_st_values;
   libxsmm_dmmfunction st_kernel;
 
+  int num_modes = 9;
+  int num_quants = 9;
   size_t num_elems = 0;
-  size_t num_modes = 9;
-  size_t num_quants = 9;
   size_t num_cfr = 8;
   size_t num_reps = 1;
   size_t elem_size;
   /* OpenMP: signed induction variables */
   int i, j;
 
-  libxsmm_gemm_descriptor l_xgemm_desc_stiff;
-  libxsmm_gemm_descriptor l_xgemm_desc_star;
+  const libxsmm_gemm_descriptor_type *l_xgemm_desc_stiff = 0, *l_xgemm_desc_star = 0;
+  libxsmm_descriptor_blob l_xgemm_blob_stiff, l_xgemm_blob_star;
+  const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+  const double alpha = 1, beta = 1;
 
   double* q;
   double* qt;
@@ -118,19 +121,21 @@ int main(int argc, char* argv[])
 
   /* generate kernels */
   printf("generating code... ");
-  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc_stiff, LIBXSMM_GEMM_PRECISION_F64, 0/*flags*/, num_quants, num_modes, num_modes,  num_modes, 0, num_modes, 1.0, 1.0, LIBXSMM_PREFETCH_NONE);
-  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc_star,  LIBXSMM_GEMM_PRECISION_F64, 0/*flags*/, num_quants, num_modes, num_quants, 0, num_modes, num_modes, 1.0, 1.0, LIBXSMM_PREFETCH_NONE);
-  a_kernel = libxsmm_create_xcsr_soa( &l_xgemm_desc_stiff, mat_a_rowptr, mat_a_colidx, (const void*)mat_a_values ).dmm;
-  b_kernel = libxsmm_create_xcsr_soa( &l_xgemm_desc_stiff, mat_b_rowptr, mat_b_colidx, (const void*)mat_b_values ).dmm;
-  c_kernel = libxsmm_create_xcsr_soa( &l_xgemm_desc_stiff, mat_c_rowptr, mat_c_colidx, (const void*)mat_c_values ).dmm;
-  st_kernel = libxsmm_create_xcsr_soa( &l_xgemm_desc_star, mat_st_rowptr, mat_st_colidx, (const void*)mat_st_values ).dmm;
+  l_xgemm_desc_stiff = libxsmm_dgemm_descriptor_init(&l_xgemm_blob_stiff,
+    num_quants, num_modes, num_modes, num_modes, 0, num_modes, alpha, beta, flags, prefetch);
+  l_xgemm_desc_star = libxsmm_dgemm_descriptor_init(&l_xgemm_blob_star,
+    num_quants, num_modes, num_quants, 0, num_modes, num_modes, alpha, beta, flags, prefetch);
+  a_kernel =  libxsmm_create_xcsr_soa( l_xgemm_desc_stiff, mat_a_rowptr,  mat_a_colidx,  (const void*)mat_a_values ).dmm;
+  b_kernel =  libxsmm_create_xcsr_soa( l_xgemm_desc_stiff, mat_b_rowptr,  mat_b_colidx,  (const void*)mat_b_values ).dmm;
+  c_kernel =  libxsmm_create_xcsr_soa( l_xgemm_desc_stiff, mat_c_rowptr,  mat_c_colidx,  (const void*)mat_c_values ).dmm;
+  st_kernel = libxsmm_create_xcsr_soa( l_xgemm_desc_star, mat_st_rowptr, mat_st_colidx, (const void*)mat_st_values ).dmm;
   if ( a_kernel == 0 || b_kernel == 0 || c_kernel == 0 || st_kernel == 0 ) {
     printf("one of the kernels could not be built -> exit!");
     exit(-1);
   }
   printf("done!\n\n");
 
-  /* create unkowns and tunkowns */
+  /* create unknowns and t-unknowns */
   printf("allocating and initializing fake data... \n");
   printf("   q: %f MiB\n", ((double)(num_elems*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
   printf("  qt: %f MiB\n", ((double)(num_elems*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
@@ -145,16 +150,16 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 # pragma omp parallel for private(i,j)
 #endif
-  for ( i = 0; i < (int)num_elems; i++ ) {
-    for ( j = 0; j < (int)elem_size; j++) {
+  for (i = 0; i < (int)num_elems; i++) {
+    for (j = 0; j < (int)elem_size; j++) {
       q[i*elem_size + j] = drand48();
     }
   }
 #if defined(_OPENMP)
 # pragma omp parallel for private(i,j)
 #endif
-  for ( i = 0; i < (int)num_elems; i++ ) {
-    for ( j = 0; j < (int)elem_size; j++) {
+  for (i = 0; i < (int)num_elems; i++) {
+    for (j = 0; j < (int)elem_size; j++) {
       qt[i*elem_size + j] = drand48();
     }
   }
@@ -164,7 +169,7 @@ int main(int argc, char* argv[])
   /* benchmark single core all kernels */
   printf("benchmarking kernels... \n");
   l_start = libxsmm_timer_tick();
-  for ( i = 0; i < (int)num_reps; i++) {
+  for (i = 0; i < (int)num_reps; i++) {
     a_kernel( qt, mat_a_values, q );
   }
   l_end = libxsmm_timer_tick();
@@ -173,7 +178,7 @@ int main(int argc, char* argv[])
   printf("%f GFLOPS for stiff1 (asm)\n", ((double)((double)num_reps * (double)num_quants * (double)mat_a_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
 
   l_start = libxsmm_timer_tick();
-  for ( i = 0; i < (int)num_reps; i++) {
+  for (i = 0; i < (int)num_reps; i++) {
     b_kernel( qt, mat_b_values, q );
   }
   l_end = libxsmm_timer_tick();
@@ -182,7 +187,7 @@ int main(int argc, char* argv[])
   printf("%f GFLOPS for stiff2 (asm)\n", ((double)((double)num_reps * (double)num_quants * (double)mat_b_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
 
   l_start = libxsmm_timer_tick();
-  for ( i = 0; i < (int)num_reps; i++) {
+  for (i = 0; i < (int)num_reps; i++) {
     c_kernel( qt, mat_c_values, q );
   }
   l_end = libxsmm_timer_tick();
@@ -191,7 +196,7 @@ int main(int argc, char* argv[])
   printf("%f GFLOPS for stiff3 (asm)\n", ((double)((double)num_reps * (double)num_quants * (double)mat_c_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
 
   l_start = libxsmm_timer_tick();
-  for ( i = 0; i < (int)num_reps; i++) {
+  for (i = 0; i < (int)num_reps; i++) {
     st_kernel( mat_st_values, qt, q );
   }
   l_end = libxsmm_timer_tick();
@@ -204,22 +209,22 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 # pragma omp parallel for private(i,j)
 #endif
-  for ( i = 0; i < (int)num_elems; i++ ) {
-    for ( j = 0; j < (int)elem_size; j++) {
+  for (i = 0; i < (int)num_elems; i++) {
+    for (j = 0; j < (int)elem_size; j++) {
       q[i*elem_size + j] = drand48();
     }
   }
 #if defined(_OPENMP)
 # pragma omp parallel for private(i,j)
 #endif
-  for ( i = 0; i < (int)num_elems; i++ ) {
-    for ( j = 0; j < (int)elem_size; j++) {
+  for (i = 0; i < (int)num_elems; i++) {
+    for (j = 0; j < (int)elem_size; j++) {
       qt[i*elem_size + j] = drand48();
     }
   }
 
   l_start = libxsmm_timer_tick();
-  for ( i = 0; i < (int)num_reps; i++) {
+  for (i = 0; i < (int)num_reps; i++) {
 #if defined(_OPENMP)
 #   pragma omp parallel private(i, j)
 #endif
@@ -229,7 +234,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 #     pragma omp for private(j)
 #endif
-      for ( j = 0; j < (int)num_elems; j++ ) {
+      for (j = 0; j < (int)num_elems; j++) {
         st_kernel( mat_st_values, qt+(j*elem_size), tp );
         a_kernel( tp, mat_a_values, q+(j*elem_size) );
 

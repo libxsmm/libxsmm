@@ -30,8 +30,6 @@
 ******************************************************************************/
 /* Lock primitives inspired by Karl Malbrain, Concurrency Kit, and TF/sync.
 ******************************************************************************/
-#include <libxsmm_sync.h>
-#include <libxsmm_timer.h>
 #include "libxsmm_main.h"
 
 #if !defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)

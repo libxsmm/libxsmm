@@ -28,13 +28,12 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_generator.h>
-#include <libxsmm_macros.h>
 #include "generator_common.h"
 #include "generator_gemm_common.h"
 #include "generator_gemm_sse3_avx_avx2_avx512.h"
 #include "generator_gemm_imci_avx512.h"
 #include "generator_gemm_noarch.h"
+#include "libxsmm_main.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -44,10 +43,10 @@
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_code,
-                                    const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                    const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                     const char*                    i_arch ) {
   /* apply the alignment override */
-  libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
+  libxsmm_gemm_descriptor_type l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
 
   /* add instruction set mismatch check to code, header */
@@ -162,7 +161,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out,
                                        const char*                     i_routine_name,
-                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                       const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                        const char*                     i_arch ) {
   /* init generated code object */
   libxsmm_generated_code l_generated_code;
@@ -216,7 +215,7 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_directasm(const char*                     i_file_out,
                                        const char*                     i_routine_name,
-                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                       const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                        const char*                     i_arch ) {
   /* init generated code object */
   libxsmm_generated_code l_generated_code;

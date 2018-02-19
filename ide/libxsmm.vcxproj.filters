@@ -410,6 +410,9 @@
     <ClCompile Include="..\src\libxsmm_python.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\libxsmm_generator.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">

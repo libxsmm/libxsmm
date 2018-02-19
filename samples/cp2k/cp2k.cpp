@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
       libxsmm_init();
 #if !defined(LIBXSMM_OFFLOAD_TARGET)
       // some more setup similar to CP2K/intel branch
-      libxsmm_set_gemm_auto_prefetch(LIBXSMM_X86_AVX512_MIC != libxsmm_get_target_archid() ? LIBXSMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_PREFETCH_BL2_VIA_C);
+      libxsmm_set_gemm_auto_prefetch(LIBXSMM_X86_AVX512_MIC != libxsmm_get_target_archid() ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C);
 #endif
       //libxsmm_set_dispatch_trylock(1);
 
@@ -360,9 +360,9 @@ int main(int argc, char* argv[])
             const T *const aij = ai + asize, *const bij = bi + bsize;
 #if (0 != LIBXSMM_PREFETCH)
             xmm(ai, bi, tmp,
-              LIBXSMM_PREFETCH_A(aij + asize),
-              LIBXSMM_PREFETCH_B(bij + bsize),
-              LIBXSMM_PREFETCH_C(tmp));
+              LIBXSMM_GEMM_PREFETCH_A(aij + asize),
+              LIBXSMM_GEMM_PREFETCH_B(bij + bsize),
+              LIBXSMM_GEMM_PREFETCH_C(tmp));
 #else
             xmm(ai, bi, tmp);
 #endif

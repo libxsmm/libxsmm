@@ -79,9 +79,9 @@ const element_filter_type *weight_base;
 element_output_type *output_base;
 
 /* Kernel related variables  */
-libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
-libxsmm_xmatcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
-libxsmm_xmatcopyfunction jitted_matzero_weights = handle->matcopy_upd[2].xmatcopy;
+libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
+libxsmm_xmcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
+libxsmm_xmcopyfunction jitted_matzero_weights = handle->matcopy_upd[2].xmatcopy;
 libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 || handle->ifmblock == 1 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
 
 /* lazy barrier init */

@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
@@ -37,45 +37,47 @@
 
 int main(int argc, char* argv[])
 {
-  /* we should modify to test all datatypes here */
-  libxsmm_xmatcopyfunction skernel;
-  libxsmm_matcopy_descriptor desc;
+  const int m = (1 < argc ? atoi(argv[1]) : 16);
+  const int n = (2 < argc ? ((unsigned int)atoi(argv[2])) : m);
+  const int unsigned ldi = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 0, m);
+  const int unsigned ldo = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 0, m);
+  const int unroll = (unsigned char)(5 < argc ? atoi(argv[5]) : 1);
+  const int prefetch = (6 < argc ? atoi(argv[6]) : 0);
+  const int flags = ((7 < argc && 0 != atoi(argv[7])) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
+  const int iters = (8 < argc ? atoi(argv[8]) : 1);
+
+  /* we should modify to test all data-types */
+  const libxsmm_mcopy_descriptor_type* desc;
+  libxsmm_xmcopyfunction skernel;
+  libxsmm_descriptor_blob blob;
+  libxsmm_timer_tickint l_start;
+  libxsmm_timer_tickint l_end;
+  int error = 0, i, j;
   float *a, *b;
-  unsigned int i, j, iters;
-  unsigned int ldi, ldo;
-  int error = 0;
   double copy_time;
-  unsigned long long l_start, l_end;
 
   printf("This is a tester for JIT matcopy kernels!\n");
-  desc.m = (1 < argc ? atoi(argv[1]) : 16);
-  desc.n = (2 < argc ? ((unsigned int)atoi(argv[2])) : desc.m);
-  desc.ldi = LIBXSMM_MAX((unsigned int)(3 < argc ? atoi(argv[3]) : 0), desc.m);
-  desc.ldo = LIBXSMM_MAX((unsigned int)(4 < argc ? atoi(argv[4]) : 0), desc.m);
-  desc.unroll_level = (unsigned char)(5 < argc ? atoi(argv[5]) : 1);
-  desc.prefetch = (unsigned char)(6 < argc ? atoi(argv[6]) : 0);
-  desc.flags = (unsigned char)((7 < argc && 0 != atoi(argv[7])) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
-  iters = (8 < argc ? atoi(argv[8]) : 1);
-  desc.typesize = 4;
+  desc = libxsmm_mcopy_descriptor_init(&blob, sizeof(float),
+    m, n, ldo, ldi, flags, prefetch, &unroll);
 
-  a = (float *) malloc(desc.n * desc.ldi * sizeof(float));
-  b = (float *) malloc(desc.n * desc.ldo * sizeof(float));
+  a = (float*) malloc(n * ldi * sizeof(float));
+  b = (float*) malloc(n * ldo * sizeof(float));
 
-  for (i=0; i < desc.n; i++ ) {
-    for (j=0; j < desc.m; j++) {
-      a[j+desc.ldi*i] = 1.f * rand();
-      if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & desc.flags)) {
-        b[j+desc.ldo*i] = 1.f * rand();
+  for (i = 0; i < n; i++) {
+    for (j = 0; j < m; j++) {
+      a[j+ldi*i] = 1.f * rand();
+      if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & flags)) {
+        b[j+ldo*i] = 1.f * rand();
       }
     }
   }
 
   /* test dispatch call */
-  skernel = libxsmm_xmatcopydispatch(&desc);
+  skernel = libxsmm_xmcopydispatch(desc);
 
   if (skernel == 0) {
     printf("JIT error -> exit!!!!\n");
-    exit(-1);
+    exit(EXIT_FAILURE);
   }
 
   /* let's call */
@@ -83,26 +85,26 @@ int main(int argc, char* argv[])
 
   l_start = libxsmm_timer_tick();
 
-  for (i=0; i<iters; i++) {
+  for (i = 0; i<iters; i++) {
     skernel(a, &ldi, b, &ldo, &a[128]);
   }
 
   l_end = libxsmm_timer_tick();
   copy_time = libxsmm_timer_duration(l_start, l_end);
 
-  for (i=0; i < desc.n; i++ ) {
-    for (j=0; j < desc.m; j++) {
-      if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & desc.flags)) {
-        if (LIBXSMM_NEQ(b[j+desc.ldo*i], 0)) {
+  for (i = 0; i < n; i++) {
+    for (j = 0; j < m; j++) {
+      if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & flags)) {
+        if (LIBXSMM_NEQ(b[j+ldo*i], 0)) {
           printf("ERROR!!!\n");
-          i = desc.n;
+          i = n;
           error = 1;
           break;
         }
       }
-      else if (LIBXSMM_NEQ(a[j+desc.ldi*i], b[j+desc.ldo*i])) {
+      else if (LIBXSMM_NEQ(a[j+ldi*i], b[j+ldo*i])) {
         printf("ERROR!!!\n");
-        i = desc.n;
+        i = n;
         error = 1;
         break;
       }
@@ -114,6 +116,6 @@ int main(int argc, char* argv[])
     printf("Time taken is\t%.5f seconds\n",copy_time);
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
