@@ -360,7 +360,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_cu
   }
 
   /* check if we have a kernel JITed */
-  if (handle->code_bwd[0].xconv.sconv == 0) {
+  if ( handle->use_bwd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) {
       const int ldx = (int)(handle->desc.v*handle->ifmblock); 
       typedef float element_input_type;
@@ -445,16 +445,21 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_bwd_nh
   }
 
   /* check if we have a kernel JITed */
-  if (handle->code_bwd[0].xconv.sconv == 0) {
+  if ( handle->use_bwd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) {
-      const int ldx = (int)(handle->desc.v*handle->ifmblock); 
+      const int lda = (int)(handle->ifmblock);
+      const int ldb = (int)(handle->blocksofm*handle->ofmblock);
+      const int ldc = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) 
+                        ? (int)(handle->desc.v*handle->blocksifm*handle->ifmblock) : (int)(handle->desc.v*handle->ifmblock);
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
       typedef libxsmm_smmfunction gemm_function;
       /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
-      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, NULL, NULL, &ldx, NULL, NULL, NULL, NULL);
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom_fallback.tpl.c"
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, &lda, &ldb, &ldc, NULL, NULL, NULL, NULL);
+#define LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM
+# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_fallback.tpl.c"
+#undef LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
