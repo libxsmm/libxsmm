@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Rajkishore Barik, Ankush Mandal, Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
 int imgifm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2, ifm1ofm1;

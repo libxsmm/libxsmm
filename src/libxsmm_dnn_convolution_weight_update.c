@@ -1147,7 +1147,7 @@ void lp_transpose_and_resize_1_chunk_1_remainder_even_pixels(int img, libxsmm_dn
 #undef TRANSPOSE_W_CHUNK_RESIZED
 #undef TRANSPOSE_W_REMAINDER_RESIZED
 
-#if 1
+#if 1 /*defined(__AVX512F__)*/
 void gather_transpose_ps_16_56_56_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
   const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
   const __mmask16 Nremmask = 0x00FF;
@@ -1400,7 +1400,7 @@ void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, cons
     }
   }
 }
-#endif //defined(__AVX512F__)
+#endif
 
 typedef void (*transposer)(int M, int N, float *dst, int ldD, const float *src, int ldS);
 
@@ -1540,54 +1540,12 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_cust
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(libxsmm_dnn_layer* handle, int start_thread, int tid)
-{
-  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-
-  /* check if we have input, output and filter */
-  if (handle->reg_input == 0 || handle->grad_output == 0 || handle->grad_filter == 0 || handle->scratch3 == 0) {
-    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-    return status;
-  }
-
-  /* check if we scratch for MB parallel execution */
-  if ( (handle->upd_use_thread_fil == 1) && (handle->scratch4 == 0) ) {
-    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-    return status;
-  }
-
-  /* check if we have a kernel JITed */
-  if ( handle->use_upd_generic != 0 ) {
-    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      typedef float element_input_type;
-      typedef float element_output_type;
-      typedef float element_filter_type;
-# include "template/libxsmm_dnn_convolve_st_upd_nhwc_rsck_fallback.tpl.c"
-    } else {
-      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-      return status;
-    }
-  }
-  else {
-    /* shouldn't happen */
-  }
-
-  return status;
-}
-
-
 LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check if we have input, output and filter */
-  if (handle->reg_input == 0 || handle->grad_output == 0 || handle->grad_filter == 0 || handle->scratch3 == 0) {
-    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-    return status;
-  }
-
-  /* check if we scratch for MB parallel execution */
-  if ( (handle->upd_use_thread_fil == 1) && (handle->scratch4 == 0) ) {
+  if (handle->reg_input == 0 || handle->grad_output == 0 || handle->grad_filter == 0) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
   }
@@ -1595,10 +1553,26 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom
   /* check if we have a kernel JITed */
   if ( handle->use_upd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      const int lda     = (int)(handle->blocksofm*handle->ofmblock);
+      const int ldb     = (int)(handle->desc.W+(2*handle->desc.pad_w));
+      const int ldc     = (int)(handle->ofmblock);
+      const int lda_alt = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) 
+                            ? (int)(handle->desc.v*handle->blocksifm*handle->ifmblock) : (int)(handle->desc.v*handle->ifmblock);
+      const int ldb_alt = (int)(handle->ofwp);
+      const int ldc_alt = (int)(handle->ifmblock);
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-# include "template/libxsmm_dnn_convolve_st_upd_nhwc_custom_fallback.tpl.c"
+      typedef libxsmm_smmfunction gemm_function;
+      /* let's do a ofmblock x ifmblock x ofw_rb GEMM :-) or in other words M=nbOfm, N=nbIfm, K=ofw (col-major) */
+      gemm_function gemm_kernel     = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->ofw, &lda, &ldb, &ldc, NULL, NULL, NULL, NULL);
+      /* for strided convlutions with kernel size bigger than 1 the above GEMM doesn't work and we need to switch to more transposes and an
+         alternative GEMM:
+         let's do a ifmblock x ofmblock x ofw_rb GEMM :-) or in other words M=nbIfm, N=nbOfm, K=ofw (col-major) */
+      gemm_function gemm_kernel_alt = libxsmm_smmdispatch(handle->ifmblock, handle->ofmblock, handle->ofw, &lda_alt, &ldb_alt, &ldc_alt, NULL, NULL, NULL, NULL);
+#define LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM
+# include "template/libxsmm_dnn_convolve_st_upd_nhwc_custom-rsck_fallback.tpl.c"
+#undef LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
@@ -1611,4 +1585,49 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom
   return status;
 }
 
+
+LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  /* check if we have input, output and filter */
+  if (handle->reg_input == 0 || handle->grad_output == 0 || handle->grad_filter == 0) {
+    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
+    return status;
+  }
+
+  /* check if we have a kernel JITed */
+  if ( handle->use_upd_generic != 0 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      const int lda     = (int)(handle->blocksofm*handle->ofmblock);
+      const int ldb     = (int)(handle->desc.W+(2*handle->desc.pad_w));
+      const int ldc     = (int)(handle->blocksofm*handle->ofmblock);
+      const int lda_alt = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) 
+                            ? (int)(handle->desc.v*handle->blocksifm*handle->ifmblock) : (int)(handle->desc.v*handle->ifmblock);
+      const int ldb_alt = (int)(handle->ofwp);
+      const int ldc_alt = (int)(handle->ifmblock);
+      typedef float element_input_type;
+      typedef float element_output_type;
+      typedef float element_filter_type;
+      typedef libxsmm_smmfunction gemm_function;
+      /* let's do a ofmblock x ifmblock x ofw_rb GEMM :-) or in other words M=nbOfm, N=nbIfm, K=ofw (col-major) */
+      gemm_function gemm_kernel     = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->ofw, &lda, &ldb, &ldc, NULL, NULL, NULL, NULL);
+      /* for strided convlutions with kernel size bigger than 1 the above GEMM doesn't work and we need to switch to more transposes and an
+         alternative GEMM:
+         let's do a ifmblock x ofmblock x ofw_rb GEMM :-) or in other words M=nbIfm, N=nbOfm, K=ofw (col-major) */
+      gemm_function gemm_kernel_alt = libxsmm_smmdispatch(handle->ifmblock, handle->ofmblock, handle->ofw, &lda_alt, &ldb_alt, &ldc_alt, NULL, NULL, NULL, NULL);
+#define LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_RSCK
+# include "template/libxsmm_dnn_convolve_st_upd_nhwc_custom-rsck_fallback.tpl.c"
+#undef LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_RSCK
+    } else {
+      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+      return status;
+    }
+  }
+  else {
+    /* shouldn't happen */
+  }
+
+  return status;
+}
 
