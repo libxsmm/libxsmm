@@ -368,8 +368,9 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 /** Call libxsmm_gemm_print using LIBXSMM's GEMM-flags. */
 #define LIBXSMM_GEMM_PRINT(OSTREAM, IPREC, OPREC, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC) \
   libxsmm_gemm_dprint(OSTREAM, (libxsmm_gemm_precision)(IPREC), (libxsmm_gemm_precision)(OPREC), \
-    (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T'), \
-    (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'N' : 'T'), \
+    /* 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
+    (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'n' : 'T'), \
+    (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'n' : 'T'), \
     M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC)
 
 /**
@@ -451,3 +452,4 @@ LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u32(unsigned int n) {
 }
 
 #endif /*LIBXSMM_FRONTEND_H*/
+
