@@ -96,7 +96,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   (defined(_WIN32) || defined(__CYGWIN__)) /* TODO: full support for Windows calling convention */
 # define INTERNAL_PREFETCH LIBXSMM_GEMM_PREFETCH_NONE
 #else
-# define INTERNAL_PREFETCH LIBXSMM_PREFETCH
+# define INTERNAL_PREFETCH ((libxsmm_gemm_prefetch_type)LIBXSMM_PREFETCH)
 #endif
 
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW)) /* most general implementation */
@@ -1827,7 +1827,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gem
     if (0 != libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.xmm) {
       LIBXSMM_FLOCK(stdout);
       fprintf(stdout, "LIBXSMM: ");
-      LIBXSMM_GEMM_PRINT(stdout,
+      LIBXSMM_GEMM_PRINT2(stdout,
         LIBXSMM_GETENUM_INP(descriptor->datatype), LIBXSMM_GETENUM_OUT(descriptor->datatype),
         descriptor->flags, descriptor->m, descriptor->n, descriptor->k,
         descriptor->alpha, 0/*a*/, descriptor->lda, 0/*b*/, descriptor->ldb,

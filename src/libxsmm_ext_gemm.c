@@ -156,7 +156,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor_type
           if (0 == count) {
             fprintf(stdout, "\nLIBXSMM STATISTIC: %u multiplication%c\n", batchcount, 1 < batchcount ? 's' : ' ');
           }
-          LIBXSMM_GEMM_PRINT(stdout, LIBXSMM_GETENUM_INP(descriptor.datatype), LIBXSMM_GETENUM_OUT(descriptor.datatype),
+          LIBXSMM_GEMM_PRINT2(stdout, LIBXSMM_GETENUM_INP(descriptor.datatype), LIBXSMM_GETENUM_OUT(descriptor.datatype),
             descriptor.flags, m, n, k, descriptor.alpha, 0/*a*/, lda, 0/*b*/, ldb, descriptor.beta, 0/*c*/, ldc);
           if (0 != symbol) {
             fprintf(stdout, ": %.0f%% [%s]\n", 100.0 * ci / batchcount, symbol);
@@ -473,7 +473,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sgemm_omp(const char* transa, const char* tr
       libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
       if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F32, *m, nn, d, c, m, ldc, &diff)) {
         LIBXSMM_FLOCK(stderr);
-        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_GEMM_PRECISION_F32,
+        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F32,
           transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
         fprintf(stderr, " L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
         LIBXSMM_FUNLOCK(stderr);
@@ -556,7 +556,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm_omp(const char* transa, const char* tr
       libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
       if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F64, *m, nn, d, c, m, ldc, &diff)) {
         LIBXSMM_FLOCK(stderr);
-        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F64, LIBXSMM_GEMM_PRECISION_F64,
+        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F64,
           transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
         fprintf(stderr, " L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
         LIBXSMM_FUNLOCK(stderr);

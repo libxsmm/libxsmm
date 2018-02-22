@@ -157,8 +157,7 @@ int main(int argc, char* argv[])
       }
 #endif
       if (!ab) {
-      libxsmm_gemm_print(stdout,
-        LIBXSMM_GEMM_PRECISION(REAL_TYPE), LIBXSMM_GEMM_PRECISION(REAL_TYPE),
+      libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
         &transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
       fprintf(stdout, "\n\n");
       }

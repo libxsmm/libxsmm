@@ -176,14 +176,14 @@
       if (0 < libxsmm_verbosity) { /* print fallback */ \
         LIBXSMM_FLOCK(stderr); \
         fprintf(stderr, "LIBXSMM FALLBACK: "); \
-        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(TYPE), LIBXSMM_GEMM_PRECISION(TYPE), \
+        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(TYPE), \
           &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(MM), &(NN), &(KK), \
           &libxsmm_tiled_xgemm_alpha_, 0/*A*/, &(LDA), 0/*B*/, &(LDB), &libxsmm_tiled_xgemm_beta_, 0/*C*/, &(LDC)); \
         fprintf(stderr, "\n"); \
         LIBXSMM_FUNLOCK(stderr); \
       } \
       else { /* dump matrices */ \
-        libxsmm_gemm_print(0, LIBXSMM_GEMM_PRECISION(TYPE), LIBXSMM_GEMM_PRECISION(TYPE), \
+        libxsmm_gemm_print(NULL, LIBXSMM_GEMM_PRECISION(TYPE), \
           &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(MM), &(NN), &(KK), \
           &libxsmm_tiled_xgemm_alpha_, A, &(LDA), B, &(LDB), &libxsmm_tiled_xgemm_beta_, C, &(LDC)); \
       } \

@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
       LIBXSMM_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
     }
 #endif
-    libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(REAL_TYPE), LIBXSMM_GEMM_PRECISION(REAL_TYPE),
+    libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
       &transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
     fprintf(stdout, "\n\n");
 

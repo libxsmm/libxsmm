@@ -366,8 +366,10 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 }
 
 /** Call libxsmm_gemm_print using LIBXSMM's GEMM-flags. */
-#define LIBXSMM_GEMM_PRINT(OSTREAM, IPREC, OPREC, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC) \
-  libxsmm_gemm_dprint(OSTREAM, (libxsmm_gemm_precision)(IPREC), (libxsmm_gemm_precision)(OPREC), \
+#define LIBXSMM_GEMM_PRINT(OSTREAM, PRECISION, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC) \
+  LIBXSMM_GEMM_PRINT2(OSTREAM, PRECISION, PRECISION, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC)
+#define LIBXSMM_GEMM_PRINT2(OSTREAM, IPREC, OPREC, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC) \
+  libxsmm_gemm_dprint2(OSTREAM, (libxsmm_gemm_precision)(IPREC), (libxsmm_gemm_precision)(OPREC), \
     /* 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
     (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'n' : 'T'), \
     (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'n' : 'T'), \
@@ -380,12 +382,24 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
  * ITK-SNAP or ParaView.
  */
 LIBXSMM_API void libxsmm_gemm_print(void* ostream,
+  libxsmm_gemm_precision precision, const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+  const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc);
+LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
   const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc);
 LIBXSMM_API void libxsmm_gemm_dprint(void* ostream,
+  libxsmm_gemm_precision precision, char transa, char transb,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  double dalpha, const void* a, libxsmm_blasint lda,
+  const void* b, libxsmm_blasint ldb,
+  double dbeta, void* c, libxsmm_blasint ldc);
+LIBXSMM_API void libxsmm_gemm_dprint2(void* ostream,
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, char transa, char transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   double dalpha, const void* a, libxsmm_blasint lda,
