@@ -39,7 +39,7 @@
         (LIBXSMM_FEQ(1, BETA) || LIBXSMM_FEQ(0, BETA)))
 
 #define LIBXSMM_TRANS_NO_BYPASS_DIMS(M, N, LDO) \
-  (((unsigned int)(1U * (M) * (N))) <= ((LIBXSMM_AVG_M) * (LIBXSMM_AVG_N)))
+  ((((unsigned int)(M)) * (N)) <= ((LIBXSMM_AVG_M) * (LIBXSMM_AVG_N)))
 
 
 /** Initialize GEMM descriptor as used by low-level routines (type-specific). */
