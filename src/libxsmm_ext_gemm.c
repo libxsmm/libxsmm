@@ -673,7 +673,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_batch_omp2(libxsmm_gemm_precision iprec
 {
   libxsmm_descriptor_blob blob;
   const libxsmm_gemm_descriptor_type *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec,
-    m, n, k, 0 == lda ? m : *lda, 0 == ldb ? k : *ldb, 0 == ldc ? m : *ldc, alpha, beta,
+    m, n, k, 0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m, alpha, beta,
     LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS), libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
   const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(descriptor);
   static int error_once = 0;
@@ -704,6 +704,18 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_batch_omp2(libxsmm_gemm_precision iprec
   {
     fprintf(stderr, "LIBXSMM ERROR: libxsmm_gemm_batch_omp failed!\n");
   }
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision,
+  const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc, libxsmm_blasint index_base, libxsmm_blasint index_stride,
+  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  libxsmm_blasint batchsize)
+{
+  libxsmm_gemm_batch_omp2(precision, precision, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
+    index_base, index_stride, stride_a, stride_b, stride_c, batchsize);
 }
 
 
@@ -778,6 +790,15 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin2(libxsmm_gemm_precision iprec,
   LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(ldb); LIBXSMM_UNUSED(ldc);
   LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(beta);
 #endif
+}
+
+
+LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin(libxsmm_gemm_precision precision, const int* flags,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const void* alpha, const void* beta)
+{
+  libxsmm_mmbatch_begin2(precision, precision, flags, m, n, k, lda, ldb, ldc, alpha, beta);
 }
 
 

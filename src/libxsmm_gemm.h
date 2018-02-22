@@ -489,8 +489,6 @@ LIBXSMM_API_VARIABLE(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_gemm_batchlock
 LIBXSMM_API_VARIABLE(unsigned int libxsmm_gemm_batchsize);
 /** Grain/chunk size when processing batches. */
 LIBXSMM_API_VARIABLE(int libxsmm_gemm_chunksize);
-/** Prefetch strategy for tiled GEMM. */
-LIBXSMM_API_VARIABLE(int libxsmm_gemm_tiled_prefetch);
 /** Determines if OpenMP tasks are used. */
 LIBXSMM_API_VARIABLE(int libxsmm_gemm_tasks);
 /**
@@ -502,9 +500,11 @@ LIBXSMM_API_VARIABLE(int libxsmm_gemm_tasks);
  */
 LIBXSMM_API_VARIABLE(int libxsmm_gemm_wrap);
 /** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_API_VARIABLE(int libxsmm_gemm_auto_prefetch_default);
+LIBXSMM_API_VARIABLE(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
-LIBXSMM_API_VARIABLE(int libxsmm_gemm_auto_prefetch);
+LIBXSMM_API_VARIABLE(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
+/** Prefetch strategy for tiled GEMM. */
+LIBXSMM_API_VARIABLE(libxsmm_gemm_prefetch_type libxsmm_gemm_tiled_prefetch);
 
 #endif /*LIBXSMM_GEMM_H*/
 

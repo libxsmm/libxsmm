@@ -81,7 +81,7 @@ LIBXSMM_INLINE void print_help(void) {
 
 int main(int argc, char* argv []) {
   const libxsmm_gemm_descriptor_type* l_xgemm_desc = 0;
-  libxsmm_gemm_descriptor_blob l_xgemm_blob;
+  libxsmm_descriptor_blob l_xgemm_blob;
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   char* l_type;
   char* l_file_out;
@@ -166,52 +166,52 @@ int main(int argc, char* argv []) {
 
   /* set value of prefetch flag */
   if (strcmp("nopf", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_NONE;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   }
   else if (strcmp("pfsigonly", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_SIGONLY;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_SIGONLY;
   }
   else if (strcmp("BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
   }
   else if (strcmp("curAL2", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2_AHEAD;
   }
   else if (strcmp("curAL2_BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD;
   }
   else if (strcmp("AL2", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2;
   }
   else if (strcmp("AL2_BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;
   }
   else if (strcmp("AL2jpst", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2_JPST;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2_JPST;
   }
   else if (strcmp("AL2jpst_BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_JPST;
   }
   else if (strcmp("AL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1;
   }
   else if (strcmp("BL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_BL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_BL1;
   }
   else if (strcmp("CL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_CL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_CL1;
   }
   else if (strcmp("AL1_BL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL1_BL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1_BL1;
   }
   else if (strcmp("BL1_CL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_BL1_CL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_BL1_CL1;
   }
   else if (strcmp("AL1_CL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL1_CL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1_CL1;
   }
   else if (strcmp("AL1_BL1_CL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL1_BL1_CL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1_BL1_CL1;
   }
   else {
     print_help();

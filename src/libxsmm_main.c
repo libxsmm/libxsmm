@@ -1855,7 +1855,7 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m
 {
   libxsmm_descriptor_blob blob;
   const libxsmm_gemm_descriptor_type *const desc = libxsmm_dgemm_descriptor_init(&blob, m, n, k,
-    0 == lda ? m : *lda, 0 == ldb ? k : *ldb, 0 == ldc ? m : *ldc,
+    0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
     0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     0 == flags ? LIBXSMM_FLAGS : *flags, libxsmm_get_gemm_xprefetch(prefetch));
   return libxsmm_xmmdispatch(desc).dmm;
@@ -1868,7 +1868,7 @@ LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m
 {
   libxsmm_descriptor_blob blob;
   const libxsmm_gemm_descriptor_type *const desc = libxsmm_sgemm_descriptor_init(&blob, m, n, k,
-    0 == lda ? m : *lda, 0 == ldb ? k : *ldb, 0 == ldc ? m : *ldc,
+    0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
     0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     0 == flags ? LIBXSMM_FLAGS : *flags, libxsmm_get_gemm_xprefetch(prefetch));
   return libxsmm_xmmdispatch(desc).smm;
@@ -1881,7 +1881,7 @@ LIBXSMM_API_DEFINITION libxsmm_wmmfunction libxsmm_wmmdispatch(libxsmm_blasint m
 {
   libxsmm_descriptor_blob blob;
   const libxsmm_gemm_descriptor_type *const desc = libxsmm_wigemm_descriptor_init(&blob, m, n, k,
-    0 == lda ? m : *lda, 0 == ldb ? k : *ldb, 0 == ldc ? m : *ldc,
+    0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
     0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     0 == flags ? LIBXSMM_FLAGS : *flags, libxsmm_get_gemm_xprefetch(prefetch));
   return libxsmm_xmmdispatch(desc).wmm;
