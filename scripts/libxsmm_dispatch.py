@@ -40,7 +40,7 @@ if __name__ == "__main__":
         threshold = int(sys.argv[2])
         mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], 0)
 
-        print("libxsmm_gemm_descriptor desc;")
+        print("libxsmm_gemm_descriptor_type desc;")
         print("libxsmm_xmmfunction func;")
         print("unsigned int hash, indx;")
         print("#if defined(_MSC_VER)")
@@ -62,7 +62,7 @@ if __name__ == "__main__":
                 print("    " + mnksig + ", " + ldxsig + ", " +
                       "LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
                 print("  hash = libxsmm_crc32(&desc, " +
-                      "LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);")
+                      "LIBXSMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);")
                 print("  indx = LIBXSMM_HASH_MOD(hash, " +
                       "LIBXSMM_CAPACITY_REGISTRY);")
                 print("  func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" +
@@ -85,7 +85,7 @@ if __name__ == "__main__":
                 print("    " + mnksig + ", " + ldxsig + ", " +
                       "LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
                 print("  hash = libxsmm_crc32(&desc, " +
-                      "LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);")
+                      "LIBXSMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);")
                 print("  indx = LIBXSMM_HASH_MOD(hash, " +
                       "LIBXSMM_CAPACITY_REGISTRY);")
                 print("  func.smm = (libxsmm_smmfunction)libxsmm_smm_" +

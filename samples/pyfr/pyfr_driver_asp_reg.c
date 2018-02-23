@@ -106,7 +106,7 @@ int my_csr_reader( const char*           i_csr_file_in,
           l_i = 0;
           l_header_read = 1;
         } else {
-          fprintf( stderr, "could not csr descripton!\n" );
+          fprintf( stderr, "could not csr description!\n" );
           return -1;
         }
       /* now we read the actual content */
@@ -121,11 +121,11 @@ int my_csr_reader( const char*           i_csr_file_in,
         /* adjust numbers to zero termination */
         l_row--;
         l_column--;
-        /* add these values to row and value strucuture */
+        /* add these values to row and value structure */
         (*o_column_idx)[l_i] = l_column;
         (*o_values)[l_i] = l_value;
         l_i++;
-        /* handle columns, set id to onw for this column, yeah we need to hanle empty columns */
+        /* handle columns, set id to own for this column, yeah we need to handle empty columns */
         l_row_idx_id[l_row] = 1;
         (*o_row_idx)[l_row+1] = l_i;
       }
@@ -135,7 +135,7 @@ int my_csr_reader( const char*           i_csr_file_in,
   /* close mtx file */
   fclose( l_csr_file_handle );
 
-  /* check if we read a file which was consitent */
+  /* check if we read a file which was consistent */
   if ( l_i != (*o_element_count) ) {
     fprintf( stderr, "we were not able to read all elements!\n" );
     return -1;

@@ -110,7 +110,7 @@ int main(int argc, char* argv []) {
   /* arch specific stuff */
   l_arch = argv[19];
 
-  /* some intial parameters checks */
+  /* some initial parameters checks */
   /* check for sparse / dense only */
   if ( (strcmp(l_type, "inlineasm") != 0) &&
        (strcmp(l_type, "plainasm")  != 0) ) {

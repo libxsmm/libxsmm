@@ -28,7 +28,6 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_common.h"
 #include "generator_x86_instructions.h"
 #include "generator_gemm_common.h"
@@ -37,6 +36,7 @@
 #include "generator_gemm_avx_microkernel.h"
 #include "generator_gemm_avx2_microkernel.h"
 #include "generator_gemm_avx512_microkernel_nofsdbcst.h"
+#include "libxsmm_main.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -45,10 +45,10 @@
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*        io_generated_code,
-                                                         const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                         const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                                          const char*                    i_arch ) {
   void (*l_generator_microkernel)(libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                                  const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int, const int);
+                                  const libxsmm_gemm_descriptor_type*, const unsigned int, const unsigned int, const int);
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
@@ -230,7 +230,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
 
 LIBXSMM_INTERNAL_API_DEFINITION
 unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                                const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                                                const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                                                                 const char*                    i_arch ) {
   unsigned int l_m_blocking = 0;
 
@@ -259,7 +259,7 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_inital_m_blocking( 
 
 LIBXSMM_INTERNAL_API_DEFINITION
 unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_update_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                            const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                                            const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                                                             const char*                    i_arch,
                                                                             const unsigned int             i_current_m_blocking ) {
   unsigned int l_m_blocking = 0;

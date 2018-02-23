@@ -268,7 +268,8 @@ int main(int argc, char* argv[])
     descriptor.options = LIBXSMM_DNN_CONV_OPTION_NONE;
 #endif
     descriptor.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
-    descriptor.datatype = LIBXSMM_DNN_DATATYPE_F32;
+    descriptor.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
+    descriptor.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
     handle = libxsmm_dnn_create_conv_layer(descriptor, &status);
     if (LIBXSMM_DNN_SUCCESS != status) {
       const char *const error_message = libxsmm_dnn_get_error(status);

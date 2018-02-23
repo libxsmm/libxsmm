@@ -322,7 +322,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
       libxsmm_generator_convolution_header_ifmOuter_loop(  io_generated_code, &l_loop_label_tracker,
                                                          &l_conv_kernel_config, l_gp_reg_mapping.gp_reg_ifmOuter_loop );
     
-      #include "kernel_repeat.tpl.c"
+      #include "template/kernel_repeat.tpl.c"
 
       /* adjust addresses, by moving to next ifm1 block */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
@@ -526,7 +526,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
         }
 #endif
 
-          #include "kernel_repeat.tpl.c"
+          #include "template/kernel_repeat.tpl.c"
 
          /* adjust addresses, by moving to next ifm1 block */
          libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
@@ -592,9 +592,9 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     }
 #endif
   
-    #include "kernel_repeat.tpl.c"
+    #include "template/kernel_repeat.tpl.c"
   } else {
-    #include "kernel_repeat.tpl.c"
+    #include "template/kernel_repeat.tpl.c"
   }
 
   /* store outputs */

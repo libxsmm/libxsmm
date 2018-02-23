@@ -145,7 +145,7 @@ int main(int argc, char* argv []) {
   l_pass= argv[11];
   l_ur_ifm = atoi(argv[12]);
 
-  /* some intial parameters checks */
+  /* some initial parameters checks */
   /* check for sparse / dense only */
   if ( (strcmp(l_type, "dense")     != 0) &&
        (strcmp(l_type, "dense_asm") != 0) ) {

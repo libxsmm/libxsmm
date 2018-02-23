@@ -102,21 +102,6 @@
     <ClInclude Include="..\include\libxsmm_source.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_forward_avx2.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_forward_avx512.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_weight_update_avx512.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_backward_avx512.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_common.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_main.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -156,12 +141,6 @@
     <ClInclude Include="..\src\perf_jitdump.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_backward_avx2.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_weight_update_avx2.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_dnn_convolution_backward.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -182,12 +161,6 @@
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_spmdm.h">
       <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_winograd_forward_avx512.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_winograd_weight_update_avx512.h">
-      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_backward.h">
       <Filter>src</Filter>
@@ -217,6 +190,24 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_spgemm_csc_bsparse_soa.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_convolution_backward_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_convolution_common.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_convolution_forward_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_convolution_weight_update_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_convolution_winograd_forward_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_convolution_winograd_weight_update_avx512.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -296,22 +287,7 @@
     <ClCompile Include="..\src\generator_spgemm_csr_reader.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_forward_avx2.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_forward_avx512.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_weight_update_avx512.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_convolution.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_backward_avx512.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_common.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn.c">
@@ -344,12 +320,6 @@
     <ClCompile Include="..\src\generator_gemm_sse3_avx_avx2_avx512.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_backward_avx2.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_weight_update_avx2.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_convolution_backward.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -360,15 +330,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_spmdm.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_winograd.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_winograd_forward_avx512.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_winograd_weight_update_avx512.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_backward.c">
@@ -408,6 +369,30 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_python.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_generator.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_backward_avx512.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_common.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_forward_avx512.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_weight_update_avx512.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_winograd.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_winograd_forward_avx512.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_convolution_winograd_weight_update_avx512.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

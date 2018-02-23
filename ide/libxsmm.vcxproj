@@ -46,12 +46,9 @@
     <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
     <ClInclude Include="..\src\generator_common.h" />
-    <ClInclude Include="..\src\generator_convolution_backward_avx2.h" />
     <ClInclude Include="..\src\generator_convolution_backward_avx512.h" />
     <ClInclude Include="..\src\generator_convolution_common.h" />
-    <ClInclude Include="..\src\generator_convolution_forward_avx2.h" />
     <ClInclude Include="..\src\generator_convolution_forward_avx512.h" />
-    <ClInclude Include="..\src\generator_convolution_weight_update_avx2.h" />
     <ClInclude Include="..\src\generator_convolution_weight_update_avx512.h" />
     <ClInclude Include="..\src\generator_convolution_winograd_forward_avx512.h" />
     <ClInclude Include="..\src\generator_convolution_winograd_weight_update_avx512.h" />
@@ -99,12 +96,9 @@
   <ItemGroup>
     <ClCompile Include="..\src\generator_common.c" />
     <ClCompile Include="..\src\generator_convolution.c" />
-    <ClCompile Include="..\src\generator_convolution_backward_avx2.c" />
     <ClCompile Include="..\src\generator_convolution_backward_avx512.c" />
     <ClCompile Include="..\src\generator_convolution_common.c" />
-    <ClCompile Include="..\src\generator_convolution_forward_avx2.c" />
     <ClCompile Include="..\src\generator_convolution_forward_avx512.c" />
-    <ClCompile Include="..\src\generator_convolution_weight_update_avx2.c" />
     <ClCompile Include="..\src\generator_convolution_weight_update_avx512.c" />
     <ClCompile Include="..\src\generator_convolution_winograd.c" />
     <ClCompile Include="..\src\generator_convolution_winograd_forward_avx512.c" />
@@ -147,6 +141,7 @@
     <ClCompile Include="..\src\libxsmm_dnn_dryruns.c" />
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
     <ClCompile Include="..\src\libxsmm_fsspmdm.c" />
+    <ClCompile Include="..\src\libxsmm_generator.c" />
     <ClCompile Include="..\src\libxsmm_hash.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>

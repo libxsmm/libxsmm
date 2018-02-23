@@ -28,9 +28,9 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_gemm_avx512_microkernel_nofsdbcst.h"
 #include "generator_x86_instructions.h"
+#include "libxsmm_main.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +40,7 @@ LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code*             io_generated_code,
                                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                          const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                          const libxsmm_gemm_descriptor_type*     i_xgemm_desc,
                                                           const unsigned int                 i_m_blocking,
                                                           const unsigned int                 i_n_blocking,
                                                           const int                          i_offset )

@@ -41,8 +41,6 @@
 # endif
 #endif
 
-#define LIBXSMM_TRANS_NO_BYPASS_DIMS(M, N, LDO) (((unsigned int)(1U * (M) * (N))) <= ((LIBXSMM_AVG_M) * (LIBXSMM_AVG_N)))
-
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
   const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
@@ -180,10 +178,10 @@ LIBXSMM_API void libxsmm_trans_init(int archid);
 LIBXSMM_API void libxsmm_trans_finalize(void);
 
 
-/** Size of peeled chunks during transposing inner tiles. */
-LIBXSMM_API_VARIABLE(unsigned int libxsmm_trans_tile[2/*DP/SP*/][2/*M,N*/][8/*size-range*/]);
 /** Determines whether JIT-kernels are used or not (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
 LIBXSMM_API_VARIABLE(int libxsmm_trans_jit);
+/** Configuration table containing the tile sizes separate for DP and SP. */
+LIBXSMM_API_VARIABLE(/*const*/ unsigned int(*libxsmm_trans_tile)[2/*M,N*/][8/*size-range*/]);
 
 #endif /*LIBXSMM_TRANS_H*/
 

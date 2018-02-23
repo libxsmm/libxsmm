@@ -109,8 +109,8 @@ element_output_type *output_base;
 element_input_type *input_zero;
 
 /* Kernel related variables  */
-libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
-libxsmm_xmatcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
+libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
+libxsmm_xmcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
 libxsmm_convfunction kernel = (handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
 
 transposer tp_func;
@@ -270,7 +270,7 @@ if (handle->reduce_weights) {
     }
     _mm512_store_ps(&weight_ptr[j*16], weight_sum);
 #else
-    element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
+    LIBXSMM_ALIGNED(element_filter_type weight_sum[16], 64);
     LIBXSMM_PRAGMA_VALIGNED
       LIBXSMM_PRAGMA_SIMD
       for ( k = 0; k < 16; k++ ) {

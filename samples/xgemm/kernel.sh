@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 #############################################################################
-# Copyright (c) 2016-2018, Intel Corporation                                #
+# Copyright (c) 2015-2018, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -27,31 +27,63 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        #
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              #
 #############################################################################
-# Alexander Heinecke (Intel Corp.)
+# Hans Pabst (Intel Corp.)
 #############################################################################
 
-echo "Please use sufficient affinities when running this benchmark"
-echo "e.g.:"
-echo "export OMP_NUM_THREADS=X"
-echo "export KMP_AFFINITY=granularity=fine,compact,1,0"
+HERE=$(cd $(dirname $0); pwd -P)
+NAME=$(basename $0 .sh)
+ECHO=$(which echo)
+GREP=$(which grep)
+ENV=$(which env)
 
-export OMP_NUM_THREADS=67
-export KMP_AFFINITY=granularity=fine,compact,1,0
+if [ "Windows_NT" = "${OS}" ]; then
+  # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")
+  export PATH=${PATH}:${HERE}/../../lib:/usr/x86_64-w64-mingw32/sys-root/mingw/bin
+  # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
+  LDD=$(which cygcheck)
+  EXE=.exe
+else
+  if [ "" != "$(which ldd)" ]; then
+    LDD=ldd
+  elif [ "" != "$(which otool)" ]; then
+    LDD="otool -L"
+  else
+    LDD=${ECHO}
+  fi
+fi
 
-numactl --membind=1 ./pyfr_gemm_rm 150 2048 125 1000
-numactl --membind=1 ./pyfr_gemm_rm 150 48000 125 1000
-numactl --membind=1 ./pyfr_gemm_rm 150 96000 125 1000
+MICINFO=$(which micinfo 2>/dev/null)
+if [ "" != "${MICINFO}" ]; then
+  MICCORES=$(${MICINFO} 2>/dev/null | sed -n "0,/\s\+Total No of Active Cores :\s\+\([0-9]\+\)/s//\1/p")
+fi
+if [ "" = "${MICCORES}" ]; then
+  MICCORES=61
+fi
+MICTPERC=3
 
-numactl --membind=1 ./pyfr_gemm_cm 150 2048 125 1000
-numactl --membind=1 ./pyfr_gemm_cm 150 48000 125 1000
-numactl --membind=1 ./pyfr_gemm_cm 150 96000 125 1000
+if [ "-mic" != "$1" ]; then
+  if [ "" != "$(${LDD} ${HERE}/${NAME}${EXE} 2>/dev/null | ${GREP} libiomp5\.)" ]; then
+    ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../../lib \
+      DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../../lib \
+      KMP_AFFINITY=compact,granularity=fine,1 \
+      MIC_KMP_AFFINITY=compact,granularity=fine \
+      MIC_KMP_HW_SUBSET=$((MICCORES-1))c${MICTPERC}t \
+      MIC_ENV_PREFIX=MIC \
+      OFFLOAD_INIT=on_start \
+    ${TOOL_COMMAND} ${HERE}/${NAME}${EXE} $*
+  else
+    ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../../lib \
+      DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../../lib \
+      OMP_PROC_BIND=TRUE \
+    ${TOOL_COMMAND} ${HERE}/${NAME}${EXE} $*
+  fi
+else
+  shift
+  ${ENV} \
+    SINK_LD_LIBRARY_PATH=${SINK_LD_LIBRARY_PATH}:${MIC_LD_LIBRARY_PATH}:${HERE}/../../lib \
+  micnativeloadex \
+    ${HERE}/${NAME}${EXE} -a "$*" \
+    -e "KMP_AFFINITY=compact,granularity=fine" \
+    -e "MIC_KMP_HW_SUBSET=$((MICCORES-1))${MICTPERC}t"
+fi
 
-numactl --membind=1 ./pyfr_gemm_rm 105 2048 75 1000
-numactl --membind=1 ./pyfr_gemm_rm 105 48000 75 1000
-numactl --membind=1 ./pyfr_gemm_rm 105 96000 75 1000
-
-numactl --membind=1 ./pyfr_gemm_cm 105 2048 75 1000
-numactl --membind=1 ./pyfr_gemm_cm 105 48000 75 1000
-numactl --membind=1 ./pyfr_gemm_cm 105 96000 75 1000
-
-numactl --membind=1 ./pyfr_driver_asp_reg ./mats/p3/hex/m6-sp.mtx 48000 10000

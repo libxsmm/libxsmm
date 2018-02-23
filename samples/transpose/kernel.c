@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Greg Henry (Intel Corp.)
+/* Alexander Heinecke, Greg Henry, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
@@ -49,7 +49,7 @@ void dfill_matrix ( double *matrix, unsigned int ld, unsigned int m, unsigned in
   if ( ld < m )
   {
      fprintf(stderr,"Error is dfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
-     exit(-1);
+     exit(EXIT_FAILURE);
   }
   for ( j = 1 ; j <= n ; j++ )
   {
@@ -72,7 +72,7 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
   if ( ld < m )
   {
      fprintf(stderr,"Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
-     exit(-1);
+     exit(EXIT_FAILURE);
   }
   for ( j = 1 ; j <= n ; j++ )
   {
@@ -152,17 +152,18 @@ double residual_dtranspose ( double *A, unsigned int lda, unsigned int m, unsign
 
 int main(int argc, char* argv[])
 {
-  unsigned int m=16, n=16, ld_in=16, ld_out=16, nerrs;
-  float  *sin, *sout;
+  unsigned int m = 16, n = 16, ld_in = 16, ld_out = 16, nerrs;
+  const unsigned char* cptr;
   double *din, *dout, dtmp;
-  const unsigned char *cptr;
+  float  *sin, *sout;
 #ifdef COMPARE_TO_AN_ASSEMBLY_CODE
   unsigned int nbest, istop, i;
   unsigned char *cptr2;
   extern void myro_();
 #endif
   union { libxsmm_xtransfunction f; const void* p; } skernel, dkernel;
-  libxsmm_transpose_descriptor descriptor;
+  const libxsmm_trans_descriptor_type* desc = 0;
+  libxsmm_descriptor_blob blob;
 
   if ( argc <= 3 )
   {
@@ -184,12 +185,10 @@ int main(int argc, char* argv[])
   printf("This is a tester for JIT transpose kernels! (m=%u n=%u ld_in=%u ld_out=%u)\n",m,n,ld_in,ld_out);
 
   /* test dispatch call */
-  descriptor.m = m; descriptor.n = n;
-  descriptor.ldo = (unsigned int) ld_out;
-  descriptor.typesize = sizeof(float);
-  skernel.f = libxsmm_xtransdispatch(&descriptor);
-  descriptor.typesize = sizeof(double);
-  dkernel.f = libxsmm_xtransdispatch(&descriptor);
+  desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), m, n, ld_out);
+  skernel.f = libxsmm_xtransdispatch(desc);
+  desc = libxsmm_trans_descriptor_init(&blob, sizeof(double), m, n, ld_out);
+  dkernel.f = libxsmm_xtransdispatch(desc);
 
   printf("address of F32 kernel: %p\n", skernel.p);
   printf("address of F64 kernel: %p\n", dkernel.p);
@@ -242,7 +241,7 @@ int main(int argc, char* argv[])
   if ( ld_out != n )
   {
      fprintf(stderr,"Final warning: This code only works for ld_out=n (n=%u,ld_out=%u)\n",n,ld_out);
-     exit(-1);
+     exit(EXIT_FAILURE);
   }
 */
 
@@ -285,6 +284,6 @@ int main(int argc, char* argv[])
   free(din);
   free(sin);
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 
