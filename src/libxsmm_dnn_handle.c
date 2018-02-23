@@ -903,38 +903,46 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
             if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
               handle->code_bwd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
             } else {
-              handle->code_bwd[0].pmm = libxsmm_create_xconv_backward(&descriptor);
-            }
-            /* PREFETCH_NO_WEIGHT */
-            descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT_L2;
-            handle->code_bwd[1].pmm = libxsmm_create_xconv_backward(&descriptor);
-            /*ALL*/
-            /*descriptor.prefetch_output_ahead = 0;*/
-            descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-            handle->code_bwd[2].pmm = libxsmm_create_xconv_backward(&descriptor);
+              /*if (handle->use_thread_private_jit > 0) {*/
+              if (handle->exploit_duality == 1) {
+                fwd_equivalent_descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
+                if ( handle->ofw != 7) {
+                  handle->code_bwd[4].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
+                } else {
+                  int hrb_save =  fwd_equivalent_descriptor.ofh_rb;
+                  int wrb_save =  fwd_equivalent_descriptor.ofw_rb;
+                  fwd_equivalent_descriptor.ofh_rb = 4;
+                  fwd_equivalent_descriptor.ofw_rb = 7;
+                  handle->code_bwd[4].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
+                  fwd_equivalent_descriptor.ofh_rb = 3;
+                  fwd_equivalent_descriptor.ofw_rb = 7;
+                  handle->code_bwd[5].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
+                  handle->bwd_ofh_rb = 4;
+                  fwd_equivalent_descriptor.ofh_rb = hrb_save;
+                  fwd_equivalent_descriptor.ofw_rb = wrb_save;
+                }
 
-            /*if (handle->use_thread_private_jit > 0) {*/
-            if (handle->exploit_duality == 1) {
-              fwd_equivalent_descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-              if ( handle->ofw != 7) {
-                handle->code_bwd[4].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
+                /* enable jit code */
+                handle->use_bwd_generic = 0;
               } else {
-                int hrb_save =  fwd_equivalent_descriptor.ofh_rb;
-                int wrb_save =  fwd_equivalent_descriptor.ofw_rb;
-                fwd_equivalent_descriptor.ofh_rb = 4;
-                fwd_equivalent_descriptor.ofw_rb = 7;
-                handle->code_bwd[4].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
-                fwd_equivalent_descriptor.ofh_rb = 3;
-                fwd_equivalent_descriptor.ofw_rb = 7;
-                handle->code_bwd[5].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
-                handle->bwd_ofh_rb = 4;
-                fwd_equivalent_descriptor.ofh_rb = hrb_save;
-                fwd_equivalent_descriptor.ofw_rb = wrb_save;
+#if defined(LIBXSMM_ENABLE_ORIG_BWD_GENERATOR)
+                handle->code_bwd[0].pmm = libxsmm_create_xconv_backward(&descriptor);
+
+                /* PREFETCH_NO_WEIGHT */
+                descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT_L2;
+                handle->code_bwd[1].pmm = libxsmm_create_xconv_backward(&descriptor);
+                /*ALL*/
+                /*descriptor.prefetch_output_ahead = 0;*/
+                descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
+                handle->code_bwd[2].pmm = libxsmm_create_xconv_backward(&descriptor);
+#else
+                /* disable jit code, use generic */
+                handle->bwd_ofh_rb = 1;
+                handle->bwd_ofw_rb = handle->ofw;
+                handle->use_bwd_generic = 1;
+#endif
               }
             }
-
-            /* enable jit code */
-            handle->use_bwd_generic = 0;
 #if 0
             /* PEELED VERSION */
             for (i = LIBXSMM_MIN(24, handle->ofw); i > 1; i--) {
@@ -1089,7 +1097,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
                 handle->matcopy_bwd[1].xmatcopy = libxsmm_xmcopydispatch(&matzero_descriptor_overwrite);
               }        
             } else {
+#if defined(LIBXSMM_ENABLE_ORIG_BWD_GENERATOR)
               status = libxsmm_dnn_perform_bwd_dryrun_direct(handle);
+#endif
             }
 
             /* compute kernel stream overhead */
@@ -1108,7 +1118,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
 
           } /* End of backward */
       /* TODO weight update path */
-      { libxsmm_convolution_weight_update_descriptor descriptor;
+      { 
+        if ( handle->desc.N % handle->desc.threads == 0 ) {
+        libxsmm_convolution_weight_update_descriptor descriptor;
         libxsmm_mcopy_descriptor_type matcopy_descriptor;
         libxsmm_mcopy_descriptor_type matzero_descriptor;
 
@@ -1608,6 +1620,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
           }
           printf("KS Overhead UPD in KB: %i \n", ks_overhead/1024 ); 
 
+        }
+        } else {
+          handle->use_upd_generic = 1;
         }
       } /* end of weight-update handle */
       {
