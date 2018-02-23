@@ -38,10 +38,10 @@
 int main(int argc, char* argv[])
 {
   const int m = (1 < argc ? atoi(argv[1]) : 16);
-  const int n = (2 < argc ? ((unsigned int)atoi(argv[2])) : m);
+  const int n = (2 < argc ? atoi(argv[2]) : m);
   const int unsigned ldi = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 0, m);
   const int unsigned ldo = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 0, m);
-  const int unroll = (unsigned char)(5 < argc ? atoi(argv[5]) : 1);
+  const int unroll = (5 < argc ? atoi(argv[5]) : 1);
   const int prefetch = (6 < argc ? atoi(argv[6]) : 0);
   const int flags = ((7 < argc && 0 != atoi(argv[7])) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
   const int iters = (8 < argc ? atoi(argv[8]) : 1);

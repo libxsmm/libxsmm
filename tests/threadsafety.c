@@ -115,7 +115,9 @@ int main(void)
       union { libxsmm_xmmfunction x; void* p; } fi;
       libxsmm_descriptor_blob blob;
       const libxsmm_gemm_descriptor_type *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-        m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, &alpha, &beta, flags, prefetch);
+        m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, &alpha, &beta, flags,
+        /* translate an eventual LIBXSMM_PREFETCH_AUTO */
+        libxsmm_get_gemm_prefetch(prefetch));
 
       fi.x = libxsmm_xmmdispatch(desc);
       if (fi.p != f[i].p) {

@@ -42,8 +42,8 @@ int main(int argc, char* argv[]) {
   unsigned int REPS =    ( argc == 7 ) ? atoi(argv[5]) : 1;
   char* l_csr_file =     ( argc == 7 ) ?      argv[6]  : "file.csr";
 
+  const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const REALTYPE alpha = 1, beta = 1;
 
   REALTYPE* l_a_de = (REALTYPE*)libxsmm_aligned_malloc(K * K * sizeof(REALTYPE), 64);

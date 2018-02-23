@@ -43,8 +43,8 @@ int main(int argc, char* argv[]) {
   unsigned int REPS =    ( argc == 7 ) ? atoi(argv[5]) : 1;
   char* l_csr_file =     ( argc == 7 ) ?      argv[6]  : "file.csr";
 
+  const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const REALTYPE alpha = 1, beta = 1;
 
   edge_mat_desc mat_desc = libxsmm_sparse_csr_reader_desc( l_csr_file );

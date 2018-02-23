@@ -222,7 +222,8 @@ int main(int argc, char* argv []) {
   double l_alpha = 0;
   double l_beta = 0;
 
-  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N'), l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  int l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const libxsmm_gemm_descriptor_type* l_xgemm_desc = 0;
   libxsmm_descriptor_blob l_xgemm_blob;
   libxsmm_matdiff_info l_diff;
@@ -330,7 +331,9 @@ int main(int argc, char* argv []) {
 
   if (strcmp(l_precision, "DP") == 0) {
     l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F64,
-      l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
+      l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags,
+      /* translate an eventual LIBXSMM_PREFETCH_AUTO */
+      libxsmm_get_gemm_prefetch(l_prefetch));
     l_a_d = (double*)libxsmm_aligned_malloc(l_lda * l_k * sizeof(double), 64);
     l_b_d = (double*)libxsmm_aligned_malloc(l_ldb * l_n * sizeof(double), 64);
     l_c_d = (double*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(double), 64);
