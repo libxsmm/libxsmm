@@ -28,7 +28,6 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_generator.h>
 #include "generator_common.h"
 #include "generator_spgemm_csc_reader.h"
 #include "generator_spgemm_csr_reader.h"
@@ -39,6 +38,7 @@
 #include "generator_spgemm_csr_bsparse_soa.h"
 #include "generator_spgemm_csr_asparse_soa.h"
 #include "generator_spgemm_csc_bsparse_soa.h"
+#include "libxsmm_main.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -47,7 +47,7 @@
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*        io_generated_code,
-                                          const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                          const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                           const char*                    i_arch,
                                           const unsigned int*            i_row_idx,
                                           const unsigned int*            i_column_idx,
@@ -87,7 +87,7 @@ void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*        io_gene
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_generated_code,
-                                          const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                          const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                           const char*                    i_arch,
                                           const unsigned int*            i_row_idx,
                                           const unsigned int*            i_column_idx,
@@ -129,7 +129,7 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_gene
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_generated_code,
-                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                              const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                               const char*                    i_arch,
                                               const unsigned int*            i_row_idx,
                                               const unsigned int*            i_column_idx,
@@ -171,7 +171,7 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_generated_code,
-                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                              const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                               const char*                    i_arch,
                                               const unsigned int*            i_row_idx,
                                               const unsigned int*            i_column_idx,
@@ -211,7 +211,7 @@ void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_generated_code,
-                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                              const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                               const char*                    i_arch,
                                               const unsigned int*            i_row_idx,
                                               const unsigned int*            i_column_idx,
@@ -239,7 +239,7 @@ void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm( const char*                    i_file_out,
                                const char*                    i_routine_name,
-                               const libxsmm_gemm_descriptor* i_xgemm_desc,
+                               const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                const char*                    i_arch,
                                const char*                    i_file_in,
                                const int                      i_is_csr ) {

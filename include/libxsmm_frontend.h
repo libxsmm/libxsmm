@@ -38,33 +38,33 @@
  || 0 != ((LIBXSMM_PREFETCH) & 4/*AL2_JPST*/) \
  || 0 != ((LIBXSMM_PREFETCH) & 16/*AL2_AHEAD*/) \
  || 0 != ((LIBXSMM_PREFETCH) & 32/*AL1*/)
-# define LIBXSMM_PREFETCH_A(EXPR) (EXPR)
+# define LIBXSMM_GEMM_PREFETCH_A(EXPR) (EXPR)
 #endif
 #if 0 != ((LIBXSMM_PREFETCH) & 8/*BL2_VIA_C*/) \
  || 0 != ((LIBXSMM_PREFETCH) & 64/*BL1*/)
-# define LIBXSMM_PREFETCH_B(EXPR) (EXPR)
+# define LIBXSMM_GEMM_PREFETCH_B(EXPR) (EXPR)
 #endif
 #if 0 != ((LIBXSMM_PREFETCH) & 128/*CL1*/)
-# define LIBXSMM_PREFETCH_C(EXPR) (EXPR)
+# define LIBXSMM_GEMM_PREFETCH_C(EXPR) (EXPR)
 #endif
 /** Secondary helper macros derived from the above group. */
-#if defined(LIBXSMM_PREFETCH_A)
+#if defined(LIBXSMM_GEMM_PREFETCH_A)
 # define LIBXSMM_NOPREFETCH_A(EXPR)
 #else
 # define LIBXSMM_NOPREFETCH_A(EXPR) EXPR
-# define LIBXSMM_PREFETCH_A(EXPR) 0
+# define LIBXSMM_GEMM_PREFETCH_A(EXPR) 0
 #endif
-#if defined(LIBXSMM_PREFETCH_B)
+#if defined(LIBXSMM_GEMM_PREFETCH_B)
 # define LIBXSMM_NOPREFETCH_B(EXPR)
 #else
 # define LIBXSMM_NOPREFETCH_B(EXPR) EXPR
-# define LIBXSMM_PREFETCH_B(EXPR) 0
+# define LIBXSMM_GEMM_PREFETCH_B(EXPR) 0
 #endif
-#if defined(LIBXSMM_PREFETCH_C)
+#if defined(LIBXSMM_GEMM_PREFETCH_C)
 # define LIBXSMM_NOPREFETCH_C(EXPR)
 #else
 # define LIBXSMM_NOPREFETCH_C(EXPR) EXPR
-# define LIBXSMM_PREFETCH_C(EXPR) 0
+# define LIBXSMM_GEMM_PREFETCH_C(EXPR) 0
 #endif
 
 /** Helper macro for BLAS-style prefixes. */
@@ -76,28 +76,11 @@
 
 /** Helper macro for comparing types. */
 #define LIBXSMM_EQUAL_CHECK(...) LIBXSMM_SELECT_HEAD(__VA_ARGS__, 0)
-#define LIBXSMM_EQUAL(T1, T2) LIBXSMM_EQUAL_CHECK(LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(LIBXSMM_EQUAL_, T1), T2))
+#define LIBXSMM_EQUAL(T1, T2) LIBXSMM_EQUAL_CHECK(LIBXSMM_CONCATENATE2(LIBXSMM_EQUAL_, T1, T2))
 #define LIBXSMM_EQUAL_floatfloat 1
 #define LIBXSMM_EQUAL_doubledouble 1
 #define LIBXSMM_EQUAL_floatdouble 0
 #define LIBXSMM_EQUAL_doublefloat 0
-
-/** Check ILP64 configuration for sanity. */
-#if !defined(LIBXSMM_ILP64) || (0 == LIBXSMM_ILP64 && defined(MKL_ILP64))
-# error "Inconsistent ILP64 configuration detected!"
-#elif (0 != LIBXSMM_ILP64 && !defined(MKL_ILP64))
-# define MKL_ILP64
-#endif
-#if (0 != LIBXSMM_ILP64)
-# define LIBXSMM_BLASINT_NBITS 64
-# define LIBXSMM_BLASINT long long
-#else /* LP64 */
-# define LIBXSMM_BLASINT_NBITS 32
-# define LIBXSMM_BLASINT int
-#endif
-
-/** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
-typedef LIBXSMM_BLASINT libxsmm_blasint;
 
 /** MKL_DIRECT_CALL requires to include the MKL interface. */
 #if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
@@ -112,6 +95,13 @@ typedef LIBXSMM_BLASINT libxsmm_blasint;
 #   include <mkl.h>
 # endif
 #endif
+
+/** Automatically select a prefetch-strategy (libxsmm_get_gemm_xprefetch, etc.). */
+#define LIBXSMM_PREFETCH_AUTO -1
+
+/** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */
+LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch);
+LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch);
 
 /** GEMM: fall-back prototype functions served by any compliant LAPACK/BLAS. */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(
@@ -317,12 +307,12 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
   LIBXSMM_NOPREFETCH_C(LIBXSMM_UNUSED(PC)); \
   LIBXSMM_ASSERT(FN); \
   FN(A, B, C, \
-    LIBXSMM_PREFETCH_A(PA), \
-    LIBXSMM_PREFETCH_B(PB), \
-    LIBXSMM_PREFETCH_C(PC)); \
+    LIBXSMM_GEMM_PREFETCH_A(PA), \
+    LIBXSMM_GEMM_PREFETCH_B(PB), \
+    LIBXSMM_GEMM_PREFETCH_C(PC)); \
 }
 
-#if (0/*LIBXSMM_PREFETCH_NONE*/ == LIBXSMM_PREFETCH)
+#if (0/*LIBXSMM_GEMM_PREFETCH_NONE*/ == LIBXSMM_PREFETCH)
 # define LIBXSMM_MMCALL_LDX(FN, A, B, C, M, N, K, LDA, LDB, LDC) \
   LIBXSMM_MMCALL_ABC(FN, A, B, C)
 #else
@@ -376,12 +366,14 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 }
 
 /** Call libxsmm_gemm_print using LIBXSMM's GEMM-flags. */
-#define LIBXSMM_GEMM_PRINT(OSTREAM, PRECISION, FLAGS, PM, PN, PK, PALPHA, A, PLDA, B, PLDB, PBETA, C, PLDC) { \
-  const char libxsmm_gemm_print_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T'); \
-  const char libxsmm_gemm_print_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'N' : 'T'); \
-  libxsmm_gemm_print(OSTREAM, PRECISION, &libxsmm_gemm_print_transa_, &libxsmm_gemm_print_transb_, \
-    PM, PN, PK, PALPHA, A, PLDA, B, PLDB, PBETA, C, PLDC); \
-}
+#define LIBXSMM_GEMM_PRINT(OSTREAM, PRECISION, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC) \
+  LIBXSMM_GEMM_PRINT2(OSTREAM, PRECISION, PRECISION, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC)
+#define LIBXSMM_GEMM_PRINT2(OSTREAM, IPREC, OPREC, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC) \
+  libxsmm_gemm_dprint2(OSTREAM, (libxsmm_gemm_precision)(IPREC), (libxsmm_gemm_precision)(OPREC), \
+    /* 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
+    (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'n' : 'T'), \
+    (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'n' : 'T'), \
+    M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC)
 
 /**
  * Utility function, which either prints information about the GEMM call
@@ -395,6 +387,24 @@ LIBXSMM_API void libxsmm_gemm_print(void* ostream,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
   const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc);
+LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
+  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+  const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc);
+LIBXSMM_API void libxsmm_gemm_dprint(void* ostream,
+  libxsmm_gemm_precision precision, char transa, char transb,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  double dalpha, const void* a, libxsmm_blasint lda,
+  const void* b, libxsmm_blasint ldb,
+  double dbeta, void* c, libxsmm_blasint ldc);
+LIBXSMM_API void libxsmm_gemm_dprint2(void* ostream,
+  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, char transa, char transb,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  double dalpha, const void* a, libxsmm_blasint lda,
+  const void* b, libxsmm_blasint ldb,
+  double dbeta, void* c, libxsmm_blasint ldc);
 
 /**
  * Structure of differences with matrix norms according
@@ -456,3 +466,4 @@ LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u32(unsigned int n) {
 }
 
 #endif /*LIBXSMM_FRONTEND_H*/
+

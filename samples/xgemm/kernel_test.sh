@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 #############################################################################
-# Copyright (c) 2016-2018, Intel Corporation                                #
+# Copyright (c) 2015-2018, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -27,31 +27,29 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        #
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              #
 #############################################################################
-# Alexander Heinecke (Intel Corp.)
-#############################################################################
 
-echo "Please use sufficient affinities when running this benchmark"
-echo "e.g.:"
-echo "export OMP_NUM_THREADS=X"
-echo "export KMP_AFFINITY=granularity=fine,compact,1,0"
+REPS=10000
+TEST_EDGE="4_9_4 4_9_9 10_9_10 10_9_9 20_9_20 20_9_9 35_9_35 35_9_9 56_9_56 56_9_9"
+TEST_EDGE_PAD="4_9_4 4_9_9 12_9_12 12_9_9 20_9_20 20_9_9 36_9_36 36_9_9 56_9_56 56_9_9"
+TEST_SU2="1008_5_75 75_5_756 147_5_75 48_5_35 184_5_35 35_5_138 75_5_147 35_5_48 48_5_75 108_5_75 75_5_48 16_5_15 15_5_16 49_5_25 25_5_49"
+TEST_SU2_2F="1008_10_75 75_10_756 147_10_75 48_10_35 184_10_35 35_10_138 75_10_147 35_10_48 48_10_75 108_10_75 75_10_48 16_10_15 15_10_16 49_10_25 25_10_49"
+TEST_SU2_3F="1008_15_75 75_15_756 147_15_75 48_15_35 184_15_35 35_15_138 75_15_147 35_15_48 48_15_75 108_15_75 75_15_48 16_15_15 15_15_16 49_15_25 25_15_49"
+TEST=${TEST_EDGE}$
 
-export OMP_NUM_THREADS=67
-export KMP_AFFINITY=granularity=fine,compact,1,0
+# select precision
+PREC=DP
+if [ $# -eq 1 ]
+then
+  PREC=$1
+fi
 
-numactl --membind=1 ./pyfr_gemm_rm 150 2048 125 1000
-numactl --membind=1 ./pyfr_gemm_rm 150 48000 125 1000
-numactl --membind=1 ./pyfr_gemm_rm 150 96000 125 1000
-
-numactl --membind=1 ./pyfr_gemm_cm 150 2048 125 1000
-numactl --membind=1 ./pyfr_gemm_cm 150 48000 125 1000
-numactl --membind=1 ./pyfr_gemm_cm 150 96000 125 1000
-
-numactl --membind=1 ./pyfr_gemm_rm 105 2048 75 1000
-numactl --membind=1 ./pyfr_gemm_rm 105 48000 75 1000
-numactl --membind=1 ./pyfr_gemm_rm 105 96000 75 1000
-
-numactl --membind=1 ./pyfr_gemm_cm 105 2048 75 1000
-numactl --membind=1 ./pyfr_gemm_cm 105 48000 75 1000
-numactl --membind=1 ./pyfr_gemm_cm 105 96000 75 1000
-
-numactl --membind=1 ./pyfr_driver_asp_reg ./mats/p3/hex/m6-sp.mtx 48000 10000
+for t in ${TEST}
+do
+  M=`echo ${t} | awk -F"_" '{print $1}'`
+  N=`echo ${t} | awk -F"_" '{print $2}'`
+  K=`echo ${t} | awk -F"_" '{print $3}'`
+  lda=$M
+  ldb=$K
+  ldc=$M
+  ./xgemmkernel $M $N $K $lda $ldb $ldc 1 1 0 0 nopf ${PREC} ${REPS}
+done

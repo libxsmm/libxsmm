@@ -36,7 +36,7 @@
 
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*             io_generated_code,
-                                                  const libxsmm_matcopy_descriptor*   i_trans_desc,
+                                                  const libxsmm_mcopy_descriptor_type*   i_trans_desc,
                                                   const char*                         i_arch );
 
 #endif /* GENERATOR_MATCOPY_AVX_AVX512_H */

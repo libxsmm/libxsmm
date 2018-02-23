@@ -66,7 +66,7 @@ compile: $(OBJECTS) $(FTNOBJS)
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBDEP) $(LIBNAME)noblas.$(LIBEXT)
 	$(LD) -o $@ $(OBJECTS) \
 		$(MAINLIB) \
-		$(call abslib,$(LIBNAME)noblas.$(LIBEXT)) \
+		$(NOBLASLIB) \
 		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc

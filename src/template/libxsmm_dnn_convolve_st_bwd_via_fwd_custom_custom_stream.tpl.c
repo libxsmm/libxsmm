@@ -70,7 +70,7 @@ const int padded_h = handle->ofhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ofwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(5, element_output_type, output_buffer, ((element_output_type*)handle->scratch5) + ltid * BLOCKSOFM * padded_h * padded_w * handle->ofmblock, padded_h, padded_w, handle->ofmblock_lp, handle->fm_lp_block);
 
-libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
+libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
 libxsmm_convfunction kernel_bwd = (libxsmm_convfunction)handle->code_bwd[4].xconv.sconv;
 libxsmm_convfunction kernel2_bwd = (libxsmm_convfunction)handle->code_bwd[5].xconv.sconv;
 libxsmm_convfunction kernel_pool[2];
@@ -88,15 +88,15 @@ if (handle->datatype_in != handle->datatype_out) {
   del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock); 
 }
 
-float scale_factor __attribute__((aligned(64)));
+LIBXSMM_ALIGNED(float scale_factor, 64);
 if (handle->use_lp_kernel == 1) {
   scale_factor = (float) pow(2.0, -1.0*((double)(handle->reg_filter->scf + handle->grad_output->scf)));
 }
 
-float *max_vals  __attribute__((aligned(64)));
+LIBXSMM_ALIGNED(float *max_vals, 64);
 __m512 max_abs;
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-  LIBXSMM_VLA_DECL(2, float, maxstats, handle->maxstats_bwd->data, handle->ifmblock_hp);
+  LIBXSMM_VLA_DECL(2, float, maxstats, (float*)handle->maxstats_bwd->data, handle->ifmblock_hp);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, handle->ifmblock_hp);
   max_abs = _mm512_setzero_ps();
   _mm512_store_ps(max_vals, max_abs);
@@ -124,8 +124,8 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   int ifm1ofm1, kj, ki, ofm2, ofm1;
   /* Kernel related variables  */
   libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_bwd[4].xconv.sconv;
-  libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
-  libxsmm_xmatcopyfunction jitted_zero_overwrite = handle->matcopy_bwd[1].xmatcopy;
+  libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
+  libxsmm_xmcopyfunction jitted_zero_overwrite = handle->matcopy_bwd[1].xmatcopy;
 
   /* Initialize base pointers */
   if ( handle->padding_flag == 1  ) {

@@ -75,8 +75,8 @@ if (handle->datatype_in != handle->datatype_out) {
   element_filter_type  *mat, *matT;
   /* Kernel related variables  */
   libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_bwd[2].xconv.sconv;
-  libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
-  libxsmm_xmatcopyfunction jitted_matcopyback = handle->matcopy_bwd[1].xmatcopy;
+  libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
+  libxsmm_xmcopyfunction jitted_matcopyback = handle->matcopy_bwd[1].xmatcopy;
   /* Initialize base pointers */
   if ( handle->padding_flag == 1  ) {
     input_base = &LIBXSMM_VLA_ACCESS(3, input_buffer , 0, 0, 0,

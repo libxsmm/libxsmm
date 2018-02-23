@@ -36,7 +36,7 @@
 
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_transpose_avx_avx512_kernel( libxsmm_generated_code*             io_generated_code,
-                                                    const libxsmm_transpose_descriptor* i_trans_desc,
+                                                    const libxsmm_trans_descriptor_type* i_trans_desc,
                                                     const char*                         i_arch );
 
 #endif /* GENERATOR_TRANSPOSE_AVX_AVX512_H */

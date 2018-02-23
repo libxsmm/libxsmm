@@ -52,9 +52,10 @@ int main(void)
 {
   union { LIBXSMM_MMFUNCTION_TYPE(REAL_TYPE) f; void* p; } f[MAX_NKERNELS];
   const char *const target_arch = libxsmm_get_target_arch();
+  const REAL_TYPE alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
+  const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   libxsmm_generated_code generated_code;
   libxsmm_registry_info registry_info;
-  const int prefetch = LIBXSMM_PREFETCH_NONE;
   const int max_shape = LIBXSMM_AVG_M;
   const int flags = LIBXSMM_FLAGS;
   int nkernels = MAX_NKERNELS;
@@ -99,7 +100,7 @@ int main(void)
     const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
     const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
     f[i].f = LIBXSMM_MMDISPATCH_SYMBOL(REAL_TYPE)(m, n, k,
-      NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
+      &m/*lda*/, &k/*ldb*/, &m/*ldc*/, &alpha, &beta,
       &flags, &prefetch);
   }
 
@@ -112,15 +113,18 @@ int main(void)
       const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
       union { libxsmm_xmmfunction x; void* p; } fi;
-      LIBXSMM_GEMM_DESCRIPTOR_TYPE(descriptor, LIBXSMM_GEMM_PRECISION(REAL_TYPE), flags,
-        m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, LIBXSMM_ALPHA, LIBXSMM_BETA, prefetch);
-      fi.x = libxsmm_xmmdispatch(&descriptor);
+      libxsmm_descriptor_blob blob;
+      const libxsmm_gemm_descriptor_type *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
+        m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, &alpha, &beta, flags,
+        /* translate an eventual LIBXSMM_PREFETCH_AUTO */
+        libxsmm_get_gemm_prefetch(prefetch));
 
+      fi.x = libxsmm_xmmdispatch(desc);
       if (fi.p != f[i].p) {
         if (NULL != fi.p) {
           if (NULL != f[i].p) {
             generated_code.code_size = 0; /* reset size; avoid stitching code */
-            libxsmm_generator_gemm_kernel(&generated_code, &descriptor, target_arch);
+            libxsmm_generator_gemm_kernel(&generated_code, desc, target_arch);
 
             if (0 == generated_code.last_error && 0 < generated_code.code_size) {
               /* perform deeper check based on another code generation (used as reference) */

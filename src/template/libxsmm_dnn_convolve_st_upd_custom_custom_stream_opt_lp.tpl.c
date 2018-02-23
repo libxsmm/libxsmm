@@ -103,9 +103,9 @@ element_filter_type *weight_base;
 element_output_type *output_base;
 
 /* Kernel related variables  */
-libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
-libxsmm_xmatcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
-libxsmm_xmatcopyfunction jitted_matzero_weights = handle->matcopy_upd[2].xmatcopy;
+libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
+libxsmm_xmcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
+libxsmm_xmcopyfunction jitted_matzero_weights = handle->matcopy_upd[2].xmatcopy;
 libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 || handle->ifmblock == 1 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
 
 transposer tp_func;
@@ -304,18 +304,18 @@ i = 0;
 instr = handle->n_entries_upd[ltid];
 n_segments = handle->n_upd_code_segments[ltid];
 
-float scale_factor __attribute__((aligned(64)));
+LIBXSMM_ALIGNED(float scale_factor, 64);
 
 if (handle->use_lp_kernel == 1) {
   scale_factor = (float) pow(2.0, -1.0*((double)(handle->reg_input->scf + handle->grad_output->scf)));
 }
 
-float vnni_scratch[32] __attribute__((aligned(64)));
+LIBXSMM_ALIGNED(float vnni_scratch[32], 64);
 
-float *max_vals __attribute__((aligned(64)));
+LIBXSMM_ALIGNED(float *max_vals, 64);
 __m512 max_abs = _mm512_setzero_ps();
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-  LIBXSMM_VLA_DECL(2, float, maxstats, handle->maxstats_upd->data, 16);
+  LIBXSMM_VLA_DECL(2, float, maxstats, (float*)handle->maxstats_upd->data, 16);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, 16);
 }
 
@@ -399,7 +399,7 @@ if (handle->reduce_weights) {
           max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(new_result));
         }
 #else
-        element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
+        LIBXSMM_ALIGNED(element_filter_type weight_sum[16], 64);
         LIBXSMM_PRAGMA_VALIGNED
           LIBXSMM_PRAGMA_SIMD
           for ( k = 0; k < 16; k++ ) {
@@ -453,7 +453,7 @@ if (handle->reduce_weights) {
             _mm512_store_epi32(&weight_ptr[j*16], new_result);
           }
 #else
-          element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
+          LIBXSMM_ALIGNED(element_filter_type weight_sum[16], 64);
           LIBXSMM_PRAGMA_VALIGNED
             LIBXSMM_PRAGMA_SIMD
             for ( k = 0; k < 16; k++ ) {
@@ -496,7 +496,7 @@ if (handle->reduce_weights) {
             _mm512_store_ps(&weight_ptr[j*16], new_result);
           }
 #else
-          element_filter_type weight_sum[16] LIBXSMM_ATTRIBUTE(aligned(64));
+          LIBXSMM_ALIGNED(element_filter_type weight_sum[16], 64);
           LIBXSMM_PRAGMA_VALIGNED
             LIBXSMM_PRAGMA_SIMD
             for ( k = 0; k < 16; k++ ) {

@@ -28,11 +28,10 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_spgemm_csr_asparse_reg.h"
 #include "generator_x86_instructions.h"
 #include "generator_gemm_common.h"
-#include <libxsmm_macros.h>
+#include "libxsmm_main.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -42,7 +41,7 @@
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
-                                  const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+                                  const libxsmm_gemm_descriptor_type* i_xgemm_desc ) {
   char l_new_code[512];
   int l_max_code_length = 511;
   int l_code_length = 0;
@@ -54,13 +53,13 @@ void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*         i
   } else {
     /* selecting the correct signature */
     if (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) {
-      if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
+      if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
       } else {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C, const float* A_prefetch, const float* B_prefetch, const float* C_prefetch) {\n", i_routine_name);
       }
     } else {
-      if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
+      if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
       } else {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C, const double* A_prefetch, const double* B_prefetch, const double* C_prefetch) {\n", i_routine_name);
@@ -73,7 +72,7 @@ void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*         i
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         io_generated_code,
-                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                               const libxsmm_gemm_descriptor_type*  i_xgemm_desc,
                                                const char*                     i_arch,
                                                const unsigned int*             i_row_idx,
                                                const unsigned int*             i_column_idx,

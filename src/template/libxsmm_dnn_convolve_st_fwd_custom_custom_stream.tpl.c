@@ -66,8 +66,8 @@ const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * BLOCKSIFM * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
 /* Kernel related variables  */
-libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
-libxsmm_xmatcopyfunction jitted_zero_overwrite = handle->matcopy_fwd[1].xmatcopy;
+libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
+libxsmm_xmcopyfunction jitted_zero_overwrite = handle->matcopy_fwd[1].xmatcopy;
 libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
 libxsmm_convfunction kernel2 = (libxsmm_convfunction)handle->code_fwd[3].xconv.sconv;
 libxsmm_convfunction kernel_pool[2];
@@ -97,15 +97,15 @@ output_base = &LIBXSMM_VLA_ACCESS(5, output, 0, 0, 0, 0, 0,
 instr = handle->n_entries_fwd[ltid];
 n_segments = handle->n_fwd_code_segments[ltid];
 
-float scale_factor __attribute__((aligned(64)));
+LIBXSMM_ALIGNED(float scale_factor, 64);
 if (handle->use_lp_kernel == 1) {
   scale_factor = (float) pow(2.0, -1.0*((double)(handle->reg_filter->scf + handle->reg_input->scf)));
 }
 
-float *max_vals __attribute__((aligned(64)));
+LIBXSMM_ALIGNED(float *max_vals, 64);
 __m512 max_abs;
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-  LIBXSMM_VLA_DECL(2, element_output_type, maxstats, handle->maxstats_fwd->data, handle->ofmblock);
+  LIBXSMM_VLA_DECL(2, element_output_type, maxstats, (element_output_type*)handle->maxstats_fwd->data, handle->ofmblock);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, handle->ofmblock);
   max_abs = _mm512_setzero_ps();
   _mm512_store_ps(max_vals, max_abs);
@@ -136,7 +136,7 @@ if (n_segments) {
       LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #endif
 #ifdef FP64_BN_STATS
-      LIBXSMM_VLA_DECL(4, double, kernel_stats, handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
+      LIBXSMM_VLA_DECL(4, double, kernel_stats, (double*)handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #endif   
       bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
       bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
@@ -270,7 +270,7 @@ if (n_segments) {
 #endif  
 #ifdef FP64_BN_STATS
               ofm1 =  code_stream[pc].aux_index;
-              LIBXSMM_VLA_DECL(4, double, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
+              LIBXSMM_VLA_DECL(4, double, stats, (double*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
               element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               __m512d bsum1a = _mm512_setzero_pd();
@@ -377,7 +377,7 @@ if (n_segments) {
 #endif  
 #ifdef FP64_BN_STATS
               ofm1 =  code_stream[pc].aux_index;
-              LIBXSMM_VLA_DECL(4, double, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
+              LIBXSMM_VLA_DECL(4, double, stats, (double*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
               element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               __m512d bsum1a = _mm512_setzero_pd();
@@ -483,7 +483,7 @@ if (n_segments) {
     LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #endif
 #ifdef FP64_BN_STATS
-    LIBXSMM_VLA_DECL(4, double, kernel_stats, handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
+    LIBXSMM_VLA_DECL(4, double, kernel_stats, (double*)handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #endif  
     bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
     bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);    

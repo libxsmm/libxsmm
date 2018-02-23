@@ -29,8 +29,7 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#include <libxsmm_generator.h>
-#include <libxsmm_macros.h>
+#include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -81,7 +80,9 @@ LIBXSMM_INLINE void print_help(void) {
 }
 
 int main(int argc, char* argv []) {
-  libxsmm_gemm_descriptor l_xgemm_desc;
+  const libxsmm_gemm_descriptor_type* l_xgemm_desc = 0;
+  libxsmm_descriptor_blob l_xgemm_blob;
+  int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   char* l_type;
   char* l_file_out;
   char* l_matrix_file_in;
@@ -105,7 +106,7 @@ int main(int argc, char* argv []) {
   /* check argument count for a valid range */
   if (argc != 17 && argc != 18) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* names of files and routines */
@@ -133,11 +134,14 @@ int main(int argc, char* argv []) {
   l_aligned_a = atoi(argv[12]);
   l_aligned_c = atoi(argv[13]);
 
+  l_flags |= (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
+  l_flags |= (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
+
   /* arch specific stuff */
   l_arch = argv[14];
   l_precision = argv[16];
 
-  /* some intial parameters checks */
+  /* some initial parameters checks */
   /* check for sparse / dense only */
   if ( (strcmp(l_type, "sparse")         != 0) &&
        (strcmp(l_type, "sparse_csr")     != 0) &&
@@ -146,7 +150,7 @@ int main(int argc, char* argv []) {
        (strcmp(l_type, "dense")          != 0) &&
        (strcmp(l_type, "dense_asm")      != 0) ) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* check for the right number of arguments depending on type */
@@ -157,61 +161,61 @@ int main(int argc, char* argv []) {
        ( (strcmp(l_type, "dense")  == 0) && (argc != 17) )         ||
        ( (strcmp(l_type, "dense_asm")  == 0) && (argc != 17) ) ) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* set value of prefetch flag */
   if (strcmp("nopf", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_NONE;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   }
   else if (strcmp("pfsigonly", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_SIGONLY;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_SIGONLY;
   }
   else if (strcmp("BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_BL2_VIA_C;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
   }
   else if (strcmp("curAL2", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2_AHEAD;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2_AHEAD;
   }
   else if (strcmp("curAL2_BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_AHEAD;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD;
   }
   else if (strcmp("AL2", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2;
   }
   else if (strcmp("AL2_BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;
   }
   else if (strcmp("AL2jpst", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2_JPST;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2_JPST;
   }
   else if (strcmp("AL2jpst_BL2viaC", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL2BL2_VIA_C_JPST;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_JPST;
   }
   else if (strcmp("AL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1;
   }
   else if (strcmp("BL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_BL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_BL1;
   }
   else if (strcmp("CL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_CL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_CL1;
   }
   else if (strcmp("AL1_BL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL1_BL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1_BL1;
   }
   else if (strcmp("BL1_CL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_BL1_CL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_BL1_CL1;
   }
   else if (strcmp("AL1_CL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL1_CL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1_CL1;
   }
   else if (strcmp("AL1_BL1_CL1", argv[15]) == 0) {
-    l_prefetch = LIBXSMM_PREFETCH_AL1_BL1_CL1;
+    l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1_BL1_CL1;
   }
   else {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* check value of arch flag */
@@ -224,7 +228,7 @@ int main(int argc, char* argv []) {
        (strcmp(l_arch, "skx") != 0)    &&
        (strcmp(l_arch, "noarch") != 0) ) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* check and evaluate precision flag */
@@ -236,50 +240,64 @@ int main(int argc, char* argv []) {
     l_single_precision = 2;
   } else {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* check alpha */
   if ((l_alpha < -1 || -1 < l_alpha) && (l_alpha < 1 || 1 < l_alpha)) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* check beta */
   if ((l_beta < 0 || 0 < l_beta) && (l_beta < 1 || 1 < l_beta)) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
-  LIBXSMM_GEMM_DESCRIPTOR(l_xgemm_desc, 0 == l_single_precision ? LIBXSMM_GEMM_PRECISION_F64 : ( 1 == l_single_precision ? LIBXSMM_GEMM_PRECISION_F32 : LIBXSMM_GEMM_PRECISION_I16 ),
-    (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0) | (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0),
-    l_m, l_n, l_k, l_lda, l_ldb, l_ldc,
-    l_alpha, l_beta, l_prefetch);
+  switch (l_single_precision) {
+    case 0: {
+      l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F64,
+        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
+    } break;
+    case 1: {
+      l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F32,
+        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
+    } break;
+    case 2: {
+      l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_I16,
+        l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
+    } break;
+    default: {
+      print_help();
+      return EXIT_FAILURE;
+    }
+  }
 
   if ( strcmp(l_type, "sparse") == 0 || strcmp(l_type, "sparse_csr") == 0 ||
        strcmp(l_type, "sparse_csr_reg") == 0 || strcmp(l_type, "sparse_csr_soa") == 0 ) {
-    /* read additional paramter for CSC/CSR description */
+    /* read additional parameter for CSC/CSR description */
     l_matrix_file_in = argv[17];
 
     /* some more restrictive checks are needed in case of sparse */
     if ( (l_alpha < 1) || (1 < l_alpha) ) {
       print_help();
-      return -1;
+      return EXIT_FAILURE;
     }
 
     if (l_lda < 1 && l_ldb < 1) {
       print_help();
-      return -1;
+      return EXIT_FAILURE;
     }
 
     if (l_ldc < 1) {
       print_help();
-      return -1;
+      return EXIT_FAILURE;
     }
 
     if ( l_single_precision > 1 ) {
       print_help();
-      return -1;
+      return EXIT_FAILURE;
     }
 
     if ( strcmp(l_type, "sparse_csr") == 0 ) {
@@ -292,23 +310,23 @@ int main(int argc, char* argv []) {
       l_is_csr = 3;
     }
 
-    libxsmm_generator_spgemm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch, l_matrix_file_in, l_is_csr );
+    libxsmm_generator_spgemm( l_file_out, l_routine_name, l_xgemm_desc, l_arch, l_matrix_file_in, l_is_csr );
   }
 
   if ( (strcmp(l_type, "dense")     == 0) ||
        (strcmp(l_type, "dense_asm") == 0) ) {
     if (l_lda < 1 || l_ldb < 1 || l_ldc < 1) {
       print_help();
-      return -1;
+      return EXIT_FAILURE;
     }
 
     if ( strcmp(l_type, "dense")  == 0 ) {
-      libxsmm_generator_gemm_inlineasm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
+      libxsmm_generator_gemm_inlineasm( l_file_out, l_routine_name, l_xgemm_desc, l_arch );
     } else {
-      libxsmm_generator_gemm_directasm( l_file_out, l_routine_name, &l_xgemm_desc, l_arch );
+      libxsmm_generator_gemm_directasm( l_file_out, l_routine_name, l_xgemm_desc, l_arch );
     }
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 

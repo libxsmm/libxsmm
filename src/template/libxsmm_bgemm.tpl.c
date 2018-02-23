@@ -33,7 +33,7 @@
 LIBXSMM_VLA_DECL(2, libxsmm_bgemm_lock, locks, handle->locks, handle->nb);
 /* TODO: pad thread-local buffer members by the size of a cache-line in order to avoid "Ping-Pong" */
 LIBXSMM_VLA_DECL(2, LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C, l_out, (LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C*)(((char*)handle->buffer) +
-  tid * LIBXSMM_UP2(handle->bm * handle->bn * handle->typesize, LIBXSMM_CACHELINE)), handle->bm);
+  tid * LIBXSMM_UP2(handle->bm * handle->bn * sizeof(LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C), LIBXSMM_CACHELINE)), handle->bm);
 LIBXSMM_VLA_DECL(4, const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB, real_a, (const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB*)a, handle->kb, handle->bk, handle->bm);
 LIBXSMM_VLA_DECL(4, const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB, real_b, (const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB*)b, handle->kb, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C, real_c, (LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C*)c, handle->mb, handle->bn, handle->bm);

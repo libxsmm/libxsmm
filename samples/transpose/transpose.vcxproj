@@ -31,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
+    <None Include="README.md" />
     <None Include="transpose.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
