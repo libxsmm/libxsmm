@@ -2160,23 +2160,23 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_finalize)(void)
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
-  const libxsmm_gemm_precision* precision, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
+  const libxsmm_gemm_precision* iprec, const libxsmm_gemm_precision* oprec,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, const int* flags, const int* prefetch);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
-  const libxsmm_gemm_precision* precision, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
+  const libxsmm_gemm_precision* iprec, const libxsmm_gemm_precision* oprec,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, const int* flags, const int* prefetch)
 {
-#if !defined(NDEBUG) /* this should not happen */
   static int error_once = 0;
-  if (0 != fn && 0 != m)
-#endif
-  {
-    const libxsmm_gemm_precision gemm_precision = (0 != precision ? *precision : LIBXSMM_GEMM_PRECISION_F64);
+  LIBXSMM_UNUSED(oprec);
+  if (0 != fn && 0 != m) {
+    const libxsmm_gemm_precision precision = (0 != iprec ? *iprec : LIBXSMM_GEMM_PRECISION_F64);
     const libxsmm_blasint kk = *(0 != k ? k : m), nn = (0 != n ? *n : kk);
-    switch (gemm_precision) {
+    switch (precision) {
       case LIBXSMM_GEMM_PRECISION_F64: {
         *fn = (intptr_t)libxsmm_dmmdispatch(*m, nn, kk, lda, ldb, ldc,
           (const double*)alpha, (const double*)beta,
@@ -2187,24 +2187,16 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
           (const float*)alpha, (const float*)beta,
           flags, prefetch);
       } break;
-      case LIBXSMM_GEMM_PRECISION_I16: {
-        *fn = (intptr_t)libxsmm_wmmdispatch(*m, nn, kk, lda, ldb, ldc,
-          (const int*)alpha, (const int*)beta,
-          flags, prefetch);
-      } break;
-#if !defined(NDEBUG) /* this should not happen */
       default: {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM ERROR: invalid precision requested for libxsmm_xmmdispatch!\n");
+          fprintf(stderr, "LIBXSMM ERROR: unsupported precision requested for libxsmm_xmmdispatch!\n");
         }
         *fn = 0;
       }
-#endif
     }
   }
-#if !defined(NDEBUG)
   else {
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -2213,7 +2205,20 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
     }
     if (0 != fn) *fn = 0;
   }
-#endif
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
+  const libxsmm_gemm_precision* precision, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const void* alpha, const void* beta, const int* flags, const int* prefetch);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
+  const libxsmm_gemm_precision* precision, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const void* alpha, const void* beta, const int* flags, const int* prefetch)
+{
+  LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(fn, precision, precision, m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch);
 }
 
 
