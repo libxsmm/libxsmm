@@ -526,7 +526,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dgemm(const char* transa, const char* transb
 LIBXSMM_API_DEFINITION int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize, int tid, int nthreads,
-  const libxsmm_gemm_descriptor_type* info)
+  const libxsmm_gemm_descriptor* info)
 {
   int result = EXIT_SUCCESS;
   const libxsmm_blasint size = LIBXSMM_ABS(batchsize);
@@ -878,7 +878,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_batch2(libxsmm_gemm_precision iprec, li
   libxsmm_blasint batchsize)
 {
   libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor_type *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec,
+  const libxsmm_gemm_descriptor *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec,
     m, n, k, 0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m, alpha, beta,
     LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS), libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
   const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(descriptor);

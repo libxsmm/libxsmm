@@ -44,7 +44,7 @@
 # if !defined(LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH)
 #   define LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH 8/*POT*/
 # endif
-LIBXSMM_API_VARIABLE_EXT(libxsmm_gemm_descriptor_type internal_ext_gemm_batchdesc[LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH]);
+LIBXSMM_API_VARIABLE_EXT(libxsmm_gemm_descriptor internal_ext_gemm_batchdesc[LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH]);
 LIBXSMM_API_VARIABLE_EXT(unsigned int internal_ext_gemm_batchdepth);
 LIBXSMM_API_VARIABLE_EXT(unsigned int internal_ext_gemm_batchsize);
 #endif
@@ -85,7 +85,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_sortrev(const void* stat_a, const void* 
 #endif /*defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD_EXT)*/
 
 
-LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor_type* batchdesc,
+LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* batchdesc,
   libxsmm_blasint batchsize, libxsmm_gemm_batchitem* batcharray)
 {
   int result = EXIT_SUCCESS;
@@ -142,7 +142,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor_type
       for (i = 1; i < batchsize; ++i) batchcount += batcharray[i].stat.count;
       LIBXSMM_FLOCK(stdout);
       for (i = 0; i < batchsize; ++i) {
-        const libxsmm_gemm_descriptor_type descriptor = batcharray[i].stat.desc;
+        const libxsmm_gemm_descriptor descriptor = batcharray[i].stat.desc;
         const libxsmm_blasint lda = descriptor.lda, ldb = descriptor.ldb, ldc = descriptor.ldc;
         const libxsmm_blasint m = descriptor.m, n = descriptor.n, k = descriptor.k;
         const char *const symbol = batcharray[i].stat.symbol;
@@ -218,7 +218,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_sgemm)(
 #if defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD_EXT)
       if (0 != (LIBXSMM_MMBATCH_FLAG_STATISTIC & libxsmm_gemm_batchdesc.flags)) {
         libxsmm_descriptor_blob blob;
-        const libxsmm_gemm_descriptor_type *const descriptor = libxsmm_sgemm_descriptor_init(&blob,
+        const libxsmm_gemm_descriptor *const descriptor = libxsmm_sgemm_descriptor_init(&blob,
           *m, *n, *k, *lda, *ldb, *ldc, *alpha, *beta, LIBXSMM_GEMM_FLAGS(*transa, *transb),
           LIBXSMM_GEMM_EXT_MMBATCH_PREFETCH);
 
@@ -331,7 +331,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(__wrap_dgemm)(
 #if defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD_EXT)
       if (0 != (LIBXSMM_MMBATCH_FLAG_STATISTIC & libxsmm_gemm_batchdesc.flags)) {
         libxsmm_descriptor_blob blob;
-        const libxsmm_gemm_descriptor_type *const descriptor = libxsmm_dgemm_descriptor_init(&blob,
+        const libxsmm_gemm_descriptor *const descriptor = libxsmm_dgemm_descriptor_init(&blob,
           *m, *n, *k, *lda, *ldb, *ldc, *alpha, *beta, LIBXSMM_GEMM_FLAGS(*transa, *transb),
           LIBXSMM_GEMM_EXT_MMBATCH_PREFETCH);
 
@@ -672,7 +672,7 @@ LIBXSMM_API_DEFINITION void libxsmm_gemm_batch_omp2(libxsmm_gemm_precision iprec
   libxsmm_blasint batchsize)
 {
   libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor_type *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec,
+  const libxsmm_gemm_descriptor *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec,
     m, n, k, 0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m, alpha, beta,
     LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS), libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
   const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(descriptor);
@@ -738,7 +738,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_begin2(libxsmm_gemm_precision iprec,
     && LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_DEFAULT) == LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_DEFAULT, &libxsmm_gemm_batchlock))
   {
     libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor_type *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec,
+    const libxsmm_gemm_descriptor *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec,
       *m, *n, *k, *lda, *ldb, *ldc, alpha, beta, *flags, libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_EXT_MMBATCH_PREFETCH));
     static int error_once = 0;
     int result = EXIT_SUCCESS;
@@ -811,7 +811,7 @@ LIBXSMM_API_DEFINITION void libxsmm_mmbatch_end(void)
 # endif
   if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_DEFAULT) == LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_DEFAULT, &libxsmm_gemm_batchlock)) {
     const unsigned int max_batchsize = (unsigned int)((LIBXSMM_GEMM_BATCHSCALE) * libxsmm_gemm_batchsize);
-    const libxsmm_gemm_descriptor_type flushdesc = libxsmm_gemm_batchdesc;
+    const libxsmm_gemm_descriptor flushdesc = libxsmm_gemm_batchdesc;
     static int error_once = 0;
 
     /* ensure descriptor does not match any GEMM such that... */

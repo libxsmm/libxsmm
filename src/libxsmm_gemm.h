@@ -110,7 +110,7 @@
   const TYPE* libxsmm_tiled_xgemm_kernel_pa_ = libxsmm_tiled_xgemm_kernel_ia_ + (libxsmm_tiled_xgemm_kernel_tk_) * (LDA); \
   const TYPE* libxsmm_tiled_xgemm_kernel_pb_ = libxsmm_tiled_xgemm_kernel_ib_ + (libxsmm_tiled_xgemm_kernel_tk_); \
   TYPE *const libxsmm_tiled_xgemm_kernel_ic_ = (C) + (POS_J) * (LDC) + (POS_I), libxsmm_tiled_xgemm_kernel_beta_ = BETA; \
-  libxsmm_gemm_descriptor_type libxsmm_tiled_xgemm_kernel_desc_; \
+  libxsmm_gemm_descriptor libxsmm_tiled_xgemm_kernel_desc_; \
   libxsmm_xmmfunction libxsmm_gemm_tiled_kernel_ = { 0 }; \
   libxsmm_blasint libxsmm_tiled_xgemm_kernel_k_ = 0; \
   assert(0 != (A) && 0 != (B) && 0 != (C)); \
@@ -206,7 +206,7 @@
         ? (libxsmm_tiled_xgemm_num_m_ * libxsmm_tiled_xgemm_num_n_) \
         : (libxsmm_tiled_xgemm_num_n_ <= libxsmm_tiled_xgemm_num_m_ ? libxsmm_tiled_xgemm_num_m_ : libxsmm_tiled_xgemm_num_n_); \
       const libxsmm_blasint libxsmm_tiled_xgemm_min_ntasks_ = MIN_TASKS(NT); \
-      libxsmm_gemm_descriptor_type libxsmm_tiled_xgemm_desc_; \
+      libxsmm_gemm_descriptor libxsmm_tiled_xgemm_desc_; \
       if (libxsmm_tiled_xgemm_min_ntasks_ <= libxsmm_tiled_xgemm_num_t_) { /* ensure enough parallel slack */ \
         assert(0 != libxsmm_tiled_xgemm_num_m_ && 0 != libxsmm_tiled_xgemm_num_n_); \
         libxsmm_tiled_xgemm_tm_ = (MM) / libxsmm_tiled_xgemm_num_m_; \
@@ -454,7 +454,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
     void *c;
   } value;
   struct {
-    libxsmm_gemm_descriptor_type desc;
+    libxsmm_gemm_descriptor desc;
     unsigned int count;
     const char* symbol;
   } stat;
@@ -464,7 +464,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
 LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize, int tid, int nthreads,
-  const libxsmm_gemm_descriptor_type* info);
+  const libxsmm_gemm_descriptor* info);
 
 LIBXSMM_API int libxsmm_dmmbatch_blas(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const double* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb, const double* beta, void* c, const libxsmm_blasint* ldc,
@@ -480,7 +480,7 @@ LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
 /** Configuration table containing the tile sizes separate for DP and SP. */
 LIBXSMM_API_VARIABLE(/*const*/ unsigned int (*libxsmm_gemm_tile)[3/*M,N,K*/][8/*size-range*/]);
 /** auto-batch descriptor (filter). */
-LIBXSMM_API_VARIABLE(libxsmm_gemm_descriptor_type libxsmm_gemm_batchdesc);
+LIBXSMM_API_VARIABLE(libxsmm_gemm_descriptor libxsmm_gemm_batchdesc);
 /** Records a batch of SMMs. */
 LIBXSMM_API_VARIABLE(libxsmm_gemm_batchitem* libxsmm_gemm_batcharray);
 /** Lock: libxsmm_mmbatch_begin, libxsmm_mmbatch_end, internal_mmbatch_flush. */

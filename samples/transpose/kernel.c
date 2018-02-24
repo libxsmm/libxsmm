@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
   extern void myro_();
 #endif
   union { libxsmm_xtransfunction f; const void* p; } skernel, dkernel;
-  const libxsmm_trans_descriptor_type* desc = 0;
+  const libxsmm_trans_descriptor* desc = 0;
   libxsmm_descriptor_blob blob;
 
   if ( argc <= 3 )

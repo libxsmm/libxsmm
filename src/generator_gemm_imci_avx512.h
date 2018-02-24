@@ -36,7 +36,7 @@
 
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         io_generated_code,
-                                                 const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+                                                 const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                  const char*                    i_arch );
 
 #endif /* GENERATOR_GEMM_IMCI_AVX512_H */

@@ -76,7 +76,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*             io_generated_code,
-                                                  const libxsmm_mcopy_descriptor_type*   i_matcopy_desc,
+                                                  const libxsmm_mcopy_descriptor*   i_matcopy_desc,
                                                   const char*                         i_arch ) {
   libxsmm_matcopy_kernel_config l_kernel_config;
   libxsmm_matcopy_gp_reg_mapping l_gp_reg_mapping;

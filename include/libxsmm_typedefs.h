@@ -89,25 +89,16 @@
 typedef LIBXSMM_BLASINT libxsmm_blasint;
 
 /** Type representing sufficient storage space for descriptors (GEMM, TCOPY, MCOPY). */
-LIBXSMM_EXTERN_C typedef char libxsmm_descriptor_blob[LIBXSMM_DESCRIPTOR_SIZE];
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_descriptor_blob {
+  char data[LIBXSMM_DESCRIPTOR_SIZE];
+} libxsmm_descriptor_blob;
 
 /** Structure storing arguments of GEMM-like routines. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor_type libxsmm_gemm_descriptor_type;
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
-  libxsmm_descriptor_blob* blob; libxsmm_gemm_descriptor_type* ptr;
-} libxsmm_gemm_descriptor;
-
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor libxsmm_gemm_descriptor;
 /** Structure storing arguments of the matrix-copy routine. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor_type libxsmm_mcopy_descriptor_type;
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor {
-  libxsmm_descriptor_blob* blob; libxsmm_mcopy_descriptor_type* ptr;
-} libxsmm_mcopy_descriptor;
-
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor libxsmm_mcopy_descriptor;
 /** Structure storing arguments of the transpose routine. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor_type libxsmm_trans_descriptor_type;
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_trans_descriptor {
-  libxsmm_descriptor_blob* blob; libxsmm_trans_descriptor_type* ptr;
-} libxsmm_trans_descriptor;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor libxsmm_trans_descriptor;
 
 /** Enumerates element/data types. */
 typedef enum libxsmm_datatype {

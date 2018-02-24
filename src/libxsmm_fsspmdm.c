@@ -56,7 +56,7 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   unsigned int* a_csr_colidx = 0;
   const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  const libxsmm_gemm_descriptor_type* xgemm_desc;
+  const libxsmm_gemm_descriptor* xgemm_desc;
   libxsmm_descriptor_blob xgemm_blob;
   libxsmm_dfsspmdm* new_handle = 0;
   int i, j, a_nnz;
@@ -162,7 +162,7 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   unsigned int* a_csr_colidx = 0;
   const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  const libxsmm_gemm_descriptor_type* xgemm_desc;
+  const libxsmm_gemm_descriptor* xgemm_desc;
   libxsmm_descriptor_blob xgemm_blob;
   libxsmm_sfsspmdm* new_handle = 0;
   int i, j, a_nnz;

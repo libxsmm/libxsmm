@@ -586,7 +586,7 @@ LIBXSMM_INLINE void gen_one_trans(
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_transpose_avx_avx512_kernel(
                 libxsmm_generated_code*             io_generated_code,
-                const libxsmm_trans_descriptor_type* i_trans_desc,
+                const libxsmm_trans_descriptor* i_trans_desc,
                 const char*                         i_arch )
 {
   libxsmm_transpose_gp_reg_mapping l_gp_reg_mapping;

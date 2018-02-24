@@ -433,8 +433,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
   if (noarch == 0) {
     /* Forward path */
     { libxsmm_convolution_forward_descriptor descriptor;
-      libxsmm_mcopy_descriptor_type matcopy_descriptor;
-      libxsmm_mcopy_descriptor_type matzero_descriptor;
+      libxsmm_mcopy_descriptor matcopy_descriptor;
+      libxsmm_mcopy_descriptor matzero_descriptor;
       if ( handle->use_nts_fwd != 0 ) {
         descriptor.use_nts = 1;
       } else {
@@ -593,8 +593,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     }
     /* Backward path */
     { libxsmm_convolution_backward_descriptor descriptor;
-      libxsmm_mcopy_descriptor_type matcopy_descriptor;
-      libxsmm_mcopy_descriptor_type matcopyback_descriptor;
+      libxsmm_mcopy_descriptor matcopy_descriptor;
+      libxsmm_mcopy_descriptor matcopyback_descriptor;
       if (handle->padding_flag == 1) {
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
         descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;
@@ -866,8 +866,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle
     } /* End of backward */
     /* TODO weight update path */
     { libxsmm_convolution_weight_update_descriptor descriptor;
-      libxsmm_mcopy_descriptor_type matcopy_descriptor;
-      libxsmm_mcopy_descriptor_type matzero_descriptor;
+      libxsmm_mcopy_descriptor matcopy_descriptor;
+      libxsmm_mcopy_descriptor matzero_descriptor;
       if (handle->padding_flag == 1) {
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
         descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;

@@ -120,7 +120,7 @@ LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libx
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
-LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor_type* descriptor);
+LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 
 /** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (double-precision). */
 LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
@@ -230,10 +230,10 @@ LIBXSMM_API void libxsmm_mmbatch_begin(libxsmm_gemm_precision precision, const i
 LIBXSMM_API void libxsmm_mmbatch_end(void);
 
 /** Code generation routine for matrix-copy using a descriptor. */
-LIBXSMM_API libxsmm_xmcopyfunction libxsmm_xmcopydispatch(const libxsmm_mcopy_descriptor_type* descriptor);
+LIBXSMM_API libxsmm_xmcopyfunction libxsmm_xmcopydispatch(const libxsmm_mcopy_descriptor* descriptor);
 
 /** Code generation routine for transposes using a descriptor */
-LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_trans_descriptor_type* descriptor);
+LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_trans_descriptor* descriptor);
 
 /**
  * Code generation routine for the CSR format which multiplies a dense SOA matrix (each element holds a SIMD-width
@@ -241,7 +241,7 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_trans_de
  * The result is always a SOA matrix. There is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor_type* descriptor,
+LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor* descriptor,
    const unsigned int* row_ptr, const unsigned int* column_idx, const void* values);
 
 /**
@@ -250,7 +250,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descr
  * The result is always a SOA matrix. There is no code cache, and user code has to manage the code pointers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descriptor_type* descriptor,
+LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descriptor* descriptor,
    const unsigned int* column_ptr, const unsigned int* row_idx, const void* values);
 
 /**
@@ -258,7 +258,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descr
  * The sparse matrix a is kept in registers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor_type* descriptor,
+LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor* descriptor,
    const unsigned int* row_ptr, const unsigned int* column_idx, const double* values);
 
 /**
@@ -266,7 +266,7 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descr
  * The sparse matrix a is kept in registers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
  */
-LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor_type* descriptor,
+LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor* descriptor,
    const unsigned int* row_ptr, const unsigned int* column_idx, const float* values);
 
 /** Deallocates the JIT'ted code as returned by libxsmm_create_* function. TODO: this is a no-op at the moment. */
@@ -361,25 +361,25 @@ public:
   libxsmm_mmfunction() { m_function.xmm = 0; }
   libxsmm_mmfunction(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int flags = LIBXSMM_FLAGS) {
     libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor_type *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
+    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
       m, n, k, m, k, m, LIBXSMM_ALPHA, LIBXSMM_BETA, flags, libxsmm_get_gemm_xprefetch(0));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int prefetch) {
     libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor_type *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
+    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
       m, n, k, m, k, m, LIBXSMM_ALPHA, LIBXSMM_BETA, flags, prefetch);
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, float alpha, float beta) {
     libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor_type *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
+    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
       m, n, k, m, k, m, &alpha, &beta, flags, libxsmm_get_gemm_xprefetch(0));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
   libxsmm_mmfunction(int flags, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, float alpha, float beta, int prefetch) {
     libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor_type *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
+    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
       m, n, k, m, k, m, &alpha, &beta, flags, prefetch);
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
@@ -387,7 +387,7 @@ public:
     libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, int prefetch)
   {
     libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor_type *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
+    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
       m, n, k, lda, ldb, ldc, LIBXSMM_ALPHA, LIBXSMM_BETA, flags, prefetch);
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
@@ -395,7 +395,7 @@ public:
     libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, float alpha, float beta)
   {
     libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor_type *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
+    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
       m, n, k, lda, ldb, ldc, &alpha, &beta, flags, libxsmm_get_gemm_xprefetch(0));
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }
@@ -403,7 +403,7 @@ public:
     libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, float alpha, float beta, int prefetch)
   {
     libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor_type *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
+    const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, libxsmm_gemm_precision_enum<T>::value(),
       m, n, k, lda, ldb, ldc, &alpha, &beta, flags, prefetch);
     m_function.xmm = (0 != desc ? libxsmm_xmmdispatch(desc).xmm : 0);
   }

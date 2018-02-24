@@ -114,7 +114,7 @@ int main(void)
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
       union { libxsmm_xmmfunction x; void* p; } fi;
       libxsmm_descriptor_blob blob;
-      const libxsmm_gemm_descriptor_type *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
+      const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
         m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, &alpha, &beta, flags,
         /* translate an eventual LIBXSMM_PREFETCH_AUTO */
         libxsmm_get_gemm_prefetch(prefetch));

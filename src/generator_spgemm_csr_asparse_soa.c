@@ -39,7 +39,7 @@
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         io_generated_code,
-                                               const libxsmm_gemm_descriptor_type*  i_xgemm_desc,
+                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                const char*                     i_arch,
                                                const unsigned int*             i_row_idx,
                                                const unsigned int*             i_column_idx,
@@ -63,7 +63,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         i
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*         io_generated_code,
-                                                      const libxsmm_gemm_descriptor_type*  i_xgemm_desc,
+                                                      const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                       const char*                     i_arch,
                                                       const unsigned int*             i_row_idx,
                                                       const unsigned int*             i_column_idx,
@@ -198,7 +198,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*            io_generated_code,
-                                                      const libxsmm_gemm_descriptor_type*     i_xgemm_desc,
+                                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                       libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                       const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                       const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,

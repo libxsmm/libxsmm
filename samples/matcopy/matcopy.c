@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
   const int iters = (8 < argc ? atoi(argv[8]) : 1);
 
   /* we should modify to test all data-types */
-  const libxsmm_mcopy_descriptor_type* desc;
+  const libxsmm_mcopy_descriptor* desc;
   libxsmm_xmcopyfunction skernel;
   libxsmm_descriptor_blob blob;
   libxsmm_timer_tickint l_start;
