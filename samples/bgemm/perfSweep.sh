@@ -56,11 +56,12 @@ if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
     NUMACTL="numactl --membind=${NUMA} ${TOOL_COMMAND}"
   fi
 fi
+NUMACTL="numactl --interleave=0,1"
 
 #----bgemm parameters
-_MB_="16 24 32 64"
-_NB_="16 24 32 64"
-_KB_="16 32 24 48 64 96 128 192"
+_MB_="24 48 64"
+_NB_="24 48 64"
+_KB_="24 48 64 96" 
 #mb1="0.1 0.2 0.3 0.4 0.5 0.8 0.16 0.32 1 2 4 8 10 16"
 #nb1="0.1 0.2 0.3 0.4 0.5 0.8 0.16 0.32 1 2 4 8 10 16"
 #kb1="0.1 0.2 0.3 0.4 0.5 0.8 0.16 0.32 1 2 4 8 10 16"
@@ -68,71 +69,88 @@ _KB_="16 32 24 48 64 96 128 192"
 MBT=4096
 NBT=4096
 KBT=4096
-mb11="0.1 0.2 0.4 0.8"
+mb11="0.1"
 nb11="0.1"
 kb11="0.1"
-mb12="0.1 0.2 0.4 0.8"
-nb12="0.1 0.2 0.4 0.8"
-kb12="0.1 0.2 0.4 0.8"
-kb2="0.1 0.2 0.4 0.5 0.8 0.16 0.32"
+mb12="0.1"
+nb12="0.1"
+kb12="0.1"
+kb2="0.1 0.2 0.4 0.5 0.8 0.16 0.24 0.32"
 order="0 1 2"
 perflog="perfSweep.log"
 
 function bgemm_test {
-  echo "M=$M N=$N K=$K it=$it"
-    bin="$NUMACTL ./bgemm"
-    log="$((M))_$((N))_$((K)).out"
-    for _mb in $mb
+best="0"
+echo "M=$M N=$N K=$K it=$it"
+bin="$NUMACTL ./bgemm"
+log="$((M))_$((N))_$((K)).out"
+for _mb in $mb
+do
+  for _nb in $nb
+  do
+    for _kb in $kb
     do
-      for _nb in $nb
+      for _mb1 in $mb1
       do
-        for _kb in $kb
+        for _nb1 in $nb1
         do
-          for _mb1 in $mb1
+          for _kb1 in $kb1
           do
-            for _nb1 in $nb1
+            for _kb2 in $kb2
             do
-              for _kb1 in $kb1
+              for _o in $order
               do
-                for _kb2 in $kb2
-                do
-                  for _o in $order
-                  do
-                    if [ $(bc <<< "$_mb1 < 1") -eq 1 ]; then
-                      IFS="." read temp _MB1 <<< $_mb1
-                    else
-                      _MB1=$(($M/$_mb1))
-                    fi
-                    if [ $(bc <<< "$_nb1 < 1") -eq 1 ]; then
-                      IFS="." read temp _NB1 <<< $_nb1
-                    else
-                      _NB1=$(($N/$_nb1))
-                    fi
-                    if [ $(bc <<< "$_kb1 < 1") -eq 1 ]; then
-                      IFS="." read temp _KB1 <<< $_kb1
-                    else
-                      _KB1=$(($K/$_kb1))
-                    fi
-                    if [ $(bc <<< "$_kb2 < 1") -eq 1 ]; then
-                      IFS="." read temp _KB2 <<< $_kb2
-                    else
-                      _KB2=$(($K/$_kb2))
-                    fi
-                    echo "$bin $M $N $K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2"
-                    echo "----------------------------------------------------------------------" >> $log
-                    echo "$bin $M $N $K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2" >> $log
-                    $bin $M $N $K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2 >> $log
-                    echo " " >> $log
-                  done
-                done
+                _M=$M
+                _N=$N
+                _K=$K
+                if [[ "$((M % _mb))" -gt 0 ]]
+                then
+                  _M=$((_mb*(M/_mb+1)))
+                fi
+                if [[ "$((N % _nb))" -gt 0 ]]
+                then
+                  _N=$((_nb*(N/_nb+1)))
+                fi
+                if [[ "$((K % _kb))" -gt 0 ]]
+                then
+                  _K=$((_kb*(K/_kb+1)))
+                fi
+                if [ $(bc <<< "$_mb1 < 1") -eq 1 ]; then
+                  IFS="." read temp _MB1 <<< $_mb1
+                else
+                  _MB1=$(($_M/$_mb1))
+                fi
+                if [ $(bc <<< "$_nb1 < 1") -eq 1 ]; then
+                  IFS="." read temp _NB1 <<< $_nb1
+                else
+                  _NB1=$(($_N/$_nb1))
+                fi
+                if [ $(bc <<< "$_kb1 < 1") -eq 1 ]; then
+                  IFS="." read temp _KB1 <<< $_kb1
+                else
+                  _KB1=$(($_K/$_kb1))
+                fi
+                if [ $(bc <<< "$_kb2 < 1") -eq 1 ]; then
+                  IFS="." read temp _KB2 <<< $_kb2
+                else
+                  _KB2=$(($_K/$_kb2))
+                fi
+                echo "$bin $_M $_N $_K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2"
+                $bin $_M $_N $_K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2 > /dev/null
+                $bin $_M $_N $_K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2 > temp.out
+                prf="$(grep "LIBXSMM" temp.out | awk {'print $2;'})"
+                cfg="$_M $_N $_K $_mb $_nb $_kb $_o $it $_MB1 $_NB1 $_KB1 $_KB2"
+                echo "$cfg $prf" >> $log
               done
             done
           done
         done
       done
     done
-    best=$(grep LIBXSMM $log |  awk ' BEGIN { val = 0 } { if ($2 > val) val = $2 } END { print val }')
-    echo "$_b,$best" >> $perflog
+  done
+done
+best=$(cat $log | awk ' BEGIN { val = 0 } { if ($13 > val) {val = $13; best=$0} } END { print best }')
+echo "$best" >> $perflog
 }
 
 
@@ -148,46 +166,31 @@ then
   nb=$7
   kb=$8
 else
-  mb=32
-  nb=32
-  kb=32
+  mb=24
+  nb=24
+  kb=24
 fi
 #_it=$9
 #_bin=$7
 
-
 if [[ "$mb" -gt "$M" ]]
 then
   mb=$M
+else
+  mb=$_MB_
 fi
 if [[ "$nb" -gt "$N" ]]
 then
   nb=$N
+else
+  nb=$_NB_
 fi
 if [[ "$kb" -gt "$K" ]]
 then
   kb=$K
+else
+  kb=$_KB_
 fi
-if [[ "$((M % mb))" -gt 0 ]]
-then
-  #mb=$M
-  M=$((mb*(M/mb+1)))
-fi
-if [[ "$((N % nb))" -gt 0 ]]
-then
-  #nb=$N
-  N=$((nb*(N/nb+1)))
-fi
-if [[ "$((K % kb))" -gt 0 ]]
-then
-  #kb=$K
-  K=$((kb*(K/kb+1)))
-fi
-
-mb=$_MB_
-nb=$_NB_
-kb=$_KB_
-
 if [[ "$M" -gt "$MBT" ]]; then
   mb1=$mb12
 else
@@ -203,7 +206,6 @@ if [[ "$K" -gt "$KBT" ]]; then
 else
   kb1=$kb11
 fi
-
 _Trans=0
 if [[ "$_AT" == "T" ]]
 then
@@ -228,12 +230,23 @@ then
   nb=$t_kb
 fi
 
-if [[ "$M" -gt "4000" ]]; then
-  if [[ "$N" -gt "4000" ]]; then
-    if [[ "$K" -gt "4000" ]]; then
-      it=100
+if [[ "$M" -gt "2000" ]]; then
+  if [[ "$N" -gt "2000" ]]; then
+    if [[ "$K" -gt "2000" ]]; then
+      it=10
     fi
   fi
+fi
+
+if [[ "$M" -gt "4000" ]]; then
+  it=10
+fi
+
+if [[ "$N" -gt "4000" ]]; then
+  it=10
+fi
+if [[ "$K" -gt "4000" ]]; then
+  it=10
 fi
 
 bgemm_test
