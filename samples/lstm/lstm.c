@@ -73,9 +73,9 @@ struct rnn_handle {
   libxsmm_blasint n;
   libxsmm_blasint k;
   libxsmm_blasint t;
-  libxsmm_dnn_tensor *w; 
-  libxsmm_dnn_tensor *xt; 
-  libxsmm_dnn_tensor *u; 
+  libxsmm_dnn_tensor *w;
+  libxsmm_dnn_tensor *xt;
+  libxsmm_dnn_tensor *u;
   libxsmm_dnn_tensor *h;
   libxsmm_dnn_tensor *z1t;
   libxsmm_dnn_tensor *z2;
@@ -90,14 +90,14 @@ struct lstm_handle {
   libxsmm_blasint n;
   libxsmm_blasint k;
   libxsmm_blasint t;
-  libxsmm_dnn_tensor *wi; 
-  libxsmm_dnn_tensor *wf; 
-  libxsmm_dnn_tensor *wo; 
-  libxsmm_dnn_tensor *wc; 
-  libxsmm_dnn_tensor *xt; 
-  libxsmm_dnn_tensor *ri; 
-  libxsmm_dnn_tensor *rf; 
-  libxsmm_dnn_tensor *ro; 
+  libxsmm_dnn_tensor *wi;
+  libxsmm_dnn_tensor *wf;
+  libxsmm_dnn_tensor *wo;
+  libxsmm_dnn_tensor *wc;
+  libxsmm_dnn_tensor *xt;
+  libxsmm_dnn_tensor *ri;
+  libxsmm_dnn_tensor *rf;
+  libxsmm_dnn_tensor *ro;
   libxsmm_dnn_tensor *rc;
   libxsmm_dnn_tensor *h;
   libxsmm_dnn_tensor *i1t;
@@ -112,10 +112,10 @@ struct lstm_handle {
   libxsmm_dnn_tensor *f;
   libxsmm_dnn_tensor *o;
   libxsmm_dnn_tensor *c;
-  libxsmm_dnn_tensor *d0; 
-  libxsmm_dnn_tensor *d1; 
-  libxsmm_dnn_tensor *d2; 
-  libxsmm_dnn_tensor *d; 
+  libxsmm_dnn_tensor *d0;
+  libxsmm_dnn_tensor *d1;
+  libxsmm_dnn_tensor *d2;
+  libxsmm_dnn_tensor *d;
   libxsmm_bgemm_handle *handlewx;
   libxsmm_bgemm_handle *handleuh;
   libxsmm_bgemm_handle *handlett;
@@ -211,7 +211,7 @@ void matrix_relu(libxsmm_blasint size, REAL_TYPE *src, REAL_TYPE *dst)
 }
 
 
-void recursive_step(libxsmm_bgemm_handle* handle, REAL_TYPE* u, REAL_TYPE* h, REAL_TYPE* op1, REAL_TYPE *op2, 
+void recursive_step(libxsmm_bgemm_handle* handle, REAL_TYPE* u, REAL_TYPE* h, REAL_TYPE* op1, REAL_TYPE *op2,
   REAL_TYPE *temp, REAL_TYPE *dst, int act, libxsmm_blasint size)
 {
 #if defined(LSTM_TIMING)
@@ -256,7 +256,7 @@ void recursive_step(libxsmm_bgemm_handle* handle, REAL_TYPE* u, REAL_TYPE* h, RE
 
 libxsmm_dnn_tensor* libxsmm_create_dnn_tensor_rnn( REAL_TYPE *data )
 {
-  libxsmm_dnn_tensor* tensor; 
+  libxsmm_dnn_tensor* tensor;
   tensor = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
   tensor->layout = NULL;
   tensor->data = (void*)data;
@@ -267,7 +267,7 @@ libxsmm_dnn_tensor* libxsmm_create_dnn_tensor_rnn( REAL_TYPE *data )
 
 void rnn_init(struct rnn_handle *rnn, REAL_TYPE *wgold, REAL_TYPE *xgoldt, REAL_TYPE *ugold,
   REAL_TYPE *hgold, REAL_TYPE *z1gold, REAL_TYPE *z2gold, REAL_TYPE *zgold,
-  const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz, 
+  const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz,
   const libxsmm_blasint ldu, const libxsmm_blasint ldh)
 {
 #if defined(CHECK)
@@ -417,7 +417,7 @@ void rnn_destroy(struct rnn_handle *rnn)
 }
 
 
-int rnn (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k, const libxsmm_blasint t, 
+int rnn (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k, const libxsmm_blasint t,
          const libxsmm_blasint bm, const libxsmm_blasint bn, const libxsmm_blasint bk, const libxsmm_bgemm_order order, const int nrepeat,
          const libxsmm_blasint b_m1, const libxsmm_blasint b_n1, const libxsmm_blasint b_k1, const libxsmm_blasint b_k2, const libxsmm_blasint b_m2,
          const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz, const libxsmm_blasint ldu, const libxsmm_blasint ldh)
@@ -431,7 +431,7 @@ int rnn (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   const REAL_TYPE alpha = 1, beta = 1;
-  
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
@@ -481,7 +481,7 @@ int rnn (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint
     rnn.handlewx = handlewx;
     rnn.handleuh = handleuh;
     rnn.handlett = handlett;
-    
+
     if (0 != handlewx && 0 != handleuh && 0 != handlett) {
       rnn_init(&rnn, wgold, xgoldt, ugold, hgold, z1gold, z2gold, zgold, ldw, ldx, ldz, ldu, ldh);
       rnn_execute(&rnn, nrepeat);
@@ -555,11 +555,11 @@ int rnn (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint
 
 
 void lstm_init(struct lstm_handle *lstm, REAL_TYPE *wigold, REAL_TYPE *wfgold, REAL_TYPE *wogold, REAL_TYPE *wcgold,
-  REAL_TYPE *xgoldt, REAL_TYPE *rigold, REAL_TYPE *rfgold, REAL_TYPE *rogold, REAL_TYPE *rcgold, REAL_TYPE *hgold, 
+  REAL_TYPE *xgoldt, REAL_TYPE *rigold, REAL_TYPE *rfgold, REAL_TYPE *rogold, REAL_TYPE *rcgold, REAL_TYPE *hgold,
   REAL_TYPE *i1gold, REAL_TYPE *i2gold, REAL_TYPE *f1gold, REAL_TYPE *f2gold, REAL_TYPE *o1gold, REAL_TYPE *o2gold,
   REAL_TYPE *c1gold, REAL_TYPE *c2gold, REAL_TYPE *igold, REAL_TYPE *fgold, REAL_TYPE *ogold, REAL_TYPE *cgold,
   REAL_TYPE *d0gold, REAL_TYPE *d1gold, REAL_TYPE *d2gold, REAL_TYPE *dgold,
-  const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz, 
+  const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz,
   const libxsmm_blasint ldu, const libxsmm_blasint ldh)
 {
 #if defined(CHECK)
@@ -769,7 +769,7 @@ void lstm_execute(struct lstm_handle *lstm, const int nrepeat)
   REAL_TYPE *d2 = (REAL_TYPE*)lstm->d2->data;
   REAL_TYPE *d = (REAL_TYPE*)lstm->d->data;
   LIBXSMM_VLA_DECL(2, REAL_TYPE, x, xt, k * n);
-#if defined(NON_FUSED_INPUT_GEMM) 
+#if defined(NON_FUSED_INPUT_GEMM)
   LIBXSMM_VLA_DECL(2, REAL_TYPE, i1, i1t, m * n);
   LIBXSMM_VLA_DECL(2, REAL_TYPE, f1, f1t, m * n);
   LIBXSMM_VLA_DECL(2, REAL_TYPE, o1, o1t, m * n);
@@ -805,7 +805,7 @@ void lstm_execute(struct lstm_handle *lstm, const int nrepeat)
     Gbl_t_input = libxsmm_timer_tick();
 #endif
     /* The following loop may be absorbed into libxsmm_lstm_omp */
-#if defined(NON_FUSED_INPUT_GEMM) 
+#if defined(NON_FUSED_INPUT_GEMM)
     libxsmm_bgemm_omp(handlett, wi, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, i1, 0, 0, m * n), 1/*nrepeat*/);
     libxsmm_bgemm_omp(handlett, wf, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, f1, 0, 0, m * n), 1/*nrepeat*/);
     libxsmm_bgemm_omp(handlett, wo, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, o1, 0, 0, m * n), 1/*nrepeat*/);
@@ -937,7 +937,7 @@ void lstm_destroy(struct lstm_handle *lstm)
 }
 
 
-int lstm (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k, const libxsmm_blasint t, 
+int lstm (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k, const libxsmm_blasint t,
           const libxsmm_blasint bm, const libxsmm_blasint bn, const libxsmm_blasint bk, const libxsmm_bgemm_order order, const int nrepeat,
           const libxsmm_blasint b_m1, const libxsmm_blasint b_n1, const libxsmm_blasint b_k1, const libxsmm_blasint b_k2, const libxsmm_blasint b_m2,
           const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz, const libxsmm_blasint ldu, const libxsmm_blasint ldh)
@@ -1028,18 +1028,18 @@ int lstm (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasin
     libxsmm_bgemm_handle* handlett = 0;
     const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
     handlewx = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-      m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2, 
+      m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
     handleuh = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-      m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2, 
+      m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
 #if defined(NON_FUSED_INPUT_GEMM)
     handlett = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-      m, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2, 
+      m, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
 #else
     handlett = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
-      m*4, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2, 
+      m*4, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
 #endif
 
@@ -1079,7 +1079,7 @@ int lstm (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasin
     lstm.handlett = handlett;
 
     if (0 != handlewx && 0 != handleuh && 0 != handlett) {
-      lstm_init(&lstm, wigold, wfgold, wogold, wcgold, xgoldt, rigold, rfgold, rogold, rcgold, hgold, 
+      lstm_init(&lstm, wigold, wfgold, wogold, wcgold, xgoldt, rigold, rfgold, rogold, rcgold, hgold,
         i1gold, i2gold, f1gold, f2gold, o1gold, o2gold, c1gold, c2gold, igold, fgold, ogold, cgold,
         d0gold, d1gold, d2gold, dgold, ldw, ldx, ldz, ldu, ldh);
       lstm_execute(&lstm, nrepeat);
@@ -1128,15 +1128,15 @@ int lstm (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasin
           fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
         }
         /* free memory not needed further; avoid double-free later on */
-        libxsmm_free(wigold); wigold = 0; 
-        libxsmm_free(wfgold); wfgold = 0; 
-        libxsmm_free(wogold); wogold = 0; 
-        libxsmm_free(wcgold); wcgold = 0; 
-        libxsmm_free(xgoldt); xgoldt = 0; 
-        libxsmm_free(rigold); rigold = 0; 
-        libxsmm_free(rfgold); rfgold = 0; 
-        libxsmm_free(rogold); rogold = 0; 
-        libxsmm_free(rcgold); rcgold = 0; 
+        libxsmm_free(wigold); wigold = 0;
+        libxsmm_free(wfgold); wfgold = 0;
+        libxsmm_free(wogold); wogold = 0;
+        libxsmm_free(wcgold); wcgold = 0;
+        libxsmm_free(xgoldt); xgoldt = 0;
+        libxsmm_free(rigold); rigold = 0;
+        libxsmm_free(rfgold); rfgold = 0;
+        libxsmm_free(rogold); rogold = 0;
+        libxsmm_free(rcgold); rcgold = 0;
         libxsmm_free(hgold); hgold = 0;
         libxsmm_free(i1gold); i1gold = 0;
         libxsmm_free(i2gold); i2gold = 0;
