@@ -44,7 +44,7 @@ int main(void)
 {
   const int cpuid_archid = libxsmm_cpuid();
   const int m = 64, n = 239, k = 64, lda = 64, ldb = 240, ldc = 240;
-  libxsmm_gemm_descriptor_type descs[8], desc_a, desc_b;
+  libxsmm_gemm_descriptor descs[8], desc_a, desc_b;
   int result = EXIT_SUCCESS;
 
   LIBXSMM_GEMM_DESCRIPTOR(desc_a, LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_GEMM_FLAGS('N', 'N'),

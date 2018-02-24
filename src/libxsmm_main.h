@@ -132,7 +132,7 @@
 
 /** Declare and construct a GEMM descriptor. */
 #define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, DATA_TYPE, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
-  libxsmm_gemm_descriptor_type DESCRIPTOR; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE, \
+  libxsmm_gemm_descriptor DESCRIPTOR; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE, \
     FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR_TYPE, but separately taking the input-/output-precision. */
 #define LIBXSMM_GEMM_DESCRIPTOR2_TYPE(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
@@ -144,7 +144,7 @@
 * This structure must be ordered by the size of the members (packed).
 * The size of the structure matches LIBXSMM_DESCRIPTOR_SIZE.
 */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor_type {
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
   /** Leading dimensions are general offsets. */
   unsigned int lda, ldb, ldc;
   /** Extents of the matrix. */
@@ -162,7 +162,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor_type {
 };
 
 /** Structure storing the matcopy argument description. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor_type { /* 20 Byte */
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor { /* 20 Byte */
   /** LDx, M, and N. */
   unsigned int m, n, ldi, ldo;
   /** Size of data element. */
@@ -176,7 +176,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor_type { /* 
 };
 
 /** Structure storing the transpose argument description. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor_type { /* 13 Byte */
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor { /* 13 Byte */
   /** LD, M, and N. */
   unsigned int m, n, ldo;
   /** Size of data element. */
@@ -184,21 +184,21 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor_type { /* 
 };
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
-  const libxsmm_gemm_descriptor_type* gemm;
+  const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
   const unsigned int* column_idx;
   const void* values;
 } libxsmm_csr_soa_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csc_soa_descriptor {
-  const libxsmm_gemm_descriptor_type* gemm;
+  const libxsmm_gemm_descriptor* gemm;
   const unsigned int* column_ptr;
   const unsigned int* row_idx;
   const void* values;
 } libxsmm_csc_soa_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor {
-  const libxsmm_gemm_descriptor_type* gemm;
+  const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
   const unsigned int* column_idx;
   const void* values;
@@ -443,7 +443,7 @@ typedef enum libxsmm_build_kind {
 } libxsmm_build_kind;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
-  const libxsmm_gemm_descriptor_type* gemm;
+  const libxsmm_gemm_descriptor* gemm;
   const libxsmm_csr_soa_descriptor* srsoa;
   const libxsmm_csc_soa_descriptor* scsoa;
   const libxsmm_csr_reg_descriptor* sreg;
@@ -451,8 +451,8 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_convolution_backward_descriptor* cbwd;
   const libxsmm_convolution_weight_update_descriptor* cupd;
   const libxsmm_convolution_winograd_descriptor* cwino;
-  const libxsmm_mcopy_descriptor_type* matcopy;
-  const libxsmm_trans_descriptor_type* trans;
+  const libxsmm_mcopy_descriptor* matcopy;
+  const libxsmm_trans_descriptor* trans;
 } libxsmm_build_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
@@ -517,9 +517,9 @@ LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_kernel_info {
-  libxsmm_gemm_descriptor_type xgemm;
-  libxsmm_mcopy_descriptor_type mcopy;
-  libxsmm_trans_descriptor_type trans;
+  libxsmm_gemm_descriptor xgemm;
+  libxsmm_mcopy_descriptor mcopy;
+  libxsmm_trans_descriptor trans;
 } libxsmm_kernel_info;
 
 /** Attempts to receive information about JIT-generated code. */

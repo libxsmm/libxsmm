@@ -64,7 +64,7 @@ const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 /* Pointer related variables for output and weight */
-int pixels_lp = handle->fm_lp_block; 
+int pixels_lp = handle->fm_lp_block;
 element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
 LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
 LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
@@ -134,7 +134,7 @@ if (handle->reduce_weights == 0) {
   int team_div = (int) sqrt(handle->desc.threads);
   while ( handle->desc.threads % team_div != 0  ) {
     team_div--;
-  }  
+  }
   int n_ifm_teams = ( BLOCKSIFM > BLOCKSOFM ) ? handle->desc.threads/team_div : team_div ;
   int n_ofm_teams = ( BLOCKSIFM > BLOCKSOFM ) ? team_div : handle->desc.threads/team_div ;
   int ifms_per_thread = (BLOCKSIFM+n_ifm_teams-1)/n_ifm_teams;
@@ -167,7 +167,7 @@ if (pixels_lp !=4) {
     int img = ltid, ifm1, ij, ifm2, ii;
     int ofm1, ofm2, k, lp;
     int FM;
-    int W;  
+    int W;
     for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
       for (ij = 0; ij < handle->ifhp; ++ij) {
         for (ii = 0; ii < handle->ifwp; ++ii) {
@@ -179,7 +179,7 @@ if (pixels_lp !=4) {
           }
         }
       }
-    }  
+    }
 #include "output_lp_transposer.tpl.c"
   } else {
     if (handle->resize_input == 0) {
@@ -221,27 +221,27 @@ if (pixels_lp !=4) {
           }
         }
       }
-    }  
-  }  
-  
+    }
+  }
+
   for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
     for (ij = 0; ij < handle->ofhp; ++ij) {
       for (ii = 0; ii < handle->ofwp; ++ii) {
         for (ofm2 = 0; ofm2 < handle->ofmblock_lp; ++ofm2) {
           for (lp = 0; lp < handle->fm_lp_block; ++lp) {
             LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/pixels_lp, ofm2*handle->fm_lp_block+lp, ii%pixels_lp, BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp) =
-            LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, ofm2, lp,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); 
+            LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, ofm2, lp,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
           }
         }
       }
     }
-  }  
+  }
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
 if (handle->reduce_weights) {
-  weight_base = &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid/(handle->desc.threads/handle->weight_copies), 0, handle->weight_copies, handle->ofmblock); 
+  weight_base = &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid/(handle->desc.threads/handle->weight_copies), 0, handle->weight_copies, handle->ofmblock);
 } else {
   weight_base = weight_ptr;
 }

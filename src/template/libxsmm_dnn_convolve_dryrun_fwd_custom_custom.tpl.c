@@ -138,14 +138,14 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   }
 
   mark_ofm_init =  ((((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_fwd == 0) ) || ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) ? 1 : 0;
-  mark_ofm_close = (((((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 0) ) || 
+  mark_ofm_close = (((((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 0) ) ||
                     ((((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0) ) ) ? 1 : 0;
   mark_ifm_close = 0;
   mark_img_init = ( (handle->padding_flag == 1) || (mark_ofm_close == 1) || (mark_ifm_close == 1) ) ? 1 : 0;
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */
   if (loop_order == MIXED) {
-    if (handle->use_lp_kernel == 0) { /* Well, in this case leave loop as is...  */  
+    if (handle->use_lp_kernel == 0) { /* Well, in this case leave loop as is...  */
       for (img = my_img_start; img < my_img_end; img++) {
         if (mark_img_init== 1) {
           n_code_segments++;
@@ -179,7 +179,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
           }
         }
       }
-    } else { 
+    } else {
       for (img = my_img_start; img < my_img_end; img++) {
         if (mark_img_init== 1) {
           n_code_segments++;
@@ -232,8 +232,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
         for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
           for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
             for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
-              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {   
-                for (ifmb = 0; ifmb < BLOCKSIFM; ifmb += handle->block_fwd_ifm) {       
+              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+                for (ifmb = 0; ifmb < BLOCKSIFM; ifmb += handle->block_fwd_ifm) {
                   for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, BLOCKSIFM); ifm1 += BLOCKSIFM_BLOCKING) {
 
                     local_entries += 3;
@@ -294,7 +294,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   /* Second run to compute actual indices */
   if (loop_order == MIXED) {
-    if (handle->use_lp_kernel == 0) { /* Well, in this case leave loop as is...  */  
+    if (handle->use_lp_kernel == 0) { /* Well, in this case leave loop as is...  */
       for (img = my_img_start; img < my_img_end; img++) {
         if (mark_img_init== 1) {
           tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
@@ -317,7 +317,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         ij_use = oj;
                         ii_use = oi;
                         oi_use = oi * handle->desc.u;
-                        oj_use = oj * handle->desc.v;                    
+                        oj_use = oj * handle->desc.v;
                       }
 
                       if (mark_ofm_init == 1) {
@@ -389,7 +389,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         ij_use = oj;
                         ii_use = oi;
                         oi_use = oi * handle->desc.u;
-                        oj_use = oj * handle->desc.v;                    
+                        oj_use = oj * handle->desc.v;
                       }
 
                       if (mark_ofm_init == 1) {
@@ -460,8 +460,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
         for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
           for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
             for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
-              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {   
-                for (ifmb = 0; ifmb < BLOCKSIFM; ifmb += handle->block_fwd_ifm) {       
+              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+                for (ifmb = 0; ifmb < BLOCKSIFM; ifmb += handle->block_fwd_ifm) {
                   for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, BLOCKSIFM); ifm1 += BLOCKSIFM_BLOCKING) {
 
                     if ( handle->use_fwd_for_bwd == 0 ) {
@@ -473,7 +473,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       ij_use = oj;
                       ii_use = oi;
                       oi_use = oi * handle->desc.u;
-                      oj_use = oj * handle->desc.v;                    
+                      oj_use = oj * handle->desc.v;
                     }
 
                     if (mark_ofm_init == 1) {
@@ -512,7 +512,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         tmp_expanded_stream[tmp_stream_index] = IFM_LOOP_CLOSE_S;
                         tmp_stream_index++;
                       }
-                    }   
+                    }
 
                     if (mark_ofm_close == 1) {
                       if (ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
@@ -563,7 +563,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     encoded_stream_index = 0;
 
     if (loop_order == MIXED) {
-      if (handle->use_lp_kernel == 0) { /* Well, in this case leave loop as is...  */  
+      if (handle->use_lp_kernel == 0) { /* Well, in this case leave loop as is...  */
         for (img = my_img_start; img < my_img_end; img++) {
           if (mark_img_init== 1) {
             encoded_code_segments[encoded_stream_index].aux_index = img;
@@ -659,8 +659,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
           for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
             for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
               for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
-                for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {   
-                  for (ifmb = 0; ifmb < BLOCKSIFM; ifmb += handle->block_fwd_ifm) {       
+                for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
+                  for (ifmb = 0; ifmb < BLOCKSIFM; ifmb += handle->block_fwd_ifm) {
                     for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, BLOCKSIFM); ifm1 += BLOCKSIFM_BLOCKING) {
 
                       ij = oj * handle->desc.u;

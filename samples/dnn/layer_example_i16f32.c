@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Evangelos Georganas, Alexander Heinecke, Hans Pabst, Dhiraj Kalamkar, 
+/* Evangelos Georganas, Alexander Heinecke, Hans Pabst, Dhiraj Kalamkar,
  * Ankush Mandal (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
@@ -217,7 +217,7 @@ LIBXSMM_INLINE void naive_conv_fp_int16(naive_conv_t* param, const short* input,
               if (ij+kj < 0 || ij+kj >= ifh) continue;
               for (ki = 0; ki < kw; ++ki) {
                 if (ii+ki < 0 || ii+ki >= ifw) continue;
-                LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) += 
+                LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) +=
                    (1.0 *  LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp))
                 *  (1.0 *  LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw));
               }
@@ -348,7 +348,7 @@ int main(int argc, char* argv[])
   float *naive_output_fp, *naive_input_bp, *naive_filter_wu;
   float *naive_libxsmm_input, *naive_libxsmm_output, *naive_libxsmm_filter;
   short *input_libxsmm, *filter_libxsmm;
-  float *output_libxsmm, *dinput_libxsmm;  
+  float *output_libxsmm, *dinput_libxsmm;
   float *dfilter_libxsmm;
   short *doutput_libxsmm;
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
@@ -467,7 +467,7 @@ int main(int argc, char* argv[])
     pad_h_in = pad_h;
     pad_w_in = pad_w;
     pad_h_out = pad_h;
-    pad_w_out = pad_w; 
+    pad_w_out = pad_w;
   }
 
   /* deriving some values for naive code */
@@ -554,7 +554,7 @@ int main(int argc, char* argv[])
     init_buf_int16(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
   } else {
     init_buf_int16(naive_input_tmp,      nImg*nIfm*ifh*ifw, 0, 0);
-    init_buf_int16(naive_output_bp_tmp,  nImg*nOfm*ofh*ofw, 0, 0); 
+    init_buf_int16(naive_output_bp_tmp,  nImg*nOfm*ofh*ofw, 0, 0);
     copy_internal_nchw( naive_input , naive_input_tmp, nImg, nIfm, ifh, ifw, pad_h, pad_w);
     copy_internal_nchw( naive_output_bp , naive_output_bp_tmp, nImg, nOfm, ofh, ofw, pad_h, pad_w);
   }
@@ -623,7 +623,7 @@ int main(int argc, char* argv[])
 #elif defined(USE_FUSED_BIAS_RELU)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
 #elif (defined(USE_FUSED_BATCH_STATS) && defined(USE_FUSED_MAX_STATS))
-    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_AND_MAX;  
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_AND_MAX;
 #elif (defined(USE_FUSED_RELU_BWD) && defined(USE_FUSED_MAX_STATS))
    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU_BWD_AND_MAX;
 #elif defined(USE_FUSED_BATCH_STATCH_RELU_BWD)
@@ -635,7 +635,7 @@ int main(int argc, char* argv[])
 #elif defined(USE_FUSED_MAX_STATS)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_MAX_STATS;
 #elif defined(USE_FUSED_RELU_BWD)
-   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU_BWD;  
+   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU_BWD;
 #else
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
@@ -660,7 +660,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
-  libxsmm_dinput = libxsmm_dnn_link_tensor( libxsmm_layout,  dinput_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status ); 
+  libxsmm_dinput = libxsmm_dnn_link_tensor( libxsmm_layout,  dinput_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT, &status ); CHKERR_LIBXSMM_DNN( status );
@@ -702,10 +702,10 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_tensor( libxsmm_dinput ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_zero_tensor( libxsmm_dfilter ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter, (void*)naive_filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-#ifdef FP32_BN_STATS 
+#ifdef FP32_BN_STATS
     zero_buf_f32(batchstats_libxsmm, 2*nImg*nOfm);
 #endif
-#ifdef FP64_BN_STATS 
+#ifdef FP64_BN_STATS
     zero_buf_f32((float *) batchstats_libxsmm, 4*nImg*nOfm);
 #endif
 
@@ -798,10 +798,10 @@ int main(int argc, char* argv[])
       int ch_i = 0;
       int ch_j = 0;
       int pxl_i = 0;
-#ifdef FP32_BN_STATS         
+#ifdef FP32_BN_STATS
       LIBXSMM_VLA_DECL(4, float, sum_fuse,  batchstats_libxsmm, nOfm/16, nImg, 16);
 #endif
-#ifdef FP64_BN_STATS   
+#ifdef FP64_BN_STATS
       LIBXSMM_VLA_DECL(4, double, sum_fuse,  batchstats_libxsmm, nOfm/16, nImg, 16);
 #endif
       LIBXSMM_VLA_DECL(3, float, sum_naive, naive_output_fp,       nOfm, ofhp*ofwp);
@@ -820,8 +820,8 @@ int main(int argc, char* argv[])
       for ( ch_i = 0; ch_i < nOfm/16; ++ch_i ) {
         for ( ch_j = 0; ch_j < 16; ++ch_j ) {
           for ( img_i = 0; img_i < nImg; ++img_i ) {
-#ifdef FP32_BN_STATS    
-            ch_sum_fuse[(ch_i*16) + ch_j]  += sum_fuse[0][ch_i][img_i][ch_j];           
+#ifdef FP32_BN_STATS
+            ch_sum_fuse[(ch_i*16) + ch_j]  += sum_fuse[0][ch_i][img_i][ch_j];
             ch_sum2_fuse[(ch_i*16) + ch_j] += sum_fuse[1][ch_i][img_i][ch_j];
 #endif
 #ifdef FP64_BN_STATS
@@ -830,7 +830,7 @@ int main(int argc, char* argv[])
             acc1 += (double) sum_fuse[0][ch_i][img_i][ch_j];
             acc2 = (double) ch_sum2_fuse[(ch_i*16) + ch_j];
             acc2 += (double) sum_fuse[1][ch_i][img_i][ch_j];
-            ch_sum_fuse[(ch_i*16) + ch_j] = (float) acc1;        
+            ch_sum_fuse[(ch_i*16) + ch_j] = (float) acc1;
             ch_sum2_fuse[(ch_i*16) + ch_j]= (float) acc2;
 #endif
           }
@@ -847,7 +847,7 @@ int main(int argc, char* argv[])
           }
         }
         ch_sum[ch_i]  = (float) dsum;
-        ch_sum2[ch_i] = (float) dsum2; 
+        ch_sum2[ch_i] = (float) dsum2;
       }
 
       libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum, ch_sum_fuse, 0, 0, &norms_batchstats);
@@ -873,7 +873,7 @@ int main(int argc, char* argv[])
       free(ch_sum);
       free(ch_sum2);
       free(ch_sum_fuse);
-      free(ch_sum2_fuse);        
+      free(ch_sum2_fuse);
     }
 #endif
   }

@@ -172,7 +172,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_bwd_ofm) {
         for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {
           for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ++ofm1) {
-            for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {         
+            for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
               for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
                 for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
                   local_entries += 3;

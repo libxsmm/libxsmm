@@ -90,7 +90,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
         0 == (m % *b_m1) && 0 == (n % *b_n1) && 0 == (k % *b_k1) &&
         0 == ((k / *b_k1 / *b_k2) % kk) && 0 == ((n / *b_n1) % nn) && 0 == ((m / *b_m1) % mm))
     { /* check for valid block-size */
-      libxsmm_gemm_descriptor_type* desc;
+      libxsmm_gemm_descriptor* desc;
       libxsmm_descriptor_blob blob;
       if (0 == prefetch) { /* auto-prefetch */
         /* TODO: more sophisticated strategy perhaps according to CPUID */

@@ -245,7 +245,7 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_intfloat {
 #define LIBXSMM_DNN_MASK_FULL_F32      0xffffffff
 #define LIBXSMM_DNN_MANT_SZ_F32        23
 #define LIBXSMM_DNN_SZ_F32             32
- 
+
 /* DFP16 masking defines */
 #define LIBXSMM_DNN_MANT_DFP16         15
 #define LIXSMMM_DNN_RES_DFP16          (pow(2,-(LIBXSMM_DNN_MANT_DFP16)))
@@ -311,7 +311,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_reduce_wu_filters(libxsmm_dnn_layer* h
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind, unsigned int* num_tasks);
 
-/** some quantization helper functions, 
+/** some quantization helper functions,
     @TODO need to be integrated better for all different ways of quantizations */
 #define _mm512_quantize_near_ps_epi16( A, B ) _mm512_cvtepi32_epi16( _mm512_cvt_roundps_epi32( _mm512_mul_ps( _mm512_load_ps(A), B), (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC) ) )
 LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int length, unsigned char add_shift, unsigned char* scf, int round_mode );
@@ -365,7 +365,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction_bwd
 /** Function type which is either libxsmm_sconvfunction or libxsmm_wconvfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction {
   libxsmm_sconvfunction sconv;
-  libxsmm_wsconvfunction wsconv; 
+  libxsmm_wsconvfunction wsconv;
   libxsmm_uwsconvfunction uwsconv;
   libxsmm_wconvfunction wconv;
   libxsmm_bdbconvfunction bdbconv;

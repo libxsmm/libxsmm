@@ -43,49 +43,49 @@
 
 
 /** Initialize GEMM descriptor as used by low-level routines (type-specific). */
-LIBXSMM_API libxsmm_gemm_descriptor_type* libxsmm_dgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_dgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   double alpha, double beta, int flags, libxsmm_gemm_prefetch_type prefetch);
-LIBXSMM_API libxsmm_gemm_descriptor_type* libxsmm_sgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_sgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   float alpha, float beta, int flags, libxsmm_gemm_prefetch_type prefetch);
-LIBXSMM_API libxsmm_gemm_descriptor_type* libxsmm_wigemm_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_wigemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   int alpha, int beta, int flags, libxsmm_gemm_prefetch_type prefetch);
-LIBXSMM_API libxsmm_gemm_descriptor_type* libxsmm_wsgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_wsgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   float alpha, float beta, int flags, libxsmm_gemm_prefetch_type prefetch);
 
 /** Initialize GEMM descriptor (generic: double-precision alpha/beta). */
-LIBXSMM_API libxsmm_gemm_descriptor_type* libxsmm_gemm_descriptor_dinit(libxsmm_descriptor_blob* blob,
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, double alpha, double beta,
   int flags, libxsmm_gemm_prefetch_type prefetch);
-LIBXSMM_API libxsmm_gemm_descriptor_type* libxsmm_gemm_descriptor_dinit2(libxsmm_descriptor_blob* blob,
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   double alpha, double beta, int flags, libxsmm_gemm_prefetch_type prefetch);
 
 /** Initialize GEMM descriptor as used by low-level routines (generic). */
-LIBXSMM_API libxsmm_gemm_descriptor_type* libxsmm_gemm_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
   int flags, libxsmm_gemm_prefetch_type prefetch);
-LIBXSMM_API libxsmm_gemm_descriptor_type* libxsmm_gemm_descriptor_init2(libxsmm_descriptor_blob* blob,
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init2(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
   int flags, libxsmm_gemm_prefetch_type prefetch);
 
 /** Initialize transpose descriptor as used by low-level routines. */
-LIBXSMM_API libxsmm_trans_descriptor_type* libxsmm_trans_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API libxsmm_trans_descriptor* libxsmm_trans_descriptor_init(libxsmm_descriptor_blob* blob,
   unsigned int typesize, unsigned int m, unsigned int n, unsigned int ldo);
 
 /** Initialize transpose descriptor as used by low-level routines. */
-LIBXSMM_API libxsmm_mcopy_descriptor_type* libxsmm_mcopy_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_descriptor_blob* blob,
   unsigned int typesize, unsigned int m, unsigned int n, unsigned int ldo,
   unsigned int ldi, int flags, int prefetch, const int* unroll);
 
@@ -116,27 +116,27 @@ const char* libxsmm_strerror(unsigned int i_error_code);
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_gemm_inlineasm(const char*                    i_file_out,
                                       const char*                    i_routine_name,
-                                      const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+                                      const libxsmm_gemm_descriptor* i_xgemm_desc,
                                       const char*                    i_arch );
 
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_gemm_directasm(const char*                    i_file_out,
                                       const char*                    i_routine_name,
-                                      const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+                                      const libxsmm_gemm_descriptor* i_xgemm_desc,
                                       const char*                    i_arch );
 
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_gemm_kernel(libxsmm_generated_code*        io_generated_code,
-                                   const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
                                    const char*                    i_arch );
 
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_spgemm(const char*                    i_file_out,
                               const char*                    i_routine_name,
-                              const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+                              const libxsmm_gemm_descriptor* i_xgemm_desc,
                               const char*                    i_arch,
                               const char*                    i_file_in,
                               const int                      i_is_csr);
@@ -144,7 +144,7 @@ void libxsmm_generator_spgemm(const char*                    i_file_out,
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_spgemm_csc_kernel(libxsmm_generated_code*        io_generated_code,
-                                         const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+                                         const libxsmm_gemm_descriptor* i_xgemm_desc,
                                          const char*                    i_arch,
                                          const unsigned int*            i_row_idx,
                                          const unsigned int*            i_column_idx,
@@ -153,7 +153,7 @@ void libxsmm_generator_spgemm_csc_kernel(libxsmm_generated_code*        io_gener
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_spgemm_csr_kernel(libxsmm_generated_code*        io_generated_code,
-                                         const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+                                         const libxsmm_gemm_descriptor* i_xgemm_desc,
                                          const char*                    i_arch,
                                          const unsigned int*            i_row_idx,
                                          const unsigned int*            i_column_idx,
@@ -162,7 +162,7 @@ void libxsmm_generator_spgemm_csr_kernel(libxsmm_generated_code*        io_gener
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_spgemm_csr_reg_kernel(libxsmm_generated_code*        io_generated_code,
-                                             const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+                                             const libxsmm_gemm_descriptor* i_xgemm_desc,
                                              const char*                    i_arch,
                                              const unsigned int*            i_row_idx,
                                              const unsigned int*            i_column_idx,
@@ -171,7 +171,7 @@ void libxsmm_generator_spgemm_csr_reg_kernel(libxsmm_generated_code*        io_g
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_spgemm_csr_soa_kernel(libxsmm_generated_code*        io_generated_code,
-                                             const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+                                             const libxsmm_gemm_descriptor* i_xgemm_desc,
                                              const char*                    i_arch,
                                              const unsigned int*            i_row_idx,
                                              const unsigned int*            i_column_idx,
@@ -180,7 +180,7 @@ void libxsmm_generator_spgemm_csr_soa_kernel(libxsmm_generated_code*        io_g
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_generated_code,
-                                              const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
                                               const char*                    i_arch,
                                               const unsigned int*            i_row_idx,
                                               const unsigned int*            i_column_idx,
@@ -189,12 +189,12 @@ void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*                      io_generated_code,
-                                       const libxsmm_mcopy_descriptor_type*            i_matcopy_desc,
+                                       const libxsmm_mcopy_descriptor*            i_matcopy_desc,
                                        const char*                                  i_arch );
 
 LIBXSMM_INTERNAL_API
 void libxsmm_generator_transpose_kernel( libxsmm_generated_code*                        io_generated_code,
-                                         const libxsmm_trans_descriptor_type*            i_trans_desc,
+                                         const libxsmm_trans_descriptor*            i_trans_desc,
                                          const char*                                    i_arch );
 
 /* @TODO change int based architecture value */

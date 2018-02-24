@@ -28,7 +28,7 @@ if (w_chunks == 1) {
     for (ij = 0; ij < handle->ifhp; ++ij) {
       for (ifm2 = 0; ifm2 < 8; ++ifm2) {
         TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2+8, 2*ifm1+1, 2*ifm2);        
+        TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2+8, 2*ifm1+1, 2*ifm2);
       }
     }
   }
@@ -38,7 +38,7 @@ if (w_chunks == 1) {
       for (w = 0; w < w_chunks; w++) {
         for (ifm2 = 0; ifm2 < 8; ++ifm2) {
           TRANSPOSE_W_CHUNK(img, ifm1, ij, w*16, ifm2, 2*ifm1, 2*ifm2);
-          TRANSPOSE_W_CHUNK(img, ifm1, ij, w*16, ifm2+8, 2*ifm1+1, 2*ifm2);        
+          TRANSPOSE_W_CHUNK(img, ifm1, ij, w*16, ifm2+8, 2*ifm1+1, 2*ifm2);
         }
       }
     }

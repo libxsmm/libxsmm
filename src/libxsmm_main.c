@@ -216,7 +216,7 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_prec
 }
 
 
-LIBXSMM_API_INLINE unsigned int internal_update_mmstatistic(const libxsmm_gemm_descriptor_type* desc,
+LIBXSMM_API_INLINE unsigned int internal_update_mmstatistic(const libxsmm_gemm_descriptor* desc,
   unsigned int ntry, unsigned int ncol)
 {
   assert(0 != desc && LIBXSMM_KERNEL_KIND_MATMUL == desc->iflags);
@@ -367,9 +367,9 @@ LIBXSMM_API_INLINE unsigned int internal_statistic_ntry(int precision)
 }
 
 
-LIBXSMM_API void internal_register_static_code(const libxsmm_gemm_descriptor_type*,
+LIBXSMM_API void internal_register_static_code(const libxsmm_gemm_descriptor*,
   unsigned int, unsigned int, libxsmm_xmmfunction, libxsmm_code_pointer*);
-LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_descriptor_type* desc,
+LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_descriptor* desc,
   unsigned int index, unsigned int hash, libxsmm_xmmfunction src, libxsmm_code_pointer* registry)
 {
   libxsmm_kernel_info* dst_key = internal_registry_keys + index;
@@ -778,7 +778,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
         if (0 != code.ptr_const) {
           /* check if the registered entity is a GEMM kernel */
           if (LIBXSMM_KERNEL_KIND_MATMUL == registry_keys[i].xgemm.iflags) {
-            const libxsmm_gemm_descriptor_type *const desc = &registry_keys[i].xgemm;
+            const libxsmm_gemm_descriptor *const desc = &registry_keys[i].xgemm;
             const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
             const int precision = (LIBXSMM_GEMM_PRECISION_F64 == desc->datatype ? 0 : 1);
             int bucket = 3/*huge*/;
@@ -1433,16 +1433,16 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
 }
 
 
-LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_descriptor_type* descriptor)
+LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_descriptor* descriptor)
 {
   libxsmm_code_pointer flux_entry = { 0 };
   unsigned int hash, i0, i = 0, mode = 0, diff = 1;
 #if !defined(NDEBUG)
-  const libxsmm_gemm_descriptor_type* refdesc = 0;
+  const libxsmm_gemm_descriptor* refdesc = 0;
 #endif
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
   static LIBXSMM_TLS struct {
-    libxsmm_gemm_descriptor_type keys[LIBXSMM_CAPACITY_CACHE];
+    libxsmm_gemm_descriptor keys[LIBXSMM_CAPACITY_CACHE];
     libxsmm_code_pointer code[LIBXSMM_CAPACITY_CACHE];
     unsigned int hit, id;
   } cache;
@@ -1621,7 +1621,7 @@ LIBXSMM_API_DEFINITION const libxsmm_kernel_info* libxsmm_get_kernel_info(libxsm
     && EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, size, 0/*flags*/, &extra)
     && 0 != extra && *((const unsigned int*)extra) < (LIBXSMM_CAPACITY_REGISTRY)
     && code.ptr_const == internal_registry[*((const unsigned int*)extra)].ptr_const
-    /* the kernel kind is stored in the internal flags of the libxsmm_gemm_descriptor_type (iflags). */
+    /* the kernel kind is stored in the internal flags of the libxsmm_gemm_descriptor (iflags). */
     && internal_registry_keys[*((const unsigned int*)extra)].xgemm.iflags < LIBXSMM_KERNEL_KIND_INVALID)
   {
     if (0 != kind) *kind = (libxsmm_kernel_kind)internal_registry_keys[*((const unsigned int*)extra)].xgemm.iflags;
@@ -1811,11 +1811,11 @@ LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(libxsmm_registry_info* info
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor_type* descriptor)
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
 {
   libxsmm_xmmfunction result;
   if (0 != descriptor) {
-    libxsmm_gemm_descriptor_type backend_descriptor;
+    libxsmm_gemm_descriptor backend_descriptor;
     /*LIBXSMM_INIT: assume initialization completed by descriptor initialization function */
     if (0 != (0x8000 & descriptor->prefetch)) { /* "sign"-bit of unsigned short is set */
       backend_descriptor = *descriptor;
@@ -1854,7 +1854,7 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m
   const double* alpha, const double* beta, const int* flags, const int* prefetch)
 {
   libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor_type *const desc = libxsmm_dgemm_descriptor_init(&blob, m, n, k,
+  const libxsmm_gemm_descriptor *const desc = libxsmm_dgemm_descriptor_init(&blob, m, n, k,
     0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
     0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     0 == flags ? LIBXSMM_FLAGS : *flags, libxsmm_get_gemm_xprefetch(prefetch));
@@ -1867,7 +1867,7 @@ LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m
   const float* alpha, const float* beta, const int* flags, const int* prefetch)
 {
   libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor_type *const desc = libxsmm_sgemm_descriptor_init(&blob, m, n, k,
+  const libxsmm_gemm_descriptor *const desc = libxsmm_sgemm_descriptor_init(&blob, m, n, k,
     0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
     0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     0 == flags ? LIBXSMM_FLAGS : *flags, libxsmm_get_gemm_xprefetch(prefetch));
@@ -1880,7 +1880,7 @@ LIBXSMM_API_DEFINITION libxsmm_wmmfunction libxsmm_wmmdispatch(libxsmm_blasint m
   const int* alpha, const int* beta, const int* flags, const int* prefetch)
 {
   libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor_type *const desc = libxsmm_wigemm_descriptor_init(&blob, m, n, k,
+  const libxsmm_gemm_descriptor *const desc = libxsmm_wigemm_descriptor_init(&blob, m, n, k,
     0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
     0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     0 == flags ? LIBXSMM_FLAGS : *flags, libxsmm_get_gemm_xprefetch(prefetch));
@@ -1892,7 +1892,7 @@ LIBXSMM_API_DEFINITION libxsmm_wmmfunction libxsmm_wmmdispatch(libxsmm_blasint m
 LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
-LIBXSMM_API_DEFINITION libxsmm_xmcopyfunction libxsmm_xmcopydispatch(const libxsmm_mcopy_descriptor_type* descriptor)
+LIBXSMM_API_DEFINITION libxsmm_xmcopyfunction libxsmm_xmcopydispatch(const libxsmm_mcopy_descriptor* descriptor)
 {
   libxsmm_xmcopyfunction result;
   if (0 != descriptor) {
@@ -1914,7 +1914,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmcopyfunction libxsmm_xmcopydispatch(const libxs
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_trans_descriptor_type* descriptor)
+LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_trans_descriptor* descriptor)
 {
   libxsmm_xtransfunction result;
   if (0 != descriptor
@@ -1936,7 +1936,7 @@ LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxs
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor_type* descriptor,
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const void* values)
 {
   libxsmm_code_pointer result = { 0 };
@@ -1944,7 +1944,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm
     libxsmm_csr_soa_descriptor srsoa;
     libxsmm_build_request request;
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
-    libxsmm_gemm_descriptor_type gemm = *descriptor;
+    libxsmm_gemm_descriptor gemm = *descriptor;
     LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_GEMM_PREFETCH_NONE);
     descriptor = &gemm;
 #endif
@@ -1961,7 +1961,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descriptor_type* descriptor,
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values)
 {
   libxsmm_code_pointer result = { 0 };
@@ -1969,7 +1969,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm
     libxsmm_csc_soa_descriptor scsoa;
     libxsmm_build_request request;
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
-    libxsmm_gemm_descriptor_type gemm = *descriptor;
+    libxsmm_gemm_descriptor gemm = *descriptor;
     LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_GEMM_PREFETCH_NONE);
     descriptor = &gemm;
 #endif
@@ -1986,7 +1986,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor_type* descriptor,
+LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values)
 {
   libxsmm_code_pointer result = { 0 };
@@ -1994,7 +1994,7 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm
     libxsmm_csr_reg_descriptor sreg;
     libxsmm_build_request request;
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
-    libxsmm_gemm_descriptor_type gemm = *descriptor;
+    libxsmm_gemm_descriptor gemm = *descriptor;
     LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_GEMM_PREFETCH_NONE);
     descriptor = &gemm;
 #endif
@@ -2011,7 +2011,7 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor_type* descriptor,
+LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const float* values)
 {
   libxsmm_code_pointer result = { 0 };
@@ -2021,7 +2021,7 @@ LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm
     const unsigned int n = row_ptr[descriptor->m];
     double *const d_values = (double*)malloc(n * sizeof(double));
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
-    libxsmm_gemm_descriptor_type gemm = *descriptor;
+    libxsmm_gemm_descriptor gemm = *descriptor;
     LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_GEMM_PREFETCH_NONE);
     descriptor = &gemm;
 #endif

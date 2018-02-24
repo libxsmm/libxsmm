@@ -40,7 +40,7 @@
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_bsparse_soa( libxsmm_generated_code*         io_generated_code,
-                                               const libxsmm_gemm_descriptor_type*  i_xgemm_desc,
+                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                const char*                     i_arch,
                                                const unsigned int*             i_row_idx,
                                                const unsigned int*             i_column_idx,
@@ -64,7 +64,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa( libxsmm_generated_code*         i
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code*         io_generated_code,
-                                                          const libxsmm_gemm_descriptor_type*  i_xgemm_desc,
+                                                          const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                           const char*                     i_arch,
                                                           const unsigned int*             i_row_idx,
                                                           const unsigned int*             i_column_idx,

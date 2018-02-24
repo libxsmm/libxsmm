@@ -46,7 +46,7 @@ const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 element_input_type input_scratch[padded_h*padded_w*handle->ifmblock]; /* this is a [H][c-block][W] or [H][c-block][W] tensor */
 for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch[ii] = (element_input_type)0; }
 
-/* tranpsose via stack allocated buffers for output and weights to control stride-GEMM issue 
+/* tranpsose via stack allocated buffers for output and weights to control stride-GEMM issue
    idea: we transpose grad_output and transpose filters when done */
 element_output_type output_scratch[handle->ofhp*handle->ofwp*handle->ofmblock];
 for ( oi = 0; oi < handle->ofhp*handle->ofwp*handle->ofmblock; ++oi ) { output_scratch[oi] = (element_output_type)0; }
@@ -92,7 +92,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
           }
           temp_buf += handle->blocksofm*handle->ofmblock;
         }
-      }      
+      }
     }
 #endif
   }
@@ -100,9 +100,9 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
   for (img = 0; img < handle->desc.N; ++img) {
     /* we can only run GEMM based code for update in case of 1x1 convolutions or
        if the kernel size is bigger 1 and there is no stride */
-    if (    ( (handle->desc.R == 1) && (handle->desc.S == 1) && (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) 
+    if (    ( (handle->desc.R == 1) && (handle->desc.S == 1) && (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) )
          || ( (handle->desc.u == 1) && (handle->desc.v == 1) ) ) {
-      /* first we need to transpose in order to use a GEMM 
+      /* first we need to transpose in order to use a GEMM
          we also do, if needed, padding for the input activations */
       if ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) {
         for (ij = 0; ij < handle->ifhp/handle->desc.u; ++ij) {

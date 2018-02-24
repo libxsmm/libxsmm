@@ -80,7 +80,7 @@ LIBXSMM_INLINE void print_help(void) {
 }
 
 int main(int argc, char* argv []) {
-  const libxsmm_gemm_descriptor_type* l_xgemm_desc = 0;
+  const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
   libxsmm_descriptor_blob l_xgemm_blob;
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   char* l_type;
