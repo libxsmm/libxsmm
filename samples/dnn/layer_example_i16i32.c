@@ -383,7 +383,7 @@ int main(int argc, char* argv[])
     pad_h_in = pad_h;
     pad_w_in = pad_w;
     pad_h_out = pad_h;
-    pad_w_out = pad_w; 
+    pad_w_out = pad_w;
   }
 
 

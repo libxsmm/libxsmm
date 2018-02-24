@@ -125,7 +125,7 @@ if (handle->reduce_weights == 0) {
   int team_div = (int) sqrt(handle->desc.threads);
   while ( handle->desc.threads % team_div != 0  ) {
     team_div--;
-  }  
+  }
   int n_ifm_teams = ( BLOCKSIFM > BLOCKSOFM ) ? handle->desc.threads/team_div : team_div ;
   int n_ofm_teams = ( BLOCKSIFM > BLOCKSOFM ) ? team_div : handle->desc.threads/team_div ;
   int ifms_per_thread = (BLOCKSIFM+n_ifm_teams-1)/n_ifm_teams;
@@ -238,7 +238,7 @@ if (handle->padding_flag == 1) {
 }
 
 if (handle->reduce_weights) {
-  weight_base = &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid/(handle->desc.threads/handle->weight_copies), 0, handle->weight_copies, handle->ofmblock); 
+  weight_base = &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid/(handle->desc.threads/handle->weight_copies), 0, handle->weight_copies, handle->ofmblock);
 } else {
   weight_base = weight_ptr;
 }

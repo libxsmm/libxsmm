@@ -279,7 +279,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_nh
       const int lda     = (int)(handle->blocksofm*handle->ofmblock);
       const int ldb     = (int)(handle->desc.W+(2*handle->desc.pad_w));
       const int ldc     = (int)(handle->ofmblock);
-      const int lda_alt = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) 
+      const int lda_alt = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) )
                             ? (int)(handle->desc.v*handle->blocksifm*handle->ifmblock) : (int)(handle->desc.v*handle->ifmblock);
       const int ldb_alt = (int)(handle->ofwp);
       const int ldc_alt = (int)(handle->ifmblock);

@@ -53,7 +53,7 @@ element_input_type* del_in = 0;
 if (handle->datatype_in != handle->datatype_out) {
   del_in = ((element_input_type*)handle->grad_input->data) /* + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock)*/;
 } else {
-  del_in = ((element_input_type*)handle->grad_input->data) /* + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock)*/; 
+  del_in = ((element_input_type*)handle->grad_input->data) /* + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock)*/;
 }
 { /* open new scope for additional variable declarations (C89) */
   LIBXSMM_VLA_DECL(5, element_input_type, del_input, del_in, handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock);
@@ -119,7 +119,7 @@ if (handle->datatype_in != handle->datatype_out) {
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
-  if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {  
+  if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
     memset( &LIBXSMM_VLA_ACCESS(5, del_input, ltid, 0, 0, 0, 0,handle->blocksifm * handle->fm_lp_block, handle->ifhp, handle->ifwp, handle->ifmblock), 0, handle->blocksifm*handle->ifhp*handle->ifwp*handle->ifmblock*sizeof(element_input_type));
   }
 
@@ -140,14 +140,14 @@ if (handle->datatype_in != handle->datatype_out) {
         } else {
 #include "libxsmm_dnn_zero_rim_st_input_custom.tpl.c"
         }
-        if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) { 
+        if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
           LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-          LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);  
+          LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           element_input_type *orig_input_ptr;
           element_input_type *del_input_ptr;
-          __m512 zero_reg  = _mm512_setzero_ps();  
+          __m512 zero_reg  = _mm512_setzero_ps();
           __m512 orig_reg;
-          __mmask16 mask; 
+          __mmask16 mask;
           orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
           for (ij = 0; ij < handle->desc.H; ij++) {
@@ -159,7 +159,7 @@ if (handle->datatype_in != handle->datatype_out) {
             orig_input_ptr += handle->ifwp * 16;
             del_input_ptr += handle->ifwp *16;
           }
-        }        
+        }
       }
 
       if ( instr == IFM_LOOP_INIT )  {

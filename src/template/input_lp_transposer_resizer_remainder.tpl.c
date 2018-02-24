@@ -78,7 +78,7 @@ if (w_chunks == 0) {
       for (ifm2 = 0; ifm2 < 8; ++ifm2) {
         TRANSPOSE_W_CHUNK(img, ifm1, 0, src_j, 0, dst_j, ifm2, 2*ifm1, 2*ifm2);
         TRANSPOSE_W_CHUNK(img, ifm1, 0, src_j, 0, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER(img, ifm1, u*16, src_j, 16, dst_j, ifm2, 2*ifm1, 2*ifm2);  
+        TRANSPOSE_W_REMAINDER(img, ifm1, u*16, src_j, 16, dst_j, ifm2, 2*ifm1, 2*ifm2);
         TRANSPOSE_W_REMAINDER(img, ifm1, u*16, src_j, 16, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);
       }
     }
@@ -91,12 +91,12 @@ if (w_chunks == 0) {
       for (w = 0; w < w_chunks; w++) {
         for (ifm2 = 0; ifm2 < 8; ++ifm2) {
           TRANSPOSE_W_CHUNK(img, ifm1, w*u*16, src_j, w*16, dst_j, ifm2, 2*ifm1, 2*ifm2);
-          TRANSPOSE_W_CHUNK(img, ifm1, w*u*16, src_j, w*16, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);  
+          TRANSPOSE_W_CHUNK(img, ifm1, w*u*16, src_j, w*16, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);
         }
       }
       /* Handle remainder */
       for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-        TRANSPOSE_W_REMAINDER(img, ifm1, w_chunks*u*16, src_j, w_chunks*16, dst_j, ifm2, 2*ifm1, 2*ifm2);  
+        TRANSPOSE_W_REMAINDER(img, ifm1, w_chunks*u*16, src_j, w_chunks*16, dst_j, ifm2, 2*ifm1, 2*ifm2);
         TRANSPOSE_W_REMAINDER(img, ifm1, w_chunks*u*16, src_j, w_chunks*16, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);
       }
     }

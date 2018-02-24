@@ -38,11 +38,14 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_dgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_dgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   double alpha, double beta, int flags, libxsmm_gemm_prefetch_type prefetch)
 {
-  libxsmm_gemm_descriptor result;
+  union {
+    libxsmm_gemm_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k)
@@ -59,11 +62,14 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_dgemm_descriptor_in
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_sgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_sgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   float alpha, float beta, int flags, libxsmm_gemm_prefetch_type prefetch)
 {
-  libxsmm_gemm_descriptor result;
+  union {
+    libxsmm_gemm_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k)
@@ -80,11 +86,14 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_sgemm_descriptor_in
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_wigemm_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_wigemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   int alpha, int beta, int flags, libxsmm_gemm_prefetch_type prefetch)
 {
-  libxsmm_gemm_descriptor result;
+  union {
+    libxsmm_gemm_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k)
@@ -101,11 +110,14 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_wigemm_descriptor_i
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_wsgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_wsgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   float alpha, float beta, int flags, libxsmm_gemm_prefetch_type prefetch)
 {
-  libxsmm_gemm_descriptor result;
+  union {
+    libxsmm_gemm_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
   if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k)
@@ -122,7 +134,7 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_wsgemm_descriptor_i
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_gemm_descriptor_dinit(libxsmm_descriptor_blob* blob,
+LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, double alpha, double beta,
   int flags, libxsmm_gemm_prefetch_type prefetch)
@@ -131,12 +143,12 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_gemm_descriptor_din
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_gemm_descriptor_dinit2(libxsmm_descriptor_blob* blob,
+LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, double alpha, double beta,
   int flags, libxsmm_gemm_prefetch_type prefetch)
 {
-  libxsmm_gemm_descriptor_type* result;
+  libxsmm_gemm_descriptor* result;
   switch (iprec) {
     case LIBXSMM_GEMM_PRECISION_F64: {
       LIBXSMM_ASSERT(iprec == oprec);
@@ -173,7 +185,7 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_gemm_descriptor_din
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_gemm_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
   int flags, libxsmm_gemm_prefetch_type prefetch)
@@ -182,12 +194,12 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_gemm_descriptor_ini
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_gemm_descriptor_init2(libxsmm_descriptor_blob* blob,
+LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init2(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
   int flags, libxsmm_gemm_prefetch_type prefetch)
 {
-  libxsmm_gemm_descriptor_type* result;
+  libxsmm_gemm_descriptor* result;
   switch (iprec) {
     case LIBXSMM_GEMM_PRECISION_F64: {
       result = libxsmm_dgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
@@ -236,10 +248,13 @@ LIBXSMM_API_DEFINITION libxsmm_gemm_descriptor_type* libxsmm_gemm_descriptor_ini
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_trans_descriptor_type* libxsmm_trans_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API_DEFINITION libxsmm_trans_descriptor* libxsmm_trans_descriptor_init(libxsmm_descriptor_blob* blob,
   unsigned int typesize, unsigned int m, unsigned int n, unsigned int ldo)
 {
-  libxsmm_trans_descriptor result;
+  union {
+    libxsmm_trans_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
   /* limit the amount of (unrolled) code by rejecting larger kernels */
   if (LIBXSMM_TRANS_NO_BYPASS_DIMS(m, n, ldo)) {
     result.blob = blob;
@@ -255,11 +270,14 @@ LIBXSMM_API_DEFINITION libxsmm_trans_descriptor_type* libxsmm_trans_descriptor_i
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_mcopy_descriptor_type* libxsmm_mcopy_descriptor_init(libxsmm_descriptor_blob* blob,
+LIBXSMM_API_DEFINITION libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_descriptor_blob* blob,
   unsigned int typesize, unsigned int m, unsigned int n, unsigned int ldo,
   unsigned int ldi, int flags, int prefetch, const int* unroll)
 {
-  libxsmm_mcopy_descriptor result;
+  union {
+    libxsmm_mcopy_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
   result.blob = blob;
   result.ptr->unroll_level = (unsigned char)(0 == unroll ? 2 : (0 >= *unroll ? 2 : LIBXSMM_MIN(*unroll, 64)));
   result.ptr->typesize = (unsigned char)typesize;

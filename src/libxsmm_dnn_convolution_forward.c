@@ -55,7 +55,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
   /* check if we have a kernel JITed */
   if ( handle->use_fwd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      const int ldx = (int)(handle->desc.v*handle->ifmblock); 
+      const int ldx = (int)(handle->desc.v*handle->ifmblock);
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
@@ -93,13 +93,13 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_cust
       typedef int element_output_type;
       typedef short element_filter_type;
       typedef libxsmm_wconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"     
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
     }  else if (handle->datatype_in ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef short element_input_type;
       typedef float element_output_type;
       typedef short element_filter_type;
       typedef libxsmm_wsconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"     
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
     } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
       typedef unsigned char element_input_type;
       typedef int element_output_type;
@@ -130,9 +130,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_custom
   if ( handle->use_fwd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       const int lda = (int)(handle->ofmblock);
-      const int ldb = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) 
+      const int ldb = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) )
                         ? (int)(handle->desc.v*handle->blocksifm*handle->ifmblock) : (int)(handle->desc.v*handle->ifmblock);
-      const int ldc = (int)(handle->blocksofm*handle->ofmblock); 
+      const int ldc = (int)(handle->blocksofm*handle->ofmblock);
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
@@ -168,9 +168,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_nhwc_rsck(l
   if ( handle->use_fwd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       const int lda = (int)(handle->blocksofm*handle->ofmblock);
-      const int ldb = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) ) 
+      const int ldb = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) )
                         ? (int)(handle->desc.v*handle->blocksifm*handle->ifmblock) : (int)(handle->desc.v*handle->ifmblock);
-      const int ldc = (int)(handle->blocksofm*handle->ofmblock); 
+      const int ldc = (int)(handle->blocksofm*handle->ofmblock);
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;

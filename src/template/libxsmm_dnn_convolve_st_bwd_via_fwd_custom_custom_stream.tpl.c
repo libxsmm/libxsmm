@@ -85,7 +85,7 @@ element_input_type* del_in = 0;
 if (handle->datatype_in != handle->datatype_out) {
   del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock_hp);
 } else {
-  del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock); 
+  del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock);
 }
 
 LIBXSMM_ALIGNED(float scale_factor, 64);
@@ -261,7 +261,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           }
 
           if ( instr == IFM_LOOP_CLOSE) {
-            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {     
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               ifm1 =  code_stream[pc].aux_index;
               element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
@@ -311,7 +311,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           }
 
           if ( instr == IFM_LOOP_CLOSE) {
-            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {     
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               ifm1 =  code_stream[pc].aux_index;
               element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
@@ -360,18 +360,18 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0) ) {
               jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
             }
-          } 
+          }
 
           if ( instr == IFM_LOOP_CLOSE ) {
-            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {   
-              ifm1 = code_stream[pc].aux_index; 
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
+              ifm1 = code_stream[pc].aux_index;
               LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-              LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);  
+              LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
               element_input_type *orig_input_ptr;
               element_input_type *del_input_ptr;
-              __m512 zero_reg  = _mm512_setzero_ps();  
+              __m512 zero_reg  = _mm512_setzero_ps();
               __m512 orig_reg;
-              __mmask16 mask; 
+              __mmask16 mask;
               orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
               del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
               for (ij = 0; ij < handle->desc.H; ij++) {
@@ -385,7 +385,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
             }
 
-            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {     
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               ifm1 =  code_stream[pc].aux_index;
               element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
@@ -435,15 +435,15 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           }
 
           if ( instr == IFM_LOOP_CLOSE ) {
-            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {   
-              ifm1 = code_stream[pc].aux_index; 
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
+              ifm1 = code_stream[pc].aux_index;
               LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-              LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);  
+              LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
               element_input_type *orig_input_ptr;
               element_input_type *del_input_ptr;
-              __m512 zero_reg  = _mm512_setzero_ps();  
+              __m512 zero_reg  = _mm512_setzero_ps();
               __m512 orig_reg;
-              __mmask16 mask; 
+              __mmask16 mask;
               orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
               del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
               for (ij = 0; ij < handle->desc.H; ij++) {
@@ -457,7 +457,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
             }
 
-            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {     
+            if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               ifm1 =  code_stream[pc].aux_index;
               element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, 0, 0, 0,
                   handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
@@ -468,7 +468,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 cur_vec += handle->ifwp*handle->ifmblock_hp;
               }
             }
-          }     
+          }
 
           /* Run the stream of convolutions for this segment */
           for (conv_i = 0; conv_i < n_convs; conv_i++) {
@@ -494,15 +494,15 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       if (handle->ofw == 7) {
         for (pc = 0; pc < instr; pc+=1) {
           offset_i = stream[i];
-          offset_w = stream[i+1]; 
+          offset_w = stream[i+1];
           offset_o = stream[i+2];
           pi = stream[i+3];
           pw = stream[i+4];
           po = stream[i+5];
           kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
-          i+=3;  
+          i+=3;
         }
-      } else { 
+      } else {
         for (pc = 0; pc < instr; pc++) {
           offset_i = stream[i];
           offset_w = stream[i+1];
@@ -518,13 +518,13 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       if (handle->ofw == 7) {
         for (pc = 0; pc < instr; pc+=1) {
           offset_i = stream[i];
-          offset_w = stream[i+1]; 
+          offset_w = stream[i+1];
           offset_o = stream[i+2];
           pi = stream[i+3];
           pw = stream[i+4];
           po = stream[i+5];
           kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-          i+=3;  
+          i+=3;
         }
       } else {
         for (pc = 0; pc < instr; pc++) {
@@ -537,11 +537,11 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
           i+=3;
         }
-      }    
+      }
     }
   }
 
-  if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_lp_kernel == 1) && (handle->compute_max_in_kernel_bwd == 0) ) {   
+  if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_lp_kernel == 1) && (handle->compute_max_in_kernel_bwd == 0) ) {
     _mm512_store_ps(max_vals, max_abs);
   }
   libxsmm_barrier_wait(handle->barrier, ltid);
@@ -552,12 +552,12 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
     int ii, ij, ifm1, ifm2, img;
     img = ltid;
     LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
-    LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);  
+    LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
     element_input_type *orig_input_ptr;
     element_input_type *del_input_ptr;
-    __m512 zero_reg  = _mm512_setzero_ps();  
+    __m512 zero_reg  = _mm512_setzero_ps();
     __m512 orig_reg;
-    __mmask16 mask; 
+    __mmask16 mask;
     for (ifm1 = 0; ifm1 < BLOCKSIFM; ifm1++ ) {
       orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
       del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);

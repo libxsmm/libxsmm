@@ -79,7 +79,7 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;
-    }  
+    }
   } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32
                      && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
     if ( (strcmp(i_arch, "skx") == 0) ||

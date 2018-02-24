@@ -43,7 +43,7 @@ handle->block_upd_ofm = 8;
 handle->block_upd_ifm = 8;
 int IFMBLOCK;
 if (handle->use_lp_kernel) {
-  IFMBLOCK = handle->ifmblock_hp;   
+  IFMBLOCK = handle->ifmblock_hp;
 } else {
   IFMBLOCK = handle->ifmblock;
 }

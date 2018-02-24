@@ -68,7 +68,7 @@ LIBXSMM_INLINE void print_help(void) {
 
 
 LIBXSMM_INLINE
-void run_jit_double( const libxsmm_gemm_descriptor_type*  i_xgemm_desc,
+void run_jit_double( const libxsmm_gemm_descriptor*  i_xgemm_desc,
                      const double*                        i_a,
                      const double*                        i_b,
                      double*                              o_c ) {
@@ -111,7 +111,7 @@ void run_jit_double( const libxsmm_gemm_descriptor_type*  i_xgemm_desc,
 
 
 LIBXSMM_INLINE
-void run_jit_float( const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+void run_jit_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
                     const float*                        i_a,
                     const float*                        i_b,
                     float*                              o_c ) {
@@ -154,7 +154,7 @@ void run_jit_float( const libxsmm_gemm_descriptor_type* i_xgemm_desc,
 
 
 LIBXSMM_INLINE
-void run_jit_short( const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+void run_jit_short( const libxsmm_gemm_descriptor* i_xgemm_desc,
                     const short*                        i_a,
                     const short*                        i_b,
 #if defined(LIBXSMM_WGEMM_USE_FP32_OUTPUT)
@@ -224,7 +224,7 @@ int main(int argc, char* argv []) {
 
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   int l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
-  const libxsmm_gemm_descriptor_type* l_xgemm_desc = 0;
+  const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
   libxsmm_descriptor_blob l_xgemm_blob;
   libxsmm_matdiff_info l_diff;
   int l_i, l_j, l_s, l_t;

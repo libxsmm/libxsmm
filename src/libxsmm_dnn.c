@@ -522,7 +522,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
             if ( ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_INPUT) )  ) {
               layout->datatype = handle->datatype_in;
             } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
-              layout->datatype = handle->datatype_out;     
+              layout->datatype = handle->datatype_out;
             }
             layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(6*sizeof(libxsmm_dnn_tensor_dimtype));
             layout->dim_size = (unsigned int*) malloc(6*sizeof(unsigned int));
@@ -560,7 +560,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
             if ( ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_INPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT)  )  ) {
               layout->datatype = handle->datatype_in;
             } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) ) {
-              layout->datatype = handle->datatype_out;     
+              layout->datatype = handle->datatype_out;
             }
             layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(6*sizeof(libxsmm_dnn_tensor_dimtype));
             layout->dim_size = (unsigned int*) malloc(6*sizeof(unsigned int));
@@ -697,7 +697,7 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
             if ( (type == LIBXSMM_DNN_REGULAR_FILTER) || (type == LIBXSMM_DNN_FILTER) ) {
               layout->datatype = handle->datatype_in;
             } else if (type == LIBXSMM_DNN_GRADIENT_FILTER) {
-              layout->datatype = handle->datatype_out;       
+              layout->datatype = handle->datatype_out;
             }
             layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(7*sizeof(libxsmm_dnn_tensor_dimtype));
             layout->dim_size = (unsigned int*) malloc(7*sizeof(unsigned int));
@@ -905,8 +905,8 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_
       } else if ( (type == LIBXSMM_DNN_BATCH_STATS) ) {
         layout->format = handle->buffer_format;
         layout->tensor_type = LIBXSMM_DNN_BATCH_STATS;
-#ifdef FP64_BN_STATS     
-        layout->datatype = LIBXSMM_DNN_DATATYPE_F64; 
+#ifdef FP64_BN_STATS
+        layout->datatype = LIBXSMM_DNN_DATATYPE_F64;
 #endif
 
         if ((handle->buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) {
@@ -1382,9 +1382,9 @@ LIBXSMM_API_DEFINITION libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsm
                                                                                                                  } break;
                                                                                   case LIBXSMM_DNN_DATATYPE_I8: {
                                                                                                                   typedef unsigned char element_type;
-#define LIBXSMM_DNN_COPY_LOW_PRECISION                                                                                                                  
+#define LIBXSMM_DNN_COPY_LOW_PRECISION
 #include "template/libxsmm_dnn_tensor_buffer_copy_out_nchw.tpl.c"
-#undef LIBXSMM_DNN_COPY_LOW_PRECISION                                                                                                               
+#undef LIBXSMM_DNN_COPY_LOW_PRECISION
                                                                                                                 } break;
                                                                                   default: {
                                                                                              status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -2418,7 +2418,7 @@ LIBXSMM_API_DEFINITION short libxsmm_internal_quantize_scalar_no_scf( float inpu
     /* caclulate rhs, be aware of the now explicit leading bit, @TODO add DFP8/4 */
     rhs = (unsigned char)((LIBXSMM_DNN_MANT_SZ_F32+1) - LIBXSMM_DNN_MANT_DFP16 + exp_off + add_shift);
     /* some safety, to generate 0 when we fall off quant region, @TODO issue a LIBXSMM Warning that we shifted out the entire mantissa */
-    if (rhs > (LIBXSMM_DNN_MANT_SZ_F32+1)) { 
+    if (rhs > (LIBXSMM_DNN_MANT_SZ_F32+1)) {
       rhs = (LIBXSMM_DNN_MANT_SZ_F32+1);
     }
     /* finally shfit the value into the region we need, this is now a 15-add_rhs bit number for the max value in in_buffer */
@@ -2443,7 +2443,7 @@ LIBXSMM_API_DEFINITION short libxsmm_internal_quantize_scalar_no_scf( float inpu
         qvalue++;
       }
     } else if (round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND) {
-      /* stochastic rounding, as implemented in the IBM paper from 2015, @TODO, fix F64 and DFP8 */ 
+      /* stochastic rounding, as implemented in the IBM paper from 2015, @TODO, fix F64 and DFP8 */
       float p, q;
       libxsmm_intfloat fvalue;
       float eps = (float)LIXSMMM_DNN_RES_DFP16;
@@ -2475,7 +2475,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_quantize( float* in_buffer, short* out_b
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
     float max = libxsmm_internal_get_max( in_buffer, length );
     int maxexp = 0;
-    float scfq = 0.0f;  
+    float scfq = 0.0f;
     frexpf(max, &maxexp);
     maxexp -= (15-add_shift);
     scfq = (float)pow(2.0, (double)-maxexp);
@@ -2543,7 +2543,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_quantize_act( float* in_buffer, short* o
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
     float max = libxsmm_internal_get_max( in_buffer, N*C*H*W );
     int maxexp = 0;
-    float scfq = 0.0f;  
+    float scfq = 0.0f;
     frexpf(max, &maxexp);
     maxexp -= (15-add_shift);
     scfq = (float)pow(2.0, (double)-maxexp);
@@ -2645,7 +2645,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dnn_quantize_fil( float* in_buffer, short* o
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
     float max = libxsmm_internal_get_max( in_buffer, K*C*R*S );
     int maxexp = 0;
-    float scfq = 0.0f;  
+    float scfq = 0.0f;
     frexpf(max, &maxexp);
     maxexp -= (15-add_shift);
     scfq = (float)pow(2.0, (double)-maxexp);

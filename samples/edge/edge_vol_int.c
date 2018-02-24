@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
   /* OpenMP: signed induction variables */
   int i, j;
 
-  const libxsmm_gemm_descriptor_type *l_xgemm_desc_stiff = 0, *l_xgemm_desc_star = 0;
+  const libxsmm_gemm_descriptor *l_xgemm_desc_stiff = 0, *l_xgemm_desc_star = 0;
   libxsmm_descriptor_blob l_xgemm_blob_stiff, l_xgemm_blob_star;
   const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');

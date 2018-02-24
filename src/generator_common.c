@@ -760,7 +760,7 @@ void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
-                                  const libxsmm_gemm_descriptor_type* i_xgemm_desc ) {
+                                  const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   char l_new_code[512];
   int l_max_code_length = 511;
   int l_code_length = 0;

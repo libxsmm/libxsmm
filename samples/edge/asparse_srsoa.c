@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
   LIBXSMM_VLA_DECL(3, REALTYPE, l_p_c_gold, l_c_gold, N, N_CRUNS);
 
   libxsmm_descriptor_blob l_xgemm_blob;
-  const libxsmm_gemm_descriptor_type* l_xgemm_desc = 0;
+  const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
   LIBXSMM_MMFUNCTION_TYPE(REALTYPE) mykernel = NULL;
 
   unsigned long long l_start, l_end;

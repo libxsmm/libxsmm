@@ -29,7 +29,7 @@
         compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_low,1), 0); \
         compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_high, 1), 1); \
         _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, dst_ifm1, ij, dst_ifm2, w_offset, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, compressed_low_store); \
-        _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, dst_ifm1, ij, dst_ifm2+1, w_offset, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, compressed_high_store); 
+        _mm256_maskstore_epi32((int*) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, dst_ifm1, ij, dst_ifm2+1, w_offset, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended), mask_reg, compressed_high_store);
 
 int w_chunks = handle->ifwp/16;
 int w_remainder = handle->ifwp%16;
@@ -63,7 +63,7 @@ if (w_chunks == 0) {
     for (ij = 0; ij < handle->ifhp; ++ij) {
       for (ifm2 = 0; ifm2 < 8; ++ifm2) {
         TRANSPOSE_W_REMAINDER(img, ifm1, ij, 0, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 0, ifm2+8,  2*ifm1+1, 2*ifm2); 
+        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 0, ifm2+8,  2*ifm1+1, 2*ifm2);
       }
     }
   }
@@ -74,7 +74,7 @@ if (w_chunks == 0) {
         TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2, 2*ifm1, 2*ifm2);
         TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2+8, 2*ifm1+1, 2*ifm2);
         TRANSPOSE_W_REMAINDER(img, ifm1, ij, 16, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 16, ifm2+8,  2*ifm1+1, 2*ifm2);   
+        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 16, ifm2+8,  2*ifm1+1, 2*ifm2);
       }
     }
   }
@@ -87,7 +87,7 @@ if (w_chunks == 0) {
         TRANSPOSE_W_CHUNK(img, ifm1, ij, 16, ifm2, 2*ifm1, 2*ifm2);
         TRANSPOSE_W_CHUNK(img, ifm1, ij, 16, ifm2+8, 2*ifm1+1, 2*ifm2);
         TRANSPOSE_W_REMAINDER(img, ifm1, ij, 32, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 32, ifm2+8,  2*ifm1+1, 2*ifm2);   
+        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 32, ifm2+8,  2*ifm1+1, 2*ifm2);
       }
     }
   }
@@ -104,7 +104,7 @@ if (w_chunks == 0) {
       /* Handle remainder */
       for (ifm2 = 0; ifm2 < 8; ++ifm2) {
         TRANSPOSE_W_REMAINDER(img, ifm1, ij, w_chunks*16, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER(img, ifm1, ij, w_chunks*16, ifm2+8,  2*ifm1+1, 2*ifm2); 
+        TRANSPOSE_W_REMAINDER(img, ifm1, ij, w_chunks*16, ifm2+8,  2*ifm1+1, 2*ifm2);
       }
     }
   }

@@ -374,7 +374,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop( libxsmm_generated_co
       libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_two_rows( io_generated_code, i_gp_reg_mapping,
                                                                         i_conv_kernel_config, i_conv_desc, i_kw_unroll, num_output_prefetch );
     } else if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
-                i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE || 
+                i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ||
                 i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL    ) {
       libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( io_generated_code, i_gp_reg_mapping,
                                                                           i_conv_kernel_config, i_conv_desc, i_kw_unroll, num_output_prefetch );
