@@ -87,15 +87,15 @@ int main(int argc, char* argv[])
   try {
     typedef REAL_TYPE T;
     const libxsmm_blasint benchmark = 1 < argc ? std::atoi(argv[1]) : 0;
-    const libxsmm_blasint m = (2 < argc ? std::atoi(argv[2]) : 23);
-    const libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
-    const libxsmm_blasint n = (3 < argc ? std::atoi(argv[3]) : k);
+    LIBXSMM_GEMM_CONST libxsmm_blasint m = (2 < argc ? std::atoi(argv[2]) : 23);
+    LIBXSMM_GEMM_CONST libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
+    LIBXSMM_GEMM_CONST libxsmm_blasint n = (3 < argc ? std::atoi(argv[3]) : k);
     const libxsmm_blasint q = (5 < argc ? std::atoi(argv[5]) : 0/*auto*/);
     const libxsmm_blasint nrepeat = (6 < argc ? std::atoi(argv[6]) : (0 >= q ? 13 : 1));
 
-    const libxsmm_blasint lda = m, ldb = k, ldc = m;
-    const char transa = 'N', transb = 'N';
-    const T alpha = 1, beta = 1;
+    LIBXSMM_GEMM_CONST libxsmm_blasint lda = m, ldb = k, ldc = m;
+    LIBXSMM_GEMM_CONST char transa = 'N', transb = 'N';
+    LIBXSMM_GEMM_CONST T alpha = 1, beta = 1;
 
     const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
     const libxsmm_blasint max_size = ((2ULL << 30/*2 GB*/) / ((asize + bsize + csize) * sizeof(T)));
@@ -196,7 +196,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize_batched / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
       case 1: { // batched indirect
@@ -216,7 +216,8 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         if (0 == benchmark) { /* Gold result is available */
-          libxsmm_matdiff_info diff = { 0 };
+          libxsmm_matdiff_info diff;
+          memset(&diff, 0, sizeof(diff));
           for (libxsmm_blasint h = 0; h < s; ++h) {
             const T *const u = c + h * csize, *const v = c_array[h];
             libxsmm_matdiff_info dv;
@@ -250,7 +251,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
       case 3: { // indirect A and C
@@ -294,7 +295,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
       case 5: { // indirect B and C
@@ -343,7 +344,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
       case 7: { // indirect A and B
@@ -401,7 +402,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
       case 9: { // indirect cached

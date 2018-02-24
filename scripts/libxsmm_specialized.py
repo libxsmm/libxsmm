@@ -53,6 +53,10 @@ if __name__ == "__main__":
                   "(const float* a, const float* b, float* c" + pfsig)
             print("{")
             print("#if defined(__AVX512F__) && "
+                  "defined(LIBXSMM_GENTARGET_skx_sp) && \\")
+            print("  !(defined(__AVX512PF__) && defined(__AVX512ER__))")
+            print("  libxsmm_smm_" + mnkstr + "_skx(" + signature + ");")
+            print("#elif defined(__AVX512F__) && "
                   "defined(LIBXSMM_GENTARGET_knl_sp)")
             print("  libxsmm_smm_" + mnkstr + "_knl(" + signature + ");")
             print("#elif defined(__AVX2__) && "
@@ -68,12 +72,6 @@ if __name__ == "__main__":
                   "defined(LIBXSMM_GENTARGET_knc_sp)")
             print("  libxsmm_smm_" + mnkstr + "_knc(" + signature + ");")
             print("#else")
-            print("  LIBXSMM_MESSAGE(\"================================"
-                  "================================================\")")
-            print("  LIBXSMM_MESSAGE(\"LIBXSMM: No specific instruction"
-                  " set extension found for specialization!\")")
-            print("  LIBXSMM_MESSAGE(\"================================"
-                  "================================================\")")
             if (0 < prefetch):
                 print("  LIBXSMM_UNUSED(pa);"
                       " LIBXSMM_UNUSED(pb);"
@@ -106,6 +104,10 @@ if __name__ == "__main__":
                   "(const double* a, const double* b, double* c" + pfsig)
             print("{")
             print("#if defined(__AVX512F__) && "
+                  "defined(LIBXSMM_GENTARGET_skx_dp) && \\")
+            print("  !(defined(__AVX512PF__) && defined(__AVX512ER__))")
+            print("  libxsmm_dmm_" + mnkstr + "_skx(" + signature + ");")
+            print("#elif defined(__AVX512F__) && "
                   "defined(LIBXSMM_GENTARGET_knl_dp)")
             print("  libxsmm_dmm_" + mnkstr + "_knl(" + signature + ");")
             print("#elif defined(__AVX2__) && "
@@ -121,10 +123,6 @@ if __name__ == "__main__":
                   "defined(LIBXSMM_GENTARGET_knc_dp)")
             print("  libxsmm_dmm_" + mnkstr + "_knc(" + signature + ");")
             print("#else")
-            print("  /** Generate below message once per translation unit "
-                  "(already emitted for single-precision; see above)")
-            print("  LIBXSMM_MESSAGE(\"No specific instruction set extension"
-                  " found for specialization!\")*/")
             if (0 < prefetch):
                 print("  LIBXSMM_UNUSED(pa);"
                       " LIBXSMM_UNUSED(pb);"

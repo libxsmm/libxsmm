@@ -73,9 +73,33 @@ pip install \
 
 This document is an early recipe for building and running TensorFlow with LIBXSMM. Please do not expect any performance advantage (at this point) when comparing to TensorFlow without LIBXSMM!
 
+### TensorFlow Model Repository
+
+This section helps to quickly setup benchmarks such as Alexnet.
+
+```bash
+git clone https://github.com/tensorflow/models.git tensorflow-models
+cd /path/to/tensorflow-xsmm
+ln -s /path/to/tensorflow-models tensorflow/models
+
+bazel build --copt=-O2 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
+  --define tensorflow_xsmm=1 --define eigen_xsmm=1 --define tensorflow_xsmm_backward=1 \
+  <line-of-target-flags-from-above> \
+  //tensorflow/models/tutorials/image/alexnet:alexnet_benchmark
+```
+
+The above command may be combined with `//tensorflow/tools/pip_package:build_pip_package` to build TF as well. Please note, the wheel needs to be only installed if it is needed to run a model outside of TF's source tree. To run the "Alexnet" benchmark:
+
+```bash
+LIBXSMM_VERBOSE=2 \
+bazel-bin/tensorflow/models/tutorials/image/alexnet/alexnet_benchmark \
+  --data_format=NHWC --forward_only=true --batch_size=256 2>&1 \
+| tee output_alexnet.log
+```
+
 ### Convnet Benchmarks
 
-The section helps to quickly setup benchmarks for Alexnet, Overfeat, VGG, and Googlenet&#160;v1. To setup a more complete set of models, please have a look at the next subsection.
+The section helps to quickly setup benchmarks for Alexnet, Overfeat, VGG, and Googlenet&#160;v1. Recently, the original Convnet benchmark **stopped working with current TensorFlow**: please rely on TensorFlow model repository (previous section).
 
 ```bash
 git clone https://github.com/soumith/convnet-benchmarks.git
@@ -92,7 +116,7 @@ bazel build --copt=-O2 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linko
   //tensorflow/models/convnetbenchmarks:benchmark_googlenet
 ```
 
-The above command may be combined to build `//tensorflow/tools/pip_package:build_pip_package` as well. When completed (wheel installed!) e.g., run the "Alexnet" benchmark:
+The above command may be combined with `//tensorflow/tools/pip_package:build_pip_package` to build TF as well. To run the "Alexnet" benchmark:
 
 ```bash
 LIBXSMM_VERBOSE=2 \

@@ -68,7 +68,7 @@ if ( handle->use_thread_private_jit ) {
   const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
   const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
   LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
-  libxsmm_xmatcopyfunction jitted_matcopy;
+  libxsmm_xmcopyfunction jitted_matcopy;
 #endif
 
   /* select pointer based on precision */

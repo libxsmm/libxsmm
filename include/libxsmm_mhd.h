@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_MHD_H
 #define LIBXSMM_MHD_H
 
-#include <libxsmm.h>
+#include "libxsmm.h"
 
 
 /** Denotes the element/pixel type of an image/channel. */
@@ -50,7 +50,7 @@ typedef enum libxsmm_mhd_elemtype {
 
 
 /** Function type used for custom data-handler or element conversion. */
-typedef LIBXSMM_RETARGETABLE int (*libxsmm_mhd_element_handler)(
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE int (*libxsmm_mhd_element_handler)(
   void* dst, libxsmm_mhd_elemtype dst_type,
   const void* src, libxsmm_mhd_elemtype src_type);
 

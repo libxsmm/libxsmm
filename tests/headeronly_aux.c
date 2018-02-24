@@ -30,13 +30,25 @@
 ******************************************************************************/
 #include <libxsmm_source.h>
 
+#if !defined(REAL_TYPE)
+/* must correspond with definition in headeronly.c */
+# define REAL_TYPE double
+#endif
 
-LIBXSMM_EXTERN libxsmm_dmmfunction dmmdispatch(int m, int n, int k);
-LIBXSMM_EXTERN libxsmm_dmmfunction dmmdispatch(int m, int n, int k)
+
+LIBXSMM_EXTERN LIBXSMM_MMFUNCTION_TYPE(REAL_TYPE) mmdispatch(int m, int n, int k);
+LIBXSMM_EXTERN LIBXSMM_MMFUNCTION_TYPE(REAL_TYPE) mmdispatch(int m, int n, int k)
 {
-  return libxsmm_dmmdispatch(m, n, k,
+  LIBXSMM_MMFUNCTION_TYPE(REAL_TYPE) result;
+#if defined(__cplusplus) /* C++ by chance: test libxsmm_mmfunction<> wrapper */
+  const libxsmm_mmfunction<REAL_TYPE> mmfunction(m, n, k);
+  result = mmfunction.kernel().LIBXSMM_TPREFIX(REAL_TYPE, mm);
+#else
+  result = LIBXSMM_MMDISPATCH_SYMBOL(REAL_TYPE)(m, n, k,
     NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/,
     NULL/*alpha*/, NULL/*beta*/,
     NULL/*flags*/, NULL/*prefetch*/);
+#endif
+  return result;
 }
 

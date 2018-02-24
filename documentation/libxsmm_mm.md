@@ -5,14 +5,18 @@
 To perform the dense matrix-matrix multiplication *C<sub>m&#8239;x&#8239;n</sub> = alpha &middot; A<sub>m&#8239;x&#8239;k</sub> &middot; B<sub>k&#8239;x&#8239;n</sub> + beta &middot; C<sub>m&#8239;x&#8239;n</sub>*, the full-blown GEMM interface can be treated with "default arguments" (which is deviating from the BLAS standard, however without compromising the binary compatibility).
 
 ```C
-/** Automatically dispatched dense matrix multiplication (single/double-precision, C code). */
-libxsmm_?gemm(NULL/*transa*/, NULL/*transb*/, &m/*required*/, &n/*required*/, &k/*required*/,
-  NULL/*alpha*/, a/*required*/, NULL/*lda*/, b/*required*/, NULL/*ldb*/,
-  NULL/*beta*/, c/*required*/, NULL/*ldc*/);
+/** Dense matrix multiplication (single/double-precision, C code). */
+libxsmm_?gemm(NULL/*transa*/, NULL/*transb*/,
+  &m/*required*/, &n/*required*/, &k/*required*/,
+  NULL/*alpha*/, a/*required*/, NULL/*lda*/,
+                 b/*required*/, NULL/*ldb*/,
+   NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 /** Automatically dispatched dense matrix multiplication (C++ code). */
-libxsmm_gemm(NULL/*transa*/, NULL/*transb*/, m/*required*/, n/*required*/, k/*required*/,
-  NULL/*alpha*/, a/*required*/, NULL/*lda*/, b/*required*/, NULL/*ldb*/,
-  NULL/*beta*/, c/*required*/, NULL/*ldc*/);
+libxsmm_gemm(NULL/*transa*/, NULL/*transb*/,
+  m/*required*/, n/*required*/, k/*required*/,
+  NULL/*alpha*/, a/*required*/, NULL/*lda*/,
+                 b/*required*/, NULL/*ldb*/,
+   NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 ```
 
 For the C interface (with type prefix 's' or 'd'), all arguments including m, n, and k are passed by pointer. This is needed for binary compatibility with the original GEMM/BLAS interface. The C++ interface is also supplying overloaded versions where m, n, and k can be passed by&#8209;value (making it clearer that m, n, and k are non-optional arguments).
@@ -20,26 +24,29 @@ For the C interface (with type prefix 's' or 'd'), all arguments including m, n,
 The FORTRAN interface supports optional arguments (without affecting the binary compatibility with the original BLAS interface) by allowing to omit arguments where the C/C++ interface allows for NULL to be passed.
 
 ```FORTRAN
-! Automatically dispatched dense matrix multiplication (single/double-precision).
+! Dense matrix multiplication (single/double-precision).
 CALL libxsmm_?gemm(m=m, n=n, k=k, a=a, b=b, c=c)
-! Automatically dispatched dense matrix multiplication (generic interface).
+! Dense matrix multiplication (generic interface).
 CALL libxsmm_gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 ```
 
-For convenience, a BLAS-based dense matrix multiplication (`libxsmm_blas_gemm`) is provided for all supported languages which is simply re-exposing the underlying GEMM/BLAS implementation. The BLAS-based GEMM might be useful for validation/benchmark purposes, and more important as a fallback when building an application-specific dispatch mechanism.
+For convenience, a BLAS-based dense matrix multiplication (`libxsmm_blas_gemm`) is provided for all supported languages. This is re-exposing the underlying GEMM/BLAS implementation. To remove any BLAS-dependency, please follow the [Link Instructions](index.md#link-instructions). A BLAS-based GEMM can be useful for validation/benchmark purposes, and more important as a fallback when building an application-specific dispatch mechanism.
 
 ```C
-/** Automatically dispatched dense matrix multiplication (single/double-precision). */
-libxsmm_blas_?gemm(NULL/*transa*/, NULL/*transb*/, &m/*required*/, &n/*required*/, &k/*required*/,
-  NULL/*alpha*/, a/*required*/, NULL/*lda*/, b/*required*/, NULL/*ldb*/,
-  NULL/*beta*/, c/*required*/, NULL/*ldc*/);
+/** Dense matrix multiplication (single/double-precision). */
+libxsmm_blas_?gemm(NULL/*transa*/, NULL/*transb*/,
+  &m/*required*/, &n/*required*/, &k/*required*/,
+  NULL/*alpha*/, a/*required*/, NULL/*lda*/,
+                 b/*required*/, NULL/*ldb*/,
+   NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 ```
 
 A more recently added variant of matrix multiplication is parallelized based on the OpenMP standard. These routines will open an internal parallel region and rely on "classic" thread-based OpenMP. If these routines are called from inside of a parallel region, the parallelism will be based on tasks (OpenMP&#160;3.0). Please note that all OpenMP-based routines are hosted by the extension library (libxsmmext), which keeps the main library agnostic with respect to a threading runtime.
 
 ```C
-/** OpenMP parallelized dense matrix multiplication (single/double-precision). */
-libxsmm_?gemm_omp(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+/** OpenMP parallelized dense matrix multiplication. */
+libxsmm_?gemm_omp(&transa, &transb, &m, &n, &k,
+  &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 ```
 
 ### Manual Code Dispatch
@@ -47,27 +54,39 @@ libxsmm_?gemm_omp(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta,
 Successively calling a kernel (i.e., multiple times) allows for amortizing the cost of the code dispatch. Moreover, to customize the dispatch mechanism, one can rely on the following interface.
 
 ```C
-/** If non-zero function pointer is returned, call (*function_ptr)(a, b, c [, pa, pb, pc]). */
-libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const double* alpha, const double* beta, const int* flags, const int* prefetch);
-/** If non-zero function pointer is returned, call (*function_ptr)(a, b, c [, pa, pb, pc]). */
-libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** If non-zero function pointer is returned, call (*function_ptr)(a, b, c [, pa, pb, pc]). */
-libxsmm_smmfunction libxsmm_wmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const int* alpha, const int* beta, const int* flags, const int* prefetch);
+/** Call dispatched (*function_ptr)(a, b, c [, pa, pb, pc]). */
+libxsmm_[s|d]mmfunction libxsmm_dmmdispatch(
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  /** NULL: tight fit (m) */ const libxsmm_blasint* lda,
+  /** NULL: tight fit (k) */ const libxsmm_blasint* ldb,
+  /** NULL: tight fit (m) */ const libxsmm_blasint* ldc,
+  /** NULL: LIBXSMM_ALPHA */ const real* alpha,
+  /** NULL: LIBXSMM_BETA  */ const real* beta,
+  /** NULL: LIBXSMM_FLAGS */ const int* flags,
+  /** NULL: LIBXSMM_PREFETCH_NONE (not LIBXSMM_PREFETCH!) */
+  const int* prefetch);
+
+libxsmm_smmfunction libxsmm_wmmdispatch(
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  /** NULL: tight fit (m) */ const libxsmm_blasint* lda,
+  /** NULL: tight fit (k) */ const libxsmm_blasint* ldb,
+  /** NULL: tight fit (m) */ const libxsmm_blasint* ldc,
+  /** NULL: LIBXSMM_ALPHA */ const int* alpha,
+  /** NULL: LIBXSMM_BETA  */ const int* beta,
+  /** NULL: LIBXSMM_FLAGS */ const int* flags,
+  /** NULL: LIBXSMM_PREFETCH_NONE (not LIBXSMM_PREFETCH!) */
+  const int* prefetch);
 ```
 
 Overloaded function signatures are provided and allow to omit arguments (C++ and FORTRAN), which are then derived from the [configurable defaults](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h). In C++, `libxsmm_mmfunction<type>` can be used to instantiate a functor rather than making a distinction between numeric types per type-prefix.
 
 ```C
-libxsmm_mmfunction<T> xmm(m, n, k); /* generates or dispatches the code specialization */
+/* generates or dispatches the code specialization */
+libxsmm_mmfunction<T> xmm(m, n, k);
 if (xmm) { /* JIT'ted code */
-  for (int i = 0; i < n; ++i) { /* perhaps OpenMP parallelized */
-    xmm(a+i*asize, b+i*bsize, c+i*csize); /* already dispatched */
+  /* can be parallelized per e.g., OpenMP */
+  for (int i = 0; i < n; ++i) {
+    xmm(a+i*asize, b+i*bsize, c+i*csize);
   }
 }
 ```
@@ -78,7 +97,7 @@ Similarly in FORTRAN (see [samples/smm/smm.f](https://github.com/hfp/libxsmm/blo
 TYPE(LIBXSMM_DMMFUNCTION) :: xmm
 CALL libxsmm_dispatch(xmm, m, n, k)
 IF (libxsmm_available(xmm)) THEN
-  DO i = LBOUND(c, 3), UBOUND(c, 3) ! perhaps OpenMP parallelized
+  DO i = LBOUND(c, 3), UBOUND(c, 3) ! consider OpenMP
     CALL libxsmm_dmmcall(xmm, a(:,:,i), b(:,:,i), c(:,:,i))
   END DO
 END IF
@@ -118,26 +137,34 @@ if (0 < n) { /* check that n is at least 1 */
 To process a batch of matrix multiplications and to prefetch the operands of the next multiplication ahead of time, the code presented in the [Overview](#overview) section may be modified as shown above. The last multiplication is peeled off from the batch to avoid prefetching out-of-bounds (OOB). Prefetching from an invalid address does not trap an exception, but an (unnecessary) page fault can be avoided as shown above.
 
 ```C
-/** Process a series of matrix multiplications (explicit data representation). */
-int libxsmm_mmbatch(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
-  const void* a, const void* b, void* c, libxsmm_blasint batchsize, int tid, int nthreads);
+/** Batched matrix multiplications (explicit data representation). */
+int libxsmm_mmbatch(libxsmm_xmmfunction kernel,
+  libxsmm_blasint index_base, libxsmm_blasint index_stride,
+  const libxsmm_blasint stride_a[],
+  const libxsmm_blasint stride_b[],
+  const libxsmm_blasint stride_c[],
+  const void* a, const void* b, void* c,
+  libxsmm_blasint batchsize,
+  int tid, int nthreads);
 ```
 
 To further simplify the multiplication of matrices in a batch, the above interface can help if an explicit data representation is available. This low-level form is also able to employ a user-defined threading runtime. In case of OpenMP, `libxsmm_mmbatch_omp` is ready to use and hosted by the extension library (libxsmmext). An even higher-level set of procedures (and potentially more convenient functions) are available with `libxsmm_gemm_batch` and `libxsmm_gemm_batch_omp`.
 
 ```C
-void libxsmm_gemm_batch(libxsmm_gemm_precision precision, const char* transa, const char* transb,
+void libxsmm_gemm_batch(libxsmm_gemm_precision precision,
+  const char* transa, const char* transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
                      const void* b, const libxsmm_blasint* ldb,
    const void* beta,       void* c, const libxsmm_blasint* ldc,
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  const libxsmm_blasint stride_a[],
+  const libxsmm_blasint stride_b[],
+  const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 ```
 
-Please note that an explicit data representation is not actually necessary to process a series of matrix multiplications. A "chain" of multiplications can be programmatically described without the need for arrays of operands or indexes.
+Please note that an explicit data representation is not actually necessary to process a series of matrix multiplications. A "chain" of multiplications can be algorithmically described without the need for arrays of operands or indexes.
 
 ### Call Wrapper
 
@@ -168,7 +195,7 @@ gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ \
           /path/to/your_regular_blas.a
 ```
 
-**NOTE**: The static link-time wrapper technique may only work with a GCC tool chain (GNU Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU GCC, Intel&#160;Compiler, and Clang. However, this does not work under Microsoft Windows (even when using the GNU tool chain or Cygwin), and it may not work under OS&#160;X (Compiler&#160;6.1 or earlier, later versions have not been tested).
+**NOTE**: The static link-time wrapper technique may only work with a GCC tool chain (GNU&#160;Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU&#160;GCC, Intel&#160;Compiler, and Clang. However, this does not work under Microsoft Windows (even when using the GNU tool chain or Cygwin), and it may not work under OS&#160;X (Compiler&#160;6.1 or earlier, later versions have not been tested).
 
 #### Dynamic Linkage
 

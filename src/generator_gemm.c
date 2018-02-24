@@ -28,13 +28,12 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_generator.h>
-#include <libxsmm_macros.h>
 #include "generator_common.h"
 #include "generator_gemm_common.h"
 #include "generator_gemm_sse3_avx_avx2_avx512.h"
 #include "generator_gemm_imci_avx512.h"
 #include "generator_gemm_noarch.h"
+#include "libxsmm_main.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,11 +42,11 @@
 
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API_DEFINITION
-void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated_code,
-                                    const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                    const char*                     i_arch ) {
+void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_code,
+                                    const libxsmm_gemm_descriptor_type* i_xgemm_desc,
+                                    const char*                    i_arch ) {
   /* apply the alignment override */
-  libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
+  libxsmm_gemm_descriptor_type l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
 
   /* add instruction set mismatch check to code, header */
@@ -81,13 +80,13 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
     l_vector_length = 16;
   } else if ( (strcmp(i_arch, "knm") == 0) && LIBXSMM_GEMM_PRECISION_I16 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 16;
-    l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/2;
-    l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/2;
     /* some checks as we cannot mask everything */
-    if ( (l_xgemm_desc_mod.k % 4 != 0) ) {
+    if ( (l_xgemm_desc_mod.k % 8 != 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
       return;
     }
+    l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/2;
+    l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/2;
   } else if ( (strcmp(i_arch, "skx") == 0) && LIBXSMM_GEMM_PRECISION_F64 == l_xgemm_desc_mod.datatype ) {
     l_vector_length = 8;
   } else if ( (strcmp(i_arch, "skx") == 0) && LIBXSMM_GEMM_PRECISION_F32 == l_xgemm_desc_mod.datatype ) {
@@ -162,7 +161,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*         io_generated
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out,
                                        const char*                     i_routine_name,
-                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                       const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                        const char*                     i_arch ) {
   /* init generated code object */
   libxsmm_generated_code l_generated_code;
@@ -216,7 +215,7 @@ void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_directasm(const char*                     i_file_out,
                                        const char*                     i_routine_name,
-                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                       const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                        const char*                     i_arch ) {
   /* init generated code object */
   libxsmm_generated_code l_generated_code;

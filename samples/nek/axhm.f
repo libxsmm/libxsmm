@@ -159,15 +159,18 @@
           DO r = 1, repetitions
             !$OMP DO
             DO i = LBOUND(a, 4), UBOUND(a, 4)
-              CALL libxsmm_blas_gemm(m=m, n=n*k, k=m,                   &
+              ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
+              CALL libxsmm_blas_dgemm(m=m, n=n*k, k=m,                  &
      &                a=dx, b=a(:,:,1,i), c=tm1(:,:,1),                 &
      &                alpha=alpha, beta=beta)
               DO j = 1, k
-                CALL libxsmm_blas_gemm(m=m, n=n, k=n,                   &
+                ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
+                CALL libxsmm_blas_dgemm(m=m, n=n, k=n,                  &
      &                a=a(:,:,j,i), b=dy, c=tm2(:,:,j),                 &
      &                alpha=alpha, beta=beta)
               END DO
-              CALL libxsmm_blas_gemm(m=m*n, n=k, k=k,                   &
+              ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
+              CALL libxsmm_blas_dgemm(m=m*n, n=k, k=k,                  &
      &                a=a(:,:,1,i), b=dz, c=tm3(:,:,1),                 &
      &                alpha=alpha, beta=beta)
               !DEC$ vector aligned nontemporal
@@ -195,15 +198,18 @@
         DO r = 1, repetitions
           !$OMP DO
           DO i = LBOUND(a, 4), UBOUND(a, 4)
-            CALL libxsmm_blas_gemm(m=m, n=n*k, k=m,                     &
+            ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
+            CALL libxsmm_blas_dgemm(m=m, n=n*k, k=m,                    &
      &              a=dx, b=a(:,:,1,i), c=tm1(:,:,1),                   &
      &              alpha=alpha, beta=beta)
             DO j = 1, k
-              CALL libxsmm_blas_gemm(m=m, n=n, k=n,                     &
+              ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
+              CALL libxsmm_blas_dgemm(m=m, n=n, k=n,                    &
      &              a=a(:,:,j,i), b=dy, c=tm2(:,:,j),                   &
      &              alpha=alpha, beta=beta)
             END DO
-            CALL libxsmm_blas_gemm(m=m*n, n=k, k=k,                     &
+            ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
+            CALL libxsmm_blas_dgemm(m=m*n, n=k, k=k,                    &
      &              a=a(:,:,1,i), b=dz, c=tm3(:,:,1),                   &
      &              alpha=alpha, beta=beta)
             CALL stream_update_helmholtz(                               &
@@ -275,15 +281,18 @@
         DO r = 1, repetitions
           !$OMP DO
           DO i = LBOUND(a, 4), UBOUND(a, 4)
-            CALL libxsmm_gemm(m=m, n=n*k, k=m,                          &
+            ! PGI: cannot deduce generic procedure (libxsmm_gemm)
+            CALL libxsmm_dgemm(m=m, n=n*k, k=m,                         &
      &              a=dx, b=a(:,:,1,i), c=tm1(:,:,1),                   &
      &              alpha=alpha, beta=beta)
             DO j = 1, k
-              CALL libxsmm_gemm(m=m, n=n, k=n,                          &
+              ! PGI: cannot deduce generic procedure (libxsmm_gemm)
+              CALL libxsmm_dgemm(m=m, n=n, k=n,                         &
      &              a=a(:,:,j,i), b=dy, c=tm2(:,:,j),                   &
      &              alpha=alpha, beta=beta)
             END DO
-            CALL libxsmm_gemm(m=m*n, n=k, k=k,                          &
+            ! PGI: cannot deduce generic procedure (libxsmm_gemm)
+            CALL libxsmm_dgemm(m=m*n, n=k, k=k,                         &
      &              a=a(:,:,1,i), b=dz, c=tm3(:,:,1),                   &
      &              alpha=alpha, beta=beta)
             CALL stream_update_helmholtz(                               &

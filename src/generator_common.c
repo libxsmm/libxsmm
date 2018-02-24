@@ -29,7 +29,7 @@
 /* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "generator_common.h"
-#include <libxsmm_sync.h>
+#include "libxsmm_main.h"
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -754,17 +754,13 @@ void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker ) {
-  unsigned int l_i;
-  for ( l_i = 0; l_i < 32; l_i++) {
-    io_loop_label_tracker->label_address[l_i] = 0;
-  }
-  io_loop_label_tracker->label_count = 0;
+  memset(io_loop_label_tracker, 0, sizeof(*io_loop_label_tracker));
 }
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
-                                  const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+                                  const libxsmm_gemm_descriptor_type* i_xgemm_desc ) {
   char l_new_code[512];
   int l_max_code_length = 511;
   int l_code_length = 0;
@@ -776,19 +772,19 @@ void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_
   } else {
     /* selecting the correct signature */
     if (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) {
-      if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
+      if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
       } else {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C, const float* A_prefetch, const float* B_prefetch, const float* C_prefetch) {\n", i_routine_name);
       }
     } else if (LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype) {
-      if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
+      if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C) {\n", i_routine_name);
       } else {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const double* A, const double* B, double* C, const double* A_prefetch, const double* B_prefetch, const double* C_prefetch) {\n", i_routine_name);
       }
     } else if (LIBXSMM_GEMM_PRECISION_I16 == i_xgemm_desc->datatype) {
-      if (LIBXSMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
+      if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const short* A, const short* B, int* C) {\n", i_routine_name);
       } else {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const short* A, const short* B, int* C, const short* A_prefetch, const short* B_prefetch, const int* C_prefetch) {\n", i_routine_name);
@@ -929,7 +925,7 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       break;
     case LIBXSMM_ERR_ARCH_PREC:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "unknown architecture and precision (error #%u)!", i_error_code );
+        "unknown architecture or precision (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_ARCH:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,

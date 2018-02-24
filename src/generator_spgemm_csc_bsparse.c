@@ -69,7 +69,7 @@
  */
 #include "generator_spgemm_csc_bsparse.h"
 #include "generator_common.h"
-#include <libxsmm_macros.h>
+#include "libxsmm_main.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,7 +77,7 @@
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csc_bsparse( libxsmm_generated_code*         io_generated_code,
-                                           const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                           const libxsmm_gemm_descriptor_type*  i_xgemm_desc,
                                            const char*                     i_arch,
                                            const unsigned int*             i_row_idx,
                                            const unsigned int*             i_column_idx,

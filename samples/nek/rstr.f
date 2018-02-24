@@ -207,15 +207,18 @@
         DO r = 1, repetitions
           !$OMP DO
           DO i = LBOUND(a, 4), UBOUND(a, 4)
-            CALL libxsmm_blas_gemm(m=mm, n=n*k, k=m,                    &
+            ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
+            CALL libxsmm_blas_dgemm(m=mm, n=n*k, k=m,                   &
      &              a=dx, b=a(:,:,1,i), c=tm1(:,:,1),                   &
      &              alpha=alpha, beta=beta)
             DO j = 1, k
-              CALL libxsmm_blas_gemm(m=mm, n=nn, k=n,                   &
+              ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
+              CALL libxsmm_blas_dgemm(m=mm, n=nn, k=n,                  &
      &              a=tm1(:,:,j), b=dy, c=tm2(:,:,j),                   &
      &              alpha=alpha, beta=beta)
             END DO
-            CALL libxsmm_blas_gemm(m=mm*nn, n=kk, k=k,                  &
+            ! PGI: cannot deduce generic procedure (libxsmm_blas_gemm)
+            CALL libxsmm_blas_dgemm(m=mm*nn, n=kk, k=k,                 &
      &              a=tm2(:,:,1), b=dz, c=tm3(:,:,1),                   &
      &              alpha=alpha, beta=beta)
             CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
@@ -275,15 +278,18 @@
         DO r = 1, repetitions
           !$OMP DO
           DO i = LBOUND(a, 4), UBOUND(a, 4)
-            CALL libxsmm_gemm(m=mm, n=n*k, k=m,                         &
+            ! PGI: cannot deduce generic procedure (libxsmm_gemm)
+            CALL libxsmm_dgemm(m=mm, n=n*k, k=m,                        &
      &              a=dx, b=a(:,:,1,i), c=tm1(:,:,1),                   &
      &              alpha=alpha, beta=beta)
             DO j = 1, k
-              CALL libxsmm_gemm(m=mm, n=nn, k=n,                        &
+              ! PGI: cannot deduce generic procedure (libxsmm_gemm)
+              CALL libxsmm_dgemm(m=mm, n=nn, k=n,                       &
      &              a=tm1(:,:,j), b=dy, c=tm2(:,:,j),                   &
      &              alpha=alpha, beta=beta)
             END DO
-            CALL libxsmm_gemm(m=mm*nn, n=kk, k=k,                       &
+            ! PGI: cannot deduce generic procedure (libxsmm_gemm)
+            CALL libxsmm_dgemm(m=mm*nn, n=kk, k=k,                      &
      &              a=tm2(:,:,1), b=dz, c=tm3(:,:,1),                   &
      &              alpha=alpha, beta=beta)
             CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )

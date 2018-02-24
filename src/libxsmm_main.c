@@ -62,12 +62,22 @@
 # pragma offload_attribute(pop)
 #endif
 
-/* LIBXSMM_CAPACITY_REGISTRY is POT */
-/*#define LIBXSMM_HASH_MOD(N, NGEN) ((N) % (NGEN))*/
-#define LIBXSMM_HASH_MOD(N, NPOT) LIBXSMM_MOD2(N, NPOT)
-
 #if !defined(LIBXSMM_CAPACITY_CACHE)
 # define LIBXSMM_CAPACITY_CACHE 4
+#endif
+
+#if !defined(LIBXSMM_CODE_MAXSIZE)
+# define LIBXSMM_CODE_MAXSIZE 131072
+#endif
+
+#if !defined(LIBXSMM_HASH_SEED)
+# define LIBXSMM_HASH_SEED 25071975
+#endif
+
+#if 0
+# define LIBXSMM_HASH_MOD(N, NGEN) ((N) % (NGEN))
+#else /* LIBXSMM_CAPACITY_REGISTRY is POT */
+# define LIBXSMM_HASH_MOD(N, NPOT) LIBXSMM_MOD2(N, NPOT)
 #endif
 
 /* flag fused into the memory address of a code version in case of non-JIT */
@@ -77,20 +87,16 @@
 # define LIBXSMM_HASH_COLLISION (1ULL << (8 * sizeof(void*) - 2))
 #endif
 
-#define LIBXSMM_HASH_FUNCTION_CALL(HASH, INDX, DESCRIPTOR) \
-  HASH = libxsmm_crc32(DESCRIPTOR, LIBXSMM_GEMM_DESCRIPTOR_SIZE, 25071975/*seed*/); \
-  INDX = LIBXSMM_HASH_MOD(HASH, LIBXSMM_CAPACITY_REGISTRY)
-
-typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   unsigned int ntry, ncol, njit, nsta;
 } internal_statistic_type;
 
 /** Helper macro determining the default prefetch strategy which is used for statically generated kernels. */
 #if (0 > LIBXSMM_PREFETCH) /* auto-prefetch (frontend) */ || \
   (defined(_WIN32) || defined(__CYGWIN__)) /* TODO: full support for Windows calling convention */
-# define INTERNAL_PREFETCH LIBXSMM_PREFETCH_NONE
+# define INTERNAL_PREFETCH LIBXSMM_GEMM_PREFETCH_NONE
 #else
-# define INTERNAL_PREFETCH LIBXSMM_PREFETCH
+# define INTERNAL_PREFETCH ((libxsmm_gemm_prefetch_type)LIBXSMM_PREFETCH)
 #endif
 
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW)) /* most general implementation */
@@ -102,76 +108,55 @@ typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
     RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((LIBXSMM_CAPACITY_CACHE) - 1), LIBXSMM_CAPACITY_CACHE)
 #endif
 
-#if defined(_DEBUG)
-# define INTERNAL_DISPATCH_DEBUG(RESULT, TYPE, FLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA) \
-  if (0 != libxsmm_verbosity && ((INT_MAX) - 1) != libxsmm_verbosity && 0 != (RESULT).pmm) { \
-    const libxsmm_blasint internal_dispatch_debug_m_ = M, internal_dispatch_debug_n_ = N, internal_dispatch_debug_k_ = K; \
-    const libxsmm_blasint internal_dispatch_debug_lda_ = (0 == (PLDA) ? M : *(PLDA)); \
-    const libxsmm_blasint internal_dispatch_debug_ldb_ = (0 == (PLDB) ? K : *(PLDB)); \
-    const libxsmm_blasint internal_dispatch_debug_ldc_ = (0 == (PLDC) ? M : *(PLDC)); \
-    LIBXSMM_FLOCK(stdout); \
-    fprintf(stdout, "LIBXSMM: "); \
-    LIBXSMM_GEMM_PRINT(stdout, LIBXSMM_GEMM_PRECISION(TYPE), FLAGS, \
-      &internal_dispatch_debug_m_, &internal_dispatch_debug_n_, &internal_dispatch_debug_k_, \
-      PALPHA, 0/*a*/, &internal_dispatch_debug_lda_, 0/*b*/, &internal_dispatch_debug_ldb_, PBETA, 0/*c*/, &internal_dispatch_debug_ldc_); \
-    fprintf(stdout, " = %p\n", (RESULT).pmm); \
-    LIBXSMM_FUNLOCK(stdout); \
-  }
-#else
-# define INTERNAL_DISPATCH_DEBUG(RESULT, TYPE, FLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA)
-#endif
-
-#define INTERNAL_DISPATCH(TYPE, DESC, PFLAGS, M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA, PREFETCH) { \
-  const libxsmm_blasint ilda = (0 == (PLDA) ? m : *(PLDA)), ildb = (0 == (PLDB) ? k : *(PLDB)), ildc = (0 == (PLDC) ? m : *(PLDC)); \
-  const int internal_prefetch = (0 == (PREFETCH) ? libxsmm_gemm_auto_prefetch : *(PREFETCH)); \
-  const int iflags = (0 == (PFLAGS) ? LIBXSMM_FLAGS : *(PFLAGS)); \
-  libxsmm_code_pointer internal_dispatch_result_; \
-  libxsmm_gemm_descriptor DESC; \
-  if (EXIT_SUCCESS == LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX_NAME(TYPE)), gemm_descriptor_init)( \
-    &(DESC), M, N, K, ilda, ildb, ildc, \
-    0 != (PALPHA) ? *((const TYPE*)(PALPHA)) : (LIBXSMM_ALPHA), \
-    0 != (PBETA) ? *((const TYPE*)(PBETA)) : (LIBXSMM_BETA), \
-    iflags, internal_prefetch)) \
-  { \
-    internal_dispatch_result_ = internal_find_code(&(DESC)); \
-  } \
-  else { /* unsupported */ \
-    libxsmm_update_mmstatistic(LIBXSMM_GEMM_PRECISION(TYPE), M, N, K, 1/*try*/, 0); \
-    internal_dispatch_result_.pmm = 0; \
-  } \
-  INTERNAL_DISPATCH_DEBUG(internal_dispatch_result_, TYPE, \
-    0 == (PFLAGS) ? LIBXSMM_FLAGS : *(PFLAGS), \
-    M, N, K, PLDA, PLDB, PLDC, PALPHA, PBETA); \
-  return internal_dispatch_result_.xgemm.LIBXSMM_TPREFIX(TYPE, mm); \
-}
-
 #if !defined(LIBXSMM_NO_SYNC)
 # if !defined(INTERNAL_REGLOCK_MAXN)
-#   if 0 /* RW-lock */
-#   define INTERNAL_REGLOCK_MAXN 0
+#   if defined(_MSC_VER)
+#     define INTERNAL_REGLOCK_MAXN 0
 #   else
-#   define INTERNAL_REGLOCK_MAXN 256
+#     define INTERNAL_REGLOCK_MAXN 256
 #   endif
 # endif
 # if (0 < INTERNAL_REGLOCK_MAXN)
-LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_DEFAULT) internal_reglock[INTERNAL_REGLOCK_MAXN];
+#   if !defined(LIBXSMM_REGNLOCK)
+#     define LIBXSMM_REGNLOCK LIBXSMM_LOCK_DEFAULT
+#   endif
+#   if LIBXSMM_LOCK_TYPE_ISPOD(LIBXSMM_REGNLOCK)
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
+  char pad[LIBXSMM_CACHELINE];
+  LIBXSMM_LOCK_TYPE(LIBXSMM_REGNLOCK) state;
+} internal_reglocktype;
+#   else
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
+  LIBXSMM_LOCK_TYPE(LIBXSMM_REGNLOCK) state;
+} internal_reglocktype;
+#   endif
+LIBXSMM_API_VARIABLE(internal_reglocktype internal_reglock[INTERNAL_REGLOCK_MAXN]);
 # else /* RW-lock */
-LIBXSMM_API_VARIABLE LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK_RWLOCK) internal_reglock_attr;
-LIBXSMM_API_VARIABLE LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_RWLOCK) internal_reglock;
+#   if !defined(LIBXSMM_REG1LOCK)
+#     if defined(_MSC_VER)
+#       define LIBXSMM_REG1LOCK LIBXSMM_LOCK_MUTEX
+#     else
+#       define LIBXSMM_REG1LOCK LIBXSMM_LOCK_RWLOCK
+#     endif
+#   endif
+LIBXSMM_API_VARIABLE(LIBXSMM_LOCK_TYPE(LIBXSMM_REG1LOCK) internal_reglock);
 # endif
 #endif
 
 /** Determines the try-lock property (1<N: disabled, N=1: enabled [N=0: disabled in case of RW-lock]). */
-LIBXSMM_API_VARIABLE int internal_reglock_count;
-LIBXSMM_API_VARIABLE size_t internal_registry_nbytes;
-LIBXSMM_API_VARIABLE libxsmm_kernel_info* internal_registry_keys;
-LIBXSMM_API_VARIABLE libxsmm_code_pointer* internal_registry;
-LIBXSMM_API_VARIABLE internal_statistic_type internal_statistic[2/*DP/SP*/][4/*sml/med/big/xxx*/];
-LIBXSMM_API_VARIABLE unsigned int internal_statistic_sml, internal_statistic_med, internal_statistic_mnk;
-LIBXSMM_API_VARIABLE unsigned int internal_statistic_num_mcopy, internal_statistic_num_tcopy;
-LIBXSMM_API_VARIABLE unsigned int internal_teardown;
-LIBXSMM_API_VARIABLE int internal_dispatch_trylock_locked;
-LIBXSMM_API_VARIABLE int internal_gemm_auto_prefetch_locked;
+LIBXSMM_API_VARIABLE(int internal_reglock_count);
+LIBXSMM_API_VARIABLE(size_t internal_registry_nbytes);
+LIBXSMM_API_VARIABLE(libxsmm_kernel_info* internal_registry_keys);
+LIBXSMM_API_VARIABLE(libxsmm_code_pointer* internal_registry);
+LIBXSMM_API_VARIABLE(internal_statistic_type internal_statistic[2/*DP/SP*/][4/*sml/med/big/xxx*/]);
+LIBXSMM_API_VARIABLE(unsigned int internal_statistic_sml);
+LIBXSMM_API_VARIABLE(unsigned int internal_statistic_med);
+LIBXSMM_API_VARIABLE(unsigned int internal_statistic_mnk);
+LIBXSMM_API_VARIABLE(unsigned int internal_statistic_num_mcopy);
+LIBXSMM_API_VARIABLE(unsigned int internal_statistic_num_tcopy);
+LIBXSMM_API_VARIABLE(unsigned int internal_teardown);
+LIBXSMM_API_VARIABLE(int internal_dispatch_trylock_locked);
+LIBXSMM_API_VARIABLE(int internal_gemm_auto_prefetch_locked);
 
 
 #if defined(LIBXSMM_NO_SYNC)
@@ -180,7 +165,7 @@ LIBXSMM_API_VARIABLE int internal_gemm_auto_prefetch_locked;
 #elif (0 < INTERNAL_REGLOCK_MAXN)
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
   const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, internal_reglock_count); \
-  if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_DEFAULT) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_DEFAULT, internal_reglock + (LOCKINDEX))) { \
+  if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REGNLOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REGNLOCK, &internal_reglock[LOCKINDEX].state)) { \
     if (1 != internal_reglock_count && /* (re-)try and get (meanwhile) generated code */ \
         0 != internal_registry) /* ensure engine is not shut down */ \
     { \
@@ -191,10 +176,10 @@ LIBXSMM_API_VARIABLE int internal_gemm_auto_prefetch_locked;
       break; \
     } \
   }
-# define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_DEFAULT, internal_reglock + (LOCKINDEX)); }
+# define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGNLOCK, &internal_reglock[LOCKINDEX].state); }
 #else /* RW-lock */
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
-  if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_RWLOCK, &internal_reglock)) { \
+  if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REG1LOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REG1LOCK, &internal_reglock)) { \
     if (1 != internal_reglock_count && /* (re-)try and get (meanwhile) generated code */ \
         0 != internal_registry) /* ensure engine is not shut down */ \
     { \
@@ -205,7 +190,7 @@ LIBXSMM_API_VARIABLE int internal_gemm_auto_prefetch_locked;
       break; \
     } \
   }
-# define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_RWLOCK, &internal_reglock); }
+# define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REG1LOCK, &internal_reglock); }
 #endif
 
 
@@ -231,7 +216,7 @@ LIBXSMM_API_DEFINITION unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_prec
 }
 
 
-LIBXSMM_API_INLINE unsigned int internal_update_mmstatistic(const libxsmm_gemm_descriptor* desc,
+LIBXSMM_API_INLINE unsigned int internal_update_mmstatistic(const libxsmm_gemm_descriptor_type* desc,
   unsigned int ntry, unsigned int ncol)
 {
   assert(0 != desc && LIBXSMM_KERNEL_KIND_MATMUL == desc->iflags);
@@ -382,9 +367,9 @@ LIBXSMM_API_INLINE unsigned int internal_statistic_ntry(int precision)
 }
 
 
-LIBXSMM_API void internal_register_static_code(const libxsmm_gemm_descriptor*,
+LIBXSMM_API void internal_register_static_code(const libxsmm_gemm_descriptor_type*,
   unsigned int, unsigned int, libxsmm_xmmfunction, libxsmm_code_pointer*);
-LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_descriptor* desc,
+LIBXSMM_API_DEFINITION void internal_register_static_code(const libxsmm_gemm_descriptor_type* desc,
   unsigned int index, unsigned int hash, libxsmm_xmmfunction src, libxsmm_code_pointer* registry)
 {
   libxsmm_kernel_info* dst_key = internal_registry_keys + index;
@@ -489,13 +474,11 @@ LIBXSMM_API_INLINE void internal_finalize(void)
 #if !defined(LIBXSMM_NO_SYNC)
   { /* release locks */
 # if (0 < INTERNAL_REGLOCK_MAXN)
-    int i; for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_DESTROY(LIBXSMM_LOCK_DEFAULT, internal_reglock + i);
+    int i; for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_DESTROY(LIBXSMM_REGNLOCK, &internal_reglock[i].state);
 # else
-    LIBXSMM_LOCK_DESTROY(LIBXSMM_LOCK_RWLOCK, &internal_reglock);
-    LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK_RWLOCK, &internal_reglock_attr);
+    LIBXSMM_LOCK_DESTROY(LIBXSMM_REG1LOCK, &internal_reglock);
 # endif
-    LIBXSMM_LOCK_DESTROY(LIBXSMM_LOCK_DEFAULT, &libxsmm_lock_global);
-    LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK_DEFAULT, &libxsmm_lock_attr_default);
+    LIBXSMM_LOCK_DESTROY(LIBXSMM_LOCK, &libxsmm_lock_global);
   }
 #endif
 }
@@ -503,20 +486,22 @@ LIBXSMM_API_INLINE void internal_finalize(void)
 
 LIBXSMM_API_INLINE void internal_init(void)
 {
-  libxsmm_code_pointer* result;
-  int init_code = EXIT_FAILURE, i;
+#if defined(LIBXSMM_TRACE)
+  int filter_threadid = 0, filter_mindepth = -1, filter_maxnsyms = 0, init_code = EXIT_SUCCESS;
+#endif
+  int i;
+  const libxsmm_malloc_function null_malloc_fn = { 0 };
+  const libxsmm_free_function null_free_fn = { 0 };
 #if !defined(LIBXSMM_NO_SYNC) /* setup the locks in a thread-safe fashion */
-  LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_DEFAULT, &libxsmm_lock_global);
+  LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, &libxsmm_lock_global);
 # if (0 < INTERNAL_REGLOCK_MAXN)
-  for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_DEFAULT, internal_reglock + i);
+  for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_ACQUIRE(LIBXSMM_REGNLOCK, &internal_reglock[i].state);
 # else
-  LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_RWLOCK, &internal_reglock);
+  LIBXSMM_LOCK_ACQUIRE(LIBXSMM_REG1LOCK, &internal_reglock);
 # endif
 #endif
-  result = internal_registry;
-  if (0 == result) {
-    const libxsmm_malloc_function null_malloc_fn = { 0 };
-    const libxsmm_free_function null_free_fn = { 0 };
+  if (0 == internal_registry) { /* double-check after acquiring the lock(s) */
+    assert(0 == internal_registry_keys); /* should never happen */
     libxsmm_xset_default_allocator(0/*lock*/, 0/*context*/, null_malloc_fn, null_free_fn);
     libxsmm_xset_scratch_allocator(0/*lock*/, 0/*context*/, null_malloc_fn, null_free_fn);
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
@@ -580,7 +565,7 @@ LIBXSMM_API_INLINE void internal_init(void)
       }
 #if !defined(NDEBUG)
       else {
-        libxsmm_verbosity = INT_MAX - 1; /* quiet -> verbose */
+        libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
       }
 #endif
     }
@@ -588,10 +573,7 @@ LIBXSMM_API_INLINE void internal_init(void)
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
 #if defined(LIBXSMM_TRACE)
-    {
-      int filter_threadid = 0, filter_mindepth = -1, filter_maxnsyms = 0;
-      const char *const env = getenv("LIBXSMM_TRACE");
-      init_code = EXIT_SUCCESS;
+    { const char *const env = getenv("LIBXSMM_TRACE");
       if (0 != env && 0 != *env) {
         char buffer[32] = { 0 };
         if (1 == sscanf(env, "%32[^,],", buffer)) {
@@ -607,28 +589,21 @@ LIBXSMM_API_INLINE void internal_init(void)
           filter_maxnsyms = -1; /* all */
         }
       }
-      if (EXIT_SUCCESS == init_code) {
-        init_code = libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
-      }
     }
-    if (EXIT_SUCCESS == init_code)
-#else
-    LIBXSMM_UNUSED(init_code);
+    if (EXIT_SUCCESS == init_code) {
 #endif
-    {
-      libxsmm_gemm_diff_init(libxsmm_target_archid);
-      libxsmm_trans_init(libxsmm_target_archid);
-      libxsmm_hash_init(libxsmm_target_archid);
-      libxsmm_dnn_init(libxsmm_target_archid);
-#if defined(LIBXSMM_PERF)
-      libxsmm_perf_init();
-#endif
-      assert(0 == internal_registry_keys && 0 == internal_registry); /* should never happen */
-      result = (libxsmm_code_pointer*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_code_pointer));
+      libxsmm_code_pointer *const new_registry = (libxsmm_code_pointer*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_code_pointer));
       internal_registry_keys = (libxsmm_kernel_info*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_kernel_info));
-      if (0 != result && 0 != internal_registry_keys) {
+      if (0 != new_registry && 0 != internal_registry_keys) {
         const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
-        for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) result[i].pmm = 0;
+        libxsmm_gemm_diff_init(libxsmm_target_archid);
+        libxsmm_trans_init(libxsmm_target_archid);
+        libxsmm_hash_init(libxsmm_target_archid);
+        libxsmm_dnn_init(libxsmm_target_archid);
+#if defined(LIBXSMM_PERF)
+        libxsmm_perf_init();
+#endif
+        for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) new_registry[i].pmm = 0;
         /* omit registering code if JIT is enabled and if an ISA extension is found
          * which is beyond the static code path used to compile the library
          */
@@ -636,9 +611,9 @@ LIBXSMM_API_INLINE void internal_init(void)
 # if (0 != LIBXSMM_JIT) && !defined(__MIC__)
         /* check if target arch. permits execution (arch. may be overridden) */
         if (LIBXSMM_STATIC_TARGET_ARCH <= libxsmm_target_archid &&
-           (LIBXSMM_X86_AVX > libxsmm_target_archid /* JIT code gen. is not available */
+           (LIBXSMM_X86_SSE4 > libxsmm_target_archid /* JIT code gen. is not available */
             /* condition allows to avoid JIT (if static code is good enough) */
-         || LIBXSMM_STATIC_TARGET_ARCH == libxsmm_target_archid))
+            || LIBXSMM_STATIC_TARGET_ARCH == libxsmm_target_archid))
 # endif
         { /* opening a scope for eventually declaring variables */
           /* setup the dispatch table for the statically generated code */
@@ -651,7 +626,7 @@ LIBXSMM_API_INLINE void internal_init(void)
         libxsmm_gemm_auto_prefetch_default = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
           /* avoid special prefetch if static code is present, since such code uses INTERNAL_PREFETCH */
           ? (((LIBXSMM_X86_AVX512 >= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid))
-            ? LIBXSMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_PREFETCH_BL2_VIA_C)
+            ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C)
           : INTERNAL_PREFETCH;
 #endif
         libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
@@ -669,7 +644,7 @@ LIBXSMM_API_INLINE void internal_init(void)
         }
         {
           void *const pv_registry = &internal_registry;
-          LIBXSMM_ATOMIC_STORE((void**)pv_registry, (void*)result, LIBXSMM_ATOMIC_SEQ_CST);
+          LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)((void**)pv_registry, (void*)new_registry, LIBXSMM_ATOMIC_SEQ_CST);
         }
       }
       else {
@@ -677,22 +652,26 @@ LIBXSMM_API_INLINE void internal_init(void)
           fprintf(stderr, "LIBXSMM ERROR: failed to allocate code registry!\n");
         }
         free(internal_registry_keys);
-        free(result);
+        free(new_registry);
+      }
+#if defined(LIBXSMM_TRACE)
+      init_code = libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
+      if (EXIT_SUCCESS != init_code && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+        fprintf(stderr, "LIBXSMM ERROR: failed to initialize TRACE (error #%i)!\n", init_code);
       }
     }
-#if defined(LIBXSMM_TRACE)
     else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-      fprintf(stderr, "LIBXSMM ERROR: failed to initialize TRACE (error #%i)!\n", init_code);
+      fprintf(stderr, "LIBXSMM ERROR: failed to parse LIBXSMM_TRACE!\n");
     }
 #endif
   }
 #if !defined(LIBXSMM_NO_SYNC) /* release locks */
 # if (0 < INTERNAL_REGLOCK_MAXN)
-  for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_DEFAULT, internal_reglock + i);
+  for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGNLOCK, &internal_reglock[i].state);
 # else
-  LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_RWLOCK, &internal_reglock);
+  LIBXSMM_LOCK_RELEASE(LIBXSMM_REG1LOCK, &internal_reglock);
 # endif
-  LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_DEFAULT, &libxsmm_lock_global);
+  LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, &libxsmm_lock_global);
 #endif
 }
 
@@ -706,13 +685,22 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     static int counter = 0, once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
       const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
+      LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK) attr_global;
 # if (0 < INTERNAL_REGLOCK_MAXN)
       int i;
-      assert(sizeof(internal_reglock) == (INTERNAL_REGLOCK_MAXN * sizeof(*internal_reglock)));
+      LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REGNLOCK) attr;
+      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_REGNLOCK, &attr);
+# else
+      LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_REG1LOCK) attr;
+      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_REG1LOCK, &attr);
+      LIBXSMM_LOCK_INIT(LIBXSMM_REG1LOCK, &internal_reglock, &attr);
+      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REG1LOCK, &attr);
 # endif
-      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK_DEFAULT, &libxsmm_lock_attr_default);
-      LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_DEFAULT, &libxsmm_lock_global, &libxsmm_lock_attr_default);
-      if (0 == env_trylock || 0 == *env_trylock) { /* LIBXSMM_TRYLOCK not present in environment */
+      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK, &attr_global);
+      LIBXSMM_LOCK_INIT(LIBXSMM_LOCK, &libxsmm_lock_global, &attr_global);
+      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK, &attr_global);
+      /* control number of locks needed; LIBXSMM_TRYLOCK implies only 1 lock */
+      if (0 == env_trylock || 0 == *env_trylock) { /* no LIBXSMM_TRYLOCK */
         internal_reglock_count = INTERNAL_REGLOCK_MAXN;
       }
       else { /* LIBXSMM_TRYLOCK environment variable specified */
@@ -721,10 +709,8 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       }
 # if (0 < INTERNAL_REGLOCK_MAXN)
       assert(1 <= internal_reglock_count);
-      for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_DEFAULT, internal_reglock + i, &libxsmm_lock_attr_default);
-# else
-      LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK_RWLOCK, &internal_reglock_attr);
-      LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_RWLOCK, &internal_reglock, &internal_reglock_attr);
+      for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_REGNLOCK, &internal_reglock[i].state, &attr);
+      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGNLOCK, &attr);
 # endif
       once = 1;
     }
@@ -735,7 +721,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 #endif
     internal_init();
     s1 = libxsmm_timer_tick(); t1 = libxsmm_timer_tick_rdtsc(); /* final timings */
-    if (0 != LIBXSMM_FEQ(0, libxsmm_timer_scale) && s0 != s1 && t0 != t1) {
+    if (LIBXSMM_FEQ(0, libxsmm_timer_scale) && s0 != s1 && t0 != t1) {
       libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / (t0 < t1 ? (t1 - t0) : (t0 - t1));
     }
   }
@@ -750,19 +736,22 @@ void libxsmm_finalize(void);
 
 LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 {
-  libxsmm_code_pointer* registry = LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
+  void *const regaddr = &internal_registry;
+  uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
+  libxsmm_code_pointer* registry = (libxsmm_code_pointer*)regptr;
   if (0 != registry) {
     int i;
 #if !defined(LIBXSMM_NO_SYNC)
-    LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_DEFAULT, &libxsmm_lock_global);
+    LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, &libxsmm_lock_global);
     /* acquire locks and thereby shortcut lazy initialization later on */
 # if (0 < INTERNAL_REGLOCK_MAXN)
-    for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_DEFAULT, internal_reglock + i);
+    for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_ACQUIRE(LIBXSMM_REGNLOCK, &internal_reglock[i].state);
 # else
-    LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_RWLOCK, &internal_reglock);
+    LIBXSMM_LOCK_ACQUIRE(LIBXSMM_REG1LOCK, &internal_reglock);
 # endif
 #endif
-    registry = internal_registry;
+    regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_RELAXED);
+    registry = (libxsmm_code_pointer*)regptr;
 
     if (0 != registry) {
       libxsmm_kernel_info *const registry_keys = internal_registry_keys;
@@ -784,16 +773,12 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 #if defined(LIBXSMM_PERF)
       libxsmm_perf_finalize();
 #endif
-      /* make internal registry globally unavailable */
-      LIBXSMM_ATOMIC_STORE_ZERO(&internal_registry, LIBXSMM_ATOMIC_SEQ_CST);
-      internal_registry_keys = 0;
-
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
         /*const*/ libxsmm_code_pointer code = registry[i];
         if (0 != code.ptr_const) {
           /* check if the registered entity is a GEMM kernel */
           if (LIBXSMM_KERNEL_KIND_MATMUL == registry_keys[i].xgemm.iflags) {
-            const libxsmm_gemm_descriptor *const desc = &registry_keys[i].xgemm;
+            const libxsmm_gemm_descriptor_type *const desc = &registry_keys[i].xgemm;
             const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
             const int precision = (LIBXSMM_GEMM_PRECISION_F64 == desc->datatype ? 0 : 1);
             int bucket = 3/*huge*/;
@@ -817,7 +802,7 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
           else if (LIBXSMM_KERNEL_KIND_MCOPY == registry_keys[i].xgemm.iflags) {
             ++internal_statistic_num_mcopy;
           }
-          else if (LIBXSMM_KERNEL_KIND_TCOPY == registry_keys[i].xgemm.iflags) {
+          else if (LIBXSMM_KERNEL_KIND_TRANS == registry_keys[i].xgemm.iflags) {
             ++internal_statistic_num_tcopy;
           }
           else {
@@ -831,21 +816,25 @@ LIBXSMM_API_DEFINITION LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 #endif
             if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, &size, 0/*flags*/, &buffer)) {
               libxsmm_xfree(code.ptr_const);
-              internal_registry_nbytes += (unsigned int)(size + (((char*)code.ptr_const) - (char*)buffer));
+              /* round-up size (it is fine to assume 4 KB pages since it is likely more accurate than not rounding up) */
+              internal_registry_nbytes += (unsigned int)LIBXSMM_UP2(size + (((char*)code.ptr_const) - (char*)buffer), 4096/*4KB*/);
             }
           }
         }
       }
+      /* make internal registry globally unavailable */
+      LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
+      internal_registry_keys = 0;
       free(registry_keys);
       free(registry);
     }
 #if !defined(LIBXSMM_NO_SYNC) /* LIBXSMM_LOCK_RELEASE, but no LIBXSMM_LOCK_DESTROY */
 # if (0 < INTERNAL_REGLOCK_MAXN)
-    for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_DEFAULT, internal_reglock + i);
+    for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGNLOCK, &internal_reglock[i].state);
 # else
-    LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_RWLOCK, &internal_reglock);
+    LIBXSMM_LOCK_RELEASE(LIBXSMM_REG1LOCK, &internal_reglock);
 # endif
-    LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_DEFAULT, &libxsmm_lock_global);
+    LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, &libxsmm_lock_global);
 #endif
   }
 }
@@ -887,8 +876,8 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_archid(int id)
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
   if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
     const int cpuid = libxsmm_cpuid();
-    if (cpuid < libxsmm_target_archid) {
-      const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
+    if (cpuid < target_archid) {
+      const char *const target_arch = internal_get_target_arch(target_archid);
       fprintf(stderr, "LIBXSMM WARNING: \"%s\" code will fail to run on \"%s\"!\n",
         target_arch, internal_get_target_arch(cpuid));
     }
@@ -947,10 +936,14 @@ LIBXSMM_API_DEFINITION void libxsmm_set_target_arch(const char* arch)
     else if (0 == strcmp("snb", arch) || 0 == strcmp("avx", arch)) {
       target_archid = LIBXSMM_X86_AVX;
     }
-    else if (0 == strcmp("wsm", arch) || 0 == strcmp("nhm", arch) || 0 == strcmp("sse4", arch) || 0 == strcmp("sse4_2", arch) || 0 == strcmp("sse4.2", arch)) {
+    else if (0 == strcmp("wsm", arch) || 0 == strcmp("nhm", arch)
+          || 0 == strcmp("sse", arch) || 0 == strcmp("sse4", arch)
+          || 0 == strcmp("sse4_2", arch)
+          || 0 == strcmp("sse4.2", arch))
+    {
       target_archid = LIBXSMM_X86_SSE4;
     }
-    else if (0 == strcmp("sse", arch) || 0 == strcmp("sse3", arch)) {
+    else if (0 == strcmp("sse3", arch)) {
       target_archid = LIBXSMM_X86_SSE3;
     }
     else if (0 == strcmp("x86", arch) || 0 == strcmp("sse2", arch)) {
@@ -1072,17 +1065,19 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
   int result = EXIT_SUCCESS;
 #if !defined(__MIC__)
   const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
-  libxsmm_generated_code generated_code = { 0 };
+  libxsmm_generated_code generated_code;
   char jit_name[256] = { 0 };
 
   /* large enough temporary buffer for generated code */
 #if defined(NDEBUG)
-  char jit_buffer[131072];
+  char jit_buffer[LIBXSMM_CODE_MAXSIZE];
+  memset(&generated_code, 0, sizeof(generated_code)); /* avoid warning "maybe used uninitialized" */
   generated_code.generated_code = jit_buffer;
   generated_code.buffer_size = sizeof(jit_buffer);
 #else
-  generated_code.generated_code = malloc(131072);
-  generated_code.buffer_size = (0 != generated_code.generated_code ? 131072 : 0);
+  memset(&generated_code, 0, sizeof(generated_code)); /* avoid warning "maybe used uninitialized" */
+  generated_code.generated_code = malloc(LIBXSMM_CODE_MAXSIZE);
+  generated_code.buffer_size = (0 != generated_code.generated_code ? LIBXSMM_CODE_MAXSIZE : 0);
 #endif
   /* setup code generation */
   generated_code.code_type = 2;
@@ -1126,13 +1121,15 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.srsoa->gemm->prefetch);
           const char *const tname = internal_get_typename(request->descriptor.srsoa->gemm->datatype);
+          const unsigned int nnz = ((unsigned int)request->descriptor.srsoa->gemm->lda == 0) ?
+            request->descriptor.srsoa->row_ptr[request->descriptor.srsoa->gemm->m] : request->descriptor.srsoa->row_ptr[request->descriptor.srsoa->gemm->k];
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_nnz%u.srsoa", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.srsoa->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.srsoa->gemm->flags) ? 'n' : 't',
             (unsigned int)request->descriptor.srsoa->gemm->m,   (unsigned int)request->descriptor.srsoa->gemm->n,   (unsigned int)request->descriptor.srsoa->gemm->k,
             (unsigned int)request->descriptor.srsoa->gemm->lda, (unsigned int)request->descriptor.srsoa->gemm->ldb, (unsigned int)request->descriptor.srsoa->gemm->ldc,
-            request->descriptor.srsoa->gemm->alpha, request->descriptor.srsoa->gemm->beta, uid, request->descriptor.srsoa->row_ptr[request->descriptor.srsoa->gemm->m]);
+            request->descriptor.srsoa->gemm->alpha, request->descriptor.srsoa->gemm->beta, uid, nnz);
         }
       }
     } break;
@@ -1149,13 +1146,15 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.scsoa->gemm->prefetch);
           const char *const tname = internal_get_typename(request->descriptor.scsoa->gemm->datatype);
+          const unsigned int nnz = ((unsigned int)request->descriptor.srsoa->gemm->lda == 0) ?
+            request->descriptor.scsoa->column_ptr[request->descriptor.scsoa->gemm->k] : request->descriptor.scsoa->column_ptr[request->descriptor.scsoa->gemm->n];
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_nnz%u.scsoa", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.scsoa->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.scsoa->gemm->flags) ? 'n' : 't',
             (unsigned int)request->descriptor.scsoa->gemm->m,   (unsigned int)request->descriptor.scsoa->gemm->n,   (unsigned int)request->descriptor.scsoa->gemm->k,
             (unsigned int)request->descriptor.scsoa->gemm->lda, (unsigned int)request->descriptor.scsoa->gemm->ldb, (unsigned int)request->descriptor.scsoa->gemm->ldc,
-            request->descriptor.scsoa->gemm->alpha, request->descriptor.scsoa->gemm->beta, uid, request->descriptor.scsoa->column_ptr[request->descriptor.scsoa->gemm->m]);
+            request->descriptor.scsoa->gemm->alpha, request->descriptor.scsoa->gemm->beta, uid, nnz);
         }
       }
     } break;
@@ -1163,7 +1162,7 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
       assert(0 != request->descriptor.sreg && 0 != request->descriptor.sreg->gemm);
       assert(0 != request->descriptor.sreg->row_ptr && 0 != request->descriptor.sreg->column_idx && 0 != request->descriptor.sreg->values);
 #if 1
-      if (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.sreg->gemm->flags) { /* only double-precision */
+      if (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.sreg->gemm->datatype) { /* only double-precision */
 #endif
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csr_reg_kernel, &generated_code, request->descriptor.sreg->gemm, target_arch,
           request->descriptor.sreg->row_ptr, request->descriptor.sreg->column_idx,
@@ -1428,29 +1427,29 @@ LIBXSMM_API_DEFINITION int libxsmm_build(const libxsmm_build_request* request, u
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
   /* libxsmm_get_target_arch also serves as a runtime check whether JIT is available or not */
-  if (LIBXSMM_X86_AVX <= libxsmm_target_archid) result = EXIT_FAILURE;
+  if (LIBXSMM_X86_SSE4 <= libxsmm_target_archid) result = EXIT_FAILURE;
 #endif
   return result;
 }
 
 
-LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_descriptor* descriptor)
+LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_descriptor_type* descriptor)
 {
   libxsmm_code_pointer flux_entry = { 0 };
   unsigned int hash, i0, i = 0, mode = 0, diff = 1;
 #if !defined(NDEBUG)
-  const libxsmm_gemm_descriptor* refdesc = 0;
+  const libxsmm_gemm_descriptor_type* refdesc = 0;
 #endif
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
   static LIBXSMM_TLS struct {
-    libxsmm_gemm_descriptor keys[LIBXSMM_CAPACITY_CACHE];
+    libxsmm_gemm_descriptor_type keys[LIBXSMM_CAPACITY_CACHE];
     libxsmm_code_pointer code[LIBXSMM_CAPACITY_CACHE];
     unsigned int hit, id;
   } cache;
   unsigned int cache_index;
   assert(0 != descriptor);
   /* search small cache starting with the last hit on record */
-  cache_index = libxsmm_gemm_diffn(descriptor, &cache.keys, cache.hit, LIBXSMM_CAPACITY_CACHE, LIBXSMM_GEMM_DESCRIPTOR_SIZE);
+  cache_index = libxsmm_gemm_diffn(descriptor, &cache.keys, cache.hit, LIBXSMM_CAPACITY_CACHE, LIBXSMM_DESCRIPTOR_SIZE);
   if ((LIBXSMM_CAPACITY_CACHE) > cache_index && cache.id == internal_teardown) { /* cache hit, and valid */
     flux_entry = cache.code[cache_index];
     cache.hit = cache_index;
@@ -1472,15 +1471,18 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 #endif
   {
     assert(0 != internal_registry);
-    /* check if the requested xGEMM is already JITted */
-    LIBXSMM_HASH_FUNCTION_CALL(hash, i = i0, descriptor);
+    /* calculate registry location (and check if the requested code is already JITted) */
+    hash = libxsmm_crc32(descriptor, LIBXSMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);
+    i = i0 = LIBXSMM_HASH_MOD(hash, LIBXSMM_CAPACITY_REGISTRY);
+
     while (0 != diff) {
-#if (0 < INTERNAL_REGLOCK_MAXN) || defined(LIBXSMM_NO_SYNC)
-      flux_entry.pmm = LIBXSMM_ATOMIC_LOAD(&internal_registry[i].pmm, LIBXSMM_ATOMIC_RELAXED); /* read registered code */
+#if (0 < INTERNAL_REGLOCK_MAXN) || defined(LIBXSMM_NO_SYNC) /* read registered code */
+      void *const fluxaddr = &internal_registry[i].pmm;
+      flux_entry.uval = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)fluxaddr, LIBXSMM_ATOMIC_RELAXED);
 #else
-      LIBXSMM_LOCK_ACQREAD(LIBXSMM_LOCK_RWLOCK, &internal_reglock);
+      LIBXSMM_LOCK_ACQREAD(LIBXSMM_REG1LOCK, &internal_reglock);
       flux_entry.pmm = internal_registry[i].pmm; /* read registered code */
-      LIBXSMM_LOCK_RELREAD(LIBXSMM_LOCK_RWLOCK, &internal_reglock);
+      LIBXSMM_LOCK_RELREAD(LIBXSMM_REG1LOCK, &internal_reglock);
 #endif
       if ((0 != flux_entry.ptr_const || 1 == mode) && 2 > mode) { /* check existing entry further */
         diff = 0 != flux_entry.ptr_const ? libxsmm_gemm_diff(descriptor, &internal_registry_keys[i].xgemm) : 1;
@@ -1513,14 +1515,16 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
       else { /* enter code generation (there is no code version yet) */
         assert(0 == mode || 1 < mode);
 #if (0 != LIBXSMM_JIT)
-        if (LIBXSMM_X86_AVX <= libxsmm_target_archid) { /* check if JIT is supported (CPUID) */
+        if (LIBXSMM_X86_AVX <= libxsmm_target_archid || /* check if JIT is supported (CPUID) */
+           (LIBXSMM_X86_SSE4 <= libxsmm_target_archid && LIBXSMM_BUILD_KIND_GEMM == descriptor->iflags))
+        {
           assert(0 != mode || 0 == flux_entry.ptr_const/*code version does not exist*/);
           INTERNAL_FIND_CODE_LOCK(lock, i, diff, flux_entry.pmm); /* lock the registry entry */
           if (0 == internal_registry[i].ptr_const) { /* double-check registry after acquiring the lock */
             libxsmm_build_request request; /* setup the code build request */
             request.descriptor.gemm = descriptor;
             if (LIBXSMM_KERNEL_KIND_MCOPY != descriptor->iflags) {
-              if (LIBXSMM_KERNEL_KIND_TCOPY != descriptor->iflags) { /* GEMM */
+              if (LIBXSMM_KERNEL_KIND_TRANS != descriptor->iflags) { /* GEMM */
                 internal_update_mmstatistic(descriptor, 1/*try*/, 0); /* count attempt */
                 request.kind = LIBXSMM_BUILD_KIND_GEMM;
               }
@@ -1534,7 +1538,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
             if (EXIT_SUCCESS == libxsmm_build(&request, i, &flux_entry) && 0 != flux_entry.ptr_const) {
               internal_registry_keys[i].xgemm = *descriptor;
 # if (0 < INTERNAL_REGLOCK_MAXN)
-              LIBXSMM_ATOMIC_STORE(&internal_registry[i].pmm, flux_entry.pmm, LIBXSMM_ATOMIC_RELAXED);
+              LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&internal_registry[i].pmm, flux_entry.pmm, LIBXSMM_ATOMIC_RELAXED);
 # else
               internal_registry[i].pmm = flux_entry.pmm;
 # endif
@@ -1599,7 +1603,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
     refdesc = &internal_registry_keys[i].xgemm;
 #endif
   }
-  assert(0 == flux_entry.ptr_const || 0 == refdesc || 0 == memcmp(refdesc, descriptor, LIBXSMM_GEMM_DESCRIPTOR_SIZE));
+  assert(0 == flux_entry.ptr_const || 0 == refdesc || 0 == memcmp(refdesc, descriptor, LIBXSMM_DESCRIPTOR_SIZE));
 #if defined(LIBXSMM_HASH_COLLISION)
   flux_entry.uval &= ~(LIBXSMM_CODE_STATIC | LIBXSMM_HASH_COLLISION); /* clear non-JIT and collision flag */
 #else
@@ -1617,7 +1621,7 @@ LIBXSMM_API_DEFINITION const libxsmm_kernel_info* libxsmm_get_kernel_info(libxsm
     && EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, size, 0/*flags*/, &extra)
     && 0 != extra && *((const unsigned int*)extra) < (LIBXSMM_CAPACITY_REGISTRY)
     && code.ptr_const == internal_registry[*((const unsigned int*)extra)].ptr_const
-    /* the kernel kind is stored in the internal flags of the libxsmm_gemm_descriptor (iflags). */
+    /* the kernel kind is stored in the internal flags of the libxsmm_gemm_descriptor_type (iflags). */
     && internal_registry_keys[*((const unsigned int*)extra)].xgemm.iflags < LIBXSMM_KERNEL_KIND_INVALID)
   {
     if (0 != kind) *kind = (libxsmm_kernel_kind)internal_registry_keys[*((const unsigned int*)extra)].xgemm.iflags;
@@ -1638,7 +1642,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_kernel_kind(const void* kernel, libxsmm_k
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_gemm_descriptor* info, size_t* code_size)
+LIBXSMM_API_DEFINITION int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mmkernel_info* info, size_t* code_size)
 {
   libxsmm_code_pointer code;
   libxsmm_kernel_kind kind;
@@ -1648,7 +1652,18 @@ LIBXSMM_API_DEFINITION int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel,
   if (0 != info || 0 != code_size) {
     const libxsmm_kernel_info *const kernel_info = libxsmm_get_kernel_info(code, &kind, code_size);
     if (0 != kernel_info && LIBXSMM_KERNEL_KIND_MATMUL == kind) {
-      if (0 != info) *info = kernel_info->xgemm;
+      if (0 != info) {
+        info->iprecision = (libxsmm_gemm_precision)LIBXSMM_GETENUM_INP(kernel_info->xgemm.datatype);
+        info->oprecision = (libxsmm_gemm_precision)LIBXSMM_GETENUM_OUT(kernel_info->xgemm.datatype);
+        info->prefetch = (libxsmm_gemm_prefetch_type)kernel_info->xgemm.prefetch;
+        info->flags = kernel_info->xgemm.flags;
+        info->lda = kernel_info->xgemm.lda;
+        info->ldb = kernel_info->xgemm.ldb;
+        info->ldc = kernel_info->xgemm.ldc;
+        info->m = kernel_info->xgemm.m;
+        info->n = kernel_info->xgemm.n;
+        info->k = kernel_info->xgemm.k;
+      }
       result = EXIT_SUCCESS;
     }
     else {
@@ -1672,7 +1687,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel,
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libxsmm_transpose_descriptor* info, size_t* code_size)
+LIBXSMM_API_DEFINITION int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libxsmm_transkernel_info* info, size_t* code_size)
 {
   libxsmm_code_pointer code;
   libxsmm_kernel_kind kind;
@@ -1681,8 +1696,13 @@ LIBXSMM_API_DEFINITION int libxsmm_get_transkernel_info(libxsmm_xtransfunction k
   code.xtrans = kernel;
   if (0 != info || 0 != code_size) {
     const libxsmm_kernel_info *const kernel_info = libxsmm_get_kernel_info(code, &kind, code_size);
-    if (0 != kernel_info && LIBXSMM_KERNEL_KIND_TCOPY == kind) {
-      if (0 != info) *info = kernel_info->trans;
+    if (0 != kernel_info && LIBXSMM_KERNEL_KIND_TRANS == kind) {
+      if (0 != info) {
+        info->typesize = kernel_info->trans.typesize;
+        info->ldo = kernel_info->trans.ldo;
+        info->m = kernel_info->trans.m;
+        info->n = kernel_info->trans.n;
+      }
       result = EXIT_SUCCESS;
     }
     else {
@@ -1706,7 +1726,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_transkernel_info(libxsmm_xtransfunction k
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_get_matcopykernel_info(libxsmm_xmatcopyfunction kernel, libxsmm_matcopy_descriptor* info, size_t* code_size)
+LIBXSMM_API_DEFINITION int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libxsmm_mcopykernel_info* info, size_t* code_size)
 {
   libxsmm_code_pointer code;
   libxsmm_kernel_kind kind;
@@ -1716,7 +1736,15 @@ LIBXSMM_API_DEFINITION int libxsmm_get_matcopykernel_info(libxsmm_xmatcopyfuncti
   if (0 != info || 0 != code_size) {
     const libxsmm_kernel_info *const kernel_info = libxsmm_get_kernel_info(code, &kind, code_size);
     if (0 != kernel_info && LIBXSMM_KERNEL_KIND_MCOPY == kind) {
-      if (0 != info) *info = kernel_info->mcopy;
+      if (0 != info) {
+        info->typesize = kernel_info->mcopy.typesize;
+        info->prefetch = kernel_info->mcopy.prefetch;
+        info->flags = kernel_info->mcopy.flags;
+        info->ldi = kernel_info->mcopy.ldi;
+        info->ldo = kernel_info->mcopy.ldo;
+        info->m = kernel_info->mcopy.m;
+        info->n = kernel_info->mcopy.n;
+      }
       result = EXIT_SUCCESS;
     }
     else {
@@ -1783,72 +1811,35 @@ LIBXSMM_API_DEFINITION int libxsmm_get_registry_info(libxsmm_registry_info* info
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_gemm_descriptor_init(libxsmm_gemm_descriptor* descriptor,
-  libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const void* alpha, const void* beta, const int* flags, const int* prefetch)
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor_type* descriptor)
 {
-  const libxsmm_blasint ilda = (0 == lda ? m : *lda), ildb = (0 == ldb ? k : *ldb), ildc = (0 == ldc ? m : *ldc);
-  const int internal_prefetch = (0 == prefetch ? libxsmm_gemm_auto_prefetch : *prefetch);
-  const int iflags = (0 == flags ? LIBXSMM_FLAGS : *flags);
-  int result;
-
-  switch (precision) {
-    case LIBXSMM_GEMM_PRECISION_F64: {
-      result = libxsmm_dgemm_descriptor_init(descriptor, m, n, k, ilda, ildb, ildc,
-        0 != alpha ? *((const double*)alpha) : (LIBXSMM_ALPHA),
-        0 != beta ? *((const double*)beta) : (LIBXSMM_BETA),
-        iflags, internal_prefetch);
-    } break;
-    case LIBXSMM_GEMM_PRECISION_F32: {
-      result = libxsmm_sgemm_descriptor_init(descriptor, m, n, k, ilda, ildb, ildc,
-        0 != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA),
-        0 != beta ? *((const float*)beta) : (LIBXSMM_BETA),
-        iflags, internal_prefetch);
-    } break;
-    case LIBXSMM_GEMM_PRECISION_I16: {
-      /**
-       * Take alpha and beta as short data although wgemm works on integers.
-       * However, alpha and beta are only JIT-supported for certain values,
-       * and the call-side may not distinct different input and output types
-       * (integer/short), hence it is safer to only read short data.
-       */
-      result = libxsmm_wgemm_descriptor_init(descriptor, m, n, k, ilda, ildb, ildc,
-        0 != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA),
-        0 != beta ? *((const short*)beta) : (LIBXSMM_BETA),
-        iflags, internal_prefetch);
-    } break;
-    default: {
-      static int error_once = 0;
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
-       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM ERROR: GEMM precision is not supported!\n");
-      }
-      result = EXIT_FAILURE;
-    }
-  }
-
-  return result;
-}
-
-
-LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor)
-{
-  libxsmm_xmmfunction result = { 0 };
-  /* there is no need to check LIBXSMM_GEMM_NO_BYPASS_DIMS (M, N, K, LDx) since we already got a descriptor */
-  if (0 != descriptor && LIBXSMM_GEMM_NO_BYPASS(descriptor->flags, descriptor->alpha, descriptor->beta)) {
-    libxsmm_gemm_descriptor backend_descriptor;
-    LIBXSMM_INIT
-    if (0 > (int)descriptor->prefetch) {
+  libxsmm_xmmfunction result;
+  if (0 != descriptor) {
+    libxsmm_gemm_descriptor_type backend_descriptor;
+    /*LIBXSMM_INIT: assume initialization completed by descriptor initialization function */
+    if (0 != (0x8000 & descriptor->prefetch)) { /* "sign"-bit of unsigned short is set */
       backend_descriptor = *descriptor;
       LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(backend_descriptor, libxsmm_gemm_auto_prefetch);
       descriptor = &backend_descriptor;
     }
     result = internal_find_code(descriptor).xgemm;
+#if defined(_DEBUG)
+    if (0 != libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.xmm) {
+      LIBXSMM_FLOCK(stdout);
+      fprintf(stdout, "LIBXSMM: ");
+      LIBXSMM_GEMM_PRINT2(stdout,
+        LIBXSMM_GETENUM_INP(descriptor->datatype), LIBXSMM_GETENUM_OUT(descriptor->datatype),
+        descriptor->flags, descriptor->m, descriptor->n, descriptor->k,
+        descriptor->alpha, 0/*a*/, descriptor->lda, 0/*b*/, descriptor->ldb,
+        descriptor->beta, 0/*c*/, descriptor->ldc);
+      fprintf(stdout, " = %p\n", result.xmm);
+      LIBXSMM_FUNLOCK(stdout);
+    }
+#endif
   }
-  else { /* bypass (not supported) */
+  else { /* count dispatch attempt */
     internal_update_mmstatistic(descriptor, 1/*try*/, 0);
+    result.xmm = 0;
   }
   return result;
 }
@@ -1860,31 +1851,40 @@ LIBXSMM_PRAGMA_OPTIMIZE_OFF
 
 LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const double* alpha, const double* beta,
-  const int* flags, const int* prefetch)
+  const double* alpha, const double* beta, const int* flags, const int* prefetch)
 {
-  LIBXSMM_INIT
-  INTERNAL_DISPATCH(double, descriptor, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+  libxsmm_descriptor_blob blob;
+  const libxsmm_gemm_descriptor_type *const desc = libxsmm_dgemm_descriptor_init(&blob, m, n, k,
+    0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
+    0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
+    0 == flags ? LIBXSMM_FLAGS : *flags, libxsmm_get_gemm_xprefetch(prefetch));
+  return libxsmm_xmmdispatch(desc).dmm;
 }
 
 
 LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const float* alpha, const float* beta,
-  const int* flags, const int* prefetch)
+  const float* alpha, const float* beta, const int* flags, const int* prefetch)
 {
-  LIBXSMM_INIT
-  INTERNAL_DISPATCH(float, descriptor, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+  libxsmm_descriptor_blob blob;
+  const libxsmm_gemm_descriptor_type *const desc = libxsmm_sgemm_descriptor_init(&blob, m, n, k,
+    0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
+    0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
+    0 == flags ? LIBXSMM_FLAGS : *flags, libxsmm_get_gemm_xprefetch(prefetch));
+  return libxsmm_xmmdispatch(desc).smm;
 }
 
 
 LIBXSMM_API_DEFINITION libxsmm_wmmfunction libxsmm_wmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const int* alpha, const int* beta,
-  const int* flags, const int* prefetch)
+  const int* alpha, const int* beta, const int* flags, const int* prefetch)
 {
-  LIBXSMM_INIT
-  INTERNAL_DISPATCH(short, descriptor, flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+  libxsmm_descriptor_blob blob;
+  const libxsmm_gemm_descriptor_type *const desc = libxsmm_wigemm_descriptor_init(&blob, m, n, k,
+    0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
+    0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
+    0 == flags ? LIBXSMM_FLAGS : *flags, libxsmm_get_gemm_xprefetch(prefetch));
+  return libxsmm_xmmdispatch(desc).wmm;
 }
 
 
@@ -1892,13 +1892,14 @@ LIBXSMM_API_DEFINITION libxsmm_wmmfunction libxsmm_wmmdispatch(libxsmm_blasint m
 LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
-LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const libxsmm_matcopy_descriptor* descriptor)
+LIBXSMM_API_DEFINITION libxsmm_xmcopyfunction libxsmm_xmcopydispatch(const libxsmm_mcopy_descriptor_type* descriptor)
 {
-  libxsmm_xmatcopyfunction result = { 0 };
+  libxsmm_xmcopyfunction result;
   if (0 != descriptor) {
-    libxsmm_kernel_info query = { { 0 } };
+    libxsmm_kernel_info query;
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->flags) < sizeof(query));
     LIBXSMM_INIT
+    memset(&query, 0, sizeof(query)); /* avoid warning "maybe used uninitialized" */
     query.mcopy = *descriptor;
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
     query.mcopy.prefetch = 0;
@@ -1906,28 +1907,36 @@ LIBXSMM_API_DEFINITION libxsmm_xmatcopyfunction libxsmm_xmatcopydispatch(const l
     query.xgemm.iflags = LIBXSMM_KERNEL_KIND_MCOPY;
     result = internal_find_code(&query.xgemm).xmatcopy;
   }
-  return result;
-}
-
-
-LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_transpose_descriptor* descriptor)
-{
-  libxsmm_xtransfunction result = { 0 };
-  if (0 != descriptor && /* basic sanity check against LIBXSMM_TRANS_THRESHOLD */
-     (descriptor->m * descriptor->n) <= (LIBXSMM_TRANS_THRESHOLD))
-  {
-    libxsmm_kernel_info query = { { 0 } };
-    assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
-    LIBXSMM_INIT
-    query.trans = *descriptor;
-    query.xgemm.iflags = LIBXSMM_KERNEL_KIND_TCOPY;
-    result = internal_find_code(&query.xgemm).xtrans;
+  else {
+    result = 0;
   }
   return result;
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor* descriptor,
+LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_trans_descriptor_type* descriptor)
+{
+  libxsmm_xtransfunction result;
+  if (0 != descriptor
+    /* no need to double-check since initializing the descriptor was successful
+    && 0 != LIBXSMM_TRANS_NO_BYPASS_DIMS(descriptor->m, descriptor->n, descriptor->ldo)*/)
+  {
+    libxsmm_kernel_info query;
+    assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
+    LIBXSMM_INIT
+    memset(&query, 0, sizeof(query)); /* avoid warning "maybe used uninitialized" */
+    query.trans = *descriptor;
+    query.xgemm.iflags = LIBXSMM_KERNEL_KIND_TRANS;
+    result = internal_find_code(&query.xgemm).xtrans;
+  }
+  else {
+    result = 0;
+  }
+  return result;
+}
+
+
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor_type* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const void* values)
 {
   libxsmm_code_pointer result = { 0 };
@@ -1935,8 +1944,8 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm
     libxsmm_csr_soa_descriptor srsoa;
     libxsmm_build_request request;
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
-    libxsmm_gemm_descriptor gemm = *descriptor;
-    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_PREFETCH_NONE);
+    libxsmm_gemm_descriptor_type gemm = *descriptor;
+    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_GEMM_PREFETCH_NONE);
     descriptor = &gemm;
 #endif
     LIBXSMM_INIT
@@ -1952,7 +1961,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descriptor* descriptor,
+LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descriptor_type* descriptor,
   const unsigned int* column_ptr, const unsigned int* row_idx, const void* values)
 {
   libxsmm_code_pointer result = { 0 };
@@ -1960,8 +1969,8 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm
     libxsmm_csc_soa_descriptor scsoa;
     libxsmm_build_request request;
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
-    libxsmm_gemm_descriptor gemm = *descriptor;
-    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_PREFETCH_NONE);
+    libxsmm_gemm_descriptor_type gemm = *descriptor;
+    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_GEMM_PREFETCH_NONE);
     descriptor = &gemm;
 #endif
     LIBXSMM_INIT
@@ -1977,7 +1986,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor* descriptor,
+LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descriptor_type* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const double* values)
 {
   libxsmm_code_pointer result = { 0 };
@@ -1985,8 +1994,8 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm
     libxsmm_csr_reg_descriptor sreg;
     libxsmm_build_request request;
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
-    libxsmm_gemm_descriptor gemm = *descriptor;
-    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_PREFETCH_NONE);
+    libxsmm_gemm_descriptor_type gemm = *descriptor;
+    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_GEMM_PREFETCH_NONE);
     descriptor = &gemm;
 #endif
     LIBXSMM_INIT
@@ -2002,7 +2011,7 @@ LIBXSMM_API_DEFINITION libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor* descriptor,
+LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descriptor_type* descriptor,
   const unsigned int* row_ptr, const unsigned int* column_idx, const float* values)
 {
   libxsmm_code_pointer result = { 0 };
@@ -2012,8 +2021,8 @@ LIBXSMM_API_DEFINITION libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm
     const unsigned int n = row_ptr[descriptor->m];
     double *const d_values = (double*)malloc(n * sizeof(double));
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
-    libxsmm_gemm_descriptor gemm = *descriptor;
-    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_PREFETCH_NONE);
+    libxsmm_gemm_descriptor_type gemm = *descriptor;
+    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_GEMM_PREFETCH_NONE);
     descriptor = &gemm;
 #endif
     if (0 != d_values) {
@@ -2151,23 +2160,23 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_finalize)(void)
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
-  const libxsmm_gemm_precision* precision, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
+  const libxsmm_gemm_precision* iprec, const libxsmm_gemm_precision* oprec,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, const int* flags, const int* prefetch);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
-  const libxsmm_gemm_precision* precision, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
+  const libxsmm_gemm_precision* iprec, const libxsmm_gemm_precision* oprec,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, const int* flags, const int* prefetch)
 {
-#if !defined(NDEBUG) /* this should not happen */
   static int error_once = 0;
-  if (0 != fn && 0 != m)
-#endif
-  {
-    const libxsmm_gemm_precision gemm_precision = (0 != precision ? *precision : LIBXSMM_GEMM_PRECISION_F64);
+  LIBXSMM_UNUSED(oprec);
+  if (0 != fn && 0 != m) {
+    const libxsmm_gemm_precision precision = (0 != iprec ? *iprec : LIBXSMM_GEMM_PRECISION_F64);
     const libxsmm_blasint kk = *(0 != k ? k : m), nn = (0 != n ? *n : kk);
-    switch (gemm_precision) {
+    switch (precision) {
       case LIBXSMM_GEMM_PRECISION_F64: {
         *fn = (intptr_t)libxsmm_dmmdispatch(*m, nn, kk, lda, ldb, ldc,
           (const double*)alpha, (const double*)beta,
@@ -2178,24 +2187,16 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
           (const float*)alpha, (const float*)beta,
           flags, prefetch);
       } break;
-      case LIBXSMM_GEMM_PRECISION_I16: {
-        *fn = (intptr_t)libxsmm_wmmdispatch(*m, nn, kk, lda, ldb, ldc,
-          (const int*)alpha, (const int*)beta,
-          flags, prefetch);
-      } break;
-#if !defined(NDEBUG) /* this should not happen */
       default: {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM ERROR: invalid precision requested for libxsmm_xmmdispatch!\n");
+          fprintf(stderr, "LIBXSMM ERROR: unsupported precision requested for libxsmm_xmmdispatch!\n");
         }
         *fn = 0;
       }
-#endif
     }
   }
-#if !defined(NDEBUG)
   else {
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -2204,7 +2205,20 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
     }
     if (0 != fn) *fn = 0;
   }
-#endif
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
+  const libxsmm_gemm_precision* precision, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const void* alpha, const void* beta, const int* flags, const int* prefetch);
+LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
+  const libxsmm_gemm_precision* precision, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const void* alpha, const void* beta, const int* flags, const int* prefetch)
+{
+  LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(fn, precision, precision, m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch);
 }
 
 

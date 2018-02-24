@@ -33,7 +33,6 @@
 
 #include "libxsmm_hash.h"
 #include "libxsmm_main.h"
-#include <libxsmm_intrinsics_x86.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -77,12 +76,12 @@
 #define LIBXSMM_HASH_CRC32_U16(SEED, VALUE) _mm_crc32_u16(SEED, VALUE)
 #define LIBXSMM_HASH_CRC32_U32(SEED, VALUE) _mm_crc32_u32(SEED, VALUE)
 
-#if (defined(__SIZE_MAX__) && (4294967295U < __SIZE_MAX__)) || defined(_WIN64)
-# define LIBXSMM_HASH_CRC32_U64(SEED, VALUE) _mm_crc32_u64(SEED, VALUE)
-#else
+#if (64 > (LIBXSMM_BITS))
 # define LIBXSMM_HASH_CRC32_U64(SEED, VALUE) LIBXSMM_HASH_CRC32_U32( \
     LIBXSMM_HASH_CRC32_U32((uint32_t)(SEED), (uint32_t)(VALUE)), \
     (uint32_t)((VALUE) >> 32))
+#else
+# define LIBXSMM_HASH_CRC32_U64(SEED, VALUE) _mm_crc32_u64(SEED, VALUE)
 #endif
 
 #define LIBXSMM_HASH_UNALIGNED(FN64, FN32, FN16, FN8, DATA, SIZE, SEED) { \
@@ -132,8 +131,8 @@
 #endif
 
 typedef uint32_t internal_crc32_entry_type[256];
-LIBXSMM_API_VARIABLE const internal_crc32_entry_type* internal_crc32_table;
-LIBXSMM_API_VARIABLE libxsmm_hash_function internal_hash_function;
+LIBXSMM_API_VARIABLE(const internal_crc32_entry_type* internal_crc32_table);
+LIBXSMM_API_VARIABLE(libxsmm_hash_function internal_hash_function);
 
 
 LIBXSMM_API_INLINE unsigned int internal_crc32_u8(unsigned int seed, unsigned char value)

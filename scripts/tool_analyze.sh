@@ -33,7 +33,7 @@
 HERE=$(cd $(dirname $0); pwd -P)
 
 cd ${HERE}/..
-make CXX=clang++ CC=clang DBG=1 ECFLAGS=--analyze $* 2> .analyze.log
+make CXX=clang++ CC=clang FC= DBG=1 EFLAGS=--analyze $* 2> .analyze.log
 echo
 echo "================================================================================"
 echo "Errors (warnings)"

@@ -19,6 +19,7 @@ samples/*/*.sln
 samples/*/*.dat
 samples/*/*.pdf
 samples/*/*.png
+inspector*
 site
 bin
 tmp
@@ -26,11 +27,14 @@ tmp
 .state
 .make
 threadsafety-*.txt
+malloc-trace-*.txt
+blas-trace-*.txt
 codecov-*.txt
 keywords.txt
 notes.txt
 err*.txt
 out*.txt
+log.txt
 _*.txt
 .libxsmm_??????.*
 *.lastcodeanalysissucceeded

@@ -28,13 +28,12 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_matcopy_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_convolution_common.h"
 #include "generator_common.h"
+#include "libxsmm_main.h"
 
-#include <libxsmm_intrinsics_x86.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -77,17 +76,18 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*             io_generated_code,
-                                                  const libxsmm_matcopy_descriptor*   i_matcopy_desc,
+                                                  const libxsmm_mcopy_descriptor_type*   i_matcopy_desc,
                                                   const char*                         i_arch ) {
-  libxsmm_matcopy_kernel_config l_kernel_config = { 0/*avoid warning "maybe used uninitialized" */ };
-  libxsmm_matcopy_gp_reg_mapping l_gp_reg_mapping = { 0/*avoid warning "maybe used uninitialized" */ };
-  libxsmm_loop_label_tracker l_loop_label_tracker = { {0}/*avoid warning "maybe used uninitialized" */ };
+  libxsmm_matcopy_kernel_config l_kernel_config;
+  libxsmm_matcopy_gp_reg_mapping l_gp_reg_mapping;
+  libxsmm_loop_label_tracker l_loop_label_tracker;
   unsigned int m_trips, remaining_unrolled, remaining, i;
 
   /* define loop_label_tracker */
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define gp register mapping */
+  memset(&l_gp_reg_mapping, 0, sizeof(l_gp_reg_mapping)); /* avoid warning "maybe used uninitialized" */
 #if defined(_WIN32) || defined(__CYGWIN__)
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RCX;
   l_gp_reg_mapping.gp_reg_lda = LIBXSMM_X86_GP_REG_RDX;
@@ -109,6 +109,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_RAX;
 
   /* define matcopy kernel config */
+  memset(&l_kernel_config, 0, sizeof(l_kernel_config)); /* avoid warning "maybe used uninitialized" */
   if ( strcmp( i_arch, "snb" ) == 0 ) {
     l_kernel_config.instruction_set = LIBXSMM_X86_AVX;
     l_kernel_config.vector_reg_count = 16;

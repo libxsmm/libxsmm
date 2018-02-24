@@ -46,8 +46,8 @@
 #endif
 
 /** Opaque handles which represents convolutions and LIBXSMM datatypes */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer libxsmm_dnn_layer;
-typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor libxsmm_dnn_tensor;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer libxsmm_dnn_layer;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor libxsmm_dnn_tensor;
 typedef unsigned int libxsmm_dnn_err_t;
 
 /** Define error and warning codes */
@@ -145,7 +145,7 @@ typedef enum libxsmm_dnn_tensor_type {
 
 /** layout descriptor to allow external data handling
     outside of LIBXSMM */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor_datalayout {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor_datalayout {
   libxsmm_dnn_tensor_dimtype* dim_type;
   unsigned int* dim_size;
   unsigned int num_dims;
@@ -177,7 +177,7 @@ typedef enum libxsmm_dnn_conv_algo {
 } libxsmm_dnn_conv_algo;
 
 /** Structure which describes the input and output of data (DNN). */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   int N;                                    /* number of images in mini-batch */
   int C;                                    /* number of input feature maps */
   int H;                                    /* height of input image */
@@ -263,29 +263,38 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* 
 #if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API) /* Internal API */
 
 /** Function type used for convolutions (single-precision); the actual signature depends on the kind of convolution. */
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_sconvfunction)(const float* input1, const float* input2, float* output,
-                                                           const float* ipf1, const float* ipf2, const float* opf);
-
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction)(const short* input1, const short* input2, int* output,
-                                                           const short* ipf1, const short* ipf2, const int* opf);
-
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction)(const unsigned char* input1, const char* input2, short* output,
-                                                             const unsigned char* ipf1, const char* ipf2, const short* opf);
-
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction)(const unsigned char* input1, const char* input2, int* output,
-                                                             const unsigned char* ipf1, const char* ipf2, const int* opf);
-
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction_bwd)(int* input1, const short* input2, const short* output,
-                                                           const int* ipf1, const short* ipf2, const short* opf);
-
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction_bwd)(const unsigned short* input1, const char* input2, const char* output,
-                                                             const unsigned short* ipf1, const char* ipf2, const char* opf);
-
-typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction_bwd)(const unsigned int* input1, const char* input2, const char* output,
-                                                             const unsigned int* ipf1, const char* ipf2, const char* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sconvfunction)(
+  const float* input1, const float* input2, float* output,
+  const float* ipf1, const float* ipf2, const float* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction)(
+  const short* input1, const short* input2, int* output,
+  const short* ipf1, const short* ipf2, const int* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction)(
+  const unsigned char* input1, const char* input2, short* output,
+  const unsigned char* ipf1, const char* ipf2, const short* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction)(
+  const unsigned char* input1, const char* input2, int* output,
+  const unsigned char* ipf1, const char* ipf2, const int* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction_bwd)(
+  int* input1, const short* input2, const short* output,
+  const int* ipf1, const short* ipf2, const short* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction_bwd)(
+  const unsigned short* input1, const char* input2, const char* output,
+  const unsigned short* ipf1, const char* ipf2, const char* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction_bwd)(
+  const unsigned int* input1, const char* input2, const char* output,
+  const unsigned int* ipf1, const char* ipf2, const char* opf);
 
 /** Function type which is either libxsmm_sconvfunction or libxsmm_wconvfunction (weak-typed). */
-typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction { libxsmm_sconvfunction sconv; libxsmm_wconvfunction wconv; libxsmm_busconvfunction busconv; libxsmm_budconvfunction budconv; libxsmm_wconvfunction_bwd wconvb; libxsmm_busconvfunction_bwd busconvb; libxsmm_budconvfunction_bwd budconvb; } libxsmm_xconvfunction;
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction {
+  libxsmm_sconvfunction sconv;
+  libxsmm_wconvfunction wconv;
+  libxsmm_busconvfunction busconv;
+  libxsmm_budconvfunction budconv;
+  libxsmm_wconvfunction_bwd wconvb;
+  libxsmm_busconvfunction_bwd busconvb;
+  libxsmm_budconvfunction_bwd budconvb;
+} libxsmm_xconvfunction;
 
 /** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
 LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);

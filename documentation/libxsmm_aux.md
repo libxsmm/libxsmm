@@ -17,14 +17,15 @@ Available code paths (IDs and corresponding strings):
 
 * LIBXSMM_TARGET_ARCH_GENERIC: "**generic**", "none", "0"
 * LIBXSMM_X86_GENERIC: "**x86**", "sse2"
-* LIBXSMM_X86_SSE3: "**sse3**", "sse"
-* LIBXSMM_X86_SSE4: "**wsm**", "nhm", "sse4", "sse4_2", "sse4.2"
+* LIBXSMM_X86_SSE3: "**sse3**"
+* LIBXSMM_X86_SSE4: "**wsm**", "nhm", "sse", "sse4", "sse4_2", "sse4.2"
 * LIBXSMM_X86_AVX: "**snb**", "avx"
 * LIBXSMM_X86_AVX2: "**hsw**", "avx2"
 * LIBXSMM_X86_AVX512: "**avx3**", "avx512"
 * LIBXSMM_X86_AVX512_MIC: "**knl**", "mic"
 * LIBXSMM_X86_AVX512_KNM: "**knm**"
 * LIBXSMM_X86_AVX512_CORE: "**skx**", "skl"
+* LIBXSMM_X86_AVX512_ICL: "**icl**"
 
 The **bold** names are returned by `libxsmm_get_target_arch` whereas `libxsmm_set_target_arch` accepts all of the above strings (similar to the environment variable LIBXSMM_TARGET).
 
@@ -42,8 +43,11 @@ void libxsmm_set_verbosity(int level);
 Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface ([libxsmm_timer.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_timer.h#L37) and [libxsmm.f](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f#L32)). The timer is used in many of the [code samples](https://github.com/hfp/libxsmm/tree/master/samples) to measure the duration of executing various code regions. The timer is based on monotonic clock tick, which uses a platform-specific resolution. The counter may rely on the time stamp counter instruction (RDTSC), but this is not necessarily counting CPU cycles due to varying CPU clock speed (Turbo Boost), different clock domains (e.g., depending on the instructions executed), and other reasons (which are out of scope in this context).
 
 ```C
-unsigned long long libxsmm_timer_tick(void);
-double libxsmm_timer_duration(unsigned long long tick0, unsigned long long tick1);
+typedef unsigned long long libxsmm_timer_tickint;
+libxsmm_timer_tickint libxsmm_timer_tick(void);
+double libxsmm_timer_duration(
+  libxsmm_timer_tickint tick0,
+  libxsmm_timer_tickint tick1);
 ```
 
 ### Memory Allocation
@@ -56,7 +60,7 @@ void* libxsmm_malloc(size_t size);
 void* libxsmm_aligned_malloc(size_t size, size_t alignment);
 void* libxsmm_aligned_scratch(size_t size, size_t alignment);
 void libxsmm_free(const volatile void* memory);
-int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info* info);
+int libxsmm_get_malloc_info(const void* m, libxsmm_malloc_info* i);
 int libxsmm_get_scratch_info(libxsmm_scratch_info* info);
 ```
 

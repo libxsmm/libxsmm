@@ -28,11 +28,10 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_spgemm_csr_asparse_soa.h"
-#include "generator_gemm_common.h"
 #include "generator_x86_instructions.h"
-#include <libxsmm_macros.h>
+#include "generator_gemm_common.h"
+#include "libxsmm_main.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +39,7 @@
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         io_generated_code,
-                                               const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                               const libxsmm_gemm_descriptor_type*  i_xgemm_desc,
                                                const char*                     i_arch,
                                                const unsigned int*             i_row_idx,
                                                const unsigned int*             i_column_idx,
@@ -64,7 +63,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         i
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*         io_generated_code,
-                                                      const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                      const libxsmm_gemm_descriptor_type*  i_xgemm_desc,
                                                       const char*                     i_arch,
                                                       const unsigned int*             i_row_idx,
                                                       const unsigned int*             i_column_idx,
@@ -78,7 +77,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
   unsigned int l_n_max_block = 0;
   unsigned int l_n_loop = 0;
 
-  libxsmm_micro_kernel_config l_micro_kernel_config = { 0 };
+  libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
@@ -172,7 +171,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
                                      l_micro_kernel_config.datatype_size*l_soa_width*l_n_chunksize);
 
   /* advance B prefetch pointer */
-  if ( (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL2_VIA_C) > 0 ) {
+  if ( (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL2_VIA_C) > 0 ) {
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_sub_instruction, l_gp_reg_mapping.gp_reg_b_prefetch,
                                        (l_micro_kernel_config.datatype_size*l_soa_width*i_xgemm_desc->ldb*i_xgemm_desc->m)-(l_micro_kernel_config.datatype_size*l_soa_width*l_n_chunksize));
   }
@@ -199,7 +198,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*            io_generated_code,
-                                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                      const libxsmm_gemm_descriptor_type*     i_xgemm_desc,
                                                       libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                       const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                       const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
@@ -254,7 +253,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*   
                                             i_micro_kernel_config->vector_name,
                                             l_n, 0, 0 );
         }
-        if ( (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL2_VIA_C) > 0 ) {
+        if ( (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL2_VIA_C) > 0 ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
                                             i_micro_kernel_config->prefetch_instruction,
                                             i_gp_reg_mapping->gp_reg_b_prefetch,
@@ -340,7 +339,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*   
                                      i_micro_kernel_config->datatype_size*i_soa_width*i_xgemm_desc->ldc);
 
     /* advance B prefetch pointer */
-    if ( (i_xgemm_desc->prefetch & LIBXSMM_PREFETCH_BL2_VIA_C) > 0 ) {
+    if ( (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL2_VIA_C) > 0 ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_b_prefetch,
                                        i_micro_kernel_config->datatype_size*i_soa_width*i_xgemm_desc->ldb);
     }

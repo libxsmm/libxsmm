@@ -22,8 +22,16 @@ OUTDIR = .
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
-DFLAGS = $(NULL)
+DFLAGS = -DLIBXSMM_GEMM_CONST
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
+
+# determines if WGEMM assumes FP32 output
+# @TODO remove (also in LIBXSMM's Makefile)
+WGEMM_FP32 ?= 0
+
+ifneq (0,$(WGEMM_FP32))
+  DFLAGS += -DLIBXSMM_WGEMM_USE_FP32_OUTPUT
+endif
 
 BLAS = 2
 OMP = 1
@@ -55,7 +63,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)
+XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/kernel
 
 .PHONY: all
 all: $(XFILES)
@@ -63,12 +71,11 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(EXTDEP) $(LIBDEP)
-ifneq (0,$(BLAS))
-	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-else
-	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(EXTLIB) $(call abslib, $(LIBNAME)noblas.$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-endif
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-c.o $(EXTDEP) $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/kernel: $(OUTDIR)/.make $(BLDDIR)/kernel-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/kernel-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

@@ -35,8 +35,8 @@
 
 
 /** Opaque types for fsspmdm */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm libxsmm_dfsspmdm;
-typedef struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm libxsmm_sfsspmdm;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm libxsmm_dfsspmdm;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm libxsmm_sfsspmdm;
 
 LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create( libxsmm_blasint M,   libxsmm_blasint   N, libxsmm_blasint   K,
                                                        libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,

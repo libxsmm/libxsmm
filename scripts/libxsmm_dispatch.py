@@ -40,7 +40,7 @@ if __name__ == "__main__":
         threshold = int(sys.argv[2])
         mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], 0)
 
-        print("libxsmm_gemm_descriptor desc;")
+        print("libxsmm_gemm_descriptor_type desc;")
         print("libxsmm_xmmfunction func;")
         print("unsigned int hash, indx;")
         print("#if defined(_MSC_VER)")
@@ -55,17 +55,20 @@ if __name__ == "__main__":
             # prefer registering double-precision kernels
             # when approaching an exhausted registry
             if (1 != precision):  # only double-precision
-                print("if (LIBXSMM_GEMM_NO_BYPASS_DIMS(" + mnksig + ") &&")
-                print("    LIBXSMM_GEMM_NO_BYPASS_DIMS(" + ldxsig + ")) {")
+                print("if (LIBXSMM_GEMM_NO_BYPASS_DIMS(" + mnksig + ")" +
+                      " && LIBXSMM_GEMM_NO_BYPASS_DIMS(" + ldxsig + ")) {")
                 print("  LIBXSMM_GEMM_DESCRIPTOR(desc, " +
                       "LIBXSMM_GEMM_PRECISION_F64, LIBXSMM_FLAGS,")
-                print("    " + mnksig + ", " + ldxsig + ",")
-                print("    LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
-                print("    LIBXSMM_HASH_FUNCTION_CALL(hash, indx, &desc);" +
-                      " func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" +
+                print("    " + mnksig + ", " + ldxsig + ", " +
+                      "LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
+                print("  hash = libxsmm_crc32(&desc, " +
+                      "LIBXSMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);")
+                print("  indx = LIBXSMM_HASH_MOD(hash, " +
+                      "LIBXSMM_CAPACITY_REGISTRY);")
+                print("  func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" +
                       mnkstr + ";")
                 print("  internal_register_static_code(" +
-                      "&desc, indx, hash, func, result);")
+                      "&desc, indx, hash, func, new_registry);")
                 print("}")
         for mnk in mnklist:
             mstr, nstr, kstr, mnkstr = \
@@ -75,17 +78,20 @@ if __name__ == "__main__":
             # prefer registering double-precision kernels
             # when approaching an exhausted registry
             if (2 != precision):  # only single-precision
-                print("if (LIBXSMM_GEMM_NO_BYPASS_DIMS(" + mnksig + ") &&")
-                print("    LIBXSMM_GEMM_NO_BYPASS_DIMS(" + ldxsig + ")) {")
+                print("if (LIBXSMM_GEMM_NO_BYPASS_DIMS(" + mnksig + ")" +
+                      " && LIBXSMM_GEMM_NO_BYPASS_DIMS(" + ldxsig + ")) {")
                 print("  LIBXSMM_GEMM_DESCRIPTOR(desc, " +
                       "LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_FLAGS,")
-                print("    " + mnksig + ", " + ldxsig + ",")
-                print("    LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
-                print("  LIBXSMM_HASH_FUNCTION_CALL(hash, indx, &desc);" +
-                      " func.smm = (libxsmm_smmfunction)libxsmm_smm_" +
+                print("    " + mnksig + ", " + ldxsig + ", " +
+                      "LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
+                print("  hash = libxsmm_crc32(&desc, " +
+                      "LIBXSMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);")
+                print("  indx = LIBXSMM_HASH_MOD(hash, " +
+                      "LIBXSMM_CAPACITY_REGISTRY);")
+                print("  func.smm = (libxsmm_smmfunction)libxsmm_smm_" +
                       mnkstr + ";")
                 print("  internal_register_static_code(" +
-                      "&desc, indx, hash, func, result);")
+                      "&desc, indx, hash, func, new_registry);")
                 print("}")
         print("#if defined(_MSC_VER)")
         print("# pragma warning(pop)")

@@ -41,7 +41,7 @@
 /* @TODO change int based architecture value */
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_transpose_kernel( libxsmm_generated_code*                        io_generated_code,
-                                         const libxsmm_transpose_descriptor*            i_trans_desc,
+                                         const libxsmm_trans_descriptor_type*            i_trans_desc,
                                          const char*                                    i_arch ) {
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );

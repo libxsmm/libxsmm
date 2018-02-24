@@ -33,8 +33,8 @@
 
 #include <libxsmm.h>
 
-#if !defined(LIBXSMM_HASH_SW)
-/*# define LIBXSMM_HASH_SW*/
+#if !defined(LIBXSMM_HASH_SW) && 0
+# define LIBXSMM_HASH_SW
 #endif
 
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_HASH_NOINLINE)
@@ -47,7 +47,8 @@
 
 
 /** Function type representing the CRC32 functionality. */
-typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(const void*, size_t, unsigned int);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(
+  const void*, size_t, unsigned int);
 
 /** Initialize hash function module; not thread-safe. */
 LIBXSMM_HASH_API void libxsmm_hash_init(int target_arch);

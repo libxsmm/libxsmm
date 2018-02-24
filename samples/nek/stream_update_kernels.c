@@ -29,7 +29,6 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <libxsmm_intrinsics_x86.h>
 
 /*#define DISABLE_NONTEMPORAL_STORES*/
 
@@ -37,7 +36,7 @@
 LIBXSMM_API_INLINE
 void stream_init(int i_length, size_t i_start_address, int* o_trip_prolog, int* o_trip_stream)
 {
-  /* let's calculate the prolog until C is cachline aligned */
+  /* let's calculate the prologue until C is cacheline aligned */
   /* @TODO we need to add shifts */
   if ( (i_start_address % 64) != 0 ) {
     *o_trip_prolog = (64 - (i_start_address % 64))/sizeof(double);
@@ -70,7 +69,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_vector_copy)(const double* i_
     io_c[l_n] = i_a[l_n];
   }
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
   {
     /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */
@@ -123,7 +122,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_vector_set)(const double* i_s
     io_c[l_n] = *i_scalar;
   }
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
   {
     /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */
@@ -177,7 +176,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_vector_compscale)(const doubl
     io_c[l_n] = i_a[l_n]*i_b[l_n];
   }
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
   {
     /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */
@@ -288,7 +287,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_update_helmholtz)(
 #endif
 */
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
   {
     const __m256d vec_h1 = _mm256_broadcast_sd(i_h1);
     const __m256d vec_h2 = _mm256_broadcast_sd(i_h2);
@@ -450,7 +449,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_update_helmholtz_no_h2)(
     io_c[l_n] = (*i_h1)*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]);
   }
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
   {
     const __m256d vec_h1 = _mm256_broadcast_sd(i_h1);
     /* we need manual unrolling as the compiler otherwise generates
@@ -593,7 +592,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(stream_update_var_helmholtz)(
 #endif
 */
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
   {
     /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */

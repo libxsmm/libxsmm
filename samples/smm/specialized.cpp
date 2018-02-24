@@ -161,9 +161,9 @@ int main(int argc, char* argv[])
             T *const ci = c + i * csize;
 #if (0 != LIBXSMM_PREFETCH)
             xmm(ai, bi, ci,
-              LIBXSMM_PREFETCH_A(ai + asize),
-              LIBXSMM_PREFETCH_B(bi + bsize),
-              LIBXSMM_PREFETCH_C(ci + csize));
+              LIBXSMM_GEMM_PREFETCH_A(ai + asize),
+              LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
+              LIBXSMM_GEMM_PREFETCH_C(ci + csize));
 #else
             xmm(ai, bi, ci);
 #endif
@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize_batched / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
       case 1: { // batched/indirect
         fprintf(stdout, "Indirect (A,B,C)...\n");
@@ -200,7 +200,8 @@ int main(int argc, char* argv[])
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
         if (0 == benchmark) { /* Gold result is available */
-          libxsmm_matdiff_info diff = { 0 };
+          libxsmm_matdiff_info diff;
+          memset(&diff, 0, sizeof(diff));
           for (libxsmm_blasint h = 0; h < s; ++h) {
             const T *const u = c + h * csize, *const v = c_array[h];
             libxsmm_matdiff_info dv;
@@ -224,8 +225,8 @@ int main(int argc, char* argv[])
             T *const ci = c + i * csize;
 #if (0 != LIBXSMM_PREFETCH)
             xmm(ai, b, ci,
-              LIBXSMM_PREFETCH_A(ai + asize), LIBXSMM_PREFETCH_B(b),
-              LIBXSMM_PREFETCH_C(ci + csize));
+              LIBXSMM_GEMM_PREFETCH_A(ai + asize), LIBXSMM_GEMM_PREFETCH_B(b),
+              LIBXSMM_GEMM_PREFETCH_C(ci + csize));
 #else
             xmm(ai, b, ci);
 #endif
@@ -239,7 +240,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
       case 3: { // indirect A and C
         fprintf(stdout, "Indirect (A,C)...\n");
@@ -259,7 +260,8 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        libxsmm_matdiff_info diff = { 0 };
+        libxsmm_matdiff_info diff;
+        memset(&diff, 0, sizeof(diff));
         for (libxsmm_blasint h = 0; h < s; ++h) {
           const T *const u = c + h * csize, *const v = c_array[h];
           libxsmm_matdiff_info dv;
@@ -282,8 +284,8 @@ int main(int argc, char* argv[])
             T *const ci = c + i * csize;
 #if (0 != LIBXSMM_PREFETCH)
             xmm(a, bi, ci,
-              LIBXSMM_PREFETCH_A(a), LIBXSMM_PREFETCH_B(bi + bsize),
-              LIBXSMM_PREFETCH_C(ci + csize));
+              LIBXSMM_GEMM_PREFETCH_A(a), LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
+              LIBXSMM_GEMM_PREFETCH_C(ci + csize));
 #else
             xmm(a, bi, ci);
 #endif
@@ -297,7 +299,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
       case 5: { // indirect B and C
         fprintf(stdout, "Indirect (B,C)...\n");
@@ -317,7 +319,8 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        libxsmm_matdiff_info diff = { 0 };
+        libxsmm_matdiff_info diff;
+        memset(&diff, 0, sizeof(diff));
         for (libxsmm_blasint h = 0; h < s; ++h) {
           const T *const u = c + h * csize, *const v = c_array[h];
           libxsmm_matdiff_info dv;
@@ -344,9 +347,9 @@ int main(int argc, char* argv[])
             const T *const ai = a + i * asize, *const bi = b + i * bsize;
 #if (0 != LIBXSMM_PREFETCH)
             xmm(ai, bi, c + j,
-              LIBXSMM_PREFETCH_A(ai + asize),
-              LIBXSMM_PREFETCH_B(bi + bsize),
-              LIBXSMM_PREFETCH_C(c + j));
+              LIBXSMM_GEMM_PREFETCH_A(ai + asize),
+              LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
+              LIBXSMM_GEMM_PREFETCH_C(c + j));
 #else
             xmm(ai, bi, c + j);
 #endif
@@ -360,7 +363,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
       case 7: { // indirect A and B
         fprintf(stdout, "Indirect (A,B)...\n");
@@ -407,9 +410,9 @@ int main(int argc, char* argv[])
 #endif
 #if (0 != LIBXSMM_PREFETCH)
             xmm(a, b, c + j,
-              LIBXSMM_PREFETCH_A(a),
-              LIBXSMM_PREFETCH_B(b),
-              LIBXSMM_PREFETCH_C(c + j));
+              LIBXSMM_GEMM_PREFETCH_A(a),
+              LIBXSMM_GEMM_PREFETCH_B(b),
+              LIBXSMM_GEMM_PREFETCH_C(c + j));
 #else
             xmm(a, b, c + j);
 #endif
@@ -422,7 +425,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
       case 9: { // indirect cached
         fprintf(stdout, "Indirect cached...\n");

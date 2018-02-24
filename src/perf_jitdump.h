@@ -41,7 +41,7 @@
 #endif
 
 
-typedef struct LIBXSMM_RETARGETABLE jitdump_file_header {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_file_header {
   uint32_t magic;
   uint32_t version;
   uint32_t total_size;
@@ -53,14 +53,14 @@ typedef struct LIBXSMM_RETARGETABLE jitdump_file_header {
 } jitdump_file_header;
 
 
-typedef struct LIBXSMM_RETARGETABLE jitdump_record_header {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_header {
   uint32_t id;
   uint32_t total_size;
   uint64_t timestamp;
 } jitdump_record_header;
 
 
-typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_load {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_load {
   uint32_t pid;
   uint32_t tid;
   uint64_t vma;
@@ -71,7 +71,7 @@ typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_load {
 } jitdump_record_code_load;
 
 
-typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_move {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_move {
   uint32_t pid;
   uint32_t tid;
   uint64_t vma;
@@ -82,7 +82,7 @@ typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_move {
 } jitdump_record_code_move;
 
 
-typedef struct LIBXSMM_RETARGETABLE jitdump_debug_entry {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_debug_entry {
   uint64_t code_addr;
   uint32_t line;
   uint32_t discrim;
@@ -90,7 +90,7 @@ typedef struct LIBXSMM_RETARGETABLE jitdump_debug_entry {
 } jitdump_debug_entry;
 
 
-typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_debug_info {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_debug_info {
   uint64_t code_addr;
   uint64_t nr_entry;
   /* Followed by nr_entry jitdump_debug_entry structures. */
@@ -98,20 +98,20 @@ typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_debug_info {
 
 
 /* Currently empty */
-typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_close {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE jitdump_record_code_close {
   int dummy; /* avoid warning about struct without member */
 } jitdump_record_code_close;
 
 
 /* magic is "JiTD", serialized differently dependent on endianness. */
-LIBXSMM_API_VARIABLE /*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_MAGIC, 'J' << 24 | 'i' << 16 | 'T' << 8 | 'D');
-LIBXSMM_API_VARIABLE /*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_MAGIC_SWAPPED, 'J' | 'i' << 8 | 'T' << 16 | 'D' << 24);
-LIBXSMM_API_VARIABLE /*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_VERSION, 1);
-LIBXSMM_API_VARIABLE /*const*/ uint64_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_FLAGS_ARCH_TIMESTAMP, 1ULL /*<< 0*/);
+LIBXSMM_API_VARIABLE(/*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_MAGIC, 'J' << 24 | 'i' << 16 | 'T' << 8 | 'D'));
+LIBXSMM_API_VARIABLE(/*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_MAGIC_SWAPPED, 'J' | 'i' << 8 | 'T' << 16 | 'D' << 24));
+LIBXSMM_API_VARIABLE(/*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_VERSION, 1));
+LIBXSMM_API_VARIABLE(/*const*/ uint64_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_FLAGS_ARCH_TIMESTAMP, 1ULL /*<< 0*/));
 
-LIBXSMM_API_VARIABLE /*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_CODE_LOAD, 0);
-LIBXSMM_API_VARIABLE /*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_CODE_MOVE, 1);
-LIBXSMM_API_VARIABLE /*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_CODE_DEBUG_INFO, 2);
-LIBXSMM_API_VARIABLE /*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_CODE_CLOSE, 3);
+LIBXSMM_API_VARIABLE(/*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_CODE_LOAD, 0));
+LIBXSMM_API_VARIABLE(/*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_CODE_MOVE, 1));
+LIBXSMM_API_VARIABLE(/*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_CODE_DEBUG_INFO, 2));
+LIBXSMM_API_VARIABLE(/*const*/ uint32_t PERF_JITDUMP_GLOBAL_VARIABLE(JITDUMP_CODE_CLOSE, 3));
 
 #endif /* PERF_JITDUMP_H */

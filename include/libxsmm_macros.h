@@ -33,9 +33,14 @@
 
 #include "libxsmm_config.h"
 
-/** Parameters the library and static kernels were built for. */
+/** Parameters the library was built for. */
 #define LIBXSMM_CACHELINE LIBXSMM_CONFIG_CACHELINE
 #define LIBXSMM_ALIGNMENT LIBXSMM_CONFIG_ALIGNMENT
+#define LIBXSMM_ILP64 LIBXSMM_CONFIG_ILP64
+#define LIBXSMM_SYNC LIBXSMM_CONFIG_SYNC
+#define LIBXSMM_JIT LIBXSMM_CONFIG_JIT
+
+/** Parameters of GEMM domain (static kernels, etc). */
 #define LIBXSMM_PREFETCH LIBXSMM_CONFIG_PREFETCH
 #define LIBXSMM_MAX_MNK LIBXSMM_CONFIG_MAX_MNK
 #define LIBXSMM_MAX_M LIBXSMM_CONFIG_MAX_M
@@ -45,19 +50,28 @@
 #define LIBXSMM_AVG_N LIBXSMM_CONFIG_AVG_N
 #define LIBXSMM_AVG_K LIBXSMM_CONFIG_AVG_K
 #define LIBXSMM_FLAGS LIBXSMM_CONFIG_FLAGS
-#define LIBXSMM_ILP64 LIBXSMM_CONFIG_ILP64
 #define LIBXSMM_ALPHA LIBXSMM_CONFIG_ALPHA
 #define LIBXSMM_BETA LIBXSMM_CONFIG_BETA
 #define LIBXSMM_WRAP LIBXSMM_CONFIG_WRAP
-#define LIBXSMM_SYNC LIBXSMM_CONFIG_SYNC
-#define LIBXSMM_JIT LIBXSMM_CONFIG_JIT
+
+#if (defined(__SIZEOF_PTRDIFF_T__) && 4 < (__SIZEOF_PTRDIFF_T__)) || \
+    (defined(__SIZE_MAX__) && (4294967295U < (__SIZE_MAX__))) || \
+    (defined(__GNUC__) && defined(_CRAYC)) || defined(_WIN64) || \
+    (defined(__x86_64__) && 0 != (__x86_64__))
+# define LIBXSMM_BITS 64
+#elif defined(NDEBUG) /* not for production use! */
+# error LIBXSMM is only supported on a 64-bit platform!
+#else /* JIT-generated code (among other issues) is not supported! */
+# define LIBXSMM_BITS 32
+#endif
 
 #define LIBXSMM_STRINGIFY2(SYMBOL) #SYMBOL
 #define LIBXSMM_STRINGIFY(SYMBOL) LIBXSMM_STRINGIFY2(SYMBOL)
 #define LIBXSMM_TOSTRING(SYMBOL) LIBXSMM_STRINGIFY(SYMBOL)
-#define LIBXSMM_CONCATENATE2(A, B) A##B
-#define LIBXSMM_CONCATENATE(A, B) LIBXSMM_CONCATENATE2(A, B)
-#define LIBXSMM_FSYMBOL(SYMBOL) LIBXSMM_CONCATENATE2(SYMBOL, _)
+#define LIBXSMM_CONCATENATE1(A, B) A##B
+#define LIBXSMM_CONCATENATE(A, B) LIBXSMM_CONCATENATE1(A, B)
+#define LIBXSMM_CONCATENATE2(A, B, C) LIBXSMM_CONCATENATE(LIBXSMM_CONCATENATE(A, B), C)
+#define LIBXSMM_FSYMBOL(SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, _)
 #define LIBXSMM_UNIQUE(NAME) LIBXSMM_CONCATENATE(NAME, __LINE__)
 #define LIBXSMM_EXPAND(...) __VA_ARGS__
 
@@ -66,10 +80,9 @@
 #define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) ((MAJOR) * 100000000 + (MINOR) * 1000000 + (UPDATE) * 10000 + (PATCH))
 
 #if defined(__cplusplus)
-# define LIBXSMM_API_INLINE LIBXSMM_EXTERN LIBXSMM_INLINE LIBXSMM_RETARGETABLE
-# define LIBXSMM_API_INTERN LIBXSMM_EXTERN LIBXSMM_RETARGETABLE
 # define LIBXSMM_VARIADIC ...
 # define LIBXSMM_EXTERN extern "C"
+# define LIBXSMM_EXTERN_C LIBXSMM_EXTERN
 # define LIBXSMM_INLINE_KEYWORD inline
 # define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
 # if defined(__GNUC__)
@@ -80,10 +93,9 @@
 #   define LIBXSMM_CALLER __FUNCNAME__
 # endif
 #else
-# define LIBXSMM_API_INLINE LIBXSMM_INLINE LIBXSMM_RETARGETABLE
-# define LIBXSMM_API_INTERN LIBXSMM_RETARGETABLE
 # define LIBXSMM_VARIADIC
 # define LIBXSMM_EXTERN extern
+# define LIBXSMM_EXTERN_C
 # if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
 #   define LIBXSMM_CALLER __func__
@@ -106,27 +118,42 @@
 # define LIBXSMM_CALLER NULL
 #endif
 
-#define LIBXSMM_VARIABLE LIBXSMM_RETARGETABLE
-#if defined(LIBXSMM_BUILD_EXT)
-# define LIBXSMM_API_VARIABLE LIBXSMM_EXTERN LIBXSMM_VARIABLE
+#if defined(LIBXSMM_OFFLOAD_BUILD) && \
+  defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
+# define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
+# define LIBXSMM_NO_OFFLOAD(RTYPE, FN, ...) ((RTYPE (*)(LIBXSMM_VARIADIC))(FN))(__VA_ARGS__)
+# if !defined(LIBXSMM_OFFLOAD_TARGET)
+#   define LIBXSMM_OFFLOAD_TARGET mic
+# endif
 #else
-# define LIBXSMM_API_VARIABLE LIBXSMM_VARIABLE
+# define LIBXSMM_OFFLOAD(A)
+# define LIBXSMM_NO_OFFLOAD(RTYPE, FN, ...) (FN)(__VA_ARGS__)
 #endif
+#define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
 #if !defined(LIBXSMM_INTERNAL_API)
-# if defined(__cplusplus)
-#   define LIBXSMM_INTERNAL_API extern "C"
-# else
-#   define LIBXSMM_INTERNAL_API
-# endif
+# define LIBXSMM_INTERNAL_API LIBXSMM_EXTERN_C
 #endif
 #if !defined(LIBXSMM_INTERNAL_API_DEFINITION)
 # define LIBXSMM_INTERNAL_API_DEFINITION LIBXSMM_INTERNAL_API
 #endif
 
+#define LIBXSMM_API_INLINE LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE LIBXSMM_INLINE
+#define LIBXSMM_API_INTERN LIBXSMM_INTERNAL_API LIBXSMM_RETARGETABLE
 #define LIBXSMM_API LIBXSMM_INTERNAL_API LIBXSMM_RETARGETABLE
 #define LIBXSMM_API_DEFINITION LIBXSMM_INTERNAL_API_DEFINITION LIBXSMM_RETARGETABLE
 #define LIBXSMM_API_EXTERN LIBXSMM_EXTERN LIBXSMM_RETARGETABLE
+
+#if defined(LIBXSMM_BUILD_EXT)
+# if defined(__cplusplus)
+#   define LIBXSMM_API_VARIABLE(DECL) LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE DECL
+# else
+#   define LIBXSMM_API_VARIABLE(DECL) LIBXSMM_EXTERN LIBXSMM_RETARGETABLE DECL
+# endif
+# define LIBXSMM_API_VARIABLE_EXT(DECL) LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE DECL; LIBXSMM_RETARGETABLE DECL
+#else
+# define LIBXSMM_API_VARIABLE(DECL) LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE DECL; LIBXSMM_RETARGETABLE DECL
+#endif
 
 #if !defined(LIBXSMM_RESTRICT)
 # if ((defined(__GNUC__) && !defined(__CYGWIN32__)) || defined(__INTEL_COMPILER)) && !defined(_WIN32)
@@ -163,17 +190,8 @@
 #else
 # define LIBXSMM_ATTRIBUTE(A)
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_INLINE
-# define LIBXSMM_ALIGNED(DECL, N)
+# define LIBXSMM_ALIGNED(DECL, N) DECL
 # define LIBXSMM_CDECL
-#endif
-
-#if defined(_MSC_VER)
-# define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message(MSG))
-#elif LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
-   && LIBXSMM_VERSION3(5, 0, 0) >  LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
-# define LIBXSMM_MESSAGE(MSG) LIBXSMM_PRAGMA(message MSG)
-#else
-# define LIBXSMM_MESSAGE(MSG)
 #endif
 
 #if !defined(LIBXSMM_OPENMP_SIMD) && (defined(_OPENMP) && (201307 <= _OPENMP)) /*OpenMP 4.0*/
@@ -282,7 +300,7 @@
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
-#define LIBXSMM_DIFF(T0, T1) ((T0) < (T1) ? ((T1) - (T0)) : ((T0) - (T1)))
+#define LIBXSMM_DIFF(T0, T1) ((T0) < (T1) ? ((T1) - (T0)) : 0)
 #define LIBXSMM_CLMP(VALUE, LO, HI) ((LO) < (VALUE) ? ((VALUE) <= (HI) ? (VALUE) : LIBXSMM_MIN(VALUE, HI)) : LIBXSMM_MAX(LO, VALUE))
 #define LIBXSMM_MOD2(N, NPOT) ((N) & ((NPOT) - 1))
 #define LIBXSMM_MUL2(N, NPOT) (((unsigned long long)(N)) << LIBXSMM_LOG2(NPOT))
@@ -290,7 +308,8 @@
 #define LIBXSMM_SQRT2(N) ((unsigned int)(1ULL << (LIBXSMM_LOG2(((N) << 1) - 1) >> 1)))
 #define LIBXSMM_HASH2(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 /** Compares floating point values but avoids warning about unreliable comparison. */
-#define LIBXSMM_FEQ(A, B) (!((A) < (B) || (A) > (B)))
+#define LIBXSMM_NEQ(A, B) ((A) < (B) || (A) > (B))
+#define LIBXSMM_FEQ(A, B) (!LIBXSMM_NEQ(A, B))
 
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
 #define LIBXSMM_DEFAULT(DEFAULT, VALUE) (0 < (VALUE) ? (VALUE) : (DEFAULT))
@@ -393,7 +412,7 @@
 #endif
 
 #if !defined(LIBXSMM_UNUSED)
-# if 0 /*defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)*/
+# if 0
 #   define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))
 # else
 #   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
@@ -408,7 +427,7 @@
 # define LIBXSMM_VISIBILITY_INTERNAL
 #endif
 
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(__CYGWIN__)
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(__CYGWIN__) && !defined(__MINGW32__)
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT LIBXSMM_ATTRIBUTE(weak_import)
 # define LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE(weak)
 #else
@@ -416,9 +435,12 @@
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT
 #endif
 
-#if defined(__GNUC__)
+#if !defined(LIBXSMM_NO_CTOR) && defined(__GNUC__)
 # define LIBXSMM_ATTRIBUTE_CTOR LIBXSMM_ATTRIBUTE(constructor)
 # define LIBXSMM_ATTRIBUTE_DTOR LIBXSMM_ATTRIBUTE(destructor)
+# if !defined(LIBXSMM_CTOR) && defined(LIBXSMM_BUILD) && !defined(__STATIC)
+#   define LIBXSMM_CTOR
+# endif
 #else
 # define LIBXSMM_ATTRIBUTE_CTOR
 # define LIBXSMM_ATTRIBUTE_DTOR
@@ -437,16 +459,20 @@
 
 #if defined(_WIN32)
 # define LIBXSMM_SNPRINTF(S, N, ...) _snprintf_s(S, N, _TRUNCATE, __VA_ARGS__)
-# define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
-# define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
 # define setenv(NAME, VALUE, OVERWRITE) _putenv(NAME "=" VALUE)
+#elif defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
+# define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
 #else
-# if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
-#   define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
-# else
-#   define LIBXSMM_SNPRINTF(S, N, ...) sprintf(S, __VA_ARGS__); LIBXSMM_UNUSED(N)
-# endif
-# if !defined(__CYGWIN__)
+# define LIBXSMM_SNPRINTF(S, N, ...) sprintf(S, __VA_ARGS__); LIBXSMM_UNUSED(N)
+#endif
+#if defined(LIBXSMM_NO_SYNC)
+# define LIBXSMM_FLOCK(FILE)
+# define LIBXSMM_FUNLOCK(FILE)
+#else
+# if defined(_WIN32)
+#   define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
+#   define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
+# elif !defined(__CYGWIN__)
 #   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
 #   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
 # else /* Only available with __CYGWIN__ *and* C++0x. */
@@ -492,11 +518,15 @@
 #     define __STATIC
 #   endif
 # endif
+#else
 #endif
 #if defined(__GNUC__)
 # if !defined(_GNU_SOURCE)
 #   define _GNU_SOURCE
 # endif
+#endif
+#if !defined(__STDC_FORMAT_MACROS)
+# define __STDC_FORMAT_MACROS
 #endif
 #if defined(__clang__) && !defined(__extern_always_inline)
 # define __extern_always_inline LIBXSMM_INLINE
@@ -512,22 +542,13 @@
 /* _Float128 was introduced with GNU GCC 7.0. */
 #if !defined(_Float128) && defined(__GNUC__) && !defined(__cplusplus) \
   && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
-  || (defined(__INTEL_COMPILER) && defined(__INTEL_COMPILER_UPDATE) && (1801 > ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE)))))
+  || (defined(__INTEL_COMPILER) && defined(__INTEL_COMPILER_UPDATE) && ( \
+        ((1800 <= ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE))) \
+      && (1801  > ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE)))) || \
+        ((1706  > ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE))) \
+      &&    (0 != ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE)))))))
 # define _Float128 __float128
 #endif
-
-#if defined(LIBXSMM_OFFLOAD_BUILD) && \
-  defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
-# define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
-# define LIBXSMM_NO_OFFLOAD(RTYPE, FN, ...) ((RTYPE (*)(LIBXSMM_VARIADIC))(FN))(__VA_ARGS__)
-# if !defined(LIBXSMM_OFFLOAD_TARGET)
-#   define LIBXSMM_OFFLOAD_TARGET mic
-# endif
-#else
-# define LIBXSMM_OFFLOAD(A)
-# define LIBXSMM_NO_OFFLOAD(RTYPE, FN, ...) (FN)(__VA_ARGS__)
-#endif
-#define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))

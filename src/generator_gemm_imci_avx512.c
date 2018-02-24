@@ -28,15 +28,14 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 #include "generator_gemm_imci_avx512.h"
 #include "generator_gemm_imci_microkernel.h"
 #include "generator_gemm_avx512_microkernel.h"
 #include "generator_gemm_common.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
+#include "libxsmm_main.h"
 
-#include <libxsmm_intrinsics_x86.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -46,7 +45,7 @@ LIBXSMM_INLINE
 void libxsmm_generator_gemm_imci_avx512_kernel_initialize_mask( libxsmm_generated_code*            io_generated_code,
                                                                 const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                 const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                const libxsmm_gemm_descriptor_type*     i_xgemm_desc,
                                                                 unsigned int                       i_m_done ) {
   unsigned int l_mask;
 
@@ -85,16 +84,16 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
                                                       libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                       const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                       const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                      const libxsmm_gemm_descriptor_type*     i_xgemm_desc,
                                                       const char*                        i_arch,
                                                       unsigned int                       i_n_blocking ) {
   /* set function pointers for AVX512 and IMCI */
   unsigned int (*l_generator_microkernel_kloop)( libxsmm_generated_code*, libxsmm_loop_label_tracker*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                                                 const libxsmm_gemm_descriptor*, const char*, unsigned int ) = 0;
+                                                 const libxsmm_gemm_descriptor_type*, const char*, unsigned int ) = 0;
   void (*l_generator_load)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                            const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int ) = 0;
+                            const libxsmm_gemm_descriptor_type*, const unsigned int, const unsigned int ) = 0;
   void (*l_generator_store)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                            const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int ) = 0;
+                            const libxsmm_gemm_descriptor_type*, const unsigned int, const unsigned int ) = 0;
   unsigned int l_k_unrolled;
   unsigned int l_m_done;
 
@@ -222,7 +221,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
 
 LIBXSMM_INTERNAL_API_DEFINITION
 void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         io_generated_code,
-                                                 const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                 const libxsmm_gemm_descriptor_type* i_xgemm_desc,
                                                  const char*                    i_arch ) {
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;

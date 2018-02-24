@@ -39,18 +39,11 @@ FCFLAGS := $(CFLAGS)
 DFLAGS = -DLIBXSMM_BUILD
 IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
 
-# Python interpreter
-PYTHON ?= python
-
-# Version numbers according to interface (version.txt)
-VERSION_MAJOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 1)
-VERSION_MINOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 2)
-
 # THRESHOLD problem size (M x N x K) determining when to use BLAS
 # A value of zero (0) populates a default threshold
 THRESHOLD ?= 0
 
-# Generates M,N,K-combinations for each comma separated group e.g., "1, 2, 3" gnerates (1,1,1), (2,2,2),
+# Generates M,N,K-combinations for each comma separated group e.g., "1, 2, 3" generates (1,1,1), (2,2,2),
 # and (3,3,3). This way a heterogeneous set can be generated e.g., "1 2, 3" generates (1,1,1), (1,1,2),
 # (1,2,1), (1,2,2), (2,1,1), (2,1,2) (2,2,1) out of the first group, and a (3,3,3) for the second group
 # To generate a series of square matrices one can specify e.g., make MNK=$(echo $(seq -s, 1 5))
@@ -109,6 +102,14 @@ ifneq (1,$(BETA))
 ifneq (0,$(BETA))
   $(error BETA needs to be either 0 or 1)
 endif
+endif
+
+# determines if WGEMM should produce FP32
+# @TODO this is kind of hacky and we should find a better solutions
+WGEMM_FP32 ?= 0
+
+ifneq (0,$(WGEMM_FP32))
+  DFLAGS += -DLIBXSMM_WGEMM_USE_FP32_OUTPUT
 endif
 
 # Determines if the library is thread-safe
@@ -178,7 +179,9 @@ ifneq (0,$(OMP))
 endif
 
 ifneq (,$(MKL))
+ifneq (0,$(MKL))
   BLAS = $(MKL)
+endif
 endif
 
 BLAS_WARNING ?= 0
@@ -210,6 +213,12 @@ EXCLUDE_STATE = BLAS_WARNING PREFIX
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
+# Version numbers according to interface (version.txt)
+VERSION_MAJOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 1)
+VERSION_MINOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 2)
+VERSION_UPDATE ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 3)
+VERSION_API ?= $(VERSION_MAJOR).$(VERSION_MINOR)
+
 # target library for a broad range of systems
 ifneq (0,$(JIT))
 ifeq (file,$(origin AVX))
@@ -239,12 +248,19 @@ else
 endif
 
 ifeq (0,$(STATIC))
-  GENERATOR = @$(ENV) \
-    LD_LIBRARY_PATH=$(OUTDIR):$${LD_LIBRARY_PATH} \
-    PATH=$(OUTDIR):$${PATH} \
-  $(BINDIR)/libxsmm_gemm_generator
+  ifneq (Darwin,$(UNAME))
+    GENGEMM = @$(ENV) \
+      LD_LIBRARY_PATH=$(OUTDIR):$${LD_LIBRARY_PATH} \
+      PATH=$(OUTDIR):$${PATH} \
+    $(BINDIR)/libxsmm_gemm_generator
+  else # osx
+    GENGEMM = @$(ENV) \
+      DYLD_LIBRARY_PATH=$(OUTDIR):$${DYLD_LIBRARY_PATH} \
+      PATH=$(OUTDIR):$${PATH} \
+    $(BINDIR)/libxsmm_gemm_generator
+  endif
 else
-  GENERATOR = $(BINDIR)/libxsmm_gemm_generator
+  GENGEMM = $(BINDIR)/libxsmm_gemm_generator
 endif
 
 INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
@@ -267,7 +283,7 @@ HEADERS = $(wildcard $(SRCDIR)/template/*.c) $(wildcard $(SRCDIR)/*.h) \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
 SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
-          libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_malloc.c \
+          libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_malloc.c libxsmm_python.c \
           libxsmm_sync.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_trans.c libxsmm_bgemm.c \
           libxsmm_spmdm.c libxsmm_fsspmdm.c \
@@ -280,7 +296,7 @@ SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
           libxsmm_dnn_convolution_winograd_weight_update.o )
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
-SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) libxsmm_trace.c)
+SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) libxsmm_trace.c libxsmm_generator.c)
 SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
 SRCFILES_GEN_CONVWINO_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_convolution_winograd_driver.c)
 SRCFILES_GEN_CONV_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_convolution_driver.c)
@@ -465,20 +481,20 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
-	@cp $(ROOTDIR)/include/libxsmm_bgemm.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_dnn.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_fsspmdm.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_intrinsics_x86.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_malloc.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_mhd.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_spmdm.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2> /dev/null || true
-	@cp $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2> /dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_bgemm.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_dnn.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_fsspmdm.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_generator.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_intrinsics_x86.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_malloc.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_mhd.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_spmdm.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2>/dev/null || true
 	@$(PYTHON) $(SCRDIR)/libxsmm_config.py $(SRCDIR)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
@@ -561,9 +577,9 @@ $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py $(SR
 
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
 ifneq (,$(strip $(SRCFILES_KERNELS)))
-	$(eval MVALUE := $(shell echo $(basename $@) | cut -d_ -f2))
-	$(eval NVALUE := $(shell echo $(basename $@) | cut -d_ -f3))
-	$(eval KVALUE := $(shell echo $(basename $@) | cut -d_ -f4))
+	$(eval MVALUE := $(shell echo $(basename $(notdir $@)) | cut -d_ -f2))
+	$(eval NVALUE := $(shell echo $(basename $(notdir $@)) | cut -d_ -f3))
+	$(eval KVALUE := $(shell echo $(basename $(notdir $@)) | cut -d_ -f4))
 	$(eval MNVALUE := $(MVALUE))
 	$(eval NMVALUE := $(NVALUE))
 	@echo "#include <libxsmm.h>" > $@
@@ -595,16 +611,16 @@ endif
 	@echo >> $@
 	@echo >> $@
 ifneq (2,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) SP
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) SP
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) SP
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) SP
+	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) SP
+	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) SP
+	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) SP
+	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) SP
 endif
 ifneq (1,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) DP
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) DP
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) DP
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) DP
+	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_knl $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knl $(PREFETCH_SCHEME) DP
+	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_hsw $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 hsw $(PREFETCH_SCHEME) DP
+	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_snb $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 snb $(PREFETCH_SCHEME) DP
+	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_wsm $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 wsm $(PREFETCH_SCHEME) DP
 endif
 endif # target
 else # noarch
@@ -617,19 +633,19 @@ endif
 	@echo >> $@
 	@echo >> $@
 ifneq (2,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) SP
+	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) SP
 endif
 ifneq (1,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) DP
+	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) DP
 endif
 endif # noarch
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ifneq (2,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knc $(PREFETCH_SCHEME_MIC) SP
+	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knc $(PREFETCH_SCHEME_MIC) SP
 endif
 ifneq (1,$(PRECISION))
-	$(GENERATOR) dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knc $(PREFETCH_SCHEME_MIC) DP
+	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knc $(PREFETCH_SCHEME_MIC) DP
 endif
 endif
 endif
@@ -642,7 +658,7 @@ endif
 		-e "/#pragma message (\".*KERNEL COMPILATION WARNING: compiling ..* code on ..* or newer architecture: \" __FILE__)/d" \
 		| tr "~" "\n" > $(TMPFILE)
 	@$(PYTHON) $(SCRDIR)/libxsmm_specialized.py $(PRECISION) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $(TMPFILE)
-	@mv $(TMPFILE) $@
+	@$(MV) $(TMPFILE) $@
 endif
 
 ifneq (0,$(JIT))
@@ -666,7 +682,7 @@ ifeq (,$(filter Darwin,$(UNAME)))
       CFLAGS += -diag-disable 271
     endif
 $(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
-	@cp $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT) $(BLDDIR)/jitprofiling
+	@$(CP) $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT) $(BLDDIR)/jitprofiling
 	@cd $(BLDDIR)/jitprofiling; $(AR) x libjitprofiling.$(SLIBEXT)
   else
 .PHONY: $(LIBJITPROFILING)
@@ -711,7 +727,7 @@ $(foreach OBJ,$(EXTOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   -mmic $(EXTCFLAGS) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
 $(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_MIC),$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
-  -mmic $(NOBLAS_CFLAGS) $(NOBLAS_DFLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
+  -mmic $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 endif
 endif
 
@@ -744,7 +760,7 @@ $(foreach OBJ,$(OBJFILES_GEN_CONV_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(CFLAGS) $(DFLAGS) $(IFLAGS))))
 $(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_HST),$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
-  $(CTARGET) $(NOBLAS_CFLAGS) $(NOBLAS_DFLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
+  $(CTARGET) $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 
 .PHONY: compile_mic
 ifneq (0,$(MIC))
@@ -768,8 +784,10 @@ module_mic: $(INCDIR)/mic/libxsmm.mod
 $(BLDDIR)/mic/libxsmm-mod.o: $(BLDDIR)/mic/.make $(INCDIR)/mic/.make $(INCDIR)/libxsmm.f
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)/mic
 $(INCDIR)/mic/libxsmm.mod: $(BLDDIR)/mic/libxsmm-mod.o
-	@if [ -e $(BLDDIR)/mic/libxsmm.mod ]; then cp $(BLDDIR)/mic/libxsmm.mod $(INCDIR)/mic; fi
-	@if [ -e $(BLDDIR)/mic/LIBXSMM.mod ]; then cp $(BLDDIR)/mic/LIBXSMM.mod $(INCDIR)/mic; fi
+	@if [ -e $(BLDDIR)/mic/LIBXSMM.mod ]; then $(CP) $(BLDDIR)/mic/LIBXSMM.mod $(INCDIR); fi
+	@if [ -e $(BLDDIR)/mic/libxsmm.mod ]; then $(CP) $(BLDDIR)/mic/libxsmm.mod $(INCDIR); fi
+	@if [ -e LIBXSMM.mod ]; then $(MV) LIBXSMM.mod $(INCDIR); fi
+	@if [ -e libxsmm.mod ]; then $(MV) libxsmm.mod $(INCDIR); fi
 	@touch $@
 else
 .PHONY: $(BLDDIR)/mic/libxsmm-mod.o
@@ -790,8 +808,10 @@ module_hst: $(INCDIR)/libxsmm.mod
 $(BLDDIR)/intel64/libxsmm-mod.o: $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.f
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)
 $(INCDIR)/libxsmm.mod: $(BLDDIR)/intel64/libxsmm-mod.o
-	@if [ -e $(BLDDIR)/intel64/libxsmm.mod ]; then cp $(BLDDIR)/intel64/libxsmm.mod $(INCDIR); fi
-	@if [ -e $(BLDDIR)/intel64/LIBXSMM.mod ]; then cp $(BLDDIR)/intel64/LIBXSMM.mod $(INCDIR); fi
+	@if [ -e $(BLDDIR)/intel64/LIBXSMM.mod ]; then $(CP) $(BLDDIR)/intel64/LIBXSMM.mod $(INCDIR); fi
+	@if [ -e $(BLDDIR)/intel64/libxsmm.mod ]; then $(CP) $(BLDDIR)/intel64/libxsmm.mod $(INCDIR); fi
+	@if [ -e LIBXSMM.mod ]; then $(MV) LIBXSMM.mod $(INCDIR); fi
+	@if [ -e libxsmm.mod ]; then $(MV) libxsmm.mod $(INCDIR); fi
 	@touch $@
 else
 .PHONY: $(BLDDIR)/intel64/libxsmm-mod.o
@@ -805,14 +825,8 @@ module: module_hst module_mic
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
-ifneq (Darwin,$(UNAME))
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(call soname,$@ $(VERSION_MAJOR)) $(OBJFILES_GEN_LIB) $(LDFLAGS) $(CLDFLAGS) -lrt
-else
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(call soname,$@ $(VERSION_MAJOR)) $(OBJFILES_GEN_LIB) $(LDFLAGS) $(CLDFLAGS)
-endif
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@.$(VERSION_MAJOR)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@
-else
+	$(LD) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_GEN_LIB) $(LDFLAGS) $(CLDFLAGS) $(LIBRT)
+else # static
 	$(AR) -rs $@ $(OBJFILES_GEN_LIB)
 endif
 
@@ -831,10 +845,8 @@ ifneq (0,$(MPSS))
 clib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC) $(KRNOBJS_MIC)
 ifeq (0,$(STATIC))
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(call soname,$@ $(VERSION_MAJOR)) $(OBJFILES_MIC) $(KRNOBJS_MIC) $(LDFLAGS) $(CLDFLAGS)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@.$(VERSION_MAJOR)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@
-else
+	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_MIC) $(KRNOBJS_MIC) $(LDFLAGS) $(CLDFLAGS)
+else # static
 	$(AR) -rs $@ $(OBJFILES_MIC) $(KRNOBJS_MIC)
 endif
 endif
@@ -844,10 +856,8 @@ endif
 clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
 $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
 ifeq (0,$(STATIC))
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(call soname,$@ $(VERSION_MAJOR)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@.$(VERSION_MAJOR)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@
-else
+	$(LD) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
+else # static
 	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(OBJJITPROFILING)
 endif
 
@@ -858,10 +868,8 @@ ifneq (,$(strip $(FC)))
 flib_mic: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	$(FLD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(FCMTFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(BLDDIR)/mic/libxsmm-mod.o $(call abslib,$(OUTDIR)/mic/libxsmm.$(LIBEXT)) $(LDFLAGS) $(FLDFLAGS)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@.$(VERSION_MAJOR)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@
-else
+	$(FLD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(FCMTFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(BLDDIR)/mic/libxsmm-mod.o $(call abslib,$(OUTDIR)/mic/libxsmm.$(LIBEXT)) $(LDFLAGS) $(FLDFLAGS)
+else # static
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/.make
 	$(AR) -rs $@ $(BLDDIR)/mic/libxsmm-mod.o
 endif
@@ -876,10 +884,8 @@ ifneq (,$(strip $(FC)))
 flib_hst: $(OUTDIR)/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT)
-	$(FLD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(FCMTFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(LIBEXT)) $(LDFLAGS) $(FLDFLAGS)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@.$(VERSION_MAJOR)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@
-else
+	$(FLD) $(FCMTFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(LIBEXT)) $(LDFLAGS) $(FLDFLAGS)
+else # static
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/.make
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
 endif
@@ -893,10 +899,8 @@ ifneq (0,$(MPSS))
 ext_mic: $(OUTDIR)/mic/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(DLIBEXT)
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(EXTLDFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(EXTOBJS_MIC) $(call abslib,$(OUTDIR)/mic/libxsmm.$(DLIBEXT)) $(LDFLAGS) $(CLDFLAGS)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@.$(VERSION_MAJOR)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@
-else
+	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(EXTOBJS_MIC) $(call abslib,$(OUTDIR)/mic/libxsmm.$(DLIBEXT)) $(LDFLAGS) $(CLDFLAGS)
+else # static
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC)
 	$(AR) -rs $@ $(EXTOBJS_MIC)
 endif
@@ -907,13 +911,13 @@ endif
 ext_hst: $(OUTDIR)/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST) $(OUTDIR)/libxsmm.$(DLIBEXT)
-ifeq (Darwin,$(UNAME))
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(call soname,$@ $(VERSION_MAJOR)) $(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(DLIBEXT)) $(LDFLAGS) $(CLDFLAGS)
-else
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(EXTLDFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(DLIBEXT)) $(LDFLAGS) $(CLDFLAGS)
+ifneq (Darwin,$(UNAME))
+	$(LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(DLIBEXT)) $(LDFLAGS) $(CLDFLAGS)
+else ifneq (0,$(INTEL)) # intel @ osx
+	$(LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(DLIBEXT)) $(LDFLAGS) $(CLDFLAGS)
+else # osx
+	$(LD)               $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(DLIBEXT)) $(LDFLAGS) $(CLDFLAGS)
 endif
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@.$(VERSION_MAJOR)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@
 else # static
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST)
 	$(AR) -rs $@ $(EXTOBJS_HST)
@@ -925,10 +929,8 @@ ifneq (0,$(MPSS))
 noblas_mic: $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(EXTLDFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(NOBLAS_MIC) $(LDFLAGS) $(CLDFLAGS)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@.$(VERSION_MAJOR)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@
-else
+	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_MIC) $(LDFLAGS) $(CLDFLAGS)
+else # static
 $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
 	$(AR) -rs $@ $(NOBLAS_MIC)
 endif
@@ -939,87 +941,64 @@ endif
 noblas_hst: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
-ifeq (Darwin,$(UNAME))
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(call soname,$@ $(VERSION_MAJOR)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
-else
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -shared $(EXTLDFLAGS) $(call soname,$@ $(VERSION_MAJOR)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+ifneq (Darwin,$(UNAME))
+	$(LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+else ifneq (0,$(INTEL)) # intel @ osx
+	$(LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+else # osx
+	$(LD)               $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
 endif
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@.$(VERSION_MAJOR)
-	ln -fs $(notdir $@).$(VERSION_MAJOR).$(VERSION_MINOR) $@
 else # static
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
 	$(AR) -rs $@ $(NOBLAS_HST)
 endif
 
 .PHONY: samples
-samples: cp2k nek smm wrap
+samples: lib_hst
 	@find $(SPLDIR) -type f -name Makefile | grep -v /pyfr/ | grep -v /lstm/ \
-		$(patsubst %, | grep -v /%/,$^) | xargs -I {} dirname {} | xargs -I {} $(FLOCK) {} \
-		"cd {}; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) DEPSTATIC=$(STATIC) \
-		SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
+		$(patsubst %, | grep -v /%/,$^) | xargs -I {} $(FLOCK) {} "$(MAKE) DEPSTATIC=$(STATIC)"
 
 .PHONY: cp2k
 cp2k: lib_hst
-	@$(FLOCK) $(SPLDIR)/cp2k "cd $(SPLDIR)/cp2k; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
+	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: cp2k_mic
 cp2k_mic: lib_mic
-	@$(FLOCK) $(SPLDIR)/cp2k "cd $(SPLDIR)/cp2k; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) KNC=1 TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
+	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
 .PHONY: wrap
 wrap: lib_hst
-	@$(FLOCK) $(SPLDIR)/wrap "cd $(SPLDIR)/wrap; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=0 \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
+	@$(FLOCK) $(SPLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0"
 
 .PHONY: wrap_mic
 wrap_mic: lib_mic
-	@$(FLOCK) $(SPLDIR)/wrap "cd $(SPLDIR)/wrap; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) KNC=1 TRACE=0 \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
+	@$(FLOCK) $(SPLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1 TRACE=0"
 
 .PHONY: nek
 nek: lib_hst
-	@$(FLOCK) $(SPLDIR)/nek "cd $(SPLDIR)/nek; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
+	@$(FLOCK) $(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: nek_mic
 nek_mic: lib_mic
-	@$(FLOCK) $(SPLDIR)/nek "cd $(SPLDIR)/nek; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) KNC=1 TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
+	@$(FLOCK) $(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
 .PHONY: smm
 smm: lib_hst
-	@$(FLOCK) $(SPLDIR)/smm "cd $(SPLDIR)/smm; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
+	@$(FLOCK) $(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: smm_mic
 smm_mic: lib_mic
-	@$(FLOCK) $(SPLDIR)/smm "cd $(SPLDIR)/smm; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) KNC=1 TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
+	@$(FLOCK) $(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
 # added for specfem sample
 # will need option: make MNK="5 25" ..
 .PHONY: specfem
 specfem: lib_hst
-	@$(FLOCK) $(SPLDIR)/specfem "cd $(SPLDIR)/specfem; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
+	@$(FLOCK) $(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: specfem_mic
 specfem_mic: lib_mic
-	@$(FLOCK) $(SPLDIR)/specfem "cd $(SPLDIR)/specfem $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) KNC=1 TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
+	@$(FLOCK) $(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
 .PHONY: drytest
 drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/smm/smmf-perf.sh \
@@ -1236,7 +1215,7 @@ endif
 	@chmod +x $@
 
 .PHONY: test
-test: test-cp2k
+test: tests
 
 .PHONY: perf
 perf: perf-cp2k
@@ -1246,23 +1225,18 @@ test-all: tests test-cp2k test-smm test-nek test-wrap
 
 .PHONY: build-tests
 build-tests: lib_hst
-	@$(FLOCK) $(TSTDIR) "cd $(TSTDIR); $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS)"
+	@$(FLOCK) $(TSTDIR) "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: tests
-tests: build-tests
-	@$(FLOCK) $(TSTDIR) "cd $(TSTDIR); $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) test"
+tests: lib_hst
+	@$(FLOCK) $(TSTDIR) "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) test"
 
 .PHONY: cpp-test
 cpp-test: test-cpp
 
 .PHONY: test-cpp
 test-cpp: $(INCDIR)/libxsmm_source.h
-	@$(FLOCK) $(SPLDIR)/cp2k "cd $(SPLDIR)/cp2k; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=0 \
+	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 \
 		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) \
 		ECXXFLAGS=-DUSE_HEADER_ONLY $(ECXXFLAGS) clean compile"
 
@@ -1272,24 +1246,18 @@ $(SPLDIR)/cp2k/cp2k-test.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
 	$(info ========================)
 	$(info Running CP2K Code Sample)
 	$(info ========================)
-	@$(FLOCK) $(SPLDIR)/cp2k "cd $(SPLDIR)/cp2k; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) cp2k"
-	@$(FLOCK) $(SPLDIR)/cp2k "$(SPLDIR)/cp2k/cp2k-perf.sh $@ $(shell echo $$(($(TESTSIZE) * 128)))"
+	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) cp2k"
+	@$(FLOCK) $(SPLDIR)/cp2k "./cp2k-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * 128)))"
 
 .PHONY: perf-cp2k
 perf-cp2k: $(SPLDIR)/cp2k/cp2k-perf.txt
 $(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
-	@$(FLOCK) $(SPLDIR)/cp2k "cd $(SPLDIR)/cp2k; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) cp2k"
-	@$(FLOCK) $(SPLDIR)/cp2k "$(SPLDIR)/cp2k/cp2k-perf.sh $@"
+	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) cp2k"
+	@$(FLOCK) $(SPLDIR)/cp2k "./cp2k-perf.sh $(notdir $@)"
 
 .PHONY: test-wrap
 test-wrap: wrap
-	@$(FLOCK) $(SPLDIR)/wrap "cd $(SPLDIR)/wrap; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=0 \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) test"
+	@$(FLOCK) $(SPLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 test"
 
 .PHONY: test-smm
 ifneq (,$(strip $(FC)))
@@ -1298,20 +1266,16 @@ $(SPLDIR)/smm/smm-test.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
 	$(info =======================)
 	$(info Running SMM Code Sample)
 	$(info =======================)
-	@$(FLOCK) $(SPLDIR)/smm "cd $(SPLDIR)/smm; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) smm"
-	@$(FLOCK) $(SPLDIR)/smm "$(SPLDIR)/smm/smmf-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))"
+	@$(FLOCK) $(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) smm"
+	@$(FLOCK) $(SPLDIR)/smm "./smmf-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
 endif
 
 .PHONY: perf-smm
 ifneq (,$(strip $(FC)))
 perf-smm: $(SPLDIR)/smm/smmf-perf.txt
 $(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
-	@$(FLOCK) $(SPLDIR)/smm "cd $(SPLDIR)/smm; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) smm"
-	@$(FLOCK) $(SPLDIR)/smm "$(SPLDIR)/smm/smmf-perf.sh $@"
+	@$(FLOCK) $(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) smm"
+	@$(FLOCK) $(SPLDIR)/smm "./smmf-perf.sh $(notdir $@)"
 endif
 
 .PHONY: test-nek
@@ -1321,29 +1285,23 @@ $(SPLDIR)/nek/axhm-perf.txt: $(SPLDIR)/nek/axhm-perf.sh lib_hst
 	$(info =======================)
 	$(info Running NEK/AXHM Sample)
 	$(info =======================)
-	@$(FLOCK) $(SPLDIR)/nek "cd $(SPLDIR)/nek; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) axhm"
-	@$(FLOCK) $(SPLDIR)/nek "$(SPLDIR)/nek/axhm-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))"
+	@$(FLOCK) $(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) axhm"
+	@$(FLOCK) $(SPLDIR)/nek "./axhm-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
 $(SPLDIR)/nek/grad-perf.txt: $(SPLDIR)/nek/grad-perf.sh lib_hst
 	$(info =======================)
 	$(info Running NEK/GRAD Sample)
 	$(info =======================)
-	@$(FLOCK) $(SPLDIR)/nek "cd $(SPLDIR)/nek; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) grad"
-	@$(FLOCK) $(SPLDIR)/nek "$(SPLDIR)/nek/grad-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))"
+	@$(FLOCK) $(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) grad"
+	@$(FLOCK) $(SPLDIR)/nek "./grad-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
 $(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
 	$(info =======================)
 	$(info Running NEK/RSTR Sample)
 	$(info =======================)
-	@$(FLOCK) $(SPLDIR)/nek "cd $(SPLDIR)/nek; $(MAKE) --no-print-directory COMPATIBLE=$(COMPATIBLE) THREADS=$(THREADS) \
-		DEPSTATIC=$(STATIC) SYM=$(SYM) DBG=$(DBG) IPO=$(IPO) SSE=$(SSE) AVX=$(AVX) MIC=$(MIC) OFFLOAD=$(OFFLOAD) TRACE=$(TRACE) \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECXXFLAGS=$(ECXXFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) rstr"
-	@$(FLOCK) $(SPLDIR)/nek "$(SPLDIR)/nek/rstr-perf.sh $@ $(shell echo $$(($(TESTSIZE) * -128)))"
+	@$(FLOCK) $(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) rstr"
+	@$(FLOCK) $(SPLDIR)/nek "./rstr-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
 endif
 
-$(DOCDIR)/index.md: $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
+$(DOCDIR)/index.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
 	@sed $(ROOTDIR)/README.md \
 		-e 's/\[!\[..*\](..*)\](..*)//g' \
 		-e 's/\[\[..*\](..*)\]//g' \
@@ -1360,11 +1318,21 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
 		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
 		> $(TMPFILE)
-	@cd $(ROOTDIR)/documentation && iconv -t utf-8 index.md \
-		libxsmm_mm.md libxsmm_dnn.md libxsmm_aux.md \
-		libxsmm_prof.md libxsmm_tune.md libxsmm_be.md \
+	@cd $(ROOTDIR)/documentation && ( \
+		iconv -t utf-8 index.md && echo && \
+		echo "# LIBXSMM Domains" && \
+		iconv -t utf-8 libxsmm_mm.md && echo && \
+		iconv -t utf-8 libxsmm_dnn.md && echo && \
+		iconv -t utf-8 libxsmm_aux.md && echo && \
+		iconv -t utf-8 libxsmm_prof.md && echo && \
+		iconv -t utf-8 libxsmm_tune.md && echo && \
+		iconv -t utf-8 libxsmm_be.md && echo && \
+		echo "# Appendix" && \
+		echo "## Compatibility" && \
+		wget -q -O - https://raw.githubusercontent.com/wiki/hfp/libxsmm/Compatibility.md 2>/dev/null && echo && \
+		echo "## Validation" && \
+		wget -q -O - https://raw.githubusercontent.com/wiki/hfp/libxsmm/Validation.md 2>/dev/null; ) \
 	| sed \
-		-e 's/## Matrix Multiplication$$/# LIBXSMM Domains\n## Matrix Multiplication/' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
 		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
 		-e 's/----*//g' \
@@ -1527,13 +1495,13 @@ endif
 
 .PHONY: clean-all
 clean-all: clean
-	@find $(ROOTDIR) -type f -name Makefile -exec dirname {} \; | xargs -I {} $(FLOCK) {} \
-		"cd {}; $(MAKE) --no-print-directory clean 2> /dev/null || true"
+	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
+		"$(MAKE) --no-print-directory clean 2>/dev/null || true" \;
 
 .PHONY: realclean-all
 realclean-all: realclean
-	@find $(ROOTDIR) -type f -name Makefile -exec dirname {} \; | xargs -I {} $(FLOCK) {} \
-		"cd {}; $(MAKE) --no-print-directory realclean 2> /dev/null || true"
+	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
+		"$(MAKE) --no-print-directory realclean 2>/dev/null || true" \;
 
 # Dummy prefix
 ifneq (,$(strip $(PREFIX)))
@@ -1548,57 +1516,57 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing binaries..."
 	@mkdir -p $(INSTALL_ROOT)/$(POUTDIR) $(INSTALL_ROOT)/$(PBINDIR) $(INSTALL_ROOT)/$(PINCDIR)
-	@cp -v $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmmgen.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmmext.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmmf.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmmf.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmm.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
-	@cp -v $(OUTDIR)/libxsmm.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2> /dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmgen.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmext.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmf.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmmf.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmm.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v $(OUTDIR)/libxsmm.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@if [ -e $(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
-		cp -v $(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
+		$(CP) -v $(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmnoblas.$(SLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
-		cp -v $(OUTDIR)/mic/libxsmmnoblas.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
+		$(CP) -v $(OUTDIR)/mic/libxsmmnoblas.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmext.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
-		cp -v $(OUTDIR)/mic/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
+		$(CP) -v $(OUTDIR)/mic/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmext.$(SLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
-		cp -v $(OUTDIR)/mic/libxsmmext.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
+		$(CP) -v $(OUTDIR)/mic/libxsmmext.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmf.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
-		cp -v $(OUTDIR)/mic/libxsmmf.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
+		$(CP) -v $(OUTDIR)/mic/libxsmmf.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmf.$(SLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
-		cp -v $(OUTDIR)/mic/libxsmmf.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
+		$(CP) -v $(OUTDIR)/mic/libxsmmf.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmm.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
-		cp -v $(OUTDIR)/mic/libxsmm.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
+		$(CP) -v $(OUTDIR)/mic/libxsmm.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmm.$(SLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
-		cp -v $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
+		$(CP) -v $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@echo
 	@echo "LIBXSMM installing interface..."
-	@cp -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR) 2> /dev/null || true
-	@cp -v $(INCDIR)/libxsmm*.h $(INSTALL_ROOT)/$(PINCDIR)
-	@cp -v $(INCDIR)/libxsmm.f $(INSTALL_ROOT)/$(PINCDIR)
+	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR) 2>/dev/null || true
+	@$(CP) -v $(INCDIR)/libxsmm*.h $(INSTALL_ROOT)/$(PINCDIR)
+	@$(CP) -v $(INCDIR)/libxsmm.f $(INSTALL_ROOT)/$(PINCDIR)
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
-	@cp -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
 endif
 
 .PHONY: install
@@ -1607,12 +1575,12 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing documentation..."
 	@mkdir -p $(INSTALL_ROOT)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/$(DOCDIR)/*.pdf $(INSTALL_ROOT)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/$(DOCDIR)/*.md $(INSTALL_ROOT)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/version.txt $(INSTALL_ROOT)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/CODE_OF_CONDUCT.md $(INSTALL_ROOT)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/CONTRIBUTING.md $(INSTALL_ROOT)/$(PDOCDIR)
-	@cp -v $(ROOTDIR)/LICENSE.md $(INSTALL_ROOT)/$(PDOCDIR)
+	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.pdf $(INSTALL_ROOT)/$(PDOCDIR)
+	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.md $(INSTALL_ROOT)/$(PDOCDIR)
+	@$(CP) -v $(ROOTDIR)/version.txt $(INSTALL_ROOT)/$(PDOCDIR)
+	@$(CP) -v $(ROOTDIR)/CODE_OF_CONDUCT.md $(INSTALL_ROOT)/$(PDOCDIR)
+	@$(CP) -v $(ROOTDIR)/CONTRIBUTING.md $(INSTALL_ROOT)/$(PDOCDIR)
+	@$(CP) -v $(ROOTDIR)/LICENSE.md $(INSTALL_ROOT)/$(PDOCDIR)
 endif
 
 .PHONY: install-all
@@ -1620,15 +1588,15 @@ install-all: install samples
 ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing samples..."
-	@cp -v $(addprefix $(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/wrap/,dgemm-blas dgemm-blas.sh dgemm-wrap dgemm-wrap.sh dgemm-test.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/dispatch/,dispatch dispatch.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/nek/,axhm grad rstr *.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,smm smm.sh smm-perf* smmf-perf.sh smm-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,specialized specialized.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,dispatched dispatched.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,inlined inlined.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
-	@cp -v $(addprefix $(SPLDIR)/smm/,blas blas.sh) $(INSTALL_ROOT)/$(PBINDIR) 2> /dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/wrap/,dgemm-blas dgemm-blas.sh dgemm-wrap dgemm-wrap.sh dgemm-test.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/dispatch/,dispatch dispatch.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/nek/,axhm grad rstr *.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/smm/,smm smm.sh smm-perf* smmf-perf.sh smm-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/smm/,specialized specialized.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/smm/,dispatched dispatched.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/smm/,inlined inlined.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(SPLDIR)/smm/,blas blas.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
 endif
 
 .PHONY: install-dev
@@ -1637,7 +1605,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing tests..."
 	@mkdir -p $(INSTALL_ROOT)/$(PTSTDIR)
-	@cp -v $(basename $(wildcard ${TSTDIR}/*.c)) $(INSTALL_ROOT)/$(PTSTDIR) 2> /dev/null || true
+	@$(CP) -v $(basename $(wildcard ${TSTDIR}/*.c)) $(INSTALL_ROOT)/$(PTSTDIR) 2>/dev/null || true
 endif
 
 .PHONY: install-artifacts
@@ -1646,6 +1614,6 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing artifacts..."
 	@mkdir -p $(INSTALL_ROOT)/$(PDOCDIR)/artifacts
-	@cp -v .state $(INSTALL_ROOT)/$(PDOCDIR)/artifacts/make.txt
+	@$(CP) -v .state $(INSTALL_ROOT)/$(PDOCDIR)/artifacts/make.txt
 endif
 

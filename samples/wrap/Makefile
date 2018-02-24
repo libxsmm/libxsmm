@@ -70,7 +70,9 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/autobatch $(OUTDIR)/dgemm-blas $(OUTDIR)/dgemm-wrap
+XFILES := $(OUTDIR)/autobatch \
+  $(OUTDIR)/dgemm-blas $(OUTDIR)/dgemm-wrap \
+  $(NULL) #$(OUTDIR)/dgemv-blas $(OUTDIR)/dgemv-wrap
 
 .PHONY: all
 all: $(XFILES)
@@ -80,17 +82,33 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (0,$(XWRAP))
   ifneq (2,$(XWRAP))
-    WRAP_FLAG = -Wl,--wrap=dgemm_,--wrap=sgemm_
+    WRAP_GEMM = -Wl,--wrap=dgemm_,--wrap=sgemm_
+    WRAP_GEMV = -Wl,--wrap=dgemv_,--wrap=sgemv_
   else
-    WRAP_FLAG = -Wl,--wrap=dgemm_
+    WRAP_GEMM = -Wl,--wrap=dgemm_
+    WRAP_GEMV = -Wl,--wrap=dgemv_
   endif
-  DFLAGS = -DWRAP
+  DFLAGS += -DWRAP
 endif
 
 $(OUTDIR)/autobatch: $(BLDDIR)/autobatch-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
 
+ifeq (0,$(NOBLAS))
 $(OUTDIR)/dgemm-blas: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make
+	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+ifeq (Darwin,$(UNAME))
+ifneq (0,$(XWRAP))
+	$(info ================================================================================)
+	$(info The static link-time wrapper mechanism is not supported under OS X!)
+	$(info ================================================================================)
+endif
+endif
+else
+.PHONY: $(OUTDIR)/dgemm-blas
+endif
+
+$(OUTDIR)/dgemv-blas: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 ifeq (Darwin,$(UNAME))
 ifneq (0,$(XWRAP))
@@ -103,15 +121,29 @@ endif
 ifneq (0,$(XWRAP))
 $(OUTDIR)/dgemm-wrap: $(BLDDIR)/dgemm-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
 ifneq (0,$(OMP))
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
 else ifneq (,$(strip $(OMPLIB)))
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG) \
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM) \
 		$(XLIB_BEGIN) $(OMPLIB) $(XLIB_END)
 else # should not happen
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_FLAG)
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMM)
 endif
 else
 .PHONY: $(OUTDIR)/dgemm-wrap
+endif
+
+ifneq (0,$(XWRAP))
+$(OUTDIR)/dgemv-wrap: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
+ifneq (0,$(OMP))
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV)
+else ifneq (,$(strip $(OMPLIB)))
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV) \
+		$(XLIB_BEGIN) $(OMPLIB) $(XLIB_END)
+else # should not happen
+	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) $(WRAP_GEMV)
+endif
+else
+.PHONY: $(OUTDIR)/dgemv-wrap
 endif
 
 .PHONY: test

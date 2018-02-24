@@ -1,10 +1,12 @@
-barrier/barrier
+sync/sync_barrier
+sync/sync_lock
 bgemm/bgemm
 dispatch/dispatch
 dispatch/dispatchf
 dnn/layer_example_*
-edge/asparse_soa_*
-edge/bsparse_soa_*
+edge/asparse_srsoa_*
+edge/bsparse_srsoa_*
+edge/bsparse_scsoa_*
 edge/edge_vol_int
 eigen/eigen_smm
 eigen/eigen_tensor
@@ -23,6 +25,7 @@ specfem/specfem
 spmdm/spmdm
 wrap/dgemm-blas
 wrap/dgemm-wrap
+wrap/autobatch
 xgemm/xgemm
 xgemmkernel/bwgemmkernel
 xgemmkernel/sdgemmkernel

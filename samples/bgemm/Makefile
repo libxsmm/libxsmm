@@ -22,7 +22,7 @@ OUTDIR = .
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
-DFLAGS = $(NULL)
+DFLAGS = -DLIBXSMM_GEMM_CONST
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
 BLAS = 2
@@ -64,11 +64,7 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(EXTDEP) $(LIBDEP)
-ifneq (0,$(BLAS))
-	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(EXTLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-else
-	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(EXTLIB) $(call abslib, $(LIBNAME)noblas.$(LIBEXT)) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-endif
+	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

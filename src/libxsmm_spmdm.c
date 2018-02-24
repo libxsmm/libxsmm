@@ -29,7 +29,6 @@
 /* Nadathur Satish, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_spmdm.h>
-#include <libxsmm_intrinsics_x86.h>
 #include <libxsmm.h>
 #include "libxsmm_main.h"
 
@@ -58,18 +57,18 @@
 
 
 /* function pointer for the CPUID-dispatched implementation */
-LIBXSMM_API_VARIABLE void (*internal_spmdm_createSparseSlice_fp32_thread)(const libxsmm_spmdm_handle*, char,
-  const float*, libxsmm_CSR_sparseslice*, int, int, int);
-LIBXSMM_API_VARIABLE void (*internal_spmdm_createSparseSlice_bfloat16_thread)(const libxsmm_spmdm_handle*, char,
-  const uint16_t*, libxsmm_CSR_sparseslice*, int, int, int);
-LIBXSMM_API_VARIABLE void (*internal_spmdm_compute_fp32_thread)(const libxsmm_spmdm_handle*, char, char,
-  const float*, libxsmm_CSR_sparseslice*, const float*, char, const float*, float*, int, int, int);
-LIBXSMM_API_VARIABLE void (*internal_spmdm_compute_bfloat16_thread)(const libxsmm_spmdm_handle*, char, char,
-  const uint16_t*, libxsmm_CSR_sparseslice*, const uint16_t*, char, const uint16_t*, float*, int, int, int);
+LIBXSMM_API_VARIABLE(void (*internal_spmdm_createSparseSlice_fp32_thread)(const libxsmm_spmdm_handle*, char,
+  const float*, libxsmm_CSR_sparseslice*, int, int, int));
+LIBXSMM_API_VARIABLE(void (*internal_spmdm_createSparseSlice_bfloat16_thread)(const libxsmm_spmdm_handle*, char,
+  const uint16_t*, libxsmm_CSR_sparseslice*, int, int, int));
+LIBXSMM_API_VARIABLE(void (*internal_spmdm_compute_fp32_thread)(const libxsmm_spmdm_handle*, char, char,
+  const float*, libxsmm_CSR_sparseslice*, const float*, char, const float*, float*, int, int, int));
+LIBXSMM_API_VARIABLE(void (*internal_spmdm_compute_bfloat16_thread)(const libxsmm_spmdm_handle*, char, char,
+  const uint16_t*, libxsmm_CSR_sparseslice*, const uint16_t*, char, const uint16_t*, float*, int, int, int));
 
 #if defined(LIBXSMM_SPMDM_AVX)
-LIBXSMM_API_VARIABLE __m256i* internal_spmdm_shufmasks_32;
-LIBXSMM_API_VARIABLE __m256i* internal_spmdm_shufmasks_16;
+LIBXSMM_API_VARIABLE(__m256i* internal_spmdm_shufmasks_32);
+LIBXSMM_API_VARIABLE(__m256i* internal_spmdm_shufmasks_16);
 #endif
 
 
@@ -544,9 +543,7 @@ void libxsmm_spmdm_compute_bfloat16_thread(
 
 LIBXSMM_API_INLINE void internal_spmdm_init_check(int archid)
 {
-  if (archid < libxsmm_target_archid
-    && 0 != libxsmm_verbosity) /* library code is expected to be mute */
-  {
+  if (archid < libxsmm_target_archid && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
       fprintf(stderr, "LIBXSMM ERROR: missed to enter \"%s\" code path due to the compiler used!\n", libxsmm_get_target_arch());

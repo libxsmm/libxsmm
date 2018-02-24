@@ -33,7 +33,7 @@
 LIBXSMM_VLA_DECL(2, libxsmm_bgemm_lock, locks, handle->locks, handle->nb);
 /* TODO: pad thread-local buffer members by the size of a cache-line in order to avoid "Ping-Pong" */
 LIBXSMM_VLA_DECL(2, LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C, l_out, (LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C*)(((char*)handle->buffer) +
-  tid * LIBXSMM_UP2(handle->bm * handle->bn * handle->typesize, LIBXSMM_CACHELINE)), handle->bm);
+  tid * LIBXSMM_UP2(handle->bm * handle->bn * sizeof(LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C), LIBXSMM_CACHELINE)), handle->bm);
 LIBXSMM_VLA_DECL(4, const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB, real_a, (const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB*)a, handle->kb, handle->bk, handle->bm);
 LIBXSMM_VLA_DECL(4, const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB, real_b, (const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB*)b, handle->kb, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C, real_c, (LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C*)c, handle->mb, handle->bn, handle->bm);
@@ -90,7 +90,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
         else {
           if (o_i2 != i2 || o_j2 != j2) {
             libxsmm_bgemm_lock *const lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
-            LIBXSMM_ATOMIC_SYNC_SET(lock->instance);
+            LIBXSMM_ATOMIC_ACQUIRE(&lock->state, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
             for (ki = 0; ki < handle->bn; ++ki) {
               LIBXSMM_PRAGMA_SIMD
               for (kj = 0; kj < handle->bm; ++kj) {
@@ -98,7 +98,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
                 LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm);
               }
             }
-            LIBXSMM_ATOMIC_SYNC_UNSET(lock->instance);
+            LIBXSMM_ATOMIC_RELEASE(&lock->state, LIBXSMM_ATOMIC_RELAXED);
             for (ki = 0; ki < handle->bn; ++ki) {
               LIBXSMM_PRAGMA_SIMD
               for (kj = 0; kj < handle->bm; ++kj) {
@@ -139,7 +139,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
           o_j2 = j2;
 
           lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
-          LIBXSMM_ATOMIC_SYNC_SET(lock->instance);
+          LIBXSMM_ATOMIC_ACQUIRE(&lock->state, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
           for (ki = 0; ki < handle->bn; ++ki) {
             LIBXSMM_PRAGMA_SIMD
             for (kj = 0; kj < handle->bm; ++kj) {
@@ -147,7 +147,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
               LIBXSMM_VLA_ACCESS(2, l_out, ki, kj, handle->bm);
             }
           }
-          LIBXSMM_ATOMIC_SYNC_UNSET(lock->instance);
+          LIBXSMM_ATOMIC_RELEASE(&lock->state, LIBXSMM_ATOMIC_RELAXED);
           for (ki = 0; ki < handle->bn; ++ki) {
             LIBXSMM_PRAGMA_SIMD
             for (kj = 0; kj < handle->bm; ++kj) {

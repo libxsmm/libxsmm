@@ -31,13 +31,14 @@
 #include "libxsmm_trace.h"
 #include <libxsmm_sync.h>
 
-#if !defined(LIBXSMM_TRACE_DLINFO)
-/*# define LIBXSMM_TRACE_DLINFO*/
+#if !defined(LIBXSMM_TRACE_DLINFO) && 0
+# define LIBXSMM_TRACE_DLINFO
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <inttypes.h>
 #include <assert.h>
 #include <stdlib.h>
 # if (!defined(_BSD_SOURCE) || 0 == _BSD_SOURCE) && (!defined(_SVID_SOURCE) || 0 == _SVID_SOURCE) && \
@@ -106,12 +107,12 @@ LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
-LIBXSMM_API_VARIABLE volatile LONG internal_trace_initialized /*= -1*/;
+LIBXSMM_API_VARIABLE(volatile LONG internal_trace_initialized);
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
-LIBXSMM_API_VARIABLE volatile int internal_trace_initialized /*= -1*/;
+LIBXSMM_API_VARIABLE(volatile int internal_trace_initialized);
 #if !defined(LIBXSMM_NO_SYNC)
-LIBXSMM_API_VARIABLE pthread_key_t internal_trace_key /*= 0*/;
+LIBXSMM_API_VARIABLE(pthread_key_t internal_trace_key);
 #endif
 LIBXSMM_API void internal_delete(void* value);
 LIBXSMM_API_DEFINITION void internal_delete(void* value)
@@ -142,9 +143,9 @@ LIBXSMM_API_DEFINITION void internal_delete(void* value)
 #endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
 
 
-LIBXSMM_API_VARIABLE int internal_trace_mindepth;
-LIBXSMM_API_VARIABLE int internal_trace_threadid;
-LIBXSMM_API_VARIABLE int internal_trace_maxnsyms;
+LIBXSMM_API_VARIABLE(int internal_trace_mindepth);
+LIBXSMM_API_VARIABLE(int internal_trace_threadid);
+LIBXSMM_API_VARIABLE(int internal_trace_maxnsyms);
 
 
 LIBXSMM_API
@@ -189,16 +190,14 @@ LIBXSMM_API_DEFINITION int libxsmm_trace_finalize(void)
 {
   int result;
 #if defined(LIBXSMM_TRACE)
-  if (0 == internal_trace_initialized) {
+  result = EXIT_SUCCESS;
+  if (0 <= internal_trace_initialized) {
     internal_trace_initialized = -1; /* disable */
 # if defined(_WIN32) || defined(__CYGWIN__)
     result = (FALSE != SymCleanup(GetCurrentProcess()) ? EXIT_SUCCESS : GetLastError());
 # elif !defined(LIBXSMM_NO_SYNC)
     result = pthread_key_delete(internal_trace_key);
 # endif
-  }
-  else {
-    result = EXIT_SUCCESS;
   }
 #else
   result = EXIT_FAILURE;
@@ -298,7 +297,11 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
               fname = value->Name;
             }
             else if (0 > tid) { /* fall-back allowing unresolved symbol names */
-              sprintf(buffer, "0x%llx", (unsigned long long)*symbol);
+#   if defined(__MINGW32__)
+              sprintf(buffer, "%p", *symbol);
+#   else
+              sprintf(buffer, "0x%" PRIxPTR, (uintptr_t)*symbol);
+#   endif
               fname = buffer;
             }
             if (depth) *depth = i - min_n;
@@ -307,7 +310,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 # else
 #   if defined(LIBXSMM_NO_SYNC)
           static char raw_c;
-          char *const raw_value = &raw_c;
+          char */*const*/ raw_value = &raw_c; /* const: avoid warning (below / constant control-flow) */
 #   else
           char *const raw_value = (char*)pthread_getspecific(internal_trace_key);
 #   endif
@@ -468,7 +471,7 @@ LIBXSMM_API_INTERN void __cyg_profile_func_enter(void* this_fn, void* call_site)
     /* inherit global settings from libxsmm_trace_init */
     NULL, NULL, NULL);
 # else
-  if (0 == internal_trace_initialized && 0 != internal_trace_maxnsyms) {
+  if (0 <= internal_trace_initialized && 0 != internal_trace_maxnsyms) {
 #   if 1
     Dl_info info;
 #   else

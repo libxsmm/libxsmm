@@ -32,8 +32,8 @@
 /** This sample uses LIBXSMM's header-only implementation. */
 #include <libxsmm_source.h>
 
-#if !defined(__EIGEN)
-/*# define __EIGEN*/
+#if !defined(__EIGEN) && 0
+# define __EIGEN
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -185,8 +185,8 @@ int main(int argc, char* argv[])
             const T *const ai = a + i * asize, *const bi = b + i * bsize;
             T *const ci = c + i * csize;
             smm_xsmm_specialized<T>(xmm, ai, bi, ci,
-              LIBXSMM_PREFETCH_A(ai + asize), LIBXSMM_PREFETCH_B(bi + bsize),
-              LIBXSMM_PREFETCH_C(ci + csize));
+              LIBXSMM_GEMM_PREFETCH_A(ai + asize), LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
+              LIBXSMM_GEMM_PREFETCH_C(ci + csize));
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -235,8 +235,8 @@ int main(int argc, char* argv[])
             const T *const ai = a + i * asize;
             T *const ci = c + i * csize;
             smm_xsmm_specialized<T>(xmm, ai, b, ci,
-              LIBXSMM_PREFETCH_A(ai + asize), LIBXSMM_PREFETCH_B(b),
-              LIBXSMM_PREFETCH_C(ci + csize));
+              LIBXSMM_GEMM_PREFETCH_A(ai + asize), LIBXSMM_GEMM_PREFETCH_B(b),
+              LIBXSMM_GEMM_PREFETCH_C(ci + csize));
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -285,8 +285,8 @@ int main(int argc, char* argv[])
             const T *const bi = b + i * bsize;
             T *const ci = c + i * csize;
             smm_xsmm_specialized<T>(xmm, a, bi, ci,
-              LIBXSMM_PREFETCH_A(a), LIBXSMM_PREFETCH_B(bi + bsize),
-              LIBXSMM_PREFETCH_C(ci + csize));
+              LIBXSMM_GEMM_PREFETCH_A(a), LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
+              LIBXSMM_GEMM_PREFETCH_C(ci + csize));
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -339,8 +339,8 @@ int main(int argc, char* argv[])
 #endif
             const T *const ai = a + i * asize, *const bi = b + i * bsize;
             smm_xsmm_specialized<T>(xmm, ai, bi, c + j,
-              LIBXSMM_PREFETCH_A(ai + asize), LIBXSMM_PREFETCH_B(bi + bsize),
-              LIBXSMM_PREFETCH_C(c + j));
+              LIBXSMM_GEMM_PREFETCH_A(ai + asize), LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
+              LIBXSMM_GEMM_PREFETCH_C(c + j));
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -396,8 +396,8 @@ int main(int argc, char* argv[])
             const libxsmm_blasint j = 0;
 #endif
             smm_xsmm_specialized<T>(xmm, a, b, c + j,
-              LIBXSMM_PREFETCH_A(a), LIBXSMM_PREFETCH_B(b),
-              LIBXSMM_PREFETCH_C(c + j));
+              LIBXSMM_GEMM_PREFETCH_A(a), LIBXSMM_GEMM_PREFETCH_B(b),
+              LIBXSMM_GEMM_PREFETCH_C(c + j));
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());

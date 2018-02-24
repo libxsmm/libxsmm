@@ -30,12 +30,12 @@
 ******************************************************************************/
 #include "libxsmm_trans.h"
 #include "libxsmm_main.h"
-#include <libxsmm_cpuid.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -54,7 +54,7 @@
 LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
 {
   /* setup tile sizes according to CPUID or environment (LIBXSMM_TRANS_M, LIBXSMM_TRANS_N) */
-  const unsigned int tile_configs[/*configs*/][2/*DP/SP*/][2/*TILE_M,TILE_N*/][8/*size-range*/] = {
+  static unsigned int tile_configs[/*configs*/][2/*DP/SP*/][2/*TILE_M,TILE_N*/][8/*size-range*/] = {
     /* generic (hsw) */
     { { { 5, 5, 72, 135, 115, 117, 113, 123 }, { 63,  80,  20,  12, 16, 14, 16,  32 } },   /* DP */
       { { 7, 6,  7,  32, 152, 138, 145, 109 }, { 73, 147, 141, 157, 32, 32, 32,  44 } } }, /* SP */
@@ -65,36 +65,31 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
     { { { 2, 2,  1,   2,  46,  17,  20,  76 }, { 20,  16,  42,   9,  3, 56, 36, 158 } },   /* DP */
       { { 5, 8,  8,   9,  20,  17,  20,  25 }, { 25,  60,  78,  58, 52, 56, 36,  31 } } }  /* SP */
   };
-  const char *const env_jit = getenv("LIBXSMM_TRANS_JIT");
-  const char *const env_m = getenv("LIBXSMM_TRANS_M"), *const env_n = getenv("LIBXSMM_TRANS_N");
-  const int trans_m = ((0 == env_m || 0 == *env_m) ? -1 : atoi(env_m));
-  const int trans_n = ((0 == env_n || 0 == *env_n) ? -1 : atoi(env_n));
-  int config, i;
-
-  if (LIBXSMM_X86_AVX512_CORE <= archid) {
-    config = 2;
-  }
-  else if (LIBXSMM_X86_AVX512_MIC <= archid && LIBXSMM_X86_AVX512_CORE > archid) {
-    config = 1;
-  }
-  else {
-    config = 0;
-  }
+  { /* check if JIT-code generation is permitted */
 #if !defined(__clang__) || defined(__INTEL_COMPILER) /* TODO: investigate Clang specific issue */
-  /* determine if JIT-kernels are used (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
-  libxsmm_trans_jit = ((0 == env_jit || 0 == *env_jit) ? (LIBXSMM_TRANS_JIT) : atoi(env_jit));
-#else
-  LIBXSMM_UNUSED(env_jit);
+    const char *const env_jit = getenv("LIBXSMM_TRANS_JIT");
+    /* determine if JIT-kernels are used (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
+    libxsmm_trans_jit = ((0 == env_jit || 0 == *env_jit) ? (LIBXSMM_TRANS_JIT) : atoi(env_jit));
 #endif
-  for (i = 0; i < 8; ++i) {
-    /* environment-defined tile sizes apply for DP and SP */
-    libxsmm_trans_tile[0/*DP*/][0/*M*/][i] = libxsmm_trans_tile[1/*SP*/][0/*M*/][i] = (unsigned int)LIBXSMM_MAX(trans_m, 0);
-    libxsmm_trans_tile[0/*DP*/][1/*N*/][i] = libxsmm_trans_tile[1/*SP*/][1/*N*/][i] = (unsigned int)LIBXSMM_MAX(trans_n, 0);
-    /* load predefined configuration if tile size is not setup by the environment */
-    if (0 >= libxsmm_trans_tile[0/*DP*/][0/*M*/][i]) libxsmm_trans_tile[0][0][i] = tile_configs[config][0][0][i];
-    if (0 >= libxsmm_trans_tile[0/*DP*/][1/*N*/][i]) libxsmm_trans_tile[0][1][i] = tile_configs[config][0][1][i];
-    if (0 >= libxsmm_trans_tile[1/*SP*/][0/*M*/][i]) libxsmm_trans_tile[1][0][i] = tile_configs[config][1][0][i];
-    if (0 >= libxsmm_trans_tile[1/*SP*/][1/*N*/][i]) libxsmm_trans_tile[1][1][i] = tile_configs[config][1][1][i];
+  }
+  { /* load/adjust tile sizes */
+    const char *const env_m = getenv("LIBXSMM_TRANS_M"), *const env_n = getenv("LIBXSMM_TRANS_N");
+    const int m = ((0 == env_m || 0 == *env_m) ? 0 : atoi(env_m));
+    const int n = ((0 == env_n || 0 == *env_n) ? 0 : atoi(env_n));
+    int i;
+    if (LIBXSMM_X86_AVX512_CORE <= archid) {
+      libxsmm_trans_tile = tile_configs[2];
+    }
+    else if (LIBXSMM_X86_AVX512_MIC <= archid && LIBXSMM_X86_AVX512_CORE > archid) {
+      libxsmm_trans_tile = tile_configs[1];
+    }
+    else {
+      libxsmm_trans_tile = tile_configs[0];
+    }
+    for (i = 0; i < 8; ++i) {
+      if (0 < m) libxsmm_trans_tile[0/*DP*/][0/*M*/][i] = libxsmm_trans_tile[1/*SP*/][0/*M*/][i] = m;
+      if (0 < n) libxsmm_trans_tile[0/*DP*/][1/*N*/][i] = libxsmm_trans_tile[1/*SP*/][1/*N*/][i] = n;
+    }
   }
 }
 
@@ -110,66 +105,63 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_thread(void* out, const void* in, uns
 {
   int result = EXIT_SUCCESS;
   static int error_once = 0;
-
   assert(typesize <= 255);
   if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && m <= ldo &&
     /* use (signed) integer types, but check sanity of input */
     0 <= tid && tid < nthreads)
   {
     const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
-    libxsmm_xmatcopyfunction xmatcopy = 0;
-    LIBXSMM_INIT
+    unsigned int tm = (unsigned int)m, tn = (unsigned int)n;
+    const int iprefetch = (0 == prefetch ? 0 : *prefetch);
+    libxsmm_xmcopyfunction xmatcopy = 0;
+    LIBXSMM_INIT /* before leading tile sizes */
     if (1 < nthreads) {
       libxsmm_blasint m0 = 0, n0 = 0, m1 = m, n1 = n;
-      libxsmm_matcopy_descriptor descriptor = { 0 };
-      const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1U * m * n) >> 10, 7);
+      const unsigned int size = tm * tn, size2 = LIBXSMM_SQRT2(size);
+      const unsigned int index = LIBXSMM_MIN(size2 >> 10, 7);
+      const unsigned int tindex = (4 < typesize ? 0 : 1);
+      const libxsmm_mcopy_descriptor_type* desc;
+      libxsmm_descriptor_blob blob;
       int mtasks;
-      descriptor.m = LIBXSMM_MIN(libxsmm_trans_tile[tindex][0/*M*/][index], (unsigned int)m);
-      descriptor.n = LIBXSMM_MIN(libxsmm_trans_tile[tindex][1/*N*/][index], (unsigned int)n);
-      if (0 != (1 & libxsmm_trans_jit)) { /* JIT'ted matcopy permitted */
-        descriptor.prefetch = (unsigned char)((0 == prefetch || 0 == *prefetch) ? 0 : 1);
-        descriptor.flags = (unsigned char)(0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
-        descriptor.typesize = (unsigned char)typesize; descriptor.unroll_level = 2;
-        descriptor.ldi = (unsigned int)ldi; descriptor.ldo = (unsigned int)ldo;
-        xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
-      }
-      mtasks = ((1 < nthreads) ? ((int)((m + descriptor.m - 1) / descriptor.m)) : 1);
+      tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tindex][0/*M*/][index]);
+      tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tindex][1/*N*/][index]);
+      /* libxsmm_trans_jit: JIT'ted matrix-copy permitted? */
+      desc = (0 != (1 & libxsmm_trans_jit) ? libxsmm_mcopy_descriptor_init(&blob,
+        typesize, tm, tn, uldo, uldi, 0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE,
+        iprefetch, NULL/*default unroll*/) : 0);
+      mtasks = ((1 < nthreads) ? ((int)((m + tm - 1) / tm)) : 1);
+      xmatcopy = libxsmm_xmcopydispatch(desc);
       if (1 < mtasks && nthreads <= mtasks) { /* only parallelized over M */
-        const int mc = (mtasks + nthreads - 1) / nthreads * descriptor.m;
+        const int mc = (mtasks + nthreads - 1) / nthreads * tm;
         m0 = tid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
       }
       else if (1 < nthreads) {
         const int ntasks = nthreads / mtasks, mtid = tid / ntasks, ntid = tid - mtid * ntasks;
-        const libxsmm_blasint nc = (((n + ntasks - 1) / ntasks + descriptor.n - 1) / descriptor.n) * descriptor.n;
-        const libxsmm_blasint mc = descriptor.m;
+        const libxsmm_blasint nc = (((n + ntasks - 1) / ntasks + tn - 1) / tn) * tn;
+        const libxsmm_blasint mc = tm;
         m0 = mtid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
         n0 = ntid * nc; n1 = LIBXSMM_MIN(n0 + nc, n);
       }
-      assert(((tid + 1) != nthreads) || (m1 == m && n1 == n));
       if (0 != prefetch && 0 != *prefetch) { /* prefetch */
         LIBXSMM_XCOPY(
           LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
           LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, xmatcopy, out, in,
-          typesize, uldi, uldo, descriptor.m, descriptor.n, m0, m1, n0, n1);
+          typesize, uldi, uldo, tm, tn, m0, m1, n0, n1);
       }
       else { /* no prefetch */
         LIBXSMM_XCOPY(
           LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
           LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, xmatcopy, out, in,
-          typesize, uldi, uldo, descriptor.m, descriptor.n, m0, m1, n0, n1);
+          typesize, uldi, uldo, tm, tn, m0, m1, n0, n1);
       }
     }
     else {
+      libxsmm_descriptor_blob blob;
+      /* libxsmm_trans_jit: JIT'ted matrix-copy permitted? */
+      const libxsmm_mcopy_descriptor_type *const desc = (0 != (1 & libxsmm_trans_jit) ? libxsmm_mcopy_descriptor_init(&blob,
+        typesize, tm, tn, uldo, uldi, 0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/) : 0);
+      xmatcopy = libxsmm_xmcopydispatch(desc);
       assert(0 == tid && 1 == nthreads);
-      if (0 != (1 & libxsmm_trans_jit)) { /* JIT'ted matcopy permitted */
-        libxsmm_matcopy_descriptor descriptor = { 0 };
-        descriptor.prefetch = (unsigned char)((0 == prefetch || 0 == *prefetch) ? 0 : 1);
-        descriptor.flags = (unsigned char)(0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE);
-        descriptor.ldi = (unsigned int)ldi; descriptor.ldo = (unsigned int)ldo; descriptor.unroll_level = 2;
-        descriptor.typesize = (unsigned char)typesize;
-        descriptor.m = (unsigned int)m; descriptor.n = (unsigned int)n;
-        xmatcopy = libxsmm_xmatcopydispatch(&descriptor);
-      }
       if (0 != xmatcopy) { /* JIT-kernel available */
         if (0 != prefetch && 0 != *prefetch) { /* prefetch */
           LIBXSMM_MCOPY_CALL(xmatcopy, typesize, in, &uldi, out, &uldo);
@@ -179,9 +171,11 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_thread(void* out, const void* in, uns
         }
       }
       else { /* no JIT */
-        const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(1U * m * n) >> 10, 7);
-        const unsigned int tm = LIBXSMM_MIN(libxsmm_trans_tile[tindex][0/*M*/][index], (unsigned int)m);
-        const unsigned int tn = LIBXSMM_MIN(libxsmm_trans_tile[tindex][1/*N*/][index], (unsigned int)n);
+        const unsigned int size = tm * tn, size2 = LIBXSMM_SQRT2(size);
+        const unsigned int index = LIBXSMM_MIN(size2 >> 10, 7);
+        const unsigned int tindex = (4 < typesize ? 0 : 1);
+        tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tindex][0/*M*/][index]);
+        tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tindex][1/*N*/][index]);
         assert(0 == xmatcopy);
         LIBXSMM_XCOPY(
           LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
@@ -216,7 +210,6 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_thread(void* out, const void* in, uns
     }
     result = EXIT_FAILURE;
   }
-
   return result;
 }
 
@@ -235,58 +228,55 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_thread(void* out, const void* in, unsi
 {
   int result = EXIT_SUCCESS;
   static int error_once = 0;
-
   assert(typesize <= 255);
   if (0 != out && 0 != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo &&
     /* use (signed) integer types, but check sanity of input */
     0 <= tid && tid < nthreads)
   {
-    LIBXSMM_INIT
+    LIBXSMM_INIT /* before leading tile sizes */
     if (out != in) {
-      libxsmm_xtransfunction xtrans = 0;
-      libxsmm_transpose_descriptor descriptor = { 0 };
       const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
-      const unsigned int size = (unsigned int)(1U * m * n);
-      if ((LIBXSMM_TRANS_THRESHOLD) < size) { /* tiled transpose */
-        const int tindex = (4 < typesize ? 0 : 1), index = LIBXSMM_MIN(LIBXSMM_SQRT2(size) >> 10, 7);
+      unsigned int tm = (unsigned int)m, tn = (unsigned int)n;
+      libxsmm_descriptor_blob blob;
+      /* libxsmm_trans_jit: JIT'ted transpose permitted? */
+      libxsmm_trans_descriptor_type* desc = (0 != (2 & libxsmm_trans_jit)
+        ? libxsmm_trans_descriptor_init(&blob, typesize, tm, tn, uldo) : 0);
+      libxsmm_xtransfunction xtrans = 0;
+      if (0 == desc) { /* tiled transpose */
+        const unsigned int size = tm * tn, size2 = LIBXSMM_SQRT2(size);
+        const unsigned int index = LIBXSMM_MIN(size2 >> 10, 7);
+        const unsigned int tindex = (4 < typesize ? 0 : 1);
         libxsmm_blasint m0 = 0, n0 = 0, m1 = m, n1 = n;
         int mtasks;
-        descriptor.m = LIBXSMM_MIN(libxsmm_trans_tile[tindex][0/*M*/][index], (unsigned int)m);
-        descriptor.n = LIBXSMM_MIN(libxsmm_trans_tile[tindex][1/*N*/][index], (unsigned int)n);
-        if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose permitted? */
-          descriptor.typesize = (unsigned char)typesize; descriptor.ldo = uldo;
-          /* limit the amount of (unrolled) code by limiting the shape of the kernel */
-          if ((LIBXSMM_MAX_M) < descriptor.m) descriptor.m = LIBXSMM_MAX_M;
-          if ((LIBXSMM_MAX_N) < descriptor.n) descriptor.n = LIBXSMM_MAX_N;
-          xtrans = libxsmm_xtransdispatch(&descriptor);
+        tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tindex][0/*M*/][index]);
+        tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tindex][1/*N*/][index]);
+        /* libxsmm_trans_jit: JIT'ted transpose permitted? */
+        desc = (0 != (2 & libxsmm_trans_jit) ? libxsmm_trans_descriptor_init(&blob, typesize, tm, tn, uldo) : 0);
+        if (0 != desc) { /* limit the amount of (unrolled) code with smaller kernel/tiles */
+          desc->m = LIBXSMM_MIN(tm, LIBXSMM_MAX_M); desc->n = LIBXSMM_MIN(tn, LIBXSMM_MAX_N);
+          if (0 != (xtrans = libxsmm_xtransdispatch(desc))) {
+            tm = desc->m; tn = desc->n;
+          }
         }
-        mtasks = ((1 < nthreads) ? ((int)((m + descriptor.m - 1) / descriptor.m)) : 1);
+        mtasks = ((1 < nthreads) ? ((int)((m + tm - 1) / tm)) : 1);
         if (1 < mtasks && nthreads <= mtasks) { /* only parallelized over M */
-          const int mc = (mtasks + nthreads - 1) / nthreads * descriptor.m;
+          const int mc = (mtasks + nthreads - 1) / nthreads * tm;
           m0 = tid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
         }
         else if (1 < nthreads) {
           const int ntasks = nthreads / mtasks, mtid = tid / ntasks, ntid = tid - mtid * ntasks;
-          const libxsmm_blasint nc = (((n + ntasks - 1) / ntasks + descriptor.n - 1) / descriptor.n) * descriptor.n;
-          const libxsmm_blasint mc = descriptor.m;
+          const libxsmm_blasint nc = (((n + ntasks - 1) / ntasks + tn - 1) / tn) * tn;
+          const libxsmm_blasint mc = tm;
           m0 = mtid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
           n0 = ntid * nc; n1 = LIBXSMM_MIN(n0 + nc, n);
         }
-        assert(((tid + 1) != nthreads) || (m1 == m && n1 == n));
         LIBXSMM_XCOPY(
           LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
           LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans, out, in,
-          typesize, uldi, uldo, descriptor.m, descriptor.n, m0, m1, n0, n1);
+          typesize, uldi, uldo, tm, tn, m0, m1, n0, n1);
       }
       else { /* no tiling */
-        if (0 != (2 & libxsmm_trans_jit)) { /* JIT'ted transpose permitted? */
-          descriptor.typesize = (unsigned char)typesize;
-          descriptor.ldo = (unsigned int)ldo;
-          descriptor.m = (unsigned int)m;
-          descriptor.n = (unsigned int)n;
-          xtrans = libxsmm_xtransdispatch(&descriptor);
-        }
-        if (0 != xtrans) { /* JIT'ted kernel available */
+        if (0 != (xtrans = libxsmm_xtransdispatch(desc))) { /* JIT'ted kernel available */
           LIBXSMM_TCOPY_CALL(xtrans, typesize, in, &uldi, out, &uldo);
         }
         else { /* JIT not available */
@@ -332,7 +322,6 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_thread(void* out, const void* in, unsi
     }
     result = EXIT_FAILURE;
   }
-
   return result;
 }
 
@@ -351,7 +340,7 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
   static int error_once = 0;
   if (0 != inout) {
     LIBXSMM_INIT
-    if (m == n) { /* some fallback; still warned as "not implemented" */
+    if (m == n) { /* some fall-back; still warned as "not implemented" */
       libxsmm_blasint i, j;
       for (i = 0; i < n; ++i) {
         for (j = 0; j < i; ++j) {
@@ -389,7 +378,6 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
     }
     result = EXIT_FAILURE;
   }
-
   return result;
 }
 

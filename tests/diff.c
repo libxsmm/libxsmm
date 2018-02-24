@@ -44,13 +44,13 @@ int main(void)
 {
   const int cpuid_archid = libxsmm_cpuid();
   const int m = 64, n = 239, k = 64, lda = 64, ldb = 240, ldc = 240;
-  libxsmm_gemm_descriptor descs[8], desc_a, desc_b;
-  unsigned int result = EXIT_SUCCESS;
+  libxsmm_gemm_descriptor_type descs[8], desc_a, desc_b;
+  int result = EXIT_SUCCESS;
 
   LIBXSMM_GEMM_DESCRIPTOR(desc_a, LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_GEMM_FLAGS('N', 'N'),
-    m, n, k, lda, ldb, ldc, 1, 0.0, LIBXSMM_PREFETCH_BL2_VIA_C);
+    m, n, k, lda, ldb, ldc, 1, 0.0, LIBXSMM_GEMM_PREFETCH_BL2_VIA_C);
   LIBXSMM_GEMM_DESCRIPTOR(desc_b, LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_GEMM_FLAGS('N', 'T'),
-    m, n, k, lda, ldb, ldc, 1.0, 0, LIBXSMM_PREFETCH_BL2_VIA_C);
+    m, n, k, lda, ldb, ldc, 1.0, 0, LIBXSMM_GEMM_PREFETCH_BL2_VIA_C);
 
   descs[0] = desc_b; descs[1] = desc_a;
   descs[2] = desc_a; descs[3] = desc_a;
@@ -61,104 +61,104 @@ int main(void)
    */
   if (0 == libxsmm_gemm_diff_sw(&desc_a, &desc_b)) {
 #if defined(_DEBUG)
-    fprintf(stderr, "using generic code path\n");
+    fprintf(stderr, "with generic code path\n");
 #endif
     result = 1;
   }
   else if (0 == libxsmm_gemm_diff_sw(&desc_b, &desc_a)) {
 #if defined(_DEBUG)
-    fprintf(stderr, "using generic code path\n");
+    fprintf(stderr, "with generic code path\n");
 #endif
     result = 2;
   }
   else if (0 != libxsmm_gemm_diff_sw(&desc_a, &desc_a)) {
 #if defined(_DEBUG)
-    fprintf(stderr, "using generic code path\n");
+    fprintf(stderr, "with generic code path\n");
 #endif
     result = 3;
   }
   else if (0 != libxsmm_gemm_diff_sw(&desc_b, &desc_b)) {
 #if defined(_DEBUG)
-    fprintf(stderr, "using generic code path\n");
+    fprintf(stderr, "with generic code path\n");
 #endif
     result = 4;
   }
   if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX <= cpuid_archid) {
     if (0 == libxsmm_gemm_diff_avx(&desc_a, &desc_b)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX code path\n");
+      fprintf(stderr, "with AVX code path\n");
 #endif
-      result = 9;
+      result = 5;
     }
     else if (0 == libxsmm_gemm_diff_avx(&desc_b, &desc_a)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX code path\n");
+      fprintf(stderr, "with AVX code path\n");
 #endif
-      result = 10;
+      result = 6;
     }
     else if (0 != libxsmm_gemm_diff_avx(&desc_a, &desc_a)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX code path\n");
+      fprintf(stderr, "with AVX code path\n");
 #endif
-      result = 11;
+      result = 7;
     }
     else if (0 != libxsmm_gemm_diff_avx(&desc_b, &desc_b)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX code path\n");
+      fprintf(stderr, "with AVX code path\n");
 #endif
-      result = 12;
+      result = 8;
     }
   }
   if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX2 <= cpuid_archid) {
     if (0 == libxsmm_gemm_diff_avx2(&desc_a, &desc_b)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX2 code path\n");
+      fprintf(stderr, "with AVX2 code path\n");
 #endif
-      result = 13;
+      result = 9;
     }
     else if (0 == libxsmm_gemm_diff_avx2(&desc_b, &desc_a)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX2 code path\n");
+      fprintf(stderr, "with AVX2 code path\n");
 #endif
-      result = 14;
+      result = 10;
     }
     else if (0 != libxsmm_gemm_diff_avx2(&desc_a, &desc_a)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX2 code path\n");
+      fprintf(stderr, "with AVX2 code path\n");
 #endif
-      result = 15;
+      result = 11;
     }
     else if (0 != libxsmm_gemm_diff_avx2(&desc_b, &desc_b)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX2 code path\n");
+      fprintf(stderr, "with AVX2 code path\n");
 #endif
-      result = 16;
+      result = 12;
     }
   }
   if (EXIT_SUCCESS == result) {
     if (0 == libxsmm_gemm_diff(&desc_a, &desc_b)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using dispatched code path\n");
+      fprintf(stderr, "with dispatched code path\n");
 #endif
-      result = 17;
+      result = 13;
     }
     else if (0 == libxsmm_gemm_diff(&desc_b, &desc_a)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using dispatched code path\n");
+      fprintf(stderr, "with dispatched code path\n");
 #endif
-      result = 18;
+      result = 14;
     }
     else if (0 != libxsmm_gemm_diff(&desc_a, &desc_a)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using dispatched code path\n");
+      fprintf(stderr, "with dispatched code path\n");
 #endif
-      result = 19;
+      result = 15;
     }
     else if (0 != libxsmm_gemm_diff(&desc_b, &desc_b)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using dispatched code path\n");
+      fprintf(stderr, "with dispatched code path\n");
 #endif
-      result = 20;
+      result = 16;
     }
   }
   /* DIFFN Testing
@@ -168,17 +168,17 @@ int main(void)
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
 #if defined(_DEBUG)
-      fprintf(stderr, "using generic diffn-search\n");
+      fprintf(stderr, "with generic diffn-search\n");
 #endif
-      result = 21;
+      result = 17;
     }
     else if (6 != libxsmm_gemm_diffn_sw(&desc_b, descs, 2/*hint*/,
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
 #if defined(_DEBUG)
-      fprintf(stderr, "using generic diffn-search\n");
+      fprintf(stderr, "with generic diffn-search\n");
 #endif
-      result = 22;
+      result = 18;
     }
   }
   if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX <= cpuid_archid) {
@@ -186,17 +186,17 @@ int main(void)
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX-based diffn-search\n");
+      fprintf(stderr, "with AVX-based diffn-search\n");
 #endif
-      result = 23;
+      result = 19;
     }
     else if (6 != libxsmm_gemm_diffn_avx(&desc_b, descs, 2/*hint*/,
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX-based diffn-search\n");
+      fprintf(stderr, "with AVX-based diffn-search\n");
 #endif
-      result = 24;
+      result = 20;
     }
   }
   if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX2 <= cpuid_archid) {
@@ -204,17 +204,17 @@ int main(void)
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX2-based diffn-search\n");
+      fprintf(stderr, "with AVX2-based diffn-search\n");
 #endif
-      result = 25;
+      result = 21;
     }
     else if (6 != libxsmm_gemm_diffn_avx2(&desc_b, descs, 2/*hint*/,
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX2-based diffn-search\n");
+      fprintf(stderr, "with AVX2-based diffn-search\n");
 #endif
-      result = 26;
+      result = 22;
     }
   }
   if (EXIT_SUCCESS == result && LIBXSMM_X86_AVX512_MIC/*incl. LIBXSMM_X86_AVX512_CORE*/ <= cpuid_archid) {
@@ -222,17 +222,17 @@ int main(void)
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX512-based diffn-search\n");
+      fprintf(stderr, "with AVX512-based diffn-search\n");
 #endif
-      result = 27;
+      result = 23;
     }
     else if (6 != libxsmm_gemm_diffn_avx512(&desc_b, descs, 2/*hint*/,
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
 #if defined(_DEBUG)
-      fprintf(stderr, "using AVX512-based diffn-search\n");
+      fprintf(stderr, "with AVX512-based diffn-search\n");
 #endif
-      result = 28;
+      result = 24;
     }
   }
   if (EXIT_SUCCESS == result) {
@@ -240,17 +240,17 @@ int main(void)
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
 #if defined(_DEBUG)
-      fprintf(stderr, "using dispatched diffn-search\n");
+      fprintf(stderr, "with dispatched diffn-search\n");
 #endif
-      result = 29;
+      result = 25;
     }
     else if (6 != libxsmm_gemm_diffn(&desc_b, descs, 2/*hint*/,
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
 #if defined(_DEBUG)
-      fprintf(stderr, "using dispatched diffn-search\n");
+      fprintf(stderr, "with dispatched diffn-search\n");
 #endif
-      result = 30;
+      result = 26;
     }
   }
   /* Offload
@@ -261,43 +261,43 @@ int main(void)
   if (EXIT_SUCCESS == result) {
     if (0 == libxsmm_gemm_diff_imci(&desc_a, &desc_b)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using IMCI code path\n");
+      fprintf(stderr, "with IMCI code path\n");
 #endif
-      result = 31;
+      result = 27;
     }
     else if (0 == libxsmm_gemm_diff_imci(&desc_b, &desc_a)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using IMCI code path\n");
+      fprintf(stderr, "with IMCI code path\n");
 #endif
-      result = 32;
+      result = 28;
     }
     else if (0 != libxsmm_gemm_diff_imci(&desc_a, &desc_a)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using IMCI code path\n");
+      fprintf(stderr, "with IMCI code path\n");
 #endif
-      result = 33;
+      result = 29;
     }
     else if (0 != libxsmm_gemm_diff_imci(&desc_b, &desc_b)) {
 #if defined(_DEBUG)
-      fprintf(stderr, "using IMCI code path\n");
+      fprintf(stderr, "with IMCI code path\n");
 #endif
-      result = 34;
+      result = 30;
     }
     else if (1 != libxsmm_gemm_diffn_imci(&desc_a, descs, 0/*hint*/,
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
 #if defined(_DEBUG)
-      fprintf(stderr, "using IMCI-based diffn-search\n");
+      fprintf(stderr, "with IMCI-based diffn-search\n");
 #endif
-      result = 35;
+      result = 31;
     }
     else if (6 != libxsmm_gemm_diffn_imci(&desc_b, descs, 2/*hint*/,
       sizeof(descs) / sizeof(*descs), sizeof(*descs)))
     {
 #if defined(_DEBUG)
-      fprintf(stderr, "using IMCI-based diffn-search\n");
+      fprintf(stderr, "with IMCI-based diffn-search\n");
 #endif
-      result = 36;
+      result = 32;
     }
   }
 

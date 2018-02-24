@@ -53,8 +53,8 @@ const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * handle->blocksifm * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
 /* Kernel related variables  */
-libxsmm_xmatcopyfunction jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
-libxsmm_xmatcopyfunction jitted_zero_overwrite = handle->matcopy_fwd[1].xmatcopy;
+libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
+libxsmm_xmcopyfunction jitted_zero_overwrite = handle->matcopy_fwd[1].xmatcopy;
 libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
 /* Initialize base pointers */
 if (handle->padding_flag == 1) {

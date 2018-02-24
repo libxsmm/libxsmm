@@ -41,10 +41,6 @@
 # endif
 #endif
 
-#if !defined(LIBXSMM_TRANS_THRESHOLD)
-# define LIBXSMM_TRANS_THRESHOLD ((LIBXSMM_MAX_M) * (LIBXSMM_MAX_N))
-#endif
-
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
   const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
@@ -64,15 +60,14 @@
 
 #define LIBXSMM_XCOPY_LOOP_UNALIGNED(...)
 #define LIBXSMM_XCOPY_LOOP(TYPE, TYPESIZE, XKERNEL, HINT_ALIGNED, OUT, IN, LDI, LDO, M0, M1, N0, N1) { \
-  /*const*/int generic_type = (sizeof(TYPE) == (TYPESIZE) ? 1 : 0); /* mute warning (constant conditional) */ \
+  /*const*/int libxsmm_xcopy_loop_native_ = (sizeof(TYPE) == (TYPESIZE)); /* mute warning (constant conditional) */ \
   libxsmm_blasint libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_; \
-  if (0 != generic_type) { \
+  if (0 != libxsmm_xcopy_loop_native_) { \
     for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (libxsmm_blasint)(M1); ++libxsmm_xcopy_loop_i_) { \
       LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(OUT) \
       for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < (libxsmm_blasint)(N1); ++libxsmm_xcopy_loop_j_) { \
         XKERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_, \
-          libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); \
-        *libxsmm_xcopy_loop_dst_ = *libxsmm_xcopy_loop_src_; \
+          libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); *libxsmm_xcopy_loop_dst_ = *libxsmm_xcopy_loop_src_; \
       } \
     } \
   } \
@@ -115,8 +110,8 @@
       LIBXSMM_XCOPY_XALIGN(double, 8, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
     } break; \
     case 16: { \
-      typedef struct dvec2_t { double value[2]; } dvec2_t; \
-      LIBXSMM_XCOPY_XALIGN(dvec2_t, 16, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
+      typedef struct /*libxsmm_xcopy_nonjit_elem_t*/ { double value[2]; } libxsmm_xcopy_nonjit_elem_t; \
+      LIBXSMM_XCOPY_XALIGN(libxsmm_xcopy_nonjit_elem_t, 16, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
     } break; \
     default: { \
       LIBXSMM_XCOPY_XALIGN(char, TYPESIZE, XKERNEL, OUT, IN, LDI, LDO, M0, M1, N0, N1); \
@@ -183,10 +178,10 @@ LIBXSMM_API void libxsmm_trans_init(int archid);
 LIBXSMM_API void libxsmm_trans_finalize(void);
 
 
-/** Size of peeled chunks during transposing inner tiles. */
-LIBXSMM_API_VARIABLE unsigned int libxsmm_trans_tile[2/*DP/SP*/][2/*M,N*/][8/*size-range*/];
 /** Determines whether JIT-kernels are used or not (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
-LIBXSMM_API_VARIABLE int libxsmm_trans_jit;
+LIBXSMM_API_VARIABLE(int libxsmm_trans_jit);
+/** Configuration table containing the tile sizes separate for DP and SP. */
+LIBXSMM_API_VARIABLE(/*const*/ unsigned int(*libxsmm_trans_tile)[2/*M,N*/][8/*size-range*/]);
 
 #endif /*LIBXSMM_TRANS_H*/
 

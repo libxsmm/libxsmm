@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_BGEMM_H
 #define LIBXSMM_BGEMM_H
 
-#include <libxsmm_frontend.h>
+#include "libxsmm_frontend.h"
 
 
 /** Denotes the BGEMM data order. */
@@ -45,10 +45,10 @@ typedef enum libxsmm_bgemm_order {
 } libxsmm_bgemm_order;
 
 /** Describes the Block-GEMM (BGEMM) operation. */
-typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle libxsmm_bgemm_handle;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle libxsmm_bgemm_handle;
 
 
-LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm_gemm_precision precision,
+LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   /** If the block-size (bm, bn, or bk) is not given, a suitable value is chosen internally. */
   const libxsmm_blasint* bm, const libxsmm_blasint* bn, const libxsmm_blasint* bk,
@@ -57,11 +57,8 @@ LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(libxsmm_gemm_preci
   /** If alpha is not supplied (NULL), then LIBXSMM_ALPHA is used instead. */ const void* alpha,
   /** If beta is not supplied (NULL), then LIBXSMM_BETA is used instead. */   const void*  beta,
   /** See libxsmm_gemm_flags (LIBXSMM_FLAGS is used if NULL is given). */ const int* gemm_flags,
-  /**
-   * See libxsmm_gemm_prefetch_type (LIBXSMM_PREFETCH is used if NULL is given).
-   * In case of LIBXSMM_PREFETCH_AUTO, a strategy is chosen automatically.
-   */
-  const libxsmm_gemm_prefetch_type* strategy,
+  /** See libxsmm_gemm_prefetch_type; a strategy chosen automatically if NULL is given. */
+  const libxsmm_gemm_prefetch_type* prefetch,
   /** See libxsmm_bgemm_order; an order is chosen automatically if NULL is given. */
   const libxsmm_bgemm_order* order);
 
