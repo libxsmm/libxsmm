@@ -815,8 +815,13 @@ else # GCC assumed
     LDFLAGS += $(PICFLAG)
   else ifneq (0,$(MINGW))
     CXXFLAGS += -fno-asynchronous-unwind-tables
-    CFLAGS += -fno-asynchronous-unwind-tables
     FCFLAGS += -fno-asynchronous-unwind-tables
+    CFLAGS += -fno-asynchronous-unwind-tables
+    ifneq (0,$(PEDANTIC))
+    ifneq (1,$(PEDANTIC))
+      CFLAGS += -Wno-format
+    endif
+    endif
   endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((40700 <= $(GXX_VERSION)))"))
