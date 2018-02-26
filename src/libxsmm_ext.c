@@ -60,7 +60,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char* transa, LIBX
 #if defined(__GNUC__) && !defined(__PGI)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
+LIBXSMM_API void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
   LIBXSMM_GEMM_CONST libxsmm_blasint* m, LIBXSMM_GEMM_CONST libxsmm_blasint* n, LIBXSMM_GEMM_CONST libxsmm_blasint* k,
   LIBXSMM_GEMM_CONST float* alpha, LIBXSMM_GEMM_CONST float* a, LIBXSMM_GEMM_CONST libxsmm_blasint* lda,
   LIBXSMM_GEMM_CONST float* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,
@@ -81,7 +81,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* transa, LIBX
 #if defined(__GNUC__) && !defined(__PGI)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
+LIBXSMM_API void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
   LIBXSMM_GEMM_CONST libxsmm_blasint* m, LIBXSMM_GEMM_CONST libxsmm_blasint* n, LIBXSMM_GEMM_CONST libxsmm_blasint* k,
   LIBXSMM_GEMM_CONST double* alpha, LIBXSMM_GEMM_CONST double* a, LIBXSMM_GEMM_CONST libxsmm_blasint* lda,
   LIBXSMM_GEMM_CONST double* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,

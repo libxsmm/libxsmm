@@ -163,11 +163,17 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 # define LIBXSMM_GEMM_CONST const
 #endif
 
-#if defined(LIBXSMM_BUILD) && (defined(LIBXSMM_BUILD_EXT) && !defined(__STATIC)) || (1 == LIBXSMM_NO_BLAS)
-# define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_APIEXT
-#else
+#if defined(LIBXSMM_BUILD)
+# if defined(LIBXSMM_BUILD_EXT) && !defined(__STATIC)
+#   define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_APIEXT
+# elif (1 == LIBXSMM_NO_BLAS) /* noblas library */
+#   define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_API
+# endif
+#endif
+#if !defined(LIBXSMM_GEMM_SYMBOL_VISIBILITY)
 # define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_API_EXTERN LIBXSMM_VISIBILITY_IMPORT
 #endif
+
 #define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
   void LIBXSMM_GEMM_SYMBOL(TYPE)(CONST char*, CONST char*, \
     CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
