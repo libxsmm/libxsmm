@@ -605,7 +605,7 @@ else
       LDFLAGS += -hsystem_alloc
       CRAY ?= 1
     else
-      PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | if grep -q "PGI"; then echo "1"; fi)
+      PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
     endif
   endif
 endif
