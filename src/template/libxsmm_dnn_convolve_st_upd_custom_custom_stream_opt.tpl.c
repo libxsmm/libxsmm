@@ -170,7 +170,7 @@ if (handle->padding_flag == 1) {
     input_base = &LIBXSMM_VLA_ACCESS(5, input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
   }
 }
-if ( handle->ofh == 28 || handle->ofh == 56 || handle->ofh == 14 )
+if ( handle->ofh == 28 || handle->ofh == 56 )
 {
   weight_base = &LIBXSMM_VLA_ACCESS(2, per_thread_weight, 0, 0, handle->ofmblock); /* use thread-private scratchpad to accumulate weights */
 } else {
@@ -248,6 +248,9 @@ if (n_segments) {
       offset_w *= handle->desc.R * handle->desc.S * handle->ifmblock;
       offset_s = code_stream[pc].aux_index;
       for ( j = 0; j < handle->desc.R*handle->desc.S*handle->ifmblock; j++ ) {
+#ifndef __AVX512BW__
+          LIBXSMM_PRAGMA_NONTEMPORAL
+#endif
           LIBXSMM_PRAGMA_VALIGNED
           LIBXSMM_PRAGMA_SIMD
           for ( k = 0; k < 16; k++ ) {
@@ -294,7 +297,11 @@ if (handle->upd_use_external_reduce == 0) {
       weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
     }
     if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
+#ifndef __AVX512BW__  
+      _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
+#else
       _mm512_store_ps(&weight_ptr[j*16], weight_sum);
+#endif
     } else {
       _mm512_store_ps(&weight_ptr[j*16], _mm512_add_ps(weight_sum, _mm512_load_ps(&weight_ptr[j*16])));
     }
