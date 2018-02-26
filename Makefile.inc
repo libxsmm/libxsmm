@@ -879,11 +879,6 @@ else # GCC assumed
       CXXFLAGS += -funroll-loops -ftree-vectorize
       CFLAGS += -funroll-loops -ftree-vectorize
       FCFLAGS += -funroll-loops -ftree-vectorize
-      ifneq (Darwin,$(UNAME))
-        CXXFLAGS += -fdata-sections -ffunction-sections
-        CFLAGS += -fdata-sections -ffunction-sections
-        FCFLAGS += -fdata-sections -ffunction-sections
-      endif
       ifneq (0,$(GCC))
         #CXXFLAGS += -ffast-math
         #CFLAGS += -ffast-math
@@ -1032,6 +1027,9 @@ endif
 ifeq (0,$(DBG))
 ifeq (0,$(COMPATIBLE))
 ifneq (Darwin,$(UNAME))
+  CXXFLAGS += -fdata-sections -ffunction-sections -fvisibility=hidden -fvisibility-inlines-hidden
+  CFLAGS += -fdata-sections -ffunction-sections -fvisibility=hidden
+  FCFLAGS += -fdata-sections -ffunction-sections -fvisibility=hidden
   # --gc-sections: relies on section-flags present at compile-stage
   # -z,relro: Linux distributions may apply similar hardening
   LDFLAGS += -Wl,--gc-sections,-z,relro

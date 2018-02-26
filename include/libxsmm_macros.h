@@ -152,25 +152,27 @@
 #endif
 #define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
-#if !defined(__STATIC) && !defined(_WINDLL) && (defined(_WIN32) || defined(__CYGWIN__))
-# define __STATIC
-#endif
-#if !defined(__STATIC) /* Dynamic Link Library (DLL) */
-# define LIBXSMM_VISIBILITY_EXPORT LIBXSMM_ATTRIBUTE(dllexport)
-# define LIBXSMM_VISIBILITY_IMPORT LIBXSMM_ATTRIBUTE(dllimport)
-#else /* static library archive */
-# define LIBXSMM_VISIBILITY_EXPORT
-# define LIBXSMM_VISIBILITY_IMPORT
-#endif
 #if defined(__GNUC__) /* may include Clang and other compatible compilers */
 # define LIBXSMM_VISIBILITY_HIDDEN LIBXSMM_ATTRIBUTE(visibility("hidden"))
 # define LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_ATTRIBUTE(visibility("internal"))
+# define LIBXSMM_VISIBILITY_PUBLIC LIBXSMM_ATTRIBUTE(visibility("default"))
 #else
 # define LIBXSMM_VISIBILITY_HIDDEN
 # define LIBXSMM_VISIBILITY_INTERNAL
+# define LIBXSMM_VISIBILITY_PUBLIC
 #endif
 #if !defined(LIBXSMM_VISIBILITY_PRIVATE)
 # define LIBXSMM_VISIBILITY_PRIVATE LIBXSMM_VISIBILITY_HIDDEN
+#endif
+#if !defined(__STATIC) && !defined(_WINDLL) && (defined(_WIN32) || defined(__CYGWIN__))
+# define __STATIC
+#endif
+#if !defined(__STATIC) && (defined(_WIN32) || defined(__CYGWIN__)) /* Dynamic Link Library (DLL) */
+# define LIBXSMM_VISIBILITY_EXPORT LIBXSMM_ATTRIBUTE(dllexport) LIBXSMM_VISIBILITY_PUBLIC
+# define LIBXSMM_VISIBILITY_IMPORT LIBXSMM_ATTRIBUTE(dllimport)
+#else /* static library archive */
+# define LIBXSMM_VISIBILITY_EXPORT LIBXSMM_VISIBILITY_PUBLIC
+# define LIBXSMM_VISIBILITY_IMPORT
 #endif
 
 #if defined(LIBXSMM_API) /* header-only mode */
@@ -204,7 +206,7 @@
 #   define LIBXSMM_APIEXT LIBXSMM_API
 # endif
 #endif
-#define LIBXSMM_API_INLINE LIBXSMM_EXTERN_C LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_VISIBILITY_PRIVATE
+#define LIBXSMM_API_INLINE LIBXSMM_EXTERN_C LIBXSMM_INLINE LIBXSMM_RETARGETABLE
 #define LIBXSMM_API_EXTERN LIBXSMM_EXTERN LIBXSMM_RETARGETABLE
 
 #if !defined(LIBXSMM_RESTRICT)
