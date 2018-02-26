@@ -501,7 +501,16 @@ LIBXSMM_API void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API void libxsmm_dnn_finalize(void);
 
 /** Global lock; create an own lock for an independent domain. */
-LIBXSMM_APIVAR(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
+LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
+/** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_verbosity);
+/** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_target_archid);
+/** Determines whether a threaded implementation is synchronized or not. */
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_nosync);
+/** Number of threads per core. */
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_nt);
+
 /** Function used to allocate default memory. */
 LIBXSMM_APIVAR(libxsmm_malloc_function libxsmm_default_malloc_fn);
 /** Function used to allocate scratch memory. */
@@ -524,14 +533,6 @@ LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
 /** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
 LIBXSMM_APIVAR(double libxsmm_timer_scale);
-/** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
-LIBXSMM_APIVAR(int libxsmm_verbosity);
-/** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
-LIBXSMM_APIVAR(int libxsmm_target_archid);
-/** Determines whether a threaded implementation is synchronized or not. */
-LIBXSMM_APIVAR(int libxsmm_nosync);
-/** Number of threads per core. */
-LIBXSMM_APIVAR(int libxsmm_nt);
 
 #endif /*LIBXSMM_MAIN_H*/
 
