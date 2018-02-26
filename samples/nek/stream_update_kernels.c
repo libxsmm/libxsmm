@@ -33,7 +33,7 @@
 /*#define DISABLE_NONTEMPORAL_STORES*/
 
 
-LIBXSMM_API_INLINE
+LIBXSMM_INLINE
 void stream_init(int i_length, size_t i_start_address, int* o_trip_prolog, int* o_trip_stream)
 {
   /* let's calculate the prologue until C is cacheline aligned */
