@@ -70,7 +70,7 @@ int internal_x86_instructions_add_offset(const unsigned int i_place1,
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated_code,
                                      const unsigned int      i_vmove_instr,
                                      const unsigned int      i_gp_reg_base,
@@ -155,7 +155,7 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code,
                                        const unsigned int      i_instruction_set,
                                        const unsigned int      i_vmove_instr,
@@ -768,7 +768,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_generated_code,
                                                    const unsigned int      i_instruction_set,
                                                    const unsigned int      i_vec_instr,
@@ -860,7 +860,7 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
@@ -1558,7 +1558,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
@@ -1643,7 +1643,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
@@ -2471,7 +2471,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
@@ -2665,7 +2665,7 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_qfma( libxsmm_generated_code* io_generated_code,
                                                const unsigned int      i_instruction_set,
                                                const unsigned int      i_vec_instr,
@@ -2842,7 +2842,7 @@ void libxsmm_x86_instruction_vec_compute_qfma( libxsmm_generated_code* io_genera
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
@@ -3027,7 +3027,7 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_generated_code,
                                                 const unsigned int      i_instruction_set,
                                                 const unsigned int      i_vmove_instr,
@@ -3152,7 +3152,7 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code,
                                        const unsigned int      i_prefetch_instr,
                                        const unsigned int      i_gp_reg_base,
@@ -3277,7 +3277,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
                                       const unsigned int     i_alu_instr,
                                       const unsigned int     i_gp_reg_base,
@@ -3368,7 +3368,7 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_alu_instr,
                                       const unsigned int      i_gp_reg_number,
@@ -3478,7 +3478,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_alu_instr,
                                       const unsigned int      i_gp_reg_number_src,
@@ -3571,7 +3571,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code,
                                        const unsigned int      i_gp_reg_number ) {
   /* @TODO add checks in debug mode */
@@ -3620,7 +3620,7 @@ void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_gp_reg_number ) {
   /* @TODO add checks in debug mode */
@@ -3669,7 +3669,7 @@ void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_code,
                                         const unsigned int      i_mask_instr,
                                         const unsigned int      i_gp_reg_number,
@@ -3760,7 +3760,7 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_generated_code,
                                                const unsigned int      i_mask_instr,
                                                const unsigned int      i_mask_reg_number_src_0,
@@ -3812,7 +3812,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
                                                   libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   /* check if we still have lable we can jump to */
@@ -3844,7 +3844,7 @@ void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_generated_code,
                                                  const unsigned int          i_jmp_instr,
                                                  libxsmm_loop_label_tracker* io_loop_label_tracker ) {
@@ -3920,7 +3920,7 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code *io_generated_code,
                                                           const unsigned char *i_data,
                                                           const char *i_id,
@@ -4083,7 +4083,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                           const char*                   i_arch,
@@ -4316,7 +4316,7 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
                                            const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                            const char*                   i_arch,
@@ -4559,7 +4559,7 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_convolution( libxsmm_generated_code*                   io_generated_code,
                                                       const unsigned int                        i_gp_reg_input,
                                                       const unsigned int                        i_gp_reg_weight,
@@ -4653,7 +4653,7 @@ void libxsmm_x86_instruction_open_stream_convolution( libxsmm_generated_code*   
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_convolution( libxsmm_generated_code*       io_generated_code,
                                                        const char*                   i_arch) {
 
@@ -4726,7 +4726,7 @@ void libxsmm_x86_instruction_close_stream_convolution( libxsmm_generated_code*  
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_transpose( libxsmm_generated_code*                   io_generated_code,
                                                     const unsigned int                        i_gp_reg_a,
                                                     const unsigned int                        i_gp_reg_lda,
@@ -4812,7 +4812,7 @@ void libxsmm_x86_instruction_open_stream_transpose( libxsmm_generated_code*     
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_transpose( libxsmm_generated_code*       io_generated_code,
                                                      const char*                   i_arch) {
   /* libxsmm_x86_instruction_close_stream_convolution(io_generated_code, i_arch); */
@@ -4891,7 +4891,7 @@ if ( l_code_size==59 ) printf("Starting wrap-up on byte 59\n");
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*                   io_generated_code,
                                                   const unsigned int                        i_gp_reg_a,
                                                   const unsigned int                        i_gp_reg_lda,
@@ -4985,7 +4985,7 @@ void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*       
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*       io_generated_code,
                                                    const char*                   i_arch) {
   /* @TODO add checks in debug mode */

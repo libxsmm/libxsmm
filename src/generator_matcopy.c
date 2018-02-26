@@ -39,7 +39,7 @@
 #include <stdio.h>
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*                        io_generated_code,
                                        const libxsmm_mcopy_descriptor*              i_matcopy_desc,
                                        const char*                                    i_arch ) {

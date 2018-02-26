@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_header_m_loop( libxsmm_generated_code*                   io_generated_code,
                                                   libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                   const libxsmm_matcopy_kernel_config*      i_kernel_config,
@@ -48,7 +48,7 @@ void libxsmm_generator_convolution_header_m_loop( libxsmm_generated_code*       
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_add_instruction, i_gp_reg_m_loop, 1);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_footer_m_loop( libxsmm_generated_code*                       io_generated_code,
                                                   libxsmm_loop_label_tracker*                   io_loop_label_tracker,
                                                   const libxsmm_matcopy_kernel_config*          i_kernel_config,
@@ -58,7 +58,7 @@ void libxsmm_generator_convolution_footer_m_loop( libxsmm_generated_code*       
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_header_n_loop( libxsmm_generated_code*                  io_generated_code,
                                                  libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                  const libxsmm_matcopy_kernel_config*      i_kernel_config,
@@ -68,7 +68,7 @@ void libxsmm_generator_convolution_header_n_loop( libxsmm_generated_code*       
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_add_instruction, i_gp_reg_n_loop, 1);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_footer_n_loop( libxsmm_generated_code*                       io_generated_code,
                                                  libxsmm_loop_label_tracker*                   io_loop_label_tracker,
                                                  const libxsmm_matcopy_kernel_config*          i_kernel_config,
@@ -78,7 +78,7 @@ void libxsmm_generator_convolution_footer_n_loop( libxsmm_generated_code*       
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_header_oi_loop( libxsmm_generated_code*                   io_generated_code,
                                                    libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
@@ -88,7 +88,7 @@ void libxsmm_generator_convolution_header_oi_loop( libxsmm_generated_code*      
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_oi_loop, 1);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_footer_oi_loop( libxsmm_generated_code*                       io_generated_code,
                                                    libxsmm_loop_label_tracker*                   io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*      i_conv_kernel_config,
@@ -98,7 +98,7 @@ void libxsmm_generator_convolution_footer_oi_loop( libxsmm_generated_code*      
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_header_oj_loop( libxsmm_generated_code*                   io_generated_code,
                                                    libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
@@ -108,7 +108,7 @@ void libxsmm_generator_convolution_header_oj_loop( libxsmm_generated_code*      
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_oj_loop, 1);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_footer_oj_loop( libxsmm_generated_code*                       io_generated_code,
                                                    libxsmm_loop_label_tracker*                   io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*      i_conv_kernel_config,
@@ -118,7 +118,7 @@ void libxsmm_generator_convolution_footer_oj_loop( libxsmm_generated_code*      
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_header_ofw_loop( libxsmm_generated_code*                   io_generated_code,
                                                    libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
@@ -128,7 +128,7 @@ void libxsmm_generator_convolution_header_ofw_loop( libxsmm_generated_code*     
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_oi_loop, 1);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_footer_ofw_loop( libxsmm_generated_code*                       io_generated_code,
                                                    libxsmm_loop_label_tracker*                   io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*      i_conv_kernel_config,
@@ -138,7 +138,7 @@ void libxsmm_generator_convolution_footer_ofw_loop( libxsmm_generated_code*     
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_header_ofh_loop( libxsmm_generated_code*                   io_generated_code,
                                                    libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
@@ -148,7 +148,7 @@ void libxsmm_generator_convolution_header_ofh_loop( libxsmm_generated_code*     
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_ofh_loop, 1);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_footer_ofh_loop( libxsmm_generated_code*                       io_generated_code,
                                                    libxsmm_loop_label_tracker*                   io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*      i_conv_kernel_config,
@@ -158,7 +158,7 @@ void libxsmm_generator_convolution_footer_ofh_loop( libxsmm_generated_code*     
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_header_kh_loop( libxsmm_generated_code*                   io_generated_code,
                                                    libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
@@ -168,7 +168,7 @@ void libxsmm_generator_convolution_header_kh_loop( libxsmm_generated_code*      
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_kh_loop, 1);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_footer_kh_loop( libxsmm_generated_code*                       io_generated_code,
                                                    libxsmm_loop_label_tracker*                   io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*      i_conv_kernel_config,
@@ -178,7 +178,7 @@ void libxsmm_generator_convolution_footer_kh_loop( libxsmm_generated_code*      
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_header_kw_loop( libxsmm_generated_code*                   io_generated_code,
                                                    libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
@@ -188,7 +188,7 @@ void libxsmm_generator_convolution_header_kw_loop( libxsmm_generated_code*      
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_kw_loop, 1);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_footer_kw_loop( libxsmm_generated_code*                       io_generated_code,
                                                    libxsmm_loop_label_tracker*                   io_loop_label_tracker,
                                                    const libxsmm_convolution_kernel_config*      i_conv_kernel_config,
@@ -198,7 +198,7 @@ void libxsmm_generator_convolution_footer_kw_loop( libxsmm_generated_code*      
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_header_ifmOuter_loop( libxsmm_generated_code*                   io_generated_code,
                                                          libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                          const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
@@ -208,7 +208,7 @@ void libxsmm_generator_convolution_header_ifmOuter_loop( libxsmm_generated_code*
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_ifmOuter_loop, 1);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_footer_ifmOuter_loop( libxsmm_generated_code*                       io_generated_code,
                                                          libxsmm_loop_label_tracker*                   io_loop_label_tracker,
                                                          const libxsmm_convolution_kernel_config*      i_conv_kernel_config,
@@ -218,7 +218,7 @@ void libxsmm_generator_convolution_footer_ifmOuter_loop( libxsmm_generated_code*
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_header_ifm_loop( libxsmm_generated_code*                   io_generated_code,
                                                     libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                     const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
@@ -229,7 +229,7 @@ void libxsmm_generator_convolution_header_ifm_loop( libxsmm_generated_code*     
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_ifmInner_loop, i_unrolled_trips);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_footer_ifm_loop( libxsmm_generated_code*                   io_generated_code,
                                                     libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                     const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
@@ -239,7 +239,7 @@ void libxsmm_generator_convolution_footer_ifm_loop( libxsmm_generated_code*     
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_header_ofm_loop( libxsmm_generated_code*                   io_generated_code,
                                                     libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                     const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
@@ -250,7 +250,7 @@ void libxsmm_generator_convolution_header_ofm_loop( libxsmm_generated_code*     
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_ofmInner_loop, i_unrolled_trips);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_footer_ofm_loop( libxsmm_generated_code*                   io_generated_code,
                                                     libxsmm_loop_label_tracker*               io_loop_label_tracker,
                                                     const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
@@ -260,7 +260,7 @@ void libxsmm_generator_convolution_footer_ofm_loop( libxsmm_generated_code*     
   libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_conv_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code*                           io_generated_code,
                                                         const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -383,7 +383,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*                           io_generated_code,
                                                          const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
                                                          const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -476,7 +476,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_reset_x86_convolution_forward_gp_reg_mapping( libxsmm_convolution_forward_gp_reg_mapping* io_gp_reg_mapping ) {
   io_gp_reg_mapping->gp_reg_input = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_weight = LIBXSMM_X86_GP_REG_UNDEF;
@@ -496,7 +496,7 @@ void libxsmm_reset_x86_convolution_forward_gp_reg_mapping( libxsmm_convolution_f
   io_gp_reg_mapping->gp_reg_help_6 = LIBXSMM_X86_GP_REG_UNDEF;
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_reset_x86_convolution_backward_gp_reg_mapping( libxsmm_convolution_backward_gp_reg_mapping* io_gp_reg_mapping ) {
   io_gp_reg_mapping->gp_reg_input = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_weight = LIBXSMM_X86_GP_REG_UNDEF;
@@ -516,7 +516,7 @@ void libxsmm_reset_x86_convolution_backward_gp_reg_mapping( libxsmm_convolution_
   io_gp_reg_mapping->gp_reg_help_6 = LIBXSMM_X86_GP_REG_UNDEF;
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_reset_x86_convolution_weight_update_gp_reg_mapping( libxsmm_convolution_weight_update_gp_reg_mapping* io_gp_reg_mapping ) {
   io_gp_reg_mapping->gp_reg_input = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_weight = LIBXSMM_X86_GP_REG_UNDEF;
@@ -536,7 +536,7 @@ void libxsmm_reset_x86_convolution_weight_update_gp_reg_mapping( libxsmm_convolu
   io_gp_reg_mapping->gp_reg_help_6 = LIBXSMM_X86_GP_REG_UNDEF;
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_init_convolution_kernel_config( libxsmm_convolution_kernel_config* io_conv_kernel_config ) {
   memset(io_conv_kernel_config, 0, sizeof(*io_conv_kernel_config)); /* avoid warning "maybe used uninitialized" */
   io_conv_kernel_config->instruction_set = LIBXSMM_X86_INSTR_UNDEF;
@@ -558,7 +558,7 @@ void libxsmm_generator_init_convolution_kernel_config( libxsmm_convolution_kerne
   io_conv_kernel_config->vector_name = '\0';
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_fma( libxsmm_generated_code*                           io_generated_code,
                                                         const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -576,7 +576,7 @@ void libxsmm_generator_convolution_backward_fma( libxsmm_generated_code*        
                                                4 /* input loaded */);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_load_weight( libxsmm_generated_code*                           io_generated_code,
                                                         const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -600,7 +600,7 @@ void libxsmm_generator_convolution_backward_load_weight( libxsmm_generated_code*
   LIBXSMM_UNUSED(i_conv_desc);
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_load_input( libxsmm_generated_code*                           io_generated_code,
                                                         const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -627,7 +627,7 @@ void libxsmm_generator_convolution_backward_load_input( libxsmm_generated_code* 
     }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_store_input( libxsmm_generated_code*                           io_generated_code,
                                                         const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -655,7 +655,7 @@ void libxsmm_generator_convolution_backward_store_input( libxsmm_generated_code*
     }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_code*                           io_generated_code,
                                                         const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -703,7 +703,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
     }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_transpose_load_weight( libxsmm_generated_code*                           io_generated_code,
                                                         const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -736,7 +736,7 @@ void libxsmm_generator_convolution_weight_update_transpose_load_weight( libxsmm_
       }
     }
 }
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated_code*                           io_generated_code,
                                                         const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -775,7 +775,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
     }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_transpose_store_weight( libxsmm_generated_code*                           io_generated_code,
                                                         const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,

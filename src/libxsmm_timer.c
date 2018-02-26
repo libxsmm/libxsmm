@@ -75,7 +75,7 @@ LIBXSMM_API_INLINE libxsmm_timer_tickint internal_timer_tick(void)
 }
 
 
-LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
+LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
 libxsmm_timer_tickint libxsmm_timer_tick_rdtsc(void)
 {
   libxsmm_timer_tickint result;
@@ -88,7 +88,7 @@ libxsmm_timer_tickint libxsmm_timer_tick_rdtsc(void)
 }
 
 
-LIBXSMM_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
+LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
 libxsmm_timer_tickint libxsmm_timer_tick(void)
 {
   libxsmm_timer_tickint result;
@@ -105,7 +105,7 @@ libxsmm_timer_tickint libxsmm_timer_tick(void)
 }
 
 
-LIBXSMM_API_DEFINITION double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
+LIBXSMM_API double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
 {
   double result = (double)LIBXSMM_DIFF(tick0, tick1);
 #if defined(LIBXSMM_TIMER_RDTSC)

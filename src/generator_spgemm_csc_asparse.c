@@ -76,7 +76,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_sparse_csc_asparse_innerloop_scalar( libxsmm_generated_code*        io_generated_code,
                                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                   const unsigned int             i_k,
@@ -118,7 +118,7 @@ void libxsmm_sparse_csc_asparse_innerloop_scalar( libxsmm_generated_code*       
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_sparse_csc_asparse_innerloop_two_vector( libxsmm_generated_code*        io_generated_code,
                                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                       const unsigned int             i_k,
@@ -160,7 +160,7 @@ void libxsmm_sparse_csc_asparse_innerloop_two_vector( libxsmm_generated_code*   
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_sparse_csc_asparse_innerloop_four_vector( libxsmm_generated_code*        io_generated_code,
                                                        const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                        const unsigned int             i_k,
@@ -213,7 +213,7 @@ void libxsmm_sparse_csc_asparse_innerloop_four_vector( libxsmm_generated_code*  
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csc_asparse( libxsmm_generated_code*        io_generated_code,
                                            const libxsmm_gemm_descriptor* i_xgemm_desc,
                                            const char*                    i_arch,

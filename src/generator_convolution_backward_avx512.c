@@ -40,7 +40,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_code*           io_generated_code,
                                                            const libxsmm_convolution_backward_descriptor* i_conv_desc,
                                                            const char*                       i_arch ) {
@@ -355,7 +355,7 @@ void libxsmm_generator_convolution_backward_avx512_kernel( libxsmm_generated_cod
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_ofmloop( libxsmm_generated_code*                           io_generated_code,
                                                            const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                            const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
@@ -391,7 +391,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop( libxsmm_generated_co
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_init_output_strides( libxsmm_generated_code*                           io_generated_code,
                                                                       const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                       const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -429,7 +429,7 @@ void libxsmm_generator_convolution_backward_avx512_init_output_strides( libxsmm_
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_init_output_strides_two_rows( libxsmm_generated_code*                           io_generated_code,
                                                                       const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                       const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -466,7 +466,7 @@ void libxsmm_generator_convolution_backward_avx512_init_output_strides_two_rows(
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_calc_sib_output_strides( const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                             const int                                         i_stride_num,
                                                                             unsigned int*                                     o_output_reg,
@@ -521,7 +521,7 @@ void libxsmm_generator_convolution_backward_avx512_calc_sib_output_strides( cons
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_calc_sib_output_strides_two_rows( const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                             const int                                         i_row_num,
                                                                             const int                                         i_stride_num,
@@ -581,7 +581,7 @@ void libxsmm_generator_convolution_backward_avx512_calc_sib_output_strides_two_r
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_load_input( libxsmm_generated_code*                            io_generated_code,
                                                                const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
@@ -766,7 +766,7 @@ void libxsmm_generator_convolution_backward_avx512_load_input( libxsmm_generated
   } /* end of if stride_w == 1 */
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_load_input_two_rows( libxsmm_generated_code*                            io_generated_code,
                                                                         const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                         const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
@@ -853,7 +853,7 @@ void libxsmm_generator_convolution_backward_avx512_load_input_two_rows( libxsmm_
   } /* end of if stride_w == 1 */
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_store_input( libxsmm_generated_code*                            io_generated_code,
                                                                 const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                 const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
@@ -978,7 +978,7 @@ void libxsmm_generator_convolution_backward_avx512_store_input( libxsmm_generate
   } /* end of if stride == 1 */
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_store_input_two_rows( libxsmm_generated_code*                            io_generated_code,
                                                                          const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                          const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
@@ -1036,7 +1036,7 @@ void libxsmm_generator_convolution_backward_avx512_store_input_two_rows( libxsmm
   } /* end of if stride == 1 */
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generated_code*                            io_generated_code,
                                                                  const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                  const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
@@ -1253,7 +1253,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma( libxsmm_generat
   } /* end of l_k_2 over i_kw_unroll */
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsmm_generated_code*                            io_generated_code,
                                                                  const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                  const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
@@ -1471,7 +1471,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_sfma_two_rows( libxsm
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generated_code*                            io_generated_code,
                                                                  const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                  const libxsmm_convolution_kernel_config*           i_conv_kernel_config,
@@ -1617,7 +1617,7 @@ void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma( libxsmm_generat
   } /* end of l_k_2 over i_kw_unroll */
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx512_ofmloop_qfma_two_rows( libxsmm_generated_code*                            io_generated_code,
                                                                  const libxsmm_convolution_backward_gp_reg_mapping* i_gp_reg_mapping,
                                                                  const libxsmm_convolution_kernel_config*           i_conv_kernel_config,

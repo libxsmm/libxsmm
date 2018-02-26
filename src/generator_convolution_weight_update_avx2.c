@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_avx2_kernel( libxsmm_generated_code*                             io_generated_code,
                                                               const libxsmm_convolution_weight_update_descriptor* i_conv_desc,
                                                               const char*                                         i_arch ) {
@@ -254,7 +254,7 @@ Example for ofm_block = 32, ifm_block%2 == 0
   libxsmm_x86_instruction_close_stream_convolution( io_generated_code, i_arch );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_avx2_ofhofwloops( libxsmm_generated_code*                                 io_generated_code,
                                                                    libxsmm_loop_label_tracker*                             io_loop_label_tracker,
                                                                    const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,

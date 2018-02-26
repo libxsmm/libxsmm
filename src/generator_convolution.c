@@ -45,7 +45,7 @@
 #include <stdio.h>
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*                        io_generated_code,
                                                    const libxsmm_convolution_forward_descriptor*  i_conv_desc,
                                                    const char*                                    i_arch ) {
@@ -101,7 +101,7 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
 
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 void libxsmm_generator_convolution_backward_kernel( libxsmm_generated_code*                        io_generated_code,
                                                     const libxsmm_convolution_backward_descriptor* i_conv_desc,
                                                     const char*                                    i_arch ) {
@@ -132,7 +132,7 @@ void libxsmm_generator_convolution_backward_kernel( libxsmm_generated_code*     
 
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 void libxsmm_generator_convolution_weight_update_kernel( libxsmm_generated_code*                        io_generated_code,
                                                    const libxsmm_convolution_weight_update_descriptor*  i_conv_desc,
                                                    const char*                                    i_arch ) {
@@ -166,7 +166,7 @@ void libxsmm_generator_convolution_weight_update_kernel( libxsmm_generated_code*
   libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 void libxsmm_generator_convolution_forward_inlineasm( const char*                                   i_file_out,
                                                       const char*                                   i_routine_name,
                                                       const libxsmm_convolution_forward_descriptor* i_conv_desc,
@@ -218,7 +218,7 @@ void libxsmm_generator_convolution_forward_inlineasm( const char*               
   free( l_generated_code.generated_code );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 void libxsmm_generator_convolution_forward_directasm( const char*                                   i_file_out,
                                                       const char*                                   i_routine_name,
                                                       const libxsmm_convolution_forward_descriptor* i_conv_desc,

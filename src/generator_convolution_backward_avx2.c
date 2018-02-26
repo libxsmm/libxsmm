@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*                        io_generated_code,
                                                          const libxsmm_convolution_backward_descriptor* i_conv_desc,
                                                          const char*                                    i_arch ) {
@@ -188,7 +188,7 @@ void libxsmm_generator_convolution_backward_avx2_kernel( libxsmm_generated_code*
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx2_ofwloop( libxsmm_generated_code*                             io_generated_code,
                                                           const libxsmm_convolution_backward_gp_reg_mapping*  i_gp_reg_mapping,
                                                           const libxsmm_convolution_kernel_config*            i_conv_kernel_config,
@@ -308,7 +308,7 @@ void libxsmm_generator_convolution_backward_avx2_ofwloop( libxsmm_generated_code
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_backward_avx2_ofmloop( libxsmm_generated_code*                             io_generated_code,
                                                           const libxsmm_convolution_backward_gp_reg_mapping*  i_gp_reg_mapping,
                                                           const libxsmm_convolution_kernel_config*            i_conv_kernel_config,

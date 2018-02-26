@@ -179,9 +179,9 @@ LIBXSMM_API void libxsmm_trans_finalize(void);
 
 
 /** Determines whether JIT-kernels are used or not (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
-LIBXSMM_API_VARIABLE(int libxsmm_trans_jit);
+LIBXSMM_APIVAR(int libxsmm_trans_jit);
 /** Configuration table containing the tile sizes separate for DP and SP. */
-LIBXSMM_API_VARIABLE(/*const*/ unsigned int(*libxsmm_trans_tile)[2/*M,N*/][8/*size-range*/]);
+LIBXSMM_APIVAR(/*const*/ unsigned int(*libxsmm_trans_tile)[2/*M,N*/][8/*size-range*/]);
 
 #endif /*LIBXSMM_TRANS_H*/
 

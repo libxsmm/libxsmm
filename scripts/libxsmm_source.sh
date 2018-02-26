@@ -70,15 +70,10 @@ cat << EOM
 #if defined(LIBXSMM_BUILD)
 # error LIBXSMM_BUILD cannot be defined for the header-only LIBXSMM!
 #endif
-
-#if defined(__cplusplus)
-# define LIBXSMM_INTERNAL_API LIBXSMM_EXTERN LIBXSMM_INLINE
-#else
-# define LIBXSMM_INTERNAL_API LIBXSMM_INLINE
+#if !defined(LIBXSMM_API)
+# define LIBXSMM_API LIBXSMM_EXTERN_C LIBXSMM_INLINE LIBXSMM_RETARGETABLE
 #endif
-#define LIBXSMM_INTERNAL_API_DEFINITION LIBXSMM_INLINE
-
-#if !defined(LIBXSMM_DNN_INTERNAL_API)
+#if !defined(LIBXSMM_DNN_INTERNAL_API) /* TODO: remove/legacy */
 # define LIBXSMM_DNN_INTERNAL_API
 #endif
 

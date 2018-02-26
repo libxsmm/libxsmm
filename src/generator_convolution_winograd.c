@@ -28,7 +28,6 @@
 ******************************************************************************/
 /* Alexander Heinecke, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
-
 #include <libxsmm_generator.h>
 #include <libxsmm_macros.h>
 #include "generator_common.h"
@@ -40,7 +39,9 @@
 #include <assert.h>
 #include <stdio.h>
 
+
 /* @TODO change int based architecture value */
+LIBXSMM_API
 void libxsmm_generator_convolution_winograd_weight_update_kernel( libxsmm_generated_code*                        io_generated_code,
                                                                   const libxsmm_convolution_winograd_descriptor* i_conv_desc,
                                                                   const char*                                    i_arch ) {
@@ -60,6 +61,8 @@ void libxsmm_generator_convolution_winograd_weight_update_kernel( libxsmm_genera
   libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
 }
 
+
+LIBXSMM_API
 void libxsmm_generator_convolution_winograd_weight_update_inlineasm(const char*                                    i_file_out,
                                                                     const char*                                    i_routine_name,
                                                                     const libxsmm_convolution_winograd_descriptor* i_conv_desc,
@@ -95,7 +98,7 @@ void libxsmm_generator_convolution_winograd_weight_update_inlineasm(const char* 
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
-      fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_gemm_inlineasm could not write to into destination source file\n");
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_convolution_winograd_weight_update_inlineasm could not write to into destination source file\n");
       exit(-1);
     }
   }
@@ -104,6 +107,8 @@ void libxsmm_generator_convolution_winograd_weight_update_inlineasm(const char* 
   free( l_generated_code.generated_code );
 }
 
+
+LIBXSMM_API
 void libxsmm_generator_convolution_winograd_weight_update_directasm(const char*                                    i_file_out,
                                                                     const char*                                    i_routine_name,
                                                                     const libxsmm_convolution_winograd_descriptor* i_xgemm_desc,
@@ -118,7 +123,7 @@ void libxsmm_generator_convolution_winograd_weight_update_directasm(const char* 
 
   /* check if we are not noarch */
   if ( strcmp( i_arch, "noarch" ) == 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_convolution_winograd_weight_update_directasm: we cannot create ASM when noarch is specified!\n");
+    fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_convolution_winograd_weight_update_directasm cannot create ASM when noarch is specified!\n");
     exit(-1);
   }
 
@@ -142,7 +147,7 @@ void libxsmm_generator_convolution_winograd_weight_update_directasm(const char* 
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
-      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_direct: could not write to into destination source file!\n");
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_convolution_winograd_weight_update_directasm could not write to into destination source file!\n");
       exit(-1);
     }
   }
@@ -151,7 +156,9 @@ void libxsmm_generator_convolution_winograd_weight_update_directasm(const char* 
   free( l_generated_code.generated_code );
 }
 
+
 /* @TODO change int based architecture value */
+LIBXSMM_API
 void libxsmm_generator_convolution_winograd_forward_kernel( libxsmm_generated_code*                        io_generated_code,
                                                             const libxsmm_convolution_winograd_descriptor* i_conv_desc,
                                                             const char*                                    i_arch ) {
@@ -171,6 +178,8 @@ void libxsmm_generator_convolution_winograd_forward_kernel( libxsmm_generated_co
   libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
 }
 
+
+LIBXSMM_API
 void libxsmm_generator_convolution_winograd_forward_inlineasm( const char*                                    i_file_out,
                                                                const char*                                    i_routine_name,
                                                                const libxsmm_convolution_winograd_descriptor* i_conv_desc,
@@ -206,7 +215,7 @@ void libxsmm_generator_convolution_winograd_forward_inlineasm( const char*      
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
-      fprintf(stderr, "LIBXSMM ERROR libxsmm_generator_gemm_inlineasm could not write to into destination source file\n");
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_convolution_winograd_forward_inlineasm could not write to into destination source file\n");
       exit(-1);
     }
   }
@@ -215,6 +224,8 @@ void libxsmm_generator_convolution_winograd_forward_inlineasm( const char*      
   free( l_generated_code.generated_code );
 }
 
+
+LIBXSMM_API
 void libxsmm_generator_convolution_winograd_forward_directasm( const char*                                    i_file_out,
                                                                const char*                                    i_routine_name,
                                                                const libxsmm_convolution_winograd_descriptor* i_xgemm_desc,
@@ -229,7 +240,7 @@ void libxsmm_generator_convolution_winograd_forward_directasm( const char*      
 
   /* check if we are not noarch */
   if ( strcmp( i_arch, "noarch" ) == 0 ) {
-    fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_convolution_winograd_forward_directasm: we cannot create ASM when noarch is specified!\n");
+    fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_convolution_winograd_forward_directasm cannot create ASM when noarch is specified!\n");
     exit(-1);
   }
 
@@ -253,7 +264,7 @@ void libxsmm_generator_convolution_winograd_forward_directasm( const char*      
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
-      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_gemm_direct: could not write to into destination source file!\n");
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_convolution_winograd_forward_directasm could not write to into destination source file!\n");
       exit(-1);
     }
   }

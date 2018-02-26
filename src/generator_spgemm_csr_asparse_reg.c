@@ -38,7 +38,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
                                   const libxsmm_gemm_descriptor* i_xgemm_desc ) {
@@ -70,7 +70,7 @@ void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*         i
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         io_generated_code,
                                                const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                const char*                     i_arch,

@@ -35,12 +35,12 @@
 #include "generator_common.h"
 #include "generator_convolution_common.h"
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_avx2_kernel( libxsmm_generated_code*                             io_generated_code,
                                                               const libxsmm_convolution_weight_update_descriptor* i_conv_desc,
                                                               const char*                                         i_arch );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_avx2_ofhofwloops( libxsmm_generated_code*                                 io_generated_code,
                                                                    libxsmm_loop_label_tracker*                             io_loop_label_tracker,
                                                                    const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,

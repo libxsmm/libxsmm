@@ -68,7 +68,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
 };
 
 
-LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
+LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* bm, const libxsmm_blasint* bn, const libxsmm_blasint* bk,
   const libxsmm_blasint* b_m1, const libxsmm_blasint* b_n1, const libxsmm_blasint* b_k1, const libxsmm_blasint* b_k2,
@@ -164,7 +164,7 @@ LIBXSMM_API_DEFINITION libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_handle* handle)
+LIBXSMM_API void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_handle* handle)
 {
   if (0 != handle) {
     libxsmm_free(handle->buffer);
@@ -174,7 +174,7 @@ LIBXSMM_API_DEFINITION void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_han
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
+LIBXSMM_API int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
 {
   int result = EXIT_SUCCESS;
   static int error_once = 0;
@@ -224,7 +224,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* ha
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
+LIBXSMM_API int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
 {
   int result = EXIT_SUCCESS;
   static int error_once = 0;
@@ -274,7 +274,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* ha
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
+LIBXSMM_API int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
 {
   int result = EXIT_SUCCESS;
   static int error_once = 0;
@@ -324,7 +324,7 @@ LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* ha
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_bgemm_copyout_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
+LIBXSMM_API int libxsmm_bgemm_copyout_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
 {
   int result = EXIT_SUCCESS;
   static int error_once = 0;
@@ -413,7 +413,7 @@ LIBXSMM_API_INLINE void internal_bgemm_order(libxsmm_bgemm_order order,
   }
 }
 
-LIBXSMM_API_DEFINITION void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
+LIBXSMM_API void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
   const void* a, const void* b, void* c, int tid, int nthreads)
 {
   static int error_once = 0;
