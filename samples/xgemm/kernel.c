@@ -463,7 +463,7 @@ int main(int argc, char* argv []) {
 
   /* print some output... */
   printf("------------------------------------------------\n");
-  printf("RUNNING (%ux%u) X (%ux%u) = (%ux%u), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+  printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
   printf("------------------------------------------------\n");
 
   if (strcmp(l_precision, "DP") == 0) {
