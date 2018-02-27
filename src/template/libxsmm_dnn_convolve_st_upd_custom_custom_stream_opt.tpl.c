@@ -297,7 +297,7 @@ if (handle->upd_use_external_reduce == 0) {
       weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
     }
     if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
-#ifndef __AVX512BW__  
+#ifndef __AVX512BW__
       _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
 #else
       _mm512_store_ps(&weight_ptr[j*16], weight_sum);
