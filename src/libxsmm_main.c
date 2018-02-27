@@ -1812,7 +1812,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
   libxsmm_xmmfunction result;
   if (0 != descriptor) {
     libxsmm_gemm_descriptor backend_descriptor;
-    /*LIBXSMM_INIT: assume initialization completed by descriptor initialization function */
+    /* LIBXSMM_INIT: assume initialization completed by descriptor initialization function */
     if (0 != (0x8000 & descriptor->prefetch)) { /* "sign"-bit of unsigned short is set */
       backend_descriptor = *descriptor;
       LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(backend_descriptor, libxsmm_gemm_auto_prefetch);
@@ -1833,8 +1833,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     }
 #endif
   }
-  else { /* count dispatch attempt */
-    internal_update_mmstatistic(descriptor, 1/*try*/, 0);
+  else { /* quietly accept NULL-descriptor */
     result.xmm = 0;
   }
   return result;
