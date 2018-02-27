@@ -2349,9 +2349,16 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
               l_vec_reg_acc_start + reg_count);
         }
 
+
+        unsigned int instr_store;
+        if ( i_conv_desc->use_nts == 1 && i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) {
+          instr_store = LIBXSMM_X86_INSTR_VMOVNTPS;
+        } else {
+          instr_store = i_conv_kernel_config->vmove_instruction;
+        }
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_conv_kernel_config->instruction_set,
-            i_conv_kernel_config->vmove_instruction,
+            instr_store,
             i_gp_reg_mapping->gp_reg_weight,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             (reg_count)*offset * i_conv_kernel_config->datatype_size_wt,

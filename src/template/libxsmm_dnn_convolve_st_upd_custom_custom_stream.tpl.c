@@ -268,7 +268,11 @@ if (handle->reduce_weights) {
     for ( i = 0; i < handle->weight_copies; i++ ) {
       weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
     }
+#ifndef __AVX512BW__  
+    _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
+#else
     _mm512_store_ps(&weight_ptr[j*16], weight_sum);
+#endif
 #else
     LIBXSMM_ALIGNED(element_filter_type weight_sum[16], 64);
     LIBXSMM_PRAGMA_VALIGNED
