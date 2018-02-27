@@ -459,7 +459,7 @@ LIBXSMM_API void libxsmm_trace(FILE* stream, unsigned int depth, const int* filt
 }
 
 
-#if defined(LIBXSMM_TRACE) && defined(__GNUC__) && defined(LIBXSMM_BUILD)
+#if defined(__TRACE) && defined(__GNUC__) && defined(LIBXSMM_BUILD)
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
 LIBXSMM_API void __cyg_profile_func_enter(void* this_fn, void* call_site)
@@ -506,5 +506,5 @@ LIBXSMM_API void __cyg_profile_func_exit(void* this_fn, void* call_site)
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }
 
-#endif /*defined(LIBXSMM_TRACE) && defined(__GNUC__) && defined(LIBXSMM_BUILD)*/
+#endif /*defined(__TRACE) && defined(__GNUC__) && defined(LIBXSMM_BUILD)*/
 
