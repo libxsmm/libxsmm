@@ -166,7 +166,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #if defined(LIBXSMM_BUILD)
 # if defined(LIBXSMM_BUILD_EXT) && !defined(__STATIC)
 #   define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_APIEXT
-# elif (1 == LIBXSMM_NO_BLAS) /* noblas library */
+# elif defined(LIBXSMM_NO_BLAS) && (1 == LIBXSMM_NO_BLAS)
 #   define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_API
 # endif
 #endif
