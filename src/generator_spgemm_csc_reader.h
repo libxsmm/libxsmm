@@ -35,7 +35,7 @@
 #include <libxsmm_generator.h>
 #include <libxsmm_macros.h>
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
                                 const char*             i_csc_file_in,
                                 unsigned int**          o_row_idx,

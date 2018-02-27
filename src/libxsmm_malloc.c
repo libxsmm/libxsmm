@@ -187,14 +187,14 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_malloc_pool_type {
 
 /** Scratch pool, which supports up to MAX_NSCRATCH allocation sites. */
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-/* LIBXSMM_ALIGNED appears to contradict LIBXSMM_API_VARIABLE, and causes multiple defined symbols (if below is seen in multiple translation units) */
-LIBXSMM_API_VARIABLE(char internal_malloc_pool_buffer[(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)*sizeof(internal_malloc_pool_type)+(LIBXSMM_CACHELINE)-1]);
+/* LIBXSMM_ALIGNED appears to contradict LIBXSMM_APIVAR, and causes multiple defined symbols (if below is seen in multiple translation units) */
+LIBXSMM_APIVAR(char internal_malloc_pool_buffer[(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)*sizeof(internal_malloc_pool_type)+(LIBXSMM_CACHELINE)-1]);
 #endif
-LIBXSMM_API_VARIABLE(size_t internal_malloc_scratch_nmallocs);
-LIBXSMM_API_VARIABLE(size_t internal_malloc_scratch_size);
+LIBXSMM_APIVAR(size_t internal_malloc_scratch_nmallocs);
+LIBXSMM_APIVAR(size_t internal_malloc_scratch_size);
 
 
-LIBXSMM_API_DEFINITION size_t libxsmm_gcd(size_t a, size_t b)
+LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b)
 {
   while (0 != b) {
     const size_t r = a % b;
@@ -205,13 +205,13 @@ LIBXSMM_API_DEFINITION size_t libxsmm_gcd(size_t a, size_t b)
 }
 
 
-LIBXSMM_API_DEFINITION size_t libxsmm_lcm(size_t a, size_t b)
+LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b)
 {
   return (a * b) / libxsmm_gcd(a, b);
 }
 
 
-LIBXSMM_API_DEFINITION size_t libxsmm_alignment(size_t size, size_t alignment)
+LIBXSMM_API size_t libxsmm_alignment(size_t size, size_t alignment)
 {
   size_t result = sizeof(void*);
   if ((LIBXSMM_MALLOC_ALIGNFCT * LIBXSMM_MALLOC_ALIGNMAX) <= size) {
@@ -229,7 +229,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_alignment(size_t size, size_t alignment)
 }
 
 
-LIBXSMM_API_DEFINITION size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size)
+LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], size_t ndims, size_t* size)
 {
   size_t result = 0, size1 = 0;
   if (0 != ndims && 0 != shape) {
@@ -246,7 +246,7 @@ LIBXSMM_API_DEFINITION size_t libxsmm_offset(const size_t offset[], const size_t
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
+LIBXSMM_API int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
 {
   int result = EXIT_SUCCESS;
@@ -301,7 +301,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBX
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
+LIBXSMM_API int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn)
 {
   int result = EXIT_SUCCESS;
@@ -329,7 +329,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE(LIBX
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
+LIBXSMM_API int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
 {
   int result = EXIT_SUCCESS;
@@ -382,7 +382,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBX
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
+LIBXSMM_API int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn)
 {
   int result = EXIT_SUCCESS;
@@ -410,28 +410,28 @@ LIBXSMM_API_DEFINITION int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBX
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_set_default_allocator(void* context,
+LIBXSMM_API int libxsmm_set_default_allocator(void* context,
   libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
 {
   return libxsmm_xset_default_allocator(&libxsmm_lock_global, context, malloc_fn, free_fn);
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_get_default_allocator(void** context,
+LIBXSMM_API int libxsmm_get_default_allocator(void** context,
   libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn)
 {
   return libxsmm_xget_default_allocator(&libxsmm_lock_global, context, malloc_fn, free_fn);
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_set_scratch_allocator(void* context,
+LIBXSMM_API int libxsmm_set_scratch_allocator(void* context,
   libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn)
 {
   return libxsmm_xset_scratch_allocator(&libxsmm_lock_global, context, malloc_fn, free_fn);
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_get_scratch_allocator(void** context,
+LIBXSMM_API int libxsmm_get_scratch_allocator(void** context,
   libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn)
 {
   return libxsmm_xget_scratch_allocator(&libxsmm_lock_global, context, malloc_fn, free_fn);
@@ -452,7 +452,7 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* flags, void** extra)
+LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* flags, void** extra)
 {
   int result = EXIT_SUCCESS;
 #if !defined(NDEBUG) || !defined(LIBXSMM_MALLOC_NOCRC)
@@ -542,7 +542,7 @@ LIBXSMM_API_INLINE void* internal_xmap(const char* dir, size_t size, int flags, 
 #endif /*!defined(_WIN32)*/
 
 
-LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
+LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment,
   int flags, const void* extra, size_t extra_size)
 {
   int result = EXIT_SUCCESS;
@@ -842,7 +842,7 @@ LIBXSMM_API_DEFINITION int libxsmm_xmalloc(void** memory, size_t size, size_t al
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_xfree(const void* memory)
+LIBXSMM_API int libxsmm_xfree(const void* memory)
 {
   /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory);
   int result = EXIT_SUCCESS;
@@ -952,7 +952,7 @@ LIBXSMM_API_INLINE void internal_get_vtune_jitdesc(const void* code,
 #endif
 
 
-LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const char* name)
+LIBXSMM_API int libxsmm_malloc_attrib(void** memory, int flags, const char* name)
 {
   internal_malloc_info_type *const info = 0 != memory ? internal_malloc_info(*memory) : 0;
   int result = EXIT_SUCCESS;
@@ -1064,7 +1064,7 @@ LIBXSMM_API_DEFINITION int libxsmm_malloc_attrib(void** memory, int flags, const
 }
 
 
-LIBXSMM_API_DEFINITION void* libxsmm_aligned_malloc(size_t size, size_t alignment)
+LIBXSMM_API void* libxsmm_aligned_malloc(size_t size, size_t alignment)
 {
   void* result = 0;
   LIBXSMM_INIT
@@ -1134,7 +1134,7 @@ LIBXSMM_API_INLINE size_t internal_get_scratch_size(const internal_malloc_pool_t
 }
 
 
-LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignment, const char* caller)
+LIBXSMM_API void* libxsmm_scratch_malloc(size_t size, size_t alignment, const char* caller)
 {
   static int error_once = 0;
   size_t local_size = 0;
@@ -1285,13 +1285,13 @@ LIBXSMM_API_DEFINITION void* libxsmm_scratch_malloc(size_t size, size_t alignmen
 }
 
 
-LIBXSMM_API_DEFINITION void* libxsmm_malloc(size_t size)
+LIBXSMM_API void* libxsmm_malloc(size_t size)
 {
   return libxsmm_aligned_malloc(size, 0/*auto*/);
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
+LIBXSMM_API void libxsmm_free(const void* memory)
 {
   if (0 != memory) {
     unsigned int npools = 0, i = 0;
@@ -1358,7 +1358,7 @@ LIBXSMM_API_DEFINITION void libxsmm_free(const void* memory)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_release_scratch(void)
+LIBXSMM_API void libxsmm_release_scratch(void)
 {
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
   internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)((uintptr_t)(internal_malloc_pool_buffer + (LIBXSMM_CACHELINE)-1) & ~((LIBXSMM_CACHELINE)-1));
@@ -1382,7 +1382,7 @@ LIBXSMM_API_DEFINITION void libxsmm_release_scratch(void)
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info* info)
+LIBXSMM_API int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info* info)
 {
   int result = EXIT_SUCCESS;
   if (0 != info) {
@@ -1400,7 +1400,7 @@ LIBXSMM_API_DEFINITION int libxsmm_get_malloc_info(const void* memory, libxsmm_m
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
+LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
 {
   int result = EXIT_SUCCESS;
   if (0 != info) {
@@ -1434,21 +1434,21 @@ LIBXSMM_API_DEFINITION int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_set_scratch_limit(size_t nbytes)
+LIBXSMM_API void libxsmm_set_scratch_limit(size_t nbytes)
 {
   LIBXSMM_INIT
   libxsmm_scratch_limit = nbytes;
 }
 
 
-LIBXSMM_API_DEFINITION size_t libxsmm_get_scratch_limit(void)
+LIBXSMM_API size_t libxsmm_get_scratch_limit(void)
 {
   LIBXSMM_INIT
   return libxsmm_scratch_limit;
 }
 
 
-LIBXSMM_API_DEFINITION unsigned int libxsmm_hash(const void* data, size_t size, unsigned int seed)
+LIBXSMM_API unsigned int libxsmm_hash(const void* data, size_t size, unsigned int seed)
 {
   LIBXSMM_INIT
   return libxsmm_crc32(data, size, seed);

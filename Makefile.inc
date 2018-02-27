@@ -271,24 +271,24 @@ endif
 BLAS_STATIC ?= $(DEPSTATIC)
 ifneq (0,$(BLAS_STATIC))
   BLASLIBEXT ?= $(SLIBEXT)
-else
-  BLASLIBEXT ?= $(DLIBEXT)
+else # shared (DLL)
+  BLASLIBEXT ?= $(IMPEXT)
 endif
 
 # BLAS is not used by default
 BLAS ?= 0
 
-LIBDEP = $(LIBNAME).$(LIBEXT)
+LIBDEP = $(LIBNAME).$(IMPEXT)
 MAINLIB = $(call abslib,$(LIBDEP))
 
-FORTDEP = $(LIBNAME)f.$(LIBEXT)
+FORTDEP = $(LIBNAME)f.$(IMPEXT)
 FORTLIB = $(call abslib,$(FORTDEP))
 
-EXTDEP = $(LIBNAME)ext.$(LIBEXT)
+EXTDEP = $(LIBNAME)ext.$(IMPEXT)
 EXTLIB = $(call abslib,$(EXTDEP)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides libxsmmnoblas to satisfy BLAS symbols
-  NOBLASLIB = $(call abslib,$(LIBNAME)noblas.$(LIBEXT))
+  NOBLASLIB = $(call abslib,$(LIBNAME)noblas.$(IMPEXT))
 else
   NOBLASLIB = $(NULL)
 endif
@@ -321,7 +321,6 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icc, \
   $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1) \
   $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1)))))")
 
-#FORTRAN ?= $(if $(FC), $(if $(notdir $(shell which $(FC) 2>/dev/null)), 1, 0), 0)
 ifneq (0,$(INTEL))
   ifeq (0,$(OFFLOAD))
     CXXFLAGS += -qno-offload
@@ -344,13 +343,15 @@ else
     CC = gcc
   endif
   ifneq (0,$(FORTRAN))
-    ifneq (,$(strip $(FC)))
-    ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
-      FC = $(shell which gfortran 2>/dev/null)
-    endif
-    endif
-  else
-    FC = $(shell which gfortran 2>/dev/null)
+  ifneq (,$(strip $(FC)))
+  ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
+    ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
+      FC = gfortran
+    else
+      FC = $(NULL)
+    endif  
+  endif
+  endif
   endif
 endif
 ifeq (0,$(FORTRAN))
@@ -541,6 +542,11 @@ endif
 endif
 MINGW ?= 0
 
+#ifneq (0,$(MINGW))
+#  IMPEXT ?= $(SLIBEXT)
+#endif
+IMPEXT ?= $(LIBEXT)
+
 # Too many ICEs with Clang hence we want to know if we are on Clang
 ifeq (0,$(GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
@@ -605,7 +611,7 @@ else
       LDFLAGS += -hsystem_alloc
       CRAY ?= 1
     else
-      PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | if grep -q "PGI"; then echo "1"; fi)
+      PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
     endif
   endif
 endif
@@ -815,8 +821,13 @@ else # GCC assumed
     LDFLAGS += $(PICFLAG)
   else ifneq (0,$(MINGW))
     CXXFLAGS += -fno-asynchronous-unwind-tables
-    CFLAGS += -fno-asynchronous-unwind-tables
     FCFLAGS += -fno-asynchronous-unwind-tables
+    CFLAGS += -fno-asynchronous-unwind-tables
+    ifneq (0,$(PEDANTIC))
+    ifneq (1,$(PEDANTIC))
+      CFLAGS += -Wno-format
+    endif
+    endif
   endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((40700 <= $(GXX_VERSION)))"))
@@ -874,11 +885,6 @@ else # GCC assumed
       CXXFLAGS += -funroll-loops -ftree-vectorize
       CFLAGS += -funroll-loops -ftree-vectorize
       FCFLAGS += -funroll-loops -ftree-vectorize
-      ifneq (Darwin,$(UNAME))
-        CXXFLAGS += -fdata-sections -ffunction-sections
-        CFLAGS += -fdata-sections -ffunction-sections
-        FCFLAGS += -fdata-sections -ffunction-sections
-      endif
       ifneq (0,$(GCC))
         #CXXFLAGS += -ffast-math
         #CFLAGS += -ffast-math
@@ -1027,6 +1033,10 @@ endif
 ifeq (0,$(DBG))
 ifeq (0,$(COMPATIBLE))
 ifneq (Darwin,$(UNAME))
+  # flag -fvisibility=hidden is causing crashes (assertions during validation)
+  CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
+  CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
+  FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
   # --gc-sections: relies on section-flags present at compile-stage
   # -z,relro: Linux distributions may apply similar hardening
   LDFLAGS += -Wl,--gc-sections,-z,relro

@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -40,7 +40,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_generated_code*                        io_generated_code,
                                                                   const libxsmm_convolution_winograd_descriptor* i_conv_desc,
                                                                   const char*                                    i_arch ) {

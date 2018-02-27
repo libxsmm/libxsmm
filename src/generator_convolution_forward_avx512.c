@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2017, Intel Corporation                                **
+** Copyright (c) 2015-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -42,7 +42,7 @@
 
 #define FP64_BN_STATS
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code*                       io_generated_code,
                                                           const libxsmm_convolution_forward_descriptor* i_conv_desc,
                                                           const char*                                   i_arch ) {
@@ -605,7 +605,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_avx512_ifmloop( libxsmm_generated_code*                           io_generated_code,
                                                            const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
                                                            const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -622,7 +622,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop( libxsmm_generated_cod
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_generated_code*                           io_generated_code,
                                                                    const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
                                                                    const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -941,7 +941,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_generated_code*                           io_generated_code,
     const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
     const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
@@ -1239,7 +1239,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
 }
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_generated_code*                           io_generated_code,
     const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
     const libxsmm_convolution_kernel_config*          i_conv_kernel_config,

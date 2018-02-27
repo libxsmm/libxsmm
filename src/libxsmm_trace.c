@@ -107,15 +107,15 @@ LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # define LIBXSMM_TRACE_MINDEPTH 5
-LIBXSMM_API_VARIABLE(volatile LONG internal_trace_initialized);
+LIBXSMM_APIVAR(volatile LONG internal_trace_initialized);
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
-LIBXSMM_API_VARIABLE(volatile int internal_trace_initialized);
+LIBXSMM_APIVAR(volatile int internal_trace_initialized);
 #if !defined(LIBXSMM_NO_SYNC)
-LIBXSMM_API_VARIABLE(pthread_key_t internal_trace_key);
+LIBXSMM_APIVAR(pthread_key_t internal_trace_key);
 #endif
 LIBXSMM_API void internal_delete(void* value);
-LIBXSMM_API_DEFINITION void internal_delete(void* value)
+LIBXSMM_API void internal_delete(void* value)
 {
   int fd;
 #if !(defined(__APPLE__) && defined(__MACH__))
@@ -143,9 +143,9 @@ LIBXSMM_API_DEFINITION void internal_delete(void* value)
 #endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
 
 
-LIBXSMM_API_VARIABLE(int internal_trace_mindepth);
-LIBXSMM_API_VARIABLE(int internal_trace_threadid);
-LIBXSMM_API_VARIABLE(int internal_trace_maxnsyms);
+LIBXSMM_APIVAR(int internal_trace_mindepth);
+LIBXSMM_APIVAR(int internal_trace_threadid);
+LIBXSMM_APIVAR(int internal_trace_maxnsyms);
 
 
 LIBXSMM_API
@@ -154,7 +154,7 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms);
 
-LIBXSMM_API_DEFINITION int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms)
+LIBXSMM_API int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms)
 {
   int result = EXIT_SUCCESS;
   internal_trace_initialized = -1; /* disabled */
@@ -186,7 +186,7 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 int libxsmm_trace_finalize(void);
 
-LIBXSMM_API_DEFINITION int libxsmm_trace_finalize(void)
+LIBXSMM_API int libxsmm_trace_finalize(void)
 {
   int result;
 #if defined(LIBXSMM_TRACE)
@@ -212,7 +212,7 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 unsigned int libxsmm_backtrace(void* buffer[], unsigned int size);
 
-LIBXSMM_API_DEFINITION
+LIBXSMM_API
 #if defined(_WIN32)
 /*TODO: no inline*/
 #elif defined(__GNUC__)
@@ -234,7 +234,7 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms);
 
-LIBXSMM_API_DEFINITION
+LIBXSMM_API
 #if defined(_WIN32)
 /*TODO: no inline*/
 #elif defined(__GNUC__)
@@ -433,7 +433,7 @@ LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 void libxsmm_trace(FILE* stream, unsigned int depth, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms);
 
-LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms)
+LIBXSMM_API void libxsmm_trace(FILE* stream, unsigned int depth, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms)
 {
 #if defined(LIBXSMM_TRACE)
   unsigned int depth1 = depth + 1, threadid;
@@ -459,10 +459,10 @@ LIBXSMM_API_DEFINITION void libxsmm_trace(FILE* stream, unsigned int depth, cons
 }
 
 
-#if defined(__GNUC__) && defined(LIBXSMM_BUILD)
+#if defined(__TRACE) && defined(__GNUC__) && defined(LIBXSMM_BUILD)
 
-LIBXSMM_API_EXTERN LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
-LIBXSMM_API_INTERN void __cyg_profile_func_enter(void* this_fn, void* call_site)
+LIBXSMM_API LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_enter(void* this_fn, void* call_site);
+LIBXSMM_API void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if defined(LIBXSMM_TRACE)
 # if !defined(LIBXSMM_TRACE_DLINFO)
@@ -500,11 +500,11 @@ LIBXSMM_API_INTERN void __cyg_profile_func_enter(void* this_fn, void* call_site)
 }
 
 
-LIBXSMM_API_EXTERN LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
-LIBXSMM_API_INTERN void __cyg_profile_func_exit(void* this_fn, void* call_site)
+LIBXSMM_API LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_exit(void* this_fn, void* call_site);
+LIBXSMM_API void __cyg_profile_func_exit(void* this_fn, void* call_site)
 {
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
 }
 
-#endif /*defined(__GNUC__) && defined(LIBXSMM_BUILD)*/
+#endif /*defined(__TRACE) && defined(__GNUC__) && defined(LIBXSMM_BUILD)*/
 

@@ -6,6 +6,7 @@ bash -c "make realclean ; make headers sources"
 cd ide
 
 SET LIBXSMMROOT=%~d0%~p0..
+SETX PATH "%LIBXSMMROOT%\lib\intel64;%LIBXSMMROOT%\lib\ia32;%PATH%"
 
 IF EXIST C:\cygwin64\usr\include\eigen3\Eigen\Dense (
   SET EIGENROOT=C:\cygwin64\usr\include\eigen3

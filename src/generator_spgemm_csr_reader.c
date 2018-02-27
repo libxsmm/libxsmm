@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
                                 const char*             i_csr_file_in,
                                 unsigned int**          o_row_idx,

@@ -42,7 +42,7 @@
  * @param i_arch architecture code was generated for (needed to build clobber)
  * @param i_prefetch prefetch mode which may result in additional gp reg inits
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                           const char*                   i_arch,
@@ -56,7 +56,7 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
  * @param i_arch architecture code was generated for (needed to build clobber)
  * @param i_prefetch prefetch mode which may result in additional gp reg clobbers
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
                                            const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
                                            const char*                   i_arch,
@@ -66,7 +66,7 @@ void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_gene
  * Generates vmaskmovps/vmaskmovpd with displacements for loads and stores.
  * Only works with i_vector_name='Y'
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated_code,
                                      const unsigned int      i_vmove_instr,
                                      const unsigned int      i_gp_reg_base,
@@ -92,7 +92,7 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
  * @param i_mask_reg_number the mask register to be used
  * @param i_is_store 0: load semantic, other: store semantic
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code,
                                        const unsigned int      i_instruction_set,
                                        const unsigned int      i_vmove_instr,
@@ -116,7 +116,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
  * @param i_vec_reg_number_1 the second vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_vec_reg_number_2 the third vector register number (xmm/ymm: 0-15, zmm: 0-31), if this operand equals LIBXSMM_X86_VEC_REG_UNDEF -> SSE3 code generation
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
@@ -137,7 +137,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
  * @param i_vec_reg_dst the second/destination vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_shuffle_operand is an immediate (only looked at when needed)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
@@ -161,7 +161,7 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
  * @param i_vec_reg_number_0 the first vector register number (zmm: 0-31)
  * @param i_vec_reg_number_1 the second vector register number (zmm: 0-31)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
@@ -180,7 +180,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
  * @param i_vec_reg_number_2 the third vector register number (zmm: 0-31)
  * @param i_mask_reg_number the mask register (0-7)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
@@ -207,7 +207,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
   * @param i_vec_reg_number_src the second vector register number (zmm: 0-31), this define a implicit regsiter range
   * @param i_vec_reg_number_dest the first vector register number (zmm: 0-31)
   */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_mask( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
@@ -236,7 +236,7 @@ void libxsmm_x86_instruction_vec_compute_mem_mask( libxsmm_generated_code* io_ge
   * @param i_vec_reg_number_src the second vector register number (zmm: 0-31), this define a implicit regsiter range
   * @param i_vec_reg_number_dest the first vector register number (zmm: 0-31)
   */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_qfma( libxsmm_generated_code* io_generated_code,
                                                const unsigned int      i_instruction_set,
                                                const unsigned int      i_vec_instr,
@@ -259,7 +259,7 @@ void libxsmm_x86_instruction_vec_compute_qfma( libxsmm_generated_code* io_genera
  * @param i_vec_reg_number_1 the second vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_vec_reg_number_2 the third vector register number (xmm/ymm: 0-15, zmm: 0-31), if this operand equals LIBXSMM_X86_VEC_REG_UNDEF -> SSE3 code generation
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generated_code,
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
@@ -284,7 +284,7 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
  * @param i_mask_reg_number the mask register (xmm/ymm: 0-15 when using AVX2), (k1-k7 when using AVX512)
  * @param i_is_gather "true" generate a gather instruction, "false" generator a scatter instruction
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_generated_code,
                                                 const unsigned int      i_instruction_set,
                                                 const unsigned int      i_vmove_instr,
@@ -307,7 +307,7 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
  * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_displacement the offset to the base address
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code,
                                        const unsigned int      i_prefetch_instr,
                                        const unsigned int      i_gp_reg_base,
@@ -320,7 +320,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
  * Takes 3 gp_registers (0-15 values)
  * i_is_store tells whether this is a store or load
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
                                       const unsigned int     i_alu_instr,
                                       const unsigned int     i_gp_reg_base,
@@ -338,7 +338,7 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
  * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_immediate the immediate operand
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_alu_instr,
                                       const unsigned int      i_gp_reg_number,
@@ -352,7 +352,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
  * @param i_gp_reg_number_src the source register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_gp_reg_number_dest the destination register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_alu_instr,
                                       const unsigned int      i_gp_reg_number_src,
@@ -364,7 +364,7 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_number the source register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code,
                                        const unsigned int      i_gp_reg_number );
 
@@ -374,7 +374,7 @@ void libxsmm_x86_instruction_push_reg( libxsmm_generated_code* io_generated_code
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_number the source register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_gp_reg_number );
 
@@ -386,7 +386,7 @@ void libxsmm_x86_instruction_pop_reg( libxsmm_generated_code* io_generated_code,
  * @param i_gp_reg_number the register number (rax=0,rcx=1,rdx=2,rbx=3,rsp=4,rbp=5,rsi=6,rdi=7,r8=8,r9=9,r10=10,r11=11,r12=12,r13=13,r14=14,r15=15) of the base address register
  * @param i_mask_reg_number the register number (k1=1...k7=7)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_code,
                                         const unsigned int      i_mask_instr,
                                         const unsigned int      i_gp_reg_number,
@@ -401,7 +401,7 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
  * @param i_mask_reg_number_src_1 the second operand register number (att syntax) (k1=1...k7=7)
  * @param i_mask_reg_number_dest the third operand register number (att syntax) (k1=1...k7=7)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_generated_code,
                                                const unsigned int      i_mask_instr,
                                                const unsigned int      i_mask_reg_number_src_0,
@@ -414,7 +414,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param io_loop_label_tracker data structure to handle loop labels, nested loops are supported, but not overlapping loops
 */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
                                                   libxsmm_loop_label_tracker* io_loop_label_tracker );
 
@@ -425,7 +425,7 @@ void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io
  * @param i_jmp_instr the particular jump instruction used
  * @param io_loop_label_tracker data structure to handle loop labels will jump to latest registered label
 */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_generated_code,
                                                  const unsigned int          i_jmp_instr,
                                                  libxsmm_loop_label_tracker* io_loop_label_tracker );
@@ -440,7 +440,7 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
  * @param i_vector_name the vector register name prefix (x,y or z)
  * @param i_vec_reg_number the destination(gather)/source(scatter) vec register (xmm/ymm: 0-15, zmm: 0-31)
 */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code *io_generated_code,
                                                           const unsigned char *i_data,
                                                           const char *i_id,
@@ -453,7 +453,7 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_arch architecture code was generated for (needed to build clobber)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_convolution( libxsmm_generated_code*                   io_generated_code,
                                                       const unsigned int                        i_gp_reg_input,
                                                       const unsigned int                        i_gp_reg_weight,
@@ -470,7 +470,7 @@ void libxsmm_x86_instruction_open_stream_convolution( libxsmm_generated_code*   
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_arch architecture code was generated for (needed to build clobber)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_convolution( libxsmm_generated_code*       io_generated_code,
                                                 const char*                   i_arch );
 
@@ -482,7 +482,7 @@ void libxsmm_x86_instruction_close_stream_convolution( libxsmm_generated_code*  
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_arch architecture code was generated for (needed to build clobber)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*                   io_generated_code,
                                                   const unsigned int                        i_gp_reg_a,
                                                   const unsigned int                        i_gp_reg_lda,
@@ -499,7 +499,7 @@ void libxsmm_x86_instruction_open_stream_matcopy( libxsmm_generated_code*       
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_arch architecture code was generated for (needed to build clobber)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*       io_generated_code,
                                                    const char*                   i_arch );
 
@@ -510,7 +510,7 @@ void libxsmm_x86_instruction_close_stream_matcopy( libxsmm_generated_code*      
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_arch architecture code was generated for (needed to build clobber)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream_transpose( libxsmm_generated_code*                   io_generated_code,
                                                     const unsigned int                        i_gp_reg_a,
                                                     const unsigned int                        i_gp_reg_lda,
@@ -525,7 +525,7 @@ void libxsmm_x86_instruction_open_stream_transpose( libxsmm_generated_code*     
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_arch architecture code was generated for (needed to build clobber)
  */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream_transpose( libxsmm_generated_code*       io_generated_code,
                                                      const char*                   i_arch );
 

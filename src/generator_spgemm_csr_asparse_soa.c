@@ -37,7 +37,7 @@
 #include <string.h>
 #include <stdio.h>
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         io_generated_code,
                                                const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                const char*                     i_arch,
@@ -61,7 +61,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         i
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*         io_generated_code,
                                                       const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                       const char*                     i_arch,
@@ -196,7 +196,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
   libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*            io_generated_code,
                                                       const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                       libxsmm_loop_label_tracker*        io_loop_label_tracker,

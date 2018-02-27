@@ -109,31 +109,31 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
 } libxsmm_generated_code;
 
 /** function to translate LIBXSMM Generator error codes to error messages */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 const char* libxsmm_strerror(unsigned int i_error_code);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_gemm_inlineasm(const char*                    i_file_out,
                                       const char*                    i_routine_name,
                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
                                       const char*                    i_arch );
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_gemm_directasm(const char*                    i_file_out,
                                       const char*                    i_routine_name,
                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
                                       const char*                    i_arch );
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_gemm_kernel(libxsmm_generated_code*        io_generated_code,
                                    const libxsmm_gemm_descriptor* i_xgemm_desc,
                                    const char*                    i_arch );
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_spgemm(const char*                    i_file_out,
                               const char*                    i_routine_name,
                               const libxsmm_gemm_descriptor* i_xgemm_desc,
@@ -142,7 +142,7 @@ void libxsmm_generator_spgemm(const char*                    i_file_out,
                               const int                      i_is_csr);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_spgemm_csc_kernel(libxsmm_generated_code*        io_generated_code,
                                          const libxsmm_gemm_descriptor* i_xgemm_desc,
                                          const char*                    i_arch,
@@ -151,7 +151,7 @@ void libxsmm_generator_spgemm_csc_kernel(libxsmm_generated_code*        io_gener
                                          const double*                  i_values);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_spgemm_csr_kernel(libxsmm_generated_code*        io_generated_code,
                                          const libxsmm_gemm_descriptor* i_xgemm_desc,
                                          const char*                    i_arch,
@@ -160,7 +160,7 @@ void libxsmm_generator_spgemm_csr_kernel(libxsmm_generated_code*        io_gener
                                          const double*                  i_values);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_spgemm_csr_reg_kernel(libxsmm_generated_code*        io_generated_code,
                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
                                              const char*                    i_arch,
@@ -169,7 +169,7 @@ void libxsmm_generator_spgemm_csr_reg_kernel(libxsmm_generated_code*        io_g
                                              const double*                  i_values);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_spgemm_csr_soa_kernel(libxsmm_generated_code*        io_generated_code,
                                              const libxsmm_gemm_descriptor* i_xgemm_desc,
                                              const char*                    i_arch,
@@ -178,7 +178,7 @@ void libxsmm_generator_spgemm_csr_soa_kernel(libxsmm_generated_code*        io_g
                                              const void*                    i_values);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_generated_code,
                                               const libxsmm_gemm_descriptor* i_xgemm_desc,
                                               const char*                    i_arch,
@@ -187,83 +187,83 @@ void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_
                                               const void*                    i_values );
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
-void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*                      io_generated_code,
-                                       const libxsmm_mcopy_descriptor*            i_matcopy_desc,
-                                       const char*                                  i_arch );
+LIBXSMM_API
+void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*            io_generated_code,
+                                       const libxsmm_mcopy_descriptor*    i_matcopy_desc,
+                                       const char*                        i_arch );
 
-LIBXSMM_INTERNAL_API
-void libxsmm_generator_transpose_kernel( libxsmm_generated_code*                        io_generated_code,
-                                         const libxsmm_trans_descriptor*            i_trans_desc,
-                                         const char*                                    i_arch );
+LIBXSMM_API
+void libxsmm_generator_transpose_kernel( libxsmm_generated_code*          io_generated_code,
+                                         const libxsmm_trans_descriptor*  i_trans_desc,
+                                         const char*                      i_arch );
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_convolution_forward_inlineasm(const char*                       i_file_out,
                                                      const char*                       i_routine_name,
                                                      const libxsmm_convolution_forward_descriptor* i_conv_desc,
                                                      const char*                       i_arch);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_convolution_forward_directasm(const char*                       i_file_out,
                                                      const char*                       i_routine_name,
                                                      const libxsmm_convolution_forward_descriptor* i_conv_desc,
                                                      const char*                       i_arch);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_convolution_forward_kernel(libxsmm_generated_code*           io_generated_code,
                                                   const libxsmm_convolution_forward_descriptor* i_conv_desc,
                                                   const char*                       i_arch);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_convolution_backward_kernel(libxsmm_generated_code*           io_generated_code,
                                                    const libxsmm_convolution_backward_descriptor* i_conv_desc,
                                                    const char*                       i_arch);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_convolution_weight_update_kernel(libxsmm_generated_code*           io_generated_code,
                                                         const libxsmm_convolution_weight_update_descriptor* i_conv_desc,
                                                         const char*                       i_arch);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_convolution_winograd_weight_update_kernel(libxsmm_generated_code*                        io_generated_code,
                                                                  const libxsmm_convolution_winograd_descriptor* i_conv_desc,
                                                                  const char*                                    i_arch);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_convolution_winograd_weight_update_inlineasm(const char*                                    i_file_out,
                                                                     const char*                                    i_routine_name,
                                                                     const libxsmm_convolution_winograd_descriptor* i_conv_desc,
                                                                     const char*                                    i_arch);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_convolution_winograd_weight_update_directasm(const char*                                    i_file_out,
                                                                     const char*                                    i_routine_name,
                                                                     const libxsmm_convolution_winograd_descriptor* i_conv_desc,
                                                                     const char*                                    i_arch);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_convolution_winograd_forward_kernel(libxsmm_generated_code*                        io_generated_code,
                                                            const libxsmm_convolution_winograd_descriptor* i_conv_desc,
                                                            const char*                                    i_arch);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_convolution_winograd_forward_inlineasm(const char*                                    i_file_out,
                                                               const char*                                    i_routine_name,
                                                               const libxsmm_convolution_winograd_descriptor* i_conv_desc,
                                                               const char*                                    i_arch);
 
 /* @TODO change int based architecture value */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API
 void libxsmm_generator_convolution_winograd_forward_directasm(const char*                                    i_file_out,
                                                               const char*                                    i_routine_name,
                                                               const libxsmm_convolution_winograd_descriptor* i_conv_desc,

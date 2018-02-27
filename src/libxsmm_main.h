@@ -536,37 +536,38 @@ LIBXSMM_API void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API void libxsmm_dnn_finalize(void);
 
 /** Global lock; create an own lock for an independent domain. */
-LIBXSMM_API_VARIABLE(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
-/** Function used to allocate default memory. */
-LIBXSMM_API_VARIABLE(libxsmm_malloc_function libxsmm_default_malloc_fn);
-/** Function used to allocate scratch memory. */
-LIBXSMM_API_VARIABLE(libxsmm_malloc_function libxsmm_scratch_malloc_fn);
-/** Function used to release default memory. */
-LIBXSMM_API_VARIABLE(libxsmm_free_function libxsmm_default_free_fn);
-/** Function used to release scratch memory. */
-LIBXSMM_API_VARIABLE(libxsmm_free_function libxsmm_scratch_free_fn);
-/** If non-NULL, this context used for the context-form of the malloc/free function. */
-LIBXSMM_API_VARIABLE(void* libxsmm_default_allocator_context);
-/** If non-NULL, this context used for the context-form of the malloc/free function. */
-LIBXSMM_API_VARIABLE(void* libxsmm_scratch_allocator_context);
-/** Number of discovered threads (per libxsmm_get_tid) */
-LIBXSMM_API_VARIABLE(unsigned int libxsmm_threads_count);
-/** Number of scratch memory pools used; clamped against internal maximum. */
-LIBXSMM_API_VARIABLE(unsigned int libxsmm_scratch_pools);
-/** Maximum total size of the scratch memory domain. */
-LIBXSMM_API_VARIABLE(size_t libxsmm_scratch_limit);
-/** Growth factor used to scale the scratch memory in case of reallocation. */
-LIBXSMM_API_VARIABLE(double libxsmm_scratch_scale);
-/** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
-LIBXSMM_API_VARIABLE(double libxsmm_timer_scale);
+LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
 /** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
-LIBXSMM_API_VARIABLE(int libxsmm_verbosity);
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_verbosity);
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
-LIBXSMM_API_VARIABLE(int libxsmm_target_archid);
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_target_archid);
 /** Determines whether a threaded implementation is synchronized or not. */
-LIBXSMM_API_VARIABLE(int libxsmm_nosync);
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_nosync);
 /** Number of threads per core. */
-LIBXSMM_API_VARIABLE(int libxsmm_nt);
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_nt);
+
+/** Function used to allocate default memory. */
+LIBXSMM_APIVAR(libxsmm_malloc_function libxsmm_default_malloc_fn);
+/** Function used to allocate scratch memory. */
+LIBXSMM_APIVAR(libxsmm_malloc_function libxsmm_scratch_malloc_fn);
+/** Function used to release default memory. */
+LIBXSMM_APIVAR(libxsmm_free_function libxsmm_default_free_fn);
+/** Function used to release scratch memory. */
+LIBXSMM_APIVAR(libxsmm_free_function libxsmm_scratch_free_fn);
+/** If non-NULL, this context used for the context-form of the malloc/free function. */
+LIBXSMM_APIVAR(void* libxsmm_default_allocator_context);
+/** If non-NULL, this context used for the context-form of the malloc/free function. */
+LIBXSMM_APIVAR(void* libxsmm_scratch_allocator_context);
+/** Number of discovered threads (per libxsmm_get_tid) */
+LIBXSMM_APIVAR(unsigned int libxsmm_threads_count);
+/** Number of scratch memory pools used; clamped against internal maximum. */
+LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
+/** Maximum total size of the scratch memory domain. */
+LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
+/** Growth factor used to scale the scratch memory in case of reallocation. */
+LIBXSMM_APIVAR(double libxsmm_scratch_scale);
+/** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
+LIBXSMM_APIVAR(double libxsmm_timer_scale);
 
 #endif /*LIBXSMM_MAIN_H*/
 

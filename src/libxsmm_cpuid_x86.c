@@ -77,7 +77,7 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*,
 #endif
 
 
-LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
+LIBXSMM_API int libxsmm_cpuid_x86(void)
 {
   int target_arch = LIBXSMM_STATIC_TARGET_ARCH;
   unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
@@ -142,7 +142,7 @@ LIBXSMM_API_DEFINITION int libxsmm_cpuid_x86(void)
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_cpuid(void)
+LIBXSMM_API int libxsmm_cpuid(void)
 {
   return libxsmm_cpuid_x86();
 }

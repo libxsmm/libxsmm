@@ -45,7 +45,7 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
+LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   const double alpha, const double beta,
@@ -151,7 +151,7 @@ LIBXSMM_API_DEFINITION libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
+LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   libxsmm_blasint M, libxsmm_blasint N, libxsmm_blasint K,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   const float alpha, const float beta,
@@ -257,7 +257,7 @@ LIBXSMM_API_DEFINITION libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const double* B, double* C )
+LIBXSMM_API void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* handle, const double* B, double* C )
 {
   int i;
   assert( handle != 0 );
@@ -274,7 +274,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dfsspmdm_execute( const libxsmm_dfsspmdm* ha
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const float* B, float* C )
+LIBXSMM_API void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* handle, const float* B, float* C )
 {
   int i;
   assert( handle != 0 );
@@ -291,7 +291,7 @@ LIBXSMM_API_DEFINITION void libxsmm_sfsspmdm_execute( const libxsmm_sfsspmdm* ha
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
+LIBXSMM_API void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
 {
   assert( handle != 0 );
 
@@ -310,7 +310,7 @@ LIBXSMM_API_DEFINITION void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_sfsspmdm_destroy( libxsmm_sfsspmdm* handle )
+LIBXSMM_API void libxsmm_sfsspmdm_destroy( libxsmm_sfsspmdm* handle )
 {
   assert( handle != 0 );
 
