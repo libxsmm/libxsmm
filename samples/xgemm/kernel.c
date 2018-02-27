@@ -223,7 +223,7 @@ int main(int argc, char* argv []) {
   double l_beta = 0;
 
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  int l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+  libxsmm_gemm_prefetch_type l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
   libxsmm_descriptor_blob l_xgemm_blob;
   libxsmm_matdiff_info l_diff;
