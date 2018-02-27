@@ -1027,10 +1027,9 @@ endif
 ifeq (0,$(DBG))
 ifeq (0,$(COMPATIBLE))
 ifneq (Darwin,$(UNAME))
-  # flag -fvisibility=hidden is causing crashes (assertions during validation)
-  CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
-  CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
-  FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
+  CXXFLAGS += -fdata-sections -ffunction-sections -fvisibility=hidden -fvisibility-inlines-hidden
+  CFLAGS += -fdata-sections -ffunction-sections -fvisibility=hidden
+  FCFLAGS += -fdata-sections -ffunction-sections -fvisibility=hidden
   # --gc-sections: relies on section-flags present at compile-stage
   # -z,relro: Linux distributions may apply similar hardening
   LDFLAGS += -Wl,--gc-sections,-z,relro
