@@ -271,24 +271,24 @@ endif
 BLAS_STATIC ?= $(DEPSTATIC)
 ifneq (0,$(BLAS_STATIC))
   BLASLIBEXT ?= $(SLIBEXT)
-else
-  BLASLIBEXT ?= $(DLIBEXT)
+else # shared (DLL)
+  BLASLIBEXT ?= $(IMPEXT)
 endif
 
 # BLAS is not used by default
 BLAS ?= 0
 
-LIBDEP = $(LIBNAME).$(LIBEXT)
+LIBDEP = $(LIBNAME).$(IMPEXT)
 MAINLIB = $(call abslib,$(LIBDEP))
 
-FORTDEP = $(LIBNAME)f.$(LIBEXT)
+FORTDEP = $(LIBNAME)f.$(IMPEXT)
 FORTLIB = $(call abslib,$(FORTDEP))
 
-EXTDEP = $(LIBNAME)ext.$(LIBEXT)
+EXTDEP = $(LIBNAME)ext.$(IMPEXT)
 EXTLIB = $(call abslib,$(EXTDEP)) #$(XLIB_BEGIN) -lm $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides libxsmmnoblas to satisfy BLAS symbols
-  NOBLASLIB = $(call abslib,$(LIBNAME)noblas.$(LIBEXT))
+  NOBLASLIB = $(call abslib,$(LIBNAME)noblas.$(IMPEXT))
 else
   NOBLASLIB = $(NULL)
 endif
@@ -321,7 +321,6 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icc, \
   $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1) \
   $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1)))))")
 
-#FORTRAN ?= $(if $(FC), $(if $(notdir $(shell which $(FC) 2>/dev/null)), 1, 0), 0)
 ifneq (0,$(INTEL))
   ifeq (0,$(OFFLOAD))
     CXXFLAGS += -qno-offload
@@ -344,13 +343,13 @@ else
     CC = gcc
   endif
   ifneq (0,$(FORTRAN))
-    ifneq (,$(strip $(FC)))
-    ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
-      FC = $(shell which gfortran 2>/dev/null)
-    endif
-    endif
-  else
-    FC = $(shell which gfortran 2>/dev/null)
+  ifneq (,$(strip $(FC)))
+  ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
+  ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
+    FC = gfortran
+  endif  
+  endif
+  endif
   endif
 endif
 ifeq (0,$(FORTRAN))
@@ -540,6 +539,11 @@ else ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__MINGW32
 endif
 endif
 MINGW ?= 0
+
+#ifneq (0,$(MINGW))
+#  IMPEXT ?= $(SLIBEXT)
+#endif
+IMPEXT ?= $(LIBEXT)
 
 # Too many ICEs with Clang hence we want to know if we are on Clang
 ifeq (0,$(GCC)) # not GCC
