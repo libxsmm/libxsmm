@@ -48,7 +48,7 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
+LIBXSMM_APIEXT void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
   const void* a, const void* b, void* c, /*unsigned*/int count)
 {
   static int error_once = 0;

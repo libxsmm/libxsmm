@@ -33,7 +33,7 @@
 /*#define DISABLE_NONTEMPORAL_STORES*/
 
 
-LIBXSMM_API_INLINE
+LIBXSMM_INLINE
 void stream_init(int i_length, size_t i_start_address, int* o_trip_prolog, int* o_trip_stream)
 {
   /* let's calculate the prologue until C is cacheline aligned */
@@ -53,8 +53,8 @@ void stream_init(int i_length, size_t i_start_address, int* o_trip_prolog, int* 
 
 
 /* avoid warning about external function definition with no prior declaration */
-LIBXSMM_API void LIBXSMM_FSYMBOL(stream_vector_copy)(const double* /*i_a*/, double* /*io_c*/, const int* /*i_length*/);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_vector_copy)(const double* i_a, double* io_c, const int* i_length)
+void LIBXSMM_FSYMBOL(stream_vector_copy)(const double* /*i_a*/, double* /*io_c*/, const int* /*i_length*/);
+void LIBXSMM_FSYMBOL(stream_vector_copy)(const double* i_a, double* io_c, const int* i_length)
 {
   int l_n = 0;
   int l_trip_prolog = 0;
@@ -105,8 +105,8 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_vector_copy)(const double* i_
 }
 
 
-LIBXSMM_API void LIBXSMM_FSYMBOL(stream_vector_set)(const double* /*i_scalar*/, double* /*io_c*/, const int* /*i_length*/);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_vector_set)(const double* i_scalar, double* io_c, const int* i_length)
+void LIBXSMM_FSYMBOL(stream_vector_set)(const double* /*i_scalar*/, double* /*io_c*/, const int* /*i_length*/);
+void LIBXSMM_FSYMBOL(stream_vector_set)(const double* i_scalar, double* io_c, const int* i_length)
 {
   int l_n = 0;
   int l_trip_prolog = 0;
@@ -160,8 +160,8 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_vector_set)(const double* i_s
 }
 
 
-LIBXSMM_API void LIBXSMM_FSYMBOL(stream_vector_compscale)(const double* /*i_a*/, const double* /*i_b*/, double* /*io_c*/, const int* /*i_length*/);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_vector_compscale)(const double* i_a, const double* i_b, double* io_c, const int* i_length)
+void LIBXSMM_FSYMBOL(stream_vector_compscale)(const double* /*i_a*/, const double* /*i_b*/, double* /*io_c*/, const int* /*i_length*/);
+void LIBXSMM_FSYMBOL(stream_vector_compscale)(const double* i_a, const double* i_b, double* io_c, const int* i_length)
 {
   int l_n = 0;
   int l_trip_prolog = 0;
@@ -225,13 +225,13 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_vector_compscale)(const doubl
 }
 
 
-LIBXSMM_API void LIBXSMM_FSYMBOL(stream_update_helmholtz)(
+void LIBXSMM_FSYMBOL(stream_update_helmholtz)(
   const double* i_g1, const double* i_g2, const double* i_g3,
   const double* i_tm1, const double* i_tm2, const double* i_tm3,
   const double* i_a, const double* i_b, double* io_c,
   const double* i_h1, const double* i_h2, const int* i_length);
 
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_update_helmholtz)(
+void LIBXSMM_FSYMBOL(stream_update_helmholtz)(
   const double* i_g1, const double* i_g2, const double* i_g3,
   const double* i_tm1, const double* i_tm2, const double* i_tm3,
   const double* i_a, const double* i_b, double* io_c,
@@ -425,12 +425,12 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_update_helmholtz)(
 }
 
 
-LIBXSMM_API void LIBXSMM_FSYMBOL(stream_update_helmholtz_no_h2)(
+void LIBXSMM_FSYMBOL(stream_update_helmholtz_no_h2)(
   const double* i_g1, const double* i_g2, const double* i_g3,
   const double* i_tm1, const double* i_tm2, const double* i_tm3,
   double* io_c, const double* i_h1, const int* i_length);
 
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_update_helmholtz_no_h2)(
+void LIBXSMM_FSYMBOL(stream_update_helmholtz_no_h2)(
   const double* i_g1, const double* i_g2, const double* i_g3,
   const double* i_tm1, const double* i_tm2, const double* i_tm3,
   double* io_c, const double* i_h1, const int* i_length)
@@ -532,13 +532,13 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_update_helmholtz_no_h2)(
 }
 
 
-LIBXSMM_API void LIBXSMM_FSYMBOL(stream_update_var_helmholtz)(
+void LIBXSMM_FSYMBOL(stream_update_var_helmholtz)(
   const double* i_g1, const double* i_g2, const double* i_g3,
   const double* i_tm1, const double* i_tm2, const double* i_tm3,
   const double* i_a, const double* i_b, double* io_c,
   const double* i_h1, const double* i_h2, const int* i_length);
 
-  LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(stream_update_var_helmholtz)(
+void LIBXSMM_FSYMBOL(stream_update_var_helmholtz)(
   const double* i_g1, const double* i_g2, const double* i_g3,
   const double* i_tm1, const double* i_tm2, const double* i_tm3,
   const double* i_a, const double* i_b, double* io_c,

@@ -171,7 +171,7 @@ LIBXSMM_API int libxsmm_mmbatch(
   /*unsigned*/int tid, /*unsigned*/int nthreads);
 
 /** Process a series of matrix multiplications (batch) similar to libxsmm_mmbatch; MT via libxsmmext. */
-LIBXSMM_API int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
+LIBXSMM_APIEXT int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize);
 
@@ -194,7 +194,7 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision precision, const char
   libxsmm_blasint batchsize);
 
 /** Process a series of matrix multiplications (batch); MT via libxsmmext. See also libxsmm_mmbatch. */
-LIBXSMM_API void libxsmm_gemm_batch_omp2(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
+LIBXSMM_APIEXT void libxsmm_gemm_batch_omp2(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
                      const void* b, const libxsmm_blasint* ldb,
@@ -202,7 +202,7 @@ LIBXSMM_API void libxsmm_gemm_batch_omp2(libxsmm_gemm_precision iprec, libxsmm_g
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
-LIBXSMM_API void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision, const char* transa, const char* transb,
+LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision, const char* transa, const char* transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
                      const void* b, const libxsmm_blasint* ldb,
@@ -217,17 +217,17 @@ LIBXSMM_API void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision, const 
  * non-NULL values match. Otherwise (NULL) the respective argument is
  * considered a "free value" i.e., every value can match; libxsmmext required.
  */
-LIBXSMM_API void libxsmm_mmbatch_begin2(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const int* flags,
+LIBXSMM_APIEXT void libxsmm_mmbatch_begin2(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const int* flags,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta);
-LIBXSMM_API void libxsmm_mmbatch_begin(libxsmm_gemm_precision precision, const int* flags,
+LIBXSMM_APIEXT void libxsmm_mmbatch_begin(libxsmm_gemm_precision precision, const int* flags,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta);
 
 /** Processes the batch of previously recorded matrix multiplications (libxsmm_mmbatch_begin); libxsmmext required. */
-LIBXSMM_API void libxsmm_mmbatch_end(void);
+LIBXSMM_APIEXT void libxsmm_mmbatch_end(void);
 
 /** Code generation routine for matrix-copy using a descriptor. */
 LIBXSMM_API libxsmm_xmcopyfunction libxsmm_xmcopydispatch(const libxsmm_mcopy_descriptor* descriptor);
@@ -283,7 +283,7 @@ LIBXSMM_API int libxsmm_matcopy_thread(void* out, const void* in, unsigned int t
   const int* prefetch, int tid, int nthreads);
 
 /** Matrix copy function ("in" can be NULL to zero the destination); MT via libxsmmext. */
-LIBXSMM_API int libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,
+LIBXSMM_APIEXT int libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   const int* prefetch);
 
@@ -297,7 +297,7 @@ LIBXSMM_API int libxsmm_otrans_thread(void* out, const void* in, unsigned int ty
   int tid, int nthreads);
 
 /** Matrix transposition; MT via libxsmmext (out-of-place form). */
-LIBXSMM_API int libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
+LIBXSMM_APIEXT int libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo);
 
 /** Matrix transposition (in-place form). */
@@ -319,14 +319,14 @@ LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
   const double* beta, double* c, const libxsmm_blasint* ldc);
 
 /** General dense matrix multiplication; MT via libxsmmext (single-precision). */
-LIBXSMM_API void libxsmm_sgemm_omp(const char* transa, const char* transb,
+LIBXSMM_APIEXT void libxsmm_sgemm_omp(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
 
 /** General dense matrix multiplication; MT via libxsmmext (double-precision). */
-LIBXSMM_API void libxsmm_dgemm_omp(const char* transa, const char* transb,
+LIBXSMM_APIEXT void libxsmm_dgemm_omp(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,

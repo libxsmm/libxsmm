@@ -515,68 +515,62 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_loop_label_tracker_struct {
   unsigned int label_count;
 } libxsmm_loop_label_tracker;
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
                                   char*              o_gp_reg_name,
                                   const int          i_gp_reg_name_max_length );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 unsigned int libxsmm_check_x86_gp_reg_name_callee_save( const unsigned int i_gp_reg_number );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
                                  char*              o_instr_name,
                                  const int          i_instr_name_max_length );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_instr_number );
 
 /* some string manipulation helper needed to
    generated code */
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
                                     const char*             i_code_to_append,
                                     const int               i_append_length );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_close_function( libxsmm_generated_code* io_generated_code );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_mmfunction_signature( libxsmm_generated_code*       io_generated_code,
                                   const char*                    i_routine_name,
                                   const libxsmm_gemm_descriptor* i_xgemm_desc );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_code,
                                          const char*             i_arch );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_code,
                                          const char*             i_arch );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
                            const char*             context,
                            int emit_message );
 
-LIBXSMM_INTERNAL_API
-void libxsmm_strncpy( char*        o_dest,
-                      const char*  i_src,
-                      unsigned int i_dest_length,
-                      unsigned int i_src_length );
-
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_convfunction_signature_fp32( libxsmm_generated_code*         io_generated_code,
                                           const char*                     i_routine_name     );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_convfunction_signature_int16( libxsmm_generated_code*         io_generated_code,
                                            const char*                     i_routine_name     );
 

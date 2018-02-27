@@ -45,7 +45,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*        io_generated_code,
                                           const libxsmm_gemm_descriptor* i_xgemm_desc,
                                           const char*                    i_arch,
@@ -85,7 +85,7 @@ void libxsmm_generator_spgemm_csc_kernel( libxsmm_generated_code*        io_gene
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_generated_code,
                                           const libxsmm_gemm_descriptor* i_xgemm_desc,
                                           const char*                    i_arch,
@@ -127,7 +127,7 @@ void libxsmm_generator_spgemm_csr_kernel( libxsmm_generated_code*        io_gene
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_generated_code,
                                               const libxsmm_gemm_descriptor* i_xgemm_desc,
                                               const char*                    i_arch,
@@ -169,7 +169,7 @@ void libxsmm_generator_spgemm_csr_reg_kernel( libxsmm_generated_code*        io_
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_generated_code,
                                               const libxsmm_gemm_descriptor* i_xgemm_desc,
                                               const char*                    i_arch,
@@ -209,7 +209,7 @@ void libxsmm_generator_spgemm_csr_soa_kernel( libxsmm_generated_code*        io_
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_generated_code,
                                               const libxsmm_gemm_descriptor* i_xgemm_desc,
                                               const char*                    i_arch,
@@ -236,7 +236,7 @@ void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 void libxsmm_generator_spgemm( const char*                    i_file_out,
                                const char*                    i_routine_name,
                                const libxsmm_gemm_descriptor* i_xgemm_desc,
@@ -434,7 +434,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {
-      fprintf(stderr, "LIBXSMM ERROR, libxsmm_generator_spgemm: could not write to into destination source file\n");
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_generator_spgemm could not write to into destination source file\n");
       exit(-1);
     }
   }

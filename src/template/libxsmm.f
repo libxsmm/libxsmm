@@ -542,15 +542,15 @@
           CHARACTER, POINTER :: libxsmm_get_target_arch(:)
           INTEGER(C_INT) :: length(1)
           TYPE(C_PTR) :: arch
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: get_target_arch
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmmf_get_target_arch
           INTERFACE
-            FUNCTION get_target_arch(length) BIND(C)
+            FUNCTION libxsmmf_get_target_arch(length) BIND(C)
               IMPORT :: C_INT, C_PTR
               INTEGER(C_INT), INTENT(OUT) :: length
-              TYPE(C_PTR) :: get_target_arch
+              TYPE(C_PTR) :: libxsmmf_get_target_arch
             END FUNCTION
           END INTERFACE
-          arch = get_target_arch(length(1))
+          arch = libxsmmf_get_target_arch(length(1))
           CALL C_F_POINTER(arch, libxsmm_get_target_arch, length)
         END FUNCTION
 

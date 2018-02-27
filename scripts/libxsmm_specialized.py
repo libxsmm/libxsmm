@@ -49,7 +49,7 @@ if __name__ == "__main__":
                      ", const float* pc)"][0 < prefetch]
             print
             print
-            print("LIBXSMM_API_DEFINITION void libxsmm_smm_" + mnkstr +
+            print("LIBXSMM_API void libxsmm_smm_" + mnkstr +
                   "(const float* a, const float* b, float* c" + pfsig)
             print("{")
             print("#if defined(__AVX512F__) && "
@@ -87,7 +87,7 @@ if __name__ == "__main__":
             print("LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_smm_" + mnkstr +
                   ")(const float* a, const float* b, float* c" +
                   pfsig + ";")
-            print("LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_smm_" +
+            print("LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_smm_" +
                   mnkstr + ")(const float* a, const float* b, float* c" +
                   pfsig)
             print("{")
@@ -100,7 +100,7 @@ if __name__ == "__main__":
                      ", const double* pc)"][0 < prefetch]
             print
             print
-            print("LIBXSMM_API_DEFINITION void libxsmm_dmm_" + mnkstr +
+            print("LIBXSMM_API void libxsmm_dmm_" + mnkstr +
                   "(const double* a, const double* b, double* c" + pfsig)
             print("{")
             print("#if defined(__AVX512F__) && "
@@ -138,7 +138,7 @@ if __name__ == "__main__":
             print("LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dmm_" + mnkstr +
                   ")(const double* a, const double* b, double* c" +
                   pfsig + ";")
-            print("LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_dmm_" +
+            print("LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dmm_" +
                   mnkstr + ")(const double* a, const double* b, double* c" +
                   pfsig)
             print("{")

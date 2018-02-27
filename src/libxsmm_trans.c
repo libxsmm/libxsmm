@@ -51,7 +51,7 @@
 #endif
 
 
-LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
+LIBXSMM_API void libxsmm_trans_init(int archid)
 {
   /* setup tile sizes according to CPUID or environment (LIBXSMM_TRANS_M, LIBXSMM_TRANS_N) */
   static unsigned int tile_configs[/*configs*/][2/*DP/SP*/][2/*TILE_M,TILE_N*/][8/*size-range*/] = {
@@ -94,12 +94,12 @@ LIBXSMM_API_DEFINITION void libxsmm_trans_init(int archid)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_trans_finalize(void)
+LIBXSMM_API void libxsmm_trans_finalize(void)
 {
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_matcopy_thread(void* out, const void* in, unsigned int typesize,
+LIBXSMM_API int libxsmm_matcopy_thread(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   const int* prefetch, int tid, int nthreads)
 {
@@ -214,7 +214,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy_thread(void* out, const void* in, uns
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned int typesize,
+LIBXSMM_API int libxsmm_matcopy(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   const int* prefetch)
 {
@@ -222,7 +222,7 @@ LIBXSMM_API_DEFINITION int libxsmm_matcopy(void* out, const void* in, unsigned i
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_otrans_thread(void* out, const void* in, unsigned int typesize,
+LIBXSMM_API int libxsmm_otrans_thread(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   int tid, int nthreads)
 {
@@ -326,14 +326,14 @@ LIBXSMM_API_DEFINITION int libxsmm_otrans_thread(void* out, const void* in, unsi
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
+LIBXSMM_API int libxsmm_otrans(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   return libxsmm_otrans_thread(out, in, typesize, m, n, ldi, ldo, 0/*tid*/, 1/*nthreads*/);
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
+LIBXSMM_API int libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
   int result = EXIT_SUCCESS;
@@ -388,7 +388,7 @@ LIBXSMM_API_DEFINITION int libxsmm_itrans(void* inout, unsigned int typesize,
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* /*out*/, const void* /*in*/, const unsigned int* /*typesize*/,
   const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/,
   const int* /*prefetch*/);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* out, const void* in, const unsigned int* typesize,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* out, const void* in, const unsigned int* typesize,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
   const int* prefetch)
 {
@@ -402,7 +402,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* out, const vo
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* /*out*/, const void* /*in*/, const unsigned int* /*typesize*/,
   const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* out, const void* in, const unsigned int* typesize,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* out, const void* in, const unsigned int* typesize,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo)
 {
   libxsmm_blasint ldx;
@@ -415,7 +415,7 @@ LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* out, const voi
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* /*inout*/, const unsigned int* /*typesize*/,
   const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ld*/);
-LIBXSMM_API_DEFINITION void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* inout, const unsigned int* typesize,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* inout, const unsigned int* typesize,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ld)
 {
   assert(0 != typesize && 0 != m);

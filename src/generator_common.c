@@ -41,7 +41,7 @@
 #endif
 
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_INLINE
 void libxsmm_strncpy( char*                  o_dest,
                       const char*            i_src,
                       unsigned int           i_dest_length,
@@ -56,7 +56,7 @@ void libxsmm_strncpy( char*                  o_dest,
   strcpy( o_dest, i_src );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
                                     const char*             i_code_to_append,
                                     const int               i_append_length ) {
@@ -116,7 +116,7 @@ void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
   io_generated_code->buffer_size = (io_generated_code->code_size) + 1;
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_close_function( libxsmm_generated_code* io_generated_code ) {
   if ( io_generated_code->code_type == 0 ) {
     char l_new_code[512];
@@ -126,7 +126,7 @@ void libxsmm_close_function( libxsmm_generated_code* io_generated_code ) {
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 unsigned int libxsmm_check_x86_gp_reg_name_callee_save( const unsigned int i_gp_reg_number ) {
   if ( (i_gp_reg_number == LIBXSMM_X86_GP_REG_RBX) ||
        (i_gp_reg_number == LIBXSMM_X86_GP_REG_RBP) ||
@@ -140,7 +140,7 @@ unsigned int libxsmm_check_x86_gp_reg_name_callee_save( const unsigned int i_gp_
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
                                   char*              o_gp_reg_name,
                                   const int          i_gp_reg_name_max_length ) {
@@ -199,7 +199,7 @@ void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
                                  char*              o_instr_name,
                                  const int          i_instr_name_max_length ) {
@@ -521,7 +521,7 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_instr_number ) {
   unsigned int l_return = 0;
 
@@ -733,7 +733,7 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
   return l_return;
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping ) {
   io_gp_reg_mapping->gp_reg_a = LIBXSMM_X86_GP_REG_UNDEF;
   io_gp_reg_mapping->gp_reg_b = LIBXSMM_X86_GP_REG_UNDEF;
@@ -752,12 +752,12 @@ void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping
   io_gp_reg_mapping->gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   memset(io_loop_label_tracker, 0, sizeof(*io_loop_label_tracker));
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
                                   const libxsmm_gemm_descriptor* i_xgemm_desc ) {
@@ -795,7 +795,7 @@ void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_code,
                                          const char*             i_arch ) {
   if ( io_generated_code->code_type == 0 ) {
@@ -848,7 +848,7 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_code,
                                          const char*             i_arch ) {
   if ( io_generated_code->code_type == 0 ) {
@@ -880,7 +880,7 @@ void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_co
   }
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
                            const char* context,
@@ -902,7 +902,7 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
   io_generated_code->last_error = i_error_code;
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API
 const char* libxsmm_strerror(unsigned int i_error_code) {
   static LIBXSMM_TLS char error_message[GENERATOR_COMMON_MAX_ERROR_LENGTH+1];
 
@@ -1149,7 +1149,7 @@ void libxsmm_convfunction_signature_fp32( libxsmm_generated_code*         io_gen
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 }
 
-LIBXSMM_INTERNAL_API_DEFINITION
+LIBXSMM_API_INTERN
 void libxsmm_convfunction_signature_int16( libxsmm_generated_code*         io_generated_code,
                                            const char*                     i_routine_name ) {
   char l_new_code[512];

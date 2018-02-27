@@ -75,14 +75,14 @@
 #endif
 
 
-LIBXSMM_API_VARIABLE(FILE* internal_perf_fp);
+LIBXSMM_APIVAR(FILE* internal_perf_fp);
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
-LIBXSMM_API_VARIABLE(void* internal_perf_marker);
-LIBXSMM_API_VARIABLE(int internal_perf_codeidx);
+LIBXSMM_APIVAR(void* internal_perf_marker);
+LIBXSMM_APIVAR(int internal_perf_codeidx);
 #endif
 
 
-LIBXSMM_API_DEFINITION void libxsmm_perf_init(void)
+LIBXSMM_API void libxsmm_perf_init(void)
 {
   const uint32_t pid = (uint32_t)libxsmm_get_pid();
   char file_name[LIBXSMM_MAX_PATH];
@@ -200,7 +200,7 @@ error:
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_perf_finalize(void)
+LIBXSMM_API void libxsmm_perf_finalize(void)
 {
 #if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
   int res, page_size;
@@ -250,7 +250,7 @@ LIBXSMM_API_INLINE unsigned int internal_perf_get_tid(void)
 }
 
 
-LIBXSMM_API_DEFINITION void libxsmm_perf_dump_code(const void* memory, size_t size, const char* name)
+LIBXSMM_API void libxsmm_perf_dump_code(const void* memory, size_t size, const char* name)
 {
   assert(internal_perf_fp != NULL);
   assert(name && *name);

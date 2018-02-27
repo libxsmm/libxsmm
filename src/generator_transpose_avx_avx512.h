@@ -34,7 +34,7 @@
 
 #include "generator_common.h"
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_transpose_avx_avx512_kernel( libxsmm_generated_code*             io_generated_code,
                                                     const libxsmm_trans_descriptor* i_trans_desc,
                                                     const char*                         i_arch );

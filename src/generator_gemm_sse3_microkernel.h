@@ -35,7 +35,7 @@
 #include "generator_common.h"
 #include "generator_gemm_common.h"
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_sse3_microkernel( libxsmm_generated_code*             io_generated_code,
                                                const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                const libxsmm_micro_kernel_config* i_micro_kernel_config,

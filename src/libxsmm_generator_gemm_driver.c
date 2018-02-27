@@ -81,15 +81,15 @@ LIBXSMM_INLINE void print_help(void) {
 
 int main(int argc, char* argv []) {
   const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
-  libxsmm_descriptor_blob l_xgemm_blob;
   int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+  libxsmm_gemm_prefetch_type l_prefetch;
+  libxsmm_descriptor_blob l_xgemm_blob;
   char* l_type;
   char* l_file_out;
   char* l_matrix_file_in;
   char* l_routine_name;
   char* l_arch;
   char* l_precision;
-  int l_prefetch;
   int l_m = 0;
   int l_n = 0;
   int l_k = 0;

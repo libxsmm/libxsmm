@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2017, Intel Corporation                                **
+** Copyright (c) 2015-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -35,18 +35,18 @@
 #include "generator_common.h"
 #include "generator_convolution_common.h"
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generated_code*     io_generated_code,
                                                           const libxsmm_convolution_weight_update_descriptor* i_conv_desc,
                                                           const char*                       i_arch );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_avx512_init_weight_strides( libxsmm_generated_code*                          io_generated_code,
                                                                       const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                                       const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
                                                                       const libxsmm_convolution_weight_update_descriptor*                       i_conv_desc );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_avx512_ofwloop( libxsmm_generated_code*                           io_generated_code,
                                                            const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                            const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
@@ -55,7 +55,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop( libxsmm_generat
             const unsigned int ofh_trip_counter,
                                                            const int                                               no_unroll_no_block);
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_generated_code*                           io_generated_code,
                                                                 const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                                 const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
@@ -64,13 +64,13 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
             const unsigned int ofh_trip_counter,
                                                                 const int                                               no_unroll_no_block);
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_transpose_avx512_init_weight_strides( libxsmm_generated_code*                          io_generated_code,
                                                                       const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                                       const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
                                                                       const libxsmm_convolution_weight_update_descriptor*                       i_conv_desc );
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop( libxsmm_generated_code*                           io_generated_code,
                                                            const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                            const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
@@ -79,14 +79,14 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop( libxs
             const unsigned int ofh_trip_counter,
                                                            const int                                               no_unroll_no_block);
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pixels_inside( libxsmm_generated_code*               io_generated_code,
                                                                                 const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                                                 const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
                                                                                 const libxsmm_convolution_weight_update_descriptor*     i_conv_desc,
                                                                                 unsigned int                                            is_last_call);
 
-LIBXSMM_INTERNAL_API
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_inside( libxsmm_generated_code*               io_generated_code,
                                                                                 const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
                                                                                 const libxsmm_convolution_kernel_config*                i_conv_kernel_config,

@@ -605,7 +605,7 @@ else
       LDFLAGS += -hsystem_alloc
       CRAY ?= 1
     else
-      PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | if grep -q "PGI"; then echo "1"; fi)
+      PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
     endif
   endif
 endif
@@ -815,8 +815,13 @@ else # GCC assumed
     LDFLAGS += $(PICFLAG)
   else ifneq (0,$(MINGW))
     CXXFLAGS += -fno-asynchronous-unwind-tables
-    CFLAGS += -fno-asynchronous-unwind-tables
     FCFLAGS += -fno-asynchronous-unwind-tables
+    CFLAGS += -fno-asynchronous-unwind-tables
+    ifneq (0,$(PEDANTIC))
+    ifneq (1,$(PEDANTIC))
+      CFLAGS += -Wno-format
+    endif
+    endif
   endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((40700 <= $(GXX_VERSION)))"))
@@ -874,11 +879,6 @@ else # GCC assumed
       CXXFLAGS += -funroll-loops -ftree-vectorize
       CFLAGS += -funroll-loops -ftree-vectorize
       FCFLAGS += -funroll-loops -ftree-vectorize
-      ifneq (Darwin,$(UNAME))
-        CXXFLAGS += -fdata-sections -ffunction-sections
-        CFLAGS += -fdata-sections -ffunction-sections
-        FCFLAGS += -fdata-sections -ffunction-sections
-      endif
       ifneq (0,$(GCC))
         #CXXFLAGS += -ffast-math
         #CFLAGS += -ffast-math
@@ -1027,6 +1027,10 @@ endif
 ifeq (0,$(DBG))
 ifeq (0,$(COMPATIBLE))
 ifneq (Darwin,$(UNAME))
+  # flag -fvisibility=hidden is causing crashes (assertions during validation)
+  CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
+  CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
+  FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
   # --gc-sections: relies on section-flags present at compile-stage
   # -z,relro: Linux distributions may apply similar hardening
   LDFLAGS += -Wl,--gc-sections,-z,relro

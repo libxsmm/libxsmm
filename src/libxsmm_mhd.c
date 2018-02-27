@@ -67,7 +67,7 @@
   else { assert(0/*should not happen*/); }}
 
 
-LIBXSMM_API_DEFINITION const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t* typesize, const char** ctypename)
+LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t* typesize, const char** ctypename)
 {
   const char *mhd_typename = 0, *c_typename = 0;
   size_t size = 0;
@@ -91,7 +91,7 @@ LIBXSMM_API_DEFINITION const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype typ
 }
 
 
-LIBXSMM_API_DEFINITION libxsmm_mhd_elemtype libxsmm_mhd_typeinfo(const char elemname[])
+LIBXSMM_API libxsmm_mhd_elemtype libxsmm_mhd_typeinfo(const char elemname[])
 {
   libxsmm_mhd_elemtype result = LIBXSMM_MHD_ELEMTYPE_UNKNOWN;
   if (0 == strcmp("MET_CHAR", elemname)) {
@@ -157,7 +157,7 @@ LIBXSMM_API_INLINE int internal_mhd_readline(char buffer[], char split, size_t* 
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char header_filename[], size_t filename_max_length,
+LIBXSMM_API int libxsmm_mhd_read_header(const char header_filename[], size_t filename_max_length,
   char filename[], size_t* ndims, size_t size[], size_t* ncomponents, libxsmm_mhd_elemtype* type,
   size_t* header_size, size_t* extension_size)
 {
@@ -349,8 +349,7 @@ LIBXSMM_API_DEFINITION int libxsmm_mhd_read_header(const char header_filename[],
 }
 
 
-LIBXSMM_API int internal_mhd_element_conversion(void* /*dst*/, libxsmm_mhd_elemtype /*dst_type*/, const void* /*src*/, libxsmm_mhd_elemtype /*src_type*/);
-LIBXSMM_API_DEFINITION int internal_mhd_element_conversion(void* dst, libxsmm_mhd_elemtype dst_type, const void* src, libxsmm_mhd_elemtype src_type)
+LIBXSMM_API_INLINE int internal_mhd_element_conversion(void* dst, libxsmm_mhd_elemtype dst_type, const void* src, libxsmm_mhd_elemtype src_type)
 {
   int result = EXIT_SUCCESS;
   switch (dst_type) {
@@ -390,7 +389,7 @@ LIBXSMM_API_DEFINITION int internal_mhd_element_conversion(void* dst, libxsmm_mh
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_mhd_element_comparison(void* dst, libxsmm_mhd_elemtype dst_type, const void* src, libxsmm_mhd_elemtype src_type)
+LIBXSMM_API int libxsmm_mhd_element_comparison(void* dst, libxsmm_mhd_elemtype dst_type, const void* src, libxsmm_mhd_elemtype src_type)
 {
   size_t typesize;
   int result;
@@ -619,7 +618,7 @@ LIBXSMM_API_INLINE int internal_mhd_write(FILE* file, const void* data,
 }
 
 
-LIBXSMM_API_DEFINITION int libxsmm_mhd_write(const char filename[],
+LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   const size_t offset[], const size_t size[], const size_t pitch[], size_t ndims,
   size_t ncomponents, libxsmm_mhd_elemtype type, const void* data, size_t* header_size,
   const char extension_header[], const void* extension, size_t extension_size)
