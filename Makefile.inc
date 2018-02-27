@@ -345,9 +345,11 @@ else
   ifneq (0,$(FORTRAN))
   ifneq (,$(strip $(FC)))
   ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
-  ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
-    FC = gfortran
-  endif  
+    ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
+      FC = gfortran
+    else
+      FC = $(NULL)
+    endif  
   endif
   endif
   endif
