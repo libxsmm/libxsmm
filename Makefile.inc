@@ -67,9 +67,6 @@ endif
 CMAIN = "main\s*(.*)"
 FMAIN = "^\s*PROGRAM\s\s*\w\w*\(\s\s*\!.*\)*$$"
 
-# PIC: PIC or pic
-PIC=pic
-
 # Optimization level
 OPT ?= 2
 
@@ -293,11 +290,6 @@ else
   NOBLASLIB = $(NULL)
 endif
 BLASLIB ?= $(NOBLASLIB)
-
-# Assemble PIC flag
-ifneq (,$(strip $(PIC)))
-  PICFLAG = -f$(PIC)
-endif
 
 COMPILER_VERSION_FLAG ?= --version
 CC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
@@ -628,10 +620,10 @@ ifneq (0,$(INTEL))
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  CXXFLAGS += $(PICFLAG) -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
-  CFLAGS += $(PICFLAG) -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
-  LDFLAGS += $(PICFLAG) -diag-disable 1879,3415,10006,10010,10411
-  FCFLAGS += $(PICFLAG) -diag-disable 10006,10010,10411,13003
+  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
+  FCFLAGS += -diag-disable 10006,10010,10411,13003
   ifneq (0,$(THREADS))
     FCMTFLAGS += -threads
   endif
@@ -753,18 +745,6 @@ ifneq (0,$(INTEL))
       CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
       FCFLAGS := -g -traceback $(FCFLAGS)
     endif
-    ifeq (0,$(COMPATIBLE))
-    ifneq (0,$(DEPSTATIC))
-    ifneq (Darwin,$(UNAME))
-    ifneq (Windows_NT,$(UNAME))
-      LDFLAGS += -Wl,--export-dynamic
-    endif
-    endif
-    endif
-    endif
-  endif
-  ifeq (0,$(EXP))
-    CXXFLAGS += -fno-exceptions
   endif
   OMPFLAG = -fopenmp
   ifeq (,$(strip $(OMPRT)))
@@ -814,21 +794,6 @@ else # GCC assumed
     CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
   endif
-  ifneq (Windows_NT,$(UNAME))
-    CXXFLAGS += $(PICFLAG)
-    CFLAGS += $(PICFLAG)
-    FCFLAGS += $(PICFLAG)
-    LDFLAGS += $(PICFLAG)
-  else ifneq (0,$(MINGW))
-    CXXFLAGS += -fno-asynchronous-unwind-tables
-    FCFLAGS += -fno-asynchronous-unwind-tables
-    CFLAGS += -fno-asynchronous-unwind-tables
-    ifneq (0,$(PEDANTIC))
-    ifneq (1,$(PEDANTIC))
-      CFLAGS += -Wno-format
-    endif
-    endif
-  endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((40700 <= $(GXX_VERSION)))"))
       CXXFLAGS += -std=c++11
@@ -846,6 +811,18 @@ else # GCC assumed
     ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
       FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
                    -Wrealloc-lhs -Wrealloc-lhs-all
+    endif
+    ifeq (0,$(MINGW))
+      CPEDANTIC += -Wformat=2
+    else # MinGW
+      CXXFLAGS += -fno-asynchronous-unwind-tables
+      FCFLAGS += -fno-asynchronous-unwind-tables
+      CFLAGS += -fno-asynchronous-unwind-tables
+      ifneq (0,$(PEDANTIC))
+      ifneq (1,$(PEDANTIC))
+        CFLAGS += -Wno-format
+      endif
+      endif
     endif
     FPEDANTIC += $(FWARNEXTRA)
     ifeq (1,$(PEDANTIC))
@@ -963,18 +940,6 @@ else # GCC assumed
       CFLAGS := -g3 -gdwarf-2 $(CFLAGS)
       FCFLAGS := -g $(FCFLAGS)
     endif
-    ifeq (0,$(COMPATIBLE))
-    ifneq (0,$(DEPSTATIC))
-    ifneq (Darwin,$(UNAME))
-    ifneq (Windows_NT,$(UNAME))
-      LDFLAGS += -Wl,--export-dynamic
-    endif
-    endif
-    endif
-    endif
-  endif
-  ifeq (0,$(EXP))
-    CXXFLAGS += -fno-exceptions
   endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
@@ -1028,20 +993,6 @@ else # GCC assumed
     FCFLAGS += -fdefault-real-8 -fdefault-double-8
   endif
   endif
-endif
-
-ifeq (0,$(DBG))
-ifeq (0,$(COMPATIBLE))
-ifneq (Darwin,$(UNAME))
-  # flag -fvisibility=hidden is causing crashes (assertions during validation)
-  CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
-  CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
-  FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
-  # --gc-sections: relies on section-flags present at compile-stage
-  # -z,relro: Linux distributions may apply similar hardening
-  LDFLAGS += -Wl,--gc-sections,-z,relro
-endif
-endif
 endif
 
 ifeq (,$(CTARGET))
@@ -1136,6 +1087,64 @@ ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-f.f); \
   rm -f /tmp/.libxsmm_??????-f.f .libxsmm_??????-f.o* 2>/dev/null))
 # inherit CTARGET flags
   FTARGET = $(CTARGET)
+endif
+endif
+
+ifeq (0,$(DEPSTATIC))
+  # PIC: PIC or pic
+  PIC ?= pic
+endif
+ifeq (0,$(COMPATIBLE))
+  ifeq (0,$(DBG))
+    ifneq (Darwin,$(UNAME))
+      # Linux distributions may apply similar hardening
+      LDFLAGS += -Wl,-z,relro,-z,now
+      ifneq (0,$(HARDEN)) # not defined: enabled
+        ifneq (,$(strip $(HARDEN))) # explicit
+          ifneq (0,$(shell echo "$$((40900 <= $(FC_VERSION)))"))
+            CXXFLAGS += -fstack-protector-strong
+            CFLAGS += -fstack-protector-strong
+          else
+            CXXFLAGS += -fstack-protector
+            CFLAGS += -fstack-protector
+          endif
+          CXXFLAGS += -D_FORTIFY_SOURCE=2
+          CFLAGS += -D_FORTIFY_SOURCE=2
+          PIC ?= pic
+        else
+          CXXFLAGS += -D_FORTIFY_SOURCE=1
+          CFLAGS += -D_FORTIFY_SOURCE=1
+        endif
+      else
+        CXXFLAGS += -fno-stack-protector
+        CFLAGS += -fno-stack-protector
+      endif
+      ifneq (Windows_NT,$(UNAME))
+      ifneq (0,$(DEPSTATIC))
+        ifneq (0,$(HARDEN))
+          ifneq (,$(strip $(HARDEN))) # explicit
+            LDFLAGS += -Wl,--export-dynamic
+          endif
+        else ifneq (0,$(SYM))
+          LDFLAGS += -Wl,--export-dynamic
+        endif
+      endif
+      endif
+      # flag -fvisibility=hidden is causing crashes (assertions during validation)
+      CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
+      CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
+      FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
+      # --gc-sections: relies on section-flags present at compile-stage
+      LDFLAGS += -Wl,--gc-sections
+    endif
+  endif
+  ifeq (0,$(EXP))
+    CXXFLAGS += -fno-exceptions
+  endif
+endif
+ifneq (Windows_NT,$(UNAME))
+ifneq (,$(strip $(PIC)))
+  PICFLAG = -f$(PIC)
 endif
 endif
 
@@ -1437,10 +1446,10 @@ else ifneq (0,$(BLAS)) # generic
 endif
 
 # no-BLAS flags: cleanup and extra flags
-NOBLAS_CXXFLAGS := $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-NOBLAS_FCFLAGS := $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-NOBLAS_CFLAGS := $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CXXFLAGS := $(strip $(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+NOBLAS_FCFLAGS := $(strip $(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+NOBLAS_CFLAGS := $(strip $(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+NOBLAS_LDFLAGS := $(strip $(PICFLAG) $(LDFLAGS) $(ELDFLAGS))
 NOBLAS_CLDFLAGS := $(strip $(CLDFLAGS))
 NOBLAS_FLAGS := $(strip $(DFLAGS))
 NOBLAS_IFLAGS := $(strip $(IFLAGS))
