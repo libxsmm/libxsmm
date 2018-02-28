@@ -236,7 +236,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       element_input_type *regular_input_base;
       regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
 
-      if (handle->ofw == 7) {
+      if (handle->n_variants == 2) {
         for (pc = 0; pc < n_segments; pc++) {
           instr = code_stream[pc].segment_type;
           n_convs = code_stream[pc].n_convs;
@@ -338,7 +338,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
         }
       }
     } else { /* We don't do RELU stuff in the kernel  */
-      if (handle->ofw == 7) {
+      if (handle->n_variants == 2) {
         for (pc = 0; pc < n_segments; pc++) {
           instr = code_stream[pc].segment_type;
           n_convs = code_stream[pc].n_convs;
@@ -491,7 +491,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       element_input_type *regular_input_base;
       regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
 
-      if (handle->ofw == 7) {
+      if (handle->n_variants == 2) {
         for (pc = 0; pc < instr; pc+=1) {
           offset_i = stream[i];
           offset_w = stream[i+1];
@@ -515,7 +515,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
         }
       }
     } else {
-      if (handle->ofw == 7) {
+      if (handle->n_variants == 2) {
         for (pc = 0; pc < instr; pc+=1) {
           offset_i = stream[i];
           offset_w = stream[i+1];

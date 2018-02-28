@@ -14,8 +14,7 @@ for ( l_kh = 0; l_kh < l_kh_trips; l_kh++) {
 
 
   /* ifmInner loop, VLEN, ifm2, fully unrolled blocked by ofw_rb * ofw_rb */
-  if ( (i_conv_desc->ofw_rb == 7)  && ( i_conv_desc->ofh_rb == 4 || i_conv_desc->ofh_rb == 3 ) ) {
-      /* Call with 4 rows  */
+  if (i_conv_desc->n_variants == 2) {
       libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc, l_kw_trips, i_conv_desc->ofh_rb);
   } else {
       libxsmm_generator_convolution_forward_avx512_ifmloop(  io_generated_code,

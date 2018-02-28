@@ -141,7 +141,7 @@ if (n_segments) {
       bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
       bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 
-      if (handle->ofw == 7) {
+      if (handle->n_variants == 2) {
         for (pc = 0; pc < n_segments; pc++) {
           instr = code_stream[pc].segment_type;
           n_convs = code_stream[pc].n_convs;
@@ -219,7 +219,7 @@ if (n_segments) {
         }
       }
     } else { /* We don't do BN stuff in the kernel  */
-      if (handle->ofw == 7) {
+      if (handle->n_variants == 2) {
         for (pc = 0; pc < n_segments; pc++) {
           instr = code_stream[pc].segment_type;
           n_convs = code_stream[pc].n_convs;
@@ -487,7 +487,7 @@ if (n_segments) {
 #endif
     bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
     bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
-    if (handle->ofw == 7) {
+    if (handle->n_variants  == 2) {
       for (pc = 0; pc < instr; pc+=1) {
         offset_i = stream[i];
         offset_w = stream[i+1];
@@ -515,7 +515,7 @@ if (n_segments) {
       }
     }
   } else { /* We do not  do BN stuff in the kernel  */
-    if (handle->ofw == 7) {
+    if (handle->n_variants == 2) {
       for (pc = 0; pc < instr; pc+=1) {
         offset_i = stream[i];
         offset_w = stream[i+1];
