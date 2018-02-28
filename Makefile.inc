@@ -1108,12 +1108,10 @@ ifeq (0,$(COMPATIBLE))
             CXXFLAGS += -fstack-protector
             CFLAGS += -fstack-protector
           endif
-          CXXFLAGS += -D_FORTIFY_SOURCE=2
-          CFLAGS += -D_FORTIFY_SOURCE=2
+          #DFLAGS += -D_FORTIFY_SOURCE=2
           PIC ?= pic
-        else
-          CXXFLAGS += -D_FORTIFY_SOURCE=1
-          CFLAGS += -D_FORTIFY_SOURCE=1
+        #else
+          #DFLAGS += -D_FORTIFY_SOURCE=1
         endif
       else
         CXXFLAGS += -fno-stack-protector
