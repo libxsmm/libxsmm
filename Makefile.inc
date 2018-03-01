@@ -803,8 +803,8 @@ else # GCC assumed
     ifneq (0,$(shell echo "$$((40700 <= $(GXX_VERSION)))"))
       CXXFLAGS += -std=c++11
     endif
-    CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
-    CFLAGS += -Wall -Wno-unused-function -Wno-attributes
+    CXXFLAGS += -Wall -Wno-unused-function #-Wno-attributes
+    CFLAGS += -Wall -Wno-unused-function #-Wno-attributes
     FSTD = -std=f2003
     CPEDANTIC += -pedantic -Wextra -Wshadow \
                  -Wno-overlength-strings -Wno-variadic-macros
