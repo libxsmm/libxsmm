@@ -1169,7 +1169,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
         descriptor.fm_lp_block = handle->fm_lp_block;
         descriptor.kh = handle->desc.R;
         descriptor.kw = handle->desc.S;
-        descriptor.unroll_kw = (descriptor.ifm_block == 1) ? 1 : 0;
         descriptor.stride_h = handle->desc.u;
         descriptor.stride_w = handle->desc.v;
         descriptor.blocks_ofm = handle->blocksofm;
@@ -1198,7 +1197,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
             libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL /*)*/ /*&&
                                                                     ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM))*/ )
             {
-              const unsigned int wu_each_iter_code_size = 10 * (descriptor.ifm_block == 1 ? descriptor.kw : descriptor.ifm_block);
+              const unsigned int wu_each_iter_code_size = 10 * descriptor.ifm_block;
               const unsigned int wu_max_code_size = 8000;
               int upper_limit_ofw_rb = wu_max_code_size / wu_each_iter_code_size, upper_limit_ofh_rb = 0;
               unsigned int chunk_size;
@@ -1548,7 +1547,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
 
           handle->trans_ofw_ifm = 0;
           /* Determine if we will be using thread private filters  */
-          if ((handle->ifmblock == 1) || (handle->blocksifm_lp * handle->blocksofm < handle->desc.threads) ) {
+          if ( (handle->blocksifm_lp * handle->blocksofm < handle->desc.threads) ) {
             handle->use_thread_private_filter = 1;
             /* determine if we will transpose input  */
             if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0 ) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE  && handle->use_lp_kernel == 1 && ( ((handle->desc.R !=1 || handle->desc.S != 1) && handle->padding_flag == 1) || handle->desc.u != 1 || handle->desc.v != 1 || handle->desc.W%2 != 0 )) ) ) {
@@ -1641,7 +1640,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
           * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
 
         /* minibatch parallel execution of weight update kernel */
-        if ((handle->ifmblock == 1) || ((handle->blocksifm * handle->blocksofm) < handle->desc.threads) || (handle->use_thread_private_jit)) {
+        if ( ((handle->blocksifm * handle->blocksofm) < handle->desc.threads) || (handle->use_thread_private_jit) ) {
           handle->upd_use_thread_fil = 1;
           handle->scratch4 = 0;
           handle->scratch4_size = 2 * handle->desc.threads * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_out);

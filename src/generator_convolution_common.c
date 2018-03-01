@@ -2096,8 +2096,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
     const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
     const libxsmm_convolution_weight_update_descriptor*     i_conv_desc) {
   /* determine the number of registers needed for an ofm block */
-  /* const unsigned int l_reg_per_block = (i_conv_desc->ifm_block == 1) ? (i_conv_desc->kw) : (i_conv_desc->ifm_block / i_conv_kernel_config->vector_length_wt); */
-  const unsigned int l_reg_per_block = (i_conv_desc->ifm_block == 1) ? (i_conv_desc->kw) : (i_conv_desc->ifm_block_hp < i_conv_kernel_config->vector_length_wt ? 1 : i_conv_desc->ifm_block_hp / i_conv_kernel_config->vector_length_wt);
+  const unsigned int l_reg_per_block = i_conv_desc->ifm_block_hp < i_conv_kernel_config->vector_length_wt ? 1 : i_conv_desc->ifm_block_hp / i_conv_kernel_config->vector_length_wt;
   /* start register of accumulator */
   const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - ( i_conv_desc->ifm_block_hp * l_reg_per_block);
   /* register blocking counter */
@@ -2122,11 +2121,7 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
   /* for filter in RSCK format it's active ofm leading dimension */
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0 ) {
     offset = i_conv_kernel_config->l_ld_ofm_act;
-    if (i_conv_desc->ifm_block == 1) {
-      offset *= i_conv_kernel_config->l_ld_ifm_act;
-    }
   }
-  /* TODO support reductions in RSCK format */
 
   int eq_index;
   int unrolled_ofms = ( i_conv_desc->ifm_block == 3 && i_conv_desc->blocks_ofm == 4 ) ? 4 : 1;
@@ -2221,7 +2216,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
     const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
     const libxsmm_convolution_weight_update_descriptor*     i_conv_desc) {
   /* determine the number of registers needed for an ofm block */
-  const unsigned int l_reg_per_block = (i_conv_desc->ifm_block == 1) ? (i_conv_desc->kw) : (i_conv_desc->ifm_block_hp < i_conv_kernel_config->vector_length_wt ? 1 : i_conv_desc->ifm_block_hp / i_conv_kernel_config->vector_length_wt);
+  const unsigned int l_reg_per_block = i_conv_desc->ifm_block_hp < i_conv_kernel_config->vector_length_wt ? 1 : i_conv_desc->ifm_block_hp / i_conv_kernel_config->vector_length_wt;
   /* start register of accumulator */
   const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - ( i_conv_desc->ifm_block_hp * l_reg_per_block);
   /* register blocking counter  */
@@ -2246,9 +2241,6 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
   /* for filter in RSCK format it's active ofm leading dimension */
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0 ) {
     offset = i_conv_kernel_config->l_ld_ofm_act;
-    if (i_conv_desc->ifm_block == 1) {
-      offset *= i_conv_kernel_config->l_ld_ifm_act;
-    }
   }
   /* TODO support reductions in RSCK format */
   int eq_index;
