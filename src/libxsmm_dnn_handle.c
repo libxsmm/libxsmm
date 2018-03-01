@@ -49,6 +49,8 @@
 # pragma offload_attribute(pop)
 #endif
 
+#define LIBXSMM_ENABLE_ORIG_BWD_GENERATOR
+
 int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *wrb2_res, int *hrb2_res) {
   const int min_r = 15;
   const int max_r = 28;
@@ -1010,12 +1012,14 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
             /* TODO: Decide the unroll factor and register blocking using some heuristics as above */
             descriptor.unroll_kh = 0;
             descriptor.unroll_kw = 1;
+            /*
             if ( handle->ofw != 7 ) {
               descriptor.ofh_rb = handle->fwd_ofh_rb;
               handle->bwd_ofh_rb = handle->fwd_ofh_rb;
               descriptor.ofw_rb = handle->fwd_ofw_rb;
               handle->bwd_ofw_rb = handle->fwd_ofw_rb;
             }
+            */
 #if 0
             !defined(NDEBUG)
               printf("DEBUG JIT of conv (NON-PEELED):\n  arch: %s\n  type: %s\n  kw: %u\n  unroll_kw: %u\n  kh: %u\n  unroll_kh: %u\n  ofm_block: %u\n  ifm_block: %u\n"
@@ -1082,6 +1086,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
                 /*descriptor.prefetch_output_ahead = 0;*/
                 descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
                 handle->code_bwd[2].pmm = libxsmm_create_xconv_backward(&descriptor);
+                handle->use_bwd_generic = 0;
 #else
                 /* disable jit code, use generic */
                 handle->bwd_ofh_rb = 1;
