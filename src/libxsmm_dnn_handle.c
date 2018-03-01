@@ -162,15 +162,17 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
 
-  int wrb1, wrb2, hrb1, hrb2;
-  int n_variants = find_rb(handle->ofw, handle->ofh, &wrb1, &hrb1, &wrb2, &hrb2);
-  if (n_variants == 2) {
-    if (wrb1 == wrb2) {
-      handle->h_variants = 1;
-      handle->w_variants = 0;
-    } else {
-      handle->h_variants = 0;
-      handle->w_variants = 1; 
+  int wrb1, wrb2, hrb1, hrb2, n_variants = 1;
+  if (handle->desc.N >= handle->desc.threads) {
+    n_variants = find_rb(handle->ofw, handle->ofh, &wrb1, &hrb1, &wrb2, &hrb2);
+    if (n_variants == 2) {
+      if (wrb1 == wrb2) {
+        handle->h_variants = 1;
+        handle->w_variants = 0;
+      } else {
+        handle->h_variants = 0;
+        handle->w_variants = 1; 
+      }
     }
   }
 
@@ -284,8 +286,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
 
     /* Intercept RB factors with new functionality */
     handle->n_variants = n_variants;
-    handle->fwd_ofw_rb = wrb1;
-    handle->fwd_ofh_rb = hrb1;
+    if (handle->desc.N >= handle->desc.threads) {
+      handle->fwd_ofw_rb = wrb1;
+      handle->fwd_ofh_rb = hrb1;
+    }
+
     handle->blocksimg_blocking = 1;
 
     /* calculate blockings */
@@ -494,6 +499,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
     } else {
       handle->use_nts_bwd = 0;
     }
+   
+    if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE && handle->desc.K/16 <= 8) {
+      handle->use_nts_bwd = 0;
+    }
+    
 
     /* Adjust blocking factors if custom_2 format is requested */
     if ((handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2)) {
