@@ -559,7 +559,7 @@ CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     | cut -d: -f2- | tr "\n" " " | tr [:upper:] [:lower:]; \
   fi))
 SSE ?= 0
-ifeq (0,$(SSE))
+ifeq (0,$(SSE)) # discover AVX
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
     AVX ?= 3
     SSE = 0
@@ -576,13 +576,18 @@ ifeq (0,$(SSE))
     endif
     SSE = 0
   endif
-else ifeq (1,$(SSE))
+else ifeq (1,$(SSE)) # discover SSE
+  ifneq (0,$(STATIC)) # static
   ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS))))
     SSE = 4
-  else ifeq (1,$(words $(filter sse3,$(CPUFLAGS))))
+  endif
+  endif
+  ifeq (1,$(SSE))
+  ifneq (0,$(words $(filter sse3 ssse3,$(CPUFLAGS))))
     SSE = 3
   else #ifeq (,$(SSE))
     SSE = 0
+  endif
   endif
 else ifneq (0,$(KNC))
   MPSS = 1
@@ -1038,15 +1043,23 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
         #DFLAGS += -D__SSE4_2__ -D__SSE4_1__
         CTARGET = -tp=nehalem
       endif
-      CTARGET ?= -msse4.2
+      ifneq (0,$(STATIC))
+        CTARGET ?= -msse4.2
+      else # shared
+        CTARGET ?= -msse3
+      endif
     else ifeq (2,$(SSE))
       # implicitly present (64-bit ABI)
     else ifeq (3,$(SSE))
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__SSSE3__ -D__SSE3__
+        CTARGET = -tp=penryn
+      endif
       ifneq (Darwin,$(UNAME))
-        CTARGET = -msse3
+        CTARGET ?= -msse3
       else
         # prevents Clang backend error with CRC32/other instructions
-        CTARGET = -msse4.2
+        CTARGET ?= -msse4.2
       endif
     else ifeq (4,$(SSE))
       ifneq (0,$(PGI))
