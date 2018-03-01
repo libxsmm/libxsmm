@@ -64,16 +64,10 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/layer_example_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_f32-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/layer_example_f32-c.o \
-		$(MAINLIB) \
-		$(NOBLASLIB) \
-		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/layer_example_f32-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/layer_example_i16i32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i16i32-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/layer_example_i16i32-c.o \
-		$(MAINLIB) \
-		$(NOBLASLIB) \
-		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/layer_example_i16i32-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/layer_example_i16f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i16f32-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/layer_example_i16f32-c.o \
@@ -82,10 +76,7 @@ $(OUTDIR)/layer_example_i16f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i16f32-c
 		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/layer_example_i8i32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i8i32-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/layer_example_i8i32-c.o \
-		$(MAINLIB) \
-		$(NOBLASLIB) \
-		$(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/layer_example_i8i32-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/layer_example_qi16f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_qi16f32-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/layer_example_qi16f32-c.o \
