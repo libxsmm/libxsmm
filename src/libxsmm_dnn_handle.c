@@ -117,7 +117,7 @@ int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *wrb2_res, int *hrb2
     int h = 1;
     wrb1 = W;
     while ( (wrb1 * h <= max_r) && (h <= H) ) {
-      if ( (wrb1 * (h+1) <= max_r) && (wrb1 * (h+1) <= H) ) {
+      if ( (wrb1 * (h+1) <= max_r) && (h+1 <= H)) {
         h++;
       } else {
         break;
