@@ -803,8 +803,8 @@ else # GCC assumed
     ifneq (0,$(shell echo "$$((40700 <= $(GXX_VERSION)))"))
       CXXFLAGS += -std=c++11
     endif
-    CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
-    CFLAGS += -Wall -Wno-unused-function -Wno-attributes
+    CXXFLAGS += -Wall -Wno-unused-function #-Wno-attributes
+    CFLAGS += -Wall -Wno-unused-function #-Wno-attributes
     FSTD = -std=f2003
     CPEDANTIC += -pedantic -Wextra -Wshadow \
                  -Wno-overlength-strings -Wno-variadic-macros
@@ -1026,21 +1026,21 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     endif
     ifeq (,$(CTARGET)) # fall-back to AVX2
       ifneq (0,$(PGI))
-        #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__
+        #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
         CTARGET = -tp=haswell
       endif
       CTARGET ?= -march=core-avx2
     endif
   else ifeq (1,$(AVX))
     ifneq (0,$(PGI))
-      #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__
+      #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
       CTARGET = -tp=sandybridge
     endif
     CTARGET ?= -mavx
   else ifneq (0,$(SSE))
     ifeq (1,$(SSE)) # default
       ifneq (0,$(PGI))
-        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__
+        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
         CTARGET = -tp=nehalem
       endif
       ifneq (0,$(STATIC))
@@ -1063,7 +1063,7 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
       endif
     else ifeq (4,$(SSE))
       ifneq (0,$(PGI))
-        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__
+        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
         CTARGET = -tp=nehalem
       endif
       CTARGET ?= -msse4.2
