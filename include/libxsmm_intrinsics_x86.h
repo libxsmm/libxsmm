@@ -36,6 +36,12 @@
 /** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
 
+#if !defined(LIBXSMM_INTRINSICS_STATIC) && /* GCC 4.4 is a prerequisite for the target-attribute */ \
+  (LIBXSMM_VERSION3(4, 4, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) || \
+  (defined(__APPLE__) && defined(__MACH__))) /* insufficient Binutils */
+# define LIBXSMM_INTRINSICS_STATIC
+#endif
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
@@ -140,7 +146,7 @@
 #     endif
 #     define LIBXSMM_INTRINSICS_INCLUDE
 #     include <immintrin.h>
-#   elif (LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) /* GCC/legacy incl. Clang */
+#   else /* GCC/legacy incl. Clang */
 #     if defined(__clang__) && !(defined(__APPLE__) && defined(__MACH__)) \
         && ((LIBXSMM_VERSION3(3, 9, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
          || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))) /* devel */
@@ -284,11 +290,6 @@
 #         undef __AVX512VNNI__
 #       endif
 #     endif /*defined(LIBXSMM_INTRINSICS_INCLUDE)*/
-#   else /* GCC 4.4 is a prerequisite of the target-attribute */
-#     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_STATIC_TARGET_ARCH
-#     if !defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(__PGI)
-#       define LIBXSMM_INTRINSICS_INCLUDE
-#     endif
 #   endif /* GCC/legacy incl. Clang */
 #   if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
 #     error "LIBXSMM_MAX_STATIC_TARGET_ARCH not defined!"
