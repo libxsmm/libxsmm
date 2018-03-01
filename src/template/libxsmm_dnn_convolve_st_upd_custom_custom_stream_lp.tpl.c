@@ -314,7 +314,6 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 
 if (handle->reduce_weights) {
   if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-#define __AVX512F__
     for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 #ifdef __AVX512F__
       __m512 weight_sum = _mm512_setzero_ps();
@@ -352,7 +351,6 @@ if (handle->reduce_weights) {
 #undef __AVX512F__
   } else {
     if (pixels_lp == 4) {
-#define __AVX512F__
       __m512i weight_sumi;
       for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 #ifdef __AVX512F__
@@ -386,7 +384,6 @@ if (handle->reduce_weights) {
       libxsmm_barrier_wait(handle->barrier, ltid);
 #undef __AVX512F__
     } else {
-#define __AVX512F__
       __m512 weight_sum;
       for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 #ifdef __AVX512F__
