@@ -29,20 +29,14 @@
 /* Alexander Heinecke, Evangelos Georganas, Hans Pabst (Intel Corp.)
  ******************************************************************************/
 if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
-  if ( handle->use_thread_private_jit ) {
-    if (handle->use_fastpath) {
-      if ( handle->use_hybrid_wu_parallelism == 1) {
+  if (handle->use_fastpath) {
+    if ( handle->use_hybrid_wu_parallelism == 1) {
 #include "libxsmm_dnn_convolve_st_upd_custom_custom_stream.tpl.c"
-      } else {
-#include "libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt.tpl.c"
-      }
     } else {
-#include "libxsmm_dnn_convolve_st_upd_custom_custom_stream_fma_opt.tpl.c"
+#include "libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt.tpl.c"
     }
   } else {
-#if 0
-#include "libxsmm_dnn_convolve_st_upd_custom_custom_1.tpl.c"
-#endif
+#include "libxsmm_dnn_convolve_st_upd_custom_custom_stream_fma_opt.tpl.c"
   }
 } else if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
 #if 0

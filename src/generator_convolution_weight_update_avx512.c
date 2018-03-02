@@ -466,7 +466,7 @@ void libxsmm_generator_convolution_weight_update_avx512_init_weight_strides( lib
     const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
     const libxsmm_convolution_weight_update_descriptor*     i_conv_desc ) {
 
-  int unroll_factor = (i_conv_desc->ifm_block == 1) ? i_conv_desc->kw : i_conv_desc->ifm_block;
+  int unroll_factor = i_conv_desc->ifm_block;
 
   /* Initialize helper registers for SIB addressing */
   /* helper 0: Index register holding ldb*datatype_size */
@@ -520,7 +520,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
   unsigned int l_w;
   unsigned int num_look_ahead;
   unsigned int output_counter = 0;
-  unsigned int unroll_factor = (i_conv_desc->ifm_block == 1) ? i_conv_desc->kw : i_conv_desc->ifm_block;
+  unsigned int unroll_factor = i_conv_desc->ifm_block;
   unsigned int prefetch_input_type = LIBXSMM_X86_INSTR_PREFETCHT0;
   unsigned int prefetch_output_type = LIBXSMM_X86_INSTR_PREFETCHT0;
   unsigned int input_pf_offset = 0;
@@ -748,9 +748,6 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_init_weight_st
     const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
     const libxsmm_convolution_weight_update_descriptor*     i_conv_desc ) {
 
-#if 0
-  int unroll_factor = (i_conv_desc->ifm_block == 1) ? i_conv_desc->kw : i_conv_desc->ifm_block;
-#endif
   int unroll_factor = i_conv_desc->ifm_block;
 
   /* Initialize helper registers for SIB addressing */
@@ -808,7 +805,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop( libxs
 #endif
   unsigned int l_w;
   unsigned int output_counter = 0;
-  unsigned int unroll_factor = (i_conv_desc->ifm_block == 1) ? i_conv_desc->kw : i_conv_desc->ifm_block;
+  unsigned int unroll_factor = i_conv_desc->ifm_block;
   unsigned int step_size = 0;
 
   /* Currently for formats other than custom format, ifmblock<VECTOR_LENGTH scenario is not optimized*/

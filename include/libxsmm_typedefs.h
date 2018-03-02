@@ -356,7 +356,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_d
 /** Structure storing the convolution weight update argument description. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
   unsigned int kw;                              /* kernel width */
-  unsigned int unroll_kw;                       /* kernel width, unrolled */
   unsigned int kh;                              /* kernel height */
   unsigned int blocks_ofm;
   unsigned int blocks_ifm;
