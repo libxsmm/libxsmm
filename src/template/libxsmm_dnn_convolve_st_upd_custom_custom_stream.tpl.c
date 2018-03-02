@@ -262,7 +262,6 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 
 if (handle->reduce_weights) {
   for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
-#define __AVX512F__
 #ifdef __AVX512F__
     __m512 weight_sum = _mm512_setzero_ps();
     for ( i = 0; i < handle->weight_copies; i++ ) {

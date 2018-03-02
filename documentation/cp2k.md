@@ -7,7 +7,7 @@ Some additional reference can found under
 
 ## Getting the Source Code
 
-The source code is hosted at GitHub and is supposed to represent the master version of CP2K in a timely fashion. CP2K's main repository is hosted at SourceForge but automatically mirrored at GitHub. The LIBXSMM library can be found under [https://github.com/hfp/libxsmm](http://libxsmm.readthedocs.io).
+The source code is hosted at GitHub and is supposed to represent the master version of CP2K in a timely fashion. CP2K's main repository is hosted at SourceForge but automatically mirrored at GitHub. The LIBXSMM library can be found under [https://github.com/hfp/libxsmm](https://libxsmm.readthedocs.io).
 
 ## Build Instructions
 
@@ -45,7 +45,7 @@ To [download](https://www.cp2k.org/download) and [build](https://www.cp2k.org/ho
 
 ```bash
 git clone https://github.com/hfp/libxsmm.git
-wget http://downloads.sourceforge.net/project/cp2k/cp2k-4.1.tar.bz2
+wget https://sourceforge.net/projects/cp2k/files/cp2k-5.1.tar.bz2
 tar xvf cp2k-4.1.tar.bz2
 cd cp2k-4.1/arch
 wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-intel.x
@@ -82,7 +82,7 @@ mpirun -np 16 \
 
 For an actual workload, one may try `cp2k/tests/QS/benchmark/H2O-32.inp`, or for example the workloads under `cp2k/tests/QS/benchmark_single_node` which are supposed to fit into a single node (in fact to fit into 16 GB of memory). For the latter set of workloads (and many others), LIBINT and LIBXC may be required.
 
-The CP2K/intel branch carries several "reconfigurations" and environment variables, which allow to adjust important runtime options. Most of these options are also accessible via the input file format (input reference e.g., [http://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html](http://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html)).
+The CP2K/intel branch carries several "reconfigurations" and environment variables, which allow to adjust important runtime options. Most of these options are also accessible via the input file format (input reference e.g., [https://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html](https://manual.cp2k.org/trunk/CP2K_INPUT/GLOBAL/DBCSR.html)).
 
 * **CP2K_RECONFIGURE**: environment variable for reconfiguring CP2K (default depends on whether the ACCeleration layer is enabled or not). With the ACCeleration layer enabled, CP2K is reconfigured (as if CP2K_RECONFIGURE=1 is set) e.g. an increased number of entries per matrix stack is populated, and otherwise CP2K is not reconfigured. Further, setting CP2K_RECONFIGURE=0 is disabling the code specific to the [Intel branch of CP2K](https://github.com/cp2k/cp2k/tree/intel), and relies on the (optional) LIBXSMM integration into [CP2K&#160;3.0](https://www.cp2k.org/version_history) (and later).
 * **CP2K_STACKSIZE**: environment variable which denotes the number of matrix multiplications which is collected into a single stack. Usually the internal default performs best across a variety of workloads, however depending on the workload a different value can be better. This variable is relatively impactful since the work distribution and balance is affected.
@@ -92,15 +92,15 @@ The CP2K/intel branch carries several "reconfigurations" and environment variabl
 
 ## LIBINT and LIBXC<a name="libint-and-libxc-dependencies"></a>
 
-Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](http://xconfigure.readthedocs.io)), which helps to configure common HPC software for Intel software development tools.
+Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://xconfigure.readthedocs.io)), which helps to configure common HPC software for Intel software development tools.
 
-To configure, build, and install LIBINT (version&#160;1.1.5 and 1.1.6 have been tested), one can proceed with [https://github.com/hfp/xconfigure/tree/master/config/libint](http://xconfigure.readthedocs.io/libint/README/). Please note there is no straightforward way to cross-compile LIBINT&#160;1.1.x for an instruction set extension which is not supported by the compiler host. To incorporate LIBINT into CP2K, the key `LIBINTROOT=/path/to/libint` needs to be supplied when using CP2K/intel's ARCH files (make).
+To configure, build, and install LIBINT (version&#160;1.1.5 and 1.1.6 have been tested), one can proceed with [https://github.com/hfp/xconfigure/tree/master/config/libint](https://xconfigure.readthedocs.io/libint/README/). Please note there is no straightforward way to cross-compile LIBINT&#160;1.1.x for an instruction set extension which is not supported by the compiler host. To incorporate LIBINT into CP2K, the key `LIBINTROOT=/path/to/libint` needs to be supplied when using CP2K/intel's ARCH files (make).
 
-To configure, build, and install LIBXC (version&#160;3.0.0 has been tested), one can proceed with [https://github.com/hfp/xconfigure/tree/master/config/libxc](http://xconfigure.readthedocs.io/libxc/README/). To incorporate LIBXC into CP2K, the key `LIBXCROOT=/path/to/libxc` needs to be supplied when using CP2K/intel's ARCH files (make).
+To configure, build, and install LIBXC (version&#160;3.0.0 has been tested), one can proceed with [https://github.com/hfp/xconfigure/tree/master/config/libxc](https://xconfigure.readthedocs.io/libxc/README/). To incorporate LIBXC into CP2K, the key `LIBXCROOT=/path/to/libxc` needs to be supplied when using CP2K/intel's ARCH files (make).
 
 ## ELPA<a name="eigenvalue-solvers-for-petaflop-applications-elpa"></a>
 
-Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](http://xconfigure.readthedocs.io)), which helps to configure common HPC software for Intel software development tools. To incorporate the Eigenvalue SoLvers for Petaflop-Applications (ELPA), one can proceed with [https://github.com/hfp/xconfigure/tree/master/config/elpa](http://xconfigure.readthedocs.io/elpa/README/). To incorporate ELPA into CP2K, the key `ELPAROOT=/path/to/elpa` needs to be supplied when using CP2K/intel's ARCH files (make). The Intel-branch defaults to ELPA-2017.05 (earlier versions can rely on the ELPA key-value pair e.g., `ELPA=201611`).
+Please refer to the XCONFIGURE project ([https://github.com/hfp/xconfigure](https://xconfigure.readthedocs.io)), which helps to configure common HPC software for Intel software development tools. To incorporate the Eigenvalue SoLvers for Petaflop-Applications (ELPA), one can proceed with [https://github.com/hfp/xconfigure/tree/master/config/elpa](https://xconfigure.readthedocs.io/elpa/README/). To incorporate ELPA into CP2K, the key `ELPAROOT=/path/to/elpa` needs to be supplied when using CP2K/intel's ARCH files (make). The Intel-branch defaults to ELPA-2017.05 (earlier versions can rely on the ELPA key-value pair e.g., `ELPA=201611`).
 
 ```bash
 make ARCH=Linux-x86-64-intel VERSION=psmp ELPAROOT=/path/to/elpa/default-arch

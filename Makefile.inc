@@ -67,9 +67,6 @@ endif
 CMAIN = "main\s*(.*)"
 FMAIN = "^\s*PROGRAM\s\s*\w\w*\(\s\s*\!.*\)*$$"
 
-# PIC: PIC or pic
-PIC=pic
-
 # Optimization level
 OPT ?= 2
 
@@ -293,11 +290,6 @@ else
   NOBLASLIB = $(NULL)
 endif
 BLASLIB ?= $(NOBLASLIB)
-
-# Assemble PIC flag
-ifneq (,$(strip $(PIC)))
-  PICFLAG = -f$(PIC)
-endif
 
 COMPILER_VERSION_FLAG ?= --version
 CC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
@@ -567,7 +559,7 @@ CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
     | cut -d: -f2- | tr "\n" " " | tr [:upper:] [:lower:]; \
   fi))
 SSE ?= 0
-ifeq (0,$(SSE))
+ifeq (0,$(SSE)) # discover AVX
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
     AVX ?= 3
     SSE = 0
@@ -584,10 +576,10 @@ ifeq (0,$(SSE))
     endif
     SSE = 0
   endif
-else ifeq (1,$(SSE))
+else ifeq (1,$(SSE)) # discover SSE
   ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS))))
     SSE = 4
-  else ifeq (1,$(words $(filter sse3,$(CPUFLAGS))))
+  else ifneq (0,$(words $(filter sse3 ssse3,$(CPUFLAGS))))
     SSE = 3
   else #ifeq (,$(SSE))
     SSE = 0
@@ -628,10 +620,10 @@ ifneq (0,$(INTEL))
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  CXXFLAGS += $(PICFLAG) -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
-  CFLAGS += $(PICFLAG) -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
-  LDFLAGS += $(PICFLAG) -diag-disable 1879,3415,10006,10010,10411
-  FCFLAGS += $(PICFLAG) -diag-disable 10006,10010,10411,13003
+  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
+  FCFLAGS += -diag-disable 10006,10010,10411,13003
   ifneq (0,$(THREADS))
     FCMTFLAGS += -threads
   endif
@@ -753,18 +745,6 @@ ifneq (0,$(INTEL))
       CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
       FCFLAGS := -g -traceback $(FCFLAGS)
     endif
-    ifeq (0,$(COMPATIBLE))
-    ifneq (0,$(DEPSTATIC))
-    ifneq (Darwin,$(UNAME))
-    ifneq (Windows_NT,$(UNAME))
-      LDFLAGS += -Wl,--export-dynamic
-    endif
-    endif
-    endif
-    endif
-  endif
-  ifeq (0,$(EXP))
-    CXXFLAGS += -fno-exceptions
   endif
   OMPFLAG = -fopenmp
   ifeq (,$(strip $(OMPRT)))
@@ -814,27 +794,12 @@ else # GCC assumed
     CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
   endif
-  ifneq (Windows_NT,$(UNAME))
-    CXXFLAGS += $(PICFLAG)
-    CFLAGS += $(PICFLAG)
-    FCFLAGS += $(PICFLAG)
-    LDFLAGS += $(PICFLAG)
-  else ifneq (0,$(MINGW))
-    CXXFLAGS += -fno-asynchronous-unwind-tables
-    FCFLAGS += -fno-asynchronous-unwind-tables
-    CFLAGS += -fno-asynchronous-unwind-tables
-    ifneq (0,$(PEDANTIC))
-    ifneq (1,$(PEDANTIC))
-      CFLAGS += -Wno-format
-    endif
-    endif
-  endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((40700 <= $(GXX_VERSION)))"))
       CXXFLAGS += -std=c++11
     endif
-    CXXFLAGS += -Wall -Wno-unused-function -Wno-attributes
-    CFLAGS += -Wall -Wno-unused-function -Wno-attributes
+    CXXFLAGS += -Wall -Wno-unused-function #-Wno-attributes
+    CFLAGS += -Wall -Wno-unused-function #-Wno-attributes
     FSTD = -std=f2003
     CPEDANTIC += -pedantic -Wextra -Wshadow \
                  -Wno-overlength-strings -Wno-variadic-macros
@@ -846,6 +811,18 @@ else # GCC assumed
     ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
       FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
                    -Wrealloc-lhs -Wrealloc-lhs-all
+    endif
+    ifeq (0,$(MINGW))
+      CPEDANTIC += -Wformat=2
+    else # MinGW
+      CXXFLAGS += -fno-asynchronous-unwind-tables
+      FCFLAGS += -fno-asynchronous-unwind-tables
+      CFLAGS += -fno-asynchronous-unwind-tables
+      ifneq (0,$(PEDANTIC))
+      ifneq (1,$(PEDANTIC))
+        CFLAGS += -Wno-format
+      endif
+      endif
     endif
     FPEDANTIC += $(FWARNEXTRA)
     ifeq (1,$(PEDANTIC))
@@ -882,26 +859,9 @@ else # GCC assumed
     CFLAGS += $(OPTFLAG)
     FCFLAGS += $(OPTFLAG)
     ifeq (0,$(COMPATIBLE))
-      CXXFLAGS += -funroll-loops -ftree-vectorize
-      CFLAGS += -funroll-loops -ftree-vectorize
-      FCFLAGS += -funroll-loops -ftree-vectorize
-      ifneq (0,$(GCC))
-        #CXXFLAGS += -ffast-math
-        #CFLAGS += -ffast-math
-        #FCFLAGS += -ffast-math
-        ifneq (0,$(SIMD))
-        ifneq (0,$(shell echo "$$((40900 <= $(GXX_VERSION)))"))
-          DFLAGS += -DLIBXSMM_OPENMP_SIMD
-          CXXFLAGS += -fopenmp-simd
-          CFLAGS += -fopenmp-simd
-          FCFLAGS += -fopenmp-simd
-        endif
-        endif
-      #else ifneq (3,$(AVX))
-        #CXXFLAGS += -ffast-math
-        #CFLAGS += -ffast-math
-        #FCFLAGS += -ffast-math
-      endif
+      CXXFLAGS += -funroll-loops
+      CFLAGS += -funroll-loops
+      FCFLAGS += -funroll-loops
     endif
     ifneq (0,$(IPO))
       CXXFLAGS += -flto -ffat-lto-objects
@@ -963,18 +923,6 @@ else # GCC assumed
       CFLAGS := -g3 -gdwarf-2 $(CFLAGS)
       FCFLAGS := -g $(FCFLAGS)
     endif
-    ifeq (0,$(COMPATIBLE))
-    ifneq (0,$(DEPSTATIC))
-    ifneq (Darwin,$(UNAME))
-    ifneq (Windows_NT,$(UNAME))
-      LDFLAGS += -Wl,--export-dynamic
-    endif
-    endif
-    endif
-    endif
-  endif
-  ifeq (0,$(EXP))
-    CXXFLAGS += -fno-exceptions
   endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
@@ -1030,20 +978,6 @@ else # GCC assumed
   endif
 endif
 
-ifeq (0,$(DBG))
-ifeq (0,$(COMPATIBLE))
-ifneq (Darwin,$(UNAME))
-  # flag -fvisibility=hidden is causing crashes (assertions during validation)
-  CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
-  CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
-  FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
-  # --gc-sections: relies on section-flags present at compile-stage
-  # -z,relro: Linux distributions may apply similar hardening
-  LDFLAGS += -Wl,--gc-sections,-z,relro
-endif
-endif
-endif
-
 ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
@@ -1070,41 +1004,47 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
     endif
     ifeq (,$(CTARGET)) # fall-back to AVX2
       ifneq (0,$(PGI))
-        #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__
+        #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
         CTARGET = -tp=haswell
       endif
       CTARGET ?= -march=core-avx2
     endif
   else ifeq (1,$(AVX))
     ifneq (0,$(PGI))
-      #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__
+      #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
       CTARGET = -tp=sandybridge
     endif
     CTARGET ?= -mavx
   else ifneq (0,$(SSE))
     ifeq (1,$(SSE)) # default
       ifneq (0,$(PGI))
-        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__
+        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
         CTARGET = -tp=nehalem
       endif
       CTARGET ?= -msse4.2
     else ifeq (2,$(SSE))
       # implicitly present (64-bit ABI)
-    else ifeq (3,$(SSE))
-      ifneq (Darwin,$(UNAME))
-        CTARGET = -msse3
-      else
-        # prevents Clang backend error with CRC32/other instructions
-        CTARGET = -msse4.2
+    else ifneq (30,$(GCC)$(STATIC))
+      ifeq (3,$(SSE))
+        ifneq (0,$(PGI))
+          #DFLAGS += -D__SSSE3__ -D__SSE3__
+          CTARGET = -tp=penryn
+        endif
+        ifneq (Darwin,$(UNAME))
+          CTARGET ?= -msse3
+        else
+          # prevents Clang backend error with CRC32/other instructions
+          CTARGET ?= -msse4.2
+        endif
+      else ifeq (4,$(SSE))
+        ifneq (0,$(PGI))
+          #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
+          CTARGET = -tp=nehalem
+        endif
+        CTARGET ?= -msse4.2
+      else # perhaps better to use TARGET flag directly
+        CTARGET = -msse$(SSE)
       endif
-    else ifeq (4,$(SSE))
-      ifneq (0,$(PGI))
-        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__
-        CTARGET = -tp=nehalem
-      endif
-      CTARGET ?= -msse4.2
-    else # perhaps better to use TARGET flag directly
-      CTARGET = -msse$(SSE)
     endif
   else ifneq (0,$(AVX))
     CTARGET = -march=native
@@ -1139,6 +1079,95 @@ ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-f.f); \
 endif
 endif
 
+ifeq (0,$(DEPSTATIC))
+  # PIC: PIC or pic
+  PIC ?= pic
+endif
+ifeq (0,$(COMPATIBLE))
+  ifneq (0,$(OPT))
+  ifeq (0,$(INTEL))
+    ifneq (0,$(SIMD))
+    ifneq (0,$(GCC))
+    ifneq (0,$(shell echo "$$((40900 <= $(CC_VERSION)))"))
+    ifneq (,$(CTARGET))
+      DFLAGS += -DLIBXSMM_OPENMP_SIMD
+      CFLAGS += -fopenmp-simd
+      ifneq (1,$(GCC))
+      ifneq (0,$(shell echo "$$((40900 <= $(CXX_VERSION)))"))
+        CXXFLAGS += -fopenmp-simd
+        ifneq (,$(CTARGET))
+        ifneq (2,$(GCC))
+        ifneq (0,$(shell echo "$$((40900 <= $(FC_VERSION)))"))
+          FCFLAGS += -fopenmp-simd
+        endif
+        endif
+        endif
+      endif
+      endif
+    endif
+    endif
+    endif
+    endif
+    ifneq (,$(CTARGET))
+      CXXFLAGS += -ftree-vectorize
+      CFLAGS += -ftree-vectorize
+    endif
+    ifneq (,$(CTARGET))
+      FCFLAGS += -ftree-vectorize
+    endif
+  endif
+  endif
+  ifneq (Darwin,$(UNAME))
+    ifneq (0,$(HARDEN)) # not defined: enabled
+      ifneq (,$(strip $(HARDEN))) # explicit
+        ifneq (0,$(shell echo "$$((40900 <= $(FC_VERSION)))"))
+          CXXFLAGS += -fstack-protector-strong
+          CFLAGS += -fstack-protector-strong
+        else
+          CXXFLAGS += -fstack-protector
+          CFLAGS += -fstack-protector
+        endif
+        #DFLAGS += -D_FORTIFY_SOURCE=2
+        PIC ?= pic
+      #else
+        #DFLAGS += -D_FORTIFY_SOURCE=1
+      endif
+    else
+      CXXFLAGS += -fno-stack-protector
+      CFLAGS += -fno-stack-protector
+    endif
+    ifneq (Windows_NT,$(UNAME))
+      # Linux distributions may apply similar hardening
+      LDFLAGS += -Wl,-z,relro,-z,now
+      ifneq (0,$(DEPSTATIC))
+        ifneq (0,$(HARDEN))
+          ifneq (,$(strip $(HARDEN))) # explicit
+            LDFLAGS += -Wl,--export-dynamic
+          else ifneq (0,$(SYM))
+            LDFLAGS += -Wl,--export-dynamic
+          endif
+        else ifneq (0,$(SYM))
+          LDFLAGS += -Wl,--export-dynamic
+        endif
+      endif
+    endif
+    # flag -fvisibility=hidden is causing crashes (assertions during validation)
+    CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
+    CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
+    FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
+    # --gc-sections: relies on section-flags present at compile-stage
+    LDFLAGS += -Wl,--gc-sections
+  endif
+  ifeq (0,$(EXP))
+    CXXFLAGS += -fno-exceptions
+  endif
+endif
+ifneq (Windows_NT,$(UNAME))
+ifneq (,$(strip $(PIC)))
+  PICFLAG = -f$(PIC)
+endif
+endif
+
 ifneq (0,$(THREADS))
   ifeq (0,$(COMPATIBLE))
     CXXFLAGS += -pthread
@@ -1164,12 +1193,12 @@ endif
 # Information which can be displayed by the actual Makefile
 ifneq (,$(strip $(FC)))
   GINFO = $(SUITE): $(strip $(CC_NAME) $(CC_VERSION_STRING)), $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
-  FINFO = Fortran: $(if $(FTARGET),$(FTARGET),<compiler default>)
+  FINFO = Fortran target: $(if $(FTARGET),$(FTARGET),<compiler default>)
 else
   GINFO = $(SUITE): $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(CXX_NAME) $(CXX_VERSION_STRING))
   FINFO = Fortran: <none>
 endif
-CINFO = C / C++: $(if $(CTARGET),$(CTARGET),<compiler default>)
+CINFO = C / C++ target: $(if $(CTARGET),$(CTARGET),<compiler default>)
 
 ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
   LIBRT = -lrt
@@ -1437,10 +1466,10 @@ else ifneq (0,$(BLAS)) # generic
 endif
 
 # no-BLAS flags: cleanup and extra flags
-NOBLAS_CXXFLAGS := $(strip $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-NOBLAS_FCFLAGS := $(strip $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-NOBLAS_CFLAGS := $(strip $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_LDFLAGS := $(strip $(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CXXFLAGS := $(strip $(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+NOBLAS_FCFLAGS := $(strip $(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+NOBLAS_CFLAGS := $(strip $(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+NOBLAS_LDFLAGS := $(strip $(PICFLAG) $(LDFLAGS) $(ELDFLAGS))
 NOBLAS_CLDFLAGS := $(strip $(CLDFLAGS))
 NOBLAS_FLAGS := $(strip $(DFLAGS))
 NOBLAS_IFLAGS := $(strip $(IFLAGS))

@@ -251,10 +251,13 @@ LIBXSMM_API_INLINE const char* internal_get_target_arch(int id)
       target_arch = "snb";
     } break;
     case LIBXSMM_X86_SSE4: {
-      target_arch = "wsm";
+      target_arch = "sse4";
     } break;
     case LIBXSMM_X86_SSE3: {
-      target_arch = "sse3";
+      /* WSM includes SSE4, but BE relies on SSE3 only,
+       * hence we enter "wsm" path starting with SSE3.
+       */
+      target_arch = "wsm";
     } break;
     case LIBXSMM_TARGET_ARCH_GENERIC: {
       target_arch = "generic";
@@ -609,7 +612,7 @@ LIBXSMM_API_INLINE void internal_init(void)
 # if (0 != LIBXSMM_JIT) && !defined(__MIC__)
         /* check if target arch. permits execution (arch. may be overridden) */
         if (LIBXSMM_STATIC_TARGET_ARCH <= libxsmm_target_archid &&
-           (LIBXSMM_X86_SSE4 > libxsmm_target_archid /* JIT code gen. is not available */
+           (LIBXSMM_X86_SSE3 > libxsmm_target_archid /* JIT code gen. is not available */
             /* condition allows to avoid JIT (if static code is good enough) */
             || LIBXSMM_STATIC_TARGET_ARCH == libxsmm_target_archid))
 # endif
@@ -844,7 +847,7 @@ LIBXSMM_API int libxsmm_get_target_archid(void)
 #if !defined(__MIC__)
   return libxsmm_target_archid;
 #else /* no JIT support */
-  return LIBXSMM_MIN(libxsmm_target_archid, LIBXSMM_X86_SSE4);
+  return LIBXSMM_MIN(libxsmm_target_archid, LIBXSMM_X86_SSE3);
 #endif
 }
 
@@ -934,17 +937,18 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (0 == strcmp("snb", arch) || 0 == strcmp("avx", arch)) {
       target_archid = LIBXSMM_X86_AVX;
     }
-    else if (0 == strcmp("wsm", arch) || 0 == strcmp("nhm", arch)
-          || 0 == strcmp("sse", arch) || 0 == strcmp("sse4", arch)
-          || 0 == strcmp("sse4_2", arch)
-          || 0 == strcmp("sse4.2", arch))
+    else if (0 == strcmp("wsm", arch) || 0 == strcmp("nhm", arch) || 0 == strcmp("sse4", arch)
+       || 0 == strcmp("sse4_1", arch) || 0 == strcmp("sse4.1", arch)
+       || 0 == strcmp("sse4_2", arch) || 0 == strcmp("sse4.2", arch))
     {
       target_archid = LIBXSMM_X86_SSE4;
     }
-    else if (0 == strcmp("sse3", arch)) {
+    else if (0 == strcmp("sse", arch) || 0 == strcmp("sse3", arch)
+        || 0 == strcmp("ssse3", arch) || 0 == strcmp("ssse", arch))
+    {
       target_archid = LIBXSMM_X86_SSE3;
     }
-    else if (0 == strcmp("x86", arch) || 0 == strcmp("sse2", arch)) {
+    else if (0 == strcmp("x86", arch) || 0 == strcmp("x64", arch) || 0 == strcmp("sse2", arch)) {
       target_archid = LIBXSMM_X86_GENERIC;
     }
     else if (0 == strcmp("generic", arch) || 0 == strcmp("none", arch)) {
@@ -1422,7 +1426,7 @@ LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned int
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
   /* libxsmm_get_target_arch also serves as a runtime check whether JIT is available or not */
-  if (LIBXSMM_X86_SSE4 <= libxsmm_target_archid) result = EXIT_FAILURE;
+  if (LIBXSMM_X86_SSE3 <= libxsmm_target_archid) result = EXIT_FAILURE;
 #endif
   return result;
 }
@@ -1511,7 +1515,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
         assert(0 == mode || 1 < mode);
 #if (0 != LIBXSMM_JIT)
         if (LIBXSMM_X86_AVX <= libxsmm_target_archid || /* check if JIT is supported (CPUID) */
-           (LIBXSMM_X86_SSE4 <= libxsmm_target_archid && LIBXSMM_BUILD_KIND_GEMM == descriptor->iflags))
+           (LIBXSMM_X86_SSE3 <= libxsmm_target_archid && LIBXSMM_BUILD_KIND_GEMM == descriptor->iflags))
         {
           assert(0 != mode || 0 == flux_entry.ptr_const/*code version does not exist*/);
           INTERNAL_FIND_CODE_LOCK(lock, i, diff, flux_entry.pmm); /* lock the registry entry */

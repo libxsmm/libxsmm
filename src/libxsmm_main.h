@@ -205,7 +205,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
 } libxsmm_csr_reg_descriptor;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
-  void(*ptr_fn)(LIBXSMM_VARIADIC);
+  void (*ptr_fn)(LIBXSMM_VARIADIC);
   const void* ptr_const;
   void* pmm;
   uintptr_t uval;

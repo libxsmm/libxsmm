@@ -10,15 +10,5 @@ The executable can run with the following arguments (all arguments are optional)
 
 For stable timing (benchmark), the key operation (convolution) may be repeated (`nrepeat`). Further, `kw` and `kh` can specify the kernel-size of the convolution. The `filename-in` and `filename-out` name MHD-files (see [Meta Image File I/O](https://github.com/hfp/libxsmm/blob/master/documentation/libxsmm_aux.md#meta-image-file-io)) used as input and output respectively. The `filename-in` may not exist, and specify the image resolution (`w`[x`h`] where the file `wxh.mhd` is generated in this case).
 
-To load an image from a familiar format (JPG, PNG, etc.), one may save the raw data using for instance [IrfanView](http://www.irfanview.com/) and rely on a "header-only" MHD-file (plain text). This may look like:
-
-```ini
-NDims = 2
-DimSize = 202 134
-ElementType = MET_UCHAR
-ElementNumberOfChannels = 1
-ElementDataFile = mhd_image.raw
-```
-
-In the above case, a single channel (gray-scale) 202x134-image is described with pixel data stored separately (`mhd_image.raw`). Multi-channel images are expected to interleave the pixel data. The pixel type is per `libxsmm_mhd_elemtype` ([libxsmm_mhd.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_mhd.h#L38)).
+To load an image from a familiar format (JPG, PNG, etc.), please have a look at [libxsmm_aux.md#meta-image-file-io](Meta Image File I/O).
 

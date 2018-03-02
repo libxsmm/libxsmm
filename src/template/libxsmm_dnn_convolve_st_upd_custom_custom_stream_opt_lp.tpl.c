@@ -380,7 +380,6 @@ if (n_segments) {
 
 if (handle->reduce_weights) {
   if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-#define __AVX512F__
     /* Perform reduction because we used thread private filters... */
     if (handle->upd_use_external_reduce == 0) {
       libxsmm_barrier_wait(handle->barrier, ltid);
@@ -435,7 +434,6 @@ if (handle->reduce_weights) {
     libxsmm_barrier_wait(handle->barrier, ltid);
 #undef __AVX512F__
   } else {
-#define __AVX512F__
     /* Perform reduction because we used thread private filters... */
     if (handle->upd_use_external_reduce == 0) {
       libxsmm_barrier_wait(handle->barrier, ltid);

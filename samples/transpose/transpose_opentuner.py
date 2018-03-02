@@ -72,12 +72,12 @@ class TransposeTune(MeasurementInterface):
         nruns = max(self.args.nruns, 1)
         end = max(self.args.end, 0)
         run_cmd = (
-            "CHECK=0"
+            "CHECK=-1"  # repeatable runs
             " LIBXSMM_TRANS_M=" + str(self.granularity * cfg["M"]) +
             " LIBXSMM_TRANS_N=" + str(self.granularity * cfg["N"]) +
             " ./transpose.sh o" + " " + str(end) + " " + str(end) +
             " " + str(end) + " " + str(end) + " " + str(nruns) +
-            " " + str(max(self.args.begin, 0)))
+            " -" + str(abs(self.args.begin)))
         run_result = self.call_program(run_cmd)
         if (0 == run_result["returncode"]):
             match = re.search(

@@ -36,6 +36,12 @@
 /** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
 
+#if !defined(LIBXSMM_INTRINSICS_STATIC) && defined(__GNUC__) && /* GCC 4.4 (target-attribute) */ \
+  (LIBXSMM_VERSION3(4, 4, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) || \
+  (defined(__APPLE__) && defined(__MACH__))) /* insufficient Binutils */
+# define LIBXSMM_INTRINSICS_STATIC
+#endif
+
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
@@ -382,62 +388,60 @@
 # else
 #   include <mm_malloc.h>
 # endif
-/** Intrinsic-specific fix-ups */
-# if defined(__clang__)
-#   define LIBXSMM_INTRINSICS_LDDQU_SI128(A) _mm_loadu_si128(A)
-# else
-#   define LIBXSMM_INTRINSICS_LDDQU_SI128(A) _mm_lddqu_si128(A)
-# endif
-/* Clang misses _mm512_stream_p? (checked with v3.8.1). */
-# if defined(__clang__) && (LIBXSMM_VERSION3(3, 9, 0) > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
-#   define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_store_ps(A, B)
-#   define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_store_pd(A, B)
-# else
-#   define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_stream_ps(A, B)
-#   define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_stream_pd(A, B)
-# endif
-/* at least Clang 3.8.1 declares prototypes with incorrect signature (_mm512_load_ps takes DP*, _mm512_load_pd takes SP*) */
-# if defined(__clang__) && (LIBXSMM_VERSION3(3, 9, 0) >  LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
-                        && (LIBXSMM_VERSION3(0, 0, 0) != LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
-#   define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const double*)(A))
-#   define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const float*)(A))
-# elif defined(__clang__)
-#   define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const float*)(A))
-#   define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const double*)(A))
-# else
-#   define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps(A)
-#   define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd(A)
-# endif
-# if defined(__INTEL_COMPILER)
-#   define LIBXSMM_INTRINSICS_MM512_SET_EPI16(A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, \
-                                    A16, A17, A18, A19, A20, A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31) \
-                             _mm512_set_epi16(A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, \
-                                    A16, A17, A18, A19, A20, A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31)
-#   define LIBXSMM_INTRINSICS_MM512_MASK_I32GATHER_EPI32(A, B, C, D, E) _mm512_mask_i32gather_epi32(A, B, C, D, E)
-#   define LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(A, B) _mm512_extracti64x4_epi64(A, B)
-#   define LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(A, B) _mm512_permutexvar_epi32(A, B)
-#   define LIBXSMM_INTRINSICS_MM512_ABS_PS(A) _mm512_abs_ps(A)
-#   define LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32() _mm512_undefined_epi32()
-#   define LIBXSMM_INTRINSICS_MM512_UNDEFINED() _mm512_undefined()
-# else
-#   define LIBXSMM_INTRINSICS_MM512_SET_EPI16(A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, \
-                                    A16, A17, A18, A19, A20, A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31) \
-                             _mm512_set_epi32((A0) |  ((A1) << 16),  (A2) |  ((A3) << 16),  (A4) |  ((A5) << 16),  (A6) |  ((A7) << 16), \
-                                              (A8) |  ((A9) << 16), (A10) | ((A11) << 16), (A12) | ((A13) << 16), (A14) | ((A15) << 16), \
-                                             (A16) | ((A17) << 16), (A18) | ((A19) << 16), (A20) | ((A21) << 16), (A22) | ((A23) << 16), \
-                                             (A24) | ((A25) << 16), (A26) | ((A27) << 16), (A28) | ((A29) << 16), (A30) | ((A31) << 16))
-#   define LIBXSMM_INTRINSICS_MM512_MASK_I32GATHER_EPI32(A, B, C, D, E) _mm512_castps_si512(_mm512_mask_i32gather_ps(_mm512_castsi512_ps(A), B, C, D, E))
-#   define LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(A, B) _mm256_castpd_si256(_mm512_extractf64x4_pd(_mm512_castsi512_pd(A), B))
-#   define LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(A, B) _mm512_permutexvar_epi32(A, B)
-#   define LIBXSMM_INTRINSICS_MM512_ABS_PS(A) _mm512_castsi512_ps(_mm512_and_epi32( \
-                             _mm512_castps_si512(A), _mm512_set1_epi32(0x7FFFFFFF)))
-#   define LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32() _mm512_set1_epi32(0)
-#   define LIBXSMM_INTRINSICS_MM512_UNDEFINED() _mm512_set1_ps(0)
-# endif
-#endif /*!defined(LIBXSMM_INTRINSICS_NONE)*/
+#endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
+#endif
+
+/** Intrinsic-specific fix-ups */
+#if defined(__clang__)
+# define LIBXSMM_INTRINSICS_LDDQU_SI128(A) _mm_loadu_si128(A)
+#else
+# define LIBXSMM_INTRINSICS_LDDQU_SI128(A) _mm_lddqu_si128(A)
+#endif
+#if defined(__clang__) && ( \
+      (LIBXSMM_VERSION3(3, 9, 0)  > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) && \
+       LIBXSMM_VERSION3(0, 0, 0) != LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
+   || (LIBXSMM_VERSION3(7, 3, 0)  > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) && \
+       defined(__APPLE__) && defined(__MACH__)))
+/* prototypes with incorrect signature: _mm512_load_ps takes DP*, _mm512_load_pd takes SP* (checked with v3.8.1) */
+# define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const double*)(A))
+# define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const float*)(A))
+/* Clang misses _mm512_stream_p? (checked with v3.8.1). */
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_store_ps(A, B)
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_store_pd(A, B)
+#else
+# define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const float*)(A))
+# define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const double*)(A))
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_stream_ps(A, B)
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_stream_pd(A, B)
+#endif
+#if defined(__INTEL_COMPILER)
+# define LIBXSMM_INTRINSICS_MM512_SET_EPI16(A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, \
+                                  A16, A17, A18, A19, A20, A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31) \
+                           _mm512_set_epi16(A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, \
+                                  A16, A17, A18, A19, A20, A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31)
+# define LIBXSMM_INTRINSICS_MM512_MASK_I32GATHER_EPI32(A, B, C, D, E) _mm512_mask_i32gather_epi32(A, B, C, D, E)
+# define LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(A, B) _mm512_extracti64x4_epi64(A, B)
+# define LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(A, B) _mm512_permutexvar_epi32(A, B)
+# define LIBXSMM_INTRINSICS_MM512_ABS_PS(A) _mm512_abs_ps(A)
+# define LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32() _mm512_undefined_epi32()
+# define LIBXSMM_INTRINSICS_MM512_UNDEFINED() _mm512_undefined()
+#else
+# define LIBXSMM_INTRINSICS_MM512_SET_EPI16(A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, \
+                                  A16, A17, A18, A19, A20, A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31) \
+                           _mm512_set_epi32((A0) |  ((A1) << 16),  (A2) |  ((A3) << 16),  (A4) |  ((A5) << 16),  (A6) |  ((A7) << 16), \
+                                            (A8) |  ((A9) << 16), (A10) | ((A11) << 16), (A12) | ((A13) << 16), (A14) | ((A15) << 16), \
+                                           (A16) | ((A17) << 16), (A18) | ((A19) << 16), (A20) | ((A21) << 16), (A22) | ((A23) << 16), \
+                                           (A24) | ((A25) << 16), (A26) | ((A27) << 16), (A28) | ((A29) << 16), (A30) | ((A31) << 16))
+# define LIBXSMM_INTRINSICS_MM512_MASK_I32GATHER_EPI32(A, B, C, D, E) _mm512_castps_si512(_mm512_mask_i32gather_ps(_mm512_castsi512_ps(A), B, C, D, E))
+# define LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(A, B) _mm256_castpd_si256(_mm512_extractf64x4_pd(_mm512_castsi512_pd(A), B))
+# define LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(A, B) _mm512_permutexvar_epi32(A, B)
+# define LIBXSMM_INTRINSICS_MM512_ABS_PS(A) _mm512_castsi512_ps(_mm512_and_epi32( \
+                           _mm512_castps_si512(A), _mm512_set1_epi32(0x7FFFFFFF)))
+# define LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32() _mm512_set1_epi32(0)
+# define LIBXSMM_INTRINSICS_MM512_UNDEFINED() _mm512_set1_ps(0)
 #endif
 
 LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD32_SW(unsigned int n) {

@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_H
 #define LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_H
 
-#include "libxsmm_dnn.h"
+#include <libxsmm_dnn.h>
 
 LIBXSMM_API void libxsmm_dnn_convolve_winograd_fwd_init(int target_arch);
 LIBXSMM_API void libxsmm_dnn_convolve_winograd_fwd_finalize(void);
