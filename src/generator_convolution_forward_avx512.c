@@ -974,7 +974,11 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
 
   /* apply k blocking */
   if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM ) {
-    step_size = 4;
+    if (i_conv_desc->ifm_block > 3) {
+      step_size = 4;
+    } else {
+      step_size =  i_conv_desc->ifm_block;
+    }
   } else {
     step_size = 1;
   }
@@ -1003,6 +1007,14 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
           i_conv_kernel_config->vector_name, l_w,
           0, 0 );
       l_filter_pos++;
+    }
+
+    /* we QMADD for 3 input channels, 4th channel needs to be set to zero */
+    if (step_size == 3) {
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vxor_instruction,
+                                                 i_conv_kernel_config->vector_name, 3, 3, 3);
     }
 
     /* compute vectorwidth (A) * column broadcast (B) */
@@ -1274,7 +1286,11 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
 
   /* apply k blocking */
   if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM ) {
-    step_size = 4;
+   if (i_conv_desc->ifm_block > 3) {
+      step_size = 4;
+    } else {
+      step_size =  i_conv_desc->ifm_block;
+    }
   } else {
     step_size = 1;
   }
@@ -1296,6 +1312,14 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
           i_conv_kernel_config->vector_name, l_w,
           0, 0 );
       l_filter_pos++;
+    }
+
+    /* we QMADD for 3 input channels, 4th channel needs to be set to zero */
+    if (step_size == 3) {
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+                                                 i_conv_kernel_config->instruction_set,
+                                                 i_conv_kernel_config->vxor_instruction,
+                                                 i_conv_kernel_config->vector_name, 3, 3, 3);
     }
 
     /* compute vectorwidth (A) * column broadcast (B) */
@@ -1526,7 +1550,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
     if (step_size == 1) {
       moffset += 4;
     } else {
-      moffset += 16;
+      moffset += step_size * 4;
     }
   }
 }

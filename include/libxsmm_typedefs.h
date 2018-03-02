@@ -318,6 +318,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_de
   unsigned int compute_batch_stats;
   unsigned int compute_max;
   unsigned int perform_relu_in_kernel;
+  unsigned int n_variants;
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;

@@ -336,10 +336,20 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       compute_indices[local_entries+2] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  handle->ofhp )  +  oj_use) * handle->ofwp)  +  oi_use) *  handle->ofmblock;
 
                       /* Initialize kernel variant with the one that prefetches everything */
-                      if (oj == 0 ) {
-                        kernel_variant[local_entries/3] = 0;
-                      } else {
-                        kernel_variant[local_entries/3] = 1;
+                      if (handle->n_variants == 2) {
+                        if (handle->h_variants) {
+                          if (oj + handle->fwd_ofh_rb <= handle->ofh) {
+                            kernel_variant[local_entries/3] = 0;
+                          } else {
+                            kernel_variant[local_entries/3] = 1;
+                          }
+                        } else {
+                          if (oi + handle->fwd_ofw_rb <= handle->ofw) {
+                            kernel_variant[local_entries/3] = 0;
+                          } else {
+                            kernel_variant[local_entries/3] = 1;
+                          }
+                        }
                       }
 
                       if (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
@@ -408,11 +418,22 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       compute_indices[local_entries+2] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  handle->ofhp )  +  oj_use) * handle->ofwp)  +  oi_use) *  handle->ofmblock;
 
                       /* Initialize kernel variant with the one that prefetches everything */
-                      if (oj == 0 ) {
-                        kernel_variant[local_entries/3] = 0;
-                      } else {
-                        kernel_variant[local_entries/3] = 1;
+                      if (handle->n_variants == 2) {
+                        if (handle->h_variants) {
+                          if (oj + handle->fwd_ofh_rb <= handle->ofh) {
+                            kernel_variant[local_entries/3] = 0;
+                          } else {
+                            kernel_variant[local_entries/3] = 1;
+                          }
+                        } else {
+                          if (oi + handle->fwd_ofw_rb <= handle->ofw) {
+                            kernel_variant[local_entries/3] = 0;
+                          } else {
+                            kernel_variant[local_entries/3] = 1;
+                          }
+                        }
                       }
+
 
                       if (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
                         bn_indices[local_entries/3] =  img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
@@ -492,10 +513,20 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     compute_indices[local_entries+2] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  handle->ofhp )  +  oj_use) * handle->ofwp)  +  oi_use  ) *  handle->ofmblock;
 
                     /* Initialize kernel variant with the one that prefetches everything */
-                    if (oj == 0 ) {
-                      kernel_variant[local_entries/3] = 0;
-                    } else {
-                      kernel_variant[local_entries/3] = 1;
+                    if (handle->n_variants == 2) {
+                      if (handle->h_variants) {
+                        if (oj + handle->fwd_ofh_rb <= handle->ofh) {
+                          kernel_variant[local_entries/3] = 0;
+                        } else {
+                          kernel_variant[local_entries/3] = 1;
+                        }
+                      } else {
+                        if (oi + handle->fwd_ofw_rb <= handle->ofw) {
+                          kernel_variant[local_entries/3] = 0;
+                        } else {
+                          kernel_variant[local_entries/3] = 1;
+                        }
+                      }
                     }
 
                     if (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {

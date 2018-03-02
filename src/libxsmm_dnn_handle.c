@@ -49,6 +49,112 @@
 # pragma offload_attribute(pop)
 #endif
 
+#define LIBXSMM_ENABLE_ORIG_BWD_GENERATOR
+
+int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *wrb2_res, int *hrb2_res) {
+  const int min_r = 15;
+  const int max_r = 28;
+  int n_variants;
+  int wrb1, hrb1, wrb2, hrb2, w_tmp, rem;
+  int var1_times;
+  int case_id;
+
+  /* Case 1: min_r <= W <= max_r  */
+  if (min_r <= W && W <= max_r) {
+    n_variants = 1;
+    wrb1 = W;
+    hrb1 = 1;
+    var1_times = 1;
+    case_id = 1;
+  }
+  /* Case 2: max_r < W  */
+  if (max_r < W) {
+    /* Subcase (i) */
+    int success2_1 = 0;
+    /* Attempt to find w_tmp s.t. min_r <= w_tmp <= max_r AND W%w_tmp == 0 */
+    for (w_tmp = max_r; w_tmp >= min_r; w_tmp--) {
+      if (W % w_tmp == 0) {
+        break;
+      }
+    }
+    if (W % w_tmp == 0) {
+      success2_1 = 1;
+      n_variants = 1;
+      wrb1 = w_tmp;
+      hrb1 = 1;
+      var1_times = W / w_tmp;
+      case_id = 2;
+    }
+
+    /* Subcase (ii) if subcase (i) failed  */
+    if (!success2_1) {
+      n_variants = 2;
+      w_tmp = max_r;
+      rem = W % w_tmp;
+      while (rem < min_r && w_tmp >= min_r) {
+        w_tmp--;
+        rem = W % w_tmp;
+      }
+      if (min_r <= w_tmp && w_tmp <= max_r && min_r <= rem && rem <= max_r ) {
+        wrb1 = w_tmp;
+        hrb1 = 1;
+        var1_times = W / wrb1;
+        wrb2 = rem;
+        hrb2 = 1;
+        case_id = 3;
+      } else {
+        wrb1 = max_r;
+        hrb1 = 1;
+        var1_times = W / wrb1;
+        wrb2 = W % wrb1;
+        hrb2 = 1;
+        case_id = 4;
+      } 
+    }
+  }
+  /* Case 3: W < min_r */
+  if (W < min_r) {
+    int h = 1;
+    wrb1 = W;
+    while ( (wrb1 * h <= max_r) && (h <= H) ) {
+      if ( (wrb1 * (h+1) <= max_r) && (h+1 <= H)) {
+        h++;
+      } else {
+        break;
+      }
+    }
+    if (H % h == 0) {
+      n_variants = 1;
+      wrb1 = W;
+      hrb1 = h;
+      case_id = 5;
+    } else {
+      n_variants = 2;
+      rem = H % h;
+      wrb1 = W;
+      hrb1 = h;
+      var1_times = H / h;
+      wrb2 = W;
+      hrb2 = rem;
+      case_id = 6;
+    }
+  }
+
+  printf("Problem has W = %d and H = %d\n", W, H);
+  if (n_variants == 1) {
+    printf("Have 1 variant with wrb = %d and hrb = %d\n",wrb1, hrb1);
+  } else {
+      printf("Have 2 variants\n");
+      printf("Variant 1 with wrb = %d and hrb = %d\n",wrb1, hrb1);
+      printf("Variant 2 with wrb = %d and hrb = %d\n",wrb2, hrb2);
+  }
+
+  *wrb1_res = wrb1;
+  *hrb1_res = hrb1;
+  *wrb2_res = wrb2;
+  *hrb2_res = hrb2;
+  return n_variants;
+}
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( libxsmm_dnn_layer* handle ) {
   /* flag to test if we found an architecture which is supported */
@@ -57,6 +163,20 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
   int i = 0;
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
+
+  int wrb1, wrb2, hrb1, hrb2, n_variants = 1;
+  if (handle->desc.N >= handle->desc.threads) {
+    n_variants = find_rb(handle->ofw, handle->ofh, &wrb1, &hrb1, &wrb2, &hrb2);
+    if (n_variants == 2) {
+      if (wrb1 == wrb2) {
+        handle->h_variants = 1;
+        handle->w_variants = 0;
+      } else {
+        handle->h_variants = 0;
+        handle->w_variants = 1; 
+      }
+    }
+  }
 
   /* const char *const env_ifm = getenv("DISABLE_IFM");*/
   int disable_ifm_in = 0;
@@ -165,6 +285,14 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
       if (handle->ofw % i == 0) break;
     }
     handle->upd_ofw_rb = i;
+
+    /* Intercept RB factors with new functionality */
+    handle->n_variants = n_variants;
+    if (handle->desc.N >= handle->desc.threads) {
+      handle->fwd_ofw_rb = wrb1;
+      handle->fwd_ofh_rb = hrb1;
+    }
+
     handle->blocksimg_blocking = 1;
 
     /* calculate blockings */
@@ -373,6 +501,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
     } else {
       handle->use_nts_bwd = 0;
     }
+   
+    if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE && handle->desc.K/16 <= 8) {
+      handle->use_nts_bwd = 0;
+    }
+    
 
     /* Adjust blocking factors if custom_2 format is requested */
     if ((handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2)) {
@@ -586,7 +719,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
         memset( handle->ofh_fwd_end, 0, handle->desc.threads * sizeof(int) );
 
 
-        if ( handle->ofw == 7) {
+        /*if ( handle->ofw == 7) {
           int hrb_save =  descriptor.ofh_rb;
           int wrb_save =  descriptor.ofw_rb;
           descriptor.ofh_padded = handle->ofhp;
@@ -602,8 +735,24 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
           handle->fwd_ofh_rb = 4;
           descriptor.ofh_rb = hrb_save;
           descriptor.ofw_rb = wrb_save;
-        }
+        } */
 
+        descriptor.n_variants = handle->n_variants;
+        if ( handle->n_variants == 2) {
+          descriptor.ofh_padded = handle->ofhp;
+          descriptor.ofw_padded = handle->ofwp;
+          descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
+          descriptor.ofh_rb = hrb1;
+          descriptor.ofw_rb = wrb1;
+          handle->code_fwd[2].pmm = libxsmm_create_xconv_forward(&descriptor);
+          descriptor.ofh_rb = hrb2;
+          descriptor.ofw_rb = wrb2;
+          descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
+          handle->code_fwd[3].pmm = libxsmm_create_xconv_forward(&descriptor);
+          handle->fwd_ofh_rb = hrb1;
+          descriptor.ofh_rb = hrb1;
+          descriptor.ofw_rb = wrb1;
+        }
         for (i = 0; i < handle->desc.threads; i++) {
           handle->compute_fwd_indices_ptrs[i] = NULL;
           handle->kernel_fwd_variant_ptrs[i] = NULL;
@@ -863,12 +1012,14 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
             /* TODO: Decide the unroll factor and register blocking using some heuristics as above */
             descriptor.unroll_kh = 0;
             descriptor.unroll_kw = 1;
+            /*
             if ( handle->ofw != 7 ) {
               descriptor.ofh_rb = handle->fwd_ofh_rb;
               handle->bwd_ofh_rb = handle->fwd_ofh_rb;
               descriptor.ofw_rb = handle->fwd_ofw_rb;
               handle->bwd_ofw_rb = handle->fwd_ofw_rb;
             }
+            */
 #if 0
             !defined(NDEBUG)
               printf("DEBUG JIT of conv (NON-PEELED):\n  arch: %s\n  type: %s\n  kw: %u\n  unroll_kw: %u\n  kh: %u\n  unroll_kh: %u\n  ofm_block: %u\n  ifm_block: %u\n"
@@ -905,21 +1056,21 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
             } else {
               /*if (handle->use_thread_private_jit > 0) {*/
               if (handle->exploit_duality == 1) {
+                fwd_equivalent_descriptor.n_variants = handle->n_variants;
                 fwd_equivalent_descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-                if ( handle->ofw != 7) {
+                if ( handle->n_variants == 1) {
                   handle->code_bwd[4].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
                 } else {
-                  int hrb_save =  fwd_equivalent_descriptor.ofh_rb;
-                  int wrb_save =  fwd_equivalent_descriptor.ofw_rb;
-                  fwd_equivalent_descriptor.ofh_rb = 4;
-                  fwd_equivalent_descriptor.ofw_rb = 7;
+                  fwd_equivalent_descriptor.ofh_rb = hrb1;
+                  fwd_equivalent_descriptor.ofw_rb = wrb1;
                   handle->code_bwd[4].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
-                  fwd_equivalent_descriptor.ofh_rb = 3;
-                  fwd_equivalent_descriptor.ofw_rb = 7;
+                  fwd_equivalent_descriptor.ofh_rb = hrb2;
+                  fwd_equivalent_descriptor.ofw_rb = wrb2;
                   handle->code_bwd[5].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
-                  handle->bwd_ofh_rb = 4;
-                  fwd_equivalent_descriptor.ofh_rb = hrb_save;
-                  fwd_equivalent_descriptor.ofw_rb = wrb_save;
+                  handle->bwd_ofh_rb = hrb1;
+                  handle->bwd_ofw_rb = wrb1;
+                  fwd_equivalent_descriptor.ofh_rb = hrb1;
+                  fwd_equivalent_descriptor.ofw_rb = wrb1;
                 }
 
                 /* enable jit code */
@@ -935,6 +1086,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
                 /*descriptor.prefetch_output_ahead = 0;*/
                 descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
                 handle->code_bwd[2].pmm = libxsmm_create_xconv_backward(&descriptor);
+                handle->use_bwd_generic = 0;
 #else
                 /* disable jit code, use generic */
                 handle->bwd_ofh_rb = 1;

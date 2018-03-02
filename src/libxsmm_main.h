@@ -299,6 +299,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int avoid_output_trans;
   int avoid_input_trans;
   int enforce_sfma_kernel;
+  int n_variants;
+  int w_variants;
+  int h_variants;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;
