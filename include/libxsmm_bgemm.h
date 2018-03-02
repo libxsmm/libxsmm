@@ -85,7 +85,7 @@ LIBXSMM_API void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
  * allows to run multiple GEMMs, which is specified by 'count' (RNNs).
  * This function requires to link against libxsmmext.
  */
-LIBXSMM_API void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
+LIBXSMM_APIEXT void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
   const void* a, const void* b, void* c, /*unsigned*/int count);
 
 #endif /*LIBXSMM_BGEMM_H*/

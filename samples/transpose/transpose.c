@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint ldi = LIBXSMM_MAX/*sanitize ld*/(4 < argc ? atoi(argv[4]) : 0, m);
   const libxsmm_blasint ldo = LIBXSMM_MAX/*sanitize ld*/(5 < argc ? atoi(argv[5]) : 0, n);
   const int r = (6 < argc ? atoi(argv[6]) : 0), s = LIBXSMM_ABS(r);
-  const libxsmm_blasint lower = LIBXSMM_MAX(7 < argc ? atoi(argv[7]) : 0, 0);
+  const libxsmm_blasint lower = (7 < argc ? atoi(argv[7]) : 0);
   libxsmm_blasint km = m, kn = n, kldi = ldi, kldo = (('o' == t || 'O' == t) ? ldo : ldi);
   int result = EXIT_SUCCESS, k;
 
@@ -170,22 +170,27 @@ int main(int argc, char* argv[])
       }
     }
 
-    srand(RAND_SEED);
+    if (0 != check) { /* repeatable (reference) */
+      srand(RAND_SEED);
+    }
+    else { /* randomized selection */
+      srand(libxsmm_timer_tick() % ((unsigned int)-1));
+    }
     for (k = (0 == r ? -1 : 0); k < s && EXIT_SUCCESS == result; ++k) {
       if (0 < r) {
-        const libxsmm_blasint rldi = randstart(lower, ldi);
-        km = randstart(lower, m);
+        const libxsmm_blasint rldi = 0 <= lower ? randstart(lower, ldi) : 0;
+        km = randstart(LIBXSMM_ABS(lower), m);
         kldi = LIBXSMM_MAX(rldi, km);
         if (('o' == t || 'O' == t)) {
-          const libxsmm_blasint rldo = randstart(lower, ldo);
-          kn = randstart(lower, n);
+          const libxsmm_blasint rldo = 0 <= lower ? randstart(lower, ldo) : 0;
+          kn = randstart(LIBXSMM_ABS(lower), n);
           kldo = LIBXSMM_MAX(rldo, kn);
           /* trigger JIT-generated code */
           OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
         }
         else {
 #if 0 /* TODO: enable when in-place transpose is fully supported */
-          kn = randstart(lower, n);
+          kn = randstart(LIBXSMM_ABS(lower), n);
 #else
           kn = km;
 #endif
@@ -253,53 +258,51 @@ int main(int argc, char* argv[])
     }
 
 #if defined(USE_REFERENCE)
-    srand(RAND_SEED); /* reproduce the same sequence as above */
-    for (k = (0 == r ? -1 : 0); k < s && EXIT_SUCCESS == result; ++k) {
-      if (0 < r) {
-        const libxsmm_blasint rldi = randstart(lower, ldi);
-        km = randstart(lower, m);
-        kldi = LIBXSMM_MAX(rldi, km);
+    if (0 < check) { /* check shall imply reference (performance-)test */
+      srand(RAND_SEED); /* reproduce the same sequence as above */
+      for (k = (0 == r ? -1 : 0); k < s && EXIT_SUCCESS == result; ++k) {
+        if (0 < r) {
+          const libxsmm_blasint rldi = 0 <= lower ? randstart(lower, ldi) : 0;
+          km = randstart(LIBXSMM_ABS(lower), m);
+          kldi = LIBXSMM_MAX(rldi, km);
+          if (('o' == t || 'O' == t)) {
+            const libxsmm_blasint rldo = 0 <= lower ? randstart(lower, ldo) : 0;
+            kn = randstart(LIBXSMM_ABS(lower), n);
+            kldo = LIBXSMM_MAX(rldo, kn);
+          }
+          else {
+#if 0 /* TODO: enable when in-place transpose is fully supported */
+            kn = randstart(LIBXSMM_ABS(lower), n);
+#else
+            kn = km;
+#endif
+            kldo = kldi;
+          }
+        }
+
         if (('o' == t || 'O' == t)) {
-          const libxsmm_blasint rldo = randstart(lower, ldo);
-          kn = randstart(lower, n);
-          kldo = LIBXSMM_MAX(rldo, kn);
-          /* trigger JIT-generated code */
-          OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          start = libxsmm_timer_tick();
+          OTRANS_GOLD(&km, &kn, a, &kldi, b, &kldo);
+          duration2 += libxsmm_timer_diff(start, libxsmm_timer_tick());
         }
         else {
-#if 0 /* TODO: enable when in-place transpose is fully supported */
-          kn = randstart(lower, n);
-#else
-          kn = km;
-#endif
-          kldo = kldi;
-          /* trigger JIT-generated code */
-          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
+          assert(('i' == t || 'I' == t) && kldo == kldi);
+          memcpy(b, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
+          start = libxsmm_timer_tick();
+          ITRANS_GOLD(&km, &kn, b, &kldi, &kldo);
+          duration2 += libxsmm_timer_diff(start, libxsmm_timer_tick());
         }
-      }
-
-      if (('o' == t || 'O' == t)) {
-        start = libxsmm_timer_tick();
-        OTRANS_GOLD(&km, &kn, a, &kldi, b, &kldo);
-        duration2 += libxsmm_timer_diff(start, libxsmm_timer_tick());
-      }
-      else {
-        assert(('i' == t || 'I' == t) && kldo == kldi);
-        memcpy(b, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
-        start = libxsmm_timer_tick();
-        ITRANS_GOLD(&km, &kn, b, &kldi, &kldo);
-        duration2 += libxsmm_timer_diff(start, libxsmm_timer_tick());
-      }
-      if (1 < check || 0 > check) { /* check */
-        for (i = 0; i < km; ++i) {
-          libxsmm_blasint j;
-          for (j = 0; j < kn; ++j) {
-            const ELEM_TYPE u = b[i*kldo+j];
-            const ELEM_TYPE v = a[j*kldi+i];
-            if (LIBXSMM_NEQ(u, v)) {
-              i += km; /* leave outer loop as well */
-              result = EXIT_FAILURE;
-              break;
+        if (1 < check || 0 > check) { /* check */
+          for (i = 0; i < km; ++i) {
+            libxsmm_blasint j;
+            for (j = 0; j < kn; ++j) {
+              const ELEM_TYPE u = b[i*kldo+j];
+              const ELEM_TYPE v = a[j*kldi+i];
+              if (LIBXSMM_NEQ(u, v)) {
+                i += km; /* leave outer loop as well */
+                result = EXIT_FAILURE;
+                break;
+              }
             }
           }
         }
@@ -314,8 +317,12 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size
           * ((('o' == t || 'O' == t)) ? 3 : 2) / (d * (1 << 30)));
       }
-      fprintf(stdout, "\tduration: %.0f ms\n", 1000.0
-          * (0 == lower ? (d / (0 == r ? (s + 1) : s)) : d));
+      if (0 == lower) {
+        fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * (d / (0 == r ? (s + 1) : s)));
+      }
+      else {
+        fprintf(stdout, "\tduration: %f ms\n", 1000.0 * d);
+      }
 #if defined(USE_REFERENCE)
       if (0 < duration2) {
         fprintf(stdout, "\treference: %.1fx\n", (1.0 * duration) / duration2);
