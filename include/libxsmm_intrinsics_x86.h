@@ -36,7 +36,7 @@
 /** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
 
-#if !defined(LIBXSMM_INTRINSICS_STATIC) && /* GCC 4.4 is a prerequisite for the target-attribute */ \
+#if !defined(LIBXSMM_INTRINSICS_STATIC) && defined(__GNUC__) && /* GCC 4.4 (target-attribute) */ \
   (LIBXSMM_VERSION3(4, 4, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) || \
   (defined(__APPLE__) && defined(__MACH__))) /* insufficient Binutils */
 # define LIBXSMM_INTRINSICS_STATIC
