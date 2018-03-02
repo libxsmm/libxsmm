@@ -577,17 +577,12 @@ ifeq (0,$(SSE)) # discover AVX
     SSE = 0
   endif
 else ifeq (1,$(SSE)) # discover SSE
-  ifneq (0,$(STATIC)) # static
   ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS))))
     SSE = 4
-  endif
-  endif
-  ifeq (1,$(SSE))
-  ifneq (0,$(words $(filter sse3 ssse3,$(CPUFLAGS))))
+  else ifneq (0,$(words $(filter sse3 ssse3,$(CPUFLAGS))))
     SSE = 3
   else #ifeq (,$(SSE))
     SSE = 0
-  endif
   endif
 else ifneq (0,$(KNC))
   MPSS = 1
@@ -864,26 +859,9 @@ else # GCC assumed
     CFLAGS += $(OPTFLAG)
     FCFLAGS += $(OPTFLAG)
     ifeq (0,$(COMPATIBLE))
-      CXXFLAGS += -funroll-loops -ftree-vectorize
-      CFLAGS += -funroll-loops -ftree-vectorize
-      FCFLAGS += -funroll-loops -ftree-vectorize
-      ifneq (0,$(GCC))
-        #CXXFLAGS += -ffast-math
-        #CFLAGS += -ffast-math
-        #FCFLAGS += -ffast-math
-        ifneq (0,$(SIMD))
-        ifneq (0,$(shell echo "$$((40900 <= $(GXX_VERSION)))"))
-          DFLAGS += -DLIBXSMM_OPENMP_SIMD
-          CXXFLAGS += -fopenmp-simd
-          CFLAGS += -fopenmp-simd
-          FCFLAGS += -fopenmp-simd
-        endif
-        endif
-      #else ifneq (3,$(AVX))
-        #CXXFLAGS += -ffast-math
-        #CFLAGS += -ffast-math
-        #FCFLAGS += -ffast-math
-      endif
+      CXXFLAGS += -funroll-loops
+      CFLAGS += -funroll-loops
+      FCFLAGS += -funroll-loops
     endif
     ifneq (0,$(IPO))
       CXXFLAGS += -flto -ffat-lto-objects
@@ -1043,32 +1021,30 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
         #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
         CTARGET = -tp=nehalem
       endif
-      ifneq (0,$(STATIC))
-        CTARGET ?= -msse4.2
-      else # shared
-        CTARGET ?= -msse3
-      endif
+      CTARGET ?= -msse4.2
     else ifeq (2,$(SSE))
       # implicitly present (64-bit ABI)
-    else ifeq (3,$(SSE))
-      ifneq (0,$(PGI))
-        #DFLAGS += -D__SSSE3__ -D__SSE3__
-        CTARGET = -tp=penryn
-      endif
-      ifneq (Darwin,$(UNAME))
-        CTARGET ?= -msse3
-      else
-        # prevents Clang backend error with CRC32/other instructions
+    else ifneq (30,$(GCC)$(STATIC))
+      ifeq (3,$(SSE))
+        ifneq (0,$(PGI))
+          #DFLAGS += -D__SSSE3__ -D__SSE3__
+          CTARGET = -tp=penryn
+        endif
+        ifneq (Darwin,$(UNAME))
+          CTARGET ?= -msse3
+        else
+          # prevents Clang backend error with CRC32/other instructions
+          CTARGET ?= -msse4.2
+        endif
+      else ifeq (4,$(SSE))
+        ifneq (0,$(PGI))
+          #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
+          CTARGET = -tp=nehalem
+        endif
         CTARGET ?= -msse4.2
+      else # perhaps better to use TARGET flag directly
+        CTARGET = -msse$(SSE)
       endif
-    else ifeq (4,$(SSE))
-      ifneq (0,$(PGI))
-        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-        CTARGET = -tp=nehalem
-      endif
-      CTARGET ?= -msse4.2
-    else # perhaps better to use TARGET flag directly
-      CTARGET = -msse$(SSE)
     endif
   else ifneq (0,$(AVX))
     CTARGET = -march=native
@@ -1108,29 +1084,55 @@ ifeq (0,$(DEPSTATIC))
   PIC ?= pic
 endif
 ifeq (0,$(COMPATIBLE))
-  ifeq (0,$(DBG))
-    ifneq (Darwin,$(UNAME))
+  ifneq (0,$(OPT))
+  ifeq (0,$(INTEL))
+    ifneq (0,$(SIMD))
+    ifneq (00,$(GCC)$(shell echo "$$((40900 <= $(CC_VERSION)))"))
+    ifneq (,$(CTARGET))
+      DFLAGS += -DLIBXSMM_OPENMP_SIMD
+      CFLAGS += -fopenmp-simd
+      ifneq (10,$(GCC)$(shell echo "$$((40900 <= $(CXX_VERSION)))"))
+        CXXFLAGS += -fopenmp-simd
+        ifneq (,$(CTARGET))
+        ifneq (20,$(GCC)$(shell echo "$$((40900 <= $(FC_VERSION)))"))
+          FCFLAGS += -fopenmp-simd
+        endif
+        endif
+      endif
+    endif
+    endif
+    endif
+    ifneq (,$(CTARGET))
+      CXXFLAGS += -ftree-vectorize
+      CFLAGS += -ftree-vectorize
+    endif
+    ifneq (,$(CTARGET))
+      FCFLAGS += -ftree-vectorize
+    endif
+  endif
+  endif
+  ifneq (Darwin,$(UNAME))
+    ifneq (0,$(HARDEN)) # not defined: enabled
+      ifneq (,$(strip $(HARDEN))) # explicit
+        ifneq (0,$(shell echo "$$((40900 <= $(FC_VERSION)))"))
+          CXXFLAGS += -fstack-protector-strong
+          CFLAGS += -fstack-protector-strong
+        else
+          CXXFLAGS += -fstack-protector
+          CFLAGS += -fstack-protector
+        endif
+        #DFLAGS += -D_FORTIFY_SOURCE=2
+        PIC ?= pic
+      #else
+        #DFLAGS += -D_FORTIFY_SOURCE=1
+      endif
+    else
+      CXXFLAGS += -fno-stack-protector
+      CFLAGS += -fno-stack-protector
+    endif
+    ifneq (Windows_NT,$(UNAME))
       # Linux distributions may apply similar hardening
       LDFLAGS += -Wl,-z,relro,-z,now
-      ifneq (0,$(HARDEN)) # not defined: enabled
-        ifneq (,$(strip $(HARDEN))) # explicit
-          ifneq (0,$(shell echo "$$((40900 <= $(FC_VERSION)))"))
-            CXXFLAGS += -fstack-protector-strong
-            CFLAGS += -fstack-protector-strong
-          else
-            CXXFLAGS += -fstack-protector
-            CFLAGS += -fstack-protector
-          endif
-          #DFLAGS += -D_FORTIFY_SOURCE=2
-          PIC ?= pic
-        #else
-          #DFLAGS += -D_FORTIFY_SOURCE=1
-        endif
-      else
-        CXXFLAGS += -fno-stack-protector
-        CFLAGS += -fno-stack-protector
-      endif
-      ifneq (Windows_NT,$(UNAME))
       ifneq (0,$(DEPSTATIC))
         ifneq (0,$(HARDEN))
           ifneq (,$(strip $(HARDEN))) # explicit
@@ -1142,14 +1144,13 @@ ifeq (0,$(COMPATIBLE))
           LDFLAGS += -Wl,--export-dynamic
         endif
       endif
-      endif
-      # flag -fvisibility=hidden is causing crashes (assertions during validation)
-      CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
-      CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
-      FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
-      # --gc-sections: relies on section-flags present at compile-stage
-      LDFLAGS += -Wl,--gc-sections
     endif
+    # flag -fvisibility=hidden is causing crashes (assertions during validation)
+    CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
+    CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
+    FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
+    # --gc-sections: relies on section-flags present at compile-stage
+    LDFLAGS += -Wl,--gc-sections
   endif
   ifeq (0,$(EXP))
     CXXFLAGS += -fno-exceptions
@@ -1186,12 +1187,12 @@ endif
 # Information which can be displayed by the actual Makefile
 ifneq (,$(strip $(FC)))
   GINFO = $(SUITE): $(strip $(CC_NAME) $(CC_VERSION_STRING)), $(strip $(CXX_NAME) $(CXX_VERSION_STRING)), and $(strip $(FC_NAME) $(FC_VERSION_STRING))
-  FINFO = Fortran: $(if $(FTARGET),$(FTARGET),<compiler default>)
+  FINFO = Fortran target: $(if $(FTARGET),$(FTARGET),<compiler default>)
 else
   GINFO = $(SUITE): $(strip $(CC_NAME) $(CC_VERSION_STRING)), and $(strip $(CXX_NAME) $(CXX_VERSION_STRING))
   FINFO = Fortran: <none>
 endif
-CINFO = C / C++: $(if $(CTARGET),$(CTARGET),<compiler default>)
+CINFO = C / C++ target: $(if $(CTARGET),$(CTARGET),<compiler default>)
 
 ifneq (0,$(shell $(LD) $(SLDFLAGS) -lrt 2>&1 | grep -q "\-lrt"; echo "$$?"))
   LIBRT = -lrt
