@@ -1087,18 +1087,24 @@ ifeq (0,$(COMPATIBLE))
   ifneq (0,$(OPT))
   ifeq (0,$(INTEL))
     ifneq (0,$(SIMD))
-    ifneq (00,$(GCC)$(shell echo "$$((40900 <= $(CC_VERSION)))"))
+    ifneq (0,$(GCC))
+    ifneq (0,$(shell echo "$$((40900 <= $(CC_VERSION)))"))
     ifneq (,$(CTARGET))
       DFLAGS += -DLIBXSMM_OPENMP_SIMD
       CFLAGS += -fopenmp-simd
-      ifneq (10,$(GCC)$(shell echo "$$((40900 <= $(CXX_VERSION)))"))
+      ifneq (1,$(GCC))
+      ifneq (0,$(shell echo "$$((40900 <= $(CXX_VERSION)))"))
         CXXFLAGS += -fopenmp-simd
         ifneq (,$(CTARGET))
-        ifneq (20,$(GCC)$(shell echo "$$((40900 <= $(FC_VERSION)))"))
+        ifneq (2,$(GCC))
+        ifneq (0,$(shell echo "$$((40900 <= $(FC_VERSION)))"))
           FCFLAGS += -fopenmp-simd
         endif
         endif
+        endif
       endif
+      endif
+    endif
     endif
     endif
     endif
