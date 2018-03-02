@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
     1 >= nthreads ? "" : "s");
 
 #if 0 != LIBXSMM_JIT
-  if (LIBXSMM_X86_AVX > libxsmm_get_target_archid()) {
+  if (LIBXSMM_X86_SSE3 > libxsmm_get_target_archid()) {
     fprintf(stderr, "\tWarning: JIT support is not available at runtime!\n");
   }
 #else
