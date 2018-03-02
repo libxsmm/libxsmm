@@ -161,7 +161,8 @@
 #endif
 
 #if !defined(LIBXSMM_VISIBILITY_EXPORT) && !defined(LIBXSMM_VISIBILITY_IMPORT)
-# if defined(__GNUC__) /* may include Clang and other compatible compilers */
+/* may include Clang and other compatible compilers */
+# if defined(__GNUC__) && !defined(_WIN32) && !defined(__CYGWIN__)
 #   define LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_ATTRIBUTE(visibility("internal"))
 #   define LIBXSMM_VISIBILITY_HIDDEN LIBXSMM_ATTRIBUTE(visibility("hidden"))
 #   define LIBXSMM_VISIBILITY_PUBLIC LIBXSMM_ATTRIBUTE(visibility("default"))
