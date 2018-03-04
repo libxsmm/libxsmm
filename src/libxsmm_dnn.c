@@ -55,14 +55,14 @@
 #endif
 
 
-LIBXSMM_API void libxsmm_dnn_init(int target_arch)
+LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch)
 {
   libxsmm_dnn_convolve_winograd_fwd_init(target_arch);
   libxsmm_dnn_convolve_winograd_bwd_init(target_arch);
 }
 
 
-LIBXSMM_API void libxsmm_dnn_finalize(void)
+LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void)
 {
   libxsmm_dnn_convolve_winograd_fwd_finalize();
   libxsmm_dnn_convolve_winograd_bwd_finalize();

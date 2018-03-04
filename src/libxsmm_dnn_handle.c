@@ -49,7 +49,7 @@
 #endif
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( libxsmm_dnn_layer* handle ) {
   /* flag to test if we found an architecture which is supported */
   int noarch = 1;
   /* general counting helper */
@@ -1250,7 +1250,7 @@ LIBXSMM_API_INLINE void internal_dnn_handle_factors_all(
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_winograd_check( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_winograd_check( libxsmm_dnn_layer* handle ) {
   /* flag to test if we found an architecture which is supported */
   int noarch = 1;
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;

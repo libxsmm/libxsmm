@@ -437,49 +437,49 @@ typedef enum libxsmm_malloc_flags {
 } libxsmm_malloc_flags;
 
 /** Greatest common divisor. */
-LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b);
+LIBXSMM_API_INTERN size_t libxsmm_gcd(size_t a, size_t b);
 /** Least common multiple. */
-LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
+LIBXSMM_API_INTERN size_t libxsmm_lcm(size_t a, size_t b);
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
 LIBXSMM_API size_t libxsmm_alignment(size_t size, size_t alignment);
 
 /** Same as libxsmm_set_default_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
+LIBXSMM_API_INTERN int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Same as libxsmm_get_default_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
+LIBXSMM_API_INTERN int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /** Same as libxsmm_set_scratch_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
+LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Same as libxsmm_get_scratch_allocator, but takes a lock (can be NULL). */
-LIBXSMM_API int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
+LIBXSMM_API_INTERN int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /** Retrieve internal information about a buffer (default memory domain). */
 LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* flags, void** extra);
 
 /** Allocate memory of the requested size, which is aligned according to the given alignment. */
-LIBXSMM_API int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,
+LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,
   /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
   const void* extra, size_t extra_size);
 /** Release memory, which was allocated using libxsmm_[*]malloc. */
-LIBXSMM_API int libxsmm_xfree(const void* memory);
+LIBXSMM_API_INTERN int libxsmm_xfree(const void* memory);
 
 /**
  * Attribute memory allocation and protect with only the necessary flags.
  * This procedure is expected to run only one time per buffer, and may
  * relocate the given memory.
  */
-LIBXSMM_API int libxsmm_malloc_attrib(void** memory, int flags,
+LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags,
   /** If a name is given, an executable buffer will be dumped into a file. */
   const char* name);
 
-LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
+LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
-LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
+LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_kernel_info {
   libxsmm_gemm_descriptor xgemm;
@@ -495,10 +495,10 @@ LIBXSMM_API unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision preci
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, unsigned int ntry, unsigned int ncol);
 
 /** Returns the current tick of a (monotonic) platform-specific counter; not necessarily CPU cycles. */
-LIBXSMM_API unsigned long long libxsmm_timer_tick_rdtsc(void);
+LIBXSMM_API_INTERN unsigned long long libxsmm_timer_tick_rdtsc(void);
 
-LIBXSMM_API void libxsmm_dnn_init(int target_arch);
-LIBXSMM_API void libxsmm_dnn_finalize(void);
+LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch);
+LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);
 
 /** Global lock; create an own lock for an independent domain. */
 LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);

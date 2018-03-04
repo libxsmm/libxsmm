@@ -412,16 +412,16 @@
 
 
 /** Provides GEMM functions available via BLAS; NOT thread-safe. */
-LIBXSMM_API void libxsmm_gemm_init(int archid);
+LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid);
 
 /** Finalizes the GEMM facility; NOT thread-safe. */
-LIBXSMM_API void libxsmm_gemm_finalize(void);
+LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void);
 
 /** Determines the size of the element-type given by precision. */
-LIBXSMM_API unsigned char libxsmm_gemm_typesize(libxsmm_gemm_precision precision);
+LIBXSMM_API_INTERN unsigned char libxsmm_gemm_typesize(libxsmm_gemm_precision precision);
 
-LIBXSMM_API int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
+LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
+LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
 
 #if defined(LIBXSMM_GEMM_WRAP_STATIC)
 LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(
