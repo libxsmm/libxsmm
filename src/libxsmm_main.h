@@ -213,7 +213,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wmm, or void-function */
   libxsmm_xmcopyfunction xmatcopy;
   libxsmm_xtransfunction xtrans;
-#if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)
+#if (defined(LIBXSMM_BUILD) && defined(__STATIC)) || defined(LIBXSMM_DNN_INTERNAL_API) /* Internal API */
   libxsmm_xconvfunction xconv;
 #endif
 } libxsmm_code_pointer;

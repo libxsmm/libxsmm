@@ -73,9 +73,6 @@ cat << EOM
 #if !defined(LIBXSMM_API)
 # define LIBXSMM_API LIBXSMM_EXTERN_C LIBXSMM_INLINE LIBXSMM_RETARGETABLE
 #endif
-#if !defined(LIBXSMM_DNN_INTERNAL_API) /* TODO: remove/legacy */
-# define LIBXSMM_DNN_INTERNAL_API
-#endif
 
 /**
  * This header is intentionally called "libxsmm_source.h" since the followings block

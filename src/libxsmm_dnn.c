@@ -2176,7 +2176,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* 
 }
 
 
-#if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)
+#if (defined(LIBXSMM_BUILD) && defined(__STATIC)) || defined(LIBXSMM_DNN_INTERNAL_API) /* Internal API */
 
 LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_forward(
     const libxsmm_convolution_forward_descriptor* descriptor)
@@ -2384,5 +2384,5 @@ LIBXSMM_API void* libxsmm_create_xconv_wino_update_weights(
   return code.pmm;
 }
 
-#endif /*defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)*/
+#endif /*(defined(LIBXSMM_BUILD) && defined(__STATIC)) || defined(LIBXSMM_DNN_INTERNAL_API)*/
 

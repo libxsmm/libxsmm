@@ -260,7 +260,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_reduce_wu_filters(libxsmm_dnn_layer* h
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind, unsigned int* num_tasks);
 
-#if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API) /* Internal API */
+#if (defined(LIBXSMM_BUILD) && defined(__STATIC)) || defined(LIBXSMM_DNN_INTERNAL_API) /* Internal API */
 
 /** Function type used for convolutions (single-precision); the actual signature depends on the kind of convolution. */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sconvfunction)(
@@ -323,6 +323,6 @@ LIBXSMM_API void* libxsmm_create_xconv_wino_backward(const libxsmm_convolution_w
 /** Code generation routine for a weight-update-convolution winograd kernel as specified by descriptor. */
 LIBXSMM_API void* libxsmm_create_xconv_wino_update_weights(const libxsmm_convolution_winograd_descriptor* descriptor);
 
-#endif
+#endif /*(defined(LIBXSMM_BUILD) && defined(__STATIC)) || defined(LIBXSMM_DNN_INTERNAL_API)*/
 #endif /*LIBXSMM_DNN_H*/
 
