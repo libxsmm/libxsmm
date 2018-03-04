@@ -51,5 +51,5 @@ do
   lda=$M
   ldb=$K
   ldc=$M
-  ./xgemmkernel $M $N $K $lda $ldb $ldc 1 1 0 0 nopf ${PREC} ${REPS}
+  ./kernel $M $N $K $lda $ldb $ldc 1 1 0 0 nopf ${PREC} ${REPS}
 done
