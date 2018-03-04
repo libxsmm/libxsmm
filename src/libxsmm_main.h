@@ -204,6 +204,40 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
   const void* values;
 } libxsmm_csr_reg_descriptor;
 
+/** Function type used for convolutions (single-precision); the actual signature depends on the kind of convolution. */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_sconvfunction)(
+  const float* input1, const float* input2, float* output,
+  const float* ipf1, const float* ipf2, const float* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_wconvfunction)(
+  const short* input1, const short* input2, int* output,
+  const short* ipf1, const short* ipf2, const int* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_busconvfunction)(
+  const unsigned char* input1, const char* input2, short* output,
+  const unsigned char* ipf1, const char* ipf2, const short* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_budconvfunction)(
+  const unsigned char* input1, const char* input2, int* output,
+  const unsigned char* ipf1, const char* ipf2, const int* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_wconvfunction_bwd)(
+  int* input1, const short* input2, const short* output,
+  const int* ipf1, const short* ipf2, const short* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_busconvfunction_bwd)(
+  const unsigned short* input1, const char* input2, const char* output,
+  const unsigned short* ipf1, const char* ipf2, const char* opf);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_budconvfunction_bwd)(
+  const unsigned int* input1, const char* input2, const char* output,
+  const unsigned int* ipf1, const char* ipf2, const char* opf);
+
+/** Function type which is either libxsmm_sconvfunction or libxsmm_wconvfunction (weak-typed). */
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction {
+  libxsmm_sconvfunction sconv;
+  libxsmm_wconvfunction wconv;
+  libxsmm_busconvfunction busconv;
+  libxsmm_budconvfunction budconv;
+  libxsmm_wconvfunction_bwd wconvb;
+  libxsmm_busconvfunction_bwd busconvb;
+  libxsmm_budconvfunction_bwd budconvb;
+} libxsmm_xconvfunction;
+
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   void (*ptr_fn)(LIBXSMM_VARIADIC);
   const void* ptr_const;
@@ -213,9 +247,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wmm, or void-function */
   libxsmm_xmcopyfunction xmatcopy;
   libxsmm_xtransfunction xtrans;
-#if (defined(LIBXSMM_BUILD) && defined(__STATIC)) || defined(LIBXSMM_DNN_INTERNAL_API) /* Internal API */
   libxsmm_xconvfunction xconv;
-#endif
 } libxsmm_code_pointer;
 
 /** Structure which describes all tensors in LIBXSMM's DNN module */
@@ -499,6 +531,33 @@ LIBXSMM_API_INTERN unsigned long long libxsmm_timer_tick_rdtsc(void);
 
 LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);
+
+/** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
+LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
+
+/** Code generation routine for a backward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
+LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_backward(const libxsmm_convolution_backward_descriptor* descriptor);
+
+/** Code generation routine for a convolution kernel as specified by descriptor. */
+LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
+
+/** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
+
+/** Code generation routine for a backward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_backward(const libxsmm_convolution_backward_descriptor* descriptor);
+
+/** Code generation routine for a convolution kernel as specified by descriptor. */
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
+
+/** Code generation routine for a forward-convolution Winograd kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_forward(const libxsmm_convolution_winograd_descriptor* descriptor);
+
+/** Code generation routine for a backward-convolution Winograd kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_backward(const libxsmm_convolution_winograd_descriptor* descriptor);
+
+/** Code generation routine for a weight-update-convolution Winograd kernel as specified by descriptor. */
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_update_weights(const libxsmm_convolution_winograd_descriptor* descriptor);
 
 /** Global lock; create an own lock for an independent domain. */
 LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);

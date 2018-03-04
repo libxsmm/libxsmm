@@ -256,7 +256,7 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
       handle = 0;
       return 0;
     }
-    /* @TODO we might want to fall back to direct convolution if winograd fails */
+    /* @TODO we might want to fall back to direct convolution if Winograd fails */
     if ( handle->algo == LIBXSMM_DNN_CONV_ALGO_WINOGRAD ) {
       *status = libxsmm_dnn_internal_create_conv_handle_winograd_check( handle );
       if ( *status == LIBXSMM_DNN_WARN_FALLBACK ) {
@@ -2176,9 +2176,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* 
 }
 
 
-#if (defined(LIBXSMM_BUILD) && defined(__STATIC)) || defined(LIBXSMM_DNN_INTERNAL_API) /* Internal API */
-
-LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_forward(
+LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_forward(
     const libxsmm_convolution_forward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
@@ -2201,7 +2199,7 @@ LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_forward(
 }
 
 
-LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_backward(
+LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_backward(
     const libxsmm_convolution_backward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
@@ -2224,7 +2222,7 @@ LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_backward(
 }
 
 
-LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_update_weights(
+LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_update_weights(
     const libxsmm_convolution_weight_update_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
@@ -2247,7 +2245,7 @@ LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_update_weights(
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_forward(
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_forward(
     const libxsmm_convolution_forward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
@@ -2270,7 +2268,7 @@ LIBXSMM_API void* libxsmm_create_xconv_forward(
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_backward(
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_backward(
     const libxsmm_convolution_backward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
@@ -2293,7 +2291,7 @@ LIBXSMM_API void* libxsmm_create_xconv_backward(
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_update_weights(
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_update_weights(
     const libxsmm_convolution_weight_update_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
@@ -2316,7 +2314,7 @@ LIBXSMM_API void* libxsmm_create_xconv_update_weights(
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_wino_forward(
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_forward(
     const libxsmm_convolution_winograd_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
@@ -2339,7 +2337,7 @@ LIBXSMM_API void* libxsmm_create_xconv_wino_forward(
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_wino_backward(
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_backward(
     const libxsmm_convolution_winograd_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
@@ -2362,7 +2360,7 @@ LIBXSMM_API void* libxsmm_create_xconv_wino_backward(
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_wino_update_weights(
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_update_weights(
     const libxsmm_convolution_winograd_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
@@ -2383,6 +2381,4 @@ LIBXSMM_API void* libxsmm_create_xconv_wino_update_weights(
 #endif
   return code.pmm;
 }
-
-#endif /*(defined(LIBXSMM_BUILD) && defined(__STATIC)) || defined(LIBXSMM_DNN_INTERNAL_API)*/
 
