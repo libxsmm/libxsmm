@@ -441,7 +441,7 @@ LIBXSMM_API_INTERN size_t libxsmm_gcd(size_t a, size_t b);
 /** Least common multiple. */
 LIBXSMM_API_INTERN size_t libxsmm_lcm(size_t a, size_t b);
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
-LIBXSMM_API size_t libxsmm_alignment(size_t size, size_t alignment);
+LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment);
 
 /** Same as libxsmm_set_default_allocator, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
