@@ -227,7 +227,8 @@ void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
-  unsigned int l_number_of_chunks = 1+((i_xgemm_desc->n-1)/30);
+  unsigned int l_max_n_rb_block = (strcmp(i_arch, "knm") == 0) ? 28 : 30;
+  unsigned int l_number_of_chunks = 1+((i_xgemm_desc->n-1)/l_max_n_rb_block);
   unsigned int l_modulo = i_xgemm_desc->n%l_number_of_chunks;
   unsigned int l_n2 = i_xgemm_desc->n/l_number_of_chunks;
   unsigned int l_n1 = l_n2 + 1;
@@ -269,7 +270,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         
   /* define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
 
-  if (l_n1 > 30) l_n1 = 30; /* this just the case if i_xgemm_desc->n/l_number_of_chunks has no remainder */
+  if (l_n1 > l_max_n_rb_block) l_n1 = l_max_n_rb_block; /* this just the case if i_xgemm_desc->n/l_number_of_chunks has no remainder */
   for (l_chunk = 0; l_chunk < l_number_of_chunks; l_chunk++) {
     if (l_chunk < l_modulo) {
       l_N1 += l_n1;

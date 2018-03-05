@@ -59,14 +59,14 @@
 #endif
 
 
-LIBXSMM_API void libxsmm_dnn_init(int target_arch)
+LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch)
 {
   libxsmm_dnn_convolve_winograd_fwd_init(target_arch);
   libxsmm_dnn_convolve_winograd_bwd_init(target_arch);
 }
 
 
-LIBXSMM_API void libxsmm_dnn_finalize(void)
+LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void)
 {
   libxsmm_dnn_convolve_winograd_fwd_finalize();
   libxsmm_dnn_convolve_winograd_bwd_finalize();
@@ -2763,213 +2763,200 @@ LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, in
 }
 
 
-#if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)
-
-LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_forward(
-    const libxsmm_convolution_forward_descriptor* descriptor)
+LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cfwd = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CFWD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cfwd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CFWD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
     }
+  }
 #endif
   return code.xconv.sconv;
 }
 
 
-LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_backward(
-    const libxsmm_convolution_backward_descriptor* descriptor)
+LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_backward(const libxsmm_convolution_backward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cbwd = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CBWD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cbwd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CBWD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
     }
+  }
 #endif
   return code.xconv.sconv;
 }
 
 
-LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_update_weights(
-    const libxsmm_convolution_weight_update_descriptor* descriptor)
+LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cupd = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CUPD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cupd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CUPD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
     }
+  }
 #endif
   return code.xconv.sconv;
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_forward(
-    const libxsmm_convolution_forward_descriptor* descriptor)
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_forward(const libxsmm_convolution_forward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cfwd = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CFWD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cfwd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CFWD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
     }
+  }
 #endif
   return code.pmm;
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_backward(
-    const libxsmm_convolution_backward_descriptor* descriptor)
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_backward(const libxsmm_convolution_backward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cbwd = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CBWD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cbwd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CBWD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
     }
+  }
 #endif
   return code.pmm;
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_update_weights(
-    const libxsmm_convolution_weight_update_descriptor* descriptor)
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cupd = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CUPD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cupd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CUPD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
     }
+  }
 #endif
   return code.pmm;
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_wino_forward(
-    const libxsmm_convolution_winograd_descriptor* descriptor)
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_forward(const libxsmm_convolution_winograd_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cwino = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CWFWD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cwino = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CWFWD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
     }
+  }
 #endif
   return code.pmm;
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_wino_backward(
-    const libxsmm_convolution_winograd_descriptor* descriptor)
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_backward(const libxsmm_convolution_winograd_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cwino = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CWBWD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cwino = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CWBWD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
     }
+  }
 #endif
   return code.pmm;
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_wino_update_weights(
-    const libxsmm_convolution_winograd_descriptor* descriptor)
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_update_weights(const libxsmm_convolution_winograd_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cwino = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CWUPD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cwino = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CWUPD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
     }
+  }
 #endif
   return code.pmm;
 }
-
-#endif /*defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)*/
 

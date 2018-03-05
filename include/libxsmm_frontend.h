@@ -194,16 +194,17 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (template). */
 #if !defined(__BLAS) || (0 != __BLAS)
-# define LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-    const char libxsmm_blas_xgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T'); \
-    const char libxsmm_blas_xgemm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'N' : 'T'); \
+# define LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+    /* 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
+    const char libxsmm_blas_xgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'n' : 'T'); \
+    const char libxsmm_blas_xgemm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'n' : 'T'); \
     const TYPE libxsmm_blas_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_blas_xgemm_beta_ = (TYPE)(BETA); \
     const libxsmm_blasint libxsmm_blas_xgemm_lda_ = (libxsmm_blasint)(LDA); \
     const libxsmm_blasint libxsmm_blas_xgemm_ldb_ = (libxsmm_blasint)(LDB); \
     const libxsmm_blasint libxsmm_blas_xgemm_ldc_ = (libxsmm_blasint)(LDC); \
-    const libxsmm_blasint libxsmm_blas_xgemm_m_ = (libxsmm_blasint)(MM); \
-    const libxsmm_blasint libxsmm_blas_xgemm_n_ = (libxsmm_blasint)(NN); \
-    const libxsmm_blasint libxsmm_blas_xgemm_k_ = (libxsmm_blasint)(KK); \
+    const libxsmm_blasint libxsmm_blas_xgemm_m_ = (libxsmm_blasint)(M); \
+    const libxsmm_blasint libxsmm_blas_xgemm_n_ = (libxsmm_blasint)(N); \
+    const libxsmm_blasint libxsmm_blas_xgemm_k_ = (libxsmm_blasint)(K); \
     LIBXSMM_ASSERT(0 != ((uintptr_t)LIBXSMM_ORIGINAL_GEMM(TYPE))); \
     LIBXSMM_ORIGINAL_GEMM(TYPE)(&libxsmm_blas_xgemm_transa_, &libxsmm_blas_xgemm_transb_, \
       &libxsmm_blas_xgemm_m_, &libxsmm_blas_xgemm_n_, &libxsmm_blas_xgemm_k_, \

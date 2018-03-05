@@ -156,7 +156,7 @@ int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *wrb2_res, int *hrb2
   return n_variants;
 }
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( libxsmm_dnn_layer* handle ) {
   /* flag to test if we found an architecture which is supported */
   int noarch = 1;
   /* general counting helper */
@@ -1966,7 +1966,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( li
     }
 
 
-    LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_winograd_check( libxsmm_dnn_layer* handle ) {
+    LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_winograd_check( libxsmm_dnn_layer* handle ) {
       /* flag to test if we found an architecture which is supported */
       int noarch = 1;
       libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;

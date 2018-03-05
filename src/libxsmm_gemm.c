@@ -95,7 +95,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 }
 
 
-LIBXSMM_API void libxsmm_gemm_init(int archid)
+LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
 {
   /* setup tile sizes according to CPUID or environment (LIBXSMM_TGEMM_M, LIBXSMM_TGEMM_N, LIBXSMM_TGEMM_K) */
   static unsigned int tile_configs[/*configs*/][2/*DP/SP*/][3/*TILE_M,TILE_N,TILE_K*/][8/*size-range*/] = {
@@ -184,7 +184,7 @@ LIBXSMM_API void libxsmm_gemm_init(int archid)
 }
 
 
-LIBXSMM_API void libxsmm_gemm_finalize(void)
+LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void)
 {
 #if !defined(LIBXSMM_NO_SYNC)
   unsigned int i; for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_DESTROY(LIBXSMM_GEMM_LOCK, &internal_gemm_lock[i].state);
@@ -203,7 +203,7 @@ LIBXSMM_API void libxsmm_gemm_finalize(void)
 }
 
 
-LIBXSMM_API unsigned char libxsmm_gemm_typesize(libxsmm_gemm_precision precision)
+LIBXSMM_API_INTERN unsigned char libxsmm_gemm_typesize(libxsmm_gemm_precision precision)
 {
   return libxsmm_typesize((libxsmm_datatype)precision);
 }
@@ -231,7 +231,7 @@ LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch)
 }
 
 
-LIBXSMM_API int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch)
+LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch)
 {
   switch (prefetch) {
     case LIBXSMM_GEMM_PREFETCH_SIGONLY:            return 2;
@@ -258,7 +258,7 @@ LIBXSMM_API int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch)
 }
 
 
-LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid)
+LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid)
 {
   switch (uid) {
     case  1: return LIBXSMM_GEMM_PREFETCH_NONE;                /* nopf */
