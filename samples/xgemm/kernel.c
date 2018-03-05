@@ -506,7 +506,7 @@ int main(int argc, char* argv []) {
     run_jit_float( l_xgemm_desc, l_a_f, l_b_f, l_c_f );
     libxsmm_matdiff(LIBXSMM_DATATYPE_F32, l_m, l_n, l_c_gold_f, l_c_f, &l_ldc, &l_ldc, &l_diff);
     printf("max. error: %f\n", l_diff.linf_abs);
-   
+
     libxsmm_free(l_a_f);
     libxsmm_free(l_b_f);
     libxsmm_free(l_c_f);
