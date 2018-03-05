@@ -172,10 +172,10 @@
 
 
 /** Initializes the transpose functionality; NOT thread-safe. */
-LIBXSMM_API void libxsmm_trans_init(int archid);
+LIBXSMM_API_INTERN void libxsmm_trans_init(int archid);
 
 /** Finalizes the transpose functionality; NOT thread-safe. */
-LIBXSMM_API void libxsmm_trans_finalize(void);
+LIBXSMM_API_INTERN void libxsmm_trans_finalize(void);
 
 
 /** Determines whether JIT-kernels are used or not (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */

@@ -179,7 +179,7 @@ LIBXSMM_API_INLINE void internal_upd_delweight_transform(
 #endif
 }
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -253,7 +253,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_custom_custom
   return status;
 }
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_nhwc_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_nhwc_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
