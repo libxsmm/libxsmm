@@ -75,7 +75,7 @@ LIBXSMM_API_INLINE libxsmm_timer_tickint internal_timer_tick(void)
 }
 
 
-LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
 libxsmm_timer_tickint libxsmm_timer_tick_rdtsc(void)
 {
   libxsmm_timer_tickint result;

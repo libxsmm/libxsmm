@@ -40,7 +40,7 @@
 #endif
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct( libxsmm_dnn_layer* handle ) {
 
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -58,7 +58,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct( libxsmm_dnn
   return status;
 }
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct( libxsmm_dnn_layer* handle ) {
 
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -76,7 +76,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct( libxsmm_dnn
   return status;
 }
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct( libxsmm_dnn_layer* handle ) {
 
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -94,7 +94,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct( libxsmm_dnn
   return status;
 }
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle ) {
 
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -124,7 +124,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct_custom_custo
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle ) {
 
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -143,7 +143,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct_custom_custo
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle ) {
 
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -162,7 +162,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custo
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_custom( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_custom( libxsmm_dnn_layer* handle ) {
 
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -198,7 +198,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_custom(
   return status;
 }
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_rsck( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_rsck( libxsmm_dnn_layer* handle ) {
 
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 

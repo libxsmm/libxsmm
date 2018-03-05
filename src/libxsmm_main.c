@@ -1020,7 +1020,7 @@ LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strat
 }
 
 
-LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
+LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype)
 {
   switch (datatype) {
     case LIBXSMM_DATATYPE_F64: return 8;
@@ -1060,7 +1060,7 @@ LIBXSMM_API_INLINE const char* internal_get_typesize_string(size_t typesize)
 }
 
 
-LIBXSMM_API int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code)
+LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code)
 {
   int result = EXIT_SUCCESS;
 #if !defined(__MIC__)
