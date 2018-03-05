@@ -9,6 +9,7 @@
 *.json export-ignore
 *.yml export-ignore
 documentation/*.pptx export-ignore
+documentation/*.pptm export-ignore
 scripts/tool_*.sh export-ignore
 samples/seissol/*.bound export-ignore
 samples/seissol/*.neigh export-ignore
