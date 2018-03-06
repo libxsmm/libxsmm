@@ -1079,8 +1079,8 @@ ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-f.f); \
 endif
 endif
 
-ifeq (0,$(DEPSTATIC))
-  # PIC: PIC or pic
+# PIC: PIC or pic
+ifneq (0,$(DEPSTATIC))
   PIC ?= pic
 endif
 ifeq (0,$(COMPATIBLE))
