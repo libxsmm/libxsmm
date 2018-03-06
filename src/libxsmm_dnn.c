@@ -307,9 +307,12 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
         libxsmm_free(handle->code_bwd[0].pmm);
       }
       if ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)) {
-        libxsmm_free(handle->code_bwd[1].pmm);
-        libxsmm_free(handle->code_bwd[2].pmm);
-        libxsmm_free(handle->code_bwd[3].pmm);
+        if (handle->exploit_duality == 1) {
+          libxsmm_free(handle->code_bwd[4].pmm);
+          if (handle->n_variants != 1) {
+            libxsmm_free(handle->code_bwd[5].pmm);
+          }
+        }
       }
       if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
         libxsmm_free(handle->code_upd[0].pmm);
@@ -348,18 +351,20 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
         if ( handle->fwd_code_segments[loop] != NULL ) {
           libxsmm_free( handle->fwd_code_segments[loop] );
         }
-        /* Bwd related arrays  */
-        if ( handle->compute_bwd_indices_ptrs[loop] != NULL ) {
-          libxsmm_free( handle->compute_bwd_indices_ptrs[loop] );
-        }
-        if ( handle->kernel_bwd_variant_ptrs[loop] != NULL ) {
-          libxsmm_free( handle->kernel_bwd_variant_ptrs[loop] );
-        }
-        if ( handle->bwd_code_segments[loop] != NULL ) {
-          libxsmm_free( handle->bwd_code_segments[loop] );
-        }
-        if ( handle->transpose_bwd_indices_ptrs[loop] != NULL ) {
-          libxsmm_free( handle->transpose_bwd_indices_ptrs[loop] );
+        if (handle->exploit_duality == 1) {
+          /* Bwd related arrays  */
+          if ( handle->compute_bwd_indices_ptrs[loop] != NULL ) {
+            libxsmm_free( handle->compute_bwd_indices_ptrs[loop] );
+          }
+          if ( handle->kernel_bwd_variant_ptrs[loop] != NULL ) {
+            libxsmm_free( handle->kernel_bwd_variant_ptrs[loop] );
+          }
+          if ( handle->bwd_code_segments[loop] != NULL ) {
+            libxsmm_free( handle->bwd_code_segments[loop] );
+          }
+          if ( handle->transpose_bwd_indices_ptrs[loop] != NULL ) {
+            libxsmm_free( handle->transpose_bwd_indices_ptrs[loop] );
+          }
         }
       }
 
@@ -371,13 +376,15 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
       free( handle->ofh_fwd_start );
       free( handle->ofh_fwd_end );
 
-      free( handle->compute_bwd_indices_ptrs );
-      free( handle->kernel_bwd_variant_ptrs );
-      free( handle->n_entries_bwd );
-      free( handle->n_bwd_code_segments );
-      free( handle->ofh_bwd_start );
-      free( handle->ofh_bwd_end );
-      free( handle->transpose_bwd_indices_ptrs );
+      if (handle->exploit_duality == 1) {
+        free( handle->compute_bwd_indices_ptrs );
+        free( handle->kernel_bwd_variant_ptrs );
+        free( handle->n_entries_bwd );
+        free( handle->n_bwd_code_segments );
+        free( handle->ofh_bwd_start );
+        free( handle->ofh_bwd_end );
+        free( handle->transpose_bwd_indices_ptrs );
+      }
     }
 
     if (handle->padding_flag) libxsmm_free(handle->scratch5);
