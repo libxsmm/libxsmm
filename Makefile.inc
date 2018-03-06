@@ -93,6 +93,9 @@ PYMOD ?= 0
 # Static or shared binary
 STATIC ?= 0
 
+# PIC: PIC or pic
+PIC ?= pic
+
 # Intrinsics support level
 INTRINSICS ?= 2
 ifneq (0,$(INTRINSICS))
@@ -1079,10 +1082,6 @@ ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-f.f); \
 endif
 endif
 
-# PIC: PIC or pic
-ifneq (0,$(DEPSTATIC))
-  PIC ?= pic
-endif
 ifeq (0,$(COMPATIBLE))
   ifneq (0,$(OPT))
   ifeq (0,$(INTEL))
@@ -1128,7 +1127,6 @@ ifeq (0,$(COMPATIBLE))
           CFLAGS += -fstack-protector
         endif
         #DFLAGS += -D_FORTIFY_SOURCE=2
-        PIC ?= pic
       #else
         #DFLAGS += -D_FORTIFY_SOURCE=1
       endif
