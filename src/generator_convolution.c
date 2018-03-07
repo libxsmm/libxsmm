@@ -33,7 +33,6 @@
 #include "generator_common.h"
 #include "generator_convolution_common.h"
 #include "generator_convolution_forward_avx512.h"
-#include "generator_convolution_backward_avx512.h"
 #include "generator_convolution_weight_update_avx512.h"
 
 #include <stdlib.h>
@@ -85,36 +84,6 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
     if ( (strcmp(i_arch, "skx") == 0) ||
          (strcmp(i_arch, "icl") == 0)   ) {
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
-    } else {
-      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
-      return;
-    }
-  } else {
-    /* TODO fix this error */
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
-    return;
-  }
-
-  /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
-}
-
-
-/* @TODO change int based architecture value */
-LIBXSMM_API
-void libxsmm_generator_convolution_backward_kernel( libxsmm_generated_code*                        io_generated_code,
-                                                    const libxsmm_convolution_backward_descriptor* i_conv_desc,
-                                                    const char*                                    i_arch ) {
-  /* add instruction set mismatch check to code, header */
-  libxsmm_generator_isa_check_header( io_generated_code, i_arch );
-
-  /* select datatype */
-  if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
-    if ( (strcmp(i_arch, "knl") == 0) ||
-         (strcmp(i_arch, "knm") == 0) ||
-         (strcmp(i_arch, "skx") == 0) ||
-         (strcmp(i_arch, "icl") == 0)   ) {
-      libxsmm_generator_convolution_backward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;

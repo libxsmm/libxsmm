@@ -58,24 +58,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct( libx
   return status;
 }
 
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct( libxsmm_dnn_layer* handle ) {
-
-  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-
-  /* Switch based on the format to use the correct dryrun */
-  if ( handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM && handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) {
-    status = libxsmm_dnn_perform_bwd_dryrun_direct_custom_custom( handle );
-  } else if ( handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NHWC && handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) {
-    status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
-  } else if ( handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NHWC && handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_RSCK ) {
-    status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
-  } else {
-    status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
-  }
-
-  return status;
-}
-
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct( libxsmm_dnn_layer* handle ) {
 
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -120,25 +102,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct_custo
     }
   }
 
-  return status;
-}
-
-
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle ) {
-
-  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-
-  /* check if we have a kernel JITed */
-  if (handle->code_bwd[0].xconv.sconv == 0) {
-    /* In these case we run fallback code so we do not support thread private jitting */
-    status = LIBXSMM_DNN_WARN_FALLBACK;
-  } else {
-    if (handle->desc.N*handle->blocksifm*handle->fm_lp_block >= handle->desc.threads) {
-# include "template/libxsmm_dnn_convolve_dryrun_bwd_custom_custom.tpl.c"
-    } else {
-# include "template/libxsmm_dnn_convolve_dryrun_bwd_custom_custom.tpl.c"
-    }
-  }
   return status;
 }
 

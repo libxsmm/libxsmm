@@ -95,8 +95,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom(l
       typedef libxsmm_sconvfunction libxsmm_convfunction;
       if ( handle->exploit_duality == 1  ) {
 #include "template/libxsmm_dnn_convolve_st_bwd_via_fwd_custom_custom_stream.tpl.c"
-      } else {
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_stream.tpl.c"
       }
     } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
 #if 0
