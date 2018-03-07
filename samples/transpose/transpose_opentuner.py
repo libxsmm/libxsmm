@@ -51,14 +51,22 @@ class TransposeTune(MeasurementInterface):
         """
         self.granularity = 1
         assert(0 < self.granularity)
-        max_m = (160 + self.granularity - 1) / self.granularity
-        max_n = (160 + self.granularity - 1) / self.granularity
+        m_max = (160 + self.granularity - 1) / self.granularity
+        n_max = (160 + self.granularity - 1) / self.granularity
+        m_param = IntegerParameter("M", self.granularity, m_max)
+        n_param = IntegerParameter("N", self.granularity, n_max)
         manipulator = ConfigurationManipulator()
-        manipulator.add_parameter(
-          IntegerParameter("M", self.granularity, max_m))
-        manipulator.add_parameter(
-          IntegerParameter("N", self.granularity, max_n))
+        manipulator.add_parameter(m_param)
+        manipulator.add_parameter(n_param)
         return manipulator
+
+    def seed_configurations(self):
+        m_seed = [self.args.n, self.args.m][0 != self.args.m]
+        n_seed = [self.args.m, self.args.n][0 != self.args.n]
+        if 0 == m_seed or 0 == n_seed:
+            return []
+        else:
+            return [{"M": m_seed, "N": n_seed}]
 
     def objective(self):
         return opentuner.search.objective.MaximizeAccuracyMinimizeSize()
@@ -110,12 +118,18 @@ class TransposeTune(MeasurementInterface):
 if __name__ == "__main__":
     argparser = opentuner.default_argparser()
     argparser.add_argument(
-        "begin", type=int, default=1024,
-        help="Begin of the range")
+        "begin", type=int,
+        help="Begin of the range (min. M and N)")
     argparser.add_argument(
-        "end", type=int, default=2048,
-        help="End of the range")
+        "end", type=int,
+        help="End of the range (max. M and N)")
     argparser.add_argument(
-        "nruns", type=int, default=100,
-        help="Number of runs")
+        "nruns", type=int, default=100, nargs='?',
+        help="Number of experiments per epoch")
+    argparser.add_argument(
+        "m", type=int, default=0, nargs='?',
+        help="Initial tile size (M)")
+    argparser.add_argument(
+        "n", type=int, default=0, nargs='?',
+        help="Initial tile size (N)")
     TransposeTune.main(argparser.parse_args())
