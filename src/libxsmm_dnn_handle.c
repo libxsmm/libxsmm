@@ -938,7 +938,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
               if (handle->exploit_duality == 1) {
                 if (handle->padding_flag == 1) {
                   handle->matcopy_bwd[0].xmatcopy = libxsmm_xmcopydispatch(&matcopy_descriptor);
+                  matcopy_descriptor.n = 1;
+                  handle->matcopy_bwd[2].xmatcopy = libxsmm_xmcopydispatch(&matcopy_descriptor);
                 }
+
+
                 fwd_equivalent_descriptor.n_variants = handle->n_variants;
                 fwd_equivalent_descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
                 if ( handle->n_variants == 1) {
@@ -1038,6 +1042,15 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
                 matzero_descriptor_overwrite.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype_out);
                 matzero_descriptor_overwrite.flags = LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE;
                 handle->matcopy_bwd[1].xmatcopy = libxsmm_xmcopydispatch(&matzero_descriptor_overwrite);
+
+                if (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) {
+                  matzero_descriptor_overwrite.m = handle->ifwp*handle->ifmblock_hp;
+                  matzero_descriptor_overwrite.ldi = handle->ifwp*handle->ifmblock_hp;
+                  matzero_descriptor_overwrite.ldo = handle->ifwp*handle->ifmblock_hp;
+                } else { /* Assumes NHWC format */
+                  status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
+                }
+                handle->matcopy_bwd[3].xmatcopy = libxsmm_xmcopydispatch(&matzero_descriptor_overwrite);
               }
               /* compute kernel stream overhead */
               ks_overhead += handle->desc.threads*5*sizeof(int);
