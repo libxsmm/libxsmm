@@ -397,9 +397,8 @@ libxsmm: lib
 endif
 	$(information)
 ifneq (,$(strip $(LIBJITPROFILING)))
-	@echo "===================================================="
-	@echo "Intel VTune Amplifier support has been incorporated."
-	@echo "===================================================="
+	$(info Intel VTune Amplifier support has been incorporated.)
+	$(info ================================================================================)
 endif
 
 .PHONY: lib
