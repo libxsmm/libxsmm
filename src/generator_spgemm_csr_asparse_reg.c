@@ -52,7 +52,7 @@ void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*         i
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
   } else {
     /* selecting the correct signature */
-    if (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype) {
+    if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
       if (LIBXSMM_GEMM_PREFETCH_NONE == i_xgemm_desc->prefetch) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* A, const float* B, float* C) {\n", i_routine_name);
       } else {
@@ -188,7 +188,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   for ( l_z = 0; l_z < l_unique; l_z++) {
     char l_id[65];
     LIBXSMM_SNPRINTF(l_id, 64, "%u", l_z);
-    if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
+    if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
       for ( l_m = 0; l_m < 8; l_m++) {
         l_code_const_dp[l_m] = l_unique_values[l_z];
       }

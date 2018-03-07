@@ -95,7 +95,7 @@ void libxsmm_generator_gemm_sse3_microkernel( libxsmm_generated_code*           
                                       i_micro_kernel_config->vector_name,
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
-        if ( LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
+        if ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
           libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->b_shuff_instruction,
@@ -115,7 +115,7 @@ void libxsmm_generator_gemm_sse3_microkernel( libxsmm_generated_code*           
                                       i_micro_kernel_config->vector_name,
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
-        if ( LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
+        if ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
           libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->b_shuff_instruction,
@@ -161,7 +161,7 @@ void libxsmm_generator_gemm_sse3_microkernel( libxsmm_generated_code*           
                                       i_micro_kernel_config->vector_name,
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
-        if ( LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
+        if ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && ( i_micro_kernel_config->b_shuff_instruction != LIBXSMM_X86_INSTR_UNDEF ) ) {
           libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->b_shuff_instruction,
@@ -183,7 +183,7 @@ void libxsmm_generator_gemm_sse3_microkernel( libxsmm_generated_code*           
                                       i_micro_kernel_config->vector_name,
                                       l_n, i_micro_kernel_config->use_masking_a_c, 0 );
         /* generate shuffle as SSE3 has no broadcast load for single precision */
-        if ( LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype ) {
+        if ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
           libxsmm_x86_instruction_vec_shuffle_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->b_shuff_instruction,

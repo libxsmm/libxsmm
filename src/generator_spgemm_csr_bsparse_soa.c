@@ -90,7 +90,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
   LIBXSMM_UNUSED(i_values);
 
   /* select soa width */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
+  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     if ( strcmp(i_arch, "knl") == 0 ||
          strcmp(i_arch, "knm") == 0 ||
          strcmp(i_arch, "skx") == 0 ) {

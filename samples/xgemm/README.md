@@ -16,7 +16,7 @@ To tune the tile sizes ("block sizes") internal to LIBXSMM, the [OpenTuner](http
 ./xgemm_opentuner.py 1024,1280,1536,1792
 ```
 
-To start a tuning experiment for a new set of arguments, it is highly recommended to start from scratch. Otherwise the population of previously generated tuning results is fetched from a database and used to tune an unrelated range of matrix shapes.
+To start a tuning experiment for a new set of arguments, it is highly recommended to start from scratch. Otherwise the population of previously generated tuning results is fetched from a database and used to tune an unrelated range of matrix shapes. Optionally, the initial block size can be seeded (`tile-size-m`, `tile-size-n`, and `tile-size-k`).
 
 ```
 rm -rf opentuner.db

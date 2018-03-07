@@ -104,14 +104,6 @@ ifneq (0,$(BETA))
 endif
 endif
 
-# determines if WGEMM should produce FP32
-# @TODO this is kind of hacky and we should find a better solutions
-WGEMM_FP32 ?= 0
-
-ifneq (0,$(WGEMM_FP32))
-  DFLAGS += -DLIBXSMM_WGEMM_USE_FP32_OUTPUT
-endif
-
 # Determines if the library is thread-safe
 THREADS ?= 1
 
@@ -327,6 +319,63 @@ ifneq (,$(strip $(FC)))
   FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
 endif
 
+ifneq (0,$(JIT))
+ifneq (0,$(SYM))
+ifeq (,$(filter Darwin,$(UNAME)))
+  ifneq (0,$(PERF))
+    DFLAGS += -DLIBXSMM_PERF
+    ifneq (0,$(JITDUMP))
+      DFLAGS += -DLIBXSMM_PERF_JITDUMP
+    endif
+  endif
+  VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
+  ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
+    LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
+    OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
+    DFLAGS += -DLIBXSMM_VTUNE
+    IFLAGS += -I$(VTUNEROOT)/include
+    ifneq (0,$(INTEL))
+      CXXFLAGS += -diag-disable 271
+      CFLAGS += -diag-disable 271
+    endif
+  endif
+endif
+endif
+endif
+
+information = \
+	$(info ================================================================================) \
+	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py)) \
+	$(info --------------------------------------------------------------------------------) \
+	$(info $(GINFO)) \
+	$(info $(CINFO)) \
+	$(if $(strip $(FC)),$(info $(FINFO)),$(NULL)) \
+	$(info --------------------------------------------------------------------------------) \
+	$(if $(strip $(FC)),$(NULL),$(if $(strip $(FC_VERSION_STRING)), \
+	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!), \
+	$(info Fortran Compiler is missing: no Fortran interface is built!)) \
+	$(info ================================================================================)) \
+	$(if $(filter Windows_NT0,$(UNAME)$(STATIC)), \
+	$(info The shared link-time wrapper (libxsmmext) is not supported under Windows/Cygwin!) \
+	$(info ================================================================================), \
+	$(NULL)) \
+	$(if $(filter _0_,_$(BLAS_WARNING)_),$(NULL), \
+	$(info Building a shared library requires to link against BLAS since there is) \
+	$(info no runtime resolution/search for weak symbols implemented for this OS.)) \
+	$(if $(filter _0_,_$(BLAS)_), \
+	$(if $(filter _0_,_$(NOBLAS)_),$(NULL), \
+	$(info LIBXSMM's link-time BLAS dependency is removed (fallback might be unavailable!)) \
+	$(info ================================================================================)), \
+	$(if $(filter _0_,_$(BLAS_WARNING)_), \
+	$(info LIBXSMM is link-time agnostic with respect to BLAS/GEMM!) \
+	$(info Linking a certain BLAS library may prevent users to decide.), \
+	$(NULL)) \
+	$(if $(filter _1_,_$(BLAS)_), \
+	$(info LIBXSMM's THRESHOLD already prevents calling small GEMMs!) \
+	$(info A sequential BLAS is superfluous with respect to LIBXSMM.), \
+	$(NULL)) \
+	$(info ================================================================================))
+
 ifneq (,$(strip $(TEST)))
 .PHONY: run-tests
 run-tests: tests
@@ -337,6 +386,11 @@ ifeq (0,$(COMPATIBLE))
 libxsmm: lib generator
 else
 libxsmm: lib
+endif
+	$(information)
+ifneq (,$(strip $(LIBJITPROFILING)))
+	$(info Intel VTune Amplifier support has been incorporated.)
+	$(info ================================================================================)
 endif
 
 .PHONY: lib
@@ -478,6 +532,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
                             $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
                             $(wildcard $(ROOTDIR)/.hooks/*) \
                             $(ROOTDIR)/version.txt
+	$(information)
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
@@ -500,47 +555,6 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) > $@
-	$(info ================================================================================)
-	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py))
-	$(info --------------------------------------------------------------------------------)
-	$(info $(GINFO))
-	$(info $(CINFO))
-ifneq (,$(strip $(FC)))
-	$(info $(FINFO))
-endif
-	$(info --------------------------------------------------------------------------------)
-ifeq (,$(strip $(FC)))
-ifeq (,$(strip $(FC_VERSION_STRING)))
-	$(info Fortran Compiler is missing: building without Fortran support!)
-else
-	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!)
-endif
-	$(info ================================================================================)
-endif
-ifeq (0,$(STATIC))
-ifeq (Windows_NT,$(UNAME))
-	$(info The shared link-time wrapper (libxsmmext) is not supported under Windows/Cygwin!)
-	$(info ================================================================================)
-endif
-endif
-ifneq (0,$(BLAS_WARNING))
-	$(info Building a shared library requires to link against BLAS since there is)
-	$(info no runtime resolution/search for weak symbols implemented for this OS.)
-endif
-ifneq (0,$(BLAS))
-ifeq (0,$(BLAS_WARNING))
-	$(info LIBXSMM is link-time agnostic with respect to BLAS/GEMM!)
-	$(info Linking a certain BLAS library may prevent users to decide.)
-endif
-ifeq (1,$(BLAS))
-	$(info LIBXSMM's THRESHOLD already prevents calling small GEMMs!)
-	$(info A sequential BLAS is superfluous with respect to LIBXSMM.)
-endif
-	$(info ================================================================================)
-else ifneq (0,$(NOBLAS))
-	$(info LIBXSMM's link-time BLAS dependency is removed (fallback might be unavailable!))
-	$(info ================================================================================)
-endif
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
@@ -659,36 +673,6 @@ endif
 		| tr "~" "\n" > $(TMPFILE)
 	@$(PYTHON) $(SCRDIR)/libxsmm_specialized.py $(PRECISION) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $(TMPFILE)
 	@$(MV) $(TMPFILE) $@
-endif
-
-ifneq (0,$(JIT))
-ifneq (0,$(SYM))
-ifeq (,$(filter Darwin,$(UNAME)))
-  ifneq (0,$(PERF))
-    DFLAGS += -DLIBXSMM_PERF
-    ifneq (0,$(JITDUMP))
-      DFLAGS += -DLIBXSMM_PERF_JITDUMP
-    endif
-  endif
-
-  VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
-  ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
-    LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
-    OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
-    DFLAGS += -DLIBXSMM_VTUNE
-    IFLAGS += -I$(VTUNEROOT)/include
-    ifneq (0,$(INTEL))
-      CXXFLAGS += -diag-disable 271
-      CFLAGS += -diag-disable 271
-    endif
-$(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
-	@$(CP) $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT) $(BLDDIR)/jitprofiling
-	@cd $(BLDDIR)/jitprofiling; $(AR) x libjitprofiling.$(SLIBEXT)
-  else
-.PHONY: $(LIBJITPROFILING)
-  endif
-endif
-endif
 endif
 
 define DEFINE_COMPILE_RULE
@@ -838,6 +822,12 @@ $(BINDIR)/libxsmm_conv_generator: $(BINDIR)/.make $(OBJFILES_GEN_CONV_BIN) $(OUT
 	$(LD) -o $@ $(OBJFILES_GEN_CONV_BIN) $(call abslib,$(OUTDIR)/libxsmmgen.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 $(BINDIR)/libxsmm_convwino_generator: $(BINDIR)/.make $(OBJFILES_GEN_CONVWINO_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT)
 	$(LD) -o $@ $(OBJFILES_GEN_CONVWINO_BIN) $(call abslib,$(OUTDIR)/libxsmmgen.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
+
+ifneq (,$(strip $(LIBJITPROFILING)))
+$(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
+	@$(CP) $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT) $(BLDDIR)/jitprofiling
+	@cd $(BLDDIR)/jitprofiling; $(AR) x libjitprofiling.$(SLIBEXT)
+endif
 
 .PHONY: clib_mic
 ifneq (0,$(MIC))

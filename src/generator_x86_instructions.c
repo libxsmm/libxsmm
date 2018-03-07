@@ -718,7 +718,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     if ( (i_instruction_set == LIBXSMM_X86_AVX512_MIC   ||
           i_instruction_set == LIBXSMM_X86_AVX512_CORE  ||
           i_instruction_set == LIBXSMM_X86_AVX512_KNM   ||
-          i_instruction_set == LIBXSMM_X86_AVX512_ICL     ) &&
+          i_instruction_set == LIBXSMM_X86_AVX512_ICL  ) &&
          (i_use_masking != 0) ) {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
