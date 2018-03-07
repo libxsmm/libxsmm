@@ -458,19 +458,39 @@ LIBXSMM_API_INLINE void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, con
   }
 }
 
-/* Implementation is taken from an anonymous GitHub Gist. */
+/* SQRT with Newton's method using integer arithmetic. */
+LIBXSMM_API_INLINE unsigned int libxsmm_sqrt_u64(unsigned long long n) {
+  unsigned long long b; unsigned int y = 0, s;
+  for (s = 0x80000000/*2^31*/; 0 < s; s >>= 1) {
+    b = y | s; y |= (b * b <= n ? s : 0);
+  }
+  return y;
+}
+
+/* SQRT with Newton's method using integer arithmetic. */
+LIBXSMM_API_INLINE unsigned int libxsmm_sqrt_u32(unsigned int n) {
+  unsigned int b; unsigned int y = 0; int s;
+  for (s = 0x40000000/*2^30*/; 0 < s; s >>= 2) {
+    b = y | s; y >>= 1;
+    if (b <= n) { n -= b; y |= s; }
+  }
+  return y;
+}
+
+/* CBRT with Newton's method using integer arithmetic. */
 LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u64(unsigned long long n) {
   unsigned long long b; unsigned int y = 0; int s;
-  for (s = 63; s >= 0; s -= 3) {
+  for (s = 63; 0 <= s; s -= 3) {
     y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
     if (b <= (n >> s)) { n -= b << s; ++y; }
   }
   return y;
 }
 
+/* CBRT with Newton's method using integer arithmetic. */
 LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u32(unsigned int n) {
   unsigned int b; unsigned int y = 0; int s;
-  for (s = 31; s >= 0; s -= 3) {
+  for (s = 30; 0 <= s; s -= 3) {
     y += y; b = 3 * y * (y + 1) + 1;
     if (b <= (n >> s)) { n -= b << s; ++y; }
   }
