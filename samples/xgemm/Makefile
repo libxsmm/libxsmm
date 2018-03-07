@@ -25,14 +25,6 @@ CFLAGS = $(NULL)
 DFLAGS = -DLIBXSMM_GEMM_CONST
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
-# determines if WGEMM assumes FP32 output
-# @TODO remove (also in LIBXSMM's Makefile)
-WGEMM_FP32 ?= 0
-
-ifneq (0,$(WGEMM_FP32))
-  DFLAGS += -DLIBXSMM_WGEMM_USE_FP32_OUTPUT
-endif
-
 BLAS = 2
 OMP = 1
 SYM = 1

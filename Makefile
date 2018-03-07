@@ -104,14 +104,6 @@ ifneq (0,$(BETA))
 endif
 endif
 
-# determines if WGEMM should produce FP32
-# @TODO this is kind of hacky and we should find a better solutions
-WGEMM_FP32 ?= 0
-
-ifneq (0,$(WGEMM_FP32))
-  DFLAGS += -DLIBXSMM_WGEMM_USE_FP32_OUTPUT
-endif
-
 # Determines if the library is thread-safe
 THREADS ?= 1
 
