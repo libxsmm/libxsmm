@@ -49,10 +49,12 @@ class TransposeTune(MeasurementInterface):
         Define the search space by creating a
         ConfigurationManipulator
         """
+        m_max = min(160, self.args.end)
+        n_max = min(160, self.args.end)
         self.granularity = 1
         assert(0 < self.granularity)
-        m_max = (160 + self.granularity - 1) / self.granularity
-        n_max = (160 + self.granularity - 1) / self.granularity
+        m_max = (m_max + self.granularity - 1) / self.granularity
+        n_max = (n_max + self.granularity - 1) / self.granularity
         m_param = IntegerParameter("M", self.granularity, m_max)
         n_param = IntegerParameter("N", self.granularity, n_max)
         manipulator = ConfigurationManipulator()
@@ -78,14 +80,15 @@ class TransposeTune(MeasurementInterface):
         """
         cfg = desired_result.configuration.data
         nruns = max(self.args.nruns, 1)
-        end = max(self.args.end, 0)
+        begin = max(self.args.begin, 1)
+        end = max(self.args.end, 1)
         run_cmd = (
             "CHECK=-1"  # repeatable runs
             " LIBXSMM_TRANS_M=" + str(self.granularity * cfg["M"]) +
             " LIBXSMM_TRANS_N=" + str(self.granularity * cfg["N"]) +
             " ./transpose.sh o" + " " + str(end) + " " + str(end) +
             " " + str(end) + " " + str(end) + " " + str(nruns) +
-            " -" + str(abs(self.args.begin)))
+            " -" + str(begin))
         run_result = self.call_program(run_cmd)
         if (0 == run_result["returncode"]):
             match = re.search(
@@ -106,8 +109,8 @@ class TransposeTune(MeasurementInterface):
         called at the end of tuning
         """
         filename = (
-            "transpose-" + str(max(self.args.begin, 0)) +
-            "_" + str(max(self.args.end,   0)) +
+            "transpose-" + str(max(self.args.begin, 1)) +
+            "_" + str(max(self.args.end,   1)) +
             "_" + str(max(self.args.nruns, 1)) +
             time.strftime("-%Y%m%d-%H%M%S") + ".json")
         print("Optimal block size written to " + filename +
