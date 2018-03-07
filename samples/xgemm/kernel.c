@@ -158,7 +158,7 @@ void run_jit_short_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
   libxsmm_mmkernel_info l_info;
   double l_jittime, l_runtime;
   int l_t;
-  
+
 
   l_start = libxsmm_timer_tick();
   l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);
@@ -202,7 +202,7 @@ void run_jit_short_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
   libxsmm_mmkernel_info l_info;
   double l_jittime, l_runtime;
   int l_t;
-  
+
 
   l_start = libxsmm_timer_tick();
   l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);

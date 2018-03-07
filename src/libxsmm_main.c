@@ -1051,7 +1051,7 @@ LIBXSMM_API_INLINE const char* internal_get_typename(int datatype)
   } else {
     return "void";
   }
-  
+
   return "void";
 }
 

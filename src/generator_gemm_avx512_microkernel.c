@@ -999,8 +999,8 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
         }
       }
 
-      if ( (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_AL1_BL1_CL1) && 
-           (l_k % 4 == 0) && 
+      if ( (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_AL1_BL1_CL1) &&
+           (l_k % 4 == 0) &&
            (i_k_blocking >= i_micro_kernel_config->vector_length) ) {
 
         b_prefetch_blocks = i_k_blocking/i_micro_kernel_config->vector_length;
