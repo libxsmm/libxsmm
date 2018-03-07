@@ -293,7 +293,11 @@ if (handle->use_lp_kernel == 1) {
 LIBXSMM_ALIGNED(float vnni_scratch[32], 64);
 
 LIBXSMM_ALIGNED(float *max_vals, 64);
+#ifdef __AVX512F__
 __m512 max_abs = _mm512_setzero_ps();
+#else
+/* won't happen as this code only runs on AVX512 platforms */
+#endif
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, float, maxstats, (float*)handle->maxstats_upd->data, 16);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, 16);
@@ -348,7 +352,6 @@ if (handle->reduce_weights) {
     _mm512_store_ps(max_vals, max_abs);
 #endif
     libxsmm_barrier_wait(handle->barrier, ltid);
-#undef __AVX512F__
   } else {
     if (pixels_lp == 4) {
       __m512i weight_sumi;
@@ -382,7 +385,6 @@ if (handle->reduce_weights) {
 #endif
       }
       libxsmm_barrier_wait(handle->barrier, ltid);
-#undef __AVX512F__
     } else {
       __m512 weight_sum;
       for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
@@ -415,7 +417,6 @@ if (handle->reduce_weights) {
 #endif
       }
       libxsmm_barrier_wait(handle->barrier, ltid);
-#undef __AVX512F__
     }
   }
 }

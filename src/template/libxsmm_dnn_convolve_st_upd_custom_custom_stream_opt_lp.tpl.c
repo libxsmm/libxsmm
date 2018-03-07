@@ -313,7 +313,11 @@ if (handle->use_lp_kernel == 1) {
 LIBXSMM_ALIGNED(float vnni_scratch[32], 64);
 
 LIBXSMM_ALIGNED(float *max_vals, 64);
+#ifdef __AVX512F__
 __m512 max_abs = _mm512_setzero_ps();
+#else
+/* won't happen as this code only runs on AVX512 platforms */
+#endif
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, float, maxstats, (float*)handle->maxstats_upd->data, 16);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, 16);
@@ -432,7 +436,6 @@ if (handle->reduce_weights) {
 #endif
     }
     libxsmm_barrier_wait(handle->barrier, ltid);
-#undef __AVX512F__
   } else {
     /* Perform reduction because we used thread private filters... */
     if (handle->upd_use_external_reduce == 0) {
@@ -527,7 +530,6 @@ if (handle->reduce_weights) {
       }
     }
     libxsmm_barrier_wait(handle->barrier, ltid);
-#undef __AVX512F__
   }
 }
 libxsmm_barrier_wait(handle->barrier, ltid);

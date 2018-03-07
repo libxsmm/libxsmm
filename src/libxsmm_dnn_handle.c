@@ -215,7 +215,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   handle->use_upd_generic = 1;
 
   /* @FIXME, we should find a better knob */
+#ifdef __AVX512F__
   handle->use_thread_private_jit = 1;
+#else
+  handle->use_thread_private_jit = 0;
+#endif
 
   /* If we do not have AVX512 arch disable kernel streams  */
   if (libxsmm_target_archid != LIBXSMM_X86_AVX512_MIC  &&

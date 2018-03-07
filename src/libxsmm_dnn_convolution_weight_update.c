@@ -43,6 +43,7 @@
 # pragma offload_attribute(pop)
 #endif
 
+#ifdef __AVX512F__
 #define TRANSPOSE_W_CHUNK(img, ifm1, ij, w_offset, ifm2) \
         base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w_offset, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block); \
         gather_reg = _mm512_i32gather_epi32(vgindex, base_addr, 1); \
@@ -1140,6 +1141,18 @@ void lp_transpose_and_resize_1_chunk_1_remainder_even_pixels(int img, libxsmm_dn
 }
 #endif
 
+#else
+void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handle) { 
+  LIBXSMM_UNUSED(ltid);
+  LIBXSMM_UNUSED(handle);
+}
+
+void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
+  LIBXSMM_UNUSED(ltid);
+  LIBXSMM_UNUSED(handle);
+}
+#endif /* __AVX512F__ */
+
 #undef TRANSPOSE_W_CHUNK
 #undef TRANSPOSE_W_REMAINDER
 #undef TRANSPOSE_W_FULL_PAIR
@@ -1147,7 +1160,7 @@ void lp_transpose_and_resize_1_chunk_1_remainder_even_pixels(int img, libxsmm_dn
 #undef TRANSPOSE_W_CHUNK_RESIZED
 #undef TRANSPOSE_W_REMAINDER_RESIZED
 
-#if 1 /*defined(__AVX512F__)*/
+#if defined(__AVX512F__)
 void gather_transpose_ps_16_56_56_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
   const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
   const __mmask16 Nremmask = 0x00FF;
@@ -1405,6 +1418,7 @@ void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, cons
 typedef void (*transposer)(int M, int N, float *dst, int ldD, const float *src, int ldS);
 
 transposer get_transposer(int M, int N, int ldD, int ldS) {
+#ifdef __AVX512F__
   if(M == 16 && N == 7 && ldD == 8 && ldS == 16) {
     return gather_transpose_ps_16_7_8_16;
   }
@@ -1453,6 +1467,7 @@ transposer get_transposer(int M, int N, int ldD, int ldS) {
   if(M == 16 && N == 58 && ldD == 60 && ldS == 16) {
     return gather_transpose_ps_16_58_60_16;
   }
+#endif
 
   return transpose_fallback;
 }
