@@ -87,7 +87,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
   LIBXSMM_UNUSED(i_values);
 
   /* select soa width */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
+  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     if ( strcmp(i_arch, "knl") == 0 ||
          strcmp(i_arch, "knm") == 0 ||
          strcmp(i_arch, "skx") == 0 ) {
@@ -207,7 +207,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
       /* let's figure out if we can apply qmadd when being sin F32 setting and on KNM */
       if ( (l_k < ((unsigned int)i_xgemm_desc->k - 3))                       &&
            (l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM) &&
-           (LIBXSMM_GEMM_PRECISION_F32 == i_xgemm_desc->datatype)               ) {
+           (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) )               ) {
         /* loop over the columns of B/C */
         for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
           unsigned int l_found = 0;

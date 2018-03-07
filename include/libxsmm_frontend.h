@@ -72,7 +72,7 @@
 #define LIBXSMM_TPREFIX(TYPE, SYMBOL) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_NAME(TYPE), SYMBOL)
 #define LIBXSMM_TPREFIX_double d
 #define LIBXSMM_TPREFIX_float s
-#define LIBXSMM_TPREFIX_short w
+#define LIBXSMM_TPREFIX_short wi
 
 /** Helper macro for comparing types. */
 #define LIBXSMM_EQUAL_CHECK(...) LIBXSMM_SELECT_HEAD(__VA_ARGS__, 0)

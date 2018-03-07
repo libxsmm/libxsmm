@@ -244,7 +244,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   void* pmm;
   uintptr_t uval;
   intptr_t ival;
-  libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wmm, or void-function */
+  libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wimm, wsmm, or void-function */
   libxsmm_xmcopyfunction xmatcopy;
   libxsmm_xtransfunction xtrans;
   libxsmm_xconvfunction xconv;
