@@ -39,13 +39,7 @@
 # define srand48 srand
 #endif
 
-#if 0 /* use: make WGEMM_FP32=1 */
-# define LIBXSMM_WGEMM_USE_FP32_OUTPUT
-#endif
-
-
 int g_reps = 0;
-
 
 LIBXSMM_INLINE void print_help(void) {
   printf("\n\n");
@@ -61,7 +55,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    0: unaligned A, otherwise aligned\n");
   printf("    0: unaligned C, otherwise aligned\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC, AL1_BL1_CL1\n");
-  printf("    PRECISION: SP, DP, I16, I8\n");
+  printf("    PRECISION: SP, DP, I16I32, I16F32, I8\n");
   printf("    #repetitions\n");
   printf("\n\n");
 }
@@ -154,21 +148,17 @@ void run_jit_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
 
 
 LIBXSMM_INLINE
-void run_jit_short( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                    const short*                        i_a,
-                    const short*                        i_b,
-#if defined(LIBXSMM_WGEMM_USE_FP32_OUTPUT)
-                    float*                              o_c,
-                    float*                              i_scf) {
-#else
-                    int*                                o_c) {
-#endif
+void run_jit_short_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
+                        const short*                        i_a,
+                        const short*                        i_b,
+                        int*                                o_c) {
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit;
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   double l_jittime, l_runtime;
   int l_t;
+  
 
   l_start = libxsmm_timer_tick();
   l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);
@@ -186,19 +176,55 @@ void run_jit_short( const libxsmm_gemm_descriptor* i_xgemm_desc,
   l_start = libxsmm_timer_tick();
   if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
     for ( l_t = 0; l_t < g_reps; l_t++ ) {
-#if defined(LIBXSMM_WGEMM_USE_FP32_OUTPUT)
-      l_test_jit.wmm(i_a, i_b, o_c, NULL, NULL, NULL, i_scf);
-#else
-      l_test_jit.wmm(i_a, i_b, o_c);
-#endif
+      l_test_jit.wimm(i_a, i_b, o_c, NULL, NULL, NULL);
     }
   } else {
     for ( l_t = 0; l_t < g_reps; l_t++ ) {
-#if defined(LIBXSMM_WGEMM_USE_FP32_OUTPUT)
-      l_test_jit.wmm(i_a, i_b, o_c, i_a, i_b, o_c, i_scf);
-#else
-      l_test_jit.wmm(i_a, i_b, o_c, i_a, i_b, o_c);
-#endif
+      l_test_jit.wimm(i_a, i_b, o_c, i_a, i_b, o_c);
+    }
+  }
+  l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
+
+  printf("%fs for creating jit\n", l_jittime);
+  printf("%fs for executing jit\n", l_runtime);
+  printf("%f GOPS for jit\n", ((double)((double)g_reps * (double)l_info.m * (double)l_info.n * (double)l_info.k) * 2.0) / (l_runtime * 1.0e9));
+}
+
+LIBXSMM_INLINE
+void run_jit_short_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
+                          const short*                        i_a,
+                          const short*                        i_b,
+                          float*                              o_c,
+                          float*                              i_scf) {
+  /* define function pointer */
+  libxsmm_xmmfunction l_test_jit;
+  libxsmm_timer_tickint l_start;
+  libxsmm_mmkernel_info l_info;
+  double l_jittime, l_runtime;
+  int l_t;
+  
+
+  l_start = libxsmm_timer_tick();
+  l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);
+  l_jittime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
+  printf("function pointer address: %llx\n", (unsigned long long)l_test_jit.xmm);
+
+  if (l_test_jit.xmm == 0) {
+    printf("JIT failed, please run with LIBXSMM_VERBOSE=-1 and/or with debug mode LIBXSMM library!\n");
+    exit(EXIT_FAILURE);
+  }
+
+  /* receive kernel information */
+  libxsmm_get_mmkernel_info(l_test_jit, &l_info, NULL/*code_size*/);
+
+  l_start = libxsmm_timer_tick();
+  if (l_info.prefetch == LIBXSMM_GEMM_PREFETCH_NONE ) {
+    for ( l_t = 0; l_t < g_reps; l_t++ ) {
+      l_test_jit.wsmm(i_a, i_b, o_c, NULL, NULL, NULL, i_scf);
+    }
+  } else {
+    for ( l_t = 0; l_t < g_reps; l_t++ ) {
+      l_test_jit.wsmm(i_a, i_b, o_c, i_a, i_b, o_c, i_scf);
     }
   }
   l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
@@ -237,23 +263,18 @@ int main(int argc, char* argv []) {
   unsigned char* l_a_b = 0;
   char* l_b_b = 0;
   int* l_c_b = 0;
-#if defined(LIBXSMM_WGEMM_USE_FP32_OUTPUT)
-  float* l_c_w = 0;
-#else
-  int* l_c_w = 0;
-#endif
+  float* l_c_w_f = 0;
+  int* l_c_w_i = 0;
   /* Gold data */
   double* l_c_gold_d = 0;
   float* l_c_gold_f = 0;
   int* l_c_gold_b = 0;
-#if defined(LIBXSMM_WGEMM_USE_FP32_OUTPUT)
-  float* l_c_gold_w = 0;
+  float* l_c_gold_w_f = 0;
   unsigned char exp_a = 0, exp_b = 0;
   float l_scf = (float)pow(2.0, -1.0*((double)exp_a + (double)exp_b));
   /*l_scf = 1000;*/
-#else
-  int* l_c_gold_w = 0;
-#endif
+  int* l_c_gold_w_i = 0;
+
   /* check argument count for a valid range */
   if ( argc != 14 ) {
     print_help();
@@ -385,23 +406,15 @@ int main(int argc, char* argv []) {
       }
     }
   }
-  else if (strcmp(l_precision, "I16") == 0) {
+  else if (strcmp(l_precision, "I16I32") == 0) {
     l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
-#if defined(LIBXSMM_WGEMM_USE_FP32_OUTPUT)
-      LIBXSMM_GEMM_PRECISION_I16, LIBXSMM_GEMM_PRECISION_F32,
-#else
       LIBXSMM_GEMM_PRECISION_I16, LIBXSMM_GEMM_PRECISION_I32,
-#endif
       l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
     l_a_w = (short*)libxsmm_aligned_malloc(l_lda * l_k * sizeof(short), 64);
     l_b_w = (short*)libxsmm_aligned_malloc(l_ldb * l_n * sizeof(short), 64);
-#if defined(LIBXSMM_WGEMM_USE_FP32_OUTPUT)
-    l_c_w = (float*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(float), 64);
-    l_c_gold_w = (float*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(float), 64);
-#else
-    l_c_w = (int*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(int), 64);
-    l_c_gold_w = (int*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(int), 64);
-#endif
+    l_c_w_i = (int*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(int), 64);
+    l_c_gold_w_i = (int*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(int), 64);
+
     /* touch A */
     for (l_i = 0; l_i < l_lda; l_i++) {
       for (l_j = 0; l_j < l_k; l_j++) {
@@ -417,13 +430,36 @@ int main(int argc, char* argv []) {
     /* touch C */
     for (l_i = 0; l_i < l_ldc; l_i++) {
       for (l_j = 0; l_j < l_n; l_j++) {
-#if defined(LIBXSMM_WGEMM_USE_FP32_OUTPUT)
-        l_c_w[(l_j * l_ldc) + l_i] = 0.0f;
-        l_c_gold_w[(l_j * l_ldc) + l_i] = 0.0f;
-#else
-        l_c_w[(l_j * l_ldc) + l_i] = 0;
-        l_c_gold_w[(l_j * l_ldc) + l_i] = 0;
-#endif
+        l_c_w_i[(l_j * l_ldc) + l_i] = 0;
+        l_c_gold_w_i[(l_j * l_ldc) + l_i] = 0;
+      }
+    }
+  }
+  else if (strcmp(l_precision, "I16F32") == 0) {
+    l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
+      LIBXSMM_GEMM_PRECISION_I16, LIBXSMM_GEMM_PRECISION_F32,
+      l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
+    l_a_w = (short*)libxsmm_aligned_malloc(l_lda * l_k * sizeof(short), 64);
+    l_b_w = (short*)libxsmm_aligned_malloc(l_ldb * l_n * sizeof(short), 64);
+    l_c_w_f = (float*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(float), 64);
+    l_c_gold_w_f = (float*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(float), 64);
+    /* touch A */
+    for (l_i = 0; l_i < l_lda; l_i++) {
+      for (l_j = 0; l_j < l_k; l_j++) {
+        l_a_w[(l_j * l_lda) + l_i] = (short)(drand48() * 10.0);
+      }
+    }
+    /* touch B */
+    for (l_i = 0; l_i < l_ldb; l_i++) {
+      for (l_j = 0; l_j < l_n; l_j++) {
+        l_b_w[(l_j * l_ldb) + l_i] = (short)(drand48() * 10.0);
+      }
+    }
+    /* touch C */
+    for (l_i = 0; l_i < l_ldc; l_i++) {
+      for (l_j = 0; l_j < l_n; l_j++) {
+        l_c_w_f[(l_j * l_ldc) + l_i] = 0.0f;
+        l_c_gold_w_f[(l_j * l_ldc) + l_i] = 0.0f;
       }
     }
   }
@@ -512,7 +548,7 @@ int main(int argc, char* argv []) {
     libxsmm_free(l_c_f);
     libxsmm_free(l_c_gold_f);
   }
-  else if (strcmp(l_precision, "I16") == 0) {
+  else if (strcmp(l_precision, "I16I32") == 0) {
     const int l_k_block = 2;
     double l_max_error = 0;
     int l_k2;
@@ -522,13 +558,7 @@ int main(int argc, char* argv []) {
         for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
           for (l_i = 0; l_i < l_m; l_i++) {
             for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
-#if defined(LIBXSMM_WGEMM_USE_FP32_OUTPUT)
-              const int iprod = (int)l_a_w[(l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] * (int)l_b_w[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
-              const float fprod = (float)iprod;
-              l_c_gold_w[(l_j * l_ldc) + l_i] += fprod * l_scf;
-#else
-              l_c_gold_w[(l_j * l_ldc) + l_i] += l_a_w[(l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] * l_b_w[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
-#endif
+              l_c_gold_w_i[(l_j * l_ldc) + l_i] += l_a_w[(l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] * l_b_w[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
             }
           }
         }
@@ -537,23 +567,54 @@ int main(int argc, char* argv []) {
     l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
     printf("%fs for C\n", l_runtime);
     printf("%f GOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime * 1.0e9));
-    run_jit_short(l_xgemm_desc, l_a_w, l_b_w,
-#if defined(LIBXSMM_WGEMM_USE_FP32_OUTPUT)
-      l_c_w, &l_scf);
-#else
-      l_c_w);
-#endif
+    run_jit_short_int(l_xgemm_desc, l_a_w, l_b_w, l_c_w_i);
+
     for (l_i = 0; l_i < l_m; l_i++) {
       for (l_j = 0; l_j < l_n; l_j++) {
-        const double l_fabs = fabs((double)l_c_gold_w[(l_j * l_ldc) + l_i] - (double)l_c_w[(l_j * l_ldc) + l_i]);
+        const double l_fabs = fabs((double)l_c_gold_w_i[(l_j * l_ldc) + l_i] - (double)l_c_w_i[(l_j * l_ldc) + l_i]);
         if (l_max_error < l_fabs) l_max_error = l_fabs;
       }
     }
     printf("max. error: %f\n", l_max_error);
     libxsmm_free(l_a_w);
     libxsmm_free(l_b_w);
-    libxsmm_free(l_c_w);
-    libxsmm_free(l_c_gold_w);
+    libxsmm_free(l_c_w_i);
+    libxsmm_free(l_c_gold_w_i);
+  }
+  else if (strcmp(l_precision, "I16F32") == 0) {
+    const int l_k_block = 2;
+    double l_max_error = 0;
+    int l_k2;
+    const libxsmm_timer_tickint l_start = libxsmm_timer_tick();
+    for (l_t = 0; l_t < g_reps; l_t++) {
+      for (l_j = 0; l_j < l_n; l_j++) {
+        for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
+          for (l_i = 0; l_i < l_m; l_i++) {
+            for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
+              const int iprod = (int)l_a_w[(l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2] * (int)l_b_w[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
+              const float fprod = (float)iprod;
+              l_c_gold_w_f[(l_j * l_ldc) + l_i] += fprod * l_scf;
+            }
+          }
+        }
+      }
+    }
+    l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
+    printf("%fs for C\n", l_runtime);
+    printf("%f GOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime * 1.0e9));
+    run_jit_short_float(l_xgemm_desc, l_a_w, l_b_w, l_c_w_f, &l_scf);
+
+    for (l_i = 0; l_i < l_m; l_i++) {
+      for (l_j = 0; l_j < l_n; l_j++) {
+        const double l_fabs = fabs((double)l_c_gold_w_f[(l_j * l_ldc) + l_i] - (double)l_c_w_f[(l_j * l_ldc) + l_i]);
+        if (l_max_error < l_fabs) l_max_error = l_fabs;
+      }
+    }
+    printf("max. error: %f\n", l_max_error);
+    libxsmm_free(l_a_w);
+    libxsmm_free(l_b_w);
+    libxsmm_free(l_c_w_f);
+    libxsmm_free(l_c_gold_w_f);
   }
 
   printf("------------------------------------------------\n");
