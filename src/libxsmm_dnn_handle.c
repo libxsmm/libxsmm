@@ -1379,23 +1379,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
               /*ALL*/
               descriptor.transpose_ofw_ifm = 0;
               descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-              handle->code_upd[1].pmm = libxsmm_create_xconv_update_weights(&descriptor);
-              /* NO_OUTPUT_L2 */
-              descriptor.transpose_ofw_ifm = 0;
-              descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT_L2;
-              handle->code_upd[2].pmm = libxsmm_create_xconv_update_weights(&descriptor);
-              /* TRANSPOSE NONE */
-              descriptor.transpose_ofw_ifm = 1;
-              descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-              handle->code_upd[3].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+              handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
               /*TRANSPOSE ALL*/
               descriptor.transpose_ofw_ifm = 1;
               descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-              handle->code_upd[4].pmm = libxsmm_create_xconv_update_weights(&descriptor);
-              /* TRANSPOSE NO_OUTPUT_L2 */
-              descriptor.transpose_ofw_ifm = 1;
-              descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT_L2;
-              handle->code_upd[5].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+              handle->code_upd[1].pmm = libxsmm_create_xconv_update_weights(&descriptor);
 
               /* enable JIT code path */
               handle->use_upd_generic = 0;
