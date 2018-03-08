@@ -175,11 +175,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   local_entries = 0;
   int KW, ofmb, ifmb, ojb;
 
-  if ( IFMBLOCK != 1  ) {
-    KW = kw;
-  } else {
-    KW = 1;
-  }
+  KW = kw;
 
   int my_ofm_start;
   int my_ofm_end;

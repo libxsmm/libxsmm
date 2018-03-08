@@ -150,11 +150,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   kw = handle->desc.S;
   num_ofw_strips = 1; /* Internally always fully unroll W */
   local_entries = 0;
-  if ( IFMBLOCK != 1  ) {
-    KW = kw;
-  } else {
-    KW = 1;
-  }
+  
+  KW = kw;
 
   n_code_segments = 0;
   tmp_stream_index = 0;
