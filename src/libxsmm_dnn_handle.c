@@ -642,14 +642,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
           handle->code_fwd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
-          descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
-          handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
-          descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_WEIGHT;
-          handle->code_fwd[1].pmm = libxsmm_create_xconv_forward(&descriptor);
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-          handle->code_fwd[2].pmm = libxsmm_create_xconv_forward(&descriptor);
-          descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NO_OUTPUT;
-          handle->code_fwd[3].pmm = libxsmm_create_xconv_forward(&descriptor);
+          handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
           if (handle->padding_flag == 1) {
             handle->matcopy_fwd[0].xmatcopy = libxsmm_xmcopydispatch(&matcopy_descriptor);
           }
@@ -680,25 +674,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
         handle->ofh_fwd_end = (int*) malloc(handle->desc.threads * sizeof(int));
         memset( handle->ofh_fwd_end, 0, handle->desc.threads * sizeof(int) );
 
-
-        /*if ( handle->ofw == 7) {
-          int hrb_save =  descriptor.ofh_rb;
-          int wrb_save =  descriptor.ofw_rb;
-          descriptor.ofh_padded = handle->ofhp;
-          descriptor.ofw_padded = handle->ofwp;
-          descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-          descriptor.ofh_rb = 4;
-          descriptor.ofw_rb = 7;
-          handle->code_fwd[2].pmm = libxsmm_create_xconv_forward(&descriptor);
-          descriptor.ofh_rb = 3;
-          descriptor.ofw_rb = 7;
-          descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-          handle->code_fwd[3].pmm = libxsmm_create_xconv_forward(&descriptor);
-          handle->fwd_ofh_rb = 4;
-          descriptor.ofh_rb = hrb_save;
-          descriptor.ofw_rb = wrb_save;
-        } */
-
         descriptor.n_variants = handle->n_variants;
         if ( handle->n_variants == 2) {
           descriptor.ofh_padded = handle->ofhp;
@@ -706,11 +681,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
           descriptor.ofh_rb = hrb1;
           descriptor.ofw_rb = wrb1;
-          handle->code_fwd[2].pmm = libxsmm_create_xconv_forward(&descriptor);
+          handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
           descriptor.ofh_rb = hrb2;
           descriptor.ofw_rb = wrb2;
           descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-          handle->code_fwd[3].pmm = libxsmm_create_xconv_forward(&descriptor);
+          handle->code_fwd[1].pmm = libxsmm_create_xconv_forward(&descriptor);
           handle->fwd_ofh_rb = hrb1;
           descriptor.ofh_rb = hrb1;
           descriptor.ofw_rb = wrb1;

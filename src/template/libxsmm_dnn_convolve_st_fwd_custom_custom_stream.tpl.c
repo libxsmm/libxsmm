@@ -68,8 +68,8 @@ LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)hand
 /* Kernel related variables  */
 libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
 libxsmm_xmcopyfunction jitted_zero_overwrite = handle->matcopy_fwd[1].xmatcopy;
-libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
-libxsmm_convfunction kernel2 = (libxsmm_convfunction)handle->code_fwd[3].xconv.sconv;
+libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
+libxsmm_convfunction kernel2 = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 libxsmm_convfunction kernel_pool[2];
 kernel_pool[0] = kernel;
 kernel_pool[1] = kernel2;
