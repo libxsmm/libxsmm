@@ -1044,15 +1044,16 @@ LIBXSMM_API_INLINE const char* internal_get_typename(int datatype)
   }
   if ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
     return "i16i32";
-  } else if ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
+  }
+  else if ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
     return "i16f32";
-  } else if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
+  }
+  else if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
     return "i8i32";
-  } else {
+  }
+  else {
     return "void";
   }
-  
-  return "void";
 }
 
 
@@ -1869,7 +1870,7 @@ LIBXSMM_API libxsmm_wimmfunction libxsmm_wimmdispatch(libxsmm_blasint m, libxsmm
 
 LIBXSMM_API libxsmm_wsmmfunction libxsmm_wsmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const int* alpha, const int* beta, const int* flags, const int* prefetch)
+  const float* alpha, const float* beta, const int* flags, const int* prefetch)
 {
   libxsmm_descriptor_blob blob;
   const libxsmm_gemm_descriptor *const desc = libxsmm_wsgemm_descriptor_init(&blob, m, n, k,
