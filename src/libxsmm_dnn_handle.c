@@ -449,37 +449,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     unsigned int weight_block_size = (handle->blocksifm_blocking * 64) * 64/2; /*  (weight_ofm_block * 64)/2; */
     unsigned int total_size = input_block_size + output_block_size + weight_block_size;
 
-#if 0
-    if ( handle->blocksifm_blocking != 1 ) {
-      while (total_size > 450000 ) {
-        handle->blocksifm_blocking =  handle->blocksifm_blocking / 2;
-        input_block_size = 28 * handle->blocksifm_blocking * 64;
-        weight_block_size =  (handle->blocksifm_blocking * 64) * 64/2;   /*  (weight_ofm_block * 64)/2; */
-        total_size = input_block_size + output_block_size + weight_block_size;
-        if (handle->blocksifm_blocking == 1 ) {
-          break;
-        }
-      }
-      input_block_size = 28 * handle->blocksifm_blocking * 64;
-      weight_block_size =  (handle->blocksifm_blocking * 64) * 64/2; /*  ((weight_ofm_block+2) * 64/2);*/
-      total_size = input_block_size + output_block_size + weight_block_size;
-
-      /* Maximize reuse by bringing more ofms inside */
-#if 0
-      while ( total_size < 450000 ) {
-        weight_ofm_block += 2;
-        input_block_size = 28 * handle->blocksifm_blocking * 64;
-        weight_block_size =  (handle->blocksifm_blocking * 64) * ((weight_ofm_block+2) * 64)/2;
-        total_size = input_block_size + output_block_size + weight_block_size;
-      }
-#endif
-      handle->block_fwd_ofm = weight_ofm_block;
-
-      /*printf("Picked IFM blocking equal to %d and OFM blocking equal to %d (total_size is %d)\n", handle->blocksifm_blocking, weight_ofm_block, total_size/1024);*/
-    }
-
-#endif
-
     handle->block_fwd_ofm = weight_ofm_block;
     handle->block_bwd_ifm = weight_ifm_block;
 
@@ -600,16 +569,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
         descriptor.unroll_kh = 0;
         descriptor.unroll_kw = 1;
       }
-#if 0
-      if ( ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) ||
-            (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) ) &&
-          (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) &&
-          handle->desc.R > 1 && handle->desc.S > 1 && handle->fwd_ofh_rb == 1 ) {
-        /* we need 3 instrad of 1 instruction for FMA -> do not perform any unrolling in kh/kw to control code size */
-        descriptor.unroll_kh = 0;
-        descriptor.unroll_kw = 0;
-      }
-#endif
+
       if (handle->padding_flag == 1) {
         descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;
         descriptor.ifw_padded = handle->ifwp + 2 * handle->desc.pad_w;
@@ -1429,33 +1389,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
                 }
               }
 
-#if 0
-              !defined(NDEBUG)
-                printf("DEBUG JIT of conv:\n  arch: %s\n  type: %s\n  ofm_block: %u\n  ifm_block: %u\n"
-                    "  ofh_padded: %u\n  ofw_padded: %u\n  ofh_rb: %u\n  ofw_rb: %u\n  ifh_padded: %u\n  ifw_padded: %u\n"
-                    "  stride_h: %u\n  stride_w: %u\n  ifm_unroll: %u\n  ofh: %u\n  ofh_unroll: %u\n  ofw: %u\n  ofw_unroll: %u\n  kw:%u\n  unroll_kw=%u\n  kh: %u\n  transpose: %u\n",
-                    libxsmm_get_target_arch(),
-                    "weight-update",        /* type */
-                    descriptor.ofm_block,  /* should be VLEN */
-                    descriptor.ifm_block,  /* should be VLEN */
-                    descriptor.ofh_padded, /* this we need for 2D register block */
-                    descriptor.ofw_padded, /* this we use for 1D and 2D register block */
-                    descriptor.ofh_rb,     /* UR, register block of ofh */
-                    descriptor.ofw_rb,     /* UR, register block of ofw */
-                    descriptor.ifh_padded,
-                    descriptor.ifw_padded,
-                    descriptor.stride_h,   /* this we use for offsets in the input */
-                    descriptor.stride_w,   /* this we use for offsets in the input */
-                    descriptor.ifm_unroll, /*should unroll ifm loop -- yes or no */
-                    descriptor.ofh,        /*ofh */
-                    descriptor.ofh_unroll,        /*ofh_unroll */
-                    descriptor.ofw,        /*ofw */
-                    descriptor.ofw_unroll,        /*ofw_unroll */
-                    descriptor.kw, /*kw unroll */
-                    descriptor.unroll_kw, /* unroll factor of kw */
-                    descriptor.kh, /*kh unroll */
-                    descriptor.transpose_ofw_ifm /*transpose */);
-#endif
               /* NONE */
               if (handle->padding_flag == 1) {
                 handle->matcopy_upd[0].xmatcopy = libxsmm_xmcopydispatch(&matcopy_descriptor);
