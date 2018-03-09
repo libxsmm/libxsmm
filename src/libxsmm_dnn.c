@@ -2479,7 +2479,7 @@ LIBXSMM_API short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned
       /* stochastic rounding, as implemented in the IBM paper from 2015, @TODO, fix F64 and DFP8 */
       float p, q;
       libxsmm_intfloat fvalue;
-      float eps = (float)LIXSMMM_DNN_RES_DFP16;
+      float eps = LIXSMMM_DNN_RES_DFP16;
       /* masking all bits which will be shifted out */
       fvalue.ui = value.ui & ((LIBXSMM_DNN_MASK_FULL_F32) << rhs);
       /* drawing a random number */
@@ -2511,7 +2511,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
     float scfq = 0.0f;
     frexpf(max, &maxexp);
     maxexp -= (15-add_shift);
-    scfq = (float)pow(2.0, (double)-maxexp);
+    scfq = libxsmm_sexp2((float)-maxexp);
 
 #if defined(__AVX512F__)
     if ( length % 16 == 0 ) {
@@ -2579,7 +2579,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
     float scfq = 0.0f;
     frexpf(max, &maxexp);
     maxexp -= (15-add_shift);
-    scfq = (float)pow(2.0, (double)-maxexp);
+    scfq = libxsmm_sexp2((float)-maxexp);
 
 #if defined(__AVX512F__)
     if ( (cblk_f32 == 16) && (cblk_i16*lp_blk == 16) ) {
@@ -2681,7 +2681,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
     float scfq = 0.0f;
     frexpf(max, &maxexp);
     maxexp -= (15-add_shift);
-    scfq = (float)pow(2.0, (double)-maxexp);
+    scfq = libxsmm_sexp2((float)-maxexp);
 
 #if defined(__AVX512F__)
     if ( (kblk_f32 == 16) && (cblk_f32 == 16) && (kblk_i16 == 16) && (cblk_i16*lp_blk == 16) ) {
@@ -2785,7 +2785,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
 
 LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, int length, unsigned char scf ) {
   int i = 0;
-  float exp = pow(2.0, -scf);
+  float exp = libxsmm_sexp2(-scf);
 
 #ifdef _OPENMP
 #pragma omp parallel for private(i)

@@ -132,7 +132,7 @@ if (handle->padding_flag == 1) {
 
 #if 0
 if (handle->reduce_weights == 0) {
-  int team_div = (int) sqrt(handle->desc.threads);
+  int team_div = (int) libxsmm_sqrt_u32(handle->desc.threads);
   while ( handle->desc.threads % team_div != 0  ) {
     team_div--;
   }
@@ -307,7 +307,7 @@ n_segments = handle->n_upd_code_segments[ltid];
 LIBXSMM_ALIGNED(float scale_factor, 64);
 
 if (handle->use_lp_kernel == 1) {
-  scale_factor = (float) pow(2.0, -1.0*((double)(handle->reg_input->scf + handle->grad_output->scf)));
+  scale_factor = libxsmm_sexp2(-1.f*((float)(handle->reg_input->scf + handle->grad_output->scf)));
 }
 
 LIBXSMM_ALIGNED(float vnni_scratch[32], 64);

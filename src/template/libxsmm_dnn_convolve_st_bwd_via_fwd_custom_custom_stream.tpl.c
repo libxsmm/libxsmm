@@ -90,7 +90,7 @@ if (handle->datatype_in != handle->datatype_out) {
 
 LIBXSMM_ALIGNED(float scale_factor, 64);
 if (handle->use_lp_kernel == 1) {
-  scale_factor = (float) pow(2.0, -1.0*((double)(handle->reg_filter->scf + handle->grad_output->scf)));
+  scale_factor = libxsmm_sexp2(-1.f*((float)(handle->reg_filter->scf + handle->grad_output->scf)));
 }
 
 LIBXSMM_ALIGNED(float *max_vals, 64);

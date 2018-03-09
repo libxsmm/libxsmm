@@ -248,9 +248,9 @@ typedef union LIBXSMM_RETARGETABLE libxsmm_intfloat {
 
 /* DFP16 masking defines */
 #define LIBXSMM_DNN_MANT_DFP16         15
-#define LIXSMMM_DNN_RES_DFP16          (pow(2,-(LIBXSMM_DNN_MANT_DFP16)))
+#define LIXSMMM_DNN_RES_DFP16          (libxsmm_sexp2(-(LIBXSMM_DNN_MANT_DFP16)))
 
-/* Qunatization Rounding Defines */
+/* Quantization Rounding Defines */
 #define LIBXSMM_DNN_QUANT_NO_ROUND       80000
 #define LIBXSMM_DNN_QUANT_BIAS_ROUND     80001
 #define LIBXSMM_DNN_QUANT_STOCH_ROUND    80002

@@ -70,11 +70,16 @@
 /** Helper macro for BLAS-style prefixes. */
 #define LIBXSMM_TPREFIX_NAME(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_, TYPE)
 #define LIBXSMM_TPREFIX(TYPE, SYMBOL) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_NAME(TYPE), SYMBOL)
-#define LIBXSMM_TPREFIX_double d
-#define LIBXSMM_TPREFIX_float s
-#define LIBXSMM_TPREFIX_short wi
+#define LIBXSMM_TPREFIX_doubledouble d
+#define LIBXSMM_TPREFIX_floatfloat s
+#define LIBXSMM_TPREFIX_shortfloat ws
+#define LIBXSMM_TPREFIX_shortint wi
+/** Defaults if only the input type is specified. */
+#define LIBXSMM_TPREFIX_double LIBXSMM_TPREFIX_doubledouble
+#define LIBXSMM_TPREFIX_float LIBXSMM_TPREFIX_floatfloat
+#define LIBXSMM_TPREFIX_short LIBXSMM_TPREFIX_shortint
 
-/** Helper macro for comparing types. */
+/** Helper macro for comparing selected types. */
 #define LIBXSMM_EQUAL_CHECK(...) LIBXSMM_SELECT_HEAD(__VA_ARGS__, 0)
 #define LIBXSMM_EQUAL(T1, T2) LIBXSMM_EQUAL_CHECK(LIBXSMM_CONCATENATE2(LIBXSMM_EQUAL_, T1, T2))
 #define LIBXSMM_EQUAL_floatfloat 1
@@ -93,6 +98,16 @@
 #   pragma offload_attribute(pop)
 # else
 #   include <mkl.h>
+# endif
+#endif
+
+#if !defined(LIBXSMM_NO_LIBM)
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+# endif
+# include <math.h>
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(pop)
 # endif
 #endif
 
@@ -153,6 +168,12 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #define LIBXSMM_XBLAS_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_XGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(TYPE), _omp)
+
+/* Construct prefix names, function type or dispatch function from given input and output types. */
+#define LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE)    LIBXSMM_MMFUNCTION_TYPE(LIBXSMM_CONCATENATE(ITYPE, OTYPE))
+#define LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE, OTYPE)  LIBXSMM_MMDISPATCH_SYMBOL(LIBXSMM_CONCATENATE(ITYPE, OTYPE))
+#define LIBXSMM_TPREFIX_NAME2(ITYPE, OTYPE)       LIBXSMM_TPREFIX_NAME(LIBXSMM_CONCATENATE(ITYPE, OTYPE))
+#define LIBXSMM_TPREFIX2(ITYPE, OTYPE, SYMBOL)    LIBXSMM_TPREFIX(LIBXSMM_CONCATENATE(ITYPE, OTYPE), SYMBOL)
 
 #if defined(LIBXSMM_GEMM_CONST)
 # undef LIBXSMM_GEMM_CONST
@@ -458,23 +479,123 @@ LIBXSMM_API_INLINE void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, con
   }
 }
 
-/* Implementation is taken from an anonymous GitHub Gist. */
+/* SQRT with Newton's method using integer arithmetic. */
+LIBXSMM_API_INLINE unsigned int libxsmm_sqrt_u64(unsigned long long n) {
+  unsigned long long b; unsigned int y = 0, s;
+  for (s = 0x80000000/*2^31*/; 0 < s; s >>= 1) {
+    b = y | s; y |= (b * b <= n ? s : 0);
+  }
+  return y;
+}
+
+/* SQRT with Newton's method using integer arithmetic. */
+LIBXSMM_API_INLINE unsigned int libxsmm_sqrt_u32(unsigned int n) {
+  unsigned int b; unsigned int y = 0; int s;
+  for (s = 0x40000000/*2^30*/; 0 < s; s >>= 2) {
+    b = y | s; y >>= 1;
+    if (b <= n) { n -= b; y |= s; }
+  }
+  return y;
+}
+
+/* CBRT with Newton's method using integer arithmetic. */
 LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u64(unsigned long long n) {
   unsigned long long b; unsigned int y = 0; int s;
-  for (s = 63; s >= 0; s -= 3) {
+  for (s = 63; 0 <= s; s -= 3) {
     y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
     if (b <= (n >> s)) { n -= b << s; ++y; }
   }
   return y;
 }
 
+/* CBRT with Newton's method using integer arithmetic. */
 LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u32(unsigned int n) {
   unsigned int b; unsigned int y = 0; int s;
-  for (s = 31; s >= 0; s -= 3) {
+  for (s = 30; 0 <= s; s -= 3) {
     y += y; b = 3 * y * (y + 1) + 1;
     if (b <= (n >> s)) { n -= b << s; ++y; }
   }
   return y;
+}
+
+/**
+ * Implementation based on Claude Baumann's work (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm).
+ * Exposes the number of iterations taken in the main case (1...22; lower numbers accelerate the function).
+ * For example, maxiter=13 yields fast (but reasonable results), and maxiter=20 yields more accurate results.
+ */
+LIBXSMM_API_INLINE float libxsmm_sexp2_fast(float x, int maxiter)
+{
+  /* tabulate powf(2.f, powf(2.f, -index)) */
+  static const float lut[] = { 2.000000000000f, 1.41421353816986084f, 1.18920707702636719f, 1.09050774574279785f, 1.04427373409271240f,
+    1.02189719676971436f, 1.01088917633056600f, 1.00542986392974853f, 1.00271129608154297f, 1.00135469436645508f, 1.00067710876464844f,
+    1.00033855438232422f, 1.00016927719116211f, 1.00008463859558105f, 1.00004231929779053f, 1.00002110004425049f, 1.00001060962677002f,
+    1.00000524520874023f, 1.00000262260437012f, 1.00000131130218506f, 1.00000071525573730f, 1.00000035762786865f, 1.00000011920928955f
+  };
+  const int lut_size1 = sizeof(lut) / sizeof(*lut) - 1;
+  const int *const raw = (const int*)&x;
+  const int sign = (0 == (*raw & 0x80000000) ? 0 : 1);
+  const int temp = *raw & 0x7FFFFFFF; /* clear sign */
+  const int unbiased = (temp >> 23) - 127; /* exponent */
+  const int exponent = -unbiased;
+  int mantissa = (temp << 8) | 0x80000000;
+  float result;
+  if (lut_size1 >= exponent) {
+    if (lut_size1 != exponent) { /* multiple lookups needed */
+      if (7 >= unbiased) { /* non a degenerated case */
+        const int n = (0 >= maxiter || lut_size1 <= maxiter) ? lut_size1 : maxiter;
+        int i;
+        if (0 > unbiased) { /* regular/main case */
+          result = lut[exponent]; /* initial value */
+          i = exponent + 1; /* next LUT offset */
+        }
+        else {
+          result = 2.f; /* lut[0] */
+          i = 1; /* next LUT offset */
+        }
+        for (; i <= n; ++i) {
+          mantissa <<= 1;
+          if (0 != (mantissa & 0x80000000)) { /* check MSB */
+            result *= lut[i]; /* TODO: normalized multiply */
+          }
+        }
+        for (i = 0; i < unbiased; ++i) { /* compute squares */
+          result *= result;
+        }
+        /* reciprocal after squares to avoid denormal value */
+        if (sign == 1) { /* negative value, so reciprocal */
+          result = 1.f / result;
+        }
+      }
+      else { /* out of range */
+#if defined(INFINITY)
+        result = (0 == sign ? (INFINITY) : +0.f);
+#else
+        static const union { int i; float s; } infinity = { 0x7F800000 };
+        result = (0 == sign ? infinity.s : +0.f);
+#endif
+      }
+    }
+    else if (0 == sign) {
+      result = lut[lut_size1];
+    }
+    else { /* reciprocal */
+      result = 1.f / lut[lut_size1];
+    }
+  }
+  else {
+    result = 1.f; /* case 2^0 */
+  }
+  return result;
+}
+
+/* Similar to libxsmm_sexp2, but aims for highest supported accuracy. */
+LIBXSMM_API_INLINE float libxsmm_sexp2(float x)
+{
+#if defined(LIBXSMM_NO_LIBM)
+  return libxsmm_sexp2_fast(x, 20/*compromise*/);
+#else
+  return powf(2.f, x);
+#endif
 }
 
 #endif /*LIBXSMM_FRONTEND_H*/
