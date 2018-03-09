@@ -271,7 +271,7 @@ int main(int argc, char* argv []) {
   int* l_c_gold_b = 0;
   float* l_c_gold_w_f = 0;
   unsigned char exp_a = 0, exp_b = 0;
-  float l_scf = (float)pow(2.0, -1.0*((double)exp_a + (double)exp_b));
+  float l_scf = libxsmm_sexp2(-1.f*((float)exp_a + (float)exp_b));
   /*l_scf = 1000;*/
   int* l_c_gold_w_i = 0;
 
