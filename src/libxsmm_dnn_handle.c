@@ -1579,20 +1579,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
       handle->code_fwd[0].xconv.sconv = 0;
       handle->code_fwd[1].xconv.sconv = 0;
       handle->code_fwd[2].xconv.sconv = 0;
-      handle->code_fwd[3].xconv.sconv = 0;
       /* Backward path */
       handle->code_bwd[0].xconv.sconv = 0;
       handle->code_bwd[1].xconv.sconv = 0;
       handle->code_bwd[2].xconv.sconv = 0;
-      handle->code_bwd[3].xconv.sconv = 0;
       /* weight update path */
       handle->code_upd[0].xconv.sconv = 0;
       handle->code_upd[1].xconv.sconv = 0;
-      handle->code_upd[2].xconv.sconv = 0;
-      handle->code_upd[3].xconv.sconv = 0;
-      handle->code_upd[4].xconv.sconv = 0;
-      handle->code_upd[5].xconv.sconv = 0;
-
+      
       /* prepare barrier */
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
 
@@ -2523,19 +2517,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
         handle->code_fwd[0].xconv.sconv = 0;
         handle->code_fwd[1].xconv.sconv = 0;
         handle->code_fwd[2].xconv.sconv = 0;
-        handle->code_fwd[3].xconv.sconv = 0;
         /* Backward path */
         handle->code_bwd[0].xconv.sconv = 0;
         handle->code_bwd[1].xconv.sconv = 0;
         handle->code_bwd[2].xconv.sconv = 0;
-        handle->code_bwd[3].xconv.sconv = 0;
         /* weight update path */
         handle->code_upd[0].xconv.sconv = 0;
         handle->code_upd[1].xconv.sconv = 0;
-        handle->code_upd[2].xconv.sconv = 0;
-        handle->code_upd[3].xconv.sconv = 0;
-        handle->code_upd[4].xconv.sconv = 0;
-        handle->code_upd[5].xconv.sconv = 0;
         handle->barrier  = 0;
         handle->scratch1 = 0;
         handle->scratch1_size = 0;
