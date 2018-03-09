@@ -241,7 +241,7 @@ if (pixels_lp != 4) {
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-if (handle->ofh == 28 || handle->ofh == 56 || handle->ofh == 14)
+if (handle->ofh == 28 || handle->ofh == 56 /*|| handle->ofh == 14*/)
 {
   weight_base = &LIBXSMM_VLA_ACCESS(2, per_thread_weight, 0, 0, handle->ofmblock); /* use thread-private scratchpad to accumulate weights */
 } else {
