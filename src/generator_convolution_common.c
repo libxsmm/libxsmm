@@ -1625,7 +1625,6 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
 #endif
       }
     } else { /* "Store" branch for backward with stride */
-      unsigned int n_zero_regs = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofh_rb * i_conv_desc->ofw_rb);
       unsigned int reg_to_use = 0;
       unsigned int index_zero;
 

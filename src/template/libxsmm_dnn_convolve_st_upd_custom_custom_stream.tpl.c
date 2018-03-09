@@ -37,7 +37,7 @@ int BLOCKSIFM = handle->blocksifm;
 int BLOCKSOFM = handle->blocksofm;
 
 /* Auxiliary integer variables   */
-int img, ofm1, ifm1, ifm2, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__,ii_, ij_, kh, kw, ofm1ifm1, ki, kj, imgifm1,ii, ij, i, j, ofm1ifm1img;
+int img, ofm1, ifm1, ki, kj, imgifm1, ij, i, j, ofm1ifm1img;
 
 /* traspose, copy and reduce work-related variables  */
 const int transpose_work = handle->desc.N*BLOCKSIFM;

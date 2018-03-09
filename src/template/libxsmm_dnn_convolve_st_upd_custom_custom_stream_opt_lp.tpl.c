@@ -41,13 +41,8 @@ int OFWP = handle->ofwp+handle->output_lp_padding;
 const int ltid = tid-start_thread;
 
 /* Auxiliary integer variables   */
-int img, ifm1, ifm2, imgifm1,ii, ij, i;
-int j, k;
-int ifmb;
-
+int i, j, k;
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
-int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
-int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
 
 /* traspose, copy and reduce work-related variables  */
 const int reduce_work = BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*handle->ofmblock;
@@ -56,8 +51,6 @@ const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * r
 const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
 const int copywork = handle->desc.N*BLOCKSIFM;
 const int copychunksize = (copywork % handle->desc.threads == 0) ? (copywork / handle->desc.threads) : (copywork / handle->desc.threads) + 1;
-const int copy_thr_begin = (ltid * copychunksize < copywork) ? (ltid * copychunksize) : copywork;
-const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) * copychunksize) : copywork;
 
 /* Pointer related variables for output and weight */
 int pixels_lp = handle->fm_lp_block;
@@ -71,9 +64,6 @@ element_filter_type* reduction_weight_ptr = ((element_filter_type*)handle->scrat
 LIBXSMM_VLA_DECL(3, element_filter_type, reduction_weight, reduction_weight_ptr, handle->desc.threads, handle->ofmblock);
 
 /* Pointer related variables for input */
-element_input_type (* LIBXSMM_RESTRICT input_ptr);
-element_input_type (* LIBXSMM_RESTRICT copy_ptr);
-element_input_type *prefetch_ptr;
 int padded_h = (handle->padding_flag == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
 int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
 int ifwp_extended = padded_w + handle->qfma_input_pad;
