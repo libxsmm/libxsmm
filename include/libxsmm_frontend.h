@@ -497,5 +497,80 @@ LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u32(unsigned int n) {
   return y;
 }
 
+/**
+ * Implementation based on Claude Baumann's work (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm).
+ * Exposes the number of iterations taken in the main case (1...22; lower numbers accelerate the function).
+ * For example, maxiter=13 yields fast (but reasonable results), and maxiter=20 yields more accurate results.
+ */
+LIBXSMM_API_INLINE float libxsmm_sexp2_fast(float x, int maxiter)
+{
+  /* tabulate powf(2.f, powf(2.f, -index)) */
+  static const float lut[] = { 2.000000000000f, 1.41421353816986084f, 1.18920707702636719f, 1.09050774574279785f, 1.04427373409271240f,
+    1.02189719676971436f, 1.01088917633056600f, 1.00542986392974853f, 1.00271129608154297f, 1.00135469436645508f, 1.00067710876464844f,
+    1.00033855438232422f, 1.00016927719116211f, 1.00008463859558105f, 1.00004231929779053f, 1.00002110004425049f, 1.00001060962677002f,
+    1.00000524520874023f, 1.00000262260437012f, 1.00000131130218506f, 1.00000071525573730f, 1.00000035762786865f, 1.00000011920928955f
+  };
+  const int lut_size1 = sizeof(lut) / sizeof(*lut) - 1;
+  const int *const raw = (const int*)&x;
+  const int sign = (0 == (*raw & 0x80000000) ? 0 : 1);
+  const int temp = *raw & 0x7FFFFFFF; /* clear sign */
+  const int unbiased = (temp >> 23) - 127; /* exponent */
+  const int exponent = -unbiased;
+  int mantissa = (temp << 8) | 0x80000000;
+  float result;
+  if (lut_size1 < exponent) { /* values below precision */
+    result = 1.f; /* case 2^0 */
+  }
+  else {
+    if (lut_size1 != exponent) { /* multiple lookups needed */
+      if (7 >= unbiased) { /* non a degenerated case */
+        const int n = (0 >= maxiter || lut_size1 <= maxiter) ? lut_size1 : maxiter;
+        int i;
+        if (0 > unbiased) { /* regular/main case */
+          result = lut[exponent]; /* initial value */
+          i = exponent + 1; /* next LUT offset */
+        }
+        else {
+          result = 2.f; /* lut[0] */
+          i = 1; /* next LUT offset */
+        }
+        for (; i <= n; ++i) {
+          mantissa <<= 1;
+          if (0 != (mantissa & 0x80000000)) { /* check MSB */
+            result *= lut[i]; /* TODO: normalized multiply */
+          }
+        }
+        for (i = 0; i < unbiased; ++i) { /* compute squares */
+          result *= result;
+        }
+        /* reciprocal after squares to avoid denormal value */
+        if (sign == 1) { /* negative value, so reciprocal */
+          result = 1.f / result;
+        }
+      }
+      else { /* out of range */
+#if defined(INFINITY)
+        result = (0 == sign ? (INFINITY) : +0.f);
+#else
+        static const union { int i; float s; } infinity = { 0x7F800000 };
+        result = (0 == sign ? infinity.s : +0.f);
+#endif
+      }
+    }
+    else if (0 == sign) {
+      result = lut[lut_size1];
+    }
+    else { /* reciprocal */
+      result = 1.f / lut[lut_size1];
+    }
+  }
+  return result;
+}
+
+/* Similar to libxsmm_sexp2, but aims for highest supported accuracy. */
+LIBXSMM_API_INLINE float libxsmm_sexp2(float x) {
+  return libxsmm_sexp2_fast(x, 20/*compromise*/);
+}
+
 #endif /*LIBXSMM_FRONTEND_H*/
 
