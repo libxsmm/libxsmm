@@ -70,11 +70,16 @@
 /** Helper macro for BLAS-style prefixes. */
 #define LIBXSMM_TPREFIX_NAME(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_, TYPE)
 #define LIBXSMM_TPREFIX(TYPE, SYMBOL) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_NAME(TYPE), SYMBOL)
-#define LIBXSMM_TPREFIX_double d
-#define LIBXSMM_TPREFIX_float s
-#define LIBXSMM_TPREFIX_short wi
+#define LIBXSMM_TPREFIX_doubledouble d
+#define LIBXSMM_TPREFIX_floatfloat s
+#define LIBXSMM_TPREFIX_shortfloat ws
+#define LIBXSMM_TPREFIX_shortint wi
+/** Defaults if only the input type is specified. */
+#define LIBXSMM_TPREFIX_double LIBXSMM_TPREFIX_doubledouble
+#define LIBXSMM_TPREFIX_float LIBXSMM_TPREFIX_floatfloat
+#define LIBXSMM_TPREFIX_short LIBXSMM_TPREFIX_shortint
 
-/** Helper macro for comparing types. */
+/** Helper macro for comparing selected types. */
 #define LIBXSMM_EQUAL_CHECK(...) LIBXSMM_SELECT_HEAD(__VA_ARGS__, 0)
 #define LIBXSMM_EQUAL(T1, T2) LIBXSMM_EQUAL_CHECK(LIBXSMM_CONCATENATE2(LIBXSMM_EQUAL_, T1, T2))
 #define LIBXSMM_EQUAL_floatfloat 1
@@ -163,6 +168,12 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #define LIBXSMM_XBLAS_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_XGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(TYPE), _omp)
+
+/* Construct prefix names, function type or dispatch function from given input and output types. */
+#define LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE)    LIBXSMM_MMFUNCTION_TYPE(LIBXSMM_CONCATENATE(ITYPE, OTYPE))
+#define LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE, OTYPE)  LIBXSMM_MMDISPATCH_SYMBOL(LIBXSMM_CONCATENATE(ITYPE, OTYPE))
+#define LIBXSMM_TPREFIX_NAME2(ITYPE, OTYPE)       LIBXSMM_TPREFIX_NAME(LIBXSMM_CONCATENATE(ITYPE, OTYPE))
+#define LIBXSMM_TPREFIX2(ITYPE, OTYPE, SYMBOL)    LIBXSMM_TPREFIX(LIBXSMM_CONCATENATE(ITYPE, OTYPE), SYMBOL)
 
 #if defined(LIBXSMM_GEMM_CONST)
 # undef LIBXSMM_GEMM_CONST
