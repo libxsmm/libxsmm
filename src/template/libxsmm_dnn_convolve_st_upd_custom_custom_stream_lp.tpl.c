@@ -354,7 +354,9 @@ if (handle->reduce_weights) {
     libxsmm_barrier_wait(handle->barrier, ltid);
   } else {
     if (pixels_lp == 4) {
+#ifdef __AVX512F__
       __m512i weight_sumi;
+#endif
       for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 #ifdef __AVX512F__
         weight_sumi = _mm512_setzero_epi32();
@@ -386,7 +388,9 @@ if (handle->reduce_weights) {
       }
       libxsmm_barrier_wait(handle->barrier, ltid);
     } else {
+#ifdef __AVX512F__
       __m512 weight_sum;
+#endif
       for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 #ifdef __AVX512F__
         weight_sum = _mm512_setzero_ps();

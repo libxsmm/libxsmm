@@ -302,39 +302,21 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
       }
       libxsmm_free(handle->code_fwd[1].pmm);
       libxsmm_free(handle->code_fwd[2].pmm);
-      libxsmm_free(handle->code_fwd[3].pmm);
       if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
         libxsmm_free(handle->code_bwd[0].pmm);
       }
-      if ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)) {
-        if (handle->exploit_duality == 1) {
-          libxsmm_free(handle->code_bwd[4].pmm);
-          if (handle->n_variants != 1) {
-            libxsmm_free(handle->code_bwd[5].pmm);
-          }
-        }
-      }
+      libxsmm_free(handle->code_bwd[1].pmm);
+      libxsmm_free(handle->code_bwd[2].pmm);
       if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
         libxsmm_free(handle->code_upd[0].pmm);
       }
-      if ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)) {
-        libxsmm_free(handle->code_upd[1].pmm);
-        libxsmm_free(handle->code_upd[2].pmm);
-        libxsmm_free(handle->code_upd[3].pmm);
-        libxsmm_free(handle->code_upd[4].pmm);
-        libxsmm_free(handle->code_upd[5].pmm);
-      }
+      libxsmm_free(handle->code_upd[1].pmm);
     } else {
       /* no kernel was JITed */
     }
 
     /* Deallocate barrier */
     if (handle->barrier != 0 ) { libxsmm_barrier_release((const libxsmm_barrier*)handle->barrier); }
-
-    /*Deallocate scratch in handle*/
-    libxsmm_free(handle->scratch1);
-    libxsmm_free(handle->scratch3);
-    libxsmm_free(handle->scratch4);
 
     /* Deallocate per-thread jitted data structures */
     if ( handle->use_thread_private_jit ) {
@@ -412,9 +394,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
       free( handle->copy_upd_indices_ptrs );
 
     }
-
-    if (handle->padding_flag) libxsmm_free(handle->scratch5);
-    if (handle->use_lp_kernel == 1) libxsmm_free(handle->scratch6);
 
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_layer*)handle);

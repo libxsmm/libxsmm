@@ -297,6 +297,7 @@ if (n_segments) {
 /* Perform reduction because we used thread private filters... */
 if (handle->upd_use_external_reduce == 0) {
   libxsmm_barrier_wait(handle->barrier, ltid);
+#ifdef __AVX512F__
   if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  || libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
     if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
       for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
@@ -334,6 +335,9 @@ if (handle->upd_use_external_reduce == 0) {
       }
     }
   }
+#else
+/* should not happen */
+#endif
 }
 libxsmm_barrier_wait(handle->barrier, ltid);
 
