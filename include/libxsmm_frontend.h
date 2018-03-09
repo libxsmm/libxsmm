@@ -96,6 +96,16 @@
 # endif
 #endif
 
+#if !defined(LIBXSMM_NO_LIBM)
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+# endif
+# include <math.h>
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(pop)
+# endif
+#endif
+
 /** Automatically select a prefetch-strategy (libxsmm_get_gemm_xprefetch, etc.). */
 #define LIBXSMM_PREFETCH_AUTO -1
 
@@ -518,10 +528,7 @@ LIBXSMM_API_INLINE float libxsmm_sexp2_fast(float x, int maxiter)
   const int exponent = -unbiased;
   int mantissa = (temp << 8) | 0x80000000;
   float result;
-  if (lut_size1 < exponent) { /* values below precision */
-    result = 1.f; /* case 2^0 */
-  }
-  else {
+  if (lut_size1 >= exponent) {
     if (lut_size1 != exponent) { /* multiple lookups needed */
       if (7 >= unbiased) { /* non a degenerated case */
         const int n = (0 >= maxiter || lut_size1 <= maxiter) ? lut_size1 : maxiter;
@@ -564,12 +571,20 @@ LIBXSMM_API_INLINE float libxsmm_sexp2_fast(float x, int maxiter)
       result = 1.f / lut[lut_size1];
     }
   }
+  else {
+    result = 1.f; /* case 2^0 */
+  }
   return result;
 }
 
 /* Similar to libxsmm_sexp2, but aims for highest supported accuracy. */
-LIBXSMM_API_INLINE float libxsmm_sexp2(float x) {
+LIBXSMM_API_INLINE float libxsmm_sexp2(float x)
+{
+#if defined(LIBXSMM_NO_LIBM)
   return libxsmm_sexp2_fast(x, 20/*compromise*/);
+#else
+  return powf(2.f, x);
+#endif
 }
 
 #endif /*LIBXSMM_FRONTEND_H*/
