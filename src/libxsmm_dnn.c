@@ -366,6 +366,22 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
             libxsmm_free( handle->transpose_bwd_indices_ptrs[loop] );
           }
         }
+        /* Upd related arrays */
+        if ( handle->compute_upd_indices_ptrs[loop] != NULL ) {
+          libxsmm_free( handle->compute_upd_indices_ptrs[loop] );
+        }
+        if ( handle->init_upd_indices_ptrs[loop] != NULL ) {
+          libxsmm_free( handle->init_upd_indices_ptrs[loop] );
+        }
+        if ( handle->kernel_upd_variant_ptrs[loop] != NULL ) {
+          libxsmm_free( handle->kernel_upd_variant_ptrs[loop] );
+        }
+        if ( handle->upd_code_segments[loop] != NULL ) {
+          libxsmm_free( handle->upd_code_segments[loop] );
+        }
+        if ( handle->copy_upd_indices_ptrs[loop] != NULL ) {
+          libxsmm_free( handle->copy_upd_indices_ptrs[loop] );
+        }     
       }
 
       /* Free shared arrays  */
@@ -385,6 +401,16 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
         free( handle->ofh_bwd_end );
         free( handle->transpose_bwd_indices_ptrs );
       }
+      free( handle->compute_upd_indices_ptrs );
+      free( handle->kernel_upd_variant_ptrs );
+      free( handle->n_entries_upd );
+      free( handle->n_entries_init_upd );   
+      free( handle->n_upd_code_segments );
+      free( handle->upd_code_segments );
+      free( handle->init_upd_indices_ptrs );
+      free( handle->n_entries_copy_upd );   
+      free( handle->copy_upd_indices_ptrs );
+
     }
 
     if (handle->padding_flag) libxsmm_free(handle->scratch5);
