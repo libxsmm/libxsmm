@@ -33,10 +33,16 @@
 #include "generator_common.h"
 #include "libxsmm_main.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 /* #define GENERATOR_TRANSPOSE_DEBUG */
 
@@ -51,7 +57,7 @@
    i_avx512 (based on what the processor can do, not necessarily what's best)
     =0 to use AVX2 or below, 1 for zmm on Skylake, 2 for zmm on Knights Landing
 */
-LIBXSMM_INLINE
+LIBXSMM_API_INLINE
 int d_ymm_or_zmm(
          const int i_m,
          const int i_n,
@@ -130,7 +136,7 @@ int d_ymm_or_zmm(
  * reg = 0 or 13 to indicate which ymm register to use
  * buf = The buffer to contain the instruction/opcode sequence
  * loc = The location inside the buffer to store the new instruction bytes */
-LIBXSMM_INLINE
+LIBXSMM_API_INLINE
 void load_mask_into_var (
                           const int m,
                           const int datasize,
@@ -192,7 +198,7 @@ void load_mask_into_var (
 * Note: Assumes rdi = &A, rsi = lda*datasize, r8 = lda*datasize*3,           *
 *               rbx =lda*datasize*5, rbp=lda*datasize*7, rdx = &B            *
 * TODO: fix assumptions to match register mapping!                           */
-LIBXSMM_INLINE void gen_one_trans(
+LIBXSMM_API_INLINE void gen_one_trans(
   libxsmm_generated_code*                 io_generated_code,
   const libxsmm_transpose_gp_reg_mapping* i_gp_reg_mapping,
   const int m,

@@ -32,16 +32,22 @@
 #include "generator_common.h"
 #include <libxsmm_intrinsics_x86.h>
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 
 /**
  * This routine is for the jit code. All offsets/displacements have similar
  * byte patterns, so this is used for all of them.
  */
-LIBXSMM_INLINE
+LIBXSMM_API_INLINE
 int internal_x86_instructions_add_offset(const unsigned int i_place1,
   const unsigned int i_place2,
   const int i_offset,

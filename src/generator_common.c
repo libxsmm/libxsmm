@@ -31,17 +31,23 @@
 #include "generator_common.h"
 #include "libxsmm_main.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 #if !defined(GENERATOR_COMMON_MAX_ERROR_LENGTH)
 # define GENERATOR_COMMON_MAX_ERROR_LENGTH 511
 #endif
 
 
-LIBXSMM_INLINE
+LIBXSMM_API_INLINE
 void libxsmm_strncpy( char*                  o_dest,
                       const char*            i_src,
                       unsigned int           i_dest_length,

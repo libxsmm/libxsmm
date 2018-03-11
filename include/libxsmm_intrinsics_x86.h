@@ -54,6 +54,7 @@
 #if defined(__MIC__) && !defined(LIBXSMM_INTRINSICS_NONE)
 # define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_IMCI
 # define LIBXSMM_INTRINSICS(TARGET)
+# define LIBXSMM_INTRINSICS_INCLUDE
 #elif !defined(LIBXSMM_INTRINSICS_NONE) /*!defined(__MIC__)*/
 # if    defined(__AVX512F__)  && defined(__AVX512CD__) \
    &&   defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VL__) && defined(__AVX512VNNI__) \

@@ -32,10 +32,16 @@
 #include "generator_x86_instructions.h"
 #include "libxsmm_main.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*             io_generated_code,
@@ -1017,6 +1023,7 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
         }
 
         if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
+          assert(0 != b_pref_freq);
           if ( l_k % (b_pref_freq*4) == 0 ) {
             if ( l_k % (b_pref_freq*8) == 0) {
               /* prefetch N/2 columns of B */

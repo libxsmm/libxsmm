@@ -101,16 +101,6 @@
 # endif
 #endif
 
-#if !defined(LIBXSMM_NO_LIBM)
-# if defined(LIBXSMM_OFFLOAD_TARGET)
-#   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-# endif
-# include <math.h>
-# if defined(LIBXSMM_OFFLOAD_TARGET)
-#   pragma offload_attribute(pop)
-# endif
-#endif
-
 /** Automatically select a prefetch-strategy (libxsmm_get_gemm_xprefetch, etc.). */
 #define LIBXSMM_PREFETCH_AUTO -1
 
@@ -192,7 +182,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 # endif
 #endif
 #if !defined(LIBXSMM_GEMM_SYMBOL_VISIBILITY)
-# define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_VISIBILITY_IMPORT
+# define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_VISIBILITY_IMPORT LIBXSMM_RETARGETABLE
 #endif
 
 #define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
@@ -438,165 +428,6 @@ LIBXSMM_API void libxsmm_gemm_dprint2(void* ostream,
   double dalpha, const void* a, libxsmm_blasint lda,
   const void* b, libxsmm_blasint ldb,
   double dbeta, void* c, libxsmm_blasint ldc);
-
-/**
- * Structure of differences with matrix norms according
- * to http://www.netlib.org/lapack/lug/node75.html).
- */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
-  /** One-norm */         double norm1_abs, norm1_rel;
-  /** Infinity-norm */    double normi_abs, normi_rel;
-  /** Froebenius-norm */  double normf_rel;
-  /** L1-norm and L2-norm of differences. */
-  double l2_abs, l2_rel, l1_ref, l1_tst;
-  /** Maximum absolute and relative error. */
-  double linf_abs, linf_rel;
-  /** Location of maximum error (m, n). */
-  libxsmm_blasint linf_abs_m, linf_abs_n;
-} libxsmm_matdiff_info;
-
-/** Utility function to calculate the difference between two matrices. */
-LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n,
-  const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
-  libxsmm_matdiff_info* info);
-
-LIBXSMM_API_INLINE void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input) {
-  LIBXSMM_ASSERT(0 != output && 0 != input);
-  if (output->normf_rel < input->normf_rel) {
-    output->linf_abs_m = input->linf_abs_m;
-    output->linf_abs_n = input->linf_abs_n;
-    output->norm1_abs = input->norm1_abs;
-    output->norm1_rel = input->norm1_rel;
-    output->normi_abs = input->normi_abs;
-    output->normi_rel = input->normi_rel;
-    output->normf_rel = input->normf_rel;
-    output->linf_abs = input->linf_abs;
-    output->linf_rel = input->linf_rel;
-    output->l2_abs = input->l2_abs;
-    output->l2_rel = input->l2_rel;
-    output->l1_ref = input->l1_ref;
-    output->l1_tst = input->l1_tst;
-  }
-}
-
-/* SQRT with Newton's method using integer arithmetic. */
-LIBXSMM_API_INLINE unsigned int libxsmm_sqrt_u64(unsigned long long n) {
-  unsigned long long b; unsigned int y = 0, s;
-  for (s = 0x80000000/*2^31*/; 0 < s; s >>= 1) {
-    b = y | s; y |= (b * b <= n ? s : 0);
-  }
-  return y;
-}
-
-/* SQRT with Newton's method using integer arithmetic. */
-LIBXSMM_API_INLINE unsigned int libxsmm_sqrt_u32(unsigned int n) {
-  unsigned int b; unsigned int y = 0; int s;
-  for (s = 0x40000000/*2^30*/; 0 < s; s >>= 2) {
-    b = y | s; y >>= 1;
-    if (b <= n) { n -= b; y |= s; }
-  }
-  return y;
-}
-
-/* CBRT with Newton's method using integer arithmetic. */
-LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u64(unsigned long long n) {
-  unsigned long long b; unsigned int y = 0; int s;
-  for (s = 63; 0 <= s; s -= 3) {
-    y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
-    if (b <= (n >> s)) { n -= b << s; ++y; }
-  }
-  return y;
-}
-
-/* CBRT with Newton's method using integer arithmetic. */
-LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u32(unsigned int n) {
-  unsigned int b; unsigned int y = 0; int s;
-  for (s = 30; 0 <= s; s -= 3) {
-    y += y; b = 3 * y * (y + 1) + 1;
-    if (b <= (n >> s)) { n -= b << s; ++y; }
-  }
-  return y;
-}
-
-/**
- * Implementation based on Claude Baumann's work (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm).
- * Exposes the number of iterations taken in the main case (1...22; lower numbers accelerate the function).
- * For example, maxiter=13 yields fast (but reasonable results), and maxiter=20 yields more accurate results.
- */
-LIBXSMM_API_INLINE float libxsmm_sexp2_fast(float x, int maxiter)
-{
-  /* tabulate powf(2.f, powf(2.f, -index)) */
-  static const float lut[] = { 2.000000000000f, 1.41421353816986084f, 1.18920707702636719f, 1.09050774574279785f, 1.04427373409271240f,
-    1.02189719676971436f, 1.01088917633056600f, 1.00542986392974853f, 1.00271129608154297f, 1.00135469436645508f, 1.00067710876464844f,
-    1.00033855438232422f, 1.00016927719116211f, 1.00008463859558105f, 1.00004231929779053f, 1.00002110004425049f, 1.00001060962677002f,
-    1.00000524520874023f, 1.00000262260437012f, 1.00000131130218506f, 1.00000071525573730f, 1.00000035762786865f, 1.00000011920928955f
-  };
-  const int lut_size1 = sizeof(lut) / sizeof(*lut) - 1;
-  const int *const raw = (const int*)&x;
-  const int sign = (0 == (*raw & 0x80000000) ? 0 : 1);
-  const int temp = *raw & 0x7FFFFFFF; /* clear sign */
-  const int unbiased = (temp >> 23) - 127; /* exponent */
-  const int exponent = -unbiased;
-  int mantissa = (temp << 8) | 0x80000000;
-  float result;
-  if (lut_size1 >= exponent) {
-    if (lut_size1 != exponent) { /* multiple lookups needed */
-      if (7 >= unbiased) { /* non a degenerated case */
-        const int n = (0 >= maxiter || lut_size1 <= maxiter) ? lut_size1 : maxiter;
-        int i;
-        if (0 > unbiased) { /* regular/main case */
-          result = lut[exponent]; /* initial value */
-          i = exponent + 1; /* next LUT offset */
-        }
-        else {
-          result = 2.f; /* lut[0] */
-          i = 1; /* next LUT offset */
-        }
-        for (; i <= n; ++i) {
-          mantissa <<= 1;
-          if (0 != (mantissa & 0x80000000)) { /* check MSB */
-            result *= lut[i]; /* TODO: normalized multiply */
-          }
-        }
-        for (i = 0; i < unbiased; ++i) { /* compute squares */
-          result *= result;
-        }
-        /* reciprocal after squares to avoid denormal value */
-        if (sign == 1) { /* negative value, so reciprocal */
-          result = 1.f / result;
-        }
-      }
-      else { /* out of range */
-#if defined(INFINITY)
-        result = (0 == sign ? (INFINITY) : +0.f);
-#else
-        static const union { int i; float s; } infinity = { 0x7F800000 };
-        result = (0 == sign ? infinity.s : +0.f);
-#endif
-      }
-    }
-    else if (0 == sign) {
-      result = lut[lut_size1];
-    }
-    else { /* reciprocal */
-      result = 1.f / lut[lut_size1];
-    }
-  }
-  else {
-    result = 1.f; /* case 2^0 */
-  }
-  return result;
-}
-
-/* Similar to libxsmm_sexp2, but aims for highest supported accuracy. */
-LIBXSMM_API_INLINE float libxsmm_sexp2(float x)
-{
-#if defined(LIBXSMM_NO_LIBM)
-  return libxsmm_sexp2_fast(x, 20/*compromise*/);
-#else
-  return powf(2.f, x);
-#endif
-}
 
 #endif /*LIBXSMM_FRONTEND_H*/
 

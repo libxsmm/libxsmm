@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define N 10000000
+#define N 1000000
 
 
 LIBXSMM_INLINE unsigned int isqrt_u32(unsigned int u32)
@@ -40,6 +40,12 @@ int main(int argc, char* argv[])
   const unsigned long long scale64 = ((unsigned long long)-1) / (RAND_MAX) - 1;
   const unsigned int scale32 = ((unsigned int)-1) / (RAND_MAX) - 1;
   int i;
+
+  for (i = 0; i < 256; ++i) {
+    const float a = libxsmm_sexp2_u8((unsigned char)i);
+    const float b = (float)pow(2.0, (double)i);
+    if (LIBXSMM_NEQ(a, b)) exit(EXIT_FAILURE);
+  }
 
   for (i = 0; i < (N); ++i) {
     const int r1 = rand(), r2 = rand();

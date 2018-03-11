@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_BGEMM_H
 #define LIBXSMM_BGEMM_H
 
-#include "libxsmm_frontend.h"
+#include "libxsmm_typedefs.h"
 
 
 /** Denotes the BGEMM data order. */
