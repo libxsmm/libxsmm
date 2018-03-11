@@ -444,10 +444,10 @@ LIBXSMM_API void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
 #         undef LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C
         }
         else { /* WSMM */
-          LIBXSMM_ASSERT(LIBXSMM_GEMM_PRECISION_F32 == handle->oprec);
 #         define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C float
 #         include "template/libxsmm_bgemm.tpl.c"
 #         undef LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C
+          LIBXSMM_ASSERT(LIBXSMM_GEMM_PRECISION_F32 == handle->oprec);
         }
 #       undef LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB
       } break;

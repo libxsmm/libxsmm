@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="mhd.c" />
+    <ClCompile Include="math.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
@@ -35,8 +35,8 @@
     <None Include="test.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>mhd</ProjectName>
-    <ProjectGuid>{0F908964-721C-4952-99A8-EF5C988CCE58}</ProjectGuid>
+    <ProjectName>math</ProjectName>
+    <ProjectGuid>{2EE779F4-1C04-4FC8-93A3-A721B4C1F095}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">
