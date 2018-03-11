@@ -1017,6 +1017,7 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
         }
 
         if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
+          assert(0 != b_pref_freq);
           if ( l_k % (b_pref_freq*4) == 0 ) {
             if ( l_k % (b_pref_freq*8) == 0) {
               /* prefetch N/2 columns of B */
