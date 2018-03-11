@@ -297,7 +297,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
           libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM  ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL    ) ) {
-      if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
+#if 0
+     if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
         libxsmm_free(handle->code_fwd[0].pmm);
       }
       libxsmm_free(handle->code_fwd[1].pmm);
@@ -311,6 +312,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
         libxsmm_free(handle->code_upd[0].pmm);
       }
       libxsmm_free(handle->code_upd[1].pmm);
+#endif
     } else {
       /* no kernel was JITed */
     }
@@ -318,6 +320,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
     /* Deallocate barrier */
     if (handle->barrier != 0 ) { libxsmm_barrier_release((const libxsmm_barrier*)handle->barrier); }
 
+#if 0
     /* Deallocate per-thread jitted data structures */
     if ( handle->use_thread_private_jit ) {
 
@@ -394,6 +397,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
       free( handle->copy_upd_indices_ptrs );
 
     }
+#endif
 
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_layer*)handle);
