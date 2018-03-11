@@ -35,10 +35,16 @@
 #include "generator_gemm_noarch.h"
 #include "libxsmm_main.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 /* @TODO change int based architecture value */
 LIBXSMM_API

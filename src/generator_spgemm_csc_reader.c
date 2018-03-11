@@ -70,10 +70,16 @@
 #include "generator_common.h"
 #include "generator_spgemm_csc_reader.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
