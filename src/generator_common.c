@@ -47,7 +47,7 @@
 #endif
 
 
-LIBXSMM_INLINE
+LIBXSMM_API_INLINE
 void libxsmm_strncpy( char*                  o_dest,
                       const char*            i_src,
                       unsigned int           i_dest_length,
