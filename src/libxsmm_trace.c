@@ -73,7 +73,7 @@ LIBXSMM_EXTERN int mkstemps(char*, int);
 # endif
 # if defined(__APPLE__) && defined(__MACH__)
 /* taken from "libtransmission" fdlimit.c */
-LIBXSMM_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
+LIBXSMM_API_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
 {
   fstore_t fst;
   fst.fst_flags = F_ALLOCATECONTIG;

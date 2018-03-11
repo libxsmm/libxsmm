@@ -47,7 +47,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-LIBXSMM_INLINE
+LIBXSMM_API_INLINE
 void libxsmm_generator_gemm_imci_avx512_kernel_initialize_mask( libxsmm_generated_code*            io_generated_code,
                                                                 const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                 const libxsmm_micro_kernel_config* i_micro_kernel_config,
@@ -86,7 +86,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel_initialize_mask( libxsmm_generate
   } else {}
 }
 
-LIBXSMM_INLINE
+LIBXSMM_API_INLINE
 void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*            io_generated_code,
                                                       libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                       const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
