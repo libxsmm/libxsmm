@@ -60,25 +60,24 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 
 
 /* SQRT with Newton's method using integer arithmetic. */
-LIBXSMM_API unsigned int libxsmm_sqrt_u64(unsigned long long n);
+LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long n);
 /* SQRT with Newton's method using integer arithmetic. */
-LIBXSMM_API unsigned int libxsmm_sqrt_u32(unsigned int n);
+LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int n);
 
 
 /* CBRT with Newton's method using integer arithmetic. */
-LIBXSMM_API unsigned int libxsmm_cbrt_u64(unsigned long long n);
+LIBXSMM_API unsigned int libxsmm_icbrt_u64(unsigned long long n);
 /* CBRT with Newton's method using integer arithmetic. */
-LIBXSMM_API unsigned int libxsmm_cbrt_u32(unsigned int n);
+LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int n);
 
 
 /**
- * Implementation based on Claude Baumann's work (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm).
- * Exposes the number of iterations taken in the main case (1...22; lower numbers accelerate the function).
- * For example, maxiter=13 yields fast (but reasonable results), and maxiter=20 yields more accurate results.
+ * Exponential function, which exposes the number of iterations taken in the main case (1...22). For example,
+ * a value of maxiter=13 yields fast (but reasonable results), whereas maxiter=20 yields more accurate results.
  */
 LIBXSMM_API float libxsmm_sexp2_fast(float x, int maxiter);
 
-/* Similar to libxsmm_sexp2, but aims for highest supported accuracy. */
+/* A wrapper around libxsmm_sexp2_fast (or powf), which aims for accuracy. */
 LIBXSMM_API float libxsmm_sexp2(float x);
 
 /**
@@ -86,6 +85,12 @@ LIBXSMM_API float libxsmm_sexp2(float x);
  * This function reproduces bit-accurate results (single-precision).
  */
 LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x);
+
+/**
+* Exponential function (base 2), which is limited to signed 8-bit input values.
+* This function reproduces bit-accurate results (single-precision).
+*/
+LIBXSMM_API float libxsmm_sexp2_i8(signed char x);
 
 #endif /*LIBXSMM_MATH_H*/
 
