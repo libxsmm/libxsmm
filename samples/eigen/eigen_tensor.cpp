@@ -29,10 +29,6 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-#if !defined(LIBXSMM_FALLBACK_MMFUNCTION_NONE)
-# define LIBXSMM_FALLBACK_MMFUNCTION_NONE
-#endif
-
 /** This sample uses LIBXSMM's header-only implementation. */
 #include <libxsmm_source.h>
 
