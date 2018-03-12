@@ -1235,8 +1235,7 @@ cpp-test: test-cpp
 .PHONY: test-cpp
 test-cpp: $(INCDIR)/libxsmm_source.h
 	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) \
-		ECXXFLAGS=-DUSE_HEADER_ONLY $(ECXXFLAGS) clean compile"
+		ECXXFLAGS='-DUSE_HEADER_ONLY $(ECXXFLAGS)' clean compile"
 
 .PHONY: test-cp2k
 test-cp2k: $(SPLDIR)/cp2k/cp2k-test.txt
