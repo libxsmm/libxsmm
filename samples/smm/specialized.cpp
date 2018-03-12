@@ -28,9 +28,6 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if !defined(NDEBUG) && (defined(__CYGWIN__) || defined(_WIN32))
-# define LIBXSMM_FALLBACK_MMFUNCTION
-#endif
 #include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
