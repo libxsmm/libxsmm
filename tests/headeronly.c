@@ -31,9 +31,11 @@
 #include <libxsmm_source.h>
 #include <stdlib.h>
 
+/* must match definitions in headeronly_aux.c */
 #if !defined(REAL_TYPE)
-/* must match definition in headeronly_aux.c */
 # define REAL_TYPE double
+#endif
+#if !defined(REAL_OUT)
 # define REAL_OUT REAL_TYPE
 #endif
 

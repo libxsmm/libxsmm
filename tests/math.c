@@ -47,6 +47,12 @@ int main(int argc, char* argv[])
     if (LIBXSMM_NEQ(a, b)) exit(EXIT_FAILURE);
   }
 
+  for (i = -128; i < 127; ++i) {
+    const float a = libxsmm_sexp2_i8((signed char)i);
+    const float b = (float)pow(2.0, (double)i);
+    if (LIBXSMM_NEQ(a, b)) exit(EXIT_FAILURE);
+  }
+
   for (i = 0; i < (N); ++i) {
     const int r1 = rand(), r2 = rand();
     const float rs = 2.f * (r1 * (r2 - RAND_MAX / 2)) / RAND_MAX;
@@ -69,17 +75,17 @@ int main(int argc, char* argv[])
     }
 
     a = isqrt_u32(r32);
-    b = libxsmm_sqrt_u32(r32);
+    b = libxsmm_isqrt_u32(r32);
     if (a != b) exit(EXIT_FAILURE);
     a = isqrt_u64(r64);
-    b = libxsmm_sqrt_u64(r64);
+    b = libxsmm_isqrt_u64(r64);
     if (a != b) exit(EXIT_FAILURE);
 
     a = icbrt_u32(r32);
-    b = libxsmm_cbrt_u32(r32);
+    b = libxsmm_icbrt_u32(r32);
     if (a != b) exit(EXIT_FAILURE);
     a = icbrt_u64(r64);
-    b = libxsmm_cbrt_u64(r64);
+    b = libxsmm_icbrt_u64(r64);
     if (a != b) exit(EXIT_FAILURE);
   }
 
