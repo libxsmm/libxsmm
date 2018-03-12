@@ -94,20 +94,10 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
   else {
     result = EXIT_FAILURE;
   }
-  if (EXIT_SUCCESS == result) { /* square-root without libm dependency */
-    int i;
-    if (0 < info->l2_abs) {
-      const double squared = info->l2_abs; info->l2_abs *= 0.5;
-      for (i = 0; i < 16; ++i) info->l2_abs = 0.5 * (info->l2_abs + squared / info->l2_abs);
-    }
-    if (0 < info->l2_rel) {
-      const double squared = info->l2_rel; info->l2_rel *= 0.5;
-      for (i = 0; i < 16; ++i) info->l2_rel = 0.5 * (info->l2_rel + squared / info->l2_rel);
-    }
-    if (0 < info->normf_rel) {
-      const double squared = info->normf_rel; info->normf_rel *= 0.5;
-      for (i = 0; i < 16; ++i) info->normf_rel = 0.5 * (info->normf_rel + squared / info->normf_rel);
-    }
+  if (EXIT_SUCCESS == result) {
+    info->normf_rel = libxsmm_dsqrt(info->normf_rel);
+    info->l2_abs = libxsmm_dsqrt(info->l2_abs);
+    info->l2_rel = libxsmm_dsqrt(info->l2_rel);
     if (1 == n) {
       const libxsmm_blasint tmp = info->linf_abs_m;
       info->linf_abs_m = info->linf_abs_n;
@@ -139,43 +129,79 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 }
 
 
-LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long n)
+LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x)
 {
   unsigned long long b; unsigned int y = 0, s;
   for (s = 0x80000000/*2^31*/; 0 < s; s >>= 1) {
-    b = y | s; y |= (b * b <= n ? s : 0);
+    b = y | s; y |= (b * b <= x ? s : 0);
   }
   return y;
 }
 
-LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int n)
+LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int x)
 {
   unsigned int b; unsigned int y = 0; int s;
   for (s = 0x40000000/*2^30*/; 0 < s; s >>= 2) {
     b = y | s; y >>= 1;
-    if (b <= n) { n -= b; y |= s; }
+    if (b <= x) { x -= b; y |= s; }
   }
   return y;
 }
 
 
-LIBXSMM_API unsigned int libxsmm_icbrt_u64(unsigned long long n)
+LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double x)
+{
+#if defined(LIBXSMM_INTRINSICS_X86)
+  const double result = _mm_cvtsd_f64(_mm_sqrt_sd(_mm_undefined_pd(), _mm_set_sd(x)));
+#else
+  double result, y = x;
+  if (0 != x) {
+    do {
+      result = y;
+      y = 0.5 * (y + x / y);
+    } while (result != y);
+  }
+  result = y;
+#endif
+  return result;
+}
+
+
+LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) float libxsmm_ssqrt(float x)
+{
+#if defined(LIBXSMM_INTRINSICS_X86)
+  const float result = _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(x)));
+#else
+  float result, y = x;
+  if (0 != x) {
+    do {
+      result = y;
+      y = 0.5f * (y + x / y);
+    } while (result != y);
+  }
+  result = y;
+#endif
+  return result;
+}
+
+
+LIBXSMM_API unsigned int libxsmm_icbrt_u64(unsigned long long x)
 {
   unsigned long long b; unsigned int y = 0; int s;
   for (s = 63; 0 <= s; s -= 3) {
     y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
-    if (b <= (n >> s)) { n -= b << s; ++y; }
+    if (b <= (x >> s)) { x -= b << s; ++y; }
   }
   return y;
 }
 
 
-LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int n)
+LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int x)
 {
   unsigned int b; unsigned int y = 0; int s;
   for (s = 30; 0 <= s; s -= 3) {
     y += y; b = 3 * y * (y + 1) + 1;
-    if (b <= (n >> s)) { n -= b << s; ++y; }
+    if (b <= (x >> s)) { x -= b << s; ++y; }
   }
   return y;
 }
