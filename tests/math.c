@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   const int exp_maxiter = (1 < argc ? atoi(argv[1]) : 20);
   const unsigned long long scale64 = ((unsigned long long)-1) / (RAND_MAX) - 1;
   const unsigned int scale32 = ((unsigned int)-1) / (RAND_MAX) - 1;
-  int i;
+  int warn_dsqrt = 0, warn_ssqrt = 0, i;
 
   for (i = 0; i < 256; ++i) {
     const float a = libxsmm_sexp2_u8((unsigned char)i);
@@ -55,15 +55,17 @@ int main(int argc, char* argv[])
 
   for (i = 0; i < (N); ++i) {
     const int r1 = rand(), r2 = rand();
-    const float rs = 2.f * (r1 * (r2 - RAND_MAX / 2)) / RAND_MAX;
+    const double rd = 2.0 * (r1 * (r2 - RAND_MAX / 2)) / RAND_MAX;
     const unsigned long long r64 = scale64 * r1;
     const unsigned int r32 = scale32 * r1;
+    double d1, d2, e1, e2, e3;
     unsigned int a, b;
 
-    const float s1 = libxsmm_sexp2_fast(rs, exp_maxiter);
-    const float s2 = powf(2.f, rs), sd = fabsf(s1 - s2);
-    const float s3 = fabsf(s2), sr = 0 < s3 ? (sd / s3) : 0.f;
-    if (1E-4 < fminf(sd, sr)) exit(EXIT_FAILURE);
+    d1 = libxsmm_sexp2_fast((float)rd, exp_maxiter);
+    d2 = powf(2.f, (float)rd);
+    e1 = fabs(d1 - d2); e2 = fabs(d2);
+    e3 = 0 < e2 ? (e1 / e2) : 0.0;
+    if (1E-4 < fmin(e1, e3)) exit(EXIT_FAILURE);
 
     a = LIBXSMM_SQRT2(r32);
     if ((r32 * 2.0) < ((double)a * a)) {
@@ -74,19 +76,49 @@ int main(int argc, char* argv[])
       exit(EXIT_FAILURE);
     }
 
-    a = isqrt_u32(r32);
-    b = libxsmm_isqrt_u32(r32);
+    a = libxsmm_isqrt_u32(r32);
+    b = isqrt_u32(r32);
     if (a != b) exit(EXIT_FAILURE);
-    a = isqrt_u64(r64);
-    b = libxsmm_isqrt_u64(r64);
+    a = libxsmm_isqrt_u64(r64);
+    b = isqrt_u64(r64);
     if (a != b) exit(EXIT_FAILURE);
+    d1 = libxsmm_ssqrt((float)fabs(rd));
+    e1 = fabs(d1 * d1 - fabs(rd));
+    d2 = sqrtf((float)fabs(rd));
+    e2 = fabs(d2 * d2 - fabs(rd));
+    if (e2 < e1) {
+      e3 = 0 < e2 ? (e1 / e2) : 0.f;
+      if (1E-2 > fmin(fabs(e1 - e2), e3)) {
+        ++warn_ssqrt;
+      }
+      else {
+        exit(EXIT_FAILURE);
+      }
+    }
+    d1 = libxsmm_dsqrt(fabs(rd));
+    e1 = fabs(d1 * d1 - fabs(rd));
+    d2 = sqrt(fabs(rd));
+    e2 = fabs(d2 * d2 - fabs(rd));
+    if (e2 < e1) {
+      e3 = 0 < e2 ? (e1 / e2) : 0.f;
+      if (1E-11 > fmin(fabs(e1 - e2), e3)) {
+        ++warn_dsqrt;
+      }
+      else {
+        exit(EXIT_FAILURE);
+      }
+    }
 
-    a = icbrt_u32(r32);
-    b = libxsmm_icbrt_u32(r32);
+    a = libxsmm_icbrt_u32(r32);
+    b = icbrt_u32(r32);
     if (a != b) exit(EXIT_FAILURE);
-    a = icbrt_u64(r64);
-    b = libxsmm_icbrt_u64(r64);
+    a = libxsmm_icbrt_u64(r64);
+    b = icbrt_u64(r64);
     if (a != b) exit(EXIT_FAILURE);
+  }
+
+  if (0 < warn_ssqrt || 0 < warn_dsqrt) {
+    fprintf(stderr, "missed bitwise exact result in %u of %i cases!\n", LIBXSMM_MAX(warn_ssqrt, warn_dsqrt), N);
   }
 
   return EXIT_SUCCESS;

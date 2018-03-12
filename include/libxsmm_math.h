@@ -60,15 +60,19 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 
 
 /* SQRT with Newton's method using integer arithmetic. */
-LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long n);
+LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x);
 /* SQRT with Newton's method using integer arithmetic. */
-LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int n);
+LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int x);
+/* SQRT with Newton's method using double-precision. */
+LIBXSMM_API double libxsmm_dsqrt(double x);
+/* SQRT with Newton's method using single-precision. */
+LIBXSMM_API float libxsmm_ssqrt(float x);
 
 
 /* CBRT with Newton's method using integer arithmetic. */
-LIBXSMM_API unsigned int libxsmm_icbrt_u64(unsigned long long n);
+LIBXSMM_API unsigned int libxsmm_icbrt_u64(unsigned long long x);
 /* CBRT with Newton's method using integer arithmetic. */
-LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int n);
+LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int x);
 
 
 /**
