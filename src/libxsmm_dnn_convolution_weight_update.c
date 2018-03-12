@@ -133,6 +133,7 @@
       pair_addr_dst = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
       _mm512_stream_si512(pair_addr_dst, compact);
 
+/* @TODO this function needs to be target decorated, it's only called on AVX512 platforms and use_vperm_transposes=1 is for AVX512BW platforms only */
 void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
   typedef short element_input_type;
   typedef short element_output_type;
@@ -406,6 +407,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
   }
 }
 
+/* @TODO this function needs to be target decorated and use vperm business as above applies */
 void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
   typedef short element_input_type;
   typedef short element_output_type;
@@ -915,6 +917,86 @@ transposer get_transposer(int M, int N, int ldD, int ldS) {
   return transpose_fallback;
 }
 
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */ 
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#ifdef __AVX512F__
+  typedef float element_input_type;
+  typedef float element_output_type;
+  typedef float element_filter_type;
+  typedef libxsmm_sconvfunction libxsmm_convfunction;
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+#else
+/* should not happen */
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#ifdef __AVX512F__
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#else
+/* should not happen */
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */ 
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#ifdef __AVX512F__
+  if (handle->upd_use_thread_fil > 0) {
+    typedef short element_input_type;
+    typedef short element_output_type;
+    typedef float element_filter_type;
+    typedef libxsmm_uwsconvfunction libxsmm_convfunction;
+    if (handle->use_fastpath) {
+      if ( handle->use_hybrid_wu_parallelism == 1) {
+#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
+      } else {
+#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
+      }
+    }
+  }
+#else
+/* should not happen */
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */ 
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#ifdef __AVX512F__
+  if (handle->upd_use_thread_fil > 0) {
+    typedef unsigned char element_input_type;
+    typedef unsigned char element_output_type;
+    typedef int element_filter_type;
+    typedef libxsmm_bdbconvfunction libxsmm_convfunction;
+    if (handle->use_fastpath) {
+      if ( handle->use_hybrid_wu_parallelism == 1) {
+#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
+      } else {
+#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
+      }
+    }
+  }
+#else
+/* should not happen */
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -955,39 +1037,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(l
   }
   else {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      typedef float element_input_type;
-      typedef float element_output_type;
-      typedef float element_filter_type;
-      typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+      status = libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32( handle, start_thread, tid );
     } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      if (handle->upd_use_thread_fil > 0) {
-        typedef short element_input_type;
-        typedef short element_output_type;
-        typedef float element_filter_type;
-        typedef libxsmm_uwsconvfunction libxsmm_convfunction;
-        if (handle->use_fastpath) {
-          if ( handle->use_hybrid_wu_parallelism == 1) {
-#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
-          } else {
-#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
-          }
-        }
-      }
+      status = libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32( handle, start_thread, tid );
     } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
-      if (handle->upd_use_thread_fil > 0) {
-        typedef unsigned char element_input_type;
-        typedef unsigned char element_output_type;
-        typedef int element_filter_type;
-        typedef libxsmm_bdbconvfunction libxsmm_convfunction;
-        if (handle->use_fastpath) {
-          if ( handle->use_hybrid_wu_parallelism == 1) {
-#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
-          } else {
-#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
-          }
-        }
-      }
+      status = libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32( handle, start_thread, tid );
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
