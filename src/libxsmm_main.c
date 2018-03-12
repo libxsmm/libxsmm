@@ -716,8 +716,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       once = 1;
     }
     else while (1) {
-      if (0 != once) break;
-      else LIBXSMM_SYNC_PAUSE;
+      if (0 != once) break; else { LIBXSMM_SYNC_PAUSE; }
     }
 #endif
     internal_init();

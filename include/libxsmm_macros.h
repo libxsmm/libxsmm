@@ -547,7 +547,6 @@
 #   define __builtin_nans nan
 #   define __builtin_nansf nanf
 # endif
-#else
 #endif
 #if defined(__GNUC__)
 # if !defined(_GNU_SOURCE)
