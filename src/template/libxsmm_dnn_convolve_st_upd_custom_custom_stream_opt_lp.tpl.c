@@ -122,7 +122,7 @@ if (handle->padding_flag == 1) {
 
 #if 0
 if (handle->reduce_weights == 0) {
-  int team_div = (int) libxsmm_sqrt_u32(handle->desc.threads);
+  int team_div = (int) libxsmm_isqrt_u32(handle->desc.threads);
   while ( handle->desc.threads % team_div != 0  ) {
     team_div--;
   }

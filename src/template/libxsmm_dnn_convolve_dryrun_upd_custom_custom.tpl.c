@@ -193,7 +193,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   if (handle->reduce_weights == 0) {
     /* Parallelize over the FMs in this case and avoid reduction */
-    int team_div = (int) libxsmm_sqrt_u32(handle->desc.threads);
+    int team_div = (int) libxsmm_isqrt_u32(handle->desc.threads);
     while ( handle->desc.threads % team_div != 0  ) {
       team_div--;
     }
