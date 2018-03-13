@@ -442,9 +442,9 @@ else
   FLD = $(LD)
 endif
 ifeq (0,$(DEPSTATIC))
-  LIB_LD = $(LD) -shared
-  LIB_XLD = $(XLD) -shared
-  LIB_FLD = $(FLD) -shared
+  LIB_LD := $(LD) -shared
+  LIB_XLD := $(XLD) -shared
+  LIB_FLD := $(FLD) -shared
   ifneq (0,$(CRAY))
     XLD += -dynamic
     FLD += -dynamic
