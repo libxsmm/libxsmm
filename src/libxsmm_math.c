@@ -94,20 +94,10 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
   else {
     result = EXIT_FAILURE;
   }
-  if (EXIT_SUCCESS == result) { /* square-root without libm dependency */
-    int i;
-    if (0 < info->l2_abs) {
-      const double squared = info->l2_abs; info->l2_abs *= 0.5;
-      for (i = 0; i < 16; ++i) info->l2_abs = 0.5 * (info->l2_abs + squared / info->l2_abs);
-    }
-    if (0 < info->l2_rel) {
-      const double squared = info->l2_rel; info->l2_rel *= 0.5;
-      for (i = 0; i < 16; ++i) info->l2_rel = 0.5 * (info->l2_rel + squared / info->l2_rel);
-    }
-    if (0 < info->normf_rel) {
-      const double squared = info->normf_rel; info->normf_rel *= 0.5;
-      for (i = 0; i < 16; ++i) info->normf_rel = 0.5 * (info->normf_rel + squared / info->normf_rel);
-    }
+  if (EXIT_SUCCESS == result) {
+    info->normf_rel = libxsmm_dsqrt(info->normf_rel);
+    info->l2_abs = libxsmm_dsqrt(info->l2_abs);
+    info->l2_rel = libxsmm_dsqrt(info->l2_rel);
     if (1 == n) {
       const libxsmm_blasint tmp = info->linf_abs_m;
       info->linf_abs_m = info->linf_abs_n;
@@ -139,47 +129,84 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 }
 
 
-LIBXSMM_API unsigned int libxsmm_sqrt_u64(unsigned long long n)
+LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x)
 {
   unsigned long long b; unsigned int y = 0, s;
   for (s = 0x80000000/*2^31*/; 0 < s; s >>= 1) {
-    b = y | s; y |= (b * b <= n ? s : 0);
+    b = y | s; y |= (b * b <= x ? s : 0);
   }
   return y;
 }
 
-LIBXSMM_API unsigned int libxsmm_sqrt_u32(unsigned int n)
+LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int x)
 {
   unsigned int b; unsigned int y = 0; int s;
   for (s = 0x40000000/*2^30*/; 0 < s; s >>= 2) {
     b = y | s; y >>= 1;
-    if (b <= n) { n -= b; y |= s; }
+    if (b <= x) { x -= b; y |= s; }
   }
   return y;
 }
 
 
-LIBXSMM_API unsigned int libxsmm_cbrt_u64(unsigned long long n)
+LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double x)
+{
+#if defined(LIBXSMM_INTRINSICS_X86)
+  const double result = _mm_cvtsd_f64(_mm_sqrt_sd(LIBXSMM_INTRINSICS_MM_UNDEFINED_PD(), _mm_set_sd(x)));
+#else
+  double result, y = x;
+  if (0 != x) {
+    do {
+      result = y;
+      y = 0.5 * (y + x / y);
+    } while (result != y);
+  }
+  result = y;
+#endif
+  return result;
+}
+
+
+LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) float libxsmm_ssqrt(float x)
+{
+#if defined(LIBXSMM_INTRINSICS_X86)
+  const float result = _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(x)));
+#else
+  float result, y = x;
+  if (0 != x) {
+    do {
+      result = y;
+      y = 0.5f * (y + x / y);
+    } while (result != y);
+  }
+  result = y;
+#endif
+  return result;
+}
+
+
+LIBXSMM_API unsigned int libxsmm_icbrt_u64(unsigned long long x)
 {
   unsigned long long b; unsigned int y = 0; int s;
   for (s = 63; 0 <= s; s -= 3) {
     y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
-    if (b <= (n >> s)) { n -= b << s; ++y; }
+    if (b <= (x >> s)) { x -= b << s; ++y; }
   }
   return y;
 }
 
 
-LIBXSMM_API unsigned int libxsmm_cbrt_u32(unsigned int n)
+LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int x)
 {
   unsigned int b; unsigned int y = 0; int s;
   for (s = 30; 0 <= s; s -= 3) {
     y += y; b = 3 * y * (y + 1) + 1;
-    if (b <= (n >> s)) { n -= b << s; ++y; }
+    if (b <= (x >> s)) { x -= b << s; ++y; }
   }
   return y;
 }
 
+/* Implementation based on Claude Baumann's work (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm). */
 LIBXSMM_API float libxsmm_sexp2_fast(float x, int maxiter)
 {
   static const float lut[] = { /* tabulated powf(2.f, powf(2.f, -index)) */
@@ -194,7 +221,7 @@ LIBXSMM_API float libxsmm_sexp2_fast(float x, int maxiter)
   const int unbiased = (temp >> 23) - 127; /* exponent */
   const int exponent = -unbiased;
   int mantissa = (temp << 8) | 0x80000000;
-  float result;
+  union { int i; float s; } result;
   if (lut_size1 >= exponent) {
     if (lut_size1 != exponent) { /* multiple lookups needed */
       if (7 >= unbiased) { /* not a degenerated case */
@@ -202,47 +229,46 @@ LIBXSMM_API float libxsmm_sexp2_fast(float x, int maxiter)
         int i = 1;
         if (0 > unbiased) { /* regular/main case */
           LIBXSMM_ASSERT(0 <= exponent && exponent < lut_size);
-          result = lut[exponent]; /* initial value */
+          result.s = lut[exponent]; /* initial value */
           i = exponent + 1; /* next LUT offset */
         }
         else {
-          result = 2.f; /* lut[0] */
+          result.s = 2.f; /* lut[0] */
           i = 1; /* next LUT offset */
         }
         for (; i <= n && 0 != mantissa; ++i) {
           mantissa <<= 1;
           if (0 != (mantissa & 0x80000000)) { /* check MSB */
             LIBXSMM_ASSERT(0 <= i && i < lut_size);
-            result *= lut[i]; /* TODO: normalized multiply */
+            result.s *= lut[i]; /* TODO: normalized multiply */
           }
         }
         for (i = 0; i < unbiased; ++i) { /* compute squares */
-          result *= result;
+          result.s *= result.s;
         }
         if (0 != sign) { /* negative value, so reciprocal */
-          result = 1.f / result;
+          result.s = 1.f / result.s;
         }
       }
       else { /* out of range */
 #if defined(INFINITY)
-        result = (0 == sign ? (INFINITY) : +0.f);
+        result.s = (0 == sign ? (INFINITY) : 0.f);
 #else
-        static const union { int i; float s; } infinity = { 0x7F800000 };
-        result = (0 == sign ? infinity.s : +0.f);
+        result.i = (0 == sign ? 0x7F800000 : 0);
 #endif
       }
     }
     else if (0 == sign) {
-      result = lut[lut_size1];
+      result.s = lut[lut_size1];
     }
     else { /* reciprocal */
-      result = 1.f / lut[lut_size1];
+      result.s = 1.f / lut[lut_size1];
     }
   }
   else {
-    result = 1.f; /* case 2^0 */
+    result.s = 1.f; /* case 2^0 */
   }
-  return result;
+  return result.s;
 }
 
 
@@ -258,28 +284,54 @@ LIBXSMM_API float libxsmm_sexp2(float x)
 
 LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x)
 {
-  float result;
+  union { int i; float s; } result;
   if (128 > x) {
     if (31 < x) {
       const float r32 = 2.f * ((float)(1U << 31)); /* 2^32 */
       const int n = x >> 5;
       int i;
-      result = r32;
-      for (i = 1; i < n; ++i) result *= r32;
-      result *= (1U << (x - (n << 5)));
+      result.s = r32;
+      for (i = 1; i < n; ++i) result.s *= r32;
+      result.s *= (1U << (x - (n << 5)));
     }
     else {
-      result = (float)(1U << x);
+      result.s = (float)(1U << x);
     }
   }
   else {
 #if defined(INFINITY)
-    result = INFINITY;
+    result.s = INFINITY;
 #else
-    static const union { int i; float s; } infinity = { 0x7F800000 };
-    result = infinity.s;
+    result.i = 0x7F800000;
 #endif
   }
-  return result;
+  return result.s;
+}
+
+
+LIBXSMM_API float libxsmm_sexp2_i8(signed char x)
+{
+  union { int i; float s; } result;
+  if (-128 != x) {
+    const signed char ux = LIBXSMM_ABS(x);
+    if (31 < ux) {
+      const float r32 = 2.f * ((float)(1U << 31)); /* 2^32 */
+      const int n = ux >> 5;
+      int i;
+      result.s = r32;
+      for (i = 1; i < n; ++i) result.s *= r32;
+      result.s *= (1U << (ux - (n << 5)));
+    }
+    else {
+      result.s = (float)(1U << ux);
+    }
+    if (ux != x) { /* signed */
+      result.s = 1.f / result.s;
+    }
+  }
+  else {
+    result.i = 0x200000;
+  }
+  return result.s;
 }
 

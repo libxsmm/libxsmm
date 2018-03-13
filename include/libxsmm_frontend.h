@@ -310,16 +310,6 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
     LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #endif
 
-#if defined(__cplusplus) /** Fall-back from JIT inside of libxsmm_mmfunction (C++). */ \
-  && (defined(LIBXSMM_FALLBACK_MMFUNCTION) || !defined(NDEBUG)/*debug code*/) \
-  /* there are no individual fall-back requests for single or double-precision */ \
-  && !defined(LIBXSMM_FALLBACK_SMMFUNCTION) && !defined(LIBXSMM_FALLBACK_DMMFUNCTION) \
-  /* there is no request to avoid falling back */ \
-  && !defined(LIBXSMM_FALLBACK_MMFUNCTION_NONE)
-# define LIBXSMM_FALLBACK_SMMFUNCTION
-# define LIBXSMM_FALLBACK_DMMFUNCTION
-#endif
-
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
 #define LIBXSMM_MMCALL_ABC(FN, A, B, C) \
   LIBXSMM_ASSERT(FN); \

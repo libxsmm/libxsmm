@@ -145,9 +145,6 @@ ifeq (0,$(THREADS))
 endif
 OMP ?= 0
 
-# SIMD code generation
-SIMD ?= 1
-
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
 
@@ -804,13 +801,16 @@ else # GCC assumed
     CXXFLAGS += -Wall -Wno-unused-function #-Wno-attributes
     CFLAGS += -Wall -Wno-unused-function #-Wno-attributes
     FSTD = -std=f2003
-    CPEDANTIC += -pedantic -Wextra -Wshadow \
+    CPEDANTIC += -pedantic -Wextra \
                  -Wno-overlength-strings -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wconversion-extra \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wintrinsics-std -Wreal-q-constant
+    ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
+      CPEDANTIC += -Wshadow
+    endif
     ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
       FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
                    -Wrealloc-lhs -Wrealloc-lhs-all
@@ -830,7 +830,8 @@ else # GCC assumed
     FPEDANTIC += $(FWARNEXTRA)
     ifeq (1,$(PEDANTIC))
       CSTD = -std=c99
-      CXXFLAGS += $(CPEDANTIC) -Wno-long-long #-Wno-missing-field-initializers
+      CXXFLAGS += $(CPEDANTIC) -Wno-long-long
+      #CXXFLAGS += -Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += -ffree-form
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
@@ -844,7 +845,8 @@ else # GCC assumed
       else # Clang may run into ICEs under OSX
         CSTD = -std=c99
       endif
-      CXXFLAGS += $(CPEDANTIC) -Wno-long-long #-Wno-missing-field-initializers
+      CXXFLAGS += $(CPEDANTIC) -Wno-long-long #-Wzero-as-null-pointer-constant
+      #CXXFLAGS += -Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += $(FSTD) $(FPEDANTIC)
     else ifeq (0,$(COMPATIBLE))
@@ -1086,27 +1088,48 @@ ifeq (0,$(COMPATIBLE))
   ifneq (0,$(OPT))
   ifeq (0,$(INTEL))
     ifneq (0,$(SIMD))
-    ifneq (0,$(GCC))
-    ifneq (0,$(shell echo "$$((40900 <= $(CC_VERSION)))"))
-    ifneq (,$(CTARGET))
-      DFLAGS += -DLIBXSMM_OPENMP_SIMD
-      CFLAGS += -fopenmp-simd
-      ifneq (1,$(GCC))
-      ifneq (0,$(shell echo "$$((40900 <= $(CXX_VERSION)))"))
-        CXXFLAGS += -fopenmp-simd
+      ifneq (0,$(GCC))
         ifneq (,$(CTARGET))
-        ifneq (2,$(GCC))
-        ifneq (0,$(shell echo "$$((40900 <= $(FC_VERSION)))"))
-          FCFLAGS += -fopenmp-simd
+        ifneq (0,$(shell echo "$$((40900 <= $(CC_VERSION)))"))
+          DFLAGS += -DLIBXSMM_OPENMP_SIMD
+          CFLAGS += -fopenmp-simd
+          ifneq (1,$(GCC))
+          ifneq (0,$(shell echo "$$((40900 <= $(CXX_VERSION)))"))
+            CXXFLAGS += -fopenmp-simd
+            ifneq (,$(FTARGET))
+            ifneq (2,$(GCC))
+            ifneq (0,$(shell echo "$$((40900 <= $(FC_VERSION)))"))
+              FCFLAGS += -fopenmp-simd
+            endif
+            endif
+            endif
+          endif
+          endif
+        endif
+        endif
+      else ifneq (0,$(CLANG))
+        ifneq (,$(strip $(SIMD))) # explicit
+        ifneq (Darwin,$(UNAME))
+        ifneq (,$(CTARGET))
+        ifneq (0,$(shell echo "$$((60000 <= $(CC_VERSION)))"))
+        ifneq (0,$(shell echo "$$((60000 <= $(CXX_VERSION)))"))
+          DFLAGS += -DLIBXSMM_OPENMP_SIMD
+          CXXFLAGS += -fopenmp-simd
+          CFLAGS += -fopenmp-simd
+          ifneq (,$(FTARGET))
+          ifneq (,$(strip $(FC)))
+          ifneq (0,$(shell echo "$$((40900 <= $(FC_VERSION)))"))
+            FCFLAGS += -fopenmp-simd
+          endif
+          endif
+          endif
+        endif
+        endif
         endif
         endif
         endif
       endif
-      endif
-    endif
-    endif
-    endif
-    endif
+    endif # SIMD
     ifneq (,$(CTARGET))
       CXXFLAGS += -ftree-vectorize
       CFLAGS += -ftree-vectorize

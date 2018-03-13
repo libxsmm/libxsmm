@@ -570,7 +570,7 @@ LIBXSMM_API_INLINE void internal_init(void)
       }
 #endif
     }
-    internal_statistic_mnk = libxsmm_cbrt_u64(LIBXSMM_MAX_MNK);
+    internal_statistic_mnk = libxsmm_icbrt_u32(LIBXSMM_MAX_MNK);
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
 #if defined(LIBXSMM_TRACE)
@@ -716,8 +716,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       once = 1;
     }
     else while (1) {
-      if (0 != once) break;
-      else LIBXSMM_SYNC_PAUSE;
+      if (0 != once) break; else { LIBXSMM_SYNC_PAUSE; }
     }
 #endif
     internal_init();

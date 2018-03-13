@@ -29,10 +29,6 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-#if !defined(LIBXSMM_FALLBACK_MMFUNCTION_NONE)
-# define LIBXSMM_FALLBACK_MMFUNCTION_NONE
-#endif
-
 /** This sample uses LIBXSMM's header-only implementation. */
 #include <libxsmm_source.h>
 
@@ -96,7 +92,7 @@ int main(int argc, char* argv[])
     LIBXSMM_GEMM_CONST libxsmm_blasint m = (1 < argc ? std::atoi(argv[1]) : 512);
     LIBXSMM_GEMM_CONST libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
     LIBXSMM_GEMM_CONST libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
-    const int nrepeat = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 13 / LIBXSMM_MAX(1, libxsmm_cbrt_u64(1ULL * m * n * k) >> 10), 3);
+    const int nrepeat = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 13 / LIBXSMM_MAX(1, libxsmm_icbrt_u64(1ULL * m * n * k) >> 10), 3);
     const char *const env_check = getenv("CHECK"), *const env_nthreads = getenv("NTHREADS");
     const double check = (0 == env_check ? 1.0 : LIBXSMM_ABS(atof(env_check)));
     const double gflops = 2.0 * m * n * k * 1E-9;
