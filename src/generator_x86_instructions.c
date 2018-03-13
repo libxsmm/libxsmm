@@ -3509,7 +3509,7 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
        case LIBXSMM_X86_INSTR_ADDQ:
           break;
        case LIBXSMM_X86_INSTR_SALQ:
-          if ( (i_immediate < 0) || (i_immediate > 127) )
+          if ( /*i_immediate < 0 ||*/ i_immediate > 127 )
           {
              fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
                               "because other immediates are signed but salq is unsigned. So this code\n"
@@ -3549,7 +3549,7 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
     } else {
        l_reg0 = i_gp_reg_number;
     }
-    if ( (i_immediate <= 127) && (i_immediate >= -128) &&
+    if ( (i_immediate <= 127) && /*(i_immediate >= -128) &&*/
          (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
     {
        /* one byte (even for 0!) - but never for MOVQ */
@@ -3588,9 +3588,11 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
     libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name, 15 );
 
     if ( io_generated_code->code_type == 0 ) {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%lld, %%%%%s\\n\\t\"\n", l_instr_name, i_immediate, l_gp_reg_name );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%llu, %%%%%s\\n\\t\"\n",
+                                       l_instr_name, (unsigned long long)i_immediate, l_gp_reg_name );
     } else {
-      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%lld, %%%s\n", l_instr_name, i_immediate, l_gp_reg_name );
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%lld, %%%s\n",
+                                       l_instr_name, (unsigned long long)i_immediate, l_gp_reg_name );
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
