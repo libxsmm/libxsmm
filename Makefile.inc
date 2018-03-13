@@ -1111,6 +1111,7 @@ ifeq (0,$(COMPATIBLE))
         endif
         endif
       else ifneq (0,$(CLANG))
+        ifneq (Darwin,$(UNAME))
         ifneq (,$(CTARGET))
         ifneq (0,$(shell echo "$$((60000 <= $(CC_VERSION)))"))
         ifneq (0,$(shell echo "$$((60000 <= $(CXX_VERSION)))"))
@@ -1124,6 +1125,7 @@ ifeq (0,$(COMPATIBLE))
           endif
           endif
           endif
+        endif
         endif
         endif
         endif
