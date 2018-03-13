@@ -85,7 +85,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int *compute_indices;
   char *kernel_variant;
   /* calculate group sizes, we handle splits as additional images */
-  const int l_l1 = handle->desc.N * (handle->blocksofm*handle->fm_lp_block);
+  const int l_l1 = handle->desc.N * (handle->blocksofm);
   const int l_l3 = handle->ofh / handle->fwd_ofh_rb;
   /* number of threads need in the ofh loop (as we have l_l1 global parallel tasks) */
   const int l_l1_gs = handle->desc.threads / l_l1;
@@ -94,13 +94,13 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   /* get group id */
   const int l_tidgroup = ltid / l_l1_gs;
   /* compute img and ofm1 based on group */
-  my_img_start = l_tidgroup / (handle->blocksofm*handle->fm_lp_block);
+  my_img_start = l_tidgroup / (handle->blocksofm);
   my_img_end = LIBXSMM_MIN(my_img_start + 1, handle->desc.N);
   my_h_start =  l_l2_ts * (ltid % l_l1_gs);
   my_h_end = ((my_h_start + l_l2_ts) <= handle->ofh) ? (my_h_start + l_l2_ts) : handle->ofh;
   my_w_start = 0;
   my_w_end = handle->ofw;
-  my_ofm_start = l_tidgroup % (handle->blocksofm*handle->fm_lp_block);
+  my_ofm_start = l_tidgroup % (handle->blocksofm);
   my_ofm_end = my_ofm_start+1;
 
   if (handle->padding_flag == 1) {
@@ -198,7 +198,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) *  handle->ifhp )  +  ij) * handle->ifwp)  +  ii  ) *  handle->ifmblock * handle->fm_lp_block;
                   }
                   compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock *  handle->fm_lp_block;
-                  compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm * handle->fm_lp_block ) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
+                  compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj) * handle->ofwp)  +  oi  ) *  handle->ofmblock;
 
                   /* Initialize kernel variant with the one that prefetches everything */
                   kernel_variant[local_entries/3] = 2;
