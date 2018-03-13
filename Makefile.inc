@@ -445,9 +445,11 @@ ifeq (0,$(DEPSTATIC))
   LIB_LD = $(LD) -shared
   LIB_XLD = $(XLD) -shared
   LIB_FLD = $(FLD) -shared
-  LD += -pie #-shared
-  XLD += -pie #-shared
-  FLD += -pie #-shared
+  ifneq (0,$(CRAY))
+    XLD += -dynamic
+    FLD += -dynamic
+    LD += -dynamic
+  endif
 else
   LIB_LD = $(LD)
   LIB_XLD = $(XLD)
