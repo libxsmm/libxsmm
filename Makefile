@@ -209,7 +209,7 @@ include $(ROOTDIR)/Makefile.inc
 VERSION_MAJOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 1)
 VERSION_MINOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 2)
 VERSION_UPDATE ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 3)
-VERSION_API ?= $(VERSION_MAJOR).$(VERSION_MINOR)
+VERSION_API ?= $(VERSION_MAJOR)
 
 # target library for a broad range of systems
 ifneq (0,$(JIT))
@@ -1235,8 +1235,7 @@ cpp-test: test-cpp
 .PHONY: test-cpp
 test-cpp: $(INCDIR)/libxsmm_source.h
 	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) \
-		ECXXFLAGS=-DUSE_HEADER_ONLY $(ECXXFLAGS) clean compile"
+		ECXXFLAGS='-DUSE_HEADER_ONLY $(ECXXFLAGS)' clean compile"
 
 .PHONY: test-cp2k
 test-cp2k: $(SPLDIR)/cp2k/cp2k-test.txt

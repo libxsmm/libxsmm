@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
 
     const libxsmm_blasint asize = m * k, bsize = k * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
     const libxsmm_blasint s = 0 < r ? r : ((2ULL << 30) / ((asize + bsize) * sizeof(T))); // 2 GByte
-    const libxsmm_blasint u = 0 < t ? t : static_cast<libxsmm_blasint>(std::sqrt(static_cast<double>(s) * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL) + 0.5);
+    const libxsmm_blasint u = 0 < t ? t : static_cast<libxsmm_blasint>(libxsmm_isqrt_u64(s * CP2K_MIN_NLOCAL / CP2K_MIN_NPARALLEL));
     const size_t bwsize = static_cast<size_t>((s * (asize + bsize)/*load*/ + ((s + u - 1) / u) * csize * 2/*accumulate*/) * sizeof(T));
     const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0 / s;
     const char *const env_check = getenv("CHECK");
