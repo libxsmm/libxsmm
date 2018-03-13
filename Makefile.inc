@@ -442,9 +442,16 @@ else
   FLD = $(LD)
 endif
 ifeq (0,$(DEPSTATIC))
-  LD += -shared
-  XLD += -shared
-  FLD += -shared
+  LIB_LD = $(LD) -shared
+  LIB_XLD = $(XLD) -shared
+  LIB_FLD = $(FLD) -shared
+  LD += -pie #-shared
+  XLD += -pie #-shared
+  FLD += -pie #-shared
+else
+  LIB_LD = $(LD)
+  LIB_XLD = $(XLD)
+  LIB_FLD = $(FLD)
 endif
 
 # compiler names
