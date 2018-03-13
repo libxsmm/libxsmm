@@ -145,9 +145,6 @@ ifeq (0,$(THREADS))
 endif
 OMP ?= 0
 
-# SIMD code generation
-SIMD ?= 1
-
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
 
@@ -1111,6 +1108,7 @@ ifeq (0,$(COMPATIBLE))
         endif
         endif
       else ifneq (0,$(CLANG))
+        ifneq (,$(strip $(SIMD))) # explicit
         ifneq (Darwin,$(UNAME))
         ifneq (,$(CTARGET))
         ifneq (0,$(shell echo "$$((60000 <= $(CC_VERSION)))"))
@@ -1129,6 +1127,7 @@ ifeq (0,$(COMPATIBLE))
         endif
         endif
         endif
+		endif
       endif
     endif # SIMD
     ifneq (,$(CTARGET))
