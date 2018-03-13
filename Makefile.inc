@@ -1127,7 +1127,7 @@ ifeq (0,$(COMPATIBLE))
         endif
         endif
         endif
-		endif
+        endif
       endif
     endif # SIMD
     ifneq (,$(CTARGET))

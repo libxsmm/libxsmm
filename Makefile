@@ -170,9 +170,6 @@ ifneq (0,$(OMP))
   DFLAGS += -DLIBXSMM_OMP
 endif
 
-# SIMD code generation
-SIMD ?= 1
-
 ifneq (,$(MKL))
 ifneq (0,$(MKL))
   BLAS = $(MKL)
