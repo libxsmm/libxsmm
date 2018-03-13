@@ -3488,6 +3488,116 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
 
 
 LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_code,
+                                          const unsigned int      i_alu_instr,
+                                          const unsigned int      i_gp_reg_number,
+                                          const size_t            i_immediate ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    int l_first = 0;
+    int l_second = 0;
+    int l_third = 0;
+    int l_reg0 = 0;
+    int l_extra = 0;
+    int l_unsignedadj = 0;
+    int l_r8adjment = 1;
+    int l_reg0multiplier = 1;
+
+    switch ( i_alu_instr ) {
+       case LIBXSMM_X86_INSTR_ADDQ:
+          break;
+       case LIBXSMM_X86_INSTR_SALQ:
+          if ( (i_immediate < 0) || (i_immediate > 127) )
+          {
+             fprintf(stderr,  "libxsmm_instruction_alu_imm is using an out-of-range immediate for salq.\n"
+                              "because other immediates are signed but salq is unsigned. So this code\n"
+                              "should be changed if you want an immediate in this range.\n");
+             exit(-1);
+          }
+          l_unsignedadj = 0x3e;
+          l_third += 0x20;
+          break;
+       case LIBXSMM_X86_INSTR_IMUL:
+/* Note: we assume that if you call imul in alu_imm you mean: something like imul $3,%rax,%rax. That is, we assume that i_gp_reg_number is used twice */
+          l_unsignedadj = -0x18;
+          l_extra -= 0x18;
+          l_r8adjment = 0x05;
+          l_reg0multiplier = 9; /* We are adjusting by 1 and 8 at the same time */
+          break;
+       case LIBXSMM_X86_INSTR_SUBQ:
+          l_second += 0x28;
+          l_third += 0x28;
+          break;
+       case LIBXSMM_X86_INSTR_MOVQ:
+          l_second += 0x46;
+          l_extra += 0x46;
+          break;
+       case LIBXSMM_X86_INSTR_CMPQ:
+          l_second += 0x38;
+          l_third += 0x38;
+          break;
+       default:
+          fprintf(stderr, "libxsmm_instruction_alu_imm: Unknown instruction type: %u\n",i_alu_instr);
+          exit(-1);
+    }
+    if ( (i_gp_reg_number > 7) && (i_gp_reg_number <= 15) )
+    {
+       l_first += l_r8adjment;
+       l_reg0 = i_gp_reg_number - 8;
+    } else {
+       l_reg0 = i_gp_reg_number;
+    }
+    if ( (i_immediate <= 127) && (i_immediate >= -128) &&
+         (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
+    {
+       /* one byte (even for 0!) - but never for MOVQ */
+       buf[i++] = (unsigned char)(0x48 + l_first);
+       buf[i++] = (unsigned char)(0x83 + l_unsignedadj);
+       buf[i++] = (unsigned char)(0xc0 + l_third + l_reg0*l_reg0multiplier);
+       buf[i++] = (unsigned char)(i_immediate);
+    } else {
+       /* four bytes */
+       unsigned char *l_cptr = (unsigned char *) &i_immediate;
+       buf[i++] = (unsigned char)(0x48 + l_first);
+       if ( i_gp_reg_number==0 && (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
+       {
+          /* special case for %rax! */
+          buf[i++] = (unsigned char)(0x05 + l_second);
+       } else {
+          buf[i++] = (unsigned char)(0x81 + l_extra);
+          buf[i++] = (unsigned char)(0xc0 + l_third + l_reg0*l_reg0multiplier);
+       }
+       buf[i++] = l_cptr[0];
+       buf[i++] = l_cptr[1];
+       buf[i++] = l_cptr[2];
+       buf[i++] = l_cptr[3];
+    }
+
+    io_generated_code->code_size = i;
+    /* *loc = i; */
+  } else {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+    char l_gp_reg_name[4];
+    char l_instr_name[16];
+
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name, 3 );
+    libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name, 15 );
+
+    if ( io_generated_code->code_type == 0 ) {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%lld, %%%%%s\\n\\t\"\n", l_instr_name, i_immediate, l_gp_reg_name );
+    } else {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%lld, %%%s\n", l_instr_name, i_immediate, l_gp_reg_name );
+    }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  }
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_alu_instr,
                                       const unsigned int      i_gp_reg_number_src,
