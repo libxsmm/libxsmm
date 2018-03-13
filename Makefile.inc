@@ -199,14 +199,14 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 # Embedd soname into shared library
 ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
-    soname = -shared -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5) \
+    soname = -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5) \
              $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5)) \
              $(shell cd $(dir $1) && ln -fs $(notdir $1.$5) $(notdir $1))
   else # MinGW
-    soname = -shared -o $1 -Wl,-soname=$(strip $(notdir $1).$5)
+    soname = -o $1 -Wl,-soname=$(strip $(notdir $1).$5)
   endif
 else # osx
-  soname = -shared -o $(basename $1).$2$(suffix $1) \
+  soname = -o $(basename $1).$2$(suffix $1) \
            -install_name $(notdir $(basename $1).$2$(suffix $1)) \
            -current_version $2.$3.$4 -compatibility_version $5 \
            $(shell cd $(dir $1) && ln -fs $(notdir $(basename $1).$2$(suffix $1)) $(notdir $1))
@@ -440,6 +440,11 @@ ifneq (,$(strip $(FC)))
   FLD = $(FC)
 else
   FLD = $(LD)
+endif
+ifeq (0,$(DEPSTATIC))
+  LD += -shared
+  XLD += -shared
+  FLD += -shared
 endif
 
 # compiler names
