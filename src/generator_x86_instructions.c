@@ -3494,29 +3494,29 @@ void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_c
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    unsigned char *l_cptr = (unsigned char *) &i_immediate;
     int i = io_generated_code->code_size;
     int l_first = 0;
     int l_reg0 = 0;
 
-    if ( i_alu_instr != LIBXSMM_X86_INSTR_MOVQ ) 
+    if ( i_alu_instr != LIBXSMM_X86_INSTR_MOVQ )
     {
        fprintf(stderr,"How are you doing a 64-byte immediate on instruction: %d\n",i_alu_instr);
        exit(-1);
     }
-    if ( i_gp_reg_number < 0 || i_gp_reg_number > 15 )
+    if ( /*i_gp_reg_number < 0 ||*/ i_gp_reg_number > 15 )
     {
        fprintf(stderr,"libxsmm_x86_instruction_alu_imm_i64 strange gp reg=%d\n",i_gp_reg_number);
        exit(-1);
     }
     l_reg0 = i_gp_reg_number;
-    if ( i_gp_reg_number >= 8 ) 
-    { 
+    if ( i_gp_reg_number >= 8 )
+    {
        l_first = 1;
        l_reg0 -= 8;
     }
     buf[i++]= (unsigned char)(0x48 + l_first);
     buf[i++]= (unsigned char)(0xb8 + l_reg0);
-    unsigned char *l_cptr = (unsigned char *) &i_immediate;
     buf[i++] = l_cptr[0];
     buf[i++] = l_cptr[1];
     buf[i++] = l_cptr[2];
