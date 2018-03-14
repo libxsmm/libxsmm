@@ -3486,6 +3486,69 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
   }
 }
 
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_alu_imm_i64( libxsmm_generated_code* io_generated_code,
+                                          const unsigned int      i_alu_instr,
+                                          const unsigned int      i_gp_reg_number,
+                                          const size_t            i_immediate ) {
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+    int i = io_generated_code->code_size;
+    int l_first = 0;
+    int l_reg0 = 0;
+
+    if ( i_alu_instr != LIBXSMM_X86_INSTR_MOVQ ) 
+    {
+       fprintf(stderr,"How are you doing a 64-byte immediate on instruction: %d\n",i_alu_instr);
+       exit(-1);
+    }
+    if ( i_gp_reg_number < 0 || i_gp_reg_number > 15 )
+    {
+       fprintf(stderr,"libxsmm_x86_instruction_alu_imm_i64 strange gp reg=%d\n",i_gp_reg_number);
+       exit(-1);
+    }
+    l_reg0 = i_gp_reg_number;
+    if ( i_gp_reg_number >= 8 ) 
+    { 
+       l_first = 1;
+       l_reg0 -= 8;
+    }
+    buf[i++]= (unsigned char)(0x48 + l_first);
+    buf[i++]= (unsigned char)(0xb8 + l_reg0);
+    unsigned char *l_cptr = (unsigned char *) &i_immediate;
+    buf[i++] = l_cptr[0];
+    buf[i++] = l_cptr[1];
+    buf[i++] = l_cptr[2];
+    buf[i++] = l_cptr[3];
+    buf[i++] = l_cptr[4];
+    buf[i++] = l_cptr[5];
+    buf[i++] = l_cptr[6];
+    buf[i++] = l_cptr[7];
+
+    io_generated_code->code_size = i;
+    /* *loc = i; */
+  } else {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+    char l_gp_reg_name[4];
+    char l_instr_name[16];
+
+    libxsmm_get_x86_gp_reg_name( i_gp_reg_number, l_gp_reg_name, 3 );
+    libxsmm_get_x86_instr_name( i_alu_instr, l_instr_name, 15 );
+
+    if ( io_generated_code->code_type == 0 ) {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s $%llu, %%%%%s\\n\\t\"\n",
+                                       l_instr_name, (unsigned long long)i_immediate, l_gp_reg_name );
+    } else {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s $%lld, %%%s\n",
+                                       l_instr_name, (unsigned long long)i_immediate, l_gp_reg_name );
+    }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  }
+}
+
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
