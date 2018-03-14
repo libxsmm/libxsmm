@@ -31,7 +31,7 @@ git clone https://github.com/hfp/libxsmm.git
 git clone --branch intel https://github.com/cp2k/cp2k.git cp2k.git
 ln -s cp2k.git/cp2k cp2k
 cd cp2k/makefiles
-make ARCH=Linux-x86-64-intel VERSION=psmp AVX=2
+make ARCH=Linux-x86-64-xintel VERSION=psmp AVX=2
 ```
 
 To target for instance "Knights Landing" (KNL), use "AVX=3 MIC=1" instead of "AVX=2". Since [CP2K&#160;3.0](https://www.cp2k.org/version_history), the mainline version (non-Intel branch) supports LIBXSMM as well. If an own ARCH file is used or prepared, the LIBXSMM library needs to be built separately and one may follow the [official guide](https://www.cp2k.org/howto:compile). Building LIBXSMM is rather simple (instead of the master revision, an official [release](https://github.com/hfp/libxsmm/releases) can used as well):
@@ -48,19 +48,19 @@ git clone https://github.com/hfp/libxsmm.git
 wget https://sourceforge.net/projects/cp2k/files/cp2k-5.1.tar.bz2
 tar xvf cp2k-4.1.tar.bz2
 cd cp2k-4.1/arch
-wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-intel.x
-wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-intel.popt
-wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-intel.psmp
-wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-intel.sopt
-wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-intel.ssmp
+wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-xintel.x
+wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-xintel.popt
+wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-xintel.psmp
+wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-xintel.sopt
+wget https://github.com/cp2k/cp2k/raw/intel/cp2k/arch/Linux-x86-64-xintel.ssmp
 cd ../makefiles
 source /opt/intel/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64
-make ARCH=Linux-x86-64-intel VERSION=psmp AVX=2
+make ARCH=Linux-x86-64-xintel VERSION=psmp AVX=2
 ```
 
 For Intel MPI, usually any version is fine. For product suites, the compiler and the MPI library are sourced in one step. To work around known issues, one may combine components from different suites. To further improve performance and versatility, one may supply LIBINTROOT, LIBXCROOT, and ELPAROOT when relying on CP2K/intel's ARCH files (see later sections about these libraries).
 
-To further adjust CP2K at build time of the application, additional key-value pairs can be passed at make's command line (like `ARCH=Linux-x86-64-intel` or `VERSION=psmp`).
+To further adjust CP2K at build time of the application, additional key-value pairs can be passed at make's command line (like `ARCH=Linux-x86-64-xintel` or `VERSION=psmp`).
 
 * **SYM**: set `SYM=1` to include debug symbols into the executable e.g., helpful with performance profiling.
 * **DBG**: set `DBG=1` to include debug symbols, and to generate non-optimized code.
