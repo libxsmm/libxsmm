@@ -42,7 +42,7 @@
 # define srand48 srand
 #endif
 
-#define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
+#define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) { fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) ); global_status = A; }
 
 #define USE_OVERWRITE
 /*#define USE_FUSED_BATCH_STATS*/
@@ -414,6 +414,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_maxstats_upd;
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
+  libxsmm_dnn_err_t global_status;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff, norms_batchstats;
   memset(&norms_fwd, 0, sizeof(norms_fwd));
@@ -1118,7 +1119,7 @@ int main(int argc, char* argv[])
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 100.0 : atof(env_check_scale));
-    if (LIBXSMM_NEQ(0, check) && check < 100.0 * check_scale * diff.normf_rel) {
+    if (LIBXSMM_NEQ(0, check) && (check < 100.0 * check_scale * diff.normf_rel) && (global_status == LIBXSMM_DNN_SUCCESS)) {
       fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
       exit(EXIT_FAILURE);
     }
