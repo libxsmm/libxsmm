@@ -147,13 +147,13 @@ LIBXSMM_APIVAR(int internal_trace_threadid);
 LIBXSMM_APIVAR(int internal_trace_maxnsyms);
 
 
-LIBXSMM_API_INTERN
+LIBXSMM_API
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms);
 
-LIBXSMM_API_INTERN int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms)
+LIBXSMM_API int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms)
 {
   int result = EXIT_SUCCESS;
   internal_trace_initialized = -1; /* disabled */
@@ -179,13 +179,13 @@ LIBXSMM_API_INTERN int libxsmm_trace_init(int filter_threadid, int filter_mindep
 }
 
 
-LIBXSMM_API_INTERN
+LIBXSMM_API
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
 int libxsmm_trace_finalize(void);
 
-LIBXSMM_API_INTERN int libxsmm_trace_finalize(void)
+LIBXSMM_API int libxsmm_trace_finalize(void)
 {
   int result;
 #if defined(LIBXSMM_TRACE)
