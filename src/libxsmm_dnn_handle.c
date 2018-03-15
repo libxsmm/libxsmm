@@ -173,6 +173,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
         handle->h_variants = 0;
         handle->w_variants = 1;
       }
+      handle->fwd_ofw_rb_2 = wrb2;
+      handle->fwd_ofh_rb_2 = hrb2;
     }
   }
 
