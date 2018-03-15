@@ -152,7 +152,8 @@ LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int x)
 LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double x)
 {
 #if defined(LIBXSMM_INTRINSICS_X86)
-  const double result = _mm_cvtsd_f64(_mm_sqrt_sd(LIBXSMM_INTRINSICS_MM_UNDEFINED_PD(), _mm_set_sd(x)));
+  const __m128d a = LIBXSMM_INTRINSICS_MM_UNDEFINED_PD();
+  const double result = _mm_cvtsd_f64(_mm_sqrt_sd(a, _mm_set_sd(x)));
 #else
   double result, y = x;
   if (0 != x) {
@@ -313,7 +314,7 @@ LIBXSMM_API float libxsmm_sexp2_i8(signed char x)
 {
   union { int i; float s; } result;
   if (-128 != x) {
-    const signed char ux = LIBXSMM_ABS(x);
+    const signed char ux = (signed char)LIBXSMM_ABS(x);
     if (31 < ux) {
       const float r32 = 2.f * ((float)(1U << 31)); /* 2^32 */
       const int n = ux >> 5;

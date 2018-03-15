@@ -64,7 +64,7 @@
 
 #if defined(__MIC__)
 # define LIBXSMM_SYNC_PAUSE _mm_delay_32(8/*delay*/)
-#elif !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY)
+#elif !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_STATIC)
 # define LIBXSMM_SYNC_PAUSE _mm_pause()
 #elif defined(LIBXSMM_GCC_BASELINE) && !defined(__PGI)
 # define LIBXSMM_SYNC_PAUSE __builtin_ia32_pause()

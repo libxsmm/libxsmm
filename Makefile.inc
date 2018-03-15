@@ -199,14 +199,14 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 # Embedd soname into shared library
 ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
-    soname = -shared -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5) \
+    soname = -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5) \
              $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5)) \
              $(shell cd $(dir $1) && ln -fs $(notdir $1.$5) $(notdir $1))
   else # MinGW
-    soname = -shared -o $1 -Wl,-soname=$(strip $(notdir $1).$5)
+    soname = -o $1 -Wl,-soname=$(strip $(notdir $1).$5)
   endif
 else # osx
-  soname = -shared -o $(basename $1).$2$(suffix $1) \
+  soname = -o $(basename $1).$2$(suffix $1) \
            -install_name $(notdir $(basename $1).$2$(suffix $1)) \
            -current_version $2.$3.$4 -compatibility_version $5 \
            $(shell cd $(dir $1) && ln -fs $(notdir $(basename $1).$2$(suffix $1)) $(notdir $1))
@@ -433,15 +433,6 @@ else ifneq (0,$(INTEL))
 endif
 endif
 
-# linker setup
-LD = $(CC)
-XLD = $(CXX)
-ifneq (,$(strip $(FC)))
-  FLD = $(FC)
-else
-  FLD = $(LD)
-endif
-
 # compiler names
 CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 \
            | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" \
@@ -609,6 +600,29 @@ else
 endif
 CRAY ?= 0
 PGI ?= 0
+
+# linker setup
+LD = $(CC)
+XLD = $(CXX)
+ifneq (,$(strip $(FC)))
+  FLD = $(FC)
+else
+  FLD = $(LD)
+endif
+ifeq (0,$(DEPSTATIC))
+  LIB_LD := $(LD) -shared
+  LIB_XLD := $(XLD) -shared
+  LIB_FLD := $(FLD) -shared
+  ifneq (0,$(CRAY))
+    XLD += -dynamic
+    FLD += -dynamic
+    LD += -dynamic
+  endif
+else
+  LIB_LD = $(LD)
+  LIB_XLD = $(XLD)
+  LIB_FLD = $(FLD)
+endif
 
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
