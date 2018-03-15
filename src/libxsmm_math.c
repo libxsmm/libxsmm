@@ -156,11 +156,11 @@ LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double 
   const double result = _mm_cvtsd_f64(_mm_sqrt_sd(a, _mm_set_sd(x)));
 #else
   double result, y = x;
-  if (0 != x) {
+  if (LIBXSMM_NEQ(0, x)) {
     do {
       result = y;
       y = 0.5 * (y + x / y);
-    } while (result != y);
+    } while (LIBXSMM_NEQ(result, y));
   }
   result = y;
 #endif
@@ -174,11 +174,11 @@ LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) float libxsmm_ssqrt(float x)
   const float result = _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(x)));
 #else
   float result, y = x;
-  if (0 != x) {
+  if (LIBXSMM_NEQ(0, x)) {
     do {
       result = y;
       y = 0.5f * (y + x / y);
-    } while (result != y);
+    } while (LIBXSMM_NEQ(result, y));
   }
   result = y;
 #endif

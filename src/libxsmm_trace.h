@@ -46,7 +46,7 @@
 
 
 /** Initializes the trace facility; NOT thread-safe. */
-LIBXSMM_API_INTERN int libxsmm_trace_init(
+LIBXSMM_API int libxsmm_trace_init(
   /* Filter for thread id (-1: all). */
   int filter_threadid,
   /* Specify min. depth of stack trace (0: all). */
@@ -55,7 +55,7 @@ LIBXSMM_API_INTERN int libxsmm_trace_init(
   int filter_maxnsyms);
 
 /** Finalizes the trace facility; NOT thread-safe. */
-LIBXSMM_API_INTERN int libxsmm_trace_finalize(void);
+LIBXSMM_API int libxsmm_trace_finalize(void);
 
 /** Receives the backtrace of up to 'size' addresses. Returns the actual number of addresses (n <= size). */
 LIBXSMM_API unsigned int libxsmm_backtrace(void* buffer[], unsigned int size);
