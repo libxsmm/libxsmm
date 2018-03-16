@@ -28,11 +28,13 @@ else
 fi
 
 UNAME=$(which uname 2>/dev/null)
-SORT=$(which sort 2>/dev/null)
+PASTE=$(which paste 2>/dev/null)
 GREP=$(which grep 2>/dev/null)
+SORT=$(which sort 2>/dev/null)
 CUT=$(which cut 2>/dev/null)
 WC=$(which wc 2>/dev/null)
 TR=$(which tr 2>/dev/null)
+BC=$(which bc 2>/dev/null)
 
 if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
   export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
@@ -90,9 +92,12 @@ ${EXE} ${ITERS}  120   68 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} |
 ${EXE} ${ITERS}  120   68 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
 RESULT=$?
 
-if [ "0" = "${RESULT}" ]; then
-  echo "${NS}/$(grep "PERFDUMP" ${LOGFILE} | cut -d, -f15 | paste -sd+ | bc)" | bc -l
-else
-  exit ${RESULT}
+if [ "0" = "${RESULT}" ] && [ "" != "${GREP}" ] && [ "" != "${PASTE}" ] && [ "" != "${BC}" ]; then
+  echo -n "GFLOPS: "
+  echo "$(${GREP} "PERFDUMP" ${LOGFILE} | ${CUT} -d, -f16 | ${PASTE} -sd+ | ${BC})/13" | ${BC} -l
+  echo -n "FPS:    "
+  echo "${NS}/$(${GREP} "PERFDUMP" ${LOGFILE} | ${CUT} -d, -f15 | ${PASTE} -sd+ | ${BC})" | ${BC} -l
 fi
+
+exit ${RESULT}
 
