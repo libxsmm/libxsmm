@@ -69,7 +69,7 @@ void LIBXSMM_FSYMBOL(stream_vector_copy)(const double* i_a, double* io_c, const 
     io_c[l_n] = i_a[l_n];
   }
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_STATIC)
   {
     /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */
@@ -122,7 +122,7 @@ void LIBXSMM_FSYMBOL(stream_vector_set)(const double* i_scalar, double* io_c, co
     io_c[l_n] = *i_scalar;
   }
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_STATIC)
   {
     /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */
@@ -176,7 +176,7 @@ void LIBXSMM_FSYMBOL(stream_vector_compscale)(const double* i_a, const double* i
     io_c[l_n] = i_a[l_n]*i_b[l_n];
   }
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_STATIC)
   {
     /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */
@@ -287,7 +287,7 @@ void LIBXSMM_FSYMBOL(stream_update_helmholtz)(
 #endif
 */
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_STATIC)
   {
     const __m256d vec_h1 = _mm256_broadcast_sd(i_h1);
     const __m256d vec_h2 = _mm256_broadcast_sd(i_h2);
@@ -449,7 +449,7 @@ void LIBXSMM_FSYMBOL(stream_update_helmholtz_no_h2)(
     io_c[l_n] = (*i_h1)*(i_g1[l_n]*i_tm1[l_n] + i_g2[l_n]*i_tm2[l_n] + i_g3[l_n]*i_tm3[l_n]);
   }
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_STATIC)
   {
     const __m256d vec_h1 = _mm256_broadcast_sd(i_h1);
     /* we need manual unrolling as the compiler otherwise generates
@@ -592,7 +592,7 @@ void LIBXSMM_FSYMBOL(stream_update_var_helmholtz)(
 #endif
 */
   /* run the bulk, hopefully using streaming stores */
-#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_LEGACY)
+#if defined(__SSE3__) && defined(__AVX__) && !defined(__AVX512F__) && !defined(LIBXSMM_INTRINSICS_STATIC)
   {
     /* we need manual unrolling as the compiler otherwise generates
        too many dependencies */

@@ -433,29 +433,6 @@ else ifneq (0,$(INTEL))
 endif
 endif
 
-# linker setup
-LD = $(CC)
-XLD = $(CXX)
-ifneq (,$(strip $(FC)))
-  FLD = $(FC)
-else
-  FLD = $(LD)
-endif
-ifeq (0,$(DEPSTATIC))
-  LIB_LD := $(LD) -shared
-  LIB_XLD := $(XLD) -shared
-  LIB_FLD := $(FLD) -shared
-  ifneq (0,$(CRAY))
-    XLD += -dynamic
-    FLD += -dynamic
-    LD += -dynamic
-  endif
-else
-  LIB_LD = $(LD)
-  LIB_XLD = $(XLD)
-  LIB_FLD = $(FLD)
-endif
-
 # compiler names
 CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 \
            | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" \
@@ -623,6 +600,29 @@ else
 endif
 CRAY ?= 0
 PGI ?= 0
+
+# linker setup
+LD = $(CC)
+XLD = $(CXX)
+ifneq (,$(strip $(FC)))
+  FLD = $(FC)
+else
+  FLD = $(LD)
+endif
+ifeq (0,$(DEPSTATIC))
+  LIB_LD := $(LD) -shared
+  LIB_XLD := $(XLD) -shared
+  LIB_FLD := $(FLD) -shared
+  ifneq (0,$(CRAY))
+    XLD += -dynamic
+    FLD += -dynamic
+    LD += -dynamic
+  endif
+else
+  LIB_LD = $(LD)
+  LIB_XLD = $(XLD)
+  LIB_FLD = $(FLD)
+endif
 
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be

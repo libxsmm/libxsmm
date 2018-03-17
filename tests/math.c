@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
   }
 
   if (0 < warn_ssqrt || 0 < warn_dsqrt) {
-    fprintf(stderr, "missed bitwise exact result in %u of %i cases!\n", LIBXSMM_MAX(warn_ssqrt, warn_dsqrt), N);
+    fprintf(stderr, "missed bitwise exact result in %i of %i cases!\n", LIBXSMM_MAX(warn_ssqrt, warn_dsqrt), N);
   }
 
   return EXIT_SUCCESS;

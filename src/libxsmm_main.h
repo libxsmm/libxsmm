@@ -142,7 +142,7 @@
 /**
 * Structure, which stores the argument description of GEMM routines.
 * This structure must be ordered by the size of the members (packed).
-* The size of the structure matches LIBXSMM_DESCRIPTOR_SIZE.
+* The size of the structure matches LIBXSMM_GEMM_DESCRIPTOR_SIZE.
 */
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
   /** Leading dimensions are general offsets. */
