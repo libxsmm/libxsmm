@@ -47,6 +47,10 @@
 # define LIBXSMM_BLASINT int
 #endif
 
+/** Generic prefetches; similar to LIBXSMM_PREFETCH_AUTO (libxsmm_frontend.h) */
+#define LIBXSMM_PREFETCH_SIGONLY 1
+#define LIBXSMM_PREFETCH_NONE 0
+
 /** Helper macros for type postfixes. */
 #define LIBXSMM_TPOSTFIX_NAME(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TPOSTFIX_, TYPE)
 #define LIBXSMM_TPOSTFIX(TYPE, SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, LIBXSMM_TPOSTFIX_NAME(TYPE))
@@ -82,7 +86,7 @@
                                                               LIBXSMM_GEMM_PRECISION(OTYPE))
 
 /** Necessary size to store a descriptor/blob (GEMM, MCOPY, TRANS). */
-#define LIBXSMM_DESCRIPTOR_SIZE 32
+#define LIBXSMM_GEMM_DESCRIPTOR_SIZE 32
 
 
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
@@ -90,7 +94,7 @@ typedef LIBXSMM_BLASINT libxsmm_blasint;
 
 /** Type representing sufficient storage space for descriptors (GEMM, TCOPY, MCOPY). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_descriptor_blob {
-  char data[LIBXSMM_DESCRIPTOR_SIZE];
+  char data[LIBXSMM_GEMM_DESCRIPTOR_SIZE];
 } libxsmm_descriptor_blob;
 
 /** Structure storing arguments of GEMM-like routines. */
@@ -158,9 +162,9 @@ typedef enum libxsmm_mmbatch_flags {
 /** Enumeration of the available prefetch strategies. */
 typedef enum libxsmm_gemm_prefetch_type {
   /** No prefetching and no prefetch fn. signature. */
-  LIBXSMM_GEMM_PREFETCH_NONE               = 0,
+  LIBXSMM_GEMM_PREFETCH_NONE               = LIBXSMM_PREFETCH_NONE,
   /** Only function prefetch signature. */
-  LIBXSMM_GEMM_PREFETCH_SIGONLY            = 1,
+  LIBXSMM_GEMM_PREFETCH_SIGONLY            = LIBXSMM_PREFETCH_SIGONLY,
   /** Prefetch PA using accesses to A. */
   LIBXSMM_GEMM_PREFETCH_AL2                = 2,
   /** Prefetch PA (aggressive). */
@@ -393,7 +397,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_upd
 } libxsmm_convolution_weight_update_descriptor;
 
 /**
- * Structure storing the convolution winograd argument description.
+ * Structure storing the convolution Winograd argument description.
  */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
   /** alpha determines the tile size */
@@ -417,13 +421,15 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_d
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const float* a, const float* b, float* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (low-precision). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wmmfunction)(const short* a, const short* b, void* c, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wimmfunction)(const short* a, const short* b, int* c, ...);
+/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (low-precision). */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wsmmfunction)(const short* a, const short* b, float* c, ...);
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   void (*xmm)(const void* a, const void* b, void* c, ...);
-  libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wmmfunction wmm;
+  libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wimmfunction wimm; libxsmm_wsmmfunction wsmm;
 } libxsmm_xmmfunction;
 
 /** Determines the kernel kind. */

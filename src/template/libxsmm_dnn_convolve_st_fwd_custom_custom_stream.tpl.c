@@ -68,8 +68,8 @@ LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)hand
 /* Kernel related variables  */
 libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
 libxsmm_xmcopyfunction jitted_zero_overwrite = handle->matcopy_fwd[1].xmatcopy;
-libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
-libxsmm_convfunction kernel2 = (libxsmm_convfunction)handle->code_fwd[3].xconv.sconv;
+libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
+libxsmm_convfunction kernel2 = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 libxsmm_convfunction kernel_pool[2];
 kernel_pool[0] = kernel;
 kernel_pool[1] = kernel2;
@@ -99,16 +99,24 @@ n_segments = handle->n_fwd_code_segments[ltid];
 
 LIBXSMM_ALIGNED(float scale_factor, 64);
 if (handle->use_lp_kernel == 1) {
-  scale_factor = (float) pow(2.0, -1.0*((double)(handle->reg_filter->scf + handle->reg_input->scf)));
+  scale_factor = libxsmm_sexp2(-1.f*((float)(handle->reg_filter->scf + handle->reg_input->scf)));
 }
 
 LIBXSMM_ALIGNED(float *max_vals, 64);
+#ifdef __AVX512F__
 __m512 max_abs;
+#else
+/* won't happen as this code only runs on AVX512 platforms */
+#endif
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, element_output_type, maxstats, (element_output_type*)handle->maxstats_fwd->data, handle->ofmblock);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, handle->ofmblock);
+#ifdef __AVX512F__
   max_abs = _mm512_setzero_ps();
   _mm512_store_ps(max_vals, max_abs);
+#else
+/* won't happen as this code only runs on AVX512 platforms */
+#endif
 }
 
 i = 0;
@@ -246,6 +254,7 @@ if (n_segments) {
           if (instr == OFM_LOOP_CLOSE) {
             /* Compute batch norm statistics... */
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) {
+#ifdef __AVX512F__
 #ifdef FP32_BN_STATS
               ofm1 =  code_stream[pc].aux_index;
               LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
@@ -299,6 +308,9 @@ if (n_segments) {
               _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
                     BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
 #endif
+#else
+              /* won't happen as this code only runs on AVX512 platforms */
+#endif
             }
 
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
@@ -307,7 +319,11 @@ if (n_segments) {
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+#ifdef __AVX512F__
                   max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+oi)));
+#else
+                  /* Won't happen as this code only runs on AVX512 systems */   
+#endif
                 }
                 cur_vec += handle->ofwp*handle->ofmblock;
               }
@@ -353,6 +369,7 @@ if (n_segments) {
           if ( instr == OFM_LOOP_CLOSE ) {
             /* Compute batch norm statistics... */
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) {
+#ifdef __AVX512F__
 #ifdef FP32_BN_STATS
               ofm1 =  code_stream[pc].aux_index;
               LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
@@ -406,6 +423,9 @@ if (n_segments) {
               _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
                     BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
 #endif
+#else
+              /* won't happen as this code only runs on AVX512 platforms */
+#endif
             }
 
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
@@ -414,7 +434,11 @@ if (n_segments) {
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+#ifdef __AVX512F__
                   max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+oi)));
+#else
+                  /* won't happen as this code only runs on AVX512 platforms */
+#endif
                 }
                 cur_vec += handle->ofwp*handle->ofmblock;
               }
@@ -542,7 +566,11 @@ if (n_segments) {
 }
 
 if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_lp_kernel == 1) && (handle->compute_max_in_kernel_fwd == 0) ) {
+#ifdef __AVX512F__
   _mm512_store_ps(max_vals, max_abs);
+#else
+  /* won't happen as this code only runs on AVX512 platforms */
+#endif
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);

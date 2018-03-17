@@ -36,12 +36,18 @@
 #include "generator_common.h"
 #include "libxsmm_main.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
-LIBXSMM_INLINE
+LIBXSMM_API_INLINE
 void libxsmm_generator_gemm_imci_avx512_kernel_initialize_mask( libxsmm_generated_code*            io_generated_code,
                                                                 const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                 const libxsmm_micro_kernel_config* i_micro_kernel_config,
@@ -50,7 +56,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel_initialize_mask( libxsmm_generate
   unsigned int l_mask;
 
   /* init full mask */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
+  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     l_mask = 0xff;
   } else {
     l_mask = 0xffff;
@@ -69,9 +75,10 @@ void libxsmm_generator_gemm_imci_avx512_kernel_initialize_mask( libxsmm_generate
                                    LIBXSMM_X86_INSTR_KMOV,
                                    i_gp_reg_mapping->gp_reg_help_5,
                                    LIBXSMM_X86_IMCI_AVX512_MASK );
-  } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC ||
-              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM ||
-              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {
+  } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
+              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM  ||
+              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ||
+              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL     ) {
     libxsmm_x86_instruction_mask_move( io_generated_code,
                                    LIBXSMM_X86_INSTR_KMOVW,
                                    i_gp_reg_mapping->gp_reg_help_5,
@@ -79,7 +86,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel_initialize_mask( libxsmm_generate
   } else {}
 }
 
-LIBXSMM_INLINE
+LIBXSMM_API_INLINE
 void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*            io_generated_code,
                                                       libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                       const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
@@ -106,6 +113,10 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
     l_generator_load = libxsmm_generator_gemm_load_C;
     l_generator_store = libxsmm_generator_gemm_store_C;
   } else if ( (strcmp(i_arch, "knm") == 0) ) {
+    l_generator_microkernel_kloop = libxsmm_generator_gemm_avx512_kernel_kloop;
+    l_generator_load = libxsmm_generator_gemm_load_C;
+    l_generator_store = libxsmm_generator_gemm_store_C;
+  } else if ( (strcmp(i_arch, "icl") == 0) ) {
     l_generator_microkernel_kloop = libxsmm_generator_gemm_avx512_kernel_kloop;
     l_generator_load = libxsmm_generator_gemm_load_C;
     l_generator_store = libxsmm_generator_gemm_store_C;
@@ -227,7 +238,8 @@ void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
-  unsigned int l_number_of_chunks = 1+((i_xgemm_desc->n-1)/30);
+  unsigned int l_max_n_rb_block = ( (strcmp(i_arch, "knm") == 0) || ( (strcmp(i_arch, "skx") == 0) && (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) ) ? 28 : 30;
+  unsigned int l_number_of_chunks = 1+((i_xgemm_desc->n-1)/l_max_n_rb_block);
   unsigned int l_modulo = i_xgemm_desc->n%l_number_of_chunks;
   unsigned int l_n2 = i_xgemm_desc->n/l_number_of_chunks;
   unsigned int l_n1 = l_n2 + 1;
@@ -269,7 +281,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         
   /* define the micro kernel code gen properties */
   libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
 
-  if (l_n1 > 30) l_n1 = 30; /* this just the case if i_xgemm_desc->n/l_number_of_chunks has no remainder */
+  if (l_n1 > l_max_n_rb_block) l_n1 = l_max_n_rb_block; /* this just the case if i_xgemm_desc->n/l_number_of_chunks has no remainder */
   for (l_chunk = 0; l_chunk < l_number_of_chunks; l_chunk++) {
     if (l_chunk < l_modulo) {
       l_N1 += l_n1;

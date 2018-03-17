@@ -124,14 +124,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   const int img_parallel_work = BLOCKSIFM*BLOCKSOFM;
   /* compute chunck size */
   const int img_parallel_chunksize = (img_parallel_work % handle->desc.threads == 0) ? (img_parallel_work / handle->desc.threads) : (img_parallel_work / handle->desc.threads) + 1;
-  /* compute thr_begin and thr_end */
-  const int img_parallel_thr_begin = (ltid * img_parallel_chunksize < img_parallel_work) ? (ltid * img_parallel_chunksize) : img_parallel_work;
-  const int img_parallel_thr_end = ((ltid + 1) * img_parallel_chunksize < img_parallel_work) ? ((ltid + 1) * img_parallel_chunksize) : img_parallel_work;
-
-  const int copywork = handle->desc.N*BLOCKSIFM;
-  const int copychunksize = (copywork % handle->desc.threads == 0) ? (copywork / handle->desc.threads) : (copywork / handle->desc.threads) + 1;
-  const int copy_thr_begin = (ltid * copychunksize < copywork) ? (ltid * copychunksize) : copywork;
-  const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) * copychunksize) : copywork;
 
   int total_calls, aux;
   int n_code_segments = 0;
@@ -175,11 +167,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   local_entries = 0;
   int KW, ofmb, ifmb, ojb;
 
-  if ( IFMBLOCK != 1  ) {
-    KW = kw;
-  } else {
-    KW = 1;
-  }
+  KW = kw;
 
   int my_ofm_start;
   int my_ofm_end;
@@ -205,7 +193,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   if (handle->reduce_weights == 0) {
     /* Parallelize over the FMs in this case and avoid reduction */
-    int team_div = (int) sqrt(handle->desc.threads);
+    int team_div = (int) libxsmm_isqrt_u32(handle->desc.threads);
     while ( handle->desc.threads % team_div != 0  ) {
       team_div--;
     }

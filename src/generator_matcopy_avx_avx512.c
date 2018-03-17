@@ -34,12 +34,18 @@
 #include "generator_common.h"
 #include "libxsmm_main.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
-LIBXSMM_INLINE
+LIBXSMM_API_INLINE
 void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_generated_code*               io_generated_code,
                                                                  const libxsmm_matcopy_gp_reg_mapping*  i_gp_reg_mapping,
                                                                  const libxsmm_matcopy_kernel_config*   i_micro_kernel_config,
@@ -52,11 +58,18 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
   }
 
   /* Move mask to GP register */
-  libxsmm_x86_instruction_alu_imm( io_generated_code,
+  if (i_micro_kernel_config->vector_length == 64) {
+    libxsmm_x86_instruction_alu_imm_i64( io_generated_code,
+                                  i_micro_kernel_config->alu_mov_instruction,
+                                  i_gp_reg_mapping->gp_reg_help_0,
+                                  l_mask );
+  } else {
+     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                   i_micro_kernel_config->alu_mov_instruction,
                                   i_gp_reg_mapping->gp_reg_help_0,
                                   /* immediate is passed as an integer */
                                   (int)l_mask );
+  }
 
   /* Set mask register */
   if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {

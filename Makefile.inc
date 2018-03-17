@@ -93,6 +93,9 @@ PYMOD ?= 0
 # Static or shared binary
 STATIC ?= 0
 
+# PIC: PIC or pic
+PIC ?= pic
+
 # Intrinsics support level
 INTRINSICS ?= 2
 ifneq (0,$(INTRINSICS))
@@ -141,9 +144,6 @@ ifeq (0,$(THREADS))
   override OMP = 0
 endif
 OMP ?= 0
-
-# SIMD code generation
-SIMD ?= 1
 
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
@@ -199,14 +199,14 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 # Embedd soname into shared library
 ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
-    soname = -shared -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5) \
+    soname = -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5) \
              $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5)) \
              $(shell cd $(dir $1) && ln -fs $(notdir $1.$5) $(notdir $1))
   else # MinGW
-    soname = -shared -o $1 -Wl,-soname=$(strip $(notdir $1).$5)
+    soname = -o $1 -Wl,-soname=$(strip $(notdir $1).$5)
   endif
 else # osx
-  soname = -shared -o $(basename $1).$2$(suffix $1) \
+  soname = -o $(basename $1).$2$(suffix $1) \
            -install_name $(notdir $(basename $1).$2$(suffix $1)) \
            -current_version $2.$3.$4 -compatibility_version $5 \
            $(shell cd $(dir $1) && ln -fs $(notdir $(basename $1).$2$(suffix $1)) $(notdir $1))
@@ -433,15 +433,6 @@ else ifneq (0,$(INTEL))
 endif
 endif
 
-# linker setup
-LD = $(CC)
-XLD = $(CXX)
-ifneq (,$(strip $(FC)))
-  FLD = $(FC)
-else
-  FLD = $(LD)
-endif
-
 # compiler names
 CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 \
            | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" \
@@ -609,6 +600,29 @@ else
 endif
 CRAY ?= 0
 PGI ?= 0
+
+# linker setup
+LD = $(CC)
+XLD = $(CXX)
+ifneq (,$(strip $(FC)))
+  FLD = $(FC)
+else
+  FLD = $(LD)
+endif
+ifeq (0,$(DEPSTATIC))
+  LIB_LD := $(LD) -shared
+  LIB_XLD := $(XLD) -shared
+  LIB_FLD := $(FLD) -shared
+  ifneq (0,$(CRAY))
+    XLD += -dynamic
+    FLD += -dynamic
+    LD += -dynamic
+  endif
+else
+  LIB_LD = $(LD)
+  LIB_XLD = $(XLD)
+  LIB_FLD = $(FLD)
+endif
 
 # Avoid more sophisticated flags of the GCC tool chain,
 # and improve compatibility with compilers supposed to be
@@ -801,13 +815,16 @@ else # GCC assumed
     CXXFLAGS += -Wall -Wno-unused-function #-Wno-attributes
     CFLAGS += -Wall -Wno-unused-function #-Wno-attributes
     FSTD = -std=f2003
-    CPEDANTIC += -pedantic -Wextra -Wshadow \
+    CPEDANTIC += -pedantic -Wextra \
                  -Wno-overlength-strings -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wconversion-extra \
                  -Wimplicit-interface -Wimplicit-procedure \
                  -Wintrinsics-std -Wreal-q-constant
+    ifneq (0,$(shell echo "$$((40500 <= $(FC_VERSION)))"))
+      CPEDANTIC += -Wshadow
+    endif
     ifneq (0,$(shell echo "$$((50000 <= $(FC_VERSION)))"))
       FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
                    -Wrealloc-lhs -Wrealloc-lhs-all
@@ -827,7 +844,8 @@ else # GCC assumed
     FPEDANTIC += $(FWARNEXTRA)
     ifeq (1,$(PEDANTIC))
       CSTD = -std=c99
-      CXXFLAGS += $(CPEDANTIC) -Wno-long-long #-Wno-missing-field-initializers
+      CXXFLAGS += $(CPEDANTIC) -Wno-long-long
+      #CXXFLAGS += -Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += -ffree-form
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
@@ -841,7 +859,8 @@ else # GCC assumed
       else # Clang may run into ICEs under OSX
         CSTD = -std=c99
       endif
-      CXXFLAGS += $(CPEDANTIC) -Wno-long-long #-Wno-missing-field-initializers
+      CXXFLAGS += $(CPEDANTIC) -Wno-long-long #-Wzero-as-null-pointer-constant
+      #CXXFLAGS += -Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
       FCFLAGS += $(FSTD) $(FPEDANTIC)
     else ifeq (0,$(COMPATIBLE))
@@ -1079,35 +1098,52 @@ ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-f.f); \
 endif
 endif
 
-ifeq (0,$(DEPSTATIC))
-  # PIC: PIC or pic
-  PIC ?= pic
-endif
 ifeq (0,$(COMPATIBLE))
   ifneq (0,$(OPT))
   ifeq (0,$(INTEL))
     ifneq (0,$(SIMD))
-    ifneq (0,$(GCC))
-    ifneq (0,$(shell echo "$$((40900 <= $(CC_VERSION)))"))
-    ifneq (,$(CTARGET))
-      DFLAGS += -DLIBXSMM_OPENMP_SIMD
-      CFLAGS += -fopenmp-simd
-      ifneq (1,$(GCC))
-      ifneq (0,$(shell echo "$$((40900 <= $(CXX_VERSION)))"))
-        CXXFLAGS += -fopenmp-simd
+      ifneq (0,$(GCC))
         ifneq (,$(CTARGET))
-        ifneq (2,$(GCC))
-        ifneq (0,$(shell echo "$$((40900 <= $(FC_VERSION)))"))
-          FCFLAGS += -fopenmp-simd
+        ifneq (0,$(shell echo "$$((40900 <= $(CC_VERSION)))"))
+          DFLAGS += -DLIBXSMM_OPENMP_SIMD
+          CFLAGS += -fopenmp-simd
+          ifneq (1,$(GCC))
+          ifneq (0,$(shell echo "$$((40900 <= $(CXX_VERSION)))"))
+            CXXFLAGS += -fopenmp-simd
+            ifneq (,$(FTARGET))
+            ifneq (2,$(GCC))
+            ifneq (0,$(shell echo "$$((40900 <= $(FC_VERSION)))"))
+              FCFLAGS += -fopenmp-simd
+            endif
+            endif
+            endif
+          endif
+          endif
+        endif
+        endif
+      else ifneq (0,$(CLANG))
+        ifneq (,$(strip $(SIMD))) # explicit
+        ifneq (Darwin,$(UNAME))
+        ifneq (,$(CTARGET))
+        ifneq (0,$(shell echo "$$((60000 <= $(CC_VERSION)))"))
+        ifneq (0,$(shell echo "$$((60000 <= $(CXX_VERSION)))"))
+          DFLAGS += -DLIBXSMM_OPENMP_SIMD
+          CXXFLAGS += -fopenmp-simd
+          CFLAGS += -fopenmp-simd
+          ifneq (,$(FTARGET))
+          ifneq (,$(strip $(FC)))
+          ifneq (0,$(shell echo "$$((40900 <= $(FC_VERSION)))"))
+            FCFLAGS += -fopenmp-simd
+          endif
+          endif
+          endif
+        endif
+        endif
         endif
         endif
         endif
       endif
-      endif
-    endif
-    endif
-    endif
-    endif
+    endif # SIMD
     ifneq (,$(CTARGET))
       CXXFLAGS += -ftree-vectorize
       CFLAGS += -ftree-vectorize
@@ -1128,7 +1164,6 @@ ifeq (0,$(COMPATIBLE))
           CFLAGS += -fstack-protector
         endif
         #DFLAGS += -D_FORTIFY_SOURCE=2
-        PIC ?= pic
       #else
         #DFLAGS += -D_FORTIFY_SOURCE=1
       endif

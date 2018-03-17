@@ -51,7 +51,7 @@ try:
     if scripts not in sys.path:
         sys.path.insert(0, scripts)
     import libxsmm_utilities
-except:
+except ImportError:
     pass
 
 
@@ -63,17 +63,26 @@ class XgemmTuner(MeasurementInterface):
         """
         self.granularity = 1
         assert(0 < self.granularity)
-        max_m = (256 + self.granularity - 1) / self.granularity
-        max_n = (256 + self.granularity - 1) / self.granularity
-        max_k = (256 + self.granularity - 1) / self.granularity
+        m_max = (256 + self.granularity - 1) / self.granularity
+        n_max = (256 + self.granularity - 1) / self.granularity
+        k_max = (256 + self.granularity - 1) / self.granularity
+        m_param = IntegerParameter("M", self.granularity, m_max)
+        n_param = IntegerParameter("N", self.granularity, n_max)
+        k_param = IntegerParameter("K", self.granularity, k_max)
         manipulator = ConfigurationManipulator()
-        manipulator.add_parameter(
-          IntegerParameter("M", self.granularity, max_m))
-        manipulator.add_parameter(
-          IntegerParameter("N", self.granularity, max_n))
-        manipulator.add_parameter(
-          IntegerParameter("K", self.granularity, max_k))
+        manipulator.add_parameter(m_param)
+        manipulator.add_parameter(n_param)
+        manipulator.add_parameter(k_param)
         return manipulator
+
+    def seed_configurations(self):
+        m_seed = [self.args.n, self.args.m][0 != self.args.m]
+        k_seed = [self.args.m, self.args.k][0 != self.args.k]
+        n_seed = [self.args.k, self.args.n][0 != self.args.n]
+        if 0 == m_seed or 0 == n_seed or k_seed:
+            return []
+        else:
+            return [{"M": m_seed, "N": n_seed, "K": k_seed}]
 
     def objective(self):
         return opentuner.search.objective.MaximizeAccuracyMinimizeSize()
@@ -90,7 +99,6 @@ class XgemmTuner(MeasurementInterface):
             " LIBXSMM_TGEMM_N=" + str(self.granularity * cfg["N"]) +
             " LIBXSMM_TGEMM_K=" + str(self.granularity * cfg["K"]) +
             " ./xgemm.sh")
-
         dimset = libxsmm_utilities.load_mnklist(self.args.mnk, 0, -1)
         geoperf = 0  # geometric mean
         compensation = 0  # see Kahan
@@ -110,7 +118,6 @@ class XgemmTuner(MeasurementInterface):
             geoperf = khb
         geoperf = math.exp(geoperf / len(dimset))
         geotime = 1000000.0 / geoperf
-
         mnk = (self.granularity**3) * cfg["M"] * cfg["N"] * cfg["K"]
         return Result(time=geotime, accuracy=geoperf, size=mnk)
 
@@ -132,4 +139,13 @@ if __name__ == "__main__":
     argparser.add_argument(
         "mnk", metavar="N", nargs="*", default=["1024,1280,1536,1792"],
         help="Set of MNK parameters to be tuned")
+    argparser.add_argument(
+        "m", type=int, default=0, nargs='?',
+        help="Initial tile size (M)")
+    argparser.add_argument(
+        "n", type=int, default=0, nargs='?',
+        help="Initial tile size (N)")
+    argparser.add_argument(
+        "k", type=int, default=0, nargs='?',
+        help="Initial tile size (K)")
     XgemmTuner.main(argparser.parse_args())

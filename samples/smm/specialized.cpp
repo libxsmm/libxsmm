@@ -28,9 +28,6 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if !defined(NDEBUG) && (defined(__CYGWIN__) || defined(_WIN32))
-# define LIBXSMM_FALLBACK_MMFUNCTION
-#endif
 #include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -138,7 +135,8 @@ int main(int argc, char* argv[])
         1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20),
         8 == sizeof(T) ? "DP" : "SP");
 
-      const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, lda, ldb, ldc, alpha, beta);
+      const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb),
+                  m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH);
       if (!xmm) throw "no specialized routine found!";
 
       // arrays needed for the batch interface (indirect)

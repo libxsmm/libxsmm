@@ -104,14 +104,6 @@ ifneq (0,$(BETA))
 endif
 endif
 
-# determines if WGEMM should produce FP32
-# @TODO this is kind of hacky and we should find a better solutions
-WGEMM_FP32 ?= 0
-
-ifneq (0,$(WGEMM_FP32))
-  DFLAGS += -DLIBXSMM_WGEMM_USE_FP32_OUTPUT
-endif
-
 # Determines if the library is thread-safe
 THREADS ?= 1
 
@@ -217,7 +209,7 @@ include $(ROOTDIR)/Makefile.inc
 VERSION_MAJOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 1)
 VERSION_MINOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 2)
 VERSION_UPDATE ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 3)
-VERSION_API ?= $(VERSION_MAJOR).$(VERSION_MINOR)
+VERSION_API ?= $(VERSION_MAJOR)
 
 # target library for a broad range of systems
 ifneq (0,$(JIT))
@@ -277,14 +269,15 @@ HEADERS = $(wildcard $(SRCDIR)/template/*.c) $(wildcard $(SRCDIR)/*.h) \
           $(ROOTDIR)/include/libxsmm_intrinsics_x86.h \
           $(ROOTDIR)/include/libxsmm_macros.h \
           $(ROOTDIR)/include/libxsmm_malloc.h \
+          $(ROOTDIR)/include/libxsmm_math.h \
           $(ROOTDIR)/include/libxsmm_mhd.h \
           $(ROOTDIR)/include/libxsmm_spmdm.h \
           $(ROOTDIR)/include/libxsmm_sync.h \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
 SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
-          libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_malloc.c libxsmm_python.c \
-          libxsmm_sync.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
+          libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_malloc.c libxsmm_math.c libxsmm_sync.c \
+          libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_trans.c libxsmm_bgemm.c \
           libxsmm_spmdm.c libxsmm_fsspmdm.c \
           libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_handle.c \
@@ -327,6 +320,63 @@ ifneq (,$(strip $(FC)))
   FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
 endif
 
+ifneq (0,$(JIT))
+ifneq (0,$(SYM))
+ifeq (,$(filter Darwin,$(UNAME)))
+  ifneq (0,$(PERF))
+    DFLAGS += -DLIBXSMM_PERF
+    ifneq (0,$(JITDUMP))
+      DFLAGS += -DLIBXSMM_PERF_JITDUMP
+    endif
+  endif
+  VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
+  ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
+    LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
+    OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
+    DFLAGS += -DLIBXSMM_VTUNE
+    IFLAGS += -I$(VTUNEROOT)/include
+    ifneq (0,$(INTEL))
+      CXXFLAGS += -diag-disable 271
+      CFLAGS += -diag-disable 271
+    endif
+  endif
+endif
+endif
+endif
+
+information = \
+	$(info ================================================================================) \
+	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py)) \
+	$(info --------------------------------------------------------------------------------) \
+	$(info $(GINFO)) \
+	$(info $(CINFO)) \
+	$(if $(strip $(FC)),$(info $(FINFO)),$(NULL)) \
+	$(info --------------------------------------------------------------------------------) \
+	$(if $(strip $(FC)),$(NULL),$(if $(strip $(FC_VERSION_STRING)), \
+	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!), \
+	$(info Fortran Compiler is missing: no Fortran interface is built!)) \
+	$(info ================================================================================)) \
+	$(if $(filter Windows_NT0,$(UNAME)$(STATIC)), \
+	$(info The shared link-time wrapper (libxsmmext) is not supported under Windows/Cygwin!) \
+	$(info ================================================================================), \
+	$(NULL)) \
+	$(if $(filter _0_,_$(BLAS_WARNING)_),$(NULL), \
+	$(info Building a shared library requires to link against BLAS since there is) \
+	$(info no runtime resolution/search for weak symbols implemented for this OS.)) \
+	$(if $(filter _0_,_$(BLAS)_), \
+	$(if $(filter _0_,_$(NOBLAS)_),$(NULL), \
+	$(info LIBXSMM's link-time BLAS dependency is removed (fallback might be unavailable!)) \
+	$(info ================================================================================)), \
+	$(if $(filter _0_,_$(BLAS_WARNING)_), \
+	$(info LIBXSMM is link-time agnostic with respect to BLAS/GEMM!) \
+	$(info Linking a certain BLAS library may prevent users to decide.), \
+	$(NULL)) \
+	$(if $(filter _1_,_$(BLAS)_), \
+	$(info LIBXSMM's THRESHOLD already prevents calling small GEMMs!) \
+	$(info A sequential BLAS is superfluous with respect to LIBXSMM.), \
+	$(NULL)) \
+	$(info ================================================================================))
+
 ifneq (,$(strip $(TEST)))
 .PHONY: run-tests
 run-tests: tests
@@ -337,6 +387,11 @@ ifeq (0,$(COMPATIBLE))
 libxsmm: lib generator
 else
 libxsmm: lib
+endif
+	$(information)
+ifneq (,$(strip $(LIBJITPROFILING)))
+	$(info Intel VTune Amplifier support has been incorporated.)
+	$(info ================================================================================)
 endif
 
 .PHONY: lib
@@ -478,6 +533,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
                             $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
                             $(wildcard $(ROOTDIR)/.hooks/*) \
                             $(ROOTDIR)/version.txt
+	$(information)
 	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
 		$(ROOTDIR)/.hooks/install.sh; \
 	fi
@@ -490,6 +546,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@$(CP) $(ROOTDIR)/include/libxsmm_intrinsics_x86.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_malloc.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_math.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_mhd.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_spmdm.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2>/dev/null || true
@@ -500,47 +557,6 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) > $@
-	$(info ================================================================================)
-	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py))
-	$(info --------------------------------------------------------------------------------)
-	$(info $(GINFO))
-	$(info $(CINFO))
-ifneq (,$(strip $(FC)))
-	$(info $(FINFO))
-endif
-	$(info --------------------------------------------------------------------------------)
-ifeq (,$(strip $(FC)))
-ifeq (,$(strip $(FC_VERSION_STRING)))
-	$(info Fortran Compiler is missing: building without Fortran support!)
-else
-	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!)
-endif
-	$(info ================================================================================)
-endif
-ifeq (0,$(STATIC))
-ifeq (Windows_NT,$(UNAME))
-	$(info The shared link-time wrapper (libxsmmext) is not supported under Windows/Cygwin!)
-	$(info ================================================================================)
-endif
-endif
-ifneq (0,$(BLAS_WARNING))
-	$(info Building a shared library requires to link against BLAS since there is)
-	$(info no runtime resolution/search for weak symbols implemented for this OS.)
-endif
-ifneq (0,$(BLAS))
-ifeq (0,$(BLAS_WARNING))
-	$(info LIBXSMM is link-time agnostic with respect to BLAS/GEMM!)
-	$(info Linking a certain BLAS library may prevent users to decide.)
-endif
-ifeq (1,$(BLAS))
-	$(info LIBXSMM's THRESHOLD already prevents calling small GEMMs!)
-	$(info A sequential BLAS is superfluous with respect to LIBXSMM.)
-endif
-	$(info ================================================================================)
-else ifneq (0,$(NOBLAS))
-	$(info LIBXSMM's link-time BLAS dependency is removed (fallback might be unavailable!))
-	$(info ================================================================================)
-endif
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
@@ -659,36 +675,6 @@ endif
 		| tr "~" "\n" > $(TMPFILE)
 	@$(PYTHON) $(SCRDIR)/libxsmm_specialized.py $(PRECISION) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $(TMPFILE)
 	@$(MV) $(TMPFILE) $@
-endif
-
-ifneq (0,$(JIT))
-ifneq (0,$(SYM))
-ifeq (,$(filter Darwin,$(UNAME)))
-  ifneq (0,$(PERF))
-    DFLAGS += -DLIBXSMM_PERF
-    ifneq (0,$(JITDUMP))
-      DFLAGS += -DLIBXSMM_PERF_JITDUMP
-    endif
-  endif
-
-  VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
-  ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
-    LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
-    OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
-    DFLAGS += -DLIBXSMM_VTUNE
-    IFLAGS += -I$(VTUNEROOT)/include
-    ifneq (0,$(INTEL))
-      CXXFLAGS += -diag-disable 271
-      CFLAGS += -diag-disable 271
-    endif
-$(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
-	@$(CP) $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT) $(BLDDIR)/jitprofiling
-	@cd $(BLDDIR)/jitprofiling; $(AR) x libjitprofiling.$(SLIBEXT)
-  else
-.PHONY: $(LIBJITPROFILING)
-  endif
-endif
-endif
 endif
 
 define DEFINE_COMPILE_RULE
@@ -825,7 +811,7 @@ module: module_hst module_mic
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
-	$(LD) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_GEN_LIB) $(LDFLAGS) $(CLDFLAGS) $(LIBRT)
+	$(LIB_LD) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_GEN_LIB) $(LDFLAGS) $(CLDFLAGS) $(LIBRT)
 else # static
 	$(AR) -rs $@ $(OBJFILES_GEN_LIB)
 endif
@@ -839,13 +825,19 @@ $(BINDIR)/libxsmm_conv_generator: $(BINDIR)/.make $(OBJFILES_GEN_CONV_BIN) $(OUT
 $(BINDIR)/libxsmm_convwino_generator: $(BINDIR)/.make $(OBJFILES_GEN_CONVWINO_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT)
 	$(LD) -o $@ $(OBJFILES_GEN_CONVWINO_BIN) $(call abslib,$(OUTDIR)/libxsmmgen.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 
+ifneq (,$(strip $(LIBJITPROFILING)))
+$(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
+	@$(CP) $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT) $(BLDDIR)/jitprofiling
+	@cd $(BLDDIR)/jitprofiling; $(AR) x libjitprofiling.$(SLIBEXT)
+endif
+
 .PHONY: clib_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 clib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC) $(KRNOBJS_MIC)
 ifeq (0,$(STATIC))
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_MIC) $(KRNOBJS_MIC) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) -mmic $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_MIC) $(KRNOBJS_MIC) $(LDFLAGS) $(CLDFLAGS)
 else # static
 	$(AR) -rs $@ $(OBJFILES_MIC) $(KRNOBJS_MIC)
 endif
@@ -856,7 +848,7 @@ endif
 clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
 $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
 ifeq (0,$(STATIC))
-	$(LD) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
 else # static
 	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(OBJJITPROFILING)
 endif
@@ -868,7 +860,7 @@ ifneq (,$(strip $(FC)))
 flib_mic: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	$(FLD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(FCMTFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_FLD) -mmic $(FCMTFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/mic/libxsmm-mod.o $(call abslib,$(OUTDIR)/mic/libxsmm.$(IMPEXT)) $(LDFLAGS) $(FLDFLAGS)
 else # static
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/.make
@@ -885,7 +877,7 @@ ifneq (,$(strip $(FC)))
 flib_hst: $(OUTDIR)/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT)
-	$(FLD) $(FCMTFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_FLD) $(FCMTFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(FLDFLAGS)
 else # static
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/.make
@@ -901,7 +893,7 @@ ifneq (0,$(MPSS))
 ext_mic: $(OUTDIR)/mic/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_LD) -mmic $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_MIC) $(call abslib,$(OUTDIR)/mic/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 else # static
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC)
@@ -915,14 +907,14 @@ ext_hst: $(OUTDIR)/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST) $(OUTDIR)/libxsmm.$(LIBEXT)
 ifneq (Darwin,$(UNAME))
-	$(LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 else ifneq (0,$(INTEL)) # intel @ osx
-	$(LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+			$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 else # osx
-	$(LD)               $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD)               $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+			$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 endif
 else # static
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST)
@@ -935,7 +927,7 @@ ifneq (0,$(MPSS))
 noblas_mic: $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
-	$(LD) -o $@.$(VERSION_MAJOR).$(VERSION_MINOR) -mmic -shared $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_MIC) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) -mmic $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_MIC) $(LDFLAGS) $(CLDFLAGS)
 else # static
 $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
 	$(AR) -rs $@ $(NOBLAS_MIC)
@@ -948,11 +940,11 @@ noblas_hst: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
 ifneq (Darwin,$(UNAME))
-	$(LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
 else ifneq (0,$(INTEL)) # intel @ osx
-	$(LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
 else # osx
-	$(LD)               $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD)               $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
 endif
 else # static
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
@@ -1243,8 +1235,7 @@ cpp-test: test-cpp
 .PHONY: test-cpp
 test-cpp: $(INCDIR)/libxsmm_source.h
 	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 \
-		EFLAGS=$(EFLAGS) ELDFLAGS=$(ELDFLAGS) ECFLAGS=$(ECFLAGS) EFCFLAGS=$(EFCFLAGS) \
-		ECXXFLAGS=-DUSE_HEADER_ONLY $(ECXXFLAGS) clean compile"
+		ECXXFLAGS='-DUSE_HEADER_ONLY $(ECXXFLAGS)' clean compile"
 
 .PHONY: test-cp2k
 test-cp2k: $(SPLDIR)/cp2k/cp2k-test.txt

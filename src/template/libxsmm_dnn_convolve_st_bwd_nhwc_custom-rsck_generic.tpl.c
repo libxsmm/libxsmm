@@ -51,7 +51,6 @@ const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work
 
 /* offset pointer in case of physcial padding */
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm * handle->ofmblock;
-element_input_type* in  = ((element_output_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * handle->blocksifm * handle->ifmblock;
 
 #if defined(LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM)
 /* Weight and transpose_weight tensor declaration */

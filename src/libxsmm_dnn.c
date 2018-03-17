@@ -59,14 +59,14 @@
 #endif
 
 
-LIBXSMM_API void libxsmm_dnn_init(int target_arch)
+LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch)
 {
   libxsmm_dnn_convolve_winograd_fwd_init(target_arch);
   libxsmm_dnn_convolve_winograd_bwd_init(target_arch);
 }
 
 
-LIBXSMM_API void libxsmm_dnn_finalize(void)
+LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void)
 {
   libxsmm_dnn_convolve_winograd_fwd_finalize();
   libxsmm_dnn_convolve_winograd_bwd_finalize();
@@ -297,30 +297,22 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
           libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM  ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL    ) ) {
-      if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
+#if 0
+     if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
         libxsmm_free(handle->code_fwd[0].pmm);
       }
       libxsmm_free(handle->code_fwd[1].pmm);
       libxsmm_free(handle->code_fwd[2].pmm);
-      libxsmm_free(handle->code_fwd[3].pmm);
       if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
         libxsmm_free(handle->code_bwd[0].pmm);
       }
-      if ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)) {
-        libxsmm_free(handle->code_bwd[1].pmm);
-        libxsmm_free(handle->code_bwd[2].pmm);
-        libxsmm_free(handle->code_bwd[3].pmm);
-      }
+      libxsmm_free(handle->code_bwd[1].pmm);
+      libxsmm_free(handle->code_bwd[2].pmm);
       if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
         libxsmm_free(handle->code_upd[0].pmm);
       }
-      if ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)) {
-        libxsmm_free(handle->code_upd[1].pmm);
-        libxsmm_free(handle->code_upd[2].pmm);
-        libxsmm_free(handle->code_upd[3].pmm);
-        libxsmm_free(handle->code_upd[4].pmm);
-        libxsmm_free(handle->code_upd[5].pmm);
-      }
+      libxsmm_free(handle->code_upd[1].pmm);
+#endif
     } else {
       /* no kernel was JITed */
     }
@@ -328,11 +320,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
     /* Deallocate barrier */
     if (handle->barrier != 0 ) { libxsmm_barrier_release((const libxsmm_barrier*)handle->barrier); }
 
-    /*Deallocate scratch in handle*/
-    libxsmm_free(handle->scratch1);
-    libxsmm_free(handle->scratch3);
-    libxsmm_free(handle->scratch4);
-
+#if 0
     /* Deallocate per-thread jitted data structures */
     if ( handle->use_thread_private_jit ) {
 
@@ -348,19 +336,37 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
         if ( handle->fwd_code_segments[loop] != NULL ) {
           libxsmm_free( handle->fwd_code_segments[loop] );
         }
-        /* Bwd related arrays  */
-        if ( handle->compute_bwd_indices_ptrs[loop] != NULL ) {
-          libxsmm_free( handle->compute_bwd_indices_ptrs[loop] );
+        if (handle->exploit_duality == 1) {
+          /* Bwd related arrays  */
+          if ( handle->compute_bwd_indices_ptrs[loop] != NULL ) {
+            libxsmm_free( handle->compute_bwd_indices_ptrs[loop] );
+          }
+          if ( handle->kernel_bwd_variant_ptrs[loop] != NULL ) {
+            libxsmm_free( handle->kernel_bwd_variant_ptrs[loop] );
+          }
+          if ( handle->bwd_code_segments[loop] != NULL ) {
+            libxsmm_free( handle->bwd_code_segments[loop] );
+          }
+          if ( handle->transpose_bwd_indices_ptrs[loop] != NULL ) {
+            libxsmm_free( handle->transpose_bwd_indices_ptrs[loop] );
+          }
         }
-        if ( handle->kernel_bwd_variant_ptrs[loop] != NULL ) {
-          libxsmm_free( handle->kernel_bwd_variant_ptrs[loop] );
+        /* Upd related arrays */
+        if ( handle->compute_upd_indices_ptrs[loop] != NULL ) {
+          libxsmm_free( handle->compute_upd_indices_ptrs[loop] );
         }
-        if ( handle->bwd_code_segments[loop] != NULL ) {
-          libxsmm_free( handle->bwd_code_segments[loop] );
+        if ( handle->init_upd_indices_ptrs[loop] != NULL ) {
+          libxsmm_free( handle->init_upd_indices_ptrs[loop] );
         }
-        if ( handle->transpose_bwd_indices_ptrs[loop] != NULL ) {
-          libxsmm_free( handle->transpose_bwd_indices_ptrs[loop] );
+        if ( handle->kernel_upd_variant_ptrs[loop] != NULL ) {
+          libxsmm_free( handle->kernel_upd_variant_ptrs[loop] );
         }
+        if ( handle->upd_code_segments[loop] != NULL ) {
+          libxsmm_free( handle->upd_code_segments[loop] );
+        }
+        if ( handle->copy_upd_indices_ptrs[loop] != NULL ) {
+          libxsmm_free( handle->copy_upd_indices_ptrs[loop] );
+        }     
       }
 
       /* Free shared arrays  */
@@ -371,17 +377,27 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
       free( handle->ofh_fwd_start );
       free( handle->ofh_fwd_end );
 
-      free( handle->compute_bwd_indices_ptrs );
-      free( handle->kernel_bwd_variant_ptrs );
-      free( handle->n_entries_bwd );
-      free( handle->n_bwd_code_segments );
-      free( handle->ofh_bwd_start );
-      free( handle->ofh_bwd_end );
-      free( handle->transpose_bwd_indices_ptrs );
-    }
+      if (handle->exploit_duality == 1) {
+        free( handle->compute_bwd_indices_ptrs );
+        free( handle->kernel_bwd_variant_ptrs );
+        free( handle->n_entries_bwd );
+        free( handle->n_bwd_code_segments );
+        free( handle->ofh_bwd_start );
+        free( handle->ofh_bwd_end );
+        free( handle->transpose_bwd_indices_ptrs );
+      }
+      free( handle->compute_upd_indices_ptrs );
+      free( handle->kernel_upd_variant_ptrs );
+      free( handle->n_entries_upd );
+      free( handle->n_entries_init_upd );   
+      free( handle->n_upd_code_segments );
+      free( handle->upd_code_segments );
+      free( handle->init_upd_indices_ptrs );
+      free( handle->n_entries_copy_upd );   
+      free( handle->copy_upd_indices_ptrs );
 
-    if (handle->padding_flag) libxsmm_free(handle->scratch5);
-    if (handle->use_lp_kernel == 1) libxsmm_free(handle->scratch6);
+    }
+#endif
 
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_layer*)handle);
@@ -2446,7 +2462,7 @@ LIBXSMM_API short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned
       /* stochastic rounding, as implemented in the IBM paper from 2015, @TODO, fix F64 and DFP8 */
       float p, q;
       libxsmm_intfloat fvalue;
-      float eps = (float)LIXSMMM_DNN_RES_DFP16;
+      float eps = LIXSMMM_DNN_RES_DFP16;
       /* masking all bits which will be shifted out */
       fvalue.ui = value.ui & ((LIBXSMM_DNN_MASK_FULL_F32) << rhs);
       /* drawing a random number */
@@ -2478,7 +2494,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
     float scfq = 0.0f;
     frexpf(max, &maxexp);
     maxexp -= (15-add_shift);
-    scfq = (float)pow(2.0, (double)-maxexp);
+    scfq = libxsmm_sexp2((float)-maxexp);
 
 #if defined(__AVX512F__)
     if ( length % 16 == 0 ) {
@@ -2546,7 +2562,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
     float scfq = 0.0f;
     frexpf(max, &maxexp);
     maxexp -= (15-add_shift);
-    scfq = (float)pow(2.0, (double)-maxexp);
+    scfq = libxsmm_sexp2((float)-maxexp);
 
 #if defined(__AVX512F__)
     if ( (cblk_f32 == 16) && (cblk_i16*lp_blk == 16) ) {
@@ -2648,7 +2664,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
     float scfq = 0.0f;
     frexpf(max, &maxexp);
     maxexp -= (15-add_shift);
-    scfq = (float)pow(2.0, (double)-maxexp);
+    scfq = libxsmm_sexp2((float)-maxexp);
 
 #if defined(__AVX512F__)
     if ( (kblk_f32 == 16) && (cblk_f32 == 16) && (kblk_i16 == 16) && (cblk_i16*lp_blk == 16) ) {
@@ -2752,7 +2768,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
 
 LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, int length, unsigned char scf ) {
   int i = 0;
-  float exp = pow(2.0, -scf);
+  float exp = libxsmm_sexp2(-scf);
 
 #ifdef _OPENMP
 #pragma omp parallel for private(i)
@@ -2763,213 +2779,156 @@ LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, in
 }
 
 
-#if defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)
-
-LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_forward(
-    const libxsmm_convolution_forward_descriptor* descriptor)
+LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cfwd = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CFWD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cfwd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CFWD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
     }
+  }
 #endif
   return code.xconv.sconv;
 }
 
 
-LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_backward(
-    const libxsmm_convolution_backward_descriptor* descriptor)
+LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cbwd = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CBWD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cupd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CUPD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
     }
+  }
 #endif
   return code.xconv.sconv;
 }
 
 
-LIBXSMM_API libxsmm_sconvfunction libxsmm_create_sconv_update_weights(
-    const libxsmm_convolution_weight_update_descriptor* descriptor)
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_forward(const libxsmm_convolution_forward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cupd = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CUPD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cfwd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CFWD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
     }
-#endif
-  return code.xconv.sconv;
-}
-
-
-LIBXSMM_API void* libxsmm_create_xconv_forward(
-    const libxsmm_convolution_forward_descriptor* descriptor)
-{
-  libxsmm_code_pointer code = { 0 };
-  LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cfwd = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CFWD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
-#if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
-      }
-    }
+  }
 #endif
   return code.pmm;
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_backward(
-    const libxsmm_convolution_backward_descriptor* descriptor)
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cbwd = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CBWD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cupd = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CUPD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
     }
+  }
 #endif
   return code.pmm;
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_update_weights(
-    const libxsmm_convolution_weight_update_descriptor* descriptor)
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_forward(const libxsmm_convolution_winograd_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cupd = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CUPD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cwino = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CWFWD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
     }
+  }
 #endif
   return code.pmm;
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_wino_forward(
-    const libxsmm_convolution_winograd_descriptor* descriptor)
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_backward(const libxsmm_convolution_winograd_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cwino = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CWFWD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cwino = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CWBWD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (forward convolution)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
     }
+  }
 #endif
   return code.pmm;
 }
 
 
-LIBXSMM_API void* libxsmm_create_xconv_wino_backward(
-    const libxsmm_convolution_winograd_descriptor* descriptor)
+LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_update_weights(const libxsmm_convolution_winograd_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };
   LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cwino = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CWBWD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
+  if (0 != descriptor) {
+    libxsmm_build_request request;
+    request.descriptor.cwino = descriptor;
+    request.kind = LIBXSMM_BUILD_KIND_CWUPD;
+    libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
+  }
 #if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid descriptor (backward convolution)!\n");
-      }
+  else {
+    static int error_once = 0;
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+      fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
     }
+  }
 #endif
   return code.pmm;
 }
-
-
-LIBXSMM_API void* libxsmm_create_xconv_wino_update_weights(
-    const libxsmm_convolution_winograd_descriptor* descriptor)
-{
-  libxsmm_code_pointer code = { 0 };
-  LIBXSMM_INIT
-    if (0 != descriptor) {
-      libxsmm_build_request request;
-      request.descriptor.cwino = descriptor;
-      request.kind = LIBXSMM_BUILD_KIND_CWUPD;
-      libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &code);
-    }
-#if !defined(NDEBUG) /* library code is expected to be mute */
-    else {
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: invalid convolution descriptor (weight update)!\n");
-      }
-    }
-#endif
-  return code.pmm;
-}
-
-#endif /*defined(LIBXSMM_BUILD) || defined(LIBXSMM_DNN_INTERNAL_API)*/
 

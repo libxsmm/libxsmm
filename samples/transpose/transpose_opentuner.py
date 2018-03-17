@@ -49,16 +49,26 @@ class TransposeTune(MeasurementInterface):
         Define the search space by creating a
         ConfigurationManipulator
         """
+        m_max = min(160, self.args.end)
+        n_max = min(160, self.args.end)
         self.granularity = 1
         assert(0 < self.granularity)
-        max_m = (160 + self.granularity - 1) / self.granularity
-        max_n = (160 + self.granularity - 1) / self.granularity
+        m_max = (m_max + self.granularity - 1) / self.granularity
+        n_max = (n_max + self.granularity - 1) / self.granularity
+        m_param = IntegerParameter("M", self.granularity, m_max)
+        n_param = IntegerParameter("N", self.granularity, n_max)
         manipulator = ConfigurationManipulator()
-        manipulator.add_parameter(
-          IntegerParameter("M", self.granularity, max_m))
-        manipulator.add_parameter(
-          IntegerParameter("N", self.granularity, max_n))
+        manipulator.add_parameter(m_param)
+        manipulator.add_parameter(n_param)
         return manipulator
+
+    def seed_configurations(self):
+        m_seed = [self.args.n, self.args.m][0 != self.args.m]
+        n_seed = [self.args.m, self.args.n][0 != self.args.n]
+        if 0 == m_seed or 0 == n_seed:
+            return []
+        else:
+            return [{"M": m_seed, "N": n_seed}]
 
     def objective(self):
         return opentuner.search.objective.MaximizeAccuracyMinimizeSize()
@@ -70,14 +80,15 @@ class TransposeTune(MeasurementInterface):
         """
         cfg = desired_result.configuration.data
         nruns = max(self.args.nruns, 1)
-        end = max(self.args.end, 0)
+        begin = max(self.args.begin, 1)
+        end = max(self.args.end, 1)
         run_cmd = (
             "CHECK=-1"  # repeatable runs
             " LIBXSMM_TRANS_M=" + str(self.granularity * cfg["M"]) +
             " LIBXSMM_TRANS_N=" + str(self.granularity * cfg["N"]) +
             " ./transpose.sh o" + " " + str(end) + " " + str(end) +
             " " + str(end) + " " + str(end) + " " + str(nruns) +
-            " -" + str(abs(self.args.begin)))
+            " -" + str(begin))
         run_result = self.call_program(run_cmd)
         if (0 == run_result["returncode"]):
             match = re.search(
@@ -98,8 +109,8 @@ class TransposeTune(MeasurementInterface):
         called at the end of tuning
         """
         filename = (
-            "transpose-" + str(max(self.args.begin, 0)) +
-            "_" + str(max(self.args.end,   0)) +
+            "transpose-" + str(max(self.args.begin, 1)) +
+            "_" + str(max(self.args.end,   1)) +
             "_" + str(max(self.args.nruns, 1)) +
             time.strftime("-%Y%m%d-%H%M%S") + ".json")
         print("Optimal block size written to " + filename +
@@ -110,12 +121,18 @@ class TransposeTune(MeasurementInterface):
 if __name__ == "__main__":
     argparser = opentuner.default_argparser()
     argparser.add_argument(
-        "begin", type=int, default=1024,
-        help="Begin of the range")
+        "begin", type=int,
+        help="Begin of the range (min. M and N)")
     argparser.add_argument(
-        "end", type=int, default=2048,
-        help="End of the range")
+        "end", type=int,
+        help="End of the range (max. M and N)")
     argparser.add_argument(
-        "nruns", type=int, default=100,
-        help="Number of runs")
+        "nruns", type=int, default=100, nargs='?',
+        help="Number of experiments per epoch")
+    argparser.add_argument(
+        "m", type=int, default=0, nargs='?',
+        help="Initial tile size (M)")
+    argparser.add_argument(
+        "n", type=int, default=0, nargs='?',
+        help="Initial tile size (N)")
     TransposeTune.main(argparser.parse_args())

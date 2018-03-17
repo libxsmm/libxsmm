@@ -73,7 +73,7 @@ LIBXSMM_EXTERN int mkstemps(char*, int);
 # endif
 # if defined(__APPLE__) && defined(__MACH__)
 /* taken from "libtransmission" fdlimit.c */
-LIBXSMM_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
+LIBXSMM_API_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
 {
   fstore_t fst;
   fst.fst_flags = F_ALLOCATECONTIG;
@@ -114,8 +114,7 @@ LIBXSMM_APIVAR(volatile int internal_trace_initialized);
 #if !defined(LIBXSMM_NO_SYNC)
 LIBXSMM_APIVAR(pthread_key_t internal_trace_key);
 #endif
-LIBXSMM_API void internal_delete(void* value);
-LIBXSMM_API void internal_delete(void* value)
+LIBXSMM_API_INLINE void internal_delete(void* value)
 {
   int fd;
 #if !(defined(__APPLE__) && defined(__MACH__))

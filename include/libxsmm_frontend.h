@@ -70,11 +70,16 @@
 /** Helper macro for BLAS-style prefixes. */
 #define LIBXSMM_TPREFIX_NAME(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_, TYPE)
 #define LIBXSMM_TPREFIX(TYPE, SYMBOL) LIBXSMM_CONCATENATE(LIBXSMM_TPREFIX_NAME(TYPE), SYMBOL)
-#define LIBXSMM_TPREFIX_double d
-#define LIBXSMM_TPREFIX_float s
-#define LIBXSMM_TPREFIX_short w
+#define LIBXSMM_TPREFIX_doubledouble d
+#define LIBXSMM_TPREFIX_floatfloat s
+#define LIBXSMM_TPREFIX_shortfloat ws
+#define LIBXSMM_TPREFIX_shortint wi
+/** Defaults if only the input type is specified. */
+#define LIBXSMM_TPREFIX_double LIBXSMM_TPREFIX_doubledouble
+#define LIBXSMM_TPREFIX_float LIBXSMM_TPREFIX_floatfloat
+#define LIBXSMM_TPREFIX_short LIBXSMM_TPREFIX_shortint
 
-/** Helper macro for comparing types. */
+/** Helper macro for comparing selected types. */
 #define LIBXSMM_EQUAL_CHECK(...) LIBXSMM_SELECT_HEAD(__VA_ARGS__, 0)
 #define LIBXSMM_EQUAL(T1, T2) LIBXSMM_EQUAL_CHECK(LIBXSMM_CONCATENATE2(LIBXSMM_EQUAL_, T1, T2))
 #define LIBXSMM_EQUAL_floatfloat 1
@@ -154,6 +159,12 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #define LIBXSMM_XGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(TYPE), _omp)
 
+/* Construct prefix names, function type or dispatch function from given input and output types. */
+#define LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE)    LIBXSMM_MMFUNCTION_TYPE(LIBXSMM_CONCATENATE(ITYPE, OTYPE))
+#define LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE, OTYPE)  LIBXSMM_MMDISPATCH_SYMBOL(LIBXSMM_CONCATENATE(ITYPE, OTYPE))
+#define LIBXSMM_TPREFIX_NAME2(ITYPE, OTYPE)       LIBXSMM_TPREFIX_NAME(LIBXSMM_CONCATENATE(ITYPE, OTYPE))
+#define LIBXSMM_TPREFIX2(ITYPE, OTYPE, SYMBOL)    LIBXSMM_TPREFIX(LIBXSMM_CONCATENATE(ITYPE, OTYPE), SYMBOL)
+
 #if defined(LIBXSMM_GEMM_CONST)
 # undef LIBXSMM_GEMM_CONST
 # define LIBXSMM_GEMM_CONST const
@@ -171,7 +182,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 # endif
 #endif
 #if !defined(LIBXSMM_GEMM_SYMBOL_VISIBILITY)
-# define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_VISIBILITY_IMPORT
+# define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_VISIBILITY_IMPORT LIBXSMM_RETARGETABLE
 #endif
 
 #define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
@@ -194,16 +205,17 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (template). */
 #if !defined(__BLAS) || (0 != __BLAS)
-# define LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, MM, NN, KK, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
-    const char libxsmm_blas_xgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'N' : 'T'); \
-    const char libxsmm_blas_xgemm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'N' : 'T'); \
+# define LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
+    /* 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
+    const char libxsmm_blas_xgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & (FLAGS)) ? 'n' : 'T'); \
+    const char libxsmm_blas_xgemm_transb_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & (FLAGS)) ? 'n' : 'T'); \
     const TYPE libxsmm_blas_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_blas_xgemm_beta_ = (TYPE)(BETA); \
     const libxsmm_blasint libxsmm_blas_xgemm_lda_ = (libxsmm_blasint)(LDA); \
     const libxsmm_blasint libxsmm_blas_xgemm_ldb_ = (libxsmm_blasint)(LDB); \
     const libxsmm_blasint libxsmm_blas_xgemm_ldc_ = (libxsmm_blasint)(LDC); \
-    const libxsmm_blasint libxsmm_blas_xgemm_m_ = (libxsmm_blasint)(MM); \
-    const libxsmm_blasint libxsmm_blas_xgemm_n_ = (libxsmm_blasint)(NN); \
-    const libxsmm_blasint libxsmm_blas_xgemm_k_ = (libxsmm_blasint)(KK); \
+    const libxsmm_blasint libxsmm_blas_xgemm_m_ = (libxsmm_blasint)(M); \
+    const libxsmm_blasint libxsmm_blas_xgemm_n_ = (libxsmm_blasint)(N); \
+    const libxsmm_blasint libxsmm_blas_xgemm_k_ = (libxsmm_blasint)(K); \
     LIBXSMM_ASSERT(0 != ((uintptr_t)LIBXSMM_ORIGINAL_GEMM(TYPE))); \
     LIBXSMM_ORIGINAL_GEMM(TYPE)(&libxsmm_blas_xgemm_transa_, &libxsmm_blas_xgemm_transb_, \
       &libxsmm_blas_xgemm_m_, &libxsmm_blas_xgemm_n_, &libxsmm_blas_xgemm_k_, \
@@ -296,16 +308,6 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(cons
 #else
 # define LIBXSMM_FALLBACK1(TYPE, INT, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
     LIBXSMM_BLAS_XGEMM(TYPE, FLAGS, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
-#endif
-
-#if defined(__cplusplus) /** Fall-back from JIT inside of libxsmm_mmfunction (C++). */ \
-  && (defined(LIBXSMM_FALLBACK_MMFUNCTION) || !defined(NDEBUG)/*debug code*/) \
-  /* there are no individual fall-back requests for single or double-precision */ \
-  && !defined(LIBXSMM_FALLBACK_SMMFUNCTION) && !defined(LIBXSMM_FALLBACK_DMMFUNCTION) \
-  /* there is no request to avoid falling back */ \
-  && !defined(LIBXSMM_FALLBACK_MMFUNCTION_NONE)
-# define LIBXSMM_FALLBACK_SMMFUNCTION
-# define LIBXSMM_FALLBACK_DMMFUNCTION
 #endif
 
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
@@ -416,65 +418,6 @@ LIBXSMM_API void libxsmm_gemm_dprint2(void* ostream,
   double dalpha, const void* a, libxsmm_blasint lda,
   const void* b, libxsmm_blasint ldb,
   double dbeta, void* c, libxsmm_blasint ldc);
-
-/**
- * Structure of differences with matrix norms according
- * to http://www.netlib.org/lapack/lug/node75.html).
- */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
-  /** One-norm */         double norm1_abs, norm1_rel;
-  /** Infinity-norm */    double normi_abs, normi_rel;
-  /** Froebenius-norm */  double normf_rel;
-  /** L1-norm and L2-norm of differences. */
-  double l2_abs, l2_rel, l1_ref, l1_tst;
-  /** Maximum absolute and relative error. */
-  double linf_abs, linf_rel;
-  /** Location of maximum error (m, n). */
-  libxsmm_blasint linf_abs_m, linf_abs_n;
-} libxsmm_matdiff_info;
-
-/** Utility function to calculate the difference between two matrices. */
-LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n,
-  const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
-  libxsmm_matdiff_info* info);
-
-LIBXSMM_API_INLINE void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input) {
-  LIBXSMM_ASSERT(0 != output && 0 != input);
-  if (output->normf_rel < input->normf_rel) {
-    output->linf_abs_m = input->linf_abs_m;
-    output->linf_abs_n = input->linf_abs_n;
-    output->norm1_abs = input->norm1_abs;
-    output->norm1_rel = input->norm1_rel;
-    output->normi_abs = input->normi_abs;
-    output->normi_rel = input->normi_rel;
-    output->normf_rel = input->normf_rel;
-    output->linf_abs = input->linf_abs;
-    output->linf_rel = input->linf_rel;
-    output->l2_abs = input->l2_abs;
-    output->l2_rel = input->l2_rel;
-    output->l1_ref = input->l1_ref;
-    output->l1_tst = input->l1_tst;
-  }
-}
-
-/* Implementation is taken from an anonymous GitHub Gist. */
-LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u64(unsigned long long n) {
-  unsigned long long b; unsigned int y = 0; int s;
-  for (s = 63; s >= 0; s -= 3) {
-    y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
-    if (b <= (n >> s)) { n -= b << s; ++y; }
-  }
-  return y;
-}
-
-LIBXSMM_API_INLINE unsigned int libxsmm_cbrt_u32(unsigned int n) {
-  unsigned int b; unsigned int y = 0; int s;
-  for (s = 31; s >= 0; s -= 3) {
-    y += y; b = 3 * y * (y + 1) + 1;
-    if (b <= (n >> s)) { n -= b << s; ++y; }
-  }
-  return y;
-}
 
 #endif /*LIBXSMM_FRONTEND_H*/
 

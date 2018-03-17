@@ -64,7 +64,7 @@
 
 #if defined(__MIC__)
 # define LIBXSMM_SYNC_PAUSE _mm_delay_32(8/*delay*/)
-#elif !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_LEGACY)
+#elif !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_STATIC)
 # define LIBXSMM_SYNC_PAUSE _mm_pause()
 #elif defined(LIBXSMM_GCC_BASELINE) && !defined(__PGI)
 # define LIBXSMM_SYNC_PAUSE __builtin_ia32_pause()
@@ -165,7 +165,11 @@
 #       define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT(0 != *(DST_PTR) && *"LIBXSMM_ATOMIC_RELEASE"); \
                 __atomic_clear(DST_PTR, KIND); }
 #     endif
+#     if 0 /* __atomic_thread_fence: incorrect behavior in libxsmm_barrier (even with LIBXSMM_ATOMIC_SEQ_CST) */
 #     define LIBXSMM_ATOMIC_SYNC(KIND) __atomic_thread_fence(KIND)
+#     else
+#     define LIBXSMM_ATOMIC_SYNC(KIND) __sync_synchronize()
+#     endif
 #   else /* GCC legacy atomics */
 #     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
 #     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) { \

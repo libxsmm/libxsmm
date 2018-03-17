@@ -37,7 +37,7 @@ int BLOCKSIFM = handle->blocksifm;
 int BLOCKSOFM = handle->blocksofm;
 
 /* Auxiliary integer variables   */
-int img, ofm1, ifm1, ifm2, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__,ii_, ij_, kh, kw, ofm1ifm1, ki, kj, imgifm1,ii, ij, i, j, ofm1ifm1img;
+int img, ofm1, ifm1, ki, kj, imgifm1, ij, i, j, ofm1ifm1img;
 
 /* traspose, copy and reduce work-related variables  */
 const int transpose_work = handle->desc.N*BLOCKSIFM;
@@ -111,7 +111,7 @@ element_input_type *input_zero;
 /* Kernel related variables  */
 libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
 libxsmm_xmcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
-libxsmm_convfunction kernel = (handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
+libxsmm_convfunction kernel = (handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[0].xconv.sconv : (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
 
 transposer tp_func;
 if ( handle->trans_ofw_ifm > 0 ) {
@@ -122,7 +122,7 @@ if ( handle->trans_ofw_ifm > 0 ) {
 libxsmm_barrier_init(handle->barrier, ltid);
 
 if (handle->reduce_weights == 0) {
-  int team_div = (int) sqrt(handle->desc.threads);
+  int team_div = (int) libxsmm_isqrt_u32(handle->desc.threads);
   while ( handle->desc.threads % team_div != 0  ) {
     team_div--;
   }
@@ -261,40 +261,27 @@ for (pc = 0; pc < instr; pc++) {
 libxsmm_barrier_wait(handle->barrier, ltid);
 
 if (handle->reduce_weights) {
-  for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 #ifdef __AVX512F__
-    __m512 weight_sum = _mm512_setzero_ps();
-    for ( i = 0; i < handle->weight_copies; i++ ) {
-      weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
-    }
-#ifndef __AVX512BW__
-    _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
-#else
-    _mm512_store_ps(&weight_ptr[j*16], weight_sum);
-#endif
-#else
-    LIBXSMM_ALIGNED(element_filter_type weight_sum[16], 64);
-    LIBXSMM_PRAGMA_VALIGNED
-      LIBXSMM_PRAGMA_SIMD
-      for ( k = 0; k < 16; k++ ) {
-        weight_sum[k] = (element_filter_type) 0;
+  if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  || libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
+    for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
+      __m512 weight_sum = _mm512_setzero_ps();
+      for ( i = 0; i < handle->weight_copies; i++ ) {
+        weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
       }
-    for ( i = 0; i < handle->weight_copies; i++ ) {
-      LIBXSMM_PRAGMA_VALIGNED
-        LIBXSMM_PRAGMA_SIMD
-        for ( k = 0; k < 16; k++ ) {
-          weight_sum[k] += LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, k, handle->weight_copies, 16);
-        }
+      _mm512_stream_ps(&weight_ptr[j*16], weight_sum);
     }
-    LIBXSMM_PRAGMA_NONTEMPORAL
-      LIBXSMM_PRAGMA_VALIGNED
-      LIBXSMM_PRAGMA_SIMD
-      for ( k = 0; k < 16; k++ ) {
-        weight_ptr[j*16 + k] = weight_sum[k];
+  } else {
+    for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
+      __m512 weight_sum = _mm512_setzero_ps();
+      for ( i = 0; i < handle->weight_copies; i++ ) {
+        weight_sum = _mm512_add_ps(weight_sum, _mm512_load_ps(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
       }
-#endif
-#undef __AVX512F__
+      _mm512_store_ps(&weight_ptr[j*16], weight_sum);
+    }
   }
+#else
+/* should not happen */
+#endif
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
 

@@ -114,7 +114,7 @@ element_input_type *input_zero;
 /* Kernel related variables  */
 libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
 libxsmm_xmcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
-libxsmm_convfunction kernel = (handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
+libxsmm_convfunction kernel = (handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[0].xconv.sconv : (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
 
 transposer tp_func;
 tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
@@ -131,7 +131,7 @@ if (handle->padding_flag == 1) {
 }
 
 if (handle->reduce_weights == 0) {
-  int team_div = (int) sqrt(handle->desc.threads);
+  int team_div = (int) libxsmm_isqrt_u32(handle->desc.threads);
   while ( handle->desc.threads % team_div != 0  ) {
     team_div--;
   }
@@ -287,13 +287,17 @@ instr = handle->n_entries_upd[ltid];
 
 LIBXSMM_ALIGNED(float scale_factor, 64);
 if (handle->use_lp_kernel == 1) {
-  scale_factor = (float) pow(2.0, -1.0*((double)(handle->reg_input->scf + handle->grad_output->scf)));
+  scale_factor = libxsmm_sexp2(-1.f*((float)(handle->reg_input->scf + handle->grad_output->scf)));
 }
 
 LIBXSMM_ALIGNED(float vnni_scratch[32], 64);
 
 LIBXSMM_ALIGNED(float *max_vals, 64);
+#ifdef __AVX512F__
 __m512 max_abs = _mm512_setzero_ps();
+#else
+/* won't happen as this code only runs on AVX512 platforms */
+#endif
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, float, maxstats, (float*)handle->maxstats_upd->data, 16);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, 16);
@@ -348,10 +352,11 @@ if (handle->reduce_weights) {
     _mm512_store_ps(max_vals, max_abs);
 #endif
     libxsmm_barrier_wait(handle->barrier, ltid);
-#undef __AVX512F__
   } else {
     if (pixels_lp == 4) {
+#ifdef __AVX512F__
       __m512i weight_sumi;
+#endif
       for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 #ifdef __AVX512F__
         weight_sumi = _mm512_setzero_epi32();
@@ -382,9 +387,10 @@ if (handle->reduce_weights) {
 #endif
       }
       libxsmm_barrier_wait(handle->barrier, ltid);
-#undef __AVX512F__
     } else {
+#ifdef __AVX512F__
       __m512 weight_sum;
+#endif
       for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
 #ifdef __AVX512F__
         weight_sum = _mm512_setzero_ps();
@@ -415,7 +421,6 @@ if (handle->reduce_weights) {
 #endif
       }
       libxsmm_barrier_wait(handle->barrier, ltid);
-#undef __AVX512F__
     }
   }
 }

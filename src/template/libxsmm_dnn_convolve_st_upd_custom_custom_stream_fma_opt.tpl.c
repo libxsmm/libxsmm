@@ -86,7 +86,7 @@ element_output_type *output_base;
 libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
 libxsmm_xmcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
 libxsmm_xmcopyfunction jitted_matzero_weights = handle->matcopy_upd[2].xmatcopy;
-libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
+libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[0].xconv.sconv : (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -199,18 +199,14 @@ if (handle->upd_use_external_reduce == 0) {
   for ( i = 0; i < handle->desc.threads; i++ ) {
     remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*total_filter_size);
     for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
-#if defined(__AVX512F__)
+#ifdef __AVX512F__
       __m512 remote_weight;
       __m512 reduction_weight;
       __m512 sum_weight;
       remote_weight = LIBXSMM_INTRINSICS_MM512_LOAD_PS(remote_weight_ptr + (j*16));
-      reduction_weight = LIBXSMM_INTRINSICS_MM512_LOAD_PS(weight_ptr + (j*16);
+      reduction_weight = LIBXSMM_INTRINSICS_MM512_LOAD_PS(weight_ptr + (j*16));
       sum_weight =  _mm512_add_ps( remote_weight, reduction_weight);
       _mm512_store_ps((void*) &weight_ptr[j*16] , sum_weight);
-#else
-      for (pc = 0; pc < handle->ofmblock; pc++) {
-        weight_ptr[(j*16)+pc] += remote_weight_ptr[(j*16)+pc];
-      }
 #endif
     }
   }

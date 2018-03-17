@@ -33,12 +33,18 @@
 #include "generator_convolution_common.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-
 #include <libxsmm_intrinsics_x86.h>
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generated_code*     io_generated_code,
@@ -521,13 +527,6 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
   unsigned int num_look_ahead;
   unsigned int output_counter = 0;
   unsigned int unroll_factor = i_conv_desc->ifm_block;
-  unsigned int prefetch_input_type = LIBXSMM_X86_INSTR_PREFETCHT0;
-  unsigned int prefetch_output_type = LIBXSMM_X86_INSTR_PREFETCHT0;
-  unsigned int input_pf_offset = 0;
-  unsigned int output_pf_offset = 0;
-  unsigned int input_pf_index = 0;
-  unsigned int input_pf_bound = i_conv_desc->ofw_rb * i_conv_desc->ofh_rb;
-  unsigned int output_pf_bound = i_conv_desc->ofw_rb * i_conv_desc->ofh_rb * i_conv_kernel_config->l_ld_ofm_act *  i_conv_kernel_config->datatype_size_out ;
   unsigned int eq_index = 0;
 
   LIBXSMM_UNUSED(ofh_trip_counter);
@@ -1046,13 +1045,11 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
   unsigned int cache_line_offset = 0;
   unsigned int prefetch_type_input = LIBXSMM_X86_INSTR_PREFETCHT0;
   unsigned int prefetch_type_output = LIBXSMM_X86_INSTR_PREFETCHT0;
-  unsigned int prefetch_type_weight = LIBXSMM_X86_INSTR_PREFETCHT0;
-  unsigned int weight_pf_offset = 0;
   unsigned int step_size = 0;
   unsigned int l_compute_instr = 0;
   unsigned int lp_dim_out = 1;
   unsigned int use_lp_kernel = 0;
-
+  
   unsigned int vperm_instr = (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL) ? LIBXSMM_X86_INSTR_VPERMD : LIBXSMM_X86_INSTR_VPERMW;
 
   /* depending on datatype emit the needed FMA(-sequence) */
@@ -1343,7 +1340,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
               output_pf_init_offset + cache_line_offset );
         }
 
-        if (step_size == 4 | step_size == 8) {
+        if ( (step_size == 4) | (step_size == 8) ) {
           pixel_id = (cache_line_offset+64)/64;
           if (l_n == 10 && pixel_id < n_compute_pixels/lp_dim_out) {
             libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -1405,8 +1402,6 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
   unsigned int l_n = 0;
   unsigned int l_k_1 = 0, l_k_2 = 0;
   unsigned int l_disp;
-  unsigned int l_w;
-  unsigned int output_counter = 0;
   unsigned int unroll_factor = i_conv_desc->ifm_block_hp;
   unsigned int input_pf_register;
   unsigned int output_pf_register;
@@ -1414,11 +1409,8 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
   unsigned int output_pf_init_offset;
   unsigned int prefetch_type_input = LIBXSMM_X86_INSTR_PREFETCHT0;
   unsigned int prefetch_type_output = LIBXSMM_X86_INSTR_PREFETCHT0;
-  unsigned int prefetch_type_weight = LIBXSMM_X86_INSTR_PREFETCHT0;
-  unsigned int weight_pf_offset = 0;
   unsigned int step_size = 0;
   unsigned int l_compute_instr = 0;
-  unsigned int lp_dim_out = 1;
   unsigned int use_lp_kernel = 0;
   unsigned int lookahead = 1;
 

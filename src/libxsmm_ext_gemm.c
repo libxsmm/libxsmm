@@ -416,7 +416,7 @@ LIBXSMM_APIEXT void libxsmm_sgemm_omp(const char* transa, const char* transb,
   LIBXSMM_INIT
   assert(0 != libxsmm_gemm_tile);
   if (LIBXSMM_MAX_MNK < size) {
-    const int index = LIBXSMM_MIN(libxsmm_cbrt_u64(size) >> 10, 7);
+    const int index = LIBXSMM_MIN(libxsmm_icbrt_u64(size) >> 10, 7);
     const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][index], (unsigned int)*m);
     const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][index], (unsigned int)nn);
     const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][index], (unsigned int)kk);
@@ -499,7 +499,7 @@ LIBXSMM_APIEXT void libxsmm_dgemm_omp(const char* transa, const char* transb,
   LIBXSMM_INIT
   assert(0 != libxsmm_gemm_tile);
   if (LIBXSMM_MAX_MNK < size) {
-    const int index = LIBXSMM_MIN(libxsmm_cbrt_u64(size) >> 10, 7);
+    const int index = LIBXSMM_MIN(libxsmm_icbrt_u64(size) >> 10, 7);
     const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][index], (unsigned int)*m);
     const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][index], (unsigned int)nn);
     const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][index], (unsigned int)kk);
@@ -586,7 +586,7 @@ LIBXSMM_APIEXT int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blasi
     {
 #if defined(_OPENMP)
       const unsigned int size = info->xgemm.m * info->xgemm.n * info->xgemm.k;
-      const int chunksize = (0 >= libxsmm_gemm_chunksize ? ((int)(1048576 * libxsmm_cbrt_u32(size) / size)) : libxsmm_gemm_chunksize);
+      const int chunksize = (0 >= libxsmm_gemm_chunksize ? ((int)(1048576 * libxsmm_icbrt_u32(size) / size)) : libxsmm_gemm_chunksize);
       const int max_chunksize = LIBXSMM_MAX(chunksize, 1), ntasks = (int)((LIBXSMM_ABS(batchsize) + max_chunksize - 1) / max_chunksize);
 
       if (1 < ntasks) {

@@ -35,7 +35,7 @@ const element_filter_type *weight_base;
 element_output_type *output_base;
 int offset_i, offset_o, offset_w, pi, po, pw, pc, i = 0;
 int *stream = handle->compute_fwd_indices_ptrs[ltid];
-libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[2].xconv.sconv;
+libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 int instr;
 char *kernel_stream = handle->kernel_fwd_variant_ptrs[ltid];
 #if 0

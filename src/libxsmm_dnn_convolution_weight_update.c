@@ -43,6 +43,7 @@
 # pragma offload_attribute(pop)
 #endif
 
+#ifdef __AVX512F__
 #define TRANSPOSE_W_CHUNK(img, ifm1, ij, w_offset, ifm2) \
         base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w_offset, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block); \
         gather_reg = _mm512_i32gather_epi32(vgindex, base_addr, 1); \
@@ -132,6 +133,7 @@
       pair_addr_dst = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
       _mm512_stream_si512(pair_addr_dst, compact);
 
+/* @TODO this function needs to be target decorated, it's only called on AVX512 platforms and use_vperm_transposes=1 is for AVX512BW platforms only */
 void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
   typedef short element_input_type;
   typedef short element_output_type;
@@ -405,6 +407,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
   }
 }
 
+/* @TODO this function needs to be target decorated and use vperm business as above applies */
 void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
   typedef short element_input_type;
   typedef short element_output_type;
@@ -583,562 +586,17 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
     }
   }
 }
-
-#if 0
-void lp_transpose_0_chunk_1_remainder_even_pixels(int img, libxsmm_dnn_layer* handle) {
-  typedef short element_input_type;
-  typedef short element_output_type;
-
-  int w_chunks = handle->ifwp/16;
-  int w_remainder = handle->ifwp%16;
-  int w_i, w, c_i, ifm1, ij, ifm2;
-  int BLOCKSIFM = handle->blocksifm;;
-  int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
-  int ifwp_extended = padded_w + handle->qfma_input_pad;
-  int dst_ifhp;
-  element_input_type *base_addr;
-  const __m512i vgindex = _mm512_set_epi32(960,832,448,320,  704,576,192,64,  896,768,384,256,  640,512,128,0);
-  const int gather_offsets[16] = {960,832,448,320,  704,576,192,64,  896,768,384,256,  640,512,128,0};
-  const __m256i shuffler = _mm256_set_epi32(7,5,3,1,6,4,2,0);
-  unsigned int int_mask = 0xffffffff;
-  const __mmask16 gmask = int_mask;
-  int mask_remainder = (w_remainder+1)/2;
-  unsigned int mask[8];
-  for (c_i=0;c_i<16;c_i++) {
-    if (gather_offsets[16-c_i-1] >= w_remainder*64) {
-      int_mask = int_mask & ~(1 << c_i);
-    }
-  }
-  for (c_i=0; c_i<mask_remainder; c_i++) {
-    mask[c_i] = (1<<31);
-  }
-  for (c_i=mask_remainder; c_i<8; c_i++) {
-    mask[c_i] = 0;
-  }
-  __m256i mask_reg = _mm256_loadu_si256((const union __m256i *) mask);
-  __m512i gather_reg;
-  __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
-
-  /* Input transpose  */
-  dst_ifhp = handle->ifhp;
-  LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-  LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock, ifwp_extended);
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (ij = 0; ij < handle->ifhp; ++ij) {
-      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 0, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 0, ifm2+8,  2*ifm1+1, 2*ifm2);
-      }
-    }
-  }
-
-  element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi;
-  element_output_type *dst_lo, *dst_hi;
-  int half_i, ofm1,  ii;
-  int BLOCKSOFM = handle->blocksofm;
-  int OFWP = handle->ofwp+handle->output_lp_padding;
-  __m256i even_pixel_lo, even_pixel_hi, odd_pixel_hi, odd_pixel_lo, compressed_hi, compressed_lo, compressed_lo_store, compressed_hi_store;
-
-  /* Output transpose */
-  element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block;
-  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-  LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
-    for (ij = 0; ij < handle->ofhp; ++ij) {
-      for (ii = 0, half_i=0 ; ii < handle->ofwp-1; ii+=2, half_i++) {
-        TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i);
-      }
-    }
-  }
+#else
+void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handle) { 
+  LIBXSMM_UNUSED(ltid);
+  LIBXSMM_UNUSED(handle);
 }
 
-void lp_transpose_0_chunk_1_remainder_odd_pixels(int img, libxsmm_dnn_layer* handle) {
-  typedef short element_input_type;
-  typedef short element_output_type;
-
-  int w_chunks = handle->ifwp/16;
-  int w_remainder = handle->ifwp%16;
-  int w_i, w, c_i, ifm1, ij, ifm2;
-  int BLOCKSIFM = handle->blocksifm;;
-  int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
-  int ifwp_extended = padded_w + handle->qfma_input_pad;
-  int dst_ifhp;
-  element_input_type *base_addr;
-  const __m512i vgindex = _mm512_set_epi32(960,832,448,320,  704,576,192,64,  896,768,384,256,  640,512,128,0);
-  const int gather_offsets[16] = {960,832,448,320,  704,576,192,64,  896,768,384,256,  640,512,128,0};
-  const __m256i shuffler = _mm256_set_epi32(7,5,3,1,6,4,2,0);
-  unsigned int int_mask = 0xffffffff;
-  const __mmask16 gmask = int_mask;
-  int mask_remainder = (w_remainder+1)/2;
-  unsigned int mask[8];
-  for (c_i=0;c_i<16;c_i++) {
-    if (gather_offsets[16-c_i-1] >= w_remainder*64) {
-      int_mask = int_mask & ~(1 << c_i);
-    }
-  }
-  for (c_i=0; c_i<mask_remainder; c_i++) {
-    mask[c_i] = (1<<31);
-  }
-  for (c_i=mask_remainder; c_i<8; c_i++) {
-    mask[c_i] = 0;
-  }
-  __m256i mask_reg = _mm256_loadu_si256((const union __m256i *) mask);
-  __m512i gather_reg;
-  __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
-
-  /* Input transpose  */
-  dst_ifhp = handle->ifhp;
-  LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-  LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock, ifwp_extended);
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (ij = 0; ij < handle->ifhp; ++ij) {
-      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 0, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 0, ifm2+8,  2*ifm1+1, 2*ifm2);
-      }
-    }
-  }
-
-  element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi;
-  element_output_type *dst_lo, *dst_hi;
-  int half_i, ofm1,  ii;
-  int BLOCKSOFM = handle->blocksofm;
-  int OFWP = handle->ofwp+handle->output_lp_padding;
-  __m256i even_pixel_lo, even_pixel_hi, odd_pixel_hi, odd_pixel_lo, compressed_hi, compressed_lo, compressed_lo_store, compressed_hi_store;
-
-  /* Output transpose */
-  element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block;
-  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-  LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
-    for (ij = 0; ij < handle->ofhp; ++ij) {
-      for (ii = 0, half_i=0 ; ii < handle->ofwp-1; ii+=2, half_i++) {
-        TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i);
-      }
-    }
-  }
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
-    for (ij = 0; ij < handle->ofhp; ++ij) {
-      ii = handle->ofwp-1;
-      half_i = ii/2;
-      TRANSPOSE_W_HALF_PAIR(img, ofm1, ij, ii, half_i);
-    }
-  }
+void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
+  LIBXSMM_UNUSED(ltid);
+  LIBXSMM_UNUSED(handle);
 }
-
-void lp_transpose_1_chunk_0_remainder_even_pixels(int img, libxsmm_dnn_layer* handle) {
-  typedef short element_input_type;
-  typedef short element_output_type;
-
-  int w_chunks = handle->ifwp/16;
-  int w_remainder = handle->ifwp%16;
-  int w_i, w, c_i, ifm1, ij, ifm2;
-  int BLOCKSIFM = handle->blocksifm;;
-  int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
-  int ifwp_extended = padded_w + handle->qfma_input_pad;
-  int dst_ifhp;
-  element_input_type *base_addr;
-  const __m512i vgindex = _mm512_set_epi32(960,832,448,320,  704,576,192,64,  896,768,384,256,  640,512,128,0);
-  const int gather_offsets[16] = {960,832,448,320,  704,576,192,64,  896,768,384,256,  640,512,128,0};
-  const __m256i shuffler = _mm256_set_epi32(7,5,3,1,6,4,2,0);
-  __m512i gather_reg;
-  __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
-
-  /* Input transpose  */
-  dst_ifhp = handle->ifhp;
-  LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-  LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock, ifwp_extended);
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (ij = 0; ij < handle->ifhp; ++ij) {
-      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2+8, 2*ifm1+1, 2*ifm2);
-      }
-    }
-  }
-
-  element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi;
-  element_output_type *dst_lo, *dst_hi;
-  int half_i, ofm1,  ii;
-  int BLOCKSOFM = handle->blocksofm;
-  int OFWP = handle->ofwp+handle->output_lp_padding;
-  __m256i even_pixel_lo, even_pixel_hi, odd_pixel_hi, odd_pixel_lo, compressed_hi, compressed_lo, compressed_lo_store, compressed_hi_store;
-
-  /* Output transpose */
-  element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block;
-  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-  LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
-    for (ij = 0; ij < handle->ofhp; ++ij) {
-      for (ii = 0, half_i=0 ; ii < handle->ofwp-1; ii+=2, half_i++) {
-        TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i);
-      }
-    }
-  }
-}
-
-void lp_transpose_1_chunk_1_remainder_even_pixels(int img, libxsmm_dnn_layer* handle) {
-  typedef short element_input_type;
-  typedef short element_output_type;
-
-  int w_chunks = handle->ifwp/16;
-  int w_remainder = handle->ifwp%16;
-  int w_i, w, c_i, ifm1, ij, ifm2;
-  int BLOCKSIFM = handle->blocksifm;;
-  int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
-  int ifwp_extended = padded_w + handle->qfma_input_pad;
-  int dst_ifhp;
-  element_input_type *base_addr;
-  const __m512i vgindex = _mm512_set_epi32(960,832,448,320,  704,576,192,64,  896,768,384,256,  640,512,128,0);
-  const int gather_offsets[16] = {960,832,448,320,  704,576,192,64,  896,768,384,256,  640,512,128,0};
-  const __m256i shuffler = _mm256_set_epi32(7,5,3,1,6,4,2,0);
-  unsigned int int_mask = 0xffffffff;
-  const __mmask16 gmask = int_mask;
-  int mask_remainder = (w_remainder+1)/2;
-  unsigned int mask[8];
-  for (c_i=0;c_i<16;c_i++) {
-    if (gather_offsets[16-c_i-1] >= w_remainder*64) {
-      int_mask = int_mask & ~(1 << c_i);
-    }
-  }
-  for (c_i=0; c_i<mask_remainder; c_i++) {
-    mask[c_i] = (1<<31);
-  }
-  for (c_i=mask_remainder; c_i<8; c_i++) {
-    mask[c_i] = 0;
-  }
-  __m256i mask_reg = _mm256_loadu_si256((const union __m256i *) mask);
-  __m512i gather_reg;
-  __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
-
-  /* Input transpose  */
-  dst_ifhp = handle->ifhp;
-  LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-  LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock, ifwp_extended);
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (ij = 0; ij < handle->ifhp; ++ij) {
-      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2+8, 2*ifm1+1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 16, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 16, ifm2+8,  2*ifm1+1, 2*ifm2);
-      }
-    }
-  }
-
-  element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi;
-  element_output_type *dst_lo, *dst_hi;
-  int half_i, ofm1,  ii;
-  int BLOCKSOFM = handle->blocksofm;
-  int OFWP = handle->ofwp+handle->output_lp_padding;
-  __m256i even_pixel_lo, even_pixel_hi, odd_pixel_hi, odd_pixel_lo, compressed_hi, compressed_lo, compressed_lo_store, compressed_hi_store;
-
-  /* Output transpose */
-  element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block;
-  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-  LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
-    for (ij = 0; ij < handle->ofhp; ++ij) {
-      for (ii = 0, half_i=0 ; ii < handle->ofwp-1; ii+=2, half_i++) {
-        TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i);
-      }
-    }
-  }
-}
-
-void lp_transpose_3_chunk_1_remainder_even_pixels(int img, libxsmm_dnn_layer* handle) {
-  typedef short element_input_type;
-  typedef short element_output_type;
-
-  int w_chunks = handle->ifwp/16;
-  int w_remainder = handle->ifwp%16;
-  int w_i, w, c_i, ifm1, ij, ifm2;
-  int BLOCKSIFM = handle->blocksifm;;
-  int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
-  int ifwp_extended = padded_w + handle->qfma_input_pad;
-  int dst_ifhp;
-  element_input_type *base_addr;
-  const __m512i vgindex = _mm512_set_epi32(960,832,448,320,  704,576,192,64,  896,768,384,256,  640,512,128,0);
-  const int gather_offsets[16] = {960,832,448,320,  704,576,192,64,  896,768,384,256,  640,512,128,0};
-  const __m256i shuffler = _mm256_set_epi32(7,5,3,1,6,4,2,0);
-  unsigned int int_mask = 0xffffffff;
-  const __mmask16 gmask = int_mask;
-  int mask_remainder = (w_remainder+1)/2;
-  unsigned int mask[8];
-  for (c_i=0;c_i<16;c_i++) {
-    if (gather_offsets[16-c_i-1] >= w_remainder*64) {
-      int_mask = int_mask & ~(1 << c_i);
-    }
-  }
-  for (c_i=0; c_i<mask_remainder; c_i++) {
-    mask[c_i] = (1<<31);
-  }
-  for (c_i=mask_remainder; c_i<8; c_i++) {
-    mask[c_i] = 0;
-  }
-  __m256i mask_reg = _mm256_loadu_si256((const union __m256i *) mask);
-  __m512i gather_reg;
-  __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
-
-  /* Input transpose  */
-  dst_ifhp = handle->ifhp;
-  LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-  LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock, ifwp_extended);
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (ij = 0; ij < handle->ifhp; ++ij) {
-      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, 0, ifm2+8, 2*ifm1+1, 2*ifm2);
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, 16, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, 16, ifm2+8, 2*ifm1+1, 2*ifm2);
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, 32, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_CHUNK(img, ifm1, ij, 32, ifm2+8, 2*ifm1+1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 48, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER(img, ifm1, ij, 48, ifm2+8,  2*ifm1+1, 2*ifm2);
-      }
-    }
-  }
-
-  element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi;
-  element_output_type *dst_lo, *dst_hi;
-  int half_i, ofm1,  ii;
-  int BLOCKSOFM = handle->blocksofm;
-  int OFWP = handle->ofwp+handle->output_lp_padding;
-  __m256i even_pixel_lo, even_pixel_hi, odd_pixel_hi, odd_pixel_lo, compressed_hi, compressed_lo, compressed_lo_store, compressed_hi_store;
-
-  /* Output transpose */
-  element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block;
-  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-  LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
-    for (ij = 0; ij < handle->ofhp; ++ij) {
-      for (ii = 0, half_i=0 ; ii < handle->ofwp-1; ii+=2, half_i++) {
-        TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i);
-      }
-    }
-  }
-}
-
-void lp_transpose_and_resize_0_chunk_1_remainder_even_pixels(int img, libxsmm_dnn_layer* handle) {
-  typedef short element_input_type;
-  typedef short element_output_type;
-
-  int w_chunks = handle->ifwp_resized/16;
-  int w_remainder = handle->ifwp_resized%16;
-  int u = handle->desc.u;
-  int w_i, w, c_i, ifm1, ij, ifm2;
-  int dst_i, dst_j, src_i, src_j;
-  int BLOCKSIFM = handle->blocksifm;;
-  int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
-  int ifwp_extended = padded_w + handle->qfma_input_pad;
-  int dst_ifhp;
-  element_input_type *base_addr;
-  const __m512i vgindex = _mm512_set_epi32(u*960,u*832,u*448,u*320,  u*704,u*576,u*192,u*64,  u*896,u*768,u*384,u*256,  u*640,u*512,u*128, u*0);
-  const int gather_offsets[16] = {u*960,u*832,u*448,u*320,  u*704,u*576,u*192,u*64,  u*896,u*768,u*384,u*256,  u*640,u*512,u*128, u*0};
-  const __m256i shuffler = _mm256_set_epi32(7,5,3,1,6,4,2,0);
-  unsigned int int_mask = 0xffffffff;
-  const __mmask16 gmask = int_mask;
-  int mask_remainder = (w_remainder+1)/2;
-  unsigned int mask[8];
-  for (c_i=0;c_i<16;c_i++) {
-    if (gather_offsets[16-c_i-1] >= (w_remainder*64)*u) {
-      int_mask = int_mask & ~(1 << c_i);
-    }
-  }
-  for (c_i=0; c_i<mask_remainder; c_i++) {
-    mask[c_i] = (1<<31);
-  }
-  for (c_i=mask_remainder; c_i<8; c_i++) {
-    mask[c_i] = 0;
-  }
-  __m256i mask_reg = _mm256_loadu_si256((const union __m256i *) mask);
-  __m512i gather_reg;
-  __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
-
-  /* Input transpose  */
-  ifwp_extended = handle->ifwp_resized + handle->qfma_input_pad;
-  dst_ifhp = handle->ifhp_resized;
-  LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-  LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock, ifwp_extended);
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
-      src_j = dst_j * handle->desc.v;
-      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-        TRANSPOSE_W_REMAINDER_RESIZED(img, ifm1, 0, src_j, 0, dst_j, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER_RESIZED(img, ifm1, 0, src_j, 0, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);
-      }
-    }
-  }
-
-  element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi;
-  element_output_type *dst_lo, *dst_hi;
-  int half_i, ofm1,  ii;
-  int BLOCKSOFM = handle->blocksofm;
-  int OFWP = handle->ofwp+handle->output_lp_padding;
-  __m256i even_pixel_lo, even_pixel_hi, odd_pixel_hi, odd_pixel_lo, compressed_hi, compressed_lo, compressed_lo_store, compressed_hi_store;
-  /* Output transpose */
-  element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block;
-  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-  LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
-    for (ij = 0; ij < handle->ofhp; ++ij) {
-      for (ii = 0, half_i=0 ; ii < handle->ofwp-1; ii+=2, half_i++) {
-        TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i);
-      }
-    }
-  }
-}
-
-void lp_transpose_and_resize_0_chunk_1_remainder_odd_pixels(int img, libxsmm_dnn_layer* handle) {
-  typedef short element_input_type;
-  typedef short element_output_type;
-
-  int w_chunks = handle->ifwp_resized/16;
-  int w_remainder = handle->ifwp_resized%16;
-  int u = handle->desc.u;
-  int w_i, w, c_i, ifm1, ij, ifm2;
-  int dst_i, dst_j, src_i, src_j;
-  int BLOCKSIFM = handle->blocksifm;;
-  int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
-  int ifwp_extended = padded_w + handle->qfma_input_pad;
-  int dst_ifhp;
-  element_input_type *base_addr;
-  const __m512i vgindex = _mm512_set_epi32(u*960,u*832,u*448,u*320,  u*704,u*576,u*192,u*64,  u*896,u*768,u*384,u*256,  u*640,u*512,u*128, u*0);
-  const int gather_offsets[16] = {u*960,u*832,u*448,u*320,  u*704,u*576,u*192,u*64,  u*896,u*768,u*384,u*256,  u*640,u*512,u*128, u*0};
-  const __m256i shuffler = _mm256_set_epi32(7,5,3,1,6,4,2,0);
-  unsigned int int_mask = 0xffffffff;
-  const __mmask16 gmask = int_mask;
-  int mask_remainder = (w_remainder+1)/2;
-  unsigned int mask[8];
-  for (c_i=0;c_i<16;c_i++) {
-    if (gather_offsets[16-c_i-1] >= (w_remainder*64)*u) {
-      int_mask = int_mask & ~(1 << c_i);
-    }
-  }
-  for (c_i=0; c_i<mask_remainder; c_i++) {
-    mask[c_i] = (1<<31);
-  }
-  for (c_i=mask_remainder; c_i<8; c_i++) {
-    mask[c_i] = 0;
-  }
-  __m256i mask_reg = _mm256_loadu_si256((const union __m256i *) mask);
-  __m512i gather_reg;
-  __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
-
-  /* Input transpose  */
-  ifwp_extended = handle->ifwp_resized + handle->qfma_input_pad;
-  dst_ifhp = handle->ifhp_resized;
-  LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-  LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock, ifwp_extended);
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
-      src_j = dst_j * handle->desc.v;
-      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-        TRANSPOSE_W_REMAINDER_RESIZED(img, ifm1, 0, src_j, 0, dst_j, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER_RESIZED(img, ifm1, 0, src_j, 0, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);
-      }
-    }
-  }
-
-  element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi;
-  element_output_type *dst_lo, *dst_hi;
-  int half_i, ofm1,  ii;
-  int BLOCKSOFM = handle->blocksofm;
-  int OFWP = handle->ofwp+handle->output_lp_padding;
-  __m256i even_pixel_lo, even_pixel_hi, odd_pixel_hi, odd_pixel_lo, compressed_hi, compressed_lo, compressed_lo_store, compressed_hi_store;
-  /* Output transpose */
-  element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block;
-  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-  LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
-    for (ij = 0; ij < handle->ofhp; ++ij) {
-      for (ii = 0, half_i=0 ; ii < handle->ofwp-1; ii+=2, half_i++) {
-        TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i);
-      }
-    }
-  }
-
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
-    for (ij = 0; ij < handle->ofhp; ++ij) {
-      ii = handle->ofwp-1;
-      half_i = ii/2;
-      TRANSPOSE_W_HALF_PAIR(img, ofm1, ij, ii, half_i);
-    }
-  }
-}
-
-void lp_transpose_and_resize_1_chunk_1_remainder_even_pixels(int img, libxsmm_dnn_layer* handle) {
-  typedef short element_input_type;
-  typedef short element_output_type;
-
-  int w_chunks = handle->ifwp_resized/16;
-  int w_remainder = handle->ifwp_resized%16;
-  int u = handle->desc.u;
-  int w_i, w, c_i, ifm1, ij, ifm2;
-  int dst_i, dst_j, src_i, src_j;
-  int BLOCKSIFM = handle->blocksifm;;
-  int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
-  int ifwp_extended = padded_w + handle->qfma_input_pad;
-  int dst_ifhp;
-  element_input_type *base_addr;
-  const __m512i vgindex = _mm512_set_epi32(u*960,u*832,u*448,u*320,  u*704,u*576,u*192,u*64,  u*896,u*768,u*384,u*256,  u*640,u*512,u*128, u*0);
-  const int gather_offsets[16] = {u*960,u*832,u*448,u*320,  u*704,u*576,u*192,u*64,  u*896,u*768,u*384,u*256,  u*640,u*512,u*128, u*0};
-  const __m256i shuffler = _mm256_set_epi32(7,5,3,1,6,4,2,0);
-  unsigned int int_mask = 0xffffffff;
-  const __mmask16 gmask = int_mask;
-  int mask_remainder = (w_remainder+1)/2;
-  unsigned int mask[8];
-  for (c_i=0;c_i<16;c_i++) {
-    if (gather_offsets[16-c_i-1] >= (w_remainder*64)*u) {
-      int_mask = int_mask & ~(1 << c_i);
-    }
-  }
-  for (c_i=0; c_i<mask_remainder; c_i++) {
-    mask[c_i] = (1<<31);
-  }
-  for (c_i=mask_remainder; c_i<8; c_i++) {
-    mask[c_i] = 0;
-  }
-  __m256i mask_reg = _mm256_loadu_si256((const union __m256i *) mask);
-  __m512i gather_reg;
-  __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
-
-  /* Input transpose  */
-  ifwp_extended = handle->ifwp_resized + handle->qfma_input_pad;
-  dst_ifhp = handle->ifhp_resized;
-  LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
-  LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock, ifwp_extended);
-  for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
-    for (dst_j=0; dst_j < handle->ifhp_resized; dst_j++) {
-      src_j = dst_j * handle->desc.v;
-      for (ifm2 = 0; ifm2 < 8; ++ifm2) {
-        TRANSPOSE_W_CHUNK_RESIZED(img, ifm1, 0, src_j, 0, dst_j, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_CHUNK_RESIZED(img, ifm1, 0, src_j, 0, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER_RESIZED(img, ifm1, u*16, src_j, 16, dst_j, ifm2, 2*ifm1, 2*ifm2);
-        TRANSPOSE_W_REMAINDER_RESIZED(img, ifm1, u*16, src_j, 16, dst_j, ifm2+8, 2*ifm1+1, 2*ifm2);
-      }
-    }
-  }
-
-  element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi;
-  element_output_type *dst_lo, *dst_hi;
-  int half_i, ofm1,  ii;
-  int BLOCKSOFM = handle->blocksofm;
-  int OFWP = handle->ofwp+handle->output_lp_padding;
-  __m256i even_pixel_lo, even_pixel_hi, odd_pixel_hi, odd_pixel_lo, compressed_hi, compressed_lo, compressed_lo_store, compressed_hi_store;
-  /* Output transpose */
-  element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block;
-  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-  LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock, handle->fm_lp_block);
-  for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ++ofm1) {
-    for (ij = 0; ij < handle->ofhp; ++ij) {
-      for (ii = 0, half_i=0 ; ii < handle->ofwp-1; ii+=2, half_i++) {
-        TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i);
-      }
-    }
-  }
-}
-#endif
+#endif /* __AVX512F__ */
 
 #undef TRANSPOSE_W_CHUNK
 #undef TRANSPOSE_W_REMAINDER
@@ -1147,7 +605,7 @@ void lp_transpose_and_resize_1_chunk_1_remainder_even_pixels(int img, libxsmm_dn
 #undef TRANSPOSE_W_CHUNK_RESIZED
 #undef TRANSPOSE_W_REMAINDER_RESIZED
 
-#if 1 /*defined(__AVX512F__)*/
+#if defined(__AVX512F__)
 void gather_transpose_ps_16_56_56_16(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS) {
   const __m512i vindex = _mm512_set_epi32(240,224,208,192,176,160,144,128,112,96,80,64,48,32,16,0);
   const __mmask16 Nremmask = 0x00FF;
@@ -1405,6 +863,7 @@ void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, cons
 typedef void (*transposer)(int M, int N, float *dst, int ldD, const float *src, int ldS);
 
 transposer get_transposer(int M, int N, int ldD, int ldS) {
+#ifdef __AVX512F__
   if(M == 16 && N == 7 && ldD == 8 && ldS == 16) {
     return gather_transpose_ps_16_7_8_16;
   }
@@ -1453,11 +912,92 @@ transposer get_transposer(int M, int N, int ldD, int ldS) {
   if(M == 16 && N == 58 && ldD == 60 && ldS == 16) {
     return gather_transpose_ps_16_58_60_16;
   }
+#endif
 
   return transpose_fallback;
 }
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */ 
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#ifdef __AVX512F__
+  typedef float element_input_type;
+  typedef float element_output_type;
+  typedef float element_filter_type;
+  typedef libxsmm_sconvfunction libxsmm_convfunction;
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+#else
+/* should not happen */
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#ifdef __AVX512F__
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#else
+/* should not happen */
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */ 
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#ifdef __AVX512F__
+  if (handle->upd_use_thread_fil > 0) {
+    typedef short element_input_type;
+    typedef short element_output_type;
+    typedef float element_filter_type;
+    typedef libxsmm_uwsconvfunction libxsmm_convfunction;
+    if (handle->use_fastpath) {
+      if ( handle->use_hybrid_wu_parallelism == 1) {
+#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
+      } else {
+#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
+      }
+    }
+  }
+#else
+/* should not happen */
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */ 
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#ifdef __AVX512F__
+  if (handle->upd_use_thread_fil > 0) {
+    typedef unsigned char element_input_type;
+    typedef unsigned char element_output_type;
+    typedef int element_filter_type;
+    typedef libxsmm_bdbconvfunction libxsmm_convfunction;
+    if (handle->use_fastpath) {
+      if ( handle->use_hybrid_wu_parallelism == 1) {
+#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
+      } else {
+#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
+      }
+    }
+  }
+#else
+/* should not happen */
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -1497,39 +1037,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(libxsmm_
   }
   else {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      typedef float element_input_type;
-      typedef float element_output_type;
-      typedef float element_filter_type;
-      typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+      status = libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32( handle, start_thread, tid );
     } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      if (handle->upd_use_thread_fil > 0) {
-        typedef short element_input_type;
-        typedef short element_output_type;
-        typedef float element_filter_type;
-        typedef libxsmm_uwsconvfunction libxsmm_convfunction;
-        if (handle->use_fastpath) {
-          if ( handle->use_hybrid_wu_parallelism == 1) {
-#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
-          } else {
-#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
-          }
-        }
-      }
+      status = libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32( handle, start_thread, tid );
     } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
-      if (handle->upd_use_thread_fil > 0) {
-        typedef unsigned char element_input_type;
-        typedef unsigned char element_output_type;
-        typedef int element_filter_type;
-        typedef libxsmm_bdbconvfunction libxsmm_convfunction;
-        if (handle->use_fastpath) {
-          if ( handle->use_hybrid_wu_parallelism == 1) {
-#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
-          } else {
-#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
-          }
-        }
-      }
+      status = libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32( handle, start_thread, tid );
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
@@ -1540,7 +1052,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(libxsmm_
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -1586,7 +1098,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom(libxsmm_dn
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(libxsmm_dnn_layer* handle, int start_thread, int tid)
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 

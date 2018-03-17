@@ -71,9 +71,15 @@
 #include "generator_common.h"
 #include "libxsmm_main.h"
 
-#include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csc_bsparse( libxsmm_generated_code*         io_generated_code,
@@ -108,7 +114,7 @@ void libxsmm_generator_spgemm_csc_bsparse( libxsmm_generated_code*         io_ge
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    #pragma vector aligned\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     }
-    if ( LIBXSMM_GEMM_PRECISION_F64 == i_xgemm_desc->datatype ) {
+    if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++) { C[(l_n*%u)+l_m] = 0.0; }\n", (unsigned int)i_xgemm_desc->m, (unsigned int)i_xgemm_desc->ldc);
     } else {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    for ( l_m = 0; l_m < %u; l_m++) { C[(l_n*%u)+l_m] = 0.0f; }\n", (unsigned int)i_xgemm_desc->m, (unsigned int)i_xgemm_desc->ldc);

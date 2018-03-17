@@ -41,13 +41,8 @@ int OFWP = handle->ofwp+handle->output_lp_padding;
 const int ltid = tid-start_thread;
 
 /* Auxiliary integer variables   */
-int img, ifm1, ifm2, imgifm1,ii, ij, i;
-int j, k;
-int ifmb;
-
+int i, j, k;
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
-int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
-int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
 
 /* traspose, copy and reduce work-related variables  */
 const int reduce_work = BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*handle->ofmblock;
@@ -56,8 +51,6 @@ const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * r
 const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
 const int copywork = handle->desc.N*BLOCKSIFM;
 const int copychunksize = (copywork % handle->desc.threads == 0) ? (copywork / handle->desc.threads) : (copywork / handle->desc.threads) + 1;
-const int copy_thr_begin = (ltid * copychunksize < copywork) ? (ltid * copychunksize) : copywork;
-const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) * copychunksize) : copywork;
 
 /* Pointer related variables for output and weight */
 int pixels_lp = handle->fm_lp_block;
@@ -71,9 +64,6 @@ element_filter_type* reduction_weight_ptr = ((element_filter_type*)handle->scrat
 LIBXSMM_VLA_DECL(3, element_filter_type, reduction_weight, reduction_weight_ptr, handle->desc.threads, handle->ofmblock);
 
 /* Pointer related variables for input */
-element_input_type (* LIBXSMM_RESTRICT input_ptr);
-element_input_type (* LIBXSMM_RESTRICT copy_ptr);
-element_input_type *prefetch_ptr;
 int padded_h = (handle->padding_flag == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
 int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
 int ifwp_extended = padded_w + handle->qfma_input_pad;
@@ -106,7 +96,7 @@ element_output_type *output_base;
 libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
 libxsmm_xmcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
 libxsmm_xmcopyfunction jitted_matzero_weights = handle->matcopy_upd[2].xmatcopy;
-libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[1].xconv.sconv : (libxsmm_convfunction)handle->code_upd[4].xconv.sconv;
+libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[0].xconv.sconv : (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
 
 transposer tp_func;
 if ( handle->trans_ofw_ifm > 0 && pixels_lp != 4 ) {
@@ -132,7 +122,7 @@ if (handle->padding_flag == 1) {
 
 #if 0
 if (handle->reduce_weights == 0) {
-  int team_div = (int) sqrt(handle->desc.threads);
+  int team_div = (int) libxsmm_isqrt_u32(handle->desc.threads);
   while ( handle->desc.threads % team_div != 0  ) {
     team_div--;
   }
@@ -241,7 +231,7 @@ if (pixels_lp != 4) {
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-if (handle->ofh == 28 || handle->ofh == 56 || handle->ofh == 14)
+if (handle->ofh == 28 || handle->ofh == 56 /*|| handle->ofh == 14*/)
 {
   weight_base = &LIBXSMM_VLA_ACCESS(2, per_thread_weight, 0, 0, handle->ofmblock); /* use thread-private scratchpad to accumulate weights */
 } else {
@@ -307,13 +297,17 @@ n_segments = handle->n_upd_code_segments[ltid];
 LIBXSMM_ALIGNED(float scale_factor, 64);
 
 if (handle->use_lp_kernel == 1) {
-  scale_factor = (float) pow(2.0, -1.0*((double)(handle->reg_input->scf + handle->grad_output->scf)));
+  scale_factor = libxsmm_sexp2(-1.f*((float)(handle->reg_input->scf + handle->grad_output->scf)));
 }
 
 LIBXSMM_ALIGNED(float vnni_scratch[32], 64);
 
 LIBXSMM_ALIGNED(float *max_vals, 64);
+#ifdef __AVX512F__
 __m512 max_abs = _mm512_setzero_ps();
+#else
+/* won't happen as this code only runs on AVX512 platforms */
+#endif
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, float, maxstats, (float*)handle->maxstats_upd->data, 16);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, 16);
@@ -432,7 +426,6 @@ if (handle->reduce_weights) {
 #endif
     }
     libxsmm_barrier_wait(handle->barrier, ltid);
-#undef __AVX512F__
   } else {
     /* Perform reduction because we used thread private filters... */
     if (handle->upd_use_external_reduce == 0) {
@@ -527,7 +520,6 @@ if (handle->reduce_weights) {
       }
     }
     libxsmm_barrier_wait(handle->barrier, ltid);
-#undef __AVX512F__
   }
 }
 libxsmm_barrier_wait(handle->barrier, ltid);

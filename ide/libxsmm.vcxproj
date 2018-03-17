@@ -39,6 +39,7 @@
     <ClInclude Include="..\include\libxsmm_intrinsics_x86.h" />
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_malloc.h" />
+    <ClInclude Include="..\include\libxsmm_math.h" />
     <ClInclude Include="..\include\libxsmm_mhd.h" />
     <ClInclude Include="..\include\libxsmm_source.h" />
     <ClInclude Include="..\include\libxsmm_spmdm.h" />
@@ -46,7 +47,6 @@
     <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
     <ClInclude Include="..\src\generator_common.h" />
-    <ClInclude Include="..\src\generator_convolution_backward_avx512.h" />
     <ClInclude Include="..\src\generator_convolution_common.h" />
     <ClInclude Include="..\src\generator_convolution_forward_avx512.h" />
     <ClInclude Include="..\src\generator_convolution_weight_update_avx512.h" />
@@ -96,7 +96,6 @@
   <ItemGroup>
     <ClCompile Include="..\src\generator_common.c" />
     <ClCompile Include="..\src\generator_convolution.c" />
-    <ClCompile Include="..\src\generator_convolution_backward_avx512.c" />
     <ClCompile Include="..\src\generator_convolution_common.c" />
     <ClCompile Include="..\src\generator_convolution_forward_avx512.c" />
     <ClCompile Include="..\src\generator_convolution_weight_update_avx512.c" />
@@ -161,6 +160,7 @@
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_main.c" />
     <ClCompile Include="..\src\libxsmm_malloc.c" />
+    <ClCompile Include="..\src\libxsmm_math.c" />
     <ClCompile Include="..\src\libxsmm_mhd.c" />
     <ClCompile Include="..\src\libxsmm_perf.c" />
     <ClCompile Include="..\src\libxsmm_python.c" />

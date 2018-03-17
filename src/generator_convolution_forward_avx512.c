@@ -33,12 +33,18 @@
 #include "generator_convolution_common.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
-
 #include <libxsmm_intrinsics_x86.h>
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 #define FP64_BN_STATS
 
@@ -55,6 +61,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
   unsigned int l_found_act_format = 0;
   unsigned int l_found_fil_format = 0;
   unsigned int i_out_pf, j_out_pf;
+  int prefetch_current_output;
 #if 0
   unsigned int l_kw = 0;
 #endif
@@ -202,7 +209,6 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     l_kh_trips = i_conv_desc->kh;
   }
 
-  int prefetch_current_output;
   if (i_conv_desc->datatype != i_conv_desc->datatype_itm) {
     prefetch_current_output = ( i_conv_desc->use_nts == 1 ) ? 0 : 1;
   } else {
@@ -635,12 +641,10 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
   unsigned int l_scale;
   unsigned int l_disp;
   unsigned int l_displacement_k = 0;
-  unsigned int l_k_updates = 0;
   unsigned int l_w;
   unsigned int l_reg_block;
   unsigned int l_accs;
   unsigned int l_filter_pos = 0;
-  unsigned int l_input_offset = 0;
   unsigned int l_compute_instr = 0;
   unsigned int l_prefetch_input_index = 0;
   unsigned int prefetch_type_input = LIBXSMM_X86_INSTR_PREFETCHT0;
@@ -954,11 +958,9 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
   unsigned int l_scale;
   unsigned int l_disp;
   unsigned int l_displacement_k = 0;
-  unsigned int l_k_updates = 0;
   unsigned int l_w;
   unsigned int l_m;
   unsigned int l_filter_pos = 0;
-  unsigned int l_input_offset = 0;
   unsigned int l_compute_instr = 0;
   unsigned int l_prefetch_input_index_w = 0;
   unsigned int l_prefetch_input_index_h = 0;
@@ -1264,12 +1266,9 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
   unsigned int l_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
   unsigned int l_scale = 0;
   unsigned int l_disp;
-  unsigned int l_displacement_k = 0;
-  unsigned int l_k_updates = 0;
   unsigned int l_w;
   unsigned int l_m;
   unsigned int l_filter_pos = 0;
-  unsigned int l_input_offset = 0;
   unsigned int l_compute_instr = 0;
   unsigned int l_prefetch_input_index_w = 0;
   unsigned int l_prefetch_input_index_h = 0;
