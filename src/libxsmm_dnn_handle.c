@@ -1081,10 +1081,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
 
 
         /* TODO check JIT errors */
-        if ( /*(*/libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
+        if ( /*(*/(libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
             libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ||
-            libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL /*)*/ /*&&
+            libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) &&
+            !((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32))                                                      /*)*/ /*&&
                                                                     ((handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM))*/ )
             {
               const unsigned int wu_each_iter_code_size = 10 * descriptor.ifm_block;
