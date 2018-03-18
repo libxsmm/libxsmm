@@ -229,7 +229,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   libxsmm_dnn_conv_fuse_op fuse_ops;        /* used ops into convolutions */
 } libxsmm_dnn_conv_desc;
 
-/** these are some quatization definitions, not sure if we want to
+/** these are some quantization definitions, not sure if we want to
     move them into some main part of LIBXSMM */
 /* @TODO check position of these declarations and defines */
 typedef union LIBXSMM_RETARGETABLE libxsmm_intfloat {
