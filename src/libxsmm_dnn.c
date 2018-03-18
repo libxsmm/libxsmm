@@ -262,7 +262,7 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
       handle = 0;
       return 0;
     }
-    /* @TODO we might want to fall back to direct convolution if winograd fails */
+    /* @TODO we might want to fall back to direct convolution if Winograd fails */
     if ( handle->algo == LIBXSMM_DNN_CONV_ALGO_WINOGRAD ) {
       *status = libxsmm_dnn_internal_create_conv_handle_winograd_check( handle );
       if ( *status == LIBXSMM_DNN_WARN_FALLBACK ) {
@@ -2486,7 +2486,7 @@ LIBXSMM_API short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned
 LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int length, unsigned char add_shift, unsigned char* scf, int round_mode ) {
   int i = 0;
 
-  /* in case we are using FP-Mul based quatization we use a different path for now
+  /* in case we are using FP-Mul based quantization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
     float max = libxsmm_internal_get_max( in_buffer, length );
@@ -2516,7 +2516,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
 #if defined(__AVX512F__)
     }
 #endif
-    /* @TODO, we need to potentialy fix this unsigned char problem */
+    /* @TODO, we need to potentially fix this unsigned char problem */
 #if !defined(NDEBUG) /* library code is expected to be mute */
     if (maxexp > 0) {
       fprintf(stderr, "error quant fil\n");
@@ -2545,19 +2545,19 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
 
 
 LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, unsigned int N, unsigned int C, unsigned int H, unsigned int W, unsigned int cblk_f32, unsigned int cblk_i16, unsigned int lp_blk, unsigned char add_shift, unsigned char* scf, int round_mode ) {
-  LIBXSMM_VLA_DECL(5, float, in,  in_buffer,  C/cblk_f32, H, W, cblk_f32);
+  LIBXSMM_VLA_DECL(5, const float, in,  in_buffer,  C/cblk_f32, H, W, cblk_f32);
   LIBXSMM_VLA_DECL(6, short, out, out_buffer, C/(cblk_i16*lp_blk), H, W, cblk_i16, lp_blk);
-  unsigned int cblk = C/(cblk_i16*lp_blk);
+  const unsigned int cblk = C/(cblk_i16*lp_blk);
   int i1, i2, i3, i4, i5, i6;
 
   /* some quick and dirty checks */
   assert((C % cblk_f32) == 0);
   assert((C % cblk_i16) == 0);
 
-  /* in case we are using FP-Mul based quatization we use a different path for now
+  /* in case we are using FP-Mul based quantization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
-    float max = libxsmm_internal_get_max( in_buffer, N*C*H*W );
+    const float max = libxsmm_internal_get_max( in_buffer, N*C*H*W );
     int maxexp = 0;
     float scfq = 0.0f;
     frexpf(max, &maxexp);
@@ -2578,18 +2578,19 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
 #ifdef _OPENMP
 #     pragma omp parallel for private(i1, i2, i3, i4, i5, i6) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-      for( i1 = 0; i1 < N; ++i1 ) {
-        for( i2 = 0; i2 < cblk; ++i2 ) {
-          for( i3 = 0; i3 < H; ++i3 ) {
-            for( i4 = 0; i4 < W; ++i4 ) {
-              for( i5 = 0; i5 < cblk_i16; ++i5 ) {
-                for( i6 = 0; i6 < lp_blk; ++i6 ) {
-                  int fi1 = i1;
-                  int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)/cblk_f32;
-                  int fi3 = i3;
-                  int fi4 = i4;
-                  int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)%cblk_f32;
-                  out[i1][i2][i3][i4][i5][i6] = (short)round(in[fi1][fi2][fi3][fi4][fi5] * scfq);
+      for( i1 = 0; i1 < (int)N; ++i1 ) {
+        for( i2 = 0; i2 < (int)cblk; ++i2 ) {
+          for( i3 = 0; i3 < (int)H; ++i3 ) {
+            for( i4 = 0; i4 < (int)W; ++i4 ) {
+              for( i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
+                for( i6 = 0; i6 < (int)lp_blk; ++i6 ) {
+                  const int fi1 = i1;
+                  const int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)/cblk_f32;
+                  const int fi3 = i3;
+                  const int fi4 = i4;
+                  const int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)%cblk_f32;
+                  LIBXSMM_VLA_ACCESS(6, out, i1, i2, i3, i4, i5, i6, cblk, H, W, cblk_i16, lp_blk) = (short)round(
+                  LIBXSMM_VLA_ACCESS(5, in, fi1, fi2, fi3, fi4, fi5, C / cblk_f32, H, W, cblk_f32) * scfq);
                 }
               }
             }
@@ -2599,7 +2600,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
 #if defined(__AVX512F__)
     }
 #endif
-    /* @TODO, we need to potentialy fix this unsigned char problem */
+    /* @TODO, we need to potentially fix this unsigned char problem */
 #if !defined(NDEBUG) /* library code is expected to be mute */
     if (maxexp > 0) {
       fprintf(stderr, "error quant act\n");
@@ -2610,7 +2611,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
     /* get max exponent */
     unsigned char max_exp = libxsmm_internal_get_max_exp( in_buffer, N*C*H*W );
 
-    /* if we go for stochstic rounding, let's intialize random seed */
+    /* if we go for stochastic rounding, let's initialize random seed */
     if ( round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND ) {
       srand(libxsmm_timer_tick() % ((unsigned int)-1));
     }
@@ -2618,18 +2619,19 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
 #ifdef _OPENMP
 #   pragma omp parallel for private(i1, i2, i3, i4, i5, i6) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-    for( i1 = 0; i1 < N; ++i1 ) {
-      for( i2 = 0; i2 < cblk; ++i2 ) {
-        for( i3 = 0; i3 < H; ++i3 ) {
-          for( i4 = 0; i4 < W; ++i4 ) {
-            for( i5 = 0; i5 < cblk_i16; ++i5 ) {
-              for( i6 = 0; i6 < lp_blk; ++i6 ) {
-                int fi1 = i1;
-                int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)/cblk_f32;
-                int fi3 = i3;
-                int fi4 = i4;
-                int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)%cblk_f32;
-                out[i1][i2][i3][i4][i5][i6] = libxsmm_internal_quantize_scalar_no_scf( in[fi1][fi2][fi3][fi4][fi5], max_exp, add_shift, round_mode );
+    for( i1 = 0; i1 < (int)N; ++i1 ) {
+      for( i2 = 0; i2 < (int)cblk; ++i2 ) {
+        for( i3 = 0; i3 < (int)H; ++i3 ) {
+          for( i4 = 0; i4 < (int)W; ++i4 ) {
+            for( i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
+              for( i6 = 0; i6 < (int)lp_blk; ++i6 ) {
+                const int fi1 = i1;
+                const int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)/cblk_f32;
+                const int fi3 = i3;
+                const int fi4 = i4;
+                const int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)%cblk_f32;
+                LIBXSMM_VLA_ACCESS(6, out, i1, i2, i3, i4, i5, i6, cblk, H, W, cblk_i16, lp_blk) = libxsmm_internal_quantize_scalar_no_scf(
+                LIBXSMM_VLA_ACCESS(5, in, fi1, fi2, fi3, fi4, fi5, C / cblk_f32, H, W, cblk_f32), max_exp, add_shift, round_mode);
               }
             }
           }
@@ -2643,8 +2645,8 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
 
 
 LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, unsigned int K, unsigned int C, unsigned int R, unsigned int S, unsigned int cblk_f32, unsigned int cblk_i16, unsigned int kblk_f32, unsigned int kblk_i16, unsigned int lp_blk, unsigned char add_shift, unsigned char* scf, int round_mode ) {
-  LIBXSMM_VLA_DECL(6, float, in,  in_buffer,  C/cblk_f32, R, S, cblk_f32, kblk_f32);
-  LIBXSMM_VLA_DECL(7, short, out, out_buffer, C/(cblk_i16*lp_blk), R, S, cblk_i16, kblk_i16, lp_blk );
+  LIBXSMM_VLA_DECL(6, const float, in,  in_buffer,  C/cblk_f32, R, S, cblk_f32, kblk_f32);
+  LIBXSMM_VLA_DECL(7, short, out, out_buffer, C/(cblk_i16*lp_blk), R, S, cblk_i16, kblk_i16, lp_blk);
   unsigned int cblk = C/(cblk_i16*lp_blk);
   unsigned int kblk = K/kblk_i16;
   int i1, i2, i3, i4, i5, i6, i7;
@@ -2656,7 +2658,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
   assert((K % kblk_i16) == 0);
   assert((lp_blk % 2) == 0);
 
-  /* in case we are using FP-Mul based quatization we use a different path for now
+  /* in case we are using FP-Mul based quantization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
     float max = libxsmm_internal_get_max( in_buffer, K*C*R*S );
@@ -2696,20 +2698,21 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
 #ifdef _OPENMP
 #     pragma omp parallel for private(i1, i2, i3, i4, i5, i6, i7) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-      for( i1 = 0; i1 < kblk; ++i1 ) {
-        for( i2 = 0; i2 < cblk; ++i2 ) {
-          for( i3 = 0; i3 < R; ++i3 ) {
-            for( i4 = 0; i4 < S; ++i4 ) {
-              for( i5 = 0; i5 < cblk_i16; ++i5 ) {
-                for( i6 = 0; i6 < kblk_i16; ++i6 ) {
-                  for( i7 = 0; i7 < lp_blk; ++i7 ) {
-                    int fi1 = ((i1*kblk_i16)+i6)/kblk_f32;
-                    int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)/cblk_f32;
-                    int fi3 = i3;
-                    int fi4 = i4;
-                    int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)%cblk_f32;
-                    int fi6 = ((i1*kblk_i16)+i6)%kblk_f32;
-                    out[i1][i2][i3][i4][i5][i6][i7] = (short)round(in[fi1][fi2][fi3][fi4][fi5][fi6]*scfq);
+      for( i1 = 0; i1 < (int)kblk; ++i1 ) {
+        for( i2 = 0; i2 < (int)cblk; ++i2 ) {
+          for( i3 = 0; i3 < (int)R; ++i3 ) {
+            for( i4 = 0; i4 < (int)S; ++i4 ) {
+              for( i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
+                for( i6 = 0; i6 < (int)kblk_i16; ++i6 ) {
+                  for( i7 = 0; i7 < (int)lp_blk; ++i7 ) {
+                    const int fi1 = ((i1*kblk_i16)+i6)/kblk_f32;
+                    const int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)/cblk_f32;
+                    const int fi3 = i3;
+                    const int fi4 = i4;
+                    const int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)%cblk_f32;
+                    const int fi6 = ((i1*kblk_i16)+i6)%kblk_f32;
+                    LIBXSMM_VLA_ACCESS(7, out, i1, i2, i3, i4, i5, i6, i7, cblk, R, S, cblk_i16, kblk_i16, lp_blk) = (short)round(
+                    LIBXSMM_VLA_ACCESS(6, in, fi1, fi2, fi3, fi4, fi5, fi6, C / cblk_f32, R, S, cblk_f32, kblk_f32) * scfq);
                   }
                 }
               }
@@ -2720,7 +2723,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
 #if defined(__AVX512F__)
     }
 #endif
-    /* @TODO, we need to potentialy fix this unsigned char problem */
+    /* @TODO, we need to potentially fix this unsigned char problem */
 #if !defined(NDEBUG) /* library code is expected to be mute */
     if (maxexp > 0) {
       fprintf(stderr, "error quant fil\n");
@@ -2731,7 +2734,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
     /* get max exponent */
     unsigned char max_exp = libxsmm_internal_get_max_exp( in_buffer, K*C*R*S );
 
-    /* if we go for stochstic rounding, let's intialize random seed */
+    /* if we go for stochastic rounding, let's initialize random seed */
     if ( round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND ) {
       srand(libxsmm_timer_tick() % ((unsigned int)-1));
     }
@@ -2739,20 +2742,21 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
 #ifdef _OPENMP
 #   pragma omp parallel for private(i1, i2, i3, i4, i5, i6, i7) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-    for( i1 = 0; i1 < kblk; ++i1 ) {
-      for( i2 = 0; i2 < cblk; ++i2 ) {
-        for( i3 = 0; i3 < R; ++i3 ) {
-          for( i4 = 0; i4 < S; ++i4 ) {
-            for( i5 = 0; i5 < cblk_i16; ++i5 ) {
-              for( i6 = 0; i6 < kblk_i16; ++i6 ) {
-                for( i7 = 0; i7 < lp_blk; ++i7 ) {
-                  int fi1 = ((i1*kblk_i16)+i6)/kblk_f32;
-                  int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)/cblk_f32;
-                  int fi3 = i3;
-                  int fi4 = i4;
-                  int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)%cblk_f32;
-                  int fi6 = ((i1*kblk_i16)+i6)%kblk_f32;
-                  out[i1][i2][i3][i4][i5][i6][i7] = libxsmm_internal_quantize_scalar_no_scf( in[fi1][fi2][fi3][fi4][fi5][fi6], max_exp, add_shift, round_mode );
+    for( i1 = 0; i1 < (int)kblk; ++i1 ) {
+      for( i2 = 0; i2 < (int)cblk; ++i2 ) {
+        for( i3 = 0; i3 < (int)R; ++i3 ) {
+          for( i4 = 0; i4 < (int)S; ++i4 ) {
+            for( i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
+              for( i6 = 0; i6 < (int)kblk_i16; ++i6 ) {
+                for( i7 = 0; i7 < (int)lp_blk; ++i7 ) {
+                  const int fi1 = ((i1*kblk_i16)+i6)/kblk_f32;
+                  const int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)/cblk_f32;
+                  const int fi3 = i3;
+                  const int fi4 = i4;
+                  const int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)%cblk_f32;
+                  const int fi6 = ((i1*kblk_i16)+i6)%kblk_f32;
+                  LIBXSMM_VLA_ACCESS(7, out, i1, i2, i3, i4, i5, i6, i7, cblk, R, S, cblk_i16, kblk_i16, lp_blk) = libxsmm_internal_quantize_scalar_no_scf(
+                  LIBXSMM_VLA_ACCESS(6, in, fi1, fi2, fi3, fi4, fi5, fi6, C / cblk_f32, R, S, cblk_f32, kblk_f32), max_exp, add_shift, round_mode);
                 }
               }
             }
