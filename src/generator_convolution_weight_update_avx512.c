@@ -1049,7 +1049,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
   unsigned int l_compute_instr = 0;
   unsigned int lp_dim_out = 1;
   unsigned int use_lp_kernel = 0;
-  
+
   unsigned int vperm_instr = (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL) ? LIBXSMM_X86_INSTR_VPERMD : LIBXSMM_X86_INSTR_VPERMW;
 
   /* depending on datatype emit the needed FMA(-sequence) */

@@ -86,7 +86,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   kw = handle->desc.S;
   num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
   local_entries = 0;
-    
+
   KW = kw;
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */

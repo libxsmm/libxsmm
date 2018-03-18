@@ -587,7 +587,7 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
   }
 }
 #else
-void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handle) { 
+void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
   LIBXSMM_UNUSED(ltid);
   LIBXSMM_UNUSED(handle);
 }
@@ -917,7 +917,7 @@ transposer get_transposer(int M, int N, int ldD, int ldS) {
   return transpose_fallback;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */ 
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -947,7 +947,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i
   return status;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */ 
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -972,7 +972,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i
   return status;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */ 
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;

@@ -1589,7 +1589,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
       /* weight update path */
       handle->code_upd[0].xconv.sconv = 0;
       handle->code_upd[1].xconv.sconv = 0;
-      
+
       /* prepare barrier */
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
 
