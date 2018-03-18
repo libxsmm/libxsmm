@@ -130,7 +130,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
       }
     }
 
-    /* zero rim in case of physical padding.... this code is extremly stupid and crappy as it requires a complicated if... */
+    /* zero rim in case of physical padding.... this code is extremely stupid and crappy as it requires a complicated if... */
     if (handle->desc.pad_h_in > 0 || handle->desc.pad_w_in > 0) {
       for ( ij = 0; ij < handle->ifhp; ij++ ) {
         for ( ii = 0; ii < handle->ifwp; ii++ ) {

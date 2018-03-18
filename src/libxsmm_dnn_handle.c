@@ -212,7 +212,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     }
   }
 
-  /* let's enable generice code path by default */
+  /* let's enable generic code path by default */
   handle->use_fwd_generic = 1;
   handle->use_bwd_generic = 1;
   handle->use_upd_generic = 1;
@@ -1080,7 +1080,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
         descriptor.blocks_img = 1;
         descriptor.ncopies = handle->desc.threads;
 
-
         /* TODO check JIT errors */
         if ( /*(*/(libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
           libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
@@ -1510,7 +1509,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
           handle->upd_use_thread_fil = 0;
         }
 
-        /* Allocate scrarch for additional output transpose */
+        /* Allocate scratch for additional output transpose */
         if (handle->use_lp_kernel == 1) {
           handle->scratch6 = 0;
           handle->scratch6_size = handle->desc.N * handle->blocksofm * handle->ofmblock * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+8+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_in);
