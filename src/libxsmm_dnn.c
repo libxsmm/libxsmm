@@ -2489,12 +2489,12 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
   /* in case we are using FP-Mul based quantization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
-    float max = libxsmm_internal_get_max( in_buffer, length );
+    const float max_value = libxsmm_internal_get_max( in_buffer, length );
     int maxexp = 0;
-    float scfq = 0.0f;
-    frexpf(max, &maxexp);
-    maxexp -= (15-add_shift);
-    scfq = libxsmm_sexp2((float)-maxexp);
+    float scfq = 0;
+    frexpf(max_value, &maxexp);
+    maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
+    scfq = libxsmm_sexp2_i8i(-maxexp);
 
 #if defined(__AVX512F__)
     if ( length % 16 == 0 ) {
@@ -2557,12 +2557,12 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
   /* in case we are using FP-Mul based quantization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
-    const float max = libxsmm_internal_get_max( in_buffer, N*C*H*W );
+    const float max_value = libxsmm_internal_get_max( in_buffer, N*C*H*W );
     int maxexp = 0;
-    float scfq = 0.0f;
-    frexpf(max, &maxexp);
-    maxexp -= (15-add_shift);
-    scfq = libxsmm_sexp2((float)-maxexp);
+    float scfq = 0;
+    frexpf(max_value, &maxexp);
+    maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
+    scfq = libxsmm_sexp2_i8i(-maxexp);
 
 #if defined(__AVX512F__)
     if ( (cblk_f32 == 16) && (cblk_i16*lp_blk == 16) ) {
@@ -2661,12 +2661,12 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
   /* in case we are using FP-Mul based quantization we use a different path for now
      @TODO let's unify the paths by using the similar vectorization for both */
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
-    float max = libxsmm_internal_get_max( in_buffer, K*C*R*S );
+    const float max_value = libxsmm_internal_get_max( in_buffer, K*C*R*S );
     int maxexp = 0;
     float scfq = 0.0f;
-    frexpf(max, &maxexp);
-    maxexp -= (15-add_shift);
-    scfq = libxsmm_sexp2((float)-maxexp);
+    frexpf(max_value, &maxexp);
+    maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
+    scfq = libxsmm_sexp2_i8i(-maxexp);
 
 #if defined(__AVX512F__)
     if ( (kblk_f32 == 16) && (cblk_f32 == 16) && (kblk_i16 == 16) && (cblk_i16*lp_blk == 16) ) {
@@ -2771,8 +2771,8 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
 
 
 LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, int length, unsigned char scf ) {
+  const float exp = libxsmm_sexp2_i8i(-scf);
   int i = 0;
-  float exp = libxsmm_sexp2(-scf);
 
 #ifdef _OPENMP
 #pragma omp parallel for private(i)
