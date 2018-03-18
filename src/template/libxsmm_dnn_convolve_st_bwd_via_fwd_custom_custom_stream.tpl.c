@@ -558,7 +558,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
           i+=3;
         }
-      }    
+      }
     }
   } else {
     /* Run the stream of convolutions, no extra operations are required... */
@@ -620,7 +620,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_lp_kernel == 1) && (handle->compute_max_in_kernel_bwd == 0) ) {
 #ifdef __AVX512F__
     _mm512_store_ps(max_vals, max_abs);
-#else 
+#else
     /* won't happen as this code only runs on AVX512 platforms */
 #endif
   }

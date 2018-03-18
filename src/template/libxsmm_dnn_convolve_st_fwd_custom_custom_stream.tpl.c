@@ -322,7 +322,7 @@ if (n_segments) {
 #ifdef __AVX512F__
                   max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+oi)));
 #else
-                  /* Won't happen as this code only runs on AVX512 systems */   
+                  /* Won't happen as this code only runs on AVX512 systems */
 #endif
                 }
                 cur_vec += handle->ofwp*handle->ofmblock;
