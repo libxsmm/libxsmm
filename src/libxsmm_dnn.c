@@ -286,7 +286,6 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_layer* handle)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  int loop;
 
   if (0 != handle) {
     /* deallocate data components; not an error to deallocate a NULL-pointer
@@ -323,6 +322,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
 #if 0
     /* Deallocate per-thread jitted data structures */
     if ( handle->use_thread_private_jit ) {
+      int loop;
 
       /* Free per thread allocated arrays  */
       for (loop = 0; loop < handle->desc.threads; loop++) {

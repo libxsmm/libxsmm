@@ -52,8 +52,9 @@
 int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *wrb2_res, int *hrb2_res) {
   const int min_r = 15;
   const int max_r = 28;
-  int n_variants;
-  int wrb1, hrb1, wrb2, hrb2, w_tmp, rem;
+  int n_variants = 0;
+  int wrb1 = 0, hrb1 = 0, wrb2 = 0, hrb2 = 0;
+  int w_tmp, rem;
   int var1_times;
   int case_id;
 
@@ -162,7 +163,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
 
-  int wrb1, wrb2, hrb1, hrb2, n_variants = 1;
+  int wrb1 = 0, wrb2 = 0, hrb1 = 0, hrb2 = 0, n_variants = 1;
   if (handle->desc.N >= handle->desc.threads) {
     n_variants = find_rb(handle->ofw, handle->ofh, &wrb1, &hrb1, &wrb2, &hrb2);
     if (n_variants == 2) {
@@ -178,8 +179,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     }
   }
 
-  /* const char *const env_ifm = getenv("DISABLE_IFM");*/
-  int disable_ifm_in = 0;
+  /* const char *const env_ifm = getenv("DISABLE_IFM");
+  int disable_ifm_in = 0;*/
 
   /*if ( 0 == env_ifm || 0 == *env_ifm) {
     disable_ifm_in = 0;
@@ -444,12 +445,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     }
 
     /* Logic for L2 tiling  */
-    unsigned int input_block_size = 28 * handle->blocksifm_blocking * 64;
-    unsigned int output_block_size = 28 * 64;
+    /*unsigned int input_block_size = 28 * handle->blocksifm_blocking * 64;*/
+    /*unsigned int output_block_size = 28 * 64;*/
     unsigned int weight_ofm_block = LIBXSMM_MIN(16, handle->blocksofm);
     unsigned int weight_ifm_block = LIBXSMM_MIN(16, handle->blocksifm);
-    unsigned int weight_block_size = (handle->blocksifm_blocking * 64) * 64/2; /*  (weight_ofm_block * 64)/2; */
-    unsigned int total_size = input_block_size + output_block_size + weight_block_size;
+    /*unsigned int weight_block_size = (handle->blocksifm_blocking * 64) * 64/2;*/ /*  (weight_ofm_block * 64)/2; */
+    /*unsigned int total_size = input_block_size + output_block_size + weight_block_size;*/
 
     handle->block_fwd_ofm = weight_ofm_block;
     handle->block_bwd_ifm = weight_ifm_block;
@@ -1177,7 +1178,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
 
               if (handle->use_fastpath == 1) {
                 /* Here starts logic for calculating RB factors for UPD when KS are enabled  */
-                int ifw_padded, qfma_padding, kernel_ifw_padded, kernel_ofw_padded;
+                int ifw_padded, qfma_padding, kernel_ifw_padded/*, kernel_ofw_padded*/;
                 int kernel_ofw_compute;
                 int kernel_ofw_fake_pixels;
                 int kernel_ofw;
