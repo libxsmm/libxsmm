@@ -340,6 +340,6 @@ LIBXSMM_API float libxsmm_sexp2_i8(signed char x)
 LIBXSMM_API float libxsmm_sexp2_i8i(int x)
 {
   LIBXSMM_ASSERT(-128 <= x && x <= 127);
-  libxsmm_sexp2_i8(x);
+  return libxsmm_sexp2_i8((signed char)x);
 }
 
