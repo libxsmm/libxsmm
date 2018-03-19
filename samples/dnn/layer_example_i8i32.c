@@ -72,28 +72,28 @@ typedef struct {
 
 LIBXSMM_INLINE void zero_buf_int8(char* buf, size_t size) {
   int i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = 0;
   }
 }
 
 LIBXSMM_INLINE void zero_buf_uint8(unsigned char* buf, size_t size) {
   int i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = 0;
   }
 }
 
 LIBXSMM_INLINE void zero_buf_int32(int* buf, size_t size) {
   int i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = 0;
   }
 }
 
 LIBXSMM_INLINE void copy_buf_int8(char* src, char* dst, size_t size) {
   int i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     dst[i] = src[i];
   }
 }
@@ -101,7 +101,7 @@ LIBXSMM_INLINE void copy_buf_int8(char* src, char* dst, size_t size) {
 
 LIBXSMM_INLINE void copy_buf_uint8(unsigned char* src, unsigned char* dst, size_t size) {
   int i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     dst[i] = src[i];
   }
 }
@@ -110,7 +110,7 @@ LIBXSMM_INLINE void init_buf_int8(char* buf, size_t size, int initPos, int initO
 {
   int i;
   zero_buf_int8(buf, size);
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = (char)((initOne != 0) ? 1 : ((initPos != 0) ? (rand()%3) : (rand()%3)-1));
   }
 }
@@ -119,7 +119,7 @@ LIBXSMM_INLINE void init_buf_uint8(unsigned char* buf, size_t size, int initPos,
 {
   int i;
   zero_buf_uint8(buf, size);
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = (unsigned char)((initOne != 0) ? 1 : (rand()%3));
   }
 }
@@ -128,7 +128,7 @@ LIBXSMM_INLINE void init_buf_int32(int* buf, size_t size, int initPos, int initO
 {
   int i;
   zero_buf_int32(buf, size);
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = (int)((initOne != 0) ? 1 : ((initPos != 0) ? (rand()%7) : (rand()%7)-3));
   }
 }
@@ -611,7 +611,7 @@ int main(int argc, char* argv[])
   conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #if defined(USE_OVERWRITE)
-  conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE | LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED;
+  conv_desc.options = (libxsmm_dnn_conv_option)(LIBXSMM_DNN_CONV_OPTION_OVERWRITE | LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED);
 #else
   conv_desc.options = LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED;
 #endif

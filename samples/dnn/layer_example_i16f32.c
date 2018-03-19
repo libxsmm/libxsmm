@@ -76,28 +76,28 @@ typedef struct {
 
 LIBXSMM_INLINE void zero_buf_int16(short* buf, size_t size) {
   int i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = 0;
   }
 }
 
 LIBXSMM_INLINE void zero_buf_int32(int* buf, size_t size) {
   int i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = 0;
   }
 }
 
 LIBXSMM_INLINE void copy_buf_int16(short* src, short* dst, size_t size) {
   int i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     dst[i] = src[i];
   }
 }
 
 LIBXSMM_INLINE void zero_buf_f32(float* buf, size_t size) {
   int i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = 0;
   }
 }
@@ -106,7 +106,7 @@ LIBXSMM_INLINE void init_buf_int16(short* buf, size_t size, int initPos, int ini
 {
   int i;
   zero_buf_int16(buf, size);
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = (short)((initOne != 0) ? 1 : ((initPos != 0) ? (rand()%7) : (rand()%7-3)));
   }
 }
@@ -115,7 +115,7 @@ LIBXSMM_INLINE void init_buf_int32(int* buf, size_t size, int initPos, int initO
 {
   int i;
   zero_buf_int32(buf, size);
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = (int)((initOne != 0) ? 1 : ((initPos != 0) ? (rand()%7) : (rand()%7-3)));
   }
 }
