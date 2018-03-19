@@ -91,7 +91,7 @@ if (0 == tid) {
 
 /* number of tasks that could be run in parallel */
 work = handle->desc.N*handle->blocksifm;
-/* compute chunck size */
+/* compute chunk size */
 chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
 thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
@@ -117,7 +117,7 @@ if (0 == tid) t_input = __rdtsc() - t_start;
 
 /* number of tasks that could be run in parallel */
 work = handle->blocksofm*handle->blocksifm;
-/* compute chunck size */
+/* compute chunk size */
 chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
 thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
@@ -140,7 +140,7 @@ if (0 == tid) t_wt = __rdtsc() - t_start;
 
 /* number of tasks that could be run in parallel */
 work = ALPHA * ALPHA * handle->blocksofm;
-/* compute chunck size */
+/* compute chunk size */
 chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
 thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
@@ -235,7 +235,7 @@ if (0 == tid) t_gemm += __rdtsc() - t_start;
 
 /* number of tasks that could be run in parallel */
 work = handle->desc.N*handle->blocksofm;
-/* compute chunck size */
+/* compute chunk size */
 chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
 thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;

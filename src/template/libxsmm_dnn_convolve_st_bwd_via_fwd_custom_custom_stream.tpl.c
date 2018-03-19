@@ -52,7 +52,7 @@ if (handle->use_lp_kernel == 0) {
 #endif
 }
 
-/* compute chunck size */
+/* compute chunk size */
 const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (transpose_work / handle->desc.threads) : ((transpose_work / handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;

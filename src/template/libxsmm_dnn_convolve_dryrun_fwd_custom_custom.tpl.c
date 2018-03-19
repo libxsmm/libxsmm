@@ -94,8 +94,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int ltid = omp_get_thread_num();
 #endif
   int img, ofm1, ifm1, oj, oi, ij, ii, local_entries = 0, ojb, ifmb, ofmb;
-  int cur_wt, next_wt, cur_out, next_out, padded_h = 0, padded_w = 0;
   int ii_use, ij_use, oi_use, oj_use;
+  int padded_h = 0, padded_w = 0;
 
   /* Threading related variables */
   int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -117,7 +117,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int lookahead_index;
 
   /* Arrays of stream indices */
-  int *compute_indices, *bn_indices;
+  int *compute_indices, *bn_indices = 0;
   char *kernel_variant;
 
   if (handle->padding_flag == 1) {

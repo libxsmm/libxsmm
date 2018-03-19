@@ -34,7 +34,7 @@
 #define TRANSPOSE_EXEC 3
 #define LIBXSMM_UPD_STREAMS_TRANSPOSE_IFMB_SHIFT 12
 
-/* FIXME assignemnts here  */
+/* FIXME assignments here */
 int BLOCKSIFM = handle->blocksifm;
 int BLOCKSOFM = handle->blocksofm;
 

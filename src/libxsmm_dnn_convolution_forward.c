@@ -52,8 +52,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_f
   typedef float element_filter_type;
   typedef libxsmm_sconvfunction libxsmm_convfunction;
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
-#else
-/* should not happen */
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
@@ -69,8 +69,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_i
   typedef short element_filter_type;
   typedef libxsmm_wconvfunction libxsmm_convfunction;
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
-#else
-/* should not happen */
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
@@ -86,8 +86,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_i
   typedef short element_filter_type;
   typedef libxsmm_wsconvfunction libxsmm_convfunction;
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
-#else
-/* should not happen */
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
@@ -103,8 +103,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_i
   typedef char element_filter_type;
   typedef libxsmm_budconvfunction libxsmm_convfunction;
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
-#else
-/* should not happen */
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;

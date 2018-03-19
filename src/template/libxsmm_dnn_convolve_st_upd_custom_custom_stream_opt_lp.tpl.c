@@ -32,7 +32,7 @@
 #define UPDATE_KERNEL 1
 #define WEIGHT_COPY 2
 
-/* FIXME assignemnts here  */
+/* FIXME assignments here */
 int BLOCKSIFM = handle->blocksifm;
 int BLOCKSOFM = handle->blocksofm;
 int OFWP = handle->ofwp+handle->output_lp_padding;

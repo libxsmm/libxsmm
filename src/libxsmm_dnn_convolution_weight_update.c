@@ -860,10 +860,12 @@ void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, cons
 }
 #endif
 
-typedef void (*transposer)(int M, int N, float *dst, int ldD, const float *src, int ldS);
+typedef void (*transposer)(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS);
 
 transposer get_transposer(int M, int N, int ldD, int ldS) {
-#ifdef __AVX512F__
+#if !defined(__AVX512F__)
+  LIBXSMM_UNUSED(M); LIBXSMM_UNUSED(N); LIBXSMM_UNUSED(ldD); LIBXSMM_UNUSED(ldS);
+#else
   if(M == 16 && N == 7 && ldD == 8 && ldS == 16) {
     return gather_transpose_ps_16_7_8_16;
   }
@@ -913,11 +915,10 @@ transposer get_transposer(int M, int N, int ldD, int ldS) {
     return gather_transpose_ps_16_58_60_16;
   }
 #endif
-
   return transpose_fallback;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish between SKX and KNx) */
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -927,27 +928,27 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f
   typedef float element_filter_type;
   typedef libxsmm_sconvfunction libxsmm_convfunction;
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
-#else
-/* should not happen */
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish between SKX and KNx) */
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid); /* TODO */
 #ifdef __AVX512F__
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
-#else
-/* should not happen */
+#else /* should not happen */
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish between SKX and KNx) */
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -965,14 +966,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i
       }
     }
   }
-#else
-/* should not happen */
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish betweem SKX and KNx) */
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish between SKX and KNx) */
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -990,8 +991,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i
       }
     }
   }
-#else
-/* should not happen */
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
@@ -1025,7 +1026,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(l
       typedef libxsmm_smmfunction gemm_function;
       /* let's do a ofmblock x ifmblock x ofw_rb GEMM :-) or in other words M=nbOfm, N=nbIfm, K=ofw (col-major) */
       gemm_function gemm_kernel     = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->ofw, NULL, &ldx, NULL, NULL, NULL, NULL, NULL);
-      /* for strided convlutions with kernel size bigger than 1 the above GEMM doesn't work and we need to switch to more transposes and an
+      /* for strided convolutions with kernel size bigger than 1 the above GEMM doesn't work and we need to switch to more transposes and an
          alternative GEMM:
          let's do a ifmblock x ofmblock x ofw_rb GEMM :-) or in other words M=nbIfm, N=nbOfm, K=ofw (col-major) */
       gemm_function gemm_kernel_alt = libxsmm_smmdispatch(handle->ifmblock, handle->ofmblock, handle->ofw, &ldx_alt, &ldb_alt, NULL, NULL, NULL, NULL, NULL);
@@ -1078,7 +1079,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom(lib
       typedef libxsmm_smmfunction gemm_function;
       /* let's do a ofmblock x ifmblock x ofw_rb GEMM :-) or in other words M=nbOfm, N=nbIfm, K=ofw (col-major) */
       gemm_function gemm_kernel     = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->ofw, &lda, &ldb, &ldc, NULL, NULL, NULL, NULL);
-      /* for strided convlutions with kernel size bigger than 1 the above GEMM doesn't work and we need to switch to more transposes and an
+      /* for strided convolutions with kernel size bigger than 1 the above GEMM doesn't work and we need to switch to more transposes and an
          alternative GEMM:
          let's do a ifmblock x ofmblock x ofw_rb GEMM :-) or in other words M=nbIfm, N=nbOfm, K=ofw (col-major) */
       gemm_function gemm_kernel_alt = libxsmm_smmdispatch(handle->ifmblock, handle->ofmblock, handle->ofw, &lda_alt, &ldb_alt, &ldc_alt, NULL, NULL, NULL, NULL);
@@ -1124,7 +1125,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(libxs
       typedef libxsmm_smmfunction gemm_function;
       /* let's do a ofmblock x ifmblock x ofw_rb GEMM :-) or in other words M=nbOfm, N=nbIfm, K=ofw (col-major) */
       gemm_function gemm_kernel     = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->ofw, &lda, &ldb, &ldc, NULL, NULL, NULL, NULL);
-      /* for strided convlutions with kernel size bigger than 1 the above GEMM doesn't work and we need to switch to more transposes and an
+      /* for strided convolutions with kernel size bigger than 1 the above GEMM doesn't work and we need to switch to more transposes and an
          alternative GEMM:
          let's do a ifmblock x ofmblock x ofw_rb GEMM :-) or in other words M=nbIfm, N=nbOfm, K=ofw (col-major) */
       gemm_function gemm_kernel_alt = libxsmm_smmdispatch(handle->ifmblock, handle->ofmblock, handle->ofw, &lda_alt, &ldb_alt, &ldc_alt, NULL, NULL, NULL, NULL);
