@@ -361,12 +361,12 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     }
 
     /* BLOCK 2: Run (n_peeling-1) iters to prefetch for extra L2 from pf* pointers if it is requested */
-    unsigned int peel_index;
+    unsigned int peel_index = 0;
 
     unsigned int out_reg_L2 = 0; /*atoi(getenv("REG_L2"));*/
-    unsigned int out_reg_L1 = -1; /*atoi(getenv("REG_L1"));*/
+    unsigned int out_reg_L1 = (unsigned int)-1; /*atoi(getenv("REG_L1"));*/
     unsigned int out_pf_L2 = 1; /*atoi(getenv("PF_L2"));*/
-    unsigned int out_pf_L1 = -1; /*atoi(getenv("PF_L1"));*/
+    unsigned int out_pf_L1 = (unsigned int)-1; /*atoi(getenv("PF_L1"));*/
 
     if (n_peeling-1 > 0) {
       if ( i_conv_desc->input_L2_prefetching == 1 ) {
@@ -374,7 +374,6 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
       }
       libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_1, l_gp_reg_mapping.gp_reg_weight_pf_L2);
 
-      peel_index = 0;
       for (peel_index = 0; peel_index < n_peeling-1; peel_index++) {
 
         /* Prefetch current output block to be loaded soon...  */
@@ -1298,7 +1297,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
   /* apply k blocking */
   for ( l_k = 0; l_k < i_conv_desc->ifm_block*i_kw_unroll; l_k+=step_size ) {
     /* load the four source registers, we cannot perform a pipeline as in case of sfma */
-    for ( l_w = 0; l_w < step_size; l_w++ ) {
+    for ( l_w = 0; l_w < (unsigned int)step_size; l_w++ ) {
       if (((l_k+l_w)%i_conv_desc->ifm_block == 0) && (l_k > 0) ) {
         l_filter_pos += (i_conv_kernel_config->l_ld_ifm_fil-i_conv_desc->ifm_block) * i_conv_desc->fm_lp_block;
       }

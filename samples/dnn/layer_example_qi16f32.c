@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2017-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -87,7 +87,7 @@ typedef struct {
   int stride_w;
 } naive_conv_t;
 
-LIBXSMM_INLINE void zero_buf(float* buf, long size) {
+LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
   int i;
 #pragma omp parallel for private(i)
   for (i = 0; i < size; ++i) {
@@ -95,16 +95,16 @@ LIBXSMM_INLINE void zero_buf(float* buf, long size) {
   }
 }
 
-LIBXSMM_INLINE void zero_buf_i16(short* buf, long size) {
+LIBXSMM_INLINE void zero_buf_i16(short* buf, size_t size) {
   int i;
 #pragma omp parallel for private(i)
   for (i = 0; i < size; ++i) {
-    buf[i] = 0.0f;
+    buf[i] = 0;
   }
 }
 
 
-LIBXSMM_INLINE void copy_buf(float* src, float* dst, long size) {
+LIBXSMM_INLINE void copy_buf(float* src, float* dst, size_t size) {
   int i;
 #pragma omp parallel for private(i)
   for (i = 0; i < size; ++i) {
@@ -112,7 +112,7 @@ LIBXSMM_INLINE void copy_buf(float* src, float* dst, long size) {
   }
 }
 
-LIBXSMM_INLINE void init_buf(float* buf, long size, int initPos, int initOne)
+LIBXSMM_INLINE void init_buf(float* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf(buf, size);
@@ -338,8 +338,10 @@ LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float
 
   LIBXSMM_VLA_DECL(4, const float, output_t, output + (pad_w_out * ofwp + pad_h_out), nOfm, ofhp, ofwp);
   LIBXSMM_VLA_DECL(4,       float,  input_t,  input + (pad_w_in * ifwp + pad_h_in), nIfm, ifhp, ifwp);
-  LIBXSMM_VLA_DECL(4,       float,  naive_input_t,  naive_input_save + (pad_w_in * ifwp + pad_h_in), nIfm, ifhp, ifwp);
   LIBXSMM_VLA_DECL(4, const float, filter_t, filter, nIfm, kh, kw);
+#if defined(USE_FUSED_RELU_BWD)
+  LIBXSMM_VLA_DECL(4, const float, naive_input_t, naive_input_save + (pad_w_in * ifwp + pad_h_in), nIfm, ifhp, ifwp);
+#endif
 
 #if defined(_OPENMP)
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
@@ -441,7 +443,7 @@ int main(int argc, char* argv[])
   short *input_libxsmm, *filter_libxsmm, *doutput_libxsmm, *filtertr_libxsmm;
   short *i16_naive_input, *i16_naive_filter, *i16_naive_doutput;
   float *dq_naive_input, *dq_naive_filter, *dq_naive_doutput;
-  unsigned char scf_input, scf_filter, scf_doutput, scf_filtertr;
+  unsigned char scf_input, scf_filter, scf_doutput/*, scf_filtertr*/;
 
 #ifdef FP32_BN_STATS
   float *batchstats_libxsmm;
@@ -504,10 +506,12 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_filter_tr;
   libxsmm_dnn_tensor* libxsmm_bias;
   libxsmm_dnn_tensor* libxsmm_dbias;
+#ifdef USE_FUSED_MAX_STATS
   libxsmm_dnn_tensor* libxsmm_batchstats;
   libxsmm_dnn_tensor* libxsmm_maxstats_fwd;
   libxsmm_dnn_tensor* libxsmm_maxstats_bwd;
   libxsmm_dnn_tensor* libxsmm_maxstats_upd;
+#endif
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;

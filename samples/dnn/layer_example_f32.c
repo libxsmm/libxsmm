@@ -85,7 +85,7 @@ typedef struct {
   int stride_w;
 } naive_conv_t;
 
-LIBXSMM_INLINE void zero_buf(float* buf, long size) {
+LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
   int i;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
@@ -95,7 +95,7 @@ LIBXSMM_INLINE void zero_buf(float* buf, long size) {
   }
 }
 
-LIBXSMM_INLINE void copy_buf(float* src, float* dst, long size) {
+LIBXSMM_INLINE void copy_buf(float* src, float* dst, size_t size) {
   int i;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
@@ -105,7 +105,7 @@ LIBXSMM_INLINE void copy_buf(float* src, float* dst, long size) {
   }
 }
 
-LIBXSMM_INLINE void init_buf(float* buf, long size, int initPos, int initOne)
+LIBXSMM_INLINE void init_buf(float* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf(buf, size);
@@ -331,8 +331,10 @@ LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float
 
   LIBXSMM_VLA_DECL(4, const float, output_t, output + (pad_h_out * ofwp + pad_w_out), nOfm, ofhp, ofwp);
   LIBXSMM_VLA_DECL(4,       float,  input_t,  input + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
-  LIBXSMM_VLA_DECL(4, const float, naive_input_t, naive_input_save + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
   LIBXSMM_VLA_DECL(4, const float, filter_t, filter, nIfm, kh, kw);
+#if defined(USE_FUSED_RELU_BWD)
+  LIBXSMM_VLA_DECL(4, const float, naive_input_t, naive_input_save + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
+#endif
 
 #if defined(_OPENMP)
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
@@ -489,7 +491,9 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_filter_tr;
   libxsmm_dnn_tensor* libxsmm_bias;
   libxsmm_dnn_tensor* libxsmm_dbias;
+#ifdef USE_FUSED_BATCH_STATS
   libxsmm_dnn_tensor* libxsmm_batchstats;
+#endif
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;

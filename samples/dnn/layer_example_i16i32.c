@@ -69,28 +69,28 @@ typedef struct {
   int stride_w;
 } naive_conv_t;
 
-LIBXSMM_INLINE void zero_buf_int16(short* buf, long size) {
+LIBXSMM_INLINE void zero_buf_int16(short* buf, size_t size) {
   int i;
   for (i = 0; i < size; ++i) {
     buf[i] = 0;
   }
 }
 
-LIBXSMM_INLINE void zero_buf_int32(int* buf, long size) {
+LIBXSMM_INLINE void zero_buf_int32(int* buf, size_t size) {
   int i;
   for (i = 0; i < size; ++i) {
     buf[i] = 0;
   }
 }
 
-LIBXSMM_INLINE void copy_buf_int16(short* src, short* dst, long size) {
+LIBXSMM_INLINE void copy_buf_int16(short* src, short* dst, size_t size) {
   int i;
   for (i = 0; i < size; ++i) {
     dst[i] = src[i];
   }
 }
 
-LIBXSMM_INLINE void init_buf_int16(short* buf, long size, int initPos, int initOne)
+LIBXSMM_INLINE void init_buf_int16(short* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf_int16(buf, size);
@@ -99,7 +99,7 @@ LIBXSMM_INLINE void init_buf_int16(short* buf, long size, int initPos, int initO
   }
 }
 
-LIBXSMM_INLINE void init_buf_int32(int* buf, long size, int initPos, int initOne)
+LIBXSMM_INLINE void init_buf_int32(int* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf_int32(buf, size);
@@ -326,9 +326,9 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_input;
   libxsmm_dnn_tensor* libxsmm_output;
   libxsmm_dnn_tensor* libxsmm_filter;
-  libxsmm_dnn_tensor* libxsmm_dinput;
-  libxsmm_dnn_tensor* libxsmm_doutput;
-  libxsmm_dnn_tensor* libxsmm_dfilter;
+  /*libxsmm_dnn_tensor* libxsmm_dinput;*/
+  /*libxsmm_dnn_tensor* libxsmm_doutput;*/
+  /*libxsmm_dnn_tensor* libxsmm_dfilter;*/
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;

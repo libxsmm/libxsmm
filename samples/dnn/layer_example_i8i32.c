@@ -26,7 +26,8 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Evangelos Georganas,  Hans Pabst, Dhiraj Kalamkar, Ankush Mandal (Intel Corp.)
+/* Alexander Heinecke, Evangelos Georganas, Hans Pabst,
+   Dhiraj Kalamkar, Ankush Mandal (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <stdlib.h>
@@ -69,28 +70,28 @@ typedef struct {
   int stride_w;
 } naive_conv_t;
 
-LIBXSMM_INLINE void zero_buf_int8(char* buf, long size) {
+LIBXSMM_INLINE void zero_buf_int8(char* buf, size_t size) {
   int i;
   for (i = 0; i < size; ++i) {
     buf[i] = 0;
   }
 }
 
-LIBXSMM_INLINE void zero_buf_uint8(unsigned char* buf, long size) {
+LIBXSMM_INLINE void zero_buf_uint8(unsigned char* buf, size_t size) {
   int i;
   for (i = 0; i < size; ++i) {
     buf[i] = 0;
   }
 }
 
-LIBXSMM_INLINE void zero_buf_int32(int* buf, long size) {
+LIBXSMM_INLINE void zero_buf_int32(int* buf, size_t size) {
   int i;
   for (i = 0; i < size; ++i) {
     buf[i] = 0;
   }
 }
 
-LIBXSMM_INLINE void copy_buf_int8(char* src, char* dst, long size) {
+LIBXSMM_INLINE void copy_buf_int8(char* src, char* dst, size_t size) {
   int i;
   for (i = 0; i < size; ++i) {
     dst[i] = src[i];
@@ -98,14 +99,14 @@ LIBXSMM_INLINE void copy_buf_int8(char* src, char* dst, long size) {
 }
 
 
-LIBXSMM_INLINE void copy_buf_uint8(unsigned char* src, unsigned char* dst, long size) {
+LIBXSMM_INLINE void copy_buf_uint8(unsigned char* src, unsigned char* dst, size_t size) {
   int i;
   for (i = 0; i < size; ++i) {
     dst[i] = src[i];
   }
 }
 
-LIBXSMM_INLINE void init_buf_int8(char* buf, long size, int initPos, int initOne)
+LIBXSMM_INLINE void init_buf_int8(char* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf_int8(buf, size);
@@ -114,7 +115,7 @@ LIBXSMM_INLINE void init_buf_int8(char* buf, long size, int initPos, int initOne
   }
 }
 
-LIBXSMM_INLINE void init_buf_uint8(unsigned char* buf, long size, int initPos, int initOne)
+LIBXSMM_INLINE void init_buf_uint8(unsigned char* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf_uint8(buf, size);
@@ -123,7 +124,7 @@ LIBXSMM_INLINE void init_buf_uint8(unsigned char* buf, long size, int initPos, i
   }
 }
 
-LIBXSMM_INLINE void init_buf_int32(int* buf, long size, int initPos, int initOne)
+LIBXSMM_INLINE void init_buf_int32(int* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf_int32(buf, size);
@@ -323,9 +324,9 @@ LIBXSMM_INLINE void naive_conv_wu_int8(naive_conv_t* param, const unsigned char 
   /* loop counters */
   int img, ofm, ifm, oj, oi, ij, ii, kj, ki;
 
-  LIBXSMM_VLA_DECL(4, unsigned char, output_t, output + (pad_w_out * ofwp + pad_h_out), nOfm, ofhp, ofwp);
-  LIBXSMM_VLA_DECL(4, unsigned char,  input_t,  input + (pad_w_in * ifwp + pad_h_in), nIfm, ifhp, ifwp);
-  LIBXSMM_VLA_DECL(4,       int, filter_t, filter, nIfm, kh, kw);
+  LIBXSMM_VLA_DECL(4, const unsigned char, output_t, output + (pad_w_out * ofwp + pad_h_out), nOfm, ofhp, ofwp);
+  LIBXSMM_VLA_DECL(4, const unsigned char,  input_t,  input + (pad_w_in * ifwp + pad_h_in), nIfm, ifhp, ifwp);
+  LIBXSMM_VLA_DECL(4,                 int, filter_t, filter, nIfm, kh, kw);
 
 #if defined(_OPENMP)
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
@@ -417,7 +418,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_dfilter;
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
-  libxsmm_dnn_err_t global_status;
+  libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff;
   memset(&norms_fwd, 0, sizeof(norms_fwd));

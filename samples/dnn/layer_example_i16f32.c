@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2017-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -74,35 +74,35 @@ typedef struct {
   int stride_w;
 } naive_conv_t;
 
-LIBXSMM_INLINE void zero_buf_int16(short* buf, long size) {
+LIBXSMM_INLINE void zero_buf_int16(short* buf, size_t size) {
   int i;
   for (i = 0; i < size; ++i) {
     buf[i] = 0;
   }
 }
 
-LIBXSMM_INLINE void zero_buf_int32(int* buf, long size) {
+LIBXSMM_INLINE void zero_buf_int32(int* buf, size_t size) {
   int i;
   for (i = 0; i < size; ++i) {
     buf[i] = 0;
   }
 }
 
-LIBXSMM_INLINE void copy_buf_int16(short* src, short* dst, long size) {
+LIBXSMM_INLINE void copy_buf_int16(short* src, short* dst, size_t size) {
   int i;
   for (i = 0; i < size; ++i) {
     dst[i] = src[i];
   }
 }
 
-LIBXSMM_INLINE void zero_buf_f32(float* buf, long size) {
+LIBXSMM_INLINE void zero_buf_f32(float* buf, size_t size) {
   int i;
   for (i = 0; i < size; ++i) {
     buf[i] = 0;
   }
 }
 
-LIBXSMM_INLINE void init_buf_int16(short* buf, long size, int initPos, int initOne)
+LIBXSMM_INLINE void init_buf_int16(short* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf_int16(buf, size);
@@ -111,7 +111,7 @@ LIBXSMM_INLINE void init_buf_int16(short* buf, long size, int initPos, int initO
   }
 }
 
-LIBXSMM_INLINE void init_buf_int32(int* buf, long size, int initPos, int initOne)
+LIBXSMM_INLINE void init_buf_int32(int* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf_int32(buf, size);
@@ -217,9 +217,9 @@ LIBXSMM_INLINE void naive_conv_fp_int16(naive_conv_t* param, const short* input,
               if (ij+kj < 0 || ij+kj >= ifh) continue;
               for (ki = 0; ki < kw; ++ki) {
                 if (ii+ki < 0 || ii+ki >= ifw) continue;
-                LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) +=
-                   (1.0 *  LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp))
-                *  (1.0 *  LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw));
+                LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) +=
+                  (1.f * LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp))
+                * (1.f * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw));
               }
             }
           }
@@ -409,12 +409,14 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_doutput;
   libxsmm_dnn_tensor* libxsmm_dfilter;
   libxsmm_dnn_tensor* libxsmm_batchstats;
+#ifdef USE_FUSED_MAX_STATS
   libxsmm_dnn_tensor* libxsmm_maxstats_fwd;
   libxsmm_dnn_tensor* libxsmm_maxstats_bwd;
   libxsmm_dnn_tensor* libxsmm_maxstats_upd;
+#endif
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
-  libxsmm_dnn_err_t global_status;
+  libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff, norms_batchstats;
   memset(&norms_fwd, 0, sizeof(norms_fwd));
