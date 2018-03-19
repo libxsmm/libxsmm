@@ -34,23 +34,22 @@ int ofm1ifm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2;
 const int ltid = tid - start_thread;
 /* number of tasks that could be run in parallel */
 const int work = handle->blocksifm * handle->blocksofm;
-/* compute chunck size */
+/* compute chunk size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 /* transpose + padding via stack allocated buffers for input */
-const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
-element_input_type input_scratch[padded_h*padded_w*handle->ifmblock]; /* this is a [H][c-block][W] or [H][c-block][W] tensor */
-for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch[ii] = (element_input_type)0; }
+element_input_type *const input_scratch = (element_input_type*)handle->scratch7; /* [H][c-block][W] tensor */
+for ( ii = 0; ii < handle->scratch7_size; ++ii ) { input_scratch[ii] = (element_input_type)0; }
 
-/* tranpsose via stack allocated buffers for output and weights to control stride-GEMM issue
+/* transpose via stack allocated buffers for output and weights to control stride-GEMM issue
    idea: we transpose grad_output and transpose filters when done */
-element_output_type output_scratch[handle->ofhp*handle->ofwp*handle->ofmblock];
+element_output_type *const output_scratch = (element_output_type*)handle->scratch8;
 for ( oi = 0; oi < handle->ofhp*handle->ofwp*handle->ofmblock; ++oi ) { output_scratch[oi] = (element_output_type)0; }
-element_filter_type filter_scratch[handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock];
+element_filter_type *const filter_scratch = (element_filter_type*)handle->scratch9;
 for ( oi = 0; oi < handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; ++oi ) { filter_scratch[oi] = (element_filter_type)0; }
 
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;

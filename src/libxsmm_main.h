@@ -388,7 +388,10 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t scratch4_size;
   void* scratch5;             /* This scratch is used as a copy buffer when padding needs to be applied */
   void* scratch6;
-  size_t scratch6_size;
+  void* scratch7;             /* [H][W][c-block] tensor (generic fwd/bwd convolution) */
+  void* scratch8;             /* output_scratch (generic update convolution) */
+  void* scratch9;             /* filter_scratch (generic update convolution) */
+  size_t scratch6_size, scratch7_size, scratch8_size, scratch9_size;
   size_t minibatch_scratch_size;
   size_t fwdbwd_scratch_size;
   size_t max_scratch5_size;

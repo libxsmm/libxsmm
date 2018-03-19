@@ -163,6 +163,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
 
+  LIBXSMM_ASSERT(0 != handle);
   int wrb1 = 0, wrb2 = 0, hrb1 = 0, hrb2 = 0, n_variants = 1;
   if (handle->desc.N >= handle->desc.threads) {
     n_variants = find_rb(handle->ofw, handle->ofh, &wrb1, &hrb1, &wrb2, &hrb2);
@@ -1496,9 +1497,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
           handle->upd_use_thread_fil = 1;
           handle->scratch4 = 0;
           handle->scratch4_size = 2 * handle->desc.threads * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_out);
-          // handle->scratch4_size += 32*handle->desc.threads *  handle->blocksofm *  handle->blocksifm * handle->desc.R
-          //   * handle->desc.S * handle->ifmblock * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_out);
-
+#if 0
+          handle->scratch4_size += 32*handle->desc.threads *  handle->blocksofm *  handle->blocksifm * handle->desc.R
+            * handle->desc.S * handle->ifmblock * handle->ofmblock * libxsmm_dnn_typesize(handle->datatype_out);
+#endif
           /* enable external reduce of filter scratch */
           if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE) > 0 ) {
             handle->upd_use_external_reduce = 1;
@@ -1606,6 +1608,29 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
       handle->scratch3_size = 0;
       handle->scratch4 = 0;
       handle->scratch4_size = 0;
+    }
+
+    if (handle->use_fwd_generic != 0 || handle->use_bwd_generic != 0) {
+      const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
+      const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
+      handle->scratch7_size = padded_h * padded_w * handle->ifmblock;
+      handle->scratch7 = 0;
+    }
+    else {
+      handle->scratch7_size = 0;
+      handle->scratch7 = 0;
+    }
+    if (handle->use_upd_generic != 0) {
+      handle->scratch8_size = handle->ofhp * handle->ofwp * handle->ofmblock;
+      handle->scratch8 = 0;
+      handle->scratch9_size = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
+      handle->scratch9 = 0;
+    }
+    else {
+      handle->scratch8_size = 0;
+      handle->scratch8 = 0;
+      handle->scratch9_size = 0;
+      handle->scratch9 = 0;
     }
 
     return status;

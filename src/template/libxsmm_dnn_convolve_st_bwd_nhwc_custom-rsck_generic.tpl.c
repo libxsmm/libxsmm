@@ -35,7 +35,7 @@ const int ltid = tid - start_thread;
 
 /* number of tasks that could be run in parallel */
 const int work = handle->desc.N * handle->blocksifm;
-/* compute chunck size */
+/* compute chunk size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
@@ -43,13 +43,13 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 
 /* number of tasks for transpose that could be run in parallel */
 int transpose_work = handle->blocksifm * handle->blocksofm;
-/* compute chunck size */
+/* compute chunk size */
 const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (transpose_work / handle->desc.threads) : ((transpose_work / handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;
 const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
 
-/* offset pointer in case of physcial padding */
+/* offset pointer in case of physical padding */
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm * handle->ofmblock;
 
 #if defined(LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM)
@@ -66,10 +66,9 @@ LIBXSMM_VLA_DECL(6, element_filter_type, tr_wt, (element_filter_type*)handle->sc
 element_filter_type* weight_base = 0;
 
 /* padding via stack allocated buffers */
-const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
-element_input_type del_input_scratch_padding[padded_h*padded_w*handle->ifmblock]; /* this is a [H][W][c-block] tensor */
-for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { del_input_scratch_padding[ii] = (element_input_type)0; }
+element_input_type *const del_input_scratch_padding = (element_input_type*)handle->scratch7; /* [H][W][c-block] tensor */
+for ( ii = 0; ii < handle->scratch7_size; ++ii ) { del_input_scratch_padding[ii] = (element_input_type)0; }
 
 /* transpose filters, if requested */
 if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) {
@@ -165,7 +164,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
        of input channels should be convoluted */
     if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
       LIBXSMM_PRAGMA_SIMD
-      for (ij = 0; ij < padded_h*padded_w*handle->ifmblock; ij++) {
+      for (ij = 0; ij < handle->scratch7_size; ij++) {
         del_input_scratch_padding[ij] = (element_output_type)0;
       }
     } else {
