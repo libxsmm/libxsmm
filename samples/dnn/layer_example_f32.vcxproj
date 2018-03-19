@@ -32,11 +32,17 @@
   <ItemGroup>
     <None Include="Makefile" />
     <None Include="run_alexnet.sh" />
+    <None Include="run_dcgan.sh" />
     <None Include="run_deepbench.sh" />
     <None Include="run_googlenetv1.sh" />
+    <None Include="run_googlenetv3.sh" />
     <None Include="run_overfeat.sh" />
     <None Include="run_resnet50.sh" />
+    <None Include="run_resnet50b.sh" />
+    <None Include="run_resnet50_mock.sh" />
     <None Include="run_vgga.sh" />
+    <None Include="run_vgga_4k.sh" />
+    <None Include="run_vgga_hd.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>layer_example_f32</ProjectName>

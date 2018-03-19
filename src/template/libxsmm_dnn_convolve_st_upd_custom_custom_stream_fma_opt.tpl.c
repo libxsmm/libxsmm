@@ -32,7 +32,7 @@
 /* computing first logical thread */
 const int ltid = tid-start_thread;
 
-/* FIXME assignemnts here  */
+/* FIXME assignments here */
 int BLOCKSIFM = handle->blocksifm;
 int BLOCKSOFM = handle->blocksofm;
 

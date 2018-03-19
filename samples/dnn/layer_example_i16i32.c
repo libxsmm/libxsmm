@@ -69,41 +69,41 @@ typedef struct {
   int stride_w;
 } naive_conv_t;
 
-LIBXSMM_INLINE void zero_buf_int16(short* buf, long size) {
+LIBXSMM_INLINE void zero_buf_int16(short* buf, size_t size) {
   int i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = 0;
   }
 }
 
-LIBXSMM_INLINE void zero_buf_int32(int* buf, long size) {
+LIBXSMM_INLINE void zero_buf_int32(int* buf, size_t size) {
   int i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = 0;
   }
 }
 
-LIBXSMM_INLINE void copy_buf_int16(short* src, short* dst, long size) {
+LIBXSMM_INLINE void copy_buf_int16(short* src, short* dst, size_t size) {
   int i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     dst[i] = src[i];
   }
 }
 
-LIBXSMM_INLINE void init_buf_int16(short* buf, long size, int initPos, int initOne)
+LIBXSMM_INLINE void init_buf_int16(short* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf_int16(buf, size);
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = (short)((initOne != 0) ? 1 : ((initPos != 0) ? (rand()%7) : (rand()%7)-3));
   }
 }
 
-LIBXSMM_INLINE void init_buf_int32(int* buf, long size, int initPos, int initOne)
+LIBXSMM_INLINE void init_buf_int32(int* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf_int32(buf, size);
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = (int)((initOne != 0) ? 1 : ((initPos != 0) ? (rand()%7) : (rand()%7)-3));
   }
 }
@@ -326,9 +326,9 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_input;
   libxsmm_dnn_tensor* libxsmm_output;
   libxsmm_dnn_tensor* libxsmm_filter;
-  libxsmm_dnn_tensor* libxsmm_dinput;
-  libxsmm_dnn_tensor* libxsmm_doutput;
-  libxsmm_dnn_tensor* libxsmm_dfilter;
+  /*libxsmm_dnn_tensor* libxsmm_dinput;*/
+  /*libxsmm_dnn_tensor* libxsmm_doutput;*/
+  /*libxsmm_dnn_tensor* libxsmm_dfilter;*/
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
@@ -548,11 +548,10 @@ int main(int argc, char* argv[])
   /* let's allocate and bind scratch */
   scratch_size = libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, &status );
   CHKERR_LIBXSMM_DNN( status );
-  scratch = (void*)libxsmm_aligned_malloc( scratch_size, 2097152 );
-  CHKERR_LIBXSMM_DNN( status );
+  scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, scratch ) );
   /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
-  //init_buf_int16( (short*)scratch, scratch_size/2, 0, 0 );
+  /*init_buf_int16( (short*)scratch, scratch_size/2, 0, 0 );*/
 
   if ((type == 'A' || type == 'F') && LIBXSMM_NEQ(0, check)) {
     printf("##############################################\n");

@@ -52,7 +52,7 @@ if (handle->use_lp_kernel == 0) {
 #endif
 }
 
-/* compute chunck size */
+/* compute chunk size */
 const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (transpose_work / handle->desc.threads) : ((transpose_work / handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;
@@ -219,7 +219,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 __m128i part2 = _mm256_extractf128_si256(lo_zipped,1);
                 __m128i part1 = _mm256_extractf128_si256(hi_zipped,0);
                 __m128i part3 =  _mm256_extractf128_si256(hi_zipped,1);
-                __m512i compact = _mm512_inserti32x4 (compact, part0, 0);
+                __m512i compact = _mm512_inserti32x4(LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), part0, 0);
                 compact = _mm512_inserti32x4 (compact, part1, 1);
                 compact = _mm512_inserti32x4 (compact, part2, 2);
                 compact = _mm512_inserti32x4 (compact, part3, 3);

@@ -35,7 +35,7 @@ const int ltid = tid - start_thread;
 
 /* number of tasks that could be run in parallel */
 const int work = handle->desc.N * handle->blocksifm;
-/* compute chunck size */
+/* compute chunk size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
@@ -43,13 +43,13 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 
 /* number of tasks for transpose that could be run in parallel */
 int transpose_work = handle->blocksifm * handle->blocksofm;
-/* compute chunck size */
+/* compute chunk size */
 const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (transpose_work / handle->desc.threads) : ((transpose_work / handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;
 const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
 
-/* offset pointer in case of physcial padding */
+/* offset pointer in case of physical padding */
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 
 /* Weight and transpose_weight tensor declaration */
@@ -59,10 +59,9 @@ LIBXSMM_VLA_DECL(6, element_filter_type, tr_wt, (element_filter_type*)handle->sc
 element_filter_type* weight_base = 0;
 
 /* padding via stack allocated buffers */
-const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
-element_input_type del_input_scratch_padding[padded_h*padded_w*handle->ifmblock]; /* this is a [H][W][c-block] tensor */
-for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { del_input_scratch_padding[ii] = (element_input_type)0; }
+element_input_type *const del_input_scratch_padding = (element_input_type*)handle->scratch7; /* [H][W][c-block] tensor */
+for ( ii = 0; ii < (int)handle->scratch7_size; ++ii ) { del_input_scratch_padding[ii] = (element_input_type)0; }
 
 /* transpose filters, if requested */
 if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) {
@@ -79,7 +78,7 @@ if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) {
         for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
           for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
             LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj , handle->desc.S-1-ki, ofm2, ifm2, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock) =
-                  LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+              LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
           }
         }
       }
@@ -130,7 +129,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
       }
     }
 
-    /* zero rim in case of physical padding.... this code is extremly stupid and crappy as it requires a complicated if... */
+    /* zero rim in case of physical padding.... this code is extremely stupid and crappy as it requires a complicated if... */
     if (handle->desc.pad_h_in > 0 || handle->desc.pad_w_in > 0) {
       for ( ij = 0; ij < handle->ifhp; ij++ ) {
         for ( ii = 0; ii < handle->ifwp; ii++ ) {
@@ -148,7 +147,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
        of input channels should be convoluted */
     if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
       LIBXSMM_PRAGMA_SIMD
-      for (ij = 0; ij < padded_h*padded_w*handle->ifmblock; ij++) {
+      for (ij = 0; ij < (int)handle->scratch7_size; ++ij) {
         del_input_scratch_padding[ij] = (element_output_type)0;
       }
     } else {

@@ -34,20 +34,19 @@ int imgofm1, img, ofm1, ifm1, oj, ij, oi, ii, kj, ki, ifm2, ofm2;
 const int ltid = tid - start_thread;
 /* number of tasks that could be run in parallel */
 const int work = handle->desc.N * handle->blocksofm;
-/* compute chunck size */
+/* compute chunk size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 /* offset output pointer in case of physical output padding */
-element_output_type* out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->blocksofm*handle->ofmblock);
+element_output_type *const out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->blocksofm*handle->ofmblock);
 
 /* padding via stack allocated buffers */
-const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
-element_input_type input_scratch_padding[padded_h*padded_w*handle->ifmblock]; /* this is a [H][W][c-block] tensor */
-for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
+element_input_type *const input_scratch_padding = (element_input_type*)handle->scratch7; /* [H][W][c-block] tensor */
+for ( ii = 0; ii < (int)handle->scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
 
 { /* open new scope for additional variable declarations (C89) */
   LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
@@ -117,7 +116,7 @@ for ( ii = 0; ii < padded_h*padded_w*handle->ifmblock; ++ii ) { input_scratch_pa
           }
         }
       } else {
-        /* copy into stack buffer for physial padding */
+        /* copy into stack buffer for physical padding */
         for (ij = 0; ij < handle->desc.H; ++ij) {
           for (ii = 0; ii < handle->desc.W; ++ii) {
             LIBXSMM_PRAGMA_SIMD

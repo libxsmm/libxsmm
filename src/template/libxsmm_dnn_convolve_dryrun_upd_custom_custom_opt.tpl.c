@@ -117,7 +117,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int n_code_segments;
   int mark_weight_init, mark_weight_copy;
   int *tmp_expanded_stream, tmp_stream_index;
-  segment_t *encoded_code_segments;
+  segment_t *encoded_code_segments = 0;
   int expanded_size;
   int stretch_of_convs;
   int encoded_stream_index;

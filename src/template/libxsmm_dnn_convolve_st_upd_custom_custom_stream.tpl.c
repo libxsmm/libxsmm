@@ -32,7 +32,7 @@
 /* computing first logical thread */
 const int ltid = tid-start_thread;
 
-/* FIXME assignemnts here  */
+/* FIXME assignments here */
 int BLOCKSIFM = handle->blocksifm;
 int BLOCKSOFM = handle->blocksofm;
 
@@ -56,7 +56,7 @@ const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) *
 
 
 const int work = BLOCKSIFM*BLOCKSOFM;
-/* compute chunck size */
+/* compute chunk size */
 const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
@@ -280,7 +280,7 @@ if (handle->reduce_weights) {
     }
   }
 #else
-/* should not happen */
+  /* should not happen */
 #endif
   libxsmm_barrier_wait(handle->barrier, ltid);
 }

@@ -77,7 +77,6 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
   l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_X86_GP_REG_R14;
   l_gp_reg_mapping.gp_reg_help_6 = LIBXSMM_X86_GP_REG_R15;
 
-
   /* define convolution kernel config */
   libxsmm_generator_init_convolution_kernel_config( &l_conv_kernel_config );
   if ( strcmp( i_arch, "knl" ) == 0 ) {
@@ -451,10 +450,10 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
 }
 
   LIBXSMM_API_INTERN
-void libxsmm_generator_convolution_weight_update_avx512_ofwloop( libxsmm_generated_code*                           io_generated_code,
+void libxsmm_generator_convolution_weight_update_avx512_ofwloop( libxsmm_generated_code* io_generated_code,
     const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
     const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
-    const libxsmm_convolution_weight_update_descriptor*                       i_conv_desc,
+    const libxsmm_convolution_weight_update_descriptor*     i_conv_desc,
     const unsigned int                                      i_ofh_unroll,
     const unsigned int                                      ofh_trip_counter,
     const int                                               no_unroll_no_block)
@@ -467,9 +466,9 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop( libxsmm_generat
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_convolution_weight_update_avx512_init_weight_strides( libxsmm_generated_code*                           io_generated_code,
+void libxsmm_generator_convolution_weight_update_avx512_init_weight_strides( libxsmm_generated_code* io_generated_code,
     const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
-    const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+    const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
     const libxsmm_convolution_weight_update_descriptor*     i_conv_desc ) {
 
   int unroll_factor = i_conv_desc->ifm_block;
@@ -508,10 +507,10 @@ void libxsmm_generator_convolution_weight_update_avx512_init_weight_strides( lib
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_generated_code*                           io_generated_code,
+void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_generated_code* io_generated_code,
     const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
     const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
-    const libxsmm_convolution_weight_update_descriptor*                       i_conv_desc,
+    const libxsmm_convolution_weight_update_descriptor*     i_conv_desc,
     const unsigned int                                      i_ofh_unroll,
     const unsigned int                                      ofh_trip_counter,
     const int                                               no_unroll_no_block ) {
@@ -742,9 +741,9 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_sfma( libxsmm_ge
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_convolution_weight_update_transpose_avx512_init_weight_strides( libxsmm_generated_code*                           io_generated_code,
+void libxsmm_generator_convolution_weight_update_transpose_avx512_init_weight_strides( libxsmm_generated_code* io_generated_code,
     const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
-    const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+    const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
     const libxsmm_convolution_weight_update_descriptor*     i_conv_desc ) {
 
   int unroll_factor = i_conv_desc->ifm_block;
@@ -784,7 +783,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_init_weight_st
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop( libxsmm_generated_code*                                 io_generated_code,
+void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop( libxsmm_generated_code* io_generated_code,
     const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
     const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
     const libxsmm_convolution_weight_update_descriptor*     i_conv_desc,
@@ -806,6 +805,8 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop( libxs
   unsigned int output_counter = 0;
   unsigned int unroll_factor = i_conv_desc->ifm_block;
   unsigned int step_size = 0;
+  LIBXSMM_UNUSED(ofh_trip_counter);
+  LIBXSMM_UNUSED(i_ofh_unroll);
 
   /* Currently for formats other than custom format, ifmblock<VECTOR_LENGTH scenario is not optimized*/
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0 ) {
@@ -1027,7 +1028,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop( libxs
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pixels_inside( libxsmm_generated_code*               io_generated_code,
+void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pixels_inside( libxsmm_generated_code* io_generated_code,
     const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
     const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
     const libxsmm_convolution_weight_update_descriptor*     i_conv_desc,
@@ -1050,6 +1051,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
   unsigned int lp_dim_out = 1;
   unsigned int use_lp_kernel = 0;
   unsigned int vperm_instr = LIBXSMM_X86_INSTR_VPERMW;
+  LIBXSMM_UNUSED(is_last_call);
 
   /* depending on datatype emit the needed FMA(-sequence) */
   if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -1117,7 +1119,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
       remainder = 0;
 
       if ( i_conv_desc->avoid_output_trans == 0 )  {
-        for ( l_w = 0; l_w < bound; l_w++ ) {
+        for ( l_w = 0; l_w < (unsigned int)bound; l_w++ ) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
             i_conv_kernel_config->instruction_set,
             i_conv_kernel_config->vmove_instruction,
@@ -1330,7 +1332,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
 
         /* Output prefetches */
         int pixel_id = cache_line_offset/64;
-        if (l_n == 8 && pixel_id < n_compute_pixels/lp_dim_out) {
+        if (l_n == 8 && pixel_id < n_compute_pixels/((int)lp_dim_out)) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
               prefetch_type_output,
               output_pf_register,
@@ -1341,7 +1343,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
 
         if ( (step_size == 4) | (step_size == 8) ) {
           pixel_id = (cache_line_offset+64)/64;
-          if (l_n == 10 && pixel_id < n_compute_pixels/lp_dim_out) {
+          if (l_n == 10 && pixel_id < n_compute_pixels/((int)lp_dim_out)) {
             libxsmm_x86_instruction_prefetch( io_generated_code,
                 prefetch_type_output,
                 output_pf_register,
@@ -1351,7 +1353,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
           }
 
           pixel_id = (cache_line_offset+128)/64;
-          if (l_n == 12 && pixel_id < n_compute_pixels/lp_dim_out) {
+          if (l_n == 12 && pixel_id < n_compute_pixels/((int)lp_dim_out)) {
             libxsmm_x86_instruction_prefetch( io_generated_code,
                 prefetch_type_output,
                 output_pf_register,
@@ -1361,7 +1363,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
           }
 
           pixel_id = (cache_line_offset+192)/64;
-          if (l_n == 14 && pixel_id < n_compute_pixels/lp_dim_out) {
+          if (l_n == 14 && pixel_id < n_compute_pixels/((int)lp_dim_out)) {
             libxsmm_x86_instruction_prefetch( io_generated_code,
                 prefetch_type_output,
                 output_pf_register,
@@ -1371,7 +1373,9 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
           }
         }
 
-#if 0
+#if 1
+        LIBXSMM_UNUSED(is_last_call);
+#else
         int before = 0; /*atoi(getenv("BEFORE"));*/
         if ( (is_last_call == 1) && (i_conv_desc->use_nts == 0) && (l_k_2 ==  i_conv_desc->ofw_rb - before) && (l_k_1 == i_conv_desc->ofh_rb - 1)   ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -1393,7 +1397,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_inside( libxsmm_generated_code*                                 io_generated_code,
+void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_inside( libxsmm_generated_code* io_generated_code,
     const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
     const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
     const libxsmm_convolution_weight_update_descriptor*     i_conv_desc,
@@ -1414,6 +1418,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
   unsigned int lookahead = 1;
   unsigned int vperm_instr = LIBXSMM_X86_INSTR_VPERMW;
 
+  LIBXSMM_UNUSED(is_last_call);
   /* depending on datatype emit the needed FMA(-sequence) */
   if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     l_compute_instr = LIBXSMM_X86_INSTR_VFMADD231PS;
