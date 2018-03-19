@@ -10,11 +10,11 @@
       part2 = _mm256_extractf128_si256(compressed_lo,1); \
       part1 = _mm256_extractf128_si256(compressed_hi,0); \
       part3 =  _mm256_extractf128_si256(compressed_hi,1); \
-      compact = _mm512_inserti32x4 (compact, part0, 0); \
-      compact = _mm512_inserti32x4 (compact, part1, 1); \
-      compact = _mm512_inserti32x4 (compact, part2, 2); \
-      compact = _mm512_inserti32x4 (compact, part3, 3); \
-      pair_addr = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
+      compact = _mm512_inserti32x4(LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), part0, 0); \
+      compact = _mm512_inserti32x4(compact, part1, 1); \
+      compact = _mm512_inserti32x4(compact, part2, 2); \
+      compact = _mm512_inserti32x4(compact, part3, 3); \
+      pair_addr = &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
       _mm512_storeu_si512 (pair_addr, compact);
 
 #define TRANSPOSE_W_HALF_PAIR(img, ofm1, ij, ii, half_i) \
@@ -27,11 +27,11 @@
       part2 = _mm256_extractf128_si256(compressed_lo,1); \
       part1 = _mm256_extractf128_si256(compressed_hi,0); \
       part3 =  _mm256_extractf128_si256(compressed_hi,1); \
-      compact = _mm512_inserti32x4 (compact, part0, 0); \
-      compact = _mm512_inserti32x4 (compact, part1, 1); \
-      compact = _mm512_inserti32x4 (compact, part2, 2); \
-      compact = _mm512_inserti32x4 (compact, part3, 3); \
-      pair_addr = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
+      compact = _mm512_inserti32x4(LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), part0, 0); \
+      compact = _mm512_inserti32x4(compact, part1, 1); \
+      compact = _mm512_inserti32x4(compact, part2, 2); \
+      compact = _mm512_inserti32x4(compact, part3, 3); \
+      pair_addr = &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
       _mm512_storeu_si512(pair_addr, compact);
 
 element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi, *pair_addr;

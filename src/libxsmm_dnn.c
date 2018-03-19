@@ -2641,9 +2641,9 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
     if ( (cblk_f32 == 16) && (cblk_i16*lp_blk == 16) ) {
       __m512 vscfq = _mm512_set1_ps(scfq);
 #ifdef _OPENMP
-#pragma omp parallel for private(i1)
+#     pragma omp parallel for private(i1)
 #endif
-      for( i1 = 0; i1 < N*C*H*W; i1+=16 ) {
+      for( i1 = 0; i1 < (int)(N*C*H*W); i1 += 16 ) {
         _mm256_stream_si256( (__m256i *)&(out_buffer[i1]), _mm512_quantize_near_ps_epi16( &(in_buffer[i1]), vscfq ) );
       }
     } else {
@@ -2748,19 +2748,23 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
 #ifdef _OPENMP
 #     pragma omp parallel for private(i1, i2, i3, i4, i5) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-      for( i1 = 0; i1 < kblk; ++i1 ) {
-        for( i2 = 0; i2 < cblk; ++i2 ) {
-          for( i3 = 0; i3 < R; ++i3 ) {
-            for( i4 = 0; i4 < S; ++i4 ) {
+      for( i1 = 0; i1 < (int)kblk; ++i1 ) {
+        for( i2 = 0; i2 < (int)cblk; ++i2 ) {
+          for( i3 = 0; i3 < (int)R; ++i3 ) {
+            for( i4 = 0; i4 < (int)S; ++i4 ) {
               for( i5 = 0; i5 < 16; i5+=2 ) {
-                __m256i even_ch = _mm512_quantize_near_ps_epi16( &(in[i1][i2][i3][i4][i5+0][0]), vscfq );
-                __m256i odd_ch  = _mm512_quantize_near_ps_epi16( &(in[i1][i2][i3][i4][i5+1][0]), vscfq );
-                __m256i compressed_lo  = _mm256_unpacklo_epi16(even_ch, odd_ch);
-                __m256i compressed_hi  = _mm256_unpackhi_epi16(even_ch, odd_ch);
+                __m256i even_ch = _mm512_quantize_near_ps_epi16(
+                  &LIBXSMM_VLA_ACCESS(6, in, i1, i2, i3, i4, i5 + 0, 0, C / cblk_f32, R, S, cblk_f32, kblk_f32), vscfq);
+                __m256i odd_ch  = _mm512_quantize_near_ps_epi16(
+                  &LIBXSMM_VLA_ACCESS(6, in, i1, i2, i3, i4, i5 + 1, 0, C / cblk_f32, R, S, cblk_f32, kblk_f32), vscfq);
+                __m256i compressed_lo = _mm256_unpacklo_epi16(even_ch, odd_ch);
+                __m256i compressed_hi = _mm256_unpackhi_epi16(even_ch, odd_ch);
                 __m512i compact =  _mm512_inserti64x4( _mm512_setzero_si512(), compressed_lo, 0);
-                compact =  _mm512_inserti64x4(compact, compressed_hi, 1);
-                compact =  LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(permute_compact_idx, compact);
-                _mm512_stream_si512(&(out[i1][i2][i3][i4][i5/2][0][0]), compact);
+                compact = _mm512_inserti64x4(compact, compressed_hi, 1);
+                compact = LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(permute_compact_idx, compact);
+                _mm512_stream_si512(
+                  &LIBXSMM_VLA_ACCESS(7, out, i1, i2, i3, i4, i5 / 2, 0, 0, cblk, R, S, cblk_i16, kblk_i16, lp_blk),
+                  compact);
               }
             }
           }

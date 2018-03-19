@@ -43,7 +43,7 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 /* transpose + padding via stack allocated buffers for input */
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 element_input_type *const input_scratch = (element_input_type*)handle->scratch7; /* [H][c-block][W] tensor */
-for ( ii = 0; ii < handle->scratch7_size; ++ii ) { input_scratch[ii] = (element_input_type)0; }
+for ( ii = 0; ii < (int)handle->scratch7_size; ++ii ) { input_scratch[ii] = (element_input_type)0; }
 
 /* transpose via stack allocated buffers for output and weights to control stride-GEMM issue
    idea: we transpose grad_output and transpose filters when done */

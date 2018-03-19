@@ -61,7 +61,7 @@ element_filter_type* weight_base = 0;
 /* padding via stack allocated buffers */
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 element_input_type *const del_input_scratch_padding = (element_input_type*)handle->scratch7; /* [H][W][c-block] tensor */
-for ( ii = 0; ii < handle->scratch7_size; ++ii ) { del_input_scratch_padding[ii] = (element_input_type)0; }
+for ( ii = 0; ii < (int)handle->scratch7_size; ++ii ) { del_input_scratch_padding[ii] = (element_input_type)0; }
 
 /* transpose filters, if requested */
 if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) {
@@ -78,7 +78,7 @@ if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) {
         for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
           for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
             LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj , handle->desc.S-1-ki, ofm2, ifm2, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock) =
-                  LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+              LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
           }
         }
       }
@@ -147,7 +147,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
        of input channels should be convoluted */
     if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
       LIBXSMM_PRAGMA_SIMD
-      for (ij = 0; ij < handle->scratch7_size; ij++) {
+      for (ij = 0; ij < (int)handle->scratch7_size; ++ij) {
         del_input_scratch_padding[ij] = (element_output_type)0;
       }
     } else {
