@@ -1246,7 +1246,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_quant.normf_rel);
 
       /* norms quantization */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output_bp, dq_naive_doutput, 0, 0, &norms_quant);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output_wu, dq_naive_doutput, 0, 0, &norms_quant);
       printf("del-Output Quantization:\n");
       printf("L1 reference  : %.25g\n", norms_quant.l1_ref);
       printf("L1 test       : %.25g\n", norms_quant.l1_tst);
