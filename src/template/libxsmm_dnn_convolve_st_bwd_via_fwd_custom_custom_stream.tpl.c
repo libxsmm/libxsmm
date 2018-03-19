@@ -561,58 +561,72 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       }
     }
   } else {
-    /* Run the stream of convolutions, no extra operations are required... */
-    if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
-      LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
-      element_input_type *regular_input_base;
-      regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
+    if (handle->desc.N*BLOCKSIFM >= handle->desc.threads) {
+      /* Run the stream of convolutions, no extra operations are required... */
+      if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
+        LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
+        element_input_type *regular_input_base;
+        regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
 
-      if (handle->n_variants == 2) {
-        for (pc = 0; pc < instr; pc+=1) {
-          offset_i = stream[i];
-          offset_w = stream[i+1];
-          offset_o = stream[i+2];
-          pi = stream[i+3];
-          pw = stream[i+4];
-          po = stream[i+5];
-          kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
-          i+=3;
+        if (handle->n_variants == 2) {
+          for (pc = 0; pc < instr; pc+=1) {
+            offset_i = stream[i];
+            offset_w = stream[i+1];
+            offset_o = stream[i+2];
+            pi = stream[i+3];
+            pw = stream[i+4];
+            po = stream[i+5];
+            kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
+            i+=3;
+          }
+        } else {
+          for (pc = 0; pc < instr; pc++) {
+            offset_i = stream[i];
+            offset_w = stream[i+1];
+            offset_o = stream[i+2];
+            pi = stream[i+3];
+            pw = stream[i+4];
+            po = stream[i+5];
+            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
+            i+=3;
+          }
         }
       } else {
-        for (pc = 0; pc < instr; pc++) {
-          offset_i = stream[i];
-          offset_w = stream[i+1];
-          offset_o = stream[i+2];
-          pi = stream[i+3];
-          pw = stream[i+4];
-          po = stream[i+5];
-          kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
-          i+=3;
+        if (handle->n_variants == 2) {
+          for (pc = 0; pc < instr; pc+=1) {
+            offset_i = stream[i];
+            offset_w = stream[i+1];
+            offset_o = stream[i+2];
+            pi = stream[i+3];
+            pw = stream[i+4];
+            po = stream[i+5];
+            kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+            i+=3;
+          }
+        } else {
+          for (pc = 0; pc < instr; pc++) {
+            offset_i = stream[i];
+            offset_w = stream[i+1];
+            offset_o = stream[i+2];
+            pi = stream[i+3];
+            pw = stream[i+4];
+            po = stream[i+5];
+            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+            i+=3;
+          }
         }
       }
     } else {
-      if (handle->n_variants == 2) {
-        for (pc = 0; pc < instr; pc+=1) {
-          offset_i = stream[i];
-          offset_w = stream[i+1];
-          offset_o = stream[i+2];
-          pi = stream[i+3];
-          pw = stream[i+4];
-          po = stream[i+5];
-          kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-          i+=3;
-        }
-      } else {
-        for (pc = 0; pc < instr; pc++) {
-          offset_i = stream[i];
-          offset_w = stream[i+1];
-          offset_o = stream[i+2];
-          pi = stream[i+3];
-          pw = stream[i+4];
-          po = stream[i+5];
-          kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-          i+=3;
-        }
+      /* This is the the img par branch...  */
+      for (pc = 0; pc < instr; pc++) {
+        offset_i = stream[i];
+        offset_w = stream[i+1];
+        offset_o = stream[i+2];
+        pi = stream[i+3];
+        pw = stream[i+4];
+        po = stream[i+5];
+        kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+        i+=3;
       }
     }
   }

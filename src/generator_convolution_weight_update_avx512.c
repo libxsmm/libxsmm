@@ -77,7 +77,6 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
   l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_X86_GP_REG_R14;
   l_gp_reg_mapping.gp_reg_help_6 = LIBXSMM_X86_GP_REG_R15;
 
-
   /* define convolution kernel config */
   libxsmm_generator_init_convolution_kernel_config( &l_conv_kernel_config );
   if ( strcmp( i_arch, "knl" ) == 0 ) {
@@ -1051,8 +1050,8 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
   unsigned int l_compute_instr = 0;
   unsigned int lp_dim_out = 1;
   unsigned int use_lp_kernel = 0;
-
-  unsigned int vperm_instr = (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL) ? LIBXSMM_X86_INSTR_VPERMD : LIBXSMM_X86_INSTR_VPERMW;
+  unsigned int vperm_instr = LIBXSMM_X86_INSTR_VPERMW;
+  LIBXSMM_UNUSED(is_last_call);
 
   /* depending on datatype emit the needed FMA(-sequence) */
   if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -1417,10 +1416,9 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
   unsigned int l_compute_instr = 0;
   unsigned int use_lp_kernel = 0;
   unsigned int lookahead = 1;
+  unsigned int vperm_instr = LIBXSMM_X86_INSTR_VPERMW;
 
-  unsigned int vperm_instr = (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL) ? LIBXSMM_X86_INSTR_VPERMD : LIBXSMM_X86_INSTR_VPERMW;
   LIBXSMM_UNUSED(is_last_call);
-
   /* depending on datatype emit the needed FMA(-sequence) */
   if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     l_compute_instr = LIBXSMM_X86_INSTR_VFMADD231PS;
