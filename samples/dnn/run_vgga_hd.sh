@@ -31,6 +31,7 @@ UNAME=$(which uname 2>/dev/null)
 PASTE=$(which paste 2>/dev/null)
 GREP=$(which grep 2>/dev/null)
 SORT=$(which sort 2>/dev/null)
+DATE=$(which date 2>/dev/null)
 CUT=$(which cut 2>/dev/null)
 WC=$(which wc 2>/dev/null)
 TR=$(which tr 2>/dev/null)
@@ -64,16 +65,19 @@ else
 fi
 
 if [[ -z "${OMP_NUM_THREADS}" ]]; then
-  echo "using defaults for OMP settings!"
   export KMP_AFFINITY=compact,granularity=fine KMP_HW_SUBSET=1T
   export OMP_NUM_THREADS=$((NC/NS))
-else
-  echo "using environment OMP settings!"
 fi
+echo "OMP_NUM_THREADS=\"${OMP_NUM_THREADS}\" NUMACTL=\"${NUMACTL}\""
 echo
 
+if [ "" != "${DATE}" ]; then
+  LOGFILE=$(basename $0 .sh)-$(${DATE} +%Y%m%d-%H%M%S).log
+else
+  LOGFILE=$(basename $0 .sh).log
+fi
+
 EXE="${NUMACTL} ./layer_example_${TYPE}"
-LOGFILE=$(basename $0 .sh).log
 
 # arguments: iters ifw ifh nImg nIfm nOfm kw kh padw padh stride type format padmode
 #
