@@ -46,7 +46,8 @@ element_output_type* out = ((element_output_type*)handle->reg_output->data) + (h
 /* padding via stack allocated buffers */
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 element_input_type *const input_scratch_padding = (element_input_type*)handle->scratch7; /* [H][W][c-block] tensor */
-for ( ii = 0; ii < (int)handle->scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
+const int scratch7_size = (int)(handle->scratch7_size / libxsmm_dnn_typesize(handle->datatype_in));
+for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
 
 { /* open new scope for additional variable declarations (C89) */
   LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);

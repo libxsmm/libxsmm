@@ -43,14 +43,17 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 /* transpose + padding via stack allocated buffers for input */
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 element_input_type *const input_scratch = (element_input_type*)handle->scratch7; /* [H][c-block][W] tensor */
-for ( ii = 0; ii < (int)handle->scratch7_size; ++ii ) { input_scratch[ii] = (element_input_type)0; }
+const int scratch7_size = (int)(handle->scratch7_size / libxsmm_dnn_typesize(handle->datatype_in));
+for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch[ii] = (element_input_type)0; }
 
 /* transpose via stack allocated buffers for output and weights to control stride-GEMM issue
    idea: we transpose grad_output and transpose filters when done */
 element_output_type *const output_scratch = (element_output_type*)handle->scratch8;
-for ( oi = 0; oi < handle->ofhp*handle->ofwp*handle->ofmblock; ++oi ) { output_scratch[oi] = (element_output_type)0; }
+const int scratch8_size = (int)(handle->scratch8_size / libxsmm_dnn_typesize(handle->datatype_out));
+for ( oi = 0; oi < scratch8_size; ++oi ) { output_scratch[oi] = (element_output_type)0; }
 element_filter_type *const filter_scratch = (element_filter_type*)handle->scratch9;
-for ( oi = 0; oi < handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; ++oi ) { filter_scratch[oi] = (element_filter_type)0; }
+const int scratch9_size = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
+for ( oi = 0; oi < scratch9_size; ++oi ) { filter_scratch[oi] = (element_filter_type)0; }
 
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm*handle->ofmblock;
 LIBXSMM_VLA_DECL(5, const element_output_type, output, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
@@ -76,7 +79,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
 #if defined(LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM)
     element_filter_type* temp_buf = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
     LIBXSMM_PRAGMA_SIMD
-    for (ii = 0; ii < handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock; ++ii) {
+    for (ii = 0; ii < scratch9_size; ++ii) {
       temp_buf[ii] = (element_filter_type)0;
     }
 #endif
@@ -108,7 +111,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
           for (ii = 0; ii < handle->ifwp/handle->desc.v; ++ii) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
               LIBXSMM_VLA_ACCESS(3, input_trans, ij, ifm2, ii, handle->ifmblock, padded_w) =
-                LIBXSMM_VLA_ACCESS(5,  input, img, ij*handle->desc.u, ii*handle->desc.v, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+                LIBXSMM_VLA_ACCESS(5, input, img, ij*handle->desc.u, ii*handle->desc.v, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
             }
           }
         }
@@ -117,7 +120,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
           for (ii = 0; ii < handle->desc.W/handle->desc.v; ++ii) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
               LIBXSMM_VLA_ACCESS(3, input_trans, ij + handle->desc.pad_h, ifm2, ii + handle->desc.pad_w, handle->ifmblock, padded_w) =
-                LIBXSMM_VLA_ACCESS(5,  input, img, ij*handle->desc.u, ii*handle->desc.v, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+                LIBXSMM_VLA_ACCESS(5, input, img, ij*handle->desc.u, ii*handle->desc.v, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
             }
           }
         }
@@ -155,7 +158,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
           for (oi = 0; oi < handle->ofwp; ++oi) {
             for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
               LIBXSMM_VLA_ACCESS(3, output_trans, oj, ofm2, oi, handle->ofmblock, handle->ofwp) =
-                LIBXSMM_VLA_ACCESS(5,  output_padded, img, oj, oi, ofm1, ofm2, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
+                LIBXSMM_VLA_ACCESS(5, output_padded, img, oj, oi, ofm1, ofm2, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
             }
           }
         }
@@ -179,7 +182,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
             LIBXSMM_PRAGMA_SIMD
             for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
               LIBXSMM_VLA_ACCESS(3, input_padded, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
-                LIBXSMM_VLA_ACCESS(5,  input, img, ij, ii, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
+                LIBXSMM_VLA_ACCESS(5, input, img, ij, ii, ifm1, ifm2, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
             }
           }
         }
@@ -189,7 +192,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
           for (oi = 0; oi < handle->ofw; ++oi) {
             for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
               LIBXSMM_VLA_ACCESS(3, output_trans, oj, ofm2, oi, handle->ofmblock, handle->ofwp) =
-                LIBXSMM_VLA_ACCESS(5,  output, img, oj, oi, ofm1, ofm2, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
+                LIBXSMM_VLA_ACCESS(5, output, img, oj, oi, ofm1, ofm2, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
             }
           }
         }
