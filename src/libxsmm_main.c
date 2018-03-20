@@ -2120,37 +2120,31 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, const int* flags, const int* prefetch)
 {
-  static int error_once = 0;
-  LIBXSMM_UNUSED(oprec);
   if (0 != fn && 0 != m) {
     const libxsmm_gemm_precision precision = (0 != iprec ? *iprec : LIBXSMM_GEMM_PRECISION_F64);
     const libxsmm_blasint kk = *(0 != k ? k : m), nn = (0 != n ? *n : kk);
-    switch (precision) {
-      case LIBXSMM_GEMM_PRECISION_F64: {
-        *fn = (intptr_t)libxsmm_dmmdispatch(*m, nn, kk, lda, ldb, ldc,
-          (const double*)alpha, (const double*)beta,
-          flags, prefetch);
-      } break;
-      case LIBXSMM_GEMM_PRECISION_F32: {
-        *fn = (intptr_t)libxsmm_smmdispatch(*m, nn, kk, lda, ldb, ldc,
-          (const float*)alpha, (const float*)beta,
-          flags, prefetch);
-      } break;
-      default: {
-        if (0 != libxsmm_verbosity /* library code is expected to be mute */
-         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-        {
-          fprintf(stderr, "LIBXSMM ERROR: unsupported precision requested for libxsmm_xmmdispatch!\n");
-        }
-        *fn = 0;
+    libxsmm_descriptor_blob blob;
+    libxsmm_gemm_descriptor backend_descriptor, *descriptor = libxsmm_gemm_descriptor_init2(&blob,
+      precision, 0 != oprec ? *oprec : precision, *m, nn, kk, 0 != lda ? *lda : *m, 0 != ldb ? *ldb : kk, 0 != ldc ? *ldc : *m,
+      alpha, beta, 0 != flags ? *flags : LIBXSMM_FLAGS, libxsmm_get_gemm_xprefetch(prefetch));
+    if (0 != descriptor) {
+      if (0 != (0x8000 & descriptor->prefetch)) { /* "sign"-bit of unsigned short is set */
+        backend_descriptor = *descriptor;
+        LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(backend_descriptor, libxsmm_gemm_auto_prefetch);
+        descriptor = &backend_descriptor;
       }
+      *fn = internal_find_code(descriptor).ival;
+    }
+    else { /* quiet */
+      *fn = 0;
     }
   }
   else {
+    static int error_once = 0;
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM ERROR: invalid M, N, or K passed into libxsmm_xmmdispatch!\n");
+      fprintf(stderr, "LIBXSMM ERROR: invalid argument passed into libxsmm_xmmdispatch!\n");
     }
     if (0 != fn) *fn = 0;
   }
