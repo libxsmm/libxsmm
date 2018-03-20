@@ -47,7 +47,11 @@ element_output_type* out = ((element_output_type*)handle->reg_output->data) + (h
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int scratch7_size = padded_h * padded_w * handle->ifmblock;
+#if 0 /* TODO: no VLAs */
 element_input_type *const input_scratch_padding = (element_input_type*)(((char*)handle->scratch7) + ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_input_type), LIBXSMM_CACHELINE));
+#else
+element_input_type input_scratch_padding[scratch7_size];
+#endif
 for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
 
 { /* open new scope for additional variable declarations (C89) */
