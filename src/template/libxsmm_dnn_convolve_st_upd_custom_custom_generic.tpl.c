@@ -42,17 +42,18 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 
 /* transpose + padding via stack allocated buffers for input */
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
-element_input_type *const input_scratch = (element_input_type*)handle->scratch7; /* [H][c-block][W] tensor */
-const int scratch7_size = (int)(handle->scratch7_size / libxsmm_dnn_typesize(handle->datatype_in));
+const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
+const int scratch7_size = padded_h * padded_w * handle->ifmblock;
+element_input_type *const input_scratch = (element_input_type*)(((char*)handle->scratch7) + ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_input_type), LIBXSMM_CACHELINE));
 for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch[ii] = (element_input_type)0; }
 
 /* transpose via stack allocated buffers for output and weights to control stride-GEMM issue
    idea: we transpose grad_output and transpose filters when done */
-element_output_type *const output_scratch = (element_output_type*)handle->scratch8;
-const int scratch8_size = (int)(handle->scratch8_size / libxsmm_dnn_typesize(handle->datatype_out));
+const int scratch8_size = handle->ofhp * handle->ofwp * handle->ofmblock;
+element_output_type *const output_scratch = (element_output_type*)(((char*)handle->scratch8) + ltid * LIBXSMM_UP2(scratch8_size * sizeof(element_output_type), LIBXSMM_CACHELINE));
 for ( oi = 0; oi < scratch8_size; ++oi ) { output_scratch[oi] = (element_output_type)0; }
-element_filter_type *const filter_scratch = (element_filter_type*)handle->scratch9;
 const int scratch9_size = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
+element_filter_type *const filter_scratch = (element_filter_type*)(((char*)handle->scratch9) + ltid * LIBXSMM_UP2(scratch9_size * sizeof(element_filter_type), LIBXSMM_CACHELINE));
 for ( oi = 0; oi < scratch9_size; ++oi ) { filter_scratch[oi] = (element_filter_type)0; }
 
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
