@@ -92,7 +92,9 @@
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_GEMM_PRECISION_F64 = 0,                               &
      &    LIBXSMM_GEMM_PRECISION_F32 = 1,                               &
-     &    LIBXSMM_GEMM_PRECISION_I16 = 3
+     &    LIBXSMM_GEMM_PRECISION_I32 = 2,                               &
+     &    LIBXSMM_GEMM_PRECISION_I16 = 3,                               &
+     &    LIBXSMM_GEMM_PRECISION_I8  = 4
 
         ! Enumeration of the available prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
@@ -320,6 +322,24 @@
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INTPTR_T), INTENT(OUT) :: kernel
             INTEGER(C_INT), INTENT(IN) :: prec
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+            TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
+            TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+            TYPE(C_PTR), INTENT(IN), VALUE :: flags, prefetch
+          END SUBROUTINE
+
+          ! Type-generic (unsafe) code dispatch (trylock: impure routine).
+          ! Implicit FORTRAN 77 interface:
+          ! INTEGER(4)   :: iprec, oprec, flags, prefetch
+          ! INTEGER(4|8) :: m, n, k, lda, ldb, ldc
+          ! REAL(4|8)    :: alpha, beta
+          ! INTEGER(8)   :: kernel
+          SUBROUTINE libxsmm_xmmdispatch2(kernel, iprec, oprec,         &
+     &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
+     &    BIND(C, NAME="libxsmm_xmmdispatch2_")
+            IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            INTEGER(C_INTPTR_T), INTENT(OUT) :: kernel
+            INTEGER(C_INT), INTENT(IN) :: iprec, oprec
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta

@@ -585,9 +585,9 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
           i_conv_kernel_config->instruction_set,
           i_conv_kernel_config->vxor_instruction,
-          i_conv_kernel_config->vector_name, 0, 0, 0);    
+          i_conv_kernel_config->vector_name, 0, 0, 0);
       }
-        
+
      int index_zero;
      for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -601,7 +601,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
 
       if ( i_conv_desc->use_nts == 1 ) {
         /* Zero out the skipped "W" pixels for the H index we do write */
-        for (index_zero = 1; index_zero < i_conv_desc->stride_w_store; index_zero++) {
+        for (index_zero = 1; index_zero < (int)i_conv_desc->stride_w_store; ++index_zero) {
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_conv_kernel_config->instruction_set,
               l_intr_store,
@@ -617,8 +617,8 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
     if ( i_conv_desc->use_nts == 1 && i_conv_desc->stride_h_store != 1) {
         /* Zero out the skipped "H" rows of pixels  */
         for (i = 0; i < 1; i++) {
-          for (index_zero = 1; index_zero < i_conv_desc->stride_h_store; index_zero++) {
-            for (j = 0; j < i_conv_desc->ofw_rb * i_conv_desc->stride_w_store; j++) {
+          for (index_zero = 1; index_zero < (int)i_conv_desc->stride_h_store; ++index_zero) {
+            for (j = 0; j < i_conv_desc->ofw_rb * i_conv_desc->stride_w_store; ++j) {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                   i_conv_kernel_config->instruction_set,
                   l_intr_store,

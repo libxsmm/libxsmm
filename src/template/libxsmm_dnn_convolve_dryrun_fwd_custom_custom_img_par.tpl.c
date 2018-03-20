@@ -70,7 +70,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #if defined(_OPENMP)
   int ltid = omp_get_thread_num();
 #endif
-  int img, ofm1, ifm1, oj, oi, ij, ii, ii_use, ij_use, oi_use, oj_use, local_entries = 0, ojb, ifmb, ofmb, my_img_start, my_img_end, my_ofm_start, my_ofm_end, my_h_start, my_h_end, my_w_start, my_w_end;
+  int img, ofm1, ifm1, oj, oi, ii, ii_use, ij_use, oi_use, oj_use, local_entries = 0, ojb, ifmb, ofmb, my_img_start, my_img_end, my_ofm_start, my_ofm_end, my_h_start, my_h_end, my_w_start, my_w_end;
   int total_calls;
   int n_code_segments;
   int mark_ofm_init, mark_ofm_close;
