@@ -377,7 +377,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
                                           i_conv_kernel_config->vmove_instruction,
                                           i_gp_reg_mapping->gp_reg_output,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          l_j * l_lead_dim * i_conv_kernel_config->datatype_size_out,
+                                          l_j *  i_conv_desc->stride_w_store * l_lead_dim * i_conv_kernel_config->datatype_size_out,
                                           i_conv_kernel_config->vector_name,
                                           i_conv_kernel_config->vector_reg_count - i_conv_desc->ofw_rb + l_j , 0, 0 );
 #if 1
