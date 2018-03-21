@@ -1463,7 +1463,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* data, cons
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
-  if (0 != hash && 0 != data && 0 != size || 0 != seed)
+  if (0 != hash && 0 != data && 0 != size && 0 != seed)
 #endif
   {
     *hash = (libxsmm_hash(data, *size, *seed) & 0x7FFFFFFF);
