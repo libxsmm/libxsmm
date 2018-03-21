@@ -469,10 +469,10 @@ int main(int argc, char* argv[])
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
   const int algo_winograd = (0 == env_winograd ? 0 : atoi(env_winograd));
 
-  #if defined(_OPENMP)
-  int nThreads = omp_get_max_threads();      /* number of threads */
+#if defined(_OPENMP)
+  int nThreads = omp_get_max_threads(); /* number of threads */
 #else
-  int nThreads = 1;       /* number of threads */
+  int nThreads = 1; /* number of threads */
 #endif
 
   unsigned long long l_start, l_end;

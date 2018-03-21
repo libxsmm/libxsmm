@@ -175,6 +175,7 @@ if (n_segments) {
 
           /* Run the stream of convolutions for this segment */
           for (conv_i = 0; conv_i < n_convs; conv_i++) {
+            const int vi = variant[pool_index]; /* avoid warning about char used as array index */
             offset_i = stream[i];
             offset_w = stream[i+1];
             offset_o = stream[i+2];
@@ -182,10 +183,10 @@ if (n_segments) {
             pw = stream[i+4];
             po = stream[i+5];
             offset_bn = bn_stream[bn_i];
-            kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
-            pool_index++;
-            i+=3;
-            bn_i++;
+            kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
+            ++pool_index;
+            i += 3;
+            ++bn_i;
           }
         }
       } else {
@@ -221,8 +222,8 @@ if (n_segments) {
             po = stream[i+5];
             offset_bn = bn_stream[bn_i];
             kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
-            i+=3;
-            bn_i++;
+            i += 3;
+            ++bn_i;
           }
         }
       }
@@ -332,15 +333,16 @@ if (n_segments) {
 
           /* Run the stream of convolutions for this segment */
           for (conv_i = 0; conv_i < n_convs; conv_i++) {
+            const int vi = variant[pool_index]; /* avoid warning about char used as array index */
             offset_i = stream[i];
             offset_w = stream[i+1];
             offset_o = stream[i+2];
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-            pool_index++;
-            i+=3;
+            kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+            ++pool_index;
+            i += 3;
           }
         }
       } else {
@@ -454,7 +456,7 @@ if (n_segments) {
             pw = stream[i+4];
             po = stream[i+5];
             kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-            i+=3;
+            i += 3;
           }
         }
       }
@@ -496,7 +498,7 @@ if (n_segments) {
         pw = stream[i+4];
         po = stream[i+5];
         kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-        i+=3;
+        i += 3;
       }
     }
   }
@@ -512,7 +514,8 @@ if (n_segments) {
     bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
     bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
     if (handle->n_variants  == 2) {
-      for (pc = 0; pc < instr; pc+=1) {
+      for (pc = 0; pc < instr; pc += 1) {
+        const int vi = variant[pc]; /* avoid warning about char used as array index */
         offset_i = stream[i];
         offset_w = stream[i+1];
         offset_o = stream[i+2];
@@ -520,9 +523,9 @@ if (n_segments) {
         pw = stream[i+4];
         po = stream[i+5];
         offset_bn = bn_stream[bn_i];
-        kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
-        i+=3;
-        bn_i++;
+        kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
+        i += 3;
+        ++bn_i;
       }
     } else {
       for (pc = 0; pc < instr; pc++) {
@@ -534,21 +537,22 @@ if (n_segments) {
         po = stream[i+5];
         offset_bn = bn_stream[bn_i];
         kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,  bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
-        i+=3;
-        bn_i++;
+        i += 3;
+        ++bn_i;
       }
     }
   } else { /* We do not  do BN stuff in the kernel  */
     if (handle->n_variants == 2) {
-      for (pc = 0; pc < instr; pc+=1) {
+      for (pc = 0; pc < instr; pc += 1) {
+        const int vi = variant[pc]; /* avoid warning about char used as array index */
         offset_i = stream[i];
         offset_w = stream[i+1];
         offset_o = stream[i+2];
         pi = stream[i+3];
         pw = stream[i+4];
         po = stream[i+5];
-        kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-        i+=3;
+        kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+        i += 3;
       }
     } else {
       for (pc = 0; pc < instr; pc++) {
@@ -559,7 +563,7 @@ if (n_segments) {
         pw = stream[i+4];
         po = stream[i+5];
         kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-        i+=3;
+        i += 3;
       }
     }
   }

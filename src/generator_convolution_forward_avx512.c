@@ -524,7 +524,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
         }
 #endif
 
-          #include "template/kernel_repeat.tpl.c"
+#        include "template/kernel_repeat.tpl.c"
 
          /* adjust addresses, by moving to next ifm1 block */
          libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
@@ -590,9 +590,9 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     }
 #endif
 
-    #include "template/kernel_repeat.tpl.c"
+#   include "template/kernel_repeat.tpl.c"
   } else {
-    #include "template/kernel_repeat.tpl.c"
+#   include "template/kernel_repeat.tpl.c"
   }
 
   /* store outputs */
