@@ -43,7 +43,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#ifdef __AVX512F__
+#if defined(__AVX512F__) && defined(__AVX512BW__)
 #define TRANSPOSE_W_CHUNK(img, ifm1, ij, w_offset, ifm2) \
         base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w_offset, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block); \
         gather_reg = _mm512_i32gather_epi32(vgindex, base_addr, 1); \
