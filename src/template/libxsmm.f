@@ -318,7 +318,7 @@
           ! INTEGER(8)   :: kernel
           SUBROUTINE libxsmm_xmmdispatch(kernel, prec, m, n, k,         &
      &    lda, ldb, ldc, alpha, beta, flags, prefetch)                  &
-     &    BIND(C, NAME="libxsmm_xmmdispatch_")
+     &    BIND(C, NAME="libxsmm_xmmdispatch_") ! FORTAN 77 layer
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INTPTR_T), INTENT(OUT) :: kernel
             INTEGER(C_INT), INTENT(IN) :: prec
@@ -336,7 +336,7 @@
           ! INTEGER(8)   :: kernel
           SUBROUTINE libxsmm_xmmdispatch2(kernel, iprec, oprec,         &
      &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
-     &    BIND(C, NAME="libxsmm_xmmdispatch2_")
+     &    BIND(C, NAME="libxsmm_xmmdispatch2_") ! FORTAN 77 layer
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INTPTR_T), INTENT(OUT) :: kernel
             INTEGER(C_INT), INTENT(IN) :: iprec, oprec
@@ -351,7 +351,7 @@
           ! REAL(4|8)  :: a(1), b(1), c(1)
           ! INTEGER(8) :: kernel
           PURE SUBROUTINE libxsmm_xmmcall_abc(kernel, a, b, c)          &
-     &    BIND(C, NAME="libxsmm_xmmcall_abc_")
+     &    BIND(C, NAME="libxsmm_xmmcall_abc_") ! FORTAN 77 layer
             IMPORT :: C_INTPTR_T, C_PTR
             INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
@@ -362,7 +362,7 @@
           ! REAL(4|8)  :: a(1), b(1), c(1), pa(1), pb(1), pc(1)
           ! INTEGER(8) :: kernel
           PURE SUBROUTINE libxsmm_xmmcall_prf(kernel, a, b, c,          &
-     &    pa, pb, pc) BIND(C, NAME="libxsmm_xmmcall_prf_")
+     &    pa, pb, pc) BIND(C, NAME="libxsmm_xmmcall_prf_") ! FORTAN 77 layer
             IMPORT :: C_INTPTR_T, C_PTR
             INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
@@ -374,7 +374,7 @@
           ! ANY ARRAY    :: output, input
           ! INTEGER(4)   :: typesize
           PURE SUBROUTINE libxsmm_otrans_omp(output, input, typesize,   &
-     &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_omp_")
+     &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_omp_") ! FORTAN 77 layer
             IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
@@ -383,7 +383,7 @@
 
           ! General dense matrix multiplication; MT via libxsmmext (double-precision).
           ! Implicit FORTRAN 77 interface: similar to DGEMM.
-          SUBROUTINE libxsmm_dgemm_omp(transa, transb, m, n, k,         &
+          PURE SUBROUTINE libxsmm_dgemm_omp(transa, transb, m, n, k,    &
      &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
             IMPORT C_DOUBLE, C_CHAR, LIBXSMM_BLASINT_KIND
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
@@ -396,7 +396,7 @@
 
           ! General dense matrix multiplication; MT via libxsmmext (single-precision).
           ! Implicit FORTRAN 77 interface: similar to SGEMM.
-          SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,         &
+          PURE SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,    &
      &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
             IMPORT C_FLOAT, C_CHAR, LIBXSMM_BLASINT_KIND
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
@@ -416,10 +416,10 @@
           ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
           ! INTEGER(4|8) :: index_base, index_stride, batchsize
           ! Otherwise arguments are similar to GEMM.
-          SUBROUTINE libxsmm_gemm_batch(prec, transa, transb,           &
+          PURE SUBROUTINE libxsmm_gemm_batch(prec, transa, transb,      &
      &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, index_base,     &
      &    index_stride, stride_a, stride_b, stride_c, batchsize)        &
-     &    BIND(C, NAME="libxsmm_gemm_batch_")
+     &    BIND(C, NAME="libxsmm_gemm_batch_") ! FORTAN 77 layer
             IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
@@ -444,10 +444,10 @@
           ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
           ! INTEGER(4|8) :: index_base, index_stride, batchsize
           ! Otherwise arguments are similar to GEMM.
-          SUBROUTINE libxsmm_gemm_batch_omp(prec, transa, transb,       &
+          PURE SUBROUTINE libxsmm_gemm_batch_omp(prec, transa, transb,  &
      &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, index_base,     &
      &    index_stride, stride_a, stride_b, stride_c, batchsize)        &
-     &    BIND(C, NAME="libxsmm_gemm_batch_omp_")
+     &    BIND(C, NAME="libxsmm_gemm_batch_omp_") ! FORTAN 77 layer
             IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
@@ -470,9 +470,9 @@
           ! ARRAY        :: a, b, c
           ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
           ! INTEGER(4|8) :: index_base, index_stride, batchsize
-          SUBROUTINE libxsmm_mmbatch(kernel, index_base,                &
+          PURE SUBROUTINE libxsmm_mmbatch(kernel, index_base,           &
      &    index_stride, stride_a, stride_b, stride_c, a, b, c,          &
-     &    batchsize, tid, nthreads) BIND(C, NAME="libxsmm_mmbatch_")
+     &    batchsize, tid, nthreads) BIND(C, NAME="libxsmm_mmbatch_") ! FORTAN 77 layer
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             ! Determines index-base (1 for one-based indexes);
             ! uses the same unit as the strides.
@@ -513,9 +513,9 @@
           ! ARRAY        :: a, b, c
           ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
           ! INTEGER(4|8) :: index_base, index_stride, batchsize
-          SUBROUTINE libxsmm_mmbatch_omp(kernel, index_base,            &
+          PURE SUBROUTINE libxsmm_mmbatch_omp(kernel, index_base,       &
      &    index_stride, stride_a, stride_b, stride_c, a, b, c,          &
-     &    batchsize) BIND(C, NAME="libxsmm_mmbatch_omp_")
+     &    batchsize) BIND(C, NAME="libxsmm_mmbatch_omp_") ! FORTAN 77 layer
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
@@ -951,7 +951,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_matcopy
           INTERFACE
             PURE SUBROUTINE internal_matcopy(output, input, typesize,   &
-     &      m, n, ldi, ldo, prefetch) BIND(C, NAME="libxsmm_matcopy_")
+     &      m, n, ldi, ldo, prefetch) BIND(C, NAME="libxsmm_matcopy_") ! FORTAN 77 layer
               IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
               TYPE(C_PTR), INTENT(IN), VALUE :: n, ldi, ldo
@@ -976,7 +976,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_otrans
           INTERFACE
             PURE SUBROUTINE internal_otrans(output, input, typesize,    &
-     &      m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_")
+     &      m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_") ! FORTAN 77 layer
               IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
               TYPE(C_PTR), INTENT(IN), VALUE :: n, ldi, ldo
@@ -999,7 +999,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_itrans
           INTERFACE
             PURE SUBROUTINE internal_itrans(matrix, typesize, m, n, ld) &
-     &      BIND(C, NAME="libxsmm_itrans_")
+     &      BIND(C, NAME="libxsmm_itrans_") ! FORTAN 77 layer
               IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
               TYPE(C_PTR), INTENT(IN), VALUE :: n, ld, matrix
@@ -1008,5 +1008,26 @@
           END INTERFACE
           CALL internal_itrans(matrix, typesize, m, C_LOC(n), C_LOC(ld))
         END SUBROUTINE
+
+        ! Calculate a hash value for a given key value (array).
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash
+        PURE FUNCTION libxsmm_hash(key, seed)
+          INTEGER(C_INT), DIMENSION(:), INTENT(IN) :: key
+          INTEGER(C_INT), INTENT(IN) :: seed
+          INTEGER(C_INT) :: libxsmm_hash
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
+          INTERFACE
+            PURE SUBROUTINE internal_hash(hash, key, keysize, seed)     &
+     &      BIND(C, NAME="libxsmm_hash_") ! FORTAN 77 layer
+              IMPORT C_INT
+              INTEGER(C_INT), INTENT(IN)  :: key
+              INTEGER(C_INT), INTENT(IN)  :: keysize
+              INTEGER(C_INT), INTENT(IN)  :: seed
+              INTEGER(C_INT), INTENT(OUT) :: hash
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_hash(libxsmm_hash,                              &
+     &      key(LBOUND(key,1)), SIZE(key) * 4, seed)
+        END FUNCTION
       END MODULE
 
