@@ -518,14 +518,14 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           }
         }
       }
-    } else {
-      /* This is the the img par branch...  */
+    } else { /* This is the the img par branch...  */
       /* Use fine-grained operations since we are in the img_par path, so update relevant kernel pointers... */
-      jitted_zero_overwrite = handle->matcopy_bwd[3].xmatcopy;
       int input_h_start = LIBXSMM_MAX(0,  handle->ofh_bwd_start[ltid] - handle->desc.R + 1);
       int input_h_end = LIBXSMM_MIN(handle->ifhp, (handle->ofh_bwd_end[ltid] + handle->desc.R - 1) * handle->desc.u);
       int my_h_out = handle->ofh_bwd_end[ltid]-handle->ofh_bwd_start[ltid];
       int ih;
+      jitted_zero_overwrite = handle->matcopy_bwd[3].xmatcopy;
+      jitted_matcopy = handle->matcopy_bwd[2].xmatcopy;
       for (pc = 0; pc < n_segments; pc++) {
         instr = code_stream[pc].segment_type;
         n_convs = code_stream[pc].n_convs;
