@@ -106,7 +106,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
     l_conv_kernel_config.datatype_size_out = 4;
   } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16) {
     l_conv_kernel_config.datatype_size_out = 2;
-  }  else if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8) {
+  } else if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8) {
     l_conv_kernel_config.datatype_size_out = 1;
   }
   l_conv_kernel_config.vector_length_wt = 16;
@@ -1058,7 +1058,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
   /* depending on datatype emit the needed FMA(-sequence) */
   if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     l_compute_instr = LIBXSMM_X86_INSTR_V4FMADDPS;
-  }  else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+  } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSDS;
   } else {
     /* shouldn't happen */
@@ -1070,7 +1070,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
       step_size = 4;
       lp_dim_out = 1;
       use_lp_kernel = 0;
-    }  else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+    } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
       step_size = 8;
       lp_dim_out = 2;
       use_lp_kernel = 1;

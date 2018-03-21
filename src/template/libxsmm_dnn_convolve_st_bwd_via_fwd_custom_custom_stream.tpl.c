@@ -276,7 +276,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 for ( ij = 0; ij < handle->desc.H; ij++ ) {
                   for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
 #ifdef __AVX512F__
-                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+ii)));
+                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
 #else
                     /* won't happen as this code only runs on AVX512 platforms */
 #endif
@@ -331,7 +331,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 for ( ij = 0; ij < handle->desc.H; ij++ ) {
                   for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
 #ifdef __AVX512F__
-                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+ii)));
+                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
 #else
                     /* won't happen as this code only runs on AVX512 platforms */
 #endif
@@ -394,7 +394,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                 for (ij = 0; ij < handle->desc.H; ij++) {
                   for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
-                    orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
+                    orig_reg  = LIBXSMM_INTRINSICS_MM512_LOAD_PS(orig_input_ptr + ii);
                     mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
                     _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
                   }
@@ -413,7 +413,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 for ( ij = 0; ij < handle->desc.H; ij++ ) {
                   for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
 #ifdef __AVX512F__
-                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+ii)));
+                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
 #else
                     /* won't happen as this code only runs on AVX512 platforms */
 #endif
@@ -475,7 +475,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                 for (ij = 0; ij < handle->desc.H; ij++) {
                   for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
-                    orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
+                    orig_reg  = LIBXSMM_INTRINSICS_MM512_LOAD_PS(orig_input_ptr + ii);
                     mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
                     _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
                   }
@@ -494,7 +494,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 for ( ij = 0; ij < handle->desc.H; ij++ ) {
                   for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
 #ifdef __AVX512F__
-                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+ii)));
+                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
 #else
                     /* won't happen as this code only runs on AVX512 platforms */
 #endif
@@ -655,7 +655,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
       for (ij = 0; ij < handle->desc.H; ij++) {
         for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
-          orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
+          orig_reg  = LIBXSMM_INTRINSICS_MM512_LOAD_PS(orig_input_ptr + ii);
           mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
           _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
         }

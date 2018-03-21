@@ -206,9 +206,9 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
       /* error */
     } else if ( (conv_desc.datatype_in == LIBXSMM_DNN_DATATYPE_I16) && (conv_desc.datatype_out != LIBXSMM_DNN_DATATYPE_F32) ) {
       /* error */
-    }  else if ( (conv_desc.datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (conv_desc.datatype_out != LIBXSMM_DNN_DATATYPE_I32) ) {
+    } else if ( (conv_desc.datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (conv_desc.datatype_out != LIBXSMM_DNN_DATATYPE_I32) ) {
       /* error */
-    }  else if ( (conv_desc.datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (conv_desc.datatype_out != LIBXSMM_DNN_DATATYPE_F32) ) {
+    } else if ( (conv_desc.datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (conv_desc.datatype_out != LIBXSMM_DNN_DATATYPE_F32) ) {
       /* error */
     } else {
       /* fine, no error */
@@ -1637,7 +1637,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_tensor(libxsmm_dnn_layer* hand
       handle->reg_filter_tr = 0;
     } else if ( type == LIBXSMM_DNN_BATCH_STATS ) {
       handle->batch_stats = 0;
-    }  else if ( type == LIBXSMM_DNN_MAX_STATS_FWD ) {
+    } else if ( type == LIBXSMM_DNN_MAX_STATS_FWD ) {
       handle->maxstats_fwd = 0;
     } else if ( type == LIBXSMM_DNN_MAX_STATS_BWD ) {
       handle->maxstats_bwd = 0;
@@ -2491,7 +2491,7 @@ LIBXSMM_API short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned
     qvalue = 0;
   } else {
     /* let's get a float copy to work on */
-    /* vinp = _mm512_load_ps( in_buffer[i] ); */
+    /* vinp = LIBXSMM_INTRINSICS_MM512_LOAD_PS( in_buffer[i] ); */
     value.f = input;
     /* let's compute the offset of the current exp at pos i from max offset, we need to mask the sign bit though */
     /*__m512i vexp     = _mm512_cvtps_epi32(_mm512_getexp_ps (vinp));

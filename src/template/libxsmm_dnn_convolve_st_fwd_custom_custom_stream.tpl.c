@@ -266,7 +266,7 @@ if (n_segments) {
 
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                  __m512 btmp = _mm512_load_ps( red+oi );
+                  __m512 btmp = LIBXSMM_INTRINSICS_MM512_LOAD_PS( red+oi );
                   bsum = _mm512_add_ps( bsum, btmp );
                   bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
                 }
@@ -321,7 +321,7 @@ if (n_segments) {
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
 #ifdef __AVX512F__
-                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+oi)));
+                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+oi)));
 #else
                   /* Won't happen as this code only runs on AVX512 systems */
 #endif
@@ -382,7 +382,7 @@ if (n_segments) {
 
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                  __m512 btmp = _mm512_load_ps( red+oi );
+                  __m512 btmp = LIBXSMM_INTRINSICS_MM512_LOAD_PS( red+oi );
                   bsum = _mm512_add_ps( bsum, btmp );
                   bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
                 }
@@ -437,7 +437,7 @@ if (n_segments) {
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
 #ifdef __AVX512F__
-                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+oi)));
+                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+oi)));
 #else
                   /* won't happen as this code only runs on AVX512 platforms */
 #endif

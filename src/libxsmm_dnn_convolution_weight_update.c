@@ -57,8 +57,8 @@
         compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_high, 0), 1); \
         compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_low,1), 0); \
         compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_high, 1), 1); \
-        _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, 2*ifm2, w_offset, BLOCKSIFM, handle->ifhp, handle->ifmblock_hp, ifwp_extended), compressed_low_store); \
-        _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, 2*ifm2+1, w_offset, BLOCKSIFM, handle->ifhp, handle->ifmblock_hp, ifwp_extended), compressed_high_store);
+        _mm256_storeu_si256((__m256i*)&LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, 2*ifm2, w_offset, BLOCKSIFM, handle->ifhp, handle->ifmblock_hp, ifwp_extended), compressed_low_store); \
+        _mm256_storeu_si256((__m256i*)&LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, 2*ifm2+1, w_offset, BLOCKSIFM, handle->ifhp, handle->ifmblock_hp, ifwp_extended), compressed_high_store);
 
 #define TRANSPOSE_W_REMAINDER(img, ifm1, ij, w_offset, ifm2) \
         base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w_offset, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block); \
@@ -89,8 +89,8 @@
         compressed_low_store = _mm256_insertf128_si256(compressed_low_store, _mm256_extractf128_si256(compressed_high, 0), 1); \
         compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_low,1), 0); \
         compressed_high_store = _mm256_insertf128_si256(compressed_high_store, _mm256_extractf128_si256(compressed_high, 1), 1); \
-        _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, dst_j, 2*ifm2, dst_i, BLOCKSIFM, handle->ifhp_resized, handle->ifmblock_hp, ifwp_extended), compressed_low_store); \
-        _mm256_storeu_si256((union __m256i *) &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, dst_j, 2*ifm2+1, dst_i, BLOCKSIFM, handle->ifhp_resized, handle->ifmblock_hp, ifwp_extended), compressed_high_store);
+        _mm256_storeu_si256((__m256i*)&LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, dst_j, 2*ifm2, dst_i, BLOCKSIFM, handle->ifhp_resized, handle->ifmblock_hp, ifwp_extended), compressed_low_store); \
+        _mm256_storeu_si256((__m256i*)&LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, dst_j, 2*ifm2+1, dst_i, BLOCKSIFM, handle->ifhp_resized, handle->ifmblock_hp, ifwp_extended), compressed_high_store);
 
 #define TRANSPOSE_W_REMAINDER_RESIZED(img, ifm1, w_offset, ij, ifm2, dst_i, dst_j) \
         base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w_offset, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block); \
@@ -119,11 +119,11 @@
       compact =  _mm512_inserti64x4(compact, compressed_hi, 1); \
       compact =  LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(permute_compact_idx, compact); \
       pair_addr_dst = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      _mm512_stream_si512(pair_addr_dst, compact);
+      _mm512_stream_si512((void*)pair_addr_dst, compact);
 
 #define TRANSPOSE_W_HALF_PAIR(img, ofm1, ij, ii, half_i) \
       pair_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); \
-      even_pixel = _mm256_loadu_si256((const union __m256i *) pair_addr); \
+      even_pixel = _mm256_loadu_si256((const __m256i*)pair_addr); \
       odd_pixel = _mm256_xor_si256(odd_pixel, odd_pixel); \
       compressed_lo  = _mm256_unpacklo_epi16(even_pixel, odd_pixel); \
       compressed_hi  = _mm256_unpackhi_epi16(even_pixel, odd_pixel); \
@@ -131,7 +131,7 @@
       compact =  _mm512_inserti64x4(compact, compressed_hi, 1); \
       compact =  LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(permute_compact_idx, compact); \
       pair_addr_dst = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      _mm512_stream_si512(pair_addr_dst, compact);
+      _mm512_stream_si512((void*)pair_addr_dst, compact);
 
 /* @TODO this function needs to be target decorated, it's only called on AVX512 platforms and use_vperm_transposes=1 is for AVX512BW platforms only */
 void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
@@ -143,7 +143,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
     if (handle->trans_ofw_ifm == 1) {
       int w_chunks = handle->ifwp/16;
       int w_remainder = handle->ifwp%16;
-      int w_i, w, c_i, ifm1, ij, ifm2;
+      int w, c_i, ifm1, ij, ifm2;
       int BLOCKSIFM = handle->blocksifm;
       int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
       int ifwp_extended = padded_w + handle->qfma_input_pad;
@@ -167,7 +167,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
       for (c_i=mask_remainder; c_i<8; c_i++) {
         mask[c_i] = 0;
       }
-      __m256i mask_reg = _mm256_loadu_si256((const union __m256i *) mask);
+      __m256i mask_reg = _mm256_loadu_si256((const __m256i*)mask);
       __m512i gather_reg;
       __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
 
@@ -220,7 +220,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
         LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
         LIBXSMM_VLA_DECL(6, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, handle->blocksifm_lp, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);
 
-        int ifm1, ij, ii, ofm1;
+        int ifm1, ij, ii;
         int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
         int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
         int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
@@ -243,7 +243,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
 
     if (handle->avoid_output_trans == 0 ) {
       const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31,15, 30,14, 29,13, 28,12, 27,11 ,26,10, 25,9, 24,8, 23,7, 22,6, 21,5, 20,4, 19,3, 18,2, 17,1, 16,0);
-      int ifm1, ij, ii, ofm1;
+      int ij, ii, ofm1;
       int OFWP = handle->ofwp+handle->output_lp_padding;
       element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
       LIBXSMM_VLA_DECL(6, element_output_type, tr_output, (element_output_type*)handle->scratch6 , handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
@@ -281,7 +281,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
 
               element_output_type *addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, handle->ofwp-1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
               element_output_type *dst_addr = &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-              __m256i half_cl = _mm256_loadu_si256((const union __m256i *)addr);
+              __m256i half_cl = _mm256_loadu_si256((const __m256i*)addr);
               __m512i cl = _mm512_inserti64x4(LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), half_cl, 0);
               /*__m256i zero_pixel = _mm256_xor_si256(zero_pixel, zero_pixel);*/
               cl = _mm512_inserti64x4(cl, _mm256_set1_epi32(0)/*zero_pixel*/, 1);
@@ -295,7 +295,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
   } else {
     int w_chunks = handle->ifwp/16;
     int w_remainder = handle->ifwp%16;
-    int w_i, w, c_i, ifm1, ij, ifm2;
+    int w, c_i, ifm1, ij, ifm2;
     int BLOCKSIFM = handle->blocksifm;
     int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
     int ifwp_extended = padded_w + handle->qfma_input_pad;
@@ -319,7 +319,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
     for (c_i=mask_remainder; c_i<8; c_i++) {
       mask[c_i] = 0;
     }
-    __m256i mask_reg = _mm256_loadu_si256((const union __m256i *) mask);
+    __m256i mask_reg = _mm256_loadu_si256((const __m256i*)mask);
     __m512i gather_reg;
     __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
 
@@ -327,7 +327,6 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
     dst_ifhp = handle->ifhp;
     LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
     LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended);
-
 
     int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
     int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
@@ -368,13 +367,11 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
       }
     }
 
-    element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi, *pair_addr, *pair_addr_dst;
-    element_output_type *dst_lo, *dst_hi;
+    element_output_type *pair_addr, *pair_addr_dst;
     int half_i, ofm1, ii;
     int BLOCKSOFM = handle->blocksofm;
     int OFWP = handle->ofwp+handle->output_lp_padding;
-    __m256i even_pixel_lo, even_pixel_hi, odd_pixel_hi, odd_pixel_lo, compressed_hi, compressed_lo, compressed_lo_store, compressed_hi_store, even_pixel, odd_pixel;
-    __m128i part0, part1, part2, part3;
+    __m256i compressed_hi, compressed_lo, even_pixel, odd_pixel;
     __m512i compact, pair_pixels;
     const __m512i permute_compact_idx = _mm512_set_epi32(15,14,13,12,  7,6,5,4,  11,10,9,8,  3,2,1,0);
 
@@ -415,8 +412,8 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
   int w_chunks = handle->ifwp_resized/16;
   int w_remainder = handle->ifwp_resized%16;
   int u = handle->desc.u;
-  int w_i, w, c_i, ifm1, ij, ifm2;
-  int dst_i, dst_j, src_i, src_j;
+  int w, c_i, ifm1, ij, ifm2;
+  int dst_j, src_j;
   int BLOCKSIFM = handle->blocksifm;
   int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
   int ifwp_extended = padded_w + handle->qfma_input_pad;
@@ -441,7 +438,7 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
   for (c_i=mask_remainder; c_i<8; c_i++) {
     mask[c_i] = 0;
   }
-  __m256i mask_reg = _mm256_loadu_si256((const union __m256i *) mask);
+  __m256i mask_reg = _mm256_loadu_si256((const __m256i*)mask);
   __m512i gather_reg;
   __m256i lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
 
@@ -501,7 +498,7 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
 
     if (handle->avoid_output_trans == 0) {
       const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31,15, 30,14, 29,13, 28,12, 27,11 ,26,10, 25,9, 24,8, 23,7, 22,6, 21,5, 20,4, 19,3, 18,2, 17,1, 16,0);
-      int ifm1, ij, ii, ofm1;
+      int ij, ii, ofm1;
       int OFWP = handle->ofwp+handle->output_lp_padding;
       element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
       LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
@@ -535,7 +532,7 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
 
               element_output_type *addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, handle->ofwp-1, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
               element_output_type *dst_addr = &LIBXSMM_VLA_ACCESS(6, tr_output, img, ofm1, ij, ii/2, 0, 0, handle->blocksofm, handle->ofhp, OFWP/2, handle->ofmblock, 2);
-              __m256i half_cl = _mm256_loadu_si256((const union __m256i *)addr);
+              __m256i half_cl = _mm256_loadu_si256((const __m256i*)addr);
               __m512i cl = _mm512_inserti64x4(LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), half_cl, 0);
               /*__m256i zero_pixel = _mm256_xor_si256(zero_pixel, zero_pixel);*/
               cl = _mm512_inserti64x4(cl, _mm256_set1_epi32(0)/*zero_pixel*/, 1);
@@ -548,13 +545,11 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
       }
     }
   } else {
-    element_output_type *even_addr_lo, *odd_addr_lo, *even_addr_hi, *odd_addr_hi, *pair_addr, *pair_addr_dst;
-    element_output_type *dst_lo, *dst_hi;
+    element_output_type *pair_addr, *pair_addr_dst;
     int half_i, ofm1, ii;
     int BLOCKSOFM = handle->blocksofm;
     int OFWP = handle->ofwp+handle->output_lp_padding;
-    __m256i even_pixel_lo, even_pixel_hi, odd_pixel_hi, odd_pixel_lo, compressed_hi, compressed_lo, compressed_lo_store, compressed_hi_store, even_pixel, odd_pixel;
-    __m128i part0, part1, part2, part3;
+    __m256i compressed_hi, compressed_lo, even_pixel, odd_pixel;
     __m512i compact, pair_pixels;
     const __m512i permute_compact_idx = _mm512_set_epi32(15,14,13,12,  7,6,5,4,  11,10,9,8,  3,2,1,0);
 
@@ -611,7 +606,7 @@ void gather_transpose_ps_16_56_56_16(int M, int N, float *LIBXSMM_RESTRICT dst, 
   LIBXSMM_PRAGMA_UNROLL_AND_JAM(4)
   for(m = 0; m < 16; ++m) {
     int n;
-    LIBXSMM_PRAGMA_UNROLL(3)
+    LIBXSMM_PRAGMA_UNROLL_N(3)
     for(n = 0; n < 3; ++n) {
       const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
       _mm512_store_ps((void*)(dst+m*56+n*16),tmp);
@@ -629,7 +624,7 @@ void gather_transpose_ps_16_56_58_16(int M, int N, float *LIBXSMM_RESTRICT dst, 
   LIBXSMM_PRAGMA_UNROLL_AND_JAM(4)
   for(m = 0; m < 16; ++m) {
     int n;
-    LIBXSMM_PRAGMA_UNROLL(3)
+    LIBXSMM_PRAGMA_UNROLL_N(3)
     for(n = 0; n < 3; ++n) {
       const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
       _mm512_store_ps((void*)(dst+m*58+n*16),tmp);
@@ -647,7 +642,7 @@ void gather_transpose_ps_16_58_60_16(int M, int N, float *LIBXSMM_RESTRICT dst, 
   LIBXSMM_PRAGMA_UNROLL_AND_JAM(4)
   for(m = 0; m < 16; ++m) {
     int n;
-    LIBXSMM_PRAGMA_UNROLL(3)
+    LIBXSMM_PRAGMA_UNROLL_N(3)
     for(n = 0; n < 3; ++n) {
       const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
       _mm512_store_ps((void*)(dst+m*60+n*16),tmp);
@@ -665,7 +660,7 @@ void gather_transpose_ps_16_58_58_16(int M, int N, float *LIBXSMM_RESTRICT dst, 
   LIBXSMM_PRAGMA_UNROLL_AND_JAM(4)
   for(m = 0; m < 16; ++m) {
     int n;
-    LIBXSMM_PRAGMA_UNROLL(3)
+    LIBXSMM_PRAGMA_UNROLL_N(3)
     for(n = 0; n < 3; ++n) {
       const __m512 tmp =  _mm512_i32gather_ps(vindex, src+m+n*256, 4);
       _mm512_store_ps((void*)(dst+m*58+n*16),tmp);
@@ -849,7 +844,7 @@ void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, cons
   LIBXSMM_PRAGMA_UNROLL_AND_JAM(2)
   for(i = 0; i < M; ++i) {
     int j;
-    LIBXSMM_PRAGMA_UNROLL(4)
+    LIBXSMM_PRAGMA_UNROLL_N(4)
     for(j = 0; j < whole16s; ++j) {
       const __m512 res = _mm512_i32gather_ps(vindex, src+i+j*16*ldS, 4);
       _mm512_store_ps(dst + ldD*i+j*16, res);

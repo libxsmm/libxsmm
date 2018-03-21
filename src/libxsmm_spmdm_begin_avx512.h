@@ -44,7 +44,7 @@
 #define _MM_SET1_INT32 _mm512_set1_epi32
 #define _MM_SET1_INT16 _mm512_set1_epi16
 #define _MM_SET_INT32 _mm512_set_epi32
-#define _MM_LOAD_FP32 _mm512_load_ps
+#define _MM_LOAD_FP32 LIBXSMM_INTRINSICS_MM512_LOAD_PS
 #define _MM_LOADU_FP32 _mm512_loadu_ps
 #define _MM_LOAD_INT32 _mm512_load_epi32
 #define _MM_STORE_INT32 _mm512_store_epi32

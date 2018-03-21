@@ -43,7 +43,7 @@ int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
 int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
 int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
 
-/* traspose, copy and reduce work-related variables  */
+/* transpose, copy and reduce work-related variables  */
 const int reduce_work = BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*handle->ifmblock;
 const int reduce_chunksize = (reduce_work % handle->desc.threads == 0) ? (reduce_work / handle->desc.threads) : (reduce_work / handle->desc.threads) + 1;
 const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
@@ -91,7 +91,7 @@ libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunc
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-/* If padding is requested, copy the entire minibatch upfront (only if trnaspose is not requested, otherwise we combine trnaspose with padding) */
+/* If padding is requested, copy the entire minibatch upfront (only if transpose is not requested, otherwise we combine transpose with padding) */
 if (handle->padding_flag == 1) {
   /* Initialize in parallel scratch5 to zero */
   for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
