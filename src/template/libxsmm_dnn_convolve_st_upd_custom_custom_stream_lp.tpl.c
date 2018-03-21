@@ -135,8 +135,8 @@ if (handle->reduce_weights == 0) {
   while ( handle->desc.threads % team_div != 0  ) {
     team_div--;
   }
-  int n_ifm_teams = ( BLOCKSIFM > BLOCKSOFM ) ? handle->desc.threads/team_div : team_div ;
-  int n_ofm_teams = ( BLOCKSIFM > BLOCKSOFM ) ? team_div : handle->desc.threads/team_div ;
+  int n_ifm_teams = (BLOCKSIFM > BLOCKSOFM) ? handle->desc.threads / team_div : team_div;
+  int n_ofm_teams = (BLOCKSIFM > BLOCKSOFM) ? team_div : handle->desc.threads / team_div;
   int ifms_per_thread = (BLOCKSIFM+n_ifm_teams-1)/n_ifm_teams;
   int ofms_per_thread = (BLOCKSOFM+n_ofm_teams-1)/n_ofm_teams;
   int my_ifm_id = ltid/n_ofm_teams;

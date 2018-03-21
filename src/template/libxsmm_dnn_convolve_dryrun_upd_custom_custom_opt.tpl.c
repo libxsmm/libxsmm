@@ -38,10 +38,10 @@
 int ltid;
 #endif
 int block_j = 14;
+int IFMBLOCK;
 
 handle->block_upd_ofm = 8;
 handle->block_upd_ifm = 8;
-int IFMBLOCK;
 if (handle->use_lp_kernel) {
   IFMBLOCK = handle->ifmblock_hp;
 } else {
@@ -56,10 +56,10 @@ while ( block_j % handle->upd_ofh_rb != 0 ) {
 }
 
 if (block_j < handle->upd_ofh_rb ) {
-  block_j = handle->upd_ofh_rb ;
+  block_j = handle->upd_ofh_rb;
 }
 
-block_j = handle->ofh ;
+block_j = handle->ofh;
 
 if ( handle->ofh == 56 ) {
   /* Pixel block is 196 Kbytes */
@@ -107,7 +107,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #if defined(_OPENMP)
   int ltid = omp_get_thread_num();
 #endif
-  int img, ifmb, ofmb, ofm1, ifm1, num_ofw_strips, oi_, oj_, oi__, ii_, ij_, kh, kw, KW, ki, kj, local_entries, stride_w, stride_h ;
+  int img, ifmb, ofmb, ofm1, ifm1, num_ofw_strips, oi_, oj_, oi__, ii_, ij_, kh, kw, KW, ki, kj, local_entries, stride_w, stride_h;
   int ojb;
 
   /* Here we assume that N % Threads == 0 */
@@ -209,7 +209,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   }
 
 
-  /* Alocate auxiliary data structures for index jitting  */
+  /* Allocate auxiliary data structures for index jitting  */
   handle->n_entries_upd[ltid] = local_entries/3;
   compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
   handle->compute_upd_indices_ptrs[ltid] = compute_indices;
@@ -261,11 +261,10 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       }
 
                       if (handle->trans_ofw_ifm == 1 ) {
-                        compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * IFMBLOCK) ) * padded_w  + (ii_ + ki) ;
+                        compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * IFMBLOCK) ) * padded_w  + (ii_ + ki);
                       } else {
                         compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + (ii_ + ki) ) *  IFMBLOCK;
                       }
-
 
                       /* use different weights format if we can skip init and copy */
                       if (mark_weight_init == 1 && mark_weight_copy == 1) {

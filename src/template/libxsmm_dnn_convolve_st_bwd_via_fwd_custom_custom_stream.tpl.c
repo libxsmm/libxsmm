@@ -121,7 +121,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(7, element_filter_type, tr_wt2, (element_filter_type*)handle->scratch1, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock_lp, handle->ifmblock_hp, handle->fm_lp_block);
 
   /* Auxiliary integer variables   */
-  int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i,  n_convs, conv_i, ifm1, img = 0, ifm2, ij, ii, ifm1lpblock ;
+  int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i, n_convs, conv_i, ifm1, img = 0, ifm2, ij, ii, ifm1lpblock;
   int ti, tj, trans_i, n_trans_tasks, trans_offset, trans_offset_dst;
   /* Stream related variables  */
   segment_t *code_stream;
@@ -527,7 +527,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       jitted_matcopy = handle->matcopy_bwd[2].xmatcopy;
       jitted_zero_overwrite = handle->matcopy_bwd[3].xmatcopy;
       int input_h_start = LIBXSMM_MAX(0,  handle->ofh_bwd_start[ltid] - handle->desc.R + 1);
-      int input_h_end = LIBXSMM_MIN( handle->ifhp, (handle->ofh_bwd_end[ltid] + handle->desc.R -1) * handle->desc.u ) ;
+      int input_h_end = LIBXSMM_MIN(handle->ifhp, (handle->ofh_bwd_end[ltid] + handle->desc.R - 1) * handle->desc.u);
       int my_h_out = handle->ofh_bwd_end[ltid]-handle->ofh_bwd_start[ltid];
       int ih;
       for (pc = 0; pc < n_segments; pc++) {

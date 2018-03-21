@@ -386,7 +386,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
     for (img = my_img_start; img < my_img_end; img++) {
       for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
         for (ij = 0; ij < handle->ofhp; ++ij) {
-          for (ii = 0, half_i=0 ; ii < handle->ofwp-1; ii+=2, half_i++) {
+          for (ii = 0, half_i = 0; ii < handle->ofwp - 1; ii += 2, half_i++) {
             TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i);
           }
         }
@@ -566,7 +566,7 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
     for (img = my_img_start; img < my_img_end; img++) {
       for (ofm1 = 0; ofm1 < handle->blocksofm_lp; ofm1++) {
         for (ij = 0; ij < handle->ofhp; ++ij) {
-          for (ii = 0, half_i=0 ; ii < handle->ofwp-1; ii+=2, half_i++) {
+          for (ii = 0, half_i = 0; ii < handle->ofwp - 1; ii += 2, half_i++) {
             TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i);
           }
         }

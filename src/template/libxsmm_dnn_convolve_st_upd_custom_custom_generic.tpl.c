@@ -49,7 +49,6 @@ element_input_type *const input_scratch = (element_input_type*)(((char*)handle->
 #else
 element_input_type input_scratch[scratch7_size];
 #endif
-for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch[ii] = (element_input_type)0; }
 
 /* transpose via stack allocated buffers for output and weights to control stride-GEMM issue
    idea: we transpose grad_output and transpose filters when done */
@@ -59,14 +58,12 @@ element_output_type *const output_scratch = (element_output_type*)(((char*)handl
 #else
 element_output_type output_scratch[scratch8_size];
 #endif
-for ( oi = 0; oi < scratch8_size; ++oi ) { output_scratch[oi] = (element_output_type)0; }
 const int scratch9_size = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
 #if 0 /* TODO: no VLAs */
 element_filter_type *const filter_scratch = (element_filter_type*)(((char*)handle->scratch9) + ltid * LIBXSMM_UP2(scratch9_size * sizeof(element_filter_type), LIBXSMM_CACHELINE));
 #else
 element_filter_type filter_scratch[scratch9_size];
 #endif
-for ( oi = 0; oi < scratch9_size; ++oi ) { filter_scratch[oi] = (element_filter_type)0; }
 
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, const element_output_type, output, (const element_output_type*)out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
@@ -77,6 +74,11 @@ LIBXSMM_VLA_DECL(3, element_input_type, input_trans, input_scratch, handle->ifmb
 LIBXSMM_VLA_DECL(3, element_input_type, input_padded, input_scratch, padded_w, handle->ifmblock);
 LIBXSMM_VLA_DECL(3, element_output_type, output_trans, output_scratch, handle->ofmblock, handle->ofwp);
 LIBXSMM_VLA_DECL(4, element_filter_type, weight_local, filter_scratch, handle->desc.S, handle->ofmblock, handle->ifmblock);
+
+/* zeroing local scratch after declarations (not mixing declarations and code) */
+for (ii = 0; ii < scratch7_size; ++ii) { input_scratch[ii] = (element_input_type)0; }
+for (oi = 0; oi < scratch8_size; ++oi) { output_scratch[oi] = (element_output_type)0; }
+for (oi = 0; oi < scratch9_size; ++oi) { filter_scratch[oi] = (element_filter_type)0; }
 
 for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
   ofm1 = ofm1ifm1 / handle->blocksifm;

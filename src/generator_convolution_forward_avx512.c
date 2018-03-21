@@ -61,9 +61,10 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
   unsigned int l_found_act_format = 0;
   unsigned int l_found_fil_format = 0;
   unsigned int i_out_pf, j_out_pf;
-  int prefetch_current_output;
+  unsigned int rsp_maxval_offset = 56;
+  int prefetch_scale_factor;
 #if 0
-  unsigned int l_kw = 0;
+  int prefetch_current_output;
 #endif
   /* define gp register mapping */
   libxsmm_reset_x86_convolution_forward_gp_reg_mapping( &l_gp_reg_mapping );
@@ -208,14 +209,13 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
   if (i_conv_desc->unroll_kh != 0) {
     l_kh_trips = i_conv_desc->kh;
   }
-
+#if 0
   if (i_conv_desc->datatype != i_conv_desc->datatype_itm) {
     prefetch_current_output = ( i_conv_desc->use_nts == 1 ) ? 0 : 1;
   } else {
     prefetch_current_output = 0;
   }
-
-  int prefetch_scale_factor;
+#endif
   if (i_conv_desc->datatype != i_conv_desc->datatype_itm) {
     prefetch_scale_factor = ( i_conv_desc->use_nts == 1 ) ? 1 : 0;
   } else {
@@ -231,8 +231,6 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
                                                    l_gp_reg_mapping.gp_reg_weight, l_gp_reg_mapping.gp_reg_output,
                                                    l_gp_reg_mapping.gp_reg_input_pf, l_gp_reg_mapping.gp_reg_weight_pf,
                                                    l_gp_reg_mapping.gp_reg_output_pf, i_arch );
-
-  unsigned int rsp_maxval_offset = 56;
 
   if ( i_conv_desc->compute_batch_stats > 0 && i_conv_desc->ifm_block != 3 ) {
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, l_gp_reg_mapping.gp_reg_help_3);
@@ -290,19 +288,23 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0 );
   }
 
-
   libxsmm_generator_convolution_forward_load_output( io_generated_code, &l_gp_reg_mapping, &l_conv_kernel_config, i_conv_desc );
 
   /* loop over ifm1 blocks, begin */
   if ( i_conv_desc->blocks_ifm_blocking > 1 ) {
     unsigned int n_peeling = (i_conv_desc->extra_L2_prefetching == 0) ? 1 :LIBXSMM_MIN(i_conv_desc->blocks_ifm_blocking, i_conv_desc->lookahead);
+    /* BLOCK 2: Run (n_peeling-1) iters to prefetch for extra L2 from pf* pointers if it is requested */
+    unsigned int peel_index = 0;
+    unsigned int out_reg_L2 = 0; /*atoi(getenv("REG_L2"));*/
+    unsigned int out_reg_L1 = (unsigned int)-1; /*atoi(getenv("REG_L1"));*/
+    unsigned int out_pf_L2 = 1; /*atoi(getenv("PF_L2"));*/
+    unsigned int out_pf_L1 = (unsigned int)-1; /*atoi(getenv("PF_L1"));*/
 
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_input_pf, l_gp_reg_mapping.gp_reg_help_0);
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_weight_pf, l_gp_reg_mapping.gp_reg_help_1);
 
     /* BLOCK:1 Prefetching using the input/wt base pointers */
     if ( i_conv_desc->blocks_ifm_blocking-n_peeling > 0 ) {
-
       libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_input, l_gp_reg_mapping.gp_reg_input_pf);
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
                                      l_gp_reg_mapping.gp_reg_input_pf, i_conv_desc->ifw_padded * i_conv_desc->ifh_padded  * l_conv_kernel_config.datatype_size_in * l_conv_kernel_config.l_ld_ifm_act * i_conv_desc->fm_lp_block);
@@ -312,7 +314,6 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
                                      l_gp_reg_mapping.gp_reg_weight_pf, i_conv_desc->weight_stride * l_conv_kernel_config.l_ld_ofm_act * l_conv_kernel_config.datatype_size_wt * l_conv_kernel_config.l_ld_ifm_act * i_conv_desc->fm_lp_block);
 
       if ( i_conv_desc->extra_L2_prefetching == 1 ) {
-
         if ( i_conv_desc->input_L2_prefetching == 1 ) {
           libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_input, l_gp_reg_mapping.gp_reg_input_pf_L2);
           libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
@@ -328,7 +329,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
       libxsmm_generator_convolution_header_ifmOuter_loop(  io_generated_code, &l_loop_label_tracker,
                                                          &l_conv_kernel_config, l_gp_reg_mapping.gp_reg_ifmOuter_loop );
 
-      #include "template/kernel_repeat.tpl.c"
+#     include "template/kernel_repeat.tpl.c"
 
       /* adjust addresses, by moving to next ifm1 block */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_conv_kernel_config.alu_add_instruction,
@@ -359,14 +360,6 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
       libxsmm_generator_convolution_footer_ifmOuter_loop(  io_generated_code, &l_loop_label_tracker,
                                                          &l_conv_kernel_config, l_gp_reg_mapping.gp_reg_ifmOuter_loop, i_conv_desc->blocks_ifm_blocking-n_peeling );
     }
-
-    /* BLOCK 2: Run (n_peeling-1) iters to prefetch for extra L2 from pf* pointers if it is requested */
-    unsigned int peel_index = 0;
-
-    unsigned int out_reg_L2 = 0; /*atoi(getenv("REG_L2"));*/
-    unsigned int out_reg_L1 = (unsigned int)-1; /*atoi(getenv("REG_L1"));*/
-    unsigned int out_pf_L2 = 1; /*atoi(getenv("PF_L2"));*/
-    unsigned int out_pf_L1 = (unsigned int)-1; /*atoi(getenv("PF_L1"));*/
 
     if (n_peeling-1 > 0) {
       if ( i_conv_desc->input_L2_prefetching == 1 ) {

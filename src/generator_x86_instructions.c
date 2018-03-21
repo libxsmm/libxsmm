@@ -651,7 +651,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     } else {
         /* SSE3 code */
         int l_vecgrp0 = 0;
-        int l_vecval0 = i_vec_reg_number_0 % 8 ;
+        int l_vecval0 = i_vec_reg_number_0 % 8;
         int l_place1=i+2;
         int l_regbas0 = i_gp_reg_base % 8;
         int l_regidx =  i_gp_reg_idx % 8;
@@ -2372,10 +2372,9 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
 
     io_generated_code->code_size = i;
     /* *loc = i; */
-    } else {
-        /* SSE3 code */
+    } else { /* SSE3 code */
         int l_vecgrp0 = 0;
-        int l_vecval0 = i_vec_reg_number_0 % 8 ;
+        int l_vecval0 = i_vec_reg_number_0 % 8;
         int l_place1=i+2;
         int l_regbas0 = i_gp_reg_base % 8;
         int l_regidx =  i_gp_reg_idx % 8;

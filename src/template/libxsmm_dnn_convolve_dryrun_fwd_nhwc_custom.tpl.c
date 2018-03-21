@@ -102,7 +102,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   handle->n_entries_fwd[ltid] = local_entries/3;
 
-  /* Alocate auxiliary data structures for index jitting  */
+  /* Allocate auxiliary data structures for index jitting  */
   compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
   handle->compute_fwd_indices_ptrs[ltid] = compute_indices;
   kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 64);
@@ -117,7 +117,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
           for ( ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
             for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ++ifm1) {
               for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
-                for (oi = 0; oi < handle->ofw ; oi += handle->fwd_ofw_rb) {
+                for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
 
                   ij = oj * handle->desc.u;
                   ii = oi * handle->desc.v;
