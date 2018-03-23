@@ -144,7 +144,7 @@ This domain (MM) supports Small Matrix Multiplications (SMM), batches of multipl
 The [Matrix Multiplication domain (MM)](libxsmm_mm.md) contains routines for:
 
 * [Small, tiled, and parallelized matrix multiplications](libxsmm_mm.md#overview)
-* [Manual code dispatch (customized matrix batches)](libxsmm_mm.md##manual-code-dispatch)
+* [Manual code dispatch (customized matrix batches)](libxsmm_mm.md#manual-code-dispatch)
 * [Batched multiplication (explicit interface)](libxsmm_mm.md#batched-multiplication)
 * [Call wrapper (static and dynamic linkage)](libxsmm_mm.md#call-wrapper)
 
