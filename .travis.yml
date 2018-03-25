@@ -43,11 +43,12 @@ addons:
     - sshpass
 
 before_install:
-  #- if [ "${TRAVIS_OS_NAME}" = "osx" ]; then brew update; fi
-  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then sudo easy_install pip; fi
+  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
+      if [ "${TRAVIS_OS_NAME}" = "osx" ]; then sudo easy_install pip; fi;
+    fi
 
 install:
-  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
+  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
       pip install --user codecov;
     fi
   - if [ "${UPLOAD_ENABLED}" != "" ] && [ "${UPLOAD_ENABLED}" != "0" ] && [ "" = "$(which sshpass)" ] ; then
