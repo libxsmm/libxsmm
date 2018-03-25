@@ -85,7 +85,6 @@ int main(int argc, char* argv[])
 
     const libxsmm_blasint lda = m, ldb = k, ldc = m;
     const char transa = 'N', transb = 'N';
-    const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
     const T alpha = 1, beta = 1;
 
     const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
@@ -142,9 +141,8 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            LIBXSMM_INLINE_GEMM(flags, m, n, k,
-              alpha, a + i * asize, lda, b + i * bsize, ldb,
-               beta, c + i * csize, ldc);
+            LIBXSMM_INLINE_XGEMM(REAL_TYPE, REAL_TYPE, &transa, &transb, &m, &n, &k,
+              &alpha, a + i * asize, &lda, b + i * bsize, &ldb, &beta, c + i * csize, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -165,9 +163,8 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            LIBXSMM_INLINE_GEMM(flags, m, n, k,
-              alpha, a + i * asize, lda, b, ldb,
-               beta, c + i * csize, ldc);
+            LIBXSMM_INLINE_XGEMM(REAL_TYPE, REAL_TYPE, &transa, &transb, &m, &n, &k,
+              &alpha, a + i * asize, &lda, b, &ldb, &beta, c + i * csize, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -188,9 +185,8 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            LIBXSMM_INLINE_GEMM(flags, m, n, k,
-              alpha, a, lda, b + i * bsize, ldb,
-               beta, c + i * csize, ldc);
+            LIBXSMM_INLINE_XGEMM(REAL_TYPE, REAL_TYPE, &transa, &transb, &m, &n, &k,
+              &alpha, a, &lda, b + i * bsize, &ldb, &beta, c + i * csize, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -216,9 +212,8 @@ int main(int argc, char* argv[])
 #else
             const libxsmm_blasint j = 0;
 #endif
-            LIBXSMM_INLINE_GEMM(flags, m, n, k,
-              alpha, a + i * asize, lda, b + i * bsize, ldb,
-               beta, c + j, ldc);
+            LIBXSMM_INLINE_XGEMM(REAL_TYPE, REAL_TYPE, &transa, &transb, &m, &n, &k,
+              &alpha, a + i * asize, &lda, b + i * bsize, &ldb, &beta, c + j, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -244,9 +239,8 @@ int main(int argc, char* argv[])
 #else
             const libxsmm_blasint j = 0;
 #endif
-            LIBXSMM_INLINE_GEMM(flags, m, n, k,
-              alpha, a, lda, b, ldb,
-               beta, c + j, ldc);
+            LIBXSMM_INLINE_XGEMM(REAL_TYPE, REAL_TYPE, &transa, &transb, &m, &n, &k,
+              &alpha, a, &lda, b, &ldb, &beta, c + j, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());

@@ -157,7 +157,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
             fprintf(stdout, "\nLIBXSMM STATISTIC: %u multiplication%c\n", batchcount, 1 < batchcount ? 's' : ' ');
           }
           LIBXSMM_GEMM_PRINT2(stdout, LIBXSMM_GETENUM_INP(descriptor.datatype), LIBXSMM_GETENUM_OUT(descriptor.datatype),
-            descriptor.flags, m, n, k, descriptor.alpha, 0/*a*/, lda, 0/*b*/, ldb, descriptor.beta, 0/*c*/, ldc);
+            descriptor.flags, m, n, k, descriptor.alpha, NULL/*a*/, lda, NULL/*b*/, ldb, descriptor.beta, NULL/*c*/, ldc);
           if (0 != symbol) {
             fprintf(stdout, ": %.0f%% [%s]\n", 100.0 * ci / batchcount, symbol);
           }
@@ -250,7 +250,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
             libxsmm_gemm_batcharray[i-1].stat.desc = *descriptor;
             libxsmm_gemm_batcharray[i-1].stat.count = 1;
             libxsmm_gemm_batcharray[i-1].stat.symbol = libxsmm_trace_info(&depth, 0, 0, 0, &maxnsyms);
-            if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, 0/*size*/, 0/*flags*/, &extra)) {
+            if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, NULL/*size*/, NULL/*flags*/, &extra)) {
               *(libxsmm_mmbatch_flush_function*)extra = libxsmm_mmbatch_end;
             }
 # if !defined(NDEBUG)
@@ -363,7 +363,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
             libxsmm_gemm_batcharray[i-1].stat.desc = *descriptor;
             libxsmm_gemm_batcharray[i-1].stat.count = 1;
             libxsmm_gemm_batcharray[i-1].stat.symbol = libxsmm_trace_info(&depth, 0, 0, 0, &maxnsyms);
-            if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, 0/*size*/, 0/*flags*/, &extra)) {
+            if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, NULL/*size*/, NULL/*flags*/, &extra)) {
               *(libxsmm_mmbatch_flush_function*)extra = libxsmm_mmbatch_end;
             }
 # if !defined(NDEBUG)
@@ -423,16 +423,6 @@ LIBXSMM_APIEXT void libxsmm_sgemm_omp(const char* transa, const char* transb,
     const float ralpha = (0 != alpha ? *alpha : ((float)LIBXSMM_ALPHA));
     const float rbeta = (0 != beta ? *beta : ((float)LIBXSMM_BETA));
     const libxsmm_blasint ilda = *(lda ? lda : m), ildb = (ldb ? *ldb : kk), ildc = *(ldc ? ldc : m);
-    const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
-#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-    const char *const check = getenv("LIBXSMM_CHECK");
-    float *const d = (float*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
-        || 0 == check || 0 == *check || 0 == check[0]) ? NULL
-      : libxsmm_aligned_scratch((size_t)((*m) * nn * sizeof(float)), 0/*auto-aligned*/));
-    if (0 != d) {
-      libxsmm_matcopy(d, c, sizeof(float), *m, nn, ildc, *m, 0/*prefetch*/);
-    }
-#endif
     assert((0 < tm || 0 == *m) && (0 < tn || 0 == nn) && (0 < tk || 0 == kk) && 0 < libxsmm_nt);
 #if defined(_OPENMP)
 # if defined(LIBXSMM_EXT_TASKS)
@@ -444,7 +434,7 @@ LIBXSMM_APIEXT void libxsmm_sgemm_omp(const char* transa, const char* transb,
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_DLOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        float, flags, tm, tn, tk, *m, nn, kk,
+        float, transa, transb, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
     else
@@ -455,7 +445,7 @@ LIBXSMM_APIEXT void libxsmm_sgemm_omp(const char* transa, const char* transb,
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
         if (0 == libxsmm_nosync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
           LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-          float, flags, tm, tn, tk, *m, nn, kk,
+          float, transa, transb, tm, tn, tk, *m, nn, kk,
           ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
 #else
@@ -463,22 +453,8 @@ LIBXSMM_APIEXT void libxsmm_sgemm_omp(const char* transa, const char* transb,
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
         LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
-        float, flags, tm, tn, tk, *m, nn, kk,
+        float, transa, transb, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
-    }
-#endif
-#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-    if (0 != d) {
-      libxsmm_matdiff_info diff;
-      libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
-      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F32, *m, nn, d, c, m, ldc, &diff)) {
-        LIBXSMM_FLOCK(stderr);
-        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F32,
-          transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-        fprintf(stderr, " L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
-        LIBXSMM_FUNLOCK(stderr);
-      }
-      libxsmm_free(d);
     }
 #endif
   }
@@ -506,16 +482,6 @@ LIBXSMM_APIEXT void libxsmm_dgemm_omp(const char* transa, const char* transb,
     const double ralpha = (0 != alpha ? *alpha : ((double)LIBXSMM_ALPHA));
     const double rbeta = (0 != beta ? *beta : ((double)LIBXSMM_BETA));
     const libxsmm_blasint ilda = *(lda ? lda : m), ildb = (ldb ? *ldb : kk), ildc = *(ldc ? ldc : m);
-    const int flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
-#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-    const char *const check = getenv("LIBXSMM_CHECK");
-    double *const d = (double*)((0 == LIBXSMM_GEMM_NO_BYPASS(flags, ralpha, rbeta)
-        || 0 == check || 0 == *check || 0 == check[0]) ? NULL
-      : libxsmm_aligned_scratch((size_t)((*m) * nn * sizeof(double)), 0/*auto-aligned*/));
-    if (0 != d) {
-      libxsmm_matcopy(d, c, sizeof(double), *m, nn, ildc, *m, 0/*prefetch*/);
-    }
-#endif
     assert((0 < tm || 0 == *m) && (0 < tn || 0 == nn) && (0 < tk || 0 == kk) && 0 < libxsmm_nt);
 #if defined(_OPENMP)
 # if defined(LIBXSMM_EXT_TASKS)
@@ -527,7 +493,7 @@ LIBXSMM_APIEXT void libxsmm_dgemm_omp(const char* transa, const char* transb,
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_EXT_PARALLEL, LIBXSMM_EXT_FOR_DLOOP, LIBXSMM_EXT_FOR_KERNEL, LIBXSMM_NOOP,
         LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-        double, flags, tm, tn, tk, *m, nn, kk,
+        double, transa, transb, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
     else
@@ -538,7 +504,7 @@ LIBXSMM_APIEXT void libxsmm_dgemm_omp(const char* transa, const char* transb,
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
         if (0 == libxsmm_nosync) { LIBXSMM_EXT_TSK_SYNC } /* allow to omit synchronization */,
           LIBXSMM_EXT_MIN_NTASKS, LIBXSMM_EXT_OVERHEAD, libxsmm_nt,
-          double, flags, tm, tn, tk, *m, nn, kk,
+          double, transa, transb, tm, tn, tk, *m, nn, kk,
           ralpha, a, ilda, b, ildb, rbeta, c, ildc);
     }
 #else
@@ -546,22 +512,8 @@ LIBXSMM_APIEXT void libxsmm_dgemm_omp(const char* transa, const char* transb,
       LIBXSMM_TILED_XGEMM(
         LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
         LIBXSMM_MIN_NTASKS, LIBXSMM_OVERHEAD, libxsmm_nt,
-        double, flags, tm, tn, tk, *m, nn, kk,
+        double, transa, transb, tm, tn, tk, *m, nn, kk,
         ralpha, a, ilda, b, ildb, rbeta, c, ildc);
-    }
-#endif
-#if !defined(NDEBUG) && (0 == LIBXSMM_NO_BLAS)
-    if (0 != d) {
-      libxsmm_matdiff_info diff;
-      libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, m);
-      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F64, *m, nn, d, c, m, ldc, &diff)) {
-        LIBXSMM_FLOCK(stderr);
-        libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F64,
-          transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-        fprintf(stderr, " L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
-        LIBXSMM_FUNLOCK(stderr);
-      }
-      libxsmm_free(d);
     }
 #endif
   }
@@ -580,7 +532,7 @@ LIBXSMM_APIEXT int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blasi
   libxsmm_code_pointer code;
   libxsmm_kernel_kind kind;
   code.xgemm = kernel;
-  info = libxsmm_get_kernel_info(code, &kind, 0/*size*/);
+  info = libxsmm_get_kernel_info(code, &kind, NULL/*size*/);
   if (0 != info && LIBXSMM_KERNEL_KIND_MATMUL == kind && 0 != a && 0 != b && 0 != c) {
     LIBXSMM_INIT
     {

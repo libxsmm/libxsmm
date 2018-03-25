@@ -161,6 +161,8 @@ int main(int argc, char* argv[])
       ? ((CP2K_MIN_NLOCAL) >> std::strlen(argv[3])) : -1))) : -1;
     const libxsmm_blasint k = 5 < argc ? std::atoi(argv[5]) : m;
     const libxsmm_blasint n = 4 < argc ? std::atoi(argv[4]) : k;
+    const char transa = 'N', transb = 'N';
+    const REAL_TYPE alpha = 1, beta = 1;
 
     const libxsmm_blasint csize = m * n;
     if ((MAX_SIZE) < csize) {
@@ -223,7 +225,7 @@ int main(int argc, char* argv[])
       const T zero = 0;
 
       // eventually JIT-compile the requested kernel
-      const libxsmm_mmfunction<T> xmm(LIBXSMM_FLAGS, m, n, k, LIBXSMM_PREFETCH);
+      const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, LIBXSMM_PREFETCH);
 
       memset(&diff, 0, sizeof(diff));
       { // LAPACK/BLAS3 (warmup BLAS Library)
@@ -236,9 +238,8 @@ int main(int argc, char* argv[])
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
-            libxsmm_blas_gemm(0/*transa*/, 0/*transb*/, m, n, k,
-              0/*alpha*/, ai, 0/*lda*/, bi, 0/*ldb*/,
-              0/*beta*/, tmp, 0/*ldc*/);
+            libxsmm_blas_gemm(&transa, &transb, m, n, k,
+              &alpha, ai, &m, bi, &k, &beta, tmp, &m);
             ai = aij;
             bi = bij;
           }
@@ -259,9 +260,8 @@ int main(int argc, char* argv[])
           for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
             // alternatively libxsmm_blas_gemm can be called (see above)
-            LIBXSMM_BLAS_GEMM(LIBXSMM_FLAGS, m, n, k,
-              LIBXSMM_ALPHA, ai, m, bi, k,
-              LIBXSMM_BETA, tmp, m);
+            LIBXSMM_BLAS_XGEMM(REAL_TYPE, REAL_TYPE, &transa, &transb, &m, &n, &k,
+              &alpha, ai, &m, bi, &k, &beta, tmp, &m);
             ai = aij;
             bi = bij;
           }
@@ -292,9 +292,8 @@ int main(int argc, char* argv[])
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
-            LIBXSMM_INLINE_GEMM(LIBXSMM_FLAGS, m, n, k,
-              LIBXSMM_ALPHA, ai, m, bi, k,
-              LIBXSMM_BETA, tmp, m);
+            LIBXSMM_INLINE_XGEMM(REAL_TYPE, REAL_TYPE, &transa, &transb, &m, &n, &k,
+              &alpha, ai, &m, bi, &k, &beta, tmp, &m);
             ai = aij;
             bi = bij;
           }
@@ -325,9 +324,8 @@ int main(int argc, char* argv[])
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
-            libxsmm_gemm(0/*transa*/, 0/*transb*/, m, n, k,
-              0/*alpha*/, ai, 0/*lda*/, bi, 0/*ldb*/,
-              0/*beta*/, tmp, 0/*ldc*/);
+            libxsmm_gemm(&transa, &transb, m, n, k,
+              &alpha, ai, &m, bi, &k, &beta, tmp, &m);
             ai = aij;
             bi = bij;
           }

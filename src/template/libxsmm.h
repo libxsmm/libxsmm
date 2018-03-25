@@ -140,7 +140,6 @@ LIBXSMM_API libxsmm_wsmmfunction libxsmm_wsmmdispatch(libxsmm_blasint m, libxsmm
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch);
 
-
 /** Process a series of matrix multiplications (batch). */
 LIBXSMM_API int libxsmm_mmbatch(
   /** Kernel (matches precision, transa, transb, beta, etc.). */
@@ -310,20 +309,12 @@ LIBXSMM_APIEXT int libxsmm_otrans_omp(void* out, const void* in, unsigned int ty
 LIBXSMM_API int libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
-/** Dispatched general dense matrix multiplication (single-precision); can be called from F77 code. */
-LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-  const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc);
-
-/** Dispatched general dense matrix multiplication (double-precision); can be called from F77 code. */
-LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
+/** General dense matrix multiplication; MT via libxsmmext (double-precision). */
+LIBXSMM_APIEXT void libxsmm_dgemm_omp(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc);
-
 /** General dense matrix multiplication; MT via libxsmmext (single-precision). */
 LIBXSMM_APIEXT void libxsmm_sgemm_omp(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
@@ -331,30 +322,34 @@ LIBXSMM_APIEXT void libxsmm_sgemm_omp(const char* transa, const char* transb,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
 
-/** General dense matrix multiplication; MT via libxsmmext (double-precision). */
-LIBXSMM_APIEXT void libxsmm_dgemm_omp(const char* transa, const char* transb,
+/** Dispatched general dense matrix multiplication (double-precision). */
+LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc);
-
-/** General dense matrix multiplication based on LAPACK/BLAS (single-precision). */
-LIBXSMM_API void libxsmm_blas_sgemm(const char* transa, const char* transb,
+/** Dispatched general dense matrix multiplication (single-precision). */
+LIBXSMM_API void libxsmm_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
-
-/** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */
-LIBXSMM_API void libxsmm_blas_dgemm(const char* transa, const char* transb,
+/** Dispatched general dense matrix multiplication (I16 input, I32 result). */
+LIBXSMM_API void libxsmm_wigemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-  const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc);
+  const int* alpha, const short* a, const libxsmm_blasint* lda,
+  const short* b, const libxsmm_blasint* ldb,
+  const int* beta, int* c, const libxsmm_blasint* ldc);
+/** Dispatched general dense matrix multiplication (I16 input, F32 result). */
+LIBXSMM_API void libxsmm_wsgemm(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const short* a, const libxsmm_blasint* lda,
+  const short* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc);
 $MNK_INTERFACE_LIST
 #if defined(__cplusplus)
 
-template<typename T> struct libxsmm_gemm_precision_enum {};
+template<typename T> struct libxsmm_gemm_precision_enum {};     /** Map a built-in type to libxsmm_gemm_precision. */
 template<> struct libxsmm_gemm_precision_enum<double>           { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F64; };
 template<> struct libxsmm_gemm_precision_enum<float>            { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F32; };
 template<> struct libxsmm_gemm_precision_enum<int>              { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I32; };
