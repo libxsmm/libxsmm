@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
       for (libxsmm_blasint i = 0; i < s; ++i) {
         LIBXSMM_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
           &alpha, a + i * asize, &lda, b + i * bsize, &ldb,
-            &beta, c + i * csize, &ldc);
+           &beta, c + i * csize, &ldc);
       }
 
 #if (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
           LIBXSMM_TPREFIX(REAL_TYPE, gemm_batch)(&transa, &transb, &m, &n, &k,
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
-            &beta, &c_array[0], &ldc, &group_count, &s);
+             &beta, &c_array[0], &ldc, &group_count, &s);
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles);
@@ -305,7 +305,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
           LIBXSMM_TPREFIX(REAL_TYPE, gemm_batch)(&transa, &transb, &m, &n, &k,
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
-            &beta, &c_array[0], &ldc, &group_count, &s);
+             &beta, &c_array[0], &ldc, &group_count, &s);
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles);
@@ -364,7 +364,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
           LIBXSMM_TPREFIX(REAL_TYPE, gemm_batch)(&transa, &transb, &m, &n, &k,
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
-            &beta, &c_array[0], &ldc, &group_count, &s);
+             &beta, &c_array[0], &ldc, &group_count, &s);
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles);
@@ -391,8 +391,7 @@ int main(int argc, char* argv[])
             const libxsmm_blasint j = 0;
 #endif
             LIBXSMM_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
-              &alpha, a, &lda, b, &ldb,
-               &beta, c + j, &ldc);
+              &alpha, a, &lda, b, &ldb, &beta, c + j, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -422,7 +421,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
           LIBXSMM_TPREFIX(REAL_TYPE, gemm_batch)(&transa, &transb, &m, &n, &k,
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
-            &beta, &c_array[0], &ldc, &group_count, &s);
+             &beta, &c_array[0], &ldc, &group_count, &s);
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles);
