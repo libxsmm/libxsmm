@@ -185,6 +185,7 @@
   const OTYPE libxsmm_inline_xgemm_alpha_ = (NULL != ((void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
   const OTYPE libxsmm_inline_xgemm_beta_  = (NULL != ((void*)(BETA))  ? (*(const OTYPE*)(BETA))  : ((OTYPE)LIBXSMM_BETA)); \
   libxsmm_blasint libxsmm_inline_xgemm_ni_, libxsmm_inline_xgemm_mi_, libxsmm_inline_xgemm_ki_; /* loop induction variables */ \
+  LIBXSMM_UNUSED(TRANSA); LIBXSMM_UNUSED(TRANSB); /* TODO: only NN is supported */ \
   LIBXSMM_ASSERT((NULL == ((void*)(TRANSA)) && 0 == (LIBXSMM_GEMM_FLAG_TRANS_A & LIBXSMM_FLAGS)) || (NULL != ((void*)(TRANSA)) && (*"N" == *(TRANSA) || 'n' == *(TRANSA)))); \
   LIBXSMM_ASSERT((NULL == ((void*)(TRANSB)) && 0 == (LIBXSMM_GEMM_FLAG_TRANS_B & LIBXSMM_FLAGS)) || (NULL != ((void*)(TRANSB)) && (*"N" == *(TRANSB) || 'n' == *(TRANSB)))); \
   LIBXSMM_ASSERT(libxsmm_inline_xgemm_m_ <= LIBXSMM_MIN(libxsmm_inline_xgemm_lda_, libxsmm_inline_xgemm_ldc_) && libxsmm_inline_xgemm_k_ <= libxsmm_inline_xgemm_ldb_); \
