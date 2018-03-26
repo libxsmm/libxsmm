@@ -107,7 +107,7 @@ LIBXSMM_APIEXT int libxsmm_matcopy_omp(void* out, const void* in, unsigned int t
     }
   }
   else {
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       if (0 == out) {
@@ -196,7 +196,7 @@ LIBXSMM_APIEXT int libxsmm_otrans_omp(void* out, const void* in, unsigned int ty
       result = libxsmm_itrans/*TODO: omp*/(out, typesize, m, n, ldi);
     }
     else {
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
+      if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
         fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
@@ -205,7 +205,7 @@ LIBXSMM_APIEXT int libxsmm_otrans_omp(void* out, const void* in, unsigned int ty
     }
   }
   else {
-    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       if (0 == out || 0 == in) {

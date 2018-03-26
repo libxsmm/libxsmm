@@ -132,13 +132,13 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
       memset(batcharray, 0, (size_t)(batchsize * itemsize)); /* clear */
     }
     else { /* print statistic */
-      const libxsmm_blasint limit = (3 < libxsmm_verbosity ? batchsize : 7);
+      const libxsmm_blasint limit = (3 < libxsmm_get_verbosity() ? batchsize : 7);
       unsigned int threshold, batchcount;
       libxsmm_blasint count = 0, i;
       assert(0 != batcharray);
       qsort(batcharray, (size_t)batchsize, (size_t)itemsize, internal_mmbatch_sortrev);
       batchcount = batcharray[0].stat.count;
-      threshold = ((3 < libxsmm_verbosity || 3 >= batchsize) ? 0 : (batchcount / 2));
+      threshold = ((3 < libxsmm_get_verbosity() || 3 >= batchsize) ? 0 : (batchcount / 2));
       for (i = 1; i < batchsize; ++i) batchcount += batcharray[i].stat.count;
       LIBXSMM_FLOCK(stdout);
       for (i = 0; i < batchsize; ++i) {
@@ -279,7 +279,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       internal_mmbatch_flush(&libxsmm_gemm_batchdesc, libxsmm_gemm_batchsize, libxsmm_gemm_batcharray);
     }
 # if !defined(NDEBUG) /* library code is expected to be mute */
-    if (EXIT_SUCCESS != result && 0 != libxsmm_verbosity &&
+    if (EXIT_SUCCESS != result && 0 != libxsmm_get_verbosity() &&
       1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM ERROR: SGEMM batch recording failed!\n");
@@ -392,7 +392,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       internal_mmbatch_flush(&libxsmm_gemm_batchdesc, libxsmm_gemm_batchsize, libxsmm_gemm_batcharray);
     }
 # if !defined(NDEBUG) /* library code is expected to be mute */
-    if (EXIT_SUCCESS != result && 0 != libxsmm_verbosity &&
+    if (EXIT_SUCCESS != result && 0 != libxsmm_get_verbosity() &&
       1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM ERROR: DGEMM batch recording failed!\n");
@@ -651,7 +651,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp2(libxsmm_gemm_precision iprec, libxsm
     }
   }
   if (EXIT_SUCCESS != result
-    && 0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 0 != libxsmm_get_verbosity() /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: libxsmm_gemm_batch_omp failed!\n");
@@ -726,7 +726,7 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_begin2(libxsmm_gemm_precision iprec, libxsmm
     else {
       result = EXIT_FAILURE;
     }
-    if (EXIT_SUCCESS != result && 0 != libxsmm_verbosity /* library code is expected to be mute */
+    if (EXIT_SUCCESS != result && 0 != libxsmm_get_verbosity() /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM ERROR: GEMM batch enabling failed!\n");
@@ -778,7 +778,7 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_end(void)
       assert((LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH) == LIBXSMM_UP2POT(LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH)/*is pot*/);
       libxsmm_gemm_batchdesc = internal_ext_gemm_batchdesc[LIBXSMM_MOD2(internal_ext_gemm_batchdepth, LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH)];
     }
-    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    else if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM ERROR: GEMM batch processing failed!\n");
@@ -837,7 +837,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_mmbatch_omp)(libxsmm_xmmfunction ker
   static int error_once = 0;
   assert(0 != a && 0 != b && 0 != c && 0 != index_base && 0 != index_stride && 0 != batchsize);
   if (EXIT_SUCCESS != libxsmm_mmbatch_omp(kernel, *index_base, *index_stride, stride_a, stride_b, stride_c, a, b, c, *batchsize)
-    && 0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 0 != libxsmm_get_verbosity() /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: libxsmm_mmbatch_omp failed!\n");
