@@ -65,7 +65,7 @@ before_script:
 
 script:
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 TRACE=1 STATIC=0 ABSLIBS=1 EFLAGS="-DREAL_TYPE=double" install-artifacts tests &&
+      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 TRACE=1 STATIC=0 ABSLIBS=1 EFLAGS="-DITYPE=double" install-artifacts tests &&
       if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
         env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/blas 2> blas-trace-${COVID}.txt;
         env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/malloc 2> malloc-trace-${COVID}.txt;

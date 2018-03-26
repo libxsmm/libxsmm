@@ -73,12 +73,12 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(REAL_TYPE)
-# define REAL_TYPE float
+#if !defined(ITYPE)
+# define ITYPE float
 #endif
 
 
-LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, REAL_TYPE);
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE);
 
 
 int main(int argc, char* argv[])
@@ -110,9 +110,9 @@ int main(int argc, char* argv[])
       Eigen::NonBlockingThreadPool threadpool(nthreads);
 # endif
       Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
-      Eigen::Tensor<REAL_TYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n), td(m, n);
+      Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n), td(m, n);
       LIBXSMM_GEMM_CONST char transa = 'N', transb = 'N';
-      LIBXSMM_GEMM_CONST REAL_TYPE alpha = 1, beta = 0;
+      LIBXSMM_GEMM_CONST ITYPE alpha = 1, beta = 0;
       libxsmm_matdiff_info diff;
       unsigned long long start;
       double d1, d2;
@@ -127,13 +127,13 @@ int main(int argc, char* argv[])
         }
         d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       }
-      libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(REAL_TYPE), &transa, &transb,
+      libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(ITYPE), &transa, &transb,
         &m, &n, &k, &alpha, ta.data(), &m, tb.data(), &k, &beta, tc.data(), &m);
       fprintf(stdout, "\n\n");
       {
         start = libxsmm_timer_tick();
         for (int i = 0; i < nrepeat; ++i) {
-          LIBXSMM_GEMM_SYMBOL(REAL_TYPE)(&transa, &transb, &m, &n, &k,
+          LIBXSMM_GEMM_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k,
             &alpha, ta.data(), &m, tb.data(), &k,
              &beta, td.data(), &m);
         }
@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
       if (0 < d2) {
         fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / d2);
       }
-      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m, n, td.data(), tc.data(), &m, &m, &diff)) {
+      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, td.data(), tc.data(), &m, &m, &diff)) {
         fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
         if (check < 100.0 * diff.normf_rel) {
           fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);

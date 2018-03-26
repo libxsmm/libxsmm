@@ -274,6 +274,12 @@
 # define LIBXSMM_PRAGMA_NOVECTOR
 #endif
 
+#if defined(_OPENMP)
+# define LIBXSMM_PRAGMA_OMP(...) LIBXSMM_PRAGMA(omp __VA_ARGS__)
+#else
+# define LIBXSMM_PRAGMA_OMP(...)
+#endif
+
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_NONTEMPORAL_VARS(...) LIBXSMM_PRAGMA(vector nontemporal(__VA_ARGS__))
 # define LIBXSMM_PRAGMA_NONTEMPORAL LIBXSMM_PRAGMA(vector nontemporal)

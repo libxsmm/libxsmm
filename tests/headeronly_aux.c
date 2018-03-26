@@ -31,23 +31,23 @@
 #include <libxsmm_source.h>
 
 /* must match definitions in headeronly.c */
-#if !defined(REAL_TYPE)
-# define REAL_TYPE double
+#if !defined(ITYPE)
+# define ITYPE double
 #endif
-#if !defined(REAL_OUT)
-# define REAL_OUT REAL_TYPE
+#if !defined(OTYPE)
+# define OTYPE ITYPE
 #endif
 
 
-LIBXSMM_EXTERN LIBXSMM_MMFUNCTION_TYPE2(REAL_TYPE, REAL_OUT) mmdispatch(int m, int n, int k);
-LIBXSMM_EXTERN LIBXSMM_MMFUNCTION_TYPE2(REAL_TYPE, REAL_OUT) mmdispatch(int m, int n, int k)
+LIBXSMM_EXTERN LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) mmdispatch(int m, int n, int k);
+LIBXSMM_EXTERN LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) mmdispatch(int m, int n, int k)
 {
-  LIBXSMM_MMFUNCTION_TYPE2(REAL_TYPE, REAL_OUT) result;
+  LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) result;
 #if defined(__cplusplus) /* C++ by chance: test libxsmm_mmfunction<> wrapper */
-  const libxsmm_mmfunction<REAL_TYPE, REAL_OUT> mmfunction(m, n, k);
-  result = mmfunction.kernel().LIBXSMM_TPREFIX2(REAL_TYPE, REAL_OUT, mm);
+  const libxsmm_mmfunction<ITYPE, OTYPE> mmfunction(m, n, k);
+  result = mmfunction.kernel().LIBXSMM_TPREFIX2(ITYPE, OTYPE, mm);
 #else
-  result = LIBXSMM_MMDISPATCH_SYMBOL2(REAL_TYPE, REAL_OUT)(m, n, k,
+  result = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE, OTYPE)(m, n, k,
     NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/,
     NULL/*alpha*/, NULL/*beta*/,
     NULL/*flags*/, NULL/*prefetch*/);

@@ -43,16 +43,16 @@
 #if !defined(USE_VERBOSE)
 # define USE_VERBOSE
 #endif
-#if !defined(REAL_TYPE)
-# define REAL_TYPE float
+#if !defined(ITYPE)
+# define ITYPE float
 #endif
 
 
 int main(void)
 {
-  union { LIBXSMM_MMFUNCTION_TYPE(REAL_TYPE) f; void* p; } f[MAX_NKERNELS];
+  union { LIBXSMM_MMFUNCTION_TYPE(ITYPE) f; void* p; } f[MAX_NKERNELS];
   const char *const target_arch = libxsmm_get_target_arch();
-  const REAL_TYPE alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
+  const ITYPE alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
   const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   libxsmm_generated_code generated_code;
   libxsmm_registry_info registry_info;
@@ -99,7 +99,7 @@ int main(void)
     const libxsmm_blasint m = r[3*i+0] % max_shape + 1;
     const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
     const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
-    f[i].f = LIBXSMM_MMDISPATCH_SYMBOL(REAL_TYPE)(m, n, k,
+    f[i].f = LIBXSMM_MMDISPATCH_SYMBOL(ITYPE)(m, n, k,
       &m/*lda*/, &k/*ldb*/, &m/*ldc*/, &alpha, &beta,
       &flags, &prefetch);
   }
@@ -114,7 +114,7 @@ int main(void)
       const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
       union { libxsmm_xmmfunction x; void* p; } fi;
       libxsmm_descriptor_blob blob;
-      const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_GEMM_PRECISION(REAL_TYPE),
+      const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_GEMM_PRECISION(ITYPE),
         m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, &alpha, &beta, flags,
         /* translate an eventual LIBXSMM_PREFETCH_AUTO */
         libxsmm_get_gemm_prefetch(prefetch));

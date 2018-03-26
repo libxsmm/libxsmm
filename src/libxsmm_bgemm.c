@@ -188,19 +188,19 @@ LIBXSMM_API int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* handle, const
 #endif
     switch (handle->iprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE double
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE double
 #       include "template/libxsmm_bgemm_copyin_a.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_F32: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE float
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE float
 #       include "template/libxsmm_bgemm_copyin_a.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE short
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE short
 #       include "template/libxsmm_bgemm_copyin_a.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
       } break;
       default: {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -238,19 +238,19 @@ LIBXSMM_API int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* handle, const
 #endif
     switch (handle->iprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE double
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE double
 #       include "template/libxsmm_bgemm_copyin_b.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_F32: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE float
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE float
 #       include "template/libxsmm_bgemm_copyin_b.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE short
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE short
 #       include "template/libxsmm_bgemm_copyin_b.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
       } break;
       default: {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -288,19 +288,19 @@ LIBXSMM_API int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* handle, const
 #endif
     switch (handle->oprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE double
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE double
 #       include "template/libxsmm_bgemm_copyin_c.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_F32: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE float
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE float
 #       include "template/libxsmm_bgemm_copyin_c.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE int
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE int
 #       include "template/libxsmm_bgemm_copyin_c.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
       } break;
       default: {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -338,19 +338,19 @@ LIBXSMM_API int libxsmm_bgemm_copyout_c(const libxsmm_bgemm_handle* handle, cons
 #endif
     switch (handle->oprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE double
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE double
 #       include "template/libxsmm_bgemm_copyout_c.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_F32: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE float
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE float
 #       include "template/libxsmm_bgemm_copyout_c.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE int
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE int
 #       include "template/libxsmm_bgemm_copyout_c.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
       } break;
       default: {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -423,33 +423,33 @@ LIBXSMM_API void libxsmm_bgemm(const libxsmm_bgemm_handle* handle,
   {
     switch (handle->iprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB double
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C  double
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE_AB double
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE_C  double
 #       include "template/libxsmm_bgemm.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE_AB
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE_C
       } break;
       case LIBXSMM_GEMM_PRECISION_F32: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB float
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C  float
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE_AB float
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE_C  float
 #       include "template/libxsmm_bgemm.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB
-#       undef  LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE_AB
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE_C
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-#       define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB short
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE_AB short
         if (LIBXSMM_GEMM_PRECISION_I32 == handle->oprec) {
-#         define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C int
+#         define LIBXSMM_BGEMM_TEMPLATE_TYPE_C int
 #         include "template/libxsmm_bgemm.tpl.c"
-#         undef LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C
+#         undef LIBXSMM_BGEMM_TEMPLATE_TYPE_C
         }
         else { /* WSMM */
-#         define LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C float
+#         define LIBXSMM_BGEMM_TEMPLATE_TYPE_C float
 #         include "template/libxsmm_bgemm.tpl.c"
-#         undef LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_C
+#         undef LIBXSMM_BGEMM_TEMPLATE_TYPE_C
           LIBXSMM_ASSERT(LIBXSMM_GEMM_PRECISION_F32 == handle->oprec);
         }
-#       undef LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE_AB
+#       undef LIBXSMM_BGEMM_TEMPLATE_TYPE_AB
       } break;
       default: if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
