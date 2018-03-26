@@ -86,11 +86,12 @@
 # define LIBXSMM_INLINE_KEYWORD inline
 # define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
 # if defined(__GNUC__)
-#   define LIBXSMM_CALLER __PRETTY_FUNCTION__
+#   define LIBXSMM_CALLER_ID __PRETTY_FUNCTION__
 # elif defined(_MSC_VER)
-#   define LIBXSMM_CALLER __FUNCDNAME__
+#   define LIBXSMM_CALLER_ID __FUNCDNAME__
+#   define LIBXSMM_CALLER __FUNCTION__
 # else
-#   define LIBXSMM_CALLER __FUNCNAME__
+#   define LIBXSMM_CALLER_ID __FUNCNAME__
 # endif
 #else
 # define LIBXSMM_VARIADIC
@@ -98,15 +99,16 @@
 # define LIBXSMM_EXTERN_C
 # if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
-#   define LIBXSMM_CALLER __func__
+#   define LIBXSMM_CALLER_ID __func__
 #   define LIBXSMM_RESTRICT restrict
 #   define LIBXSMM_INLINE_KEYWORD inline
 # elif defined(_MSC_VER)
-#   define LIBXSMM_CALLER __FUNCDNAME__
+#   define LIBXSMM_CALLER_ID __FUNCDNAME__
+#   define LIBXSMM_CALLER __FUNCTION__
 #   define LIBXSMM_INLINE_KEYWORD __inline
 #   define LIBXSMM_INLINE_FIXUP
 # elif defined(__GNUC__) && !defined(__STRICT_ANSI__)
-#   define LIBXSMM_CALLER __PRETTY_FUNCTION__
+#   define LIBXSMM_CALLER_ID __PRETTY_FUNCTION__
 # endif
 # if !defined(LIBXSMM_INLINE_KEYWORD)
 #   define LIBXSMM_INLINE_KEYWORD
@@ -114,8 +116,11 @@
 # endif
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
 #endif /*__cplusplus*/
+#if !defined(LIBXSMM_CALLER_ID)
+# define LIBXSMM_CALLER_ID NULL
+#endif
 #if !defined(LIBXSMM_CALLER)
-# define LIBXSMM_CALLER NULL
+# define LIBXSMM_CALLER LIBXSMM_CALLER_ID
 #endif
 
 #if defined(_WIN32) && !defined(__GNUC__)
