@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
         8 == sizeof(ITYPE) ? "DP" : "SP");
 
       const libxsmm_mmfunction<ITYPE,OTYPE> xmm(LIBXSMM_GEMM_FLAGS(transa, transb),
-                  m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH);
+        m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_PREFETCH);
       if (!xmm) throw "no specialized routine found!";
 
       // arrays needed for the batch interface (indirect)
