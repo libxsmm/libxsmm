@@ -1043,7 +1043,7 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
       CTARGET ?= -msse4.2
     else ifeq (2,$(SSE))
       # implicitly present (64-bit ABI)
-    else ifneq (30,$(GCC)$(STATIC))
+    else #ifneq (30,$(GCC)$(STATIC))
       ifeq (3,$(SSE))
         ifneq (0,$(PGI))
           #DFLAGS += -D__SSSE3__ -D__SSE3__
@@ -1060,7 +1060,11 @@ ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
           #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
           CTARGET = -tp=nehalem
         endif
-        CTARGET ?= -msse4.2
+        ifneq (30,$(GCC)$(STATIC))
+          CTARGET ?= -msse4.2
+        else
+          CTARGET ?= -msse3
+        endif
       else # perhaps better to use TARGET flag directly
         CTARGET = -msse$(SSE)
       endif

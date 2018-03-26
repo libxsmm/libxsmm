@@ -30,6 +30,7 @@
    Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_bgemm.h>
+#include <libxsmm.h>
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -99,13 +100,13 @@ LIBXSMM_APIEXT void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
       libxsmm_barrier_release(barrier);
 #endif
     }
-    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    else if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
           && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM ERROR: BGEMM matrix-operands cannot be NULL!\n");
     }
   }
-  else if (0 > count && 0 != libxsmm_verbosity /* library code is expected to be mute */
+  else if (0 > count && 0 != libxsmm_get_verbosity() /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: BGEMM count-argument cannot be negative!\n");

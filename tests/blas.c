@@ -36,8 +36,11 @@
 # include <stdio.h>
 #endif
 
-#if !defined(REAL_TYPE)
-# define REAL_TYPE double
+#if !defined(ITYPE)
+# define ITYPE double
+#endif
+#if !defined(OTYPE)
+# define OTYPE ITYPE
 #endif
 #if !defined(REFERENCE_BLAS)
 # define REFERENCE_BLAS LIBXSMM_GEMM_SYMBOL
@@ -48,47 +51,26 @@
 #endif
 
 
-LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, REAL_TYPE);
-
-
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
-  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
-{
-  const double seed1 = scale * (seed + 1);
-  libxsmm_blasint i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < ncols; ++i) {
-    libxsmm_blasint j = 0;
-    for (; j < nrows; ++j) {
-      const libxsmm_blasint k = i * ld + j;
-      dst[k] = (REAL_TYPE)(seed1 / (k + 1));
-    }
-    for (; j < ld; ++j) {
-      const libxsmm_blasint k = i * ld + j;
-      dst[k] = (REAL_TYPE)seed;
-    }
-  }
-}
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE);
 
 
 int main(void)
 {
 #if !defined(__BLAS) || (0 != __BLAS)
-  libxsmm_blasint m[]                   = { 0, 0, 1, 1, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32,    9 };
-  libxsmm_blasint n[]                   = { 0, 1, 1, 1, 3, 1, 3,    8, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33,    9 };
-  libxsmm_blasint k[]                   = { 0, 1, 1, 1, 3, 2, 2,   64,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192, 1742 };
-  libxsmm_blasint lda[]                 = { 0, 1, 1, 1, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9 };
-  libxsmm_blasint ldb[]                 = { 0, 1, 1, 1, 3, 2, 2, 9216, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742 };
-  libxsmm_blasint ldc[]                 = { 0, 1, 0, 1, 3, 3, 1, 4096, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
-  LIBXSMM_GEMM_CONST REAL_TYPE alpha[]  = { 1, 1, 1, 1, 1, 1, 1,    1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
-  LIBXSMM_GEMM_CONST REAL_TYPE beta[]   = { 0, 1, 0, 1, 1, 0, 0,    0,   1,     0,     0,   0,   0,   0,   0,   0,  0,  0,  0,  0,    0,    0 };
+  libxsmm_blasint m[]               = { 0, 0, 1, 1, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32,    9 };
+  libxsmm_blasint n[]               = { 0, 1, 1, 1, 3, 1, 3,    8, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33,    9 };
+  libxsmm_blasint k[]               = { 0, 1, 1, 1, 3, 2, 2,   64,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192, 1742 };
+  libxsmm_blasint lda[]             = { 0, 1, 1, 1, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9 };
+  libxsmm_blasint ldb[]             = { 0, 1, 1, 1, 3, 2, 2, 9216, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742 };
+  libxsmm_blasint ldc[]             = { 0, 1, 0, 1, 3, 3, 1, 4096, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
+  LIBXSMM_GEMM_CONST OTYPE alpha[]  = { 1, 1, 1, 1, 1, 1, 1,    1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
+  LIBXSMM_GEMM_CONST OTYPE beta[]   = { 0, 1, 0, 1, 1, 0, 0,    0,   1,     0,     0,   0,   0,   0,   0,   0,  0,  0,  0,  0,    0,    0 };
   LIBXSMM_GEMM_CONST char transa = 'N', transb = 'N';
   const int begin = 3, end = sizeof(m) / sizeof(*m);
   libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0;
-  REAL_TYPE *a = 0, *b = 0, *c = 0, *d = 0;
   libxsmm_matdiff_info diff;
+  ITYPE *a = 0, *b = 0;
+  OTYPE *c = 0, *d = 0;
   int test;
 
   for (test = begin; test < end; ++test) {
@@ -99,28 +81,28 @@ int main(void)
     max_size_c = LIBXSMM_MAX(max_size_c, size_c);
   }
 
-  a = (REAL_TYPE*)libxsmm_malloc((size_t)(max_size_a * sizeof(REAL_TYPE)));
-  b = (REAL_TYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(REAL_TYPE)));
-  c = (REAL_TYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(REAL_TYPE)));
-  d = (REAL_TYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(REAL_TYPE)));
+  a = (ITYPE*)libxsmm_malloc((size_t)(max_size_a * sizeof(ITYPE)));
+  b = (ITYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ITYPE)));
+  c = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
+  d = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
   assert(0 != a && 0 != b && 0 != c && 0 != d);
 
-  init(42, a, max_size_a, 1, max_size_a, 1.0);
-  init(24, b, max_size_b, 1, max_size_b, 1.0);
-  init( 0, c, max_size_c, 1, max_size_c, 1.0);
-  init( 0, d, max_size_c, 1, max_size_c, 1.0);
+  LIBXSMM_MATINIT(ITYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
+  LIBXSMM_MATINIT(ITYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
+  LIBXSMM_MATINIT(OTYPE,  0, c, max_size_c, 1, max_size_c, 1.0);
+  LIBXSMM_MATINIT(OTYPE,  0, d, max_size_c, 1, max_size_c, 1.0);
   memset(&diff, 0, sizeof(diff));
 
   for (test = begin; test < end; ++test) {
     libxsmm_matdiff_info diff_test;
 
-    LIBXSMM_BLAS(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
+    LIBXSMM_BLAS(ITYPE)(&transa, &transb, m + test, n + test, k + test,
       alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
 
-    REFERENCE_BLAS(REAL_TYPE)(&transa, &transb, m + test, n + test, k + test,
+    REFERENCE_BLAS(ITYPE)(&transa, &transb, m + test, n + test, k + test,
       alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
 
-    if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), m[test], n[test], d, c, ldc + test, ldc + test, &diff_test)) {
+    if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m[test], n[test], d, c, ldc + test, ldc + test, &diff_test)) {
       libxsmm_matdiff_reduce(&diff, &diff_test);
     }
   }

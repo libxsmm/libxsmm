@@ -1389,15 +1389,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       }
     }
     else {
-# if !defined(LIBXSMM_VERBOSE_BACKEND) /* avoid duplicated error messages */
-      if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-        static int error_once = 0;
-        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-          LIBXSMM_NO_OFFLOAD(int, fprintf, stderr, "LIBXSMM ERROR: %s\n",
-            LIBXSMM_NO_OFFLOAD(const char*, libxsmm_strerror, generated_code.last_error));
-        }
-      }
-# endif
       result = EXIT_FAILURE;
     }
 # if !defined(NDEBUG)

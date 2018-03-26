@@ -269,5 +269,8 @@ void libxsmm_generator_convolution_winograd_forward_directasm(const char*       
                                                               const libxsmm_convolution_winograd_descriptor* i_conv_desc,
                                                               const char*                                    i_arch);
 
+/** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
+LIBXSMM_APIVAR(int libxsmm_verbosity);
+
 #endif /*LIBXSMM_GENERATOR_H*/
 

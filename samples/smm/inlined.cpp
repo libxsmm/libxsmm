@@ -47,35 +47,16 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(REAL_TYPE)
-# define REAL_TYPE double
+#if !defined(ITYPE)
+# define ITYPE double
 #endif
-
-
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(libxsmm_blasint seed, REAL_TYPE *LIBXSMM_RESTRICT dst,
-  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
-{
-  const double seed1 = scale * (seed + 1);
-  libxsmm_blasint i;
-  for (i = 0; i < ncols; ++i) {
-    libxsmm_blasint j = 0;
-    for (; j < nrows; ++j) {
-      const libxsmm_blasint k = i * ld + j;
-      dst[k] = (REAL_TYPE)(seed1 / (k + 1));
-    }
-    for (; j < ld; ++j) {
-      const libxsmm_blasint k = i * ld + j;
-      dst[k] = (REAL_TYPE)seed;
-    }
-  }
-}
 
 
 int main(int argc, char* argv[])
 {
   int result = EXIT_SUCCESS;
   try {
-    typedef REAL_TYPE T;
+    typedef ITYPE T;
     const libxsmm_blasint benchmark = 1 < argc ? std::atoi(argv[1]) : 0;
     const libxsmm_blasint m = (2 < argc ? std::atoi(argv[2]) : 23);
     const libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
@@ -85,7 +66,6 @@ int main(int argc, char* argv[])
 
     const libxsmm_blasint lda = m, ldb = k, ldc = m;
     const char transa = 'N', transb = 'N';
-    const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
     const T alpha = 1, beta = 1;
 
     const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
@@ -113,9 +93,9 @@ int main(int argc, char* argv[])
 #   pragma omp parallel for schedule(static)
 #endif
     for (libxsmm_blasint i = 0; i < s; ++i) {
-      init(42 + i, a + i * asize, m, k, lda, scale);
-      init(24 + i, b + i * bsize, k, n, ldb, scale);
-      init(22 + i, c + i * csize, m, n, ldc, scale);
+      LIBXSMM_MATINIT(ITYPE, 42 + i, a + i * asize, m, k, lda, scale);
+      LIBXSMM_MATINIT(ITYPE, 24 + i, b + i * bsize, k, n, ldb, scale);
+      LIBXSMM_MATINIT(ITYPE, 22 + i, c + i * csize, m, n, ldc, scale);
     }
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -142,9 +122,8 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            LIBXSMM_INLINE_GEMM(flags, m, n, k,
-              alpha, a + i * asize, lda, b + i * bsize, ldb,
-               beta, c + i * csize, ldc);
+            LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+              &alpha, a + i * asize, &lda, b + i * bsize, &ldb, &beta, c + i * csize, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -165,9 +144,8 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            LIBXSMM_INLINE_GEMM(flags, m, n, k,
-              alpha, a + i * asize, lda, b, ldb,
-               beta, c + i * csize, ldc);
+            LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+              &alpha, a + i * asize, &lda, b, &ldb, &beta, c + i * csize, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -188,9 +166,8 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            LIBXSMM_INLINE_GEMM(flags, m, n, k,
-              alpha, a, lda, b + i * bsize, ldb,
-               beta, c + i * csize, ldc);
+            LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+              &alpha, a, &lda, b + i * bsize, &ldb, &beta, c + i * csize, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -216,9 +193,8 @@ int main(int argc, char* argv[])
 #else
             const libxsmm_blasint j = 0;
 #endif
-            LIBXSMM_INLINE_GEMM(flags, m, n, k,
-              alpha, a + i * asize, lda, b + i * bsize, ldb,
-               beta, c + j, ldc);
+            LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+              &alpha, a + i * asize, &lda, b + i * bsize, &ldb, &beta, c + j, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
@@ -244,9 +220,8 @@ int main(int argc, char* argv[])
 #else
             const libxsmm_blasint j = 0;
 #endif
-            LIBXSMM_INLINE_GEMM(flags, m, n, k,
-              alpha, a, lda, b, ldb,
-               beta, c + j, ldc);
+            LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+              &alpha, a, &lda, b, &ldb, &beta, c + j, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
