@@ -42,8 +42,8 @@ void dgemm_(const char*, const char*, const BLASINT_TYPE*, const BLASINT_TYPE*, 
   const double*, double*, const BLASINT_TYPE*);
 
 
-void LIBXSMM_MATINIT(ITYPE, int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld, double scale);
-void LIBXSMM_MATINIT(ITYPE, int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld, double scale)
+void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld, double scale);
+void init(int seed, double* dst, BLASINT_TYPE nrows, BLASINT_TYPE ncols, BLASINT_TYPE ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
   BLASINT_TYPE i;
@@ -92,9 +92,9 @@ int main(int argc, char* argv[])
                               beta, (const void*)c, ldc);
 
   assert(0 != a && 0 != b && 0 != c);
-  LIBXSMM_MATINIT(ITYPE, 42, a, m, k, lda, 1.0);
-  LIBXSMM_MATINIT(ITYPE, 24, b, k, n, ldb, 1.0);
-  LIBXSMM_MATINIT(ITYPE,  0, c, m, n, ldc, 1.0);
+  init(42, a, m, k, lda, 1.0);
+  init(24, b, k, n, ldb, 1.0);
+  init( 0, c, m, n, ldc, 1.0);
 
   for (i = 0; i < size; ++i) {
     dgemm_(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
