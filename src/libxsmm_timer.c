@@ -105,6 +105,12 @@ libxsmm_timer_tickint libxsmm_timer_tick(void)
 }
 
 
+LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_cycles(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
+{
+  return LIBXSMM_DIFF(tick0, tick1);
+}
+
+
 LIBXSMM_API double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
 {
   double result = (double)LIBXSMM_DIFF(tick0, tick1);

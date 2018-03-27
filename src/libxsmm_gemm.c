@@ -877,6 +877,21 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision precision,
 #if defined(LIBXSMM_BUILD)
 
 /* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dgemm)(const char*, const char*,
+  const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const double*, const double*, const libxsmm_blasint*,
+  const double*, const libxsmm_blasint*,
+  const double*, double*, const libxsmm_blasint*);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dgemm)(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+
+/* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_sgemm)(const char*, const char*,
   const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const float*, const float*, const libxsmm_blasint*,
@@ -893,34 +908,34 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_sgemm)(const char* transa, const char* 
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dgemm)(const char*, const char*,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_wigemm)(const char*, const char*,
   const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const double*, const double*, const libxsmm_blasint*,
-  const double*, const libxsmm_blasint*,
-  const double*, double*, const libxsmm_blasint*);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dgemm)(const char* transa, const char* transb,
+  const int*, const short*, const libxsmm_blasint*,
+  const short*, const libxsmm_blasint*,
+  const int*, int*, const libxsmm_blasint*);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_wigemm)(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-  const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc)
+  const int* alpha, const short* a, const libxsmm_blasint* lda,
+  const short* b, const libxsmm_blasint* ldb,
+  const int* beta, int* c, const libxsmm_blasint* ldc)
 {
-  libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  libxsmm_wigemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_blas_sgemm)(const char*, const char*,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_wsgemm)(const char*, const char*,
   const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const float*, const float*, const libxsmm_blasint*,
-  const float*, const libxsmm_blasint*,
+  const float*, const short*, const libxsmm_blasint*,
+  const short*, const libxsmm_blasint*,
   const float*, float*, const libxsmm_blasint*);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_blas_sgemm)(const char* transa, const char* transb,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_wsgemm)(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-  const float* b, const libxsmm_blasint* ldb,
+  const float* alpha, const short* a, const libxsmm_blasint* lda,
+  const short* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  libxsmm_wsgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
@@ -937,6 +952,22 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_blas_dgemm)(const char* transa, const c
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
   libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_blas_sgemm)(const char*, const char*,
+  const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
+  const float*, const float*, const libxsmm_blasint*,
+  const float*, const libxsmm_blasint*,
+  const float*, float*, const libxsmm_blasint*);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_blas_sgemm)(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
