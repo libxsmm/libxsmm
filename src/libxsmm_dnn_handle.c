@@ -1307,7 +1307,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
                   }
                 }
 
-                if ( handle->ofh == 56 ) {
+               if ( handle->ofh == 56 ) {
                   descriptor.use_nts = 0;
                   descriptor.ofh_rb = 1;
                   descriptor.blocks_h = 1;
@@ -1317,8 +1317,18 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
                     descriptor.ofh_rb = 2;
                   }
                 }
+                if ( handle->ofh == 35 || handle->ofh == 149 || handle->ofh == 71  ||  handle->ofh == 147 || handle->ofh == 73   ) {
+                  descriptor.use_nts = 0;
+                  descriptor.ofh_rb = 1;
+                  descriptor.blocks_h = 1;
+                  handle->upd_ofh_rb = 1;
+                  if ( handle->desc.R == 3 && handle->desc.S == 3 ) {
+                    handle->upd_ofh_rb = 1;
+                    descriptor.ofh_rb = 1;
+                  }
+                }
 
-                if (handle->ofh == 28 || handle->ofh == 56 || ( handle->ofh == 14 && handle->desc.threads > 1 && ( handle->desc.C == 512 && (handle->desc.K == 1024 || handle->desc.K == 256) ) )) {
+                if (handle->ofh == 28 || handle->ofh == 35 || handle->ofh == 56 ||  handle->ofh == 71  || handle->ofh == 149 ||  handle->ofh == 147 || handle->ofh == 73  || ( handle->ofh == 14 && handle->desc.threads > 1 && ( handle->desc.C == 512 && (handle->desc.K == 1024 || handle->desc.K == 256) ) )) {
                   handle->use_hybrid_wu_parallelism = 0;
                   handle->weight_copies = handle->desc.threads;
                   descriptor.ncopies = handle->weight_copies;
