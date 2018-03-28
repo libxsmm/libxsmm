@@ -48,6 +48,12 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if 0 /* enable padding on a per-matrix basis */
+# define PAD(TYPE, VALUE) (LIBXSMM_UP2((VALUE) * sizeof(TYPE), LIBXSMM_ALIGNMENT) / sizeof(TYPE))
+#else
+# define PAD(TYPE, VALUE) (VALUE)
+#endif
+
 #if !defined(ITYPE)
 # define ITYPE double
 #endif
@@ -71,9 +77,10 @@ int main(int argc, char* argv[])
     const char transa = 'N', transb = 'N';
     const OTYPE alpha = 1, beta = 1;
 
-    const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(ITYPE);
+    const libxsmm_blasint asize = PAD(ITYPE, lda * k), bsize = PAD(ITYPE, ldb * n), csize = PAD(OTYPE, ldc * n);
     const libxsmm_blasint max_size = ((2ULL << 30/*2 GB*/) / ((asize + bsize) * sizeof(ITYPE) + csize * sizeof(OTYPE)));
     const libxsmm_blasint s = LIBXSMM_MIN(0 < q ? q : max_size, max_size);
+    const libxsmm_blasint aspace = LIBXSMM_ALIGNMENT / sizeof(ITYPE);
     const size_t bwsize = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(ITYPE) + 2/*RFO*/ * csize * sizeof(OTYPE));
     const double gflops = 2E-9 * s * m * n * k, scale = 1.0 / s;
 #if !defined(_DEBUG)
