@@ -110,8 +110,7 @@ int main(int argc, char* argv[])
     const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(ITYPE);
     const libxsmm_blasint max_size = ((2ULL << 30/*2 GB*/) / ((asize + bsize) * sizeof(ITYPE) + csize * sizeof(OTYPE)));
     const libxsmm_blasint s = LIBXSMM_MIN(0 < q ? q : max_size, max_size);
-    const size_t bwsize_batched = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(ITYPE) + 2/*RFO*/ * csize * sizeof(OTYPE));
-    const size_t bwsize = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(ITYPE)); // omit size of A, B, or C since it is held in cache
+    const size_t bwsize = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(ITYPE) + 2/*RFO*/ * csize * sizeof(OTYPE));
     const double gflops = 2.0 * nrepeat * s * m * n * k * 1E-9, scale = 1.0 / s;
 #if defined(_OPENMP)
     const libxsmm_blasint chunksize = s / omp_get_max_threads();
@@ -175,7 +174,7 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize_batched / (duration * (1 << 30)));
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } /*break;*/
@@ -199,7 +198,7 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize_batched / (duration * (1 << 30)));
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
@@ -225,7 +224,7 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * (bwsize - bsize * sizeof(ITYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } /*break;*/
@@ -249,7 +248,7 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * (bwsize - bsize * sizeof(ITYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
@@ -275,7 +274,7 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * (bwsize - asize * sizeof(ITYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } /*break;*/
@@ -299,7 +298,7 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * (bwsize - asize * sizeof(ITYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }
@@ -329,7 +328,7 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * (bwsize - 2 * csize * sizeof(OTYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } /*break;*/
@@ -357,7 +356,7 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * (bwsize - 2 * csize * sizeof(OTYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       }

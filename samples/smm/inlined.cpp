@@ -50,13 +50,15 @@
 #if !defined(ITYPE)
 # define ITYPE double
 #endif
+#if !defined(OTYPE)
+# define OTYPE ITYPE
+#endif
 
 
 int main(int argc, char* argv[])
 {
   int result = EXIT_SUCCESS;
   try {
-    typedef ITYPE T;
     const libxsmm_blasint benchmark = 1 < argc ? std::atoi(argv[1]) : 0;
     const libxsmm_blasint m = (2 < argc ? std::atoi(argv[2]) : 23);
     const libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
@@ -66,28 +68,28 @@ int main(int argc, char* argv[])
 
     const libxsmm_blasint lda = m, ldb = k, ldc = m;
     const char transa = 'N', transb = 'N';
-    const T alpha = 1, beta = 1;
+    const OTYPE alpha = 1, beta = 1;
 
-    const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(T);
-    const libxsmm_blasint max_size = ((2ULL << 30/*2 GB*/) / ((asize + bsize + csize) * sizeof(T)));
+    const libxsmm_blasint asize = lda * k, bsize = ldb * n, csize = ldc * n, aspace = LIBXSMM_ALIGNMENT / sizeof(ITYPE);
+    const libxsmm_blasint max_size = ((2ULL << 30/*2 GB*/) / ((asize + bsize) * sizeof(ITYPE) + csize * sizeof(OTYPE)));
     const libxsmm_blasint s = LIBXSMM_MIN(0 < q ? q : max_size, max_size);
-    const size_t bwsize_batched = static_cast<size_t>((asize/*load*/ + bsize/*load*/ + 2 * csize/*RFO*/) * sizeof(T)); // batched (A, B, and C)
-    const size_t bwsize = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(T)); // omit size of A, B, or C since it is held in cache
+    const size_t bwsize = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(ITYPE) + 2/*RFO*/ * csize * sizeof(OTYPE));
     const double gflops = 2.0 * nrepeat * s * m * n * k * 1E-9, scale = 1.0 / s;
 #if defined(_OPENMP)
     const libxsmm_blasint chunksize = s / omp_get_max_threads();
 #endif
 
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
-      T *a, *b, *c;
+      ITYPE *a, *b;
+      OTYPE *c;
       raii(libxsmm_blasint asize_, libxsmm_blasint bsize_, libxsmm_blasint csize_)
-        : a(new T[static_cast<size_t>(asize_)]), b(new T[static_cast<size_t>(bsize_)])
-        , c(new T[static_cast<size_t>(csize_)]) {}
+        : a(new ITYPE[static_cast<size_t>(asize_)]), b(new ITYPE[static_cast<size_t>(bsize_)])
+        , c(new OTYPE[static_cast<size_t>(csize_)]) {}
       ~raii() { delete[] a; delete[] b; delete[] c; }
     } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1);
-    T *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
-    T *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
-    T *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
+    ITYPE *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
+    ITYPE *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
+    OTYPE *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
 
 #if defined(_OPENMP)
 #   pragma omp parallel for schedule(static)
@@ -95,7 +97,7 @@ int main(int argc, char* argv[])
     for (libxsmm_blasint i = 0; i < s; ++i) {
       LIBXSMM_MATINIT(ITYPE, 42 + i, a + i * asize, m, k, lda, scale);
       LIBXSMM_MATINIT(ITYPE, 24 + i, b + i * bsize, k, n, ldb, scale);
-      LIBXSMM_MATINIT(ITYPE, 22 + i, c + i * csize, m, n, ldc, scale);
+      LIBXSMM_MATINIT(OTYPE, 22 + i, c + i * csize, m, n, ldc, scale);
     }
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -110,8 +112,8 @@ int main(int argc, char* argv[])
 
       fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n",
         static_cast<long long>(m), static_cast<long long>(n), static_cast<long long>(k), static_cast<long long>(s),
-        1.0 * (s * (asize + bsize + csize) * sizeof(T)) / (1 << 20),
-        8 == sizeof(T) ? "DP" : "SP");
+        1.0 * (s * ((asize + bsize) * sizeof(ITYPE) + csize * sizeof(OTYPE))) / (1 << 20),
+        8 == sizeof(ITYPE) ? "DP" : "SP");
 
       switch (benchmark) {
       case 0: { // batched
@@ -131,7 +133,7 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize_batched / (duration * (1 << 30)));
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } break;
@@ -153,7 +155,7 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * (bwsize - bsize * sizeof(ITYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } break;
@@ -175,7 +177,7 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * (bwsize - asize * sizeof(ITYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } break;
@@ -202,7 +204,7 @@ int main(int argc, char* argv[])
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (nrepeat * s * (2.0 * m * n * k - m * n)) / ncycles);
           fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
-          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * bwsize / (duration * (1 << 30)));
+          fprintf(stdout, "\tbandwidth: %.1f GB/s\n", nrepeat * s * (bwsize - 2 * csize * sizeof(OTYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } break;
@@ -255,3 +257,4 @@ int main(int argc, char* argv[])
 
   return result;
 }
+
