@@ -49,8 +49,9 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
   const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
   libxsmm_matdiff_info* info)
 {
-  int result = EXIT_SUCCESS;
-  if (0 != ref && 0 != tst && 0 != info) {
+  int result = EXIT_SUCCESS, result_swap = 0;
+  if (0 == ref && 0 != tst) { ref = tst; tst = NULL; result_swap = 1; }
+  if (0 != ref && 0 != info) {
     libxsmm_blasint mm = m, nn = n, ldr = (0 == ldref ? m : *ldref), ldt = (0 == ldtst ? m : *ldtst);
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
     memset(info, 0, sizeof(*info)); /* nullify */
@@ -102,6 +103,10 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
       const libxsmm_blasint tmp = info->linf_abs_m;
       info->linf_abs_m = info->linf_abs_n;
       info->linf_abs_n = tmp;
+    }
+    if (0 != result_swap) {
+      info->l1_tst = info->l1_ref;
+      info->l1_ref = 0;
     }
   }
   return result;

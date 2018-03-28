@@ -92,10 +92,10 @@ int main(int argc, char* argv[])
     OTYPE* d = 0;
     if (!LIBXSMM_FEQ(0, check)) {
       d = (OTYPE*)libxsmm_malloc((size_t)(ldc * n * sizeof(OTYPE)));
-      LIBXSMM_MATINIT(ITYPE, 0, d, m, n, ldc, 1.0);
+      LIBXSMM_MATINIT(OTYPE, 0, d, m, n, ldc, 1.0);
     }
 #endif
-    LIBXSMM_MATINIT(ITYPE,  0, c, m, n, ldc, 1.0);
+    LIBXSMM_MATINIT(OTYPE,  0, c, m, n, ldc, 1.0);
     LIBXSMM_MATINIT(ITYPE, 42, a, m, k, lda, 1.0);
     LIBXSMM_MATINIT(ITYPE, 24, b, k, n, ldb, 1.0);
 #if defined(MKL_ENABLE_AVX512)
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
       if (0 < duration) {
         fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
       }
-      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, d, c, &ldc, &ldc, &diff)) {
+      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m, n, d, c, &ldc, &ldc, &diff)) {
         fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
         if (check < 100.0 * diff.normf_rel) {
           fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);

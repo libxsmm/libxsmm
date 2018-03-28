@@ -84,10 +84,15 @@ int main(int argc, char* argv[])
     const libxsmm_blasint s = LIBXSMM_MIN(0 < q ? q : max_size, max_size);
     const size_t bwsize = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(ITYPE) + 2/*RFO*/ * csize * sizeof(OTYPE));
     const double gflops = 2E-9 * s * m * n * k, scale = 1.0 / s;
+#if !defined(_DEBUG)
+    const char *const env_check = getenv("CHECK");
+    const int check = (0 == env_check ? 0 : atoi(env_check));
+#else
+    /*const*/ int check = 1;
+#endif
 #if defined(_OPENMP)
     const libxsmm_blasint chunksize = s / omp_get_max_threads();
 #endif
-
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
       ITYPE *a, *b;
       OTYPE *c, *d;
@@ -418,6 +423,12 @@ int main(int argc, char* argv[])
       default: throw "invalid case selected!";
       } /*switch*/
 
+      if (0 != check) {
+        libxsmm_matdiff_info diff;
+        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m, n, c, NULL, &ldc, &ldc, &diff)) {
+          fprintf(stdout, "\tcheck: %f\n", diff.l1_ref);
+        }
+      }
       // finalize LIBXSMM
       libxsmm_finalize();
       fprintf(stdout, "Finished\n");
