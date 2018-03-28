@@ -87,8 +87,7 @@ if ( handle->ofh == 7 ) {
 }
 
 
-if ( handle->ofh == 28 || handle->ofh == 56 ) {
-  /* Pixel block is 12.25 Kbytes */
+if (  handle->ofh == 28 || handle->ofh == 35  || handle->ofh == 56 || handle->ofh == 149 || handle->ofh == 71  ||  handle->ofh == 147 || handle->ofh == 73   ) {     /* Pixel block is 12.25 Kbytes */
  handle->block_upd_ofm = 32;
  handle->block_upd_ifm = 16;
 }
@@ -157,8 +156,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   tmp_stream_index = 0;
 
   /* Skip WEIGHT_INIT and WEIGHT_COPY when kernel uses NT stores */
-  mark_weight_init = ( handle->ofh == 28 || handle->ofh == 56 ) ? 1 : 0;
-  mark_weight_copy = ( handle->ofh == 28 || handle->ofh == 56 ) ? 1 : 0;
+  mark_weight_init = ( handle->ofh == 28 || handle->ofh == 35  || handle->ofh == 56 || handle->ofh == 149 || handle->ofh == 71  ||  handle->ofh == 147 || handle->ofh == 73  ) ? 1 : 0;
+  mark_weight_copy = (handle->ofh == 28 || handle->ofh == 35 ||  handle->ofh == 56 || handle->ofh == 149 || handle->ofh == 71  ||  handle->ofh == 147 || handle->ofh == 73  ) ? 1 : 0;
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */
   for (img = my_img_start; img < my_img_end; img++) {
