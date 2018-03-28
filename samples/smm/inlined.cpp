@@ -115,10 +115,10 @@ int main(int argc, char* argv[])
       // initialize LIBXSMM
       libxsmm_init();
 
-      fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (%s)\n\n",
+      fprintf(stdout, "m=%lli n=%lli k=%lli size=%lli memory=%.1f MB (input=%s output=%s)\n\n",
         static_cast<long long>(m), static_cast<long long>(n), static_cast<long long>(k), static_cast<long long>(s),
         1.0 * (s * ((asize + bsize) * sizeof(ITYPE) + csize * sizeof(OTYPE))) / (1 << 20),
-        8 == sizeof(ITYPE) ? "DP" : "SP");
+        LIBXSMM_TYPENAME(ITYPE), LIBXSMM_TYPENAME(OTYPE));
 
       switch (benchmark) {
       case 0: { // batched
