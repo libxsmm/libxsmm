@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
     const libxsmm_blasint chunksize = s / omp_get_max_threads();
 #endif
-    printf("DEBUG: %f\n", gflops);
+
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
       ITYPE *a, *b;
       OTYPE *c, *d;
