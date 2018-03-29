@@ -118,11 +118,15 @@ int main(int argc, char* argv[])
     const libxsmm_blasint s = LIBXSMM_MIN(0 < q ? q : max_size, max_size);
     const libxsmm_blasint aspace = LIBXSMM_ALIGNMENT / sizeof(ITYPE);
     const size_t bwsize = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(ITYPE) + 2/*RFO*/ * csize * sizeof(OTYPE));
-    const double gflops = 2E-9 * s * m * n * k, scale = 1.0 / s;
+    const double gflops = 2E-9 * s * m * n * k;
+#if LIBXSMM_TYPEINFO(ITYPE, FP)
+    const double scale = 1.0 / s;
+#else
+    const double scale = 1;
+#endif
 #if defined(_OPENMP)
     const libxsmm_blasint chunksize = s / omp_get_max_threads();
 #endif
-
     struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
       ITYPE *a, *b;
       OTYPE *c;

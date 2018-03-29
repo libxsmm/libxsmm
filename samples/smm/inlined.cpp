@@ -81,7 +81,12 @@ int main(int argc, char* argv[])
     const libxsmm_blasint s = LIBXSMM_MIN(0 < q ? q : max_size, max_size);
     const libxsmm_blasint aspace = LIBXSMM_ALIGNMENT / sizeof(ITYPE);
     const size_t bwsize = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(ITYPE) + 2/*RFO*/ * csize * sizeof(OTYPE));
-    const double gflops = 2E-9 * s * m * n * k, scale = 1.0 / s;
+    const double gflops = 2E-9 * s * m * n * k;
+#if LIBXSMM_TYPEINFO(ITYPE, FP)
+    const double scale = 1.0 / s;
+#else
+    const double scale = 1;
+#endif
 #if !defined(_DEBUG)
     const char *const env_check = getenv("CHECK");
     const int check = (0 == env_check ? 0 : atoi(env_check));
