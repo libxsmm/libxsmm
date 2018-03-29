@@ -250,7 +250,7 @@ int main(int argc, char* argv[])
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
@@ -282,7 +282,7 @@ int main(int argc, char* argv[])
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
@@ -314,7 +314,7 @@ int main(int argc, char* argv[])
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
@@ -352,7 +352,7 @@ int main(int argc, char* argv[])
         }
         const double duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
         if (0 < duration) {
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", bwsize / (duration * (1 << 30)));
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
