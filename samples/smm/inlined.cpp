@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+            LIBXSMM_INLINE_XGEMM(ITYPE, OTYPE, &transa, &transb, &m, &n, &k,
               &alpha, a + i * asize, &lda, b + i * bsize, &ldb, &beta, c + i * csize, &ldc);
           }
         }
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+            LIBXSMM_INLINE_XGEMM(ITYPE, OTYPE, &transa, &transb, &m, &n, &k,
               &alpha, a + i * asize, &lda, b, &ldb, &beta, c + i * csize, &ldc);
           }
         }
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+            LIBXSMM_INLINE_XGEMM(ITYPE, OTYPE, &transa, &transb, &m, &n, &k,
               &alpha, a, &lda, b + i * bsize, &ldb, &beta, c + i * csize, &ldc);
           }
         }
@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
 #else
             const libxsmm_blasint j = 0;
 #endif
-            LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+            LIBXSMM_INLINE_XGEMM(ITYPE, OTYPE, &transa, &transb, &m, &n, &k,
               &alpha, a + i * asize, &lda, b + i * bsize, &ldb, &beta, c + j, &ldc);
           }
         }
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
 #else
             const libxsmm_blasint j = 0;
 #endif
-            LIBXSMM_INLINE_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+            LIBXSMM_INLINE_XGEMM(ITYPE, OTYPE, &transa, &transb, &m, &n, &k,
               &alpha, a, &lda, b, &ldb, &beta, c + j, &ldc);
           }
         }
