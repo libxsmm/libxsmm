@@ -29,8 +29,8 @@
 /* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE, real_dst, (LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE*)dst, handle->kb, handle->bk, handle->bm);
-LIBXSMM_VLA_DECL(2, const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE, real_src, (const LIBXSMM_BGEMM_TEMPLATE_REAL_TYPE*)src, handle->m);
+LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_TYPE, real_dst, (LIBXSMM_BGEMM_TEMPLATE_TYPE*)dst, handle->kb, handle->bk, handle->bm);
+LIBXSMM_VLA_DECL(2, const LIBXSMM_BGEMM_TEMPLATE_TYPE, real_src, (const LIBXSMM_BGEMM_TEMPLATE_TYPE*)src, handle->m);
 libxsmm_blasint mb, kb, bm, bk;
 
 for (mb = 0; mb < handle->mb; ++mb) {

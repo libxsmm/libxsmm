@@ -931,7 +931,7 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       break;
     case LIBXSMM_ERR_ARCH_PREC:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "unknown architecture or precision (error #%u)!", i_error_code );
+        "unknown architecture or unsupported precision (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_ARCH:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,

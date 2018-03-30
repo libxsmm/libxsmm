@@ -308,20 +308,12 @@
 #define LIBXSMM_ERR_UNIQUE_VAL           90052
 #define LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF 90053
 
-#if !defined(LIBXSMM_VERBOSE_BACKEND) && !defined(NDEBUG)
-# define LIBXSMM_VERBOSE_BACKEND
-#endif
-#if defined(LIBXSMM_VERBOSE_BACKEND)
-# define LIBXSMM_BACKEND_VERBOSITY 1
-#else
-# define LIBXSMM_BACKEND_VERBOSITY 0
-#endif
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-  GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, LIBXSMM_BACKEND_VERBOSITY)
+  GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, libxsmm_verbosity)
 #define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, 1)
 
-/* micro kernel config */
+/* micro kernel configuration */
 LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
@@ -344,7 +336,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
   char vector_name;
 } libxsmm_micro_kernel_config;
 
-/* struct for storing the current gp reg mapping */
+/* structure for storing the current gp reg mapping */
 LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_a;
   unsigned int gp_reg_b;
@@ -363,7 +355,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_help_5;
 } libxsmm_gp_reg_mapping;
 
-/* convolution kernel config */
+/* convolution kernel configuration */
 LIBXSMM_EXTERN_C typedef struct libxsmm_convolution_kernel_config_struct {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
@@ -392,7 +384,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_convolution_kernel_config_struct {
   unsigned int l_ld_ofm_fil;
 } libxsmm_convolution_kernel_config;
 
-/* struct for storing the current gp reg mapping for convolution */
+/* structure for storing the current gp reg mapping for convolution */
 LIBXSMM_EXTERN_C typedef struct libxsmm_convolution_forward_gp_reg_mapping_struct {
   unsigned int gp_reg_input;
   unsigned int gp_reg_weight;
@@ -415,7 +407,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_convolution_forward_gp_reg_mapping_struc
   unsigned int gp_reg_help_6;
 } libxsmm_convolution_forward_gp_reg_mapping;
 
-/* struct for storing the current gp reg mapping for convolution */
+/* structure for storing the current gp reg mapping for convolution */
 LIBXSMM_EXTERN_C typedef struct libxsmm_convolution_weight_update_gp_reg_mapping_struct {
   unsigned int gp_reg_input;
   unsigned int gp_reg_weight;
@@ -435,7 +427,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_convolution_weight_update_gp_reg_mapping
   unsigned int gp_reg_help_6;
 } libxsmm_convolution_weight_update_gp_reg_mapping;
 
-/* struct for storing the current gp reg mapping for matcopy */
+/* structure for storing the current gp reg mapping for matcopy */
 LIBXSMM_EXTERN_C typedef struct libxsmm_matcopy_gp_reg_mapping_struct {
   unsigned int gp_reg_a;
   unsigned int gp_reg_lda;
@@ -448,7 +440,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matcopy_gp_reg_mapping_struct {
   unsigned int gp_reg_help_0;
 } libxsmm_matcopy_gp_reg_mapping;
 
-/* matcopy kernel config */
+/* matcopy kernel configuration */
 LIBXSMM_EXTERN_C typedef struct libxsmm_matcopy_kernel_config_struct {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
@@ -464,7 +456,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_matcopy_kernel_config_struct {
   char vector_name;
 } libxsmm_matcopy_kernel_config;
 
-/* struct for storing the current gp reg mapping for transpose */
+/* structure for storing the current gp reg mapping for transpose */
 LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_gp_reg_mapping_struct {
   unsigned int gp_reg_a;
   unsigned int gp_reg_lda;
@@ -480,15 +472,14 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_gp_reg_mapping_struct {
   unsigned int gp_reg_help_5;
 } libxsmm_transpose_gp_reg_mapping;
 
-/* transpose kernel config */
+/* transpose kernel configuration */
 LIBXSMM_EXTERN_C typedef struct libxsmm_transpose_kernel_config_struct {
   unsigned int instruction_set;
   unsigned int vector_reg_count;
   char vector_name;
 } libxsmm_transpose_kernel_config;
 
-/* struct for tracking local labels in assembly
-   we don't allow overlapping loops */
+/* structure for tracking local labels in assembly we don't allow overlapping loops */
 LIBXSMM_EXTERN_C typedef struct libxsmm_loop_label_tracker_struct {
   unsigned int label_address[32];
   unsigned int label_count;
@@ -516,8 +507,7 @@ void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping
 LIBXSMM_API_INTERN
 unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_instr_number );
 
-/* some string manipulation helper needed to
-   generated code */
+/* some string manipulation helper needed to generated code */
 LIBXSMM_API_INTERN
 void libxsmm_append_code_as_string( libxsmm_generated_code* io_generated_code,
                                     const char*             i_code_to_append,

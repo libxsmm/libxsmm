@@ -70,7 +70,6 @@ const int padded_h = handle->ofhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ofwp + 2 * handle->desc.pad_w;
 LIBXSMM_VLA_DECL(5, element_output_type, output_buffer, ((element_output_type*)handle->scratch5) + ltid * BLOCKSOFM * padded_h * padded_w * handle->ofmblock, padded_h, padded_w, handle->ofmblock_lp, handle->fm_lp_block);
 
-libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
 libxsmm_convfunction kernel_bwd = (libxsmm_convfunction)handle->code_bwd[0].xconv.sconv;
 libxsmm_convfunction kernel2_bwd = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
 libxsmm_convfunction kernel_pool[2];
@@ -121,14 +120,11 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(7, element_filter_type, tr_wt2, (element_filter_type*)handle->scratch1, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock_lp, handle->ifmblock_hp, handle->fm_lp_block);
 
   /* Auxiliary integer variables   */
-  int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i,  n_convs, conv_i, ifm1, img = 0, ifm2, ij, ii, ifm1lpblock ;
-  int ti, tj, trans_i, n_trans_tasks, trans_offset, trans_offset_dst;
+  int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i, n_convs, conv_i, ifm1, img = 0, ifm2, ij, ii;
   /* Stream related variables  */
   segment_t *code_stream;
   int *stream = handle->compute_bwd_indices_ptrs[ltid];
-  int *trans_indices =  handle->transpose_bwd_indices_ptrs[ltid];
   int pool_index;
-  element_filter_type  *mat, *matT;
   int ifm1ofm1, kj, ki, ofm2, ofm1;
   /* Kernel related variables  */
   libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_bwd[0].xconv.sconv;
@@ -156,7 +152,6 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   n_segments = handle->n_bwd_code_segments[ltid];
   i = 0;
   code_stream = handle->bwd_code_segments[ltid];
-  n_trans_tasks =  handle->n_entries_trans_bwd[ltid];
 
   /* lazy barrier init */
   libxsmm_barrier_init(handle->barrier, ltid);
@@ -200,7 +195,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
         }
       } else {
 #ifdef __AVX512F__
-        int icb, okb, t1, t2, t3;
+        int icb, okb, t1;
         const __m512i permute_index = _mm512_set_epi32(15,13,11,9,7,5,3,1,14,12,10,8,6,4,2,0);
         const  __m256i scatter_index = _mm256_set_epi32(7*32, 6*32, 5*32, 4*32,  3*32, 2*32, 1*32, 0*32);
         for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
@@ -281,7 +276,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 for ( ij = 0; ij < handle->desc.H; ij++ ) {
                   for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
 #ifdef __AVX512F__
-                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+ii)));
+                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
 #else
                     /* won't happen as this code only runs on AVX512 platforms */
 #endif
@@ -293,15 +288,16 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 
             /* Run the stream of convolutions for this segment */
             for (conv_i = 0; conv_i < n_convs; conv_i++) {
+              const int vi = variant[pool_index]; /* avoid warning about char used as array index */
               offset_i = stream[i];
               offset_w = stream[i+1];
               offset_o = stream[i+2];
               pi = stream[i+3];
               pw = stream[i+4];
               po = stream[i+5];
-              kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
-              pool_index++;
-              i+=3;
+              kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
+              ++pool_index;
+              i += 3;
             }
           }
         } else {
@@ -335,7 +331,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 for ( ij = 0; ij < handle->desc.H; ij++ ) {
                   for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
 #ifdef __AVX512F__
-                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+ii)));
+                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
 #else
                     /* won't happen as this code only runs on AVX512 platforms */
 #endif
@@ -354,7 +350,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               pw = stream[i+4];
               po = stream[i+5];
               kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
-              i+=3;
+              i += 3;
             }
           }
         }
@@ -398,7 +394,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                 for (ij = 0; ij < handle->desc.H; ij++) {
                   for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
-                    orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
+                    orig_reg  = LIBXSMM_INTRINSICS_MM512_LOAD_PS(orig_input_ptr + ii);
                     mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
                     _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
                   }
@@ -417,7 +413,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 for ( ij = 0; ij < handle->desc.H; ij++ ) {
                   for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
 #ifdef __AVX512F__
-                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+ii)));
+                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
 #else
                     /* won't happen as this code only runs on AVX512 platforms */
 #endif
@@ -429,15 +425,16 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 
             /* Run the stream of convolutions for this segment */
             for (conv_i = 0; conv_i < n_convs; conv_i++) {
+              const int vi = variant[pool_index]; /* avoid warning about char used as array index */
               offset_i = stream[i];
               offset_w = stream[i+1];
               offset_o = stream[i+2];
               pi = stream[i+3];
               pw = stream[i+4];
               po = stream[i+5];
-              kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-              pool_index++;
-              i+=3;
+              kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+              ++pool_index;
+              i += 3;
             }
           }
         } else {
@@ -478,7 +475,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                 for (ij = 0; ij < handle->desc.H; ij++) {
                   for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
-                    orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
+                    orig_reg  = LIBXSMM_INTRINSICS_MM512_LOAD_PS(orig_input_ptr + ii);
                     mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
                     _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
                   }
@@ -497,7 +494,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 for ( ij = 0; ij < handle->desc.H; ij++ ) {
                   for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
 #ifdef __AVX512F__
-                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+ii)));
+                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
 #else
                     /* won't happen as this code only runs on AVX512 platforms */
 #endif
@@ -516,26 +513,25 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               pw = stream[i+4];
               po = stream[i+5];
               kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-              i+=3;
+              i += 3;
             }
           }
         }
       }
-    } else {
-      /* This is the the img par branch...  */
+    } else { /* This is the the img par branch...  */
       /* Use fine-grained operations since we are in the img_par path, so update relevant kernel pointers... */
-      jitted_matcopy = handle->matcopy_bwd[2].xmatcopy;
-      jitted_zero_overwrite = handle->matcopy_bwd[3].xmatcopy;
       int input_h_start = LIBXSMM_MAX(0,  handle->ofh_bwd_start[ltid] - handle->desc.R + 1);
-      int input_h_end = LIBXSMM_MIN( handle->ifhp, (handle->ofh_bwd_end[ltid] + handle->desc.R -1) * handle->desc.u ) ;
+      int input_h_end = LIBXSMM_MIN(handle->ifhp, (handle->ofh_bwd_end[ltid] + handle->desc.R - 1) * handle->desc.u);
       int my_h_out = handle->ofh_bwd_end[ltid]-handle->ofh_bwd_start[ltid];
       int ih;
+      jitted_zero_overwrite = handle->matcopy_bwd[3].xmatcopy;
+      jitted_matcopy = handle->matcopy_bwd[2].xmatcopy;
       for (pc = 0; pc < n_segments; pc++) {
         instr = code_stream[pc].segment_type;
         n_convs = code_stream[pc].n_convs;
         if (instr == IMG_LOOP_INIT) {
           /* Padding code via jitted matcopy kernel */
-          #include "libxsmm_dnn_bwd_custom_custom_padding_img_par.tpl.c"
+#         include "libxsmm_dnn_bwd_custom_custom_padding_img_par.tpl.c"
         }
 
         if ( instr == IFM_LOOP_INIT ) {
@@ -556,7 +552,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           pw = stream[i+4];
           po = stream[i+5];
           kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-          i+=3;
+          i += 3;
         }
       }
     }
@@ -569,15 +565,16 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
         regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
 
         if (handle->n_variants == 2) {
-          for (pc = 0; pc < instr; pc+=1) {
+          for (pc = 0; pc < instr; pc += 1) {
+            const int vi = variant[pc]; /* avoid warning about char used as array index */
             offset_i = stream[i];
             offset_w = stream[i+1];
             offset_o = stream[i+2];
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
-            i+=3;
+            kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
+            i += 3;
           }
         } else {
           for (pc = 0; pc < instr; pc++) {
@@ -588,20 +585,21 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             pw = stream[i+4];
             po = stream[i+5];
             kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
-            i+=3;
+            i += 3;
           }
         }
       } else {
         if (handle->n_variants == 2) {
-          for (pc = 0; pc < instr; pc+=1) {
+          for (pc = 0; pc < instr; pc += 1) {
+            const int vi = variant[pc]; /* avoid warning about char used as array index */
             offset_i = stream[i];
             offset_w = stream[i+1];
             offset_o = stream[i+2];
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-            i+=3;
+            kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+            i += 3;
           }
         } else {
           for (pc = 0; pc < instr; pc++) {
@@ -612,7 +610,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             pw = stream[i+4];
             po = stream[i+5];
             kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-            i+=3;
+            i += 3;
           }
         }
       }
@@ -626,7 +624,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
         pw = stream[i+4];
         po = stream[i+5];
         kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-        i+=3;
+        i += 3;
       }
     }
   }
@@ -657,7 +655,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
       for (ij = 0; ij < handle->desc.H; ij++) {
         for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
-          orig_reg  = _mm512_load_ps(orig_input_ptr + ii);
+          orig_reg  = LIBXSMM_INTRINSICS_MM512_LOAD_PS(orig_input_ptr + ii);
           mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
           _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
         }

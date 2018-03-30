@@ -1389,15 +1389,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       }
     }
     else {
-# if !defined(LIBXSMM_VERBOSE_BACKEND) /* avoid duplicated error messages */
-      if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-        static int error_once = 0;
-        if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-          LIBXSMM_NO_OFFLOAD(int, fprintf, stderr, "LIBXSMM ERROR: %s\n",
-            LIBXSMM_NO_OFFLOAD(const char*, libxsmm_strerror, generated_code.last_error));
-        }
-      }
-# endif
       result = EXIT_FAILURE;
     }
 # if !defined(NDEBUG)
@@ -2090,7 +2081,10 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, const int* flags, const int* prefetch)
 {
-  if (0 != fn && 0 != m) {
+#if !defined(NDEBUG)
+  if (0 != fn && 0 != m)
+#endif
+  {
     const libxsmm_gemm_precision precision = (0 != iprec ? *iprec : LIBXSMM_GEMM_PRECISION_F64);
     const libxsmm_blasint kk = *(0 != k ? k : m), nn = (0 != n ? *n : kk);
     libxsmm_descriptor_blob blob;
@@ -2109,6 +2103,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
       *fn = 0;
     }
   }
+#if !defined(NDEBUG)
   else {
     static int error_once = 0;
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -2118,6 +2113,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
     }
     if (0 != fn) *fn = 0;
   }
+#endif
 }
 
 
@@ -2141,12 +2137,12 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
   const libxsmm_code_pointer* fn, const void* a, const void* b, void* c)
 {
-#if !defined(NDEBUG) /* this should not happen */
+#if !defined(NDEBUG)
   static int error_once = 0;
   if (0 != fn && 0 != a && 0 != b && 0 != c)
 #endif
   {
-#if !defined(NDEBUG) /* this should not happen */
+#if !defined(NDEBUG)
     if (0 != fn->xgemm.xmm)
 #endif
     {
@@ -2178,12 +2174,12 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
   const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc)
 {
-#if !defined(NDEBUG) /* this should not happen */
+#if !defined(NDEBUG)
   static int error_once = 0;
   if (0 != fn && 0 != a && 0 != b && 0 != c)
 #endif
   {
-#if !defined(NDEBUG) /* this should not happen */
+#if !defined(NDEBUG)
     if (0 != fn->xgemm.xmm)
 #endif
     {

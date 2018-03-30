@@ -72,14 +72,21 @@ if __name__ == "__main__":
                   "defined(LIBXSMM_GENTARGET_knc_sp)")
             print("  libxsmm_smm_" + mnkstr + "_knc(" + signature + ");")
             print("#else")
+            print("  const char transa = (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & "
+                  "LIBXSMM_FLAGS) ? 'N' : 'T');")
+            print("  const char transb = (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & "
+                  "LIBXSMM_FLAGS) ? 'N' : 'T');")
+            print("  const float alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;")
+            print("  const libxsmm_blasint "
+                  "m = " + str(m) + ", "
+                  "n = " + str(n) + ", "
+                  "k = " + str(k) + ";")
             if (0 < prefetch):
                 print("  LIBXSMM_UNUSED(pa);"
                       " LIBXSMM_UNUSED(pb);"
                       " LIBXSMM_UNUSED(pc);")
-            print("  LIBXSMM_INLINE_XGEMM(float, int, LIBXSMM_FLAGS, " +
-                  str(m) + ", " + str(n) + ", " + str(k) +
-                  ", LIBXSMM_ALPHA, a, " + str(m) + ", b, " + str(k) +
-                  ", LIBXSMM_BETA, c, " + str(m) + ");")
+            print("  LIBXSMM_INLINE_XGEMM(float, float, &transa, &transb,"
+                  " &m, &n, &k, &alpha, a, &m, b, &k, &beta, c, &m);")
             print("#endif")
             print("}")
             print
@@ -123,14 +130,21 @@ if __name__ == "__main__":
                   "defined(LIBXSMM_GENTARGET_knc_dp)")
             print("  libxsmm_dmm_" + mnkstr + "_knc(" + signature + ");")
             print("#else")
+            print("  const char transa = (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & "
+                  "LIBXSMM_FLAGS) ? 'N' : 'T');")
+            print("  const char transb = (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & "
+                  "LIBXSMM_FLAGS) ? 'N' : 'T');")
+            print("  const double alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;")
+            print("  const libxsmm_blasint "
+                  "m = " + str(m) + ", "
+                  "n = " + str(n) + ", "
+                  "k = " + str(k) + ";")
             if (0 < prefetch):
                 print("  LIBXSMM_UNUSED(pa);"
                       " LIBXSMM_UNUSED(pb);"
                       " LIBXSMM_UNUSED(pc);")
-            print("  LIBXSMM_INLINE_XGEMM(double, int, LIBXSMM_FLAGS, " +
-                  str(m) + ", " + str(n) + ", " + str(k) +
-                  ", LIBXSMM_ALPHA, a, " + str(m) + ", b, " + str(k) +
-                  ", LIBXSMM_BETA, c, " + str(m) + ");")
+            print("  LIBXSMM_INLINE_XGEMM(double, double, &transa, &transb,"
+                  " &m, &n, &k, &alpha, a, &m, b, &k, &beta, c, &m);")
             print("#endif")
             print("}")
             print

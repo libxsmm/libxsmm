@@ -51,13 +51,21 @@
 #define LIBXSMM_PREFETCH_SIGONLY 1
 #define LIBXSMM_PREFETCH_NONE 0
 
+/** Helper macros for type names. */
+#define LIBXSMM_TYPENAME(TYPE) LIBXSMM_STRINGIFY(LIBXSMM_CONCATENATE(LIBXSMM_TYPENAME_, TYPE))
+#define LIBXSMM_TYPENAME_double f64
+#define LIBXSMM_TYPENAME_float f32
+#define LIBXSMM_TYPENAME_int i32
+#define LIBXSMM_TYPENAME_short i16
+#define LIBXSMM_TYPENAME_char i8
+
 /** Helper macros for type postfixes. */
-#define LIBXSMM_TPOSTFIX_NAME(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TPOSTFIX_, TYPE)
-#define LIBXSMM_TPOSTFIX(TYPE, SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, LIBXSMM_TPOSTFIX_NAME(TYPE))
-#define LIBXSMM_TPOSTFIX_double F64
-#define LIBXSMM_TPOSTFIX_float F32
-#define LIBXSMM_TPOSTFIX_int I32
-#define LIBXSMM_TPOSTFIX_short I16
+#define LIBXSMM_TYPESYMBOL(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TYPESYMBOL_, TYPE)
+#define LIBXSMM_TYPESYMBOL_double F64
+#define LIBXSMM_TYPESYMBOL_float F32
+#define LIBXSMM_TYPESYMBOL_int I32
+#define LIBXSMM_TYPESYMBOL_short I16
+#define LIBXSMM_TYPESYMBOL_char I8
 
 #define LIBXSMM_TYPESIZE(ENUM) ( \
   ((int)(ENUM)) == LIBXSMM_DATATYPE_F64 ? 8 : ( \
@@ -75,12 +83,12 @@
 #define LIBXSMM_SETENUM(DST, INP, OUT) DST = LIBXSMM_GETENUM(INP, OUT)
 
 /* Construct an enumerator (libxsmm_datatype) from a built-in type (float, double, etc.). */
-#define LIBXSMM_DATATYPE(TYPE) LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_DATATYPE_)
+#define LIBXSMM_DATATYPE(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_DATATYPE_, LIBXSMM_TYPESYMBOL(TYPE))
 /* Construct a type-id from built-in input/output types (float, double, etc.). */
 #define LIBXSMM_DATATYPE2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_DATATYPE(ITYPE), LIBXSMM_DATATYPE(OTYPE))
 
 /* Construct an enumerator (libxsmm_gemm_precision) from a built-in type (float, double, etc.). */
-#define LIBXSMM_GEMM_PRECISION(TYPE) LIBXSMM_TPOSTFIX(TYPE, LIBXSMM_GEMM_PRECISION_)
+#define LIBXSMM_GEMM_PRECISION(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_GEMM_PRECISION_, LIBXSMM_TYPESYMBOL(TYPE))
 /* Construct GEMM-precision from built-in input/output types (float, double, etc.). */
 #define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_GEMM_PRECISION(ITYPE), \
                                                               LIBXSMM_GEMM_PRECISION(OTYPE))

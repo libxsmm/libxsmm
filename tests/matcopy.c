@@ -68,28 +68,6 @@
 #endif
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void init(int seed, ELEM_TYPE *LIBXSMM_RESTRICT dst,
-  libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
-{
-  const double seed1 = scale * (seed + 1);
-  libxsmm_blasint i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < ncols; ++i) {
-    libxsmm_blasint j = 0;
-    for (; j < nrows; ++j) {
-      const libxsmm_blasint k = i * ld + j;
-      dst[k] = (ELEM_TYPE)(seed1 / (k + 1));
-    }
-    for (; j < ld; ++j) {
-      const libxsmm_blasint k = i * ld + j;
-      dst[k] = (ELEM_TYPE)seed;
-    }
-  }
-}
-
-
 int main(void)
 {
   const libxsmm_blasint m[]   = { 1, 2, 3, 16, 63,  16, 2507 };
@@ -116,12 +94,12 @@ int main(void)
   b = (ELEM_TYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ELEM_TYPE)));
   assert(0 != a && 0 != b);
 
-  init(42, a, max_size_a, 1, max_size_a, 1.0);
-  init( 0, b, max_size_b, 1, max_size_b, 1.0);
+  LIBXSMM_MATINIT(ELEM_TYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
+  LIBXSMM_MATINIT(ELEM_TYPE,  0, b, max_size_b, 1, max_size_b, 1.0);
 #if defined(MATCOPY_GOLD)
   c = (ELEM_TYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ELEM_TYPE)));
   assert(0 != c);
-  init(0, c, max_size_b, 1, max_size_b, 1.0);
+  LIBXSMM_MATINIT(ELEM_TYPE, 0, c, max_size_b, 1, max_size_b, 1.0);
 #endif
   for (test = start; test < ntests; ++test) {
     unsigned int testerrors = (EXIT_SUCCESS == MATCOPY(

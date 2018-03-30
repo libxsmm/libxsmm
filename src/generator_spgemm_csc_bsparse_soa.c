@@ -222,7 +222,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
           unsigned int l_cur_column = i_column_idx[l_n_processed+l_n];
 
           for ( l_col_k = 0; l_col_k < l_col_elements; l_col_k++ ) {
-            for ( l_acol_k = l_found; l_acol_k < 4 ; l_acol_k++ ) {
+            for ( l_acol_k = l_found; l_acol_k < 4; l_acol_k++ ) {
               if ( (l_k + l_acol_k) == i_row_idx[l_cur_column + l_col_k] ) {
                 l_nnz_idx[l_n][l_acol_k] = l_cur_column + l_col_k;
                 l_found = l_acol_k+1;

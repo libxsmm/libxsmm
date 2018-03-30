@@ -175,6 +175,7 @@ if (n_segments) {
 
           /* Run the stream of convolutions for this segment */
           for (conv_i = 0; conv_i < n_convs; conv_i++) {
+            const int vi = variant[pool_index]; /* avoid warning about char used as array index */
             offset_i = stream[i];
             offset_w = stream[i+1];
             offset_o = stream[i+2];
@@ -182,10 +183,10 @@ if (n_segments) {
             pw = stream[i+4];
             po = stream[i+5];
             offset_bn = bn_stream[bn_i];
-            kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
-            pool_index++;
-            i+=3;
-            bn_i++;
+            kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
+            ++pool_index;
+            i += 3;
+            ++bn_i;
           }
         }
       } else {
@@ -221,8 +222,8 @@ if (n_segments) {
             po = stream[i+5];
             offset_bn = bn_stream[bn_i];
             kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
-            i+=3;
-            bn_i++;
+            i += 3;
+            ++bn_i;
           }
         }
       }
@@ -265,7 +266,7 @@ if (n_segments) {
 
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                  __m512 btmp = _mm512_load_ps( red+oi );
+                  __m512 btmp = LIBXSMM_INTRINSICS_MM512_LOAD_PS( red+oi );
                   bsum = _mm512_add_ps( bsum, btmp );
                   bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
                 }
@@ -320,7 +321,7 @@ if (n_segments) {
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
 #ifdef __AVX512F__
-                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+oi)));
+                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+oi)));
 #else
                   /* Won't happen as this code only runs on AVX512 systems */
 #endif
@@ -332,15 +333,16 @@ if (n_segments) {
 
           /* Run the stream of convolutions for this segment */
           for (conv_i = 0; conv_i < n_convs; conv_i++) {
+            const int vi = variant[pool_index]; /* avoid warning about char used as array index */
             offset_i = stream[i];
             offset_w = stream[i+1];
             offset_o = stream[i+2];
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel_pool[variant[pool_index]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-            pool_index++;
-            i+=3;
+            kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+            ++pool_index;
+            i += 3;
           }
         }
       } else {
@@ -380,7 +382,7 @@ if (n_segments) {
 
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                  __m512 btmp = _mm512_load_ps( red+oi );
+                  __m512 btmp = LIBXSMM_INTRINSICS_MM512_LOAD_PS( red+oi );
                   bsum = _mm512_add_ps( bsum, btmp );
                   bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( btmp, btmp ) );
                 }
@@ -435,7 +437,7 @@ if (n_segments) {
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
 #ifdef __AVX512F__
-                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(_mm512_load_ps(cur_vec+oi)));
+                  max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+oi)));
 #else
                   /* won't happen as this code only runs on AVX512 platforms */
 #endif
@@ -454,7 +456,7 @@ if (n_segments) {
             pw = stream[i+4];
             po = stream[i+5];
             kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-            i+=3;
+            i += 3;
           }
         }
       }
@@ -464,7 +466,7 @@ if (n_segments) {
     jitted_matcopy = handle->matcopy_fwd[2].xmatcopy;
     jitted_zero_overwrite = handle->matcopy_fwd[3].xmatcopy;
     input_h_start = LIBXSMM_MAX(0,  handle->ofh_fwd_start[ltid] - handle->desc.R + 1);
-    input_h_end = LIBXSMM_MIN( handle->ifhp, (handle->ofh_fwd_end[ltid] + handle->desc.R -1) * handle->desc.u ) ;
+    input_h_end = LIBXSMM_MIN( handle->ifhp, (handle->ofh_fwd_end[ltid] + handle->desc.R -1) * handle->desc.u );
     my_h_out = handle->ofh_fwd_end[ltid]-handle->ofh_fwd_start[ltid];
     for (pc = 0; pc < n_segments; pc++) {
       instr = code_stream[pc].segment_type;
@@ -496,7 +498,7 @@ if (n_segments) {
         pw = stream[i+4];
         po = stream[i+5];
         kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-        i+=3;
+        i += 3;
       }
     }
   }
@@ -512,7 +514,8 @@ if (n_segments) {
     bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
     bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
     if (handle->n_variants  == 2) {
-      for (pc = 0; pc < instr; pc+=1) {
+      for (pc = 0; pc < instr; pc += 1) {
+        const int vi = variant[pc]; /* avoid warning about char used as array index */
         offset_i = stream[i];
         offset_w = stream[i+1];
         offset_o = stream[i+2];
@@ -520,9 +523,9 @@ if (n_segments) {
         pw = stream[i+4];
         po = stream[i+5];
         offset_bn = bn_stream[bn_i];
-        kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
-        i+=3;
-        bn_i++;
+        kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
+        i += 3;
+        ++bn_i;
       }
     } else {
       for (pc = 0; pc < instr; pc++) {
@@ -534,21 +537,22 @@ if (n_segments) {
         po = stream[i+5];
         offset_bn = bn_stream[bn_i];
         kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,  bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
-        i+=3;
-        bn_i++;
+        i += 3;
+        ++bn_i;
       }
     }
   } else { /* We do not  do BN stuff in the kernel  */
     if (handle->n_variants == 2) {
-      for (pc = 0; pc < instr; pc+=1) {
+      for (pc = 0; pc < instr; pc += 1) {
+        const int vi = variant[pc]; /* avoid warning about char used as array index */
         offset_i = stream[i];
         offset_w = stream[i+1];
         offset_o = stream[i+2];
         pi = stream[i+3];
         pw = stream[i+4];
         po = stream[i+5];
-        kernel_pool[variant[pc]]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-        i+=3;
+        kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+        i += 3;
       }
     } else {
       for (pc = 0; pc < instr; pc++) {
@@ -559,7 +563,7 @@ if (n_segments) {
         pw = stream[i+4];
         po = stream[i+5];
         kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-        i+=3;
+        i += 3;
       }
     }
   }

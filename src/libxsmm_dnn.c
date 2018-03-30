@@ -206,9 +206,9 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
       /* error */
     } else if ( (conv_desc.datatype_in == LIBXSMM_DNN_DATATYPE_I16) && (conv_desc.datatype_out != LIBXSMM_DNN_DATATYPE_F32) ) {
       /* error */
-    }  else if ( (conv_desc.datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (conv_desc.datatype_out != LIBXSMM_DNN_DATATYPE_I32) ) {
+    } else if ( (conv_desc.datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (conv_desc.datatype_out != LIBXSMM_DNN_DATATYPE_I32) ) {
       /* error */
-    }  else if ( (conv_desc.datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (conv_desc.datatype_out != LIBXSMM_DNN_DATATYPE_F32) ) {
+    } else if ( (conv_desc.datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (conv_desc.datatype_out != LIBXSMM_DNN_DATATYPE_F32) ) {
       /* error */
     } else {
       /* fine, no error */
@@ -1637,7 +1637,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_tensor(libxsmm_dnn_layer* hand
       handle->reg_filter_tr = 0;
     } else if ( type == LIBXSMM_DNN_BATCH_STATS ) {
       handle->batch_stats = 0;
-    }  else if ( type == LIBXSMM_DNN_MAX_STATS_FWD ) {
+    } else if ( type == LIBXSMM_DNN_MAX_STATS_FWD ) {
       handle->maxstats_fwd = 0;
     } else if ( type == LIBXSMM_DNN_MAX_STATS_BWD ) {
       handle->maxstats_bwd = 0;
@@ -2470,7 +2470,7 @@ LIBXSMM_API unsigned char libxsmm_internal_get_max_exp( float* in_buffer, int le
   unsigned char max_exp = 0;
 
   /* bit-wise conversion to int */
-  exp.f = libxsmm_internal_get_max( in_buffer, length ) ;
+  exp.f = libxsmm_internal_get_max( in_buffer, length );
   /* shift by mantissa to the right and convert to char */
   max_exp = (unsigned char)((exp.ui & LIBXSMM_DNN_MASK_ABS_F32) >> LIBXSMM_DNN_MANT_SZ_F32);
 
@@ -2491,7 +2491,7 @@ LIBXSMM_API short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned
     qvalue = 0;
   } else {
     /* let's get a float copy to work on */
-    /* vinp = _mm512_load_ps( in_buffer[i] ); */
+    /* vinp = LIBXSMM_INTRINSICS_MM512_LOAD_PS( in_buffer[i] ); */
     value.f = input;
     /* let's compute the offset of the current exp at pos i from max offset, we need to mask the sign bit though */
     /*__m512i vexp     = _mm512_cvtps_epi32(_mm512_getexp_ps (vinp));
@@ -2533,18 +2533,18 @@ LIBXSMM_API short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned
       }
     } else if (round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND) {
       /* stochastic rounding, as implemented in the IBM paper from 2015, @TODO, fix F64 and DFP8 */
-      float p, q;
+      const float eps = LIXSMMM_DNN_RES_DFP16;
+      const float r = (float)fabs((double)rand());
       libxsmm_intfloat fvalue;
-      float eps = LIXSMMM_DNN_RES_DFP16;
+      float p, q;
       /* masking all bits which will be shifted out */
       fvalue.ui = value.ui & ((LIBXSMM_DNN_MASK_FULL_F32) << rhs);
       /* drawing a random number */
-      float r = (float)fabs((double)rand());
       p = r/((float)RAND_MAX);
       q = (input - fvalue.f)/eps;
       /* apply rounding if needed */
-      if (p+q > 0.5f) {
-        qvalue++;
+      if ((p + q) > 0.5f) {
+        ++qvalue;
       }
     } else {
       /* do nothing about rounding, just chop */
@@ -2763,7 +2763,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
                 compact = _mm512_inserti64x4(compact, compressed_hi, 1);
                 compact = LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(permute_compact_idx, compact);
                 _mm512_stream_si512(
-                  &LIBXSMM_VLA_ACCESS(7, out, i1, i2, i3, i4, i5 / 2, 0, 0, cblk, R, S, cblk_i16, kblk_i16, lp_blk),
+                  (void*)&LIBXSMM_VLA_ACCESS(7, out, i1, i2, i3, i4, i5 / 2, 0, 0, cblk, R, S, cblk_i16, kblk_i16, lp_blk),
                   compact);
               }
             }
@@ -2854,7 +2854,7 @@ LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, in
 #ifdef _OPENMP
 #pragma omp parallel for private(i)
 #endif
-  for ( i = 0 ; i < length; ++i ) {
+  for ( i = 0; i < length; ++i ) {
     out_buffer[i] = ((float)in_buffer[i])*exp;
   }
 }

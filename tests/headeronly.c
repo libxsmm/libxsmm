@@ -32,24 +32,24 @@
 #include <stdlib.h>
 
 /* must match definitions in headeronly_aux.c */
-#if !defined(REAL_TYPE)
-# define REAL_TYPE double
+#if !defined(ITYPE)
+# define ITYPE double
 #endif
-#if !defined(REAL_OUT)
-# define REAL_OUT REAL_TYPE
+#if !defined(OTYPE)
+# define OTYPE ITYPE
 #endif
 
 
-LIBXSMM_EXTERN LIBXSMM_MMFUNCTION_TYPE2(REAL_TYPE, REAL_OUT) mmdispatch(int m, int n, int k);
+LIBXSMM_EXTERN LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) mmdispatch(int m, int n, int k);
 
 
 int main(void)
 {
   const int m = LIBXSMM_MAX_M, n = LIBXSMM_MAX_N, k = LIBXSMM_MAX_K;
-  const LIBXSMM_MMFUNCTION_TYPE2(REAL_TYPE, REAL_OUT) fa = LIBXSMM_MMDISPATCH_SYMBOL2(REAL_TYPE, REAL_OUT)(m, n, k,
+  const LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) fa = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE, OTYPE)(m, n, k,
     NULL/*lda*/, NULL/*ldb*/, NULL/*ldc*/, NULL/*alpha*/, NULL/*beta*/,
     NULL/*flags*/, NULL/*prefetch*/);
-  const LIBXSMM_MMFUNCTION_TYPE2(REAL_TYPE, REAL_OUT) fb = mmdispatch(m, n, k);
+  const LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) fb = mmdispatch(m, n, k);
   int result = EXIT_SUCCESS;
   if (fa != fb) {
     result = EXIT_FAILURE;

@@ -43,14 +43,17 @@ addons:
     - sshpass
 
 before_install:
-  #- if [ "${TRAVIS_OS_NAME}" = "osx" ]; then brew update; fi
-  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then sudo easy_install pip; fi
+  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
+      if [ "${TRAVIS_OS_NAME}" = "osx" ] && [ "${CC}" != "clang" ]; then sudo easy_install pip; fi;
+    fi
 
 install:
-  - pip install --user codecov
-  - if [ "${TRAVIS_OS_NAME}" = "osx" ] && [ "" = "$(which sshpass)" ]; then
-      (cd /tmp && curl -O -L http://downloads.sourceforge.net/project/sshpass/sshpass/1.05/sshpass-1.05.tar.gz &&
-        tar xvzf sshpass-1.05.tar.gz && cd sshpass-1.05 && ./configure && make ${MAKEJ} && sudo make install &&
+  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
+      if [ "${CC}" != "clang" ]; then pip install --user codecov; fi;
+    fi
+  - if [ "${UPLOAD_ENABLED}" != "" ] && [ "${UPLOAD_ENABLED}" != "0" ] && [ "" = "$(which sshpass)" ] ; then
+      (cd /tmp && curl -O -L https://downloads.sourceforge.net/project/sshpass/sshpass/1.06/sshpass-1.06.tar.gz &&
+        tar xvzf sshpass-1.06.tar.gz && cd sshpass-1.06 && ./configure && make ${MAKEJ} && sudo make install &&
         cd ${TRAVIS_BUILD_DIR}) || true;
     fi
 
@@ -62,7 +65,7 @@ before_script:
 
 script:
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 TRACE=1 STATIC=0 ABSLIBS=1 EFLAGS="-DREAL_TYPE=double" install-artifacts tests &&
+      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} PEDANTIC=2 TRACE=1 STATIC=0 ABSLIBS=1 EFLAGS="-DITYPE=double" install-artifacts tests &&
       if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
         env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/blas 2> blas-trace-${COVID}.txt;
         env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/malloc 2> malloc-trace-${COVID}.txt;

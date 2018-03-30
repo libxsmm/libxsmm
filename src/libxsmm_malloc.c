@@ -1454,3 +1454,28 @@ LIBXSMM_API unsigned int libxsmm_hash(const void* data, size_t size, unsigned in
   return libxsmm_crc32(data, size, seed);
 }
 
+
+#if defined(LIBXSMM_BUILD)
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* /*data*/, const int* /*size*/, const int* /*seed*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* data, const int* size, const int* seed)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (0 != hash && 0 != data && 0 != size && 0 != seed)
+#endif
+  {
+    *hash = (libxsmm_hash(data, *size, *seed) & 0x7FFFFFFF);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_hash specified!\n");
+  }
+#endif
+}
+
+#endif /*defined(LIBXSMM_BUILD)*/
+

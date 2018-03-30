@@ -31,8 +31,8 @@
 #include <libxsmm_source.h>
 #include <float.h>
 
-#if !defined(REAL_TYPE)
-# define REAL_TYPE double
+#if !defined(ITYPE)
+# define ITYPE double
 #endif
 
 
@@ -41,24 +41,24 @@ int main(void)
   int result = EXIT_SUCCESS;
   libxsmm_matdiff_info diff;
   /* http://www.netlib.org/lapack/lug/node75.html */
-  const REAL_TYPE a[] = {
-    (REAL_TYPE)1.00, (REAL_TYPE)2.00, (REAL_TYPE)3.00,
-    (REAL_TYPE)4.00, (REAL_TYPE)5.00, (REAL_TYPE)6.00,
-    (REAL_TYPE)7.00, (REAL_TYPE)8.00, (REAL_TYPE)10.0
+  const ITYPE a[] = {
+    (ITYPE)1.00, (ITYPE)2.00, (ITYPE)3.00,
+    (ITYPE)4.00, (ITYPE)5.00, (ITYPE)6.00,
+    (ITYPE)7.00, (ITYPE)8.00, (ITYPE)10.0
   };
-  const REAL_TYPE b[] = {
-    (REAL_TYPE)0.44, (REAL_TYPE)2.36, (REAL_TYPE)3.04,
-    (REAL_TYPE)3.09, (REAL_TYPE)5.87, (REAL_TYPE)6.66,
-    (REAL_TYPE)7.36, (REAL_TYPE)7.77, (REAL_TYPE)9.07
+  const ITYPE b[] = {
+    (ITYPE)0.44, (ITYPE)2.36, (ITYPE)3.04,
+    (ITYPE)3.09, (ITYPE)5.87, (ITYPE)6.66,
+    (ITYPE)7.36, (ITYPE)7.77, (ITYPE)9.07
   };
-  const REAL_TYPE x[] = {
-    (REAL_TYPE)1.00, (REAL_TYPE)100.0, (REAL_TYPE)9.00
+  const ITYPE x[] = {
+    (ITYPE)1.00, (ITYPE)100.0, (ITYPE)9.00
   };
-  const REAL_TYPE y[] = {
-    (REAL_TYPE)1.10, (REAL_TYPE)99.00, (REAL_TYPE)11.0
+  const ITYPE y[] = {
+    (ITYPE)1.10, (ITYPE)99.00, (ITYPE)11.0
   };
 
-  result = libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), 3/*m*/, 3/*n*/,
+  result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 3/*n*/,
     a/*ref*/, b/*tst*/, NULL/*ldref*/, NULL/*ldtst*/, &diff);
 
   if (EXIT_SUCCESS == result) {
@@ -84,7 +84,7 @@ int main(void)
     if (2 != diff.linf_abs_n) result = EXIT_FAILURE;
   }
 
-  result = libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), 1/*m*/, 3/*n*/,
+  result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), 1/*m*/, 3/*n*/,
     x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/, &diff);
 
   if (EXIT_SUCCESS == result) {
@@ -110,7 +110,7 @@ int main(void)
     if (2 != diff.linf_abs_n) result = EXIT_FAILURE;
   }
 
-  result = libxsmm_matdiff(LIBXSMM_DATATYPE(REAL_TYPE), 3/*m*/, 1/*n*/,
+  result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 1/*n*/,
     x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/, &diff);
 
   if (EXIT_SUCCESS == result) {

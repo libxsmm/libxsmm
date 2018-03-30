@@ -41,8 +41,8 @@ for (i = 0; i < nn; ++i) {
   double v0, v1;
 
   for (j = 0; j < mm; ++j) {
-    const double ri = real_ref[i*ldr+j], ti = real_tst[i*ldt+j];
-    const double di = (ri < ti ? (ti - ri) : (ri - ti));
+    const double ri = real_ref[i*ldr+j], ti = (0 != real_tst ? real_tst[i*ldt+j] : 0);
+    const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
     const double ra = LIBXSMM_ABS(ri);
     const double ta = LIBXSMM_ABS(ti);
 
@@ -137,8 +137,8 @@ for (j = 0; j < mm; ++j) {
   double normri = 0, normti = 0, norm1 = 0;
 
   for (i = 0; i < nn; ++i) {
-    const double ri = real_ref[i*ldr+j], ti = real_tst[i*ldt+j];
-    const double di = (ri < ti ? (ti - ri) : (ri - ti));
+    const double ri = real_ref[i*ldr+j], ti = (0 != real_tst ? real_tst[i*ldt+j] : 0);
+    const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
     const double ra = LIBXSMM_ABS(ri);
     const double ta = LIBXSMM_ABS(ti);
 

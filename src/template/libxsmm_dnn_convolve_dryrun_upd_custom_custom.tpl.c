@@ -31,7 +31,6 @@
 #if !defined(_OPENMP)
 int ltid;
 #endif
-int block_j = 14;
 
 /* FIXME assignments here */
 int BLOCKSIFM = handle->blocksifm;
@@ -46,8 +45,6 @@ if (handle->use_lp_kernel) {
 
 handle->block_upd_ofm = 8;
 handle->block_upd_ifm = 8;
-
-block_j = handle->ofh;
 
 if ( handle->ofh == 56 ) {
   /* Pixel block is 196 Kbytes */
@@ -84,7 +81,6 @@ if ( handle->ofh == 28 || handle->ofh == 56 ) {
   handle->block_upd_ifm = 16;
 }
 
-
   handle->block_upd_ofm = 32;
   handle->block_upd_ifm = 16;
 #endif
@@ -98,7 +94,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #if defined(_OPENMP)
   int ltid = omp_get_thread_num();
 #endif
-  int img, imgb, ofm1, ifm1, num_ofw_strips, oi_, oj_, oi__, ii_, ij_, kh, kw, ki, kj, local_entries, stride_w, stride_h;
+  int img, imgb, ofm1, ifm1, num_ofw_strips, oi_, oj_, oi__, ii_, ij_, kh, kw, ki, kj, local_entries;
   int img_block_size;
 #if 0 /* compute thr_begin and thr_end */
   const int work = BLOCKSIFM * BLOCKSOFM; /* number of tasks that could be run in parallel */
@@ -118,17 +114,33 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   /* compute chunk size */
   const int img_parallel_chunksize = (img_parallel_work % handle->desc.threads == 0) ? (img_parallel_work / handle->desc.threads) : (img_parallel_work / handle->desc.threads) + 1;
 #endif
-  int total_calls;
   int n_code_segments = 0;
-  int expanded_size;
 
   char *kernel_variant;
   /* Arrays of stream indices */
   int *compute_indices;
 
+  int my_ofm_start;
+  int my_ofm_end;
+  int my_ifm_start;
+  int my_ifm_end;
+  int group_size = handle->desc.threads/handle->weight_copies;
+  int tile_id = ltid/group_size;
+  int tiles = handle->weight_copies;
+  int img_per_tile = handle->desc.N/tiles;
+  int my_img_start = LIBXSMM_MIN( tile_id * img_per_tile, handle->desc.N);
+  int my_img_end = LIBXSMM_MIN( (tile_id+1) * img_per_tile, handle->desc.N);
+
+
+  int my_in_tile_id = ltid % group_size;
+  int ifms_per_thread = (BLOCKSIFM+group_size-1)/group_size;
+  int ofms_per_thread;
+  int block_ofm, block_ifm;
+
+  int KW, ofmb, ifmb, ojb;
+  int stride_w = handle->desc.v;
+  int stride_h = handle->desc.u;
   int padded_w, padded_h;
-  stride_w = handle->desc.v;
-  stride_h = handle->desc.u;
 
   if (handle->padding_flag == 1) {
     padded_h = handle->ifhp + 2 * handle->desc.pad_h;
@@ -150,25 +162,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   num_ofw_strips = 1;
   local_entries = 0;
-  int KW, ofmb, ifmb, ojb;
 
   KW = kw;
-
-  int my_ofm_start;
-  int my_ofm_end;
-  int my_ifm_start;
-  int my_ifm_end;
-  int group_size = handle->desc.threads/handle->weight_copies;
-  int tile_id = ltid/group_size;
-  int tiles = handle->weight_copies;
-  int img_per_tile = handle->desc.N/tiles;
-  int my_img_start = LIBXSMM_MIN( tile_id * img_per_tile, handle->desc.N);
-  int my_img_end = LIBXSMM_MIN( (tile_id+1) * img_per_tile, handle->desc.N);
-
-
-  int my_in_tile_id = ltid % group_size;
-  int ifms_per_thread = (BLOCKSIFM+group_size-1)/group_size;
-  int ofms_per_thread;
   my_ifm_start = LIBXSMM_MIN( my_in_tile_id * ifms_per_thread, BLOCKSIFM  );
   my_ifm_end = LIBXSMM_MIN( (my_in_tile_id+1) * ifms_per_thread, BLOCKSIFM  );
   my_ofm_start = 0;
@@ -176,17 +171,18 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   img_block_size = handle->blocksimg_blocking;
 
   if (handle->reduce_weights == 0) {
+    int n_ifm_teams, n_ofm_teams, my_ifm_id, my_ofm_id;
     /* Parallelize over the FMs in this case and avoid reduction */
     int team_div = (int) libxsmm_isqrt_u32(handle->desc.threads);
     while ( handle->desc.threads % team_div != 0  ) {
       team_div--;
     }
-    int n_ifm_teams = (BLOCKSIFM > BLOCKSOFM) ? handle->desc.threads / team_div : team_div;
-    int n_ofm_teams = (BLOCKSIFM > BLOCKSOFM) ? team_div : handle->desc.threads / team_div;
+    n_ifm_teams = (BLOCKSIFM > BLOCKSOFM) ? handle->desc.threads / team_div : team_div;
+    n_ofm_teams = (BLOCKSIFM > BLOCKSOFM) ? team_div : handle->desc.threads / team_div;
     ifms_per_thread = (BLOCKSIFM+n_ifm_teams-1)/n_ifm_teams;
     ofms_per_thread = (BLOCKSOFM+n_ofm_teams-1)/n_ofm_teams;
-    int my_ifm_id = ltid/n_ofm_teams;
-    int my_ofm_id = ltid%n_ofm_teams;
+    my_ifm_id = ltid/n_ofm_teams;
+    my_ofm_id = ltid%n_ofm_teams;
     my_ifm_start =  LIBXSMM_MIN(my_ifm_id * ifms_per_thread, BLOCKSIFM);
     my_ifm_end =  LIBXSMM_MIN((my_ifm_id+1) * ifms_per_thread, BLOCKSIFM);
     my_ofm_start =  LIBXSMM_MIN(my_ofm_id * ofms_per_thread, BLOCKSOFM);
@@ -196,9 +192,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     img_block_size = handle->desc.threads;
   }
 
-
-  int block_ofm = my_ofm_end-my_ofm_start+1;
-  int block_ifm = my_ifm_end-my_ifm_start+1;
+  block_ofm = my_ofm_end-my_ofm_start+1;
+  block_ifm = my_ifm_end-my_ifm_start+1;
 
   for (imgb = my_img_start; imgb < my_img_end; imgb += img_block_size) {
     for (img = imgb; img < LIBXSMM_MIN(imgb+img_block_size, my_img_end); img+=handle->blocksimg_blocking) {
@@ -225,15 +220,13 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   }
 
 
-  /* Alocate auxiliary data structures for index jitting  */
+  /* Allocate auxiliary data structures for index jitting  */
   handle->n_entries_upd[ltid] = local_entries/3;
   compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
   handle->compute_upd_indices_ptrs[ltid] = compute_indices;
   kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 64);
   handle->kernel_upd_variant_ptrs[ltid] = kernel_variant;
   handle->n_upd_code_segments[ltid] = n_code_segments;
-  expanded_size = local_entries/3 + n_code_segments;
-
   local_entries = 0;
 
   /* Second run to compute actual indices */
@@ -317,6 +310,5 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   compute_indices[local_entries] = 0;
   compute_indices[local_entries+1] = 0;
   compute_indices[local_entries+2] = 0;
-  total_calls = local_entries/3;
 }
 

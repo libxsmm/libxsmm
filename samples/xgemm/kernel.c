@@ -39,7 +39,9 @@
 # define srand48 srand
 #endif
 
+
 int g_reps = 0;
+
 
 LIBXSMM_INLINE void print_help(void) {
   printf("\n\n");
@@ -62,10 +64,10 @@ LIBXSMM_INLINE void print_help(void) {
 
 
 LIBXSMM_INLINE
-void run_jit_double( const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                     const double*                        i_a,
-                     const double*                        i_b,
-                     double*                              o_c ) {
+void run_jit_double( const libxsmm_gemm_descriptor* i_xgemm_desc,
+                     const double*                  i_a,
+                     const double*                  i_b,
+                     double*                        o_c ) {
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit;
   libxsmm_timer_tickint l_start;
@@ -105,10 +107,10 @@ void run_jit_double( const libxsmm_gemm_descriptor*  i_xgemm_desc,
 
 
 LIBXSMM_INLINE
-void run_jit_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                    const float*                        i_a,
-                    const float*                        i_b,
-                    float*                              o_c ) {
+void run_jit_float( const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                    const float*                    i_a,
+                    const float*                    i_b,
+                    float*                          o_c ) {
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit;
   libxsmm_timer_tickint l_start;
@@ -148,17 +150,16 @@ void run_jit_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
 
 
 LIBXSMM_INLINE
-void run_jit_short_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                        const short*                        i_a,
-                        const short*                        i_b,
-                        int*                                o_c) {
+void run_jit_short_int( const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                        const short*                    i_a,
+                        const short*                    i_b,
+                        int*                            o_c) {
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit;
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   double l_jittime, l_runtime;
   int l_t;
-
 
   l_start = libxsmm_timer_tick();
   l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);
@@ -190,19 +191,19 @@ void run_jit_short_int( const libxsmm_gemm_descriptor* i_xgemm_desc,
   printf("%f GOPS for jit\n", ((double)((double)g_reps * (double)l_info.m * (double)l_info.n * (double)l_info.k) * 2.0) / (l_runtime * 1.0e9));
 }
 
+
 LIBXSMM_INLINE
-void run_jit_short_float( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                          const short*                        i_a,
-                          const short*                        i_b,
-                          float*                              o_c,
-                          float*                              i_scf) {
+void run_jit_short_float( const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                          const short*                    i_a,
+                          const short*                    i_b,
+                          float*                          o_c,
+                          float*                          i_scf) {
   /* define function pointer */
   libxsmm_xmmfunction l_test_jit;
   libxsmm_timer_tickint l_start;
   libxsmm_mmkernel_info l_info;
   double l_jittime, l_runtime;
   int l_t;
-
 
   l_start = libxsmm_timer_tick();
   l_test_jit = libxsmm_xmmdispatch(i_xgemm_desc);

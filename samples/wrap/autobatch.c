@@ -33,48 +33,24 @@
 #include <assert.h>
 #include <stdio.h>
 
-#if !defined(REAL_TYPE)
-# define REAL_TYPE double
+#if !defined(ITYPE)
+# define ITYPE double
 #endif
 #if !defined(GEMM)
 # if defined(WRAP)
-#   define GEMM LIBXSMM_GEMM_SYMBOL(REAL_TYPE)
-# else
-    /* prototype for LIBXSMM's wrapped GEMM; this way auto-batch can be tested as if GEMM calls are intercepted */
-#   define GEMM LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__wrap_, LIBXSMM_TPREFIX(REAL_TYPE, gemm)))
+#   define GEMM LIBXSMM_GEMM_SYMBOL(ITYPE)
+# else /* prototype for LIBXSMM's wrapped GEMM; this way auto-batch can be tested as if GEMM calls are intercepted */
+#   define GEMM LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__wrap_, LIBXSMM_TPREFIX(ITYPE, gemm)))
 # endif
 #endif
-
 #if !defined(CALL_BEGIN_END)
 # define CALL_BEGIN_END
 #endif
 
 
 void GEMM(const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const REAL_TYPE*, const REAL_TYPE*, const libxsmm_blasint*, const REAL_TYPE*, const libxsmm_blasint*,
-  const REAL_TYPE*, REAL_TYPE*, const libxsmm_blasint*);
-
-
-void init(int seed, REAL_TYPE* dst, libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale);
-void init(int seed, REAL_TYPE* dst, libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
-{
-  const double seed1 = scale * (seed + 1);
-  libxsmm_blasint i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < ncols; ++i) {
-    libxsmm_blasint j = 0;
-    for (; j < nrows; ++j) {
-      const libxsmm_blasint k = i * ld + j;
-      dst[k] = (REAL_TYPE)(seed1 / (k + 1));
-    }
-    for (; j < ld; ++j) {
-      const libxsmm_blasint k = i * ld + j;
-      dst[k] = (REAL_TYPE)seed;
-    }
-  }
-}
+  const ITYPE*, const ITYPE*, const libxsmm_blasint*, const ITYPE*, const libxsmm_blasint*,
+  const ITYPE*, ITYPE*, const libxsmm_blasint*);
 
 
 int main(int argc, char* argv[])
@@ -87,7 +63,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint n = ((rand() % maxv) + 1) * maxn / maxv;
   const libxsmm_blasint k = ((rand() % maxv) + 1) * maxn / maxv;
   const libxsmm_blasint lda = m, ldb = k, ldc = m;
-  const REAL_TYPE alpha = 1.0, beta = 0.0;
+  const ITYPE alpha = 1.0, beta = 0.0;
   const char transa = 'N', transb = 'N';
 #if defined(CALL_BEGIN_END)
   const int flags = LIBXSMM_GEMM_FLAGS(transa, transb)
@@ -100,20 +76,20 @@ int main(int argc, char* argv[])
   ;
 #endif
 
-  REAL_TYPE *a = 0, *b = 0, *c = 0;
+  ITYPE *a = 0, *b = 0, *c = 0;
   int result = EXIT_SUCCESS, i;
 
   libxsmm_init();
 
-  a = (REAL_TYPE*)malloc((size_t)(maxn * maxn * sizeof(REAL_TYPE)));
-  b = (REAL_TYPE*)malloc((size_t)(maxn * maxn * sizeof(REAL_TYPE)));
-  c = (REAL_TYPE*)malloc((size_t)(maxn * maxn * sizeof(REAL_TYPE)));
+  a = (ITYPE*)malloc((size_t)(maxn * maxn * sizeof(ITYPE)));
+  b = (ITYPE*)malloc((size_t)(maxn * maxn * sizeof(ITYPE)));
+  c = (ITYPE*)malloc((size_t)(maxn * maxn * sizeof(ITYPE)));
   if (0 == a || 0 == b || 0 == c) result = EXIT_FAILURE;
 
   if (EXIT_SUCCESS == result) {
-    init(42, a, maxn, maxn, maxn, 1.0);
-    init(24, b, maxn, maxn, maxn, 1.0);
-    init(0, c, maxn, maxn, maxn, 1.0);
+    LIBXSMM_MATINIT(ITYPE, 42, a, maxn, maxn, maxn, 1.0);
+    LIBXSMM_MATINIT(ITYPE, 24, b, maxn, maxn, maxn, 1.0);
+    LIBXSMM_MATINIT(ITYPE, 0, c, maxn, maxn, maxn, 1.0);
 
 #if defined(_OPENMP)
 #   pragma omp parallel private(i)
@@ -123,7 +99,7 @@ int main(int argc, char* argv[])
 # if defined(_OPENMP)
 #     pragma omp single nowait
 # endif /* enable batch-recording of the specified matrix multiplication */
-      libxsmm_mmbatch_begin(LIBXSMM_GEMM_PRECISION(REAL_TYPE),
+      libxsmm_mmbatch_begin(LIBXSMM_GEMM_PRECISION(ITYPE),
         &flags, &m, &n, &k, &lda, &ldb, &ldc, &alpha, &beta);
 #endif
 #if defined(_OPENMP)

@@ -55,7 +55,7 @@ Successively calling a kernel (i.e., multiple times) allows for amortizing the c
 
 ```C
 /** Call dispatched (*function_ptr)(a, b, c [, pa, pb, pc]). */
-libxsmm_[s|d]mmfunction libxsmm_dmmdispatch(
+libxsmm_[s|d]mmfunction libxsmm_[s|d]mmdispatch(
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   /** NULL: tight fit (m) */ const libxsmm_blasint* lda,
   /** NULL: tight fit (k) */ const libxsmm_blasint* ldb,
@@ -66,7 +66,7 @@ libxsmm_[s|d]mmfunction libxsmm_dmmdispatch(
   /** NULL: LIBXSMM_PREFETCH_NONE (not LIBXSMM_PREFETCH!) */
   const int* prefetch);
 
-libxsmm_smmfunction libxsmm_wmmdispatch(
+libxsmm_w[i|s]mmfunction libxsmm_w[i|s]mmdispatch(
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   /** NULL: tight fit (m) */ const libxsmm_blasint* lda,
   /** NULL: tight fit (k) */ const libxsmm_blasint* ldb,
@@ -78,7 +78,7 @@ libxsmm_smmfunction libxsmm_wmmdispatch(
   const int* prefetch);
 ```
 
-Overloaded function signatures are provided and allow to omit arguments (C++ and FORTRAN), which are then derived from the [configurable defaults](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h). In C++, `libxsmm_mmfunction<type>` can be used to instantiate a functor rather than making a distinction between numeric types per type-prefix.
+Overloaded function signatures are provided and allow to omit arguments (C++ and FORTRAN), which are then derived from the [configurable defaults](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h). In C++, `libxsmm_mmfunction<type>` can be used to instantiate a functor rather than making a distinction between numeric types per type-prefix. For lower precision GEMMs, `libxsmm_mmfunction<itype,otype=itype>` optionally takes a second type (output type).
 
 ```C
 /* generates or dispatches the code specialization */

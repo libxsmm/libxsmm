@@ -622,8 +622,6 @@ LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_update_weights(const libxsmm_
 
 /** Global lock; create an own lock for an independent domain. */
 LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
-/** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
-LIBXSMM_APIVAR_PUBLIC(int libxsmm_verbosity);
 /** Target architecture (libxsmm_get_target_archid, libxsmm_set_target_archid). */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_target_archid);
 /** Determines whether a threaded implementation is synchronized or not. */
