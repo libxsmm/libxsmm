@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
 #endif
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)elem_size; j++) {
-      q[i*elem_size + j] = libxsmm_drand();
+      q[i*elem_size + j] = libxsmm_rand_f64();
     }
   }
 #if defined(_OPENMP)
@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
 #endif
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)elem_size; j++) {
-      qt[i*elem_size + j] = libxsmm_drand();
+      qt[i*elem_size + j] = libxsmm_rand_f64();
     }
   }
 
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
 #endif
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)elem_size; j++) {
-      q[i*elem_size + j] = libxsmm_drand();
+      q[i*elem_size + j] = libxsmm_rand_f64();
     }
   }
 #if defined(_OPENMP)
@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
 #endif
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)elem_size; j++) {
-      qt[i*elem_size + j] = libxsmm_drand();
+      qt[i*elem_size + j] = libxsmm_rand_f64();
     }
   }
 

@@ -51,7 +51,7 @@ void dfill_matrix ( double *matrix, unsigned int ld, unsigned int m, unsigned in
      /* Fill through the leading dimension */
      for ( i = 1; i <= ld; i++ )
      {
-        dtmp = 1.0 - 2.0*libxsmm_drand();
+        dtmp = 1.0 - 2.0*libxsmm_rand_f64();
         matrix [ (j-1)*ld + (i-1) ] = dtmp;
      }
   }
@@ -74,7 +74,7 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
      /* Fill through the leading dimension */
      for ( i = 1; i <= ld; i++ )
      {
-        dtmp = 1.0 - 2.0*libxsmm_drand();
+        dtmp = 1.0 - 2.0*libxsmm_rand_f64();
         matrix [ (j-1)*ld + (i-1) ] = (float) dtmp;
      }
   }

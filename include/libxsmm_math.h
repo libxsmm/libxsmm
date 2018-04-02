@@ -96,7 +96,7 @@ LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x);
 */
 LIBXSMM_API float libxsmm_sexp2_i8(signed char x);
 
-/** Function to seed libxsmm_irand (similar to srand). */
+/** Function to seed libxsmm_rand_u32 (similar to srand). */
 LIBXSMM_API void libxsmm_srand(unsigned int seed);
 
 /**
@@ -104,10 +104,10 @@ LIBXSMM_API void libxsmm_srand(unsigned int seed);
  * This function compensates for an n, which is not a factor of RAND_MAX.
  * Note: libxsmm_srand must be used if one wishes to seed the generator.
  */
-LIBXSMM_API int libxsmm_irand(int n);
+LIBXSMM_API unsigned int libxsmm_rand_u32(unsigned int n);
 
-/** Similar to libxsmm_irand, but return a DP-value in the interval [0, 1). */
-LIBXSMM_API double libxsmm_drand();
+/** Similar to libxsmm_rand_u32, but return a DP-value in the interval [0, 1). */
+LIBXSMM_API double libxsmm_rand_f64();
 
 #endif /*LIBXSMM_MATH_H*/
 

@@ -118,7 +118,7 @@ void run_test(void) {
     for ( l_i = 0; l_i < MY_LDA; l_i++) {
       for ( l_j = 0; l_j < MY_K; l_j++) {
 #if REPS==1
-        l_p_a[(l_j * MY_LDA) + l_i] = (REALTYPE)libxsmm_drand();
+        l_p_a[(l_j * MY_LDA) + l_i] = (REALTYPE)libxsmm_rand_f64();
 #else
         l_p_a[(l_j * MY_LDA) + l_i] = (REALTYPE)(l_i + (l_j * MY_M));
 #endif
@@ -139,7 +139,7 @@ void run_test(void) {
       for ( l_i = 0; l_i < MY_LDB; l_i++ ) {
         for ( l_j = 0; l_j < MY_N; l_j++ ) {
 #if REPS==1
-          l_p_b[(l_j * MY_LDB) + l_i] = (REALTYPE)libxsmm_drand();
+          l_p_b[(l_j * MY_LDB) + l_i] = (REALTYPE)libxsmm_rand_f64();
 #else
           l_p_b[(l_j * MY_LDB) + l_i] = (REALTYPE)(l_i + (l_j * MY_K));
 #endif

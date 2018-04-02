@@ -242,9 +242,9 @@ unsigned int init_data_structures(unsigned int i_cells) {
         m_cellInformation[l_cell].faceNeighborIds[f] =  scenario_neighbor[l_cell][f];
       } else {
         m_cellInformation[l_cell].faceTypes[f] = regular;
-        m_cellInformation[l_cell].faceRelations[f][0] = ((unsigned int)libxsmm_irand(4));
-        m_cellInformation[l_cell].faceRelations[f][1] = ((unsigned int)libxsmm_irand(3));
-        m_cellInformation[l_cell].faceNeighborIds[f] = ((unsigned int)libxsmm_irand(i_cells));
+        m_cellInformation[l_cell].faceRelations[f][0] = (libxsmm_rand_u32(4));
+        m_cellInformation[l_cell].faceRelations[f][1] = (libxsmm_rand_u32(3));
+        m_cellInformation[l_cell].faceNeighborIds[f] = (libxsmm_rand_u32(i_cells));
       }
     }
 #ifdef __USE_DERS
@@ -287,10 +287,10 @@ unsigned int init_data_structures(unsigned int i_cells) {
 #endif
   for (unsigned int l_cell = 0; l_cell < i_cells; l_cell++) {
     for (unsigned int i = 0; i < NUMBER_OF_ALIGNED_DOFS; i++) {
-      m_dofs[(l_cell*NUMBER_OF_ALIGNED_DOFS)+i] = (real)libxsmm_drand();
+      m_dofs[(l_cell*NUMBER_OF_ALIGNED_DOFS)+i] = (real)libxsmm_rand_f64();
     }
     for (unsigned int i = 0; i < NUMBER_OF_ALIGNED_DOFS; i++) {
-      m_tdofs[(l_cell*NUMBER_OF_ALIGNED_DOFS)+i] = (real)libxsmm_drand();
+      m_tdofs[(l_cell*NUMBER_OF_ALIGNED_DOFS)+i] = (real)libxsmm_rand_f64();
     }
   }
 #ifdef __USE_DERS
@@ -299,7 +299,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
 #endif
   for (unsigned int l_cell = 0; l_cell < i_cells; l_cell++) {
     for (unsigned int i = 0; i < NUMBER_OF_ALIGNED_DERS; i++) {
-      m_ders[(l_cell*NUMBER_OF_ALIGNED_DERS)+i] = (real)libxsmm_drand();
+      m_ders[(l_cell*NUMBER_OF_ALIGNED_DERS)+i] = (real)libxsmm_rand_f64();
     }
   }
 #endif
@@ -357,13 +357,13 @@ unsigned int init_data_structures(unsigned int i_cells) {
     // init star matrices
     for (size_t m = 0; m < 3; m++) {
       for (size_t j = 0; j < STAR_NNZ; j++) {
-        m_localIntegration[l_cell].starMatrices[m][j] = (real)libxsmm_drand();
+        m_localIntegration[l_cell].starMatrices[m][j] = (real)libxsmm_rand_f64();
       }
     }
     // init flux solver
     for (size_t m = 0; m < 4; m++) {
       for (size_t j = 0; j < NUMBER_OF_QUANTITIES*NUMBER_OF_QUANTITIES; j++) {
-        m_localIntegration[l_cell].nApNm1[m][j] = (real)libxsmm_drand();
+        m_localIntegration[l_cell].nApNm1[m][j] = (real)libxsmm_rand_f64();
       }
     }
   }
@@ -382,7 +382,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
     // init flux solver
     for (size_t m = 0; m < 4; m++) {
       for (size_t j = 0; j < NUMBER_OF_QUANTITIES*NUMBER_OF_QUANTITIES; j++) {
-        m_neighboringIntegration[l_cell].nAmNm1[m][j] = (real)libxsmm_drand();
+        m_neighboringIntegration[l_cell].nAmNm1[m][j] = (real)libxsmm_rand_f64();
       }
     }
   }
@@ -427,7 +427,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
     m_globalData =  m_globalDataArray[l_globalDataCount];
 
     for (unsigned int i = 0; i < (l_globalMatrices/sizeof(real)); i++) {
-      m_globalPointer[i] = (real)libxsmm_drand();
+      m_globalPointer[i] = (real)libxsmm_rand_f64();
     }
 
     real* tmp_pointer = m_globalPointer;
