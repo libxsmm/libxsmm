@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
 # if defined(_OPENMP)
 #         pragma omp parallel for schedule(static)
 # endif
-          for (libxsmm_blasint i = 0; i < size_; ++i) m_shuffle[i] = libxsmm_irand(size_);
+          for (libxsmm_blasint i = 0; i < size_; ++i) m_shuffle[i] = libxsmm_rand_u32(size_);
         }
         ~raii() { delete[] a; delete[] b; delete[] c; delete[] d; delete[] m_shuffle; }
 #if defined(RANDOMIZED)

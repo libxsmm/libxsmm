@@ -352,29 +352,29 @@ LIBXSMM_API void libxsmm_srand(unsigned int seed)
 }
 
 
-LIBXSMM_API int libxsmm_irand(int n)
+LIBXSMM_API unsigned int libxsmm_rand_u32(unsigned int n)
 {
 #if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-  const int q = (((RAND_MAX) + 1) / n) * n;
-  int r = rand();
+  const unsigned int q = (((RAND_MAX) + 1) / n) * n;
+  unsigned int r = (unsigned int)rand();
   if (q != ((RAND_MAX) + 1))
 #else
-  const int q = ((1 << 31) / n) * n;
-  int r = (int)lrand48();
-  if (q != (1 << 31))
+  const unsigned int q = ((1U << 31) / n) * n;
+  unsigned int r = (unsigned int)lrand48();
+  if (q != (1U << 31))
 #endif
   {
 #if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-    while (q <= r) r = rand();
+    while (q <= r) r = (unsigned int)rand();
 #else
-    while (q <= r) r = (int)lrand48();
+    while (q <= r) r = (unsigned int)lrand48();
 #endif
   }
   return r % n;
 }
 
 
-LIBXSMM_API double libxsmm_drand()
+LIBXSMM_API double libxsmm_rand_f64()
 {
 #if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
   static const double scale = 1.0 / (RAND_MAX);

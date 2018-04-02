@@ -96,7 +96,7 @@ LIBXSMM_INLINE void init_buf(float* buf, long size, int initPos, int initOne)
   int i;
   zero_buf(buf, size);
   for (i = 0; i < size; ++i) {
-    buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_drand() : (0.05 - libxsmm_drand()/10.0)));
+    buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rand_f64() : (0.05 - libxsmm_rand_f64()/10.0)));
   }
 }
 

@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
   /* Step 3: init data */
   libxsmm_srand(1);
   for ( l = 0; l < (size_t)M * (size_t)K; l++ ) {
-    double random = libxsmm_drand();
+    double random = libxsmm_rand_f64();
     #ifdef USE_BFLOAT
     float  random_f = (float)random;
     int    random_int = *(int *)(&random_f);
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
   }
 
   for ( l = 0; l < (size_t)K * (size_t)N; l++ ) {
-    double random = libxsmm_drand();
+    double random = libxsmm_rand_f64();
     #ifdef USE_BFLOAT
     float  random_f = (float)random;
     int    random_int = *(int *)(&random_f);
@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
     B_gold[l] = val;
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
-    C0_gold[l] = (float)libxsmm_drand();
+    C0_gold[l] = (float)libxsmm_rand_f64();
     C_gold[l] = C0_gold[l];
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
