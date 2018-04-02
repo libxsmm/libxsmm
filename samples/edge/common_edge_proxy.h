@@ -35,11 +35,6 @@
 #include <math.h>
 #include <assert.h>
 
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-# define drand48() ((double)rand() / RAND_MAX)
-# define srand48 srand
-#endif
-
 #if defined(__EDGE_EXECUTE_F32__)
 #define REALTYPE float
 #else

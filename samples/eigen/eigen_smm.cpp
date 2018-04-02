@@ -58,6 +58,10 @@
 # define PAD(TYPE, VALUE) (VALUE)
 #endif
 
+#if !defined(RANDOMIZED) && 0
+# define RANDOMIZED
+#endif
+
 #if !defined(ITYPE)
 # define ITYPE double
 #endif
@@ -126,34 +130,47 @@ int main(int argc, char* argv[])
     const char *const ops = "OPS";
     const double scale = 1;
 #endif
-#if defined(_OPENMP)
-    const libxsmm_blasint chunksize = s / omp_get_max_threads();
-#endif
-    struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
-      ITYPE *a, *b;
-      OTYPE *c;
-      raii(libxsmm_blasint asize_, libxsmm_blasint bsize_, libxsmm_blasint csize_)
-        : a(new ITYPE[static_cast<size_t>(asize_)]), b(new ITYPE[static_cast<size_t>(bsize_)])
-        , c(new OTYPE[static_cast<size_t>(csize_)]) {}
-      ~raii() { delete[] a; delete[] b; delete[] c; }
-    } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1);
-    ITYPE *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
-    ITYPE *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
-    OTYPE *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
-
-#if defined(_OPENMP)
-#   pragma omp parallel for schedule(static)
-#endif
-    for (libxsmm_blasint i = 0; i < s; ++i) {
-      LIBXSMM_MATINIT(ITYPE, 42 + i, a + i * asize, m, k, lda, scale);
-      LIBXSMM_MATINIT(ITYPE, 24 + i, b + i * bsize, k, n, ldb, scale);
-      LIBXSMM_MATINIT(OTYPE, 22 + i, c + i * csize, m, n, ldc, scale);
-    }
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
-#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) inout(c: length(s * csize))
+#   pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
     {
+#if defined(_OPENMP)
+      const libxsmm_blasint chunksize = s / omp_get_max_threads();
+#endif
+      struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
+        ITYPE *a, *b;
+        OTYPE *c;
+        libxsmm_blasint *m_shuffle;
+        raii(libxsmm_blasint asize_, libxsmm_blasint bsize_, libxsmm_blasint csize_, libxsmm_blasint size_)
+          : a(new ITYPE[static_cast<size_t>(asize_)]), b(new ITYPE[static_cast<size_t>(bsize_)])
+          , c(new OTYPE[static_cast<size_t>(csize_)]), m_shuffle(new libxsmm_blasint[size_])
+        {
+# if defined(_OPENMP)
+#         pragma omp parallel for schedule(static)
+# endif
+          for (libxsmm_blasint i = 0; i < size_; ++i) m_shuffle[i] = libxsmm_irand(size_);
+        }
+        ~raii() { delete[] a; delete[] b; delete[] c; delete[] m_shuffle; }
+#if defined(RANDOMIZED)
+        libxsmm_blasint shuffle(libxsmm_blasint i) const { return m_shuffle[i]; }
+#else
+        libxsmm_blasint shuffle(libxsmm_blasint i) const { return i; }
+#endif
+      } helper(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1, s);
+
+      ITYPE *const a = LIBXSMM_ALIGN(helper.a, LIBXSMM_ALIGNMENT);
+      ITYPE *const b = LIBXSMM_ALIGN(helper.b, LIBXSMM_ALIGNMENT);
+      OTYPE *const c = LIBXSMM_ALIGN(helper.c, LIBXSMM_ALIGNMENT);
+#if defined(_OPENMP)
+#     pragma omp parallel for schedule(static)
+#endif
+      for (libxsmm_blasint i = 0; i < s; ++i) {
+        LIBXSMM_MATINIT(ITYPE, 42 + helper.shuffle(i), a + helper.shuffle(i) * asize, m, k, lda, scale);
+        LIBXSMM_MATINIT(ITYPE, 24 + helper.shuffle(i), b + helper.shuffle(i) * bsize, k, n, ldb, scale);
+        LIBXSMM_MATINIT(OTYPE, 22 + i, c + i * csize, m, n, ldc, scale);
+      }
+
 #if defined(MKL_ENABLE_AVX512)
       mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
@@ -175,7 +192,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            const ITYPE *const ai = a + i * asize, *const bi = b + i * bsize;
+            const ITYPE *const ai = a + helper.shuffle(i) * asize, *const bi = b + helper.shuffle(i) * bsize;
             OTYPE *const ci = c + i * csize;
             smm_xsmm_specialized<ITYPE,OTYPE>(xmm, ai, bi, ci,
               LIBXSMM_GEMM_PREFETCH_A(ai + asize), LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
@@ -201,7 +218,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            const ITYPE *const ai = a + i * asize, *const bi = b + i * bsize;
+            const ITYPE *const ai = a + helper.shuffle(i) * asize, *const bi = b + helper.shuffle(i) * bsize;
             OTYPE *const ci = c + i * csize;
             smm_eigen_dynamic(m, n, k, ai, bi, ci);
           }
@@ -225,7 +242,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            const ITYPE *const ai = a + i * asize;
+            const ITYPE *const ai = a + helper.shuffle(i) * asize;
             OTYPE *const ci = c + i * csize;
             smm_xsmm_specialized<ITYPE,OTYPE>(xmm, ai, b, ci,
               LIBXSMM_GEMM_PREFETCH_A(ai + asize), LIBXSMM_GEMM_PREFETCH_B(b),
@@ -251,7 +268,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            const ITYPE *const ai = a + i * asize;
+            const ITYPE *const ai = a + helper.shuffle(i) * asize;
             OTYPE *const ci = c + i * csize;
             smm_eigen_dynamic(m, n, k, ai, b, ci);
           }
@@ -275,7 +292,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            const ITYPE *const bi = b + i * bsize;
+            const ITYPE *const bi = b + helper.shuffle(i) * bsize;
             OTYPE *const ci = c + i * csize;
             smm_xsmm_specialized<ITYPE,OTYPE>(xmm, a, bi, ci,
               LIBXSMM_GEMM_PREFETCH_A(a), LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
@@ -301,7 +318,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
-            const ITYPE *const bi = b + i * bsize;
+            const ITYPE *const bi = b + helper.shuffle(i) * bsize;
             OTYPE *const ci = c + i * csize;
             smm_eigen_dynamic(m, n, k, a, bi, ci);
           }
@@ -330,7 +347,7 @@ int main(int argc, char* argv[])
 #else
             const libxsmm_blasint j = 0;
 #endif
-            const ITYPE *const ai = a + i * asize, *const bi = b + i * bsize;
+            const ITYPE *const ai = a + helper.shuffle(i) * asize, *const bi = b + helper.shuffle(i) * bsize;
             smm_xsmm_specialized<ITYPE,OTYPE>(xmm, ai, bi, c + j,
               LIBXSMM_GEMM_PREFETCH_A(ai + asize), LIBXSMM_GEMM_PREFETCH_B(bi + bsize),
               LIBXSMM_GEMM_PREFETCH_C(c + j));
@@ -360,7 +377,7 @@ int main(int argc, char* argv[])
 #else
             const libxsmm_blasint j = 0;
 #endif
-            const ITYPE *const ai = a + i * asize, *const bi = b + i * bsize;
+            const ITYPE *const ai = a + helper.shuffle(i) * asize, *const bi = b + helper.shuffle(i) * bsize;
             smm_eigen_dynamic(m, n, k, ai, bi, c + j);
           }
         }

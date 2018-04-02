@@ -342,9 +342,43 @@ LIBXSMM_API float libxsmm_sexp2_i8(signed char x)
 }
 
 
-LIBXSMM_API float libxsmm_sexp2_i8i(int x)
+LIBXSMM_API void libxsmm_srand(unsigned int seed)
 {
-  LIBXSMM_ASSERT(-128 <= x && x <= 127);
-  return libxsmm_sexp2_i8((signed char)x);
+#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
+  srand(seed);
+#else
+  srand48(seed);
+#endif
+}
+
+
+LIBXSMM_API int libxsmm_irand(int n)
+{
+#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
+  const int q = (((RAND_MAX) + 1) / n) * n;
+  int r = rand();
+#else
+  const int q = ((1 << 31) / n) * n;
+  int r = (int)lrand48();
+#endif
+  if (q != ((RAND_MAX) + 1)) {
+#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
+    while (q <= r) r = rand();
+#else
+    while (q <= r) r = (int)lrand48();
+#endif
+  }
+  return r % n;
+}
+
+
+LIBXSMM_API double libxsmm_drand()
+{
+#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
+  static const double scale = 1.0 / (RAND_MAX);
+  return scale * (double)rand();
+#else
+  return drand48();
+#endif
 }
 
