@@ -357,11 +357,13 @@ LIBXSMM_API int libxsmm_irand(int n)
 #if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
   const int q = (((RAND_MAX) + 1) / n) * n;
   int r = rand();
+  if (q != ((RAND_MAX) + 1))
 #else
   const int q = ((1 << 31) / n) * n;
   int r = (int)lrand48();
+  if (q != (1 << 31))
 #endif
-  if (q != ((RAND_MAX) + 1)) {
+  {
 #if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
     while (q <= r) r = rand();
 #else
