@@ -34,11 +34,6 @@
 #include <math.h>
 #include <string.h>
 
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-# define drand48() ((double)rand() / RAND_MAX)
-# define srand48 srand
-#endif
-
 
 int g_reps = 0;
 
@@ -363,13 +358,13 @@ int main(int argc, char* argv []) {
     /* touch A */
     for (l_i = 0; l_i < l_lda; l_i++) {
       for (l_j = 0; l_j < l_k; l_j++) {
-        l_a_d[(l_j * l_lda) + l_i] = (double)drand48();
+        l_a_d[(l_j * l_lda) + l_i] = libxsmm_drand();
       }
     }
     /* touch B */
     for (l_i = 0; l_i < l_ldb; l_i++) {
       for (l_j = 0; l_j < l_n; l_j++) {
-        l_b_d[(l_j * l_ldb) + l_i] = (double)drand48();
+        l_b_d[(l_j * l_ldb) + l_i] = libxsmm_drand();
       }
     }
     /* touch C */
@@ -390,13 +385,13 @@ int main(int argc, char* argv []) {
     /* touch A */
     for (l_i = 0; l_i < l_lda; l_i++) {
       for (l_j = 0; l_j < l_k; l_j++) {
-        l_a_f[(l_j * l_lda) + l_i] = (float)drand48();
+        l_a_f[(l_j * l_lda) + l_i] = (float)libxsmm_drand();
       }
     }
     /* touch B */
     for (l_i = 0; l_i < l_ldb; l_i++) {
       for (l_j = 0; l_j < l_n; l_j++) {
-        l_b_f[(l_j * l_ldb) + l_i] = (float)drand48();
+        l_b_f[(l_j * l_ldb) + l_i] = (float)libxsmm_drand();
       }
     }
     /* touch C */
@@ -419,13 +414,13 @@ int main(int argc, char* argv []) {
     /* touch A */
     for (l_i = 0; l_i < l_lda; l_i++) {
       for (l_j = 0; l_j < l_k; l_j++) {
-        l_a_w[(l_j * l_lda) + l_i] = (short)(drand48() * 10.0);
+        l_a_w[(l_j * l_lda) + l_i] = (short)(libxsmm_drand() * 10.0);
       }
     }
     /* touch B */
     for (l_i = 0; l_i < l_ldb; l_i++) {
       for (l_j = 0; l_j < l_n; l_j++) {
-        l_b_w[(l_j * l_ldb) + l_i] = (short)(drand48() * 10.0);
+        l_b_w[(l_j * l_ldb) + l_i] = (short)(libxsmm_drand() * 10.0);
       }
     }
     /* touch C */
@@ -447,13 +442,13 @@ int main(int argc, char* argv []) {
     /* touch A */
     for (l_i = 0; l_i < l_lda; l_i++) {
       for (l_j = 0; l_j < l_k; l_j++) {
-        l_a_w[(l_j * l_lda) + l_i] = (short)(drand48() * 10.0);
+        l_a_w[(l_j * l_lda) + l_i] = (short)(libxsmm_drand() * 10.0);
       }
     }
     /* touch B */
     for (l_i = 0; l_i < l_ldb; l_i++) {
       for (l_j = 0; l_j < l_n; l_j++) {
-        l_b_w[(l_j * l_ldb) + l_i] = (short)(drand48() * 10.0);
+        l_b_w[(l_j * l_ldb) + l_i] = (short)(libxsmm_drand() * 10.0);
       }
     }
     /* touch C */
@@ -475,13 +470,13 @@ int main(int argc, char* argv []) {
     /* touch A */
     for (l_i = 0; l_i < l_lda; l_i++) {
       for (l_j = 0; l_j < (l_k / 2); l_j++) {
-        l_a_b[(l_j * l_lda) + l_i] = (unsigned char)(drand48() * 10.0);
+        l_a_b[(l_j * l_lda) + l_i] = (unsigned char)(libxsmm_drand() * 10.0);
       }
     }
     /* touch B */
     for (l_i = 0; l_i < l_ldb; l_i++) {
       for (l_j = 0; l_j < l_n; l_j++) {
-        l_b_b[(l_j * l_ldb) + l_i] = (char)(drand48() * 10.0);
+        l_b_b[(l_j * l_ldb) + l_i] = (char)(libxsmm_drand() * 10.0);
       }
     }
     /* touch C */
