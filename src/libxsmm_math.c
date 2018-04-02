@@ -342,6 +342,13 @@ LIBXSMM_API float libxsmm_sexp2_i8(signed char x)
 }
 
 
+LIBXSMM_API float libxsmm_sexp2_i8i(int x)
+{
+  LIBXSMM_ASSERT(-128 <= x && x <= 127);
+  return libxsmm_sexp2_i8((signed char)x);
+}
+
+
 LIBXSMM_API void libxsmm_srand(unsigned int seed)
 {
 #if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))

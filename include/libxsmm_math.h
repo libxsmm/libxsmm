@@ -96,6 +96,9 @@ LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x);
 */
 LIBXSMM_API float libxsmm_sexp2_i8(signed char x);
 
+/** Similar to libxsmm_sexp2_i8, but takes an integer as signed 8-bit value (check). */
+LIBXSMM_API float libxsmm_sexp2_i8i(int x);
+
 /** Function to seed libxsmm_rand_u32 (similar to srand). */
 LIBXSMM_API void libxsmm_srand(unsigned int seed);
 
