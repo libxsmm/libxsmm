@@ -116,7 +116,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
      */
 
   my_img_start = 0;
-  my_img_end = 1;
+  my_img_end = handle->desc.N;
   my_w_start = 0;
   my_w_end = handle->ofw;
 
