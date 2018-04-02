@@ -96,5 +96,21 @@ LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x);
 */
 LIBXSMM_API float libxsmm_sexp2_i8(signed char x);
 
+/** Similar to libxsmm_sexp2_i8, but takes an integer as signed 8-bit value (check). */
+LIBXSMM_API float libxsmm_sexp2_i8i(int x);
+
+/** Function to seed libxsmm_rand_u32 (similar to srand). */
+LIBXSMM_API void libxsmm_srand(unsigned int seed);
+
+/**
+ * Returns a (pseudo-)random value based on rand/rand48 in the interval [0, n).
+ * This function compensates for an n, which is not a factor of RAND_MAX.
+ * Note: libxsmm_srand must be used if one wishes to seed the generator.
+ */
+LIBXSMM_API unsigned int libxsmm_rand_u32(unsigned int n);
+
+/** Similar to libxsmm_rand_u32, but return a DP-value in the interval [0, 1). */
+LIBXSMM_API double libxsmm_rand_f64();
+
 #endif /*LIBXSMM_MATH_H*/
 

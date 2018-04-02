@@ -39,11 +39,6 @@
 # include <omp.h>
 #endif
 
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-# define drand48() ((double)rand() / RAND_MAX)
-# define srand48 srand
-#endif
-
 /* #define USE_BFLOAT */
 #ifdef USE_BFLOAT
 typedef uint16_t real;
@@ -212,9 +207,9 @@ int main(int argc, char *argv[])
   C      = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 64 );
 
   /* Step 3: init data */
-  srand48(1);
+  libxsmm_srand(1);
   for ( l = 0; l < (size_t)M * (size_t)K; l++ ) {
-    double random = drand48();
+    double random = libxsmm_rand_f64();
     #ifdef USE_BFLOAT
     float  random_f = (float)random;
     int    random_int = *(int *)(&random_f);
@@ -227,7 +222,7 @@ int main(int argc, char *argv[])
   }
 
   for ( l = 0; l < (size_t)K * (size_t)N; l++ ) {
-    double random = drand48();
+    double random = libxsmm_rand_f64();
     #ifdef USE_BFLOAT
     float  random_f = (float)random;
     int    random_int = *(int *)(&random_f);
@@ -238,7 +233,7 @@ int main(int argc, char *argv[])
     B_gold[l] = val;
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
-    C0_gold[l] = (float)drand48();
+    C0_gold[l] = (float)libxsmm_rand_f64();
     C_gold[l] = C0_gold[l];
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {

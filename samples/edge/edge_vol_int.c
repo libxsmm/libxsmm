@@ -39,11 +39,6 @@
 # include <omp.h>
 #endif
 
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-# define drand48() ((double)rand() / RAND_MAX)
-# define srand48 srand
-#endif
-
 
 int main(int argc, char* argv[])
 {
@@ -97,7 +92,7 @@ int main(int argc, char* argv[])
     printf("Usage: %s stif1 stif2 stif3 star nModes nElems nReps\n", argv[0]);
     return 0;
   }
-  srand48(1);
+  libxsmm_srand(1);
   /* some empty lines at the beginning */
   printf("\n");
 
@@ -152,7 +147,7 @@ int main(int argc, char* argv[])
 #endif
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)elem_size; j++) {
-      q[i*elem_size + j] = drand48();
+      q[i*elem_size + j] = libxsmm_rand_f64();
     }
   }
 #if defined(_OPENMP)
@@ -160,7 +155,7 @@ int main(int argc, char* argv[])
 #endif
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)elem_size; j++) {
-      qt[i*elem_size + j] = drand48();
+      qt[i*elem_size + j] = libxsmm_rand_f64();
     }
   }
 
@@ -211,7 +206,7 @@ int main(int argc, char* argv[])
 #endif
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)elem_size; j++) {
-      q[i*elem_size + j] = drand48();
+      q[i*elem_size + j] = libxsmm_rand_f64();
     }
   }
 #if defined(_OPENMP)
@@ -219,7 +214,7 @@ int main(int argc, char* argv[])
 #endif
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)elem_size; j++) {
-      qt[i*elem_size + j] = drand48();
+      qt[i*elem_size + j] = libxsmm_rand_f64();
     }
   }
 
