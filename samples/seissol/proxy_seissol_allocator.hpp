@@ -242,9 +242,9 @@ unsigned int init_data_structures(unsigned int i_cells) {
         m_cellInformation[l_cell].faceNeighborIds[f] =  scenario_neighbor[l_cell][f];
       } else {
         m_cellInformation[l_cell].faceTypes[f] = regular;
-        m_cellInformation[l_cell].faceRelations[f][0] = ((unsigned int)lrand48() % 4);
-        m_cellInformation[l_cell].faceRelations[f][1] = ((unsigned int)lrand48() % 3);
-        m_cellInformation[l_cell].faceNeighborIds[f] = ((unsigned int)lrand48() % i_cells);
+        m_cellInformation[l_cell].faceRelations[f][0] = ((unsigned int)libxsmm_irand(4));
+        m_cellInformation[l_cell].faceRelations[f][1] = ((unsigned int)libxsmm_irand(3));
+        m_cellInformation[l_cell].faceNeighborIds[f] = ((unsigned int)libxsmm_irand(i_cells));
       }
     }
 #ifdef __USE_DERS
