@@ -54,11 +54,6 @@
 # define USE_FUSED_BIAS_RELU
 #endif
 
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-# define drand48() ((double)rand() / RAND_MAX)
-# define srand48 srand
-#endif
-
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) { fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) ); global_status = A; }
 
 typedef struct {
@@ -110,7 +105,7 @@ LIBXSMM_INLINE void init_buf(float* buf, size_t size, int initPos, int initOne)
   int i;
   zero_buf(buf, size);
   for (i = 0; i < (int)size; ++i) {
-    buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? drand48() : (0.05 - drand48()/10.0)));
+    buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rand_f64() : (0.05 - libxsmm_rand_f64()/10.0)));
   }
 }
 
@@ -509,7 +504,7 @@ int main(int argc, char* argv[])
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type format padding_mode\n", argv[0]);
     return 0;
   }
-  srand48(1);
+  libxsmm_srand(1);
 
   /* reading new values from cli */
   i = 1;

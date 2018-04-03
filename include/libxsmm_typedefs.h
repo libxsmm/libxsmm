@@ -51,7 +51,7 @@
 #define LIBXSMM_PREFETCH_SIGONLY 1
 #define LIBXSMM_PREFETCH_NONE 0
 
-/** Helper macros for type names. */
+/** Helper macro for type names. */
 #define LIBXSMM_TYPENAME(TYPE) LIBXSMM_STRINGIFY(LIBXSMM_CONCATENATE(LIBXSMM_TYPENAME_, TYPE))
 #define LIBXSMM_TYPENAME_double f64
 #define LIBXSMM_TYPENAME_float f32
@@ -59,7 +59,15 @@
 #define LIBXSMM_TYPENAME_short i16
 #define LIBXSMM_TYPENAME_char i8
 
-/** Helper macros for type postfixes. */
+/** Helper macro for type information: INFO := { FP }. */
+#define LIBXSMM_TYPEINFO(TYPE, INFO) LIBXSMM_CONCATENATE3(LIBXSMM_TYPEINFO_, INFO, _, TYPE)
+#define LIBXSMM_TYPEINFO_FP_double 1
+#define LIBXSMM_TYPENAME_FP_float 1
+#define LIBXSMM_TYPENAME_FP_int 0
+#define LIBXSMM_TYPENAME_FP_short 0
+#define LIBXSMM_TYPENAME_FP_char 0
+
+/** Helper macro for type postfixes. */
 #define LIBXSMM_TYPESYMBOL(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TYPESYMBOL_, TYPE)
 #define LIBXSMM_TYPESYMBOL_double F64
 #define LIBXSMM_TYPESYMBOL_float F32
