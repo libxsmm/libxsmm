@@ -43,9 +43,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa( libxsmm_generated_code*         io_generated_code,
-                                                          const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                          const char*                     i_arch ) {
+LIBXSMM_API void libxsmm_generator_gemm_rm_ac_soa( libxsmm_generated_code*         io_generated_code,
+                                                   const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                   const char*                     i_arch ) {
   if ( strcmp(i_arch, "knl") == 0 ||
        strcmp(i_arch, "knm") == 0 ||
        strcmp(i_arch, "skx") == 0 ||

@@ -36,11 +36,6 @@
 #include "generator_common.h"
 
 /* @TODO change int based architecture value */
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa( libxsmm_generated_code*         io_generated_code,
-                                                          const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                          const char*                     i_arch );
-
-/* @TODO change int based architecture value */
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_generated_code*         io_generated_code,
                                                                      const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                                      const char*                     i_arch );
