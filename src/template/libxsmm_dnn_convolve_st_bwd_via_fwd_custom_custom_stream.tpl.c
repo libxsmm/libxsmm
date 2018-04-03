@@ -238,7 +238,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   if (n_segments) {
     /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
     code_stream = handle->bwd_code_segments[ltid];
-    if (handle->desc.N*BLOCKSIFM >= handle->desc.threads) {
+    if (handle->desc.N*BLOCKSIFM >= handle->desc.threads && !((handle->desc.N == 1) && (handle->bwd_ofh_rb == 1))) {
       if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
         LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
         element_input_type *regular_input_base;
@@ -537,8 +537,15 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
         if ( instr == IFM_LOOP_INIT ) {
           /* Overwrite output with zeros if requested */
           if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
-            for (ih = 0; ih < my_h_out * handle->ifmblock_hp * handle->ifwp; ih += handle->ifmblock_hp * handle->ifwp) {
-              jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2] + ih, NULL, NULL);
+            //for (ih = 0; ih < my_h_out * handle->ifmblock_hp * handle->ifwp; ih += handle->ifmblock_hp * handle->ifwp) {
+            //  jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2] + ih, NULL, NULL);
+            //}
+            int h,w;
+            __m512 zero_reg  = _mm512_setzero_ps();
+            for (h = 0; h<handle->bwd_ofh_rb; h++) {
+              for (w = 0; w<handle->bwd_ofw_rb; w++) {
+                _mm512_store_ps(output_base+stream[i+2]+w*handle->ifmblock_hp+h*handle->ifwp*handle->ifmblock_hp, zero_reg);
+              }
             }
           }
         }
@@ -557,7 +564,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       }
     }
   } else {
-    if (handle->desc.N*BLOCKSIFM >= handle->desc.threads) {
+    if (handle->desc.N*BLOCKSIFM >= handle->desc.threads && !((handle->desc.N == 1) && (handle->bwd_ofh_rb == 1))) {
       /* Run the stream of convolutions, no extra operations are required... */
       if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
         LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
