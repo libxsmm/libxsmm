@@ -138,6 +138,7 @@ if (n_segments) {
   /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
   code_stream = handle->fwd_code_segments[ltid];
   /* If we are in the img_par execution then avoid fine-grained copy in case of padding...  */
+  //TODO: Second condition guarantess we run the img_par code when we have MB=1 -- and hopefully HUGE images
   if (handle->desc.N*BLOCKSOFM  >= handle->desc.threads && !((handle->desc.N == 1) && (handle->fwd_ofh_rb == 1))) {
     if (handle->compute_batch_stats_in_kernel == 1) { /* We  do BN stuff in the kernel  */
 #ifdef FP32_BN_STATS
