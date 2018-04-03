@@ -197,6 +197,10 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
   const void* values;
 } libxsmm_csc_soa_descriptor;
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_rm_ac_soa_descriptor {
+  const libxsmm_gemm_descriptor* gemm;
+} libxsmm_rm_ac_soa_descriptor;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
@@ -491,6 +495,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_GEMM,
   LIBXSMM_BUILD_KIND_SRSOA,
   LIBXSMM_BUILD_KIND_SCSOA,
+  LIBXSMM_BUILD_KIND_RMACSOA,
   LIBXSMM_BUILD_KIND_SREG,
   LIBXSMM_BUILD_KIND_CFWD,
   LIBXSMM_BUILD_KIND_CUPD,
@@ -505,6 +510,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const libxsmm_csr_soa_descriptor* srsoa;
   const libxsmm_csc_soa_descriptor* scsoa;
+  const libxsmm_rm_ac_soa_descriptor* rmacsoa;
   const libxsmm_csr_reg_descriptor* sreg;
   const libxsmm_convolution_forward_descriptor* cfwd;
   const libxsmm_convolution_weight_update_descriptor* cupd;
