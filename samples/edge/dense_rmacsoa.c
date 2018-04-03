@@ -48,23 +48,23 @@ static double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
 }
 
-void matMulFusedAC(       unsigned short  i_r,
-                          unsigned int    i_m,
-                          unsigned int    i_n,
-                          unsigned int    i_k,
-                          unsigned int    i_ldA,
-                          unsigned int    i_ldB,
-                          unsigned int    i_ldC,
-                          REALTYPE           i_beta,
-                    const REALTYPE           *i_a,
-                    const REALTYPE           *i_b,
-                          REALTYPE           *o_c ) {
+static void matMulFusedAC(       unsigned int    i_r,
+                                 unsigned int    i_m,
+                                 unsigned int    i_n,
+                                 unsigned int    i_k,
+                                 unsigned int    i_ldA,
+                                 unsigned int    i_ldB,
+                                 unsigned int    i_ldC,
+                                 REALTYPE           i_beta,
+                           const REALTYPE           *i_a,
+                           const REALTYPE           *i_b,
+                                 REALTYPE           *o_c ) {
   unsigned int l_m = 0;
   unsigned int l_n = 0;
   unsigned int l_r = 0;
   unsigned int l_k = 0;
 
-  // init result matrix
+  /* init result matrix */
   for( l_m = 0; l_m < i_m; l_m++ ) {
     for( l_n = 0; l_n < i_n; l_n++ ) {
       for( l_r = 0; l_r < i_r; l_r++ ) {
@@ -72,7 +72,7 @@ void matMulFusedAC(       unsigned short  i_r,
       }
     }
   }
-
+  /* perform matmul */
   for( l_k = 0; l_k < i_k; l_k++ ) {
     for( l_m = 0; l_m < i_m; l_m++ ) {
       for( l_n = 0; l_n < i_n; l_n++ ) {
@@ -93,7 +93,7 @@ int main(int agrc, char* argv[]) {
   unsigned int l_m = atoi(argv[1]);
   unsigned int l_n = atoi(argv[2]);
   unsigned int l_k = atoi(argv[3]);
-  REALTYPE l_beta = atof(argv[4]);
+  REALTYPE l_beta = (REALTYPE)atof(argv[4]);
   REALTYPE l_alpha = 1.0;
   unsigned int l_reps = atoi(argv[5]);
   double flops = (double)l_m * (double)l_n * (double)l_k * (double)l_r * (double)l_reps;
