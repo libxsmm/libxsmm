@@ -63,8 +63,6 @@ LIBXSMM_API void libxsmm_generator_gemm_rm_ac_soa( libxsmm_generated_code*      
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_generated_code*         io_generated_code,
                                                                      const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                                      const char*                     i_arch ) {
-  unsigned int l_n = 0;
-  unsigned int l_k = 0;
   unsigned int l_soa_width = 0;
   unsigned int l_max_reg_block = 0;
   unsigned int l_n1_range = 0;
@@ -244,7 +242,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
                                                                            const unsigned int                 i_soa_width,
                                                                            const unsigned int                 i_n_blocking ) {
   unsigned int l_n = 0;
-  unsigned int l_k = 0;
   unsigned int l_lcl_k = 0;
 
   /* load C accumulator */
