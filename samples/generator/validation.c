@@ -41,16 +41,6 @@
 #include <mkl.h>
 #endif
 
-#ifndef __INTEL_COMPILER
-/* based on: http://www.mcs.anl.gov/~kazutomo/rdtsc.html */
-static __inline__ unsigned long long _rdtsc(void)
-{
-    unsigned hi, lo;
-    __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
-    return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
-}
-#endif
-
 /*#define STREAM_A_B*/
 #ifdef STREAM_A_B
 #define STREAM_A_B_SIZE 1000
@@ -128,7 +118,7 @@ void run_test(void) {
     for ( l_i = 0; l_i < MY_LDA; l_i++) {
       for ( l_j = 0; l_j < MY_K; l_j++) {
 #if REPS==1
-        l_p_a[(l_j * MY_LDA) + l_i] = (REALTYPE)drand48();
+        l_p_a[(l_j * MY_LDA) + l_i] = (REALTYPE)libxsmm_rand_f64();
 #else
         l_p_a[(l_j * MY_LDA) + l_i] = (REALTYPE)(l_i + (l_j * MY_M));
 #endif
@@ -149,7 +139,7 @@ void run_test(void) {
       for ( l_i = 0; l_i < MY_LDB; l_i++ ) {
         for ( l_j = 0; l_j < MY_N; l_j++ ) {
 #if REPS==1
-          l_p_b[(l_j * MY_LDB) + l_i] = (REALTYPE)drand48();
+          l_p_b[(l_j * MY_LDB) + l_i] = (REALTYPE)libxsmm_rand_f64();
 #else
           l_p_b[(l_j * MY_LDB) + l_i] = (REALTYPE)(l_i + (l_j * MY_K));
 #endif
@@ -288,7 +278,7 @@ void run_test(void) {
 #endif
 
   gettimeofday(&l_start, NULL);
-  size_t l_cyc_start = _rdtsc();
+  libxsmm_timer_tickint l_cyc_start = libxsmm_timer_cycles();
 
   for ( l_t = 0; l_t < REPS; l_t++ ) {
 #ifdef STREAM_A_B
@@ -310,7 +300,7 @@ void run_test(void) {
     }
 #endif
   }
-  size_t l_cyc_end = _rdtsc();
+  libxsmm_timer_tickint l_cyc_end = libxsmm_timer_cycles();
   gettimeofday(&l_end, NULL);
   l_total = sec(l_start, l_end);
 
@@ -319,7 +309,7 @@ void run_test(void) {
   printf("%f GFLOPS for assembly\n", ((double)((double)REPS * (double)MY_M * (double)MY_N * (double)MY_K) * 2.0 * ((double)STREAM_A_B_SIZE)) / (l_total * 1.0e9));
 #else
   printf("%f GFLOPS for assembly\n", ((double)((double)REPS * (double)MY_M * (double)MY_N * (double)MY_K) * 2.0) / (l_total * 1.0e9));
-  printf("%f FLOPS/cycle for assembly (using _rdtsc())\n", ((double)((double)REPS * (double)MY_M * (double)MY_N * (double)MY_K) * 2.0) / ((double)(l_cyc_end - l_cyc_start)));
+  printf("%f FLOPS/cycle for assembly (using libxsmm_timer_cycles())\n", ((double)((double)REPS * (double)MY_M * (double)MY_N * (double)MY_K) * 2.0) / ((double)(l_cyc_end - l_cyc_start)));
 #endif
 
   /* check result */

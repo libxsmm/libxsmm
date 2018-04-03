@@ -53,6 +53,10 @@
 # define PAD(TYPE, VALUE) (VALUE)
 #endif
 
+#if !defined(RANDOMIZED) && 0
+# define RANDOMIZED
+#endif
+
 #if !defined(ITYPE)
 # define ITYPE double
 #endif
@@ -81,41 +85,61 @@ int main(int argc, char* argv[])
     const libxsmm_blasint s = LIBXSMM_MIN(0 < q ? q : max_size, max_size);
     const libxsmm_blasint aspace = LIBXSMM_ALIGNMENT / sizeof(ITYPE);
     const size_t bwsize = static_cast<size_t>((asize/*load*/ + bsize/*load*/) * sizeof(ITYPE) + 2/*RFO*/ * csize * sizeof(OTYPE));
-    const double gflops = 2E-9 * s * m * n * k, scale = 1.0 / s;
+    const double gflops = 2E-9 * s * m * n * k;
+#if LIBXSMM_TYPEINFO(ITYPE, FP)
+    const char *const ops = "FLOPS";
+    const double scale = 1.0 / s;
+#else
+    const char *const ops = "OPS";
+    const double scale = 1;
+#endif
 #if !defined(_DEBUG)
     const char *const env_check = getenv("CHECK");
     const int check = (0 == env_check ? 0 : atoi(env_check));
 #else
     /*const*/ int check = 1;
 #endif
-#if defined(_OPENMP)
-    const libxsmm_blasint chunksize = s / omp_get_max_threads();
-#endif
-    struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
-      ITYPE *a, *b;
-      OTYPE *c;
-      raii(libxsmm_blasint asize_, libxsmm_blasint bsize_, libxsmm_blasint csize_)
-        : a(new ITYPE[static_cast<size_t>(asize_)]), b(new ITYPE[static_cast<size_t>(bsize_)])
-        , c(new OTYPE[static_cast<size_t>(csize_)]) {}
-      ~raii() { delete[] a; delete[] b; delete[] c; }
-    } buffer(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1);
-    ITYPE *const a = LIBXSMM_ALIGN(buffer.a, LIBXSMM_ALIGNMENT);
-    ITYPE *const b = LIBXSMM_ALIGN(buffer.b, LIBXSMM_ALIGNMENT);
-    OTYPE *c = LIBXSMM_ALIGN(buffer.c, LIBXSMM_ALIGNMENT);
-
-#if defined(_OPENMP)
-#   pragma omp parallel for schedule(static)
-#endif
-    for (libxsmm_blasint i = 0; i < s; ++i) {
-      LIBXSMM_MATINIT(ITYPE, 42 + i, a + i * asize, m, k, lda, scale);
-      LIBXSMM_MATINIT(ITYPE, 24 + i, b + i * bsize, k, n, ldb, scale);
-      LIBXSMM_MATINIT(OTYPE, 22 + i, c + i * csize, m, n, ldc, scale);
-    }
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
-#   pragma offload target(LIBXSMM_OFFLOAD_TARGET) in(a: length(s * asize)) in(b: length(s * bsize)) inout(c: length(s * csize))
+#   pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
     {
+#if defined(_OPENMP)
+      const libxsmm_blasint chunksize = s / omp_get_max_threads();
+#endif
+      struct raii { // avoid std::vector (first-touch init. causes NUMA issue)
+        ITYPE *a, *b;
+        OTYPE *c;
+        libxsmm_blasint *m_shuffle;
+        raii(libxsmm_blasint asize_, libxsmm_blasint bsize_, libxsmm_blasint csize_, libxsmm_blasint size_)
+          : a(new ITYPE[static_cast<size_t>(asize_)]), b(new ITYPE[static_cast<size_t>(bsize_)])
+          , c(new OTYPE[static_cast<size_t>(csize_)]), m_shuffle(new libxsmm_blasint[size_])
+        {
+# if defined(_OPENMP)
+#         pragma omp parallel for schedule(static)
+# endif
+          for (libxsmm_blasint i = 0; i < size_; ++i) m_shuffle[i] = libxsmm_rand_u32(size_);
+        }
+        ~raii() { delete[] a; delete[] b; delete[] c; delete[] m_shuffle; }
+#if defined(RANDOMIZED)
+        libxsmm_blasint shuffle(libxsmm_blasint i) const { return m_shuffle[i]; }
+#else
+        libxsmm_blasint shuffle(libxsmm_blasint i) const { return i; }
+#endif
+      } helper(s * asize + aspace - 1, s * bsize + aspace - 1, s * csize + aspace - 1, s);
+
+      ITYPE *const a = LIBXSMM_ALIGN(helper.a, LIBXSMM_ALIGNMENT);
+      ITYPE *const b = LIBXSMM_ALIGN(helper.b, LIBXSMM_ALIGNMENT);
+      OTYPE *const c = LIBXSMM_ALIGN(helper.c, LIBXSMM_ALIGNMENT);
+#if defined(_OPENMP)
+#     pragma omp parallel for schedule(static)
+#endif
+      for (libxsmm_blasint i = 0; i < s; ++i) {
+        LIBXSMM_MATINIT(ITYPE, 42 + helper.shuffle(i), a + helper.shuffle(i) * asize, m, k, lda, scale);
+        LIBXSMM_MATINIT(ITYPE, 24 + helper.shuffle(i), b + helper.shuffle(i) * bsize, k, n, ldb, scale);
+        LIBXSMM_MATINIT(OTYPE, 22 + i, c + i * csize, m, n, ldc, scale);
+      }
+
 #if defined(MKL_ENABLE_AVX512)
       mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
@@ -140,15 +164,15 @@ int main(int argc, char* argv[])
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             libxsmm_gemm(&transa, &transb, m, n, k,
-              &alpha, a + i * asize, &lda, b + i * bsize, &ldb,
+              &alpha, a + helper.shuffle(i) * asize, &lda, b + helper.shuffle(i) * bsize, &ldb,
                &beta, c + i * csize, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (2 * k - 1) * (double)(s * m * n) / ncycles);
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2 * k - 1) * (double)(s * m * n) / ncycles, ops);
+          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
@@ -163,15 +187,15 @@ int main(int argc, char* argv[])
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             libxsmm_gemm(&transa, &transb, m, n, k,
-              &alpha, a + i * asize, &lda, b, &ldb,
+              &alpha, a + helper.shuffle(i) * asize, &lda, b, &ldb,
                &beta, c + i * csize, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (2 * k - 1) * (double)(s * m * n) / ncycles);
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2 * k - 1) * (double)(s * m * n) / ncycles, ops);
+          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - bsize * sizeof(ITYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
@@ -186,15 +210,15 @@ int main(int argc, char* argv[])
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             libxsmm_gemm(&transa, &transb, m, n, k,
-              &alpha, a, &lda, b + i * bsize, &ldb,
+              &alpha, a, &lda, b + helper.shuffle(i) * bsize, &ldb,
                &beta, c + i * csize, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (2 * k - 1) * (double)(s * m * n) / ncycles);
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2 * k - 1) * (double)(s * m * n) / ncycles, ops);
+          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - asize * sizeof(ITYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
@@ -214,15 +238,15 @@ int main(int argc, char* argv[])
             const libxsmm_blasint j = 0;
 #endif
             libxsmm_gemm(&transa, &transb, m, n, k,
-              &alpha, a + i * asize, &lda, b + i * bsize, &ldb,
+              &alpha, a + helper.shuffle(i) * asize, &lda, b + helper.shuffle(i) * bsize, &ldb,
                &beta, c + j, &ldc);
           }
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (2 * k - 1) * (double)(s * m * n) / ncycles);
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2 * k - 1) * (double)(s * m * n) / ncycles, ops);
+          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - 2 * csize * sizeof(OTYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
@@ -249,8 +273,8 @@ int main(int argc, char* argv[])
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
-          fprintf(stdout, "\tpseudo-perf.: %.1f FLOPS/cycle\n", (2 * k - 1) * (double)(s * m * n) / ncycles);
-          fprintf(stdout, "\tperformance: %.1f GFLOPS/s\n", gflops / duration);
+          fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2 * k - 1) * (double)(s * m * n) / ncycles, ops);
+          fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
       } break;

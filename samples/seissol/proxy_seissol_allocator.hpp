@@ -104,7 +104,7 @@ seissol::kernels::Time     m_timeKernel;
 seissol::kernels::Volume   m_volumeKernel;
 seissol::kernels::Boundary m_boundaryKernel;
 
-/* This option is needed to avoid polution of low-level caches */
+/* This option is needed to avoid pollution of low-level caches */
 #define NUMBER_OF_THREADS_PER_GLOBALDATA_COPY 4
 #ifndef NUMBER_OF_THREADS_PER_GLOBALDATA_COPY
 #define NUMBER_OF_THREADS_PER_GLOBALDATA_COPY 16383
@@ -141,7 +141,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
     size_t reads;
     unsigned int value;
 
-    // read scenaio size
+    // read scenario size
     file = s_scenario + ".size";
     data.open(file.c_str());
     reads = 0;
@@ -209,7 +209,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
   }
 
   // init RNG
-  srand48(i_cells);
+  libxsmm_srand(i_cells);
 
   // cell information
   m_cellInformation = (CellLocalInformation*)malloc(i_cells*sizeof(CellLocalInformation));
@@ -242,9 +242,9 @@ unsigned int init_data_structures(unsigned int i_cells) {
         m_cellInformation[l_cell].faceNeighborIds[f] =  scenario_neighbor[l_cell][f];
       } else {
         m_cellInformation[l_cell].faceTypes[f] = regular;
-        m_cellInformation[l_cell].faceRelations[f][0] = ((unsigned int)lrand48() % 4);
-        m_cellInformation[l_cell].faceRelations[f][1] = ((unsigned int)lrand48() % 3);
-        m_cellInformation[l_cell].faceNeighborIds[f] = ((unsigned int)lrand48() % i_cells);
+        m_cellInformation[l_cell].faceRelations[f][0] = (libxsmm_rand_u32(4));
+        m_cellInformation[l_cell].faceRelations[f][1] = (libxsmm_rand_u32(3));
+        m_cellInformation[l_cell].faceNeighborIds[f] = (libxsmm_rand_u32(i_cells));
       }
     }
 #ifdef __USE_DERS
@@ -287,10 +287,10 @@ unsigned int init_data_structures(unsigned int i_cells) {
 #endif
   for (unsigned int l_cell = 0; l_cell < i_cells; l_cell++) {
     for (unsigned int i = 0; i < NUMBER_OF_ALIGNED_DOFS; i++) {
-      m_dofs[(l_cell*NUMBER_OF_ALIGNED_DOFS)+i] = (real)drand48();
+      m_dofs[(l_cell*NUMBER_OF_ALIGNED_DOFS)+i] = (real)libxsmm_rand_f64();
     }
     for (unsigned int i = 0; i < NUMBER_OF_ALIGNED_DOFS; i++) {
-      m_tdofs[(l_cell*NUMBER_OF_ALIGNED_DOFS)+i] = (real)drand48();
+      m_tdofs[(l_cell*NUMBER_OF_ALIGNED_DOFS)+i] = (real)libxsmm_rand_f64();
     }
   }
 #ifdef __USE_DERS
@@ -299,7 +299,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
 #endif
   for (unsigned int l_cell = 0; l_cell < i_cells; l_cell++) {
     for (unsigned int i = 0; i < NUMBER_OF_ALIGNED_DERS; i++) {
-      m_ders[(l_cell*NUMBER_OF_ALIGNED_DERS)+i] = (real)drand48();
+      m_ders[(l_cell*NUMBER_OF_ALIGNED_DERS)+i] = (real)libxsmm_rand_f64();
     }
   }
 #endif
@@ -357,13 +357,13 @@ unsigned int init_data_structures(unsigned int i_cells) {
     // init star matrices
     for (size_t m = 0; m < 3; m++) {
       for (size_t j = 0; j < STAR_NNZ; j++) {
-        m_localIntegration[l_cell].starMatrices[m][j] = (real)drand48();
+        m_localIntegration[l_cell].starMatrices[m][j] = (real)libxsmm_rand_f64();
       }
     }
     // init flux solver
     for (size_t m = 0; m < 4; m++) {
       for (size_t j = 0; j < NUMBER_OF_QUANTITIES*NUMBER_OF_QUANTITIES; j++) {
-        m_localIntegration[l_cell].nApNm1[m][j] = (real)drand48();
+        m_localIntegration[l_cell].nApNm1[m][j] = (real)libxsmm_rand_f64();
       }
     }
   }
@@ -382,7 +382,7 @@ unsigned int init_data_structures(unsigned int i_cells) {
     // init flux solver
     for (size_t m = 0; m < 4; m++) {
       for (size_t j = 0; j < NUMBER_OF_QUANTITIES*NUMBER_OF_QUANTITIES; j++) {
-        m_neighboringIntegration[l_cell].nAmNm1[m][j] = (real)drand48();
+        m_neighboringIntegration[l_cell].nAmNm1[m][j] = (real)libxsmm_rand_f64();
       }
     }
   }
@@ -427,17 +427,17 @@ unsigned int init_data_structures(unsigned int i_cells) {
     m_globalData =  m_globalDataArray[l_globalDataCount];
 
     for (unsigned int i = 0; i < (l_globalMatrices/sizeof(real)); i++) {
-      m_globalPointer[i] = (real)drand48();
+      m_globalPointer[i] = (real)libxsmm_rand_f64();
     }
 
     real* tmp_pointer = m_globalPointer;
-    // stiffnes for time integration
+    // stiffness for time integration
     for( unsigned int l_transposedStiffnessMatrix = 0; l_transposedStiffnessMatrix < 3; l_transposedStiffnessMatrix++ ) {
       m_globalData->stiffnessMatricesTransposed[l_transposedStiffnessMatrix] = tmp_pointer;
       tmp_pointer += seissol::kernels::getNumberOfAlignedBasisFunctions( CONVERGENCE_ORDER-1 ) * NUMBER_OF_BASIS_FUNCTIONS;
     }
 
-    // stiffnes for volume integration
+    // stiffness for volume integration
     for( unsigned int l_stiffnessMatrix = 0; l_stiffnessMatrix < 3; l_stiffnessMatrix++ ) {
       m_globalData->stiffnessMatrices[l_stiffnessMatrix] = tmp_pointer;
       tmp_pointer += NUMBER_OF_ALIGNED_BASIS_FUNCTIONS * seissol::kernels::getNumberOfBasisFunctions( CONVERGENCE_ORDER-1 );

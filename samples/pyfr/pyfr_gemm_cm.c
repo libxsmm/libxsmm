@@ -82,12 +82,12 @@ int main(int argc, char *argv[])
 
   #pragma omp parallel for
   for (i = 0; i < lda*k; i++) {
-    a[i] = drand48();
+    a[i] = libxsmm_rand_f64();
   }
 
   #pragma omp parallel for
   for (i = 0; i < ldb*n; i++) {
-    b[i] = drand48();
+    b[i] = libxsmm_rand_f64();
   }
 
   #pragma omp parallel for

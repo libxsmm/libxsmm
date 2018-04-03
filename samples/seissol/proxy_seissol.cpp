@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
 
   gettimeofday(&start_time, NULL);
 #ifdef __USE_RDTSC
-  cycles_start = __rdtsc();
+  cycles_start = _libxsmm_timer_cycles();
 #endif
 
   if (s_part.compare("all") == 0) {
@@ -213,12 +213,12 @@ int main(int argc, char* argv[]) {
     }
   }
 #ifdef __USE_RDTSC
-  cycles_end = __rdtsc();
+  cycles_end = _libxsmm_timer_cycles();
 #endif
   gettimeofday(&end_time, NULL);
   total = sec(start_time, end_time);
 #ifdef __USE_RDTSC
-  printf("Cycles via __rdtsc()!\n");
+  printf("Cycles via _libxsmm_timer_cycles()!\n");
   total_cycles = (double)(cycles_end-cycles_start);
 #else
   total_cycles = derive_cycles_from_time(total);

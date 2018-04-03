@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
   for ( l_i = 0; l_i < K; l_i++) {
     for ( l_j = 0; l_j < N; l_j++) {
       for ( l_k = 0; l_k < N_CRUNS; l_k++ ) {
-        LIBXSMM_VLA_ACCESS(3, l_p_b, l_i, l_j, l_k, N, N_CRUNS) = (REALTYPE)drand48();
+        LIBXSMM_VLA_ACCESS(3, l_p_b, l_i, l_j, l_k, N, N_CRUNS) = (REALTYPE)libxsmm_rand_f64();
       }
     }
   }
