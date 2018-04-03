@@ -222,6 +222,9 @@
     <ClInclude Include="..\include\libxsmm_math.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_rm_ac_soa.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -417,6 +420,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_math.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_rm_ac_soa.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

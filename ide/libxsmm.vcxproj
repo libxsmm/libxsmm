@@ -64,6 +64,7 @@
     <ClInclude Include="..\src\generator_gemm_imci_avx512.h" />
     <ClInclude Include="..\src\generator_gemm_imci_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_noarch.h" />
+    <ClInclude Include="..\src\generator_gemm_rm_ac_soa.h" />
     <ClInclude Include="..\src\generator_gemm_sse3_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_gemm_sse3_microkernel.h" />
     <ClInclude Include="..\src\generator_matcopy_avx_avx512.h" />
@@ -119,6 +120,7 @@
     <ClCompile Include="..\src\generator_gemm_imci_avx512.c" />
     <ClCompile Include="..\src\generator_gemm_imci_microkernel.c" />
     <ClCompile Include="..\src\generator_gemm_noarch.c" />
+    <ClCompile Include="..\src\generator_gemm_rm_ac_soa.c" />
     <ClCompile Include="..\src\generator_gemm_sse3_avx_avx2_avx512.c" />
     <ClCompile Include="..\src\generator_gemm_sse3_microkernel.c" />
     <ClCompile Include="..\src\generator_matcopy.c" />
