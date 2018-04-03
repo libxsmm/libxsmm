@@ -152,12 +152,12 @@ int main(int agrc, char* argv[]) {
   /* run optimized */
   mykernel( a, b, c2 );
 
-  /* check correctnes */ 
+  /* check correctnes */
   for ( i = 0; i < l_m*l_n*l_r; ++i ) {
     if ( max_error < fabs( c1[i] - c2[i] ) ) {
       max_error = fabs( c1[i] - c2[i] );
     }
-  } 
+  }
 
   printf("Max. Error: %f\n", max_error);
 

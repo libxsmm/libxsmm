@@ -543,7 +543,7 @@ LIBXSMM_API_INTERN
 void libxsmm_convfunction_signature_int16( libxsmm_generated_code*         io_generated_code,
                                            const char*                     i_routine_name     );
 
-LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking( unsigned int i_size, 
+LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking( unsigned int i_size,
                                                             unsigned int i_max_block,
                                                             unsigned int* o_range_1,
                                                             unsigned int* o_block_1,
