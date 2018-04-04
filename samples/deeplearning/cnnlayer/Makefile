@@ -14,7 +14,7 @@ endif
 endif
 
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
-DEPDIR = ../..
+DEPDIR = ../../..
 SRCDIR = $(ROOTDIR)
 INCDIR = .
 BLDDIR = build

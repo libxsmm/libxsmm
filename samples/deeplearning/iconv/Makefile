@@ -14,7 +14,7 @@ endif
 endif
 
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
-DEPDIR = ../..
+DEPDIR = ../../..
 SRCDIR = $(ROOTDIR)
 INCDIR = .
 BLDDIR = build
@@ -25,8 +25,10 @@ CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
-BLAS = 2
-OMP = 1
+# Fortran code here does not allow for PEDANTIC=2
+#override PEDANTIC = 1
+BLAS = 0
+OMP = 0
 SYM = 1
 
 # include common Makefile artifacts
@@ -63,7 +65,7 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(EXTDEP) $(LIBDEP)
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) #$(EXTDEP) $(LIBDEP)
 	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
