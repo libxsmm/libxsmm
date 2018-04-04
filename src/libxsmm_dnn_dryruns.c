@@ -115,7 +115,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custo
     /* In these case we run fallback code so we do not support thread private jitting */
     status = LIBXSMM_DNN_WARN_FALLBACK;
   } else {
-    if (handle->desc.N >= handle->desc.threads) {
+    //TODO: Second condition guarantess we run the img_par code when we have MB=1 -- and hopefully HUGE images
+    if ((handle->desc.N*handle->blocksofm >= handle->desc.threads) && !((handle->desc.N == 1) && (handle->fwd_ofh_rb == 1 )) ) {
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
     } else {
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
