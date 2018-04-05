@@ -21,7 +21,7 @@ pages:
 - Overview: index.md
 - Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md
-  - "DNN: Deep Neural Networks": libxsmm_dnn.md
+  - "DNN: Deep Neural Networks": libxsmm_dl.md
   - "AUX: Service Functions": libxsmm_aux.md
   - "PROF: Performance Profiling": libxsmm_prof.md
   - "TUNE: Customization": libxsmm_tune.md
