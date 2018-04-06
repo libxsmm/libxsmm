@@ -260,7 +260,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     handle->perform_relu_in_kernel = 0;
 
     /* let's check for duality */
-    if ( (handle->use_thread_private_jit > 0) && ( (handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.pad_h == 0 && handle->desc.pad_w == 0) || (handle->desc.u == 1 && handle->desc.v == 1) ) && !((handle->desc.R > 1 && handle->desc.pad_h == 0) || (handle->desc.S > 1 && handle->desc.pad_w == 0)) )  {
+    /* TODO: Enable duality even in cases of image parallelism */
+    if ( (handle->use_thread_private_jit > 0) && (handle->desc.N >= handle->desc.threads) && ( (handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.pad_h == 0 && handle->desc.pad_w == 0) || (handle->desc.u == 1 && handle->desc.v == 1) ) && !((handle->desc.R > 1 && handle->desc.pad_h == 0) || (handle->desc.S > 1 && handle->desc.pad_w == 0)) )  {
       handle->exploit_duality = 1;
     } else {
       handle->exploit_duality = 0;
