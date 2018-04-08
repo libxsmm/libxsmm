@@ -34,7 +34,7 @@
 
 #define MAX_DIMS 8
 
-typedef struct 
+typedef struct
 {
   int ndims; // Number of dimensions in tensor
   int dims[MAX_DIMS]; //Logical dimensions: for activations assume N,FM,H,W; for weight tensor assume OFM,IFM,KH,KW

@@ -33,13 +33,13 @@
 #pragma once
 #include "ImageDataImpl.hpp"
 
-class ImageDataRGBFlat : public ImageDataImpl 
+class ImageDataRGBFlat : public ImageDataImpl
 {
   protected:
-    int *r_offset, *c_offset, *augmentation; 
+    int *r_offset, *c_offset, *augmentation;
 
   public:
-    ImageDataRGBFlat(DataImplParams *gp, AugmentParams *ap) : ImageDataImpl(gp, ap) 
+    ImageDataRGBFlat(DataImplParams *gp, AugmentParams *ap) : ImageDataImpl(gp, ap)
     {
       r_offset = new int[gp->batch_size];
       c_offset = new int[gp->batch_size];

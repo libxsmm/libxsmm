@@ -63,10 +63,10 @@ class SolverParams : public MLParams
     void setLearningRate(float lr) { lr_.push_back(lr); }
     float getLearningRate() { return lr_[0]; }
 
-    void setLearningRates(vector<float> lr) 
-    { 
+    void setLearningRates(vector<float> lr)
+    {
       for(int i=0; i<lr.size(); i++)
-        lr_.push_back(lr[i]); 
+        lr_.push_back(lr[i]);
     }
 
     const vector<float>& getLearningRates() const { return lr_; }
@@ -77,10 +77,10 @@ class SolverParams : public MLParams
     void setMomentum(float m) { momentum_.push_back(m); }
     float getMomentum() { return momentum_[0]; }
 
-    void setMomentums(vector<float> m) 
-    { 
+    void setMomentums(vector<float> m)
+    {
       for(int i=0; i<m.size(); i++)
-        momentum_.push_back(m[i]); 
+        momentum_.push_back(m[i]);
     }
 
     const vector<float>& getMomentums() const { return momentum_; }
@@ -88,10 +88,10 @@ class SolverParams : public MLParams
     void setWeightDecay(float d) { decay_.push_back(d); }
     float getWeightDecay() { return decay_[0]; }
 
-    void setWeightDecays(vector<float> d) 
-    { 
+    void setWeightDecays(vector<float> d)
+    {
       for(int i=0; i<d.size(); i++)
-        decay_.push_back(d[i]); 
+        decay_.push_back(d[i]);
     }
 
     const vector<float>& getWeightDecays() const { return decay_; }
@@ -110,7 +110,7 @@ class SolverParams : public MLParams
       for(int i=0; i<s.size(); i++)
         stepvalues_[i] = s[i];
     }
-    
+
     const vector<int>& getStepValues() const { return stepvalues_; }
 
     void setWarmupEpochs(int we) { warmup_epochs_ = we; }
@@ -198,7 +198,7 @@ static SolverParams* parseSolverParams(SolverParameter* p)
   sp->setTestEpoch(p->test_epoch());
 
   sp->setSolverType(p->type());
-  
+
   sp->setGlobalFlag(p->global());
 
   return sp;

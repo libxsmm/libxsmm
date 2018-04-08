@@ -94,7 +94,7 @@ void initBuffer(void* ptr, int dtype, int vnorm, int fanin, int fanout, long lon
     if(filler.compare("ZERO") == 0)
       for(long long int i=0; i<size; i++)
         p[i] = 0;
-    else 
+    else
       printf("Weight filling for int16 not implemented!\n");
   }
 }

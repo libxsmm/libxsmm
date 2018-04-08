@@ -94,7 +94,7 @@ class TensorBuf {
     void setBuffer(void* bptr) { buf_ = bptr; }
     void* getBuffer() { return buf_; }
 
-    void setLPBuffer(void* bptr) { lpbuf_ = bptr; } 
+    void setLPBuffer(void* bptr) { lpbuf_ = bptr; }
     void setLPSF(unsigned char sf) { sf_ = sf; }
 
     void* getLPBuffer() { return lpbuf_; }
@@ -163,7 +163,7 @@ class Tensor
 
     Shape *getShape() { return &shape_; }
 
-    // Act, wt, shared, private, generic 
+    // Act, wt, shared, private, generic
     void setType(TensorType tt)	{ tType_ = tt; }
     int getType() { return tType_; }
 

@@ -65,13 +65,13 @@ void PoolXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int *maskp, i
   int tp_ipad = gp->ipad_h;
   int tp_opad = gp->opad_h;
   int lp_opad = gp->opad_w;
-  
+
   bool needs_conversion = false;
 
   if(t_pad || l_pad)
   {
     if ((ofh - 1) * stride_h >= ifh + t_pad) ofh--;
-    if ((ofw - 1) * stride_w >= ifw + l_pad) ofw--;		
+    if ((ofw - 1) * stride_w >= ifw + l_pad) ofw--;
   }
 
   __assume_aligned(inp,64);
@@ -88,7 +88,7 @@ void PoolXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int *maskp, i
         int (* __restrict mask)[nBOfm][ofh][ofw][VLEN] = (int (*)[*][*][*][VLEN])maskp;
 
 #ifdef _OPENMP
-#pragma omp parallel for collapse(2) 
+#pragma omp parallel for collapse(2)
 #endif
         for(int img = 0; img < nImg; img++) {
           for(int ofm1=0; ofm1 < nBOfm; ofm1++) {
@@ -113,7 +113,7 @@ void PoolXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int *maskp, i
 #pragma simd
                     for(int ofm2=0; ofm2 < VLEN; ofm2++) {
                       if(input[img][ofm1][ij+kj][ii+ki][ofm2] > lcl_output[oj][oi][ofm2])
-                      {	
+                      {
                         lcl_output[oj][oi][ofm2] = input[img][ofm1][ij+kj][ii+ki][ofm2];
                         mask[img][ofm1][oj][oi][ofm2] = index + ofm2;
                       }
@@ -165,7 +165,7 @@ void PoolXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int *maskp, i
                   for(int ki = 0; ki < kw; ki++) {
                     if(ii+ki < 0 || ii+ki >= ifw) continue;
 #pragma simd
-                    for(int ofm2=0; ofm2 < VLEN; ofm2++) 
+                    for(int ofm2=0; ofm2 < VLEN; ofm2++)
                       lcl_output[oj][oi][ofm2] += input[img][ofm1][ij+kj][ii+ki][ofm2];
                   }
                 }
@@ -231,7 +231,7 @@ void PoolXSMM::backPropagate(TensorBuf *deloutpb, int *maskp, TensorBuf *delinpb
   if(t_pad || l_pad)
   {
     if ((ofh - 1) * stride_h >= ifh + t_pad) ofh--;
-    if ((ofw - 1) * stride_w >= ifw + l_pad) ofw--;		
+    if ((ofw - 1) * stride_w >= ifw + l_pad) ofw--;
   }
 
   __assume_aligned(delinp,64);
@@ -328,7 +328,7 @@ void PoolXSMM::backPropagate(TensorBuf *deloutpb, int *maskp, TensorBuf *delinpb
         }
       }
       break;
-  }		
+  }
 
   delinpb->setLayoutType(LIBXSMM_CUSTOM_LAYOUT);
 }

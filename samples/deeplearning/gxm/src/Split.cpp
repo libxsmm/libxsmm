@@ -319,7 +319,7 @@ void SplitNode::backPropagate()
 
         size = tenTopData_[i]->getBufferSize()/sizeof(float);
         string s = nname_ + "_delOutp_" + to_string(i);
-        MeanOfLayer((char*)s.c_str(), ptr, size); 
+        MeanOfLayer((char*)s.c_str(), ptr, size);
       }
     }
 

@@ -98,7 +98,7 @@ DropoutNode::DropoutNode(DropoutParams* p, MLEngine* e): NNNode(p, e)
   // Note: we have no knowledge of the machine parameters here, so effectively this is single-machine config
   tenTopData_->setBufferSize(tsize);
 
-  if(!e->is_inference_only()) 
+  if(!e->is_inference_only())
   {
     if(bp_flag_)
     {
@@ -139,9 +139,9 @@ DropoutNode::DropoutNode(DropoutParams* p, MLEngine* e): NNNode(p, e)
   gparams_.nInput = bs->dims[1];
   gparams_.nOutput = gparams_.nInput;
   gparams_.iHeight = bs->dims[2];
-  gparams_.iWidth = bs->dims[3]; 
+  gparams_.iWidth = bs->dims[3];
   gparams_.oHeight = ts.dims[2];
-  gparams_.oWidth = ts.dims[3]; 
+  gparams_.oWidth = ts.dims[3];
   gparams_.data_type = dtype;
 
   gparams_.num_threads = e->get_num_threads();
@@ -164,7 +164,7 @@ void DropoutNode::forwardPropagate()
   int *mask = (int *)tenMask_;
  // unsigned int *seeds = tenSeeds_;
 
-#ifdef DEBUG	
+#ifdef DEBUG
   printf("Executing FP %s: input %p, output %p\n",NNNode::nname_.c_str(), bot, top);
   printf("Inputs: %d\n",gparams_.nInput);
   printf("Outputs: %d\n",gparams_.nOutput);
@@ -179,7 +179,7 @@ void DropoutNode::forwardPropagate()
   {
 
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
     for (int i = 0; i < M*N*H*W; i++)
     {
@@ -193,7 +193,7 @@ void DropoutNode::forwardPropagate()
   else
   {
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
     for (int i = 0; i < M*N*H*W; i++)
       top[i] = bot[i];
@@ -224,7 +224,7 @@ void DropoutNode::backPropagate()
 
   int *mask = (int *)tenMask_;
 
-#ifdef DEBUG	
+#ifdef DEBUG
   printf("Executing BP %s: grad_output %p, grad_input %p\n",NNNode::nname_.c_str(), gtop, gbot);
   printf("Grad Outputs: %d\n", N*H*W);
   printf("Grad Inputs: %d\n", N*H*W);
@@ -234,7 +234,7 @@ void DropoutNode::backPropagate()
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (int i = 0; i < M*N*H*W; i++) 
+  for (int i = 0; i < M*N*H*W; i++)
     gbot[i] = gtop[i] * mask[i] * scale_;
 
 #ifdef DEBUG

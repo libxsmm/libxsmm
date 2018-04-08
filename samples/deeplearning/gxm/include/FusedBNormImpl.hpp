@@ -46,7 +46,7 @@ typedef struct {
   int nOutput;
   int pad_h, pad_w;
   int ipad_h, ipad_w;
-  int stride_h, stride_w; 
+  int stride_h, stride_w;
   int iHeight, iWidth;
   int oHeight, oWidth;
   int batch_size;

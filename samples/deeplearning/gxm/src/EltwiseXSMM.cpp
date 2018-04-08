@@ -50,7 +50,7 @@ void EltwiseXSMM::convert_NCHW_to_NCHWV(float *inp, int n, int c, int h, int w, 
         for(int fw=0; fw < w; fw++)
           for(int v=0; v<VLEN; v++)
           {
-            int ii = img*c*h*w + fm*h*w*VLEN + v*h*w + fh*w + fw; 
+            int ii = img*c*h*w + fm*h*w*VLEN + v*h*w + fh*w + fw;
             outp[index++] = inp[ii];
           }
 }
@@ -69,7 +69,7 @@ void EltwiseXSMM::convert_NCHWV_to_NCHW(float *inp, int n, int c, int h, int w, 
         for(int fw=0; fw < w; fw++)
           for(int v=0; v<VLEN; v++)
           {
-            int oi = img*c*h*w + fm*h*w*VLEN + v*h*w + fh*w + fw; 
+            int oi = img*c*h*w + fm*h*w*VLEN + v*h*w + fh*w + fw;
             outp[oi] = inp[index++];
           }
 }
@@ -84,7 +84,7 @@ void EltwiseXSMM::forwardPropagate(vector<TensorBuf*>& inpb, TensorBuf *outpb, i
 
   int nImg = gp->batch_size;
   int nOfm = gp->nOutput;
-  int rem = 0; 
+  int rem = 0;
   int ifh = gp->iHeight;
   int ifw = gp->iWidth;
   int ofh = gp->oHeight;
@@ -126,7 +126,7 @@ void EltwiseXSMM::forwardPropagate(vector<TensorBuf*>& inpb, TensorBuf *outpb, i
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-        for(int i=0; i < size; i++) 
+        for(int i=0; i < size; i++)
           out[i] = inp_r[i] + inp_nr[i];
       }
       break;

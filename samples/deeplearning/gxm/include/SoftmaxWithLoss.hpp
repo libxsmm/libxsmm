@@ -83,21 +83,21 @@ class SoftmaxLossNode : public NNNode
       for(int i=0; i<ts_.ndims; i++)
         size *= ts_.dims[i];
 
-      if(dtype == DT_FLOAT) 
+      if(dtype == DT_FLOAT)
         size = size*sizeof(float);
       else if(dtype == DT_INT)
         size = size*sizeof(int);
 
       // Set the logical size of the tensor buffer for bufId=0 (forward data buffer).
       // Note: we have no knowledge of the machine parameters here, so effectively this is single-machine config
-      this->tenTop_->setDataBufferSize(DATA, size);		
+      this->tenTop_->setDataBufferSize(DATA, size);
 
       // Register output tensor in tensorMap
       bool inserted = e->register_tensor(NNNode::top_, this->tenTop_);
       if(!inserted)
         printf("Warning: Tensor %s already registered\n",NNNode::top_.c_str());
 
-      if(!e->is_inference_only()) 
+      if(!e->is_inference_only())
       {
 
         if(NNNode::bp_flag_)
@@ -108,7 +108,7 @@ class SoftmaxLossNode : public NNNode
           size = 1;
           for(int i=0; i<bs->ndims; i++)
             size = size*bs->dims[i];
-          if(dtype == DT_FLOAT) 
+          if(dtype == DT_FLOAT)
             size = size*sizeof(float);
           else if(dtype == DT_INT)
             size = size*sizeof(int);
@@ -116,12 +116,12 @@ class SoftmaxLossNode : public NNNode
           // Set the size of the input-gradient buffer
           tenBotDiff_->setBufferSize(size);
         }
-      }				
+      }
     }
 
     virtual ~SoftmaxLossNode(void) {}
 
-    void createTasks(list<Task*>, int);		
+    void createTasks(list<Task*>, int);
     void createPersistentTask();
 
     void createStrategy(int);

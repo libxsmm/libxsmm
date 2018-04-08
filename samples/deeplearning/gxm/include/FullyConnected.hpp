@@ -192,7 +192,7 @@ static MLParams* parseFCParams(NodeParameter* np)
 class FCNode: public NNNode
 {
   public:
-    FCNode(FCParams *p, MLEngine* e); 
+    FCNode(FCParams *p, MLEngine* e);
 
     virtual ~FCNode(void) {}
 

@@ -43,7 +43,7 @@
 		exit(-1); \
     } \
 } while(0)
-	
+
 #define MIN_VAL -FLT_MAX
 
 #define STATFREQ 1

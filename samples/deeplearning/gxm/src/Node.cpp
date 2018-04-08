@@ -41,7 +41,7 @@ bool addedFD, addedBD;
 
 void NNNode::createNNGraph(int mode)
 {
-  if(mode == TRAIN) 
+  if(mode == TRAIN)
   {
     Task *fTask = this->getBasicTask(BASIC_TASK_FORW);
     Task *bTask = this->getBasicTask(BASIC_TASK_BACK);
@@ -62,7 +62,7 @@ void NNNode::createNNGraph(int mode)
 #endif
     }
 
-    for(auto it=nextNodes_.begin(); it != nextNodes_.end(); it++) 
+    for(auto it=nextNodes_.begin(); it != nextNodes_.end(); it++)
     {
       NNNode *nNode = *it;
       Task *fnTask = nNode->getBasicTask(BASIC_TASK_FORW);
@@ -81,7 +81,7 @@ void NNNode::createNNGraph(int mode)
       if(wTask != NULL && bnTask != NULL)
         if(addedBD)
           printf("weight task (node %s) %p depends on backward task (node %s) %p\n", s.c_str(), wTask, nNode->nname_.c_str(), bnTask);
-#endif			
+#endif
       nNode->createNNGraph(mode);
     }
 
@@ -94,20 +94,20 @@ void NNNode::createNNGraph(int mode)
 #ifdef DEBUG
         if(addedFD)
           printf("backward task (node %s) %p depends on forward task (node %s) %p\n",s.c_str(), bTask, s.c_str(), fTask);
-#endif			
+#endif
       }
-    }		
+    }
   }
-  else if(mode == TEST) 
+  else if(mode == TEST)
   {
     Task *fTask = this->getBasicTask(BASIC_TASK_FORW);
 
-    for(auto it=nextNodes_.begin(); it != nextNodes_.end(); it++) 
+    for(auto it=nextNodes_.begin(); it != nextNodes_.end(); it++)
     {
       NNNode *nNode = *it;
       Task *fnTask = nNode->getBasicTask(BASIC_TASK_FORW);
       fTask->addForwDep(fnTask);
-#ifdef DEBUG			
+#ifdef DEBUG
       printf("forward task %p depends on forward task %p\n",fnTask,fTask);
 #endif
       nNode->createNNGraph(mode);

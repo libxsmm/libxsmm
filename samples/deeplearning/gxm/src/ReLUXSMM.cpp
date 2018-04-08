@@ -52,9 +52,9 @@ void ReLUXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int tid)
   int size = nImg * nOfm * ofh * ofw;
 
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
-#pragma simd 
+#pragma simd
   for(int i=0; i<size; i++) {
     if(inp[i] < 0.0)
       outp[i] = 0.0;
@@ -103,9 +103,9 @@ void ReLUXSMM::backPropagate(TensorBuf *inpb, TensorBuf *deloutpb, TensorBuf *de
   int size = nImg * nOfm * ofh * ofw;
 
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
-#pragma simd 
+#pragma simd
   for(int i=0; i<size; i++) {
     if(inp[i] > 0.0)
       delinp[i] = deloutp[i];

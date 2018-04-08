@@ -51,13 +51,13 @@ class PoolingParams : public NNParams
     PoolingParams(void)  {}
 
     ~PoolingParams(void) {}
-  
+
     void set_kernel_dims(int kdims, int ksize)
     {
       for(int i=0; i<kdims; i++)
         kernel_dim_.push_back(ksize);
     }
-	
+
     void set_kernel_dims(int kh, int kw, int kd)
     {
       kernel_dim_.push_back(kh);
@@ -66,7 +66,7 @@ class PoolingParams : public NNParams
     }
 
     vector<int>& get_kernel_dims() { return kernel_dim_; }
-	
+
     void set_strides(int sdims, int stride)
     {
       for(int i=0; i<sdims; i++)
@@ -79,7 +79,7 @@ class PoolingParams : public NNParams
       strides_.push_back(sw);
       strides_.push_back(sd);
     }
-	
+
     vector<int>& get_strides() { return strides_; }
 
     void set_pads(int pdims, int pad)
@@ -96,7 +96,7 @@ class PoolingParams : public NNParams
     }
 
     vector<int>& get_pads() { return pads_; }
-	
+
     void set_pool_mode(int m) { pool_mode_ = m; }
     int get_pool_mode() { return pool_mode_; }
 
@@ -108,7 +108,7 @@ class PoolingParams : public NNParams
 
     void set_algo_type(int at) { algotype_ = at; }
     int get_algo_type() { return algotype_; }
-	
+
   protected:
     vector<int> kernel_dim_; // Order of dimensions is Height, Width, Depth (for 3D Pooling)
     vector<int> strides_;    // Order follows kernel dimension
@@ -117,7 +117,7 @@ class PoolingParams : public NNParams
 };
 
 static MLParams* parsePoolingParams(NodeParameter* np)
-{  
+{
 
   PoolingParams* pp = new PoolingParams();
 
@@ -130,12 +130,12 @@ static MLParams* parsePoolingParams(NodeParameter* np)
   pp->set_node_type(np->type());
 
   //Set tensor names
-  assert(np->bottom_size() == 1); 
+  assert(np->bottom_size() == 1);
   assert(!np->bottom(0).empty());
   pp->set_bottom_names(np->bottom(0));
 
 
-  assert(np->top_size() == 1); 
+  assert(np->top_size() == 1);
   assert(!np->top(0).empty());
   pp->set_top_names(np->top(0));
 

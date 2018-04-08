@@ -69,7 +69,7 @@ class ReLUParams : public NNParams
 };
 
 static MLParams* parseReLUParams(NodeParameter* np)
-{  
+{
   ReLUParams* rp = new ReLUParams();
 
   // Set name of node
@@ -128,11 +128,11 @@ class ReLUNode : public NNNode
     }
 
     Tensor* tenTop_;	// Output tensor pointer
-    Tensor* tenBot_;	// Input tensor pointer	
+    Tensor* tenBot_;	// Input tensor pointer
     ReLUImplParams gparams_;
     TensorBuf *tenBotDiff_, *tenBotData_; // Data & Gradients with respect to input
     TensorBuf *tenTopData_, *tenTopDiff_; // Output data
-    
+
     int count_;
 
     int bot_cengine_;

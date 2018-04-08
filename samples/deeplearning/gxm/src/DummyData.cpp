@@ -68,7 +68,7 @@ DummyDataNode::DummyDataNode(DummyDataParams* p, MLEngine* e) : NNNode(p, e)
       for(int j=0; j<ts->ndims; j++)
         size *= ts->dims[j];
 
-      if(dtype == DT_FLOAT) 
+      if(dtype == DT_FLOAT)
         size = size*sizeof(float);
       else if(dtype == DT_INT16)
         size = size*sizeof(short int);
@@ -87,7 +87,7 @@ printf("gbs = %d\n", global_batch_size_);
       s->SetGlobalMinibatchSize(global_batch_size_);
 #endif
 
-      if(p->get_num_train_files() != 0)	
+      if(p->get_num_train_files() != 0)
         e->set_num_train_batches(p->get_num_train_files()/ts->dims[0]);
 
       if(p->get_num_test_files() != 0)
@@ -96,7 +96,7 @@ printf("gbs = %d\n", global_batch_size_);
         e->set_num_test_views(1);
       }
 
-      e->set_batch_size(ts->dims[0]);		
+      e->set_batch_size(ts->dims[0]);
       bool inserted = e->register_tensor(top_[i], INPUT, tenTop_[i]);
       if(!inserted)
         printf("Warning: Tensor %s already registered\n",top_[i].c_str());
@@ -116,7 +116,7 @@ printf("gbs = %d\n", global_batch_size_);
 
       // FIXME: the data type should be set elsewhere...
       dtype = DT_INT;
-      tenTopData_[i]->setDataType(dtype);		
+      tenTopData_[i]->setDataType(dtype);
       tenTopData_[i]->setBufferType(DATA);
       tenTop_[i]->setDataBufferSize(DATA, ts->dims[0]*sizeof(int));
       tenTop_[i]->setShape(ts);
@@ -149,7 +149,7 @@ void DummyDataNode::fillData(float* ptr, long long int size)
 #endif
   }
   if(filler_type_.compare("constant") == 0)
-  {	
+  {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -193,7 +193,7 @@ void DummyDataNode::fillData(int* ptr, long long int size)
 
   }
 }
-		
+
 void DummyDataNode::fillData(short int* ptr, long long int size)
 {
   if(filler_type_.compare("rand") == 0)
@@ -222,7 +222,7 @@ void DummyDataNode::fillData(short int* ptr, long long int size)
     printf("\n");
 #endif
 
-  }	
+  }
 }
 
 void DummyDataNode::forwardPropagate()
@@ -239,18 +239,18 @@ void DummyDataNode::forwardPropagate()
     if(dtype == DT_FLOAT)
     {
       float* top = (float*)(tenTopData_[i]->getBuffer());
-      fillData(top, bytes/sizeof(float));	
-#ifdef DEBUG		
+      fillData(top, bytes/sizeof(float));
+#ifdef DEBUG
       printf("Executing FP %s: Data %p\n",node_name_.c_str(), top);
-#endif		
+#endif
     }
     else if(dtype == DT_INT16)
     {
       short int* top = (short int*)(tenTopData_[i]->getBuffer());
       fillData(top, bytes/sizeof(short int));
-#ifdef DEBUG		
+#ifdef DEBUG
       printf("Executing FP %s: Data %p\n",node_name_.c_str(), top);
-#endif		
+#endif
     }
     else if(dtype == DT_INT)
     {

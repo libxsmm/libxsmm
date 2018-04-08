@@ -59,8 +59,8 @@ using google::protobuf::io::ZeroCopyOutputStream;
 using google::protobuf::io::CodedOutputStream;
 using google::protobuf::Message;
 
-bool ReadProtoFromText(string, Message*); 
-bool ReadProtoFromBinary(string, Message*); 
+bool ReadProtoFromText(string, Message*);
+bool ReadProtoFromBinary(string, Message*);
 void WriteProtoToText(const Message&, string);
 void ReadNWriteMeanFile(string, Message*, string);
 void initSeeds(unsigned int*, int);

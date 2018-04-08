@@ -62,7 +62,7 @@ class MLNode
 // Constructor should create Tensors for its output and internal buffers and assign type to it
 
 template <typename NType, typename PType>
-MLNode *CreateMLNode(MLParams *param, MLEngine *engine) 
+MLNode *CreateMLNode(MLParams *param, MLEngine *engine)
 {
   NType *obj = new NType(dynamic_cast<PType*>(param), engine);
   return dynamic_cast<MLNode*>(obj);

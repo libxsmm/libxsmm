@@ -61,8 +61,8 @@ class EltwiseImpl
 {
   protected:
     EltwiseImplParams *gp;
-    int engine; 
-    TensorLayoutType top_layout_type; 
+    int engine;
+    TensorLayoutType top_layout_type;
     vector<TensorLayoutType> gbot_layout_type;
     void *top_layout;
     vector<void*> gbot_layout;

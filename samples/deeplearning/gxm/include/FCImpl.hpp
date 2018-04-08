@@ -96,7 +96,7 @@ class FCImpl
     {
       switch(engine)
       {
-        case XSMM: 
+        case XSMM:
           weightUpdate(deloutp, inp, delweightp, delbiasp, 0);
           break;
       }

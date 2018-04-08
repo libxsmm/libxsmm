@@ -126,7 +126,7 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
   if(out_dtype == DT_FLOAT)
     tsize = telem*sizeof(float) + tstats*sizeof(double);
   else if(out_dtype == DT_DFP16)
-    tsize = (telem + tstats)*sizeof(short); 
+    tsize = (telem + tstats)*sizeof(short);
 
   tenTopData_->setBufferSize(tsize);
 
@@ -164,11 +164,11 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
   for(int i=0; i<ws_.ndims; i++)
     welem = welem*ws_.dims[i];
 
-  // size of weights -- always in FP32. 
+  // size of weights -- always in FP32.
   if((in_dtype == DT_FLOAT) && (out_dtype == DT_FLOAT))
     wsize = welem*sizeof(float);
   else if(in_dtype == DT_DFP16)
-    wsize = welem*sizeof(float); 
+    wsize = welem*sizeof(float);
 
   tenWeightData_->setBufferSize(wsize);
 
@@ -181,7 +181,7 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
 
   // Create bias tensor
   long long int bisize;
-  
+
   Shape bis;
   {
     if(bias_term)
@@ -214,7 +214,7 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
     if(bp_flag_)
     {
       tenBotDiff_ = tenBot_->addBuf();		// DIFF type and index
-      tenBotDiff_->setDataType(in_dtype); 
+      tenBotDiff_->setDataType(in_dtype);
       tenBotDiff_->setBufferType(DIFF);
 
       long long int bsize = bs->dims[0] * bs->dims[1] * (bs->dims[2] + 2*vp[0]) * (bs->dims[3] + 2*vp[1]);
@@ -223,7 +223,7 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
           (in_dtype == DT_DFP16 && out_dtype == DT_FLOAT))
         bsize = bsize*sizeof(float);
       else if(in_dtype == DT_DFP16 && out_dtype == DT_DFP16)
-        bsize = bsize*sizeof(short);  
+        bsize = bsize*sizeof(short);
 
       // Set the size of the input-gradient buffer
       tenBotDiff_->setBufferSize(bsize);
@@ -277,7 +277,7 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
   if(!inserted)
     printf("Warning: Tensor %s already registered\n",weight_.c_str());
 
-  // Register bias tensor in bias tensor map	
+  // Register bias tensor in bias tensor map
   if(bias_term)
   {
     inserted = e->register_tensor(bias_, CONVBIAS, tenBias_);
@@ -316,7 +316,7 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
   }
   else
   {
-    gparams_.ipad_h = 0; 
+    gparams_.ipad_h = 0;
     gparams_.ipad_w = 0;
     gparams_.ipad_d = 0;
   }
@@ -341,7 +341,7 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
   gparams_.kw = ws_.dims[3];
   gparams_.kd = ws_.dims[4];
 
-  gparams_.bias_term = bias_term; 
+  gparams_.bias_term = bias_term;
   gparams_.relu = p->get_fused_relu();
   gparams_.bwd_relu = p->get_bwd_relu();
 
@@ -359,7 +359,7 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
   // get engine
   eptr_ = e;
 
-#ifdef USE_MLSL	
+#ifdef USE_MLSL
   MLSL::DataType dt = MLSL::DT_FLOAT;
   MLSL::OperationRegInfo *myRegInfo;
   MLSL::Session *s = eptr_->get_session();
@@ -577,7 +577,7 @@ void ConvNode::forwardPropagate()
   int kh = gparams_.kh;
   int kw = gparams_.kw;
 
-#ifndef NDEBUG	
+#ifndef NDEBUG
   //	printf("Executing FP %s: input %p, weights %p, output %p\n",NNNode::nname_.c_str(), bot, wt, top);
   printf("Executing FP %s\n",NNNode::nname_.c_str());
   printf("Inputs: %d x %d x %d\n",ifm, ifh, ifw);
@@ -829,7 +829,7 @@ void ConvNode::weightUpdate()
   int kh = gparams_.kh;
   int kw = gparams_.kw;
 
-#ifdef DEBUG	
+#ifdef DEBUG
   //	printf("Executing WU %s: grad_output %p, grad_weights %p, input %p\n",NNNode::nname_.c_str(), gtop, gwt, bot);
   printf("Executing WU %s\n",NNNode::nname_.c_str());
   printf("Grad Outputs: %d x %d x %d\n",ofm, ofh,ofw);
@@ -967,7 +967,7 @@ void ConvNode::solverStep()
     bias = (bias_prv_ptr == NULL) ? bias_ptr : bias_prv_ptr;
 
     gbias_prv_ptr = (float*)tenBiasDiff_->getPrivBuffer();
-    gbias_ptr = (float*)(tenBiasDiff_->getBuffer()); 
+    gbias_ptr = (float*)(tenBiasDiff_->getBuffer());
     gbias = (gbias_prv_ptr == NULL) ? gbias_ptr : gbias_prv_ptr;
     ibias = (float*)(tenBiasInc_->getBuffer());
   }
@@ -996,7 +996,7 @@ void ConvNode::solverStep()
       MeanOfLayer((char*)s.c_str(), bias, ofm);
     }
   }
-#endif 
+#endif
 
   int num_nodes = 1;
 

@@ -79,7 +79,7 @@ class DropoutParams : public NNParams
 };
 
 static MLParams* parseDropoutParams(NodeParameter* np)
-{  
+{
   DropoutParams* dp = new DropoutParams();
 
   // Set name of node

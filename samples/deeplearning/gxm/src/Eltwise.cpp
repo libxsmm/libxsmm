@@ -55,7 +55,7 @@ EltwiseNode::EltwiseNode(EltwiseParams* p, MLEngine* e) : NNNode(p, e)
   tenTopData_ = tenTop_->getBuf(DATA);
   tenTopData_->setBufferType(DATA);
 
-#ifdef DEBUG    
+#ifdef DEBUG
   printf("bottom name %s\n",bottom_[0].c_str());
 #endif
 
@@ -91,7 +91,7 @@ EltwiseNode::EltwiseNode(EltwiseParams* p, MLEngine* e) : NNNode(p, e)
 
     gparams_.nInput[i] = bs->dims[1];
 
-    if(!e->is_inference_only()) 
+    if(!e->is_inference_only())
     {
       if(NNNode::bp_flag_)
       {
@@ -178,7 +178,7 @@ void EltwiseNode::configure(int engine)
 
 void EltwiseNode::forwardPropagate()
 {
-#ifdef DEBUG	
+#ifdef DEBUG
   float* bot;
 
   float* top = (float*)(tenTopData_->getBuffer());

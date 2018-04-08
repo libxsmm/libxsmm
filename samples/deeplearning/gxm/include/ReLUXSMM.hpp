@@ -34,12 +34,12 @@
 #include "ReLUImpl.hpp"
 #include "check.hpp"
 
-class ReLUXSMM : public ReLUImpl 
+class ReLUXSMM : public ReLUImpl
 {
   protected:
 
   public:
-    ReLUXSMM(ReLUImplParams* gp, int engine) : ReLUImpl(gp, engine) 
+    ReLUXSMM(ReLUImplParams* gp, int engine) : ReLUImpl(gp, engine)
     {
       top_layout_type = LIBXSMM_CUSTOM_LAYOUT;
       top_layout = NULL;

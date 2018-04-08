@@ -39,7 +39,7 @@ void check_physical_pad(const char *s, float *tensor, int nImg, int nBfm, int fh
 
   float (* __restrict tensor_vla)[nBfm][fhi][fwi][ifm] = (float (*)[*][*][*][ifm])tensor;
 
-  if (iph > 0 || iph > 0) { 
+  if (iph > 0 || iph > 0) {
     for (int img = 0; img < nImg; img++) {
       for (int fm = 0; fm < nBfm; fm++) {
         for (int w = 0; w < fwi; w++) {
@@ -88,7 +88,7 @@ void check_physical_pad(const char *s, short *tensor, int nImg, int nBfm, int fh
 
   short (* __restrict tensor_vla)[nBfm][fhi][fwi][ifm] = (short (*)[*][*][*][ifm])tensor;
 
-  if (iph > 0 || iph > 0) { 
+  if (iph > 0 || iph > 0) {
     for (int img = 0; img < nImg; img++) {
       for (int fm = 0; fm < nBfm; fm++) {
         for (int w = 0; w < fwi; w++) {
@@ -159,14 +159,14 @@ void MeanOfLayer(char *s, short *array, int size)
     }
 #endif
     if(array[i] != 0) nnz++;
-    if(array[i] > max) 
+    if(array[i] > max)
     {
-      max = array[i]; 
+      max = array[i];
       which_max = i;
     }
-    if(array[i] < min) 
+    if(array[i] < min)
     {
-      min = array[i]; 
+      min = array[i];
       which_min = i;
     }
     sum += array[i];
@@ -211,24 +211,24 @@ void MeanOfLayer(char *s, float *array, int size)
     }
 #endif
     if(array[i] != 0) nnz++;
-    if(array[i] > max) 
+    if(array[i] > max)
     {
-      max = array[i]; 
+      max = array[i];
       which_max = i;
     }
-    if(array[i] < min) 
+    if(array[i] < min)
     {
-      min = array[i]; 
+      min = array[i];
       which_min = i;
     }
     sum += array[i];
-    if(array[i] > 0) 
+    if(array[i] > 0)
     {
       psum += array[i];
       pc++;
     }
-    else if(array[i] < 0) 
-    {  
+    else if(array[i] < 0)
+    {
       nsum += array[i];
       nc++;
     }
@@ -250,7 +250,7 @@ void MeanOfLayer(char *s, float *array, int size)
 
   //  printf("layer:%s(%d) mean:%f stddev=%f max:%f(%d) min:%f(%d) \n", layer, size,  mean, stddev, max, which_max, min, which_min);
 
-//  printf("%s:[%d] mean:%.10f (abs mean:%.10f) stddev:%.10f (abs stdev %.10f) max:%.10f(%d) min:%.10f(%d) nnz-perc:%.10f(%d:f=%d l=%d) \n", 
+//  printf("%s:[%d] mean:%.10f (abs mean:%.10f) stddev:%.10f (abs stdev %.10f) max:%.10f(%d) min:%.10f(%d) nnz-perc:%.10f(%d:f=%d l=%d) \n",
 //      s, size,  mean, absmean, stddev, abstddev, max, which_max, min, which_min, ((double)nnz)/((double)size), nnz, first_nz, last_nz);
   //printf("%s %.10f %.10f %.10f %.10f\n", s, mean, stddev, max, min);
   //printf("%s %10g %10g %10g %10g(%d) %10g(%d), nnz-perc:%.10g(%d:f=%d l=%d)\n", s, mean, absmean, stddev, max, which_max, min, which_min, ((double)nnz)/((double)size), nnz, first_nz, last_nz);
@@ -292,24 +292,24 @@ void MeanOfLayer(char *s, double *array, int size)
     }
 #endif
     if(array[i] != 0) nnz++;
-    if(array[i] > max) 
+    if(array[i] > max)
     {
-      max = array[i]; 
+      max = array[i];
       which_max = i;
     }
-    if(array[i] < min) 
+    if(array[i] < min)
     {
-      min = array[i]; 
+      min = array[i];
       which_min = i;
     }
     sum += array[i];
-    if(array[i] > 0) 
+    if(array[i] > 0)
     {
       psum += array[i];
       pc++;
     }
-    else if(array[i] < 0) 
-    {  
+    else if(array[i] < 0)
+    {
       nsum += array[i];
       nc++;
     }
@@ -331,7 +331,7 @@ void MeanOfLayer(char *s, double *array, int size)
 
   //  printf("layer:%s(%d) mean:%f stddev=%f max:%f(%d) min:%f(%d) \n", layer, size,  mean, stddev, max, which_max, min, which_min);
 
-//  printf("%s:[%d] mean:%.10f (abs mean:%.10f) stddev:%.10f (abs stdev %.10f) max:%.10f(%d) min:%.10f(%d) nnz-perc:%.10f(%d:f=%d l=%d) \n", 
+//  printf("%s:[%d] mean:%.10f (abs mean:%.10f) stddev:%.10f (abs stdev %.10f) max:%.10f(%d) min:%.10f(%d) nnz-perc:%.10f(%d:f=%d l=%d) \n",
 //      s, size,  mean, absmean, stddev, abstddev, max, which_max, min, which_min, ((double)nnz)/((double)size), nnz, first_nz, last_nz);
   //printf("%s %.10f %.10f %.10f %.10f\n", s, mean, stddev, max, min);
 //  printf("%s %10g %10g %10g %10g(%d) %10g(%d), nnz-perc:%.10g(%d:f=%d l=%d)\n", s, mean, absmean, stddev, max, which_max, min, which_min, ((double)nnz)/((double)size), nnz, first_nz, last_nz);
@@ -394,7 +394,7 @@ void MeanOfLayer(char *s, int *array, int size)
 
     //printf("layer:%s(%d) mean:%f stddev=%f max:%f(%d) min:%f(%d) \n", layer, size,  mean, stddev, max, which_max, min, which_min);
 
-//  printf("%s:[%d] mean:%.10f (abs mean:%.10f) stddev:%.10f (abs stdev %.10f) max:%.10f(%d) min:%.10f(%d) nnz-perc:%.10f(%d:f=%d l=%d) \n", 
+//  printf("%s:[%d] mean:%.10f (abs mean:%.10f) stddev:%.10f (abs stdev %.10f) max:%.10f(%d) min:%.10f(%d) nnz-perc:%.10f(%d:f=%d l=%d) \n",
 //      s, size,  mean, absmean, stddev, abstddev, max, which_max, min, which_min, ((double)nnz)/((double)size), nnz, first_nz, last_nz);
   printf("%s %.10f %.10f %d %d\n", s, mean, stddev, max, min);
 }

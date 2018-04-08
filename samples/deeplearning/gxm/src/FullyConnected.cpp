@@ -117,18 +117,18 @@ FCNode::FCNode(FCParams *p, MLEngine* e) : NNNode(p, e)
   if(p->get_transpose_flag())
   {
     ws_.dims[0] = bs->dims[1] * bs->dims[2] * bs->dims[3]; 	// Num input feature maps (from bottom tensor)
-    ws_.dims[1] = ts_.dims[1]; 	// Num output feature maps (from top tensor)	
+    ws_.dims[1] = ts_.dims[1]; 	// Num output feature maps (from top tensor)
     ws_.dims[2] = 1;
     ws_.dims[3] = 1;
   }
   else
   {
     ws_.dims[1] = bs->dims[1] * bs->dims[2] * bs->dims[3];   // Num input feature maps (from bottom tensor)
-    ws_.dims[0] = ts_.dims[1];             // Num output feature maps (from top tensor)	
+    ws_.dims[0] = ts_.dims[1];             // Num output feature maps (from top tensor)
     ws_.dims[2] = 1;
     ws_.dims[3] = 1;
   }
-  
+
   tenWeight_->setShape(&ws_);
   tenWeight_->setBufDataType(DATA, dtype);
   tenWeightData_ = tenWeight_->getBuf(DATA);
@@ -176,10 +176,10 @@ FCNode::FCNode(FCParams *p, MLEngine* e) : NNNode(p, e)
       bisize = bisize*sizeof(float);
     else if(dtype == DT_DFP16)
       bisize = bisize*sizeof(short int);
-    tenBiasData_->setBufferSize(bisize);	
+    tenBiasData_->setBufferSize(bisize);
 
     bfiller_type_ = p->get_bias_filler_type();
-    value_ = p->get_value();		
+    value_ = p->get_value();
   }
 
   if(!e->is_inference_only()) {
@@ -242,14 +242,14 @@ FCNode::FCNode(FCParams *p, MLEngine* e) : NNNode(p, e)
     tenBotDiff_ = NULL;
     tenWeightDiff_ = NULL;
     tenWeightInc_ = NULL;
-  } 
+  }
 
   // Register output tensor in tensor Map
   bool inserted = e->register_tensor(top_[0], ACT, tenTop_);
   if(!inserted)
     printf("Warning: Tensor %s already registered\n",top_[0].c_str());
 
-  // Register weight tensor in tensor Map	
+  // Register weight tensor in tensor Map
   inserted = e->register_tensor(weight_, FCWEIGHT, tenWeight_);
   if(!inserted)
     printf("Warning: Tensor %s already registered\n",weight_.c_str());
@@ -263,7 +263,7 @@ FCNode::FCNode(FCParams *p, MLEngine* e) : NNNode(p, e)
   }
 
   // Setup parameter structure for computation in library
-  
+
   gparams_.node_name = nname_;
   gparams_.batch_size = bs->dims[0];
   gparams_.nInput = bs->dims[1];
@@ -287,7 +287,7 @@ FCNode::FCNode(FCParams *p, MLEngine* e) : NNNode(p, e)
   //get engine
   eptr_ = e;
 
-#ifdef USE_MLSL	
+#ifdef USE_MLSL
   MLSL::DataType dt = MLSL::DT_FLOAT;
   MLSL::OperationRegInfo *myRegInfo;
   MLSL::Session *s = eptr_->get_session();
@@ -447,7 +447,7 @@ void FCNode::configure(int engine)
   }
 }
 
-void FCNode::forwardPropagate() 
+void FCNode::forwardPropagate()
 {
 
 #ifdef GETSTATS
@@ -457,7 +457,7 @@ void FCNode::forwardPropagate()
   if(gparams_.bias_term)
     bias = (float*)(tenBiasData_->getBuffer());
   float* top = (float*)(tenTopData_->getBuffer());
-#ifdef DEBUG	
+#ifdef DEBUG
 
   printf("Executing FP %s: input %p, weights %p, output %p\n",NNNode::nname_.c_str(), bot, wt, top);
   fflush(NULL);
@@ -465,11 +465,11 @@ void FCNode::forwardPropagate()
   printf("Outputs: %d x %d\n",gparams_.batch_size, gparams_.nOutput*gparams_.oHeight*gparams_.oWidth);
   printf("Weights: %d x %d x %d x %d\n", gparams_.nInput*gparams_.iHeight*gparams_.iWidth, gparams_.nOutput, gparams_.kw, gparams_.kw);
 
-#endif	
+#endif
 #endif
 
   impl->set_bot_compute_engine(bot_cengine_);
-  impl->set_top_compute_engine(top_compute_engine_);	
+  impl->set_top_compute_engine(top_compute_engine_);
 
   int size = gparams_.batch_size * gparams_.nOutput * gparams_.oHeight * gparams_.oWidth;
   float *out = (float*)(tenTopData_->getBuffer());
@@ -506,7 +506,7 @@ void FCNode::forwardPropagate()
     MeanOfLayer((char*)s.c_str(), wt, gparams_.nInput*gparams_.iHeight*gparams_.iWidth*gparams_.nOutput*gparams_.kh*gparams_.kw);
     s = nname_ + "_Outp";
     MeanOfLayer((char*)s.c_str(), top, gparams_.batch_size*gparams_.nOutput);
-    
+
     if(gparams_.bias_term)
     {
       s = nname_ + "_Bias";
@@ -516,7 +516,7 @@ void FCNode::forwardPropagate()
 #endif
 }
 
-void FCNode::backPropagate() 
+void FCNode::backPropagate()
 {
   tenTopDiff_ = tenTop_->getBuf(DIFF);
 
@@ -528,14 +528,14 @@ void FCNode::backPropagate()
   float* wt = (float*)(tenWeightData_->getBuffer());
   float* gbot = (float*)(tenBotDiff_->getBuffer());
 
-#ifdef DEBUG		
+#ifdef DEBUG
   {
     printf("Executing BP %s: grad_output %p, weights %p, grad_input %p\n",NNNode::nname_.c_str(), gtop, wt, gbot);
     printf("Grad Outputs: %d x %d\n", gparams_.batch_size, gparams_.nOutput*gparams_.oHeight*gparams_.oWidth);
     printf("Grad Inputs: %d x %d\n", gparams_.batch_size, gparams_.nInput* gparams_.iHeight * gparams_.iWidth);
     printf("Weights: %d x %d x %d x %d\n", gparams_.nOutput, gparams_.nInput*gparams_.iHeight*gparams_.iWidth, gparams_.kh, gparams_.kw);
   }
-#endif	
+#endif
 #endif
 
   int size = gparams_.batch_size * gparams_.nInput * gparams_.iHeight * gparams_.iWidth;
@@ -593,19 +593,19 @@ void FCNode::weightUpdate()
   float* gbias;
   if(gparams_.bias_term)
     gbias = (float*)(tenBiasDiff_->getBuffer());
-#ifdef DEBUG	
+#ifdef DEBUG
 
   printf("Executing WU %s: grad_output %p, grad_weights %p, grad_biases %p, input %p\n",NNNode::nname_.c_str(), gtop, gwt, gbias, bot);
   printf("Grad Outputs: %d x %d\n", gparams_.batch_size, gparams_.nOutput);
   printf("Inputs: %d x %d\n", gparams_.batch_size, gparams_.nInput*gparams_.iHeight*gparams_.iWidth);
   printf("Grad Weights: %d x %d x %d x %d\n", gparams_.nOutput, gparams_.nInput*gparams_.iHeight*gparams_.iWidth, gparams_.kh, gparams_.kw);
   printf("Grad Biases: %d\n", gparams_.nOutput);
-#endif	
+#endif
 #endif
 
-  int size = gparams_.nOutput * gparams_.nInput * gparams_.iHeight*gparams_.iWidth*gparams_.kh * gparams_.kw; 
+  int size = gparams_.nOutput * gparams_.nInput * gparams_.iHeight*gparams_.iWidth*gparams_.kh * gparams_.kw;
   float* delwt_ptr = (float*)(tenWeightDiff_->getBuffer());
-  float* delbias_ptr; 
+  float* delbias_ptr;
   if(gparams_.bias_term)
     delbias_ptr = (float*)(tenBiasDiff_->getBuffer());
 
@@ -688,11 +688,11 @@ void FCNode::solverStep()
     gbias = (float*)(tenBiasDiff_->getBuffer());
     ibias = (float*)(tenBiasInc_->getBuffer());
   }
-#ifdef DEBUG	
+#ifdef DEBUG
   printf("Executing Solver: weights %p, grad_weights %p, bias %p, grad_bias %p\n", wt, gwt, bias, gbias);
   printf("Grad Weights: %d x %d\n", gparams_.nOutput, gparams_.nInput*gparams_.iHeight*gparams_.iWidth);
   printf("Grad Biases: %d\n",gparams_.nOutput);
-#endif	
+#endif
 
   int wsize = gparams_.nInput*gparams_.iHeight*gparams_.iWidth*gparams_.kw*gparams_.kh*gparams_.nOutput;
 
@@ -799,7 +799,7 @@ void FCNode::solverStep()
   }
 #endif
 
-#ifdef GETSTATS 
+#ifdef GETSTATS
 #ifdef USE_MLSL
   unsigned int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
   if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0)

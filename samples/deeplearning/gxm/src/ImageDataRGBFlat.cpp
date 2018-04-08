@@ -79,7 +79,7 @@ void ImageDataRGBFlat::processTestMinibatch(unsigned char *inp, int tv, float *o
   unsigned char (* __restrict input)[ifh][ifw][nOfm] = (unsigned char (*)[*][*][*])inp;
   float (* __restrict output)[nOfm][ofh][ofw] = (float (*)[*][*][*])outp;
 
-  int tv2 = tv/2; 
+  int tv2 = tv/2;
 
 #ifdef _OPENMP
 #pragma omp parallel for

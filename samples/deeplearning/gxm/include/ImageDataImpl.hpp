@@ -51,7 +51,7 @@ typedef struct
 {
   bool mirror;
   bool vignette;
-  bool color_bump;	
+  bool color_bump;
 } AugmentParams;
 
 typedef struct
@@ -63,7 +63,7 @@ typedef struct
   int label;
 } ImageInfo;
 
-typedef struct 
+typedef struct
 {
   int batch_size;
   int channels;
@@ -84,7 +84,7 @@ class ImageDataImpl
     AugmentParams *ap;
     unsigned int* tenSeeds_;
   public:
-    ImageDataImpl(DataImplParams *gp_, AugmentParams *ap_): gp(gp_), ap(ap_) 
+    ImageDataImpl(DataImplParams *gp_, AugmentParams *ap_): gp(gp_), ap(ap_)
     {
       tenSeeds_ = new unsigned int[gp->threads*16];
       initSeeds(tenSeeds_, gp->threads);

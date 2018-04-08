@@ -98,7 +98,7 @@ class NNNode : public MLNode
     virtual void weightUpdate() {}
     virtual void solverStep() {}
 
-    int executeTask(int taskId) 
+    int executeTask(int taskId)
     {
       if(taskId == 0)
       {
@@ -146,13 +146,13 @@ class NNNode : public MLNode
     Task *getBasicTask(int type)
     {
       int index = -1;
-      if(type == 0 || (type == 1 && bp_flag_) || (type > 1 && has_weights_)) 
+      if(type == 0 || (type == 1 && bp_flag_) || (type > 1 && has_weights_))
         index = type;
       if(index != -1) {
         if(tBasic_[index] == NULL) tBasic_[index] = new Task(this, -1, type);
         return tBasic_[index];
       }
-      return NULL;			
+      return NULL;
     }
 
     void createNNGraph(int mode);

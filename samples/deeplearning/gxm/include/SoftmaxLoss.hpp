@@ -56,10 +56,10 @@ class SoftmaxLossParams : public NNParams
     void set_data_type(int t) { data_type_ = t; }
     int get_data_type() { return data_type_; }
 
-    void set_loss_weight(vector<float> l) 
-    { 
+    void set_loss_weight(vector<float> l)
+    {
       for(int i=0; i<l.size(); i++)
-        loss_weight_.push_back(l[i]); 
+        loss_weight_.push_back(l[i]);
     }
     const vector<float>& get_loss_weight() { return loss_weight_; }
 

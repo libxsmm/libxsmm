@@ -58,7 +58,7 @@ SoftmaxLossNode::SoftmaxLossNode(SoftmaxLossParams* p, MLEngine* e) : NNNode(p, 
   tenTopData_ = tenTop_->getBuf(DATA);
   tenTopData_->setBufferType(DATA);
   int dtype = p->get_data_type();
-  Shape *bs; 
+  Shape *bs;
 
   tenBot_.resize(bottom_.size());
   tenBotData_.resize(bottom_.size());
@@ -96,16 +96,16 @@ SoftmaxLossNode::SoftmaxLossNode(SoftmaxLossParams* p, MLEngine* e) : NNNode(p, 
   for(int i=0; i<ts_.ndims; i++)
     size *= ts_.dims[i];
 
-  if(dtype == DT_FLOAT) 
+  if(dtype == DT_FLOAT)
     size = size*sizeof(float);
   else if(dtype == DT_INT)
     size = size*sizeof(int);
 
-  tenTopData_->setBufferSize(size);		
+  tenTopData_->setBufferSize(size);
 
   loss_weight_ = p->get_loss_weight();
 
-  if(!e->is_inference_only()) 
+  if(!e->is_inference_only())
   {
     if(bp_flag_)
     {
@@ -120,7 +120,7 @@ SoftmaxLossNode::SoftmaxLossNode(SoftmaxLossParams* p, MLEngine* e) : NNNode(p, 
           size = 1;
           for(int i=0; i<bs->ndims; i++)
             size = size*bs->dims[i];
-          if(dtype == DT_FLOAT) 
+          if(dtype == DT_FLOAT)
             size = size*sizeof(float);
           else if(dtype == DT_INT)
             size = size*sizeof(int);
@@ -183,7 +183,7 @@ void SoftmaxLossNode::forwardPropagate()
   MeanOfLayer("FPOut", top, gparams_.batch_size*gparams_.nOutput);
 #endif
 
-#ifdef USE_MLSL	
+#ifdef USE_MLSL
   MPI_Allreduce(MPI_IN_PLACE, &gparams_.loss, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 
   if(node_id_ == 0 && eptr_->get_current_batch() % LOSSFREQ == 0)
@@ -205,8 +205,8 @@ void SoftmaxLossNode::backPropagate()
   int* label = (int*)(tenBotData_[1]->getBuffer());
   float* top = (float*)(tenTopData_->getBuffer());
 
-#ifdef GETSTATS	
-  printf("Executing BP %s: Grad output %p, label %p Grad input %p\n",NNNode::nname_.c_str(), top, label, gbot);	
+#ifdef GETSTATS
+  printf("Executing BP %s: Grad output %p, label %p Grad input %p\n",NNNode::nname_.c_str(), top, label, gbot);
   MeanOfLayer("BPIn", top, gparams_.batch_size*gparams_.nOutput);
 #endif
 

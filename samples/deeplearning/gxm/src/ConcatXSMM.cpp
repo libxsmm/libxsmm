@@ -43,7 +43,7 @@ void ConcatXSMM::forwardPropagate(vector<TensorBuf*>& inpb, TensorBuf *outpb, in
   int nImg = gp->batch_size;
   int nOfm = gp->nOutput;
   int nBOfm = gp->nOutput/VLEN;
-  int rem = 0; 
+  int rem = 0;
   int ifh = gp->iHeight;
   int ifw = gp->iWidth;
   int ofh = gp->oHeight;
@@ -63,14 +63,14 @@ void ConcatXSMM::forwardPropagate(vector<TensorBuf*>& inpb, TensorBuf *outpb, in
     for(int b=0; b<inpb.size(); b++) {
       int nBIfm = gp->nInput[b]/VLEN;
       float *inp __attribute__((aligned(64)));
-      inp = (float*)inpb[b]->getBuffer(); 
+      inp = (float*)inpb[b]->getBuffer();
       float (* __restrict input )[nBIfm][ifh][ifw][VLEN] = (float (*)[*][*][*][VLEN])inp;
       for(int ifm=0; ifm < nBIfm; ifm++) {
         for(int h=0; h < ifh; h++) {
           for(int w=0; w < ifw; w++) {
 #pragma simd
 #pragma vector aligned
-#pragma vector nontemporal            
+#pragma vector nontemporal
             for(int v=0; v < VLEN; v++) {
               output[img][ofm][h][w][v] = input[img][ifm][h][w][v];
             }
@@ -110,14 +110,14 @@ void ConcatXSMM::backPropagate(TensorBuf *deloutpb, vector<TensorBuf*>& delinpb,
     for(int b=0; b<delinpb.size(); b++) {
       int nBIfm = gp->nInput[b]/VLEN;
       float *delinp __attribute__((aligned(64)));
-      delinp = (float*)delinpb[b]->getBuffer(); 
+      delinp = (float*)delinpb[b]->getBuffer();
       float (* __restrict del_input)[nBIfm][ifh][ifw][VLEN] = (float (*)[*][*][*][VLEN])delinp;
       for(int ifm=0; ifm < nBIfm; ifm++) {
         for(int h=0; h < ifh; h++) {
           for(int w=0; w < ifw; w++) {
 #pragma simd
 #pragma vector aligned
-#pragma vector nontemporal            
+#pragma vector nontemporal
             for(int v=0; v < VLEN; v++) {
               del_input[img][ifm][h][w][v] = del_output[img][ofm][h][w][v];
             }

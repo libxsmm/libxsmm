@@ -92,7 +92,7 @@ ReLUNode::ReLUNode(ReLUParams* p, MLEngine* e): NNNode(p, e)
   // Note: we have no knowledge of the machine parameters here, so effectively this is single-machine config
   tenTopData_->setBufferSize(tsize);
 
-  if(!e->is_inference_only()) 
+  if(!e->is_inference_only())
   {
     if(bp_flag_)
     {
@@ -160,7 +160,7 @@ void ReLUNode::configure(int engine)
 
 void ReLUNode::forwardPropagate()
 {
-#ifdef DEBUG	
+#ifdef DEBUG
   float* bot = (float*)(tenBotData_->getBuffer());
   float* top = (float*)(tenTopData_->getBuffer());
 
@@ -208,7 +208,7 @@ void ReLUNode::backPropagate()
 
   tenTopDiff_ = tenTop_->getBuf(DIFF);
 
-#ifdef DEBUG	
+#ifdef DEBUG
   float *gtop = (float*)(tenTopDiff_->getBuffer());
   assert(gtop != NULL);
   float* gbot = (float*)(tenBotDiff_->getBuffer());
@@ -219,7 +219,7 @@ void ReLUNode::backPropagate()
   {
     printf("Inputs: %d x %d x %d x %d\n",gparams_.nInput, gparams_.iDepth, gparams_.iHeight, gparams_.iWidth);
     printf("Grad Inputs: %d x %d x %d x %d\n",gparams_.nInput, gparams_.iDepth, gparams_.iHeight, gparams_.iWidth);
-  }		
+  }
   else if(gparams_.bdims > 3)
   {
     printf("Inputs: %d x %d x %d\n",gparams_.nInput, gparams_.iHeight, gparams_.iWidth);

@@ -119,7 +119,7 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
     tsize = tsize*ts_.dims[i];
 
   // For now, we only support float
-  if(dtype == DT_FLOAT) 
+  if(dtype == DT_FLOAT)
     tsize = tsize*sizeof(float);
   else if(dtype == DT_DFP16)
     tsize = tsize*sizeof(float) + tsize*sizeof(short);
@@ -135,9 +135,9 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
   for(int i=0; i<ts_.ndims; i++)
     size = size*ts_.dims[i];
   size = size*sizeof(int);
-  tenMask_ = new int[size]; 
+  tenMask_ = new int[size];
 
-  if(!e->is_inference_only()) 
+  if(!e->is_inference_only())
   {
     if(NNNode::bp_flag_)
     {
@@ -148,14 +148,14 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
       long long int bsize = 1;
       for(int i=0; i<bs->ndims; i++)
         bsize = bsize*bs->dims[i];
-      if(dtype == DT_FLOAT) 
+      if(dtype == DT_FLOAT)
         bsize = bsize*sizeof(float);
       else if(dtype == DT_DFP16)
         bsize = bsize*sizeof(float);
 
       // Set the size of the input-gradient buffer
-      tenBotDiff_->setBufferSize(bsize);	
-    }				
+      tenBotDiff_->setBufferSize(bsize);
+    }
   }
   else
     tenBotDiff_ = NULL;
@@ -184,7 +184,7 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
   gparams_.stride_h = vs[0];
   gparams_.stride_w = vs[1];
   gparams_.stride_d = vs[2];
-  gparams_.kh = vd[0];			
+  gparams_.kh = vd[0];
   gparams_.kw = vd[1];
   gparams_.kd = vd[2];
 
@@ -201,7 +201,7 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
 
   eptr_ = e;
 
-  configure(p->get_compute_engine());	
+  configure(p->get_compute_engine());
 }
 
 void PoolingNode::configure(int engine)
@@ -214,9 +214,9 @@ void PoolingNode::configure(int engine)
   }
 }
 
-void PoolingNode::forwardPropagate() 
+void PoolingNode::forwardPropagate()
 {
-#ifdef DEBUG	
+#ifdef DEBUG
   float* bot = (float*)(tenBotData_->getBuffer());
   float* top = (float*)(tenTopData_->getBuffer());
 
@@ -231,7 +231,7 @@ void PoolingNode::forwardPropagate()
   int ofw = gparams_.oWidth;
 
   impl->set_bot_compute_engine(bot_cengine_);
-  impl->set_top_compute_engine(top_compute_engine_);	
+  impl->set_top_compute_engine(top_compute_engine_);
   impl->set_next_node_type(next_ntype_);
   impl->set_node_name(nname_);
 
@@ -278,11 +278,11 @@ void PoolingNode::forwardPropagate()
 #endif
 }
 
-void PoolingNode::backPropagate() 
+void PoolingNode::backPropagate()
 {
   tenTopDiff_ = tenTop_->getBuf(DIFF);
 
-#ifdef DEBUG	
+#ifdef DEBUG
   float *gtop = (float*)(tenTopDiff_->getBuffer());
   assert(gtop != NULL);
 

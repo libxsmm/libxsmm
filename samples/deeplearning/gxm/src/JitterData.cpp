@@ -95,7 +95,7 @@ JitterDataNode::JitterDataNode(JitterDataParams* p, MLEngine* e) : NNNode(p, e)
         size *= tts.dims[j];
 
       // Size of data tensor buffer = batch_size * channels * height * width * sizeof(float/short int)
-      if(dtype == DT_FLOAT) 
+      if(dtype == DT_FLOAT)
         size = size*sizeof(float);
       else if(dtype == DT_INT16)
         size = size*sizeof(short int);
@@ -112,7 +112,7 @@ JitterDataNode::JitterDataNode(JitterDataParams* p, MLEngine* e) : NNNode(p, e)
       tenTop_[i]->setType(LABEL);
 
       int dtype = p->get_label_data_type();
-      tenTopData_[i]->setDataType(dtype);		
+      tenTopData_[i]->setDataType(dtype);
       tenTopData_[i]->setBufferType(DATA);
 
       Shape tts;
@@ -131,7 +131,7 @@ JitterDataNode::JitterDataNode(JitterDataParams* p, MLEngine* e) : NNNode(p, e)
       assert(dtype == DT_INT);
       size = size*sizeof(int);
 
-      tenTopData_[i]->setBufferSize(size);			
+      tenTopData_[i]->setBufferSize(size);
 
       // Register output tensor in tensorMap
       bool inserted = e->register_tensor(top_[i], LABEL, tenTop_[i]);
@@ -178,10 +178,10 @@ JitterDataNode::JitterDataNode(JitterDataParams* p, MLEngine* e) : NNNode(p, e)
 
   gparams_.scalejittering_min = p->get_jitter_min();
   gparams_.scalejittering_max = p->get_jitter_max();
-  gparams_.min_percent_area = p->get_percent_min_area(); 
-  gparams_.max_percent_area = p->get_percent_max_area(); 
-  gparams_.min_aspect_ratio = p->get_min_aspect_ratio(); 
-  gparams_.max_aspect_ratio = p->get_max_aspect_ratio(); 
+  gparams_.min_percent_area = p->get_percent_min_area();
+  gparams_.max_percent_area = p->get_percent_max_area();
+  gparams_.min_aspect_ratio = p->get_min_aspect_ratio();
+  gparams_.max_aspect_ratio = p->get_max_aspect_ratio();
   gparams_.test_smaller_side = p->get_test_smaller_side();
 
   gparams_.shuffle = p->get_shuffle_flag();
@@ -225,7 +225,7 @@ JitterDataNode::JitterDataNode(JitterDataParams* p, MLEngine* e) : NNNode(p, e)
 
     e->set_num_test_batches(test_batches_);
     e->set_num_test_views(gparams_.test_views);
-  }	
+  }
   else if(mode == TEST)
   {
     int factor = batch_size_ * duplicates_;
@@ -317,9 +317,9 @@ void JitterDataNode::setupTestIndices()
   }
   idx = global_node_id_%duplicates_;
   for(int n=0; n<test_files_per_mc_; n++)
-    test_list_per_mc_[n] = test_file_index_[n*duplicates_ + idx]; 
+    test_list_per_mc_[n] = test_file_index_[n*duplicates_ + idx];
 }
-        
+
 void JitterDataNode::cropVGG(const cv::Mat& cv_img, cv::Mat& cv_cropped_img, int *h_off, int *w_off)
 {
   int img_channels = cv_img.channels();
@@ -348,7 +348,7 @@ void JitterDataNode::cropVGG(const cv::Mat& cv_img, cv::Mat& cv_cropped_img, int
 //    curr_scalejittering = r_offset[ridx_] % (scalejittering_max-scalejittering_min+1) + scalejittering_min;
     curr_scalejittering = r_offset[ridx] % (scalejittering_max-scalejittering_min+1) + scalejittering_min;
 //    ridx_++;
-    ridx++;    
+    ridx++;
   }
   else
     curr_scalejittering = (scalejittering_max+scalejittering_min)/2;
@@ -430,7 +430,7 @@ void JitterDataNode::cropTorch(const cv::Mat& cv_img, cv::Mat& cv_cropped_img, i
       didx++;
 
       if( tmp_w < img_width && tmp_h < img_height) {
-        int rw = img_width - tmp_w + 1; 
+        int rw = img_width - tmp_w + 1;
         int rh = img_height - tmp_h + 1;
 #if 0
         *w_off = c_offset[ridx_] % rw;
@@ -505,7 +505,7 @@ void JitterDataNode::imageTransform(vector<cv::Mat>& vcrop, float* outp)
 #if 0
           if(gparams_.exec_mode == TRAIN)
           {
-            if((augmentation[img] < 6) && (ap.mirror == true)) 
+            if((augmentation[img] < 6) && (ap.mirror == true))
               out_idx = ((img * nOfm + ofm) * ofh + h) * ofw + (ofw-w-1);
             else
               out_idx = ((img * nOfm + ofm) * ofh + h) * ofw + w;
@@ -515,7 +515,7 @@ void JitterDataNode::imageTransform(vector<cv::Mat>& vcrop, float* outp)
 #endif
           if(gparams_.exec_mode == TRAIN)
           {
-            if((augmentation[img] < 6) && (ap.mirror == true)) 
+            if((augmentation[img] < 6) && (ap.mirror == true))
               out_idx = img * ofh * ofw * nOfm + h * ofw * nOfm + (ofw-w-1) * nOfm + ofm;
             else
               out_idx = img * ofh * ofw * nOfm + h * ofw * nOfm + w * nOfm + ofm;
@@ -541,7 +541,7 @@ void JitterDataNode::forwardPropagate()
   float *topdata = (float*)(tenTopData_[0]->getBuffer());
   int* toplabel = (int*)(tenTopData_[1]->getBuffer());
 
-#if 0 //def DEBUG	
+#if 0 //def DEBUG
   printf("Executing FP %s: Data %p, Label %p\n", NNNode::nname_.c_str(),topdata, toplabel);
 #endif
 
@@ -568,7 +568,7 @@ void JitterDataNode::forwardPropagate()
             printf("Null data read from %s.. exiting\n",path.c_str());
             exit(1);
           }
-          
+
           labels_[i][img] = train_list_[fileidx].second;
 
 #if 0 //def DEBUG
@@ -656,7 +656,7 @@ void JitterDataNode::forwardPropagate()
       full_train_prefetch_ = true;
     }
   }
-  else if(em == TEST) {		
+  else if(em == TEST) {
     if(full_test_prefetch_) {
       for(int i=0; i<gparams_.lookahead; i++) {
         for(int img=0; img<gparams_.batch_size; img++) {
@@ -704,7 +704,7 @@ void JitterDataNode::forwardPropagate()
             printf("filename: %s label: %d\n",test_list_[fileidx].first.c_str(), labels_[i][img]);
 #endif
           }
-          ctest_pf_mb_++;		
+          ctest_pf_mb_++;
         }
       }
     }

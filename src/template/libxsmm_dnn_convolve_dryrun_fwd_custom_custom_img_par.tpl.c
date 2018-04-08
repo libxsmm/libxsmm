@@ -102,7 +102,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     my_img_start = 0;
     my_img_end = handle->desc.N;
     my_w_start = 0;
-    my_w_end = handle->ofw;    
+    my_w_end = handle->ofw;
     my_ofm_start = 0;
     my_ofm_end = handle->blocksofm;
     int rows_per_thread = (handle->ofh+handle->desc.threads-1)/handle->desc.threads;
@@ -150,7 +150,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
         for (ojb = my_h_start; ojb < my_h_end; ojb += handle->block_fwd_oj) {
-          for (oib = my_w_start; oib < my_w_end; oib += block_w) {     
+          for (oib = my_w_start; oib < my_w_end; oib += block_w) {
             for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
               for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
                 for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,my_h_end); oj += handle->fwd_ofh_rb) {
@@ -207,7 +207,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
         for (ojb = my_h_start; ojb < my_h_end; ojb += handle->block_fwd_oj) {
-          for (oib = my_w_start; oib < my_w_end; oib += block_w) {   
+          for (oib = my_w_start; oib < my_w_end; oib += block_w) {
             for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
               for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
                 for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,my_h_end); oj += handle->fwd_ofh_rb) {
