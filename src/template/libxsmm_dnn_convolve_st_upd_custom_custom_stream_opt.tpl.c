@@ -146,9 +146,10 @@ if (handle->padding_flag == 1) {
 /* Initialize base pointers */
 if (handle->padding_flag == 1) {
   if (handle->trans_ofw_ifm > 0) {
+    int imgs_per_thread = handle->desc.N/handle->desc.threads;
     input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
-    input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
-    memset( input_zero, 0, BLOCKSIFM * padded_h * ifwp_extended * handle->ifmblock * sizeof(element_input_type) );
+    input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, imgs_per_thread*ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
+    memset( input_zero, 0, imgs_per_thread*BLOCKSIFM * padded_h * ifwp_extended * handle->ifmblock * sizeof(element_input_type) );
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(5, input_padded, 0, 0, 0, 0, 0, BLOCKSIFM, padded_h, padded_w, handle->ifmblock);
     input_zero = &LIBXSMM_VLA_ACCESS(5, input_padded, ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, padded_w, handle->ifmblock);
@@ -164,7 +165,7 @@ if (handle->padding_flag == 1) {
     input_base = &LIBXSMM_VLA_ACCESS(5, input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
   }
 }
-if (  handle->ofh == 28 || handle->ofh == 35 || handle->ofh == 56 || handle->ofh == 149 || handle->ofh == 71  ||  handle->ofh == 147 || handle->ofh == 73   ) {
+if ( handle->use_nts_upd == 0 ) {
   weight_base = &LIBXSMM_VLA_ACCESS(2, per_thread_weight, 0, 0, handle->ofmblock); /* use thread-private scratchpad to accumulate weights */
 } else {
   weight_base = &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid, 0, handle->desc.threads, handle->ofmblock); /* weights are accumulated in registers and can be written straight to memory */

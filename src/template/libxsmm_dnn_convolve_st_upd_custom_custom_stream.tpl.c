@@ -161,8 +161,9 @@ if (handle->padding_flag == 1) {
 
 if ( handle->trans_ofw_ifm > 0 ) {
   if (handle->padding_flag == 1) {
-    input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
-    memset( input_zero, 0, BLOCKSIFM * padded_h * ifwp_extended * handle->ifmblock * sizeof(element_input_type) );
+    int imgs_per_thread = handle->desc.N/handle->desc.threads;
+    input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, imgs_per_thread*ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
+    memset( input_zero, 0, imgs_per_thread*BLOCKSIFM * padded_h * ifwp_extended * handle->ifmblock * sizeof(element_input_type) );
     for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
       img = imgifm1/BLOCKSIFM;
       ifm1 = imgifm1%BLOCKSIFM;

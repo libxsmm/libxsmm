@@ -1327,6 +1327,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
                 }
 
                 if (handle->ofh == 28 || handle->ofh == 35 || handle->ofh == 56 ||  handle->ofh == 71  || handle->ofh == 149 ||  handle->ofh == 147 || handle->ofh == 73  || ( handle->ofh == 14 && handle->desc.threads > 1 && ( handle->desc.C == 512 && (handle->desc.K == 1024 || handle->desc.K == 256) ) )) {
+                  if ((descriptor.use_nts == 1) && (handle->desc.threads != handle->desc.N)) {
+                    descriptor.use_nts = 0;
+                  }
                   handle->use_hybrid_wu_parallelism = 0;
                   handle->weight_copies = handle->desc.threads;
                   descriptor.ncopies = handle->weight_copies;
@@ -1375,6 +1378,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
                   handle->reduce_weights = 1;
                 }
               }
+
+              handle->use_nts_upd = descriptor.use_nts;
 
               /* NONE */
               if (handle->padding_flag == 1) {
