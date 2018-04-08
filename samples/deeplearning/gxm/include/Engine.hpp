@@ -152,7 +152,7 @@ class MLEngine
 
     bool is_inference_only() { return inferenceOnly_; }
 
-    int get_num_threads() {	return num_threads_; }
+    int get_num_threads() { return num_threads_; }
     int get_num_machines() { return num_machines_; }
     int get_num_machine_groups() { return num_machine_groups_; }
     int get_num_epochs() { return num_epochs_;}

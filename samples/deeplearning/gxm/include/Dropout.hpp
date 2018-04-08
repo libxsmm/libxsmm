@@ -136,8 +136,8 @@ class DropoutNode : public NNNode
         s->dims[i] = 0;
     }
 
-    Tensor *tenTop_;	// Output tensor pointer
-    Tensor *tenBot_;	// Input tensor pointer
+    Tensor *tenTop_; // Output tensor pointer
+    Tensor *tenBot_; // Input tensor pointer
     void *tenMask_;
     TensorBuf *tenBotDiff_, *tenBotData_; // Data & Gradients with respect to input
     TensorBuf *tenTopData_; // Output buffer

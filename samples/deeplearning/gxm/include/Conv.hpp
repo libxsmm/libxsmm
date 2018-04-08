@@ -113,7 +113,7 @@ class ConvParams : public NNParams
     void set_group(int g) { this->group_ = g;}
     int get_group() { return this->group_; }
 
-    void set_nOutput(int num_output) { this->nOutput_ = num_output;	}
+    void set_nOutput(int num_output) { this->nOutput_ = num_output; }
     int get_output() { return nOutput_; }
 
     void set_weight_filler_type(string ftype) { wfiller_type_ = ftype; }

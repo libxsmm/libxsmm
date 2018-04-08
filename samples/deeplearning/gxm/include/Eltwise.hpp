@@ -124,8 +124,8 @@ class EltwiseNode : public NNNode
         s->dims[i] = 0;
     }
 
-    Tensor* tenTop_;	// Output tensor pointer
-    vector<Tensor*> tenBot_;	// Input tensor pointer
+    Tensor* tenTop_; // Output tensor pointer
+    vector<Tensor*> tenBot_; // Input tensor pointer
     EltwiseImplParams gparams_;
     vector<TensorBuf*> tenBotDiff_, tenBotData_; // Data & Gradients with respect to input
     TensorBuf *tenTopData_, *tenTopDiff_; // Output data and gradients with respect to output

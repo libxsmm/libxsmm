@@ -59,7 +59,7 @@ class FCParams : public NNParams
     void set_activation_filler_type(string ftype) { afiller_type_ = ftype; }
     string get_activation_filler_type() { return afiller_type_; }
 
-    void set_weight_filler_type(string ftype) {	wfiller_type_ = ftype; }
+    void set_weight_filler_type(string ftype) { wfiller_type_ = ftype; }
     string get_weight_filler_type() { return wfiller_type_; }
 
     void set_std(float s) { std_ = s; }
@@ -221,8 +221,8 @@ class FCNode: public NNNode
 
     void configure(int engine);
 
-    Tensor *tenTop_=NULL;	// Output tensor pointer
-    Tensor *tenBot_=NULL;	// Input tensor pointer
+    Tensor *tenTop_=NULL; // Output tensor pointer
+    Tensor *tenBot_=NULL; // Input tensor pointer
     Tensor *tenWeight_=NULL; // Weight tensor pointer
     Tensor *tenBias_=NULL;
     FCImplParams gparams_;

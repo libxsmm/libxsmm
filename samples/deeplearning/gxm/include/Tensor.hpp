@@ -49,18 +49,18 @@ class Tensor;
 class TensorBuf {
   protected:
     Tensor *tensor_;
-    void *buf_;				// Pointer to buffer
-    void *lpbuf_;			// Pointer to LP object
+    void *buf_; // Pointer to buffer
+    void *lpbuf_; // Pointer to LP object
     unsigned char sf_;
     void *prv_buf_;
     void *lp_prv_buf_;
     unsigned char psf_;
     TensorLayoutType layout_type_;
     void *layout_;
-    int dType_;				// Data type for this buffer
-    int bType_;				// Type of buffer (DATA/DIFF/HISTORY)
-    long long int size_;	// Size of this buffer
-    int bin_;				// Bin number assigned to this buffer
+    int dType_; // Data type for this buffer
+    int bType_; // Type of buffer (DATA/DIFF/HISTORY)
+    long long int size_; // Size of this buffer
+    int bin_; // Bin number assigned to this buffer
   public:
     TensorBuf(Tensor* tensor, int dtype = DT_FLOAT, int size = 0) : tensor_(tensor) {
       buf_ = NULL;
@@ -121,18 +121,18 @@ class Tensor
 {
   protected:
     string name_;
-    Shape shape_;				// Base logical shape of this tensor
-    vector<TensorBuf*> tBuf_;	// Structure holding pointer to buffer, its size, type and bin
-    TensorType tType_;			// Type of this tensor (Activation, Weight etc)
+    Shape shape_; // Base logical shape of this tensor
+    vector<TensorBuf*> tBuf_; // Structure holding pointer to buffer, its size, type and bin
+    TensorType tType_; // Type of this tensor (Activation, Weight etc)
     MLNode *owner_;
-    void *layout_;			// Layout for this tensor (applies to all buffers)
-    TensorLayoutType layout_type_;		// Layout type for this tensor (applies to all buffers)
+    void *layout_; // Layout for this tensor (applies to all buffers)
+    TensorLayoutType layout_type_;  // Layout type for this tensor (applies to all buffers)
 
   public:
     Tensor(string name)
     {
       this->name_ = name;
-      tBuf_.push_back(new TensorBuf(this));	// Assume that tBuf_[0] is always the foward pass buffer
+      tBuf_.push_back(new TensorBuf(this)); // Assume that tBuf_[0] is always the foward pass buffer
       layout_ = NULL;
       layout_type_ = NCHW;
     }
@@ -164,7 +164,7 @@ class Tensor
     Shape *getShape() { return &shape_; }
 
     // Act, wt, shared, private, generic
-    void setType(TensorType tt)	{ tType_ = tt; }
+    void setType(TensorType tt) { tType_ = tt; }
     int getType() { return tType_; }
 
     // float=1, int=2... create an enum for this

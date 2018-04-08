@@ -87,8 +87,8 @@ SoftmaxLossNode::SoftmaxLossNode(SoftmaxLossParams* p, MLEngine* e) : NNNode(p, 
   shape_setzero(&ts_);
 
   ts_.ndims = 2;
-  ts_.dims[0] = bs->dims[0];	// minibatch
-  ts_.dims[1] = bs->dims[1];	// num output = num_input
+  ts_.dims[0] = bs->dims[0]; // minibatch
+  ts_.dims[1] = bs->dims[1]; // num output = num_input
 
   tenTop_->setShape(&ts_);
 

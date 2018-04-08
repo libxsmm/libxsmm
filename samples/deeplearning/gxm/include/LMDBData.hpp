@@ -110,7 +110,7 @@ class LMDBDataParams : public NNParams
     void set_label_data_type(int t) { label_dtype_ = t; }
     int get_label_data_type() { return label_dtype_; }
 
-    void set_batch_size(int batch) { batch_size_ = batch;	}
+    void set_batch_size(int batch) { batch_size_ = batch; }
     int get_batch_size() { return batch_size_; }
 
     void set_lookahead(int l) { lookahead_ = l; }

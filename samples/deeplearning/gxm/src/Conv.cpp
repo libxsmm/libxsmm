@@ -99,7 +99,7 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
 
   shape_setzero(&ts_);
 
-  ts_.ndims = bs->ndims;		// Number of dimensions
+  ts_.ndims = bs->ndims; // Number of dimensions
   ts_.dims[0] = bs->dims[0]; // Minibatch size
   ts_.dims[1] = p->get_output(); // Num output feature maps
 
@@ -213,7 +213,7 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
   if(!e->is_inference_only()) {
     if(bp_flag_)
     {
-      tenBotDiff_ = tenBot_->addBuf();		// DIFF type and index
+      tenBotDiff_ = tenBot_->addBuf(); // DIFF type and index
       tenBotDiff_->setDataType(in_dtype);
       tenBotDiff_->setBufferType(DIFF);
 
@@ -231,11 +231,11 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
 
     if(has_weights_)
     {
-      tenWeightDiff_ = tenWeight_->addBuf();	// DIFF type and index
+      tenWeightDiff_ = tenWeight_->addBuf(); // DIFF type and index
       tenWeightDiff_->setDataType(DT_FLOAT);
       tenWeightDiff_->setBufferType(DIFF);
 
-      tenWeightInc_ = tenWeight_->addBuf();	// SHARED type and index
+      tenWeightInc_ = tenWeight_->addBuf(); // SHARED type and index
       tenWeightInc_->setDataType(DT_FLOAT);
       tenWeightInc_->setBufferType(HISTORY);
 
@@ -245,11 +245,11 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
 
       if(bias_term)
       {
-        tenBiasDiff_ = tenBias_->addBuf();	// DIFF type and index
+        tenBiasDiff_ = tenBias_->addBuf(); // DIFF type and index
         tenBiasDiff_->setDataType(DT_FLOAT);
         tenBiasDiff_->setBufferType(DIFF);
 
-        tenBiasInc_ = tenBias_->addBuf();	// SHARED type and index
+        tenBiasInc_ = tenBias_->addBuf(); // SHARED type and index
         tenBiasInc_->setDataType(DT_FLOAT);
         tenBiasInc_->setBufferType(HISTORY);
 
@@ -578,7 +578,7 @@ void ConvNode::forwardPropagate()
   int kw = gparams_.kw;
 
 #ifndef NDEBUG
-  //	printf("Executing FP %s: input %p, weights %p, output %p\n",NNNode::nname_.c_str(), bot, wt, top);
+  // printf("Executing FP %s: input %p, weights %p, output %p\n",NNNode::nname_.c_str(), bot, wt, top);
   printf("Executing FP %s\n",NNNode::nname_.c_str());
   printf("Inputs: %d x %d x %d\n",ifm, ifh, ifw);
   printf("Outputs: %d x %d x %d\n",ofm, ofh, ofw);
@@ -830,7 +830,7 @@ void ConvNode::weightUpdate()
   int kw = gparams_.kw;
 
 #ifdef DEBUG
-  //	printf("Executing WU %s: grad_output %p, grad_weights %p, input %p\n",NNNode::nname_.c_str(), gtop, gwt, bot);
+  // printf("Executing WU %s: grad_output %p, grad_weights %p, input %p\n",NNNode::nname_.c_str(), gtop, gwt, bot);
   printf("Executing WU %s\n",NNNode::nname_.c_str());
   printf("Grad Outputs: %d x %d x %d\n",ofm, ofh,ofw);
   printf("Inputs: %d x %d x %d\n",ifm, ifh, ifw);

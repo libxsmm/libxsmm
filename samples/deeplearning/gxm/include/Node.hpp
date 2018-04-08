@@ -67,7 +67,7 @@ class NNParams : public MLParams
     void set_node_name(string nname) { nname_ = nname; }
     void set_node_type(string type) {type_ = type; }
     void set_mode(int mode) { mode_ = mode; }
-    void set_bprop_flag(bool flag)	{ bp_flag_ = flag; }
+    void set_bprop_flag(bool flag) { bp_flag_ = flag; }
 
     string get_node_name() { return nname_; }
     vector<string>& get_top_names() { return top_; }

@@ -82,7 +82,7 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
 
   shape_setzero(&ts_);
 
-  ts_.ndims = bs->ndims;		// Number of dimensions
+  ts_.ndims = bs->ndims; // Number of dimensions
   ts_.dims[0] = bs->dims[0]; // Minibatch size
   ts_.dims[1] = bs->dims[1]; // Num output feature maps
 
@@ -141,7 +141,7 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
   {
     if(NNNode::bp_flag_)
     {
-      tenBotDiff_ = tenBot_->addBuf();		// DIFF type and index
+      tenBotDiff_ = tenBot_->addBuf(); // DIFF type and index
       tenBotDiff_->setDataType(dtype);
       tenBotDiff_->setBufferType(DIFF);
 

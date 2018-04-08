@@ -35,9 +35,9 @@ typedef MLParams *(*ParseFunc)(NodeParameter* np);
 typedef MLNode *(*CreateFunc)(MLParams* p, MLEngine* e);
 
 typedef struct TypeList_{
-	std::string typeName;
-	ParseFunc parse;
-	CreateFunc create;
+  std::string typeName;
+  ParseFunc parse;
+  CreateFunc create;
 } TypeList;
 
 extern TypeList nodeTypes[];

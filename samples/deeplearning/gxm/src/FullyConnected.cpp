@@ -113,11 +113,11 @@ FCNode::FCNode(FCParams *p, MLEngine* e) : NNNode(p, e)
 
   shape_setzero(&ws_);
 
-  ws_.ndims = ts_.ndims;		// Number of dimensions
+  ws_.ndims = ts_.ndims; // Number of dimensions
   if(p->get_transpose_flag())
   {
-    ws_.dims[0] = bs->dims[1] * bs->dims[2] * bs->dims[3]; 	// Num input feature maps (from bottom tensor)
-    ws_.dims[1] = ts_.dims[1]; 	// Num output feature maps (from top tensor)
+    ws_.dims[0] = bs->dims[1] * bs->dims[2] * bs->dims[3]; // Num input feature maps (from bottom tensor)
+    ws_.dims[1] = ts_.dims[1]; // Num output feature maps (from top tensor)
     ws_.dims[2] = 1;
     ws_.dims[3] = 1;
   }
@@ -218,11 +218,11 @@ FCNode::FCNode(FCParams *p, MLEngine* e) : NNNode(p, e)
 
       if(p->get_bias_term())
       {
-        tenBiasDiff_ = tenBias_->addBuf();	// DIFF type and index
+        tenBiasDiff_ = tenBias_->addBuf(); // DIFF type and index
         tenBiasDiff_->setDataType(dtype);
         tenBiasDiff_->setBufferType(DIFF);
 
-        tenBiasInc_ = tenBias_->addBuf();	// SHARED type and index
+        tenBiasInc_ = tenBias_->addBuf(); // SHARED type and index
         tenBiasInc_->setDataType(dtype);
         tenBiasInc_->setBufferType(HISTORY);
 

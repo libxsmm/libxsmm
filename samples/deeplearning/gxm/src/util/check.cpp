@@ -363,11 +363,11 @@ void MeanOfLayer(char *s, int *array, int size)
     if(array[i] != 0) last_nz = i;
     if(first_nz == -1 && array[i] != 0) first_nz = i;
     if(array[i] > 1000 || array[i] < -1000) {mmt++; printf(">>%d (%d)\n", i, array[i]);}
-	if(mmt > 100)
-	{
-		printf("more than 100 values out-of-range. exiting statistics loop...\n");
-		break;
-	}
+    if(mmt > 100)
+    {
+      printf("more than 100 values out-of-range. exiting statistics loop...\n");
+      break;
+    }
     if(array[i] != 0) nnz++;
     if(array[i] > max) {max = array[i]; which_max = i;}
     if(array[i] < min) {min = array[i]; which_min = i;}

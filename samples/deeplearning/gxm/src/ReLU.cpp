@@ -96,7 +96,7 @@ ReLUNode::ReLUNode(ReLUParams* p, MLEngine* e): NNNode(p, e)
   {
     if(bp_flag_)
     {
-      tenBotDiff_ = tenBot_->addBuf();		// DIFF type and index
+      tenBotDiff_ = tenBot_->addBuf(); // DIFF type and index
       tenBotDiff_->setDataType(dtype);
       tenBotDiff_->setBufferType(DIFF);
 

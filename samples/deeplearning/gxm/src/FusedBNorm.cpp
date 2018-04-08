@@ -182,7 +182,7 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
     {
       if(bp_flag_)
       {
-        tenBotDiff_[i] = tenBot_[i]->addBuf();		// DIFF type and index
+        tenBotDiff_[i] = tenBot_[i]->addBuf(); // DIFF type and index
         tenBotDiff_[i]->setDataType(out_dtype); // this is a hack; actually, it should be in_dtype..
         tenBotDiff_[i]->setBufferType(DIFF);
 

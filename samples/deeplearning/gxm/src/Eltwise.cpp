@@ -95,7 +95,7 @@ EltwiseNode::EltwiseNode(EltwiseParams* p, MLEngine* e) : NNNode(p, e)
     {
       if(NNNode::bp_flag_)
       {
-        tenBotDiff_[i] = tenBot_[i]->addBuf();		// DIFF type and index
+        tenBotDiff_[i] = tenBot_[i]->addBuf(); // DIFF type and index
         tenBotDiff_[i]->setDataType(dtype);
         tenBotDiff_[i]->setBufferType(DIFF);
 

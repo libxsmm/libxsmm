@@ -285,7 +285,7 @@ class PoolingNode : public NNNode
   public:
     PoolingNode(PoolingParams* p, MLEngine* e);
 
-    virtual ~PoolingNode(void)	{}
+    virtual ~PoolingNode(void) {}
 
   protected:
     void forwardPropagate();
@@ -298,8 +298,8 @@ class PoolingNode : public NNNode
 
     void configure(int engine);
 
-    Tensor* tenTop_;	// Output tensor pointer
-    Tensor* tenBot_;	// Input tensor pointer
+    Tensor* tenTop_; // Output tensor pointer
+    Tensor* tenBot_; // Input tensor pointer
     int* tenMask_;
     PoolImplParams gparams_;
     TensorBuf *tenBotDiff_, *tenBotData_;

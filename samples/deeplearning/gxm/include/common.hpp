@@ -37,11 +37,11 @@
 #endif
 
 #define CHECK_ERR(f, err) do { \
-    (err) = (f); \
-    if ((err) != E_SUCCESS) { \
-        printf("[%s:%d] err (%d)\n", __FILE__, __LINE__, err); \
-		exit(-1); \
-    } \
+  (err) = (f); \
+  if ((err) != E_SUCCESS) { \
+    printf("[%s:%d] err (%d)\n", __FILE__, __LINE__, err); \
+    exit(-1); \
+  } \
 } while(0)
 
 #define MIN_VAL -FLT_MAX
@@ -55,6 +55,6 @@
 #define ELPROD  1
 #define ELMAX   2
 
-#define AUTO   	0
+#define AUTO    0
 #define DIRECT  1
 
