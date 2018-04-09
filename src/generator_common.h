@@ -33,12 +33,6 @@
 
 #include <libxsmm_generator.h>
 
-/* Fallback to MKL and not to triple nested loops in the generator (noarch)
- **/
-#if 0
-#define LIBXSMM_GENERATOR_MKL_BLAS_FALLBACK
-#endif
-
 /*@TODO check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
 #define LIBXSMM_X86_GP_REG_RAX               0

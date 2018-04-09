@@ -238,7 +238,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   if (n_segments) {
     /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
     code_stream = handle->bwd_code_segments[ltid];
-    //TODO: Second condition guarantess we run the img_par code when we have MB=1 -- and hopefully HUGE images
+    //TODO: Second condition guarantees we run the img_par code when we have MB=1 -- and hopefully HUGE images
     if (handle->desc.N*BLOCKSIFM >= handle->desc.threads && !((handle->desc.N == 1) && (handle->bwd_ofh_rb == 1))) {
       if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
         LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
@@ -565,7 +565,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       }
     }
   } else {
-    //TODO: Second condition guarantess we run the img_par code when we have MB=1 -- and hopefully HUGE images
+    //TODO: Second condition guarantees we run the img_par code when we have MB=1 -- and hopefully HUGE images
     if (handle->desc.N*BLOCKSIFM >= handle->desc.threads && !((handle->desc.N == 1) && (handle->bwd_ofh_rb == 1))) {
       /* Run the stream of convolutions, no extra operations are required... */
       if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
