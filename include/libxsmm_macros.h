@@ -562,6 +562,9 @@
 #   define __builtin_nanf nanf
 #   define __builtin_nans nan
 #   define __builtin_nansf nanf
+#   if defined(__cplusplus)
+#     define _CMATH_
+#   endif
 # endif
 #endif
 #if defined(__GNUC__)
