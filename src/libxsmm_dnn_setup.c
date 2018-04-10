@@ -50,17 +50,20 @@
 #define HWCK 4
 
 
-LIBXSMM_API_INLINE void tune_fwd_blockings(libxsmm_dnn_layer *handle) {
+LIBXSMM_API_INTERN void tune_fwd_blockings(libxsmm_dnn_layer *handle);
+LIBXSMM_API_INTERN void tune_fwd_blockings(libxsmm_dnn_layer *handle) {
   int BLOCKSIFM_BLOCKING = handle->blocksifm_blocking;
   /* Some cache blocking tuning here...   */
-  /* Loop order tuning  */
   int loop_order = MIXED;
+  int blockifm = 8;
+  int block_j = 14;
+
+  /* Loop order tuning  */
   if (handle->desc.H >= 28 && handle->desc.R == 1) {
     loop_order = HWKC;
   }
 
   /* Feature map block tuning */
-  int blockifm = 8;
   while (blockifm % BLOCKSIFM_BLOCKING != 0) {
     blockifm++;
   }
@@ -69,13 +72,13 @@ LIBXSMM_API_INLINE void tune_fwd_blockings(libxsmm_dnn_layer *handle) {
   handle->block_fwd_ifm = blockifm;
 
   /* Spatial dimension block tuning  */
-  int block_j = 14;
   if ((handle->ofh == 7 && handle->desc.u == 2) || (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
     block_j = 4;
   }
   while ( block_j % handle->fwd_ofh_rb != 0 ) {
     block_j--;
   }
+
   handle->block_fwd_oj = block_j;
   handle->loop_order = loop_order;
 }

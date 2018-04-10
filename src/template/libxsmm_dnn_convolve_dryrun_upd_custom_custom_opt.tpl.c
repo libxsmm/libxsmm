@@ -37,12 +37,7 @@
 #if !defined(_OPENMP)
 int ltid;
 #endif
-int IFMBLOCK;
-if (handle->use_lp_kernel) {
-  IFMBLOCK = handle->ifmblock_hp;
-} else {
-  IFMBLOCK = handle->ifmblock;
-}
+int IFMBLOCK = handle->use_lp_kernel ? handle->ifmblock_hp : handle->ifmblock;
 int block_j = handle->ofh;
 
 #if defined(_OPENMP)
