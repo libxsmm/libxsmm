@@ -138,7 +138,7 @@ if (n_segments) {
   /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
   code_stream = handle->fwd_code_segments[ltid];
   /* If we are in the img_par execution then avoid fine-grained copy in case of padding...  */
-  //TODO: Second condition guarantees we run the img_par code when we have MB=1 -- and hopefully HUGE images
+  /* TODO: Second condition guarantees we run the img_par code when we have MB=1 -- and hopefully HUGE images */
   if (handle->desc.N*BLOCKSOFM  >= handle->desc.threads && !((handle->desc.N == 1) && (handle->fwd_ofh_rb == 1))) {
     if (handle->compute_batch_stats_in_kernel == 1) { /* We  do BN stuff in the kernel  */
 #ifdef FP32_BN_STATS
@@ -484,9 +484,11 @@ if (n_segments) {
         }
         /* Overwrite output with zeros if requested */
         if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
-          //for ( ih = 0; ih < my_h_out * handle->ofmblock * handle->ofwp; ih += handle->ofmblock * handle->ofwp) {
-            //jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2] + ih, NULL, NULL);
-            //}
+#if 0
+          for ( ih = 0; ih < my_h_out * handle->ofmblock * handle->ofwp; ih += handle->ofmblock * handle->ofwp) {
+            jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2] + ih, NULL, NULL);
+          }
+#endif
           int h,w;
           __m512 zero_reg  = _mm512_setzero_ps();
           for (h = 0; h<handle->fwd_ofh_rb; h++) {

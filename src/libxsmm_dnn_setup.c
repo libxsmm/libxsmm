@@ -29,11 +29,20 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_setup.h"
+#include "libxsmm_dnn_dryruns.h"
 #include "libxsmm_main.h"
 #include <libxsmm.h>
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
 
 LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *wrb2_res, int *hrb2_res) {
   const int min_r = 15;
@@ -555,7 +564,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     }
     /* use jit code path */
     handle->use_fwd_generic = 0;
-    int ks_overhead = 0;
 
     handle->n_entries_fwd = (int*) malloc(handle->desc.threads * sizeof(int));
     memset( handle->n_entries_fwd, 0, handle->desc.threads * sizeof(int) );
@@ -632,18 +640,20 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
     status = libxsmm_dnn_perform_fwd_dryrun_direct(handle);
 
-    /* compute kernel stream overhead */
-    ks_overhead += handle->desc.threads*4*sizeof(int);
-    ks_overhead += handle->desc.threads*sizeof(int*);
-    ks_overhead += handle->desc.threads*sizeof(char*);
-    ks_overhead += handle->desc.threads*sizeof(segment_t*);
-    for ( i = 0; i < handle->desc.threads; ++i ) {
-      ks_overhead += ((handle->n_entries_fwd[i]*3)+3)*sizeof(int);
-      ks_overhead += handle->n_entries_fwd[i]*sizeof(char);
-      ks_overhead += handle->n_fwd_code_segments[i]*sizeof(segment_t);
-    }
 #if defined(LIBXSMM_DNN_HANDLE_DEBUG)
-    printf("KS Overhead FWD in KB: %i \n", ks_overhead/1024 );
+    { /* compute kernel stream overhead */
+      int ks_overhead = 0;
+      ks_overhead += handle->desc.threads*4*sizeof(int);
+      ks_overhead += handle->desc.threads*sizeof(int*);
+      ks_overhead += handle->desc.threads*sizeof(char*);
+      ks_overhead += handle->desc.threads*sizeof(segment_t*);
+      for ( i = 0; i < handle->desc.threads; ++i ) {
+        ks_overhead += ((handle->n_entries_fwd[i]*3)+3)*sizeof(int);
+        ks_overhead += handle->n_entries_fwd[i]*sizeof(char);
+        ks_overhead += handle->n_fwd_code_segments[i]*sizeof(segment_t);
+      }
+      printf("KS Overhead FWD in KB: %i \n", ks_overhead/1024 );
+    }
 #endif
   }
 
@@ -654,8 +664,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* handle, int *noarch ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   int i = 0; /* general counting helper */
-  int wrb1 = 0, wrb2 = 0, hrb1 = 0, hrb2 = 0, n_variants = 1;
-
+  int wrb1 = 0, wrb2 = 0, hrb1 = 0, hrb2 = 0;
+#if 0
+  int n_variants = 1;
+#endif
   /* Let's check if we can use algorithmic duality for backward convolution! */
   /* TODO: Enable duality even in cases of image parallelism */
   if ( (handle->use_thread_private_jit > 0) && (handle->desc.N >= handle->desc.threads) && ( (handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.pad_h == 0 && handle->desc.pad_w == 0) || (handle->desc.u == 1 && handle->desc.v == 1) ) && !((handle->desc.R > 1 && handle->desc.pad_h == 0) || (handle->desc.S > 1 && handle->desc.pad_w == 0)) )  {
@@ -663,9 +675,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
   } else {
     handle->exploit_duality = 0;
   }
-
+#if 0
   n_variants = find_rb(handle->ofw, handle->ofh, &wrb1, &hrb1, &wrb2, &hrb2);
-
+#endif
   /* FIXME: Remove loop below? Doesn't algorithmic duality take care of that? */
   handle->bwd_ofh_rb = 1;
   for (i = LIBXSMM_MIN(24, handle->ofw); i > 1; i--) {
@@ -885,57 +897,57 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       assert(0/*should not happen*/);
     }
 
-    libxsmm_dnn_layer mirror_handle;
-    int ks_overhead = 0;
+    {
+      libxsmm_dnn_layer mirror_handle;
+      handle->n_entries_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
+      memset( handle->n_entries_bwd, 0, handle->desc.threads * sizeof(int) );
+      handle->compute_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+      memset( handle->compute_bwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
+      handle->kernel_bwd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
+      memset( handle->kernel_bwd_variant_ptrs, 0, handle->desc.threads * sizeof(char*));
+      handle->n_bwd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
+      memset( handle->n_bwd_code_segments, 0, handle->desc.threads * sizeof(int) );
+      handle->bwd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
+      memset( handle->bwd_code_segments, 0, handle->desc.threads * sizeof(segment_t*) );
+      handle->ofh_bwd_start = (int*) malloc(handle->desc.threads * sizeof(int));
+      memset( handle->ofh_bwd_start, 0, handle->desc.threads * sizeof(int) );
+      handle->ofh_bwd_end = (int*) malloc(handle->desc.threads * sizeof(int));
+      memset( handle->ofh_bwd_end, 0, handle->desc.threads * sizeof(int));
+      handle->n_entries_trans_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
+      memset( handle->n_entries_trans_bwd, 0, handle->desc.threads * sizeof(int));
+      handle->transpose_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+      memset( handle->transpose_bwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
 
-    handle->n_entries_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
-    memset( handle->n_entries_bwd, 0, handle->desc.threads * sizeof(int) );
-    handle->compute_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
-    memset( handle->compute_bwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
-    handle->kernel_bwd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
-    memset( handle->kernel_bwd_variant_ptrs, 0, handle->desc.threads * sizeof(char*));
-    handle->n_bwd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
-    memset( handle->n_bwd_code_segments, 0, handle->desc.threads * sizeof(int) );
-    handle->bwd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
-    memset( handle->bwd_code_segments, 0, handle->desc.threads * sizeof(segment_t*) );
-    handle->ofh_bwd_start = (int*) malloc(handle->desc.threads * sizeof(int));
-    memset( handle->ofh_bwd_start, 0, handle->desc.threads * sizeof(int) );
-    handle->ofh_bwd_end = (int*) malloc(handle->desc.threads * sizeof(int));
-    memset( handle->ofh_bwd_end, 0, handle->desc.threads * sizeof(int));
-    handle->n_entries_trans_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
-    memset( handle->n_entries_trans_bwd, 0, handle->desc.threads * sizeof(int));
-    handle->transpose_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
-    memset( handle->transpose_bwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
-
-    mirror_handle = *handle;
-    mirror_handle.use_fwd_for_bwd = 1;
-    mirror_handle.blocksifm_blocking = handle->blocksofm_blocking;
-    mirror_handle.fwd_ofh_rb = handle->bwd_ofh_rb;
-    mirror_handle.fwd_ofw_rb = handle->bwd_ofw_rb;
-    mirror_handle.blocksofm = handle->blocksifm;
-    mirror_handle.blocksofm_lp = handle->blocksifm_lp;
-    mirror_handle.ifhp = handle->ofhp;
-    mirror_handle.ifwp = handle->ofwp;
-    mirror_handle.ofhp = handle->ifhp;
-    mirror_handle.ofwp = handle->ifwp;
-    mirror_handle.use_nts_fwd = handle->use_nts_bwd;
-    mirror_handle.block_fwd_ofm = handle->block_fwd_ifm;
-    mirror_handle.blocksifm = handle->blocksofm;
-    mirror_handle.blocksifm_lp = handle->blocksofm_lp;
-    mirror_handle.ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.R) / handle->desc.v + 1;
-    mirror_handle.ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.S) / handle->desc.u + 1;
-    mirror_handle.ifmblock = handle->ofmblock_lp;
-    mirror_handle.ofmblock = handle->ifmblock_hp;
-    mirror_handle.compute_fwd_indices_ptrs =  handle->compute_bwd_indices_ptrs;
-    mirror_handle.n_entries_fwd = handle->n_entries_bwd;
-    mirror_handle.kernel_fwd_variant_ptrs = handle->kernel_bwd_variant_ptrs;
-    mirror_handle.n_fwd_code_segments = handle->n_bwd_code_segments;
-    mirror_handle.fwd_code_segments = handle->bwd_code_segments;
-    mirror_handle.ofh_fwd_start = handle->ofh_bwd_start;
-    mirror_handle.ofh_fwd_end = handle->ofh_bwd_end;
-    mirror_handle.perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
-    handle->perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
-    status = libxsmm_dnn_perform_fwd_dryrun_direct(&mirror_handle);
+      mirror_handle = *handle;
+      mirror_handle.use_fwd_for_bwd = 1;
+      mirror_handle.blocksifm_blocking = handle->blocksofm_blocking;
+      mirror_handle.fwd_ofh_rb = handle->bwd_ofh_rb;
+      mirror_handle.fwd_ofw_rb = handle->bwd_ofw_rb;
+      mirror_handle.blocksofm = handle->blocksifm;
+      mirror_handle.blocksofm_lp = handle->blocksifm_lp;
+      mirror_handle.ifhp = handle->ofhp;
+      mirror_handle.ifwp = handle->ofwp;
+      mirror_handle.ofhp = handle->ifhp;
+      mirror_handle.ofwp = handle->ifwp;
+      mirror_handle.use_nts_fwd = handle->use_nts_bwd;
+      mirror_handle.block_fwd_ofm = handle->block_fwd_ifm;
+      mirror_handle.blocksifm = handle->blocksofm;
+      mirror_handle.blocksifm_lp = handle->blocksofm_lp;
+      mirror_handle.ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.R) / handle->desc.v + 1;
+      mirror_handle.ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.S) / handle->desc.u + 1;
+      mirror_handle.ifmblock = handle->ofmblock_lp;
+      mirror_handle.ofmblock = handle->ifmblock_hp;
+      mirror_handle.compute_fwd_indices_ptrs =  handle->compute_bwd_indices_ptrs;
+      mirror_handle.n_entries_fwd = handle->n_entries_bwd;
+      mirror_handle.kernel_fwd_variant_ptrs = handle->kernel_bwd_variant_ptrs;
+      mirror_handle.n_fwd_code_segments = handle->n_bwd_code_segments;
+      mirror_handle.fwd_code_segments = handle->bwd_code_segments;
+      mirror_handle.ofh_fwd_start = handle->ofh_bwd_start;
+      mirror_handle.ofh_fwd_end = handle->ofh_bwd_end;
+      mirror_handle.perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
+      handle->perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
+      status = libxsmm_dnn_perform_fwd_dryrun_direct(&mirror_handle);      
+    }
 
     /* In case overwrite is requested, generate zero-ing kernel */
     if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0 )  {
@@ -962,19 +974,22 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       }
       handle->matcopy_bwd[3].xmatcopy = libxsmm_xmcopydispatch(&matzero_descriptor_overwrite);
     }
-    /* compute kernel stream overhead */
-    ks_overhead += handle->desc.threads*5*sizeof(int);
-    ks_overhead += handle->desc.threads*2*sizeof(int*);
-    ks_overhead += handle->desc.threads*sizeof(char*);
-    ks_overhead += handle->desc.threads*sizeof(segment_t*);
-    for ( i = 0; i < handle->desc.threads; ++i ) {
-      ks_overhead += ((handle->n_entries_bwd[i]*3)+3)*sizeof(int);
-      ks_overhead += handle->n_entries_bwd[i]*sizeof(char);
-      ks_overhead += handle->n_bwd_code_segments[i]*sizeof(segment_t);
-      ks_overhead += (handle->n_entries_trans_bwd[i]+1)*sizeof(int);
-    }
+
 #if defined(LIBXSMM_DNN_HANDLE_DEBUG)
-    printf("KS Overhead BWD in KB: %i \n", ks_overhead/1024);
+    { /* compute kernel stream overhead */
+      int ks_overhead = 0;
+      ks_overhead += handle->desc.threads*5*sizeof(int);
+      ks_overhead += handle->desc.threads*2*sizeof(int*);
+      ks_overhead += handle->desc.threads*sizeof(char*);
+      ks_overhead += handle->desc.threads*sizeof(segment_t*);
+      for ( i = 0; i < handle->desc.threads; ++i ) {
+        ks_overhead += ((handle->n_entries_bwd[i]*3)+3)*sizeof(int);
+        ks_overhead += handle->n_entries_bwd[i]*sizeof(char);
+        ks_overhead += handle->n_bwd_code_segments[i]*sizeof(segment_t);
+        ks_overhead += (handle->n_entries_trans_bwd[i]+1)*sizeof(int);
+      }
+      printf("KS Overhead BWD in KB: %i \n", ks_overhead/1024);
+    }
 #endif
   }
 
@@ -1398,8 +1413,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
       }
 
       if ( handle->use_thread_private_jit ) {
-        int ks_overhead = 0;
-
         handle->trans_ofw_ifm = 0;
         /* Determine if we will be using thread private filters  */
         if ( (handle->blocksifm_lp * handle->blocksofm < handle->desc.threads) ) {
@@ -1459,20 +1472,22 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
         status = libxsmm_dnn_perform_upd_dryrun_direct(handle);
 
-        /* compute kernel stream overhead */
-        ks_overhead += handle->desc.threads*4*sizeof(int);
-        ks_overhead += handle->desc.threads*3*sizeof(int*);
-        ks_overhead += handle->desc.threads*sizeof(char*);
-        ks_overhead += handle->desc.threads*sizeof(segment_t*);
-        for ( i = 0; i < handle->desc.threads; ++i ) {
-          ks_overhead += ((handle->n_entries_upd[i]*3)+3)*sizeof(int);
-          ks_overhead += handle->n_entries_upd[i]*sizeof(char);
-          ks_overhead += handle->n_upd_code_segments[i]*sizeof(segment_t);
-          ks_overhead += (handle->n_entries_copy_upd[i]+1)*sizeof(int);
-          ks_overhead += (handle->n_entries_init_upd[i]+1)*sizeof(int);
-        }
 #if defined(LIBXSMM_DNN_HANDLE_DEBUG)
-        printf("KS Overhead UPD in KB: %i \n", ks_overhead/1024 );
+        { /* compute kernel stream overhead */
+          int ks_overhead = 0;
+          ks_overhead += handle->desc.threads*4*sizeof(int);
+          ks_overhead += handle->desc.threads*3*sizeof(int*);
+          ks_overhead += handle->desc.threads*sizeof(char*);
+          ks_overhead += handle->desc.threads*sizeof(segment_t*);
+          for ( i = 0; i < handle->desc.threads; ++i ) {
+            ks_overhead += ((handle->n_entries_upd[i]*3)+3)*sizeof(int);
+            ks_overhead += handle->n_entries_upd[i]*sizeof(char);
+            ks_overhead += handle->n_upd_code_segments[i]*sizeof(segment_t);
+            ks_overhead += (handle->n_entries_copy_upd[i]+1)*sizeof(int);
+            ks_overhead += (handle->n_entries_init_upd[i]+1)*sizeof(int);
+          }
+          printf("KS Overhead UPD in KB: %i \n", ks_overhead/1024 );
+        }
 #endif
       }
     } else {

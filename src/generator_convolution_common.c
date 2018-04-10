@@ -1678,8 +1678,8 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
       unsigned int store_offset;
 
       if ( use_lp_kernel == 1 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
-        libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
         unsigned int rsp_offset;
+        libxsmm_x86_instruction_alu_reg(io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
         /* Scale factor offset in rsp */
         rsp_offset = 48;
         if (i_conv_desc->compute_batch_stats == 1) {
@@ -1733,18 +1733,19 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
               i_conv_kernel_config->vxor_instruction,
               i_conv_kernel_config->vector_name, 1, 1, 1);
 
-          /* Initialize "zmm mask" in zmm2 */
-          int mask_array[64];
-          int ind_mask;
-          for (ind_mask = 0; ind_mask < 16; ind_mask++) {
-            mask_array[ind_mask] = 0x7FFFFFFF;
-          }
+          { /* Initialize "zmm mask" in zmm2 */
+            int mask_array[64];
+            int ind_mask;
+            for (ind_mask = 0; ind_mask < 16; ind_mask++) {
+              mask_array[ind_mask] = 0x7FFFFFFF;
+            }
 
-          libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
-              (const unsigned char*) mask_array,
-              "abs_mask",
-              i_conv_kernel_config->vector_name,
-              2);
+            libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+                (const unsigned char*) mask_array,
+                "abs_mask",
+                i_conv_kernel_config->vector_name,
+                2);            
+          }
         }
 
         for (i = 0; i < i_conv_desc->ofh_rb; i++) {
@@ -2035,7 +2036,9 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
   /* choosing offset according to format */
   /* for filter in custom format it's vector length */
   unsigned int offset = i_conv_kernel_config->vector_length_wt;
-  int use_lp_kernel;
+  const int unrolled_ofms = ( i_conv_desc->ifm_block == 3 && i_conv_desc->blocks_ofm == 4 ) ? 4 : 1;
+  int eq_index, use_lp_kernel;
+
   if (i_conv_desc->datatype_itm != i_conv_desc->datatype) {
     use_lp_kernel = 1;
   } else {
@@ -2050,9 +2053,6 @@ void libxsmm_generator_convolution_weight_update_load_weight( libxsmm_generated_
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0 ) {
     offset = i_conv_kernel_config->l_ld_ofm_act;
   }
-
-  int eq_index;
-  int unrolled_ofms = ( i_conv_desc->ifm_block == 3 && i_conv_desc->blocks_ofm == 4 ) ? 4 : 1;
 
   /* adding to C, so let's load C */
   if ( (i_conv_desc->use_nts == 0) && (use_lp_kernel == 0 || i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) ) {
@@ -2153,8 +2153,9 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
   /* for filter in custom format it's vector length */
   unsigned int offset = i_conv_kernel_config->vector_length_wt;
   unsigned int l_j, l_k;
-  int eq_index, unrolled_ofms;
-  int use_lp_kernel;
+  /* TODO support reductions in RSCK format */
+  const int unrolled_ofms = ( i_conv_desc->ifm_block == 3 && i_conv_desc->blocks_ofm == 4 ) ? 4 : 1;
+  int eq_index, use_lp_kernel;
 
   /* for filter in custom reduction format it's vector length * ncopies */
   if (i_conv_desc->use_nts == 1) {
@@ -2171,8 +2172,6 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
   if ( (i_conv_desc->format & LIBXSMM_DNN_TENSOR_FORMAT_RSCK) > 0 ) {
     offset = i_conv_kernel_config->l_ld_ofm_act;
   }
-  /* TODO support reductions in RSCK format */
-  unrolled_ofms = ( i_conv_desc->ifm_block == 3 && i_conv_desc->blocks_ofm == 4 ) ? 4 : 1;
 
   if ( use_lp_kernel == 1 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
     unsigned int rsp_offset = 48;

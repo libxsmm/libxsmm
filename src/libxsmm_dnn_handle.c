@@ -152,12 +152,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   /* Generic codepath setup here... */
   if (noarch == 1) {
     /*Setup generic code generation here*/
-    status = libxsmm_dnn_setup_generic(handle);
+    const int handle_status = libxsmm_dnn_setup_generic(handle);
     const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
     const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
     const size_t size7 = padded_h * padded_w * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
     handle->scratch7_size = LIBXSMM_UP2(size7, LIBXSMM_CACHELINE) * handle->desc.threads;
     handle->scratch7 = 0;
+    status = handle_status;
   } else {
     handle->scratch7_size = 0;
     handle->scratch7 = 0;
