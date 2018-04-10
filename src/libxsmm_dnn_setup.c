@@ -288,11 +288,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     }
   }
 
-  /* use generic code path */
-  handle->use_fwd_generic = 1;
-  handle->use_bwd_generic = 1;
-  handle->use_upd_generic = 1;
-
   handle->code_fwd[0].xconv.sconv = 0;
   handle->code_fwd[1].xconv.sconv = 0;
   handle->code_fwd[2].xconv.sconv = 0;
