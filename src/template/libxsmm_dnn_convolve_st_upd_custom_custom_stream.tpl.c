@@ -125,7 +125,7 @@ if (handle->reduce_weights == 0) {
           }
         }
       }
-    }    
+    }
   }
 }
 

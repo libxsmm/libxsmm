@@ -309,7 +309,7 @@ if (n_segments) {
                 _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
                       BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
                 _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
-                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );                
+                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
               }
 #endif
 #else
@@ -426,7 +426,7 @@ if (n_segments) {
                 _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
                       BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
                 _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
-                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );                
+                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
               }
 #endif
 #else

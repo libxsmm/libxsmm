@@ -58,7 +58,7 @@
         TRANSPOSE_W_HALF_PAIR(img, ofm1, ij, ii, half_i);
       }
     }
-  }  
+  }
 }
 # undef TRANSPOSE_W_FULL_PAIR
 # undef TRANSPOSE_W_HALF_PAIR

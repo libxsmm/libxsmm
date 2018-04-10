@@ -174,7 +174,7 @@ LIBXSMM_API_INTERN void lp_transpose_input_and_output(int ltid, libxsmm_dnn_laye
       LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
       LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)handle->scratch3, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended);
       __m256i mask_reg, lo_reg, hi_reg, compressed_low, compressed_high, compressed_low_store, compressed_high_store;
-      __m512i gather_reg;     
+      __m512i gather_reg;
       unsigned int mask[8];
       LIBXSMM_UNUSED(dst_ifhp);
 
@@ -289,7 +289,7 @@ LIBXSMM_API_INTERN void lp_transpose_input_and_output(int ltid, libxsmm_dnn_laye
                 /*__m256i zero_pixel = _mm256_xor_si256(zero_pixel, zero_pixel);*/
                 cl = _mm512_inserti64x4(cl, _mm256_set1_epi32(0)/*zero_pixel*/, 1);
                 permuted_reg = _mm512_permutexvar_epi16(perm_index, cl);
-                _mm512_store_si512(dst_addr, permuted_reg);                
+                _mm512_store_si512(dst_addr, permuted_reg);
               }
             }
           }
