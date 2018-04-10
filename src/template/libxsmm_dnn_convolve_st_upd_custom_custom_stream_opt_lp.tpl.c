@@ -63,15 +63,8 @@ LIBXSMM_VLA_DECL(3, element_filter_type, reduction_weight, reduction_weight_ptr,
 /* Pointer related variables for input */
 int padded_h = (handle->padding_flag == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
 int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
-int ifwp_extended = padded_w + handle->qfma_input_pad;
-int dst_ifhp;
-
-if (handle->resize_input == 1) {
-  ifwp_extended = handle->ifwp_resized + handle->qfma_input_pad;
-  dst_ifhp = handle->ifhp_resized;
-} else {
-  dst_ifhp = handle->ifhp;
-}
+int ifwp_extended = (handle->resize_input == 1 ? (handle->ifwp_resized + handle->qfma_input_pad) : (padded_w + handle->qfma_input_pad));
+int dst_ifhp = (handle->resize_input == 1 ? handle->ifhp_resized : handle->ifhp);
 
 LIBXSMM_VLA_DECL(6, element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);
 LIBXSMM_VLA_DECL(5, element_input_type, tr_input_padded, (element_input_type*)handle->scratch5, BLOCKSIFM, padded_h, handle->ifmblock_hp, ifwp_extended);
@@ -90,6 +83,15 @@ element_output_type *output_base;
 
 /* Kernel related variables  */
 libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[0].xconv.sconv : (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
+
+LIBXSMM_ALIGNED(float scale_factor, 64);
+LIBXSMM_ALIGNED(float vnni_scratch[32], 64);
+LIBXSMM_ALIGNED(float *max_vals, 64);
+#ifdef __AVX512F__
+__m512 max_abs = _mm512_setzero_ps();
+#else
+/* won't happen as this code only runs on AVX512 platforms */
+#endif
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -269,20 +271,10 @@ i = 0;
 instr = handle->n_entries_upd[ltid];
 n_segments = handle->n_upd_code_segments[ltid];
 
-LIBXSMM_ALIGNED(float scale_factor, 64);
-
 if (handle->use_lp_kernel == 1) {
   scale_factor = libxsmm_sexp2(-1.f*((float)(handle->reg_input->scf + handle->grad_output->scf)));
 }
 
-LIBXSMM_ALIGNED(float vnni_scratch[32], 64);
-
-LIBXSMM_ALIGNED(float *max_vals, 64);
-#ifdef __AVX512F__
-__m512 max_abs = _mm512_setzero_ps();
-#else
-/* won't happen as this code only runs on AVX512 platforms */
-#endif
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, float, maxstats, (float*)handle->maxstats_upd->data, 16);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, 16);

@@ -71,10 +71,28 @@ libxsmm_xmcopyfunction jitted_zero_overwrite = handle->matcopy_fwd[1].xmatcopy;
 libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_fwd[0].xconv.sconv;
 libxsmm_convfunction kernel2 = (libxsmm_convfunction)handle->code_fwd[1].xconv.sconv;
 libxsmm_convfunction kernel_pool[2];
-kernel_pool[0] = kernel;
-kernel_pool[1] = kernel2;
+LIBXSMM_ALIGNED(float scale_factor, 64);
+LIBXSMM_ALIGNED(float *max_vals, 64);
 char *variant = handle->kernel_fwd_variant_ptrs[ltid];
 int pool_index = 0;
+/* Stream for BN offsets */
+int bn_i = 0;
+#ifdef FP32_BN_STATS
+element_output_type *bn_sum_base;
+element_output_type *bn_sum_base2;
+#endif
+#ifdef FP64_BN_STATS
+double *bn_sum_base;
+double *bn_sum_base2;
+#endif
+#ifdef __AVX512F__
+__m512 max_abs;
+#else
+/* won't happen as this code only runs on AVX512 platforms */
+#endif
+
+kernel_pool[0] = kernel;
+kernel_pool[1] = kernel2;
 
 /* Initialize base pointers */
 if (handle->padding_flag == 1) {
@@ -97,17 +115,10 @@ output_base = &LIBXSMM_VLA_ACCESS(5, output, 0, 0, 0, 0, 0,
 instr = handle->n_entries_fwd[ltid];
 n_segments = handle->n_fwd_code_segments[ltid];
 
-LIBXSMM_ALIGNED(float scale_factor, 64);
 if (handle->use_lp_kernel == 1) {
   scale_factor = libxsmm_sexp2(-1.f*((float)(handle->reg_filter->scf + handle->reg_input->scf)));
 }
 
-LIBXSMM_ALIGNED(float *max_vals, 64);
-#ifdef __AVX512F__
-__m512 max_abs;
-#else
-/* won't happen as this code only runs on AVX512 platforms */
-#endif
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, element_output_type, maxstats, (element_output_type*)handle->maxstats_fwd->data, handle->ofmblock);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, handle->ofmblock);
@@ -119,21 +130,10 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 #endif
 }
 
-i = 0;
-/* Stream for BN offsets */
-int bn_i = 0;
-#ifdef FP32_BN_STATS
-element_output_type *bn_sum_base;
-element_output_type *bn_sum_base2;
-#endif
-#ifdef FP64_BN_STATS
-double *bn_sum_base;
-double *bn_sum_base2;
-#endif
-
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
+i = 0;
 if (n_segments) {
   /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
   code_stream = handle->fwd_code_segments[ltid];
@@ -281,34 +281,36 @@ if (n_segments) {
 #endif
 #ifdef FP64_BN_STATS
               ofm1 =  code_stream[pc].aux_index;
-              LIBXSMM_VLA_DECL(4, double, stats, (double*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
-              element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                  BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
-              __m512d bsum1a = _mm512_setzero_pd();
-              __m512d bsum1b = _mm512_setzero_pd();
-              __m512d bsum2a = _mm512_setzero_pd();
-              __m512d bsum2b = _mm512_setzero_pd();
+              {
+                LIBXSMM_VLA_DECL(4, double, stats, (double*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
+                element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+                    BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+                __m512d bsum1a = _mm512_setzero_pd();
+                __m512d bsum1b = _mm512_setzero_pd();
+                __m512d bsum2a = _mm512_setzero_pd();
+                __m512d bsum2b = _mm512_setzero_pd();
 
-              for ( oj = 0; oj < handle->ofh; oj++ ) {
-                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                  __m512d btmpa = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+0)) );
-                  __m512d btmpb = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+8)) );
-                  bsum1a = _mm512_add_pd( bsum1a, btmpa);
-                  bsum1b = _mm512_add_pd( bsum1b, btmpb);
-                  bsum2a = _mm512_add_pd( bsum2a, _mm512_mul_pd( btmpa, btmpa ) );
-                  bsum2b = _mm512_add_pd( bsum2b, _mm512_mul_pd( btmpb, btmpb ) );
+                for ( oj = 0; oj < handle->ofh; oj++ ) {
+                  for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                    __m512d btmpa = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+0)) );
+                    __m512d btmpb = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+8)) );
+                    bsum1a = _mm512_add_pd( bsum1a, btmpa);
+                    bsum1b = _mm512_add_pd( bsum1b, btmpb);
+                    bsum2a = _mm512_add_pd( bsum2a, _mm512_mul_pd( btmpa, btmpa ) );
+                    bsum2b = _mm512_add_pd( bsum2b, _mm512_mul_pd( btmpb, btmpb ) );
+                  }
+                  red += handle->ofwp*handle->ofmblock;
                 }
-                red += handle->ofwp*handle->ofmblock;
-              }
 
-              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
-                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1a );
-              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 8,
-                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1b );
-              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
-                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
-              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
-                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
+                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
+                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1a );
+                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 8,
+                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1b );
+                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
+                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
+                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
+                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );                
+              }
 #endif
 #else
               /* won't happen as this code only runs on AVX512 platforms */
@@ -316,8 +318,7 @@ if (n_segments) {
             }
 
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-              ofm1 =  code_stream[pc].aux_index;
-              element_output_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+              element_output_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, output, img, /*ofm1*/code_stream[pc].aux_index, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
@@ -397,34 +398,36 @@ if (n_segments) {
 #endif
 #ifdef FP64_BN_STATS
               ofm1 =  code_stream[pc].aux_index;
-              LIBXSMM_VLA_DECL(4, double, stats, (double*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
-              element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                  BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
-              __m512d bsum1a = _mm512_setzero_pd();
-              __m512d bsum1b = _mm512_setzero_pd();
-              __m512d bsum2a = _mm512_setzero_pd();
-              __m512d bsum2b = _mm512_setzero_pd();
+              {
+                LIBXSMM_VLA_DECL(4, double, stats, (double*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
+                element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+                    BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+                __m512d bsum1a = _mm512_setzero_pd();
+                __m512d bsum1b = _mm512_setzero_pd();
+                __m512d bsum2a = _mm512_setzero_pd();
+                __m512d bsum2b = _mm512_setzero_pd();
 
-              for ( oj = 0; oj < handle->ofh; oj++ ) {
-                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                  __m512d btmpa = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+0)) );
-                  __m512d btmpb = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+8)) );
-                  bsum1a = _mm512_add_pd( bsum1a, btmpa);
-                  bsum1b = _mm512_add_pd( bsum1b, btmpb);
-                  bsum2a = _mm512_add_pd( bsum2a, _mm512_mul_pd( btmpa, btmpa ) );
-                  bsum2b = _mm512_add_pd( bsum2b, _mm512_mul_pd( btmpb, btmpb ) );
+                for ( oj = 0; oj < handle->ofh; oj++ ) {
+                  for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                    __m512d btmpa = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+0)) );
+                    __m512d btmpb = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+8)) );
+                    bsum1a = _mm512_add_pd( bsum1a, btmpa);
+                    bsum1b = _mm512_add_pd( bsum1b, btmpb);
+                    bsum2a = _mm512_add_pd( bsum2a, _mm512_mul_pd( btmpa, btmpa ) );
+                    bsum2b = _mm512_add_pd( bsum2b, _mm512_mul_pd( btmpb, btmpb ) );
+                  }
+                  red += handle->ofwp*handle->ofmblock;
                 }
-                red += handle->ofwp*handle->ofmblock;
-              }
 
-              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
-                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1a );
-              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 8,
-                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1b );
-              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
-                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
-              _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
-                    BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
+                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
+                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1a );
+                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 8,
+                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1b );
+                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
+                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
+                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
+                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );                
+              }
 #endif
 #else
               /* won't happen as this code only runs on AVX512 platforms */
@@ -432,8 +435,7 @@ if (n_segments) {
             }
 
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-              ofm1 =  code_stream[pc].aux_index;
-              element_output_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+              element_output_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, output, img, /*ofm1*/code_stream[pc].aux_index, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
