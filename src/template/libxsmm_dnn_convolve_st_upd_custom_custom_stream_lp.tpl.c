@@ -48,8 +48,8 @@ const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((lti
 
 /* Pointer related variables for output and weight */
 int pixels_lp = handle->fm_lp_block;
-element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
-LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
+element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
+LIBXSMM_VLA_DECL(6, element_output_type, tr_output, (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
 LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
 LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->grad_filter->data, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock_hp, handle->ofmblock);
 element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->data;
@@ -129,8 +129,7 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 
 if (pixels_lp !=4) {
   if (handle->padding_flag == 1) {
-    int img = ltid, ifm1, ij, ifm2, ii;
-    int ofm1, lp;
+    int img = ltid, ij, ifm2, ii, lp;
     for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
       for (ij = 0; ij < handle->ifhp; ++ij) {
         for (ii = 0; ii < handle->ifwp; ++ii) {
@@ -153,8 +152,7 @@ if (pixels_lp !=4) {
   }
 } else {
   /* Scalar C code for input and output transpose when int8 <=> pixels_lp == 4 ...*/
-  int img = ltid, ifm1, ij, ifm2, ii;
-  int ofm1, ofm2, lp;
+  int img = ltid, ij, ifm2, ii, ofm2, lp;
 
   if (handle->resize_input == 0) {
     for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
@@ -231,17 +229,17 @@ if (handle->trans_ofw_ifm == 1) {
 
 
 #if 0
-element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp * handle->ofmblock_lp * handle->fm_lp_block /*+ handle->desc.pad_w_out*/);
-LIBXSMM_VLA_DECL(6, element_output_type, lp_output, out, BLOCKSOFM, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
+element_output_type *const grad_out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp * handle->ofmblock_lp * handle->fm_lp_block /*+ handle->desc.pad_w_out*/);
+LIBXSMM_VLA_DECL(6, element_output_type, lp_output, grad_out, BLOCKSOFM, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
 output_base = &LIBXSMM_VLA_ACCESS(6, lp_output, 0, 0, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
 #else
 if (handle->avoid_output_trans) {
-  element_output_type *out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
-  LIBXSMM_VLA_DECL(6, element_output_type, lp_output, out, BLOCKSOFM, handle->ofhp, handle->ofwp/pixels_lp, handle->ofmblock, pixels_lp);
+  element_output_type *const grad_out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
+  LIBXSMM_VLA_DECL(6, element_output_type, lp_output, grad_out, BLOCKSOFM, handle->ofhp, handle->ofwp/pixels_lp, handle->ofmblock, pixels_lp);
   output_base = &LIBXSMM_VLA_ACCESS(6, lp_output, 0, 0, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp/pixels_lp, handle->ofmblock, pixels_lp);
 } else {
-  LIBXSMM_VLA_DECL(6, element_output_type, tr_output,  (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
-  output_base = &LIBXSMM_VLA_ACCESS(6, tr_output, 0, 0, 0, 0, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
+  LIBXSMM_VLA_DECL(6, element_output_type, scratch_out, (element_output_type*)handle->scratch6 , BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
+  output_base = &LIBXSMM_VLA_ACCESS(6, scratch_out, 0, 0, 0, 0, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
 }
 #endif
 

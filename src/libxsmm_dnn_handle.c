@@ -120,7 +120,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
         libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL    ) &&
       handle->use_thread_private_jit == 1 )
   {
-    /* This is basically a decision pertaining for all three passes: FWD, BWD and UPD */ 
+    /* This is basically a decision pertaining for all three passes: FWD, BWD and UPD */
     /* Initialize fields that control layer fusion */
     noarch = 0;
     handle->compute_batch_stats_in_kernel = 0;
@@ -137,13 +137,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     }
 
     /* Forward path setup */
-    status = libxsmm_dnn_setup_fwd(handle, &noarch); 
+    status = libxsmm_dnn_setup_fwd(handle, &noarch);
 
     /* Backward path setup */
-    status = libxsmm_dnn_setup_bwd(handle, &noarch); 
+    status = libxsmm_dnn_setup_bwd(handle, &noarch);
 
     /* Weight update path setup */
-    status = libxsmm_dnn_setup_upd(handle, &noarch); 
+    status = libxsmm_dnn_setup_upd(handle, &noarch);
 
     /* Calculate scratch requirements */
     libxsmm_dnn_setup_scratch(handle);

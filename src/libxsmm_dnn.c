@@ -2433,20 +2433,21 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* 
 }
 
 
-LIBXSMM_API float libxsmm_internal_get_max( float* in_buffer, int length ) {
+LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length );
+LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length ) {
   float absmax_value = (float)fabs((double)(in_buffer[0]));
   int i = 0;
 #ifdef _OPENMP
-#pragma omp parallel private(i)
+# pragma omp parallel private(i)
   {
     float my_absmax_value = absmax_value;
-#pragma omp for private(i)
+#   pragma omp for private(i)
     for( i = 0; i < length; ++i ) {
       if ((float)fabs((double)(in_buffer[i])) > my_absmax_value) {
         my_absmax_value = (float)fabs((double)(in_buffer[i]));
       }
     }
-#pragma omp critical
+#   pragma omp critical
     {
       if (my_absmax_value > absmax_value) {
         absmax_value = my_absmax_value;
@@ -2465,7 +2466,7 @@ LIBXSMM_API float libxsmm_internal_get_max( float* in_buffer, int length ) {
 }
 
 
-LIBXSMM_API unsigned char libxsmm_internal_get_max_exp( float* in_buffer, int length ) {
+LIBXSMM_API_INLINE unsigned char libxsmm_internal_get_max_exp( float* in_buffer, int length ) {
   libxsmm_intfloat exp;
   unsigned char max_exp = 0;
 
@@ -2478,7 +2479,7 @@ LIBXSMM_API unsigned char libxsmm_internal_get_max_exp( float* in_buffer, int le
 }
 
 
-LIBXSMM_API short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned char max_exp, unsigned char add_shift, int round_mode ) {
+LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned char max_exp, unsigned char add_shift, int round_mode ) {
   libxsmm_intfloat value;
   unsigned int qvalue = 0;
   unsigned int mant = 0;
@@ -2487,7 +2488,7 @@ LIBXSMM_API short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned
   unsigned char exp_off = 0;
 
   /* in case of zero we don't need to do anything */
-  if (input == 0.0f) {
+  if (LIBXSMM_FEQ(input, 0)) {
     qvalue = 0;
   } else {
     /* let's get a float copy to work on */
@@ -2573,7 +2574,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
     if ( length % 16 == 0 ) {
       __m512 vscfq = _mm512_set1_ps(scfq);
 #ifdef _OPENMP
-#pragma omp parallel for private(i)
+#     pragma omp parallel for private(i)
 #endif
       for( i = 0; i < length; i+=16 ) {
         _mm256_stream_si256( (__m256i *)&(out_buffer[i]), _mm512_quantize_near_ps_epi16( &(in_buffer[i]), vscfq ) );
@@ -2581,7 +2582,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
     } else {
 #endif
 #ifdef _OPENMP
-#pragma omp parallel for private(i)
+#     pragma omp parallel for private(i)
 #endif
       for( i = 0; i < length; ++i ) {
         out_buffer[i] = (short)round(in_buffer[i]*scfq);
@@ -2606,7 +2607,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
     }
 
 #ifdef _OPENMP
-#pragma omp parallel for private(i)
+#   pragma omp parallel for private(i)
 #endif
     for( i = 0; i < length; ++i ) {
       out_buffer[i] = libxsmm_internal_quantize_scalar_no_scf( in_buffer[i], max_exp, add_shift, round_mode );
@@ -2852,7 +2853,7 @@ LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, in
   int i = 0;
 
 #ifdef _OPENMP
-#pragma omp parallel for private(i)
+# pragma omp parallel for private(i)
 #endif
   for ( i = 0; i < length; ++i ) {
     out_buffer[i] = ((float)in_buffer[i])*exp;

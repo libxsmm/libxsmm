@@ -538,7 +538,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
         if ( instr == IFM_LOOP_INIT ) {
           /* Overwrite output with zeros if requested */
           if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
-#iif 0
+#if 0
             for (ih = 0; ih < my_h_out * handle->ifmblock_hp * handle->ifwp; ih += handle->ifmblock_hp * handle->ifwp) {
               jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2] + ih, NULL, NULL);
             }
@@ -677,5 +677,5 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
     libxsmm_barrier_wait(handle->barrier, ltid);
   }
 #endif
-
 }
+

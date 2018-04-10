@@ -1744,7 +1744,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                 (const unsigned char*) mask_array,
                 "abs_mask",
                 i_conv_kernel_config->vector_name,
-                2);            
+                2);
           }
         }
 
