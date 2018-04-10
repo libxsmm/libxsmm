@@ -142,7 +142,7 @@ if (pixels_lp !=4) {
         }
       }
     }
-#include "output_lp_transposer.tpl.c"
+#   include "transpose_lp_output.tpl.c"
   } else {
     if (handle->resize_input == 0) {
       lp_transpose_input_and_output(ltid, handle);
