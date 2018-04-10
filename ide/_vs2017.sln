@@ -216,16 +216,34 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "cnnlayer", "cnnlayer", "{C903E721-1D95-4050-A5F3-BA614BABADB8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_f32", "..\samples\deeplearning\cnnlayer\layer_example_f32.vcxproj", "{63B474A0-5BC5-4212-888E-88D30CAA791B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_i8i32", "..\samples\deeplearning\cnnlayer\layer_example_i8i32.vcxproj", "{E5AF3D43-4860-4F28-8674-D641A954C7C9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_i16f32", "..\samples\deeplearning\cnnlayer\layer_example_i16f32.vcxproj", "{5459B17E-98E4-4290-A222-8181EA3FAF49}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_i16i32", "..\samples\deeplearning\cnnlayer\layer_example_i16i32.vcxproj", "{34BD90D3-A16C-421C-B2E4-C472D06166CD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_qi16f32", "..\samples\deeplearning\cnnlayer\layer_example_qi16i32.vcxproj", "{97B08EFC-A698-42D2-B031-43598DE791ED}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "iconv", "..\samples\deeplearning\iconv\iconv.vcxproj", "{54F8CC52-A93E-41BA-9AED-AFC609542A10}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
