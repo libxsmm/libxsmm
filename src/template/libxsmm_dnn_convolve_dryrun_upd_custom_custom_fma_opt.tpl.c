@@ -31,23 +31,10 @@
 #if !defined(_OPENMP)
 int ltid;
 #endif
-int block_j = 14;
 
+int block_j = handle->upd_ofh_rb;
 handle->block_upd_ofm = 8;
 handle->block_upd_ifm = 8;
-
-if ( (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
-  block_j = 4;
-}
-while ( block_j % handle->upd_ofh_rb != 0 ) {
-  block_j--;
-}
-
-if (block_j < handle->upd_ofh_rb ) {
-  block_j = handle->upd_ofh_rb;
-}
-
-block_j = handle->upd_ofh_rb;
 
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)

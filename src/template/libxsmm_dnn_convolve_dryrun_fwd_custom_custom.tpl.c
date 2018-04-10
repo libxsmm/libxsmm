@@ -40,8 +40,6 @@
 #define CHWK 3
 #define HWCK 4
 
-int block_j = 14;
-int blockifm = 8;
 #if !defined(_OPENMP)
 int ltid;
 #endif
@@ -49,40 +47,7 @@ int ltid;
 int BLOCKSIFM_BLOCKING = handle->blocksifm_blocking;
 int BLOCKSIFM = handle->blocksifm_lp;
 int BLOCKSOFM = handle->blocksofm;
-
-int loop_order = MIXED;
-/*
-   const char *const env_order = getenv("LOOP_ORDER");
-   if ( 0 == env_order || 0 == *env_order) {
-   loop_order = MIXED;
-   } else {
-   loop_order = atoi(getenv("LOOP_ORDER"));
-   }
-   */
-
-if (handle->desc.H >= 28 && handle->desc.R == 1) {
-  loop_order = HWKC;
-}
-/*loop_order = HWKC;*/
-
-while (blockifm % BLOCKSIFM_BLOCKING != 0) {
-  blockifm++;
-}
-
-/*blockifm = BLOCKSIFM_BLOCKING;*/
-
-/*handle->block_fwd_ofm = 16;*/
-handle->block_fwd_ifm = blockifm;
-
-if ((handle->ofh == 7 && handle->desc.u == 2) || (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
-  block_j = 4;
-}
-
-while ( block_j % handle->fwd_ofh_rb != 0 ) {
-  block_j--;
-}
-
-handle->block_fwd_oj = block_j;
+int loop_order = handle->loop_order;
 
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)

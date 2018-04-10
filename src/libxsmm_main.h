@@ -357,6 +357,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int n_variants;
   int w_variants;
   int h_variants;
+  int loop_order;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;

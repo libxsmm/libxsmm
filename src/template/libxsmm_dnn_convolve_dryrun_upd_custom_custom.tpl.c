@@ -43,48 +43,6 @@ if (handle->use_lp_kernel) {
   IFMBLOCK = handle->ifmblock;
 }
 
-handle->block_upd_ofm = 8;
-handle->block_upd_ifm = 8;
-
-if ( handle->ofh == 56 ) {
-  /* Pixel block is 196 Kbytes */
- handle->block_upd_ofm = BLOCKSOFM;
- handle->block_upd_ifm = 1;
-
-}
-
-if ( handle->ofh == 28 ) {
-  /* Pixel block is 49 Kbytes */
- handle->block_upd_ofm = 3;
- handle->block_upd_ifm = 3;
-}
-
-if ( handle->ofh == 14 || handle->ofh == 28 || handle->ofh == 56 ) {
-  /* Pixel block is 12.25 Kbytes */
- handle->block_upd_ofm = 8;
- handle->block_upd_ifm = 32;
-}
-
-if ( handle->ofh == 7 ) {
-  /* Pixel block is 3.06 Kbytes */
- handle->block_upd_ofm = 8;
- handle->block_upd_ifm = 16;
-}
-
-handle->block_upd_ofm = 64;
-handle->block_upd_ifm = 64;
-
-#if 0
-if ( handle->ofh == 28 || handle->ofh == 56 ) {
-  /* Pixel block is 12.25 Kbytes */
-  handle->block_upd_ofm = 32;
-  handle->block_upd_ifm = 16;
-}
-
-  handle->block_upd_ofm = 32;
-  handle->block_upd_ifm = 16;
-#endif
-
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
 #else
@@ -96,24 +54,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #endif
   int img, imgb, ofm1, ifm1, num_ofw_strips, oi_, oj_, oi__, ii_, ij_, kh, kw, ki, kj, local_entries;
   int img_block_size;
-#if 0 /* compute thr_begin and thr_end */
-  const int work = BLOCKSIFM * BLOCKSOFM; /* number of tasks that could be run in parallel */
-  const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
-  const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
-  const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-#endif
-#if 0 /* compute thr_begin and thr_end */
-  const int transpose_work = handle->desc.N*BLOCKSIFM; /* number of tasks that could be run in parallel */
-  const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (transpose_work / handle->desc.threads) : (transpose_work / handle->desc.threads) + 1;
-  const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;
-  const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
-#endif
-#if 0
-  /* number of tasks that could be run in parallel */
-  const int img_parallel_work = BLOCKSIFM*BLOCKSOFM;
-  /* compute chunk size */
-  const int img_parallel_chunksize = (img_parallel_work % handle->desc.threads == 0) ? (img_parallel_work / handle->desc.threads) : (img_parallel_work / handle->desc.threads) + 1;
-#endif
   int n_code_segments = 0;
 
   char *kernel_variant;

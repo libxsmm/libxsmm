@@ -37,65 +37,13 @@
 #if !defined(_OPENMP)
 int ltid;
 #endif
-int block_j = 14;
 int IFMBLOCK;
-
-handle->block_upd_ofm = 8;
-handle->block_upd_ifm = 8;
 if (handle->use_lp_kernel) {
   IFMBLOCK = handle->ifmblock_hp;
 } else {
   IFMBLOCK = handle->ifmblock;
 }
-
-if ( (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
-  block_j = 4;
-}
-while ( block_j % handle->upd_ofh_rb != 0 ) {
-  block_j--;
-}
-
-if (block_j < handle->upd_ofh_rb ) {
-  block_j = handle->upd_ofh_rb;
-}
-
-block_j = handle->ofh;
-
-if ( handle->ofh == 56 ) {
-  /* Pixel block is 196 Kbytes */
- handle->block_upd_ofm = handle->blocksofm;
- handle->block_upd_ifm = 1;
-
-}
-
-if ( handle->ofh == 28 ) {
-  /* Pixel block is 49 Kbytes */
- handle->block_upd_ofm = 3;
- handle->block_upd_ifm = 3;
-}
-
-if ( handle->ofh == 14 || handle->ofh == 28 || handle->ofh == 56 ) {
-  /* Pixel block is 12.25 Kbytes */
- handle->block_upd_ofm = 8;
- handle->block_upd_ifm = 32;
-}
-
-if ( handle->ofh == 7 ) {
-  /* Pixel block is 3.06 Kbytes */
- handle->block_upd_ofm = 8;
- handle->block_upd_ifm = 16;
-}
-
-
-if (  handle->ofh == 28 || handle->ofh == 35  || handle->ofh == 56 || handle->ofh == 149 || handle->ofh == 71  ||  handle->ofh == 147 || handle->ofh == 73   ) {     /* Pixel block is 12.25 Kbytes */
- handle->block_upd_ofm = 32;
- handle->block_upd_ifm = 16;
-}
-
-
-handle->block_upd_ofm = 64;
-handle->block_upd_ifm = 64;
-
+int block_j = handle->ofh;
 
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
