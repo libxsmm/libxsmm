@@ -1964,7 +1964,8 @@ LIBXSMM_API_DEFINITION libxsmm_xtransfunction libxsmm_xtransdispatch(const libxs
 
 LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_compact_trsm ( const libxsmm_gemm_descriptor* descriptor,
   const unsigned int *layout, const char *side, const char *uplo,
-  const char *transa, const char *diag, const unsigned int *typesize )
+  const char *transa, const char *diag, const unsigned int *typesize, 
+  const double *alpha )
 {
   printf("Inside libxsmm_create_compact_trsm with %c%c%c%c M=%d N=%d\n",*side,*uplo,*transa,*diag,descriptor->m,descriptor->n);
   libxsmm_code_pointer result = { 0 };
@@ -1984,6 +1985,7 @@ LIBXSMM_API_DEFINITION libxsmm_xmmfunction libxsmm_create_compact_trsm ( const l
     compact_trsm.transa = transa;
     compact_trsm.diag = diag;
     compact_trsm.typesize = typesize;
+    compact_trsm.alpha = alpha;
     request.descriptor.compact_trsm = &compact_trsm;
     request.kind = LIBXSMM_BUILD_KIND_COMPACT_TRSM;
     libxsmm_build(&request, LIBXSMM_CAPACITY_REGISTRY/*not managed*/, &result);

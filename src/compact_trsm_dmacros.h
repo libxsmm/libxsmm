@@ -12,28 +12,28 @@
 
 #define xct_ftype float /* Obsoleted in LIBXSMM, just a carry-over from XCT */
 #define SET_ZERO_PACKED(x,y,z) do {\
-    if (datasize==8) libxsmm_x86_instruction_vec_compute_reg ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VXORPD, i_vector_name, (z), (y), (x) ); \
-    else libxsmm_x86_instruction_vec_compute_reg ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VXORPS, i_vector_name, (z), (y), (x) ); \
+    if (datasz==8) libxsmm_x86_instruction_vec_compute_reg ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VXORPD, i_vector_name, (z), (y), (x) ); \
+    else libxsmm_x86_instruction_vec_compute_reg ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VXORPS, i_vector_name, (z), (y), (x) ); \
 } while(0)
 #define VMOVU_PACKED(reg, mat_ptr, mat_offset, load_store) do { \
-    if (load_store && datasize==8) libxsmm_x86_instruction_vec_move ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VMOVUPD, mat_ptr, LIBXSMM_X86_GP_REG_UNDEF, 1, (mat_offset)*2, i_vector_name, (reg), 0, 1 ); \
-    else if (load_store && datasize==4) libxsmm_x86_instruction_vec_move ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VMOVUPS, mat_ptr, LIBXSMM_X86_GP_REG_UNDEF, 1, (mat_offset), i_vector_name, (reg), 0, 1 ); \
-    else if (datasize==8) libxsmm_x86_instruction_vec_move ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VMOVUPD, mat_ptr, LIBXSMM_X86_GP_REG_UNDEF, 1, (mat_offset)*2, i_vector_name, (reg), 0, 0 ); \
-    else libxsmm_x86_instruction_vec_move ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VMOVUPS, mat_ptr, LIBXSMM_X86_GP_REG_UNDEF, 1, (mat_offset), i_vector_name, (reg), 0, 0 ); \
+    if (load_store && datasz==8) libxsmm_x86_instruction_vec_move ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VMOVUPD, mat_ptr, LIBXSMM_X86_GP_REG_UNDEF, 1, (mat_offset)*2, i_vector_name, (reg), 0, 1 ); \
+    else if (load_store && datasz==4) libxsmm_x86_instruction_vec_move ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VMOVUPS, mat_ptr, LIBXSMM_X86_GP_REG_UNDEF, 1, (mat_offset), i_vector_name, (reg), 0, 1 ); \
+    else if (datasz==8) libxsmm_x86_instruction_vec_move ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VMOVUPD, mat_ptr, LIBXSMM_X86_GP_REG_UNDEF, 1, (mat_offset)*2, i_vector_name, (reg), 0, 0 ); \
+    else libxsmm_x86_instruction_vec_move ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VMOVUPS, mat_ptr, LIBXSMM_X86_GP_REG_UNDEF, 1, (mat_offset), i_vector_name, (reg), 0, 0 ); \
 } while(0)
 #define VFMADD231_PACKED(x,y,z) do { \
-    if (datasize==8) libxsmm_x86_instruction_vec_compute_reg ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VFMADD231PD, i_vector_name, (z), (y), (x) ); \
-    else libxsmm_x86_instruction_vec_compute_reg ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VFMADD231PS, i_vector_name, (z), (y), (x) ); \
+    if (datasz==8) libxsmm_x86_instruction_vec_compute_reg ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VFMADD231PD, i_vector_name, (z), (y), (x) ); \
+    else libxsmm_x86_instruction_vec_compute_reg ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VFMADD231PS, i_vector_name, (z), (y), (x) ); \
 } while(0)
 #define VSUB_PACKED(x,y,z) do { \
-    if (datasize==8) libxsmm_x86_instruction_vec_compute_reg ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VSUBPD, i_vector_name, (x), (y), (z)); \
-    else libxsmm_x86_instruction_vec_compute_reg ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VSUBPS, i_vector_name, (z), (y), (x)); \
+    if (datasz==8) libxsmm_x86_instruction_vec_compute_reg ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VSUBPD, i_vector_name, (x), (y), (z)); \
+    else libxsmm_x86_instruction_vec_compute_reg ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VSUBPS, i_vector_name, (z), (y), (x)); \
 } while(0)
 #define VDIV_PACKED(x,y,z) do { \
-    if (datasize==8) libxsmm_x86_instruction_vec_compute_reg ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VDIVPD, i_vector_name, (x), (y), (z)); \
-    else libxsmm_x86_instruction_vec_compute_reg ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VDIVPS, i_vector_name, (z), (y), (x)); \
+    if (datasz==8) libxsmm_x86_instruction_vec_compute_reg ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VDIVPD, i_vector_name, (x), (y), (z)); \
+    else libxsmm_x86_instruction_vec_compute_reg ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VDIVPS, i_vector_name, (z), (y), (x)); \
 } while(0)
 #define VMUL_PACKED(x,y,z) do { \
-    if (datasize==8) libxsmm_x86_instruction_vec_compute_reg ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VMULPD, i_vector_name, (z), (y), (x)); \
-    else libxsmm_x86_instruction_vec_compute_reg ( io_generated_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VMULPS, i_vector_name, (z), (y), (x)); \
+    if (datasz==8) libxsmm_x86_instruction_vec_compute_reg ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VMULPD, i_vector_name, (z), (y), (x)); \
+    else libxsmm_x86_instruction_vec_compute_reg ( io_code, LIBXSMM_X86_AVX2, LIBXSMM_X86_INSTR_VMULPS, i_vector_name, (z), (y), (x)); \
 } while(0)

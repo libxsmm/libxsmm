@@ -246,7 +246,8 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descr
 
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_compact_trsm ( const libxsmm_gemm_descriptor* descriptor,
   const unsigned int *layout, const char *side, const char *uplo,
-  const char *transa, const char *diag, const unsigned int *typesize );
+  const char *transa, const char *diag, const unsigned int *typesize, 
+  const double *alpha );
 
 /**
  * Code generation routine for the CSC format which multiplies a dense SOA matrix (each element holds a SIMD-width

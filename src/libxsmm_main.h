@@ -120,6 +120,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
   const char* diag;
   const unsigned int* layout;
   const unsigned int* typesize;
+  const double* alpha;
 } libxsmm_compact_trsm_descriptor;
 
 
