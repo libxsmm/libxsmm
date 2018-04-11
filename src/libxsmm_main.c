@@ -164,11 +164,12 @@ LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX)
 #elif (0 < INTERNAL_REGLOCK_MAXN)
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
-  const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, internal_reglock_count); \
+  const unsigned int LOCKINDEX = (0 <= libxsmm_verbosity \
+    ? LIBXSMM_MOD2(INDEX, internal_reglock_count) \
+    : 0); /* dump: avoid duplicated kernels */ \
   if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REGNLOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REGNLOCK, &internal_reglock[LOCKINDEX].state)) { \
-    if (1 != internal_reglock_count && /* (re-)try and get (meanwhile) generated code */ \
-        0 != internal_registry) /* ensure engine is not shut down */ \
-    { \
+    if (1 != internal_reglock_count) { /* (re-)try and get (meanwhile) generated code */ \
+      assert(0 != internal_registry); /* engine is not shut down */ \
       continue; \
     } \
     else { /* exit dispatch and let client fall back */ \
@@ -180,9 +181,8 @@ LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
 #else /* RW-lock */
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
   if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REG1LOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REG1LOCK, &internal_reglock)) { \
-    if (1 != internal_reglock_count && /* (re-)try and get (meanwhile) generated code */ \
-        0 != internal_registry) /* ensure engine is not shut down */ \
-    { \
+    if (1 != internal_reglock_count) { /* (re-)try and get (meanwhile) generated code */ \
+      assert(0 != internal_registry); /* engine is not shut down */ \
       continue; \
     } \
     else { /* exit dispatch and let client fall back */ \
