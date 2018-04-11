@@ -189,7 +189,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->n_fwd_code_segments[ltid] = n_code_segments;
   expanded_size = local_entries/3 + n_code_segments;
   tmp_expanded_stream = (int*)(0 < expanded_size ? malloc(expanded_size * sizeof(int)) : 0);
-  assert(0 != tmp_expanded_stream); /* TODO: should never happen */
   tmp_stream_index = 0;
   if (n_code_segments) {
     encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 64);
@@ -201,7 +200,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   /* Second run to compute actual indices */
   for (img = my_img_start; img < my_img_end; img++) {
-    if (handle->padding_flag == 1) {
+    if (0 != tmp_expanded_stream && handle->padding_flag == 1) {
       tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
       tmp_stream_index++;
     }
@@ -226,11 +225,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       oj_use = oj * handle->desc.v;
                     }
 
-                    if (mark_ofm_init == 1) {
-                      if (ifm1 == 0 /*&& oj == my_h_start && oi == my_w_start*/) {
-                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
-                        tmp_stream_index++;
-                      }
+                    if (0 != tmp_expanded_stream && mark_ofm_init == 1 && ifm1 == 0 /*&& oj == my_h_start && oi == my_w_start*/) {
+                      tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
+                      tmp_stream_index++;
                     }
 
                     if (handle->padding_flag == 1) {
@@ -245,16 +242,15 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     kernel_variant[local_entries/3] = 2;
                     local_entries += 3;
 
-                    tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
-                    tmp_stream_index++;
+                    if (0 != tmp_expanded_stream) {
+                      tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                      tmp_stream_index++;
 
-                    if (mark_ofm_close == 1) {
-                      if (ifm1 == handle->blocksifm-1  && oj == my_h_end - handle->fwd_ofh_rb && oi == my_w_end - handle->fwd_ofw_rb) {
+                      if (mark_ofm_close == 1 && ifm1 == handle->blocksifm-1 && oj == (my_h_end - handle->fwd_ofh_rb) && oi == (my_w_end - handle->fwd_ofw_rb)) {
                         tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
                         tmp_stream_index++;
                       }
                     }
-
                   }
                 }
               }
@@ -272,24 +268,26 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     tmp_stream_index = 0;
     lookahead_index = 1;
 
-    while ( lookahead_index < expanded_size ) {
-      while  ( tmp_expanded_stream[lookahead_index] == CONVOLUTION_KERNEL) {
-        stretch_of_convs++;
+    if (0 != tmp_expanded_stream) {
+      while ( lookahead_index < expanded_size ) {
+        while ( tmp_expanded_stream[lookahead_index] == CONVOLUTION_KERNEL) {
+          stretch_of_convs++;
+          lookahead_index++;
+          if ( lookahead_index >= expanded_size ) break;
+        }
+        encoded_code_segments[encoded_stream_index].segment_type = tmp_expanded_stream[tmp_stream_index];
+        encoded_code_segments[encoded_stream_index].n_convs = stretch_of_convs;
+        encoded_stream_index++;
+        stretch_of_convs = 0;
+        tmp_stream_index = lookahead_index;
         lookahead_index++;
-        if ( lookahead_index >= expanded_size ) break;
       }
-      encoded_code_segments[encoded_stream_index].segment_type = tmp_expanded_stream[tmp_stream_index];
-      encoded_code_segments[encoded_stream_index].n_convs = stretch_of_convs;
-      encoded_stream_index++;
-      stretch_of_convs = 0;
-      tmp_stream_index = lookahead_index;
-      lookahead_index++;
-    }
 
-    /* Check if we have not written last segment entry -- in this case the stream ends with an action point */
-    if ( encoded_stream_index < n_code_segments ) {
-      encoded_code_segments[encoded_stream_index].segment_type = tmp_expanded_stream[tmp_stream_index];
-      encoded_code_segments[encoded_stream_index].n_convs = stretch_of_convs;
+      /* Check if we have not written last segment entry -- in this case the stream ends with an action point */
+      if ( encoded_stream_index < n_code_segments ) {
+        encoded_code_segments[encoded_stream_index].segment_type = tmp_expanded_stream[tmp_stream_index];
+        encoded_code_segments[encoded_stream_index].n_convs = stretch_of_convs;
+      }
     }
 
     /* Final pass over the segments to fill-in auxiliary indices...  */

@@ -248,8 +248,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->kernel_fwd_variant_ptrs[ltid] = kernel_variant;
   handle->n_fwd_code_segments[ltid] = n_code_segments;
   expanded_size = local_entries/3 + n_code_segments;
-  tmp_expanded_stream = (int*) malloc( expanded_size * sizeof(int) );
-  assert(0 != tmp_expanded_stream); /* TODO: check */
+  tmp_expanded_stream = (int*)(0 < expanded_size ? malloc(expanded_size * sizeof(int)) : 0);
   tmp_stream_index = 0;
   if (n_code_segments) {
     encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 64);
@@ -261,7 +260,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   if (loop_order == MIXED) {
     if (handle->use_lp_kernel == 0) { /* Well, in this case leave loop as is...  */
       for (img = my_img_start; img < my_img_end; img++) {
-        if (mark_img_init== 1) {
+        if (mark_img_init== 1 && 0 != tmp_expanded_stream) {
           tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
           tmp_stream_index++;
         }
@@ -285,11 +284,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         oj_use = oj * handle->desc.v;
                       }
 
-                      if (mark_ofm_init == 1) {
-                        if (ifm1 == 0 && oj == 0 && oi == 0) {
-                          tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
-                          tmp_stream_index++;
-                        }
+                      if (0 != tmp_expanded_stream && mark_ofm_init == 1 && ifm1 == 0 && oj == 0 && oi == 0) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
+                        tmp_stream_index++;
                       }
 
                       if (handle->padding_flag == 1) {
@@ -323,16 +320,14 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
                       local_entries += 3;
 
-                      tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
-                      tmp_stream_index++;
-
-                      if (mark_ofm_close == 1) {
-                        if (ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                      if (0 != tmp_expanded_stream) {
+                        tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                        tmp_stream_index++;
+                        if (mark_ofm_close == 1 && ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= (handle->ofh - handle->fwd_ofh_rb) && oi == (handle->ofw - handle->fwd_ofw_rb)) {
                           tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
                           tmp_stream_index++;
                         }
                       }
-
                     }
                   }
                 }
@@ -343,7 +338,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       }
     } else { /* Bring in all ifms to introduce IFM close tag  */
       for (img = my_img_start; img < my_img_end; img++) {
-        if (mark_img_init== 1) {
+        if (0 != tmp_expanded_stream && mark_img_init== 1) {
           tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
           tmp_stream_index++;
         }
@@ -367,11 +362,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         oj_use = oj * handle->desc.v;
                       }
 
-                      if (mark_ofm_init == 1) {
-                        if (ifm1 == 0 && oj == 0 && oi == 0) {
-                          tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
-                          tmp_stream_index++;
-                        }
+                      if (0 != tmp_expanded_stream && mark_ofm_init == 1 && ifm1 == 0 && oj == 0 && oi == 0) {
+                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
+                        tmp_stream_index++;
                       }
 
                       if (handle->padding_flag == 1) {
@@ -406,23 +399,18 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
                       local_entries += 3;
 
-                      tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
-                      tmp_stream_index++;
-
-                      if (mark_ifm_close == 1) {
-                        if ( ifm1 >= BLOCKSIFM-BLOCKSIFM_BLOCKING ) {
+                      if (0 != tmp_expanded_stream) {
+                        tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                        tmp_stream_index++;
+                        if (mark_ifm_close == 1 && ifm1 >= BLOCKSIFM-BLOCKSIFM_BLOCKING) {
                           tmp_expanded_stream[tmp_stream_index] = IFM_LOOP_CLOSE_S;
                           tmp_stream_index++;
                         }
-                      }
-
-                      if (mark_ofm_close == 1) {
-                        if (ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                        if (mark_ofm_close == 1 && ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= (handle->ofh - handle->fwd_ofh_rb) && oi == (handle->ofw - handle->fwd_ofw_rb)) {
                           tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
                           tmp_stream_index++;
                         }
                       }
-
                     }
                   }
                 }
@@ -437,7 +425,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   if (loop_order == HWKC) {
     for (img = my_img_start; img < my_img_end; img++) {
-      if (mark_img_init== 1) {
+      if (0 != tmp_expanded_stream && mark_img_init== 1) {
         tmp_expanded_stream[tmp_stream_index] = IMG_LOOP_INIT;
         tmp_stream_index++;
       }
@@ -462,11 +450,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       oj_use = oj * handle->desc.v;
                     }
 
-                    if (mark_ofm_init == 1) {
-                      if (ifm1 == 0 && oj == 0 && oi == 0) {
-                        tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
-                        tmp_stream_index++;
-                      }
+                    if (0 != tmp_expanded_stream && mark_ofm_init == 1 && ifm1 == 0 && oj == 0 && oi == 0) {
+                      tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_INIT;
+                      tmp_stream_index++;
                     }
 
                     if (handle->padding_flag == 1) {
@@ -500,23 +486,20 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
                     local_entries += 3;
 
-                    tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
-                    tmp_stream_index++;
+                    if (0 != tmp_expanded_stream) {
+                      tmp_expanded_stream[tmp_stream_index] = CONVOLUTION_KERNEL;
+                      tmp_stream_index++;
 
-                    if (mark_ifm_close == 1) {
-                      if ( ifm1 >= BLOCKSIFM-BLOCKSIFM_BLOCKING ) {
+                      if (mark_ifm_close == 1 && ifm1 >= BLOCKSIFM-BLOCKSIFM_BLOCKING) {
                         tmp_expanded_stream[tmp_stream_index] = IFM_LOOP_CLOSE_S;
                         tmp_stream_index++;
                       }
-                    }
 
-                    if (mark_ofm_close == 1) {
-                      if (ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                      if (mark_ofm_close == 1 && ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
                         tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
                         tmp_stream_index++;
                       }
                     }
-
                   }
                 }
               }
@@ -535,24 +518,26 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     tmp_stream_index = 0;
     lookahead_index = 1;
 
-    while ( lookahead_index < expanded_size ) {
-      while  ( tmp_expanded_stream[lookahead_index] == CONVOLUTION_KERNEL) {
-        stretch_of_convs++;
+    if (0 != tmp_expanded_stream) {
+      while ( lookahead_index < expanded_size ) {
+        while  ( tmp_expanded_stream[lookahead_index] == CONVOLUTION_KERNEL) {
+          stretch_of_convs++;
+          lookahead_index++;
+          if ( lookahead_index >= expanded_size ) break;
+        }
+        encoded_code_segments[encoded_stream_index].segment_type = tmp_expanded_stream[tmp_stream_index];
+        encoded_code_segments[encoded_stream_index].n_convs = stretch_of_convs;
+        encoded_stream_index++;
+        stretch_of_convs = 0;
+        tmp_stream_index = lookahead_index;
         lookahead_index++;
-        if ( lookahead_index >= expanded_size ) break;
       }
-      encoded_code_segments[encoded_stream_index].segment_type = tmp_expanded_stream[tmp_stream_index];
-      encoded_code_segments[encoded_stream_index].n_convs = stretch_of_convs;
-      encoded_stream_index++;
-      stretch_of_convs = 0;
-      tmp_stream_index = lookahead_index;
-      lookahead_index++;
-    }
 
-    /* Check if we have not written last segment entry -- in this case the stream ends with an action point */
-    if ( encoded_stream_index < n_code_segments ) {
-      encoded_code_segments[encoded_stream_index].segment_type = tmp_expanded_stream[tmp_stream_index];
-      encoded_code_segments[encoded_stream_index].n_convs = stretch_of_convs;
+      /* Check if we have not written last segment entry -- in this case the stream ends with an action point */
+      if ( encoded_stream_index < n_code_segments ) {
+        encoded_code_segments[encoded_stream_index].segment_type = tmp_expanded_stream[tmp_stream_index];
+        encoded_code_segments[encoded_stream_index].n_convs = stretch_of_convs;
+      }
     }
 
     /* Final pass over the segments to fill-in auxiliary indices...  */
