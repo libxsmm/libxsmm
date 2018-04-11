@@ -43,10 +43,10 @@ In general, if the build step of any of the Bazel commands goes wrong, `-s --ver
 **More important, one line of below target flags should be added to Bazel's build line**:
 
 * AVX2/HSW/BDW: `--copt=-mfma --copt=-mavx2`
-* AVX-512/SKX: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl` (and `--copt=-mavx512dq` depending on certain fixes being already present in TensorFlow)
+* AVX-512/SKX: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl --copt=-mavx512dq` (in the past `--copt=-mavx512dq` caused additional issues; see note below)
 * AVX-512/KNL: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512pf --copt=-mavx512er`
 
-**NOTE**: TensorFlow may run into issues, and one may temporarily apply `--copt=-mfma --copt=-mavx2` (even if Intel&#160;AVX-512 extensions are available). There are at least two issues: (1)&#160;there can be NaNs e.g., printed when training a network regardless of the GCC-version, or (2)&#160;TensorFlow *without* LIBXSMM may crash in TF's implementation of GEMM.
+**NOTE**: TensorFlow or specifically Eigen's pack-math may run into issues when targeted to AVX-512, hence should limit the code to Intel AVX2 instructions (`--copt=-mfma --copt=-mavx2`). This should not imply a significant performance penalty since all hotspots should be based on JIT-generated code (CPUID-dispatched). As a side-note (this is often missed in AVX2 vs. AVX-512 comparisons), AVX2 code can use twice as many registers (32) on AVX-512 capable systems (if instructions are EVEX encoded, which is practically always the case).
 
 For AVX-512 in general, GCC&#160;5.x (or higher) should be used (see section [Non-default Compiler](#non-default-compiler)). LIBXSMM supports Intel&#160;AVX2 as the baseline code path for all JIT-generated DNN-code (SMM domain also supports AVX). For Intel&#160;AVX-512 (on top of AVX2), the foundational instructions are sufficient in many cases, but for the sparse domain the Core-flavor is a prerequisite ("Skylake server" or SKX), and VNNI/QFMA instructions are honored on Intel Xeon&#160;Phi code-named "Knights Mill" (KNM).
 
