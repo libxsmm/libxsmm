@@ -196,4 +196,6 @@ int main(int agrc, char* argv[]) {
   _mm_free( b );
   _mm_free( c1 );
   _mm_free( c2 );
+
+  return 0;
 }
