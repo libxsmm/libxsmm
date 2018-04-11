@@ -165,7 +165,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
 
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n1_range );
     libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
-    
+
     /* second range */
     libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n2_block );
@@ -235,7 +235,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
 
 LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxsmm_generated_code*            io_generated_code,
                                                                            libxsmm_loop_label_tracker*        io_loop_label_tracker,
-                                                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping, 
+                                                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                                            const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                                            const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                                            const char*                        i_arch,
@@ -338,7 +338,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
                                                l_n );
     }
   }
-   
+
   /* advance A pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_add_instruction,
