@@ -40,7 +40,7 @@ int BLOCKSIFM = handle->blocksifm_lp;
 int BLOCKSOFM = handle->blocksofm;
 
 const int ltid = tid-start_thread;
-int gs = 72; /*atoi(getenv("GSIZE"));*/
+int gs = handle->desc.threads; /*atoi(getenv("GSIZE"));*/
 const int tile_id = ltid/gs;
 /* Pointer variables  */
 const element_input_type *input_base, *input_ptr;
