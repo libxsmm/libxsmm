@@ -71,7 +71,7 @@ void MLEngine::create_schedule(int mode)
           etg_[mode].push_back(tp[i]);
 #ifdef DEBUG
           printf("FP task %p (node %s), with bin %d pushed to etg_\n",tp[i], s.c_str(), tp[i]->getMaxBin());
-#endif	
+#endif
         }
       }
     }
@@ -83,7 +83,7 @@ void MLEngine::create_schedule(int mode)
     {
       Task* t = *it;
       vector<Task*> tp = t->getForwDepTasks();
-      for(int i=0; i<tp.size(); i++) 
+      for(int i=0; i<tp.size(); i++)
       {
         string s = dynamic_cast<NNNode*>(tp[i]->getNode())->getNodeName();
 
@@ -102,7 +102,7 @@ void MLEngine::create_schedule(int mode)
               printf("WU task %p (node %s), with bin %d pushed to etg_\n",tp[i], s.c_str(), tp[i]->getMaxBin());
             else if(tp[i]->getBasicTaskId() == BASIC_TASK_SOLVE)
               printf("SOLVE task %p (node %s), with bin %d pushed to etg_\n",tp[i], s.c_str(), tp[i]->getMaxBin());
-#endif	
+#endif
           }
         }
       }
@@ -134,7 +134,7 @@ bool MLEngine::register_tensor(string name, int type, Tensor* t)
       inTensorMap_[name] = it;
       break;
 
-    case ACT: 
+    case ACT:
       it = outTList_.insert(outTList_.end(), tp);
       outTensorMap_[name] = it;
       break;
@@ -187,7 +187,7 @@ Tensor* MLEngine::get_tensor(string name, int type)
     case BNORMSCALE:
     case BNORMSHIFT:
       it = biasTensorMap_[name];
-      break;	
+      break;
 
     case BNORMMEAN:
     case BNORMRSTDEV:
@@ -213,7 +213,7 @@ void MLEngine::clear_history(TensorList L)
 {
   int buftype = HISTORY;
 
-  for(Iter it=L.begin(); it != L.end(); it++) 
+  for(Iter it=L.begin(); it != L.end(); it++)
   {
     Tensor* t = it->t;
     TensorBuf *tBuf;
@@ -257,7 +257,7 @@ void MLEngine::checkpoint(TensorList L)
 {
   int buftype = DATA;
 
-  for(Iter it=L.begin(); it != L.end(); it++) 
+  for(Iter it=L.begin(); it != L.end(); it++)
   {
     Tensor* t = it->t;
     TensorBuf *tBuf;
@@ -266,7 +266,7 @@ void MLEngine::checkpoint(TensorList L)
     for(int index=0; index<t->getNumDataBuffers(); index++)
     {
       tBuf = t->getBuf(index);
-      if(tBuf->getBufferType() == buftype) 
+      if(tBuf->getBufferType() == buftype)
       {
         found = true;
         break;
@@ -336,7 +336,7 @@ void MLEngine::load_checkpoint(TensorList L, string format)
   int buftype = DATA;
   TensorBuf* tBuf;
 
-  for(Iter it=L.begin(); it != L.end(); it++) 
+  for(Iter it=L.begin(); it != L.end(); it++)
   {
     Tensor* t = it->t;
     int tenType = t->getType();
@@ -407,7 +407,7 @@ void MLEngine::quantize_and_transpose_weights(TensorList L)
 {
   int buftype = DATA;
 
-  for(Iter it=L.begin(); it != L.end(); it++) 
+  for(Iter it=L.begin(); it != L.end(); it++)
   {
     Tensor* t = it->t;
     TensorBuf *tBuf;
@@ -416,7 +416,7 @@ void MLEngine::quantize_and_transpose_weights(TensorList L)
     for(int index=0; index<t->getNumDataBuffers(); index++)
     {
       tBuf = t->getBuf(index);
-      if(tBuf->getBufferType() == buftype) 
+      if(tBuf->getBufferType() == buftype)
       {
         found = true;
         break;
@@ -438,7 +438,7 @@ void MLEngine::quantize_and_transpose_weights(TensorList L)
   }
 }
 
-void MLEngine::run(int mode) 
+void MLEngine::run(int mode)
 {
   if(mode == TRAIN)
   {
@@ -468,7 +468,7 @@ void MLEngine::run(int mode)
 
     // current_epoch_ is set in create() function or by checkpoint code above
     for(; current_epoch_ < num_epochs_; current_epoch_++)
-    {	
+    {
       // Tell data node that it should use training data
       exec_mode_ = TRAIN;
       if(global_node_id_ == 0)
@@ -499,13 +499,13 @@ void MLEngine::run(int mode)
 
           (*it)->invoke();
 
-#ifdef TIMING                                        
+#ifdef TIMING
           gettimeofday(&tvte, NULL);
           double tasktime = (tvte.tv_sec*1e6 + tvte.tv_usec) - (tvts.tv_sec*1e6 + tvts.tv_usec);
           NNNode *nn = dynamic_cast<NNNode*>((*it)->getNode());
           if(global_node_id_ == 0)
             printf("Node %s (task %d) time = %f ms\n",nn->getNodeName().c_str(), (*it)->getBasicTaskId(), tasktime/1000);
-#endif                                        
+#endif
         }
 
         if(solver_->getGlobalFlag())
@@ -654,7 +654,7 @@ void MLEngine::allocate_tensor_memory(Tensor* t, int buftype, void* buf_)
   else if(dtype == DT_INT)
   {
     buf_ = (int*)_mm_malloc(size, 64);
-    tBuf->setBuffer((int*)buf_);		
+    tBuf->setBuffer((int*)buf_);
   }
 }
 
@@ -669,10 +669,10 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
   float* lrptr, *decptr;
 
   // Get total buffer size required for tensors of type buftype
-  for(Iter it=L.begin(); it != L.end(); it++) 
+  for(Iter it=L.begin(); it != L.end(); it++)
   {
     Tensor* t = it->t;
-    
+
     bool found = false;
     for(int i=0; i<t->getNumDataBuffers(); i++)
     {
@@ -704,7 +704,7 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
         num_canaries++;
     }
   }
-  
+
   if(solver_->getGlobalFlag())
   {
     if(tenType == "WEIGHT")
@@ -814,7 +814,7 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
   //Set up tensor buffer pointers
   void* ptr = ttp ? (void*)buf_ + START_GUARD_BAND : (void*)buf_;
 
-  for(Iter it=L.begin(); it != L.end(); it++) 
+  for(Iter it=L.begin(); it != L.end(); it++)
   {
     Tensor* t = it->t;
 
@@ -822,9 +822,9 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
     for(int i=0; i<t->getNumDataBuffers(); i++)
     {
       tBuf = t->getBuf(i);
-      if(tBuf->getBufferType() == buftype) 
+      if(tBuf->getBufferType() == buftype)
       {
-        found = true; 
+        found = true;
         break;
       }
     }
@@ -961,7 +961,7 @@ void* MLEngine::allocate_gradient_tensor(TensorList L, int buftype, int n, long 
     for(int j=0; j<t->getNumDataBuffers(); j++)
     {
       TensorBuf *tBuf = t->getBuf(j);
-      if(tBuf->getBufferType() == buftype) 
+      if(tBuf->getBufferType() == buftype)
       {
         long long int offset = (count % n) * size;
         tBuf->setBuffer(rw_buf + offset);
@@ -990,7 +990,7 @@ void MLEngine::insertSplitNodes(NTGParameter& p, NTGParameter* ps)
     const NodeParameter& np = p.node(i);
     string nn = np.name();
     for(int j=0; j<np.top_size(); j++)
-      top_names.push_back(make_pair(np.top(j), nn)); 
+      top_names.push_back(make_pair(np.top(j), nn));
   }
 
   std::multimap<std::string, NodeParameter> top_as_bot;
@@ -1108,7 +1108,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
 
 #ifdef _OPENMP
   num_threads_ = omp_get_max_threads();
-#else	
+#else
   num_threads_ = 1;
 #endif
 
@@ -1148,17 +1148,17 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
 
   int numNodes = split_ntgparam.node_size();
 
-  for(int i=0; i<numNodes; i++) 
+  for(int i=0; i<numNodes; i++)
   {
     // get name and type of each node
     // call parse and create node functions based on type
     // find member of TypeList
-    NodeParameter np = split_ntgparam.node(i); 
+    NodeParameter np = split_ntgparam.node(i);
     string ntype = np.type();
 
 #ifdef DEBUG
     printf("node type %s\n",ntype.c_str());
-#endif		
+#endif
     int j = find_in_nodeTypeList(ntype);
 
     MLParams *p = nodeTypes[j].parse(&np);
@@ -1179,12 +1179,12 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
 #ifdef DEBUG
   printf("first node type %s\n",first.c_str());
 #endif
-  assert(first.find("Data") != first.npos); 
+  assert(first.find("Data") != first.npos);
 
   // Create the neural network graph for training or testing mode
   dnode->createNNGraph(mode);
 
-  // Forward Pass Binning. 
+  // Forward Pass Binning.
   // Look for tasks attached to nodes with no successors. Add them to the Executing Task Graph (etg) first.
   for(int i=numNodes-1; i>0; i--)
   {
@@ -1196,11 +1196,11 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
       etg_[mode].push_back(t);
 #ifdef DEBUG
       printf("FP task %p (node %s), bin %d pushed to etg_\n",t, nn->getNodeName().c_str(), t->getMaxBin());
-#endif	
+#endif
     }
   }
 
-  // Assign bins to tasks based on their dependencies. Tasks with lower bin number must 
+  // Assign bins to tasks based on their dependencies. Tasks with lower bin number must
   // execute before those with higher bin number. Tasks with same bin number can execute in parallel
   // Ensure no duplicate tasks in etg
   create_schedule(mode);
@@ -1259,7 +1259,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
 
   /***********************************************************/
   /*** Allocate memory and set pointers for WEIGHTS buffer ***/
-  /***********************************************************/	
+  /***********************************************************/
   long long int total_weight_size;
   weight_buf_ = allocate_memory("WEIGHT", wTList_, DATA, wt_can_ptr, &wtc, &total_weight_size, NULL, num_machines_);
   if(global_node_id_ == 0)
@@ -1267,7 +1267,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
 
   /***********************************************************/
   /*** Allocate memory and set pointers for BIASES buffer ***/
-  /***********************************************************/	
+  /***********************************************************/
   long long int total_bias_size;
   bias_buf_ = allocate_memory("BIAS", biasTList_, DATA, bias_can_ptr, &bic, &total_bias_size, NULL, num_machines_);
   if(global_node_id_ == 0)
@@ -1302,7 +1302,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
 
     /********************************************************************/
     /*** Allocate memory and set pointers for WEIGHT GRADIENTS buffer ***/
-    /********************************************************************/		
+    /********************************************************************/
     long long int total_wdiff_size;
     wdiff_buf_ = allocate_memory("WEIGHT", wTList_, DIFF, wdiff_can_ptr, &wdc, &total_wdiff_size, NULL, num_machines_);
     if(global_node_id_ == 0)
@@ -1310,7 +1310,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
 
     /*********************************************************************/
     /*** Allocate memory and set pointers for WEIGHT INCREMENTS buffer ***/
-    /*********************************************************************/		
+    /*********************************************************************/
     long long int total_winc_size;
     winc_buf_ = allocate_memory("WEIGHT", wTList_, HISTORY, winc_can_ptr, &wic, &total_winc_size, NULL, num_machines_);
     if(global_node_id_ == 0)
@@ -1318,7 +1318,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
 
     /********************************************************************/
     /*** Allocate memory and set pointers for BIAS GRADIENTS buffer ***/
-    /********************************************************************/		
+    /********************************************************************/
     long long int total_bidiff_size;
     bidiff_buf_ = allocate_memory("BIAS", biasTList_, DIFF, bidiff_can_ptr, &bidc, &total_bidiff_size, NULL, num_machines_);
     if(global_node_id_ == 0)
@@ -1326,7 +1326,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
 
     /*********************************************************************/
     /*** Allocate memory and set pointers for BIAS INCREMENTS buffer ***/
-    /*********************************************************************/		
+    /*********************************************************************/
     long long int total_biinc_size;
     biinc_buf_ = allocate_memory("BIAS", biasTList_, HISTORY, biinc_can_ptr, &biic, &total_biinc_size, NULL, num_machines_);
     if(global_node_id_ == 0)

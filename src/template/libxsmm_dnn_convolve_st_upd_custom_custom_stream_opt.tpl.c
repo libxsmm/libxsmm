@@ -70,15 +70,8 @@ element_input_type (* LIBXSMM_RESTRICT copy_ptr);
 element_input_type *prefetch_ptr;
 int padded_h = (handle->padding_flag == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
 int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
-int ifwp_extended = padded_w + handle->qfma_input_pad;
-int dst_ifhp;
-
-if (handle->resize_input == 1) {
-  ifwp_extended = handle->ifwp_resized + handle->qfma_input_pad;
-  dst_ifhp = handle->ifhp_resized;
-} else {
-  dst_ifhp = handle->ifhp;
-}
+int ifwp_extended = (handle->resize_input == 1 ? (handle->ifwp_resized + handle->qfma_input_pad) : (padded_w + handle->qfma_input_pad));
+int dst_ifhp = (handle->resize_input == 1 ? handle->ifhp_resized : handle->ifhp);
 
 LIBXSMM_VLA_DECL(5, const element_input_type, input_nopad, (element_input_type*)handle->reg_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
 LIBXSMM_VLA_DECL(5, element_input_type, tr_input_padded, (element_input_type*)handle->scratch5, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);

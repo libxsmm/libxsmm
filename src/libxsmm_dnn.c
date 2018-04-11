@@ -2433,20 +2433,21 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* 
 }
 
 
-LIBXSMM_API float libxsmm_internal_get_max( float* in_buffer, int length ) {
+LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length );
+LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length ) {
   float absmax_value = (float)fabs((double)(in_buffer[0]));
   int i = 0;
 #ifdef _OPENMP
-#pragma omp parallel private(i)
+# pragma omp parallel private(i)
   {
     float my_absmax_value = absmax_value;
-#pragma omp for private(i)
+#   pragma omp for private(i)
     for( i = 0; i < length; ++i ) {
       if ((float)fabs((double)(in_buffer[i])) > my_absmax_value) {
         my_absmax_value = (float)fabs((double)(in_buffer[i]));
       }
     }
-#pragma omp critical
+#   pragma omp critical
     {
       if (my_absmax_value > absmax_value) {
         absmax_value = my_absmax_value;
@@ -2465,7 +2466,7 @@ LIBXSMM_API float libxsmm_internal_get_max( float* in_buffer, int length ) {
 }
 
 
-LIBXSMM_API unsigned char libxsmm_internal_get_max_exp( float* in_buffer, int length ) {
+LIBXSMM_API_INLINE unsigned char libxsmm_internal_get_max_exp( float* in_buffer, int length ) {
   libxsmm_intfloat exp;
   unsigned char max_exp = 0;
 
@@ -2478,7 +2479,7 @@ LIBXSMM_API unsigned char libxsmm_internal_get_max_exp( float* in_buffer, int le
 }
 
 
-LIBXSMM_API short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned char max_exp, unsigned char add_shift, int round_mode ) {
+LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned char max_exp, unsigned char add_shift, int round_mode ) {
   libxsmm_intfloat value;
   unsigned int qvalue = 0;
   unsigned int mant = 0;
@@ -2487,7 +2488,7 @@ LIBXSMM_API short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned
   unsigned char exp_off = 0;
 
   /* in case of zero we don't need to do anything */
-  if (input == 0.0f) {
+  if (LIBXSMM_FEQ(input, 0)) {
     qvalue = 0;
   } else {
     /* let's get a float copy to work on */
@@ -2496,7 +2497,7 @@ LIBXSMM_API short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned
     /* let's compute the offset of the current exp at pos i from max offset, we need to mask the sign bit though */
     /*__m512i vexp     = _mm512_cvtps_epi32(_mm512_getexp_ps (vinp));
       __m512i vexp_off = _mm512_sub_epi32(maxexpf, vexp);*/
-    exp_off = max_exp - (unsigned char)((value.ui & LIBXSMM_DNN_MASK_ABS_F32) >> LIBXSMM_DNN_MANT_SZ_F32);
+    exp_off = (unsigned char)(max_exp - ((value.ui & LIBXSMM_DNN_MASK_ABS_F32) >> LIBXSMM_DNN_MANT_SZ_F32));
     /* cut out mantissa and set leading bit */
     /*__m512i mmask = _mm512_set1_epi32(LIBXSMM_DNN_MASK_MANT_F32);
       __m512i vmant = _mm512_or_epi32(_mm512_set1_epi32(0x1 << LIBXSMM_DNN_MANT_SZ_F32), _mm512_and_epi32( _mm512_castps_si512( vinp ), mmask));*/
@@ -2504,13 +2505,13 @@ LIBXSMM_API short libxsmm_internal_quantize_scalar_no_scf( float input, unsigned
     /* extract sign */
     /* __mmask16 smask =  _mm512_cmplt_ps_mask (inp, _mm512_set1_ps(0)); */
     sign = ((value.ui & LIBXSNN_DNN_MASK_SIGN_F32) >> (LIBXSMM_DNN_SZ_F32-1));
-    /* caclulate rhs, be aware of the now explicit leading bit, @TODO add DFP8/4 */
+    /* calculate rhs, be aware of the now explicit leading bit, @TODO add DFP8/4 */
     rhs = (unsigned char)((LIBXSMM_DNN_MANT_SZ_F32+1) - LIBXSMM_DNN_MANT_DFP16 + exp_off + add_shift);
     /* some safety, to generate 0 when we fall off quant region, @TODO issue a LIBXSMM Warning that we shifted out the entire mantissa */
     if (rhs > (LIBXSMM_DNN_MANT_SZ_F32+1)) {
       rhs = (LIBXSMM_DNN_MANT_SZ_F32+1);
     }
-    /* finally shfit the value into the region we need, this is now a 15-add_rhs bit number for the max value in in_buffer */
+    /* finally shift the value into the region we need, this is now a 15-add_rhs bit number for the max value in in_buffer */
     qvalue = (mant >> rhs);
     /* handle sign, 2 complement */
     if ( (sign > 0) && (qvalue > 0) ) {
@@ -2573,7 +2574,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
     if ( length % 16 == 0 ) {
       __m512 vscfq = _mm512_set1_ps(scfq);
 #ifdef _OPENMP
-#pragma omp parallel for private(i)
+#     pragma omp parallel for private(i)
 #endif
       for( i = 0; i < length; i+=16 ) {
         _mm256_stream_si256( (__m256i *)&(out_buffer[i]), _mm512_quantize_near_ps_epi16( &(in_buffer[i]), vscfq ) );
@@ -2581,7 +2582,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
     } else {
 #endif
 #ifdef _OPENMP
-#pragma omp parallel for private(i)
+#     pragma omp parallel for private(i)
 #endif
       for( i = 0; i < length; ++i ) {
         out_buffer[i] = (short)round(in_buffer[i]*scfq);
@@ -2606,13 +2607,13 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
     }
 
 #ifdef _OPENMP
-#pragma omp parallel for private(i)
+#   pragma omp parallel for private(i)
 #endif
     for( i = 0; i < length; ++i ) {
       out_buffer[i] = libxsmm_internal_quantize_scalar_no_scf( in_buffer[i], max_exp, add_shift, round_mode );
     }
 
-    *scf = 14-add_shift-(max_exp-127);
+    *scf = (unsigned char)(14 - add_shift - (max_exp - 127));
   }
 }
 
@@ -2712,7 +2713,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
       }
     }
 
-    *scf = 14-add_shift-(max_exp-127);
+    *scf = (unsigned char)(14 - add_shift - (max_exp - 127));
   }
 }
 
@@ -2842,7 +2843,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
       }
     }
 
-    *scf = 14-add_shift-(max_exp-127);
+    *scf = (unsigned char)(14 - add_shift - (max_exp - 127));
   }
 }
 
@@ -2852,7 +2853,7 @@ LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, in
   int i = 0;
 
 #ifdef _OPENMP
-#pragma omp parallel for private(i)
+# pragma omp parallel for private(i)
 #endif
   for ( i = 0; i < length; ++i ) {
     out_buffer[i] = ((float)in_buffer[i])*exp;

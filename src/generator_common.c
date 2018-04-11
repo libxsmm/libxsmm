@@ -1172,3 +1172,56 @@ void libxsmm_convfunction_signature_int16( libxsmm_generated_code*         io_ge
 
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 }
+
+
+LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking( unsigned int  i_size,
+                                                                    unsigned int  i_max_block,
+                                                                    unsigned int* o_range_1,
+                                                                    unsigned int* o_block_1,
+                                                                    unsigned int* o_range_2,
+                                                                    unsigned int* o_block_2 ) {
+  unsigned int l_number_of_chunks = 1+((i_size-1)/i_max_block);
+  unsigned int l_modulo = i_size%l_number_of_chunks;
+  unsigned int l_n2 = i_size/l_number_of_chunks;
+  unsigned int l_n1 = l_n2 + 1;
+  unsigned int l_N2 = 0;
+  unsigned int l_N1 = 0;
+  unsigned int l_chunk = 0;
+  unsigned int l_ret = 0;
+
+  /* ranges */
+  if (l_n1 > i_max_block) l_n1 = i_max_block;
+  for (l_chunk = 0; l_chunk < l_number_of_chunks; l_chunk++) {
+    if (l_chunk < l_modulo) {
+      l_N1 += l_n1;
+    } else {
+      l_N2 += l_n2;
+    }
+  }
+
+  /* if we have perfect blocking, let's swap n2 and n1, set  */
+  if( l_modulo == 0 ) {
+    l_n1 = l_n2;
+    l_N1 = l_N2;
+    l_n2 = 0;
+    l_N2 = 0;
+  }
+
+  /* some checks */
+  if ( l_N1 % l_n1 != 0 ) {
+    l_ret = 1;
+  }
+  if ( l_n2 != 0 ) {
+    if ( l_N2 % l_n2 != 0 ) {
+      l_ret = 1;
+    }
+  }
+
+  /* set output variables */
+  *o_range_1 = l_N1;
+  *o_block_1 = l_n1;
+  *o_range_2 = l_N2;
+  *o_block_2 = l_n2;
+
+  return l_ret;
+}

@@ -35,12 +35,12 @@
 #include "libxsmm.h"
 #include "check.hpp"
 
-class PoolXSMM : public PoolImpl 
+class PoolXSMM : public PoolImpl
 {
   protected:
 
   public:
-    PoolXSMM(PoolImplParams* gp, int engine) : PoolImpl(gp, engine) 
+    PoolXSMM(PoolImplParams* gp, int engine) : PoolImpl(gp, engine)
   {
     top_layout_type = LIBXSMM_CUSTOM_LAYOUT;
     top_layout = NULL;

@@ -44,10 +44,10 @@ then
   VLEN=$4
   FRMT=$5
 else
-  REPS=10000
+  REPS=1000
   PDEG=5
   PREC=f64
-  VLEN=32
+  VLEN=64
   FRMT=csc
 fi
 

@@ -33,12 +33,6 @@
 
 #include <libxsmm_generator.h>
 
-/* Fallback to MKL and not to triple nested loops in the generator (noarch)
- **/
-#if 0
-#define LIBXSMM_GENERATOR_MKL_BLAS_FALLBACK
-#endif
-
 /*@TODO check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
 #define LIBXSMM_X86_GP_REG_RAX               0
@@ -542,6 +536,13 @@ void libxsmm_convfunction_signature_fp32( libxsmm_generated_code*         io_gen
 LIBXSMM_API_INTERN
 void libxsmm_convfunction_signature_int16( libxsmm_generated_code*         io_generated_code,
                                            const char*                     i_routine_name     );
+
+LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking( unsigned int i_size,
+                                                            unsigned int i_max_block,
+                                                            unsigned int* o_range_1,
+                                                            unsigned int* o_block_1,
+                                                            unsigned int* o_range_2,
+                                                            unsigned int* o_block_2 );
 
 #endif /* GENERATOR_COMMON_H */
 

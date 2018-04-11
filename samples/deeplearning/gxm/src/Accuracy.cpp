@@ -68,8 +68,8 @@ AccuracyNode::AccuracyNode(AccuracyParams* p, MLEngine* e) : NNNode(p, e)
   shape_setzero(&ts_);
 
   ts_.ndims = 2;
-  ts_.dims[0] = bs->dims[0];	// minibatch
-  ts_.dims[1] = bs->dims[1];	// num output = num_input
+  ts_.dims[0] = bs->dims[0]; // minibatch
+  ts_.dims[1] = bs->dims[1]; // num output = num_input
 
   top_k_ = p->get_top_k();
 
@@ -153,7 +153,7 @@ void AccuracyNode::forwardPropagate()
       avg_test_acc_ = avg_test_acc_/(double)test_batch_count_;
 #ifdef USE_MLSL
       MPI_Allreduce(MPI_IN_PLACE, &avg_test_acc_, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-      
+
       avg_test_acc_ = avg_test_acc_/num_nodes;
       if(node_id == 0)
         printf("Top-%d Minibatch testing accuracy = %f\n", top_k_, avg_test_acc_);
@@ -164,5 +164,5 @@ void AccuracyNode::forwardPropagate()
       avg_test_acc_ = 0;
     }
   }
-}	
+}
 

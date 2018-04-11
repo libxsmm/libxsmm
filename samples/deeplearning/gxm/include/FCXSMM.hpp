@@ -35,12 +35,12 @@
 #include <omp.h>
 #include "FCImpl.hpp"
 
-class FCXSMM : public FCImpl 
+class FCXSMM : public FCImpl
 {
   protected:
 
   public:
-    FCXSMM(FCImplParams* gp, int engine) : FCImpl(gp, engine) 
+    FCXSMM(FCImplParams* gp, int engine) : FCImpl(gp, engine)
     {
       top_layout_type = NCHW;
       top_layout = NULL;
@@ -54,4 +54,4 @@ class FCXSMM : public FCImpl
     void backPropagate(TensorBuf *deloutp, TensorBuf* weightp, TensorBuf *delinp, int tid);
     void weightUpdate(TensorBuf *deloutp, TensorBuf *inp, TensorBuf *delweightp, TensorBuf *delbiasp, int tid);
 };
-		
+

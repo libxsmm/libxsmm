@@ -88,7 +88,7 @@ ImageDataNode::ImageDataNode(ImageDataParams* p, MLEngine* e) : NNNode(p, e)
         size *= tts.dims[j];
 
       // Size of data tensor buffer = batch_size * channels * height * width * sizeof(float/short int)
-      if(dtype == DT_FLOAT) 
+      if(dtype == DT_FLOAT)
         size = size*sizeof(float);
       else if(dtype == DT_INT16)
         size = size*sizeof(short int);
@@ -106,7 +106,7 @@ ImageDataNode::ImageDataNode(ImageDataParams* p, MLEngine* e) : NNNode(p, e)
       tenTop_[i]->setType(LABEL);
 
       int dtype = p->get_label_data_type();
-      tenTopData_[i]->setDataType(dtype);		
+      tenTopData_[i]->setDataType(dtype);
       tenTopData_[i]->setBufferType(DATA);
 
       Shape tts;
@@ -125,7 +125,7 @@ ImageDataNode::ImageDataNode(ImageDataParams* p, MLEngine* e) : NNNode(p, e)
       assert(dtype == DT_INT);
       size = size*sizeof(int);
 
-      tenTopData_[i]->setBufferSize(size);			
+      tenTopData_[i]->setBufferSize(size);
 
       // Register output tensor in tensorMap
       bool inserted = e->register_tensor(NNNode::top_[i], LABEL, tenTop_[i]);
@@ -198,7 +198,7 @@ ImageDataNode::ImageDataNode(ImageDataParams* p, MLEngine* e) : NNNode(p, e)
     e->set_num_test_views(gparams_.test_views);
 
     setupTestIndices();
-  }	
+  }
   else if(mode == TEST)
   {
     num_test_files_ = p->get_num_test_files();
@@ -247,7 +247,7 @@ void ImageDataNode::setupTrainIndices()
 {
   int ntrain = num_train_files_;
 
-  if(ntrain <= batch_size_)	
+  if(ntrain <= batch_size_)
   {
     ntrain = batch_size_;
     gparams_.lookahead = 1; // Override default lookahead, if any
@@ -271,7 +271,7 @@ void ImageDataNode::setupTrainIndices()
 
   random_shuffle(tfile_index.begin(), tfile_index.end());
 
-  int k=0; 
+  int k=0;
   for(int n1=0; n1 < train_batches_; n1++)
     for(int n2=0; n2 < batch_size_; n2++)
       train_imginfo_index_[k++] = tfile_index[n1*global_batch_size_ + n2*num_machines_ + global_node_id_];
@@ -329,7 +329,7 @@ void ImageDataNode::forwardPropagate()
   float *topdata = (float*)(tenTopData_[0]->getBuffer());
   int* toplabel = (int*)(tenTopData_[1]->getBuffer());
 
-#ifdef DEBUG	
+#ifdef DEBUG
   printf("Executing FP %s: Data %p, Label %p\n", NNNode::nname_.c_str(),topdata, toplabel);
 #endif
 
@@ -352,7 +352,7 @@ void ImageDataNode::forwardPropagate()
           // Read gparams_.batch_size*lookahead files into tempbuf_
           string fpath(train_source_path_ + ii.name);
           FILE *f = fopen(fpath.c_str(), "rb");
-          int bytes = fread(&tempbuf_[idx*ii.length], sizeof(char), ii.length, f); 
+          int bytes = fread(&tempbuf_[idx*ii.length], sizeof(char), ii.length, f);
           assert(bytes == ii.length);
           fclose(f);
 #if 0
@@ -384,7 +384,7 @@ void ImageDataNode::forwardPropagate()
 #if 0
           printf("idx %d, index %d, ii.name %s, ii.label %d\n",idx, index, ii.name.c_str(), ii.label);
 #endif
-        }					
+        }
         ctrain_pf_mb_++;
       }
     }
@@ -447,7 +447,7 @@ void ImageDataNode::forwardPropagate()
     }
   }
   else if(em == TEST)
-  {		
+  {
     if(full_test_prefetch_)
     {
       for(int i=0; i<gparams_.lookahead; i++)
@@ -463,7 +463,7 @@ void ImageDataNode::forwardPropagate()
 
           string fpath(test_source_path_ + ii.name);
           FILE *f = fopen(fpath.c_str(), "rb");
-          int bytes = fread(&tempbuf_[index*ii.length], sizeof(char), ii.length, f); 
+          int bytes = fread(&tempbuf_[index*ii.length], sizeof(char), ii.length, f);
           assert(bytes == ii.length);
           fclose(f);
         }
@@ -481,7 +481,7 @@ void ImageDataNode::forwardPropagate()
           int index = (ctest_pf_mb_%gparams_.lookahead)*gparams_.batch_size + img;
 
           ImageInfo ii = test_list_[test_imginfo_index_[idx]];
-          labels_[index] = ii.label;				
+          labels_[index] = ii.label;
 
           // Read batch_size files into tempbuf_
           string fpath(test_source_path_ + ii.name);
@@ -490,7 +490,7 @@ void ImageDataNode::forwardPropagate()
           assert(bytes == ii.length);
           fclose(f);
         }
-        ctest_pf_mb_++;		
+        ctest_pf_mb_++;
       }
     }
 
@@ -507,9 +507,9 @@ void ImageDataNode::forwardPropagate()
 
     curr_test_view_++;
 
-#ifdef DEBUG		
+#ifdef DEBUG
     printf("tv = %d\n",curr_test_view_);
-#endif		
+#endif
     if(curr_test_view_ == gparams_.test_views)
     {
       curr_test_view_ = 0;

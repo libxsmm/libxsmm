@@ -131,15 +131,15 @@ class FusedBNormParams : public NNParams
     int get_algo_type() { return algotype_; }
 
   protected:
-    vector<int> strides_;    
-    vector<int> pads_, ipads_;      
-    bool relu_, brelu_, eltwise_, use_global_stats_; 
+    vector<int> strides_;
+    vector<int> pads_, ipads_;
+    bool relu_, brelu_, eltwise_, use_global_stats_;
     float eps_, mmf_, lr_mult_, decay_mult_;
     int compute_engine_, algotype_, data_type_;
 };
 
 static MLParams* parseFusedBNormParams(NodeParameter* np)
-{  
+{
   FusedBNormParams* fbnp = new FusedBNormParams();
 
   // Set name of node
@@ -179,7 +179,7 @@ static MLParams* parseFusedBNormParams(NodeParameter* np)
     case 0:
       sh = p.stride_h();
       sw = p.stride_w();
-    
+
       assert((sh > 0) && (sw > 0));
       fbnp->set_strides(sh, sw, sd);
       break;
@@ -304,13 +304,13 @@ class FusedBNormNode : public NNNode
         s->dims[i] = 0;
     }
 
-    Tensor* tenTop_; 
-    vector<Tensor *> tenBot_;	
+    Tensor* tenTop_;
+    vector<Tensor *> tenBot_;
     Tensor *tenScale_, *tenShift_;
     Tensor *tenMean_, *tenRstdev_;
 
     FusedBNormImplParams gparams_;
-    vector<TensorBuf *> tenBotDiff_, tenBotData_; 
+    vector<TensorBuf *> tenBotDiff_, tenBotData_;
     TensorBuf *tenTopData_, *tenTopDiff_; // Output data
     TensorBuf *tenScaleData_, *tenScaleDiff_;
     TensorBuf *tenShiftData_, *tenShiftDiff_;

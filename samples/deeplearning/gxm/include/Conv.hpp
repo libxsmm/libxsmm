@@ -113,7 +113,7 @@ class ConvParams : public NNParams
     void set_group(int g) { this->group_ = g;}
     int get_group() { return this->group_; }
 
-    void set_nOutput(int num_output) { this->nOutput_ = num_output;	}
+    void set_nOutput(int num_output) { this->nOutput_ = num_output; }
     int get_output() { return nOutput_; }
 
     void set_weight_filler_type(string ftype) { wfiller_type_ = ftype; }
@@ -170,7 +170,7 @@ class ConvParams : public NNParams
     vector<int> kernel_dim_; // Order of dimensions is Height, Width, Depth (for 3D Conv)
     vector<int> strides_;    // Order follows kernel dimension
     vector<int> pads_, opads_;       // Order follows kernel dimension
-    int nOutput_;            // Number of output feature maps	
+    int nOutput_;            // Number of output feature maps
     string wfiller_type_, bfiller_type_;
     float std_, value_;
     bool relu_, bwd_relu_, bias_term_, compute_stats_;
@@ -181,7 +181,7 @@ class ConvParams : public NNParams
 };
 
 static MLParams* parseConvParams(NodeParameter* np)
-{  
+{
 
   ConvParams* cp = new ConvParams();
 
@@ -391,7 +391,7 @@ static MLParams* parseConvParams(NodeParameter* np)
     cp->set_group(1);
 
   int nOutput = pcp.num_output();
-  cp->set_nOutput(nOutput); 
+  cp->set_nOutput(nOutput);
 
   FillerParameter wp = pcp.weight_filler();
   cp->set_weight_filler_type(wp.type());

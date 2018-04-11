@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 
-#pragma once 
+#pragma once
 #include <stdlib.h>
 #include <math.h>
 #include <omp.h>

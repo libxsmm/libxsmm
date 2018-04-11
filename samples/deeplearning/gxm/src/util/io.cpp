@@ -54,7 +54,7 @@ bool ReadProtoFromText(string fname, Message* proto)
   return success;
 }
 
-bool ReadProtoFromBinary(string fname, Message* proto) 
+bool ReadProtoFromBinary(string fname, Message* proto)
 {
   int fd = open(fname.c_str(), O_RDONLY);
   if (fd == -1)
@@ -62,13 +62,13 @@ bool ReadProtoFromBinary(string fname, Message* proto)
     printf("File %s not found\n",fname.c_str());
     return false;
   }
-  
+
   ZeroCopyInputStream* raw_input = new FileInputStream(fd);
   CodedInputStream* coded_input = new CodedInputStream(raw_input);
   coded_input->SetTotalBytesLimit(kProtoReadBytesLimit, 536870912);
 
   bool success = proto->ParseFromCodedStream(coded_input);
-  
+
   if(!coded_input->ConsumedEntireMessage())
   {
     printf("parsing failed\n");
@@ -81,7 +81,7 @@ bool ReadProtoFromBinary(string fname, Message* proto)
   return success;
 }
 
-void WriteProtoToText(const Message& proto, string filename) 
+void WriteProtoToText(const Message& proto, string filename)
 {
   int fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
   FileOutputStream* output = new FileOutputStream(fd);

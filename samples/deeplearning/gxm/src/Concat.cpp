@@ -55,7 +55,7 @@ ConcatNode::ConcatNode(ConcatParams* p, MLEngine* e) : NNNode(p, e)
   tenTopData_ = tenTop_->getBuf(DATA);
   tenTopData_->setBufferType(DATA);
 
-#ifdef DEBUG    
+#ifdef DEBUG
   printf("bottom name %s\n",bottom_[0].c_str());
 #endif
 
@@ -92,11 +92,11 @@ ConcatNode::ConcatNode(ConcatParams* p, MLEngine* e) : NNNode(p, e)
     ts.dims[1] += bs->dims[1];
     gparams_.nInput[i] = bs->dims[1];
 
-    if(!e->is_inference_only()) 
+    if(!e->is_inference_only())
     {
       if(NNNode::bp_flag_)
       {
-        tenBotDiff_[i] = tenBot_[i]->addBuf();		// DIFF type and index
+        tenBotDiff_[i] = tenBot_[i]->addBuf(); // DIFF type and index
         tenBotDiff_[i]->setDataType(dtype);
         tenBotDiff_[i]->setBufferType(DIFF);
 
@@ -177,7 +177,7 @@ void ConcatNode::configure(int engine)
 
 void ConcatNode::forwardPropagate()
 {
-#ifdef DEBUG	
+#ifdef DEBUG
   float* bot;
 
   float* top = (float*)(tenTopData_->getBuffer());

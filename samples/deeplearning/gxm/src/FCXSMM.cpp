@@ -76,7 +76,7 @@ void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* b
 #pragma omp parallel for collapse(2)
 #endif
     for(int img=0; img<M; img++)
-      for(int ofm=0; ofm<N; ofm++) 
+      for(int ofm=0; ofm<N; ofm++)
         outp[img*M+ofm] += biasp[ofm];
   }
 

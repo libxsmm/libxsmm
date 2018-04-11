@@ -36,11 +36,11 @@
 #include <algorithm>
 #include "Tensor.hpp"
 
-#define BASIC_TASK_FORW 	0
-#define BASIC_TASK_BACK 	1
-#define BASIC_TASK_WGRAD 	2
-#define BASIC_TASK_SOLVE 	3
-#define CUSTOM_TASK_START 	100
+#define BASIC_TASK_FORW   0
+#define BASIC_TASK_BACK   1
+#define BASIC_TASK_WGRAD  2
+#define BASIC_TASK_SOLVE  3
+#define CUSTOM_TASK_START 100
 
 using namespace std;
 using namespace gxm;
@@ -109,7 +109,7 @@ class Task
     vector<Task*>& getForwDepTasks() { return this->outputs_; }
     vector<Task*>& getBackDepTasks() { return this->inputs_; }
 
-    void setMinBin(int bin)	{ minBin_ = bin; }
+    void setMinBin(int bin) { minBin_ = bin; }
     void setMaxBin(int bin) { maxBin_ = bin; }
     int getMinBin() { return minBin_; }
     int getMaxBin() { return maxBin_; }

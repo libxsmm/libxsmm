@@ -70,17 +70,17 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
   int offset = nImg * nFM * fhi * fwi;
   float* bstats_ip = inp_r + offset;
 
-  if(bmeanp == NULL) 
+  if(bmeanp == NULL)
   {
     bmeanp = (float*)_mm_malloc(nFM*sizeof(float), 64);
 #ifndef NDEBUG
     printf("%s allocated %lu bytes for mean\n",nname.c_str(), nFM*sizeof(float));
 #endif
   }
-  if(brstdp == NULL) 
+  if(brstdp == NULL)
   {
     brstdp = (float*)_mm_malloc(nFM*sizeof(float), 64);
-#ifndef NDEBUG 
+#ifndef NDEBUG
     printf("%s allocated %lu bytes for stdev\n",nname.c_str(), nFM*sizeof(float));
 #endif
   }
@@ -133,7 +133,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
     float nhw_ratio = float(nImg*fh*fw)/float(nImg*fh*fw - 1);
 
     /* reducing the batch stats computed during convolution to compute E(X) and Sigma(X).
-       We need double precision for this as this computation is numerically slightly 
+       We need double precision for this as this computation is numerically slightly
        unstable */
 #if 1
 #ifdef __AVX512F__
@@ -141,18 +141,18 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
     __m512d vrecp_nhw  = _mm512_set1_pd((double) recp_nhw);
     __m512d veps       = _mm512_set1_pd((double) gp->eps);
     __m512  vmmf       = _mm512_set1_ps(gp->mmf);
-    __m512  vnhw_ratio = _mm512_set1_ps(nhw_ratio); 
+    __m512  vnhw_ratio = _mm512_set1_ps(nhw_ratio);
     double one = 1.0;
     __m512d vone       = _mm512_set1_pd(one);
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
     for (int b = 0; b < nBfm; ++b) {
-      __m512d tmp1  = _mm512_setzero_pd(); 
-      __m512d tmp2  = _mm512_setzero_pd();     
-      __m512d tmpd1 = _mm512_setzero_pd(); 
+      __m512d tmp1  = _mm512_setzero_pd();
+      __m512d tmp2  = _mm512_setzero_pd();
+      __m512d tmpd1 = _mm512_setzero_pd();
       __m512d tmpd2 = _mm512_setzero_pd();
- 
+
       /* reduce over images */
       for (int n = 0; n < nImg; ++n) {
         tmp1 = _mm512_add_pd( tmp1, _mm512_load_pd(&(ibstats[b][n][0]) ) );
@@ -189,8 +189,8 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
       __m512 tmpStd = _mm512_castpd_ps( _mm512_insertf64x4( _mm512_castpd256_pd512(_mm256_castps_pd(tmpf3)), _mm256_castps_pd(tmpf4), 1 ) );
       _mm512_store_ps( &(brstd[b][0]), tmpStd );
 
-      _mm512_store_ps( &(gmeanp[b*16]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(gmeanp[b*16]) ), vmmf), tmpMean));  
-      _mm512_store_ps( &(grstdp[b*16]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(grstdp[b*16]) ), vmmf), _mm512_mul_ps(vnhw_ratio, tmpStd)));  
+      _mm512_store_ps( &(gmeanp[b*16]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(gmeanp[b*16]) ), vmmf), tmpMean));
+      _mm512_store_ps( &(grstdp[b*16]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(grstdp[b*16]) ), vmmf), _mm512_mul_ps(vnhw_ratio, tmpStd)));
     }
 #else
     __m512  vrecp_nhw  = _mm512_set1_ps(recp_nhw);
@@ -303,11 +303,11 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
 #endif
 #endif
 
-    /* This commened code is performing a stable computation of E(X) and Sigma(X), 
+    /* This commened code is performing a stable computation of E(X) and Sigma(X),
        however it requires several passes over the data and is potentially slower */
 #if 0
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
     for(int i=0; i < nFM; i++) {
       bmeanp[i] = 0.0;
@@ -315,7 +315,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
     }
 
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
     for(int fm=0; fm < nBfm; fm++) {
       for(int v=0; v<VLEN; v++) {
@@ -330,13 +330,13 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
     }
 
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
-    for(int i=0; i < nFM; i++) 
+    for(int i=0; i < nFM; i++)
       bmeanp[i] *= recp_nhw;
 
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
     for(int fm=0; fm < nBfm; fm++) {
       for(int v=0; v<VLEN; v++) {
@@ -351,15 +351,15 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
     }
 
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
-    for(int fm=0; fm < nFM; fm++) 
+    for(int fm=0; fm < nFM; fm++)
       brstdp[fm] = 1/sqrt(brstdp[fm] + gp->eps);
 
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
-    for(int fm=0; fm < nFM; fm++) 
+    for(int fm=0; fm < nFM; fm++)
     {
       gmeanp[fm] = gmeanp[fm] * gp->mmf + bmeanp[fm] ;
       grstdp[fm] = grstdp[fm] * gp->mmf + nhw_ratio*brstdp[fm];
@@ -382,7 +382,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
       // ReLU
       if(gp->relu) {
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
         for(int img=0; img < nImg; img++) {
           for(int fm=(nBfm-1); fm >= 0; fm--) {
@@ -407,9 +407,9 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
             }
           }
         }
-      } else {   
+      } else {
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
         for(int img=0; img < nImg; img++) {
           for(int fm=(nBfm-1); fm >= 0; fm--) {
@@ -438,7 +438,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
     {
       if(gp->relu) {
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
         for(int img=0; img < nImg; img++) {
           for(int fm=(nBfm-1); fm >= 0; fm--) {
@@ -460,7 +460,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
         }
       } else {
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
         for(int img=0; img < nImg; img++) {
           for(int fm=(nBfm-1); fm >= 0; fm--) {
@@ -508,7 +508,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
       else if(gp->pad_h == 1)
         printf("XSMM-BN-FP mb%dic%dih%dph%dn time = %g ms, GB/s= %.1f GiB/s = %.1f\n",gp->batch_size,gp->nOutput,gp->oHeight,gp->pad_h,fp_time*1000.0, gb/fp_time, gib/fp_time);
     }
-#endif 
+#endif
   }
   else
   {
@@ -523,7 +523,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
     if(gp->eltwise)
     {
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
       for(int img=0; img < nImg; img++) {
         for(int fm=0; fm < nBfm; fm++) {
@@ -551,7 +551,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
     else
     {
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
       for(int img=0; img < nImg; img++) {
         for(int fm=0; fm < nBfm; fm++) {
@@ -641,13 +641,13 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
 
   if ( del_gamma_imgp == NULL) {
     del_gamma_imgp = (float*)_mm_malloc( nImg * nBfm * VLEN * sizeof(float), 64);
-#ifndef NDEBUG 
+#ifndef NDEBUG
     printf("%s allocated %lu bytes for del_gamma reduce\n", nname.c_str(), nImg * nBfm * VLEN * sizeof(float));
 #endif
   }
   if ( del_beta_imgp == NULL) {
     del_beta_imgp = (float*)_mm_malloc( nImg * nBfm * VLEN * sizeof(float), 64);
-#ifndef NDEBUG 
+#ifndef NDEBUG
     printf("%s allocated %lu bytes for del_beta reduce\n", nname.c_str(), nImg * nBfm * VLEN * sizeof(float));
 #endif
   }
@@ -657,7 +657,7 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
 
   /* zero the rims in case of physical padding */
   /* @TODO, we need to do the same thing with del_input_l?! */
-  if (iph > 0 || iph > 0) { 
+  if (iph > 0 || iph > 0) {
 #pragma omp parallel for
     for (int img = 0; img < nImg; img++) {
       for (int fm = 0; fm < nBfm; fm++) {
@@ -732,7 +732,7 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
   gb = (5.0*(double)nImg*(double)nFM*(double)fhs*(double)fws*(double)sizeof(float)) / (1000*1000*1000);
   gib = (5.0*(double)nImg*(double)nFM*(double)fhs*(double)fws*(double)sizeof(float)) / (1024*1024*1024);
 #endif
-  
+
 
   if(gp->eltwise)
     delinpb[1]->setBuffer(deloutp);
@@ -816,10 +816,10 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
               __m512 vtmp0 = _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( vinput_r, vbmean ), vdel_gamma ), vbrstd );
               __m512 vtmp1 = _mm512_sub_ps( _mm512_mul_ps( vnhw, vdel_output ), _mm512_add_ps( vdel_beta, vtmp0 ) );
 #ifdef USE_NTS_BN
-              _mm512_stream_ps( &(del_input_r[img][fm][h][w][0]), 
+              _mm512_stream_ps( &(del_input_r[img][fm][h][w][0]),
                   _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
 #else
-              _mm512_store_ps( &(del_input_r[img][fm][h][w][0]), 
+              _mm512_store_ps( &(del_input_r[img][fm][h][w][0]),
                   _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
 #endif
 #else
@@ -829,7 +829,7 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
 #pragma vector nontemporal
 #endif
               for(int v=0; v < VLEN; v++) {
-                del_input_r[img][fm][h][w][v] = gamma[fm][v] * brstd[fm][v] * recp_nhw * (nhw*del_output[img][fm][hp][wp][v] - 
+                del_input_r[img][fm][h][w][v] = gamma[fm][v] * brstd[fm][v] * recp_nhw * (nhw*del_output[img][fm][hp][wp][v] -
                     (del_beta[fm][v] + (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_gamma[fm][v] * brstd[fm][v]));
               }
 #endif
@@ -848,7 +848,7 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
   else
   {
 #ifdef _OPENMP
-#pragma omp parallel 
+#pragma omp parallel
 #endif
     {
 #pragma omp for
@@ -918,10 +918,10 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
                __m512 vtmp0 = _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( vinput_r, vbmean ), vdel_gamma ), vbrstd );
                __m512 vtmp1 = _mm512_sub_ps( _mm512_mul_ps( vnhw, vdel_output ), _mm512_add_ps( vdel_beta, vtmp0 ) );
 #ifdef USE_NTS_BN
-               _mm512_stream_ps( &(del_input_r[img][fm][h][w][0]), 
+               _mm512_stream_ps( &(del_input_r[img][fm][h][w][0]),
                   _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
 #else
-               _mm512_store_ps( &(del_input_r[img][fm][h][w][0]), 
+               _mm512_store_ps( &(del_input_r[img][fm][h][w][0]),
                   _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
 #endif
 #else
@@ -931,7 +931,7 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
 #pragma vector nontemporal
 #endif
               for(int v=0; v < VLEN; v++) {
-                del_input_r[img][fm][h][w][v] = gamma[fm][v] * brstd[fm][v] * recp_nhw * (nhw*del_output[img][fm][hp][wp][v] - 
+                del_input_r[img][fm][h][w][v] = gamma[fm][v] * brstd[fm][v] * recp_nhw * (nhw*del_output[img][fm][hp][wp][v] -
                                     (del_beta[fm][v] + (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_gamma[fm][v] * brstd[fm][v]));
               }
 #endif
@@ -967,7 +967,7 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
     else if(gp->pad_h == 1)
       printf("XSMM-BN-BP mb%dic%dih%dph%dn time = %g ms, GB/s= %.1f GiB/s = %.1f\n",gp->batch_size,gp->nOutput,gp->oHeight,gp->pad_h,bp_time*1000.0, gb/bp_time, gib/bp_time);
   }
-#endif 
+#endif
 
 #ifndef NDEBUG
   /* check rims */

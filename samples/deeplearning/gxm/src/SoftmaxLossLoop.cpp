@@ -74,7 +74,7 @@ void SMaxLossLoop::forwardPropagate(float *inp, int* label, float *outp)
     float recp_soe = 1.0/sum_of_exp;
 
     //Normalize each value by sum_of_exp
-    for(int ofm = 0; ofm < nOfm; ofm++) 
+    for(int ofm = 0; ofm < nOfm; ofm++)
       output[img][ofm] = output[img][ofm]*recp_soe;
   }
 

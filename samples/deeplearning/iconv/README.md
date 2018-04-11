@@ -2,7 +2,7 @@
 
 This code sample aims to provide a simple piece of code, which takes an image and produces a visual result as well. For the convolution, LIBXSMM's DNN-domain is used. This sample code cannot use multiple threads (therefore OMP=0) or JIT code generation since parallelization and JIT-vectorization in the DNN-domain are per multiple images and channels respectively. JIT code is vectorized over image channels according to the native vector-width of the processor hence the sample code falls back to a high-level implementation. The code processes only a single image which consists of a single channel (eventually multiple times as per `nrepeat`).
 
-**NOTE**: Multicore and JIT code can be only leveraged with code changes and input data that consists of multiple images or channels (a.k.a. "deep neural networks" or "deep learning"). Please note the collection of [DNN code samples](https://github.com/hfp/libxsmm/tree/master/samples/dnn), which achieves both of which.
+**NOTE**: Multicore and JIT code can be only leveraged with code changes and input data that consists of multiple images or channels (a.k.a. "deep neural networks" or "deep learning"). Please note the collection of [CNN layer samples](https://github.com/hfp/libxsmm/tree/master/samples/deeplaerning/cnnlayer), which achieves both of which.
 
 The executable can run with the following arguments (all arguments are optional):
 

@@ -120,7 +120,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
         libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL    ) &&
       handle->use_thread_private_jit == 1 )
   {
-    /* This is basically a decision pertaining for all three passes: FWD, BWD and UPD */ 
+    /* This is basically a decision pertaining for all three passes: FWD, BWD and UPD */
     /* Initialize fields that control layer fusion */
     noarch = 0;
     handle->compute_batch_stats_in_kernel = 0;
@@ -137,13 +137,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     }
 
     /* Forward path setup */
-    status = libxsmm_dnn_setup_fwd(handle, &noarch); 
+    status = libxsmm_dnn_setup_fwd(handle, &noarch);
 
     /* Backward path setup */
-    status = libxsmm_dnn_setup_bwd(handle, &noarch); 
+    status = libxsmm_dnn_setup_bwd(handle, &noarch);
 
     /* Weight update path setup */
-    status = libxsmm_dnn_setup_upd(handle, &noarch); 
+    status = libxsmm_dnn_setup_upd(handle, &noarch);
 
     /* Calculate scratch requirements */
     libxsmm_dnn_setup_scratch(handle);
@@ -152,12 +152,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   /* Generic codepath setup here... */
   if (noarch == 1) {
     /*Setup generic code generation here*/
-    status = libxsmm_dnn_setup_generic(handle);
+    const int handle_status = libxsmm_dnn_setup_generic(handle);
     const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
     const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
     const size_t size7 = padded_h * padded_w * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
     handle->scratch7_size = LIBXSMM_UP2(size7, LIBXSMM_CACHELINE) * handle->desc.threads;
     handle->scratch7 = 0;
+    status = handle_status;
   } else {
     handle->scratch7_size = 0;
     handle->scratch7 = 0;

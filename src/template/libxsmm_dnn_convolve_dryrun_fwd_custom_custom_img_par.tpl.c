@@ -40,17 +40,15 @@
 #define CHWK 3
 #define HWCK 4
 
-int block_j = handle->ofh;
 int blockifm = 16;
+int w_factor = 8;/*atoi(getenv("W"));*/
 #if !defined(_OPENMP)
 int ltid;
 #endif
-while (blockifm % handle->blocksifm_blocking != 0) {
-  blockifm++;
-}
-handle->block_fwd_ofm = 8;
-handle->block_fwd_ifm = blockifm;
-
+#if 0
+int block_j;
+# if 0
+block_j = handle->ofh;
 if ( handle->ofh == 14 || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
   block_j = 4;
 }
@@ -58,17 +56,21 @@ if ( handle->ofh == 14 || handle->ofh == 48 || handle->ofh == 54 || handle->ofh 
 while ( block_j % handle->fwd_ofh_rb != 0 ) {
   block_j--;
 }
-
+# else
 block_j = 4;
-//int w_factor = 8;
-//handle->block_fwd_oj = block_j;
-//handle->block_fwd_ofm = 8;
-//handle->block_fwd_ifm = blockifm;
+# endif
+#endif
+while (blockifm % handle->blocksifm_blocking != 0) {
+  blockifm++;
+}
+handle->block_fwd_ofm = 8;
+handle->block_fwd_ifm = blockifm;
 
-int w_factor = 8;//atoi(getenv("W"));
-handle->block_fwd_oj = 4;// atoi(getenv("H"));
-handle->block_fwd_ofm = 16;// atoi(getenv("K"));
-handle->block_fwd_ifm = blockifm;//  atoi(getenv("C"));
+/*handle->block_fwd_oj = block_j;*/
+handle->block_fwd_oj = 4;/*atoi(getenv("H"));*/
+/*handle->block_fwd_ofm = 8;*/
+handle->block_fwd_ofm = 16;/*atoi(getenv("K"));*/
+handle->block_fwd_ifm = blockifm;/*atoi(getenv("C"));*/
 
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
@@ -79,8 +81,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #if defined(_OPENMP)
   int ltid = omp_get_thread_num();
 #endif
-  int img, ofm1, ifm1, oj, oi, oib, ii, ii_use, ij_use, oi_use, oj_use, local_entries = 0, ojb, ifmb, ofmb, my_img_start, my_img_end, my_ofm_start, my_ofm_end, my_h_start, my_h_end, my_w_start, my_w_end, block_w;
-  int total_calls;
+  int img, ofm1, ifm1, oj, oi, oib, ii_use, ij_use, oi_use, oj_use, local_entries = 0, ojb, ifmb, ofmb, my_img_start, my_img_end, my_ofm_start, my_ofm_end, my_h_start, my_h_end, my_w_start, my_w_end, block_w;
   int n_code_segments;
   int mark_ofm_init, mark_ofm_close;
   int *tmp_expanded_stream, tmp_stream_index;
@@ -89,7 +90,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int stretch_of_convs;
   int encoded_stream_index;
   int lookahead_index;
-  int cur_wt, next_wt, cur_out, next_out, padded_h=0, padded_w=0;
+  int padded_h=0, padded_w=0;
   /* Arrays of stream indices */
   int *compute_indices;
   char *kernel_variant;
@@ -97,15 +98,15 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int l_l1, l_l3, l_l1_gs, l_l2_ts, l_tidgroup;
 
   if (handle->desc.N == 1 && handle->fwd_ofh_rb == 1) {
+    const int rows_per_thread = (handle->ofh+handle->desc.threads-1) / handle->desc.threads;
     w_factor = 8;
     block_w = w_factor*handle->fwd_ofw_rb;
     my_img_start = 0;
     my_img_end = handle->desc.N;
     my_w_start = 0;
-    my_w_end = handle->ofw;    
+    my_w_end = handle->ofw;
     my_ofm_start = 0;
     my_ofm_end = handle->blocksofm;
-    int rows_per_thread = (handle->ofh+handle->desc.threads-1)/handle->desc.threads;
     my_h_start = LIBXSMM_MIN(ltid * rows_per_thread, handle->ofh);
     my_h_end =  LIBXSMM_MIN((ltid+1) * rows_per_thread, handle->ofh);
   } else {
@@ -150,7 +151,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
         for (ojb = my_h_start; ojb < my_h_end; ojb += handle->block_fwd_oj) {
-          for (oib = my_w_start; oib < my_w_end; oib += block_w) {     
+          for (oib = my_w_start; oib < my_w_end; oib += block_w) {
             for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
               for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
                 for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,my_h_end); oj += handle->fwd_ofh_rb) {
@@ -207,7 +208,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
         for (ojb = my_h_start; ojb < my_h_end; ojb += handle->block_fwd_oj) {
-          for (oib = my_w_start; oib < my_w_end; oib += block_w) {   
+          for (oib = my_w_start; oib < my_w_end; oib += block_w) {
             for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
               for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
                 for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,my_h_end); oj += handle->fwd_ofh_rb) {
@@ -348,18 +349,20 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   compute_indices[local_entries] = 0;
   compute_indices[local_entries+1] = 0;
   compute_indices[local_entries+2] = 0;
-  total_calls = local_entries/3;
 #if 0
-  /* Adjust the kernel variant  */
-  for (ii = 0; ii < total_calls-1; ii++) {
-    cur_wt = compute_indices[ii*3+1];
-    next_wt = compute_indices[(ii+1)*3+1];
-    cur_out = compute_indices[ii*3+2];
-    next_out = compute_indices[(ii+1)*3+2];
-    if ( cur_wt == next_wt ) {
-      kernel_variant[ii] = 1;
-    } else if ( cur_out == next_out ) {
-      kernel_variant[ii] = 3;
+  { /* Adjust the kernel variant  */
+    const int total_calls = local_entries/3;
+    int ii, cur_wt, cur_out, next_wt, next_out;
+    for (ii = 0; ii < total_calls-1; ii++) {
+      cur_wt = compute_indices[ii*3+1];
+      next_wt = compute_indices[(ii+1)*3+1];
+      cur_out = compute_indices[ii*3+2];
+      next_out = compute_indices[(ii+1)*3+2];
+      if ( cur_wt == next_wt ) {
+        kernel_variant[ii] = 1;
+      } else if ( cur_out == next_out ) {
+        kernel_variant[ii] = 3;
+      }
     }
   }
 #endif
@@ -375,3 +378,4 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #undef HWKC
 #undef CHWK
 #undef HWCK
+

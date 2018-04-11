@@ -42,7 +42,7 @@
 
 typedef struct {
   int bdims, tdims;
-  int nInput; 
+  int nInput;
   vector<int> nOutput;
   int batch_size;
   int iHeight, iWidth, iDepth;

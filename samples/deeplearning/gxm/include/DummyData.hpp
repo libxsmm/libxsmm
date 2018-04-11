@@ -71,7 +71,7 @@ class DummyDataParams: public NNParams
       shape_.dims[0] = batch;
       shape_.dims[1] = 1;
       shape_.dims[2] = 1;
-      shape_.dims[3] = 1;			
+      shape_.dims[3] = 1;
     }
 
     void set_shape(int batch, int channels)
@@ -80,7 +80,7 @@ class DummyDataParams: public NNParams
       shape_.dims[0] = batch;
       shape_.dims[1] = channels;
       shape_.dims[2] = 1;
-      shape_.dims[3] = 1;			
+      shape_.dims[3] = 1;
     }
 
     void set_shape(int batch, int channel, int height, int width)
@@ -177,7 +177,7 @@ static MLParams* parseDummyDataParams(NodeParameter* np)
       }
       else
         p->set_shape(s.dim(0), s.dim(1));
-    }	
+    }
     else if(ndims == 4)
       p->set_shape(s.dim(0), s.dim(1), s.dim(2), s.dim(3));
     else if(ndims == 5)
@@ -214,7 +214,7 @@ class DummyDataNode : public NNNode
     void fillData(short int* ptr, long long int size);
 
   protected:
-    Tensor *tenBot_; 
+    Tensor *tenBot_;
     vector<Tensor*> tenTop_;
     vector<TensorBuf*> tenTopData_;
     string node_name_, node_type_;

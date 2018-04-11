@@ -60,10 +60,10 @@ typedef struct
 {
   bool mirror;
   bool vignette;
-  bool color_bump;	
+  bool color_bump;
 } LMDBAugmentParams;
 
-typedef struct 
+typedef struct
 {
   int batch_size;
   int channels;
@@ -110,20 +110,20 @@ class LMDBDataParams : public NNParams
     void set_label_data_type(int t) { label_dtype_ = t; }
     int get_label_data_type() { return label_dtype_; }
 
-    void set_batch_size(int batch) { batch_size_ = batch;	}
+    void set_batch_size(int batch) { batch_size_ = batch; }
     int get_batch_size() { return batch_size_; }
 
     void set_lookahead(int l) { lookahead_ = l; }
-    int get_lookahead() { return lookahead_; }	
+    int get_lookahead() { return lookahead_; }
 
     void set_num_train_files(int ntrain) { num_train_files_ = ntrain; }
-    int get_num_train_files() { return num_train_files_; }	
+    int get_num_train_files() { return num_train_files_; }
 
     void set_train_img_info(string s) { train_img_info_ = s; }
     string get_train_img_info() { return train_img_info_; }
 
     void set_num_test_files(int ntest) { num_test_files_ = ntest; }
-    int get_num_test_files() { return num_test_files_; }	
+    int get_num_test_files() { return num_test_files_; }
 
     void set_test_img_info(string s) { test_img_info_ = s; }
     string get_test_img_info() { return test_img_info_; }
@@ -292,9 +292,9 @@ static MLParams* parseLMDBDataParams(NodeParameter* np)
   }
 
   // If cropping is turned on, set the crop size
-  if(pitp.crop_image() == false) 
+  if(pitp.crop_image() == false)
     itp->set_crop_image(false);
-  else 
+  else
   {
     itp->set_crop_image(true);
     int cdims = pitp.crop_size_size();

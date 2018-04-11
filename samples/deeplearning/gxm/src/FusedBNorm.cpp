@@ -109,7 +109,7 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
   else if(in_dtype == DT_FLOAT && out_dtype == DT_DFP16)
     tsize = telem*sizeof(float) + telem*sizeof(short);
   else if(in_dtype == DT_DFP16 && out_dtype == DT_DFP16)
-    tsize = telem*sizeof(short); 
+    tsize = telem*sizeof(short);
 
   tenTopData_->setBufferSize(tsize);
 
@@ -178,18 +178,18 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
 
     gparams_.nInput[i] = bs->dims[1];
 
-    if(!e->is_inference_only()) 
+    if(!e->is_inference_only())
     {
       if(bp_flag_)
       {
-        tenBotDiff_[i] = tenBot_[i]->addBuf();		// DIFF type and index
+        tenBotDiff_[i] = tenBot_[i]->addBuf(); // DIFF type and index
         tenBotDiff_[i]->setDataType(out_dtype); // this is a hack; actually, it should be in_dtype..
         tenBotDiff_[i]->setBufferType(DIFF);
 
         int belem = bs->dims[0] * bs->dims[1] * (bs->dims[2] + 2*ivp[0]) * (bs->dims[3] + 2*ivp[1]);
         long long int bsize;
 
-        if(in_dtype == DT_FLOAT && out_dtype == DT_FLOAT) 
+        if(in_dtype == DT_FLOAT && out_dtype == DT_FLOAT)
           bsize = belem*sizeof(float);
         else if(in_dtype == DT_FLOAT && out_dtype == DT_DFP16)
           bsize = belem*sizeof(float) + belem*sizeof(short);
@@ -206,7 +206,7 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
       tenBotDiff_[i] = NULL;
   }
 
-  if(!e->is_inference_only()) 
+  if(!e->is_inference_only())
   {
     if(has_weights_)
     {
@@ -293,7 +293,7 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
   solver_ = e->getSolver();
   eptr_ = e;
 
-#ifdef USE_MLSL	
+#ifdef USE_MLSL
   MLSL::DataType dt = MLSL::DT_FLOAT;
   MLSL::OperationRegInfo *myRegInfo;
   MLSL::Session *s = eptr_->get_session();
@@ -413,7 +413,7 @@ void FusedBNormNode::Checkpoint(TensorBuf *tBuf, string name, string format)
 }
 void FusedBNormNode::forwardPropagate()
 {
-#ifdef DEBUG	
+#ifdef DEBUG
   {
     int offset = gparams_.batch_size * gparams_.nInput * gparams_.iHeight * gparams_.iWidth;
     float* bot_r = (float*)(tenBotData_[0]->getBuffer());
@@ -514,7 +514,7 @@ void FusedBNormNode::forwardPropagate()
     s = nname_ + "_betap";
     float* beta = (float*)tenShiftData_->getBuffer();
     MeanOfLayer((char*)s.c_str(), beta, gparams_.nInput[0]);
-    
+
 #ifdef BNTEST
     s = nname_ + "_meanp";
     int offset = gparams_.batch_size*gparams_.nInput[0]* (gparams_.iHeight + 2*gparams_.ipad_h) * (gparams_.iWidth + 2*gparams_.ipad_2);
@@ -549,7 +549,7 @@ void FusedBNormNode::backPropagate()
 {
   tenTopDiff_ = tenTop_->getBuf(DIFF);
 
-#ifdef DEBUG	
+#ifdef DEBUG
   int offset = gparams_.batch_size * gparams_.nInput[0] * gparams_.iHeight * gparams_.iWidth;
   float *gtop = (float*)(tenTopDiff_->getBuffer());
   assert(gtop != NULL);
@@ -650,7 +650,7 @@ void FusedBNormNode::backPropagate()
 #endif
   string s;
   float *ptr, *pptr, *p;
-  if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0) //&& gparams_.pad_h && nname_ == "node_64_2_bn1") 
+  if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0) //&& gparams_.pad_h && nname_ == "node_64_2_bn1")
   {
 #if 1
     ptr = (float*)tenTopDiff_->getBuffer();

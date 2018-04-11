@@ -64,10 +64,10 @@ typedef struct
 {
   bool mirror;
   bool vignette;
-  bool color_bump;	
+  bool color_bump;
 } JitterAugmentParams;
 
-typedef struct 
+typedef struct
 {
   int batch_size;
   int channels;
@@ -132,13 +132,13 @@ class JitterDataParams : public NNParams
     int get_batch_size() { return batch_size_; }
 
     void set_lookahead(int l) { lookahead_ = l; }
-    int get_lookahead() { return lookahead_; }	
+    int get_lookahead() { return lookahead_; }
 
     void set_num_train_files(int ntrain) { num_train_files_ = ntrain; }
-    int get_num_train_files() { return num_train_files_; }	
+    int get_num_train_files() { return num_train_files_; }
 
     void set_num_test_files(int ntest) { num_test_files_ = ntest; }
-    int get_num_test_files() { return num_test_files_; }	
+    int get_num_test_files() { return num_test_files_; }
 
     void set_mean_values(int channels, float mean_val)
     {
@@ -249,7 +249,7 @@ class JitterDataParams : public NNParams
     vector <float> mean_values_, scale_values_;
     int batch_size_, channels_, lookahead_, numsplits_;
     int num_train_files_, num_test_files_;
-    int sjmin_, sjmax_, test_smaller_side_; 
+    int sjmin_, sjmax_, test_smaller_side_;
     int data_type_, label_dtype_, test_views_;
     int compute_engine_;
     float mean_, std, pc_amin_, pc_amax_;
@@ -337,9 +337,9 @@ static MLParams* parseJitterDataParams(NodeParameter* np)
   }
 
   // If cropping is turned on, set the crop size
-  if(itp.crop_image() == false) 
+  if(itp.crop_image() == false)
     jp->set_crop_image(false);
-  else 
+  else
   {
     jp->set_crop_image(true);
     int cdims = itp.crop_size_size();

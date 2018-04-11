@@ -67,7 +67,7 @@ class NNParams : public MLParams
     void set_node_name(string nname) { nname_ = nname; }
     void set_node_type(string type) {type_ = type; }
     void set_mode(int mode) { mode_ = mode; }
-    void set_bprop_flag(bool flag)	{ bp_flag_ = flag; }
+    void set_bprop_flag(bool flag) { bp_flag_ = flag; }
 
     string get_node_name() { return nname_; }
     vector<string>& get_top_names() { return top_; }
@@ -98,7 +98,7 @@ class NNNode : public MLNode
     virtual void weightUpdate() {}
     virtual void solverStep() {}
 
-    int executeTask(int taskId) 
+    int executeTask(int taskId)
     {
       if(taskId == 0)
       {
@@ -146,13 +146,13 @@ class NNNode : public MLNode
     Task *getBasicTask(int type)
     {
       int index = -1;
-      if(type == 0 || (type == 1 && bp_flag_) || (type > 1 && has_weights_)) 
+      if(type == 0 || (type == 1 && bp_flag_) || (type > 1 && has_weights_))
         index = type;
       if(index != -1) {
         if(tBasic_[index] == NULL) tBasic_[index] = new Task(this, -1, type);
         return tBasic_[index];
       }
-      return NULL;			
+      return NULL;
     }
 
     void createNNGraph(int mode);

@@ -293,7 +293,7 @@
 # define LIBXSMM_PRAGMA_NONTEMPORAL LIBXSMM_PRAGMA(vector nontemporal)
 # define LIBXSMM_PRAGMA_VALIGNED LIBXSMM_PRAGMA(vector aligned)
 # define LIBXSMM_PRAGMA_FORCEINLINE LIBXSMM_PRAGMA(forceinline)
-# define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG) LIBXSMM_PRAGMA(loop_count min(MIN) max(MAX) avg(AVG))
+# define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG) LIBXSMM_PRAGMA(loop_count min=MIN max=MAX avg=AVG)
 # define LIBXSMM_PRAGMA_UNROLL_AND_JAM(N) LIBXSMM_PRAGMA(unroll_and_jam(N))
 # define LIBXSMM_PRAGMA_UNROLL_N(N) LIBXSMM_PRAGMA(unroll(N))
 # define LIBXSMM_PRAGMA_UNROLL LIBXSMM_PRAGMA(unroll)
@@ -562,6 +562,9 @@
 #   define __builtin_nanf nanf
 #   define __builtin_nans nan
 #   define __builtin_nansf nanf
+#   if defined(__cplusplus)
+#     define _CMATH_
+#   endif
 # endif
 #endif
 #if defined(__GNUC__)

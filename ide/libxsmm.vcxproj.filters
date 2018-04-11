@@ -210,6 +210,12 @@
     <ClInclude Include="..\src\generator_spgemm_csr_asparse.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_rm_ac_soa.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_setup.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -393,6 +399,12 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_spgemm_csr_asparse.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_rm_ac_soa.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_setup.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

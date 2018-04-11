@@ -47,7 +47,7 @@ using namespace gxm;
 
 class SplitParams : public NNParams
 {
-    public: 
+    public:
       SplitParams(void) {}
       virtual ~SplitParams(void) {}
 
@@ -86,7 +86,7 @@ static MLParams* parseSplitParams(NodeParameter* np)
     //Set Mode for the node
     assert((np->mode() == TRAIN) || (np->mode() == TEST));
     sp->set_mode(np->mode());
-	
+
     //Set backprop needed/not needed flag for this node
     sp->set_bprop_flag(np->propagate_down());
 
@@ -108,7 +108,7 @@ class SplitNode : public NNNode
       void forwardPropagate();
       void backPropagate();
       void configure(int engine);
-      
+
       void shape_setzero(Shape* s)
       {
         for(int i=0; i<MAX_DIMS; i++)

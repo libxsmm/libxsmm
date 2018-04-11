@@ -97,7 +97,7 @@ LMDBDataNode::LMDBDataNode(LMDBDataParams* p, MLEngine* e) : NNNode(p, e)
         size *= tts.dims[j];
 
       // Size of data tensor buffer = batch_size * channels * height * width * sizeof(float/short int)
-      if(dtype == DT_FLOAT) 
+      if(dtype == DT_FLOAT)
         size = size*sizeof(float);
       else if(dtype == DT_INT16)
         size = size*sizeof(short int);
@@ -114,7 +114,7 @@ LMDBDataNode::LMDBDataNode(LMDBDataParams* p, MLEngine* e) : NNNode(p, e)
       tenTop_[i]->setType(LABEL);
 
       int dtype = p->get_label_data_type();
-      tenTopData_[i]->setDataType(dtype);		
+      tenTopData_[i]->setDataType(dtype);
       tenTopData_[i]->setBufferType(DATA);
 
       Shape tts;
@@ -133,7 +133,7 @@ LMDBDataNode::LMDBDataNode(LMDBDataParams* p, MLEngine* e) : NNNode(p, e)
       assert(dtype == DT_INT);
       size = size*sizeof(int);
 
-      tenTopData_[i]->setBufferSize(size);			
+      tenTopData_[i]->setBufferSize(size);
 
       // Register output tensor in tensorMap
       bool inserted = e->register_tensor(top_[i], LABEL, tenTop_[i]);
@@ -212,7 +212,7 @@ LMDBDataNode::LMDBDataNode(LMDBDataParams* p, MLEngine* e) : NNNode(p, e)
     e->set_num_test_batches(test_batches_);
     e->set_num_test_views(gparams_.test_views);
 
-  }	
+  }
   else if(mode == TEST)
   {
     num_test_files_ = p->get_num_test_files();
@@ -294,9 +294,9 @@ void LMDBDataNode::trainImageTransform(vector<Datum>& v, float* outp)
           float inp = (float)input[ofm][h+r_off][w+c_off];
           int fm = (gparams_.scale_values.size() == 1) ? 0 : ofm;
 
-          if((augmentation[img] < 6) && (ap.mirror == true)) 
+          if((augmentation[img] < 6) && (ap.mirror == true))
             output[img][ofm][h][ofw-w-1] = (inp - gparams_.mean_values[ofm]) * gparams_.scale_values[fm];
-          else 
+          else
             output[img][ofm][h][w] = (inp - gparams_.mean_values[ofm]) * gparams_.scale_values[fm];
         }
       }
@@ -315,7 +315,7 @@ void LMDBDataNode::testImageTransform(vector<Datum>& v, int tv, float* outp)
 
   float (* __restrict output)[nOfm][ofh][ofw] = (float (*)[*][*][*])outp;
 
-  int tv2 = tv/2; 
+  int tv2 = tv/2;
 
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -358,7 +358,7 @@ void LMDBDataNode::testImageTransform(vector<Datum>& v, int tv, float* outp)
   }
 
 #ifdef _OPENMP
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
   for(int img = 0; img < nImg; img++) {
     for(int ofm = 0; ofm < nOfm; ofm++) {
@@ -376,9 +376,9 @@ void LMDBDataNode::testImageTransform(vector<Datum>& v, int tv, float* outp)
           float inp = (float)input[ofm][h+r_off][w+c_off];
           int fm = (gparams_.scale_values.size() == 1) ? 0 : ofm;
 
-          if(tv % 2 == 0) 
+          if(tv % 2 == 0)
             output[img][ofm][h][w] = (inp - gparams_.mean_values[ofm]) * gparams_.scale_values[fm];
-          else 
+          else
             output[img][ofm][ofh-h-1][ofw-w-1] = (inp - gparams_.mean_values[ofm]) * gparams_.scale_values[fm];
         }
       }
@@ -391,7 +391,7 @@ void LMDBDataNode::forwardPropagate()
   float *topdata = (float*)(tenTopData_[0]->getBuffer());
   int* toplabel = (int*)(tenTopData_[1]->getBuffer());
 
-#if 0 //def DEBUG	
+#if 0 //def DEBUG
   printf("Executing FP %s: Data %p, Label %p\n", NNNode::nname_.c_str(),topdata, toplabel);
 #endif
 
@@ -448,7 +448,7 @@ void LMDBDataNode::forwardPropagate()
 #else
           train_cursor_->Next();
 #endif
-        }					
+        }
         ctrain_pf_mb_++;
       }
     }
@@ -497,7 +497,7 @@ void LMDBDataNode::forwardPropagate()
       full_train_prefetch_ = true;
     }
   }
-  else if(em == TEST) {		
+  else if(em == TEST) {
     if(full_test_prefetch_) {
       for(int i=0; i<gparams_.lookahead; i++) {
         for(int img=0; img<gparams_.batch_size; img++) {
@@ -548,7 +548,7 @@ void LMDBDataNode::forwardPropagate()
             test_cursor_->Next();
 #endif
           }
-          ctest_pf_mb_++;		
+          ctest_pf_mb_++;
         }
       }
     }

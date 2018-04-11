@@ -29,11 +29,19 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_setup.h"
+#include "libxsmm_dnn_dryruns.h"
 #include "libxsmm_main.h"
 #include <libxsmm.h>
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 #define MIXED 0
 #define KHWC 1
@@ -41,17 +49,21 @@
 #define CHWK 3
 #define HWCK 4
 
-LIBXSMM_API_INLINE void tune_fwd_blockings(libxsmm_dnn_layer *handle) {
+
+LIBXSMM_API_INTERN void tune_fwd_blockings(libxsmm_dnn_layer *handle);
+LIBXSMM_API_INTERN void tune_fwd_blockings(libxsmm_dnn_layer *handle) {
   int BLOCKSIFM_BLOCKING = handle->blocksifm_blocking;
   /* Some cache blocking tuning here...   */
-  /* Loop order tuning  */
   int loop_order = MIXED;
+  int blockifm = 8;
+  int block_j = 14;
+
+  /* Loop order tuning  */
   if (handle->desc.H >= 28 && handle->desc.R == 1) {
     loop_order = HWKC;
   }
 
   /* Feature map block tuning */
-  int blockifm = 8;
   while (blockifm % BLOCKSIFM_BLOCKING != 0) {
     blockifm++;
   }
@@ -60,17 +72,15 @@ LIBXSMM_API_INLINE void tune_fwd_blockings(libxsmm_dnn_layer *handle) {
   handle->block_fwd_ifm = blockifm;
 
   /* Spatial dimension block tuning  */
-  int block_j = 14;
   if ((handle->ofh == 7 && handle->desc.u == 2) || (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
     block_j = 4;
   }
   while ( block_j % handle->fwd_ofh_rb != 0 ) {
     block_j--;
   }
+
   handle->block_fwd_oj = block_j;
   handle->loop_order = loop_order;
-
-  return;
 }
 
 LIBXSMM_API_INLINE void tune_upd_blockings(libxsmm_dnn_layer *handle) {
@@ -105,8 +115,6 @@ LIBXSMM_API_INLINE void tune_upd_blockings(libxsmm_dnn_layer *handle) {
 
   handle->block_upd_ofm = 64;
   handle->block_upd_ifm = 64;
-
-  return;
 }
 
 LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *wrb2_res, int *hrb2_res) {
@@ -402,7 +410,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
   if (handle->desc.N >= handle->desc.threads) {
     n_variants = find_rb(handle->ofw, handle->ofh, &wrb1, &hrb1, &wrb2, &hrb2);
     handle->fwd_ofw_rb = wrb1;
-    handle->fwd_ofh_rb = hrb1; 
+    handle->fwd_ofh_rb = hrb1;
 
     if (n_variants == 2) {
       if (wrb1 == wrb2) {
@@ -427,7 +435,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
       handle->fwd_ofh_rb = 1;
     }
   }
-  handle->n_variants = n_variants; 
+  handle->n_variants = n_variants;
 
   /* if we have 1x1 let's bring some ifms into the kernel for forward to increase accumulation chain length on AVX512 */
   if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) ) {
@@ -461,7 +469,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     handle->blocksifm_blocking = 8;
   }
 
-  /* Restrict acc chain for overflow handling only if combo is int16/int32  */ 
+  /* Restrict acc chain for overflow handling only if combo is int16/int32  */
   if (handle->use_lp_kernel == 1) {
     if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
       if (handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block > 256) {
@@ -484,7 +492,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
   if ((handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2)) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32) {
       /* Calculate number of image blocks in case of custom_2 format */
-      handle->nBImg = handle->desc.N / handle->nbImg;  
+      handle->nBImg = handle->desc.N / handle->nbImg;
       /* In this case of custom_2 format, regardless of requested padding, all the pad_in/pad_out parameters should be 0 */
       if ( ((handle->desc.pad_h > 0) && ((handle->desc.pad_h_in != 0) || (handle->desc.pad_h_out != 0))) || ((handle->desc.pad_w > 0) && ((handle->desc.pad_w_in != 0) || (handle->desc.pad_w_out !=0))) ) {
         status = LIBXSMM_DNN_ERR_INVALID_PADDING;
@@ -509,11 +517,15 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
 
   /* Check if padded needs to be applied in the input and allocate appropriate buffers */
   if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && (handle->desc.pad_h_out == 0) && (handle->desc.pad_w_out == 0) && ((handle->desc.pad_h > 0) || (handle->desc.pad_w > 0))) {
-    handle->padding_flag = 1;
-    handle->scratch5  = 0;
-    handle->minibatch_scratch_size = LIBXSMM_MAX(handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w+8) * libxsmm_dnn_typesize(handle->datatype_out), handle->desc.N * handle->blocksofm_lp * handle->ofmblock * handle->fm_lp_block * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_out));
-    handle->fwdbwd_scratch_size =  LIBXSMM_MAX(handle->desc.threads * handle->desc.C * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_out), handle->desc.threads * handle->desc.K * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_in));
+    const size_t fwdbwd_scratch_size_a = handle->desc.threads * handle->desc.C * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_out);
+    const size_t fwdbwd_scratch_size_b = handle->desc.threads * handle->desc.K * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_in);
+    handle->fwdbwd_scratch_size =  LIBXSMM_MAX(fwdbwd_scratch_size_a, fwdbwd_scratch_size_b);
+    handle->minibatch_scratch_size = libxsmm_dnn_typesize(handle->datatype_out) * LIBXSMM_MAX(
+      handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w+8),
+      handle->desc.N * handle->blocksofm_lp * handle->ofmblock * handle->fm_lp_block * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w));
     handle->max_scratch5_size = (handle->minibatch_scratch_size > handle->fwdbwd_scratch_size) ? handle->minibatch_scratch_size : handle->fwdbwd_scratch_size;
+    handle->padding_flag = 1;
+    handle->scratch5 = 0;
   } else {
     handle->padding_flag = 0;
   }
@@ -629,7 +641,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     }
     /* use jit code path */
     handle->use_fwd_generic = 0;
-    int ks_overhead = 0;
 
     handle->n_entries_fwd = (int*) malloc(handle->desc.threads * sizeof(int));
     memset( handle->n_entries_fwd, 0, handle->desc.threads * sizeof(int) );
@@ -707,18 +718,20 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     tune_fwd_blockings(handle);
     status = libxsmm_dnn_perform_fwd_dryrun_direct(handle);
 
-    /* compute kernel stream overhead */
-    ks_overhead += handle->desc.threads*4*sizeof(int);
-    ks_overhead += handle->desc.threads*sizeof(int*);
-    ks_overhead += handle->desc.threads*sizeof(char*);
-    ks_overhead += handle->desc.threads*sizeof(segment_t*);
-    for ( i = 0; i < handle->desc.threads; ++i ) {
-      ks_overhead += ((handle->n_entries_fwd[i]*3)+3)*sizeof(int);
-      ks_overhead += handle->n_entries_fwd[i]*sizeof(char);
-      ks_overhead += handle->n_fwd_code_segments[i]*sizeof(segment_t);
-    }
 #if defined(LIBXSMM_DNN_HANDLE_DEBUG)
-    printf("KS Overhead FWD in KB: %i \n", ks_overhead/1024 );
+    { /* compute kernel stream overhead */
+      int ks_overhead = 0;
+      ks_overhead += handle->desc.threads*4*sizeof(int);
+      ks_overhead += handle->desc.threads*sizeof(int*);
+      ks_overhead += handle->desc.threads*sizeof(char*);
+      ks_overhead += handle->desc.threads*sizeof(segment_t*);
+      for ( i = 0; i < handle->desc.threads; ++i ) {
+        ks_overhead += ((handle->n_entries_fwd[i]*3)+3)*sizeof(int);
+        ks_overhead += handle->n_entries_fwd[i]*sizeof(char);
+        ks_overhead += handle->n_fwd_code_segments[i]*sizeof(segment_t);
+      }
+      printf("KS Overhead FWD in KB: %i \n", ks_overhead/1024 );
+    }
 #endif
   }
 
@@ -729,8 +742,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* handle, int *noarch ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   int i = 0; /* general counting helper */
-  int wrb1 = 0, wrb2 = 0, hrb1 = 0, hrb2 = 0, n_variants = 1;
-
+  int wrb1 = 0, wrb2 = 0, hrb1 = 0, hrb2 = 0;
+#if 0
+  int n_variants = 1;
+#endif
   /* Let's check if we can use algorithmic duality for backward convolution! */
   /* TODO: Enable duality even in cases of image parallelism */
   if ( (handle->use_thread_private_jit > 0) && (handle->desc.N >= handle->desc.threads) && ( (handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.pad_h == 0 && handle->desc.pad_w == 0) || (handle->desc.u == 1 && handle->desc.v == 1) ) && !((handle->desc.R > 1 && handle->desc.pad_h == 0) || (handle->desc.S > 1 && handle->desc.pad_w == 0)) )  {
@@ -738,9 +753,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
   } else {
     handle->exploit_duality = 0;
   }
-
+#if 0
   n_variants = find_rb(handle->ofw, handle->ofh, &wrb1, &hrb1, &wrb2, &hrb2);
-
+#endif
   /* FIXME: Remove loop below? Doesn't algorithmic duality take care of that? */
   handle->bwd_ofh_rb = 1;
   for (i = LIBXSMM_MIN(24, handle->ofw); i > 1; i--) {
@@ -778,7 +793,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
   }
 
 
-  /* FIXME: KNM specific tuning for Resnet */  
+  /* FIXME: KNM specific tuning for Resnet */
   if ( (handle->desc.C == 256 && handle->desc.K == 1024) || (handle->desc.C == 512 && handle->desc.K == 2048) ||  (handle->desc.C == 1024 && handle->desc.K == 2048) ) {
     handle->blocksofm_blocking = 8;
   }
@@ -802,7 +817,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
     handle->use_nts_bwd = 0;
   }
 
-  /* FIXME: SKX specific tuning for GooglenetV3 */  
+  /* FIXME: SKX specific tuning for GooglenetV3 */
   if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->desc.K/16 <= 8) {
     handle->use_nts_bwd = 0;
   }
@@ -960,59 +975,59 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       assert(0/*should not happen*/);
     }
 
-    libxsmm_dnn_layer mirror_handle;
-    int ks_overhead = 0;
+    {
+      libxsmm_dnn_layer mirror_handle;
+      handle->n_entries_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
+      memset( handle->n_entries_bwd, 0, handle->desc.threads * sizeof(int) );
+      handle->compute_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+      memset( handle->compute_bwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
+      handle->kernel_bwd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
+      memset( handle->kernel_bwd_variant_ptrs, 0, handle->desc.threads * sizeof(char*));
+      handle->n_bwd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
+      memset( handle->n_bwd_code_segments, 0, handle->desc.threads * sizeof(int) );
+      handle->bwd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
+      memset( handle->bwd_code_segments, 0, handle->desc.threads * sizeof(segment_t*) );
+      handle->ofh_bwd_start = (int*) malloc(handle->desc.threads * sizeof(int));
+      memset( handle->ofh_bwd_start, 0, handle->desc.threads * sizeof(int) );
+      handle->ofh_bwd_end = (int*) malloc(handle->desc.threads * sizeof(int));
+      memset( handle->ofh_bwd_end, 0, handle->desc.threads * sizeof(int));
+      handle->n_entries_trans_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
+      memset( handle->n_entries_trans_bwd, 0, handle->desc.threads * sizeof(int));
+      handle->transpose_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+      memset( handle->transpose_bwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
 
-    handle->n_entries_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
-    memset( handle->n_entries_bwd, 0, handle->desc.threads * sizeof(int) );
-    handle->compute_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
-    memset( handle->compute_bwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
-    handle->kernel_bwd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
-    memset( handle->kernel_bwd_variant_ptrs, 0, handle->desc.threads * sizeof(char*));
-    handle->n_bwd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
-    memset( handle->n_bwd_code_segments, 0, handle->desc.threads * sizeof(int) );
-    handle->bwd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
-    memset( handle->bwd_code_segments, 0, handle->desc.threads * sizeof(segment_t*) );
-    handle->ofh_bwd_start = (int*) malloc(handle->desc.threads * sizeof(int));
-    memset( handle->ofh_bwd_start, 0, handle->desc.threads * sizeof(int) );
-    handle->ofh_bwd_end = (int*) malloc(handle->desc.threads * sizeof(int));
-    memset( handle->ofh_bwd_end, 0, handle->desc.threads * sizeof(int));
-    handle->n_entries_trans_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
-    memset( handle->n_entries_trans_bwd, 0, handle->desc.threads * sizeof(int));
-    handle->transpose_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
-    memset( handle->transpose_bwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
+      mirror_handle = *handle;
+      mirror_handle.use_fwd_for_bwd = 1;
+      mirror_handle.blocksifm_blocking = handle->blocksofm_blocking;
+      mirror_handle.fwd_ofh_rb = handle->bwd_ofh_rb;
+      mirror_handle.fwd_ofw_rb = handle->bwd_ofw_rb;
+      mirror_handle.blocksofm = handle->blocksifm;
+      mirror_handle.blocksofm_lp = handle->blocksifm_lp;
+      mirror_handle.ifhp = handle->ofhp;
+      mirror_handle.ifwp = handle->ofwp;
+      mirror_handle.ofhp = handle->ifhp;
+      mirror_handle.ofwp = handle->ifwp;
+      mirror_handle.use_nts_fwd = handle->use_nts_bwd;
+      mirror_handle.block_fwd_ofm = handle->block_fwd_ifm;
+      mirror_handle.blocksifm = handle->blocksofm;
+      mirror_handle.blocksifm_lp = handle->blocksofm_lp;
+      mirror_handle.ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.R) / handle->desc.v + 1;
+      mirror_handle.ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.S) / handle->desc.u + 1;
+      mirror_handle.ifmblock = handle->ofmblock_lp;
+      mirror_handle.ofmblock = handle->ifmblock_hp;
+      mirror_handle.compute_fwd_indices_ptrs =  handle->compute_bwd_indices_ptrs;
+      mirror_handle.n_entries_fwd = handle->n_entries_bwd;
+      mirror_handle.kernel_fwd_variant_ptrs = handle->kernel_bwd_variant_ptrs;
+      mirror_handle.n_fwd_code_segments = handle->n_bwd_code_segments;
+      mirror_handle.fwd_code_segments = handle->bwd_code_segments;
+      mirror_handle.ofh_fwd_start = handle->ofh_bwd_start;
+      mirror_handle.ofh_fwd_end = handle->ofh_bwd_end;
+      mirror_handle.perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
+      handle->perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
 
-    mirror_handle = *handle;
-    mirror_handle.use_fwd_for_bwd = 1;
-    mirror_handle.blocksifm_blocking = handle->blocksofm_blocking;
-    mirror_handle.fwd_ofh_rb = handle->bwd_ofh_rb;
-    mirror_handle.fwd_ofw_rb = handle->bwd_ofw_rb;
-    mirror_handle.blocksofm = handle->blocksifm;
-    mirror_handle.blocksofm_lp = handle->blocksifm_lp;
-    mirror_handle.ifhp = handle->ofhp;
-    mirror_handle.ifwp = handle->ofwp;
-    mirror_handle.ofhp = handle->ifhp;
-    mirror_handle.ofwp = handle->ifwp;
-    mirror_handle.use_nts_fwd = handle->use_nts_bwd;
-    mirror_handle.block_fwd_ofm = handle->block_fwd_ifm;
-    mirror_handle.blocksifm = handle->blocksofm;
-    mirror_handle.blocksifm_lp = handle->blocksofm_lp;
-    mirror_handle.ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.R) / handle->desc.v + 1;
-    mirror_handle.ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.S) / handle->desc.u + 1;
-    mirror_handle.ifmblock = handle->ofmblock_lp;
-    mirror_handle.ofmblock = handle->ifmblock_hp;
-    mirror_handle.compute_fwd_indices_ptrs =  handle->compute_bwd_indices_ptrs;
-    mirror_handle.n_entries_fwd = handle->n_entries_bwd;
-    mirror_handle.kernel_fwd_variant_ptrs = handle->kernel_bwd_variant_ptrs;
-    mirror_handle.n_fwd_code_segments = handle->n_bwd_code_segments;
-    mirror_handle.fwd_code_segments = handle->bwd_code_segments;
-    mirror_handle.ofh_fwd_start = handle->ofh_bwd_start;
-    mirror_handle.ofh_fwd_end = handle->ofh_bwd_end;
-    mirror_handle.perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
-    handle->perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
-
-    tune_fwd_blockings(&mirror_handle);
-    status = libxsmm_dnn_perform_fwd_dryrun_direct(&mirror_handle);
+      tune_fwd_blockings(&mirror_handle);
+      status = libxsmm_dnn_perform_fwd_dryrun_direct(&mirror_handle);
+    }
 
     /* In case overwrite is requested, generate zero-ing kernel */
     if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0 )  {
@@ -1039,19 +1054,22 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       }
       handle->matcopy_bwd[3].xmatcopy = libxsmm_xmcopydispatch(&matzero_descriptor_overwrite);
     }
-    /* compute kernel stream overhead */
-    ks_overhead += handle->desc.threads*5*sizeof(int);
-    ks_overhead += handle->desc.threads*2*sizeof(int*);
-    ks_overhead += handle->desc.threads*sizeof(char*);
-    ks_overhead += handle->desc.threads*sizeof(segment_t*);
-    for ( i = 0; i < handle->desc.threads; ++i ) {
-      ks_overhead += ((handle->n_entries_bwd[i]*3)+3)*sizeof(int);
-      ks_overhead += handle->n_entries_bwd[i]*sizeof(char);
-      ks_overhead += handle->n_bwd_code_segments[i]*sizeof(segment_t);
-      ks_overhead += (handle->n_entries_trans_bwd[i]+1)*sizeof(int);
-    }
+
 #if defined(LIBXSMM_DNN_HANDLE_DEBUG)
-    printf("KS Overhead BWD in KB: %i \n", ks_overhead/1024);
+    { /* compute kernel stream overhead */
+      int ks_overhead = 0;
+      ks_overhead += handle->desc.threads*5*sizeof(int);
+      ks_overhead += handle->desc.threads*2*sizeof(int*);
+      ks_overhead += handle->desc.threads*sizeof(char*);
+      ks_overhead += handle->desc.threads*sizeof(segment_t*);
+      for ( i = 0; i < handle->desc.threads; ++i ) {
+        ks_overhead += ((handle->n_entries_bwd[i]*3)+3)*sizeof(int);
+        ks_overhead += handle->n_entries_bwd[i]*sizeof(char);
+        ks_overhead += handle->n_bwd_code_segments[i]*sizeof(segment_t);
+        ks_overhead += (handle->n_entries_trans_bwd[i]+1)*sizeof(int);
+      }
+      printf("KS Overhead BWD in KB: %i \n", ks_overhead/1024);
+    }
 #endif
   }
 
@@ -1062,7 +1080,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* handle, int *noarch ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   int i = 0; /* general counting helper */
-  handle->blocksimg_blocking = 1; 
+  handle->blocksimg_blocking = 1;
 
   /*FIXME: Do we still need that? Don't we unroll aggressivele anyway here? */
   for (i = LIBXSMM_MIN(28, handle->ofh); i > 1; i--) {
@@ -1475,8 +1493,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
       }
 
       if ( handle->use_thread_private_jit ) {
-        int ks_overhead = 0;
-
         handle->trans_ofw_ifm = 0;
         /* Determine if we will be using thread private filters  */
         if ( (handle->blocksifm_lp * handle->blocksofm < handle->desc.threads) ) {
@@ -1534,23 +1550,25 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         handle->matcopy_upd[2].xmatcopy = libxsmm_xmcopydispatch(&matzero_descriptor);
 
         /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
-        tune_upd_blockings(handle);  
+        tune_upd_blockings(handle);
         status = libxsmm_dnn_perform_upd_dryrun_direct(handle);
 
-        /* compute kernel stream overhead */
-        ks_overhead += handle->desc.threads*4*sizeof(int);
-        ks_overhead += handle->desc.threads*3*sizeof(int*);
-        ks_overhead += handle->desc.threads*sizeof(char*);
-        ks_overhead += handle->desc.threads*sizeof(segment_t*);
-        for ( i = 0; i < handle->desc.threads; ++i ) {
-          ks_overhead += ((handle->n_entries_upd[i]*3)+3)*sizeof(int);
-          ks_overhead += handle->n_entries_upd[i]*sizeof(char);
-          ks_overhead += handle->n_upd_code_segments[i]*sizeof(segment_t);
-          ks_overhead += (handle->n_entries_copy_upd[i]+1)*sizeof(int);
-          ks_overhead += (handle->n_entries_init_upd[i]+1)*sizeof(int);
-        }
 #if defined(LIBXSMM_DNN_HANDLE_DEBUG)
-        printf("KS Overhead UPD in KB: %i \n", ks_overhead/1024 );
+        { /* compute kernel stream overhead */
+          int ks_overhead = 0;
+          ks_overhead += handle->desc.threads*4*sizeof(int);
+          ks_overhead += handle->desc.threads*3*sizeof(int*);
+          ks_overhead += handle->desc.threads*sizeof(char*);
+          ks_overhead += handle->desc.threads*sizeof(segment_t*);
+          for ( i = 0; i < handle->desc.threads; ++i ) {
+            ks_overhead += ((handle->n_entries_upd[i]*3)+3)*sizeof(int);
+            ks_overhead += handle->n_entries_upd[i]*sizeof(char);
+            ks_overhead += handle->n_upd_code_segments[i]*sizeof(segment_t);
+            ks_overhead += (handle->n_entries_copy_upd[i]+1)*sizeof(int);
+            ks_overhead += (handle->n_entries_init_upd[i]+1)*sizeof(int);
+          }
+          printf("KS Overhead UPD in KB: %i \n", ks_overhead/1024 );
+        }
 #endif
       }
     } else {

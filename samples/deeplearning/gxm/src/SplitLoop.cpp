@@ -70,7 +70,7 @@ void SplitLoop::backPropagate(vector<TensorBuf *>& deloutpb, TensorBuf *delinpb,
 
   float *deloutp[deloutpb.size()];
   int num_outp = 1;
-  int size = nImg*nIfm*ifh*ifw;  
+  int size = nImg*nIfm*ifh*ifw;
 
   deloutp[0] = (float*)(deloutpb[0]->getBuffer());
 
@@ -90,7 +90,7 @@ void SplitLoop::backPropagate(vector<TensorBuf *>& deloutpb, TensorBuf *delinpb,
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for(int j=0; j<size; j+=16) { 
+      for(int j=0; j<size; j+=16) {
         __m512 vo = _mm512_load_ps( out1+j );
         vo = _mm512_add_ps( vo, _mm512_load_ps( out2+j ) );
 #ifdef USE_NTS_SPLIT
@@ -104,7 +104,7 @@ void SplitLoop::backPropagate(vector<TensorBuf *>& deloutpb, TensorBuf *delinpb,
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for(int j=0; j<size; j+=16) { 
+      for(int j=0; j<size; j+=16) {
         __m512 vo = _mm512_load_ps( out1+j );
 #ifdef USE_NTS_SPLIT
         _mm512_stream_ps( &(delinp[j]), vo );
@@ -116,10 +116,10 @@ void SplitLoop::backPropagate(vector<TensorBuf *>& deloutpb, TensorBuf *delinpb,
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for(int j=0; j<size; j+=16) { 
+      for(int j=0; j<size; j+=16) {
         __m512 vo = _mm512_load_ps( &((deloutp[0])[j]) );
         for(int i=1; i<num_outp; i++) {
-          vo = _mm512_add_ps( vo, _mm512_load_ps( &((deloutp[i])[j]) ) ); 
+          vo = _mm512_add_ps( vo, _mm512_load_ps( &((deloutp[i])[j]) ) );
         }
 #ifdef USE_NTS_SPLIT
         _mm512_stream_ps( &(delinp[j]), vo );

@@ -47,10 +47,10 @@ class AccuracyParams : public NNParams
     AccuracyParams(void) {}
     virtual ~AccuracyParams(void) {}
 
-    void set_axis(int axis)	{ axis_ = axis;	}
+    void set_axis(int axis) { axis_ = axis; }
     int get_axis() { return axis_; }
 
-    void set_top_k(int top_k)	{ top_k_ = top_k;	}
+    void set_top_k(int top_k) { top_k_ = top_k; }
     int get_top_k() { return top_k_; }
 
   protected:

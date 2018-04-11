@@ -187,6 +187,11 @@ void libxsmm_generator_spgemm_csc_soa_kernel( libxsmm_generated_code*        io_
                                               const void*                    i_values );
 
 /* @TODO change int based architecture value */
+LIBXSMM_API void libxsmm_generator_gemm_rm_ac_soa( libxsmm_generated_code*         io_generated_code,
+                                                   const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                   const char*                     i_arch );
+
+/* @TODO change int based architecture value */
 LIBXSMM_API
 void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*            io_generated_code,
                                        const libxsmm_mcopy_descriptor*    i_matcopy_desc,

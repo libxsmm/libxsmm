@@ -64,7 +64,7 @@ class ConvImpl
 {
   protected:
     ConvImplParams *gp;
-    int engine; 
+    int engine;
     TensorLayoutType top_layout_type, gbot_layout_type;
     void *top_layout, *gbot_layout;
     int top_compute_engine=-1;

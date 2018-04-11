@@ -4,7 +4,7 @@ export LD_LIBRARY_PATH=${LIB_PATH}:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=`pwd`/build/lib:$LD_LIBRARY_PATH
 export BIN_PATH=/swtools/caffe_deps/bin
 export PATH=${BIN_PATH}:$PATH
- 
+
 source /swtools/intel/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64
 source /swtools/intel/impi/2017.3.196/bin64/mpivars.sh
 

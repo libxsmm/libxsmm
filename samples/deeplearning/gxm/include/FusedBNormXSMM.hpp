@@ -35,10 +35,10 @@
 #include "check.hpp"
 #include "libxsmm.h"
 
-class FusedBNormXSMM : public FusedBNormImpl 
+class FusedBNormXSMM : public FusedBNormImpl
 {
   protected:
-    float *bmeanp=NULL, *brstdp=NULL; 
+    float *bmeanp=NULL, *brstdp=NULL;
 #if 0
     float *bstats_op=NULL;
     float *bstats2_op=NULL;
@@ -47,7 +47,7 @@ class FusedBNormXSMM : public FusedBNormImpl
     float scaling_factor_=0;
     short *i16_outp=NULL, *i16_delinp_r=NULL, *i16_delinp_l=NULL;
   public:
-    FusedBNormXSMM(FusedBNormImplParams* gp, int engine) : FusedBNormImpl(gp, engine) 
+    FusedBNormXSMM(FusedBNormImplParams* gp, int engine) : FusedBNormImpl(gp, engine)
     {
       top_layout_type = LIBXSMM_CUSTOM_LAYOUT;
       top_layout = NULL;

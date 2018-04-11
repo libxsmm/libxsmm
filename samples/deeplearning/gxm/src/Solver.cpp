@@ -146,7 +146,7 @@ if(node_id == 0)
 #endif
 
 #ifdef _OPENMP
-#pragma omp parallel for simd 
+#pragma omp parallel for simd
 #endif
     for(int i=0; i<s; i++)
     {
@@ -155,7 +155,7 @@ if(node_id == 0)
       blob[i] = blob[i] + inc[i];
 #else
       inc[i] = mval_*inc[i] + lr*(grad[i] + decay * blob[i]);
-      blob[i] = blob[i] - inc[i]; 
+      blob[i] = blob[i] - inc[i];
 #endif
       grad[i] = 0.0;
     }
