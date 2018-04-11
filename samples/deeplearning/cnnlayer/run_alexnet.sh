@@ -65,7 +65,7 @@ if [[ -z "${OMP_NUM_THREADS}" ]]; then
 fi
 
 if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; then
-  echo "OMP_NUM_THREADS=\"${OMP_NUM_THREADS}\" NUMACTL=\"${NUMACTL}\""
+  echo "OMP_NUM_THREADS=${OMP_NUM_THREADS} NUMACTL=\"${NUMACTL}\""
   echo
 fi
 
