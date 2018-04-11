@@ -130,7 +130,7 @@ LIBXSMM_API_INTERN transposer get_transposer(int M, int N, int ldD, int ldS);
       compact = _mm512_inserti64x4(compact, compressed_hi, 1); \
       compact = LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(permute_compact_idx, compact); \
       pair_addr_dst = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      _mm512_stream_si512((void*)pair_addr_dst, compact)
+      LIBXSMM_INTRINSICS_MM512_STREAM_SI512((void*)pair_addr_dst, compact)
 
 #define TRANSPOSE_W_HALF_PAIR(img, ofm1, ij, ii, half_i) \
       pair_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); \
@@ -142,7 +142,7 @@ LIBXSMM_API_INTERN transposer get_transposer(int M, int N, int ldD, int ldS);
       compact = _mm512_inserti64x4(compact, compressed_hi, 1); \
       compact = LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(permute_compact_idx, compact); \
       pair_addr_dst = &LIBXSMM_VLA_ACCESS(6,  tr_output, img, ofm1, ij, half_i, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/2, handle->ofmblock, 2); \
-      _mm512_stream_si512((void*)pair_addr_dst, compact)
+      LIBXSMM_INTRINSICS_MM512_STREAM_SI512((void*)pair_addr_dst, compact)
 
 /* @TODO this function needs to be target decorated, it's only called on AVX512 platforms and use_vperm_transposes=1 is for AVX512BW platforms only */
 LIBXSMM_API_INTERN void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
