@@ -32,18 +32,14 @@ else
   PAD=$7
 fi
 
-NUMACTL="${TOOL_COMMAND}"
-CPUFLAGS=$(if [ "" != "${GREP}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | cut -d: -f2-; fi)
-if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
-  if [ "0" != "$((NUMA < $(numactl -H | ${GREP} "node  " | tr -s " " | cut -d" " -f2- | wc -w)))" ]; then
-    NUMACTL="numactl --membind=${NUMA} ${TOOL_COMMAND}"
-  fi
-fi
-
-if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ -e /proc/cpuinfo ]; then
+if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
   export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
   export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)))
   export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l)
+elif [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
+  export NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
+  export NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
+  export NT=$(sysctl hw.logicalcpu | ${CUT} -d: -f2 | tr -d " ")
 fi
 if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
   export HT=$((NT/(NC)))
@@ -51,13 +47,26 @@ else
   export NS=1 NC=1 NT=1 HT=1
 fi
 
-if [[ -z "${OMP_NUM_THREADS}" ]]; then
-  echo "using defaults for OMP settings!"
-  export KMP_HW_SUBSET=1T
-  export KMP_AFFINITY=compact,granularity=fine
-  export OMP_NUM_THREADS=${NC}
+CPUFLAGS=$(if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2-; fi)
+if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
+  if [ "0" != "$((NUMA < $(numactl -H | ${GREP} "node  " | tr -s " " | cut -d" " -f2- | wc -w)))" ]; then
+    NUMACTL="numactl --membind=${NUMA} ${TOOL_COMMAND}"
+  elif [ "1" != "${NS}" ]; then
+    #NUMACTL="numactl -i all ${TOOL_COMMAND}"
+    NUMACTL="${TOOL_COMMAND}"
+  fi
 else
-  echo "using environment OMP settings!"
+  NUMACTL="${TOOL_COMMAND}"
+fi
+
+if [[ -z "${OMP_NUM_THREADS}" ]]; then
+  export KMP_AFFINITY=compact,granularity=fine KMP_HW_SUBSET=1T
+  export OMP_NUM_THREADS=$((NC))
+fi
+
+if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; then
+  echo "OMP_NUM_THREADS=\"${OMP_NUM_THREADS}\" NUMACTL=\"${NUMACTL}\""
+  echo
 fi
 
 # ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh padw padh stride type

@@ -68,8 +68,11 @@ if [[ -z "${OMP_NUM_THREADS}" ]]; then
   export KMP_AFFINITY=compact,granularity=fine KMP_HW_SUBSET=1T
   export OMP_NUM_THREADS=$((NC/NS))
 fi
-echo "OMP_NUM_THREADS=\"${OMP_NUM_THREADS}\" NUMACTL=\"${NUMACTL}\""
-echo
+
+if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; then
+  echo "OMP_NUM_THREADS=\"${OMP_NUM_THREADS}\" NUMACTL=\"${NUMACTL}\""
+  echo
+fi
 
 if [ "" != "${DATE}" ]; then
   LOGFILE=$(basename $0 .sh)-$(${DATE} +%Y%m%d-%H%M%S).log
