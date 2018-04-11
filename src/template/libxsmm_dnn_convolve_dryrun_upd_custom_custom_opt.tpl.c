@@ -155,7 +155,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->n_entries_upd[ltid] = local_entries/3;
   compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
   handle->compute_upd_indices_ptrs[ltid] = compute_indices;
-  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 64);
+  kernel_variant = (char*)(3 <= local_entries ? libxsmm_aligned_malloc((local_entries / 3) * sizeof(char), 64) : NULL);
   handle->kernel_upd_variant_ptrs[ltid] = kernel_variant;
   handle->n_upd_code_segments[ltid] = n_code_segments;
   expanded_size = local_entries/3 + n_code_segments;
