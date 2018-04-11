@@ -32,7 +32,7 @@
 
 HERE=$(cd $(dirname $0); pwd -P)
 #MKTEMP=$(which mktemp 2>/dev/null)
-MKTEMP=${HERE}/.mktmp.sh
+MKTEMP=${HERE}/../.mktmp.sh
 MKDIR=$(which mkdir 2>/dev/null)
 CHMOD=$(which chmod 2>/dev/null)
 UNAME=$(which uname 2>/dev/null)
@@ -54,8 +54,8 @@ then
     export TRAVIS_BUILD_DIR=${BUILDKITE_BUILD_CHECKOUT_PATH}
   fi
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
-    export BUILDKITE_BUILD_CHECKOUT_PATH=${HERE}
-    export TRAVIS_BUILD_DIR=${HERE}
+    export BUILDKITE_BUILD_CHECKOUT_PATH=${HERE}/..
+    export TRAVIS_BUILD_DIR=${HERE}/..
   fi
   if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "${UNAME}" ]; then
     export TRAVIS_OS_NAME=$(${UNAME})
@@ -85,8 +85,8 @@ then
   fi
 
   # should be source'd after the above variables are set
-  source ${HERE}/.env/travis.env
-  source ${HERE}/.env/buildkite.env
+  source ${HERE}/../.env/travis.env
+  source ${HERE}/../.env/buildkite.env
 
   # setup PARTITIONS for multi-tests
   if [ "" = "${PARTITIONS}" ]; then
@@ -117,7 +117,7 @@ then
       SRUN_CPUS_PER_TASK_FLAG="--cpus-per-task=${SRUN_CPUS_PER_TASK}"
     fi
     umask 007
-    TESTSCRIPT=$(${MKTEMP} ${HERE}/.libxsmm_XXXXXX.sh)
+    TESTSCRIPT=$(${MKTEMP} ${HERE}/../.libxsmm_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 ${SRUN_FLAGS} ${SRUN_CPUS_PER_TASK_FLAG} \
       --partition=\${PARTITION} --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
@@ -130,7 +130,7 @@ then
 
   RESULT=0
   while TEST=$(eval " \
-    ${SED} -n -e '/^ *script: *$/,\$p' ${HERE}/.${TESTSET}.yml | ${SED} -e '/^ *script: *$/d' | \
+    ${SED} -n -e '/^ *script: *$/,\$p' ${HERE}/../.${TESTSET}.yml | ${SED} -e '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
     ${SED} -e 's/^ *- *//' -e 's/^  *//' | ${TR} '\n' ' ' | \
     ${SED} -e 's/  *$//'") && [ "" != "${TEST}" ];

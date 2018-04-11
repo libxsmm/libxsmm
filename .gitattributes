@@ -1,16 +1,15 @@
 .env export-ignore
-.hooks export-ignore
+.gitx export-ignore
 .theme export-ignore
 .codefile export-ignore
-.gitattributes export-ignore
 .gitconfig export-ignore
 .gitignore export-ignore
-.travis.sh export-ignore
-*.json export-ignore
-*.yml export-ignore
+mkdocs.yml export-ignore
+_config.yml export-ignore
+.gitattributes export-ignore
+.markdownlint.json export-ignore
 documentation/*.pptx export-ignore
 documentation/*.pptm export-ignore
-scripts/tool_*.sh export-ignore
 samples/seissol/*.bound export-ignore
 samples/seissol/*.neigh export-ignore
 samples/seissol/*.orient export-ignore
@@ -18,4 +17,5 @@ samples/seissol/*.sides export-ignore
 samples/seissol/*.size export-ignore
 samples/edge/mats export-ignore
 samples/pyfr/mats export-ignore
+scripts/tool_*.sh export-ignore
 version.txt merge=ours
