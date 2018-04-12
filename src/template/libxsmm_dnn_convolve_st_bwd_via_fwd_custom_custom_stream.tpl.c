@@ -167,7 +167,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           for (ki=0; ki < handle->desc.S; ki++) {
             for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
               for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                LIBXSMM_VLA_ACCESS(7, tr_wt2, ifm1, ofm1, handle->desc.R-1-kj , handle->desc.S-1-ki, ofm2, ifm2, 0, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block) =
+                LIBXSMM_VLA_ACCESS(7, tr_wt2, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, ofm2, ifm2, 0, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock, handle->fm_lp_block) =
                   LIBXSMM_VLA_ACCESS(7, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, 0, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
               }
             }
@@ -185,7 +185,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
                 for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
                   for (fm_lp_ind = 0; fm_lp_ind < handle->fm_lp_block; fm_lp_ind++) {
-                    LIBXSMM_VLA_ACCESS(7, tr_wt2, ifm1, ofm1, handle->desc.R-1-kj , handle->desc.S-1-ki, ofm2/handle->fm_lp_block, ifm2*handle->fm_lp_block+fm_lp_ind, ofm2%handle->fm_lp_block, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block) =
+                    LIBXSMM_VLA_ACCESS(7, tr_wt2, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, ofm2/handle->fm_lp_block, ifm2*handle->fm_lp_block+fm_lp_ind, ofm2%handle->fm_lp_block, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block) =
                       LIBXSMM_VLA_ACCESS(7, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, fm_lp_ind, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
                   }
                 }
@@ -204,7 +204,8 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           for (kj=0; kj < handle->desc.R; kj++) {
             for (ki=0; ki < handle->desc.S; ki++) {
               for (t1 = 0; t1 < 8; t1++) {
-                __m512i cur_cache_line = _mm512_loadu_si512(&LIBXSMM_VLA_ACCESS(7, wt, okb, icb, kj, ki, t1, 0, 0, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block));
+                __m512i cur_cache_line = _mm512_loadu_si512(&LIBXSMM_VLA_ACCESS(7, wt, okb, icb, kj, ki, t1, 0, 0,
+                  BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block));
                 __m512i permuted_cache_line = LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(permute_index, cur_cache_line);
                 __m256i lo_half = LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(permuted_cache_line, 0);
                 __m256i hi_half = LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(permuted_cache_line, 1);
@@ -218,7 +219,8 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 compact = _mm512_inserti32x4 (compact, part1, 1);
                 compact = _mm512_inserti32x4 (compact, part2, 2);
                 compact = _mm512_inserti32x4 (compact, part3, 3);
-                _mm512_i32scatter_epi64(&LIBXSMM_VLA_ACCESS(7, tr_wt2, icb, okb, handle->desc.R-1-kj , handle->desc.S-1-ki, 0, 2*t1, 0, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block) , scatter_index, compact, 2);
+                _mm512_i32scatter_epi64(&LIBXSMM_VLA_ACCESS(7, (long long int*)tr_wt2, icb, okb, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 2*t1, 0,
+                  BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block), scatter_index, compact, 2);
               }
             }
           }
