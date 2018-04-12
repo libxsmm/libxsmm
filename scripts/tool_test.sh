@@ -45,6 +45,9 @@ WC=$(which wc 2>/dev/null)
 RM=$(which rm 2>/dev/null)
 CP=$(which cp 2>/dev/null)
 
+RUN_CMD="--session-command"
+#RUN_CMD="-c"
+
 if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && \
    [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${WC}" ] && \
    [ "" != "${RM}" ] && [ "" != "${CP}" ]; \
@@ -125,7 +128,7 @@ then
     LAUNCH=\${TEST}
   fi
   if [ "" != "${LAUNCH_USER}" ]; then
-    LAUNCH="su ${LAUNCH_USER} -p -c \'${LAUNCH}\'"
+    LAUNCH="su ${LAUNCH_USER} -p ${RUN_CMD} \'${LAUNCH}\'"
   fi
 
   RESULT=0
@@ -169,7 +172,7 @@ then
           echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
         fi
         # record the current test case
-        echo "${TEST} 2>&1" >> ${TESTSCRIPT}
+        echo "${TEST}" >> ${TESTSCRIPT}
 
         if [ "" != "${SYNC}" ]; then # flush asynchronous NFS mount
           ${SYNC}
@@ -179,7 +182,7 @@ then
       # run the prepared test case/script
       COMMAND=$(eval echo ${LAUNCH})
       #bash -c "${COMMAND}"
-      eval ${COMMAND}
+      eval ${COMMAND} 2>&1 | tee .test.log
 
       # capture test status
       RESULT=$?
