@@ -1,7 +1,7 @@
 script:
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
     CHECK=1 ITERS=1;
-    for GROUP in $(if [ -z ${GROUPS} ]; then echo "32_0"; else echo "${GROUPS}"; fi); do
+    for GROUP in $(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}"; else echo "32_0"; fi); do
       MB=$(echo ${GROUP} | cut -d_ -f1);
       OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
       ./run_resnet50.sh     ${MB} ${ITERS} 1 f32 F L 0  &&
@@ -26,7 +26,7 @@ script:
       ./run_dcgan.sh        ${MB} ${ITERS} 1 f32 B L 0  &&
       ./run_dcgan.sh        ${MB} ${ITERS} 1 f32 U L 0;
     done &&
-    OMP_NUM_THREADS=$(if [ -z ${GROUPS} ]; then echo "0"; else echo "${GROUPS}" | cut -d_ -f1; fi)
+    OMP_NUM_THREADS=$(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}" | cut -d_ -f1; else echo "0"; fi)
     ./run_deepbench.sh ${ITERS} 1 f32 F L 0 &&
     ./run_deepbench.sh ${ITERS} 1 f32 B L 0 &&
     ./run_deepbench.sh ${ITERS} 1 f32 U L 0

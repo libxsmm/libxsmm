@@ -178,8 +178,8 @@ then
 
       # run the prepared test case/script
       COMMAND=$(eval echo ${LAUNCH})
-      #eval ${COMMAND}
-      bash -c "${COMMAND}"
+      #bash -c "${COMMAND}"
+      eval ${COMMAND}
 
       # capture test status
       RESULT=$?

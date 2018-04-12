@@ -59,8 +59,8 @@ else
   NUMACTL="${TOOL_COMMAND}"
 fi
 
-if [ -z ${OMP_NUM_THREADS} ] || [ "0" = "${OMP_NUM_THREADS}" ]; then
-  if [ -z ${KMP_AFFINITY} ]; then
+if [ "" = "${OMP_NUM_THREADS}" ] || [ "0" = "${OMP_NUM_THREADS}" ]; then
+  if [ "" = "${KMP_AFFINITY}" ]; then
     export KMP_AFFINITY=compact,granularity=fine KMP_HW_SUBSET=1T
   fi
   export OMP_NUM_THREADS=$((NC))
