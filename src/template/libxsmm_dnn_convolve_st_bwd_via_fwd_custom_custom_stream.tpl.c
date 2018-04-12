@@ -219,7 +219,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 compact = _mm512_inserti32x4 (compact, part1, 1);
                 compact = _mm512_inserti32x4 (compact, part2, 2);
                 compact = _mm512_inserti32x4 (compact, part3, 3);
-                _mm512_i32scatter_epi64(&LIBXSMM_VLA_ACCESS(7, (long long int*)tr_wt2, icb, okb, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 2*t1, 0,
+                _mm512_i32scatter_epi64((long long int*)&LIBXSMM_VLA_ACCESS(7, tr_wt2, icb, okb, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 2*t1, 0,
                   BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block), scatter_index, compact, 2);
               }
             }
