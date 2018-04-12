@@ -3,7 +3,7 @@
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
   if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=100; fi
 else # check
-  if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=3; fi
+  if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=1; fi
 fi
 
 if [ $# -ne 7 ]; then
@@ -64,7 +64,7 @@ else
   NUMACTL="${TOOL_COMMAND}"
 fi
 
-if [[ -z "${OMP_NUM_THREADS}" ]]; then
+if [ -z ${OMP_NUM_THREADS} ] || [ "0" = "${OMP_NUM_THREADS}" ]; then
   export KMP_AFFINITY=compact,granularity=fine KMP_HW_SUBSET=1T
   export OMP_NUM_THREADS=$((NC/NS))
 fi
