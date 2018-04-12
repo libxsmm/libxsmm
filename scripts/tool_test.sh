@@ -177,7 +177,9 @@ then
       fi
 
       # run the prepared test case/script
-      eval $(eval echo ${LAUNCH})
+      COMMAND=$(eval echo ${LAUNCH})
+      #eval ${COMMAND}
+      bash -c "${COMMAND}"
 
       # capture test status
       RESULT=$?
