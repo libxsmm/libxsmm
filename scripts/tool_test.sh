@@ -122,14 +122,14 @@ then
 
   # setup batch execution
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ]; then
-    if [ "" != "${SRUN_CPUS_PER_TASK}" ]; then
-      SRUN_CPUS_PER_TASK_FLAG="--cpus-per-task=${SRUN_CPUS_PER_TASK}"
+    if [ "" != "${BUILDKITE_LABEL}" ]; then
+      SRUN_FLAGS+=" -J ${BUILDKITE_LABEL}"
     fi
     umask 007
     TESTSCRIPT=$(${MKTEMP} ${HERE}/../.libxsmm_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
-    LAUNCH="${SRUN} --ntasks=1 ${SRUN_FLAGS} ${SRUN_CPUS_PER_TASK_FLAG} \
-      --partition=\${PARTITION} --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
+    LAUNCH="${SRUN} ${SRUN_JOBNAME} --ntasks=1 --partition=\${PARTITION} \
+                    ${SRUN_FLAGS} --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
   else # avoid temporary script in case of non-batch execution
     LAUNCH=\${TEST}
   fi
