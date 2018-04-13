@@ -286,19 +286,23 @@ typedef enum libxsmm_dnn_datatype {
 typedef enum libxsmm_dnn_conv_option {
   /* we get default settings */
   LIBXSMM_DNN_CONV_OPTION_NONE = 0,
-  /* activations are stored unsigned */
-  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED = 1,
-  /* reduce filters externally to op */
-  LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE = 2,
-  /* use 16 bit accumulate instead of 32 bit accumulate for fix point */
-  LIBXSMM_DNN_CONV_OPTION_16BIT_ACC = 4,
   /* overwrite results buffer (set it to zero before running the operations) */
-  LIBXSMM_DNN_CONV_OPTION_OVERWRITE = 8,
+  LIBXSMM_DNN_CONV_OPTION_OVERWRITE = 1,
+  /* activations are stored unsigned */
+  /* @TODO check if we still need this option */
+  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED = 2,
+  /* reduce filters externally to op */
+  LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE = 4,
+  /* external filter transpose to bwd convolutions */
+  LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE = 8,
+  /* external filter transpose to bwd convolutions */
+  LIBXSMM_DNN_CONV_OPTION_UPD_NO_INPUT_TRANSPOSE = 16,
   /* compound types */
-  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED_16BIT_ACC = LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED | LIBXSMM_DNN_CONV_OPTION_16BIT_ACC,
-  LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED_16BIT_ACC_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED | LIBXSMM_DNN_CONV_OPTION_16BIT_ACC | LIBXSMM_DNN_CONV_OPTION_OVERWRITE,
   LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED | LIBXSMM_DNN_CONV_OPTION_OVERWRITE,
-  LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_WU_EXT_FILTER_REDUCE | LIBXSMM_DNN_CONV_OPTION_OVERWRITE
+  LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE | LIBXSMM_DNN_CONV_OPTION_OVERWRITE,
+  LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_OVERWRITE | LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE,
+  LIBXSMM_DNN_CONV_OPTION_UPD_NO_INPUT_TRANSPOSE_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_OVERWRITE | LIBXSMM_DNN_CONV_OPTION_UPD_NO_INPUT_TRANSPOSE,
+  LIBXSMM_DNN_CONV_OPTION_NO_TRANSPOSES_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_OVERWRITE | LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE | LIBXSMM_DNN_CONV_OPTION_UPD_NO_INPUT_TRANSPOSE
 } libxsmm_dnn_conv_option;
 
 /** Structure storing the convolution argument description. */
@@ -312,6 +316,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_de
   unsigned int blocks_ifm_blocking;
   unsigned int ofm_block;                       /* should be VLEN */
   unsigned int ifm_block;                       /* should be VLEN */
+  unsigned int ifm_block_hp;
+  unsigned int ofm_block_lp;
   unsigned int ofh_padded;                      /* this we need for 2D register block */
   unsigned int ofw_padded;                      /* this we use for 1D and 2D register block */
   unsigned int ofh_rb;                          /* UR, register block of ofh */
@@ -322,6 +328,17 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_de
   unsigned int stride_w;                        /* this we use for offsets in the input */
   unsigned int fm_lp_block;                     /* additional blocking for low precision datatypes of ifm */
   unsigned int use_nts;                         /* non-zero if intent is to overwrite the output buffer using streaming stores */
+  unsigned int weight_stride;
+  unsigned int use_fwd_generator_for_bwd;
+  unsigned int stride_h_store;
+  unsigned int stride_w_store;
+  unsigned int extra_L2_prefetching;
+  unsigned int input_L2_prefetching;
+  unsigned int lookahead;
+  unsigned int compute_batch_stats;
+  unsigned int compute_max;
+  unsigned int perform_relu_in_kernel;
+  unsigned int n_variants;
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;
@@ -359,12 +376,13 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_backward_d
 /** Structure storing the convolution weight update argument description. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_update_descriptor {
   unsigned int kw;                              /* kernel width */
-  unsigned int unroll_kw;                       /* kernel width, unrolled */
   unsigned int kh;                              /* kernel height */
   unsigned int blocks_ofm;
   unsigned int blocks_ifm;
   unsigned int ofm_block;                       /* should be VLEN */
   unsigned int ifm_block;                       /* should be VLEN */
+  unsigned int ifm_block_hp;
+  unsigned int ofm_block_lp;
   unsigned int ofh_padded;                      /* this we need for 2D register block */
   unsigned int ofw_padded;                      /* this we use for 1D and 2D register block */
   unsigned int ofh_rb;                          /* UR, register block of ofh */
@@ -373,13 +391,20 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_upd
   unsigned int ifw_padded;                      /* this we use for 1D and 2D register block */
   unsigned int stride_h;                        /* this we use for offsets in the input */
   unsigned int stride_w;                        /* this we use for offsets in the input */
-
+  unsigned int fm_lp_block;
   unsigned int ifm_unroll;                      /* this we use to unroll ifm loop */
   unsigned int ofh;                             /* upper bound of oj loop */
   unsigned int ofh_unroll;                      /* this we use to unroll ofh loop */
   unsigned int ofw;                             /* upper bound of oi loop */
   unsigned int ofw_unroll;                      /* this we use to unroll ofw loop */
+  unsigned int blocks_h;
+  unsigned int blocks_img;
+  unsigned int use_nts;
   unsigned int transpose_ofw_ifm;               /* transpose ofw and ifm */
+  unsigned int ofw_fake_pixels;
+  unsigned int use_fastpath;
+  unsigned int ncopies;                         /* number of reduction copies, probably nthreads */
+  unsigned int avoid_output_trans;
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;

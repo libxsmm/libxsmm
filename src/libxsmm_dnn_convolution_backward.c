@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -31,14 +31,88 @@
 #include "libxsmm_dnn_convolution_backward.h"
 #include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
+#include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <string.h>
+#include <math.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
+
+/* @TODO: needs target decoration, only on AVX512F (do we need to distinguish between SKX and KNx??) */
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#ifdef __AVX512F__
+  typedef float element_input_type;
+  typedef float element_output_type;
+  typedef float element_filter_type;
+  typedef libxsmm_sconvfunction libxsmm_convfunction;
+# include "template/libxsmm_dnn_convolve_st_bwd_via_fwd_custom_custom_stream.tpl.c"
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
+/* @TODO: needs target decoration, only on AVX512F (do we need to distinguish between SKX and KNx??) */
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#ifdef __AVX512F__
+  typedef int element_input_type;
+  typedef short element_output_type;
+  typedef short element_filter_type;
+  typedef libxsmm_wconvfunction libxsmm_convfunction;
+#include "template/libxsmm_dnn_convolve_st_bwd_via_fwd_custom_custom_stream.tpl.c"
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
+/* @TODO: needs target decoration, only on AVX512F (do we need to distinguish between SKX and KNx??) */
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#ifdef __AVX512F__
+  typedef float element_input_type;
+  typedef short element_output_type;
+  typedef short element_filter_type;
+  typedef libxsmm_wsconvfunction libxsmm_convfunction;
+#include "template/libxsmm_dnn_convolve_st_bwd_via_fwd_custom_custom_stream.tpl.c"
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
+/* @TODO: needs target decoration, only on AVX512F (do we need to distinguish between SKX and KNx??) */
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#ifdef __AVX512F__
+  typedef int element_input_type;
+  typedef unsigned char element_output_type;
+  typedef char element_filter_type;
+  typedef libxsmm_budconvfunction libxsmm_convfunction;
+#include "template/libxsmm_dnn_convolve_st_bwd_via_fwd_custom_custom_stream.tpl.c"
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
@@ -50,125 +124,50 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom(l
     return status;
   }
 
-  /* for low/mixed precision we need some scratch to be bound */
-  if ( (handle->datatype != handle->datatype_itm) && (handle->scratch7 == 0) ) {
-    status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
-    return status;
-  }
-
   /* check if we have a kernel JITed */
-  if (handle->code_bwd[0].xconv.sconv == 0) {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+  if ( handle->use_bwd_generic != 0 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      const int ldx = (int)(handle->desc.v*handle->ifmblock);
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-      if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback.tpl.c"
-#undef INPUT_PADDING
-      } else {
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback.tpl.c"
-      }
-    } else if (handle->datatype ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
+      typedef libxsmm_smmfunction gemm_function;
+      /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, NULL, NULL, &ldx, NULL, NULL, NULL, NULL);
+#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic.tpl.c"
+#if 0
+    } else if (handle->datatype_in ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
       typedef int element_input_type;
       typedef short element_output_type;
       typedef short element_filter_type;
-      if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback.tpl.c"
-#undef INPUT_PADDING
-      } else {
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback.tpl.c"
-      }
-    } else if (handle->datatype == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I16 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
+#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic.tpl.c"
+    } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I16 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
       typedef unsigned short element_input_type;
       typedef char element_output_type;
       typedef char element_filter_type;
       if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback.tpl.c"
-#undef INPUT_PADDING
-      } else {
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback.tpl.c"
-      }
-    } else if (handle->datatype == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
+#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic.tpl.c"
+    } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
       typedef unsigned int element_input_type;
       typedef char element_output_type;
       typedef char element_filter_type;
       if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback.tpl.c"
-#undef INPUT_PADDING
-      } else {
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback.tpl.c"
-      }
+#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic.tpl.c"
+#endif
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
   }
   else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-#if 0
-      if (handle->desc.N*handle->blocksifm >= handle->desc.threads) {
-#endif
-      typedef float element_input_type;
-      typedef float element_output_type;
-      typedef float element_filter_type;
-      typedef libxsmm_sconvfunction libxsmm_convfunction;
-      if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom.tpl.c"
-#undef INPUT_PADDING
-      } else {
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom.tpl.c"
-      }
-#if 0
-      }
-      else {
-        typedef float element_input_type;
-        typedef float element_output_type;
-        typedef float element_filter_type;
-        typedef libxsmm_sconvfunction libxsmm_convfunction;
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_img_par.tpl.c"
-      }
-#endif
-    } else if (handle->datatype ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
-      typedef int element_input_type;
-      typedef short element_output_type;
-      typedef short element_filter_type;
-      typedef libxsmm_wconvfunction_bwd libxsmm_convfunction;
-      if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_1.tpl.c"
-#undef INPUT_PADDING
-      } else {
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_1.tpl.c"
-      }
-    } else if (handle->datatype == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I16 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
-      typedef unsigned short element_input_type;
-      typedef char element_output_type;
-      typedef char element_filter_type;
-      typedef libxsmm_busconvfunction_bwd libxsmm_convfunction;
-      if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_1.tpl.c"
-#undef INPUT_PADDING
-      } else {
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_1.tpl.c"
-      }
-    } else if (handle->datatype == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
-      typedef unsigned int element_input_type;
-      typedef char element_output_type;
-      typedef char element_filter_type;
-      typedef libxsmm_budconvfunction_bwd libxsmm_convfunction;
-      if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_1.tpl.c"
-#undef INPUT_PADDING
-      } else {
-#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_1.tpl.c"
-      }
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      status = libxsmm_dnn_convolve_st_bwd_custom_custom_f32_f32( handle, start_thread, tid );
+    } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
+      status = libxsmm_dnn_convolve_st_bwd_custom_custom_i16_i32( handle, start_thread, tid );
+    } else if (handle->datatype_in ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      status = libxsmm_dnn_convolve_st_bwd_custom_custom_i16_f32( handle, start_thread, tid );
+    } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 && (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0 ) {
+      status = libxsmm_dnn_convolve_st_bwd_custom_custom_i8_i32( handle, start_thread, tid );
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
@@ -189,53 +188,28 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck(libxs
   }
 
   /* check if we have a kernel JITed */
-  if (handle->code_bwd[0].xconv.sconv == 0) {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+  if ( handle->use_bwd_generic != 0 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      const int lda = (int)(handle->ifmblock);
+      const int ldb = (int)(handle->blocksofm*handle->ofmblock);
+      const int ldc = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) )
+                        ? (int)(handle->desc.v*handle->blocksifm*handle->ifmblock) : (int)(handle->desc.v*handle->ifmblock);
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-      if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_st_bwd_nhwc_rsck_fallback.tpl.c"
-#undef INPUT_PADDING
-      } else {
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_rsck_fallback.tpl.c"
-      }
+      typedef libxsmm_smmfunction gemm_function;
+      /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, &lda, &ldb, &ldc, NULL, NULL, NULL, NULL);
+#define LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_RSCK
+# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_generic.tpl.c"
+#undef LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_RSCK
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
   }
   else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-#if 0
-      if (handle->desc.N*handle->blocksifm >= handle->desc.threads) {
-#endif
-        typedef float element_input_type;
-        typedef float element_output_type;
-        typedef float element_filter_type;
-        typedef libxsmm_sconvfunction libxsmm_convfunction;
-        if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-#include "template/libxsmm_dnn_convolve_st_bwd_nhwc_rsck.tpl.c"
-#undef INPUT_PADDING
-        } else {
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_rsck.tpl.c"
-        }
-#if 0
-      }
-      else {
-        typedef float element_input_type;
-        typedef float element_output_type;
-        typedef float element_filter_type;
-        typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_rsck_img_par.tpl.c"
-      }
-#endif
-    } else {
-      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-      return status;
-    }
+    /* shouldn't happen */
   }
 
   return status;
@@ -252,53 +226,28 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom(lib
   }
 
   /* check if we have a kernel JITed */
-  if (handle->code_bwd[0].xconv.sconv == 0) {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+  if ( handle->use_bwd_generic != 0 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      const int lda = (int)(handle->ifmblock);
+      const int ldb = (int)(handle->blocksofm*handle->ofmblock);
+      const int ldc = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) )
+                        ? (int)(handle->desc.v*handle->blocksifm*handle->ifmblock) : (int)(handle->desc.v*handle->ifmblock);
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-      if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom_fallback.tpl.c"
-#undef INPUT_PADDING
-      } else {
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom_fallback.tpl.c"
-      }
+      typedef libxsmm_smmfunction gemm_function;
+      /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, &lda, &ldb, &ldc, NULL, NULL, NULL, NULL);
+#define LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM
+# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_generic.tpl.c"
+#undef LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
   }
   else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-#if 0
-      if (handle->desc.N*handle->blocksifm >= handle->desc.threads) {
-#endif
-        typedef float element_input_type;
-        typedef float element_output_type;
-        typedef float element_filter_type;
-        typedef libxsmm_sconvfunction libxsmm_convfunction;
-        if (handle->padding_flag == 1) {
-#define INPUT_PADDING
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom.tpl.c"
-#undef INPUT_PADDING
-        } else {
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom.tpl.c"
-        }
-#if 0
-      }
-      else {
-        typedef float element_input_type;
-        typedef float element_output_type;
-        typedef float element_filter_type;
-        typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_bwd_nhwc_custom_img_par.tpl.c"
-      }
-#endif
-    } else {
-      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-      return status;
-    }
+    /* shouldn't happen */
   }
 
   return status;

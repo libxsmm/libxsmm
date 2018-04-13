@@ -164,11 +164,12 @@ LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
 # define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX)
 #elif (0 < INTERNAL_REGLOCK_MAXN)
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
-  const unsigned int LOCKINDEX = LIBXSMM_MOD2(INDEX, internal_reglock_count); \
+  const unsigned int LOCKINDEX = (0 <= libxsmm_verbosity \
+    ? LIBXSMM_MOD2(INDEX, internal_reglock_count) \
+    : 0); /* dump: avoid duplicated kernels */ \
   if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REGNLOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REGNLOCK, &internal_reglock[LOCKINDEX].state)) { \
-    if (1 != internal_reglock_count && /* (re-)try and get (meanwhile) generated code */ \
-        0 != internal_registry) /* ensure engine is not shut down */ \
-    { \
+    if (1 != internal_reglock_count) { /* (re-)try and get (meanwhile) generated code */ \
+      assert(0 != internal_registry); /* engine is not shut down */ \
       continue; \
     } \
     else { /* exit dispatch and let client fall back */ \
@@ -180,9 +181,8 @@ LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
 #else /* RW-lock */
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
   if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REG1LOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REG1LOCK, &internal_reglock)) { \
-    if (1 != internal_reglock_count && /* (re-)try and get (meanwhile) generated code */ \
-        0 != internal_registry) /* ensure engine is not shut down */ \
-    { \
+    if (1 != internal_reglock_count) { /* (re-)try and get (meanwhile) generated code */ \
+      assert(0 != internal_registry); /* engine is not shut down */ \
       continue; \
     } \
     else { /* exit dispatch and let client fall back */ \
@@ -1245,35 +1245,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         }
       }
     } break;
-    case LIBXSMM_BUILD_KIND_CBWD: { /* backward convolution */
-      assert(0 != request->descriptor.cbwd);
-      if (0 < request->descriptor.cbwd->kw && 0 < request->descriptor.cbwd->kh &&
-          0 != request->descriptor.cbwd->stride_w && 0 != request->descriptor.cbwd->stride_h)
-      {
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_convolution_backward_kernel, &generated_code, request->descriptor.cbwd, target_arch);
-# if !defined(LIBXSMM_VTUNE)
-        if (0 > libxsmm_verbosity)
-# endif
-        {
-          const char *const precision_in = internal_get_typename(request->descriptor.cbwd->datatype);
-          const char *const precision_out = internal_get_typename(request->descriptor.cbwd->datatype_itm);
-          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_bwd_%s_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_p%i_f%i.conv",
-            target_arch/*code path name*/, precision_in, precision_out,
-            (unsigned int)request->descriptor.cbwd->kw/*kernel width*/, (unsigned int)request->descriptor.cbwd->kh/*kernel height*/,
-            (unsigned int)request->descriptor.cbwd->unroll_kw/*width*/, (unsigned int)request->descriptor.cbwd->unroll_kh/*height*/,
-            (int)request->descriptor.cbwd->stride_w/*input offset*/, (int)request->descriptor.cbwd->stride_h/*output offsets*/,
-            (unsigned int)request->descriptor.cbwd->ifm_block/*VLEN*/, (unsigned int)request->descriptor.cbwd->ofm_block/*VLEN*/,
-            (unsigned int)request->descriptor.cbwd->ifw_padded, (unsigned int)request->descriptor.cbwd->ifh_padded,
-            (unsigned int)request->descriptor.cbwd->ofw_padded/*1D and 2D register block*/,
-            (unsigned int)request->descriptor.cbwd->ofh_padded/*2D register block*/,
-            (unsigned int)request->descriptor.cbwd->ofw_rb/*register block ofw*/,
-            (unsigned int)request->descriptor.cbwd->ofh_rb/*register block ofh*/,
-            (int)request->descriptor.cbwd->prefetch/*binary OR'd prefetch flags*/,
-            (int)request->descriptor.cbwd->format/*binary OR'd format flags*/);
-        }
-      }
-    } break;
     case LIBXSMM_BUILD_KIND_CUPD: { /* convolution update weights */
       assert(0 != request->descriptor.cupd);
       if (0 < request->descriptor.cupd->kw &&
@@ -1287,10 +1258,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           const char *const precision_in = internal_get_typename(request->descriptor.cupd->datatype);
           const char *const precision_out = internal_get_typename(request->descriptor.cupd->datatype_itm);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_upd_%s_%s_%ux%u_%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%ux%uu%u_if%uu_t%u_p%i_f%i.conv",
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_upd_%s_%s_%ux%u_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%ux%uu%u_if%uu_t%u_p%i_f%i.conv",
             target_arch/*code path name*/, precision_in, precision_out,
             (unsigned int)request->descriptor.cupd->kw/*kernel width*/, (unsigned int)request->descriptor.cupd->kh/*kernel height*/,
-            (unsigned int)request->descriptor.cupd->unroll_kw/*width*/,
             (int)request->descriptor.cupd->stride_w/*input offset*/, (int)request->descriptor.cupd->stride_h/*output offsets*/,
             (unsigned int)request->descriptor.cupd->ifm_block/*VLEN*/, (unsigned int)request->descriptor.cupd->ofm_block/*VLEN*/,
             (unsigned int)request->descriptor.cupd->ifw_padded, (unsigned int)request->descriptor.cupd->ifh_padded,

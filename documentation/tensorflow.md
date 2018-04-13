@@ -24,7 +24,7 @@ To try LIBXSMM's master revision, the file `tensorflow/workspace.bzl` can be adj
   )
 ```
 
-Beside of the regular prerequisites, nothing else is needed to use TensorFlow with LIBXSMM. Prior to Bazel&#160;0.4.5, it was helpful to change TensorFlow's `configure` script by replacing `bazel clean --expunge` with `bazel clean --expunge_async` (at least when NFS-hosted).
+<a name="non-default-compiler"></a>LIBXSMM does not impose to build for a specific code path, and always exploits the most suitable instruction set extension for JIT-enabled code paths. However, LIBXSMM may also use non-JIT code paths which are CPUID-dispatched when the static code path has lower capabilities. This only works when using GCC&#160;4.9 (or later) or the Intel Compiler. If TensorFlow does not match the highest possible CPU target (march=native), a performance penalty is possible. With recent Bazel versions, a non-default compiler can be source'd just normally i.e., added the the PATH environment. Beside of the regular TF-prerequisites, nothing else is needed to use TensorFlow with LIBXSMM.
 
 ```bash
 cd /path/to/tensorflow-xsmm
@@ -38,15 +38,15 @@ export https_proxy=https://proxy.domain.com:912
 export http_proxy=http://proxy.domain.com:911
 ```
 
-Please note that certain content under `tensorflow/models` may cause an error during the configuration. In such a case, simply configure with "models" temporarily not present. In general, if the build step of any of the Bazel commands goes wrong, `-s --verbose_failures` can be added to the command line (`-s` shows the full command of each of the build steps). The flags `--define tensorflow_xsmm=1`, `--define eigen_xsmm=1`, and `--define tensorflow_xsmm_backward=1` are not actually needed for all the cases, but are supplied for consistency.  
+In general, if the build step of any of the Bazel commands goes wrong, `-s --verbose_failures` can be added to the command line (`-s` shows the full command of each of the build steps). The flags `--define tensorflow_xsmm=1`, `--define eigen_xsmm=1`, and `--define tensorflow_xsmm_backward=1` are not actually needed for all the cases, but are supplied for consistency.  
 
 **More important, one line of below target flags should be added to Bazel's build line**:
 
 * AVX2/HSW/BDW: `--copt=-mfma --copt=-mavx2`
-* AVX-512/SKX: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl` (and `--copt=-mavx512dq` depending on certain fixes being already present in TensorFlow)
+* AVX-512/SKX: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl --copt=-mavx512dq` (in the past `--copt=-mavx512dq` caused additional issues; see note below)
 * AVX-512/KNL: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512pf --copt=-mavx512er`
 
-**NOTE**: TensorFlow may run into issues, and one may temporarily apply `--copt=-mfma --copt=-mavx2` (even if Intel&#160;AVX-512 extensions are available). There are at least two issues: (1)&#160;there can be NaNs e.g., printed when training a network regardless of the GCC-version, or (2)&#160;TensorFlow *without* LIBXSMM may crash in TF's implementation of GEMM.
+**NOTE**: TensorFlow or specifically Eigen's pack-math may run into issues when targeted to AVX-512, hence should limit the code to Intel AVX2 instructions (`--copt=-mfma --copt=-mavx2`). This should not imply a significant performance penalty since all hotspots should be based on JIT-generated code (CPUID-dispatched). As a side-note (this is often missed in AVX2 vs. AVX-512 comparisons), AVX2 code can use twice as many registers (32) on AVX-512 capable systems (if instructions are EVEX encoded, which is practically always the case).
 
 For AVX-512 in general, GCC&#160;5.x (or higher) should be used (see section [Non-default Compiler](#non-default-compiler)). LIBXSMM supports Intel&#160;AVX2 as the baseline code path for all JIT-generated DNN-code (SMM domain also supports AVX). For Intel&#160;AVX-512 (on top of AVX2), the foundational instructions are sufficient in many cases, but for the sparse domain the Core-flavor is a prerequisite ("Skylake server" or SKX), and VNNI/QFMA instructions are honored on Intel Xeon&#160;Phi code-named "Knights Mill" (KNM).
 
@@ -73,6 +73,30 @@ pip install \
 
 This document is an early recipe for building and running TensorFlow with LIBXSMM. Please do not expect any performance advantage (at this point) when comparing to TensorFlow without LIBXSMM!
 
+### TensorFlow Model Repository
+
+This section may help to quickly setup models from the TensorFlow repository. Care must be taken to ensure that the model in question uses the NHWC-format, which is assumed by LIBXSMM. In most (if not all) cases this is not the default, and the model must be adjusted.
+
+```bash
+git clone https://github.com/tensorflow/models.git tensorflow-models
+cd /path/to/tensorflow-xsmm
+ln -s /path/to/tensorflow-models tensorflow/models
+
+bazel build --copt=-O2 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
+  --define tensorflow_xsmm=1 --define tensorflow_xsmm_convolutions=1 --define tensorflow_xsmm_backward_convolutions=1 \
+  <line-of-target-flags-from-above> \
+  //tensorflow/models/tutorials/image/alexnet:alexnet_benchmark
+```
+
+The above command may be combined with `//tensorflow/tools/pip_package:build_pip_package` to build TF as well. Please remember, the TF wheel needs to be only installed if the model runs outside of TF's source tree. To run the "Alexnet" benchmark:
+
+```bash
+LIBXSMM_VERBOSE=2 \
+bazel-bin/tensorflow/models/tutorials/image/alexnet/alexnet_benchmark \
+  --batch_size=256 2>&1 \
+| tee output_alexnet.log
+```
+
 ### Convnet Benchmarks
 
 The section helps to quickly setup benchmarks for Alexnet, Overfeat, VGG, and Googlenet&#160;v1. Recently, the original Convnet benchmark **stopped working with current TensorFlow**: please rely on TensorFlow model repository (previous section).
@@ -92,7 +116,7 @@ bazel build --copt=-O2 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linko
   //tensorflow/models/convnetbenchmarks:benchmark_googlenet
 ```
 
-The above command may be combined with `//tensorflow/tools/pip_package:build_pip_package` to build TF as well. Please note, the wheel needs to be only installed if the model runs outside of TF's source tree. For convenience, one can use a symlink to link the model into TF's source tree. To run the "Alexnet" benchmark:
+The above command may be combined with `//tensorflow/tools/pip_package:build_pip_package` to build TF as well. Please note, the wheel needs to be only installed if the model runs outside of TF's source tree. To run the "Alexnet" benchmark:
 
 ```bash
 LIBXSMM_VERBOSE=2 \
@@ -100,44 +124,6 @@ bazel-bin/tensorflow/models/convnetbenchmarks/benchmark_alexnet \
   --data_format=NHWC --forward_only=true --batch_size=256 2>&1 \
 | tee output_alexnet.log
 ```
-
-In case of an `ImportError: No module named builtins` one can resolve the problem with `sudo -H pip install future --upgrade`.
-
-### TensorFlow Model Repository
-
-This section may help to quickly setup models from the TensorFlow repository. Care must be taken to ensure that the model in question uses the NHWC-format, which is assumed by LIBXSMM. In most if not all cases this is not the default, and the model must be edited!
-
-```bash
-git clone https://github.com/tensorflow/models.git tensorflow-models
-cd /path/to/tensorflow-xsmm
-ln -s /path/to/tensorflow-models tensorflow/models
-
-bazel build --copt=-O2 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD --linkopt=-pthread \
-  --define tensorflow_xsmm=1 --define tensorflow_xsmm_convolutions=1 --define tensorflow_xsmm_backward_convolutions=1 \
-  <line-of-target-flags-from-above> \
-  //tensorflow/models/tutorials/image/alexnet:alexnet_benchmark
-```
-
-## Non-default Compiler
-
-LIBXSMM does not impose to build for a specific code path, and always exploits the most suitable instruction set extension for JIT-enabled code paths. However, LIBXSMM may also use non-JIT code paths which are CPUID-dispatched when the static code path has lower capabilities. This only works when using GCC&#160;4.9 (or later) or the Intel Compiler. If TensorFlow does not match the highest possible CPU target (march=native), a performance penalty is possible.
-
-It is recommended to rely on a pre-built compiler by using for instance the "devtools" package (RedHat) or similar (depends on the Linux distribution). To use a custom-built compiler with TensorFlow may not only ask to source this compiler:
-
-```bash
-export LD_LIBRARY_PATH=/software/gnu/gcc-6.3.0/lib64:/software/gnu/gcc-6.3.0/lib:${LD_LIBRARY_PATH}
-export PATH=/software/gnu/gcc-6.3.0/bin:${PATH}
-```
-
-but to further advertise the different compiler-runtime to the linker (`ld`).
-
-```bash
-echo "/software/gnu/gcc-6.3.0/lib64" > software-gnu-gcc630.conf
-sudo mv software-gnu-gcc630.conf /etc/ld.so.conf.d/
-sudo ldconfig
-```
-
-If there are still problems when using the custom compiler (mismatched GLIBC version), the symbolic link `libstdc++.so.6` (under `/usr/lib64`) may be adjusted to point to the latest update of the same major GLIBC version.
 
 ## Performance Profiling
 
@@ -150,7 +136,13 @@ amplxe-cl -r result -data-limit 0 \
     --data_format=NHWC --forward_only=true --batch_size=64 --num_batches=50
 ```
 
-To get named JIT-kernels, one may add the following flags to Bazel's build line:
+To get named JIT-kernels, one may add the following flags to Bazel's build line (Intel VTune Amplifier 2018):
+
+```bash
+--copt=-DLIBXSMM_VTUNE=2 --linkopt=${VTUNE_AMPLIFIER_2018_DIR}/lib64/libjitprofiling.a
+```
+
+To get named JIT-kernels, one may add the following flags to Bazel's build line (Intel VTune Amplifier 2017):
 
 ```bash
 --copt=-DLIBXSMM_VTUNE=2 --linkopt=${VTUNE_AMPLIFIER_XE_2017_DIR}/lib64/libjitprofiling.a

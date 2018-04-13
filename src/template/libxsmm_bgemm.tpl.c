@@ -112,7 +112,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
           }
         }
         if (0 != kernel_pf) { /* prefetch */
-          for (ki2 = 0, ki = (b_k2 * k2); ki2 < b_k2 ; ++ki2, ++ki) {
+          for (ki2 = 0, ki = (b_k2 * k2); ki2 < b_k2; ++ki2, ++ki) {
             if (k2 < (nw_k - 2)) { /* prefetch */
               kernel_pf(&LIBXSMM_VLA_ACCESS(4, real_a, i2, ki, 0, 0, handle->kb, handle->bk, handle->bm),
                         &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
@@ -128,7 +128,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
           }
         }
         else { /* no prefetch */
-          for (ki2 = 0, ki = (b_k2 * k2); ki2 < b_k2 ; ++ki2, ++ki) {
+          for (ki2 = 0, ki = (b_k2 * k2); ki2 < b_k2; ++ki2, ++ki) {
             kernel(&LIBXSMM_VLA_ACCESS(4, real_a, i2, ki, 0, 0, handle->kb, handle->bk, handle->bm),
                    &LIBXSMM_VLA_ACCESS(4, real_b, j2, ki, 0, 0, handle->kb, handle->bn, handle->bk),
                    &LIBXSMM_VLA_ACCESS(2, l_out, 0, 0, handle->bm));

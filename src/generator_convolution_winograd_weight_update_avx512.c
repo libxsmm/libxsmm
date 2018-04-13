@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -98,8 +98,13 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
     l_micro_kernel_config.instruction_set = LIBXSMM_X86_AVX512_KNM;
   } else if ((strcmp( i_arch, "knl" ) == 0)) {
     l_micro_kernel_config.instruction_set = LIBXSMM_X86_AVX512_MIC;
-  } else {
+  } else if ((strcmp( i_arch, "skx" ) == 0)) {
     l_micro_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE;
+  } else if ((strcmp( i_arch, "icl" ) == 0)) {
+    l_micro_kernel_config.instruction_set = LIBXSMM_X86_AVX512_ICL;
+  } else {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
+    return;
   }
   l_micro_kernel_config.vector_reg_count = 32;
   l_micro_kernel_config.use_masking_a_c = 0;

@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -108,13 +108,17 @@ typedef enum libxsmm_dnn_tensor_dimtype {
   /** kernel height */
   LIBXSMM_DNN_TENSOR_DIMTYPE_R,
   /** kernel width */
-  LIBXSMM_DNN_TENSOR_DIMTYPE_S
+  LIBXSMM_DNN_TENSOR_DIMTYPE_S,
+  /** general counter */
+  LIBXSMM_DNN_TENSOR_DIMTYPE_X
 } libxsmm_dnn_tensor_dimtype;
 
 /** types of different buffers */
 typedef enum libxsmm_dnn_tensor_type {
   /** regular input buffer */
   LIBXSMM_DNN_REGULAR_INPUT,
+  /** regular input buffer, transpose */
+  LIBXSMM_DNN_REGULAR_INPUT_TRANS,
   /** gradient input buffer */
   LIBXSMM_DNN_GRADIENT_INPUT,
   /** regular output buffer */
@@ -129,6 +133,8 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_ACTIVATION,
   /* regular filter */
   LIBXSMM_DNN_REGULAR_FILTER,
+  /* regular filter */
+  LIBXSMM_DNN_REGULAR_FILTER_TRANS,
   /* gradient filter */
   LIBXSMM_DNN_GRADIENT_FILTER,
   /** general filter type */
@@ -139,7 +145,12 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_GRADIENT_BIAS,
   /** general bias type */
   LIBXSMM_DNN_BIAS,
-  /** general type, if needed might cause API issues in copy in/out API */
+  /** batch stats */
+  LIBXSMM_DNN_BATCH_STATS,
+  LIBXSMM_DNN_MAX_STATS_FWD,
+  LIBXSMM_DNN_MAX_STATS_BWD,
+  LIBXSMM_DNN_MAX_STATS_UPD,
+   /** general type, if needed might cause API issues in copy in/out API */
   LIBXSMM_DNN_TENSOR
 } libxsmm_dnn_tensor_type;
 
@@ -160,9 +171,19 @@ typedef enum libxsmm_dnn_conv_fuse_op {
   LIBXSMM_DNN_CONV_FUSE_NONE = 0,
   /* we fuse bias addition into convolution */
   LIBXSMM_DNN_CONV_FUSE_BIAS = 1,
-  /* we fuse ReLU calculation into convolution op */
-  LIBXSMM_DNN_CONV_FUSE_RELU = 2,
-  /* we fuse bias addition and ReLU into convolution op */
+  /* we fuse ReLU calculation into fwd convolution op */
+  LIBXSMM_DNN_CONV_FUSE_RELU_FWD = 2,
+  /* we fuse ReLU calculation into bwd convolution op */
+  LIBXSMM_DNN_CONV_FUSE_RELU_BWD = 4,
+  /* we fuse batch stats */
+  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS = 8,
+  LIBXSMM_DNN_CONV_FUSE_MAX_STATS = 16,
+  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD = LIBXSMM_DNN_CONV_FUSE_RELU_BWD | LIBXSMM_DNN_CONV_FUSE_BATCH_STATS,
+  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD_AND_MAX = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD | LIBXSMM_DNN_CONV_FUSE_MAX_STATS,
+  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_AND_MAX = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS |  LIBXSMM_DNN_CONV_FUSE_MAX_STATS,
+  LIBXSMM_DNN_CONV_FUSE_RELU_BWD_AND_MAX = LIBXSMM_DNN_CONV_FUSE_RELU_BWD | LIBXSMM_DNN_CONV_FUSE_MAX_STATS,
+    /* we fuse bias addition and ReLU into convolution op */
+  LIBXSMM_DNN_CONV_FUSE_RELU = LIBXSMM_DNN_CONV_FUSE_RELU_FWD | LIBXSMM_DNN_CONV_FUSE_RELU_BWD,
   LIBXSMM_DNN_CONV_FUSE_BIAS_RELU = LIBXSMM_DNN_CONV_FUSE_BIAS | LIBXSMM_DNN_CONV_FUSE_RELU
 } libxsmm_dnn_conv_fuse_op;
 
@@ -199,13 +220,42 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   int pad_w_out;                            /* width of zero-padding in output buffer */
   int threads;                              /* number of threads to use when running
                                                convolution */
-  libxsmm_dnn_datatype datatype;            /* datatypes use for all input and outputs */
+  libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
+  libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for buffer buffers */
   libxsmm_dnn_tensor_format filter_format;  /* format which is for filter buffers */
   libxsmm_dnn_conv_algo algo;               /* convolution algorithm used */
   libxsmm_dnn_conv_option options;          /* additional options */
   libxsmm_dnn_conv_fuse_op fuse_ops;        /* used ops into convolutions */
 } libxsmm_dnn_conv_desc;
+
+/** these are some quantization definitions, not sure if we want to
+    move them into some main part of LIBXSMM */
+/* @TODO check position of these declarations and defines */
+typedef union LIBXSMM_RETARGETABLE libxsmm_intfloat {
+  unsigned int ui;
+  float f;
+} libxsmm_intfloat;
+
+/* F32 masking defines */
+#define LIBXSNN_DNN_MASK_SIGN_F32      0x80000000
+#define LIBXSMM_DNN_MASK_EXP_F32       0x7f800000
+#define LIBXSMM_DNN_MASK_MANT_F32      0x007fffff
+#define LIBXSMM_DNN_MASK_ABS_F32       0x7fffffff
+#define LIBXSMM_DNN_MASK_FULL_F32      0xffffffff
+#define LIBXSMM_DNN_MANT_SZ_F32        23
+#define LIBXSMM_DNN_SZ_F32             32
+
+/* DFP16 masking defines */
+#define LIBXSMM_DNN_MANT_DFP16         15
+#define LIXSMMM_DNN_RES_DFP16          libxsmm_sexp2_i8i(-(LIBXSMM_DNN_MANT_DFP16))
+
+/* Quantization Rounding Defines */
+#define LIBXSMM_DNN_QUANT_NO_ROUND       80000
+#define LIBXSMM_DNN_QUANT_BIAS_ROUND     80001
+#define LIBXSMM_DNN_QUANT_STOCH_ROUND    80002
+#define LIBXSMM_DNN_QUANT_NEAREST_ROUND  80003
+#define LIBXSMM_DNN_QUANT_FPHW_ROUND     80004
 
 /** get string of error code */
 LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code);
@@ -226,10 +276,10 @@ LIBXSMM_API unsigned int libxsmm_dnn_get_tensor_elements(const libxsmm_dnn_tenso
 
 /** Create and manage buffers, filters and bias (non-NULL if successful) */
 LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_link_tensor(const libxsmm_dnn_tensor_datalayout* layout, const void* data, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_link_qtensor(const libxsmm_dnn_tensor_datalayout* layout, const void* data, const char exp, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_link_qtensor(const libxsmm_dnn_tensor_datalayout* layout, const void* data, const unsigned char exp, libxsmm_dnn_err_t* status);
 LIBXSMM_API void* libxsmm_dnn_get_tensor_data_ptr(const libxsmm_dnn_tensor* tensor, libxsmm_dnn_err_t* status);
-LIBXSMM_API char libxsmm_dnn_get_qtensor_exp(const libxsmm_dnn_tensor* tensor, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_set_qtensor_exp(libxsmm_dnn_tensor* tensor, const char exp);
+LIBXSMM_API unsigned char libxsmm_dnn_get_qtensor_scf(const libxsmm_dnn_tensor* tensor, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_set_qtensor_scf(libxsmm_dnn_tensor* tensor, const unsigned char scf);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_tensor(const libxsmm_dnn_tensor* tensor);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_zero_tensor(const libxsmm_dnn_tensor* tensor);
 
@@ -238,6 +288,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_zero_tensor(const libxsmm_dnn_tensor* 
  */
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyin_tensor(const libxsmm_dnn_tensor* tensor, const void* data, const libxsmm_dnn_tensor_format in_format);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsmm_dnn_tensor* tensor, void* data, const libxsmm_dnn_tensor_format out_format);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_trans_reg_filter(const libxsmm_dnn_layer* handle);
 
 /** scratch pad management */
 LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status);
@@ -259,6 +310,14 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_transpose_filter(libxsmm_dnn_layer* ha
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_reduce_wu_filters(libxsmm_dnn_layer* handle, const libxsmm_dnn_tensor_type type);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* handle, libxsmm_dnn_compute_kind kind, unsigned int* num_tasks);
+
+/** some quantization helper functions,
+    @TODO need to be integrated better for all different ways of quantizations */
+#define _mm512_quantize_near_ps_epi16( A, B ) _mm512_cvtepi32_epi16( _mm512_cvt_roundps_epi32( _mm512_mul_ps( _mm512_load_ps(A), B), (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC) ) )
+LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int length, unsigned char add_shift, unsigned char* scf, int round_mode );
+LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, unsigned int N, unsigned int C, unsigned int H, unsigned int W, unsigned int cblk_f32, unsigned int cblk_i16, unsigned int lp_blk, unsigned char add_shift, unsigned char* scf, int round_mode );
+LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, unsigned int K, unsigned int C, unsigned int R, unsigned int S, unsigned int cblk_f32, unsigned int cblk_i16, unsigned int kblk_f32, unsigned int kblk_i16, unsigned int lp_blk, unsigned char add_shift, unsigned char* scf, int round_mode );
+LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, int length, unsigned char scf );
 
 #endif /*LIBXSMM_DNN_H*/
 

@@ -33,12 +33,6 @@
 
 #include <libxsmm_generator.h>
 
-/* Fallback to MKL and not to triple nested loops in the generator (noarch)
- **/
-#if 0
-#define LIBXSMM_GENERATOR_MKL_BLAS_FALLBACK
-#endif
-
 /*@TODO check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
 #define LIBXSMM_X86_GP_REG_RAX               0
@@ -390,7 +384,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_convolution_forward_gp_reg_mapping_struc
   unsigned int gp_reg_weight;
   unsigned int gp_reg_output;
   unsigned int gp_reg_input_pf;
+  unsigned int gp_reg_input_pf_L2;
   unsigned int gp_reg_weight_pf;
+  unsigned int gp_reg_weight_pf_L2;
   unsigned int gp_reg_output_pf;
   unsigned int gp_reg_kw_loop;
   unsigned int gp_reg_kh_loop;
@@ -404,27 +400,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_convolution_forward_gp_reg_mapping_struc
   unsigned int gp_reg_help_5;
   unsigned int gp_reg_help_6;
 } libxsmm_convolution_forward_gp_reg_mapping;
-
-/* structure for storing the current gp reg mapping for convolution */
-LIBXSMM_EXTERN_C typedef struct libxsmm_convolution_backward_gp_reg_mapping_struct {
-  unsigned int gp_reg_input;
-  unsigned int gp_reg_weight;
-  unsigned int gp_reg_output;
-  unsigned int gp_reg_input_pf;
-  unsigned int gp_reg_weight_pf;
-  unsigned int gp_reg_output_pf;
-  unsigned int gp_reg_kw_loop;
-  unsigned int gp_reg_oi_loop;
-  unsigned int gp_reg_kh_loop;
-  unsigned int gp_reg_ofmInner_loop;
-  unsigned int gp_reg_help_0;
-  unsigned int gp_reg_help_1;
-  unsigned int gp_reg_help_2;
-  unsigned int gp_reg_help_3;
-  unsigned int gp_reg_help_4;
-  unsigned int gp_reg_help_5;
-  unsigned int gp_reg_help_6;
-} libxsmm_convolution_backward_gp_reg_mapping;
 
 /* structure for storing the current gp reg mapping for convolution */
 LIBXSMM_EXTERN_C typedef struct libxsmm_convolution_weight_update_gp_reg_mapping_struct {

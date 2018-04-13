@@ -280,7 +280,7 @@ SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
           libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_trans.c libxsmm_bgemm.c \
           libxsmm_spmdm.c libxsmm_fsspmdm.c \
-          libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_handle.c \
+          libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c \
           libxsmm_dnn_convolution_forward.c \
           libxsmm_dnn_convolution_backward.c \
           libxsmm_dnn_convolution_weight_update.c \
@@ -531,11 +531,11 @@ config: $(INCDIR)/libxsmm_config.h
 $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_config.h \
                             $(SCRDIR)/libxsmm_config.py $(SCRDIR)/libxsmm_utilities.py \
                             $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
-                            $(wildcard $(ROOTDIR)/.hooks/*) \
+                            $(wildcard $(ROOTDIR)/.gitx/*) \
                             $(ROOTDIR)/version.txt
 	$(information)
-	@if [ -e $(ROOTDIR)/.hooks/install.sh ]; then \
-		$(ROOTDIR)/.hooks/install.sh; \
+	@if [ -e $(ROOTDIR)/.gitx/install.sh ]; then \
+		$(ROOTDIR)/.gitx/install.sh; \
 	fi
 	@$(CP) $(ROOTDIR)/include/libxsmm_bgemm.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2>/dev/null || true
@@ -953,7 +953,7 @@ endif
 
 .PHONY: samples
 samples: lib_hst
-	@find $(SPLDIR) -type f -name Makefile | grep -v /pyfr/ | grep -v /lstm/ \
+	@find $(SPLDIR) -type f -name Makefile | grep -v /pyfr/ | grep -v /lstmcell/ | grep -v /gxm/ \
 		$(patsubst %, | grep -v /%/,$^) | xargs -I {} $(FLOCK) {} "$(MAKE) DEPSTATIC=$(STATIC)"
 
 .PHONY: cp2k
@@ -1306,7 +1306,7 @@ $(DOCDIR)/index.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
 		> $@
 
 $(DOCDIR)/libxsmm.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/documentation/index.md \
-$(ROOTDIR)/documentation/libxsmm_mm.md $(ROOTDIR)/documentation/libxsmm_dnn.md $(ROOTDIR)/documentation/libxsmm_aux.md \
+$(ROOTDIR)/documentation/libxsmm_mm.md $(ROOTDIR)/documentation/libxsmm_dl.md $(ROOTDIR)/documentation/libxsmm_aux.md \
 $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.md $(ROOTDIR)/documentation/libxsmm_be.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
@@ -1319,7 +1319,7 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		iconv -t utf-8 index.md && echo && \
 		echo "# LIBXSMM Domains" && \
 		iconv -t utf-8 libxsmm_mm.md && echo && \
-		iconv -t utf-8 libxsmm_dnn.md && echo && \
+		iconv -t utf-8 libxsmm_dl.md && echo && \
 		iconv -t utf-8 libxsmm_aux.md && echo && \
 		iconv -t utf-8 libxsmm_prof.md && echo && \
 		iconv -t utf-8 libxsmm_tune.md && echo && \

@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -49,6 +49,8 @@ if (tensor->layout->custom_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
   int N = tensor->layout->dim_size[4];
 #endif
   int C = fmb * bfm * lpb;
+
+/* printf(" layout act copy out  N %i fmb %i H %i W %i bfm %i lpb %i \n", N, fmb, H, W, bfm, lpb); */
 
   LIBXSMM_VLA_DECL(6, const element_type, handle_data_1, (const element_type*)tensor->data, fmb, H, W, bfm, lpb);
   LIBXSMM_VLA_DECL(4, element_type, user_data, (element_type*)data, C, H, W);

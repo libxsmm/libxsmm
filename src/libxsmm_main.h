@@ -209,32 +209,53 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
 } libxsmm_csr_reg_descriptor;
 
 /** Function type used for convolutions (single-precision); the actual signature depends on the kind of convolution. */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_sconvfunction)(
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sconvfunction)(
   const float* input1, const float* input2, float* output,
-  const float* ipf1, const float* ipf2, const float* opf);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_wconvfunction)(
+  const float* ipf1, const float* ipf2, const float* opf, ...);
+
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction)(
   const short* input1, const short* input2, int* output,
-  const short* ipf1, const short* ipf2, const int* opf);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_busconvfunction)(
+  const short* ipf1, const short* ipf2, const int* opf, ...);
+
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wsconvfunction)(
+  const short* input1, const short* input2, float* output,
+  const short* ipf1, const short* ipf2, const float* opf, ...);
+
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_uwsconvfunction)(
+  short* input1, float* input2, short* output,
+  short* ipf1, float* ipf2, short* opf, ...);
+
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bdbconvfunction)(
+  unsigned char* input1, int* input2, unsigned char* output,
+  unsigned char* ipf1, int* ipf2, unsigned char* opf, ...);
+
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction)(
   const unsigned char* input1, const char* input2, short* output,
-  const unsigned char* ipf1, const char* ipf2, const short* opf);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_budconvfunction)(
+  const unsigned char* ipf1, const char* ipf2, const short* opf, ...);
+
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction)(
   const unsigned char* input1, const char* input2, int* output,
-  const unsigned char* ipf1, const char* ipf2, const int* opf);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_wconvfunction_bwd)(
+  const unsigned char* ipf1, const char* ipf2, const int* opf, ...);
+
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction_bwd)(
   int* input1, const short* input2, const short* output,
-  const int* ipf1, const short* ipf2, const short* opf);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_busconvfunction_bwd)(
+  const int* ipf1, const short* ipf2, const short* opf, ...);
+
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction_bwd)(
   const unsigned short* input1, const char* input2, const char* output,
-  const unsigned short* ipf1, const char* ipf2, const char* opf);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_budconvfunction_bwd)(
+  const unsigned short* ipf1, const char* ipf2, const char* opf, ...);
+
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction_bwd)(
   const unsigned int* input1, const char* input2, const char* output,
-  const unsigned int* ipf1, const char* ipf2, const char* opf);
+  const unsigned int* ipf1, const char* ipf2, const char* opf, ...);
 
 /** Function type which is either libxsmm_sconvfunction or libxsmm_wconvfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction {
   libxsmm_sconvfunction sconv;
+  libxsmm_wsconvfunction wsconv;
+  libxsmm_uwsconvfunction uwsconv;
   libxsmm_wconvfunction wconv;
+  libxsmm_bdbconvfunction bdbconv;
   libxsmm_busconvfunction busconv;
   libxsmm_budconvfunction budconv;
   libxsmm_wconvfunction_bwd wconvb;
@@ -258,7 +279,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor {
   libxsmm_dnn_tensor_datalayout* layout;           /* data-layout descriptor */
   void* data;                                      /* pointer to data */
-  char exp;                                        /* fix point exponent for this tensor */
+  unsigned char scf;                               /* fix point scaling factor for this tensor */
 };
 
 /* Structure to record segment in stream of code  */
@@ -269,8 +290,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE segment_t {
 } segment_t;
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
-  libxsmm_dnn_datatype datatype;
-  libxsmm_dnn_datatype datatype_itm;
+  libxsmm_dnn_datatype datatype_in;
+  libxsmm_dnn_datatype datatype_out;
   libxsmm_dnn_conv_desc desc;
   libxsmm_dnn_conv_algo algo;
   libxsmm_dnn_tensor_format buffer_format;
@@ -290,12 +311,17 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int ofhp;
   int ofwp;
   int ifmblock;
+  int ifmblock_hp;
   int ofmblock;
+  int ofmblock_lp;
   int blocksifm;
   int blocksofm;
+  int blocksifm_lp;
+  int blocksofm_lp;
   int fwd_ofw_rb;
   int fwd_ofw_rb_2;
   int fwd_ofh_rb;
+  int fwd_ofh_rb_2;
   int bwd_ofw_rb;
   int bwd_ofh_rb;
   int upd_ofw_rb;
@@ -308,8 +334,34 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int nbImg;
   int blocksifm_blocking;
   int blocksofm_blocking;
+  int blocksimg_blocking;
   int use_nts_fwd;
   int use_nts_bwd;
+  int use_nts_upd;
+  int use_fwd_for_bwd;
+  int exploit_duality;
+  int qfma_input_pad;
+  int resize_input;
+  int ifhp_resized;
+  int ifwp_resized;
+  int use_fastpath;
+  int use_hybrid_wu_parallelism;
+  int weight_copies;
+  int compute_batch_stats_in_kernel;
+  int compute_max_in_kernel_fwd;
+  int compute_max_in_kernel_bwd;
+  int perform_relu_in_kernel;
+  int use_lp_kernel;
+  int output_lp_padding;
+  int reduce_weights;
+  int use_vperm_transposes;
+  int avoid_output_trans;
+  int avoid_input_trans;
+  int enforce_sfma_kernel;
+  int n_variants;
+  int w_variants;
+  int h_variants;
+  int loop_order;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;
@@ -320,6 +372,15 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_tensor* grad_filter;
   libxsmm_dnn_tensor* reg_bias;
   libxsmm_dnn_tensor* grad_bias;
+  /* internal data representations for copies of tensors */
+  libxsmm_dnn_tensor* reg_input_tr;
+  libxsmm_dnn_tensor* reg_filter_tr;
+  /* batchnorm stats */
+  libxsmm_dnn_tensor* batch_stats;
+  /* maxstats used in low-recision kernels */
+  libxsmm_dnn_tensor* maxstats_fwd;
+  libxsmm_dnn_tensor* maxstats_bwd;
+  libxsmm_dnn_tensor* maxstats_upd;
 
   /* barrier */
   libxsmm_barrier* barrier;
@@ -332,14 +393,15 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   void* scratch4;
   size_t scratch4_size;
   void* scratch5;             /* This scratch is used as a copy buffer when padding needs to be applied */
+  void* scratch6;
+  void* scratch7;             /* [H][W][c-block] tensor (generic fwd/bwd convolution) */
+  void* scratch8;             /* output_scratch (generic update convolution) */
+  void* scratch9;             /* filter_scratch (generic update convolution) */
+  size_t scratch6_size, scratch7_size, scratch8_size, scratch9_size;
   size_t minibatch_scratch_size;
   size_t fwdbwd_scratch_size;
   size_t max_scratch5_size;
   int padding_flag;           /* Flag that dictates if we should apply padding in the input */
-  void* scratch6;
-  size_t scratch6_size;
-  void* scratch7;             /* This scratch is used for low precision intermediate buffer for input in backward pass */
-  size_t scratch7_size;
   void* scratchIw;
   size_t scratchIw_size;
   void* scratchOw;
@@ -348,18 +410,20 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t scratchVk_size;
 
   /* JIT-generated convolution code */
+  int use_fwd_generic;
+  int use_bwd_generic;
+  int use_upd_generic;
   /*
   libxsmm_convolution_forward_descriptor       fwd_desc;
   libxsmm_convolution_forward_descriptor       bwd_desc;
   libxsmm_convolution_weight_update_descriptor wu_desc;
   */
-  int avx512avx2fallback;
-  libxsmm_code_pointer code_fwd[4];
-  libxsmm_code_pointer code_bwd[4];
-  libxsmm_code_pointer code_upd[6];
+  libxsmm_code_pointer code_fwd[3];
+  libxsmm_code_pointer code_bwd[3];
+  libxsmm_code_pointer code_upd[2];
 
   libxsmm_code_pointer matcopy_fwd[4];
-  libxsmm_code_pointer matcopy_bwd[2];
+  libxsmm_code_pointer matcopy_bwd[4];
   libxsmm_code_pointer matcopy_upd[3];
 
   /* Data structures and metadata related to per-thread private JITing */
@@ -369,6 +433,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
 
   int *n_entries_fwd;
   int **compute_fwd_indices_ptrs;
+  int **bn_indices_ptrs;
   char **kernel_fwd_variant_ptrs;
   int block_fwd_oj;
   int block_fwd_oi;
@@ -435,7 +500,6 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_RMACSOA,
   LIBXSMM_BUILD_KIND_SREG,
   LIBXSMM_BUILD_KIND_CFWD,
-  LIBXSMM_BUILD_KIND_CBWD,
   LIBXSMM_BUILD_KIND_CUPD,
   LIBXSMM_BUILD_KIND_CWFWD,
   LIBXSMM_BUILD_KIND_CWBWD,
@@ -451,7 +515,6 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_rm_ac_soa_descriptor* rmacsoa;
   const libxsmm_csr_reg_descriptor* sreg;
   const libxsmm_convolution_forward_descriptor* cfwd;
-  const libxsmm_convolution_backward_descriptor* cbwd;
   const libxsmm_convolution_weight_update_descriptor* cupd;
   const libxsmm_convolution_winograd_descriptor* cwino;
   const libxsmm_mcopy_descriptor* matcopy;

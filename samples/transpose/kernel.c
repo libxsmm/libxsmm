@@ -46,7 +46,7 @@ void dfill_matrix ( double *matrix, unsigned int ld, unsigned int m, unsigned in
      fprintf(stderr,"Error is dfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(EXIT_FAILURE);
   }
-  for ( j = 1 ; j <= n ; j++ )
+  for ( j = 1; j <= n; j++ )
   {
      /* Fill through the leading dimension */
      for ( i = 1; i <= ld; i++ )
@@ -69,7 +69,7 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
      fprintf(stderr,"Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(EXIT_FAILURE);
   }
-  for ( j = 1 ; j <= n ; j++ )
+  for ( j = 1; j <= n; j++ )
   {
      /* Fill through the leading dimension */
      for ( i = 1; i <= ld; i++ )
@@ -90,9 +90,9 @@ double residual_stranspose ( float *A, unsigned int lda, unsigned int m, unsigne
 
   *nerrs = 0;
   derror = 0.0;
-  for ( j = 1 ; j <= n ; j++ )
+  for ( j = 1; j <= n; j++ )
   {
-     for ( i = 1 ; i <= m ; i++ )
+     for ( i = 1; i <= m; i++ )
      {
          dtmp = A[ (j-1)*lda + (i-1) ] - out [ (i-1)*ld_out + (j-1) ];
          if ( dtmp < 0.0 ) dtmp = -dtmp;
@@ -117,9 +117,9 @@ double residual_dtranspose ( double *A, unsigned int lda, unsigned int m, unsign
 
   *nerrs = 0;
   derror = 0.0;
-  for ( j = 1 ; j <= n ; j++ )
+  for ( j = 1; j <= n; j++ )
   {
-     for ( i = 1 ; i <= m ; i++ )
+     for ( i = 1; i <= m; i++ )
      {
          dtmp = A[ (j-1)*lda + (i-1) ] - out [ (i-1)*ld_out + (j-1) ];
          if ( dtmp < 0.0 ) dtmp = -dtmp;
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
 
 #ifdef COMPARE_TO_AN_ASSEMBLY_CODE
   cptr2 = (unsigned char *) &myro_;
-  i = 0 ;
+  i = 0;
   nbest = 0;
   istop = 0;
   while ( istop == 0 )

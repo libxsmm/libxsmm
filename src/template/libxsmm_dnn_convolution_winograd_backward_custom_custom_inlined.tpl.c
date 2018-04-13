@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -79,7 +79,7 @@ unsigned long long t_start  = 0;
 
 /* number of tasks that could be run in parallel */
 work = handle->desc.N * handle->blocksofm;
-/* compute chunck size */
+/* compute chunk size */
 chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
 thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
@@ -103,7 +103,7 @@ t_input = __rdtsc() - t_start;
 
 /* number of tasks that could be run in parallel */
 work = handle->blocksofm*handle->blocksifm;
-/* compute chunck size */
+/* compute chunk size */
 chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
 thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
@@ -126,7 +126,7 @@ t_wt = __rdtsc() - t_start;
 
 /* number of tasks that could be run in parallel */
 work = (handle->desc.N/handle->cwino_bwd.bimg) * ALPHA * ALPHA;
-/* compute chunck size */
+/* compute chunk size */
 chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
 thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
@@ -185,7 +185,7 @@ t_gemm = __rdtsc() - t_start;
 
 /* number of tasks that could be run in parallel */
 work = handle->desc.N*handle->blocksifm;
-/* compute chunck size */
+/* compute chunk size */
 chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
 /* compute thr_begin and thr_end */
 thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;

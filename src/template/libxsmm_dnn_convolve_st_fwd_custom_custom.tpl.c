@@ -1,5 +1,5 @@
 /******************************************************************************
- ** Copyright (c) 2016-2017, Intel Corporation                                **
+ ** Copyright (c) 2016-2018, Intel Corporation                                **
  ** All rights reserved.                                                      **
  **                                                                           **
  ** Redistribution and use in source and binary forms, with or without        **
@@ -32,10 +32,14 @@ if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
   if ( handle->use_thread_private_jit ) {
 #include "libxsmm_dnn_convolve_st_fwd_custom_custom_stream.tpl.c"
   } else {
+#if 0
 #include "libxsmm_dnn_convolve_st_fwd_custom_custom_1.tpl.c"
+#endif
   }
 } else if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
+#if 0
 #include "libxsmm_dnn_convolve_st_fwd_custom_custom_2.tpl.c"
+#endif
 }
 else {
   /* New custom format code here */

@@ -1,5 +1,5 @@
 /******************************************************************************
- ** Copyright (c) 2016-2017, Intel Corporation                                **
+ ** Copyright (c) 2016-2018, Intel Corporation                                **
  ** All rights reserved.                                                      **
  **                                                                           **
  ** Redistribution and use in source and binary forms, with or without        **
@@ -31,7 +31,17 @@
 #if !defined(_OPENMP)
 int ltid;
 #endif
-int block_img = 4;
+
+/* FIXME assignments here */
+int BLOCKSIFM = handle->blocksifm;
+int BLOCKSOFM = handle->blocksofm;
+
+int IFMBLOCK;
+if (handle->use_lp_kernel) {
+  IFMBLOCK = handle->ifmblock_hp;
+} else {
+  IFMBLOCK = handle->ifmblock;
+}
 
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(handle->desc.threads)
@@ -42,146 +52,105 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 #if defined(_OPENMP)
   int ltid = omp_get_thread_num();
 #endif
-  int img, imgb, ofm1, ifm1, num_ofw_strips, num_ofh_strips, oi_, oj_, oi__, oj__,ii_, ij_, kh, kw, ofm1ifm1, ki, kj, imgifm1, local_entries, stride_w, stride_h ;
-  int i, j, ofm1ifm1img;
-
-  /* number of tasks that could be run in parallel */
-  const int work = handle->blocksifm*handle->blocksofm;
-  /* compute chunck size */
-  const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
-  /* compute thr_begin and thr_end */
-  const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
-  const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
-  int ifm2;
-  /* number of tasks that could be run in parallel */
-  const int transpose_work = handle->desc.N*handle->blocksifm;
-  /* compute chunck size */
-  const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (transpose_work / handle->desc.threads) : (transpose_work / handle->desc.threads) + 1;
-  /* compute thr_begin and thr_end */
-  const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;
-  const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
-
-  /* number of tasks that could be run in parallel */
-  const int img_parallel_work = handle->blocksifm*handle->blocksofm*handle->desc.N;
-  /* compute chunck size */
-  const int img_parallel_chunksize = (img_parallel_work % handle->desc.threads == 0) ? (img_parallel_work / handle->desc.threads) : (img_parallel_work / handle->desc.threads) + 1;
-  /* compute thr_begin and thr_end */
-  const int img_parallel_thr_begin = (ltid * img_parallel_chunksize < img_parallel_work) ? (ltid * img_parallel_chunksize) : img_parallel_work;
-  const int img_parallel_thr_end = ((ltid + 1) * img_parallel_chunksize < img_parallel_work) ? ((ltid + 1) * img_parallel_chunksize) : img_parallel_work;
-  /* number of tasks that could be run in parallel */
-  const int reduce_work = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
-  /* compute chunck size */
-  const int reduce_chunksize = (reduce_work % handle->desc.threads == 0) ? (reduce_work / handle->desc.threads) : (reduce_work / handle->desc.threads) + 1;
-  /* compute thr_begin and thr_end */
-  const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
-  const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
-
-  const int copywork = handle->desc.N*handle->blocksifm;
-  const int copychunksize = (copywork % handle->desc.threads == 0) ? (copywork / handle->desc.threads) : (copywork / handle->desc.threads) + 1;
-  const int copy_thr_begin = (ltid * copychunksize < copywork) ? (ltid * copychunksize) : copywork;
-  const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) * copychunksize) : copywork;
-
-  int total_calls, aux;
+  int img, imgb, ofm1, ifm1, num_ofw_strips, oi_, oj_, oi__, ii_, ij_, kh, kw, ki, kj, local_entries;
+  int img_block_size;
   int n_code_segments = 0;
-  int mark_ifm_init, mark_ifm_close, mark_img_init;
-  int *tmp_expanded_stream, tmp_stream_index;
-  segment_t *encoded_code_segments;
-  int expanded_size;
-  int stretch_of_convs;
-  int encoded_stream_index;
-  int lookahead_index;
 
+  char *kernel_variant;
   /* Arrays of stream indices */
   int *compute_indices;
-  int *trans_indices;
-  char *kernel_variant;
-  int *init_indices, *copy_indices;
 
+  int my_ofm_start;
+  int my_ofm_end;
+  int my_ifm_start;
+  int my_ifm_end;
+  int group_size = handle->desc.threads/handle->weight_copies;
+  int tile_id = ltid/group_size;
+  int tiles = handle->weight_copies;
+  int img_per_tile = handle->desc.N/tiles;
+  int my_img_start = LIBXSMM_MIN( tile_id * img_per_tile, handle->desc.N);
+  int my_img_end = LIBXSMM_MIN( (tile_id+1) * img_per_tile, handle->desc.N);
+
+
+  int my_in_tile_id = ltid % group_size;
+  int ifms_per_thread = (BLOCKSIFM+group_size-1)/group_size;
+  int ofms_per_thread;
+  int block_ofm, block_ifm;
+
+  int KW, ofmb, ifmb, ojb;
+  int stride_w = handle->desc.v;
+  int stride_h = handle->desc.u;
   int padded_w, padded_h;
+
   if (handle->padding_flag == 1) {
     padded_h = handle->ifhp + 2 * handle->desc.pad_h;
-    padded_w = handle->ifwp + 2 * handle->desc.pad_w;
+    padded_w = handle->ifwp + 2 * handle->desc.pad_w + handle->qfma_input_pad;
   } else {
-    padded_h = handle->ifhp;
-    padded_w = handle->ifwp;
+    if (handle->resize_input == 1) {
+      padded_h = handle->ifhp_resized;
+      padded_w = handle->ifwp_resized + handle->qfma_input_pad;
+      stride_w = 1;
+      stride_h = 1;
+    } else {
+      padded_h = handle->ifhp;
+      padded_w = handle->ifwp + handle->qfma_input_pad;
+    }
   }
 
-  stride_w = handle->desc.v;
-  stride_h = handle->desc.u;
   kh = handle->desc.R;
   kw = handle->desc.S;
 
-  /* Dryrun for copy/padding */
-  /*
-     if (handle->padding_flag == 1) {
-     handle->n_entries_init_upd[ltid] = copy_thr_end - copy_thr_begin;
-     init_indices = (int*) libxsmm_aligned_malloc( (copy_thr_end - copy_thr_begin + 1) * sizeof(int), 2097152);
-     handle->init_upd_indices_ptrs[ltid] = init_indices;
-     aux = 0;
-     for (imgifm1 = copy_thr_begin; imgifm1 < copy_thr_end; ++imgifm1) {
-     img = imgifm1/handle->blocksifm;
-     ifm1 = imgifm1%handle->blocksifm;
-     init_indices[aux] = ifm1 * (handle->ifmblock * padded_w * padded_h) + img * (handle->ifmblock * padded_w * padded_h * handle->blocksifm);
-     aux++;
-     }
-
-     if (handle->trans_ofw_ifm == 0) {
-     handle->n_entries_copy_upd[ltid] = copy_thr_end - copy_thr_begin;
-     copy_indices = (int*) libxsmm_aligned_malloc( 2 * (copy_thr_end - copy_thr_begin + 1) * sizeof(int), 2097152);
-     handle->copy_upd_indices_ptrs[ltid] = copy_indices;
-     aux = 0;
-     for (imgifm1 = copy_thr_end-1; imgifm1 >= copy_thr_begin; imgifm1--) {
-     img = imgifm1/handle->blocksifm;
-     ifm1 = imgifm1%handle->blocksifm;
-     copy_indices[aux] = ifm1 * (handle->ifmblock * handle->ifhp *  handle->ifwp) + img * (handle->ifmblock * handle->ifhp *  handle->ifwp * handle->blocksifm);
-     copy_indices[aux+1] = handle->desc.pad_w * handle->ifmblock + handle->desc.pad_h * handle->ifmblock * padded_w + ifm1 * (handle->ifmblock * padded_w * padded_h) + img * (handle->ifmblock * padded_w * padded_h * handle->blocksifm);
-     aux +=2;
-     }
-     }
-     }*/
-
-  num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
-  num_ofh_strips = handle->ofh/handle->upd_ofh_rb;
+  num_ofw_strips = 1;
   local_entries = 0;
 
-  if ( handle->use_thread_private_filter > 0 ) {
-    for (ofm1ifm1img = img_parallel_thr_begin; ofm1ifm1img < img_parallel_thr_end; ++ofm1ifm1img) {
-      ofm1 = ofm1ifm1img / (handle->blocksifm * handle->desc.N);
-      imgifm1 = ofm1ifm1img % (handle->blocksifm * handle->desc.N);
-      ifm1 = imgifm1 / handle->desc.N;
-      img = imgifm1 % handle->desc.N;
-      for (oi__=0; oi__<num_ofw_strips; ++oi__) {
-        for (oj__=0; oj__<num_ofh_strips; ++oj__) {
-          oi_=oi__*handle->upd_ofw_rb;
-          oj_=oj__*handle->upd_ofh_rb;
-          ii_ = oi_*stride_w;
-          ij_ = oj_*stride_h;
-          for (kj=0; kj < kh; ++kj) {
-            if ( handle->ifmblock != 1  ) {
-              for (ki=0; ki < kw; ++ki) {
-                local_entries += 3;
-              }
-            } else {
-              local_entries += 3;
-            }
-          }
-        }
-      }
+  KW = kw;
+  my_ifm_start = LIBXSMM_MIN( my_in_tile_id * ifms_per_thread, BLOCKSIFM  );
+  my_ifm_end = LIBXSMM_MIN( (my_in_tile_id+1) * ifms_per_thread, BLOCKSIFM  );
+  my_ofm_start = 0;
+  my_ofm_end = BLOCKSOFM;
+  img_block_size = handle->blocksimg_blocking;
+
+  if (handle->reduce_weights == 0) {
+    int n_ifm_teams, n_ofm_teams, my_ifm_id, my_ofm_id;
+    /* Parallelize over the FMs in this case and avoid reduction */
+    int team_div = (int) libxsmm_isqrt_u32(handle->desc.threads);
+    while ( handle->desc.threads % team_div != 0  ) {
+      team_div--;
     }
-  } else {
-    for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
-      ofm1 = ofm1ifm1/handle->blocksifm;
-      ifm1 = ofm1ifm1%handle->blocksifm;
-      for (img = 0; img < handle->desc.N; ++img) {
-        for (oi__=0; oi__<num_ofw_strips; ++oi__) {
-          for (oj__=0; oj__<num_ofh_strips; ++oj__) {
-            oi_=oi__*handle->upd_ofw_rb;
-            oj_=oj__*handle->upd_ofh_rb;
-            ii_ = oi_*stride_w;
-            ij_ = oj_*stride_h;
-            for (kj=0; kj < kh; ++kj) {
-              for (ki=0; ki < kw; ++ki) {
-                local_entries += 3;
+    n_ifm_teams = (BLOCKSIFM > BLOCKSOFM) ? handle->desc.threads / team_div : team_div;
+    n_ofm_teams = (BLOCKSIFM > BLOCKSOFM) ? team_div : handle->desc.threads / team_div;
+    ifms_per_thread = (BLOCKSIFM+n_ifm_teams-1)/n_ifm_teams;
+    ofms_per_thread = (BLOCKSOFM+n_ofm_teams-1)/n_ofm_teams;
+    my_ifm_id = ltid/n_ofm_teams;
+    my_ofm_id = ltid%n_ofm_teams;
+    my_ifm_start =  LIBXSMM_MIN(my_ifm_id * ifms_per_thread, BLOCKSIFM);
+    my_ifm_end =  LIBXSMM_MIN((my_ifm_id+1) * ifms_per_thread, BLOCKSIFM);
+    my_ofm_start =  LIBXSMM_MIN(my_ofm_id * ofms_per_thread, BLOCKSOFM);
+    my_ofm_end =  LIBXSMM_MIN((my_ofm_id+1) * ofms_per_thread, BLOCKSOFM);
+    my_img_start = 0;
+    my_img_end = handle->desc.N;
+    img_block_size = handle->desc.threads;
+  }
+
+  block_ofm = my_ofm_end-my_ofm_start+1;
+  block_ifm = my_ifm_end-my_ifm_start+1;
+
+  for (imgb = my_img_start; imgb < my_img_end; imgb += img_block_size) {
+    for (img = imgb; img < LIBXSMM_MIN(imgb+img_block_size, my_img_end); img+=handle->blocksimg_blocking) {
+      for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {
+        for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += block_ifm) {
+          for (ojb = 0; ojb < handle->ofh; ojb += handle->upd_ofh_rb) {
+            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+block_ofm, my_ofm_end); ofm1++ ) {
+              for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+block_ifm, my_ifm_end); ifm1++) {
+                for (oj_ = ojb; oj_ < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj_ += handle->upd_ofh_rb) {
+                  for (oi__=0; oi__<num_ofw_strips; ++oi__) {
+                    for (kj=0; kj < kh; ++kj) {
+                      for (ki=0; ki < KW; ++ki) {
+                        local_entries += 3;
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -190,87 +159,85 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     }
   }
 
-  /* Alocate auxiliary data structures for index jitting  */
+
+  /* Allocate auxiliary data structures for index jitting  */
   handle->n_entries_upd[ltid] = local_entries/3;
-  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152);
+  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
   handle->compute_upd_indices_ptrs[ltid] = compute_indices;
-  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152);
+  kernel_variant = (char*)(3 <= local_entries ? libxsmm_aligned_malloc((local_entries / 3) * sizeof(char), 64) : NULL);
   handle->kernel_upd_variant_ptrs[ltid] = kernel_variant;
   handle->n_upd_code_segments[ltid] = n_code_segments;
-  expanded_size = local_entries/3 + n_code_segments;
-
-  /*tmp_expanded_stream = (int*) malloc( expanded_size * sizeof(int) );
-    tmp_stream_index = 0;
-    if (n_code_segments) {
-    encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 2097152);
-    handle->upd_code_segments[ltid] = encoded_code_segments;
-    }*/
-
-
   local_entries = 0;
 
   /* Second run to compute actual indices */
+  if ( !(((handle->desc.C == 512) && (handle->desc.K == 1024)) || ((handle->desc.C == 1024) &&  (handle->desc.K == 256)))  ) {
+    for (imgb = my_img_start; imgb < my_img_end; imgb += img_block_size) {
+      for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {
+        for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += block_ifm) {
+          for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+block_ofm, my_ofm_end); ofm1++ ) {
+            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+block_ifm, my_ifm_end); ifm1++) {
+              for (img = imgb; img < LIBXSMM_MIN(imgb+img_block_size, my_img_end); img+=handle->blocksimg_blocking)  {
+                for (ojb = 0; ojb < handle->ofh; ojb += handle->upd_ofh_rb) {
+                  for (oj_ = ojb; oj_ < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj_ += handle->upd_ofh_rb) {
+                    for (oi__=0; oi__<num_ofw_strips; ++oi__) {
+                      for (kj=0; kj < kh; ++kj) {
+                        for (ki=0; ki < KW; ++ki) {
 
-  if ( handle->use_thread_private_filter > 0 ) {
-    for (ofm1ifm1img = img_parallel_thr_begin; ofm1ifm1img < img_parallel_thr_end; ++ofm1ifm1img) {
-      ofm1 = ofm1ifm1img / (handle->blocksifm * handle->desc.N);
-      imgifm1 = ofm1ifm1img % (handle->blocksifm * handle->desc.N);
-      ifm1 = imgifm1 / handle->desc.N;
-      img = imgifm1 % handle->desc.N;
-      for (oi__=0; oi__<num_ofw_strips; ++oi__) {
-        for (oj__=0; oj__<num_ofh_strips; ++oj__) {
-          oi_=oi__*handle->upd_ofw_rb;
-          oj_=oj__*handle->upd_ofh_rb;
-          ii_ = oi_*stride_w;
-          ij_ = oj_*stride_h;
-          for (kj=0; kj < kh; ++kj) {
-            if ( handle->ifmblock != 1  ) {
-              for (ki=0; ki < kw; ++ki) {
-                if (handle->trans_ofw_ifm == 1 ) {
-                  compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * handle->ifmblock) ) * padded_w  + (ii_ + ki);
-                } else {
-                  compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + (ii_ + ki) ) *  handle->ifmblock;
+                          oi_=oi__*handle->upd_ofw_rb;
+                          ii_ = oi_*stride_w;
+                          ij_ = oj_*stride_h;
+
+                          if (handle->trans_ofw_ifm == 1 ) {
+                            compute_indices[local_entries] = ((((((img *  BLOCKSIFM) + ifm1) * padded_h) + (ij_ + kj)) * IFMBLOCK)) * padded_w + (ii_ + ki);
+                          } else {
+                            compute_indices[local_entries] = ((((((img *  BLOCKSIFM) + ifm1) * padded_h) + (ij_ + kj)) * padded_w) + (ii_ + ki)) *  IFMBLOCK;
+                          }
+                          compute_indices[local_entries+1] = (((ofm1 *  BLOCKSIFM) + ifm1) * handle->desc.R * handle->desc.S *  IFMBLOCK *  handle->ofmblock + kj * handle->desc.S *  IFMBLOCK *  handle->ofmblock + ki * IFMBLOCK *  handle->ofmblock)  * handle->weight_copies;
+
+                          compute_indices[local_entries+2] = ((((((img *  BLOCKSOFM) + ofm1) *  handle->ofhp) + oj_) * (handle->ofwp + handle->output_lp_padding)) + oi_) *  handle->ofmblock;
+                          local_entries += 3;
+                        }
+
+                      }
+                    }
+                  }
                 }
-                compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock;
-                compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_ ) * handle->ofwp)  +  oi_ ) *  handle->ofmblock;
-                local_entries += 3;
               }
-            } else {
-              if (handle->trans_ofw_ifm == 1 ) {
-                compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * handle->ifmblock) ) * padded_w  + ii_;
-              } else {
-                compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + ii_ ) *  handle->ifmblock;
-              }
-              compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock;
-              compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_ ) * handle->ofwp)  +  oi_ ) *  handle->ofmblock;
-              local_entries += 3;
             }
           }
         }
       }
     }
   } else {
-    for (imgb = 0; imgb < handle->desc.N; imgb += block_img) {
-      for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
-        ofm1 = ofm1ifm1/handle->blocksifm;
-        ifm1 = ofm1ifm1%handle->blocksifm;
-        for (img = imgb; img < LIBXSMM_MIN( imgb + block_img, handle->desc.N ); ++img) {
-          for (oi__=0; oi__<num_ofw_strips; ++oi__) {
-            for (oj__=0; oj__<num_ofh_strips; ++oj__) {
-              oi_=oi__*handle->upd_ofw_rb;
-              oj_=oj__*handle->upd_ofh_rb;
-              ii_ = oi_*stride_w;
-              ij_ = oj_*stride_h;
-              for (kj=0; kj < kh; ++kj) {
-                for (ki=0; ki < kw; ++ki) {
-                  if (handle->trans_ofw_ifm == 1 ) {
-                    compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * handle->ifmblock) ) * padded_w  + (ii_ + ki) ;
-                  } else {
-                    compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + (ii_ + ki) ) *  handle->ifmblock;
+    for (imgb = my_img_start; imgb < my_img_end; imgb += img_block_size) {
+      for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += block_ifm) {
+        for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {
+          for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+block_ifm, my_ifm_end); ifm1++) {
+            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+block_ofm, my_ofm_end); ofm1++ ) {
+              for (img = imgb; img < LIBXSMM_MIN(imgb+img_block_size, my_img_end); img+=handle->blocksimg_blocking)  {
+                for (ojb = 0; ojb < handle->ofh; ojb += handle->upd_ofh_rb) {
+                  for (oj_ = ojb; oj_ < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj_ += handle->upd_ofh_rb) {
+                    for (oi__=0; oi__<num_ofw_strips; ++oi__) {
+                      for (kj=0; kj < kh; ++kj) {
+                        for (ki=0; ki < KW; ++ki) {
+
+                          oi_=oi__*handle->upd_ofw_rb;
+                          ii_ = oi_*stride_w;
+                          ij_ = oj_*stride_h;
+
+                          if (handle->trans_ofw_ifm == 1 ) {
+                            compute_indices[local_entries] = ((((((img *  BLOCKSIFM) + ifm1) * padded_h) + (ij_ + kj)) * IFMBLOCK)) * padded_w + (ii_ + ki);
+                          } else {
+                            compute_indices[local_entries] = ((((((img *  BLOCKSIFM) + ifm1) * padded_h) + (ij_ + kj)) * padded_w) + (ii_ + ki)) *  IFMBLOCK;
+                          }
+                          compute_indices[local_entries+1] = (((ofm1 *  BLOCKSIFM) + ifm1) * handle->desc.R * handle->desc.S *  IFMBLOCK *  handle->ofmblock + kj * handle->desc.S *  IFMBLOCK *  handle->ofmblock + ki * IFMBLOCK *  handle->ofmblock)  * handle->weight_copies;
+                          compute_indices[local_entries+2] = ((((((img *  BLOCKSOFM) + ofm1) *  handle->ofhp) + oj_) * (handle->ofwp + handle->output_lp_padding)) + oi_) *  handle->ofmblock;
+                          local_entries += 3;
+                        }
+
+                      }
+                    }
                   }
-                  compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock;
-                  compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_ ) * handle->ofwp)  +  oi_ ) *  handle->ofmblock;
-                  local_entries += 3;
                 }
               }
             }
@@ -279,15 +246,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       }
     }
   }
-
-  //free(tmp_expanded_stream);
 
   compute_indices[local_entries] = 0;
   compute_indices[local_entries+1] = 0;
   compute_indices[local_entries+2] = 0;
-  total_calls = local_entries/3;
-
-
-
 }
 

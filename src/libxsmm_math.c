@@ -362,9 +362,10 @@ LIBXSMM_API void libxsmm_srand(unsigned int seed)
 LIBXSMM_API unsigned int libxsmm_rand_u32(unsigned int n)
 {
 #if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-  const unsigned int q = (((RAND_MAX) + 1) / n) * n;
+  const unsigned int rand_max1 = (unsigned int)(RAND_MAX) + 1U;
+  const unsigned int q = (rand_max1 / n) * n;
   unsigned int r = (unsigned int)rand();
-  if (q != ((RAND_MAX) + 1))
+  if (q != rand_max1)
 #else
   const unsigned int q = ((1U << 31) / n) * n;
   unsigned int r = (unsigned int)lrand48();

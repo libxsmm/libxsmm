@@ -1,27 +1,113 @@
 script:
-  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
-    env CHECK=1 ./run_alexnet.sh
-  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
-    env CHECK=1 ./run_deepbench.sh
-  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
-    env CHECK=1 ./run_googlenetv1.sh
-  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
-    env CHECK=1 ./run_googlenetv3.sh
-  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
-    env CHECK=1 ./run_overfeat.sh
-  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
-    env CHECK=1 ./run_resnet50.sh
-  - make -e ${MAKEJ} && cd samples/dnn && make -e ${MAKEJ} &&
-    env CHECK=1 ./run_vgga.sh
-  - make -e ${MAKEJ} && cd samples/dnn          &&
-    make -e ${MAKEJ} ECFLAGS="-DUSE_OVERWRITE"  &&
-    env CHECK=1 ./run_alexnet.sh
-  - make -e ${MAKEJ} && cd samples/dnn          &&
-    make -e ${MAKEJ} ECFLAGS="-DUSE_FUSED_BIAS" &&
-    env CHECK=1 ./run_deepbench.sh
-  - make -e ${MAKEJ} && cd samples/dnn          &&
-    make -e ${MAKEJ} ECFLAGS="-DUSE_FUSED_RELU" &&
-    env CHECK=1 ./run_googlenetv1.sh
-  - make -e ${MAKEJ} && cd samples/dnn          &&
-    make -e ${MAKEJ} ECFLAGS="-DUSE_FUSED"      &&
-    env CHECK=1 ./run_googlenetv3.sh
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+   (CHECK=1 ITERS=1;
+    for GROUP in $(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}"; else echo "32_0"; fi); do
+      MB=$(echo ${GROUP} | cut -d_ -f1);
+      OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      echo && echo "**** PADDING MODE 0 ****" && echo   &&
+      ./run_resnet50.sh     ${MB} ${ITERS} 1 f32 F L 0  &&
+      ./run_resnet50.sh     ${MB} ${ITERS} 1 f32 B L 0  &&
+      ./run_resnet50.sh     ${MB} ${ITERS} 1 f32 U L 0  &&
+      echo && echo "**** PADDING MODE 1 ****" && echo   &&
+      ./run_resnet50.sh     ${MB} ${ITERS} 1 f32 F L 1  &&
+      ./run_resnet50.sh     ${MB} ${ITERS} 1 f32 B L 1  &&
+      ./run_resnet50.sh     ${MB} ${ITERS} 1 f32 U L 1;
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+   (CHECK=1 ITERS=1;
+    for GROUP in $(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}"; else echo "32_0"; fi); do
+      MB=$(echo ${GROUP} | cut -d_ -f1);
+      OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      echo && echo "**** PADDING MODE 0 ****" && echo   &&
+      ./run_alexnet.sh      ${MB} ${ITERS} 1 f32 F L 0  &&
+      ./run_alexnet.sh      ${MB} ${ITERS} 1 f32 B L 0  &&
+      ./run_alexnet.sh      ${MB} ${ITERS} 1 f32 U L 0  &&
+      echo && echo "**** PADDING MODE 1 ****" && echo   &&
+      ./run_alexnet.sh      ${MB} ${ITERS} 1 f32 F L 1  &&
+      ./run_alexnet.sh      ${MB} ${ITERS} 1 f32 B L 1  &&
+      ./run_alexnet.sh      ${MB} ${ITERS} 1 f32 U L 1;
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+   (CHECK=1 ITERS=1;
+    for GROUP in $(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}"; else echo "32_0"; fi); do
+      MB=$(echo ${GROUP} | cut -d_ -f1);
+      OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      echo && echo "**** PADDING MODE 0 ****" && echo   &&
+      ./run_overfeat.sh     ${MB} ${ITERS} 1 f32 F L 0  &&
+      ./run_overfeat.sh     ${MB} ${ITERS} 1 f32 B L 0  &&
+      ./run_overfeat.sh     ${MB} ${ITERS} 1 f32 U L 0  &&
+      echo && echo "**** PADDING MODE 1 ****" && echo   &&
+      ./run_overfeat.sh     ${MB} ${ITERS} 1 f32 F L 1  &&
+      ./run_overfeat.sh     ${MB} ${ITERS} 1 f32 B L 1  &&
+      ./run_overfeat.sh     ${MB} ${ITERS} 1 f32 U L 1;
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+   (CHECK=1 ITERS=1;
+    for GROUP in $(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}"; else echo "32_0"; fi); do
+      MB=$(echo ${GROUP} | cut -d_ -f1);
+      OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      echo && echo "**** PADDING MODE 0 ****" && echo   &&
+      ./run_googlenetv1.sh  ${MB} ${ITERS} 1 f32 F L 0  &&
+      ./run_googlenetv1.sh  ${MB} ${ITERS} 1 f32 B L 0  &&
+      ./run_googlenetv1.sh  ${MB} ${ITERS} 1 f32 U L 0  &&
+      echo && echo "**** PADDING MODE 1 ****" && echo   &&
+      ./run_googlenetv1.sh  ${MB} ${ITERS} 1 f32 F L 1  &&
+      ./run_googlenetv1.sh  ${MB} ${ITERS} 1 f32 B L 1  &&
+      ./run_googlenetv1.sh  ${MB} ${ITERS} 1 f32 U L 1;
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+   (CHECK=1 ITERS=1;
+    for GROUP in $(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}"; else echo "32_0"; fi); do
+      MB=$(echo ${GROUP} | cut -d_ -f1);
+      OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      echo && echo "**** PADDING MODE 0 ****" && echo   &&
+      ./run_googlenetv3.sh  ${MB} ${ITERS} 1 f32 F L 0  &&
+      ./run_googlenetv3.sh  ${MB} ${ITERS} 1 f32 B L 0  &&
+      ./run_googlenetv3.sh  ${MB} ${ITERS} 1 f32 U L 0  &&
+      echo && echo "**** PADDING MODE 1 ****" && echo   &&
+      ./run_googlenetv3.sh  ${MB} ${ITERS} 1 f32 F L 1  &&
+      ./run_googlenetv3.sh  ${MB} ${ITERS} 1 f32 B L 1  &&
+      ./run_googlenetv3.sh  ${MB} ${ITERS} 1 f32 U L 1;
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+   (CHECK=1 ITERS=1;
+    for GROUP in $(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}"; else echo "32_0"; fi); do
+      MB=$(echo ${GROUP} | cut -d_ -f1);
+      OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      echo && echo "**** PADDING MODE 0 ****" && echo   &&
+      ./run_dcgan.sh        ${MB} ${ITERS} 1 f32 F L 0  &&
+      ./run_dcgan.sh        ${MB} ${ITERS} 1 f32 B L 0  &&
+      ./run_dcgan.sh        ${MB} ${ITERS} 1 f32 U L 0  &&
+      echo && echo "**** PADDING MODE 1 ****" && echo   &&
+      ./run_dcgan.sh        ${MB} ${ITERS} 1 f32 F L 1  &&
+      ./run_dcgan.sh        ${MB} ${ITERS} 1 f32 B L 1  &&
+      ./run_dcgan.sh        ${MB} ${ITERS} 1 f32 U L 1;
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+   (CHECK=1 ITERS=1;
+    for GROUP in $(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}"; else echo "32_0"; fi); do
+      MB=$(echo ${GROUP} | cut -d_ -f1);
+      OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      echo && echo "**** PADDING MODE 1 ****" && echo   &&
+      ./run_vgga.sh         ${MB} ${ITERS} 0 f32 F L 1  &&
+      ./run_vgga.sh         ${MB} ${ITERS} 0 f32 B L 1  &&
+      ./run_vgga.sh         ${MB} ${ITERS} 0 f32 U L 1;
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+   (CHECK=1 ITERS=1 OMP_NUM_THREADS=$(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}" | cut -d_ -f1; else echo "0"; fi);
+    echo && echo "**** PADDING MODE 0 ****" && echo     &&
+    ./run_deepbench.sh ${ITERS} 1 f32 F L 0             &&
+    ./run_deepbench.sh ${ITERS} 1 f32 B L 0             &&
+    ./run_deepbench.sh ${ITERS} 1 f32 U L 0             &&
+    echo && echo "**** PADDING MODE 1 ****" && echo     &&
+    ./run_deepbench.sh ${ITERS} 1 f32 F L 1             &&
+    ./run_deepbench.sh ${ITERS} 1 f32 B L 1             &&
+    ./run_deepbench.sh ${ITERS} 1 f32 U L 1)
+

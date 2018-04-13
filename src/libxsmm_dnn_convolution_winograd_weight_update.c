@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -190,19 +190,29 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_custom
   }
 
   /* check if we have a kernel JITed */
-  if (handle->code_upd[0].xconv.sconv == 0) {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
+  if ( handle->use_upd_generic != 0 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) {
+      const int ldx = (int)(handle->desc.W+(2*handle->desc.pad_w));
+      const int ldx_alt = (int)(handle->desc.v*handle->ifmblock);
+      const int ldb_alt = (int)handle->ofwp;
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_fallback.tpl.c"
+      typedef libxsmm_smmfunction gemm_function;
+      /* let's do a ofmblock x ifmblock x ofw_rb GEMM :-) or in other words M=nbOfm, N=nbIfm, K=ofw (col-major) */
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->ofw, NULL, &ldx, NULL, NULL, NULL, NULL, NULL);
+      /* for strided convolutions with kernel size bigger than 1 the above GEMM doesn't work and we need to switch to more transposes and an
+         alternative GEMM:
+         let's do a ifmblock x ofmblock x ofw_rb GEMM :-) or in other words M=nbIfm, N=nbOfm, K=ofw (col-major) */
+      gemm_function gemm_kernel_alt = libxsmm_smmdispatch(handle->ifmblock, handle->ofmblock, handle->ofw, &ldx_alt, &ldb_alt, NULL, NULL, NULL, NULL, NULL);
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_generic.tpl.c"
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
   }
   else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) {
       if (handle->cwino_upd.alpha == 6  && libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (handle->cwino_upd.itiles*handle->cwino_upd.jtiles*handle->cwino_upd.bimg % 4) == 0) {
         if (handle->scratchVk == 0) {
           status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
@@ -264,19 +274,35 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_nhwc_c
   }
 
   /* check if we have a kernel JITed */
-  if (handle->code_upd[0].xconv.sconv == 0) {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
+  if ( handle->use_upd_generic != 0 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) {
+      const int lda     = (int)(handle->blocksofm*handle->ofmblock);
+      const int ldb     = (int)(handle->desc.W+(2*handle->desc.pad_w));
+      const int ldc     = (int)(handle->ofmblock);
+      const int lda_alt = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) )
+                            ? (int)(handle->desc.v*handle->blocksifm*handle->ifmblock) : (int)(handle->desc.v*handle->ifmblock);
+      const int ldb_alt = (int)(handle->ofwp);
+      const int ldc_alt = (int)(handle->ifmblock);
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-# include "template/libxsmm_dnn_convolve_st_upd_nhwc_custom_fallback.tpl.c"
+      typedef libxsmm_smmfunction gemm_function;
+      /* let's do a ofmblock x ifmblock x ofw_rb GEMM :-) or in other words M=nbOfm, N=nbIfm, K=ofw (col-major) */
+      gemm_function gemm_kernel     = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->ofw, &lda, &ldb, &ldc, NULL, NULL, NULL, NULL);
+      /* for strided convolutions with kernel size bigger than 1 the above GEMM doesn't work and we need to switch to more transposes and an
+         alternative GEMM:
+         let's do a ifmblock x ofmblock x ofw_rb GEMM :-) or in other words M=nbIfm, N=nbOfm, K=ofw (col-major) */
+      gemm_function gemm_kernel_alt = libxsmm_smmdispatch(handle->ifmblock, handle->ofmblock, handle->ofw, &lda_alt, &ldb_alt, &ldc_alt, NULL, NULL, NULL, NULL);
+#define LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM
+# include "template/libxsmm_dnn_convolve_st_upd_nhwc_custom-rsck_generic.tpl.c"
+#undef LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
   }
   else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) {
       if (handle->cwino_upd.alpha == 6 && libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (handle->cwino_upd.itiles*handle->cwino_upd.jtiles*handle->cwino_upd.bimg % 4) == 0) {
         if (handle->scratchVk == 0) {
           status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;

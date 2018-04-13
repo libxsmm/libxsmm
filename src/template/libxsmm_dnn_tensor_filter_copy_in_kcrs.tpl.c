@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -50,9 +50,7 @@ int ofmb = tensor->layout->dim_size[5];
 #endif
 int C = ifmb * bifm * lpb;
 
-#if 0
-printf(" layout fil %i %i %i %i %i %i %i \n", ofmb, ifmb, R, S, bifm, bofm, lpb);
-#endif
+/* printf("Layout if filters fil ofmb %i ifmb %i R %i S %i bifm %i bofm %i lpb %i \n", ofmb, ifmb, R, S, bifm, bofm, lpb); */
 
 LIBXSMM_VLA_DECL(7, element_type, handle_data_1, (element_type*)tensor->data, ifmb, R, S, bifm, bofm, lpb);
 LIBXSMM_VLA_DECL(6, element_type, handle_data_2, (element_type*)tensor->data, ifmb, R, S, bifm, bofm);

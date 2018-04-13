@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_H
 #define LIBXSMM_DNN_CONVOLUTION_WINOGRAD_FORWARD_H
 
-#include "libxsmm_dnn.h"
+#include <libxsmm_dnn.h>
 
 LIBXSMM_API_INTERN void libxsmm_dnn_convolve_winograd_fwd_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_dnn_convolve_winograd_fwd_finalize(void);

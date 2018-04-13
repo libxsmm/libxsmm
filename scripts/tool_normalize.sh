@@ -67,14 +67,18 @@ if [ "" != "${ICONV}" ] && [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && \
     for FILE in $("${GIT}" ls-files ${PATTERN}); do
       BANNED=$(${SED} -n "/[${BANNED_CHARS}]/p" ${FILE} 2>/dev/null)
       DOSEOL=$(${SED} -n "/\r$/p" ${FILE} 2>/dev/null | ${TR} -d "\n")
+      TRAILS=$(${SED} -n "/\s\s*$/p" ${FILE} 2>/dev/null)
       if [ "" != "${BANNED}" ]; then
         ${ECHO} "Warning: ${FILE} contains banned characters!"
       fi
       if [ "" != "${DOSEOL}" ]; then
         ${ECHO} "Warning: ${FILE} uses non-UNIX line endings!"
       fi
-      ${ICONV} -t ASCII ${FILE} | ${SED} -e "s/\s\s*$//" > ${TMPF}
-      ${CP} ${TMPF} ${FILE}
+      if [ "" != "${TRAILS}" ]; then
+        ${ICONV} -t ASCII ${FILE} | ${SED} -e "s/\s\s*$//" > ${TMPF}
+        ${CP} ${TMPF} ${FILE}
+        ${ECHO} "${FILE}: removed trailing white spaces."
+      fi
     done
   done
 

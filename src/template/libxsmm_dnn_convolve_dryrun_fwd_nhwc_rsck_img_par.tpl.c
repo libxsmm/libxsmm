@@ -1,5 +1,5 @@
 /******************************************************************************
- ** Copyright (c) 2016-2017, Intel Corporation                                **
+ ** Copyright (c) 2016-2018, Intel Corporation                                **
  ** All rights reserved.                                                      **
  **                                                                           **
  ** Redistribution and use in source and binary forms, with or without        **
@@ -180,10 +180,10 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   }
 
   handle->n_entries_fwd[ltid] = local_entries/3;
-  /* Alocate auxiliary data structures for index jitting  */
-  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 2097152);
+  /* Allocate auxiliary data structures for index jitting  */
+  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
   handle->compute_fwd_indices_ptrs[ltid] = compute_indices;
-  kernel_variant = (char*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(char), 2097152);
+  kernel_variant = (char*)(3 <= local_entries ? libxsmm_aligned_malloc((local_entries / 3) * sizeof(char), 64) : NULL);
   handle->kernel_fwd_variant_ptrs[ltid] = kernel_variant;
   local_entries = 0;
 

@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_DNN_CONVOLUTION_WINOGRAD_WEIGHT_UPDATE_H
 #define LIBXSMM_DNN_CONVOLUTION_WINOGRAD_WEIGHT_UPDATE_H
 
-#include "libxsmm_dnn.h"
+#include <libxsmm_dnn.h>
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_upd_nhwc_custom  (libxsmm_dnn_layer* handle, int start_thread, int tid);

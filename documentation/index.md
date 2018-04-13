@@ -148,9 +148,9 @@ The [Matrix Multiplication domain (MM)](libxsmm_mm.md) contains routines for:
 * [Batched multiplication (explicit interface)](libxsmm_mm.md#batched-multiplication)
 * [Call wrapper (static and dynamic linkage)](libxsmm_mm.md#call-wrapper)
 
-### Deep Neural Networks<a name="interface-for-convolutions"></a>
+### Deep Learning<a name="interface-for-convolutions"></a>
 
-This domain (DNN) is detailed by a separate [document](libxsmm_dnn.md). Please also note on how to [Get Started with TensorFlow&trade; using LIBXSMM](tensorflow.md).
+This domain (DL) is detailed by a separate [document](libxsmm_dl.md). Please also note on how to [Get Started with TensorFlow&trade; using LIBXSMM](tensorflow.md).
 
 ### Service Functions
 

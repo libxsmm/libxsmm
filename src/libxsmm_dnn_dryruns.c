@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -33,6 +33,7 @@
 #include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #if defined(_OPENMP)
 # include <omp.h>
@@ -50,24 +51,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct( libx
     status = libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_custom( handle );
   } else if ( handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NHWC && handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_RSCK ) {
     status = libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_rsck( handle );
-  } else {
-    status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
-  }
-
-  return status;
-}
-
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct( libxsmm_dnn_layer* handle ) {
-
-  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-
-  /* Switch based on the format to use the correct dryrun */
-  if ( handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM && handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) {
-    status = libxsmm_dnn_perform_bwd_dryrun_direct_custom_custom( handle );
-  } else if ( handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NHWC && handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM ) {
-    status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
-  } else if ( handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NHWC && handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_RSCK ) {
-    status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_FORMAT_CONVOLVE;
   }
@@ -102,32 +85,16 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct_custo
     /* In these case we run fallback code so we do not support thread private jitting */
     status = LIBXSMM_DNN_WARN_FALLBACK;
   } else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-# include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom_opt.tpl.c"
-    } else {
-      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-      return status;
-    }
-  }
-
-  return status;
-}
-
-
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle ) {
-
-  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-
-  /* check if we have a kernel JITed */
-  if (handle->code_bwd[0].xconv.sconv == 0) {
-    /* In these case we run fallback code so we do not support thread private jitting */
-    status = LIBXSMM_DNN_WARN_FALLBACK;
-  } else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-      if (handle->desc.N*handle->blocksifm*handle->fm_lp_block >= handle->desc.threads) {
-# include "template/libxsmm_dnn_convolve_dryrun_bwd_custom_custom.tpl.c"
+    if (1) { /*(handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {*/
+      if (handle->use_fastpath) {
+        if ( handle->use_hybrid_wu_parallelism == 1 ) {
+#include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom.tpl.c"
+        }
+        else {
+#include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom_opt.tpl.c"
+        }
       } else {
-# include "template/libxsmm_dnn_convolve_dryrun_bwd_custom_custom.tpl.c"
+#include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom_fma_opt.tpl.c"
       }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -148,18 +115,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custo
     /* In these case we run fallback code so we do not support thread private jitting */
     status = LIBXSMM_DNN_WARN_FALLBACK;
   } else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
-      if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
+    /* TODO: Second condition guarantees we run the img_par code when we have MB=1 -- and hopefully HUGE images */
+    if ((handle->desc.N*handle->blocksofm >= handle->desc.threads) && !((handle->desc.N == 1) && (handle->fwd_ofh_rb == 1 )) ) {
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
-      } else {
-# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
-      }
     } else {
-      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-      return status;
+# include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
     }
   }
-
   return status;
 }
 
@@ -174,7 +136,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_
     status = LIBXSMM_DNN_WARN_FALLBACK;
   }
   else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
         if (handle->padding_flag == 1) {
           /* FIXME: For now support only physical padding  */
@@ -210,7 +172,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_
     status = LIBXSMM_DNN_WARN_FALLBACK;
   }
   else {
-    if (handle->datatype == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       if (handle->desc.N*handle->blocksofm >= handle->desc.threads) {
         if (handle->padding_flag == 1) {
           /* FIXME: For now support only physical padding  */

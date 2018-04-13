@@ -639,7 +639,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
    * Otherwise, we get by with registers that don't require pushing/popping */
 
   /* define transposition kernel config */
-  if (strcmp(i_arch, "skx") == 0) {
+  if (strcmp(i_arch, "skx") == 0  || strcmp(i_arch, "icl") == 0 ) {
     avx512 = 1;
   } else if (strcmp(i_arch, "knl") == 0 || strcmp(i_arch, "knm") == 0) {
     avx512 = 2;

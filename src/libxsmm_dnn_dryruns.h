@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2017, Intel Corporation                                **
+** Copyright (c) 2016-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -37,9 +37,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct( libx
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle );
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_custom( libxsmm_dnn_layer* handle );
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_nhwc_rsck( libxsmm_dnn_layer* handle );
-
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct( libxsmm_dnn_layer* handle );
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_bwd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle );
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct( libxsmm_dnn_layer* handle );
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct_custom_custom( libxsmm_dnn_layer* handle );
