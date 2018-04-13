@@ -834,6 +834,13 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
           l_vec0 = i_vec_reg_src;
           l_vec1 = i_vec_reg_dst;
           break;
+       case LIBXSMM_X86_INSTR_VPMOVDW:
+          l_second = 1;
+          l_third = 2;
+          l_fifth = 0x20;
+          l_vec1 = i_vec_reg_src;
+          l_vec0 = i_vec_reg_dst;
+          break; 
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_convert: Unknown instruction type: %u\n", i_vec_instr);
           break;
