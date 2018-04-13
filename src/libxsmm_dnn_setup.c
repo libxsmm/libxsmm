@@ -53,7 +53,7 @@
 LIBXSMM_API_INTERN void tune_fwd_blockings(libxsmm_dnn_layer *handle);
 LIBXSMM_API_INTERN void tune_fwd_blockings(libxsmm_dnn_layer *handle) {
   int BLOCKSIFM_BLOCKING = handle->blocksifm_blocking;
-  /* Some cache blocking tuning here...   */
+  /* Some cache blocking tuning here... */
   int loop_order = MIXED;
   int blockifm = 8;
   int block_j = 14;
@@ -469,7 +469,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     handle->blocksifm_blocking = 8;
   }
 
-  /* Restrict acc chain for overflow handling only if combo is int16/int32  */
+  /* Restrict acc chain for overflow handling only if combo is int16/int32 */
   if (handle->use_lp_kernel == 1) {
     if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
       if (handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block > 256) {
@@ -742,10 +742,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* handle, int *noarch ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   int i = 0; /* general counting helper */
-  int wrb1 = 0, wrb2 = 0, hrb1 = 0, hrb2 = 0;
-#if 0
-  int n_variants = 1;
-#endif
+  int wrb1 = 0, wrb2 = 0, hrb1 = 0, hrb2 = 0, n_variants = 1;
+
   /* Let's check if we can use algorithmic duality for backward convolution! */
   /* TODO: Enable duality even in cases of image parallelism */
   if ( (handle->use_thread_private_jit > 0) && (handle->desc.N >= handle->desc.threads) && ( (handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.pad_h == 0 && handle->desc.pad_w == 0) || (handle->desc.u == 1 && handle->desc.v == 1) ) && !((handle->desc.R > 1 && handle->desc.pad_h == 0) || (handle->desc.S > 1 && handle->desc.pad_w == 0)) )  {
@@ -753,9 +751,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
   } else {
     handle->exploit_duality = 0;
   }
-#if 0
+
   n_variants = find_rb(handle->ofw, handle->ofh, &wrb1, &hrb1, &wrb2, &hrb2);
-#endif
+
   /* FIXME: Remove loop below? Doesn't algorithmic duality take care of that? */
   handle->bwd_ofh_rb = 1;
   for (i = LIBXSMM_MIN(24, handle->ofw); i > 1; i--) {
