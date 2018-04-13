@@ -1866,8 +1866,8 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
     return 0;
   }
 
-  /* Let's do something special for SeisSol high-order (N == 9 holds true) */
-  if ((i_xgemm_desc->k >= 8) && (i_xgemm_desc->n == 9)) {
+  /* Let's do something special for SeisSol/EDGE high-order (N == 9 holds true) */
+  if ((i_xgemm_desc->k >= 8) && (i_xgemm_desc->n == 9) && (i_xgemm_desc->k <= 64)) {
     if ( ((i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM)
             && ((LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) || (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ))) ) {
       libxsmm_generator_gemm_avx512_microkernel_qfma( io_generated_code,
