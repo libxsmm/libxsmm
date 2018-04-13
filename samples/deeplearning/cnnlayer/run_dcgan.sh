@@ -3,6 +3,7 @@
 UNAME=$(which uname 2>/dev/null)
 SORT=$(which sort 2>/dev/null)
 GREP=$(which grep 2>/dev/null)
+CUT=$(which cut 2>/dev/null)
 WC=$(which wc 2>/dev/null)
 
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
@@ -47,7 +48,7 @@ if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
 else
   export NS=1 NC=1 NT=1 HT=1
 fi
-if [ "" != "$(which numactl 2>/dev/null)" ]; then
+if [ "" != "${CUT}" ] && [ "" != "$(which numactl 2>/dev/null)" ]; then
   export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
 else
   export NN=${NS}
@@ -81,7 +82,7 @@ fi
 
 # ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh padw padh stride type
 
-#${NUMACTL} ./layer_example_${BIN} ${ITERS}   4   4  ${MB}  512  100  4  4 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+#${NUMACTL} ./layer_example_${BIN} ${ITERS}   4   4  ${MB}  512  100  4  4 0 0 1 ${TYPE} ${FORMAT} ${PAD}    &&
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}   4   4  ${MB}  512   96  4  4 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}   8   8  ${MB}  256  512  4  4 1 1 2 ${TYPE} ${FORMAT} ${PAD}    && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}  16  16  ${MB}  128  256  4  4 1 1 2 ${TYPE} ${FORMAT} ${PAD}    && \

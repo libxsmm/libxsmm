@@ -40,6 +40,7 @@ SYNC=$(which sync 2>/dev/null)
 SORT=$(which sort 2>/dev/null)
 GREP=$(which grep 2>/dev/null)
 SED=$(which sed 2>/dev/null)
+CUT=$(which cut 2>/dev/null)
 TR=$(which tr 2>/dev/null)
 WC=$(which wc 2>/dev/null)
 RM=$(which rm 2>/dev/null)
@@ -79,7 +80,7 @@ then
   else
     export NS=1 NC=1 NT=1 HT=1
   fi
-  if [ "" != "$(which numactl 2>/dev/null)" ]; then
+  if [ "" != "${CUT}" ] && [ "" != "$(which numactl 2>/dev/null)" ]; then
     export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
   else
     export NN=${NS}

@@ -51,7 +51,7 @@ if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
 else
   export NS=1 NC=1 NT=1 HT=1
 fi
-if [ "" != "$(which numactl 2>/dev/null)" ]; then
+if [ "" != "${CUT}" ] && [ "" != "$(which numactl 2>/dev/null)" ]; then
   export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
 else
   export NN=${NS}

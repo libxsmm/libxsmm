@@ -1,8 +1,10 @@
 #!/bin/bash
 
-SORT=$(which sort 2> /dev/null)
-GREP=$(which grep 2> /dev/null)
-WC=$(which wc 2> /dev/null)
+UNAME=$(which uname 2>/dev/null)
+SORT=$(which sort 2>/dev/null)
+GREP=$(which grep 2>/dev/null)
+CUT=$(which cut 2>/dev/null)
+WC=$(which wc 2>/dev/null)
 
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
   if [ "" = "${CHECK_DNN_MB}" ]; then CHECK_DNN_MB=64; fi
@@ -46,7 +48,7 @@ if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
 else
   export NS=1 NC=1 NT=1 HT=1
 fi
-if [ "" != "$(which numactl 2>/dev/null)" ]; then
+if [ "" != "${CUT}" ] && [ "" != "$(which numactl 2>/dev/null)" ]; then
   export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
 else
   export NN=${NS}
@@ -95,8 +97,8 @@ ${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512  256 1 1 0 0 1 ${
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  256  256 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  256 1024 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB} 1024  256 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  7  7  ${MB} 1024 2048 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  7  7  ${MB} 1024  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB} 1024 2048 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB} 1024  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB}  512  512 3 3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB}  512 2048 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB} 2048  512 1 1 0 0 1 ${TYPE} ${FORMAT} ${PAD}
