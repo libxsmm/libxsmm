@@ -112,7 +112,8 @@ script:
     done)
 
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
-   (CHECK=1 ITERS=1 OMP_NUM_THREADS=$(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}" | cut -d_ -f1; else echo "0"; fi);
+   (OMP_NUM_THREADS=$(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}" | cut -d_ -f1; else echo "0"; fi);
+    CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
       echo; echo "**** TENSOR FORMAT: ${FORMAT} ****";
       for PAD in "0 1"; do
@@ -121,5 +122,15 @@ script:
         ./run_deepbench.sh ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
         ./run_deepbench.sh ${ITERS} -1 f32 U ${FORMAT} ${PAD};
       done
+    done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+   (OMP_NUM_THREADS=$(if [ "" != "${GROUPS}" ]; then echo "${GROUPS}" | cut -d_ -f1; else echo "0"; fi);
+    CHECK=1 ITERS=1000 MB=${OMP_NUM_THREADS};
+    for PAD in "0 1"; do
+      echo; echo "**** PADDING MODE: ${PAD} ****";
+      ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 F L ${PAD} &&
+      ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 B L ${PAD} &&
+      ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 U L ${PAD};
     done)
 
