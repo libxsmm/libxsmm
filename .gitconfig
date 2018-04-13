@@ -3,3 +3,6 @@
 
 [mailmap]
 	file = .gitx/.mailmap
+
+[log]
+	mailmap = true
