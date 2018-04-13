@@ -17,7 +17,7 @@ then
   echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) TYPE ('A'-ALL/'F'-FP/'B'-BP/'U'-WU) FORMAT ('A'-ALL/'L'-LIBXSMM/'T'-Tensorflow/'M'-Mixed) padding; using default values; using default values: 64 1000 1 f32 A L 0"
   MB=${CHECK_DNN_MB}
   ITERS=${CHECK_DNN_ITERS}
-  NUMA=1
+  NUMA=-1
   BIN=f32
   TYPE="A"
   FORMAT="L"
@@ -36,7 +36,7 @@ if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc
   export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
   export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)))
   export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l)
-elif [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
+elif [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
   export NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
   export NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
   export NT=$(sysctl hw.logicalcpu | ${CUT} -d: -f2 | tr -d " ")
@@ -46,10 +46,17 @@ if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
 else
   export NS=1 NC=1 NT=1 HT=1
 fi
+if [ "" != "$(which numactl 2>/dev/null)" ]; then
+  export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
+else
+  export NN=${NS}
+fi
 
 CPUFLAGS=$(if [ "" != "${GREP}" ] && [ "" != "${CUT}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | ${CUT} -d: -f2-; fi)
 if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512er)" ]; then
-  if [ "0" != "$((NUMA < $(numactl -H | ${GREP} "node  " | tr -s " " | cut -d" " -f2- | wc -w)))" ]; then
+  if [ "0" != "$((0>NUMA))" ] && [ "0" != "$((NS<NN))" ]; then
+    NUMACTL="numactl --membind=${NS} ${TOOL_COMMAND}"
+  elif [ "0" != "$((0<=NUMA && NUMA<NN))" ]; then
     NUMACTL="numactl --membind=${NUMA} ${TOOL_COMMAND}"
   elif [ "1" != "${NS}" ]; then
     #NUMACTL="numactl -i all ${TOOL_COMMAND}"

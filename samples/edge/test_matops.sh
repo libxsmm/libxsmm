@@ -28,14 +28,14 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              #
 #############################################################################
 
-#sde can be downloaded here
+# sde can be downloaded here
 SDE64_BIN=/swtools/sde/kits/latest/sde64
 SDE64_ARCH="-knl"
 SDE64_FLAGS="-ptr_check -null_check -ptr_raise"
 SDE=${SDE64_BIN}" "${SDE64_FLAGS}" "${SDE64_ARCH}" -- "
 GREP=$(which grep 2>/dev/null)
 
-#iterastions, order, precision, arch  and format
+# iterations, order, precision, arch  and format
 if [ $# -eq 5 ]
 then
   REPS=$1
@@ -111,7 +111,7 @@ fi
 
 if [[ $VLEN == "64" ]]
 then
-  #on an AVX512 pfatform we can run natively
+  #on an AVX512 platform we can run natively
   CPUFLAGS=$(if [ "" != "${GREP}" ] && [ -e /proc/cpuinfo ]; then ${GREP} -m1 flags /proc/cpuinfo | cut -d: -f2-; fi)
   if [ "" != "$(echo "${CPUFLAGS}" | ${GREP} -o avx512f)" ]; then
     SDE=

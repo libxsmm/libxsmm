@@ -64,20 +64,25 @@ then
     export TRAVIS_OS_NAME=$(${UNAME})
   fi
 
-  if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ -e /proc/cpuinfo ]; then
+  if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
     export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
     export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)))
     export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l)
-  elif [ "Darwin" = "${TRAVIS_OS_NAME}" ]; then
-    export NS=$(sysctl hw.packages | cut -d: -f2 | tr -d " ")
-    export NC=$(sysctl hw.physicalcpu | cut -d: -f2 | tr -d " ")
-    export NT=$(sysctl hw.logicalcpu | cut -d: -f2 | tr -d " ")
+  elif [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
+    export NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
+    export NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
+    export NT=$(sysctl hw.logicalcpu | ${CUT} -d: -f2 | tr -d " ")
   fi
   if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
     export HT=$((NT/(NC)))
     export MAKEJ="-j ${NC}"
   else
     export NS=1 NC=1 NT=1 HT=1
+  fi
+  if [ "" != "$(which numactl 2>/dev/null)" ]; then
+    export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
+  else
+    export NN=${NS}
   fi
 
   # set the case number
