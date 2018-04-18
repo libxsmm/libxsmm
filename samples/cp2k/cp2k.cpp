@@ -241,8 +241,7 @@ int main(int argc, char* argv[])
           const T *ai = a + i * asize, *bi = b + i * bsize;
           for (libxsmm_blasint j = 0; j < LIBXSMM_MIN(u, s - i); ++j) {
             const T *const aij = ai + asize, *const bij = bi + bsize;
-            // alternatively libxsmm_blas_gemm can be called (see above)
-            LIBXSMM_BLAS_XGEMM(ITYPE, ITYPE, &transa, &transb, &m, &n, &k,
+            libxsmm_blas_gemm(&transa, &transb, &m, &n, &k,
               &alpha, ai, &m, bi, &k, &beta, tmp, &m);
             ai = aij;
             bi = bij;

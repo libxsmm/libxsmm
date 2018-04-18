@@ -77,19 +77,19 @@ LIBXSMM_APIVAR(unsigned int internal_gemm_nlocks); /* populated number of locks 
 #endif
 
 
-LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
+LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
-  static /*volatile*/ libxsmm_sgemm_function original = 0;
-  LIBXSMM_GEMM_WRAPPER(float, original);
+  static /*volatile*/ libxsmm_dgemm_function original = 0;
+  LIBXSMM_GEMM_WRAPPER(double, original);
   assert(0 != original);
   return original;
 }
 
 
-LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
+LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
-  static /*volatile*/ libxsmm_dgemm_function original = 0;
-  LIBXSMM_GEMM_WRAPPER(double, original);
+  static /*volatile*/ libxsmm_sgemm_function original = 0;
+  LIBXSMM_GEMM_WRAPPER(float, original);
   assert(0 != original);
   return original;
 }
