@@ -181,7 +181,7 @@
   const libxsmm_blasint libxsmm_inline_xgemm_n_ = (NULL != ((void*)(N)) ? (*(const libxsmm_blasint*)(N)) : libxsmm_inline_xgemm_k_); \
   const libxsmm_blasint libxsmm_inline_xgemm_lda_ = (NULL != ((void*)(LDA)) ? (*(const libxsmm_blasint*)(LDA)) : libxsmm_inline_xgemm_m_); \
   const libxsmm_blasint libxsmm_inline_xgemm_ldb_ = (NULL != ((void*)(LDB)) ? (*(const libxsmm_blasint*)(LDB)) : libxsmm_inline_xgemm_k_); \
-  const libxsmm_blasint libxsmm_inline_xgemm_ldc_ = (NULL != ((void*)(LDA)) ? (*(const libxsmm_blasint*)(LDC)) : libxsmm_inline_xgemm_m_); \
+  const libxsmm_blasint libxsmm_inline_xgemm_ldc_ = (NULL != ((void*)(LDC)) ? (*(const libxsmm_blasint*)(LDC)) : libxsmm_inline_xgemm_m_); \
   const OTYPE libxsmm_inline_xgemm_alpha_ = (NULL != ((void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
   const OTYPE libxsmm_inline_xgemm_beta_  = (NULL != ((void*)(BETA))  ? (*(const OTYPE*)(BETA))  : ((OTYPE)LIBXSMM_BETA)); \
   libxsmm_blasint libxsmm_inline_xgemm_ni_, libxsmm_inline_xgemm_mi_, libxsmm_inline_xgemm_ki_; /* loop induction variables */ \
@@ -227,7 +227,7 @@
   const libxsmm_blasint libxsmm_blas_xgemm_n_ = (NULL != ((void*)(N)) ? (*(const libxsmm_blasint*)(N)) : libxsmm_blas_xgemm_k_); \
   const libxsmm_blasint libxsmm_blas_xgemm_lda_ = (NULL != ((void*)(LDA)) ? (*(const libxsmm_blasint*)(LDA)) : libxsmm_blas_xgemm_m_); \
   const libxsmm_blasint libxsmm_blas_xgemm_ldb_ = (NULL != ((void*)(LDB)) ? (*(const libxsmm_blasint*)(LDB)) : libxsmm_blas_xgemm_k_); \
-  const libxsmm_blasint libxsmm_blas_xgemm_ldc_ = (NULL != ((void*)(LDA)) ? (*(const libxsmm_blasint*)(LDC)) : libxsmm_blas_xgemm_m_); \
+  const libxsmm_blasint libxsmm_blas_xgemm_ldc_ = (NULL != ((void*)(LDC)) ? (*(const libxsmm_blasint*)(LDC)) : libxsmm_blas_xgemm_m_); \
   const OTYPE libxsmm_blas_xgemm_alpha_ = (NULL != ((void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
   const OTYPE libxsmm_blas_xgemm_beta_  = (NULL != ((void*)(BETA))  ? (*(const OTYPE*)(BETA))  : ((OTYPE)LIBXSMM_BETA)); \
   /* Use 'n' (instead of 'N') avoids warning about "no macro replacement within a character constant". */ \
