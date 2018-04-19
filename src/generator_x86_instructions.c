@@ -1688,8 +1688,10 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
     /*unsigned int l_maxsize = 1024;*/
     int l_second=0, l_third=0, l_fourth=0, l_xreg=0;
     int l_reg0 = 0;
-    int l_reg1   = i_vec_reg_number_0;
-    int l_reg2   = i_vec_reg_number_1;
+    int l_vec_0 = i_vec_reg_number_0;
+    int l_vec_1 = i_vec_reg_number_1;
+    int l_reg1   = l_vec_0;
+    int l_reg2   = l_vec_1;
     int l_fpadj=0, l_place=0;
     int l_fpadj2=0;
     int l_bytes=4;
@@ -1911,6 +1913,13 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           }
           l_bytes = 5;
           break;
+       case LIBXSMM_X86_INSTR_VPMOVDW:
+          l_bytes = 6;
+          l_second += 0x1;
+          l_fpadj2 -= 0x7F;
+          l_fpadj -= 0x26;
+          l_sizereg = 32;
+          break;
        case LIBXSMM_X86_INSTR_VXORPS:
           l_fpadj2 = -1;
           l_fpadj = -2;
@@ -1929,16 +1938,14 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           break;
        case LIBXSMM_X86_INSTR_VADDPS:
           if ( l_broadcast == 1 ) l_sizereg = 4;
-          if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) &&
-               (i_vec_reg_number_1<=15) )
+          if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
                l_fpadj2 = -1;
           else l_fpadj2 = -0x81;
           l_fpadj = -1;
           break;
        case LIBXSMM_X86_INSTR_VSUBPS:
           if ( l_broadcast == 1 ) l_sizereg = 4;
-          if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) &&
-               (i_vec_reg_number_1<=15) )
+          if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
                l_fpadj2 = -1;
           else l_fpadj2 = -0x81;
           l_fpadj = 3;
@@ -2277,12 +2284,19 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
     }
     if ( i_vector_name == 'x' ) l_xreg = -4;
     l_reg0 = i_gp_reg_base % 8;
-    l_reg1 = i_vec_reg_number_0 % 8;
-    l_reg2 = i_vec_reg_number_1 % 8;
-    if ( i_vec_reg_number_0 >= 8 ) { l_third  -= 0x40; }
-    if ( i_vec_reg_number_1 >= 8 ) { l_second -= 0x80; }
-    if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) &&
-         (i_vec_reg_number_1<=15) )
+    l_reg1 = l_vec_0 % 8;
+    l_reg2 = l_vec_1 % 8;
+    if ( i_vec_instr == LIBXSMM_X86_INSTR_VPMOVDW )
+    {
+       /* We only have 1 vector register input */
+       l_reg2 = l_vec_0 % 8;
+       l_reg1 = 0;
+       l_vec_1 = l_vec_0;
+       l_vec_0 = 0;
+    }
+    if ( l_vec_0 >= 8 ) { l_third  -= 0x40; }
+    if ( l_vec_1 >= 8 ) { l_second -= 0x80; }
+    if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
     {
 #if 0
      if ( i_vec_reg_number_0 >= 8 )
@@ -2339,13 +2353,13 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           l_second -= 0x40;
        }
 
-/*     if ( i_vec_reg_number_0 >= 8 ) { l_third -= 0x40; } */
-       if ( i_vec_reg_number_0 >= 16) { l_third += 0x40; l_fourth -= 0x8; }
-       if ( i_vec_reg_number_0 >= 24) { l_third -= 0x40; }
+/*     if ( l_vec_0 >= 8 ) { l_third -= 0x40; } */
+       if ( l_vec_0 >= 16) { l_third += 0x40; l_fourth -= 0x8; }
+       if ( l_vec_0 >= 24) { l_third -= 0x40; }
 
-/*     if ( i_vec_reg_number_1 >= 8 ) { l_second -= 0x80; } */
-       if ( i_vec_reg_number_1 >= 16) { l_second += 0x70; }
-       if ( i_vec_reg_number_1 >= 24) { l_second -= 0x80; }
+/*     if ( l_vec_1 >= 8 ) { l_second -= 0x80; } */
+       if ( l_vec_1 >= 16) { l_second += 0x70; }
+       if ( l_vec_1 >= 24) { l_second -= 0x80; }
        if ( l_broadcast != 0 ) { l_fourth += 0x10; }
 
        buf[i++] = 0x62;
