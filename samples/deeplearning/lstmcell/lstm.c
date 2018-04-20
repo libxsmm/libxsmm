@@ -30,7 +30,6 @@
    Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include </nfs_home/kunalban/libxsmm_egeor/src/libxsmm_main.h>
 #include <math.h>
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
@@ -73,13 +72,13 @@ struct rnn_handle {
   libxsmm_blasint n;
   libxsmm_blasint k;
   libxsmm_blasint t;
-  libxsmm_dnn_tensor *w;
-  libxsmm_dnn_tensor *xt;
-  libxsmm_dnn_tensor *u;
-  libxsmm_dnn_tensor *h;
-  libxsmm_dnn_tensor *z1t;
-  libxsmm_dnn_tensor *z2;
-  libxsmm_dnn_tensor *z;
+  ITYPE *w;
+  ITYPE *xt;
+  ITYPE *u;
+  ITYPE *h;
+  ITYPE *z1t;
+  ITYPE *z2;
+  ITYPE *z;
   libxsmm_bgemm_handle *handlewx;
   libxsmm_bgemm_handle *handleuh;
   libxsmm_bgemm_handle *handlett;
@@ -90,39 +89,39 @@ struct lstm_handle {
   libxsmm_blasint n;
   libxsmm_blasint k;
   libxsmm_blasint t;
-  libxsmm_dnn_tensor *wi;
-  libxsmm_dnn_tensor *wf;
-  libxsmm_dnn_tensor *wo;
-  libxsmm_dnn_tensor *wc;
-  libxsmm_dnn_tensor *xt;
-  libxsmm_dnn_tensor *ri;
-  libxsmm_dnn_tensor *rf;
-  libxsmm_dnn_tensor *ro;
-  libxsmm_dnn_tensor *rc;
-  libxsmm_dnn_tensor *h;
-  libxsmm_dnn_tensor *i1t;
-  libxsmm_dnn_tensor *i2;
-  libxsmm_dnn_tensor *f1t;
-  libxsmm_dnn_tensor *f2;
-  libxsmm_dnn_tensor *o1t;
-  libxsmm_dnn_tensor *o2;
-  libxsmm_dnn_tensor *c1t;
-  libxsmm_dnn_tensor *c2;
-  libxsmm_dnn_tensor *i;
-  libxsmm_dnn_tensor *f;
-  libxsmm_dnn_tensor *o;
-  libxsmm_dnn_tensor *c;
-  libxsmm_dnn_tensor *d0;
-  libxsmm_dnn_tensor *d1;
-  libxsmm_dnn_tensor *d2;
-  libxsmm_dnn_tensor *d;
+  ITYPE *wi;
+  ITYPE *wf;
+  ITYPE *wo;
+  ITYPE *wc;
+  ITYPE *xt;
+  ITYPE *ri;
+  ITYPE *rf;
+  ITYPE *ro;
+  ITYPE *rc;
+  ITYPE *h;
+  ITYPE *i1t;
+  ITYPE *i2;
+  ITYPE *f1t;
+  ITYPE *f2;
+  ITYPE *o1t;
+  ITYPE *o2;
+  ITYPE *c1t;
+  ITYPE *c2;
+  ITYPE *i;
+  ITYPE *f;
+  ITYPE *o;
+  ITYPE *c;
+  ITYPE *d0;
+  ITYPE *d1;
+  ITYPE *d2;
+  ITYPE *d;
   libxsmm_bgemm_handle *handlewx;
   libxsmm_bgemm_handle *handleuh;
   libxsmm_bgemm_handle *handlett;
 };
 
 
-LIBXSMM_INLINE LIBXSMM_RETARGETABLE void LIBXSMM_MATINIT(ITYPE, int seed, ITYPE *LIBXSMM_RESTRICT dst,
+void matinit(int seed, ITYPE * dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
@@ -150,7 +149,6 @@ void matrix_add(libxsmm_blasint size, ITYPE *a, ITYPE *b, ITYPE *c)
 #if defined(_OPENMP)
 # pragma omp parallel for private(i, size)
 #endif
-  /*LIBXSMM_PRAGMA_SIMD*/
   for (i = 0; i < size; i++) {
     c[i] = a[i] + b[i];
   }
@@ -163,7 +161,6 @@ void matrix_eltwise_mult(libxsmm_blasint size, ITYPE *a, ITYPE *b, ITYPE *c)
 #if defined(_OPENMP)
 # pragma omp parallel for private(i, size)
 #endif
-  /*LIBXSMM_PRAGMA_SIMD*/
   for (i = 0; i < size; i++) {
     c[i] = a[i] * b[i];
   }
@@ -177,7 +174,6 @@ void matrix_sigmoid(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 #if defined(_OPENMP)
 # pragma omp parallel for private(i, size)
 #endif
-  /*LIBXSMM_PRAGMA_SIMD*/
   for (i = 0; i < size; i++) {
     exp_value = (ITYPE)exp( -src[i]);
     dst[i] = 1 / (1 + exp_value);
@@ -191,7 +187,6 @@ void matrix_tanh(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 #if defined(_OPENMP)
 # pragma omp parallel for private(i, size)
 #endif
-  /*LIBXSMM_PRAGMA_SIMD*/
   for (i = 0; i < size; i++) {
     dst[i] = tanh(src[i]);
   }
@@ -204,7 +199,6 @@ void matrix_relu(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 #if defined(_OPENMP)
 # pragma omp parallel for private(i, size)
 #endif
-  /*LIBXSMM_PRAGMA_SIMD*/
   for (i = 0; i < size; i++) {
     dst[i] = (src[i] >= 0) ? src[i] : -src[i];
   }
@@ -256,11 +250,9 @@ void recursive_step(libxsmm_bgemm_handle* handle, ITYPE* u, ITYPE* h, ITYPE* op1
 
 libxsmm_dnn_tensor* libxsmm_create_dnn_tensor_rnn( ITYPE *data )
 {
-  libxsmm_dnn_tensor* tensor;
-  tensor = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
-  tensor->layout = NULL;
-  tensor->data = (void*)data;
-  tensor->scf = 1;
+  libxsmm_dnn_err_t status;
+  /*libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );*/
+  libxsmm_dnn_tensor* tensor  = libxsmm_dnn_link_tensor( NULL, data, &status ); /*CHKERR_LIBXSMM_DNN( status );*/
   return tensor;
 }
 
@@ -281,13 +273,13 @@ void rnn_init(struct rnn_handle *rnn, ITYPE *wgold, ITYPE *xgoldt, ITYPE *ugold,
   libxsmm_blasint n = rnn->n;
   libxsmm_blasint k = rnn->k;
   libxsmm_blasint t = rnn->t;
-  ITYPE *w = (ITYPE*)rnn->w->data;
-  ITYPE *xt = (ITYPE*)rnn->xt->data;
-  ITYPE *u = (ITYPE*)rnn->u->data;
-  ITYPE *h = (ITYPE*)rnn->h->data;
-  ITYPE *z1t = (ITYPE*)rnn->z1t->data;
-  ITYPE *z2 = (ITYPE*)rnn->z2->data;
-  ITYPE *z = (ITYPE*)rnn->z->data;
+  ITYPE *w = (ITYPE*)rnn->w;
+  ITYPE *xt = (ITYPE*)rnn->xt;
+  ITYPE *u = (ITYPE*)rnn->u;
+  ITYPE *h = (ITYPE*)rnn->h;
+  ITYPE *z1t = (ITYPE*)rnn->z1t;
+  ITYPE *z2 = (ITYPE*)rnn->z2;
+  ITYPE *z = (ITYPE*)rnn->z;
   libxsmm_bgemm_handle *handlewx = rnn->handlewx;
   libxsmm_bgemm_handle *handleuh = rnn->handleuh;
   LIBXSMM_VLA_DECL(2, ITYPE, xgold, xgoldt, ldx * n);
@@ -297,13 +289,13 @@ void rnn_init(struct rnn_handle *rnn, ITYPE *wgold, ITYPE *xgoldt, ITYPE *ugold,
   LIBXSMM_MATINIT(ITYPE, 42, wgold, m, k, ldw, 1.0);
   int it;
   for (it = 0; it < t; ++it) {
-    LIBXSMM_MATINIT(ITYPE, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, ldx * n), k, n, ldx, 1.0);
+    matinit(24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, ldx * n), k, n, ldx, 1.0);
   }
-  LIBXSMM_MATINIT(ITYPE, 42, ugold, m, m, ldu, 1.0);
-  LIBXSMM_MATINIT(ITYPE, 24, hgold, m, n, ldh, 1.0);
-  LIBXSMM_MATINIT(ITYPE,  0, z1gold, m, n, ldz, 1.0);
-  LIBXSMM_MATINIT(ITYPE,  0, z2gold, m, n, ldz, 1.0);
-  LIBXSMM_MATINIT(ITYPE,  0, zgold, m, n, ldz, 1.0);
+  matinit(42, ugold, m, m, ldu, 1.0);
+  matinit(24, hgold, m, n, ldh, 1.0);
+  matinit( 0, z1gold, m, n, ldz, 1.0);
+  matinit( 0, z2gold, m, n, ldz, 1.0);
+  matinit( 0, zgold, m, n, ldz, 1.0);
   libxsmm_bgemm_copyin_a(handlewx, wgold, &ldw, w);
   for (it = 0; it < t; ++it) {
     libxsmm_bgemm_copyin_b(handlewx, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, ldx * n), &ldx, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n));
@@ -351,13 +343,13 @@ void rnn_execute(struct rnn_handle *rnn, const int nrepeat)
   libxsmm_blasint k = rnn->k;
   libxsmm_blasint t = rnn->t;
   const double gflops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * t * 1E-9;
-  ITYPE *w = (ITYPE*)rnn->w->data;
-  ITYPE *xt = (ITYPE*)rnn->xt->data;
-  ITYPE *u = (ITYPE*)rnn->u->data;
-  ITYPE *h = (ITYPE*)rnn->h->data;
-  ITYPE *z1t = (ITYPE*)rnn->z1t->data;
-  ITYPE *z2 = (ITYPE*)rnn->z2->data;
-  ITYPE *z = (ITYPE*)rnn->z->data;
+  ITYPE *w = (ITYPE*)rnn->w;
+  ITYPE *xt = (ITYPE*)rnn->xt;
+  ITYPE *u = (ITYPE*)rnn->u;
+  ITYPE *h = (ITYPE*)rnn->h;
+  ITYPE *z1t = (ITYPE*)rnn->z1t;
+  ITYPE *z2 = (ITYPE*)rnn->z2;
+  ITYPE *z = (ITYPE*)rnn->z;
   libxsmm_bgemm_handle *handlewx = rnn->handlewx;
   libxsmm_bgemm_handle *handleuh = rnn->handleuh;
   libxsmm_bgemm_handle *handlett = rnn->handlett;
@@ -407,6 +399,7 @@ void rnn_execute(struct rnn_handle *rnn, const int nrepeat)
 
 void rnn_destroy(struct rnn_handle *rnn)
 {
+#if 0
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->w ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->xt ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->u ) );
@@ -414,6 +407,7 @@ void rnn_destroy(struct rnn_handle *rnn)
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->z1t ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->z2 ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->z ) );
+#endif
 }
 
 
@@ -456,13 +450,13 @@ int rnn (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint
     libxsmm_bgemm_handle* handleuh = 0;
     libxsmm_bgemm_handle* handlett = 0;
     const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
-    handlewx = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE),
+    handlewx = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
       m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
-    handleuh = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE),
+    handleuh = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
       m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
-    handlett = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE),
+    handlett = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
       m, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
 
@@ -471,13 +465,13 @@ int rnn (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint
     rnn.n = n;
     rnn.k = k;
     rnn.t = t;
-    rnn.w = libxsmm_create_dnn_tensor_rnn( w );
-    rnn.xt = libxsmm_create_dnn_tensor_rnn( xt );
-    rnn.u = libxsmm_create_dnn_tensor_rnn( u );
-    rnn.h = libxsmm_create_dnn_tensor_rnn( h );
-    rnn.z1t = libxsmm_create_dnn_tensor_rnn( z1t );
-    rnn.z2 = libxsmm_create_dnn_tensor_rnn( z2 );
-    rnn.z = libxsmm_create_dnn_tensor_rnn( z );
+    rnn.w = w;
+    rnn.xt = xt;
+    rnn.u = u;
+    rnn.h = h;
+    rnn.z1t = z1t;
+    rnn.z2 = z2;
+    rnn.z = z;
     rnn.handlewx = handlewx;
     rnn.handleuh = handleuh;
     rnn.handlett = handlett;
@@ -573,32 +567,32 @@ void lstm_init(struct lstm_handle *lstm, ITYPE *wigold, ITYPE *wfgold, ITYPE *wo
   libxsmm_blasint n = lstm->n;
   libxsmm_blasint k = lstm->k;
   libxsmm_blasint t = lstm->t;
-  ITYPE *wi = (ITYPE*)lstm->wi->data;
-  ITYPE *wf = (ITYPE*)lstm->wf->data;
-  ITYPE *wo = (ITYPE*)lstm->wo->data;
-  ITYPE *wc = (ITYPE*)lstm->wc->data;
-  ITYPE *xt = (ITYPE*)lstm->xt->data;
-  ITYPE *ri = (ITYPE*)lstm->ri->data;
-  ITYPE *rf = (ITYPE*)lstm->rf->data;
-  ITYPE *ro = (ITYPE*)lstm->ro->data;
-  ITYPE *rc = (ITYPE*)lstm->rc->data;
-  ITYPE *h = (ITYPE*)lstm->h->data;
-  ITYPE *i1t = (ITYPE*)lstm->i1t->data;
-  ITYPE *i2 = (ITYPE*)lstm->i2->data;
-  ITYPE *f1t = (ITYPE*)lstm->f1t->data;
-  ITYPE *f2 = (ITYPE*)lstm->f2->data;
-  ITYPE *o1t = (ITYPE*)lstm->o1t->data;
-  ITYPE *o2 = (ITYPE*)lstm->o2->data;
-  ITYPE *c1t = (ITYPE*)lstm->c1t->data;
-  ITYPE *c2 = (ITYPE*)lstm->c2->data;
-  ITYPE *i = (ITYPE*)lstm->i->data;
-  ITYPE *f = (ITYPE*)lstm->f->data;
-  ITYPE *o = (ITYPE*)lstm->o->data;
-  ITYPE *c = (ITYPE*)lstm->c->data;
-  ITYPE *d0 = (ITYPE*)lstm->d0->data;
-  ITYPE *d1 = (ITYPE*)lstm->d1->data;
-  ITYPE *d2 = (ITYPE*)lstm->d2->data;
-  ITYPE *d = (ITYPE*)lstm->d->data;
+  ITYPE *wi = (ITYPE*)lstm->wi;
+  ITYPE *wf = (ITYPE*)lstm->wf;
+  ITYPE *wo = (ITYPE*)lstm->wo;
+  ITYPE *wc = (ITYPE*)lstm->wc;
+  ITYPE *xt = (ITYPE*)lstm->xt;
+  ITYPE *ri = (ITYPE*)lstm->ri;
+  ITYPE *rf = (ITYPE*)lstm->rf;
+  ITYPE *ro = (ITYPE*)lstm->ro;
+  ITYPE *rc = (ITYPE*)lstm->rc;
+  ITYPE *h = (ITYPE*)lstm->h;
+  ITYPE *i1t = (ITYPE*)lstm->i1t;
+  ITYPE *i2 = (ITYPE*)lstm->i2;
+  ITYPE *f1t = (ITYPE*)lstm->f1t;
+  ITYPE *f2 = (ITYPE*)lstm->f2;
+  ITYPE *o1t = (ITYPE*)lstm->o1t;
+  ITYPE *o2 = (ITYPE*)lstm->o2;
+  ITYPE *c1t = (ITYPE*)lstm->c1t;
+  ITYPE *c2 = (ITYPE*)lstm->c2;
+  ITYPE *i = (ITYPE*)lstm->i;
+  ITYPE *f = (ITYPE*)lstm->f;
+  ITYPE *o = (ITYPE*)lstm->o;
+  ITYPE *c = (ITYPE*)lstm->c;
+  ITYPE *d0 = (ITYPE*)lstm->d0;
+  ITYPE *d1 = (ITYPE*)lstm->d1;
+  ITYPE *d2 = (ITYPE*)lstm->d2;
+  ITYPE *d = (ITYPE*)lstm->d;
   LIBXSMM_VLA_DECL(2, ITYPE, xgold, xgoldt, ldx * n);
   LIBXSMM_VLA_DECL(2, ITYPE, x, xt, k * n);
 #if defined(NON_FUSED_INPUT_GEMM)
@@ -742,32 +736,32 @@ void lstm_execute(struct lstm_handle *lstm, const int nrepeat)
   libxsmm_blasint k = lstm->k;
   libxsmm_blasint t = lstm->t;
   const double gflops = (((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * 4.0 + (4.0 * m * n)) * t * 1E-9;
-  ITYPE *wi = (ITYPE*)lstm->wi->data;
-  ITYPE *wf = (ITYPE*)lstm->wf->data;
-  ITYPE *wo = (ITYPE*)lstm->wo->data;
-  ITYPE *wc = (ITYPE*)lstm->wc->data;
-  ITYPE *xt = (ITYPE*)lstm->xt->data;
-  ITYPE *ri = (ITYPE*)lstm->ri->data;
-  ITYPE *rf = (ITYPE*)lstm->rf->data;
-  ITYPE *ro = (ITYPE*)lstm->ro->data;
-  ITYPE *rc = (ITYPE*)lstm->rc->data;
-  ITYPE *h = (ITYPE*)lstm->h->data;
-  ITYPE *i1t = (ITYPE*)lstm->i1t->data;
-  ITYPE *i2 = (ITYPE*)lstm->i2->data;
-  ITYPE *f1t = (ITYPE*)lstm->f1t->data;
-  ITYPE *f2 = (ITYPE*)lstm->f2->data;
-  ITYPE *o1t = (ITYPE*)lstm->o1t->data;
-  ITYPE *o2 = (ITYPE*)lstm->o2->data;
-  ITYPE *c1t = (ITYPE*)lstm->c1t->data;
-  ITYPE *c2 = (ITYPE*)lstm->c2->data;
-  ITYPE *i = (ITYPE*)lstm->i->data;
-  ITYPE *f = (ITYPE*)lstm->f->data;
-  ITYPE *o = (ITYPE*)lstm->o->data;
-  ITYPE *c = (ITYPE*)lstm->c->data;
-  ITYPE *d0 = (ITYPE*)lstm->d0->data;
-  ITYPE *d1 = (ITYPE*)lstm->d1->data;
-  ITYPE *d2 = (ITYPE*)lstm->d2->data;
-  ITYPE *d = (ITYPE*)lstm->d->data;
+  ITYPE *wi = (ITYPE*)lstm->wi;
+  ITYPE *wf = (ITYPE*)lstm->wf;
+  ITYPE *wo = (ITYPE*)lstm->wo;
+  ITYPE *wc = (ITYPE*)lstm->wc;
+  ITYPE *xt = (ITYPE*)lstm->xt;
+  ITYPE *ri = (ITYPE*)lstm->ri;
+  ITYPE *rf = (ITYPE*)lstm->rf;
+  ITYPE *ro = (ITYPE*)lstm->ro;
+  ITYPE *rc = (ITYPE*)lstm->rc;
+  ITYPE *h = (ITYPE*)lstm->h;
+  ITYPE *i1t = (ITYPE*)lstm->i1t;
+  ITYPE *i2 = (ITYPE*)lstm->i2;
+  ITYPE *f1t = (ITYPE*)lstm->f1t;
+  ITYPE *f2 = (ITYPE*)lstm->f2;
+  ITYPE *o1t = (ITYPE*)lstm->o1t;
+  ITYPE *o2 = (ITYPE*)lstm->o2;
+  ITYPE *c1t = (ITYPE*)lstm->c1t;
+  ITYPE *c2 = (ITYPE*)lstm->c2;
+  ITYPE *i = (ITYPE*)lstm->i;
+  ITYPE *f = (ITYPE*)lstm->f;
+  ITYPE *o = (ITYPE*)lstm->o;
+  ITYPE *c = (ITYPE*)lstm->c;
+  ITYPE *d0 = (ITYPE*)lstm->d0;
+  ITYPE *d1 = (ITYPE*)lstm->d1;
+  ITYPE *d2 = (ITYPE*)lstm->d2;
+  ITYPE *d = (ITYPE*)lstm->d;
   LIBXSMM_VLA_DECL(2, ITYPE, x, xt, k * n);
 #if defined(NON_FUSED_INPUT_GEMM)
   LIBXSMM_VLA_DECL(2, ITYPE, i1, i1t, m * n);
@@ -908,6 +902,7 @@ void lstm_execute(struct lstm_handle *lstm, const int nrepeat)
 
 void lstm_destroy(struct lstm_handle *lstm)
 {
+#if 0
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->wi ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->wf ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->wo ) );
@@ -934,6 +929,7 @@ void lstm_destroy(struct lstm_handle *lstm)
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->d1 ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->d2 ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->d ) );
+#endif
 }
 
 
@@ -1027,18 +1023,18 @@ int lstm (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasin
     libxsmm_bgemm_handle* handleuh = 0;
     libxsmm_bgemm_handle* handlett = 0;
     const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
-    handlewx = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE),
+    handlewx = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
       m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
-    handleuh = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE),
+    handleuh = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
       m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
 #if defined(NON_FUSED_INPUT_GEMM)
-    handlett = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE),
+    handlett = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
       m, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
 #else
-    handlett = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE),
+    handlett = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
       m*4, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
 #endif
@@ -1048,32 +1044,32 @@ int lstm (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasin
     lstm.n = n;
     lstm.k = k;
     lstm.t = t;
-    lstm.wi = libxsmm_create_dnn_tensor_rnn( wi );
-    lstm.wf = libxsmm_create_dnn_tensor_rnn( wf );
-    lstm.wo = libxsmm_create_dnn_tensor_rnn( wo );
-    lstm.wc = libxsmm_create_dnn_tensor_rnn( wc );
-    lstm.xt = libxsmm_create_dnn_tensor_rnn( xt );
-    lstm.ri = libxsmm_create_dnn_tensor_rnn( ri );
-    lstm.rf = libxsmm_create_dnn_tensor_rnn( rf );
-    lstm.ro = libxsmm_create_dnn_tensor_rnn( ro );
-    lstm.rc = libxsmm_create_dnn_tensor_rnn( rc );
-    lstm.h = libxsmm_create_dnn_tensor_rnn( h );
-    lstm.i1t = libxsmm_create_dnn_tensor_rnn( i1t );
-    lstm.i2 = libxsmm_create_dnn_tensor_rnn( i2 );
-    lstm.f1t = libxsmm_create_dnn_tensor_rnn( f1t );
-    lstm.f2 = libxsmm_create_dnn_tensor_rnn( f2 );
-    lstm.o1t = libxsmm_create_dnn_tensor_rnn( o1t );
-    lstm.o2 = libxsmm_create_dnn_tensor_rnn( o2 );
-    lstm.c1t = libxsmm_create_dnn_tensor_rnn( c1t );
-    lstm.c2 = libxsmm_create_dnn_tensor_rnn( c2 );
-    lstm.i = libxsmm_create_dnn_tensor_rnn( i );
-    lstm.f = libxsmm_create_dnn_tensor_rnn( f );
-    lstm.o = libxsmm_create_dnn_tensor_rnn( o );
-    lstm.c = libxsmm_create_dnn_tensor_rnn( c );
-    lstm.d0 = libxsmm_create_dnn_tensor_rnn( d0 );
-    lstm.d1 = libxsmm_create_dnn_tensor_rnn( d1 );
-    lstm.d2 = libxsmm_create_dnn_tensor_rnn( d2 );
-    lstm.d = libxsmm_create_dnn_tensor_rnn( d );
+    lstm.wi = wi;
+    lstm.wf = wf;
+    lstm.wo = wo;
+    lstm.wc = wc;
+    lstm.xt = xt;
+    lstm.ri = ri;
+    lstm.rf = rf;
+    lstm.ro = ro;
+    lstm.rc = rc;
+    lstm.h = h;
+    lstm.i1t = i1t;
+    lstm.i2 = i2;
+    lstm.f1t = f1t;
+    lstm.f2 = f2;
+    lstm.o1t = o1t;
+    lstm.o2 = o2;
+    lstm.c1t = c1t;
+    lstm.c2 = c2;
+    lstm.i = i;
+    lstm.f = f;
+    lstm.o = o;
+    lstm.c = c;
+    lstm.d0 = d0;
+    lstm.d1 = d1;
+    lstm.d2 = d2;
+    lstm.d = d;
     lstm.handlewx = handlewx;
     lstm.handleuh = handleuh;
     lstm.handlett = handlett;
