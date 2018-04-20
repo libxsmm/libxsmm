@@ -58,11 +58,11 @@ FLTPATH="$2"
 
 if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && [ "" != "${ECHO}" ] && \
    [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${WC}" ] && \
-   [ "" != "${RM}" ] && [ "" != "${CP}" ]; \
+   [ "" != "${RM}" ] && [ "" != "${CP}" ];
 then
   # check if full tests are triggered (allows to skip the detailed investigation)
   if [ "" != "${FASTCI}" ] && [ "0" != "${FASTCI}" ] && [ "" != "${GIT}" ] && \
-     [ "" = "$(${GIT} log ${REVSTART}...${REVEND} 2>/dev/null | ${GREP} -e "${FULLCI}")" ]; \
+     [ "" = "$(${GIT} log ${REVSTART}...${REVEND} 2>/dev/null | ${GREP} -e "${FULLCI}")" ];
   then
     if [ -e ${FULLCIFILE} ]; then
       # transform wild-card patterns to regular expressions
@@ -209,7 +209,7 @@ then
 
       # make execution environment locally available (always)
       if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-         [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ]; \
+         [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
       then
         source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env
       fi
@@ -219,7 +219,7 @@ then
         ${ECHO} "#!/bin/bash" > ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-           [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ]; \
+           [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
         then
           LICSDIR=$(which icc 2>/dev/null | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
           ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
@@ -241,7 +241,7 @@ then
       if [ "" != "${UNIQUENAME}" ]; then
         eval ${COMMAND} 2>&1 | tee .test-${UNIQUENAME}.log
       else
-        eval ${COMMAND} 2>&1
+        eval ${COMMAND}
       fi
 
       # capture test status
