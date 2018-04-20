@@ -31,14 +31,14 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
-#MKTEMP=$(which mktemp 2>/dev/null)
-MKTEMP=${HERE}/../.mktmp.sh
 MKDIR=$(which mkdir 2>/dev/null)
 CHMOD=$(which chmod 2>/dev/null)
 UNAME=$(which uname 2>/dev/null)
+ECHO=$(which echo 2>/dev/null)
 SYNC=$(which sync 2>/dev/null)
 SORT=$(which sort 2>/dev/null)
 GREP=$(which grep 2>/dev/null)
+GIT=$(which git 2>/dev/null)
 SED=$(which sed 2>/dev/null)
 CUT=$(which cut 2>/dev/null)
 TR=$(which tr 2>/dev/null)
@@ -46,13 +46,53 @@ WC=$(which wc 2>/dev/null)
 RM=$(which rm 2>/dev/null)
 CP=$(which cp 2>/dev/null)
 
+FULLCIFILE=${HERE}/../.fullci
+MKTEMP=${HERE}/../.mktmp.sh
+
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
+FULLCI="\[full ci\]"
+REVSTART="HEAD"
+REVEND="HEAD^"
+FLTPATH="$2"
 
-if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && \
-   [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${WC}" ] && \
+if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && [ "" != "${ECHO}" ] && \
+   [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${WC}" ] && \
    [ "" != "${RM}" ] && [ "" != "${CP}" ]; \
 then
+  # check if full tests are triggered (allows to skip the detailed investigation)
+  if [ "" != "${FASTCI}" ] && [ "0" != "${FASTCI}" ] && [ "" != "${GIT}" ] && \
+     [ "" = "$(${GIT} log ${REVSTART}...${REVEND} 2>/dev/null | ${GREP} -e "${FULLCI}")" ]; \
+  then
+    if [ -e ${FULLCIFILE} ]; then
+      # transform wild-card patterns to regular expressions
+      PATTERNS="$(${SED} -e 's/\./\\./g' -e 's/\*/..*/g' -e 's/?/./g' -e 's/$/\$/g' ${FULLCIFILE} 2>/dev/null)"
+    fi
+    DOTESTS=0
+    if [ "" != "${PATTERNS}" ]; then
+      for FILENAME in $(${GIT} diff --name-only ${REVSTART} ${REVEND} 2>/dev/null); do
+        # check if the file is supposed to impact a build (source code or script)
+        for PATTERN in ${PATTERNS}; do
+          MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
+          if [ "" != "${MATCH}" ]; then # file would impact the build
+            if [ "" = "${FLTPATH}" ] || [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e "${FLTPATH}" 2>/dev/null)" ]; then
+              DOTESTS=1
+              break
+            fi
+          fi
+        done
+        if [ "0" != "${DOTESTS}" ]; then
+          break
+        fi
+      done
+    elif [ "" = "${FLTPATH}" ] || [ "" != "$(${GIT} diff --name-only ${REVSTART} ${REVEND} 2>/dev/null | ${GREP} -e "${FLTPATH}")" ]; then
+      DOTESTS=1
+    fi
+    if [ "0" = "${DOTESTS}" ]; then
+      exit 0 # skip tests
+    fi
+  fi
+
   HOST=$(hostname -s 2>/dev/null)
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
     export TRAVIS_BUILD_DIR=${BUILDKITE_BUILD_CHECKOUT_PATH}
@@ -65,7 +105,7 @@ then
     export TRAVIS_OS_NAME=$(${UNAME})
   fi
 
-  if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
+  if [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
     export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
     export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)))
     export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l)
@@ -159,11 +199,11 @@ then
     for CONFIG in ${CONFIGS}; do
       # print some header if all tests are selected or in case of multi-tests
       if [ "" = "$1" ] || [ "none" != "${PARTITION}" ]; then
-        echo "================================================================================"
+        ${ECHO} "================================================================================"
         if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
-          echo "Test Case #${TESTID} (${PARTITION})"
+          ${ECHO} "Test Case #${TESTID} (${PARTITION})"
         else
-          echo "Test Case #${TESTID}"
+          ${ECHO} "Test Case #${TESTID}"
         fi
       fi
 
@@ -176,7 +216,7 @@ then
 
       # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
-        echo "#!/bin/bash" > ${TESTSCRIPT}
+        ${ECHO} "#!/bin/bash" > ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
            [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ]; \
@@ -185,11 +225,11 @@ then
           ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
           ${CP} -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
           ${CP} -u ${LICSDIR}/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
-          echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
-          echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
+          ${ECHO} "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
+          ${ECHO} "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
         fi
         # record the current test case
-        echo "${TEST}" >> ${TESTSCRIPT}
+        ${ECHO} "${TEST}" >> ${TESTSCRIPT}
 
         if [ "" != "${SYNC}" ]; then # flush asynchronous NFS mount
           ${SYNC}
@@ -197,7 +237,7 @@ then
       fi
 
       # run the prepared test case/script
-      COMMAND=$(eval echo ${LAUNCH})
+      COMMAND=$(eval ${ECHO} ${LAUNCH})
       if [ "" != "${UNIQUENAME}" ]; then
         eval ${COMMAND} 2>&1 | tee .test-${UNIQUENAME}.log
       else
@@ -209,9 +249,9 @@ then
 
       # exit the loop in case of an error
       if [ "0" = "${RESULT}" ]; then
-        echo "--------------------------------------------------------------------------------"
-        echo "SUCCESS"
-        echo
+        ${ECHO} "--------------------------------------------------------------------------------"
+        ${ECHO} "SUCCESS"
+        ${ECHO}
       else
         break
       fi
@@ -232,9 +272,9 @@ then
   fi
 
   if [ "0" != "${RESULT}" ]; then
-    echo "--------------------------------------------------------------------------------"
-    echo "FAILURE"
-    echo
+    ${ECHO} "--------------------------------------------------------------------------------"
+    ${ECHO} "FAILURE"
+    ${ECHO}
   fi
 
   # override result code (alternative outcome)

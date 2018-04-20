@@ -1,0 +1,3 @@
+samples/deeplearning/*
+src/libxsmm_dnn*.c
+include/*.h
