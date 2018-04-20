@@ -122,14 +122,25 @@ then
 
   # setup batch execution
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ]; then
+    if [ "" != "${BUILDKITE_BUILD_NUMBER}" ]; then
+      UNIQUENAME=${BUILDKITE_BUILD_NUMBER}
+    fi
     if [ "" != "${BUILDKITE_LABEL}" ]; then
       SRUN_FLAGS+=" -J ${BUILDKITE_LABEL}"
+      if [ "" != "${UNIQUENAME}" ]; then
+        UNIQUENAME+="-${BUILDKITE_LABEL}"
+      fi
     fi
     umask 007
-    TESTSCRIPT=$(${MKTEMP} ${HERE}/../.libxsmm_XXXXXX.sh)
+    if [ "" != "${UNIQUENAME}" ]; then
+      TESTSCRIPT=${HERE}/../.libxsmm_test-${UNIQUENAME}.sh
+      touch ${TESTSCRIPT}
+    else
+      TESTSCRIPT=$(${MKTEMP} ${HERE}/../.libxsmm_XXXXXX.sh)
+    fi
     ${CHMOD} +rx ${TESTSCRIPT}
-    LAUNCH="${SRUN} ${SRUN_JOBNAME} --ntasks=1 --partition=\${PARTITION} \
-                    ${SRUN_FLAGS} --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
+    LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
+      --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
   else # avoid temporary script in case of non-batch execution
     LAUNCH=\${TEST}
   fi
@@ -187,8 +198,11 @@ then
 
       # run the prepared test case/script
       COMMAND=$(eval echo ${LAUNCH})
-      #bash -c "${COMMAND}"
-      eval ${COMMAND} 2>&1 | tee .test.log
+      if [ "" != "${UNIQUENAME}" ]; then
+        eval ${COMMAND} 2>&1 | tee .test-${UNIQUENAME}.log
+      else
+        eval ${COMMAND} 2>&1
+      fi
 
       # capture test status
       RESULT=$?
