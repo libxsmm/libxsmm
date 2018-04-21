@@ -163,8 +163,11 @@ then
   # setup batch execution
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ]; then
     if [ "" != "${BUILDKITE_LABEL}" ]; then
-      SRUN_FLAGS="${SRUN_FLAGS} -J ${BUILDKITE_LABEL}"
-      TESTSCRIPT=${HERE}/../.libxsmm_test-${BUILDKITE_LABEL}.sh
+      LABEL=$(${ECHO} "${BUILDKITE_LABEL}" | ${TR} -s [:punct:][:space:] -)
+    fi
+    if [ "" != "${LABEL}" ]; then
+      SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
+      TESTSCRIPT=${HERE}/../.libxsmm_test-${LABEL}.sh
     fi
     umask 007
     if [ "" != "${TESTSCRIPT}" ]; then
@@ -230,12 +233,9 @@ then
       fi
 
       COMMAND=$(eval ${ECHO} ${LAUNCH})
-      if [ "" != "${VERBOSE}" ] && [ "0" != "${VERBOSE}" ]; then
-        ${ECHO} "${COMMAND}"
-      fi
       # run the prepared test case/script
-      if [ "" != "${BUILDKITE_LABEL}" ]; then
-        eval ${COMMAND} 2>&1 | tee .test-${BUILDKITE_LABEL}.log
+      if [ "" != "${LABEL}" ]; then
+        eval ${COMMAND} 2>&1 | tee .test-${LABEL}.log
       else
         eval ${COMMAND}
       fi
