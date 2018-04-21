@@ -179,8 +179,7 @@ then
       TESTSCRIPT=$(${MKTEMP} ${HERE}/../.libxsmm_XXXXXX.sh)
     fi
     ${CHMOD} +rx ${TESTSCRIPT}
-    LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
-      --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
+    LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
   else # avoid temporary script in case of non-batch execution
     LAUNCH=\${TEST}
   fi
