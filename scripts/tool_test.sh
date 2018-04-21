@@ -60,7 +60,7 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && [ ""
    [ "" != "${RM}" ] && [ "" != "${CP}" ];
 then
   # check if full tests are triggered (allows to skip the detailed investigation)
-  if [ -e ${FASTCI} ] && [ "" != "${GIT}" ] && \
+  if [ "" != "${FASTCI}" ] && [ -e ${FASTCI} ] && [ "" != "${GIT}" ] && \
      [ "" = "$(${GIT} log ${REVSTART}...${REVEND} 2>/dev/null | ${GREP} -e "${FULLCI}")" ];
   then
     # transform wild-card patterns to regular expressions
