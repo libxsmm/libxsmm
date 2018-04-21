@@ -162,18 +162,12 @@ then
 
   # setup batch execution
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ]; then
-    if [ "" != "${BUILDKITE_BUILD_NUMBER}" ]; then
-      UNIQUENAME=${BUILDKITE_BUILD_NUMBER}
-    fi
     if [ "" != "${BUILDKITE_LABEL}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${BUILDKITE_LABEL}"
-      if [ "" != "${UNIQUENAME}" ]; then
-        UNIQUENAME="${UNIQUENAME}-${BUILDKITE_LABEL}"
-      fi
+      TESTSCRIPT=${HERE}/../.libxsmm_test-${BUILDKITE_LABEL}.sh
     fi
     umask 007
-    if [ "" != "${UNIQUENAME}" ]; then
-      TESTSCRIPT=${HERE}/../.libxsmm_test-${UNIQUENAME}.sh
+    if [ "" != "${TESTSCRIPT}" ]; then
       touch ${TESTSCRIPT}
     else
       TESTSCRIPT=$(${MKTEMP} ${HERE}/../.libxsmm_XXXXXX.sh)
@@ -240,8 +234,8 @@ then
         ${ECHO} "${COMMAND}"
       fi
       # run the prepared test case/script
-      if [ "" != "${UNIQUENAME}" ]; then
-        eval ${COMMAND} 2>&1 | tee .test-${UNIQUENAME}.log
+      if [ "" != "${BUILDKITE_LABEL}" ]; then
+        eval ${COMMAND} 2>&1 | tee .test-${BUILDKITE_LABEL}.log
       else
         eval ${COMMAND}
       fi
