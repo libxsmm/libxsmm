@@ -236,8 +236,11 @@ then
         fi
       fi
 
-      # run the prepared test case/script
       COMMAND=$(eval ${ECHO} ${LAUNCH})
+      if [ "" != "${VERBOSE}" ] && [ "0" != "${VERBOSE}" ]; then
+        ${ECHO} "${COMMAND}"
+      fi
+      # run the prepared test case/script
       if [ "" != "${UNIQUENAME}" ]; then
         eval ${COMMAND} 2>&1 | tee .test-${UNIQUENAME}.log
       else
