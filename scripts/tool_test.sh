@@ -46,28 +46,25 @@ WC=$(which wc 2>/dev/null)
 RM=$(which rm 2>/dev/null)
 CP=$(which cp 2>/dev/null)
 
-FULLCIFILE=${HERE}/../.fullci
 MKTEMP=${HERE}/../.mktmp.sh
+FASTCI=$2
 
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
 FULLCI="\[full ci\]"
 REVSTART="HEAD"
 REVEND="HEAD^"
-FLTPATH="$2"
 
 if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && [ "" != "${ECHO}" ] && \
    [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${WC}" ] && \
    [ "" != "${RM}" ] && [ "" != "${CP}" ];
 then
   # check if full tests are triggered (allows to skip the detailed investigation)
-  if [ "" != "${FASTCI}" ] && [ "0" != "${FASTCI}" ] && [ "" != "${GIT}" ] && \
+  if [ -e ${FASTCI} ] && [ "" != "${GIT}" ] && \
      [ "" = "$(${GIT} log ${REVSTART}...${REVEND} 2>/dev/null | ${GREP} -e "${FULLCI}")" ];
   then
-    if [ -e ${FULLCIFILE} ]; then
-      # transform wild-card patterns to regular expressions
-      PATTERNS="$(${SED} -e 's/\./\\./g' -e 's/\*/..*/g' -e 's/?/./g' -e 's/$/\$/g' ${FULLCIFILE} 2>/dev/null)"
-    fi
+    # transform wild-card patterns to regular expressions
+    PATTERNS="$(${SED} -e 's/\./\\./g' -e 's/\*/..*/g' -e 's/?/./g' -e 's/$/\$/g' ${FASTCI} 2>/dev/null)"
     DOTESTS=0
     if [ "" != "${PATTERNS}" ]; then
       for FILENAME in $(${GIT} diff --name-only ${REVSTART} ${REVEND} 2>/dev/null); do
@@ -75,17 +72,15 @@ then
         for PATTERN in ${PATTERNS}; do
           MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
           if [ "" != "${MATCH}" ]; then # file would impact the build
-            if [ "" = "${FLTPATH}" ] || [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e "${FLTPATH}" 2>/dev/null)" ]; then
-              DOTESTS=1
-              break
-            fi
+            DOTESTS=1
+            break
           fi
         done
         if [ "0" != "${DOTESTS}" ]; then
           break
         fi
       done
-    elif [ "" = "${FLTPATH}" ] || [ "" != "$(${GIT} diff --name-only ${REVSTART} ${REVEND} 2>/dev/null | ${GREP} -e "${FLTPATH}")" ]; then
+    else
       DOTESTS=1
     fi
     if [ "0" = "${DOTESTS}" ]; then
