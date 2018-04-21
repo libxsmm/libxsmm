@@ -166,9 +166,9 @@ then
       UNIQUENAME=${BUILDKITE_BUILD_NUMBER}
     fi
     if [ "" != "${BUILDKITE_LABEL}" ]; then
-      SRUN_FLAGS+=" -J ${BUILDKITE_LABEL}"
+      SRUN_FLAGS="${SRUN_FLAGS} -J ${BUILDKITE_LABEL}"
       if [ "" != "${UNIQUENAME}" ]; then
-        UNIQUENAME+="-${BUILDKITE_LABEL}"
+        UNIQUENAME="${UNIQUENAME}-${BUILDKITE_LABEL}"
       fi
     fi
     umask 007
