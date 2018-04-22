@@ -1,4 +1,4 @@
-# GxM
+# Deep Learning with GxM
 
 ## Compiling and Building GxM
 
