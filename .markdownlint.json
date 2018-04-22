@@ -7,5 +7,6 @@
     "MD013": false,
     "MD029": { "style": "ordered" },
     "MD033": { "allowed_elements": ["a", "sub", "sup"] },
+    "MD036": false,
     "MD041": false
 }

@@ -1,6 +1,7 @@
 # Matrix Transpose (TCOPY)
 
 ## Overview
+
 This code sample aims to benchmark the performance of matrix transposes. The C/C++ and [FORTRAN sample code](https://github.com/hfp/libxsmm/blob/master/samples/transpose/transpose.f) differ slightly with the C/C++ code sample offering a richer set of command line options as well as build settings available inside of the [translation unit](https://github.com/hfp/libxsmm/blob/master/samples/transpose/transpose.c).
 
 The available command line options of the sample code may be reviewed by looking into the source code. Generally, the idea is to support the following:
@@ -12,7 +13,7 @@ Above, `m` and `n` specify the matrix shape, and `ldi` the leading dimension of 
 
 Running the C sample code may look like:
 
-```
+```bash
 $ ./transpose.sh o 20000
 m=20000 n=20000 ldi=20000 ldo=20000 size=3052MB (double, out-of-place)
         bandwidth: 18.8 GB/s
@@ -21,7 +22,7 @@ m=20000 n=20000 ldi=20000 ldo=20000 size=3052MB (double, out-of-place)
 
 Instead of executing a wrapper script, one may affinitize the multi-threaded execution manually (OpenMP runtime). In case of an executable built using the Intel Compiler this may look like:
 
-```
+```bash
 LIBXSMM_VERBOSE=2 KMP_AFFINITY=balanced,granularity=fine,1 \
 ./transpose o 20000
 m=20000 n=20000 ldi=20000 ldo=20000 size=3052MB (double, out-of-place)
@@ -34,19 +35,20 @@ Registry: 20 MB (gemm=0 mcopy=0 tcopy=1)
 In the above case one can see from the verbose output (`LIBXSMM_VERBOSE=2`) that one kernel (tcopy) served transposing the entire matrix. To avoid duplicating JIT-kernels under contention (code registry), one may also consider `LIBXSMM_TRYLOCK=1`, which is available per API-call as well.
 
 ## OpenTuner
+
 To tune the tile sizes ("block sizes") internal to LIBXSMM's transpose routine, the [OpenTuner](http://opentuner.org/) extensible framework for program autotuning can be used. A tuning script (`transpose_opentuner.py`) is provided, which accepts a range of matrix sizes as command line arguments.
 
 > transpose_opentuner.py &lt;begin&gt; &lt;end&gt; [*nexperiments-per-epoch*] [*tile-size-m*] [*tile-size-n*]
 
 To start a tuning experiment for a new set of arguments, it is highly recommended to start from scratch. Otherwise the population of previously generated tuning results is fetched from a database and used to tune an eventually unrelated range of matrix shapes. To get reliable timings, the total time for all experiments per epoch is minimized (hence a different number of experiments per epoch also asks for an own database). Optionally, the initial block size can be seeded (`tile-size-m` and `tile-size-n`).
 
-```
+```bash
 rm -rf opentuner.db
 ```
 
 The script tunes matrices with randomized shape according to the specified range. The leading dimension is chosen tightly for the experiments. The optimizer not only maximizes the performance but also minimizes the value of *M&#160;\*&#160;N* (which also helps to prune duplicated results due to an additional preference).
 
-```
+```bash
 rm -rf opentuner.db
 ./transpose_opentuner.py --no-dups 1 1024 1000
 
