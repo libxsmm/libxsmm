@@ -612,9 +612,12 @@ int main(int argc, char* argv[])
   opcode_routine = (void *) &cptr[0];
 #endif
 
-#define DUMP_ASSEMBLY_FILE
+#ifndef TIME_MKL
+  #define DUMP_ASSEMBLY_FILE
+#endif
+
 #ifdef DUMP_ASSEMBLY_FILE
-  printf("Dumping asssembly file\n");
+  printf("Dumping assembly file\n");
   FILE *fp = fopen("foo.s","w");
   char buffer[80];
   fputs("\t.text\n",fp);

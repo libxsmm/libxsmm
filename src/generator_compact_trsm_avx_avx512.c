@@ -288,7 +288,7 @@ printf("Inside libxsmm_generator_compact_trsm_avx_avx512_kernel: %c%c%c%c m=%d n
                   }
               }
 
-              for ( j = 1; j <= n1; j+=2 )
+              for ( j = 1; j <= n1; j+=3 )
               {
                  for ( k = 1 ; k <= m1; k+=2 )
                  {
@@ -296,9 +296,11 @@ printf("Inside libxsmm_generator_compact_trsm_avx_avx512_kernel: %c%c%c%c m=%d n
                     if ( (alpha != 1.0) && (k==1) ) scalealpha = 1;
                     compact_load_matrix2_ ( io_code, ldb, k, j, 0, numb, datasz, regset );
                     if ( j+1 <= n1 ) compact_load_matrix2_ ( io_code, ldb, k, j+1, 4, numb, datasz, regset );
+                    if ( j+2 <= n1 ) compact_load_matrix2_ ( io_code, ldb, k, j+2, 7, numb, datasz, regset );
                     if ( scalealpha == 1 ) {
                        compact_mult_two_nums_ ( io_code, 0, 2, 0, numb, regset );
                        if ( j+1 <= n1 ) compact_mult_two_nums_ ( io_code, 4, 2, 4, numb, regset );
+                       if ( j+2 <= n1 ) compact_mult_two_nums_ ( io_code, 7, 2, 7, numb, regset );
                     }
                     if ( nounit ) {
                        compact_load_matrix3_ ( io_code, m1, k, 1, 1, numb, datasz, regset );
@@ -307,6 +309,10 @@ printf("Inside libxsmm_generator_compact_trsm_avx_avx512_kernel: %c%c%c%c m=%d n
                        if ( j+1 <= n1 ) {
                           compact_mult_two_nums_ ( io_code, 4, 1, 4, numb, regset );
                           compact_store_matrix2_ ( io_code, ldb, k, j+1, 4, numb, datasz, regset );
+                       }
+                       if ( j+2 <= n1 ) {
+                          compact_mult_two_nums_ ( io_code, 7, 1, 7, numb, regset );
+                          compact_store_matrix2_ ( io_code, ldb, k, j+2, 7, numb, datasz, regset );
                        }
                     }
                     if ( k+1 <= m1 ) {
@@ -324,6 +330,13 @@ printf("Inside libxsmm_generator_compact_trsm_avx_avx512_kernel: %c%c%c%c m=%d n
                           compact_load_matrix1_ ( io_code, ldb, k+1, k, 3, numb, datasz, regset );
                           compact_fms_cminusab_ ( io_code, 14, 4, 3, numb, regset );
                        }
+                       if ( j+2 <= n1 ) {
+                          compact_load_matrix2_ ( io_code, ldb, k+1, j+2, 9, numb, datasz, regset );
+                          if ( scalealpha == 1 ) {
+                             compact_mult_two_nums_ ( io_code, 9, 2, 9, numb, regset );
+                          }
+                          compact_fms_cminusab_ ( io_code, 9, 7, 3, numb, regset );
+                       }
                        if ( nounit ) {
                           compact_load_matrix3_ ( io_code, m1, k+1, 1, 11, numb, datasz, regset );
                           compact_mult_two_nums_ ( io_code, 10, 11, 10, numb, regset );
@@ -331,6 +344,10 @@ printf("Inside libxsmm_generator_compact_trsm_avx_avx512_kernel: %c%c%c%c m=%d n
                           if ( j+1 <= n1 ) {
                              compact_mult_two_nums_ ( io_code, 14, 11, 14, numb, regset );
                              compact_store_matrix2_ ( io_code, ldb, k+1, j+1, 14, numb, datasz, regset );
+                          }
+                          if ( j+2 <= n1 ) {
+                             compact_mult_two_nums_ ( io_code, 9, 11, 9, numb, regset );
+                             compact_store_matrix2_ ( io_code, ldb, k+1, j+2, 9, numb, datasz, regset );
                           }
                        }
                     }
@@ -355,6 +372,16 @@ printf("Inside libxsmm_generator_compact_trsm_avx_avx512_kernel: %c%c%c%c m=%d n
                               compact_store_matrix2_ ( io_code, ldb, i, j+1, 6, numb, datasz, regset );
                           }
                        }
+                       if ( j+2 <= n1 ) {
+                          compact_load_matrix2_ ( io_code, ldb, i, j+2, 12, numb, datasz, regset );
+                          if ( scalealpha == 1 ) {
+                             compact_mult_two_nums_ ( io_code, 12, 2, 12, numb, regset );
+                          }
+                          compact_fms_cminusab_ ( io_code, 12, 7, 3, numb, regset );
+                          if ( k+1 > m1 ) {
+                              compact_store_matrix2_ ( io_code, ldb, i, j+2, 12, numb, datasz, regset );
+                          }
+                       }
                        if ( k+1 <= m1 ) {
                           compact_load_matrix1_ ( io_code, ldb, i, k+1, 13, numb, datasz, regset );
                           compact_fms_cminusab_ ( io_code, 1, 10, 13, numb, regset );
@@ -362,6 +389,10 @@ printf("Inside libxsmm_generator_compact_trsm_avx_avx512_kernel: %c%c%c%c m=%d n
                           if ( j+1 <= n1 ) {
                              compact_fms_cminusab_ ( io_code, 6, 14, 13, numb, regset );
                              compact_store_matrix2_ ( io_code, ldb, i, j+1, 6, numb, datasz, regset );
+                          }
+                          if ( j+2 <= n1 ) {
+                             compact_fms_cminusab_ ( io_code, 12, 9, 13, numb, regset );
+                             compact_store_matrix2_ ( io_code, ldb, i, j+2, 12, numb, datasz, regset );
                           }
                        }
                     } /* for i LLN main loop */
