@@ -9,107 +9,123 @@ It is based on a 4th-order, spectral-element stiffness kernel for simulations of
 
 This example needs the LIBXSMM library to be built with static kernels, using MNK="5 25" (for matrix size (5,25), (25,5) and (5,5)).
 
-1. In LIBXSMM root directory, compile the library with:
+### Build LIBXSMM
 
-  - general default compilation:
-```
+#### General Default Compilation
+
+In LIBXSMM root directory, compile the library with:
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0
 ```
 
-  additional compilation examples are:
+#### Additional Compilation Examples
 
-  - compilation using only single precision version & aggressive optimization:
-```
+Compilation using only single precision version and aggressive optimization:
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3
 ```
 
-  - for Sandy Bridge CPUs:
-```
+For Sandy Bridge CPUs:
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1
 ```
 
-  - for Haswell CPUs:
-```
+For Haswell CPUs:
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=2
 ```
 
-  - for Knights Corner (KNC) (and thereby creating a Sandy Bridge version):
-```
+For Knights Corner (KNC) (and thereby creating a Sandy Bridge version):
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 \
 OFFLOAD=1 KNC=1
 ```
 
-  - installing libraries into a sub-directory workstation/:
-```
+Installing libraries into a sub-directory workstation/:
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 \
 OFFLOAD=1 KNC=1 \
 PREFIX=workstation/ install-minimal
 ```
 
-2. Compile this example code by typing:
+### Build SpecFEM example code
 
-  - for default CPU host:
-```
+For default CPU host:
+
+```bash
 cd sample/specfem
 make
 ```
 
-  - for Knights Corner (KNC):
-```
+For Knights Corner (KNC):
+
+```bash
 cd sample/specfem
 make KNC=1
 ```
 
-  - additionally, adding some specific Fortran compiler flags, for example:
-```
+Additionally, adding some specific Fortran compiler flags, for example:
+
+```bash
 cd sample/specfem
 make FCFLAGS="-O3 -fopenmp" [...]
 ```
 
-Note that steps 1 & 2 could be shortened:
+Note that steps 1 and 2 could be shortened by specifying a "specfem" make target in the LIBXSMM root directory:
 
-  - by specifying a "specfem" make target in the LIBXSMM root directory:
-```
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 specfem
 ```
 
-  - for Knights Corner, this would need two steps:
-```
+For Knights Corner, this would need two steps:
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 OFFLOAD=1 KNC=1
 make OPT=3 specfem_mic
 ```
 
-Run the performance test:
+## Run the Performance Test
 
-  - for default CPU host:
-```
+For default CPU host:
+
+```bash
 ./specfem.sh
 ```
 
-  - for Knights Corner (KNC):
-```
+For Knights Corner (KNC):
+
+```bash
 ./specfem.sh -mic
 ```
 
 ## Results
 
-Using Intel Compiler suite: icpc 15.0.2, icc 15.0.2, and ifort 15.0.2
+Using Intel Compiler suite: icpc 15.0.2, icc 15.0.2, and ifort 15.0.2.
 
 ### Sandy Bridge - Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz
 
-- library compilation by (root directory):
-```
+Library compilation by (root directory):
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1
 ```
 
-- single threaded example run:
-```
+Single threaded example run:
+
+```bash
 cd sample/specfem
 make; OMP_NUM_THREADS=1 ./specfem.sh
 ```
 
-  Output:
-```
+Output:
+
+```bash
 ===============================================================
 average over           15 repetitions
  timing with Deville loops    =   0.1269
@@ -120,22 +136,24 @@ average over           15 repetitions
 ===============================================================
 ```
 
-
 ### Haswell - Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz
 
-- library compilation by (root directory):
-```
+Library compilation by (root directory):
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=2
 ```
 
-- single threaded example run:
-```
+Single threaded example run:
+
+```bash
 cd sample/specfem
 make; OMP_NUM_THREADS=1 ./specfem.sh
 ```
 
-  Output:
-```
+Output:
+
+```bash
 ===============================================================
 average over           15 repetitions
  timing with Deville loops    =   0.1028
@@ -146,14 +164,16 @@ average over           15 repetitions
 ===============================================================
 ```
 
-- multi-threaded example run:
-```
+Multi-threaded example run:
+
+```bash
 cd sample/specfem
 make OPT=3; OMP_NUM_THREADS=24 ./specfem.sh
 ```
 
-  Output:
-```
+Output:
+
+```bash
 OpenMP information:
   number of threads =           24
 
@@ -169,22 +189,24 @@ average over           15 repetitions
 ===============================================================
 ```
 
-
 ### Knights Corner - Intel Xeon Phi B1PRQ-5110P/5120D
 
-- library compilation by (root directory):
-```
+Library compilation by (root directory):
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 OFFLOAD=1 KNC=1
 ```
 
-- multi-threaded example run:
-```
+Multi-threaded example run:
+
+```bash
 cd sample/specfem
 make FCFLAGS="-O3 -fopenmp -warn" OPT=3 KNC=1; ./specfem.sh -mic
 ```
 
-  Output:
-```
+Output:
+
+```bash
 OpenMP information:
   number of threads =          236
 

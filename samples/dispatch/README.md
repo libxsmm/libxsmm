@@ -9,6 +9,7 @@ This code sample benchmarks the performance of (1)&#160;the dispatch mechanism, 
 
 
 **Measurements (Benchmark)**
+
 * Duration of an empty function call (serves as a reference timing).
 * Duration to find an already generated kernel (cached/non-cached).
 * Duration to JIT-generate a GEMM kernel.

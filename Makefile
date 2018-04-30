@@ -1346,8 +1346,8 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		-o $(notdir $@)
 	@rm $(TMPFILE)
 
-$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(SPLDIR)/*/README.md
-	@cat $(SPLDIR)/*/README.md \
+$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(SPLDIR)/*/README.md $(SPLDIR)/deeplearning/*/README.md
+	@cat $(SPLDIR)/*/README.md $(SPLDIR)/deeplearning/*/README.md \
 	| sed \
 		-e 's/^#/##/' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \

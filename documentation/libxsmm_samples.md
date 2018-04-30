@@ -15,6 +15,7 @@ This code sample benchmarks the performance of (1)&#160;the dispatch mechanism, 
 
 
 **Measurements (Benchmark)**
+
 * Duration of an empty function call (serves as a reference timing).
 * Duration to find an already generated kernel (cached/non-cached).
 * Duration to JIT-generate a GEMM kernel.
@@ -28,19 +29,21 @@ This directory contains kernels taken from Nek{Box,5000}. They aim to represent 
 Please note that the [mxm_std.f](https://github.com/hfp/libxsmm/blob/master/samples/nek/mxm_std.f) source code is protected by an (US) GOVERNMENT LICENSE, and under the copyright of the University of Chicago.
 
 ### stpm
+
 Small tensor-product multiple (stpm) replicates the axhelm kernel, which computes the Laplacian with spectral elements.
 Usage:
 
-```
+```bash
 ./stpm m n k size1 size
 ```
 
 The elements are m-by-n-by-k, mode picks the LIBXSMM interface used, and size scales the number of spectral elements.
 
 ### rstr
+
 Restriction operator transforms elements from one size to another. This occurs in multi-grid, the convection operator, and, when the sizes are the same, the local Schwarz solves. Usage:
 
-```
+```bash
 ./rstr m n k mm nn kk size1 size
 ```
 
@@ -99,107 +102,123 @@ It is based on a 4th-order, spectral-element stiffness kernel for simulations of
 
 This example needs the LIBXSMM library to be built with static kernels, using MNK="5 25" (for matrix size (5,25), (25,5) and (5,5)).
 
-1. In LIBXSMM root directory, compile the library with:
+#### Build LIBXSMM
 
-  - general default compilation:
-```
+##### General Default Compilation
+
+In LIBXSMM root directory, compile the library with:
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0
 ```
 
-  additional compilation examples are:
+##### Additional Compilation Examples
 
-  - compilation using only single precision version & aggressive optimization:
-```
+Compilation using only single precision version and aggressive optimization:
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3
 ```
 
-  - for Sandy Bridge CPUs:
-```
+For Sandy Bridge CPUs:
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1
 ```
 
-  - for Haswell CPUs:
-```
+For Haswell CPUs:
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=2
 ```
 
-  - for Knights Corner (KNC) (and thereby creating a Sandy Bridge version):
-```
+For Knights Corner (KNC) (and thereby creating a Sandy Bridge version):
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 \
 OFFLOAD=1 KNC=1
 ```
 
-  - installing libraries into a sub-directory workstation/:
-```
+Installing libraries into a sub-directory workstation/:
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 \
 OFFLOAD=1 KNC=1 \
 PREFIX=workstation/ install-minimal
 ```
 
-2. Compile this example code by typing:
+#### Build SpecFEM example code
 
-  - for default CPU host:
-```
+For default CPU host:
+
+```bash
 cd sample/specfem
 make
 ```
 
-  - for Knights Corner (KNC):
-```
+For Knights Corner (KNC):
+
+```bash
 cd sample/specfem
 make KNC=1
 ```
 
-  - additionally, adding some specific Fortran compiler flags, for example:
-```
+Additionally, adding some specific Fortran compiler flags, for example:
+
+```bash
 cd sample/specfem
 make FCFLAGS="-O3 -fopenmp" [...]
 ```
 
-Note that steps 1 & 2 could be shortened:
+Note that steps 1 and 2 could be shortened by specifying a "specfem" make target in the LIBXSMM root directory:
 
-  - by specifying a "specfem" make target in the LIBXSMM root directory:
-```
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 specfem
 ```
 
-  - for Knights Corner, this would need two steps:
-```
+For Knights Corner, this would need two steps:
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1 OFFLOAD=1 KNC=1
 make OPT=3 specfem_mic
 ```
 
-Run the performance test:
+### Run the Performance Test
 
-  - for default CPU host:
-```
+For default CPU host:
+
+```bash
 ./specfem.sh
 ```
 
-  - for Knights Corner (KNC):
-```
+For Knights Corner (KNC):
+
+```bash
 ./specfem.sh -mic
 ```
 
 ### Results
 
-Using Intel Compiler suite: icpc 15.0.2, icc 15.0.2, and ifort 15.0.2
+Using Intel Compiler suite: icpc 15.0.2, icc 15.0.2, and ifort 15.0.2.
 
 #### Sandy Bridge - Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz
 
-- library compilation by (root directory):
-```
+Library compilation by (root directory):
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=1
 ```
 
-- single threaded example run:
-```
+Single threaded example run:
+
+```bash
 cd sample/specfem
 make; OMP_NUM_THREADS=1 ./specfem.sh
 ```
 
-  Output:
-```
+Output:
+
+```bash
 ===============================================================
 average over           15 repetitions
  timing with Deville loops    =   0.1269
@@ -210,22 +229,24 @@ average over           15 repetitions
 ===============================================================
 ```
 
-
 #### Haswell - Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz
 
-- library compilation by (root directory):
-```
+Library compilation by (root directory):
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 AVX=2
 ```
 
-- single threaded example run:
-```
+Single threaded example run:
+
+```bash
 cd sample/specfem
 make; OMP_NUM_THREADS=1 ./specfem.sh
 ```
 
-  Output:
-```
+Output:
+
+```bash
 ===============================================================
 average over           15 repetitions
  timing with Deville loops    =   0.1028
@@ -236,14 +257,16 @@ average over           15 repetitions
 ===============================================================
 ```
 
-- multi-threaded example run:
-```
+Multi-threaded example run:
+
+```bash
 cd sample/specfem
 make OPT=3; OMP_NUM_THREADS=24 ./specfem.sh
 ```
 
-  Output:
-```
+Output:
+
+```bash
 OpenMP information:
   number of threads =           24
 
@@ -259,22 +282,24 @@ average over           15 repetitions
 ===============================================================
 ```
 
-
 #### Knights Corner - Intel Xeon Phi B1PRQ-5110P/5120D
 
-- library compilation by (root directory):
-```
+Library compilation by (root directory):
+
+```bash
 make MNK="5 25" ALPHA=1 BETA=0 PRECISION=1 OPT=3 OFFLOAD=1 KNC=1
 ```
 
-- multi-threaded example run:
-```
+Multi-threaded example run:
+
+```bash
 cd sample/specfem
 make FCFLAGS="-O3 -fopenmp -warn" OPT=3 KNC=1; ./specfem.sh -mic
 ```
 
-  Output:
-```
+Output:
+
+```bash
 OpenMP information:
   number of threads =          236
 
@@ -292,6 +317,7 @@ average over           15 repetitions
 ## Matrix Transpose (TCOPY)
 
 ### Overview
+
 This code sample aims to benchmark the performance of matrix transposes. The C/C++ and [FORTRAN sample code](https://github.com/hfp/libxsmm/blob/master/samples/transpose/transpose.f) differ slightly with the C/C++ code sample offering a richer set of command line options as well as build settings available inside of the [translation unit](https://github.com/hfp/libxsmm/blob/master/samples/transpose/transpose.c).
 
 The available command line options of the sample code may be reviewed by looking into the source code. Generally, the idea is to support the following:
@@ -303,7 +329,7 @@ Above, `m` and `n` specify the matrix shape, and `ldi` the leading dimension of 
 
 Running the C sample code may look like:
 
-```
+```bash
 $ ./transpose.sh o 20000
 m=20000 n=20000 ldi=20000 ldo=20000 size=3052MB (double, out-of-place)
         bandwidth: 18.8 GB/s
@@ -312,7 +338,7 @@ m=20000 n=20000 ldi=20000 ldo=20000 size=3052MB (double, out-of-place)
 
 Instead of executing a wrapper script, one may affinitize the multi-threaded execution manually (OpenMP runtime). In case of an executable built using the Intel Compiler this may look like:
 
-```
+```bash
 LIBXSMM_VERBOSE=2 KMP_AFFINITY=balanced,granularity=fine,1 \
 ./transpose o 20000
 m=20000 n=20000 ldi=20000 ldo=20000 size=3052MB (double, out-of-place)
@@ -325,19 +351,20 @@ Registry: 20 MB (gemm=0 mcopy=0 tcopy=1)
 In the above case one can see from the verbose output (`LIBXSMM_VERBOSE=2`) that one kernel (tcopy) served transposing the entire matrix. To avoid duplicating JIT-kernels under contention (code registry), one may also consider `LIBXSMM_TRYLOCK=1`, which is available per API-call as well.
 
 ### OpenTuner
+
 To tune the tile sizes ("block sizes") internal to LIBXSMM's transpose routine, the [OpenTuner](http://opentuner.org/) extensible framework for program autotuning can be used. A tuning script (`transpose_opentuner.py`) is provided, which accepts a range of matrix sizes as command line arguments.
 
 > transpose_opentuner.py &lt;begin&gt; &lt;end&gt; [*nexperiments-per-epoch*] [*tile-size-m*] [*tile-size-n*]
 
 To start a tuning experiment for a new set of arguments, it is highly recommended to start from scratch. Otherwise the population of previously generated tuning results is fetched from a database and used to tune an eventually unrelated range of matrix shapes. To get reliable timings, the total time for all experiments per epoch is minimized (hence a different number of experiments per epoch also asks for an own database). Optionally, the initial block size can be seeded (`tile-size-m` and `tile-size-n`).
 
-```
+```bash
 rm -rf opentuner.db
 ```
 
 The script tunes matrices with randomized shape according to the specified range. The leading dimension is chosen tightly for the experiments. The optimizer not only maximizes the performance but also minimizes the value of *M&#160;\*&#160;N* (which also helps to prune duplicated results due to an additional preference).
 
-```
+```bash
 rm -rf opentuner.db
 ./transpose_opentuner.py --no-dups 1 1024 1000
 
@@ -379,30 +406,32 @@ The code will execute in three flavors when running `dgemm-test.sh`: (1) code va
 ## XGEMM: Tiled GEMM Routines
 
 ### Overview
+
 This sample code calls the `libxsmm_?gemm_omp` routines provided by the LIBXSMM extension library (`libxsmmext`). These routines are meant for big(ger) xGEMM routines, and thereby provide an OpenMP-based parallelization.
 
 The driver program (`xgemm.c`) currently accepts all typical GEMM arguments (except for the transposition specifier): `m`, `n`, `k`, `lda`, `ldb`, `ldc`, `alpha`, and `beta`. All arguments are optional (or will inherit defaults from previously specified arguments). Matrix transposition as part of the `libxsmm_?gemm_omp` routines will become available in an upcoming release of LIBXSMM. Please also note that unsupported Alpha or Beta values will cause a fall back to the related BLAS routine. The single-precision matrix multiplications require to change the `ITYPE` in `xgemm.c`.
 
-```
+```bash
 ./xgemm.sh 2000
 ```
 
 ### OpenTuner
+
 To tune the tile sizes ("block sizes") internal to LIBXSMM, the [OpenTuner](http://opentuner.org/) extensible framework for program autotuning can be used. A tuning script (`xgemm_opentuner.py`) is provided, which optionally accepts a list of grouped parameters as command line arguments. The syntax of the arguments is per LIBXSMM's `MNK` build-option, and expands to "triplets" specifying the matrix shapes. For instance, four matrix multiplications of square-matrices can be benchmarked and tuned using the following command.
 
-```
+```bash
 ./xgemm_opentuner.py 1024,1280,1536,1792
 ```
 
 To start a tuning experiment for a new set of arguments, it is highly recommended to start from scratch. Otherwise the population of previously generated tuning results is fetched from a database and used to tune an unrelated range of matrix shapes. Optionally, the initial block size can be seeded (`tile-size-m`, `tile-size-n`, and `tile-size-k`).
 
-```
+```bash
 rm -rf opentuner.db
 ```
 
 The script tunes the geometric mean of the performance for each of the requested triplets. However, the optimizer not only maximizes the performance but also minimizes the value of *M&#160;\*&#160;N&#160;\*&#160;K* (which also helps to prune duplicated results due to an additional preference). As a limitation of the current implementation, the multiplication kernels are not accompanied by copy-kernels (and not accompanied by transpose kernels). This negatively impacts performance on power-of-two matrix shapes (POT) due to trashing the LLC. However, it has been found, that tuning for POT shapes likely achieves superior performance when compared to tuning for non-POT shapes of the same range.
 
-```
+```bash
 rm -rf opentuner.db
 ./xgemm_opentuner.py --no-dups 192,256,320,512,768
 
@@ -429,4 +458,63 @@ rm -rf opentuner.db
 ```
 
 Above, the series of matrix multiplications from 192-8K is separately tuned in eight ranges. The tuning script uses the environment variables `LIBXSMM_TGEMM_M`, `LIBXSMM_TGEMM_N`, and `LIBXSMM_TGEMM_K` which are internal to LIBXSMM. These variables are used to request a specific tiling-scheme within LIBXSMM's `libxsmm_?gemm_omp` routines.
+
+## Deep Learning with GxM
+
+### Compiling and Building GxM
+
+1. Install Pre-requisite Libraries: Google logging module (glog), gflags, Google's data interchange format (Protobuf), OpenCV, LMDB
+2. In Makefile.config, set GXM_LIBRARY_PATH variable to the path containing above libraries
+3. In Makefile.config, set LIBXSMM_PATH variable to the path containing LIBXSMM library
+4. Set/clear other flags in Makefile.config as required (see associated comments in Makefile.config)
+5. source setup_env.sh
+6. make clean; make
+
+### Running GxM
+
+The network topology definitions directory is "model_zoo". Currently, it contains definitions for
+AlexNet (without LRN), ResNet-50, Inception v3 along with CIFAR10 and MNIST as simple test definitions.
+Each topology definition is in a .prototxt file. ResNet-50 can run with "dummy data", raw JPEG image data
+or with LMDB. Filenames indicate the data source along with the minibatch size. Inception v3 runs only with
+compressed LMDB data.
+
+The hyperparameter definitions for each topology are also in the corresponding directory under "model_zoo" in
+a .prototxt file with the suffix "solver". For a single-node, this file is called solver.prototxt. For multi-node
+the filename also contains the global minibatch size (=single node minibatch size x number of nodes); e.g., solver_896.prototxt contains hyperparameters for MB=56 per node and 16 nodes. The "solver*" file also contains a
+flag that specifies whether to start execution from a checkpoint (and thus read load weights from the "./weights"
+directory) or from scratch; by default execution starts from scratch.
+
+Optimal parallelization of Convolutional layers in LIBXSMM happens when the number of OpenMP threads = MiniBatch.
+Therefore, on Xeon
+
+```bash
+export OMP_NUM_THREADS=<MiniBatch>
+export KMP_AFFINITY=compact,granularity=fine,1,0
+```
+
+The command line for a training run is:
+
+```bash
+./build/bin/gxm train <topology filename> <hyperparameter filename>
+```
+
+For example:
+
+```bash
+./build/bin/gxm train model_zoo/resnet/1_resnet50_dummy_56.prototxt model_zoo/resnet/solver.prototxt
+```
+
+## Image Convolution
+
+This code sample aims to provide a simple piece of code, which takes an image and produces a visual result as well. For the convolution, LIBXSMM's DNN-domain is used. This sample code cannot use multiple threads (therefore OMP=0) or JIT code generation since parallelization and JIT-vectorization in the DNN-domain are per multiple images and channels respectively. JIT code is vectorized over image channels according to the native vector-width of the processor hence the sample code falls back to a high-level implementation. The code processes only a single image which consists of a single channel (eventually multiple times as per `nrepeat`).
+
+**NOTE**: Multicore and JIT code can be only leveraged with code changes and input data that consists of multiple images or channels (a.k.a. "deep neural networks" or "deep learning"). Please note the collection of [CNN layer samples](https://github.com/hfp/libxsmm/tree/master/samples/deeplaerning/cnnlayer), which achieves both of which.
+
+The executable can run with the following arguments (all arguments are optional):
+
+> iconv   [&lt;filename-in&gt;  [&lt;nrepeat&gt;  [&lt;kw&gt;  [&lt;kh&gt;]  [&lt;filename-out&gt;]]]]
+
+For stable timing (benchmark), the key operation (convolution) may be repeated (`nrepeat`). Further, `kw` and `kh` can specify the kernel-size of the convolution. The `filename-in` and `filename-out` name MHD-files (see [Meta Image File I/O](https://github.com/hfp/libxsmm/blob/master/documentation/libxsmm_aux.md#meta-image-file-io)) used as input and output respectively. The `filename-in` may not exist, and specify the image resolution (`w`[x`h`] where the file `wxh.mhd` is generated in this case).
+
+To load an image from a familiar format (JPG, PNG, etc.), please have a look at [libxsmm_aux.md#meta-image-file-io](Meta Image File I/O).
 
