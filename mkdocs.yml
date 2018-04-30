@@ -28,7 +28,8 @@ pages:
   - "BE: Backend": libxsmm_be.md
 - Samples: libxsmm_samples.md
 - Applications:
-  - CP2K: cp2k.md
+  - CP2K Molecular Dynamics: cp2k.md
+  - GxM Deeplearning: gxm.md
   - TensorFlow: tensorflow.md
 - About:
   - Contributing: CONTRIBUTING.md
