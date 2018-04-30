@@ -34,7 +34,7 @@
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
-#define LSTM_TIMING
+//#define LSTM_TIMING
 
 /* #define NON_FUSED_INPUT_GEMM */
 
@@ -79,6 +79,12 @@ struct rnn_handle {
   ITYPE *z1t;
   ITYPE *z2;
   ITYPE *z;
+  /* UPD */
+  ITYPE* djdht;
+  ITYPE* deltat;
+  ITYPE* djdu;
+  ITYPE* djdw;
+  ITYPE* djdxt;
   libxsmm_bgemm_handle *handlewx;
   libxsmm_bgemm_handle *handleuh;
   libxsmm_bgemm_handle *handlett;
@@ -200,7 +206,65 @@ void matrix_relu(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 # pragma omp parallel for private(i, size)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = (src[i] >= 0) ? src[i] : -src[i];
+    dst[i] = (src[i] >= 0) ? src[i] : 0;
+  }
+}
+
+
+void matrix_sigmoid_inverse(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
+{
+  libxsmm_blasint i;
+  ITYPE exp_value;
+  ITYPE sig_exp;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i, size)
+#endif
+  for (i = 0; i < size; i++) {
+    exp_value = (ITYPE)exp( -src[i]);
+    sig_exp = 1 / (1 + exp_value);
+    dst[i] = (1 - sig_exp)*sig_exp;
+  }
+}
+
+
+void matrix_tanh_inverse(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
+{
+  libxsmm_blasint i;
+  ITYPE sech_value;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i, size)
+#endif
+  for (i = 0; i < size; i++) {
+    sech_value = sech(src[i]);
+    dst[i] = sech_value * sech_value;
+  }
+}
+
+
+void matrix_relu_inverse(libxsmm_blasint size, ITYPE *src, ITYPE *dst, ITYPE *input)
+{
+  libxsmm_blasint i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i, size)
+#endif
+  for (i = 0; i < size; i++) {
+    dst[i] = (input[i] >= 0) ? src[i] : 0;
+  }
+}
+
+
+void matrix_transpose(libxsmm_blasint rows, libxsmm_blasint cols, ITYPE *src, ITYPE *dst)
+{
+  libxsmm_blasint i, j;
+  LIBXSMM_VLA_DECL(2, ITYPE, src2D, src, cols);
+  LIBXSMM_VLA_DECL(2, ITYPE, dst2D, dst, rows);
+#if defined(_OPENMP)
+# pragma omp parallel for private(i, j, rows, cols) collapse(2)
+#endif
+  for (i = 0; i < rows; i++) {
+    for (j = 0; j < cols; j++) {
+      LIBXSMM_VLA_ACCESS(2, dst2D, j, i, rows) = LIBXSMM_VLA_ACCESS(2, src2D, i, j, cols);
+    }
   }
 }
 
@@ -578,6 +642,404 @@ int rnn (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint
     libxsmm_free(z1gold);
     libxsmm_free(z2gold);
     libxsmm_free(zgold);
+    rnn_destroy(&rnn);
+  }
+  fprintf(stdout, "Finished\n");
+
+  return result;
+}
+
+
+void rnn_bwd_upd_init(struct rnn_handle *rnn, ITYPE *djdhgoldt, ITYPE *zgoldt, ITYPE *deltagoldt,
+  ITYPE *ugold, ITYPE *xgoldt, ITYPE *hgoldt, ITYPE *wgold,
+  ITYPE *djdugold, ITYPE *djdwgold, ITYPE *djdxgoldt,
+  const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz,
+  const libxsmm_blasint ldu, const libxsmm_blasint ldh)
+{
+#if defined(CHECK)
+  const char *const env_check = getenv("CHECK");
+  const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+#endif
+  const char transa = 'N', transb = 'N'; /* no transposes */
+  const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
+  const ITYPE alpha = 1, beta = 1;
+  libxsmm_blasint m = rnn->m;
+  libxsmm_blasint n = rnn->n;
+  libxsmm_blasint k = rnn->k;
+  libxsmm_blasint t = rnn->t;
+  ITYPE *djdht = (ITYPE*)rnn->djdht;
+  ITYPE *zt = (ITYPE*)rnn->z;
+  ITYPE *deltat = (ITYPE*)rnn->deltat;
+  ITYPE *u = (ITYPE*)rnn->u;
+  ITYPE *xt = (ITYPE*)rnn->xt;
+  ITYPE *ht = (ITYPE*)rnn->h;
+  ITYPE *w = (ITYPE*)rnn->w;
+  ITYPE *djdu = (ITYPE*)rnn->djdu;
+  ITYPE *djdw = (ITYPE*)rnn->djdw;
+  ITYPE *djdxt = (ITYPE*)rnn->djdxt;
+  libxsmm_bgemm_handle *handlewx = rnn->handlewx;
+  libxsmm_bgemm_handle *handleuh = rnn->handleuh;
+  LIBXSMM_VLA_DECL(2, ITYPE, djdhgold, djdhgoldt, ldh * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, zgold, zgoldt, ldz * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, deltagold, deltagoldt, ldz * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, xgold, xgoldt, ldx * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, hgold, hgoldt, ldh * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, djdh, djdht, m * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, z, zt, m * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, delta, deltat, m * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, x, xt, k * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, h, ht, m * n);
+
+  matinit(42, ugold, m, m, ldu, 1.0);
+  LIBXSMM_MATINIT(ITYPE, 42, wgold, m, k, ldw, 1.0);
+  int it;
+  for (it = 0; it < t; ++it) {
+    matinit(24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, ldh * n), m, n, ldh, 1.0);
+    matinit(24, &LIBXSMM_VLA_ACCESS(2, zgold, it, 0, ldz * n), m, n, ldz, 1.0);
+    matinit( 0, &LIBXSMM_VLA_ACCESS(2, deltagold, it, 0, ldz * n), m, n, ldz, 0.0);
+    matinit(24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, ldx * n), k, n, ldx, 1.0);
+    matinit(24, &LIBXSMM_VLA_ACCESS(2, hgold, it, 0, ldh * n), m, n, ldh, 1.0);
+    
+    matinit( 0, &LIBXSMM_VLA_ACCESS(2, delta, it, 0, m * n), m, n, m, 0.0);
+  }
+  libxsmm_bgemm_copyin_a(handlewx, ugold, &ldu, u);
+  for (it = 0; it < t; ++it) {
+    libxsmm_bgemm_copyin_b(handleuh, &LIBXSMM_VLA_ACCESS(2, hgold, it, 0, ldh * n), &ldh, &LIBXSMM_VLA_ACCESS(2, h, it, 0, m * n));
+  }
+  matrix_transpose(m, k, wgold, w);
+  for (it = 0; it < t; ++it) {
+    matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, ldh * n), &LIBXSMM_VLA_ACCESS(2, djdh, it, 0, m * n));
+    matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, zgold, it, 0, ldz * n), &LIBXSMM_VLA_ACCESS(2, z, it, 0, m * n));
+    matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, ldx * n), &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n));
+  }
+#if 0
+#if defined(MKL_ENABLE_AVX512)
+  mkl_enable_instructions(MKL_ENABLE_AVX512);
+#endif
+  /* warmup OpenMP (populate thread pool) */
+  libxsmm_bgemm_omp(handlewx, w, x, &LIBXSMM_VLA_ACCESS(2, z1, 0, 0, m * n), 1);
+#if defined(CHECK)
+  if (!LIBXSMM_FEQ(0, check)) {
+    LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, &LIBXSMM_VLA_ACCESS(2, xgold, 0, 0, ldx * n), &ldx, &beta, z1gold, &ldz);
+  }
+#endif
+  libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(ITYPE),
+    &transa, &transb, &m, &n, &k, &alpha, w, &ldw, x, &ldx, &beta, &LIBXSMM_VLA_ACCESS(2, z1, 0, 0, m * n), &ldz);
+  fprintf(stdout, "\n\n");
+  /* warmup OpenMP (populate thread pool) */
+  libxsmm_bgemm_omp(handleuh, u, h, z2, 1);
+#if defined(CHECK)
+  if (!LIBXSMM_FEQ(0, check)) {
+    LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, ugold, &ldu, hgold, &ldh, &beta, z2gold, &ldz);
+  }
+#endif
+  libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(ITYPE),
+    &transa, &transb, &m, &n, &m, &alpha, u, &ldu, h, &ldh, &beta, z2, &ldz);
+#endif
+  fprintf(stdout, "\n\n");
+}
+
+
+void rnn_bwd_upd_execute(struct rnn_handle *rnn, const int nrepeat, const libxsmm_blasint pass)
+{
+  const char transa = 'N', transb = 'N'; /* no transposes */
+  const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
+  const ITYPE alpha = 1, beta = 1;
+  libxsmm_blasint m = rnn->m;
+  libxsmm_blasint n = rnn->n;
+  libxsmm_blasint k = rnn->k;
+  libxsmm_blasint t = rnn->t;
+  ITYPE *djdht = (ITYPE*)rnn->djdht;
+  ITYPE *zt = (ITYPE*)rnn->z;
+  ITYPE *deltat = (ITYPE*)rnn->deltat;
+  ITYPE *u = (ITYPE*)rnn->u;
+  ITYPE *xt = (ITYPE*)rnn->xt;
+  ITYPE *ht = (ITYPE*)rnn->h;
+  ITYPE *w = (ITYPE*)rnn->w;
+  ITYPE *djdu = (ITYPE*)rnn->djdu;
+  ITYPE *djdw = (ITYPE*)rnn->djdw;
+  ITYPE *djdxt = (ITYPE*)rnn->djdxt;
+  ITYPE* zi = (ITYPE*)libxsmm_malloc(m * n * sizeof(ITYPE));
+  ITYPE* di1 = (ITYPE*)libxsmm_malloc(m * n * sizeof(ITYPE));
+  ITYPE* di2 = (ITYPE*)libxsmm_malloc(m * n * sizeof(ITYPE));
+  ITYPE* dj1 = (ITYPE*)libxsmm_malloc(m * m * sizeof(ITYPE));
+  ITYPE* dw1 = (ITYPE*)libxsmm_malloc(m * k * sizeof(ITYPE));
+  ITYPE* uTp = (ITYPE*)libxsmm_malloc(m * m * sizeof(ITYPE));
+  ITYPE* wTp = (ITYPE*)libxsmm_malloc(m * k * sizeof(ITYPE));
+  ITYPE* hTp = (ITYPE*)libxsmm_malloc(m * n * sizeof(ITYPE));
+  ITYPE* xTp = (ITYPE*)libxsmm_malloc(k * n * sizeof(ITYPE));
+  libxsmm_bgemm_handle *handlewx = rnn->handlewx;
+  libxsmm_bgemm_handle *handleuh = rnn->handleuh;
+  LIBXSMM_VLA_DECL(2, ITYPE, djdh, djdh, m * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, z, zt, m * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, delta, deltat, m * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, x, xt, k * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, h, ht, m * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, djdx, djdxt, k * n);
+  const double gflops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * t * 1E-9;
+  unsigned long long start;
+  double duration;
+#if defined(LSTM_TIMING)
+  Gbl_t_input_total = 0.; Gbl_t_recur_total = 0.; Gbl_t_eltwise_total = 0.; Gbl_t_nonlin_total = 0.;
+  Gbl_t_input = 0; Gbl_t_recur = 0; Gbl_t_eltwise = 0; Gbl_t_nonlin = 0;
+  Gbl_duration_input = 0.; Gbl_duration_recur = 0.; Gbl_duration_eltwise = 0.; Gbl_duration_nonlin = 0.;
+#endif
+
+  int s;
+  int i;
+  start = libxsmm_timer_tick();
+  for (s = 0; s < nrepeat; ++s) {
+    matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, z, t-1, 0, m * n), zi);
+    matrix_eltwise_mult(m * n, zi, &LIBXSMM_VLA_ACCESS(2, djdh, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, t-1, 0, m * n));
+    matrix_transpose(m, m, u, uTp);
+    for (i = t-2; i >= 0; --i) {
+      matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, z, i, 0, m * n), zi);
+      libxsmm_bgemm_omp(handlewx, uTp, &LIBXSMM_VLA_ACCESS(2, delta, i+1, 0, m * n), di1, 1);
+      /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, uTp, &ldu, &LIBXSMM_VLA_ACCESS(2, delta, i+1, 0, m * n), &ldz, &beta, di1, &ldz);*/
+      matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdh, i, 0, m * n), di1, di2);
+      matrix_eltwise_mult(m * n, zi, di2, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n));
+    }
+    if (pass == 1 || pass == 3) {
+      matrix_transpose(m, k, w, wTp);
+      for (i = 0; i < t; ++i) {
+        libxsmm_bgemm_omp(handleuh, wTp, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), 1);
+        /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, wTp, &ldw, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &ldx);*/
+      }
+    }
+    if (pass == 2 || pass == 3) {
+      for (i = 0; i < t; ++i) {
+        matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, h, i, 0, m * n), hTp);
+        libxsmm_bgemm_omp(handleuh, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), hTp, dj1, 1);
+        /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &m, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &ldz, hTp, &ldh, &beta, dj1, &ldz);*/
+        matrix_add(m*m, dj1, djdu, djdu);
+        matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, x, i, 0, k * n), xTp);
+        libxsmm_bgemm_omp(handleuh, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), wTp, dw1, 1);
+        /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &ldz, xTp, &ldx, &beta, dw1, &ldw);*/
+        matrix_add(m*k, dw1, djdw, djdw);
+      }
+    } 
+  }
+  duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+#if defined(LSTM_TIMING)
+  double t_total = Gbl_t_input_total + Gbl_t_recur_total + Gbl_t_eltwise_total + Gbl_t_nonlin_total;
+  fprintf(stdout, "Percentage of time spent in input matrix multiplication: %lf\n", Gbl_t_input_total*100.0/t_total);
+  fprintf(stdout, "Percentage of time spent in recurrence matrix multiplication: %lf\n", Gbl_t_recur_total*100.0/t_total);
+  fprintf(stdout, "Percentage of time spent in element-wise operations: %lf\n", Gbl_t_eltwise_total*100.0/t_total);
+  fprintf(stdout, "Percentage of time spent in non-linear operations: %lf\n", Gbl_t_nonlin_total*100.0/t_total);
+#endif
+}
+
+
+
+int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k, const libxsmm_blasint t,
+         const libxsmm_blasint bm, const libxsmm_blasint bn, const libxsmm_blasint bk, const libxsmm_bgemm_order order, const int nrepeat,
+         const libxsmm_blasint b_m1, const libxsmm_blasint b_n1, const libxsmm_blasint b_k1, const libxsmm_blasint b_k2, const libxsmm_blasint b_m2,
+         const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz, const libxsmm_blasint ldu, const libxsmm_blasint ldh,
+         const libxsmm_blasint pass)
+{
+#if defined(CHECK)
+  const char *const env_check = getenv("CHECK");
+  const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+#endif
+  int result = EXIT_SUCCESS;
+  /* TODO: Check the computation of gflops */
+  const double gflops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * t * 1E-9;
+  const char transa = 'N', transb = 'N'; /* no transposes */
+  const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
+  const ITYPE alpha = 1, beta = 1;
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload target(LIBXSMM_OFFLOAD_TARGET)
+#endif
+  {
+    ITYPE* djdhgoldt = (ITYPE*)libxsmm_malloc(ldh * n * sizeof(ITYPE) * t);
+    ITYPE* zgoldt = (ITYPE*)libxsmm_malloc(ldz * n * sizeof(ITYPE) * t);
+    ITYPE* deltagoldt = (ITYPE*)libxsmm_malloc(ldz * n * sizeof(ITYPE) * t);
+    ITYPE* ugold = (ITYPE*)libxsmm_malloc(ldu * m * sizeof(ITYPE));
+    ITYPE* xgoldt = (ITYPE*)libxsmm_malloc(ldx * n * sizeof(ITYPE) * t);
+    ITYPE* hgoldt = (ITYPE*)libxsmm_malloc(ldh * n * sizeof(ITYPE) * t);
+    ITYPE* djdugold = (ITYPE*)libxsmm_malloc(ldu * m * sizeof(ITYPE));
+    ITYPE* djdwgold = (ITYPE*)libxsmm_malloc(ldw * k * sizeof(ITYPE));
+    ITYPE* djdxgoldt = (ITYPE*)libxsmm_malloc(ldx * n * sizeof(ITYPE) * t);
+    ITYPE* wgold = (ITYPE*)libxsmm_malloc(ldw * k * sizeof(ITYPE));
+    ITYPE* zigold = (ITYPE*)libxsmm_malloc(ldz * n * sizeof(ITYPE));
+    ITYPE* di1gold = (ITYPE*)libxsmm_malloc(ldz * n * sizeof(ITYPE));
+    ITYPE* di2gold = (ITYPE*)libxsmm_malloc(ldz * n * sizeof(ITYPE));
+    ITYPE* dj1gold = (ITYPE*)libxsmm_malloc(ldu * m * sizeof(ITYPE));
+    ITYPE* dw1gold = (ITYPE*)libxsmm_malloc(ldw * k * sizeof(ITYPE));
+    ITYPE* ugoldTp = (ITYPE*)libxsmm_malloc(ldu * m * sizeof(ITYPE));
+    ITYPE* wgoldTp = (ITYPE*)libxsmm_malloc(ldw * k * sizeof(ITYPE));
+    ITYPE* hgoldTp = (ITYPE*)libxsmm_malloc(ldh * n * sizeof(ITYPE));
+    ITYPE* xgoldTp = (ITYPE*)libxsmm_malloc(ldx * n * sizeof(ITYPE));
+
+    ITYPE* djdht = (ITYPE*)libxsmm_malloc(m * n * sizeof(ITYPE) * t);
+    ITYPE* zt = (ITYPE*)libxsmm_malloc(m * n * sizeof(ITYPE) * t);
+    ITYPE* deltat = (ITYPE*)libxsmm_malloc(m * n * sizeof(ITYPE) * t);
+    ITYPE* u = (ITYPE*)libxsmm_malloc(m * m * sizeof(ITYPE));
+    ITYPE* xt = (ITYPE*)libxsmm_malloc(k * n * sizeof(ITYPE) * t);
+    ITYPE* ht = (ITYPE*)libxsmm_malloc(m * n * sizeof(ITYPE) * t);
+    ITYPE* djdu = (ITYPE*)libxsmm_malloc(m * m * sizeof(ITYPE));
+    ITYPE* djdw = (ITYPE*)libxsmm_malloc(m * k * sizeof(ITYPE));
+    ITYPE* djdxt = (ITYPE*)libxsmm_malloc(k * n * sizeof(ITYPE) * t);
+    ITYPE* w = (ITYPE*)libxsmm_malloc(m * k * sizeof(ITYPE));
+    LIBXSMM_VLA_DECL(2, ITYPE, djdhgold, djdhgoldt, ldh * n);
+    LIBXSMM_VLA_DECL(2, ITYPE, zgold, zgoldt, ldz * n);
+    LIBXSMM_VLA_DECL(2, ITYPE, deltagold, deltagoldt, ldz * n);
+    LIBXSMM_VLA_DECL(2, ITYPE, xgold, xgoldt, ldx * n);
+    LIBXSMM_VLA_DECL(2, ITYPE, hgold, hgoldt, ldh * n);
+    LIBXSMM_VLA_DECL(2, ITYPE, djdxgold, djdxgoldt, ldx * n);
+    LIBXSMM_VLA_DECL(2, ITYPE, djdx, djdxt, k * n);
+    libxsmm_bgemm_handle* handlewx = 0;
+    libxsmm_bgemm_handle* handleuh = 0;
+    libxsmm_bgemm_handle* handlett = 0;
+    const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
+    handlewx = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
+      m, m, n, &bm, &bm, &bn, &b_m1, &b_m1, &b_n1, &b_m2, /* last one should be &b_n2 */
+      &alpha, &beta, &gemm_flags, &strategy, &order);
+    handleuh = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
+      m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
+      &alpha, &beta, &gemm_flags, &strategy, &order);
+
+    struct rnn_handle rnn;
+    rnn.m = m;
+    rnn.n = n;
+    rnn.k = k;
+    rnn.t = t;
+    rnn.w = w;
+    rnn.xt = xt;
+    rnn.u = u;
+    rnn.h = ht;
+    rnn.z = zt;
+    rnn.djdht = djdht;
+    rnn.deltat = deltat;
+    rnn.djdu = djdu;
+    rnn.djdw = djdw;
+    rnn.djdxt = djdxt;
+    rnn.handlewx = handlewx;
+    rnn.handleuh = handleuh;
+    rnn.handlett = handlett;
+
+    if (0 != handlewx && 0 != handleuh) {
+      rnn_bwd_upd_init(&rnn, djdhgoldt, zgoldt, deltagoldt, ugold, xgoldt, hgoldt, wgold, djdugold, djdwgold, djdxgoldt, ldw, ldx, ldz, ldu, ldh);
+      rnn_bwd_upd_execute(&rnn, nrepeat, pass);
+#if defined(CHECK)
+      unsigned long long start;
+      double duration;
+      int s;
+      if (!LIBXSMM_FEQ(0, check)) { /* validate result against LAPACK/BLAS xGEMM */
+        ITYPE* djtest = 0;
+        int i;
+        start = libxsmm_timer_tick();
+        for (s = 0; s < nrepeat; ++s) {
+          matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, zgold, t-1, 0, m * n), zigold);
+          matrix_eltwise_mult(m * n, zigold, &LIBXSMM_VLA_ACCESS(2, djdhgold, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, deltagold, t-1, 0, m * n));
+          matrix_transpose(m, m, ugold, ugoldTp);
+          for (i = t-2; i >= 0; --i) {
+            matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, zgold, i, 0, m * n), zigold);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, ugoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, deltagold, i+1, 0, m * n), &ldz, &beta, di1gold, &ldz);
+            matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, i, 0, m * n), di1gold, di2gold);
+            matrix_eltwise_mult(m * n, zigold, di2gold, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n));
+          }
+          if (pass == 1 || pass == 3) {
+            matrix_transpose(m, k, wgold, wgoldTp);
+            for (i = 0; i < t; ++i) {
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, wgoldTp, &ldw, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, i, 0, k * n), &ldx);
+            }
+          }
+          if (pass == 2 || pass == 3) {
+            for (i = 0; i < t; ++i) {
+              matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, hgold, i, 0, m * n), hgoldTp);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &m, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, hgoldTp, &ldh, &beta, dj1gold, &ldz);
+              matrix_add(m*m, dj1gold, djdugold, djdugold);
+              matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, i, 0, k * n), xgoldTp);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, xgoldTp, &ldx, &beta, dw1gold, &ldw);
+              matrix_add(m*k, dw1gold, djdwgold, djdwgold);
+            }
+          }
+        }
+        duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+        if (0 < duration) {
+          fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
+        }
+        /* free memory not needed further; avoid double-free later on */
+        libxsmm_free(djdhgoldt); djdhgoldt = 0;
+        libxsmm_free(zgoldt); zgoldt = 0;
+        libxsmm_free(deltagoldt); deltagoldt = 0;
+        libxsmm_free(ugold); ugold = 0;
+        libxsmm_free(xgoldt); xgoldt = 0;
+        libxsmm_free(hgoldt); hgoldt = 0;
+        libxsmm_free(wgold); wgold = 0;
+        libxsmm_free(zigold); zigold = 0;
+        libxsmm_free(di1gold); di1gold = 0;
+        libxsmm_free(di2gold); di2gold = 0;
+        libxsmm_free(dj1gold); dj1gold = 0;
+        libxsmm_free(ugoldTp); ugoldTp = 0;
+        libxsmm_free(wgoldTp); wgoldTp = 0;
+        libxsmm_free(hgoldTp); hgoldTp = 0;
+        libxsmm_free(xgoldTp); xgoldTp = 0;
+        if (pass == 1 || pass == 3) {
+          /* allocate C-matrix in regular format, and perform copy-out */
+          djtest = (ITYPE*)libxsmm_malloc(ldx * n * sizeof(ITYPE));
+          if (0 != djtest) {
+            libxsmm_matdiff_info diff;
+            for (i = 0; i < t; ++i) {
+              libxsmm_bgemm_copyout_c(handleuh, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &ldx, djtest);
+              if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), k, n, &LIBXSMM_VLA_ACCESS(2, djdxgold, i, 0, k * n), djtest, &ldx, &ldx, &diff)) {
+                fprintf(stdout, "dJ/dX_%d::\tdiff: L2abs=%f L2rel=%f\n", i, diff.l2_abs, diff.linf_abs);
+                if (check < 100.0 * diff.normf_rel) {
+                  fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
+                  result = EXIT_FAILURE;
+                }
+              }
+            }
+            libxsmm_free(djtest);
+          }
+        }
+        if (pass == 2 || pass == 3) {
+          /* allocate C-matrix in regular format, and perform copy-out */
+          djtest = (ITYPE*)libxsmm_malloc(ldu * m * sizeof(ITYPE));
+          if (0 != djtest) {
+            libxsmm_matdiff_info diff;
+            libxsmm_bgemm_copyout_c(handleuh, djdu, &ldu, djtest);
+            if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, m, djdugold, djtest, &ldu, &ldu, &diff)) {
+              fprintf(stdout, "dJ/dU::\tdiff: L2abs=%f L2rel=%f\n", diff.l2_abs, diff.linf_abs);
+              if (check < 100.0 * diff.normf_rel) {
+                fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
+                result = EXIT_FAILURE;
+              }
+            }
+            libxsmm_free(djtest);
+          }
+          /* allocate C-matrix in regular format, and perform copy-out */
+          djtest = (ITYPE*)libxsmm_malloc(ldw * k * sizeof(ITYPE));
+          if (0 != djtest) {
+            libxsmm_matdiff_info diff;
+            libxsmm_bgemm_copyout_c(handlewx, djdw, &ldw, djtest);
+            if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, k, djdwgold, djtest, &ldw, &ldw, &diff)) {
+              fprintf(stdout, "dJ/dW::\tdiff: L2abs=%f L2rel=%f\n", diff.l2_abs, diff.linf_abs);
+              if (check < 100.0 * diff.normf_rel) {
+                fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
+                result = EXIT_FAILURE;
+              }
+            }
+            libxsmm_free(djtest);
+          }
+        }
+      }
+#endif
+      libxsmm_bgemm_handle_destroy(handlewx);
+      libxsmm_bgemm_handle_destroy(handleuh);
+    }
+    else {
+      fprintf(stderr, "FAILED to create BGEMM-handle! For details retry with LIBXSMM_VERBOSE=1.\n");
+      result = EXIT_FAILURE;
+    }
+    libxsmm_free(djdht);
+    libxsmm_free(zt);
+    libxsmm_free(deltat);
+    libxsmm_free(u);
+    libxsmm_free(xt);
+    libxsmm_free(ht);
     rnn_destroy(&rnn);
   }
   fprintf(stdout, "Finished\n");
@@ -1347,6 +1809,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint ldu = (19 < argc ? atoi(argv[19]) : m);
   const libxsmm_blasint ldh = (20 < argc ? atoi(argv[20]) : m);
   const libxsmm_blasint reuse = (21 < argc ? atoi(argv[21]) : 1);
+  const libxsmm_blasint pass = (22 < argc ? atoi(argv[22]) : 0);
   int result = EXIT_SUCCESS;
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) { /* check command line */
     printf("\nUsage: ./lstmcell [type: 0--RNN, 1--LSTM] [M] [N] [K] [time_steps > 1] [bm] [bn] [bk] [order] [reps] [b_m1] [b_n1] [b_k1] [b_k2] [b_m2]\n\n");
@@ -1358,8 +1821,16 @@ int main(int argc, char* argv[])
   }
   if (type == 0) {
     fprintf(stdout, "Running RNN ...\n");
-    return rnn (m, n, k, t, bm, bn, bk, order, nrepeat, b_m1, b_n1, b_k1, b_k2, b_m2, ldw, ldx, ldz, ldu, ldh, reuse);
+    if (pass == 0) {
+      return rnn (m, n, k, t, bm, bn, bk, order, nrepeat, b_m1, b_n1, b_k1, b_k2, b_m2, ldw, ldx, ldz, ldu, ldh, reuse);
+    } else {
+      return rnn_bwd_upd(m, n, k, t, bm, bn, bk, order, nrepeat, b_m1, b_n1, b_k1, b_k2, b_m2, ldw, ldx, ldz, ldu, ldh, pass);
+    }
   } else if (type == 1) {
+    if (pass != 0) {
+      printf("Only forward pass (pass = 0) is currently implemented for LSTM\n\n");
+      return result;
+    }
     fprintf(stdout, "Running LSTM ...\n");
     return lstm(m, n, k, t, bm, bn, bk, order, nrepeat, b_m1, b_n1, b_k1, b_k2, b_m2, ldw, ldx, ldz, ldu, ldh, reuse);
   } else {
