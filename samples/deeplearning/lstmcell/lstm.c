@@ -88,6 +88,7 @@ struct rnn_handle {
   libxsmm_bgemm_handle *handlewx;
   libxsmm_bgemm_handle *handleuh;
   libxsmm_bgemm_handle *handlett;
+  libxsmm_bgemm_handle *handlewd;
 };
 
 struct lstm_handle {
@@ -677,8 +678,10 @@ void rnn_bwd_upd_init(struct rnn_handle *rnn, ITYPE *djdhgoldt, ITYPE *zgoldt, I
   ITYPE *djdu = (ITYPE*)rnn->djdu;
   ITYPE *djdw = (ITYPE*)rnn->djdw;
   ITYPE *djdxt = (ITYPE*)rnn->djdxt;
-  libxsmm_bgemm_handle *handlewx = rnn->handlewx;
-  libxsmm_bgemm_handle *handleuh = rnn->handleuh;
+  libxsmm_bgemm_handle *handleud = rnn->handlewx;
+  libxsmm_bgemm_handle *handledh = rnn->handleuh;
+  libxsmm_bgemm_handle *handledx = rnn->handlett;
+  libxsmm_bgemm_handle *handlewd = rnn->handlewd;
   LIBXSMM_VLA_DECL(2, ITYPE, djdhgold, djdhgoldt, ldh * n);
   LIBXSMM_VLA_DECL(2, ITYPE, zgold, zgoldt, ldz * n);
   LIBXSMM_VLA_DECL(2, ITYPE, deltagold, deltagoldt, ldz * n);
@@ -702,15 +705,15 @@ void rnn_bwd_upd_init(struct rnn_handle *rnn, ITYPE *djdhgoldt, ITYPE *zgoldt, I
     
     matinit( 0, &LIBXSMM_VLA_ACCESS(2, delta, it, 0, m * n), m, n, m, 0.0);
   }
-  libxsmm_bgemm_copyin_a(handlewx, ugold, &ldu, u);
+  libxsmm_bgemm_copyin_a(handleud, ugold, &ldu, u);
   for (it = 0; it < t; ++it) {
-    libxsmm_bgemm_copyin_b(handleuh, &LIBXSMM_VLA_ACCESS(2, hgold, it, 0, ldh * n), &ldh, &LIBXSMM_VLA_ACCESS(2, h, it, 0, m * n));
+    libxsmm_bgemm_copyin_b(handledh, &LIBXSMM_VLA_ACCESS(2, hgold, it, 0, ldh * n), &ldh, &LIBXSMM_VLA_ACCESS(2, h, it, 0, m * n));
+    libxsmm_bgemm_copyin_b(handledx, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, ldx * n), &ldx, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n));
   }
-  matrix_transpose(m, k, wgold, w);
+  libxsmm_bgemm_copyin_a(handlewd, wgold, &ldw, w);
   for (it = 0; it < t; ++it) {
     matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, ldh * n), &LIBXSMM_VLA_ACCESS(2, djdh, it, 0, m * n));
     matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, zgold, it, 0, ldz * n), &LIBXSMM_VLA_ACCESS(2, z, it, 0, m * n));
-    matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, ldx * n), &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n));
   }
 #if 0
 #if defined(MKL_ENABLE_AVX512)
@@ -768,8 +771,10 @@ void rnn_bwd_upd_execute(struct rnn_handle *rnn, const int nrepeat, const libxsm
   ITYPE* wTp = (ITYPE*)libxsmm_malloc(m * k * sizeof(ITYPE));
   ITYPE* hTp = (ITYPE*)libxsmm_malloc(m * n * sizeof(ITYPE));
   ITYPE* xTp = (ITYPE*)libxsmm_malloc(k * n * sizeof(ITYPE));
-  libxsmm_bgemm_handle *handlewx = rnn->handlewx;
-  libxsmm_bgemm_handle *handleuh = rnn->handleuh;
+  libxsmm_bgemm_handle *handleud = rnn->handlewx;
+  libxsmm_bgemm_handle *handledh = rnn->handleuh;
+  libxsmm_bgemm_handle *handledx = rnn->handlett;
+  libxsmm_bgemm_handle *handlewd = rnn->handlewd;
   LIBXSMM_VLA_DECL(2, ITYPE, djdh, djdh, m * n);
   LIBXSMM_VLA_DECL(2, ITYPE, z, zt, m * n);
   LIBXSMM_VLA_DECL(2, ITYPE, delta, deltat, m * n);
@@ -794,7 +799,7 @@ void rnn_bwd_upd_execute(struct rnn_handle *rnn, const int nrepeat, const libxsm
     matrix_transpose(m, m, u, uTp);
     for (i = t-2; i >= 0; --i) {
       matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, z, i, 0, m * n), zi);
-      libxsmm_bgemm_omp(handlewx, uTp, &LIBXSMM_VLA_ACCESS(2, delta, i+1, 0, m * n), di1, 1);
+      libxsmm_bgemm_omp(handleud, uTp, &LIBXSMM_VLA_ACCESS(2, delta, i+1, 0, m * n), di1, 1);
       /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, uTp, &ldu, &LIBXSMM_VLA_ACCESS(2, delta, i+1, 0, m * n), &ldz, &beta, di1, &ldz);*/
       matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdh, i, 0, m * n), di1, di2);
       matrix_eltwise_mult(m * n, zi, di2, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n));
@@ -802,18 +807,18 @@ void rnn_bwd_upd_execute(struct rnn_handle *rnn, const int nrepeat, const libxsm
     if (pass == 1 || pass == 3) {
       matrix_transpose(m, k, w, wTp);
       for (i = 0; i < t; ++i) {
-        libxsmm_bgemm_omp(handleuh, wTp, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), 1);
+        libxsmm_bgemm_omp(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), 1);
         /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, wTp, &ldw, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &ldx);*/
       }
     }
     if (pass == 2 || pass == 3) {
       for (i = 0; i < t; ++i) {
         matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, h, i, 0, m * n), hTp);
-        libxsmm_bgemm_omp(handleuh, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), hTp, dj1, 1);
+        libxsmm_bgemm_omp(handledh, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), hTp, dj1, 1);
         /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &m, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &ldz, hTp, &ldh, &beta, dj1, &ldz);*/
         matrix_add(m*m, dj1, djdu, djdu);
         matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, x, i, 0, k * n), xTp);
-        libxsmm_bgemm_omp(handleuh, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), wTp, dw1, 1);
+        libxsmm_bgemm_omp(handledx, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), xTp, dw1, 1);
         /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &ldz, xTp, &ldx, &beta, dw1, &ldw);*/
         matrix_add(m*k, dw1, djdw, djdw);
       }
@@ -833,9 +838,9 @@ void rnn_bwd_upd_execute(struct rnn_handle *rnn, const int nrepeat, const libxsm
 
 int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k, const libxsmm_blasint t,
          const libxsmm_blasint bm, const libxsmm_blasint bn, const libxsmm_blasint bk, const libxsmm_bgemm_order order, const int nrepeat,
-         const libxsmm_blasint b_m1, const libxsmm_blasint b_n1, const libxsmm_blasint b_k1, const libxsmm_blasint b_k2, const libxsmm_blasint b_m2,
-         const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz, const libxsmm_blasint ldu, const libxsmm_blasint ldh,
-         const libxsmm_blasint pass)
+         const libxsmm_blasint b_m1, const libxsmm_blasint b_n1, const libxsmm_blasint b_k1, const libxsmm_blasint b_m2, const libxsmm_blasint b_n2,
+         const libxsmm_blasint b_k2, const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz, const libxsmm_blasint ldu, 
+         const libxsmm_blasint ldh, const libxsmm_blasint pass)
 {
 #if defined(CHECK)
   const char *const env_check = getenv("CHECK");
@@ -889,16 +894,23 @@ int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_
     LIBXSMM_VLA_DECL(2, ITYPE, hgold, hgoldt, ldh * n);
     LIBXSMM_VLA_DECL(2, ITYPE, djdxgold, djdxgoldt, ldx * n);
     LIBXSMM_VLA_DECL(2, ITYPE, djdx, djdxt, k * n);
-    libxsmm_bgemm_handle* handlewx = 0;
-    libxsmm_bgemm_handle* handleuh = 0;
-    libxsmm_bgemm_handle* handlett = 0;
+    libxsmm_bgemm_handle* handleud = 0;
+    libxsmm_bgemm_handle* handledh = 0;
+    libxsmm_bgemm_handle* handledx = 0;
+    libxsmm_bgemm_handle* handlewd = 0;
     const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
-    handlewx = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
-      m, m, n, &bm, &bm, &bn, &b_m1, &b_m1, &b_n1, &b_m2, /* last one should be &b_n2 */
-      &alpha, &beta, &gemm_flags, &strategy, &order);
-    handleuh = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
+    handleud = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
       m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
-      &alpha, &beta, &gemm_flags, &strategy, &order);
+      &alpha, &beta, &gemm_flags, &strategy, &order); /* U^T*delta */
+    handledh = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
+      m, m, n, &bm, &bm, &bn, &b_m1, &b_m1, &b_n1, &b_n2,
+      &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*h^T */
+    handledx = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
+      m, k, n, &bm, &bk, &bn, &b_m1, &b_k1, &b_n1, &b_n2,
+      &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*x^T */
+    handlewd = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
+      k, n, m, &bk, &bn, &bm, &b_k1, &b_n1, &b_m1, &b_m2,
+      &alpha, &beta, &gemm_flags, &strategy, &order); /* W^T*delta */
 
     struct rnn_handle rnn;
     rnn.m = m;
@@ -915,11 +927,12 @@ int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_
     rnn.djdu = djdu;
     rnn.djdw = djdw;
     rnn.djdxt = djdxt;
-    rnn.handlewx = handlewx;
-    rnn.handleuh = handleuh;
-    rnn.handlett = handlett;
+    rnn.handlewx = handleud;
+    rnn.handleuh = handledh;
+    rnn.handlett = handledx;
+    rnn.handlewd = handlewd;
 
-    if (0 != handlewx && 0 != handleuh) {
+    if (0 != handleud && 0 != handledh && 0 != handledx && 0 != handlewd) {
       rnn_bwd_upd_init(&rnn, djdhgoldt, zgoldt, deltagoldt, ugold, xgoldt, hgoldt, wgold, djdugold, djdwgold, djdxgoldt, ldw, ldx, ldz, ldu, ldh);
       rnn_bwd_upd_execute(&rnn, nrepeat, pass);
 #if defined(CHECK)
@@ -983,7 +996,7 @@ int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_
           if (0 != djtest) {
             libxsmm_matdiff_info diff;
             for (i = 0; i < t; ++i) {
-              libxsmm_bgemm_copyout_c(handleuh, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &ldx, djtest);
+              libxsmm_bgemm_copyout_c(handlewd, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &ldx, djtest);
               if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), k, n, &LIBXSMM_VLA_ACCESS(2, djdxgold, i, 0, k * n), djtest, &ldx, &ldx, &diff)) {
                 fprintf(stdout, "dJ/dX_%d::\tdiff: L2abs=%f L2rel=%f\n", i, diff.l2_abs, diff.linf_abs);
                 if (check < 100.0 * diff.normf_rel) {
@@ -1000,7 +1013,7 @@ int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_
           djtest = (ITYPE*)libxsmm_malloc(ldu * m * sizeof(ITYPE));
           if (0 != djtest) {
             libxsmm_matdiff_info diff;
-            libxsmm_bgemm_copyout_c(handleuh, djdu, &ldu, djtest);
+            libxsmm_bgemm_copyout_c(handledh, djdu, &ldu, djtest);
             if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, m, djdugold, djtest, &ldu, &ldu, &diff)) {
               fprintf(stdout, "dJ/dU::\tdiff: L2abs=%f L2rel=%f\n", diff.l2_abs, diff.linf_abs);
               if (check < 100.0 * diff.normf_rel) {
@@ -1014,7 +1027,7 @@ int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_
           djtest = (ITYPE*)libxsmm_malloc(ldw * k * sizeof(ITYPE));
           if (0 != djtest) {
             libxsmm_matdiff_info diff;
-            libxsmm_bgemm_copyout_c(handlewx, djdw, &ldw, djtest);
+            libxsmm_bgemm_copyout_c(handledx, djdw, &ldw, djtest);
             if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, k, djdwgold, djtest, &ldw, &ldw, &diff)) {
               fprintf(stdout, "dJ/dW::\tdiff: L2abs=%f L2rel=%f\n", diff.l2_abs, diff.linf_abs);
               if (check < 100.0 * diff.normf_rel) {
@@ -1027,8 +1040,10 @@ int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_
         }
       }
 #endif
-      libxsmm_bgemm_handle_destroy(handlewx);
-      libxsmm_bgemm_handle_destroy(handleuh);
+      libxsmm_bgemm_handle_destroy(handleud);
+      libxsmm_bgemm_handle_destroy(handledh);
+      libxsmm_bgemm_handle_destroy(handledx);
+      libxsmm_bgemm_handle_destroy(handlewd);
     }
     else {
       fprintf(stderr, "FAILED to create BGEMM-handle! For details retry with LIBXSMM_VERBOSE=1.\n");
@@ -1789,30 +1804,31 @@ int lstm (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasin
 int main(int argc, char* argv[])
 {
   const int type = (1 < argc ? atoi(argv[1]) : 0);
-  const libxsmm_blasint m = (2 < argc ? atoi(argv[2]) : 1024);
-  const libxsmm_blasint k = (4 < argc ? atoi(argv[4]) : m);
-  const libxsmm_blasint n = (3 < argc ? atoi(argv[3]) : k);
-  const libxsmm_blasint t = (5 < argc ? atoi(argv[5]) : 3);
-  const libxsmm_blasint bm = (6 < argc ? atoi(argv[6]) : 32);
-  const libxsmm_blasint bk = (8 < argc ? atoi(argv[8]) : bm);
-  const libxsmm_blasint bn = (7 < argc ? atoi(argv[7]) : bk);
-  const libxsmm_bgemm_order order = (libxsmm_bgemm_order)(9 < argc ? atoi(argv[9]) : 0);
-  const int nrepeat = (10 < argc ? atoi(argv[10]) : 100);
-  const libxsmm_blasint b_m1 = (11 < argc ? atoi(argv[11]) : 1);
-  const libxsmm_blasint b_n1  = (12 < argc ? atoi(argv[12]) : 1);
-  const libxsmm_blasint b_k1 = (13 < argc ? atoi(argv[13]) : 1);
-  const libxsmm_blasint b_k2 = (14 < argc ? atoi(argv[14]) : 1);
-  const libxsmm_blasint b_m2 = (15 < argc ? atoi(argv[15]) : 1);
-  const libxsmm_blasint ldw = (16 < argc ? atoi(argv[16]) : m);
-  const libxsmm_blasint ldx = (17 < argc ? atoi(argv[17]) : k);
-  const libxsmm_blasint ldz = (18 < argc ? atoi(argv[18]) : m);
-  const libxsmm_blasint ldu = (19 < argc ? atoi(argv[19]) : m);
-  const libxsmm_blasint ldh = (20 < argc ? atoi(argv[20]) : m);
-  const libxsmm_blasint reuse = (21 < argc ? atoi(argv[21]) : 1);
-  const libxsmm_blasint pass = (22 < argc ? atoi(argv[22]) : 0);
+  const libxsmm_blasint pass = (2 < argc ? atoi(argv[2]) : 0);
+  const libxsmm_blasint m = (3 < argc ? atoi(argv[3]) : 1024);
+  const libxsmm_blasint k = (5 < argc ? atoi(argv[5]) : m);
+  const libxsmm_blasint n = (4 < argc ? atoi(argv[4]) : k);
+  const libxsmm_blasint t = (6 < argc ? atoi(argv[6]) : 4);
+  const int nrepeat = (7 < argc ? atoi(argv[7]) : 100);
+  const libxsmm_blasint reuse = (8 < argc ? atoi(argv[8]) : 1);
+  const libxsmm_blasint bm = (9 < argc ? atoi(argv[9]) : 32);
+  const libxsmm_blasint bk = (11 < argc ? atoi(argv[11]) : bm);
+  const libxsmm_blasint bn = (10 < argc ? atoi(argv[10]) : bk);
+  const libxsmm_bgemm_order order = (libxsmm_bgemm_order)(12 < argc ? atoi(argv[12]) : 0);
+  const libxsmm_blasint b_m1 = (13 < argc ? atoi(argv[13]) : 1);
+  const libxsmm_blasint b_n1  = (14 < argc ? atoi(argv[14]) : 1);
+  const libxsmm_blasint b_k1 = (15 < argc ? atoi(argv[15]) : 1);
+  const libxsmm_blasint b_m2 = (16 < argc ? atoi(argv[16]) : 1);
+  const libxsmm_blasint b_n2 = (17 < argc ? atoi(argv[17]) : 1);
+  const libxsmm_blasint b_k2 = (18 < argc ? atoi(argv[18]) : 1);
+  const libxsmm_blasint ldw = (19 < argc ? atoi(argv[19]) : m);
+  const libxsmm_blasint ldx = (20 < argc ? atoi(argv[20]) : k);
+  const libxsmm_blasint ldz = (21 < argc ? atoi(argv[21]) : m);
+  const libxsmm_blasint ldu = (22 < argc ? atoi(argv[22]) : m);
+  const libxsmm_blasint ldh = (23 < argc ? atoi(argv[23]) : m);
   int result = EXIT_SUCCESS;
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) { /* check command line */
-    printf("\nUsage: ./lstmcell [type: 0--RNN, 1--LSTM] [M] [N] [K] [time_steps > 1] [bm] [bn] [bk] [order] [reps] [b_m1] [b_n1] [b_k1] [b_k2] [b_m2]\n\n");
+    printf("\nUsage: ./lstmcell [type: 0--RNN, 1--LSTM] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [M] [N] [K] [time_steps > 1] [reps] [reuse (for FWD): 0/1] [bm] [bn] [bk] [order] [b_m1] [b_n1] [b_k1] [b_m2] [b_n2] [b_k2]\n\n");
     return result;
   }
   if (t <= 1) {
@@ -1824,7 +1840,7 @@ int main(int argc, char* argv[])
     if (pass == 0) {
       return rnn (m, n, k, t, bm, bn, bk, order, nrepeat, b_m1, b_n1, b_k1, b_k2, b_m2, ldw, ldx, ldz, ldu, ldh, reuse);
     } else {
-      return rnn_bwd_upd(m, n, k, t, bm, bn, bk, order, nrepeat, b_m1, b_n1, b_k1, b_k2, b_m2, ldw, ldx, ldz, ldu, ldh, pass);
+      return rnn_bwd_upd(m, n, k, t, bm, bn, bk, order, nrepeat, b_m1, b_n1, b_k1, b_m2, b_n2, b_k2, ldw, ldx, ldz, ldu, ldh, pass);
     }
   } else if (type == 1) {
     if (pass != 0) {
