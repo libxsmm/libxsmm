@@ -267,6 +267,14 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descr
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_rm_ac_soa(const libxsmm_gemm_descriptor* descriptor);
 
 /**
+ * Code generation routine for row-major format A matrix which is multiplied by a dense SOA matrix (each element holds a SIMD-width
+ * wide vector) and the result is another SOA matrix. The memory layout of the SOA matrix is [row][col][soa].
+ * here is no code cache, and user code has to manage the code pointers.
+ * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
+ */
+LIBXSMM_API libxsmm_xmmfunction libxsmm_create_rm_bc_soa(const libxsmm_gemm_descriptor* descriptor);
+
+/**
  * Code generation routine for the CSR format which multiplies a dense matrix B into a dense matrix C.
  * The sparse matrix a is kept in registers.
  * Call libxsmm_release_kernel in order to deallocate the JIT'ted code.
