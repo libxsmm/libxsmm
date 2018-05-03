@@ -96,6 +96,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_bc_soa_avx256_512( libxsmm_gen
       l_max_reg_block = 14;
     }
     l_micro_kernel_config.a_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSD;
+    l_micro_kernel_config.b_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
   } else {
     if ( strcmp(i_arch, "knl") == 0 ||
          strcmp(i_arch, "knm") == 0 ||
@@ -108,6 +109,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_bc_soa_avx256_512( libxsmm_gen
       l_max_reg_block = 14;
     }
     l_micro_kernel_config.a_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
+    l_micro_kernel_config.b_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
   }
 
   /* matching calling convention on Linux */
@@ -183,7 +185,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_bc_soa_avx256_512( libxsmm_gen
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_micro_kernel_config.alu_sub_instruction,
                                      l_gp_reg_mapping.gp_reg_b,
-                                     i_xgemm_desc->n * l_micro_kernel_config.datatype_size );
+                                     i_xgemm_desc->n * l_soa_width * l_micro_kernel_config.datatype_size );
 
     /* reset C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
@@ -208,7 +210,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_bc_soa_avx256_512( libxsmm_gen
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_micro_kernel_config.alu_sub_instruction,
                                      l_gp_reg_mapping.gp_reg_b,
-                                     i_xgemm_desc->n * l_micro_kernel_config.datatype_size );
+                                     i_xgemm_desc->n * l_soa_width * l_micro_kernel_config.datatype_size );
 
     /* reset C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
@@ -222,7 +224,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_bc_soa_avx256_512( libxsmm_gen
 
   /* advance A pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_a,
-                                   l_micro_kernel_config.datatype_size*l_soa_width*i_xgemm_desc->lda);
+                                   l_micro_kernel_config.datatype_size*i_xgemm_desc->lda);
 
   /* advance C pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_c,
@@ -275,7 +277,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_bc_soa_avx256_512_kloop( libxs
                                     i_micro_kernel_config->a_vmove_instruction,
                                     i_gp_reg_mapping->gp_reg_a,
                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                    i_micro_kernel_config->datatype_size,
+                                    0,
                                     i_micro_kernel_config->vector_name,
                                     i_n_blocking, 0, 0 );
 
