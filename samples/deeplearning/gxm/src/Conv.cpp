@@ -769,10 +769,10 @@ void ConvNode::backPropagate()
   impl->backPropagate(tenTopData_, tenWeightData_, tenTopDiff_, tenBotDiff_);
 
 #ifdef CHECK_BLOWUP_FP32
-  float* ptr = (float*)tenTopDiff_->getBuffer();
+  float* cbptr = (float*)tenTopDiff_->getBuffer();
   for(int i=0; i<16; i++)
   {
-    if(isnan(ptr[i]) || isinf(ptr[i]))
+    if(isnan(cbptr[i]) || isinf(cbptr[i]))
     {
       printf("Warning! %s layer BP activations are NaN or Inf\n", nname_.c_str());
       exit(-1);
@@ -870,10 +870,10 @@ void ConvNode::weightUpdate()
   impl->weightUpdate(tenBotData_, tenTopDiff_, tenWeightDiff_, tenBiasDiff_);
 
 #ifdef CHECK_BLOWUP_FP32
-  float* ptr = (float*)tenWeightDiff_->getBuffer();
+  float* cbptr = (float*)tenWeightDiff_->getBuffer();
   for(int i=0; i<16; i++)
   {
-    if(isnan(ptr[i]) || isinf(ptr[i]))
+    if(isnan(cbptr[i]) || isinf(cbptr[i]))
     {
       printf("Warning! %s layer WU gradients are NaN or Inf\n", nname_.c_str());
       exit(-1);
