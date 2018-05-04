@@ -64,6 +64,8 @@
 #include "libxsmm_math.h"
 #include "libxsmm_sync.h"
 #include "libxsmm_dnn.h"
+#include "libxsmm_dnn_rnncell.h"
+#include "libxsmm_dnn_lstmcell.h"
 
 
 /** Initialize the library; pay for setup cost at a specific point. */
