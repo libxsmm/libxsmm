@@ -34,7 +34,7 @@
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
-/* #define LSTM_TIMING */
+#define LSTM_TIMING
 
 /* #define NON_FUSED_INPUT_GEMM */
 
@@ -825,6 +825,7 @@ void rnn_bwd_upd_execute(struct rnn_handle *rnn, const int nrepeat, const libxsm
   libxsmm_blasint n = rnn->n;
   libxsmm_blasint k = rnn->k;
   libxsmm_blasint t = rnn->t;
+  const double gflops = ((3.0 * m * n) + (2.0 * m * m) + (2.0 * m * m * n) + (2.0 * k * m * n))* t * 1E-9;
   ITYPE *djdht = (ITYPE*)rnn->djdht;
   ITYPE *zt = (ITYPE*)rnn->z;
   ITYPE *deltat = (ITYPE*)rnn->deltat;
@@ -854,57 +855,41 @@ void rnn_bwd_upd_execute(struct rnn_handle *rnn, const int nrepeat, const libxsm
   LIBXSMM_VLA_DECL(2, ITYPE, x, xt, k * n);
   LIBXSMM_VLA_DECL(2, ITYPE, h, ht, m * n);
   LIBXSMM_VLA_DECL(2, ITYPE, djdx, djdxt, k * n);
-  const double gflops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * t * 1E-9;
   unsigned long long start;
   double duration;
-#if defined(LSTM_TIMING)
-  Gbl_t_input_total = 0.; Gbl_t_recur_total = 0.; Gbl_t_eltwise_total = 0.; Gbl_t_nonlin_total = 0.;
-  Gbl_t_input = 0; Gbl_t_recur = 0; Gbl_t_eltwise = 0; Gbl_t_nonlin = 0;
-  Gbl_duration_input = 0.; Gbl_duration_recur = 0.; Gbl_duration_eltwise = 0.; Gbl_duration_nonlin = 0.;
-#endif
-
   int s;
   int i;
   start = libxsmm_timer_tick();
   for (s = 0; s < nrepeat; ++s) {
-    matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, z, t-1, 0, m * n), zi);
-    matrix_eltwise_mult(m * n, zi, &LIBXSMM_VLA_ACCESS(2, djdh, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, t-1, 0, m * n));
+    LIBXSMM_MATINIT(ITYPE, 0, &LIBXSMM_VLA_ACCESS(2, delta, t-1, 0, m * n), m, n, m, 0.0);
     matrix_transpose(m, m, u, uTp);
     for (i = t-2; i >= 0; --i) {
-      matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, z, i, 0, m * n), zi);
+      matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, z, i+1, 0, m * n), zi);
       libxsmm_bgemm_omp(handleud, uTp, &LIBXSMM_VLA_ACCESS(2, delta, i+1, 0, m * n), di1, 1);
-      /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, uTp, &ldu, &LIBXSMM_VLA_ACCESS(2, delta, i+1, 0, m * n), &ldz, &beta, di1, &ldz);*/
-      matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdh, i, 0, m * n), di1, di2);
+      matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdh, i+1, 0, m * n), di1, di2);
       matrix_eltwise_mult(m * n, zi, di2, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n));
     }
     if (pass == 1 || pass == 3) {
       matrix_transpose(m, k, w, wTp);
       for (i = 0; i < t; ++i) {
         libxsmm_bgemm_omp(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), 1);
-        /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, wTp, &ldw, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &ldx);*/
       }
     }
     if (pass == 2 || pass == 3) {
       for (i = 0; i < t; ++i) {
         matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, h, i, 0, m * n), hTp);
         libxsmm_bgemm_omp(handledh, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), hTp, dj1, 1);
-        /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &m, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &ldz, hTp, &ldh, &beta, dj1, &ldz);*/
         matrix_add(m*m, dj1, djdu, djdu);
         matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, x, i, 0, k * n), xTp);
         libxsmm_bgemm_omp(handledx, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), xTp, dw1, 1);
-        /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &ldz, xTp, &ldx, &beta, dw1, &ldw);*/
         matrix_add(m*k, dw1, djdw, djdw);
       }
     } 
   }
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-#if defined(LSTM_TIMING)
-  double t_total = Gbl_t_input_total + Gbl_t_recur_total + Gbl_t_eltwise_total + Gbl_t_nonlin_total;
-  fprintf(stdout, "Percentage of time spent in input matrix multiplication: %lf\n", Gbl_t_input_total*100.0/t_total);
-  fprintf(stdout, "Percentage of time spent in recurrence matrix multiplication: %lf\n", Gbl_t_recur_total*100.0/t_total);
-  fprintf(stdout, "Percentage of time spent in element-wise operations: %lf\n", Gbl_t_eltwise_total*100.0/t_total);
-  fprintf(stdout, "Percentage of time spent in non-linear operations: %lf\n", Gbl_t_nonlin_total*100.0/t_total);
-#endif
+  if (0 < duration) {
+    fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
+  }
 }
 
 
@@ -921,10 +906,10 @@ int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_
 #endif
   int result = EXIT_SUCCESS;
   /* TODO: Check the computation of gflops */
-  const double gflops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * t * 1E-9;
+  const double gflops = ((3.0 * m * n) + (2.0 * m * m) + (2.0 * m * m * n) + (2.0 * k * m * n))* t * 1E-9;
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
-  const ITYPE alpha = 1, beta = 1;
+  const ITYPE alpha = 1, beta = 1, beta0 = 0;
   const libxsmm_blasint ldn = n;
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -1035,28 +1020,27 @@ int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_
         int i;
         start = libxsmm_timer_tick();
         for (s = 0; s < nrepeat; ++s) {
-          matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, zgold, t-1, 0, m * n), zigold);
-          matrix_eltwise_mult(m * n, zigold, &LIBXSMM_VLA_ACCESS(2, djdhgold, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, deltagold, t-1, 0, m * n));
+          LIBXSMM_MATINIT(ITYPE, 0, &LIBXSMM_VLA_ACCESS(2, deltagold, t-1, 0, m * n), m, n, ldz, 0.0);
           matrix_transpose(m, m, ugold, ugoldTp);
           for (i = t-2; i >= 0; --i) {
-            matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, zgold, i, 0, m * n), zigold);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, ugoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, deltagold, i+1, 0, m * n), &ldz, &beta, di1gold, &ldz);
-            matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, i, 0, m * n), di1gold, di2gold);
+            matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, zgold, i+1, 0, m * n), zigold);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, ugoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, deltagold, i+1, 0, m * n), &ldz, &beta0, di1gold, &ldz);
+            matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, i+1, 0, m * n), di1gold, di2gold);
             matrix_eltwise_mult(m * n, zigold, di2gold, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n));
           }
           if (pass == 1 || pass == 3) {
             matrix_transpose(m, k, wgold, wgoldTp);
             for (i = 0; i < t; ++i) {
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, i, 0, k * n), &ldx);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, i, 0, k * n), &ldx);
             }
           }
           if (pass == 2 || pass == 3) {
             for (i = 0; i < t; ++i) {
               matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, hgold, i, 0, m * n), hgoldTp);
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &m, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, hgoldTp, &ldn, &beta, dj1gold, &ldz);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &m, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, hgoldTp, &ldn, &beta0, dj1gold, &ldz);
               matrix_add(m*m, dj1gold, djdugold, djdugold);
               matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, i, 0, k * n), xgoldTp);
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldn, xgoldTp, &ldx, &beta, dw1gold, &ldw);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &k, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, xgoldTp, &ldn, &beta0, dw1gold, &ldw);
               matrix_add(m*k, dw1gold, djdwgold, djdwgold);
             }
           }
@@ -2153,6 +2137,7 @@ void lstm_bwd_upd_execute(struct lstm_handle *lstm, const int nrepeat, const lib
   libxsmm_blasint n = lstm->n;
   libxsmm_blasint k = lstm->k;
   libxsmm_blasint t = lstm->t;
+  const double gflops = ((24.0 * m * n) + (4.0 * m * k) + (8.0 * m * n * k) + (4.0 * m * m) + (8.0 * m * n * m) + (4.0 * m * n)) * t * 1E-9;
   ITYPE *wi = (ITYPE*)lstm->wi;
   ITYPE *wf = (ITYPE*)lstm->wf;
   ITYPE *wo = (ITYPE*)lstm->wo;
@@ -2225,16 +2210,8 @@ void lstm_bwd_upd_execute(struct lstm_handle *lstm, const int nrepeat, const lib
   libxsmm_bgemm_handle *handledh = lstm->handleuh;
   libxsmm_bgemm_handle *handledx = lstm->handlett;
   libxsmm_bgemm_handle *handlewd = lstm->handlewd;
-  /* TODO: Find out gflops */
-  const double gflops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * t * 1E-9;
   unsigned long long start;
   double duration;
-#if defined(LSTM_TIMING)
-  Gbl_t_input_total = 0.; Gbl_t_recur_total = 0.; Gbl_t_eltwise_total = 0.; Gbl_t_nonlin_total = 0.;
-  Gbl_t_input = 0; Gbl_t_recur = 0; Gbl_t_eltwise = 0; Gbl_t_nonlin = 0;
-  Gbl_duration_input = 0.; Gbl_duration_recur = 0.; Gbl_duration_eltwise = 0.; Gbl_duration_nonlin = 0.;
-#endif
-
   int s;
   int j;
   start = libxsmm_timer_tick();
@@ -2357,13 +2334,9 @@ void lstm_bwd_upd_execute(struct lstm_handle *lstm, const int nrepeat, const lib
     }
   }
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-#if defined(LSTM_TIMING)
-  double t_total = Gbl_t_input_total + Gbl_t_recur_total + Gbl_t_eltwise_total + Gbl_t_nonlin_total;
-  fprintf(stdout, "Percentage of time spent in input matrix multiplication: %lf\n", Gbl_t_input_total*100.0/t_total);
-  fprintf(stdout, "Percentage of time spent in recurrence matrix multiplication: %lf\n", Gbl_t_recur_total*100.0/t_total);
-  fprintf(stdout, "Percentage of time spent in element-wise operations: %lf\n", Gbl_t_eltwise_total*100.0/t_total);
-  fprintf(stdout, "Percentage of time spent in non-linear operations: %lf\n", Gbl_t_nonlin_total*100.0/t_total);
-#endif
+  if (0 < duration) {
+    fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
+  }
 }
 
 
@@ -2379,10 +2352,10 @@ int lstm_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm
 #endif
   int result = EXIT_SUCCESS;
   /* TODO: Check the computation of gflops */
-  const double gflops = (((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * 4.0 + (4.0 * m * n)) * t * 1E-9;
+  const double gflops = ((24.0 * m * n) + (4.0 * m * k) + (8.0 * m * n * k) + (4.0 * m * m) + (8.0 * m * n * m) + (4.0 * m * n)) * t * 1E-9;
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
-  const ITYPE alpha = 1, beta = 1;
+  const ITYPE alpha = 1, beta = 1, beta0 = 0;
   const libxsmm_blasint ldn = n;
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -2638,24 +2611,24 @@ int lstm_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm
           if (pass == 1 || pass == 3) {
             /* compute djdxgold */
             matrix_transpose(m, k, wigold, wgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdigold, t-1, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdigold, t-1, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
             matrix_transpose(m, k, wfgold, wgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdfgold, t-1, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdfgold, t-1, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
             matrix_transpose(m, k, wogold, wgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdogold, t-1, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdogold, t-1, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
             matrix_transpose(m, k, wcgold, wgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdcgold, t-1, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdcgold, t-1, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
           }
           for (j = t-2; j >= 0; --j) {
             /* compute deltagold */
             matrix_transpose(m, m, rigold, rgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdigold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdigold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
             matrix_transpose(m, m, rfgold, rgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
             matrix_transpose(m, m, rogold, rgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
             matrix_transpose(m, m, rcgold, rgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
             matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, deltagold, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, deltagold, j, 0, m * n));
             /* compute djddgold */
             matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, ogold, j, 0, m * n), d1gold);
@@ -2691,13 +2664,13 @@ int lstm_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm
             if (pass == 1 || pass == 3) {
               /* compute djdxgold */
               matrix_transpose(m, k, wigold, wgoldTp);
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdigold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdigold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
               matrix_transpose(m, k, wfgold, wgoldTp);
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
               matrix_transpose(m, k, wogold, wgoldTp);
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
               matrix_transpose(m, k, wcgold, wgoldTp);
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
             }
           }
           if (pass == 2 || pass == 3) {
