@@ -879,11 +879,9 @@ void rnn_bwd_upd_execute(struct rnn_handle *rnn, const int nrepeat, const libxsm
       for (i = 0; i < t; ++i) {
         matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, h, i, 0, m * n), hTp);
         libxsmm_bgemm_omp(handledh, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), hTp, dj1, 1);
-        /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &m, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &ldz, hTp, &ldh, &beta, dj1, &ldz);*/
         matrix_add(m*m, dj1, djdu, djdu);
         matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, x, i, 0, k * n), xTp);
         libxsmm_bgemm_omp(handledx, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), xTp, dw1, 1);
-        /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &ldz, xTp, &ldx, &beta, dw1, &ldw);*/
         matrix_add(m*k, dw1, djdw, djdw);
       }
     } 
@@ -911,7 +909,7 @@ int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_
   const double gflops = ((3.0 * m * n) + (2.0 * m * m) + (2.0 * m * m * n) + (2.0 * k * m * n))* t * 1E-9;
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
-  const ITYPE alpha = 1, beta = 1;
+  const ITYPE alpha = 1, beta = 1, beta0 = 0;
   const libxsmm_blasint ldn = n;
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -1026,23 +1024,23 @@ int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_
           matrix_transpose(m, m, ugold, ugoldTp);
           for (i = t-2; i >= 0; --i) {
             matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, zgold, i+1, 0, m * n), zigold);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, ugoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, deltagold, i+1, 0, m * n), &ldz, &beta, di1gold, &ldz);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, ugoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, deltagold, i+1, 0, m * n), &ldz, &beta0, di1gold, &ldz);
             matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, i+1, 0, m * n), di1gold, di2gold);
             matrix_eltwise_mult(m * n, zigold, di2gold, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n));
           }
           if (pass == 1 || pass == 3) {
             matrix_transpose(m, k, wgold, wgoldTp);
             for (i = 0; i < t; ++i) {
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, i, 0, k * n), &ldx);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, i, 0, k * n), &ldx);
             }
           }
           if (pass == 2 || pass == 3) {
             for (i = 0; i < t; ++i) {
               matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, hgold, i, 0, m * n), hgoldTp);
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &m, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, hgoldTp, &ldn, &beta, dj1gold, &ldz);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &m, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, hgoldTp, &ldn, &beta0, dj1gold, &ldz);
               matrix_add(m*m, dj1gold, djdugold, djdugold);
               matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, i, 0, k * n), xgoldTp);
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &k, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, xgoldTp, &ldn, &beta, dw1gold, &ldw);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &k, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &ldz, xgoldTp, &ldn, &beta0, dw1gold, &ldw);
               matrix_add(m*k, dw1gold, djdwgold, djdwgold);
             }
           }
@@ -2357,7 +2355,7 @@ int lstm_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm
   const double gflops = ((24.0 * m * n) + (4.0 * m * k) + (8.0 * m * n * k) + (4.0 * m * m) + (8.0 * m * n * m) + (4.0 * m * n)) * t * 1E-9;
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
-  const ITYPE alpha = 1, beta = 1;
+  const ITYPE alpha = 1, beta = 1, beta0 = 0;
   const libxsmm_blasint ldn = n;
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -2613,24 +2611,24 @@ int lstm_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm
           if (pass == 1 || pass == 3) {
             /* compute djdxgold */
             matrix_transpose(m, k, wigold, wgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdigold, t-1, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdigold, t-1, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
             matrix_transpose(m, k, wfgold, wgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdfgold, t-1, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdfgold, t-1, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
             matrix_transpose(m, k, wogold, wgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdogold, t-1, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdogold, t-1, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
             matrix_transpose(m, k, wcgold, wgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdcgold, t-1, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdcgold, t-1, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, t-1, 0, k * n), &ldx);
           }
           for (j = t-2; j >= 0; --j) {
             /* compute deltagold */
             matrix_transpose(m, m, rigold, rgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdigold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdigold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
             matrix_transpose(m, m, rfgold, rgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
             matrix_transpose(m, m, rogold, rgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
             matrix_transpose(m, m, rcgold, rgoldTp);
-            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
+            LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rgoldTp, &ldu, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, deltagold, j+1, 0, m * n), &ldz);
             matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, deltagold, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, deltagold, j, 0, m * n));
             /* compute djddgold */
             matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, ogold, j, 0, m * n), d1gold);
@@ -2666,13 +2664,13 @@ int lstm_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm
             if (pass == 1 || pass == 3) {
               /* compute djdxgold */
               matrix_transpose(m, k, wigold, wgoldTp);
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdigold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdigold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
               matrix_transpose(m, k, wfgold, wgoldTp);
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
               matrix_transpose(m, k, wogold, wgoldTp);
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
               matrix_transpose(m, k, wcgold, wgoldTp);
-              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, m * n), &ldz, &beta, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
+              LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &ldx, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, m * n), &ldz, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), &ldx);
             }
           }
           if (pass == 2 || pass == 3) {
