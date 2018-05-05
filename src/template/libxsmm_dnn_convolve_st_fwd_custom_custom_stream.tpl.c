@@ -139,7 +139,7 @@ if (n_segments) {
   if (handle->desc.N*BLOCKSOFM  >= handle->desc.threads && !((handle->desc.N == 1) && (handle->fwd_ofh_rb == 1))) {
     if (handle->compute_batch_stats_in_kernel == 1) { /* We  do BN stuff in the kernel  */
 #ifndef FP64_BN_STATS
-      LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
+      LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, (element_output_type*)handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #else
       LIBXSMM_VLA_DECL(4, double, kernel_stats, (double*)handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #endif
@@ -255,7 +255,7 @@ if (n_segments) {
 #ifdef __AVX512F__
 #ifndef FP64_BN_STATS
               ofm1 =  code_stream[pc].aux_index;
-              LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
+              LIBXSMM_VLA_DECL(4, element_output_type, stats, (element_output_type*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
               element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               __m512 bsum  = _mm512_setzero_ps();
@@ -371,7 +371,7 @@ if (n_segments) {
 #ifdef __AVX512F__
 #ifndef FP64_BN_STATS
               ofm1 =  code_stream[pc].aux_index;
-              LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
+              LIBXSMM_VLA_DECL(4, element_output_type, stats, (element_output_type*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
               element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               __m512 bsum  = _mm512_setzero_ps();
@@ -512,7 +512,7 @@ if (n_segments) {
   /* Run the stream of convolutions, no extra operations are required... */
   if ( handle->compute_batch_stats_in_kernel == 1 ) { /* We  do BN stuff in the kernel  */
 #ifndef FP64_BN_STATS
-    LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
+    LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, (element_output_type*)handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #else
     LIBXSMM_VLA_DECL(4, double, kernel_stats, (double*)handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #endif
