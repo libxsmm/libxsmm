@@ -46,8 +46,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define FP64_BN_STATS
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code*                       io_generated_code,
                                                           const libxsmm_convolution_forward_descriptor* i_conv_desc,

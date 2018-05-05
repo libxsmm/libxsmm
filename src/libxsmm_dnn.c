@@ -39,9 +39,6 @@
 #include "libxsmm_dnn_convolution_winograd_backward.h"
 #include "libxsmm_dnn_convolution_winograd_weight_update.h"
 
-
-#define FP64_BN_STATS
-
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
