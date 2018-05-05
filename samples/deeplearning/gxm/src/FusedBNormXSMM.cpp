@@ -38,7 +38,6 @@
 
 #define VLEN 16
 
-#define FP64_BN_STATS
 #define NO_APPX_RCP
 
 void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gammapb, TensorBuf *betapb, float *gmeanp, float *grstdp, TensorBuf *outpb, int tid)
@@ -106,13 +105,8 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
   float (* __restrict grstd)[VLEN]                   = (float (*)[VLEN])grstdp;
   float (* __restrict gamma)[VLEN]                   = (float (*)[VLEN])gammap;
   float (* __restrict beta)[VLEN]                    = (float (*)[VLEN])betap;
-#ifdef FP64_BN_STATS
-  double (* __restrict ibstats)[nImg][VLEN]          = (double (*)[*][VLEN])bstats_ip;
-  double (* __restrict ibstats2)[nImg][VLEN]         = (double (*)[*][VLEN])((double*)(bstats_ip + 2*nFM*nImg ));
-#else
   float (* __restrict ibstats)[nImg][VLEN]          = (float (*)[*][VLEN])bstats_ip;
   float (* __restrict ibstats2)[nImg][VLEN]         = (float (*)[*][VLEN])((float*)(bstats_ip + nFM*nImg ));
-#endif
 
   float recp_nhw = 1./(float)(nImg * fh * fw);
 
@@ -137,62 +131,6 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
        unstable */
 #if 1
 #ifdef __AVX512F__
-#ifdef FP64_BN_STATS
-    __m512d vrecp_nhw  = _mm512_set1_pd((double) recp_nhw);
-    __m512d veps       = _mm512_set1_pd((double) gp->eps);
-    __m512  vmmf       = _mm512_set1_ps(gp->mmf);
-    __m512  vnhw_ratio = _mm512_set1_ps(nhw_ratio);
-    double one = 1.0;
-    __m512d vone       = _mm512_set1_pd(one);
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-    for (int b = 0; b < nBfm; ++b) {
-      __m512d tmp1  = _mm512_setzero_pd();
-      __m512d tmp2  = _mm512_setzero_pd();
-      __m512d tmpd1 = _mm512_setzero_pd();
-      __m512d tmpd2 = _mm512_setzero_pd();
-
-      /* reduce over images */
-      for (int n = 0; n < nImg; ++n) {
-        tmp1 = _mm512_add_pd( tmp1, _mm512_load_pd(&(ibstats[b][n][0]) ) );
-        tmp2 = _mm512_add_pd( tmp2, _mm512_load_pd(&(ibstats[b][n][8]) ) );
-        tmpd1 = _mm512_add_pd( tmpd1, _mm512_load_pd(&(ibstats2[b][n][0]) ) );
-        tmpd2 = _mm512_add_pd( tmpd2, _mm512_load_pd(&(ibstats2[b][n][8]) ) );
-      }
-
-      __m512d vtbmeanA   = _mm512_mul_pd( vrecp_nhw, tmp1 );
-      __m512d vtbmeanB   = _mm512_mul_pd( vrecp_nhw, tmp2 );
-      __m512d vtbmean2A  = _mm512_mul_pd( vtbmeanA, vtbmeanA );
-      __m512d vtbmean2B  = _mm512_mul_pd( vtbmeanB, vtbmeanB );
-      __m512d vtbmean_2A = _mm512_mul_pd( vrecp_nhw, tmpd1 );
-      __m512d vtbmean_2B = _mm512_mul_pd( vrecp_nhw, tmpd2 );
-#ifdef __AVX512ER__
-      __m512d vtbrstd_A  = _mm512_rsqrt28_pd( _mm512_add_pd( _mm512_sub_pd( vtbmean_2A, vtbmean2A ), veps) );
-      __m512d vtbrstd_B  = _mm512_rsqrt28_pd( _mm512_add_pd( _mm512_sub_pd( vtbmean_2B, vtbmean2B ), veps) );
-#else
-#ifdef NO_APPX_RCP
-      __m512d vtbrstd_A  = _mm512_div_pd(vone, _mm512_sqrt_pd(_mm512_add_pd( _mm512_sub_pd( vtbmean_2A, vtbmean2A ), veps)));
-      __m512d vtbrstd_B  = _mm512_div_pd(vone, _mm512_sqrt_pd(_mm512_add_pd( _mm512_sub_pd( vtbmean_2B, vtbmean2B ), veps)));
-#else
-      __m512d vtbrstd_A  = _mm512_rsqrt14_pd( _mm512_add_pd( _mm512_sub_pd( vtbmean_2A, vtbmean2A ), veps) );
-      __m512d vtbrstd_B  = _mm512_rsqrt14_pd( _mm512_add_pd( _mm512_sub_pd( vtbmean_2B, vtbmean2B ), veps) );
-#endif
-#endif
-      __m256 tmpf1 = _mm512_cvtpd_ps( vtbmeanA );
-      __m256 tmpf2 = _mm512_cvtpd_ps( vtbmeanB );
-      __m512 tmpMean = _mm512_castpd_ps( _mm512_insertf64x4( _mm512_castpd256_pd512(_mm256_castps_pd(tmpf1)), _mm256_castps_pd(tmpf2), 1 ) );
-      _mm512_store_ps( &(bmean[b][0]), tmpMean );
-
-      __m256 tmpf3 = _mm512_cvtpd_ps( vtbrstd_A );
-      __m256 tmpf4 = _mm512_cvtpd_ps( vtbrstd_B );
-      __m512 tmpStd = _mm512_castpd_ps( _mm512_insertf64x4( _mm512_castpd256_pd512(_mm256_castps_pd(tmpf3)), _mm256_castps_pd(tmpf4), 1 ) );
-      _mm512_store_ps( &(brstd[b][0]), tmpStd );
-
-      _mm512_store_ps( &(gmeanp[b*16]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(gmeanp[b*16]) ), vmmf), tmpMean));
-      _mm512_store_ps( &(grstdp[b*16]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(grstdp[b*16]) ), vmmf), _mm512_mul_ps(vnhw_ratio, tmpStd)));
-    }
-#else
     __m512  vrecp_nhw  = _mm512_set1_ps(recp_nhw);
     __m512  veps       = _mm512_set1_ps(gp->eps);
     __m512  vmmf       = _mm512_set1_ps(gp->mmf);
@@ -230,42 +168,6 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
       _mm512_store_ps( &(gmeanp[b*16]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(gmeanp[b*16]) ), vmmf), vtbmeanA));
       _mm512_store_ps( &(grstdp[b*16]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(grstdp[b*16]) ), vmmf), _mm512_mul_ps(vnhw_ratio, vtbrstd_A)));
     }
-#endif
-#else
-#ifdef FP64_BN_STATS
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-    for (int b = 0; b < nBfm; ++b) {
-      double tmp[16];
-      double tmpd[16];
-#pragma omp simd
-      for (int v = 0; v < 16; ++v) {
-        tmp[v] = 0.0;
-        tmpd[v] = 0.0;
-      }
-      /* reduce over images */
-      for (int n = 0; n < nImg; ++n) {
-#pragma omp simd
-        for(int v = 0; v < 16; ++v) {
-          tmp[v] += ibstats[b][n][v];
-          tmpd[v] += ibstats2[b][n][v];
-        }
-      }
-
-      /* calculate expectation and standard derivation */
-#pragma omp simd
-      for (int v = 0; v < 16; ++v) {
-        const double tbmean = ((double)recp_nhw*tmp[v]) ;
-        const double tbmean2  = tbmean * tbmean;
-        const double tbmean_2 = (double)recp_nhw * tmpd[v];
-        const double tbrstd = 1.0/sqrt(tbmean_2 - tbmean2 + (double)gp->eps);
-        bmean[b][v] = (float)tbmean;
-        brstd[b][v] = (float)tbrstd;
-        gmeanp[(b*16)+v] = gmeanp[(b*16)+v] * gp->mmf + (float)tbmean;
-        grstdp[(b*16)+v] = grstdp[(b*16)+v] * gp->mmf + nhw_ratio*(float)tbrstd;
-      }
-    }
 #else
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -299,7 +201,6 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
         grstdp[(b*16)+v] = grstdp[(b*16)+v] * gp->mmf + nhw_ratio*tbrstd;
       }
     }
-#endif
 #endif
 #endif
 
