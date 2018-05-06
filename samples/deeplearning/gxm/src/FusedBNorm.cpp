@@ -631,10 +631,10 @@ void FusedBNormNode::backPropagate()
   impl->backPropagate(tenBotData_, tenTopData_, tenScaleData_, tenTopDiff_, tenScaleDiff_, tenShiftDiff_, tenBotDiff_, 0);
 
 #ifdef CHECK_BLOWUP_FP32
-  float* ptr = (float*)tenTopDiff_->getBuffer();
+  float* cbptr = (float*)tenTopDiff_->getBuffer();
   for(int i=0; i<16; i++)
   {
-    if(isnan(ptr[i]) || isinf(ptr[i]))
+    if(isnan(cbptr[i]) || isinf(cbptr[i]))
     {
       printf("Warning! %s layer BP activations are NaN or Inf\n", nname_.c_str());
       exit(-1);

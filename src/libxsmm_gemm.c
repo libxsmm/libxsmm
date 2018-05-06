@@ -77,19 +77,19 @@ LIBXSMM_APIVAR(unsigned int internal_gemm_nlocks); /* populated number of locks 
 #endif
 
 
-LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
+LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
-  static /*volatile*/ libxsmm_sgemm_function original = 0;
-  LIBXSMM_GEMM_WRAPPER(float, original);
+  static /*volatile*/ libxsmm_dgemm_function original = 0;
+  LIBXSMM_GEMM_WRAPPER(double, original);
   assert(0 != original);
   return original;
 }
 
 
-LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
+LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
-  static /*volatile*/ libxsmm_dgemm_function original = 0;
-  LIBXSMM_GEMM_WRAPPER(double, original);
+  static /*volatile*/ libxsmm_sgemm_function original = 0;
+  LIBXSMM_GEMM_WRAPPER(float, original);
   assert(0 != original);
   return original;
 }
@@ -309,9 +309,12 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
   const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc)
 {
-  const libxsmm_blasint nn = *(n ? n : m), kk = *(k ? k : m), ilda = *(lda ? lda : m), ildb = (ldb ? *ldb : kk), ildc = *(ldc ? ldc : m);
-  const char ctransa = (char)(0 != transa ? (*transa) : (0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'N' : 'T'));
-  const char ctransb = (char)(0 != transb ? (*transb) : (0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'N' : 'T'));
+  const libxsmm_blasint nn = *(n ? n : m), kk = *(k ? k : m);
+  const char ctransa = (char)(0 != transa ? (*transa) : (0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'n' : 't'));
+  const char ctransb = (char)(0 != transb ? (*transb) : (0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'n' : 't'));
+  const libxsmm_blasint ilda = (NULL != lda ? *lda : (('n' == ctransa || 'N' == ctransa) ? *m : kk));
+  const libxsmm_blasint ildb = (NULL != ldb ? *ldb : (('n' == ctransb || 'N' == ctransb) ? kk : nn));
+  const libxsmm_blasint ildc = *(NULL != ldc ? ldc : m);
   libxsmm_mhd_elemtype mhd_elemtype = LIBXSMM_MHD_ELEMTYPE_CHAR;
   char string_a[128], string_b[128], typeprefix = 0;
 
@@ -825,10 +828,12 @@ LIBXSMM_API void libxsmm_gemm_batch2(libxsmm_gemm_precision iprec, libxsmm_gemm_
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize)
 {
+  const int gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
   libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec,
-    m, n, k, 0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m, alpha, beta,
-    LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS), libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
+  const libxsmm_gemm_descriptor *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec, m, n, k,
+    NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
+    NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
+    0 != ldc ? *ldc : m, alpha, beta, gemm_flags, libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
   const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(descriptor);
   static int error_once = 0;
   int result;

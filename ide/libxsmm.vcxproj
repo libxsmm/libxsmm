@@ -321,7 +321,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <OffloadConstructs>None</OffloadConstructs>
@@ -364,7 +364,7 @@
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
@@ -408,7 +408,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <OffloadConstructs>None</OffloadConstructs>
@@ -452,7 +452,7 @@
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
@@ -487,7 +487,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
-      <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
@@ -526,7 +526,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
-      <DisableSpecificDiagnostics>177,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
       <ConformanceMode>true</ConformanceMode>

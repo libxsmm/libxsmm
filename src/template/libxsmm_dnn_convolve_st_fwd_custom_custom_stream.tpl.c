@@ -34,8 +34,6 @@
 #define CONVOLUTION_KERNEL 3
 #define IFM_LOOP_CLOSE_S 4
 
-#define FP64_BN_STATS
-
 int BLOCKSIFM = handle->blocksifm_lp;
 int BLOCKSOFM = handle->blocksofm;
 
@@ -77,11 +75,10 @@ char *variant = handle->kernel_fwd_variant_ptrs[ltid];
 int pool_index = 0;
 /* Stream for BN offsets */
 int bn_i = 0;
-#ifdef FP32_BN_STATS
+#ifndef FP64_BN_STATS
 element_output_type *bn_sum_base;
 element_output_type *bn_sum_base2;
-#endif
-#ifdef FP64_BN_STATS
+#else
 double *bn_sum_base;
 double *bn_sum_base2;
 #endif
@@ -141,10 +138,9 @@ if (n_segments) {
   /* TODO: Second condition guarantees we run the img_par code when we have MB=1 -- and hopefully HUGE images */
   if (handle->desc.N*BLOCKSOFM  >= handle->desc.threads && !((handle->desc.N == 1) && (handle->fwd_ofh_rb == 1))) {
     if (handle->compute_batch_stats_in_kernel == 1) { /* We  do BN stuff in the kernel  */
-#ifdef FP32_BN_STATS
-      LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
-#endif
-#ifdef FP64_BN_STATS
+#ifndef FP64_BN_STATS
+      LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, (element_output_type*)handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
+#else
       LIBXSMM_VLA_DECL(4, double, kernel_stats, (double*)handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #endif
       bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
@@ -257,9 +253,9 @@ if (n_segments) {
             /* Compute batch norm statistics... */
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) {
 #ifdef __AVX512F__
-#ifdef FP32_BN_STATS
+#ifndef FP64_BN_STATS
               ofm1 =  code_stream[pc].aux_index;
-              LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
+              LIBXSMM_VLA_DECL(4, element_output_type, stats, (element_output_type*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
               element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               __m512 bsum  = _mm512_setzero_ps();
@@ -278,8 +274,7 @@ if (n_segments) {
                     BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
               _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
                     BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2 );
-#endif
-#ifdef FP64_BN_STATS
+#else
               ofm1 =  code_stream[pc].aux_index;
               {
                 LIBXSMM_VLA_DECL(4, double, stats, (double*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
@@ -374,9 +369,9 @@ if (n_segments) {
             /* Compute batch norm statistics... */
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) {
 #ifdef __AVX512F__
-#ifdef FP32_BN_STATS
+#ifndef FP64_BN_STATS
               ofm1 =  code_stream[pc].aux_index;
-              LIBXSMM_VLA_DECL(4, element_output_type, stats, handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
+              LIBXSMM_VLA_DECL(4, element_output_type, stats, (element_output_type*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
               element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               __m512 bsum  = _mm512_setzero_ps();
@@ -395,8 +390,7 @@ if (n_segments) {
                     BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
               _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
                     BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2 );
-#endif
-#ifdef FP64_BN_STATS
+#else
               ofm1 =  code_stream[pc].aux_index;
               {
                 LIBXSMM_VLA_DECL(4, double, stats, (double*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
@@ -517,10 +511,9 @@ if (n_segments) {
 } else {
   /* Run the stream of convolutions, no extra operations are required... */
   if ( handle->compute_batch_stats_in_kernel == 1 ) { /* We  do BN stuff in the kernel  */
-#ifdef FP32_BN_STATS
-    LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
-#endif
-#ifdef FP64_BN_STATS
+#ifndef FP64_BN_STATS
+    LIBXSMM_VLA_DECL(4, element_output_type, kernel_stats, (element_output_type*)handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
+#else
     LIBXSMM_VLA_DECL(4, double, kernel_stats, (double*)handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);
 #endif
     bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
@@ -596,5 +589,4 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 #undef OFM_LOOP_CLOSE
 #undef CONVOLUTION_KERNEL
 #undef IFM_LOOP_CLOSE_S
-#undef FP64_BN_STATS
 

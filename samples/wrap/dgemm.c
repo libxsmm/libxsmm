@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
   double *a = 0, *b = 0, *c = 0;
   int i;
 
-  if (7 < argc) size = atoi(argv[7]);
+  if (9 < argc) size = atoi(argv[9]);
   a = (double*)malloc(lda * k * sizeof(double));
   b = (double*)malloc(ldb * n * sizeof(double));
   c = (double*)malloc(ldc * n * sizeof(double));

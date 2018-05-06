@@ -162,7 +162,7 @@ fit f(x) BASENAME."-plot-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSU
 g(x) = (x - a) / b
 x50 = 0.5 * (100 + MAX(0, g(0)))
 h(x) = d * x + c
-dx = 100 / FREQN
+dx = 100.0 / FREQN
 fit [x50-2.0*dx:x50+2.0*dx] h(x) BASENAME."-plot-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
 set arrow from x50, second h(x50) to x50, second 0 front
 set arrow from x50, second h(x50) to 100, second h(x50) front

@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
   double *a = 0, *x = 0, *y = 0;
   int i;
 
-  if (6 < argc) size = atoi(argv[6]);
+  if (8 < argc) size = atoi(argv[8]);
   a = (double*)malloc(lda * n * sizeof(double));
   x = (double*)malloc(incx * n * sizeof(double));
   y = (double*)malloc(incy * m * sizeof(double));

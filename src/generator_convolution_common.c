@@ -44,8 +44,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define FP64_BN_STATS
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_header_m_loop( libxsmm_generated_code*                   io_generated_code,
                                                   libxsmm_loop_label_tracker*               io_loop_label_tracker,
@@ -710,7 +708,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
     }
 
     if ( i_conv_desc->compute_batch_stats > 0 && i_conv_desc->use_nts == 1 ) {
-#ifdef FP32_BN_STATS
+#ifndef FP64_BN_STATS
       for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
         for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
           for ( l_k = 0; l_k < l_reg_per_block; l_k++ ) {
@@ -785,8 +783,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
           LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
           i_conv_kernel_config->vector_name,
           1, 0, 1 );
-#endif
-#ifdef FP64_BN_STATS
+#else
       unsigned int X;
       for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
         for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
@@ -1004,8 +1001,8 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
           LIBXSMM_X86_GP_REG_UNDEF, 0, 64,
           i_conv_kernel_config->vector_name,
           3, 0, 1 );
-    }
 #endif
+    }
   } else {
     /* adding to C, so let's store C */
     if ( (i_conv_desc->use_fwd_generator_for_bwd == 0) || (i_conv_desc->stride_w_store == 1 && i_conv_desc->stride_h_store == 1) ) {
@@ -1334,7 +1331,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
       }
 
       if ( i_conv_desc->compute_batch_stats > 0 ) {
-#ifdef FP32_BN_STATS
+#ifndef FP64_BN_STATS
         for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
           for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
             for ( l_k = 0; l_k < l_reg_per_block; l_k++ ) {
@@ -1429,8 +1426,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
             LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
             i_conv_kernel_config->vector_name,
             1, 0, 1 );
-#endif
-#ifdef FP64_BN_STATS
+#else
         unsigned int X;
         for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
           for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
