@@ -2,16 +2,19 @@
 
 ### Overview<a name="small-matrix-multiplication-smm"></a>
 
-To perform the dense matrix-matrix multiplication *C<sub>m&#8239;x&#8239;n</sub> = alpha &middot; A<sub>m&#8239;x&#8239;k</sub> &middot; B<sub>k&#8239;x&#8239;n</sub> + beta &middot; C<sub>m&#8239;x&#8239;n</sub>*, the full-blown GEMM interface can be treated with "default arguments" (which is deviating from the BLAS standard, however without compromising the binary compatibility).
+To perform the dense matrix-matrix multiplication *C<sub>m&#8239;x&#8239;n</sub> = alpha &middot; A<sub>m&#8239;x&#8239;k</sub> &middot; B<sub>k&#8239;x&#8239;n</sub> + beta &middot; C<sub>m&#8239;x&#8239;n</sub>*, the full-blown GEMM interface can be treated with "default arguments" (which is deviating from the BLAS standard, however without compromising the binary compatibility). Default arguments are derived from compile-time constants (configurable) for historic reasons (LIBXSMM's "pre-JIT era").
 
 ```C
-/** Dense matrix multiplication (single/double-precision, C code). */
 libxsmm_?gemm(NULL/*transa*/, NULL/*transb*/,
   &m/*required*/, &n/*required*/, &k/*required*/,
   NULL/*alpha*/, a/*required*/, NULL/*lda*/,
                  b/*required*/, NULL/*ldb*/,
    NULL/*beta*/, c/*required*/, NULL/*ldc*/);
-/** Automatically dispatched dense matrix multiplication (C++ code). */
+```
+
+For the C interface (with type prefix 's' or 'd'), all arguments including m, n, and k are passed by pointer. This is needed for binary compatibility with the original GEMM/BLAS interface.
+
+```C
 libxsmm_gemm(NULL/*transa*/, NULL/*transb*/,
   m/*required*/, n/*required*/, k/*required*/,
   NULL/*alpha*/, a/*required*/, NULL/*lda*/,
@@ -19,9 +22,7 @@ libxsmm_gemm(NULL/*transa*/, NULL/*transb*/,
    NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 ```
 
-For the C interface (with type prefix 's' or 'd'), all arguments including m, n, and k are passed by pointer. This is needed for binary compatibility with the original GEMM/BLAS interface. The C++ interface is also supplying overloaded versions where m, n, and k can be passed by&#8209;value (making it clearer that m, n, and k are non-optional arguments).
-
-The FORTRAN interface supports optional arguments (without affecting the binary compatibility with the original BLAS interface) by allowing to omit arguments where the C/C++ interface allows for NULL to be passed.
+The C++ interface is also supplying overloaded versions where m, n, and k can be passed by&#8209;value (making it clearer that m, n, and k are non-optional arguments).
 
 ```FORTRAN
 ! Dense matrix multiplication (single/double-precision).
@@ -30,7 +31,7 @@ CALL libxsmm_?gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 CALL libxsmm_gemm(m=m, n=n, k=k, a=a, b=b, c=c)
 ```
 
-For convenience, a BLAS-based dense matrix multiplication (`libxsmm_blas_gemm`) is provided for all supported languages. This is re-exposing the underlying GEMM/BLAS implementation. To remove any BLAS-dependency, please follow the [Link Instructions](index.md#link-instructions). A BLAS-based GEMM can be useful for validation/benchmark purposes, and more important as a fallback when building an application-specific dispatch mechanism.
+The FORTRAN interface supports optional arguments (without affecting the binary compatibility with the original BLAS interface) by allowing to omit arguments where the C/C++ interface allows for NULL to be passed.
 
 ```C
 /** Dense matrix multiplication (single/double-precision). */
@@ -41,13 +42,15 @@ libxsmm_blas_?gemm(NULL/*transa*/, NULL/*transb*/,
    NULL/*beta*/, c/*required*/, NULL/*ldc*/);
 ```
 
-A more recently added variant of matrix multiplication is parallelized based on the OpenMP standard. These routines will open an internal parallel region and rely on "classic" thread-based OpenMP. If these routines are called from inside of a parallel region, the parallelism will be based on tasks (OpenMP&#160;3.0). Please note that all OpenMP-based routines are hosted by the extension library (libxsmmext), which keeps the main library agnostic with respect to a threading runtime.
+For convenience, a BLAS-based dense matrix multiplication (`libxsmm_blas_gemm`) is provided for all supported languages. This only re-exposes the underlying GEMM/BLAS implementation, but the interface accepts optional arguments (or NULL-pointers in C) where the regular GEMM expects a value. To remove any BLAS-dependency, please follow the [Link Instructions](index.md#link-instructions). A BLAS-based GEMM can be useful for validation/benchmark purposes, and more important as a fallback when building an application-specific dispatch mechanism.
 
 ```C
 /** OpenMP parallelized dense matrix multiplication. */
 libxsmm_?gemm_omp(&transa, &transb, &m, &n, &k,
   &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 ```
+
+A more recently added variant of matrix multiplication is parallelized based on the OpenMP standard. These routines will open an internal parallel region and rely on "classic" thread-based OpenMP. If these routines are called from inside of a parallel region, the parallelism will be based on tasks (OpenMP&#160;3.0). Please note that all OpenMP-based routines are hosted by the extension library (libxsmmext), which keeps the main library agnostic with respect to a threading runtime.
 
 ### Manual Code Dispatch
 
@@ -91,7 +94,7 @@ if (xmm) { /* JIT'ted code */
 }
 ```
 
-Similarly in FORTRAN (see [samples/smm/smm.f](https://github.com/hfp/libxsmm/blob/master/samples/smm/smm.f)), a generic interface (`libxsmm_mmdispatch`) can be used to dispatch a `LIBXSMM_?MMFUNCTION`. The handle encapsulated such a `LIBXSMM_?MMFUNCTION` can be called per `libxsmm_call`. Beside of dispatching code, one can also call statically generated kernels (e.g., `libxsmm_dmm_4_4_4`) by using the prototype functions included with the FORTRAN and C/C++ interface.
+Similarly in FORTRAN (see [samples/smm/smm.f](https://github.com/hfp/libxsmm/blob/master/samples/smm/smm.f)), a generic interface (`libxsmm_mmdispatch`) can be used to dispatch a `LIBXSMM_?MMFUNCTION`. The handle encapsulated by such a `LIBXSMM_?MMFUNCTION` can be called per `libxsmm_call`. Beside of dispatching code, one can also call statically generated kernels (e.g., `libxsmm_dmm_4_4_4`) by using the prototype functions included with the FORTRAN and C/C++ interface. Prototypes are present whenever static code was requested at compile-time of the library (e.g. per `make MNK="1 2 3 4 5"`).
 
 ```FORTRAN
 TYPE(LIBXSMM_DMMFUNCTION) :: xmm
@@ -148,7 +151,7 @@ int libxsmm_mmbatch(libxsmm_xmmfunction kernel,
   int tid, int nthreads);
 ```
 
-To further simplify the multiplication of matrices in a batch, the above interface can help if an explicit data representation is available. This low-level form is also able to employ a user-defined threading runtime. In case of OpenMP, `libxsmm_mmbatch_omp` is ready to use and hosted by the extension library (libxsmmext). An even higher-level set of procedures (and potentially more convenient functions) are available with `libxsmm_gemm_batch` and `libxsmm_gemm_batch_omp`.
+To further simplify the multiplication of matrices in a batch, the above interface can help if an explicit data representation is available. This low-level form or expert interface is also able to employ a user-defined threading runtime. In case of OpenMP, `libxsmm_mmbatch_omp` is ready-to-use and hosted by the extension library (libxsmmext). Of course, `libxsmm_mmbatch_omp` does not take `tid` and `nthreads` since both arguments are given by OpenMP. An even higher-level set of procedures (and potentially more convenient) is available with `libxsmm_gemm_batch` and `libxsmm_gemm_batch_omp`. The signature of both routines is more BLAS-like, but less flexible than the forms mentioned above.
 
 ```C
 void libxsmm_gemm_batch(libxsmm_gemm_precision precision,
