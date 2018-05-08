@@ -743,9 +743,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   int i = 0; /* general counting helper */
   int wrb1 = 0, wrb2 = 0, hrb1 = 0, hrb2 = 0;
-#if 0
-  int n_variants = 1;
-#endif
   /* Let's check if we can use algorithmic duality for backward convolution! */
   /* TODO: Enable duality even in cases of image parallelism */
   if ( (handle->use_thread_private_jit > 0) && (handle->desc.N >= handle->desc.threads) && ( (handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.pad_h == 0 && handle->desc.pad_w == 0) || (handle->desc.u == 1 && handle->desc.v == 1) ) && !((handle->desc.R > 1 && handle->desc.pad_h == 0) || (handle->desc.S > 1 && handle->desc.pad_w == 0)) )  {
@@ -753,19 +750,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
   } else {
     handle->exploit_duality = 0;
   }
-#if 0
-  n_variants =
-#endif
   find_rb(handle->ofw, handle->ofh, &wrb1, &hrb1, &wrb2, &hrb2);
-
-  /* FIXME: Remove loop below? Doesn't algorithmic duality take care of that? */
-  handle->bwd_ofh_rb = 1;
-  for (i = LIBXSMM_MIN(24, handle->ofw); i > 1; i--) {
-    if (handle->ofw % i == 0) break;
-  }
-  handle->bwd_ofw_rb = i;
-
-  /* Some blocking factors are propagated via handle data structure from Forward setup  */
 
   /* if we have 1x1 let's bring some ifms into the kernel for forward to increase accumulation chain length on AVX512 */
   if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) ) {
