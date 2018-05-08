@@ -535,14 +535,14 @@ void rnn_execute(struct rnn_handle *rnn, const int nrepeat, const libxsmm_blasin
     if (reuse) {
       for (i = 0; i < t-1; ++i) {
         recursive_step(handleuh, u, h, z2, &LIBXSMM_VLA_ACCESS(2, z1, i, 0, m * n), z, h, 1, m * n); /*sigmoid*/
-      } 
+      }
       recursive_step(handleuh, u, h, z2, &LIBXSMM_VLA_ACCESS(2, z1, t-1, 0, m * n), z, z, 0, m * n); /*nop*/
     } else {
       for (i = 0; i < t-1; ++i) {
-        recursive_step(handleuh, u, &LIBXSMM_VLA_ACCESS(2, hnr, i, 0, m * n), z2, &LIBXSMM_VLA_ACCESS(2, z1, i, 0, m * n), 
+        recursive_step(handleuh, u, &LIBXSMM_VLA_ACCESS(2, hnr, i, 0, m * n), z2, &LIBXSMM_VLA_ACCESS(2, z1, i, 0, m * n),
           &LIBXSMM_VLA_ACCESS(2, znr, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, hnr, i+1, 0, m * n), 1, m * n); /*sigmoid*/
       }
-      recursive_step(handleuh, u, &LIBXSMM_VLA_ACCESS(2, hnr, t-1, 0, m * n), z2, &LIBXSMM_VLA_ACCESS(2, z1, t-1, 0, m * n), 
+      recursive_step(handleuh, u, &LIBXSMM_VLA_ACCESS(2, hnr, t-1, 0, m * n), z2, &LIBXSMM_VLA_ACCESS(2, z1, t-1, 0, m * n),
         &LIBXSMM_VLA_ACCESS(2, znr, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, znr, t-1, 0, m * n), 0, m * n); /*nop*/
     }
   }
@@ -775,7 +775,7 @@ void rnn_bwd_upd_init(struct rnn_handle *rnn, ITYPE *djdhgoldt, ITYPE *zgoldt, I
     matinit( 0, &LIBXSMM_VLA_ACCESS(2, deltagold, it, 0, ldz * n), m, n, ldz, 0.0);
     matinit(24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, ldx * n), k, n, ldx, 1.0);
     matinit(24, &LIBXSMM_VLA_ACCESS(2, hgold, it, 0, ldh * n), m, n, ldh, 1.0);
-    
+
     matinit( 0, &LIBXSMM_VLA_ACCESS(2, delta, it, 0, m * n), m, n, m, 0.0);
   }
   libxsmm_bgemm_copyin_a(handleud, ugold, &ldu, u);
@@ -884,7 +884,7 @@ void rnn_bwd_upd_execute(struct rnn_handle *rnn, const int nrepeat, const libxsm
         libxsmm_bgemm_omp(handledx, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), xTp, dw1, 1);
         matrix_add(m*k, dw1, djdw, djdw);
       }
-    } 
+    }
   }
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
   if (0 < duration) {
@@ -897,7 +897,7 @@ void rnn_bwd_upd_execute(struct rnn_handle *rnn, const int nrepeat, const libxsm
 int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k, const libxsmm_blasint t,
          const libxsmm_blasint bm, const libxsmm_blasint bn, const libxsmm_blasint bk, const libxsmm_bgemm_order order, const int nrepeat,
          const libxsmm_blasint b_m1, const libxsmm_blasint b_n1, const libxsmm_blasint b_k1, const libxsmm_blasint b_m2, const libxsmm_blasint b_n2,
-         const libxsmm_blasint b_k2, const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz, const libxsmm_blasint ldu, 
+         const libxsmm_blasint b_k2, const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz, const libxsmm_blasint ldu,
          const libxsmm_blasint ldh, const libxsmm_blasint pass)
 {
 #if defined(CHECK)
@@ -1879,7 +1879,7 @@ int lstm (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasin
 void lstm_bwd_upd_init(struct lstm_handle *lstm, ITYPE *wigold, ITYPE *wfgold, ITYPE *wogold, ITYPE *wcgold,
   ITYPE *xgoldt, ITYPE *rigold, ITYPE *rfgold, ITYPE *rogold, ITYPE *rcgold, ITYPE *hgoldt,
   ITYPE *i1gold, ITYPE *i2gold, ITYPE *i3gold, ITYPE *f1gold, ITYPE *f2gold, ITYPE *f3gold,
-  ITYPE *o1gold, ITYPE *o2gold, ITYPE *c1gold, ITYPE *c2gold, ITYPE *igoldt, ITYPE *fgoldt, 
+  ITYPE *o1gold, ITYPE *o2gold, ITYPE *c1gold, ITYPE *c2gold, ITYPE *igoldt, ITYPE *fgoldt,
   ITYPE *ogoldt, ITYPE *cgoldt, ITYPE *d1gold, ITYPE *d2gold, ITYPE *d3gold, ITYPE *d4gold,
   ITYPE *dgoldt, ITYPE *djdhgoldt, ITYPE *deltagoldt, ITYPE *djddgoldt, ITYPE *djdigoldt,
   ITYPE *djdfgoldt, ITYPE *djdcgoldt, ITYPE *djdogoldt, ITYPE *djdxgoldt, ITYPE *djdwigold,
@@ -2343,7 +2343,7 @@ void lstm_bwd_upd_execute(struct lstm_handle *lstm, const int nrepeat, const lib
 int lstm_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasint k, const libxsmm_blasint t,
           const libxsmm_blasint bm, const libxsmm_blasint bn, const libxsmm_blasint bk, const libxsmm_bgemm_order order, const int nrepeat,
           const libxsmm_blasint b_m1, const libxsmm_blasint b_n1, const libxsmm_blasint b_k1, const libxsmm_blasint b_m2, const libxsmm_blasint b_n2,
-          const libxsmm_blasint b_k2, const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz, const libxsmm_blasint ldu, 
+          const libxsmm_blasint b_k2, const libxsmm_blasint ldw, const libxsmm_blasint ldx, const libxsmm_blasint ldz, const libxsmm_blasint ldu,
           const libxsmm_blasint ldh, const libxsmm_blasint pass)
 {
 #if defined(CHECK)
@@ -2566,9 +2566,9 @@ int lstm_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm
 
     if (0 != handleud && 0 != handledh && 0 != handledx && 0 != handlewd) {
       lstm_bwd_upd_init(&lstm, wigold, wfgold, wogold, wcgold, xgoldt, rigold, rfgold, rogold, rcgold, hgoldt,
-        i1gold, i2gold, i3gold, f1gold, f2gold, f3gold, o1gold, o2gold, c1gold, c2gold, igoldt, fgoldt, ogoldt, 
+        i1gold, i2gold, i3gold, f1gold, f2gold, f3gold, o1gold, o2gold, c1gold, c2gold, igoldt, fgoldt, ogoldt,
         cgoldt, d1gold, d2gold, d3gold, d4gold, dgoldt, djdhgoldt, deltagoldt, djddgoldt, djdigoldt,
-        djdfgoldt, djdcgoldt, djdogoldt, djdxgoldt, djdwigold, djdwfgold, djdwogold, djdwcgold, 
+        djdfgoldt, djdcgoldt, djdogoldt, djdxgoldt, djdwigold, djdwfgold, djdwogold, djdwcgold,
         djdrigold, djdrfgold, djdrogold, djdrcgold, djdbigold, djdbfgold, djdbogold, djdbcgold,
         ldw, ldx, ldz, ldu, ldh, pass);
       lstm_bwd_upd_execute(&lstm, nrepeat, pass);
@@ -2681,7 +2681,7 @@ int lstm_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm
               LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &k, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, m * n), &ldz, xgoldTp, &ldn, &beta, djdwfgold, &ldw);
               LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &k, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, m * n), &ldz, xgoldTp, &ldn, &beta, djdwogold, &ldw);
               LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &k, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, m * n), &ldz, xgoldTp, &ldn, &beta, djdwcgold, &ldw);
-               
+
             }
             /* compute djdrgold */
             for (j = 0; j < t-1; ++j) {

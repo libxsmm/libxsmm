@@ -33,6 +33,8 @@
     <ClInclude Include="..\include\libxsmm_config.h" />
     <ClInclude Include="..\include\libxsmm_cpuid.h" />
     <ClInclude Include="..\include\libxsmm_dnn.h" />
+    <ClInclude Include="..\include\libxsmm_dnn_lstmcell.h" />
+    <ClInclude Include="..\include\libxsmm_dnn_rnncell.h" />
     <ClInclude Include="..\include\libxsmm_frontend.h" />
     <ClInclude Include="..\include\libxsmm_fsspmdm.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
@@ -142,6 +144,8 @@
     <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.c" />
     <ClCompile Include="..\src\libxsmm_dnn_dryruns.c" />
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_lstmcell.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_rnncell.c" />
     <ClCompile Include="..\src\libxsmm_dnn_setup.c" />
     <ClCompile Include="..\src\libxsmm_fsspmdm.c" />
     <ClCompile Include="..\src\libxsmm_generator.c" />
@@ -176,11 +180,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\.codefile" />
+    <None Include="..\.flock.sh" />
+    <None Include="..\.fullci" />
     <None Include="..\.gitattributes" />
     <None Include="..\.gitconfig" />
     <None Include="..\.gitignore" />
     <None Include="..\.state.sh" />
-    <None Include="..\.travis.sh" />
+    <None Include="..\.test-dnn.yml" />
     <None Include="..\.travis.yml" />
     <None Include="..\include\libxsmm.f" />
     <None Include="..\LICENSE.md" />
@@ -197,6 +203,7 @@
     <None Include="..\scripts\tool_inspector.sh" />
     <None Include="..\scripts\tool_normalize.sh" />
     <None Include="..\scripts\tool_scan.sh" />
+    <None Include="..\scripts\tool_test.sh" />
     <None Include="..\src\template\libxsmm.f" />
   </ItemGroup>
   <ItemGroup>

@@ -216,6 +216,12 @@
     <ClInclude Include="..\src\libxsmm_dnn_setup.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\libxsmm_dnn_lstmcell.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_dnn_rnncell.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -407,6 +413,12 @@
     <ClCompile Include="..\src\libxsmm_dnn_setup.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_rnncell.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_lstmcell.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">
@@ -440,7 +452,6 @@
       <Filter>src\template</Filter>
     </None>
     <None Include="..\.codefile" />
-    <None Include="..\.travis.sh" />
     <None Include="..\scripts\tool_inspector.sh">
       <Filter>scripts</Filter>
     </None>
@@ -454,6 +465,12 @@
       <Filter>scripts</Filter>
     </None>
     <None Include="..\scripts\tool_scan.sh">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="..\.flock.sh" />
+    <None Include="..\.fullci" />
+    <None Include="..\.test-dnn.yml" />
+    <None Include="..\scripts\tool_test.sh">
       <Filter>scripts</Filter>
     </None>
   </ItemGroup>

@@ -33,7 +33,7 @@
 
 #include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
-#include "libxsmm_dnn.h" 
+#include "libxsmm_dnn.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
