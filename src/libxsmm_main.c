@@ -915,9 +915,9 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
   if (0 != arch && 0 != *arch) {
     const int jit = atoi(arch);
     if (0 == strcmp("0", arch)) {
-      target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
+      target_archid = LIBXSMM_X86_SSE3;
     }
-    else if (1 < jit) {
+    else if (0 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
     else if (0 == strcmp("icl", arch) || 0 == strcmp("icx", arch)) {
