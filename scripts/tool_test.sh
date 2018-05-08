@@ -51,16 +51,19 @@ FASTCI=$2
 
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
-FULLCI="\[full ci\]"
 REVSTART="HEAD"
 REVEND="HEAD^"
+
+if [ "" = "${FULLCI}" ] || [ "0" = "${FULLCI}" ]; then
+  FULLCI="\[full ci\]"
+fi
 
 if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && [ "" != "${ECHO}" ] && \
    [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${WC}" ] && \
    [ "" != "${RM}" ] && [ "" != "${CP}" ];
 then
   # check if full tests are triggered (allows to skip the detailed investigation)
-  if [ "" != "${FASTCI}" ] && [ -e ${FASTCI} ] && [ "" != "${GIT}" ] && \
+  if [ "" != "${FASTCI}" ] && [ -e ${FASTCI} ] && [ "" != "${GIT}" ] && [ "1" != "${FULLCI}" ] && \
      [ "" = "$(${GIT} log ${REVSTART}...${REVEND} 2>/dev/null | ${GREP} -e "${FULLCI}")" ];
   then
     # transform wild-card patterns to regular expressions
