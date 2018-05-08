@@ -90,7 +90,7 @@ libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
 libxsmm_xmcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
 libxsmm_convfunction kernel = (handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[0].xconv.sconv : (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
 
-transposer tp_func;
+transposer tp_func = NULL;
 if ( handle->trans_ofw_ifm > 0 ) {
   tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
 }
@@ -160,6 +160,7 @@ if ( handle->trans_ofw_ifm > 0 ) {
     int imgs_per_thread = handle->desc.N/handle->desc.threads;
     input_zero = &LIBXSMM_VLA_ACCESS(5, tr_input_padded, imgs_per_thread*ltid, 0, 0, 0, 0, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended);
     memset( input_zero, 0, imgs_per_thread*BLOCKSIFM * padded_h * ifwp_extended * handle->ifmblock * sizeof(element_input_type) );
+    LIBXSMM_ASSERT(NULL != tp_func);
     for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
       img = imgifm1/BLOCKSIFM;
       ifm1 = imgifm1%BLOCKSIFM;
@@ -171,6 +172,7 @@ if ( handle->trans_ofw_ifm > 0 ) {
     }
   } else {
     if (handle->resize_input == 0) {
+      LIBXSMM_ASSERT(NULL != tp_func);
       for (imgifm1 = transpose_thr_begin; imgifm1 < transpose_thr_end; ++imgifm1) {
         img = imgifm1/BLOCKSIFM;
         ifm1 = imgifm1%BLOCKSIFM;

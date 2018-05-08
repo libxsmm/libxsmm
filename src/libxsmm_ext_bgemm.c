@@ -71,8 +71,7 @@ LIBXSMM_APIEXT void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
       {
         barrier = libxsmm_barrier_create(nthreads / 4, 4);
       }
-      else
-      {
+      else {
         barrier = libxsmm_barrier_create(nthreads / 2, 2);
       }
 # endif /*defined(LIBXSMM_BGEMM_BARRIER)*/

@@ -270,9 +270,7 @@ for (kb = 0; kb < k_blocks; kb++) {
         scratch_B[k*n_block_size + n] = res.f;
       }
     }
-  }
-  else
-  {
+  } else {
     ptr_dense = B + k_overall_start*handle->n + n_overall_start;
     if (!last_block_n) {
       for (k = 0; k < num_k; k++) {

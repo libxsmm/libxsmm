@@ -73,7 +73,7 @@ LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)han
 /* Stream related variables  */
 segment_t *code_stream;
 int *stream = handle->compute_upd_indices_ptrs[ltid];
-int instr, n_segments, n_convs, conv_i, offset_i, offset_o, offset_w, offset_s, pi, po, pw, pc;
+int instr, n_segments, n_convs, conv_i, offset_i, offset_o, offset_w = 0, offset_s, pi, po, pw, pc;
 
 /* Base pointers  */
 element_input_type *input_base;

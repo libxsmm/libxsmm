@@ -81,7 +81,7 @@ LIBXSMM_VLA_DECL(5, element_input_type, tr_input_nopad, (element_input_type*)han
 /* Stream related variables  */
 segment_t *code_stream;
 int *stream = handle->compute_upd_indices_ptrs[ltid];
-int instr, n_segments, n_convs, conv_i, offset_i, offset_t, offset_o, offset_w, offset_s, pi, po, pw, pc;
+int instr, n_segments, n_convs, conv_i, offset_i, offset_t, offset_o, offset_w = 0, offset_s, pi, po, pw, pc;
 
 /* Base pointers  */
 const element_input_type *input_base;
@@ -94,17 +94,18 @@ libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_upd[0].xmatcopy;
 libxsmm_xmcopyfunction jitted_matzero = handle->matcopy_upd[1].xmatcopy;
 libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[0].xconv.sconv : (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
 
-transposer tp_func;
+transposer tp_func = NULL;
 if ( handle->trans_ofw_ifm > 0 ) {
   if (handle->padding_flag == 1) {
     tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
   }
-  else
+  else {
     tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
+  }
 }
 
-#if 0
-if(tp_func == 0) {
+#if defined(_DEBUG) /* beyond !defined(NDEBUG) */
+if (NULL == tp_func) {
   fprintf(stderr, "Couldn't find transposer to match %d %d %d %d", handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
   exit(1);
 }
@@ -183,6 +184,7 @@ if (n_segments) {
       if ( handle->trans_ofw_ifm > 0 ) {
         if (handle->padding_flag == 1) {
           /* Transpose IFW and IFM into the padded buffer!*/
+          LIBXSMM_ASSERT(NULL != tp_func);
           for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, BLOCKSIFM); ifm1++) {
             for (ij=0; ij < handle->ifhp; ++ij) {
               float *dst = &(LIBXSMM_VLA_ACCESS(5, tr_input_padded, img, ifm1, ij + handle->desc.pad_h, 0, 0 + handle->desc.pad_w, BLOCKSIFM, padded_h, handle->ifmblock, ifwp_extended));
@@ -193,6 +195,7 @@ if (n_segments) {
         } else {
           /* Transpose IFW and IFM */
           if (handle->resize_input == 0) {
+            LIBXSMM_ASSERT(NULL != tp_func);
             for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, BLOCKSIFM); ifm1++) {
               for (ij=0; ij < handle->ifhp; ++ij) {
                 float *dst = &(LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, ij, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifmblock, ifwp_extended));
