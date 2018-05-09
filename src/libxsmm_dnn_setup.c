@@ -741,7 +741,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* handle, int *noarch ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  int i = 0; /* general counting helper */
   int wrb1 = 0, wrb2 = 0, hrb1 = 0, hrb2 = 0;
   /* Let's check if we can use algorithmic duality for backward convolution! */
   /* TODO: Enable duality even in cases of image parallelism */
