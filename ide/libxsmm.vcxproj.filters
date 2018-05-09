@@ -69,12 +69,6 @@
     <ClInclude Include="..\src\libxsmm_perf.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\template\libxsmm.h">
-      <Filter>src\template</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\template\libxsmm_config.h">
-      <Filter>src\template</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_config.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -221,6 +215,15 @@
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_dnn_rnncell.h">
       <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_gemm_rm_bc_soa.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\libxsmm.h">
+      <Filter>src\template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\libxsmm_config.h">
+      <Filter>src\template</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -419,6 +422,342 @@
     <ClCompile Include="..\src\libxsmm_dnn_lstmcell.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\generator_gemm_rm_bc_soa.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fwd_custom_custom_padding_img_par.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_tensor_bias_copy_in_nchw.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_tensor_bias_copy_out_nchw.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_tensor_buffer_copy_in_nchw.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_tensor_buffer_copy_out_nchw.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_tensor_filter_copy_in_kcrs.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_tensor_filter_copy_out_kcrs.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_zero_rim_st_input_custom.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_zero_rim_st_input_nhwc.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_matdiff.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_spmdm_compute_bfloat16_thread.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_spmdm_compute_fp32_thread.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_spmdm_createSparseSlice_bfloat16_thread.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_spmdm_createSparseSlice_fp32_thread.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\transpose.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\transpose_lp_input.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\transpose_lp_input_remainder.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\transpose_lp_input_resizer.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\transpose_lp_input_resizer_remainder.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\transpose_lp_output.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\kernel_repeat.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_bgemm.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_bgemm_copyin_a.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_bgemm_copyin_b.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_bgemm_copyin_c.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_bgemm_copyout_c.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_bwd_custom_custom_padding.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_bwd_custom_custom_padding_img_par.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_inlined.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_inlined_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_input_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_input_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_input_trans_alpha6_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_output_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_output_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_output_trans_alpha6_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_inlined.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_inlined_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_input_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_input_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_input_trans_alpha6_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_output_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_output_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_output_trans_alpha6_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_weight_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_weight_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_inlined.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_inlined_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha6_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha6_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha6_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_custom_custom_deloutput_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_custom_custom_deloutput_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_custom_custom_inlined.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_custom_custom_inlined_knm.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_custom_custom_input_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_custom_custom_input_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_delweight_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_delweight_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_deloutput_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_deloutput_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_inlined.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_inlined_knm.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_input_trans_alpha4.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_input_trans_alpha6.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_fwd_nhwc_custom.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_fwd_nhwc_custom_img_par.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_fwd_nhwc_rsck.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_fwd_nhwc_rsck_img_par.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_upd_custom_custom.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_upd_custom_custom_fma_opt.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_upd_custom_custom_opt.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom_2.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_nhwc_custom-rsck_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_via_fwd_custom_custom_stream.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_custom_custom_2.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_custom_custom_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_custom_custom_stream.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_nhwc_custom-rsck_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_stream.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_2.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_stream.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_stream_fma_opt.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_nhwc_custom-rsck_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fwd_custom_custom_bias.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fwd_custom_custom_bias_img_par.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fwd_custom_custom_padding.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">
@@ -448,9 +787,6 @@
     <None Include="..\.gitattributes" />
     <None Include="..\.state.sh" />
     <None Include="..\LICENSE.md" />
-    <None Include="..\src\template\libxsmm.f">
-      <Filter>src\template</Filter>
-    </None>
     <None Include="..\.codefile" />
     <None Include="..\scripts\tool_inspector.sh">
       <Filter>scripts</Filter>
@@ -472,6 +808,9 @@
     <None Include="..\.test-dnn.yml" />
     <None Include="..\scripts\tool_test.sh">
       <Filter>scripts</Filter>
+    </None>
+    <None Include="..\src\template\libxsmm.f">
+      <Filter>src\template</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

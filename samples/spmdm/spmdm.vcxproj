@@ -161,7 +161,7 @@
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
@@ -201,7 +201,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
@@ -243,7 +243,7 @@
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
@@ -284,7 +284,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
@@ -317,7 +317,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
@@ -354,7 +354,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DisableSpecificDiagnostics>10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>

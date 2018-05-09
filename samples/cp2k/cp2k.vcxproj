@@ -169,7 +169,7 @@
       <OpenMPSupport>true</OpenMPSupport>
       <Cpp0xSupport>true</Cpp0xSupport>
       <OpenMP>GenerateParallelCode</OpenMP>
-      <DisableSpecificDiagnostics>10128,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>10128,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
@@ -213,7 +213,7 @@
       <Cpp0xSupport>true</Cpp0xSupport>
       <OpenMP>GenerateParallelCode</OpenMP>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>10128,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>10128,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
@@ -259,7 +259,7 @@
       <OpenMPSupport>true</OpenMPSupport>
       <Cpp0xSupport>true</Cpp0xSupport>
       <OpenMP>GenerateParallelCode</OpenMP>
-      <DisableSpecificDiagnostics>10128,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>10128,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
@@ -304,7 +304,7 @@
       <Cpp0xSupport>true</Cpp0xSupport>
       <OpenMP>GenerateParallelCode</OpenMP>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>10128,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>10128,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
@@ -341,7 +341,7 @@
       <OpenMPSupport>true</OpenMPSupport>
       <Cpp0xSupport>true</Cpp0xSupport>
       <OpenMP>GenerateParallelCode</OpenMP>
-      <DisableSpecificDiagnostics>10128,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>10128,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
@@ -382,7 +382,7 @@
       <OpenMPSupport>true</OpenMPSupport>
       <Cpp0xSupport>true</Cpp0xSupport>
       <OpenMP>GenerateParallelCode</OpenMP>
-      <DisableSpecificDiagnostics>10128,10373,10382</DisableSpecificDiagnostics>
+      <DisableSpecificDiagnostics>10128,3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
