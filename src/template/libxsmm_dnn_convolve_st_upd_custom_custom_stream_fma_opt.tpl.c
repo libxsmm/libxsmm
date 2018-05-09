@@ -199,7 +199,7 @@ if (handle->upd_use_external_reduce == 0) {
   for ( i = 0; i < handle->desc.threads; i++ ) {
     remote_weight_ptr = ((element_filter_type*)handle->scratch4) + (i*total_filter_size);
     for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
       __m512 remote_weight;
       __m512 reduction_weight;
       __m512 sum_weight;

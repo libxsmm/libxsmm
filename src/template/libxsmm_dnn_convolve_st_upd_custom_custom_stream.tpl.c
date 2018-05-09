@@ -243,7 +243,7 @@ for (pc = 0; pc < instr; pc++) {
 libxsmm_barrier_wait(handle->barrier, ltid);
 
 if (handle->reduce_weights) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  || libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM) {
     for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
       __m512 weight_sum = _mm512_setzero_ps();

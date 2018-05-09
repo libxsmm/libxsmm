@@ -87,7 +87,7 @@ libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunc
 LIBXSMM_ALIGNED(float scale_factor, 64);
 LIBXSMM_ALIGNED(float vnni_scratch[32], 64);
 LIBXSMM_ALIGNED(float *max_vals, 64);
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs = _mm512_setzero_ps();
 #else
 /* won't happen as this code only runs on AVX512 platforms */
@@ -345,7 +345,7 @@ if (handle->reduce_weights) {
     if (handle->upd_use_external_reduce == 0) {
       libxsmm_barrier_wait(handle->barrier, ltid);
       for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
         __m512 weight_sum = _mm512_setzero_ps();
         for ( i = 0; i < handle->desc.threads; i++ ) {
           weight_sum = _mm512_add_ps(weight_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
@@ -388,7 +388,7 @@ if (handle->reduce_weights) {
         }
 #endif
       }
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
       _mm512_store_ps(max_vals, max_abs);
 #endif
     }
@@ -399,7 +399,7 @@ if (handle->reduce_weights) {
       libxsmm_barrier_wait(handle->barrier, ltid);
       if (pixels_lp == 4) {
         for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
           __m512i weight_sum = _mm512_setzero_epi32();
           for ( i = 0; i < handle->desc.threads; i++ ) {
             weight_sum = _mm512_add_epi32(weight_sum, _mm512_load_epi32(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
@@ -442,7 +442,7 @@ if (handle->reduce_weights) {
         }
       } else {
         for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
           __m512 weight_sum = _mm512_setzero_ps();
           for ( i = 0; i < handle->desc.threads; i++ ) {
             weight_sum = _mm512_add_ps(weight_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));

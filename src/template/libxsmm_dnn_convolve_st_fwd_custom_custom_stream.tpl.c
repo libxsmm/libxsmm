@@ -82,7 +82,7 @@ element_output_type *bn_sum_base2;
 double *bn_sum_base;
 double *bn_sum_base2;
 #endif
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs;
 #else
 /* won't happen as this code only runs on AVX512 platforms */
@@ -119,7 +119,7 @@ if (handle->use_lp_kernel == 1) {
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, element_output_type, maxstats, (element_output_type*)handle->maxstats_fwd->data, handle->ofmblock);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, handle->ofmblock);
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   max_abs = _mm512_setzero_ps();
   _mm512_store_ps(max_vals, max_abs);
 #else
@@ -252,7 +252,7 @@ if (n_segments) {
           if (instr == OFM_LOOP_CLOSE) {
             /* Compute batch norm statistics... */
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 #ifndef FP64_BN_STATS
               ofm1 =  code_stream[pc].aux_index;
               LIBXSMM_VLA_DECL(4, element_output_type, stats, (element_output_type*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
@@ -317,7 +317,7 @@ if (n_segments) {
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                   max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+oi)));
 #else
                   /* Won't happen as this code only runs on AVX512 systems */
@@ -368,7 +368,7 @@ if (n_segments) {
           if ( instr == OFM_LOOP_CLOSE ) {
             /* Compute batch norm statistics... */
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 #ifndef FP64_BN_STATS
               ofm1 =  code_stream[pc].aux_index;
               LIBXSMM_VLA_DECL(4, element_output_type, stats, (element_output_type*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
@@ -433,7 +433,7 @@ if (n_segments) {
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                   max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+oi)));
 #else
                   /* won't happen as this code only runs on AVX512 platforms */
@@ -575,7 +575,7 @@ if (n_segments) {
 }
 
 if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_lp_kernel == 1) && (handle->compute_max_in_kernel_fwd == 0) ) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   _mm512_store_ps(max_vals, max_abs);
 #else
   /* won't happen as this code only runs on AVX512 platforms */

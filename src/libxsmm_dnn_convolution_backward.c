@@ -44,10 +44,16 @@
 
 /* @TODO: needs target decoration, only on AVX512F (do we need to distinguish between SKX and KNx??) */
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+
+
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
@@ -60,12 +66,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_f
   return status;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (do we need to distinguish between SKX and KNx??) */
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   typedef int element_input_type;
   typedef short element_output_type;
   typedef short element_filter_type;
@@ -78,12 +84,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i
   return status;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (do we need to distinguish between SKX and KNx??) */
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   typedef float element_input_type;
   typedef short element_output_type;
   typedef short element_filter_type;
@@ -96,12 +102,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i
   return status;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (do we need to distinguish between SKX and KNx??) */
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   typedef int element_input_type;
   typedef unsigned char element_output_type;
   typedef char element_filter_type;
@@ -113,6 +119,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom_i
 #endif
   return status;
 }
+
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
@@ -177,6 +184,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom(l
   return status;
 }
 
+
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -214,6 +222,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_rsck(libxs
 
   return status;
 }
+
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_nhwc_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {

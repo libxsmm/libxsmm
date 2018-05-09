@@ -81,7 +81,7 @@ libxsmm_convfunction kernel = (handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunct
 LIBXSMM_ALIGNED(float scale_factor, 64);
 LIBXSMM_ALIGNED(float vnni_scratch[32], 64);
 LIBXSMM_ALIGNED(float *max_vals, 64);
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs = _mm512_setzero_ps();
 #else
 /* won't happen as this code only runs on AVX512 platforms */
@@ -276,7 +276,7 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 if (handle->reduce_weights) {
   if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
     for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
       __m512 weight_sum = _mm512_setzero_ps();
       for ( i = 0; i < handle->weight_copies; i++ ) {
         weight_sum = _mm512_add_ps(weight_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
@@ -305,17 +305,17 @@ if (handle->reduce_weights) {
       }
 #endif
     }
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
     _mm512_store_ps(max_vals, max_abs);
 #endif
     libxsmm_barrier_wait(handle->barrier, ltid);
   } else {
     if (pixels_lp == 4) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
       __m512i weight_sumi;
 #endif
       for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
         weight_sumi = _mm512_setzero_epi32();
         for ( i = 0; i < handle->weight_copies; i++ ) {
           weight_sumi = _mm512_add_epi32(weight_sumi, _mm512_load_epi32(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
@@ -345,11 +345,11 @@ if (handle->reduce_weights) {
       }
       libxsmm_barrier_wait(handle->barrier, ltid);
     } else {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
       __m512 weight_sum;
 #endif
       for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
         weight_sum = _mm512_setzero_ps();
         for ( i = 0; i < handle->weight_copies; i++ ) {
           weight_sum = _mm512_add_ps(weight_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));

@@ -1,4 +1,4 @@
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 # define TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i) \
       pair_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); \
       pair_pixels = _mm512_loadu_si512(pair_addr); \

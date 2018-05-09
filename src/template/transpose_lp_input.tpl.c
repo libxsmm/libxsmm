@@ -1,4 +1,4 @@
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 # define TRANSPOSE_W_CHUNK(img, src_ifm1, ij, w_offset, src_ifm2, dst_ifm1, dst_ifm2) \
         base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, src_ifm1, ij, w_offset, src_ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block); \
         gather_reg = _mm512_i32gather_epi32(vgindex, base_addr, 1); \

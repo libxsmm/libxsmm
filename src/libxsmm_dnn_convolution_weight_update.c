@@ -50,6 +50,12 @@ LIBXSMM_API_INTERN void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*transposer)(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS);
 LIBXSMM_API_INTERN transposer get_transposer(int M, int N, int ldD, int ldS);
 
+/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish between SKX and KNx) */
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+
 #if defined(__AVX512F__) /*&& defined(__AVX512BW__)*/
 #define TRANSPOSE_W_CHUNK(img, ifm1, ij, w_offset, ifm2) \
         base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w_offset, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block); \
@@ -918,12 +924,12 @@ LIBXSMM_API_INTERN transposer get_transposer(int M, int N, int ldD, int ldS) {
   return transpose_fallback;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish between SKX and KNx) */
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
@@ -936,13 +942,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f
   return status;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish between SKX and KNx) */
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid); /* TODO */
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #else /* should not happen */
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
@@ -950,12 +956,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i
   return status;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish between SKX and KNx) */
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   if (handle->upd_use_thread_fil > 0) {
     typedef short element_input_type;
     typedef short element_output_type;
@@ -963,9 +969,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i
     typedef libxsmm_uwsconvfunction libxsmm_convfunction;
     if (handle->use_fastpath) {
       if ( handle->use_hybrid_wu_parallelism == 1) {
-#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
       } else {
-#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
       }
     }
   }
@@ -976,12 +982,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i
   return status;
 }
 
-/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish between SKX and KNx) */
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
+
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-#ifdef __AVX512F__
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   if (handle->upd_use_thread_fil > 0) {
     typedef unsigned char element_input_type;
     typedef unsigned char element_output_type;
@@ -989,9 +995,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i
     typedef libxsmm_bdbconvfunction libxsmm_convfunction;
     if (handle->use_fastpath) {
       if ( handle->use_hybrid_wu_parallelism == 1) {
-#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_lp.tpl.c"
       } else {
-#include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_lp.tpl.c"
       }
     }
   }
