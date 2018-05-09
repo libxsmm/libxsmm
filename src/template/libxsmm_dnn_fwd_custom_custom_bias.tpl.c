@@ -33,19 +33,19 @@
 LIBXSMM_VLA_DECL(2, element_output_type, bias, (element_output_type*)handle->reg_bias->data, handle->ofmblock);
 element_output_type* temp_ptr;
 element_output_type* temp_ptr_2;
-#if defined(__AVX512F__)
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 vbias;
 #endif
 ofm1 = code_stream[pc].aux_index;
 temp_ptr_2 = &(LIBXSMM_VLA_ACCESS(  2, bias, ofm1, 0, handle->ofmblock));
 temp_ptr =  output_base + stream[i+2];
 /* @TODO this is very hacky as it assumes ofmblock is VLEN */
-#if defined(__AVX512F__)
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 vbias = LIBXSMM_INTRINSICS_MM512_LOAD_PS((void*)temp_ptr_2);
 #endif
 /* @TODO check these loops for physical output padding */
 for (oj = 0; oj < handle->ofhp*handle->ofwp; ++oj) {
-#if defined(__AVX512F__)
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   _mm512_store_ps((void*)temp_ptr, vbias);
 #else
   LIBXSMM_PRAGMA_SIMD
