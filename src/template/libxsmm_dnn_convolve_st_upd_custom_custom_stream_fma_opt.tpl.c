@@ -63,8 +63,8 @@ LIBXSMM_VLA_DECL(6, element_filter_type, per_thread_weight, per_thread_weight_pt
 /* Declare both variables for weights (private and global)  */
 LIBXSMM_VLA_DECL(6, element_filter_type, opt_weight_ptr_per_thread, per_thread_weight, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 /* Pointer related variables for input */
-element_input_type (* LIBXSMM_RESTRICT input_ptr);
-element_input_type (* LIBXSMM_RESTRICT copy_ptr);
+element_input_type *LIBXSMM_RESTRICT input_ptr;
+element_input_type *LIBXSMM_RESTRICT copy_ptr;
 element_input_type *prefetch_ptr;
 int padded_h = (handle->padding_flag == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
 int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;

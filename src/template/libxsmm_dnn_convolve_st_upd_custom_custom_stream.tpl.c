@@ -62,8 +62,8 @@ element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->dat
 element_filter_type* reduction_weight_ptr = ((element_filter_type*)handle->scratch4) + (handle->weight_copies * BLOCKSOFM * BLOCKSIFM * handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
 LIBXSMM_VLA_DECL(3, element_filter_type, reduction_weight, reduction_weight_ptr, handle->weight_copies, handle->ofmblock);
 
-element_input_type (* LIBXSMM_RESTRICT input_ptr);
-element_input_type (* LIBXSMM_RESTRICT copy_ptr);
+element_input_type *LIBXSMM_RESTRICT input_ptr;
+element_input_type *LIBXSMM_RESTRICT copy_ptr;
 element_input_type *prefetch_ptr;
 int padded_h = (handle->padding_flag == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
 int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
