@@ -488,28 +488,28 @@ ifeq (1,$(GCC))
 endif
 
 # Make GCC version number available even when not using GCC
-ifneq (0,$(shell echo "$$((2 <= $(GCC)))"))
-  GXX_VERSION_STRING = $(CXX_VERSION_STRING)
-  GXX_VERSION_MAJOR = $(CXX_VERSION_MAJOR)
-  GXX_VERSION_MINOR = $(CXX_VERSION_MINOR)
-  GXX_VERSION_PATCH = $(CXX_VERSION_PATCH)
+ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
+  GCC_VERSION_STRING = $(CXX_VERSION_STRING)
+  GCC_VERSION_MAJOR = $(CXX_VERSION_MAJOR)
+  GCC_VERSION_MINOR = $(CXX_VERSION_MINOR)
+  GCC_VERSION_PATCH = $(CXX_VERSION_PATCH)
 else
-  GXX = $(notdir $(shell which gcc 2>/dev/null))
-  ifneq (,$(strip $(GXX)))
-    GXX_VERSION_STRING = $(shell $(GXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
-    GXX_VERSION_MAJOR = $(shell echo "$(GXX_VERSION_STRING)" | cut -d"." -f1)
-    GXX_VERSION_MINOR = $(shell echo "$(GXX_VERSION_STRING)" | cut -d"." -f2)
-    GXX_VERSION_PATCH = $(shell echo "$(GXX_VERSION_STRING)" | cut -d"." -f3)
+  GCCBIN = $(notdir $(shell which gcc 2>/dev/null))
+  ifneq (,$(strip $(GCCBIN)))
+    GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+    GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f1)
+    GCC_VERSION_MINOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f2)
+    GCC_VERSION_PATCH = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f3)
   endif
 endif
-ifeq (3,$(words $(GXX_VERSION_MAJOR) $(GXX_VERSION_MINOR) $(GXX_VERSION_PATCH)))
-  GXX_VERSION = $(shell echo "$$(($(GXX_VERSION_MAJOR) * 10000 + $(GXX_VERSION_MINOR) * 100 + $(GXX_VERSION_PATCH)))")
-else ifeq (2,$(words $(GXX_VERSION_MAJOR) $(GXX_VERSION_MINOR)))
-  GXX_VERSION = $(shell echo "$$(($(GXX_VERSION_MAJOR) * 10000 + $(GXX_VERSION_MINOR) * 100))")
-  GXX_VERSION_PATCH = 0
+ifeq (3,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR) $(GCC_VERSION_PATCH)))
+  GCC_VERSION = $(shell echo "$$(($(GCC_VERSION_MAJOR) * 10000 + $(GCC_VERSION_MINOR) * 100 + $(GCC_VERSION_PATCH)))")
+else ifeq (2,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR)))
+  GCC_VERSION = $(shell echo "$$(($(GCC_VERSION_MAJOR) * 10000 + $(GCC_VERSION_MINOR) * 100))")
+  GCC_VERSION_PATCH = 0
 else
-  GXX_VERSION_STRING = $(NULL)
-  GXX_VERSION = 0
+  GCC_VERSION_STRING = $(NULL)
+  GCC_VERSION = 0
 endif
 
 ifeq (Windows_NT,$(UNAME))
@@ -809,7 +809,7 @@ else # GCC assumed
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
   endif
   ifeq (0,$(COMPATIBLE))
-    ifneq (0,$(shell echo "$$((40700 <= $(GXX_VERSION)))"))
+    ifneq (0,$(shell echo "$$((40700 <= $(GCC_VERSION)))"))
       CXXFLAGS += -std=c++11
     endif
     CXXFLAGS += -Wall -Wno-unused-function #-Wno-attributes
@@ -910,7 +910,7 @@ else # GCC assumed
     CFLAGS += -finstrument-functions
     FCFLAGS += -finstrument-functions
     # e.g. clang does not need/understand below flag
-    ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
+    ifneq (0,$(shell echo "$$((40300 <= $(GCC_VERSION)))"))
       CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
       ifneq (0,$(shell echo "$$((2 <= $(GCC)))"))
         CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
@@ -1001,7 +1001,7 @@ ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3 > $(DBG)))"))
   ifneq (0,$(shell echo "$$((2 <= $(AVX)))"))
     ifeq (3,$(AVX))
-    ifneq (0,$(shell echo "$$(((0 != $(CLANG) && 40000 <= $(CC_VERSION)) || 50000 <= $(GXX_VERSION) || 0 == $(CC_VERSION)))"))
+    ifneq (0,$(shell echo "$$(((0 != $(CLANG) && 40000 <= $(CC_VERSION)) || 50000 <= $(GCC_VERSION) || 0 == $(CC_VERSION)))"))
     ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
       CTARGET = -mavx512f -mavx512cd
       # fix for Clang
@@ -1289,7 +1289,7 @@ ifneq (0,$(TBB))
 ifneq (,$(TBBROOT))
   ifneq (Windows_NT,$(UNAME))
     TBBLIB_DIR = $(TBBROOT)/lib/intel64
-    TBBLIB_DIRGCC = gcc$(GXX_VERSION_MAJOR).$(GXX_VERSION_MINOR)
+    TBBLIB_DIRGCC = gcc$(GCC_VERSION_MAJOR).$(GCC_VERSION_MINOR)
     TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.so)
     ifeq (,$(TBBLIB_MALLOC))
       ifneq (0,$(TBB_OLDRTL))
