@@ -2,8 +2,8 @@
 # define TRANSPOSE_W_FULL_PAIR(img, ofm1, ij, ii, half_i) \
       pair_addr = &LIBXSMM_VLA_ACCESS(6, output, img, ofm1, ij, ii, 0, 0,  handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block); \
       pair_pixels = _mm512_loadu_si512(pair_addr); \
-      even_pixel = LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(pair_pixels, 0); \
-      odd_pixel = LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(pair_pixels, 1); \
+      even_pixel = LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(pair_pixels, 0); \
+      odd_pixel = LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(pair_pixels, 1); \
       compressed_lo  = _mm256_unpacklo_epi16(even_pixel, odd_pixel); \
       compressed_hi  = _mm256_unpackhi_epi16(even_pixel, odd_pixel); \
       part0 = _mm256_extractf128_si256(compressed_lo,0); \

@@ -206,9 +206,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               for (t1 = 0; t1 < 8; t1++) {
                 __m512i cur_cache_line = _mm512_loadu_si512(&LIBXSMM_VLA_ACCESS(7, wt, okb, icb, kj, ki, t1, 0, 0,
                   BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block));
-                __m512i permuted_cache_line = LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(permute_index, cur_cache_line);
-                __m256i lo_half = LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(permuted_cache_line, 0);
-                __m256i hi_half = LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(permuted_cache_line, 1);
+                __m512i permuted_cache_line = _mm512_permutexvar_epi32(permute_index, cur_cache_line);
+                __m256i lo_half = LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(permuted_cache_line, 0);
+                __m256i hi_half = LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(permuted_cache_line, 1);
                 __m256i lo_zipped = _mm256_unpacklo_epi16(lo_half, hi_half);
                 __m256i hi_zipped = _mm256_unpackhi_epi16(lo_half, hi_half);
                 __m128i part0 = _mm256_extractf128_si256(lo_zipped,0);

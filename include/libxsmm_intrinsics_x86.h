@@ -328,7 +328,8 @@
 #       define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     endif
 #   endif /*!defined(LIBXSMM_INTRINSICS)*/
-# elif defined(LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_INTRINSICS_INCLUDE)
+# elif !defined(LIBXSMM_INTRINSICS_INCLUDE) && defined(LIBXSMM_STATIC_TARGET_ARCH) && /* legacy-check */ \
+  LIBXSMM_VERSION3(4, 3, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
 #   define LIBXSMM_INTRINSICS_INCLUDE
 #   include <immintrin.h>
 # endif /*defined(LIBXSMM_STATIC_TARGET_ARCH)*/
@@ -405,8 +406,7 @@
                            _mm512_set_epi16(A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, \
                                   A16, A17, A18, A19, A20, A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31)
 # define LIBXSMM_INTRINSICS_MM512_MASK_I32GATHER_EPI32(A, B, C, D, E) _mm512_mask_i32gather_epi32(A, B, C, D, E)
-# define LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(A, B) _mm512_extracti64x4_epi64(A, B)
-# define LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(A, B) _mm512_permutexvar_epi32(A, B)
+# define LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(A, B) _mm512_extracti64x4_epi64(A, B)
 # define LIBXSMM_INTRINSICS_MM512_ABS_PS(A) _mm512_abs_ps(A)
 # define LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32() _mm512_undefined_epi32()
 # define LIBXSMM_INTRINSICS_MM512_UNDEFINED() _mm512_undefined()
@@ -420,8 +420,7 @@
                                            (A24) | ((A25) << 16), (A26) | ((A27) << 16), (A28) | ((A29) << 16), (A30) | ((A31) << 16))
 # define LIBXSMM_INTRINSICS_MM512_MASK_I32GATHER_EPI32(A, B, C, D, E) _mm512_castps_si512(_mm512_mask_i32gather_ps( \
                            _mm512_castsi512_ps(A), B, C, (const float*)(D), E))
-# define LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(A, B) _mm256_castpd_si256(_mm512_extractf64x4_pd(_mm512_castsi512_pd(A), B))
-# define LIBXSMM_INTRINSICS_MM512_PERMUTEVAR_EPI32(A, B) _mm512_permutexvar_epi32(A, B)
+# define LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(A, B) _mm256_castpd_si256(_mm512_extractf64x4_pd(_mm512_castsi512_pd(A), B))
 # define LIBXSMM_INTRINSICS_MM512_ABS_PS(A) _mm512_castsi512_ps(_mm512_and_epi32( \
                            _mm512_castps_si512(A), _mm512_set1_epi32(0x7FFFFFFF)))
 # define LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32() _mm512_set1_epi32(0)
