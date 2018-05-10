@@ -274,8 +274,8 @@ public:
   template<typename context_type>
   explicit libxsmm_tf_allocator(context_type& context)
     : libxsmm_scoped_allocator<kind>(&context,
-      libxsmm_tf_allocator::malloc_ctx<context_type>,
-      libxsmm_tf_allocator::free_ctx<context_type>,
+      libxsmm_tf_allocator::template malloc_ctx<context_type>,
+      libxsmm_tf_allocator::template free_ctx<context_type>,
       libxsmm_tf_allocator::malloc,
       libxsmm_tf_allocator::free)
   {}
