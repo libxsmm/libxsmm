@@ -186,10 +186,10 @@ int main(int argc, char* argv[]) {
   printf("GFLOPS ref: %f\n", gflops_ref);
   printf("GFLOPS opt: %f\n", gflops_opt);
 
-  _mm_free( a );
-  _mm_free( b );
-  _mm_free( c1 );
-  _mm_free( c2 );
+  libxsmm_free( a );
+  libxsmm_free( b );
+  libxsmm_free( c1 );
+  libxsmm_free( c2 );
 
   return 0;
 }
