@@ -136,7 +136,8 @@
 #   define LIBXSMM_SYNC_NPAUSE 0
 # endif
 #else
-# if defined(__GNUC__) && !defined(LIBXSMM_SYNC_SYSTEM)
+# if defined(__GNUC__) && !defined(LIBXSMM_SYNC_SYSTEM) && /* check for legacy GCC (no atomics) */ \
+  LIBXSMM_VERSION3(4, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
 #   define LIBXSMM_ATOMIC(FN, BITS) FN
 #   if defined(LIBXSMM_GCC_BASELINE)
 #     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_n(SRC_PTR, KIND)

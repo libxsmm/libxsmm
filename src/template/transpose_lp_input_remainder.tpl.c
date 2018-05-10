@@ -2,8 +2,8 @@
 # define TRANSPOSE_W_CHUNK(img, src_ifm1, ij, w_offset, src_ifm2, dst_ifm1, dst_ifm2) \
         base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, src_ifm1, ij, w_offset, src_ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block); \
         gather_reg = _mm512_i32gather_epi32(vgindex, base_addr, 1); \
-        lo_reg= LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(gather_reg,0); \
-        hi_reg= LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(gather_reg,1); \
+        lo_reg= LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(gather_reg,0); \
+        hi_reg= LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(gather_reg,1); \
         compressed_low  = _mm256_unpacklo_epi16(lo_reg, hi_reg); \
         compressed_low =  _mm256_permutevar8x32_epi32(compressed_low, shuffler); \
         compressed_high  = _mm256_unpackhi_epi16(lo_reg, hi_reg); \
@@ -18,8 +18,8 @@
 # define TRANSPOSE_W_REMAINDER(img, src_ifm1, ij, w_offset, src_ifm2, dst_ifm1, dst_ifm2) \
         base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, src_ifm1, ij, w_offset, src_ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block); \
         gather_reg = LIBXSMM_INTRINSICS_MM512_MASK_I32GATHER_EPI32(LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), gmask, vgindex, base_addr, 1); \
-        lo_reg= LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(gather_reg,0); \
-        hi_reg= LIBXSMM_INTRINSICS_MM512_EXTRACTI64x4_EPI64(gather_reg,1); \
+        lo_reg= LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(gather_reg,0); \
+        hi_reg= LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(gather_reg,1); \
         compressed_low  = _mm256_unpacklo_epi16(lo_reg, hi_reg); \
         compressed_low =  _mm256_permutevar8x32_epi32(compressed_low, shuffler); \
         compressed_high  = _mm256_unpackhi_epi16(lo_reg, hi_reg); \
