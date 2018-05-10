@@ -55,7 +55,7 @@ if [ "" != "${FLAKE8}" ] && [ "0" != "$(${FLAKE8} ${HERE}/*.py 2>&1 >/dev/null ;
   ${ECHO} "Warning: some Python scripts do not pass flake8 check (${HERE})!"
 fi
 
-if [ "" != "${ICONV}" ] && [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && \
+if [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && \
    [ "" != "${SED}" ] && [ "" != "${TR}" ] && \
    [ "" != "${CP}" ] && [ "" != "${RM}" ]; then
   TMPF=$(${MKTEMP} .libxsmm_XXXXXX.txt)
@@ -75,7 +75,11 @@ if [ "" != "${ICONV}" ] && [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && \
         ${ECHO} "Warning: ${FILE} uses non-UNIX line endings!"
       fi
       if [ "" != "${TRAILS}" ]; then
-        ${ICONV} -t ASCII ${FILE} | ${SED} -e "s/\s\s*$//" > ${TMPF}
+        if [ "" != "${ICONV}" ]; then
+          ${ICONV} -t ASCII ${FILE} | ${SED} -e "s/\s\s*$//" > ${TMPF}
+        else
+          ${SED} ${FILE} -e "s/\s\s*$//" > ${TMPF}
+        fi
         ${CP} ${TMPF} ${FILE}
         ${ECHO} "${FILE}: removed trailing white spaces."
       fi
