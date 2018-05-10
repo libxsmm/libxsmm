@@ -2225,7 +2225,7 @@ void lstm_bwd_upd_execute(struct lstm_handle *lstm, const int nrepeat, const lib
     tempflops *= (t - 1); /* for (t - 1) time steps */
     tempflops += (4.0 * m * n * (t-2)); /* for summation of dJdR{c, i, f, o} */
     gflops += tempflops;
-    gflops += (4.0 * m * n * (t - 1)); /* delbias */ 
+    gflops += (4.0 * m * n * (t - 1)); /* delbias */
   }
   gflops *= 1E-9; /* to convert flops to Gflops */
   ITYPE *wi = (ITYPE*)lstm->wi;
@@ -2491,7 +2491,7 @@ int lstm_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm
     tempflops *= (t - 1); /* for (t - 1) time steps */
     tempflops += (4.0 * m * n * (t-2)); /* for summation of dJdR{c, i, f, o} */
     gflops += tempflops;
-    gflops += (4.0 * m * n * (t - 1)); /* delbias */ 
+    gflops += (4.0 * m * n * (t - 1)); /* delbias */
   }
   gflops *= 1E-9; /* to convert flops to Gflops */
   const char transa = 'N', transb = 'N'; /* no transposes */
@@ -3173,7 +3173,7 @@ int main(int argc, char* argv[])
     printf("time_steps %d should be greater than 1\n\n", t);
     return result;
   }
-  if ( (pass == 1 || pass == 2 || pass == 3) && 
+  if ( (pass == 1 || pass == 2 || pass == 3) &&
       !(bm == bn && bn == bk && b_m1 == b_n1 && b_n1 == b_k1 && b_m2 == b_n2 && b_n2 == b_k2) ) {
     printf("Required condition for BWD/UPD, bm == bn == bk and bm1 == bn1 == bk1 and bm2 == bn2 == bk2\n\n");
     return result;
