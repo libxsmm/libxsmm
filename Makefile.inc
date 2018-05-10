@@ -487,31 +487,6 @@ ifeq (1,$(GCC))
   endif
 endif
 
-# Make GCC version number available even when not using GCC
-ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
-  GCC_VERSION_STRING = $(CXX_VERSION_STRING)
-  GCC_VERSION_MAJOR = $(CXX_VERSION_MAJOR)
-  GCC_VERSION_MINOR = $(CXX_VERSION_MINOR)
-  GCC_VERSION_PATCH = $(CXX_VERSION_PATCH)
-else
-  GCCBIN = $(notdir $(shell which gcc 2>/dev/null))
-  ifneq (,$(strip $(GCCBIN)))
-    GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
-    GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f1)
-    GCC_VERSION_MINOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f2)
-    GCC_VERSION_PATCH = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f3)
-  endif
-endif
-ifeq (3,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR) $(GCC_VERSION_PATCH)))
-  GCC_VERSION = $(shell echo "$$(($(GCC_VERSION_MAJOR) * 10000 + $(GCC_VERSION_MINOR) * 100 + $(GCC_VERSION_PATCH)))")
-else ifeq (2,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR)))
-  GCC_VERSION = $(shell echo "$$(($(GCC_VERSION_MAJOR) * 10000 + $(GCC_VERSION_MINOR) * 100))")
-  GCC_VERSION_PATCH = 0
-else
-  GCC_VERSION_STRING = $(NULL)
-  GCC_VERSION = 0
-endif
-
 ifeq (Windows_NT,$(UNAME))
 ifeq (MINGW64,$(MSYSTEM))
   MINGW = 64
@@ -539,6 +514,31 @@ endif
 endif
 endif
 CLANG ?= 0
+
+# Make GCC version number available even when not using GCC
+ifneq (0,$(shell echo "$$((1 <= $(GCC)))"))
+  GCC_VERSION_STRING = $(CXX_VERSION_STRING)
+  GCC_VERSION_MAJOR = $(CXX_VERSION_MAJOR)
+  GCC_VERSION_MINOR = $(CXX_VERSION_MINOR)
+  GCC_VERSION_PATCH = $(CXX_VERSION_PATCH)
+else ifeq (0,$(CLANG))
+  GCCBIN = $(notdir $(shell which gcc 2>/dev/null))
+  ifneq (,$(strip $(GCCBIN)))
+    GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+    GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f1)
+    GCC_VERSION_MINOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f2)
+    GCC_VERSION_PATCH = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f3)
+  endif
+endif
+ifeq (3,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR) $(GCC_VERSION_PATCH)))
+  GCC_VERSION = $(shell echo "$$(($(GCC_VERSION_MAJOR) * 10000 + $(GCC_VERSION_MINOR) * 100 + $(GCC_VERSION_PATCH)))")
+else ifeq (2,$(words $(GCC_VERSION_MAJOR) $(GCC_VERSION_MINOR)))
+  GCC_VERSION = $(shell echo "$$(($(GCC_VERSION_MAJOR) * 10000 + $(GCC_VERSION_MINOR) * 100))")
+  GCC_VERSION_PATCH = 0
+else
+  GCC_VERSION_STRING = $(NULL)
+  GCC_VERSION = 0
+endif
 
 # Select code path (if not selected otherwise)
 CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
