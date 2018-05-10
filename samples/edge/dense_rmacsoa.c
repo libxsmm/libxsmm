@@ -33,8 +33,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include <sys/time.h>
-
 #include <libxsmm.h>
 
 #if defined(__EDGE_EXECUTE_F32__)
@@ -43,10 +41,6 @@
 #define REALTYPE double
 #endif
 
-
-static double sec(struct timeval start, struct timeval end) {
-  return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
-}
 
 static void matMulFusedAC(       unsigned int    i_r,
                                  unsigned int    i_m,
@@ -84,24 +78,24 @@ static void matMulFusedAC(       unsigned int    i_r,
   }
 }
 
-int main(int agrc, char* argv[]) {
+int main(int argc, char* argv[]) {
 #if defined(__EDGE_EXECUTE_F32__)
   unsigned int l_r = 16;
 #else
   unsigned int l_r = 8;
 #endif
-  unsigned int l_m = atoi(argv[1]);
-  unsigned int l_n = atoi(argv[2]);
-  unsigned int l_k = atoi(argv[3]);
-  REALTYPE l_beta = (REALTYPE)atof(argv[4]);
+  unsigned int l_m = 1 < argc ? atoi(argv[1]) : 0;
+  unsigned int l_n = 2 < argc ? atoi(argv[2]) : 0;
+  unsigned int l_k = 3 < argc ? atoi(argv[3]) : 0;
+  REALTYPE l_beta = (REALTYPE)(4 < argc ? atof(argv[4]) : 0);
   REALTYPE l_alpha = 1.0;
-  unsigned int l_reps = atoi(argv[5]);
+  unsigned int l_reps = 5 < argc ? atoi(argv[5]) : 0;
   double flops = (double)l_m * (double)l_n * (double)l_k * (double)l_r * (double)l_reps;
 
-  REALTYPE* a = (REALTYPE*)  _mm_malloc( l_m*l_k*l_r*sizeof(REALTYPE), 64 );
-  REALTYPE* b = (REALTYPE*)  _mm_malloc( l_k*l_n*sizeof(REALTYPE), 64 );
-  REALTYPE* c1 = (REALTYPE*) _mm_malloc( l_m*l_n*l_r*sizeof(REALTYPE), 64 );
-  REALTYPE* c2 = (REALTYPE*) _mm_malloc( l_m*l_n*l_r*sizeof(REALTYPE), 64 );
+  REALTYPE* a = (REALTYPE*)  libxsmm_aligned_malloc( l_m*l_k*l_r*sizeof(REALTYPE), 64 );
+  REALTYPE* b = (REALTYPE*)  libxsmm_aligned_malloc( l_k*l_n*sizeof(REALTYPE), 64 );
+  REALTYPE* c1 = (REALTYPE*) libxsmm_aligned_malloc( l_m*l_n*l_r*sizeof(REALTYPE), 64 );
+  REALTYPE* c2 = (REALTYPE*) libxsmm_aligned_malloc( l_m*l_n*l_r*sizeof(REALTYPE), 64 );
 
   libxsmm_descriptor_blob l_xgemm_blob;
   const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
@@ -109,7 +103,7 @@ int main(int agrc, char* argv[]) {
   const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
 
-  struct timeval l_start, l_end;
+  libxsmm_timer_tickint l_start, l_end;
   double l_total_ref, l_total_opt;
   double max_error = 0.0;
   double gflops_ref = 0.0;
@@ -117,16 +111,16 @@ int main(int agrc, char* argv[]) {
   unsigned int i = 0;
 
   for ( i = 0; i < l_m*l_n*l_r; ++i ) {
-    c1[i] = (REALTYPE)drand48();
+    c1[i] = (REALTYPE)libxsmm_rand_f64();
   }
   for ( i = 0; i < l_m*l_n*l_r; ++i ) {
     c2[i] = c1[i];
   }
   for ( i = 0; i < l_m*l_k*l_r; ++i ) {
-    a[i] = (REALTYPE)drand48();
+    a[i] = (REALTYPE)libxsmm_rand_f64();
   }
   for ( i = 0; i < l_k*l_n; ++i ) {
-    b[i] = (REALTYPE)drand48();
+    b[i] = (REALTYPE)libxsmm_rand_f64();
   }
 
   /* JIT code */
@@ -152,7 +146,7 @@ int main(int agrc, char* argv[]) {
   /* run optimized */
   mykernel( a, b, c2 );
 
-  /* check correctnes */
+  /* check correctness */
   for ( i = 0; i < l_m*l_n*l_r; ++i ) {
     if ( max_error < fabs( c1[i] - c2[i] ) ) {
       max_error = fabs( c1[i] - c2[i] );
@@ -161,8 +155,8 @@ int main(int agrc, char* argv[]) {
 
   printf("Max. Error: %f\n", max_error);
 
-  /* lets run some perfoermance test */
-  gettimeofday(&l_start, NULL);
+  /* lets run some performance test */
+  l_start = libxsmm_timer_tick();
   for ( i = 0; i < l_reps; ++i ) {
     /* run reference */
     matMulFusedAC( l_r,
@@ -175,16 +169,16 @@ int main(int agrc, char* argv[]) {
                     b,
                     c1);
   }
-  gettimeofday(&l_end, NULL);
-  l_total_ref = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total_ref = libxsmm_timer_duration(l_start, l_end);
 
-  gettimeofday(&l_start, NULL);
+  l_start = libxsmm_timer_tick();
   for ( i = 0; i < l_reps; ++i ) {
     /* run optimized */
     mykernel( a, b, c2);
   }
-  gettimeofday(&l_end, NULL);
-  l_total_opt = sec(l_start, l_end);
+  l_end = libxsmm_timer_tick();
+  l_total_opt = libxsmm_timer_duration(l_start, l_end);
 
   gflops_ref = (flops/l_total_ref)/1e9;
   gflops_opt = (flops/l_total_opt)/1e9;
