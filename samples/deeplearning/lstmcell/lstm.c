@@ -154,10 +154,10 @@ struct lstm_handle {
   ITYPE *djdbf;
   ITYPE *djdbo;
   ITYPE *djdbc;
-  ITYPE* rTp;
-  ITYPE* wTp;
-  ITYPE* deltaTp;
-  ITYPE* xTp;
+  ITYPE *rTp;
+  ITYPE *wTp;
+  ITYPE *deltaTp;
+  ITYPE *xTp;
   libxsmm_bgemm_handle *handlewx;
   libxsmm_bgemm_handle *handleuh;
   libxsmm_bgemm_handle *handlett;
@@ -570,6 +570,19 @@ void rnn_destroy(struct rnn_handle *rnn)
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->z1t ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->z2 ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->z ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->djdht ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->deltat ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->djdu ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->djdw ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->djdxt ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->di1 ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->di2 ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->dj1 ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->dw1 ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->uTp ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->wTp ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->hTp ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( rnn->xTp ) );
 #endif
 }
 
@@ -788,30 +801,6 @@ void rnn_bwd_upd_init(struct rnn_handle *rnn, ITYPE *djdhgoldt, ITYPE *zgoldt, I
     matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, ldh * n), &LIBXSMM_VLA_ACCESS(2, djdh, it, 0, m * n));
     matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, zgold, it, 0, ldz * n), &LIBXSMM_VLA_ACCESS(2, z, it, 0, m * n));
   }
-#if defined(MKL_ENABLE_AVX512)
-  mkl_enable_instructions(MKL_ENABLE_AVX512);
-#endif
-#if 0
-  /* warmup OpenMP (populate thread pool) */
-  libxsmm_bgemm_omp(handlewx, w, x, &LIBXSMM_VLA_ACCESS(2, z1, 0, 0, m * n), 1);
-#if defined(CHECK)
-  if (!LIBXSMM_FEQ(0, check)) {
-    LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, wgold, &ldw, &LIBXSMM_VLA_ACCESS(2, xgold, 0, 0, ldx * n), &ldx, &beta, z1gold, &ldz);
-  }
-#endif
-  libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(ITYPE),
-    &transa, &transb, &m, &n, &k, &alpha, w, &ldw, x, &ldx, &beta, &LIBXSMM_VLA_ACCESS(2, z1, 0, 0, m * n), &ldz);
-  fprintf(stdout, "\n\n");
-  /* warmup OpenMP (populate thread pool) */
-  libxsmm_bgemm_omp(handleuh, u, h, z2, 1);
-#if defined(CHECK)
-  if (!LIBXSMM_FEQ(0, check)) {
-    LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, ugold, &ldu, hgold, &ldh, &beta, z2gold, &ldz);
-  }
-#endif
-  libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(ITYPE),
-    &transa, &transb, &m, &n, &m, &alpha, u, &ldu, h, &ldh, &beta, z2, &ldz);
-#endif
   fprintf(stdout, "\n\n");
 }
 
@@ -825,7 +814,33 @@ void rnn_bwd_upd_execute(struct rnn_handle *rnn, const int nrepeat, const libxsm
   libxsmm_blasint n = rnn->n;
   libxsmm_blasint k = rnn->k;
   libxsmm_blasint t = rnn->t;
-  const double gflops = ((3.0 * m * n) + (2.0 * m * m) + (2.0 * m * m * n) + (2.0 * k * m * n))* t * 1E-9;
+  const double tflops = 12; /* transcendental flops */
+  double gflops = m * m; /* U^T */
+  gflops += (2.0 * m * n * m); /* U^T * delta */
+  gflops += (m * n); /* dJdh + (U^T * delta) */
+  gflops += (tflops * m * n); /* sigma'(Z) */
+  gflops += (m * n); /* sigma'(Z) * (dJdh + (U^T * delta)) */
+  gflops *= t; /* for t time steps */
+  double tempflops;
+  if (pass == 2 || pass == 3) {
+    tempflops = m * n; /* h^T */
+    tempflops += (2.0 * m * n * m); /* delta * h^T */
+    tempflops *= t; /* for t time steps */
+    tempflops += (m * m * (t-1)); /* for summation of dJdU */
+    gflops += tempflops;
+    tempflops = k * n; /* x^T */
+    tempflops += (2.0 * m * n * k); /* delta * x^T */
+    tempflops *= t; /* for t time steps */
+    tempflops += (m * k * (t-1)); /* for summation of dJdW */
+    gflops += tempflops;
+  }
+  if (pass == 1 || pass == 3) {
+    tempflops = m * k; /* W^T */
+    tempflops += (2.0 * m * n * k); /* W^T * delta */
+    tempflops *= t; /* for t time steps of input */
+    gflops += tempflops;
+  }
+  gflops *= 1E-9; /* to convert flops to Gflops */
   ITYPE *djdht = (ITYPE*)rnn->djdht;
   ITYPE *zt = (ITYPE*)rnn->z;
   ITYPE *deltat = (ITYPE*)rnn->deltat;
@@ -906,11 +921,37 @@ int rnn_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_
 #endif
   int result = EXIT_SUCCESS;
   /* TODO: Check the computation of gflops */
-  const double gflops = ((3.0 * m * n) + (2.0 * m * m) + (2.0 * m * m * n) + (2.0 * k * m * n))* t * 1E-9;
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   const ITYPE alpha = 1, beta = 1, beta0 = 0;
   const libxsmm_blasint ldn = n;
+  const double tflops = 12; /* transcendental flops */
+  double gflops = m * m; /* U^T */
+  gflops += (2.0 * m * n * m); /* U^T * delta */
+  gflops += (m * n); /* dJdh + (U^T * delta) */
+  gflops += (tflops * m * n); /* sigma'(Z) */
+  gflops += (m * n); /* sigma'(Z) * (dJdh + (U^T * delta)) */
+  gflops *= t; /* for t time steps */
+  double tempflops;
+  if (pass == 2 || pass == 3) {
+    tempflops = m * n; /* h^T */
+    tempflops += (2.0 * m * n * m); /* delta * h^T */
+    tempflops *= t; /* for t time steps */
+    tempflops += (m * m * (t-1)); /* for summation of dJdU */
+    gflops += tempflops;
+    tempflops = k * n; /* x^T */
+    tempflops += (2.0 * m * n * k); /* delta * x^T */
+    tempflops *= t; /* for t time steps */
+    tempflops += (m * k * (t-1)); /* for summation of dJdW */
+    gflops += tempflops;
+  }
+  if (pass == 1 || pass == 3) {
+    tempflops = m * k; /* W^T */
+    tempflops += (2.0 * m * n * k); /* W^T * delta */
+    tempflops *= t; /* for t time steps of input */
+    gflops += tempflops;
+  }
+  gflops *= 1E-9; /* to convert flops to Gflops */
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
@@ -1347,7 +1388,7 @@ void lstm_execute(struct lstm_handle *lstm, const int nrepeat, const libxsmm_bla
   libxsmm_blasint n = lstm->n;
   libxsmm_blasint k = lstm->k;
   libxsmm_blasint t = lstm->t;
-  const double gflops = (((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * 4.0 + (4.0 * m * n)) * t * 1E-9;
+  const double gflops = (((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * 4.0 + (5.0 * m * n)) * t * 1E-9;
   ITYPE *wi = (ITYPE*)lstm->wi;
   ITYPE *wf = (ITYPE*)lstm->wf;
   ITYPE *wo = (ITYPE*)lstm->wo;
@@ -1578,6 +1619,33 @@ void lstm_destroy(struct lstm_handle *lstm)
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->d1 ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->d2 ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->d ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->i3 ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->f3 ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->d4 ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdht ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->deltat ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djddt ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdit ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdft ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdct ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdot ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdxt ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdwi ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdwf ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdwo ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdwc ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdri ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdrf ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdro ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdrc ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdbi ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdbf ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdbo ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->djdbc ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->rTp ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->wTp ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->deltaTp ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( lstm->xTp ) );
 #endif
 }
 
@@ -1593,7 +1661,7 @@ int lstm (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasin
   const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
 #endif
   int result = EXIT_SUCCESS;
-  const double gflops = (((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * 4.0 + (4.0 * m * n)) * t * 1E-9;
+  const double gflops = (((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * 4.0 + (5.0 * m * n)) * t * 1E-9;
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   const ITYPE alpha = 1, beta = 1;
@@ -2084,47 +2152,6 @@ void lstm_bwd_upd_init(struct lstm_handle *lstm, ITYPE *wigold, ITYPE *wfgold, I
   LIBXSMM_MATINIT(ITYPE,  0, djdbf, m, n, m, 0.0);
   LIBXSMM_MATINIT(ITYPE,  0, djdbo, m, n, m, 0.0);
   LIBXSMM_MATINIT(ITYPE,  0, djdbc, m, n, m, 0.0);
-#if defined(MKL_ENABLE_AVX512)
-  mkl_enable_instructions(MKL_ENABLE_AVX512);
-#endif
-#if 0
-  /* warmup OpenMP (populate thread pool) */
-#if defined(NON_FUSED_INPUT_GEMM)
-  libxsmm_bgemm_omp(handlewx, wi, x, &LIBXSMM_VLA_ACCESS(2, i1, 0, 0, m * n), 1);
-  libxsmm_bgemm_omp(handlewx, wf, x, &LIBXSMM_VLA_ACCESS(2, f1, 0, 0, m * n), 1);
-  libxsmm_bgemm_omp(handlewx, wo, x, &LIBXSMM_VLA_ACCESS(2, o1, 0, 0, m * n), 1);
-  libxsmm_bgemm_omp(handlewx, wc, x, &LIBXSMM_VLA_ACCESS(2, c1, 0, 0, m * n), 1);
-#else
-  libxsmm_bgemm_omp(handlewx, wi, x, &LIBXSMM_VLA_ACCESS(3, i1, 0, 0, 0, t, m * n), 1);
-#endif
-#if defined(CHECK)
-  if (!LIBXSMM_FEQ(0, check)) {
-    LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, wigold, &ldw, &LIBXSMM_VLA_ACCESS(2, xgold, 0, 0, ldx * n), &ldx, &beta, i1gold, &ldz);
-    LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, wfgold, &ldw, &LIBXSMM_VLA_ACCESS(2, xgold, 0, 0, ldx * n), &ldx, &beta, f1gold, &ldz);
-    LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, wogold, &ldw, &LIBXSMM_VLA_ACCESS(2, xgold, 0, 0, ldx * n), &ldx, &beta, o1gold, &ldz);
-    LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, wcgold, &ldw, &LIBXSMM_VLA_ACCESS(2, xgold, 0, 0, ldx * n), &ldx, &beta, c1gold, &ldz);
-  }
-#endif
-  libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(ITYPE),
-    &transa, &transb, &m, &n, &k, &alpha, wi, &ldw, x, &ldx, &beta, &LIBXSMM_VLA_ACCESS(2, i1, 0, 0, m * n), &ldz);
-  fprintf(stdout, "\n\n");
-  /* warmup OpenMP (populate thread pool) */
-  libxsmm_bgemm_omp(handleuh, ri, h, i2, 1);
-  libxsmm_bgemm_omp(handleuh, rf, h, f2, 1);
-  libxsmm_bgemm_omp(handleuh, ro, h, o2, 1);
-  libxsmm_bgemm_omp(handleuh, rc, h, c2, 1);
-#if defined(CHECK)
-  if (!LIBXSMM_FEQ(0, check)) {
-    LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rigold, &ldu, hgold, &ldh, &beta, i2gold, &ldz);
-    LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rfgold, &ldu, hgold, &ldh, &beta, f2gold, &ldz);
-    LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rogold, &ldu, hgold, &ldh, &beta, o2gold, &ldz);
-    LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &m, &alpha, rcgold, &ldu, hgold, &ldh, &beta, c2gold, &ldz);
-  }
-#endif
-  libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(ITYPE),
-    &transa, &transb, &m, &n, &m, &alpha, ri, &ldu, h, &ldh, &beta, i2, &ldz);
-  fprintf(stdout, "\n\n");
-#endif
 }
 
 
@@ -2137,7 +2164,38 @@ void lstm_bwd_upd_execute(struct lstm_handle *lstm, const int nrepeat, const lib
   libxsmm_blasint n = lstm->n;
   libxsmm_blasint k = lstm->k;
   libxsmm_blasint t = lstm->t;
-  const double gflops = ((24.0 * m * n) + (4.0 * m * k) + (8.0 * m * n * k) + (4.0 * m * m) + (8.0 * m * n * m) + (4.0 * m * n)) * t * 1E-9;
+  const double tflops = 12; /* transcendental flops */
+  double gflops = m * n; /* delta + delta_out */
+  gflops += (6.0 * m * n + tflops * m * n); /* dJdd */
+  gflops += (4.0 * m * n); /* dJdc */
+  gflops += (4.0 * m * n); /* dJdi */
+  gflops += (4.0 * m * n); /* dJdf */
+  gflops += (4.0 * m * n + tflops * m * n); /* dJdo */
+  double tempflops;
+  if (pass == 1 || pass == 3) {
+    tempflops += (4.0 * m * k); /* W^T */
+    tempflops += (8.0 * m * n * k); /* W^T * dJd{c, i, f, o} */
+    tempflops += (3.0 * m * k); /* summation */
+    gflops += tempflops;
+  }
+  tempflops += (4.0 * m * m); /* R^T */
+  tempflops += (8.0 * m * n * m); /* R^T * dJd{c, i, f, o} */
+  gflops += tempflops;
+  gflops *= t; /* for t time steps */
+  if (pass == 2 || pass == 3) {
+    tempflops = k * n; /* x^T */
+    tempflops += (8.0 * m * n * k); /* delta{c, i, f, o} * x^T */
+    tempflops *= t; /* for t time steps */
+    tempflops += (4.0 * m * k * (t-1)); /* for summation of dJdW{c, i, f, o} */
+    gflops += tempflops;
+    tempflops = 4.0 * m * n; /* delta^T */
+    tempflops += (8.0 * m * n * m); /* delta{c, i, f, o} * delta^T */
+    tempflops *= (t - 1); /* for (t - 1) time steps */
+    tempflops += (4.0 * m * n * (t-2)); /* for summation of dJdR{c, i, f, o} */
+    gflops += tempflops;
+    gflops += (4.0 * m * n * (t - 1)); /* delbias */ 
+  }
+  gflops *= 1E-9; /* to convert flops to Gflops */
   ITYPE *wi = (ITYPE*)lstm->wi;
   ITYPE *wf = (ITYPE*)lstm->wf;
   ITYPE *wo = (ITYPE*)lstm->wo;
@@ -2352,7 +2410,38 @@ int lstm_bwd_upd(const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm
 #endif
   int result = EXIT_SUCCESS;
   /* TODO: Check the computation of gflops */
-  const double gflops = ((24.0 * m * n) + (4.0 * m * k) + (8.0 * m * n * k) + (4.0 * m * m) + (8.0 * m * n * m) + (4.0 * m * n)) * t * 1E-9;
+  const double tflops = 12; /* transcendental flops */
+  double gflops = m * n; /* delta + delta_out */
+  gflops += (6.0 * m * n + tflops * m * n); /* dJdd */
+  gflops += (4.0 * m * n); /* dJdc */
+  gflops += (4.0 * m * n); /* dJdi */
+  gflops += (4.0 * m * n); /* dJdf */
+  gflops += (4.0 * m * n + tflops * m * n); /* dJdo */
+  double tempflops;
+  if (pass == 1 || pass == 3) {
+    tempflops += (4.0 * m * k); /* W^T */
+    tempflops += (8.0 * m * n * k); /* W^T * dJd{c, i, f, o} */
+    tempflops += (3.0 * m * k); /* summation */
+    gflops += tempflops;
+  }
+  tempflops += (4.0 * m * m); /* R^T */
+  tempflops += (8.0 * m * n * m); /* R^T * dJd{c, i, f, o} */
+  gflops += tempflops;
+  gflops *= t; /* for t time steps */
+  if (pass == 2 || pass == 3) {
+    tempflops = k * n; /* x^T */
+    tempflops += (8.0 * m * n * k); /* delta{c, i, f, o} * x^T */
+    tempflops *= t; /* for t time steps */
+    tempflops += (4.0 * m * k * (t-1)); /* for summation of dJdW{c, i, f, o} */
+    gflops += tempflops;
+    tempflops = 4.0 * m * n; /* delta^T */
+    tempflops += (8.0 * m * n * m); /* delta{c, i, f, o} * delta^T */
+    tempflops *= (t - 1); /* for (t - 1) time steps */
+    tempflops += (4.0 * m * n * (t-2)); /* for summation of dJdR{c, i, f, o} */
+    gflops += tempflops;
+    gflops += (4.0 * m * n * (t - 1)); /* delbias */ 
+  }
+  gflops *= 1E-9; /* to convert flops to Gflops */
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   const ITYPE alpha = 1, beta = 1, beta0 = 0;
