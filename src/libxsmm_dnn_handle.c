@@ -88,26 +88,23 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   handle->use_bwd_generic = 1;
   handle->use_upd_generic = 1;
 
-  /* If we do not have AVX512 arch disable kernel streams  */
+  handle->use_thread_private_jit = 0;
+  /* If we have AVX512 arch consider kernel streams  */
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-  if (LIBXSMM_X86_AVX512 <= libxsmm_target_archid) {
-    if (/* If we use any options/fuse ops, disable kernel streams */
-      0 < (handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS)
-      /* If we do not run on custom/custom format, disable kernel streams */
-      || handle->buffer_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM
-      || handle->filter_format != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)
+  if (/* If we use any options/fuse ops, keep kernel streams disabled */
+    0 >= (handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS)
+    /* If we do not run on custom/custom format, keep kernel streams disabled */
+    && handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM
+    && handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)
+  {
+# if (LIBXSMM_X86_AVX512 > LIBXSMM_STATIC_TARGET_ARCH)
+    if (LIBXSMM_X86_AVX512 <= libxsmm_target_archid)
+# endif
     {
-      handle->use_thread_private_jit = 0;
-    }
-    else {
       handle->use_thread_private_jit = 1;
     }
   }
-  else
 #endif
-  {
-    handle->use_thread_private_jit = 0;
-  }
 
   /* If we have AVX512 and kernel streams is enabled, then we generate specialized code */
   if (handle->use_thread_private_jit != 0) {
