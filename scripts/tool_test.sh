@@ -236,7 +236,7 @@ then
       COMMAND=$(eval ${ECHO} ${LAUNCH})
       # run the prepared test case/script
       if [ "" != "${LABEL}" ]; then
-        eval ${COMMAND} 2>&1 | tee .test-${LABEL}.log
+        eval ${COMMAND} #2>&1 | tee .test-${LABEL}.log
       else
         eval ${COMMAND}
       fi
