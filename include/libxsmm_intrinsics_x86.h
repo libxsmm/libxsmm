@@ -348,7 +348,9 @@
 #if defined(LIBXSMM_INTRINSICS_INCLUDE)
 # if defined(_WIN32)
 #   include <intrin.h>
-# else
+# elif defined(__INTEL_COMPILER) || defined(_CRAYC) || defined(__clang__) || defined(__PGI)
+#   include <x86intrin.h>
+# elif defined(__GNUC__) && (LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 #   include <x86intrin.h>
 # endif
 # include <xmmintrin.h>
