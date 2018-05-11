@@ -413,21 +413,21 @@ ifeq (GNU,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d" " -f
     endif
     ifneq (0,$(shell echo "$$((40500 > $(FC_VERSION)))"))
       # keep FC_VERSION_STRING available for message about outdated compiler
+      override FC = $(NULL)
       FC_VERSION = 0
-      FC = $(NULL)
       FORTRAN = 0
     endif
   else
     # keep FC_VERSION_STRING available for message about outdated compiler
+    override FC = $(NULL)
     FC_VERSION = 0
-    FC = $(NULL)
     FORTRAN = 0
   endif
   endif
 else ifneq (0,$(INTEL))
   ifneq (0,$(shell echo "$$((130000 > $(FC_VERSION) && 0 < $(FC_VERSION)))"))
+    override FC = $(NULL)
     FC_VERSION = 0
-    FC = $(NULL)
     FORTRAN = 0
   endif
 endif
@@ -1324,7 +1324,11 @@ endif
 
 ifneq (,$(strip $(MKLROOT)))
   MKL ?= $(BLAS)
-  MKL_DIRECT ?= 0
+  ifneq (,$(strip $(FC)))
+    MKL_DIRECT ?= 0
+  else
+    MKL_DIRECT = 0
+  endif
 else
   MKL = 0
 endif
