@@ -228,10 +228,11 @@ int main(int argc, char* argv[])
 
   /* Read the image data according to the header into the allocated buffer. */
   if (EXIT_SUCCESS == result) {
+    const void *const pv = &type_dnn;
     result = libxsmm_mhd_read(filename,
       offset, size_in, pitch, ndims, ncomponents, header_size, type_in,
       /* eventually perform a type-conversion (type_in != type_dnn) */
-      (const libxsmm_mhd_elemtype*)&type_dnn, image,
+      (const libxsmm_mhd_elemtype*)pv, image,
       0/*handle_element*/, 0/*extension*/, 0/*extension_size*/);
   }
 
