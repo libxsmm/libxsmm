@@ -2464,13 +2464,13 @@ LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length 
 
 
 LIBXSMM_API_INLINE unsigned char libxsmm_internal_get_max_exp( float* in_buffer, int length ) {
-  libxsmm_intfloat exp;
+  libxsmm_intfloat val_exp;
   unsigned char max_exp = 0;
 
   /* bit-wise conversion to int */
-  exp.f = libxsmm_internal_get_max( in_buffer, length );
+  val_exp.f = libxsmm_internal_get_max( in_buffer, length );
   /* shift by mantissa to the right and convert to char */
-  max_exp = (unsigned char)((exp.ui & LIBXSMM_DNN_MASK_ABS_F32) >> LIBXSMM_DNN_MANT_SZ_F32);
+  max_exp = (unsigned char)((val_exp.ui & LIBXSMM_DNN_MASK_ABS_F32) >> LIBXSMM_DNN_MANT_SZ_F32);
 
   return max_exp;
 }
@@ -2846,14 +2846,14 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
 
 
 LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, int length, unsigned char scf ) {
-  const float exp = libxsmm_sexp2_i8i(-scf);
+  const float val_exp = libxsmm_sexp2_i8i(-scf);
   int i = 0;
 
 #ifdef _OPENMP
 # pragma omp parallel for private(i)
 #endif
   for ( i = 0; i < length; ++i ) {
-    out_buffer[i] = ((float)in_buffer[i])*exp;
+    out_buffer[i] = ((float)in_buffer[i])*val_exp;
   }
 }
 

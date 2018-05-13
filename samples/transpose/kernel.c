@@ -149,8 +149,8 @@ int main(int argc, char* argv[])
 {
   unsigned int m = 16, n = 16, ld_in = 16, ld_out = 16, nerrs;
   const unsigned char* cptr;
-  double *din, *dout, dtmp;
-  float  *sin, *sout;
+  double *dinp, *dout, dtmp;
+  float  *sinp, *sout;
 #ifdef COMPARE_TO_AN_ASSEMBLY_CODE
   unsigned int nbest, istop, i;
   unsigned char *cptr2;
@@ -221,14 +221,14 @@ int main(int argc, char* argv[])
   printf("Bytes agree: %u\n",nbest);
 #endif
 
-  sin  = (float  *) malloc ( ld_in*n*sizeof(float) );
-  din  = (double *) malloc ( ld_in*n*sizeof(double) );
+  sinp  = (float  *) malloc ( ld_in*n*sizeof(float) );
+  dinp  = (double *) malloc ( ld_in*n*sizeof(double) );
   sout = (float  *) malloc ( ld_out*m*sizeof(float) );
   dout = (double *) malloc ( ld_out*m*sizeof(double) );
 
   /* Fill matrices with random data: */
-  sfill_matrix ( sin, ld_in, m, n );
-  dfill_matrix ( din, ld_in, m, n );
+  sfill_matrix ( sinp, ld_in, m, n );
+  dfill_matrix ( dinp, ld_in, m, n );
   sfill_matrix ( sout, ld_out, n, m );
   dfill_matrix ( dout, ld_out, n, m );
 
@@ -242,15 +242,15 @@ int main(int argc, char* argv[])
 
 #ifdef COMPARE_TO_A_R64_ASSEMBLY_CODE
   printf("Calling myro_: \n");
-  myro_ ( din, &ld_in, dout, &ld_out );
-  dtmp = residual_dtranspose ( din, ld_in, m, n, dout, ld_out, &nerrs );
+  myro_ ( dinp, &ld_in, dout, &ld_out );
+  dtmp = residual_dtranspose ( dinp, ld_in, m, n, dout, ld_out, &nerrs );
   printf("Myro_ R64 error: %g number of errors: %u\n",dtmp,nerrs);
   dfill_matrix ( dout, ld_out, n, m );
 #endif
 #ifdef COMPARE_TO_A_R32_ASSEMBLY_CODE
   printf("Calling myro_: \n");
-  myro_ ( sin, &ld_in, sout, &ld_out );
-  dtmp = residual_stranspose ( sin, ld_in, m, n, sout, ld_out, &nerrs );
+  myro_ ( sinp, &ld_in, sout, &ld_out );
+  dtmp = residual_stranspose ( sinp, ld_in, m, n, sout, ld_out, &nerrs );
   printf("Myro_ R32 error: %g number of errors: %u\n",dtmp,nerrs);
   sfill_matrix ( sout, ld_out, n, m );
 #endif
@@ -258,26 +258,26 @@ int main(int argc, char* argv[])
   /* let's call */
 #if 1
   printf("calling skernel\n");
-  skernel.f( sin, &ld_in, sout, &ld_out );
+  skernel.f( sinp, &ld_in, sout, &ld_out );
   printf("calling dkernel\n");
-  dkernel.f( din, &ld_in, dout, &ld_out );
+  dkernel.f( dinp, &ld_in, dout, &ld_out );
 #endif
 
   /* Did it transpose correctly? */
-  dtmp = residual_stranspose ( sin, ld_in, m, n, sout, ld_out, &nerrs );
+  dtmp = residual_stranspose ( sinp, ld_in, m, n, sout, ld_out, &nerrs );
   printf("Single precision m=%u n=%u ld_in=%u ld_out=%u error: %g number of errors: %u",m,n,ld_in,ld_out,dtmp,nerrs);
   if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*4 case",m,n);
   printf("\n");
 
-  dtmp = residual_dtranspose ( din, ld_in, m, n, dout, ld_out, &nerrs );
+  dtmp = residual_dtranspose ( dinp, ld_in, m, n, dout, ld_out, &nerrs );
   printf("Double precision m=%u n=%u ld_in=%u ld_out=%u error: %g number of errors: %u\n",m,n,ld_in,ld_out,dtmp,nerrs);
   if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*8 case",m,n);
   printf("\n");
 
   free(dout);
   free(sout);
-  free(din);
-  free(sin);
+  free(dinp);
+  free(sinp);
 
   return EXIT_SUCCESS;
 }
