@@ -88,8 +88,7 @@ void smm_eigen_dynamic(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
 template<typename itype, typename otype>
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE
 void smm_xsmm_specialized(const libxsmm_mmfunction<itype,otype>& xmm,
-  const itype *LIBXSMM_RESTRICT a, const itype *LIBXSMM_RESTRICT b, otype *LIBXSMM_RESTRICT c,
-  const itype* next_a, const itype* next_b, const otype* next_c)
+  const itype* a, const itype* b, otype* c, const itype* next_a, const itype* next_b, const otype* next_c)
 {
 #if (0 != LIBXSMM_PREFETCH)
   xmm(a, b, c, next_a, next_b, next_c);
