@@ -169,6 +169,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sync_lock", "..\samples\syn
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "atomics", "..\tests\atomics.vcxproj", "{E29F73D9-3474-4C67-800A-075D5EC7C2AB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "xgemm", "xgemm", "{927066C2-55DE-4180-8620-40C62B8000DE}"
 EndProject
@@ -246,8 +249,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "iconv", "..\samples\deeplea
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dense_rmacsoa", "..\samples\edge\dense_rmacsoa.vcxproj", "{FE7A7F77-2363-480D-A2C5-D9B72260A8AB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dense_rmbcsoa", "..\samples\edge\dense_rmbcsoa.vcxproj", "{7E33EB2B-7C25-4308-A86E-6D9A90F8613D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
