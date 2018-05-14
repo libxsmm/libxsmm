@@ -88,6 +88,34 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_release_scratch(libxsmm_dnn_l
 }
 
 
+LIBXSMM_API size_t libxsmm_dnn_lstmcell_get_internalstate_size(const libxsmm_dnn_lstmcell* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status) {
+  size_t size = 0;
+
+  LIBXSMM_UNUSED( handle );
+  LIBXSMM_UNUSED( kind );
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  return size;
+}
+
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bind_internalstate(libxsmm_dnn_lstmcell* handle, const libxsmm_dnn_compute_kind kind, const void* internalstate) {
+  LIBXSMM_UNUSED( handle );
+  LIBXSMM_UNUSED( kind );
+  LIBXSMM_UNUSED( internalstate );
+
+  return LIBXSMM_DNN_SUCCESS;
+}
+
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_release_internalstate(libxsmm_dnn_lstmcell* handle, const libxsmm_dnn_compute_kind kind) {
+  LIBXSMM_UNUSED( handle );
+  LIBXSMM_UNUSED( kind );
+
+  return LIBXSMM_DNN_SUCCESS;
+}
+
+
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bind_tensor(libxsmm_dnn_lstmcell* handle, const libxsmm_dnn_tensor* tensor, const libxsmm_dnn_tensor_type type) {
   LIBXSMM_UNUSED( handle );
   LIBXSMM_UNUSED( tensor );
