@@ -1325,7 +1325,7 @@ endif
 ifneq (,$(strip $(MKLROOT)))
   MKL ?= $(BLAS)
   ifneq (,$(strip $(FC)))
-    ifneq (0,$(shell echo "$$((0==$(GCC) || 40500<=$(GCC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((0==$(GCC) || 40600<=$(GCC_VERSION)))"))
       MKL_DIRECT ?= 0
     else
       MKL_DIRECT = 0
