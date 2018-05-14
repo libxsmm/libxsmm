@@ -58,8 +58,8 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
   unsigned int l_b_reg = 0;
   unsigned int l_b_idx = 0;
   unsigned int l_scale = 0;
-  unsigned int index   = 0;
-  unsigned int max_index = 0;
+  unsigned int idx     = 0;
+  unsigned int max_idx = 0;
   unsigned int ifm     = 0;
   unsigned int offset  = 0;
   unsigned int boffset = 0;
@@ -145,29 +145,29 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
     qfac = 1;
   }
 
-  max_index = i_conv_desc->ur - 1;
+  max_idx = i_conv_desc->ur - 1;
 
   if ( l_micro_kernel_config.instruction_set != LIBXSMM_X86_AVX512_KNM ) {
     /* Initialize helper registers for SIB addressing */
-    if ( max_index >= 1 ) {
+    if ( max_idx >= 1 ) {
       /* helper 0: Index register holding ldb*datatype_size */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_0,
                                        i_conv_desc->ur_ifm * m_dist );
     }
-    if ( max_index >= 3 ) {
+    if ( max_idx >= 3 ) {
       /* helper 1: Index register holding 3*ldb*datatype_size */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_1,
                                        i_conv_desc->ur_ifm * m_dist * 3 );
     }
-    if ( max_index >= 5 ) {
+    if ( max_idx >= 5 ) {
       /* helper 2: Index register holding 5*ldb*datatype_size */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_2,
                                        i_conv_desc->ur_ifm * m_dist * 5 );
     }
-    if ( max_index >= 7 ) {
+    if ( max_idx >= 7 ) {
       /* helper 3: Index register holding 7*ldb*datatype_size */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_3,
@@ -191,9 +191,9 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
 
     ur = (0 != is_epilogue ? ((unsigned int)remainder) : i_conv_desc->ur);
 
-    for ( index = 0; index < ur; index++ ) { /* load output */
-      offset = m_dist*index;
-      reg = num_regs - ur + index;
+    for ( idx = 0; idx < ur; idx++ ) { /* load output */
+      offset = m_dist*idx;
+      reg = num_regs - ur + idx;
       if ( i_conv_desc->ur_ifm == i_conv_desc->blocks_ifm ) {
         /* when we process an ofm block in one shot, don't need to read
          * the current value of the ofm block to save BW */
@@ -229,7 +229,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
     }
 
     if ( l_micro_kernel_config.instruction_set != LIBXSMM_X86_AVX512_KNM ) {
-      if ( max_index >= 9 ) {
+      if ( max_idx >= 9 ) {
         /* helper 4: B + 9*ldb, additional base address */
         libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                          l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_4 );
@@ -237,7 +237,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                                          l_gp_reg_mapping.gp_reg_help_4,
                                          i_conv_desc->ur_ifm * 9 * l_micro_kernel_config.datatype_size * l_micro_kernel_config.vector_length );
       }
-      if ( max_index >= 18 ) {
+      if ( max_idx >= 18 ) {
         /* helper 5: B + 18*ldb, additional base address */
         libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                          l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_5 );
@@ -286,7 +286,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
 
       /* sprinkle prefetches to avoid having too many outstanding prefetches at the same time */
       nprefetches_per_group = (ur + l_micro_kernel_config.vector_length/qfac)/(l_micro_kernel_config.vector_length/qfac);
-      for ( index = ifm/qfac*nprefetches_per_group; index < LIBXSMM_MIN((ifm/qfac + 1)*nprefetches_per_group, ur); index++ ) {
+      for ( idx = ifm/qfac*nprefetches_per_group; idx < LIBXSMM_MIN((ifm/qfac + 1)*nprefetches_per_group, ur); idx++ ) {
         if ( i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L2 ) {
           /* prefetch next input img when we're working on the last ofm block of the current image */
           libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -294,7 +294,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                                             l_gp_reg_mapping.gp_reg_b,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
-                                            (i_conv_desc->ur_ifm*index + i_conv_desc->alpha*i_conv_desc->alpha*i_conv_desc->itiles*i_conv_desc->jtiles*i_conv_desc->bimg*i_conv_desc->ur_ifm)*m_dist );
+                                            (i_conv_desc->ur_ifm*idx + i_conv_desc->alpha*i_conv_desc->alpha*i_conv_desc->itiles*i_conv_desc->jtiles*i_conv_desc->bimg*i_conv_desc->ur_ifm)*m_dist );
         }
         if ( i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_INPUT_L1 ) { /* prefetch next ur block */
           libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -302,20 +302,20 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                                             l_gp_reg_mapping.gp_reg_b,
                                             LIBXSMM_X86_GP_REG_UNDEF,
                                             0,
-                                            (i_conv_desc->ur_ifm*index + i_conv_desc->ur*i_conv_desc->ur_ifm)*m_dist );
+                                            (i_conv_desc->ur_ifm*idx + i_conv_desc->ur*i_conv_desc->ur_ifm)*m_dist );
         }
       }
 
-      for ( index = 0; index < ur; index++ ) {
-        reg = num_regs - ur + index;
+      for ( idx = 0; idx < ur; idx++ ) {
+        reg = num_regs - ur + idx;
 
-        if ( index > 27 || l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM ) {
+        if ( idx > 27 || l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM ) {
 #if !defined(NDEBUG)
           if ( ifm == 0 ) {
-            fprintf(stderr, "LIBXSMM warning: Not using optimal blocking.. >8 byte fma generated...index = %u\n", index);
+            fprintf(stderr, "LIBXSMM warning: Not using optimal blocking.. >8 byte fma generated...idx = %u\n", idx);
           }
 #endif
-          constoffset = boffset + m_dist*i_conv_desc->ur_ifm*index;
+          constoffset = boffset + m_dist*i_conv_desc->ur_ifm*idx;
           if ( l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM ) {
             libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
                                                       l_micro_kernel_config.instruction_set,
@@ -342,39 +342,39 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
           }
         } else {
           /* select the base register */
-          if ( index > 17 ) {
+          if ( idx > 17 ) {
             l_b_reg = l_gp_reg_mapping.gp_reg_help_5;
-          } else if ( index > 8 ) {
+          } else if ( idx > 8 ) {
             l_b_reg = l_gp_reg_mapping.gp_reg_help_4;
           } else {
             l_b_reg = l_gp_reg_mapping.gp_reg_b;
           }
           /* Select SIB */
-          if ( index % 9 == 0 ) {
+          if ( idx % 9 == 0 ) {
             l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
             l_scale = 0;
-          } else if ( index % 9 == 1 ) {
+          } else if ( idx % 9 == 1 ) {
             l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
             l_scale = 1;
-          } else if ( index % 9 == 2 ) {
+          } else if ( idx % 9 == 2 ) {
             l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
             l_scale = 2;
-          } else if ( index % 9 == 3 ) {
+          } else if ( idx % 9 == 3 ) {
             l_b_idx = l_gp_reg_mapping.gp_reg_help_1;
             l_scale = 1;
-          } else if ( index % 9 == 4 ) {
+          } else if ( idx % 9 == 4 ) {
             l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
             l_scale = 4;
-          } else if ( index % 9 == 5 ) {
+          } else if ( idx % 9 == 5 ) {
             l_b_idx = l_gp_reg_mapping.gp_reg_help_2;
             l_scale = 1;
-          } else if ( index % 9 == 6 ) {
+          } else if ( idx % 9 == 6 ) {
             l_b_idx = l_gp_reg_mapping.gp_reg_help_1;
             l_scale = 2;
-          } else if ( index % 9 == 7 ) {
+          } else if ( idx % 9 == 7 ) {
             l_b_idx = l_gp_reg_mapping.gp_reg_help_3;
             l_scale = 1;
-          } else if ( index % 9 == 8 ) {
+          } else if ( idx % 9 == 8 ) {
             l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
             l_scale = 8;
           }
@@ -423,9 +423,9 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
       libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
     }
 
-    for ( index = 0; index < ur; index++ ) {
-      offset = m_dist*index;
-      reg = num_regs - ur + index;
+    for ( idx = 0; idx < ur; idx++ ) {
+      offset = m_dist*idx;
+      reg = num_regs - ur + idx;
       if ( (unsigned int)reg < l_micro_kernel_config.vector_reg_count ) {
         if ( i_conv_desc->ur_ifm == i_conv_desc->blocks_ifm ) {
           /* use stream store when ur_ifm == blocks_ifm */

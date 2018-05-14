@@ -198,7 +198,7 @@ LIBXSMM_API unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision preci
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, unsigned int ntry, unsigned int ncol)
 {
   const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(m, n, k);
-  const int index = (LIBXSMM_GEMM_PRECISION_F64 == precision ? 0 : 1);
+  const int idx = (LIBXSMM_GEMM_PRECISION_F64 == precision ? 0 : 1);
   int bucket = 3/*huge*/;
 
   if (LIBXSMM_MNK_SIZE(internal_statistic_sml, internal_statistic_sml, internal_statistic_sml) >= kernel_size) {
@@ -211,8 +211,8 @@ LIBXSMM_API unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision preci
     bucket = 2;
   }
 
-  LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[index][bucket].ncol, ncol, LIBXSMM_ATOMIC_RELAXED);
-  return LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[index][bucket].ntry, ntry, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[idx][bucket].ncol, ncol, LIBXSMM_ATOMIC_RELAXED);
+  return LIBXSMM_ATOMIC_ADD_FETCH(&internal_statistic[idx][bucket].ntry, ntry, LIBXSMM_ATOMIC_RELAXED);
 }
 
 
@@ -371,10 +371,10 @@ LIBXSMM_API_INLINE unsigned int internal_statistic_ntry(int precision)
 
 
 LIBXSMM_API_INLINE void internal_register_static_code(const libxsmm_gemm_descriptor* desc,
-  unsigned int index, unsigned int hash, libxsmm_xmmfunction src, libxsmm_code_pointer* registry)
+  unsigned int idx, unsigned int hash, libxsmm_xmmfunction src, libxsmm_code_pointer* registry)
 {
-  libxsmm_kernel_info* dst_key = internal_registry_keys + index;
-  libxsmm_code_pointer* dst_entry = registry + index;
+  libxsmm_kernel_info* dst_key = internal_registry_keys + idx;
+  libxsmm_code_pointer* dst_entry = registry + idx;
 #if !defined(NDEBUG)
   libxsmm_code_pointer code; code.xgemm = src;
   assert(0 != desc && 0 != code.ptr_const && 0 != dst_key && 0 != registry);
@@ -382,7 +382,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(const libxsmm_gemm_descrip
 #endif
 
   if (0 != dst_entry->ptr_const) { /* collision? */
-    /* start at a re-hashed index position */
+    /* start at a re-hashed idx position */
     const unsigned int start = LIBXSMM_HASH_MOD(libxsmm_crc32_u32(151981/*seed*/, hash), LIBXSMM_CAPACITY_REGISTRY);
     unsigned int i0, i, next;
 #if defined(LIBXSMM_HASH_COLLISION)
@@ -390,7 +390,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(const libxsmm_gemm_descrip
     dst_entry->uval |= LIBXSMM_HASH_COLLISION;
 #endif
     /* start linearly searching for an available slot */
-    for (i = (start != index) ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_CAPACITY_REGISTRY), i0 = i, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
+    for (i = (start != idx) ? start : LIBXSMM_HASH_MOD(start + 1, LIBXSMM_CAPACITY_REGISTRY), i0 = i, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
       0 != registry[i].ptr_const && next != i0; i = next, next = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY));
 
     /* calculate destinations */

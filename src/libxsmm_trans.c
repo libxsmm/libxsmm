@@ -118,13 +118,13 @@ LIBXSMM_API int libxsmm_matcopy_thread(void* out, const void* in, unsigned int t
     if (1 < nthreads) {
       libxsmm_blasint m0 = 0, n0 = 0, m1 = m, n1 = n;
       const unsigned int size = tm * tn, size2 = LIBXSMM_SQRT2(size);
-      const unsigned int index = LIBXSMM_MIN(size2 >> 10, 7);
-      const unsigned int tindex = (4 < typesize ? 0 : 1);
+      const unsigned int indx = LIBXSMM_MIN(size2 >> 10, 7);
+      const unsigned int tidx = (4 < typesize ? 0 : 1);
       const libxsmm_mcopy_descriptor* desc;
       libxsmm_descriptor_blob blob;
       int mtasks;
-      tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tindex][0/*M*/][index]);
-      tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tindex][1/*N*/][index]);
+      tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tidx][0/*M*/][indx]);
+      tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tidx][1/*N*/][indx]);
       /* libxsmm_trans_jit: JIT'ted matrix-copy permitted? */
       desc = (0 != (1 & libxsmm_trans_jit) ? libxsmm_mcopy_descriptor_init(&blob,
         typesize, tm, tn, uldo, uldi, 0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE,
@@ -172,10 +172,10 @@ LIBXSMM_API int libxsmm_matcopy_thread(void* out, const void* in, unsigned int t
       }
       else { /* no JIT */
         const unsigned int size = tm * tn, size2 = LIBXSMM_SQRT2(size);
-        const unsigned int index = LIBXSMM_MIN(size2 >> 10, 7);
-        const unsigned int tindex = (4 < typesize ? 0 : 1);
-        tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tindex][0/*M*/][index]);
-        tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tindex][1/*N*/][index]);
+        const unsigned int indx = LIBXSMM_MIN(size2 >> 10, 7);
+        const unsigned int tidx = (4 < typesize ? 0 : 1);
+        tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tidx][0/*M*/][indx]);
+        tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tidx][1/*N*/][indx]);
         assert(0 == xmatcopy);
         LIBXSMM_XCOPY(
           LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
@@ -244,12 +244,12 @@ LIBXSMM_API int libxsmm_otrans_thread(void* out, const void* in, unsigned int ty
       libxsmm_xtransfunction xtrans = 0;
       if (0 == desc) { /* tiled transpose */
         const unsigned int size = tm * tn, size2 = LIBXSMM_SQRT2(size);
-        const unsigned int index = LIBXSMM_MIN(size2 >> 10, 7);
-        const unsigned int tindex = (4 < typesize ? 0 : 1);
+        const unsigned int indx = LIBXSMM_MIN(size2 >> 10, 7);
+        const unsigned int tidx = (4 < typesize ? 0 : 1);
         libxsmm_blasint m0 = 0, n0 = 0, m1 = m, n1 = n;
         int mtasks;
-        tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tindex][0/*M*/][index]);
-        tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tindex][1/*N*/][index]);
+        tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tidx][0/*M*/][indx]);
+        tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tidx][1/*N*/][indx]);
         /* libxsmm_trans_jit: JIT'ted transpose permitted? */
         desc = (0 != (2 & libxsmm_trans_jit) ? libxsmm_trans_descriptor_init(&blob, typesize, tm, tn, uldo) : 0);
         if (0 != desc) { /* limit the amount of (unrolled) code with smaller kernel/tiles */

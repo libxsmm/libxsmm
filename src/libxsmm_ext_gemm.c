@@ -416,10 +416,10 @@ LIBXSMM_APIEXT void libxsmm_sgemm_omp(const char* transa, const char* transb,
   LIBXSMM_INIT
   assert(0 != libxsmm_gemm_tile);
   if (LIBXSMM_MAX_MNK < size) {
-    const int index = LIBXSMM_MIN(libxsmm_icbrt_u64(size) >> 10, 7);
-    const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][index], (unsigned int)*m);
-    const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][index], (unsigned int)nn);
-    const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][index], (unsigned int)kk);
+    const int icbrt = libxsmm_icbrt_u64(size) >> 10, idx = LIBXSMM_MIN(icbrt, 7);
+    const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][0/*M*/][idx], (unsigned int)*m);
+    const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][1/*N*/][idx], (unsigned int)nn);
+    const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[1/*SP*/][2/*K*/][idx], (unsigned int)kk);
     const char ctransa = (char)(0 != transa ? (*transa) : (0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'n' : 't'));
     const char ctransb = (char)(0 != transb ? (*transb) : (0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'n' : 't'));
     const libxsmm_blasint ilda = (NULL != lda ? *lda : (('n' == ctransa || 'N' == ctransa) ? *m : kk));
@@ -479,10 +479,10 @@ LIBXSMM_APIEXT void libxsmm_dgemm_omp(const char* transa, const char* transb,
   LIBXSMM_INIT
   assert(0 != libxsmm_gemm_tile);
   if (LIBXSMM_MAX_MNK < size) {
-    const int index = LIBXSMM_MIN(libxsmm_icbrt_u64(size) >> 10, 7);
-    const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][index], (unsigned int)*m);
-    const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][index], (unsigned int)nn);
-    const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][index], (unsigned int)kk);
+    const int icbrt = libxsmm_icbrt_u64(size) >> 10, idx = LIBXSMM_MIN(icbrt, 7);
+    const unsigned int tm = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][0/*M*/][idx], (unsigned int)*m);
+    const unsigned int tn = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][1/*N*/][idx], (unsigned int)nn);
+    const unsigned int tk = LIBXSMM_MIN(libxsmm_gemm_tile[0/*DP*/][2/*K*/][idx], (unsigned int)kk);
     const char ctransa = (char)(0 != transa ? (*transa) : (0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_A) ? 'n' : 't'));
     const char ctransb = (char)(0 != transb ? (*transb) : (0 == (LIBXSMM_FLAGS & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'n' : 't'));
     const libxsmm_blasint ilda = (NULL != lda ? *lda : (('n' == ctransa || 'N' == ctransa) ? *m : kk));

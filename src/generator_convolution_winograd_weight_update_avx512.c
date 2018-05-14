@@ -59,8 +59,8 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
   unsigned int l_b_reg;
   unsigned int l_b_idx = 0;
   unsigned int l_scale = 0;
-  unsigned int index;
-  unsigned int max_index;
+  unsigned int idx;
+  unsigned int max_idx;
   unsigned int next_index;
   unsigned int urf;
   unsigned int offset;
@@ -142,28 +142,28 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
     qfac = 1;
   }
 
-  max_index = i_conv_desc->ur - 1;
+  max_idx = i_conv_desc->ur - 1;
 
   if ( l_micro_kernel_config.instruction_set != LIBXSMM_X86_AVX512_KNM ) {
     /* Initialize helper registers for SIB addressing */
-    if ( max_index >= 1 ) {
+    if ( max_idx >= 1 ) {
       /* helper 0: Index register holding ldb*datatype_size */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_0, l_micro_kernel_config.datatype_size * l_micro_kernel_config.vector_length * qfac );
     }
-    if ( max_index >= 3 )
+    if ( max_idx >= 3 )
     {
       /* helper 1: Index register holding 3*ldb*datatype_size */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_1, l_micro_kernel_config.datatype_size * l_micro_kernel_config.vector_length * 3 * qfac );
     }
-    if ( max_index >= 5 )
+    if ( max_idx >= 5 )
     {
       /* helper 2: Index register holding 5*ldb*datatype_size */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_help_2, l_micro_kernel_config.datatype_size * l_micro_kernel_config.vector_length * 5 * qfac );
     }
-    if ( max_index >= 7 )
+    if ( max_idx >= 7 )
     {
       /* helper 3: Index register holding 7*ldb*datatype_size */
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
@@ -203,14 +203,14 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
   }
 
   if ( l_micro_kernel_config.instruction_set != LIBXSMM_X86_AVX512_KNM ) {
-    if ( max_index >= 9 ) {
+    if ( max_idx >= 9 ) {
       /* helper 4: B + 9*ldb, additional base address */
       libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_4);
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
                                        l_gp_reg_mapping.gp_reg_help_4,  9 * l_micro_kernel_config.datatype_size * l_micro_kernel_config.vector_length * qfac );
     }
-    if ( max_index >= 18 ) {
+    if ( max_idx >= 18 ) {
       /* helper 5: B + 18*ldb, additional base address */
       libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_b, l_gp_reg_mapping.gp_reg_help_5);
@@ -252,41 +252,41 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
 
   toggle = 0;
 
-  for ( index = 0; index < i_conv_desc->ur; index++ ) {
+  for ( idx = 0; idx < i_conv_desc->ur; idx++ ) {
     /* select the base register */
-    if ( index > 17 ) {
+    if ( idx > 17 ) {
       l_b_reg = l_gp_reg_mapping.gp_reg_help_5;
-    } else if ( index > 8 ) {
+    } else if ( idx > 8 ) {
       l_b_reg = l_gp_reg_mapping.gp_reg_help_4;
     } else {
       l_b_reg = l_gp_reg_mapping.gp_reg_b;
     }
     /* Select SIB */
-    if ( index % 9 == 0 ) {
+    if ( idx % 9 == 0 ) {
       l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
       l_scale = 0;
-    } else if ( index % 9 == 1 ) {
+    } else if ( idx % 9 == 1 ) {
       l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
       l_scale = 1;
-    } else if ( index % 9 == 2 ) {
+    } else if ( idx % 9 == 2 ) {
       l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
       l_scale = 2;
-    } else if ( index % 9 == 3 ) {
+    } else if ( idx % 9 == 3 ) {
       l_b_idx = l_gp_reg_mapping.gp_reg_help_1;
       l_scale = 1;
-    } else if ( index % 9 == 4 ) {
+    } else if ( idx % 9 == 4 ) {
       l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
       l_scale = 4;
-    } else if ( index % 9 == 5 ) {
+    } else if ( idx % 9 == 5 ) {
       l_b_idx = l_gp_reg_mapping.gp_reg_help_2;
       l_scale = 1;
-    } else if ( index % 9 == 6 ) {
+    } else if ( idx % 9 == 6 ) {
       l_b_idx = l_gp_reg_mapping.gp_reg_help_1;
       l_scale = 2;
-    } else if ( index % 9 == 7 ) {
+    } else if ( idx % 9 == 7 ) {
       l_b_idx = l_gp_reg_mapping.gp_reg_help_3;
       l_scale = 1;
-    } else if ( index % 9 == 8 ) {
+    } else if ( idx % 9 == 8 ) {
       l_b_idx = l_gp_reg_mapping.gp_reg_help_0;
       l_scale = 8;
     }
@@ -298,7 +298,7 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
     }
 #endif
     for ( urf = 0; urf < l_micro_kernel_config.vector_length; urf++ ) {
-      if ( index < 27 && l_micro_kernel_config.instruction_set != LIBXSMM_X86_AVX512_KNM ) {
+      if ( idx < 27 && l_micro_kernel_config.instruction_set != LIBXSMM_X86_AVX512_KNM ) {
         offset2 = urf*l_micro_kernel_config.datatype_size*qfac;
         if ( l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM && 4 == qfac ) {
           libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
@@ -326,7 +326,7 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
         }
       } else {
         /* The following statements are for direct offset computation */
-        offset2 = (m_dist*index + urf*l_micro_kernel_config.datatype_size)*qfac;
+        offset2 = (m_dist*idx + urf*l_micro_kernel_config.datatype_size)*qfac;
         if ( l_micro_kernel_config.instruction_set == LIBXSMM_X86_AVX512_KNM && 4 == qfac ) {
           libxsmm_x86_instruction_vec_compute_qfma( io_generated_code,
                                                     l_micro_kernel_config.instruction_set,
@@ -355,8 +355,8 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
     }
 
     toggle = !toggle;
-    if ( index < (i_conv_desc->ur - 1) ) {
-      next_index = index + 1;
+    if ( idx < (i_conv_desc->ur - 1) ) {
+      next_index = idx + 1;
     } else {
       next_index = 0;
     }

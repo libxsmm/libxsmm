@@ -38,7 +38,7 @@ const __m256i *const shufmasks = internal_spmdm_shufmasks_32;
 const __m256i *const shufmasks2 = internal_spmdm_shufmasks_16;
 #endif
 int block_offset_base, block_offset;
-int index[16];
+int idx_array[16];
 SIMDTYPE_INT32 vindex = _MM_SETZERO_INT32();
 
 LIBXSMM_UNUSED(nthreads);
@@ -50,8 +50,8 @@ if ('T' == transA || 't' == transA) {
   int kk;
   block_offset_base = mb * handle->bm;
   block_offset = block_offset_base + kb * handle->m * handle->bk;
-  for (kk = 0; kk < SIMD_WIDTH_FP32; kk++) index[kk] = kk*handle->m;
-  vindex = _MM_LOADU_INT32(index);
+  for (kk = 0; kk < SIMD_WIDTH_FP32; kk++) idx_array[kk] = kk*handle->m;
+  vindex = _MM_LOADU_INT32(idx_array);
 }
 else {
   block_offset_base = kb * handle->bk;

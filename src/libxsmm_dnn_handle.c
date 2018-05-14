@@ -183,12 +183,12 @@ LIBXSMM_API_INLINE void internal_dnn_handle_factors(
   unsigned int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29};
   int i;
   unsigned int total_primes = 10;
-  unsigned int index = 0;
+  unsigned int idx = 0;
 
   for ( i = total_primes-1; i >= 0; i-- ) {
     while((num % primes[i]) == 0) {
-      num_factors[index] = primes[i];
-      index++;
+      num_factors[idx] = primes[i];
+      idx++;
       num = num/primes[i];
     }
   }

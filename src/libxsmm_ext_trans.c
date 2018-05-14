@@ -69,14 +69,14 @@ LIBXSMM_APIEXT int libxsmm_matcopy_omp(void* out, const void* in, unsigned int t
         unsigned int tm = (unsigned int)m, tn = (unsigned int)n, iprefetch = (0 == prefetch ? 0 : *prefetch);
         const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
         const unsigned int size = tm * tn, size2 = LIBXSMM_SQRT2(size);
-        const unsigned int index = LIBXSMM_MIN(size2 >> 10, 7);
-        const unsigned int tindex = (4 < typesize ? 0 : 1);
+        const unsigned int indx = LIBXSMM_MIN(size2 >> 10, 7);
+        const unsigned int tidx = (4 < typesize ? 0 : 1);
         const libxsmm_mcopy_descriptor* desc;
         libxsmm_xmcopyfunction xmatcopy = 0;
         libxsmm_descriptor_blob blob;
         LIBXSMM_INIT /* before leading tile sizes */
-        tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tindex][0/*M*/][index]);
-        tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tindex][1/*N*/][index]);
+        tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tidx][0/*M*/][indx]);
+        tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tidx][1/*N*/][indx]);
         /* libxsmm_trans_jit: JIT'ted matrix-copy permitted? */
         desc = (0 != (1 & libxsmm_trans_jit) ? libxsmm_mcopy_descriptor_init(&blob, typesize, tm, tn, uldo, uldi,
           0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/) : 0);
@@ -160,14 +160,14 @@ LIBXSMM_APIEXT int libxsmm_otrans_omp(void* out, const void* in, unsigned int ty
           unsigned int tm = (unsigned int)m, tn = (unsigned int)n;
           const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
           const unsigned int size = tm * tn, size2 = LIBXSMM_SQRT2(size);
-          const unsigned int index = LIBXSMM_MIN(size2 >> 10, 7);
-          const unsigned int tindex = (4 < typesize ? 0 : 1);
+          const unsigned int indx = LIBXSMM_MIN(size2 >> 10, 7);
+          const unsigned int tidx = (4 < typesize ? 0 : 1);
           libxsmm_trans_descriptor* desc;
           libxsmm_xtransfunction xtrans = 0;
           libxsmm_descriptor_blob blob;
           LIBXSMM_INIT /* before leading tile sizes */
-          tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tindex][0/*M*/][index]);
-          tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tindex][1/*N*/][index]);
+          tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tidx][0/*M*/][indx]);
+          tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tidx][1/*N*/][indx]);
           /* libxsmm_trans_jit: JIT'ted transpose permitted? */
           desc = (0 != (2 & libxsmm_trans_jit) ? libxsmm_trans_descriptor_init(&blob, typesize, tm, tn, uldo) : 0);
           if (0 != desc) { /* limit the amount of (unrolled) code with smaller kernel/tiles */
