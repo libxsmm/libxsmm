@@ -75,29 +75,17 @@ tests: test
 test: $(OUTDIR)/.make $(OUTDIR)/test.sh $(XFILES)
 	@$(OUTDIR)/test.sh $(TEST)
 
-TEST_NOBLASLIB = $(call abslib, $(LIBNAME)noblas.$(LIBEXT))
-#ifneq (Darwin,$(UNAME))
-  TEST_EXTLIB = $(EXTLIB)
-#endif
-
 # determine header-only tests (to avoid linking against LIBXSMM libraries; see below)
 HEADER_ONLY = $(basename $(notdir $(shell grep -H libxsmm_source *.c | cut -d: -f1)))
 
 define DEFINE_LINK_LD_RULE
 ifneq (,$(wildcard $(LIBDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
-
 $(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(dir $(1))/.make \
       $(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(LIBDEP) $(EXTDEP))
-ifneq (0,$(BLAS))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) \
-		$(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(TEST_EXTLIB) $(call abslib, $(LIBDEP))) \
+		$(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(EXTLIB) $(call abslib, $(LIBDEP)) $(BLASLIB)) \
 		$(LDFLAGS) $(CLDFLAGS)
-else
-	$(LD) $(SLDFLAGS) -o $(1) $(2) \
-		$(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(call abslib, $(LIBDEP)) $(TEST_EXTLIB)) \
-		$(TEST_NOBLASLIB) $(LDFLAGS) $(CLDFLAGS)
-endif
 else
 .PHONY: $(1)
 endif
@@ -112,13 +100,8 @@ ifneq (,$(wildcard $(LIBDEP)))
 ifneq (,$(wildcard $(FORTDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
 $(1): $(2) $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) $(FORTDEP) $(LIBDEP) $(EXTDEP) $(dir $(1))/.make
-ifneq (0,$(BLAS))
-	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(FORTDEP)) $(TEST_EXTLIB) \
-		$(call abslib, $(LIBDEP)) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
-else
-	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(FORTDEP)) $(call abslib, $(LIBDEP)) $(TEST_EXTLIB) \
-		$(TEST_NOBLASLIB) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
-endif
+	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(FORTDEP)) $(EXTLIB) \
+		$(call abslib, $(LIBDEP)) $(BLASLIB) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(1)
 endif

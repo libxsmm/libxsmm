@@ -282,10 +282,10 @@ FORTDEP = $(LIBNAME)f.$(IMPEXT)
 FORTLIB = $(call abslib,$(FORTDEP))
 
 EXTDEP = $(LIBNAME)ext.$(IMPEXT)
-EXTLIB = $(call abslib,$(EXTDEP)) #$(XLIB_BEGIN) -lm $(XLIB_END)
+EXTLIB = $(XLIB_BEGIN) $(call abslib,$(EXTDEP)) $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides libxsmmnoblas to satisfy BLAS symbols
-  NOBLASLIB = $(call abslib,$(LIBNAME)noblas.$(IMPEXT))
+  NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(IMPEXT)) $(XLIB_END)
 else
   NOBLASLIB = $(NULL)
 endif
