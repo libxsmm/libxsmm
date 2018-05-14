@@ -66,8 +66,12 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 ifneq (,$(strip $(FC)))
+ifneq (0,$(shell echo "$$((3>$(GCC) || 40600<=$(FC_VERSION)))"))
 $(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(EXTDEP) $(LIBDEP)
 	$(FLD) -o $@ $(FTNOBJS) $(EXTLIB) $(FORTLIB) $(MAINLIB) $(NOBLASLIB) $(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+else
+.PHONY: $(OUTDIR)/$(OUTNAME)f
+endif
 else
 .PHONY: $(OUTDIR)/$(OUTNAME)f
 endif
