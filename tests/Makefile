@@ -80,14 +80,23 @@ TEST_NOBLASLIB = $(call abslib, $(LIBNAME)noblas.$(LIBEXT))
   TEST_EXTLIB = $(EXTLIB)
 #endif
 
+# determine header-only tests (to avoid linking against LIBXSMM libraries; see below)
+HEADER_ONLY = $(basename $(notdir $(shell grep -H libxsmm_source *.c | cut -d: -f1)))
+
 define DEFINE_LINK_LD_RULE
 ifneq (,$(wildcard $(LIBDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
-$(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(LIBDEP) $(EXTDEP) $(dir $(1))/.make
+
+$(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(dir $(1))/.make \
+      $(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(LIBDEP) $(EXTDEP))
 ifneq (0,$(BLAS))
-	$(LD) $(SLDFLAGS) -o $(1) $(2) $(TEST_EXTLIB) $(call abslib, $(LIBDEP)) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) $(SLDFLAGS) -o $(1) $(2) \
+		$(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(TEST_EXTLIB) $(call abslib, $(LIBDEP))) \
+		$(LDFLAGS) $(CLDFLAGS)
 else
-	$(LD) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(LIBDEP)) $(TEST_EXTLIB) $(TEST_NOBLASLIB) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) $(SLDFLAGS) -o $(1) $(2) \
+		$(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(call abslib, $(LIBDEP)) $(TEST_EXTLIB)) \
+		$(TEST_NOBLASLIB) $(LDFLAGS) $(CLDFLAGS)
 endif
 else
 .PHONY: $(1)
