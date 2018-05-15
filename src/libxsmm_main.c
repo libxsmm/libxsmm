@@ -1027,11 +1027,12 @@ LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strat
 LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype)
 {
   switch (datatype) {
-    case LIBXSMM_DATATYPE_F64: return 8;
-    case LIBXSMM_DATATYPE_F32: return 4;
-    case LIBXSMM_DATATYPE_I32: return 4;
-    case LIBXSMM_DATATYPE_I16: return 2;
-    case LIBXSMM_DATATYPE_I8:  return 1;
+    case LIBXSMM_DATATYPE_F64:  return 8;
+    case LIBXSMM_DATATYPE_F32:  return 4;
+    case LIBXSMM_DATATYPE_BF16: return 2;
+    case LIBXSMM_DATATYPE_I32:  return 4;
+    case LIBXSMM_DATATYPE_I16:  return 2;
+    case LIBXSMM_DATATYPE_I8:   return 1;
   }
   return 0;
 }
