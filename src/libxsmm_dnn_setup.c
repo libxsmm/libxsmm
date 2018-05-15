@@ -225,6 +225,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_feature_map_blocks( libxs
     handle->fm_lp_block = 1;
     handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
     handle->ofmblock_lp = handle->ofmblock / handle->fm_lp_block;
+  } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
+    handle->ifmblock = (handle->desc.C >=16) ? 8 : handle->desc.C/2;
+    handle->ofmblock = (handle->desc.K >=16) ? 8 : handle->desc.K/2;
+    handle->fm_lp_block = 2;
+    handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
+    handle->ofmblock_lp = handle->ofmblock * handle->fm_lp_block;
+    *noarch = 1;
   } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
     handle->ifmblock = (handle->desc.C >=16) ? 8 : (handle->desc.C/2);
     handle->ofmblock = (handle->desc.K >=16) ? 16 : (handle->desc.K/2);
@@ -250,10 +257,17 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_feature_map_blocks( libxs
 
   /* Let's calculate how many blocks we need for the feature maps */
   if (handle->use_lp_kernel == 1) {
-    handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
-    handle->blocksofm = handle->desc.K / handle->ofmblock;
-    handle->blocksifm_lp = handle->desc.C / handle->ifmblock_hp;
-    handle->blocksofm_lp = handle->desc.K / handle->ofmblock;
+    if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
+      handle->blocksifm = handle->desc.C / (handle->ifmblock * handle->fm_lp_block);
+      handle->blocksofm = handle->desc.K / (handle->ofmblock * handle->fm_lp_block);
+      handle->blocksifm_lp = handle->blocksifm;
+      handle->blocksofm_lp = handle->blocksofm;
+    } else {
+      handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
+      handle->blocksofm = handle->desc.K / handle->ofmblock;
+      handle->blocksifm_lp = handle->desc.C / handle->ifmblock_hp;
+      handle->blocksofm_lp = handle->desc.K / handle->ofmblock;
+    }
   } else {
     handle->blocksifm = handle->desc.C / handle->ifmblock;
     handle->blocksofm = handle->desc.K / handle->ofmblock;
@@ -344,6 +358,19 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->bwd_ofw_rb = handle->ofw;
   handle->fm_lp_block = 1;
   handle->use_thread_private_jit = 0;
+
+  /* here we need to handle BF16 again */
+  if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.C % 2 == 0) && (handle->desc.K % 2 == 0) ) {
+    handle->fm_lp_block = 2;
+    handle->ifmblock = (handle->desc.C >=16) ? 8 : handle->desc.C/2;
+    handle->ofmblock = (handle->desc.K >=16) ? 8 : handle->desc.K/2;
+    handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
+    handle->ofmblock_lp = handle->ofmblock * handle->fm_lp_block;
+    handle->blocksifm = handle->desc.C / (handle->ifmblock * handle->fm_lp_block);
+    handle->blocksofm = handle->desc.K / (handle->ofmblock * handle->fm_lp_block);
+    handle->blocksifm_lp = handle->blocksifm;
+    handle->blocksofm_lp = handle->blocksofm;
+  }
 
   /* Adjust blocking factors if custom_2 format is requested */
   if ((handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2)) {
