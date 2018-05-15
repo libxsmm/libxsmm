@@ -32,8 +32,8 @@
 #ifndef GENERATOR_GEMM_AVX_MICROKERNEL_H
 #define GENERATOR_GEMM_AVX_MICROKERNEL_H
 
-#include "generator_common.h"
 #include "generator_gemm_common.h"
+
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*             io_generated_code,

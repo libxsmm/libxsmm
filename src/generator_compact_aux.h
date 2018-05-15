@@ -33,13 +33,20 @@
 #include "generator_common.h"
 
 #include <libxsmm_intrinsics_x86.h>
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 
-compact_load_parameter_ (
+LIBXSMM_API_INLINE void compact_load_parameter_ (
      libxsmm_generated_code* io_code,
      double alpha,
      unsigned int reg,
@@ -54,18 +61,20 @@ compact_load_parameter_ (
         fprintf(stderr,"loading too large a parameter for compact_load_parameter\n");
         exit(-1);
      }
-     for ( i = 0 ; i < number ; i++ ) vector[i]=alpha;
+     for ( i = 0 ; i < (int)number ; i++ ) vector[i]=alpha;
 
      libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) vector, "loadconst", regset, reg );
 }
 
-compact_set_zero_ (
+LIBXSMM_API_INLINE void compact_set_zero_ (
      libxsmm_generated_code* io_code,
      unsigned int reg,
      unsigned int number,
      unsigned int datasize,
      char regset )
 {
+     LIBXSMM_UNUSED(number);
+
      if ( (datasize == 8) && (regset=='z') )
      {
         libxsmm_x86_instruction_vec_compute_reg ( io_code, LIBXSMM_X86_AVX512, LIBXSMM_X86_INSTR_VXORPD, regset, reg, reg, reg );
@@ -81,7 +90,7 @@ compact_set_zero_ (
      }
 }
 
-compact_set_one_ (
+LIBXSMM_API_INLINE void compact_set_one_ (
      libxsmm_generated_code* io_code,
      unsigned int reg,
      unsigned int number,
@@ -91,17 +100,19 @@ compact_set_one_ (
      double vector[8];
      int i;
 
+     LIBXSMM_UNUSED(datasize);
+
      if ( number > 8 )
      {
         fprintf(stderr,"loading too large a parameter for compact_set_one_\n");
         exit(-1);
      }
-     for ( i = 0 ; i < number ; i++ ) vector[i]=1.0;
+     for ( i = 0 ; i < (int)number ; i++ ) vector[i]=1.0;
 
      libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) vector, "loadone", regset, reg );
 }
 
-compact_store_matrix2_ (
+LIBXSMM_API_INLINE void compact_store_matrix2_ (
      libxsmm_generated_code* io_code,
      unsigned int lda,
      unsigned int i,
@@ -123,7 +134,7 @@ compact_store_matrix2_ (
      {
         i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPS;
      } else {
-        fprintf(stderr,"compact_store_matrix2 has strange datasize=%d\n",datasize);
+        fprintf(stderr,"compact_store_matrix2 has strange datasize=%u\n",datasize);
         exit(-1);
      }
      if ( regset == 'z' )
@@ -139,7 +150,7 @@ compact_store_matrix2_ (
      libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RSI, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 1 );
 }
 
-compact_store_matrix3_ (
+LIBXSMM_API_INLINE void compact_store_matrix3_ (
      libxsmm_generated_code* io_code,
      unsigned int lda,
      unsigned int i,
@@ -161,7 +172,7 @@ compact_store_matrix3_ (
      {
         i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPS;
      } else {
-        fprintf(stderr,"compact_store_matrix3 has strange datasize=%d\n",datasize);
+        fprintf(stderr,"compact_store_matrix3 has strange datasize=%u\n",datasize);
         exit(-1);
      }
      if ( regset == 'z' )
@@ -177,7 +188,7 @@ compact_store_matrix3_ (
      libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RDX, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 1 );
 }
 
-compact_load_matrix1_ (
+LIBXSMM_API_INLINE void compact_load_matrix1_ (
      libxsmm_generated_code* io_code,
      unsigned int lda,
      unsigned int i,
@@ -199,7 +210,7 @@ compact_load_matrix1_ (
      {
         i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPS;
      } else {
-        fprintf(stderr,"compact_load_matrix1 has strange datasize=%d\n",datasize);
+        fprintf(stderr,"compact_load_matrix1 has strange datasize=%u\n",datasize);
         exit(-1);
      }
      if ( regset == 'z' )
@@ -215,7 +226,7 @@ compact_load_matrix1_ (
      libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RDI, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0 );
 }
 
-compact_load_matrix2_ (
+LIBXSMM_API_INLINE void compact_load_matrix2_ (
      libxsmm_generated_code* io_code,
      unsigned int lda,
      unsigned int i,
@@ -237,7 +248,7 @@ compact_load_matrix2_ (
      {
         i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPS;
      } else {
-        fprintf(stderr,"compact_load_matrix2 has strange datasize=%d\n",datasize);
+        fprintf(stderr,"compact_load_matrix2 has strange datasize=%u\n",datasize);
         exit(-1);
      }
      if ( regset == 'z' )
@@ -253,7 +264,7 @@ compact_load_matrix2_ (
      libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RSI, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0 );
 }
 
-compact_load_matrix3_ (
+LIBXSMM_API_INLINE void compact_load_matrix3_ (
      libxsmm_generated_code* io_code,
      unsigned int lda,
      unsigned int i,
@@ -275,7 +286,7 @@ compact_load_matrix3_ (
      {
         i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPS;
      } else {
-        fprintf(stderr,"compact_load_matrix3 has strange datasize=%d\n",datasize);
+        fprintf(stderr,"compact_load_matrix3 has strange datasize=%u\n",datasize);
         exit(-1);
      }
      if ( regset == 'z' )
@@ -291,7 +302,7 @@ compact_load_matrix3_ (
      libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RDX, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0 );
 }
 
-compact_mult_two_nums_ (
+LIBXSMM_API_INLINE void compact_mult_two_nums_ (
      libxsmm_generated_code* io_code,
      unsigned int reg0,
      unsigned int reg1,
@@ -299,10 +310,12 @@ compact_mult_two_nums_ (
      unsigned int number,
      char regset )
 {
-     int datasize;
+     int datasize = 0;
      unsigned int i_vmove_instr;
      int i_instruction_set;
 
+     LIBXSMM_UNUSED(datasize);
+     
      if ( regset == 'z' )
      {
         i_instruction_set = LIBXSMM_X86_AVX512;
@@ -337,7 +350,7 @@ compact_mult_two_nums_ (
      libxsmm_x86_instruction_vec_compute_reg ( io_code, i_instruction_set, i_vmove_instr, regset, reg1, reg0, reg2 );
 }
 
-compact_fms_cminusab_(
+LIBXSMM_API_INLINE void compact_fms_cminusab_(
      libxsmm_generated_code* io_code,
      unsigned int reg0,
      unsigned int reg1,
@@ -345,10 +358,12 @@ compact_fms_cminusab_(
      unsigned int number,
      char regset )
 {
-     int datasize;
+     int datasize = 0;
      unsigned int i_vmove_instr;
      int i_instruction_set;
 
+     LIBXSMM_UNUSED(datasize);
+     
      if ( regset == 'z' )
      {
         i_instruction_set = LIBXSMM_X86_AVX512;
@@ -383,7 +398,7 @@ compact_fms_cminusab_(
      libxsmm_x86_instruction_vec_compute_reg ( io_code, i_instruction_set, i_vmove_instr, regset, reg1, reg2, reg0 );
 }
 
-compact_divide_two_nums_ (
+LIBXSMM_API_INLINE void compact_divide_two_nums_ (
      libxsmm_generated_code* io_code,
      unsigned int reg0,
      unsigned int reg1,
@@ -391,9 +406,11 @@ compact_divide_two_nums_ (
      unsigned int number,
      char regset )
 {
-     int datasize;
+     int datasize = 0;
      unsigned int i_vmove_instr;
      int i_instruction_set;
+
+     LIBXSMM_UNUSED(datasize);
 
      if ( regset == 'z' )
      {

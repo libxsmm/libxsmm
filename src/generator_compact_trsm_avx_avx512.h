@@ -34,21 +34,9 @@
 #include "generator_common.h"
 
 
-typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_compact_trsm_descriptor2 {
-  const libxsmm_gemm_descriptor* gemm;
-  const char* side;
-  const char* uplo;
-  const char* transa;
-  const char* diag;
-  const unsigned int* layout;
-  const unsigned int* typesize;
-  const double* alpha;
-} libxsmm_compact_trsm_descriptor2;
-
-
 LIBXSMM_API_INTERN
 void libxsmm_generator_compact_trsm_avx_avx512_kernel( libxsmm_generated_code*                 io_generated_code,
-                                                       const libxsmm_compact_trsm_descriptor2* i_compact_trsm_desc,
+                                                       const libxsmm_compact_trsm_descriptor*  i_compact_trsm_desc,
                                                        const char*                             i_arch );
 
 #endif /* GENERATOR_COMPACT_TRSM_AVX_AVX512_H */

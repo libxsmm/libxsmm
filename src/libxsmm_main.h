@@ -183,6 +183,15 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor { /* 13 By
   unsigned char typesize;
 };
 
+/** Structure storing arguments of packed TRSM. */
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_compact_trsm_descriptor {
+  const libxsmm_gemm_descriptor* gemm;
+  double alpha;
+  unsigned int layout;
+  unsigned char typesize;
+  char side, uplo, diag, transa;
+};
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
@@ -274,6 +283,9 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   uintptr_t uval;
   intptr_t ival;
   libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wimm, wsmm, or void-function */
+#ifdef ADD_THIS_LATER_FOR_DISPATCHING
+  libxsmm_xcompact_trsmfunction xcompact_trsm;
+#endif
   libxsmm_xmcopyfunction xmatcopy;
   libxsmm_xtransfunction xtrans;
   libxsmm_xconvfunction xconv;
@@ -510,7 +522,8 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_CWBWD,
   LIBXSMM_BUILD_KIND_CWUPD,
   LIBXSMM_BUILD_KIND_MCOPY,
-  LIBXSMM_BUILD_KIND_TRANS
+  LIBXSMM_BUILD_KIND_TRANS,
+  LIBXSMM_BUILD_KIND_COMPACT_TRSM
 } libxsmm_build_kind;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
@@ -525,6 +538,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_convolution_winograd_descriptor* cwino;
   const libxsmm_mcopy_descriptor* matcopy;
   const libxsmm_trans_descriptor* trans;
+  const libxsmm_compact_trsm_descriptor* compact_trsm;
 } libxsmm_build_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {

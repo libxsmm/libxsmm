@@ -126,6 +126,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor lib
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor libxsmm_mcopy_descriptor;
 /** Structure storing arguments of the transpose routine. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor libxsmm_trans_descriptor;
+/** Structure storing arguments of packed TRSM. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_compact_trsm_descriptor libxsmm_compact_trsm_descriptor;
 
 /** Enumerates element/data types. */
 typedef enum libxsmm_datatype {

@@ -30,21 +30,30 @@
 ******************************************************************************/
 #include "generator_compact_trsm_avx_avx512.h"
 #include "generator_x86_instructions.h"
+#include "generator_compact_aux.h"
 #include "generator_common.h"
+#include "libxsmm_main.h"
 
 #include <libxsmm_intrinsics_x86.h>
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 /* #define GENERATOR_COMPACT_TRSM_DEBUG */
 
+
 LIBXSMM_API_INTERN
-void libxsmm_generator_compact_trsm_avx_avx512_kernel(
-                libxsmm_generated_code*                 io_code,
-                const libxsmm_compact_trsm_descriptor2* i_compact_trsm_desc,
-                const char*                             i_arch )
+void libxsmm_generator_compact_trsm_avx_avx512_kernel( libxsmm_generated_code*                 io_code,
+                                                       const libxsmm_compact_trsm_descriptor*  i_compact_trsm_desc,
+                                                       const char*                             i_arch )
 {
   /* Just reuse transpose gp mapping */
   libxsmm_transpose_gp_reg_mapping l_gp_reg_mapping = { 0/*avoid warning "maybe used uninitialized" */ };
@@ -109,45 +118,31 @@ void libxsmm_generator_compact_trsm_avx_avx512_kernel(
 
   if ( io_code->code_type > 1 )
   {
-     unsigned char *buf = (unsigned char *) io_code->generated_code;
-     int i = io_code->code_size;
+     /*unsigned char *buf = (unsigned char *) io_code->generated_code;*/
+     unsigned int i = io_code->code_size;
      unsigned int m = i_compact_trsm_desc->gemm->m;
      unsigned int n = i_compact_trsm_desc->gemm->n;
      unsigned int lda = i_compact_trsm_desc->gemm->lda;
      unsigned int ldb = i_compact_trsm_desc->gemm->ldb;
-     const unsigned int *datasize_ptr = i_compact_trsm_desc->typesize;
-     const unsigned int *layout = i_compact_trsm_desc->layout;
-     unsigned int datasz = *datasize_ptr;
-     const char *side_ptr = i_compact_trsm_desc->side;
-     const char *uplo_ptr = i_compact_trsm_desc->uplo;
-     const char *transa_ptr = i_compact_trsm_desc->transa;
-     const char *diag_ptr = i_compact_trsm_desc->diag;
-     const double *alpha_ptr = i_compact_trsm_desc->alpha;
+     const unsigned int layout = i_compact_trsm_desc->layout;
+     const unsigned char *const datasize_ptr = &i_compact_trsm_desc->typesize;
+     const char *const side_ptr = &i_compact_trsm_desc->side;
+     const char *const uplo_ptr = &i_compact_trsm_desc->uplo;
+     const char *const transa_ptr = &i_compact_trsm_desc->transa;
+     const char *const diag_ptr = &i_compact_trsm_desc->diag;
+     const double *const alpha_ptr = &i_compact_trsm_desc->alpha;
      const double alpha = (double)*alpha_ptr;
      char side=*side_ptr, uplo=*uplo_ptr, trans=*transa_ptr, diag=*diag_ptr;
+     unsigned int datasz = *datasize_ptr;
      unsigned int m1=m, n1=n;
-     int imask = 0;
-     int offsetA, offsetB, oldB;
-     int j, k, m0, n0, shiftvalue, shiftmult;
-     int REGSIZE;
-     int maskvar = 0;
+     unsigned int j, k;
+     /*int REGSIZE;*/
      int numb;
      int scalealpha = 0;
      int nounit=0;
      char regset;
-     extern void compact_divide_two_nums_();
-     extern void compact_fms_cminusab_();
-     extern void compact_load_parameter_();
-     extern void compact_load_matrix1_();
-     extern void compact_load_matrix2_();
-     extern void compact_load_matrix3_();
-     extern void compact_mult_two_nums_();
-     extern void compact_set_one_();
-     extern void compact_set_zero_();
-     extern void compact_store_matrix2_();
-     extern void compact_store_matrix3_();
 
-     if ( *layout == 101 )
+     if ( layout == 101 )
      {
         if ( *side_ptr == 'L' || *side_ptr == 'l' ) side = 'R';
         else side = 'L';
@@ -160,12 +155,12 @@ printf("Inside libxsmm_generator_compact_trsm_avx_avx512_kernel: %c%c%c%c m=%d n
 #endif
      if ( ( datasz !=4 ) && (datasz != 8) )
      {
-        fprintf(stderr,"Expecting a datasize of 4 or 8, but got %d\n",datasz);
+        fprintf(stderr,"Expecting a datasize of 4 or 8, but got %u\n",datasz);
         exit(-1);
      }
      if ( avx512 < 0 )
      {
-        fprintf(stderr,"Expecting a nonnegative number for avx512: %d\n",avx512);
+        fprintf(stderr,"Expecting a nonnegative number for avx512: %i\n",avx512);
         exit(-1);
      }
      if ( datasz == 4 && avx512 == 0 )

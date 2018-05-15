@@ -32,16 +32,22 @@
 #include "generator_common.h"
 #include "generator_compact_trsm_avx_avx512.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 
 /* @TODO change int based architecture value */
-LIBXSMM_API_INTERN
+LIBXSMM_API
 void libxsmm_generator_compact_trsm_kernel( libxsmm_generated_code*                   io_generated_code,
-                                            const libxsmm_compact_trsm_descriptor2*   i_compact_trsm_desc,
+                                            const libxsmm_compact_trsm_descriptor*    i_compact_trsm_desc,
                                             const char*                               i_arch ) {
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
