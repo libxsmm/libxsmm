@@ -251,6 +251,11 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_trans_de
 LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descriptor* descriptor,
    const unsigned int* row_ptr, const unsigned int* column_idx, const void* values);
 
+LIBXSMM_API libxsmm_xmmfunction libxsmm_create_compact_trsm (const libxsmm_gemm_descriptor* descriptor,
+  const unsigned int* layout, const char* side, const char* uplo,
+  const char* transa, const char* diag, const unsigned int* typesize,
+  const double* alpha);
+
 /**
  * Code generation routine for the CSC format which multiplies a dense SOA matrix (each element holds a SIMD-width
  * wide vector) and a sparse matrix or a sparse matrix with a dense SOA matrix.

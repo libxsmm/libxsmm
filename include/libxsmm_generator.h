@@ -89,6 +89,14 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
   unsigned int typesize, unsigned int m, unsigned int n, unsigned int ldo,
   unsigned int ldi, int flags, int prefetch, const int* unroll);
 
+/** Structure storing the compact trsm argument description. */
+LIBXSMM_EXTERN_C typedef struct libxsmm_compact_trsm_descriptor1 { /* ?? Byte */
+  unsigned int layout;
+  char side, uplo, trans, diag;
+  unsigned int m, n, lda, ldb;
+  unsigned char typesize;
+} libxsmm_compact_trsm_descriptor1;
+
 /** Structure referring to the generated code with some attached information. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
   void* generated_code;       /** pointer to memory which can contain strings or binary code */
@@ -195,6 +203,11 @@ LIBXSMM_API void libxsmm_generator_gemm_rm_ac_soa( libxsmm_generated_code*      
 LIBXSMM_API void libxsmm_generator_gemm_rm_bc_soa( libxsmm_generated_code*         io_generated_code,
                                                    const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                    const char*                     i_arch );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_compact_trsm_kernel ( libxsmm_generated_code*                    io_generated_code,
+                                             const libxsmm_compact_trsm_descriptor1*    i_compact_trsm_desc,
+                                             const char*                                i_arch );
 
 /* @TODO change int based architecture value */
 LIBXSMM_API
