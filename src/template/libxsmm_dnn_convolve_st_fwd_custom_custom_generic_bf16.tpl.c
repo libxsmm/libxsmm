@@ -41,7 +41,7 @@ const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 /* offset output pointer in case of physical output padding */
-element_output_type* out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
+element_output_type* out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock*handle->fm_lp_block;
 
 /* padding via stack allocated buffers */
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
@@ -73,6 +73,11 @@ for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_
     img = imgofm1 / handle->blocksofm;
     ofm1 = imgofm1 % handle->blocksofm;
 
+    /* set output to zero */
+    for ( ofm2 = 0 ; ofm2 < handle->ofhp*handle->ofwp*handle->ofmblock*handle->fm_lp_block; ++ofm2 ) {
+      tmpout[ofm2] = 0.0f;
+    }
+
     for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
       /* copy weights from BFP16 into float */
       for (kj = 0; kj < handle->desc.R; ++kj) {
@@ -81,10 +86,10 @@ for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_
             for( ofm2 = 0; ofm2 < handle->ifmblock*handle->fm_lp_block; ++ofm2 ) { 
               for ( lp = 0; lp < handle->fm_lp_block; ++lp ) {
                 union libxsmm_bfloat16_hp trans;
-
-                trans.f = LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, lp, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock*handle->fm_lp_block, handle->fm_lp_block);
+                trans.i[0] = 0;
+                trans.i[1] = LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, lp, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock*handle->fm_lp_block, handle->fm_lp_block);
                 
-                LIBXSMM_VLA_ACCESS(4, weight_hp, kj, ki, (ifm2*handle->fm_lp_block)+lp, ofm2, handle->desc.S, handle->ifmblock*handle->fm_lp_block, handle->ofmblock*handle->fm_lp_block) = trans.i[1];
+                LIBXSMM_VLA_ACCESS(4, weight_hp, kj, ki, (ifm2*handle->fm_lp_block)+lp, ofm2, handle->desc.S, handle->ifmblock*handle->fm_lp_block, handle->ofmblock*handle->fm_lp_block) = trans.f;
               }
             }
           }
@@ -105,7 +110,7 @@ for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_
           for (kj = 0; kj < handle->desc.R; ++kj) {
             for (ki = 0; ki< handle->desc.S; ++ki) {
               gemm_kernel( &LIBXSMM_VLA_ACCESS(4, weight_hp, kj, ki, 0, 0, handle->desc.S, handle->ifmblock*handle->fm_lp_block, handle->ofmblock*handle->fm_lp_block),
-                           &LIBXSMM_VLA_ACCESS(3,  input_hp, ij + kj, ii + ki, 0, handle->ifwp, handle->ifmblock*handle->fm_lp_block),
+                           &LIBXSMM_VLA_ACCESS(3,  input_hp, ij + kj, ii + ki, 0, padded_w, handle->ifmblock*handle->fm_lp_block),
                            &LIBXSMM_VLA_ACCESS(3, output_hp,  oj, oi, 0, handle->ofwp, handle->ofmblock*handle->fm_lp_block) );
             }
           }
@@ -116,8 +121,8 @@ for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_
         for (ij = 0; ij < handle->desc.H; ++ij) {
           for (ii = 0; ii < handle->desc.W; ++ii) {
             for (ifm2 = 0; ifm2 < handle->ifmblock*handle->fm_lp_block; ++ifm2) {
-              LIBXSMM_VLA_ACCESS(3, input_padded, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock) =
-                LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+              LIBXSMM_VLA_ACCESS(3, input_padded, ij + handle->desc.pad_h, ii + handle->desc.pad_w, ifm2, padded_w, handle->ifmblock*handle->fm_lp_block) =
+                LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock*handle->fm_lp_block);
             }
           }
         }

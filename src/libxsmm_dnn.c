@@ -588,14 +588,14 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
                 layout->dim_size[1] = handle->ifmblock;
                 layout->dim_size[2] = handle->ifwp;
                 layout->dim_size[3] = handle->ifhp;
-                layout->dim_size[4] = handle->blocksifm_lp;
+                layout->dim_size[4] = handle->blocksifm;
                 layout->dim_size[5] = handle->desc.N;
               } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
                 layout->dim_size[0] = handle->fm_lp_block;
                 layout->dim_size[1] = handle->ofmblock;
                 layout->dim_size[2] = handle->ofwp;
                 layout->dim_size[3] = handle->ofhp;
-                layout->dim_size[4] = handle->blocksofm_lp;
+                layout->dim_size[4] = handle->blocksofm;
                 layout->dim_size[5] = handle->desc.N;
               } else {
                 free(layout->dim_type);
@@ -760,8 +760,8 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
               layout->dim_size[2] = handle->ifmblock;
               layout->dim_size[3] = handle->desc.S;
               layout->dim_size[4] = handle->desc.R;
-              layout->dim_size[5] = handle->blocksifm_lp;
-              layout->dim_size[6] = handle->blocksofm_lp;
+              layout->dim_size[5] = handle->blocksifm;
+              layout->dim_size[6] = handle->blocksofm;
             }
           } else if ( ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) || ((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)) ) {
             if ( (type == LIBXSMM_DNN_REGULAR_FILTER) || (type == LIBXSMM_DNN_FILTER) ) {
@@ -877,8 +877,8 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
               layout->dim_size[2] = handle->ofmblock;
               layout->dim_size[3] = handle->desc.S;
               layout->dim_size[4] = handle->desc.R;
-              layout->dim_size[5] = handle->blocksofm_lp;
-              layout->dim_size[6] = handle->blocksifm_lp;
+              layout->dim_size[5] = handle->blocksofm;
+              layout->dim_size[6] = handle->blocksifm;
             }
           } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) ||
               (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) ) {
