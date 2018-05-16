@@ -2976,6 +2976,33 @@ LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, in
 }
 
 
+LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bfloat16* out, const unsigned int length) {
+  unsigned int i = 0;
+
+  /* truncate buffer to bfp16 */
+  for ( i = 0; i < length; ++i ) {
+    union libxsmm_bfloat16_hp t;
+
+    t.f = in[i];
+    out[i] = t.i[1];
+  } 
+}
+
+
+LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out, unsigned int length) {
+  unsigned int i = 0;
+
+  /* up-convert is super simple */
+  for ( i = 0; i < length; ++i ) {
+    union libxsmm_bfloat16_hp t;
+
+    t.i[1] = in[i];
+    t.i[0] = 0;
+    out[i] = t.f;    
+  }
+}
+
+
 LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor)
 {
   libxsmm_code_pointer code = { 0 };

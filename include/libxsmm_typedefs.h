@@ -53,6 +53,11 @@
 
 /* support for bfloat */
 typedef unsigned short libxsmm_bfloat16;
+union libxsmm_bfloat16_hp {
+  float              f;
+  libxsmm_bfloat16   i[2];
+};
+
 
 /** Helper macro for type names. */
 #define LIBXSMM_TYPENAME(TYPE) LIBXSMM_STRINGIFY(LIBXSMM_CONCATENATE(LIBXSMM_TYPENAME_, TYPE))
