@@ -198,7 +198,7 @@ LIBXSMM_API void libxsmm_generator_gemm_rm_bc_soa( libxsmm_generated_code*      
 
 LIBXSMM_API
 void libxsmm_generator_compact_trsm_kernel ( libxsmm_generated_code*                io_generated_code,
-                                             const libxsmm_compact_trsm_descriptor* i_compact_trsm_desc,
+                                             const libxsmm_trsm_descriptor* i_compact_trsm_desc,
                                              const char*                            i_arch );
 
 /* @TODO change int based architecture value */

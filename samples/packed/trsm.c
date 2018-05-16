@@ -34,11 +34,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-# define drand48() ((double)rand() / RAND_MAX)
-# define srand48 srand
-#endif
-
 #define BUFSIZE 32*32
 #define BUFSIZE2 64000
 
@@ -46,10 +41,11 @@
 #define TRIANGLE_IS_IDENTITY
 #endif
 
-dcopy_to_temp ( int layout, double *A, int lda, int m, int n, double *Atemp,
-                unsigned int VLEN )
+LIBXSMM_INLINE
+void dcopy_to_temp ( int layout, double *A, int lda, int m, int n, double *Atemp,
+                     unsigned int VLEN )
 {
-    int i, j, k, ia;
+    int i, j;
 
     if ( lda*n > BUFSIZE )
     {
@@ -88,10 +84,11 @@ dcopy_to_temp ( int layout, double *A, int lda, int m, int n, double *Atemp,
     }
 }
 
-scopy_to_temp ( int layout, float *A, int lda, int m, int n, float *Atemp,
-                unsigned int VLEN )
+LIBXSMM_INLINE
+void scopy_to_temp ( int layout, float *A, int lda, int m, int n, float *Atemp,
+                     unsigned int VLEN )
 {
-    int i, j, k, ia;
+    int i, j;
 
     if ( lda*n > BUFSIZE )
     {
@@ -121,10 +118,11 @@ scopy_to_temp ( int layout, float *A, int lda, int m, int n, float *Atemp,
     }
 }
 
-dcopy_from_temp ( int layout, double *A, int lda, int m, int n, double *Atemp,
-                  unsigned int VLEN )
+LIBXSMM_INLINE
+void dcopy_from_temp ( int layout, double *A, int lda, int m, int n, double *Atemp,
+                       unsigned int VLEN )
 {
-    int i, j, k, ia;
+    int i, j, ia;
 
     if ( lda*n > BUFSIZE )
     {
@@ -151,10 +149,11 @@ dcopy_from_temp ( int layout, double *A, int lda, int m, int n, double *Atemp,
     }
 }
 
-scopy_from_temp ( int layout, float *A, int lda, int m, int n, float *Atemp,
-                  unsigned int VLEN )
+LIBXSMM_INLINE
+void scopy_from_temp ( int layout, float *A, int lda, int m, int n, float *Atemp,
+                       unsigned int VLEN )
 {
-    int i, j, k, ia;
+    int i, j, ia;
 
     if ( lda*n > BUFSIZE )
     {
@@ -186,6 +185,7 @@ scopy_from_temp ( int layout, float *A, int lda, int m, int n, float *Atemp,
    is very naive reference code just used for testing purposes */
 /* Note: if layout==101 (row major), then this code is known to only work when
  *        nmat == VLEN. To check for accuracy otherwise, transpose everything */
+LIBXSMM_INLINE
 void compact_dtrsm_ ( unsigned int *layout, char *side, char *uplo,
                       char *transa, char *diag, unsigned int *m,
                       unsigned int *n, double *alpha, double *A,
@@ -210,9 +210,9 @@ void compact_dtrsm_ ( unsigned int *layout, char *side, char *uplo,
     }
     offseta = (*lda)*asize*(*VLEN);
     if ( ++ntimes < 3 ) printf("m/n=%d,%d layout=%d asize=%d VLEN=%d nmat=%d offseta=%d offsetb=%d\n",*m,*n,*layout, asize, *VLEN, *nmat, offseta, offsetb );
-    for ( i = 0, num = 0 ; i < (*nmat) ; i+= *VLEN, num++ )
+    for ( i = 0, num = 0 ; i < (int)(*nmat) ; i+= *VLEN, num++ )
     {
-       for ( j = 0 ; j < *VLEN ; j++ )
+       for ( j = 0 ; j < (int)*VLEN ; j++ )
        {
            /* Unpack the data, call a reference DTRSM, repack the data */
            Ap = &A[j+num*offseta];
@@ -231,6 +231,7 @@ if (++ntimes < 15 ) printf("Doing a dtrsm at place i=%d j=%d num=%d Ap[%d]=%g Bp
    is very naive reference code just used for testing purposes */
 /* Note: if layout==101 (row major), then this code is known to only work when
  *        nmat == VLEN. To check for accuracy otherwise, transpose everything */
+LIBXSMM_INLINE
 void compact_strsm_ ( unsigned int *layout, char *side, char *uplo,
                       char *transa, char *diag, unsigned int *m,
                       unsigned int *n, float *alpha, float *A,
@@ -243,9 +244,9 @@ void compact_strsm_ ( unsigned int *layout, char *side, char *uplo,
 
     if ( (*side == 'L') || (*side == 'l') ) asize = *m;
     else asize = *n;
-    for ( i = 0, num = 0 ; i < (*nmat) ; i+= *VLEN, num++ )
+    for ( i = 0, num = 0 ; i < (int)(*nmat) ; i+= *VLEN, num++ )
     {
-       for ( j = 0 ; j < *VLEN ; j++ )
+       for ( j = 0 ; j < (int)*VLEN ; j++ )
        {
            /* Unpack the data, call a reference DTRSM, repack the data */
            Ap = &A[j+num*(*lda)*asize*(*VLEN)];
@@ -274,7 +275,7 @@ void dfill_matrix ( double *matrix, unsigned int ld, unsigned int m, unsigned in
      /* Fill through the leading dimension */
      for ( i = 1; i <= ld; i++ )
      {
-        dtmp = 1.0 - 2.0*drand48();
+        dtmp = 1.0 - 2.0*libxsmm_rand_f64();
         matrix [ (j-1)*ld + (i-1) ] = dtmp;
      }
   }
@@ -290,12 +291,12 @@ void dfill_identity ( double *matrix, unsigned int ld, unsigned int m, unsigned 
      fprintf(stderr,"Error is dfill_identity: ld=%u m=%u mismatched!\n",ld,m);
      exit(-1);
   }
-  for ( h = 0; h < number_of_cases ; h++ ) {
+  for ( h = 0; h < (unsigned int)number_of_cases ; h++ ) {
      ia = h*ld*n*VLEN;
      for ( j = 1 ; j <= n ; j++ ) {
         for ( i = 1 ; i <= ld; i++ ) {
            if ( i == j ) dtmp = 1.0; else dtmp = 0.0;
-           for ( k = 0 ; k < VLEN ; k++ ) matrix[ia++] = dtmp;
+           for ( k = 0 ; k < (unsigned int)VLEN ; k++ ) matrix[ia++] = dtmp;
         }
      }
   }
@@ -317,7 +318,7 @@ void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int
      /* Fill through the leading dimension */
      for ( i = 1; i <= ld; i++ )
      {
-        dtmp = 1.0 - 2.0*drand48();
+        dtmp = 1.0 - 2.0*libxsmm_rand_f64();
         matrix [ (j-1)*ld + (i-1) ] = (float) dtmp;
      }
   }
@@ -441,7 +442,7 @@ int main(int argc, char* argv[])
   unsigned int m=8, n=8, lda=8, ldb=8, nerrs, num, nmat, nmats, nmatd, ntest;
   unsigned int layout, asize, VLEND=4, VLENS=8, bsize;
   unsigned int ncorr;
-  int i, j, k;
+  int i, j;
   char side, uplo, trans, diag;
   unsigned int typesize8 = 8;
   unsigned int typesize4 = 4;
@@ -451,15 +452,15 @@ int main(int argc, char* argv[])
   float  *sa, *sb, *sc, *sd;
   double *da, *db, *dc, *dd, *tmpbuf;
   double dalpha = 1.0;
-  float  salpha = 1.0;
+  float  salpha;
   double dtmp;
   const unsigned char *cptr;
   unsigned long op_count;
-  libxsmm_gemm_descriptor descriptor;
-  libxsmm_dmmfunction myr8kernel = NULL;
-  libxsmm_smmfunction myr4kernel = NULL;
+  libxsmm_xtrsmfunction myr8kernel = NULL;
+  libxsmm_xtrsmfunction myr4kernel = NULL;
+#ifdef USE_KERNEL_GENERATION_DIRECTLY
   void (*opcode_routine)();
-
+#endif
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
   #include <unistd.h>
   #include <signal.h>
@@ -503,7 +504,7 @@ int main(int argc, char* argv[])
   if ( argc > 10 ) layout = atoi(argv[10]); else layout=102;
   if ( argc > 11 ) ntest = atoi(argv[11]); else ntest = 1;
   if ( argc > 12 ) dalpha = atof(argv[12]); else dalpha = 1.0;
-  salpha = dalpha;
+  salpha = (float)dalpha;
 
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
@@ -541,17 +542,12 @@ int main(int argc, char* argv[])
   printf("This code tests MKL compact batch directly\n");
 #endif
 
-  descriptor.m = m;
-  descriptor.n = n;
-  descriptor.lda = lda;
-  descriptor.ldb = ldb;
-
 #ifdef USE_XSMM_GENERATED
-  printf("calling libxsmm_create_compact_trsm: typesize8=%d\n",typesize8);
-  myr8kernel = libxsmm_create_compact_trsm ( &descriptor, &layout, &side, &uplo, &trans, &diag, &typesize8, &dalpha ).dmm;
-  printf("done calling libxsmm_create_compact_trsm: typesize8=%d\n",typesize8);
+  printf("calling libxsmm_dispatch_trsm: typesize8=%u\n",typesize8);
+  myr8kernel = libxsmm_dispatch_trsm(m, n, lda, ldb, typesize8, &dalpha, trans, diag, side, uplo, layout);
+  printf("done calling libxsmm_dispatch_trsm: typesize8=%d\n",typesize8);
   if ( myr8kernel == NULL ) printf("R8 Kernel after the create call is null\n");
-  myr4kernel = libxsmm_create_compact_trsm ( &descriptor, &layout, &side, &uplo, &trans, &diag, &typesize4, &dalpha ).smm;
+  myr4kernel = libxsmm_dispatch_trsm(m, n, lda, ldb, typesize4, &salpha, trans, diag, side, uplo, layout);
   if ( myr4kernel == NULL ) printf("R4 kernel after the create call is null\n");
 #endif
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
@@ -594,10 +590,10 @@ int main(int argc, char* argv[])
   dfill_matrix ( db, bsize, bsize, nmatd );
 
 #ifndef NO_ACCURACY_CHECK
-  for ( i = 0 ; i < bsize*nmats ; i++ ) sc[i]=sb[i];
-  for ( i = 0 ; i < bsize*nmatd ; i++ ) dc[i]=db[i];
-  for ( i = 0 ; i < bsize*nmats ; i++ ) sd[i]=sb[i];
-  for ( i = 0 ; i < bsize*nmatd ; i++ ) dd[i]=db[i];
+  for ( i = 0 ; i < (int)(bsize*nmats) ; i++ ) sc[i]=sb[i];
+  for ( i = 0 ; i < (int)(bsize*nmatd) ; i++ ) dc[i]=db[i];
+  for ( i = 0 ; i < (int)(bsize*nmats) ; i++ ) sd[i]=sb[i];
+  for ( i = 0 ; i < (int)(bsize*nmatd) ; i++ ) dd[i]=db[i];
   printf("Pointing at the kernel now\n");
 #endif
 
@@ -651,9 +647,12 @@ int main(int argc, char* argv[])
 #ifndef NO_ACCURACY_CHECK
   printf("Before routine, initial B(1,1)=%g B[256]=%g\n",db[0],db[256]);
 #endif
+#ifdef USE_PREDEFINED_ASSEMBLY
   double one = 1.0;
-  double timer, tmptimer;
+#endif
+  double timer;
 #ifdef MKL_TIMER
+  double tmptimer;
   extern double dsecnd_();
   tmptimer = dsecnd_();
 #else
@@ -661,12 +660,12 @@ int main(int argc, char* argv[])
 #endif
 
   timer = 0.0;
-  for ( j = 0 ; j < ntest ; j++ )
+  for ( j = 0 ; j < (int)ntest ; j++ )
   {
 #ifndef TRIANGLE_IS_IDENTITY
-  for ( i = 0 ; i < bsize*nmatd ; i++ ) db[i]=dd[i];
+  for ( i = 0 ; i < (int)(bsize*nmatd) ; i++ ) db[i]=dd[i];
 #endif
-  for ( i = 0 , num = 0; i < nmatd ; i+= VLEND, num++ )
+  for ( i = 0 , num = 0; i < (int)nmatd ; i+= (int)VLEND, num++ )
   {
      double *Ap = &da[num*lda*asize*VLEND];
      double *Bp = &db[num*bsize*VLEND];
@@ -721,10 +720,10 @@ int main(int argc, char* argv[])
 #ifndef NO_ACCURACY_CHECK
   /* Call some reference code now on a copy of the B matrix (C) */
   double timer2 = 0.0;
-  for ( j = 0 ; j < ntest ; j++ )
+  for ( j = 0 ; j < (int)ntest ; j++ )
   {
 #ifndef TRIANGLE_IS_IDENTITY
-  for ( i = 0 ; i < bsize*nmatd ; i++ ) dc[i]=dd[i];
+  for ( i = 0 ; i < (int)(bsize*nmatd) ; i++ ) dc[i]=dd[i];
 #endif
 
 #ifdef MKL_TIMER

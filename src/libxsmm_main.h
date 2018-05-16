@@ -184,12 +184,13 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor { /* 13 By
 };
 
 /** Structure storing arguments of packed TRSM. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_compact_trsm_descriptor {
-  const libxsmm_gemm_descriptor* gemm;
-  double alpha;
-  unsigned int layout;
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor { /* 30 Byte */
+  union { double d; float s; } alpha;
+  unsigned int m, n, lda, ldb;
   unsigned char typesize;
-  char side, uplo, diag, transa;
+  unsigned char layout;
+  char diag, side, uplo;
+  char transa;
 };
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
@@ -283,12 +284,10 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   uintptr_t uval;
   intptr_t ival;
   libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wimm, wsmm, or void-function */
-#ifdef ADD_THIS_LATER_FOR_DISPATCHING
-  libxsmm_xcompact_trsmfunction xcompact_trsm;
-#endif
   libxsmm_xmcopyfunction xmatcopy;
   libxsmm_xtransfunction xtrans;
   libxsmm_xconvfunction xconv;
+  libxsmm_xtrsmfunction xtrsm;
 } libxsmm_code_pointer;
 
 /** Structure which describes all tensors in LIBXSMM's DNN module */
@@ -523,7 +522,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_CWUPD,
   LIBXSMM_BUILD_KIND_MCOPY,
   LIBXSMM_BUILD_KIND_TRANS,
-  LIBXSMM_BUILD_KIND_COMPACT_TRSM
+  LIBXSMM_BUILD_KIND_TRSM
 } libxsmm_build_kind;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
@@ -538,7 +537,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_convolution_winograd_descriptor* cwino;
   const libxsmm_mcopy_descriptor* matcopy;
   const libxsmm_trans_descriptor* trans;
-  const libxsmm_compact_trsm_descriptor* compact_trsm;
+  const libxsmm_trsm_descriptor* trsm;
 } libxsmm_build_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
@@ -606,6 +605,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_kernel_info {
   libxsmm_gemm_descriptor xgemm;
   libxsmm_mcopy_descriptor mcopy;
   libxsmm_trans_descriptor trans;
+  libxsmm_trsm_descriptor trsm;
 } libxsmm_kernel_info;
 
 /** Attempts to receive information about JIT-generated code. */

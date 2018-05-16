@@ -315,7 +315,7 @@ LIBXSMM_API_INLINE void compact_mult_two_nums_ (
      int i_instruction_set;
 
      LIBXSMM_UNUSED(datasize);
-     
+
      if ( regset == 'z' )
      {
         i_instruction_set = LIBXSMM_X86_AVX512;
@@ -363,7 +363,7 @@ LIBXSMM_API_INLINE void compact_fms_cminusab_(
      int i_instruction_set;
 
      LIBXSMM_UNUSED(datasize);
-     
+
      if ( regset == 'z' )
      {
         i_instruction_set = LIBXSMM_X86_AVX512;

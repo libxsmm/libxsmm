@@ -36,7 +36,7 @@
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_compact_trsm_avx_avx512_kernel( libxsmm_generated_code*                 io_generated_code,
-                                                       const libxsmm_compact_trsm_descriptor*  i_compact_trsm_desc,
+                                                       const libxsmm_trsm_descriptor*  i_compact_trsm_desc,
                                                        const char*                             i_arch );
 
 #endif /* GENERATOR_COMPACT_TRSM_AVX_AVX512_H */

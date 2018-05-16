@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Greg Henry (Intel Corp.)
+/* Alexander Heinecke, Greg Henry, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_generator.h>
 #include "generator_common.h"
@@ -46,9 +46,9 @@
 
 /* @TODO change int based architecture value */
 LIBXSMM_API
-void libxsmm_generator_compact_trsm_kernel( libxsmm_generated_code*                   io_generated_code,
-                                            const libxsmm_compact_trsm_descriptor*    i_compact_trsm_desc,
-                                            const char*                               i_arch ) {
+void libxsmm_generator_compact_trsm_kernel( libxsmm_generated_code*         io_generated_code,
+                                            const libxsmm_trsm_descriptor*  i_compact_trsm_desc,
+                                            const char*                     i_arch ) {
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 

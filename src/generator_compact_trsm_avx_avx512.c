@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Greg Henry (Intel Corp.)
+/* Alexander Heinecke, Greg Henry, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "generator_compact_trsm_avx_avx512.h"
 #include "generator_x86_instructions.h"
@@ -51,9 +51,9 @@
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_compact_trsm_avx_avx512_kernel( libxsmm_generated_code*                 io_code,
-                                                       const libxsmm_compact_trsm_descriptor*  i_compact_trsm_desc,
-                                                       const char*                             i_arch )
+void libxsmm_generator_compact_trsm_avx_avx512_kernel( libxsmm_generated_code*        io_code,
+                                                       const libxsmm_trsm_descriptor* i_compact_trsm_desc,
+                                                       const char*                    i_arch )
 {
   /* Just reuse transpose gp mapping */
   libxsmm_transpose_gp_reg_mapping l_gp_reg_mapping = { 0/*avoid warning "maybe used uninitialized" */ };
@@ -112,7 +112,7 @@ void libxsmm_generator_compact_trsm_avx_avx512_kernel( libxsmm_generated_code*  
   /* @Greg add more fields here */
 
   /* @Greg add generator code here, please use functions defined in generator_x86_instructions.h */
-  /*Todo-> I first want this code to work, and verify it works, then I can
+  /* Todo-> I first want this code to work, and verify it works, then I can
    *        convert one instruction at a time to those in
    *        generator_x86_instructions.h. Or add to the existing instructions */
 
@@ -120,20 +120,17 @@ void libxsmm_generator_compact_trsm_avx_avx512_kernel( libxsmm_generated_code*  
   {
      /*unsigned char *buf = (unsigned char *) io_code->generated_code;*/
      unsigned int i = io_code->code_size;
-     unsigned int m = i_compact_trsm_desc->gemm->m;
-     unsigned int n = i_compact_trsm_desc->gemm->n;
-     unsigned int lda = i_compact_trsm_desc->gemm->lda;
-     unsigned int ldb = i_compact_trsm_desc->gemm->ldb;
-     const unsigned int layout = i_compact_trsm_desc->layout;
-     const unsigned char *const datasize_ptr = &i_compact_trsm_desc->typesize;
-     const char *const side_ptr = &i_compact_trsm_desc->side;
-     const char *const uplo_ptr = &i_compact_trsm_desc->uplo;
-     const char *const transa_ptr = &i_compact_trsm_desc->transa;
-     const char *const diag_ptr = &i_compact_trsm_desc->diag;
-     const double *const alpha_ptr = &i_compact_trsm_desc->alpha;
-     const double alpha = (double)*alpha_ptr;
-     char side=*side_ptr, uplo=*uplo_ptr, trans=*transa_ptr, diag=*diag_ptr;
-     unsigned int datasz = *datasize_ptr;
+     unsigned int m = i_compact_trsm_desc->m;
+     unsigned int n = i_compact_trsm_desc->n;
+     unsigned int lda = i_compact_trsm_desc->lda;
+     unsigned int ldb = i_compact_trsm_desc->ldb;
+     char trans = i_compact_trsm_desc->transa;
+     char side = i_compact_trsm_desc->side;
+     char uplo = i_compact_trsm_desc->uplo;
+     char diag = i_compact_trsm_desc->diag;
+     const unsigned int layout = (unsigned int)i_compact_trsm_desc->layout;
+     unsigned int datasz = (unsigned int)i_compact_trsm_desc->typesize;
+     const double alpha = (8 == datasz ? i_compact_trsm_desc->alpha.d : ((double)i_compact_trsm_desc->alpha.s));
      unsigned int m1=m, n1=n;
      unsigned int j, k;
      /*int REGSIZE;*/
@@ -144,9 +141,9 @@ void libxsmm_generator_compact_trsm_avx_avx512_kernel( libxsmm_generated_code*  
 
      if ( layout == 101 )
      {
-        if ( *side_ptr == 'L' || *side_ptr == 'l' ) side = 'R';
+        if (i_compact_trsm_desc->side == 'L' || i_compact_trsm_desc->side == 'l' ) side = 'R';
         else side = 'L';
-        if ( *uplo_ptr == 'L' || *uplo_ptr == 'l' ) uplo = 'U';
+        if (i_compact_trsm_desc->uplo == 'L' || i_compact_trsm_desc->uplo == 'l' ) uplo = 'U';
         else uplo = 'L';
         m1 = n; n1 = m;
      }

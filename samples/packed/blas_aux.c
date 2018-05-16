@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 /* Link in if we don't have the BLAS routines lsame_() and xerbla_() */
 int lsame_ ( char *ca, char *cb )
 {
