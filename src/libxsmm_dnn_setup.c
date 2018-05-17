@@ -662,7 +662,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
       descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
       handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
       if (handle->padding_flag == 1) {
-        handle->matcopy_fwd[0].xmatcopy = libxsmm_xmcopydispatch(&matcopy_descriptor);
+        handle->matcopy_fwd[0].xmatcopy = libxsmm_dispatch_mcopy(&matcopy_descriptor);
       }
     }
     /* use jit code path */
@@ -710,7 +710,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     /* In case of logical padding also add a kernel that copies only one line of the image -- in case we exploit intra-image parallelism we should avoid copying entire image for each thread but only the minimum required number of input pixels... */
     if (handle->padding_flag == 1) {
       matcopy_descriptor.n = 1;
-      handle->matcopy_fwd[2].xmatcopy = libxsmm_xmcopydispatch(&matcopy_descriptor);
+      handle->matcopy_fwd[2].xmatcopy = libxsmm_dispatch_mcopy(&matcopy_descriptor);
     }
 
     /* In case overwrite is requested, generate zero-ing kernel */
@@ -727,7 +727,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
       matzero_descriptor.unroll_level = 2;
       matzero_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype_out);
       matzero_descriptor.flags = LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE;
-      handle->matcopy_fwd[1].xmatcopy = libxsmm_xmcopydispatch(&matzero_descriptor);
+      handle->matcopy_fwd[1].xmatcopy = libxsmm_dispatch_mcopy(&matzero_descriptor);
 
       if (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) {
         matzero_descriptor.m = handle->ofwp*handle->ofmblock;
@@ -736,7 +736,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
       } else { /* Assumes NHWC format */
         status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
       }
-      handle->matcopy_fwd[3].xmatcopy = libxsmm_xmcopydispatch(&matzero_descriptor);
+      handle->matcopy_fwd[3].xmatcopy = libxsmm_dispatch_mcopy(&matzero_descriptor);
 
     }
 
@@ -952,9 +952,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       } else {
         if (handle->exploit_duality == 1) {
           if (handle->padding_flag == 1) {
-            handle->matcopy_bwd[0].xmatcopy = libxsmm_xmcopydispatch(&matcopy_descriptor);
+            handle->matcopy_bwd[0].xmatcopy = libxsmm_dispatch_mcopy(&matcopy_descriptor);
             matcopy_descriptor.n = 1;
-            handle->matcopy_bwd[2].xmatcopy = libxsmm_xmcopydispatch(&matcopy_descriptor);
+            handle->matcopy_bwd[2].xmatcopy = libxsmm_dispatch_mcopy(&matcopy_descriptor);
           }
 
           fwd_equivalent_descriptor.n_variants = handle->n_variants;
@@ -1055,7 +1055,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       matzero_descriptor_overwrite.unroll_level = 2;
       matzero_descriptor_overwrite.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype_out);
       matzero_descriptor_overwrite.flags = LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE;
-      handle->matcopy_bwd[1].xmatcopy = libxsmm_xmcopydispatch(&matzero_descriptor_overwrite);
+      handle->matcopy_bwd[1].xmatcopy = libxsmm_dispatch_mcopy(&matzero_descriptor_overwrite);
 
       if (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) {
         matzero_descriptor_overwrite.m = handle->ifwp*handle->ifmblock_hp;
@@ -1064,7 +1064,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       } else { /* Assumes NHWC format */
         status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
       }
-      handle->matcopy_bwd[3].xmatcopy = libxsmm_xmcopydispatch(&matzero_descriptor_overwrite);
+      handle->matcopy_bwd[3].xmatcopy = libxsmm_dispatch_mcopy(&matzero_descriptor_overwrite);
     }
 
 #if defined(LIBXSMM_DNN_HANDLE_DEBUG)
@@ -1479,8 +1479,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
 
         /* NONE */
         if (handle->padding_flag == 1) {
-          handle->matcopy_upd[0].xmatcopy = libxsmm_xmcopydispatch(&matcopy_descriptor);
-          handle->matcopy_upd[1].xmatcopy = libxsmm_xmcopydispatch(&matzero_descriptor);
+          handle->matcopy_upd[0].xmatcopy = libxsmm_dispatch_mcopy(&matcopy_descriptor);
+          handle->matcopy_upd[1].xmatcopy = libxsmm_dispatch_mcopy(&matzero_descriptor);
         }
         descriptor.transpose_ofw_ifm = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
@@ -1559,7 +1559,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         matzero_descriptor.unroll_level = 6;
         matzero_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype_out);
         matzero_descriptor.flags = LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE;
-        handle->matcopy_upd[2].xmatcopy = libxsmm_xmcopydispatch(&matzero_descriptor);
+        handle->matcopy_upd[2].xmatcopy = libxsmm_dispatch_mcopy(&matzero_descriptor);
 
         /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
         tune_upd_blockings(handle);

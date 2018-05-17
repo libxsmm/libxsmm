@@ -80,7 +80,7 @@ LIBXSMM_APIEXT int libxsmm_matcopy_omp(void* out, const void* in, unsigned int t
         /* libxsmm_trans_jit: JIT'ted matrix-copy permitted? */
         desc = (0 != (1 & libxsmm_trans_jit) ? libxsmm_mcopy_descriptor_init(&blob, typesize, tm, tn, uldo, uldi,
           0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/) : 0);
-        xmatcopy = libxsmm_xmcopydispatch(desc);
+        xmatcopy = libxsmm_dispatch_mcopy(desc);
         if (0 == xmatcopy || 0 == iprefetch) {
           LIBXSMM_XCOPY(
             LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_EXT_TSK_KERNEL_ARGS,
@@ -172,7 +172,7 @@ LIBXSMM_APIEXT int libxsmm_otrans_omp(void* out, const void* in, unsigned int ty
           desc = (0 != (2 & libxsmm_trans_jit) ? libxsmm_trans_descriptor_init(&blob, typesize, tm, tn, uldo) : 0);
           if (0 != desc) { /* limit the amount of (unrolled) code with smaller kernel/tiles */
             desc->m = LIBXSMM_MIN(tm, LIBXSMM_MAX_M); desc->n = LIBXSMM_MIN(tn, LIBXSMM_MAX_N);
-            if (0 != (xtrans = libxsmm_xtransdispatch(desc))) {
+            if (0 != (xtrans = libxsmm_dispatch_trans(desc))) {
               tm = desc->m; tn = desc->n;
             }
           }

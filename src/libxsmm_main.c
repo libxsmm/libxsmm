@@ -1408,6 +1408,22 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         }
       }
     } break;
+    case LIBXSMM_BUILD_KIND_TRSM: { /* compact trsm kernel */
+      unsigned int tsize;
+      assert(0 != request->descriptor.trsm);
+      tsize = (unsigned int)request->descriptor.trsm->typesize;
+      if (4 == tsize || 8 == tsize) {
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_trsm_kernel, &generated_code, request->descriptor.trsm, target_arch);
+# if !defined(LIBXSMM_VTUNE)
+        if (0 > libxsmm_verbosity)
+# endif
+        {
+          const char *const tsizename = internal_get_typesize_string(tsize);
+          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_.trsm", target_arch, tsizename);
+        }
+      }
+    } break;
 # if !defined(NDEBUG) /* library code is expected to be mute */
     default: { /* unknown kind */
       static int error_once = 0;
@@ -1542,19 +1558,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
           INTERNAL_FIND_CODE_LOCK(lock, i, diff, flux_entry.pmm); /* lock the registry entry */
           if (0 == internal_registry[i].ptr_const) { /* double-check registry after acquiring the lock */
             libxsmm_build_request request; /* setup the code build request */
+            assert(descriptor->iflags < LIBXSMM_KERNEL_KIND_INVALID);
+            request.kind = (libxsmm_build_kind)descriptor->iflags;
             request.descriptor.gemm = descriptor;
-            if (LIBXSMM_KERNEL_KIND_MCOPY != descriptor->iflags) {
-              if (LIBXSMM_KERNEL_KIND_TRANS != descriptor->iflags) { /* GEMM */
-                internal_update_mmstatistic(descriptor, 1/*try*/, 0); /* count attempt */
-                request.kind = LIBXSMM_BUILD_KIND_GEMM;
-              }
-              else { /* transpose */
-                request.kind = LIBXSMM_BUILD_KIND_TRANS;
-              }
-            }
-            else { /* matcopy */
-              request.kind = LIBXSMM_BUILD_KIND_MCOPY;
-            }
             if (EXIT_SUCCESS == libxsmm_build(&request, i, &flux_entry) && 0 != flux_entry.ptr_const) {
               internal_registry_keys[i].xgemm = *descriptor;
 # if (0 < INTERNAL_REGLOCK_MAXN)
@@ -1932,7 +1938,7 @@ LIBXSMM_API libxsmm_wsmmfunction libxsmm_wsmmdispatch(libxsmm_blasint m, libxsmm
 LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
-LIBXSMM_API libxsmm_xmcopyfunction libxsmm_xmcopydispatch(const libxsmm_mcopy_descriptor* descriptor)
+LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_descriptor* descriptor)
 {
   libxsmm_xmcopyfunction result;
   if (0 != descriptor) {
@@ -1954,7 +1960,7 @@ LIBXSMM_API libxsmm_xmcopyfunction libxsmm_xmcopydispatch(const libxsmm_mcopy_de
 }
 
 
-LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_trans_descriptor* descriptor)
+LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_descriptor* descriptor)
 {
   libxsmm_xtransfunction result;
   if (0 != descriptor
@@ -1968,6 +1974,24 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_trans_de
     query.trans = *descriptor;
     query.xgemm.iflags = LIBXSMM_KERNEL_KIND_TRANS;
     result = internal_find_code(&query.xgemm).xtrans;
+  }
+  else {
+    result = 0;
+  }
+  return result;
+}
+
+
+LIBXSMM_API libxsmm_xtrsmfunction libxsmm_dispatch_trsm(const libxsmm_trsm_descriptor* descriptor)
+{
+  libxsmm_xtrsmfunction result;
+  if (0 != descriptor) {
+    libxsmm_kernel_info query;
+    LIBXSMM_INIT
+    memset(&query, 0, sizeof(query)); /* avoid warning "maybe used uninitialized" */
+    query.trsm = *descriptor;
+    query.xgemm.iflags = LIBXSMM_KERNEL_KIND_TRSM;
+    result = internal_find_code(&query.xgemm).xtrsm;
   }
   else {
     result = 0;

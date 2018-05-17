@@ -89,6 +89,11 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
   unsigned int typesize, unsigned int m, unsigned int n, unsigned int ldo,
   unsigned int ldi, int flags, int prefetch, const int* unroll);
 
+/** Initialize transpose descriptor as used by low-level routines. */
+LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descriptor_blob* blob,
+  unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, libxsmm_blasint ldb,
+  const void* alpha, char transa, char diag, char side, char uplo, int layout);
+
 /** Structure referring to the generated code with some attached information. */
 LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
   void* generated_code;       /** pointer to memory which can contain strings or binary code */
@@ -195,6 +200,11 @@ LIBXSMM_API void libxsmm_generator_gemm_rm_ac_soa( libxsmm_generated_code*      
 LIBXSMM_API void libxsmm_generator_gemm_rm_bc_soa( libxsmm_generated_code*         io_generated_code,
                                                    const libxsmm_gemm_descriptor*  i_xgemm_desc,
                                                    const char*                     i_arch );
+
+LIBXSMM_API
+void libxsmm_generator_trsm_kernel ( libxsmm_generated_code*        io_generated_code,
+                                     const libxsmm_trsm_descriptor* i_packed_trsm_desc,
+                                     const char*                    i_arch );
 
 /* @TODO change int based architecture value */
 LIBXSMM_API

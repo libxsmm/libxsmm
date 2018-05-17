@@ -39,23 +39,25 @@ CPPSRCS := $(wildcard $(SRCDIR)/*.cpp)
 CXXSRCS := $(wildcard $(SRCDIR)/*.cxx)
 CCXSRCS := $(wildcard $(SRCDIR)/*.cx)
 CSOURCS := $(wildcard $(SRCDIR)/*.c)
-FXXSRCS := $(wildcard $(SRCDIR)/*.f)
-F77SRCS := $(wildcard $(SRCDIR)/*.F)
-F90SRCS := $(wildcard $(SRCDIR)/*.f90) $(wildcard $(SRCDIR)/*.F90)
 CPPOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CPPSRCS:.cpp=-cpp.o)))
 CXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CXXSRCS:.cxx=-cxx.o)))
 CCXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CCXSRCS:.cc=-cc.o)))
 COBJCTS := $(patsubst %,$(BLDDIR)/%,$(notdir $(CSOURCS:.c=-c.o)))
+ifneq (,$(strip $(FC)))
+FXXSRCS := $(wildcard $(SRCDIR)/*.f)
+F77SRCS := $(wildcard $(SRCDIR)/*.F)
+F90SRCS := $(wildcard $(SRCDIR)/*.f90) $(wildcard $(SRCDIR)/*.F90)
 FXXOBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(FXXSRCS:.f=-f.o)))
 F77OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F77SRCS:.F=-f77.o)))
 F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90SRCS:.f90=-f90.o)))
 F90OBJS := $(patsubst %,$(BLDDIR)/%,$(notdir $(F90OBJS:.F90=-f90.o)))
+endif
 SOURCES := $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)
 OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/layer_example_f32 $(OUTDIR)/layer_example_i16i32 $(OUTDIR)/layer_example_bf16 $(OUTDIR)/layer_example_i16f32 $(OUTDIR)/layer_example_i8i32 $(OUTDIR)/layer_example_qi16f32
+XFILES := $(OUTDIR)/layer_example_f32 $(OUTDIR)/layer_example_i16i32 $(OUTDIR)/layer_example_i16f32 $(OUTDIR)/layer_example_i8i32 $(OUTDIR)/layer_example_qi16f32 $(OUTDIR)/layer_example_bf16
 
 .PHONY: all
 all: $(XFILES)
@@ -65,6 +67,9 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/layer_example_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_f32-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/layer_example_f32-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/layer_example_bf16: $(OUTDIR)/.make $(BLDDIR)/layer_example_bf16-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/layer_example_bf16-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/layer_example_i16i32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i16i32-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/layer_example_i16i32-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)

@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2018, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,23 +26,18 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Greg Henry, Timothy Costa (Intel Corp.)
 ******************************************************************************/
+#ifndef GENERATOR_PACKED_TRSM_AVX_AVX512_H
+#define GENERATOR_PACKED_TRSM_AVX_AVX512_H
 
-#ifndef GENERATOR_GEMM_AVX_MICROKERNEL_H
-#define GENERATOR_GEMM_AVX_MICROKERNEL_H
-
-#include "generator_gemm_common.h"
+#include "generator_common.h"
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*             io_generated_code,
-                                              const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                              const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                              const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                              const unsigned int                 i_m_blocking,
-                                              const unsigned int                 i_n_blocking,
-                                              const int                          i_offset );
+void libxsmm_generator_packed_trsm_avx_avx512_kernel( libxsmm_generated_code*                 io_generated_code,
+                                                       const libxsmm_trsm_descriptor*  i_packed_trsm_desc,
+                                                       const char*                             i_arch );
 
-#endif /* GENERATOR_GEMM_AVX_MICROKERNEL_H */
+#endif /* GENERATOR_PACKED_TRSM_AVX_AVX512_H */
 

@@ -17,6 +17,7 @@ transpose/kernel
 nek/axhm
 nek/grad
 nek/rstr
+packed/packed_trsm
 pyfr/pyfr_driver_asp_reg
 pyfr/pyfr_gemm_cm
 pyfr/pyfr_gemm_rm
