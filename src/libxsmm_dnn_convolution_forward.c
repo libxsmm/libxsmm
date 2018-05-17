@@ -76,7 +76,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16(libxsmm_dn
   typedef libxsmm_bfloat16 element_input_type;
   typedef libxsmm_bfloat16 element_output_type;
   typedef libxsmm_bfloat16 element_filter_type;
-  typedef libxsmm_sconvfunction libxsmm_convfunction;
+  typedef libxsmm_bf16convfunction libxsmm_convfunction;
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
