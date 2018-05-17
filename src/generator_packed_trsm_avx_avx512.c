@@ -55,18 +55,14 @@ void libxsmm_generator_packed_trsm_avx_avx512_kernel( libxsmm_generated_code*   
                                                        const libxsmm_trsm_descriptor* i_packed_trsm_desc,
                                                        const char*                    i_arch )
 {
-  /* Just reuse transpose gp mapping */
-  libxsmm_transpose_gp_reg_mapping l_gp_reg_mapping = { 0/*avoid warning "maybe used uninitialized" */ };
   libxsmm_loop_label_tracker l_loop_label_tracker /*= { 0 }*/;
-
   /* avx512 just represents whether we want to use zmm registers or not     *
    *      A value of 0 says not, a value of 1 targets AVX512_CORE, a value  *
    *      of 2 targets AVX512_MIC                                           */
   int avx512;
-
-  /* define loop_label_tracker */
-  libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
-
+#if 0 /* TOD: introduce/use register mapping rather than directly/hard-coding registers */
+  /* Just reuse transpose gp mapping */
+  libxsmm_trsm_gp_reg_mapping l_gp_reg_mapping = { 0/*avoid warning "maybe used uninitialized" */ };
   /* define gp register mapping */
 #if defined(_WIN32) || defined(__CYGWIN__)
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RCX;
@@ -97,6 +93,9 @@ void libxsmm_generator_packed_trsm_avx_avx512_kernel( libxsmm_generated_code*   
    * If LIBXSMM_MIN(n,REGSIZE)>=7 and m%REGSIZE==1, we need r14             *
    * If LIBXSMM_MIN(n,REGSIZE)>=8 and m%REGSIZE==1, we need r15             *
    * Otherwise, we get by with registers that don't require pushing/popping */
+#endif
+  /* define loop_label_tracker */
+  libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define transposition kernel config */
   if (strcmp(i_arch, "skx") == 0) {
