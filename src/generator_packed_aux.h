@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Greg Henry (Intel Corp.)
 ******************************************************************************/
-#include "generator_compact_trsm_avx_avx512.h"
+#include "generator_packed_trsm_avx_avx512.h"
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 

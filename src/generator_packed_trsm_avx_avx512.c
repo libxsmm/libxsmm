@@ -28,9 +28,9 @@
 ******************************************************************************/
 /* Alexander Heinecke, Greg Henry, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "generator_compact_trsm_avx_avx512.h"
+#include "generator_packed_trsm_avx_avx512.h"
 #include "generator_x86_instructions.h"
-#include "generator_compact_aux.h"
+#include "generator_packed_aux.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
 
@@ -47,12 +47,12 @@
 # pragma offload_attribute(pop)
 #endif
 
-/* #define GENERATOR_COMPACT_TRSM_DEBUG */
+/* #define GENERATOR_PACKED_TRSM_DEBUG */
 
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_compact_trsm_avx_avx512_kernel( libxsmm_generated_code*        io_code,
-                                                       const libxsmm_trsm_descriptor* i_compact_trsm_desc,
+void libxsmm_generator_packed_trsm_avx_avx512_kernel( libxsmm_generated_code*        io_code,
+                                                       const libxsmm_trsm_descriptor* i_packed_trsm_desc,
                                                        const char*                    i_arch )
 {
   /* Just reuse transpose gp mapping */
@@ -120,35 +120,35 @@ void libxsmm_generator_compact_trsm_avx_avx512_kernel( libxsmm_generated_code*  
   {
      /*unsigned char *buf = (unsigned char *) io_code->generated_code;*/
      unsigned int i = io_code->code_size;
-     unsigned int m = i_compact_trsm_desc->m;
-     unsigned int n = i_compact_trsm_desc->n;
-     unsigned int lda = i_compact_trsm_desc->lda;
-     unsigned int ldb = i_compact_trsm_desc->ldb;
-     char trans = i_compact_trsm_desc->transa;
-     char side = i_compact_trsm_desc->side;
-     char uplo = i_compact_trsm_desc->uplo;
-     char diag = i_compact_trsm_desc->diag;
-     const unsigned int layout = (unsigned int)i_compact_trsm_desc->layout;
-     unsigned int datasz = (unsigned int)i_compact_trsm_desc->typesize;
-     const double alpha = (8 == datasz ? i_compact_trsm_desc->alpha.d : ((double)i_compact_trsm_desc->alpha.s));
+     unsigned int m = i_packed_trsm_desc->m;
+     unsigned int n = i_packed_trsm_desc->n;
+     unsigned int lda = i_packed_trsm_desc->lda;
+     unsigned int ldb = i_packed_trsm_desc->ldb;
+     char trans = i_packed_trsm_desc->transa;
+     char side = i_packed_trsm_desc->side;
+     char uplo = i_packed_trsm_desc->uplo;
+     char diag = i_packed_trsm_desc->diag;
+     const unsigned int layout = (unsigned int)i_packed_trsm_desc->layout;
+     unsigned int datasz = (unsigned int)i_packed_trsm_desc->typesize;
+     const double alpha = (8 == datasz ? i_packed_trsm_desc->alpha.d : ((double)i_packed_trsm_desc->alpha.s));
      unsigned int m1=m, n1=n;
      unsigned int j, k;
      /*int REGSIZE;*/
-     int numb;
+     int numb = 0;
      int scalealpha = 0;
      int nounit=0;
-     char regset;
+     char regset = 'y';
 
      if ( layout == 101 )
      {
-        if (i_compact_trsm_desc->side == 'L' || i_compact_trsm_desc->side == 'l' ) side = 'R';
+        if (i_packed_trsm_desc->side == 'L' || i_packed_trsm_desc->side == 'l' ) side = 'R';
         else side = 'L';
-        if (i_compact_trsm_desc->uplo == 'L' || i_compact_trsm_desc->uplo == 'l' ) uplo = 'U';
+        if (i_packed_trsm_desc->uplo == 'L' || i_packed_trsm_desc->uplo == 'l' ) uplo = 'U';
         else uplo = 'L';
         m1 = n; n1 = m;
      }
 #if 0
-printf("Inside libxsmm_generator_compact_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=%d lay=102 alpha=%g datasz=%d\n",side,uplo,trans,diag,m1,n1,alpha,datasz);
+printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=%d lay=102 alpha=%g datasz=%d\n",side,uplo,trans,diag,m1,n1,alpha,datasz);
 #endif
      if ( ( datasz !=4 ) && (datasz != 8) )
      {

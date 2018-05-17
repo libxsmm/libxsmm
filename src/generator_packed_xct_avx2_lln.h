@@ -1,5 +1,5 @@
 printf("******* HI *********\n");
-#include "compact_trsm_dmacros.h"
+#include "packed_trsm_dmacros.h"
     auto int a_ptr = LIBXSMM_X86_GP_REG_RDI;
     auto int b_ptr = LIBXSMM_X86_GP_REG_RSI;
     char i_vector_name = 'y';

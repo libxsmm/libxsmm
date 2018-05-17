@@ -209,7 +209,7 @@ void compact_dtrsm_ ( unsigned int *layout, char *side, char *uplo,
        offsetb = (*ldb)*(*m)*(*VLEN);
     }
     offseta = (*lda)*asize*(*VLEN);
-    if ( ++ntimes < 3 ) printf("m/n=%d,%d layout=%d asize=%d VLEN=%d nmat=%d offseta=%d offsetb=%d\n",*m,*n,*layout, asize, *VLEN, *nmat, offseta, offsetb );
+    if ( ++ntimes < 3 ) printf("m/n=%u,%u layout=%u asize=%i VLEN=%u nmat=%u offseta=%i offsetb=%i\n",*m,*n,*layout, asize, *VLEN, *nmat, offseta, offsetb );
     for ( i = 0, num = 0 ; i < (int)(*nmat) ; i+= *VLEN, num++ )
     {
        for ( j = 0 ; j < (int)*VLEN ; j++ )
@@ -352,7 +352,7 @@ double residual_d ( double *A, unsigned int lda, unsigned int m, unsigned int n,
          {
              if ( ++ntimes < 15 )
              {
-                printf("Denormal bug: A(%d,%d) is %g B(%d,%d) is %g\n",i,j,atmp,i,j,btmp);
+                printf("Denormal bug: A(%u,%u) is %g B(%u,%u) is %g\n",i,j,atmp,i,j,btmp);
              }
          }
          if ( dtmp / ref > 1.0e-12 )
@@ -360,12 +360,12 @@ double residual_d ( double *A, unsigned int lda, unsigned int m, unsigned int n,
              *nerrs = *nerrs + 1;
              if ( ++ntimes < 15 )
              {
-                printf("Bug #%d: A[%d]=A(%d,%d) expected=%g instead=%g err=%g\n",ntimes,(j-1)*lda+(i-1),i,j,atmp,btmp,dtmp);
+                printf("Bug #%i: A[%u]=A(%u,%u) expected=%g instead=%g err=%g\n",ntimes,(j-1)*lda+(i-1),i,j,atmp,btmp,dtmp);
              }
          } else {
              if ( (*nerrs > 0) && (ntimes < 10) && (*ncorr < 40) )
              {
-                printf("Cor #%d: A[%d]=A(%d,%d) expected=%g\n",*ncorr+1,(j-1)*lda+(i-1),i,j,atmp);
+                printf("Cor #%u: A[%u]=A(%u,%u) expected=%g\n",*ncorr+1,(j-1)*lda+(i-1),i,j,atmp);
              }
              *ncorr = *ncorr + 1;
          }
@@ -403,7 +403,7 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
          {
              if ( ++ntimes < 15 )
              {
-                printf("Denormal bug: A(%d,%d) is %g B(%d,%d) is %g\n",i,j,atmp,i,j,btmp);
+                printf("Denormal bug: A(%u,%u) is %g B(%u,%u) is %g\n",i,j,atmp,i,j,btmp);
              }
          }
          if ( dtmp / ref > 1.0e-4 )
@@ -411,12 +411,12 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
              *nerrs = *nerrs + 1;
              if ( ++ntimes < 15 )
              {
-                printf("Bug #%d: A(%d,%d) expected=%g instead=%g err=%g\n",ntimes,i,j,atmp,btmp,dtmp);
+                printf("Bug #%d: A(%u,%u) expected=%g instead=%g err=%g\n",ntimes,i,j,atmp,btmp,dtmp);
              }
          } else {
              if ( (*nerrs > 0) && (ntimes < 10) && (*ncorr < 40) )
              {
-                printf("Cor #%d: A(%d,%d) expected=%g\n",*ncorr+1,i,j,atmp);
+                printf("Cor #%u: A(%u,%u) expected=%g\n",*ncorr+1,i,j,atmp);
              }
              *ncorr = *ncorr + 1;
          }
@@ -456,8 +456,14 @@ int main(int argc, char* argv[])
   double dtmp;
   const unsigned char *cptr;
   unsigned long op_count;
-  libxsmm_xtrsmfunction myr8kernel = NULL;
-  libxsmm_xtrsmfunction myr4kernel = NULL;
+  const libxsmm_trsm_descriptor* desc8 = NULL;
+  const libxsmm_trsm_descriptor* desc4 = NULL;
+  libxsmm_descriptor_blob blob;
+  union {
+    libxsmm_xtrsmfunction dp;
+    libxsmm_xtrsmfunction sp;
+    const void* pv;
+  } mykernel = { 0 };
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
   void (*opcode_routine)();
 #endif
@@ -466,7 +472,7 @@ int main(int argc, char* argv[])
   #include <signal.h>
   #include <malloc.h>
   #include <sys/mman.h>
-  #include "../../src/generator_compact_trsm_avx_avx512.h"
+  #include "../../src/generator_packed_trsm_avx_avx512.h"
   unsigned char *routine_output;
   libxsmm_generated_code io_generated_code;
   int pagesize = sysconf(_SC_PAGE_SIZE);
@@ -528,7 +534,7 @@ int main(int argc, char* argv[])
 
   op_count = n * m * asize;
 
-  printf("This is a real*%d tester for JIT compact TRSM kernels! (%c%c%c%c m=%u n=%u lda=%u ldb=%u layout=%d nmat=%d)\n",typesize8,side,uplo,trans,diag,m,n,lda,ldb,layout,nmat);
+  printf("This is a real*%u tester for JIT compact TRSM kernels! (%c%c%c%c m=%u n=%u lda=%u ldb=%u layout=%u nmat=%u)\n",typesize8,side,uplo,trans,diag,m,n,lda,ldb,layout,nmat);
 #ifdef USE_XSMM_GENERATED
   printf("This code tests the LIBXSMM generated kernels\n");
 #endif
@@ -542,25 +548,19 @@ int main(int argc, char* argv[])
   printf("This code tests MKL compact batch directly\n");
 #endif
 
+  desc8 = libxsmm_trsm_descriptor_init(&blob, typesize8, m, n, lda, ldb, &dalpha, trans, diag, side, uplo, layout);
+  desc4 = libxsmm_trsm_descriptor_init(&blob, typesize4, m, n, lda, ldb, &salpha, trans, diag, side, uplo, layout);
 #ifdef USE_XSMM_GENERATED
   printf("calling libxsmm_dispatch_trsm: typesize8=%u\n",typesize8);
-  myr8kernel = libxsmm_dispatch_trsm(m, n, lda, ldb, typesize8, &dalpha, trans, diag, side, uplo, layout);
-  printf("done calling libxsmm_dispatch_trsm: typesize8=%d\n",typesize8);
-  if ( myr8kernel == NULL ) printf("R8 Kernel after the create call is null\n");
-  myr4kernel = libxsmm_dispatch_trsm(m, n, lda, ldb, typesize4, &salpha, trans, diag, side, uplo, layout);
-  if ( myr4kernel == NULL ) printf("R4 kernel after the create call is null\n");
+  mykernel.dp = libxsmm_dispatch_trsm(desc8);
+  printf("done calling libxsmm_dispatch_trsm: typesize8=%u\n",typesize8);
+  if ( mykernel.dp == NULL ) printf("R8 Kernel after the create call is null\n");
+  mykernel.sp = libxsmm_dispatch_trsm(desc4);
+  if ( mykernel.sp == NULL ) printf("R4 kernel after the create call is null\n");
 #endif
+
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
-  libxsmm_compact_trsm_descriptor2 desc2;
-  desc2.gemm = &descriptor;
-  desc2.side = &side;
-  desc2.uplo = &uplo;
-  desc2.transa = &trans;
-  desc2.diag = &diag;
-  desc2.layout = &layout;
-  desc2.typesize = &typesize8;
-  desc2.alpha = &dalpha;
-  libxsmm_generator_compact_trsm_kernel ( &io_generated_code, &desc2, "hsw" );
+  libxsmm_generator_trsm_kernel ( &io_generated_code, &desc8, "hsw" );
 #endif
 
 #ifndef NO_ACCURACY_CHECK
@@ -598,7 +598,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef USE_XSMM_GENERATED
-  cptr = (const unsigned char*) myr8kernel;
+  cptr = (const unsigned char*) mykernel.pv;
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
   cptr = (const unsigned char*) trsm_xct_;
@@ -676,7 +676,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef USE_XSMM_GENERATED
-     myr8kernel ( Ap, Bp, tmpbuf );
+     mykernel.dp ( Ap, Bp, tmpbuf );
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
      trsm_xct_ ( Ap, Bp, &one );
@@ -699,7 +699,7 @@ int main(int argc, char* argv[])
   timer /= ((double)ntest);
 
 #ifndef NO_ACCURACY_CHECK
-  printf("Average time to get through %d matrices: %g\n",nmatd,timer);
+  printf("Average time to get through %u matrices: %g\n",nmatd,timer);
   printf("Gflops: %g\n",(double)(op_count*nmatd)/(timer*1.0e9));
   printf("after routine, new      B(1,1)=%g B[256]=%g\n",db[0],db[256]);
 #endif
@@ -711,7 +711,7 @@ int main(int argc, char* argv[])
      float *Ap = &sa[num*lda*asize*VLENS];
      float *Bp = &sb[num*bsize*VLENS];
 #ifdef USE_XSMM_GENERATED
-     myr4kernel ( Ap, Bp, NULL );
+     mykernel.sp ( Ap, Bp, NULL );
 #endif
   }
   printf("after r4 routine, new      B(1,1)=%g B]256]=%g\n",db[0],db[256]);
@@ -761,7 +761,7 @@ int main(int argc, char* argv[])
   /* Compute the residual between B and C */
   dtmp = residual_d ( dc, bsize, bsize, nmatd, db, bsize, &nerrs, &ncorr );
   printf("R8 %c%c%c%c m=%u n=%u lda=%u ldb=%u error: %g number of errors: %u corrects: %u",side,uplo,trans,diag,m,n,lda,ldb,dtmp,nerrs,ncorr);
-  if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*8 %d case",m,n,layout);
+  if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*8 %u case",m,n,layout);
   printf("\n");
 
 #ifdef TEST_SINGLE

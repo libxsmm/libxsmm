@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2018, Intel Corporation                                     **
+** Copyright (c) 2017-2018, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,18 +26,46 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Greg Henry, Timothy Costa (Intel Corp.)
+/* Alexander Heinecke, Greg Henry, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef GENERATOR_COMPACT_TRSM_AVX_AVX512_H
-#define GENERATOR_COMPACT_TRSM_AVX_AVX512_H
-
+#include <libxsmm_generator.h>
 #include "generator_common.h"
+#include "generator_packed_trsm_avx_avx512.h"
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 
-LIBXSMM_API_INTERN
-void libxsmm_generator_compact_trsm_avx_avx512_kernel( libxsmm_generated_code*                 io_generated_code,
-                                                       const libxsmm_trsm_descriptor*  i_compact_trsm_desc,
-                                                       const char*                             i_arch );
+/* @TODO change int based architecture value */
+LIBXSMM_API
+void libxsmm_generator_trsm_kernel( libxsmm_generated_code*         io_generated_code,
+                                    const libxsmm_trsm_descriptor*  i_packed_trsm_desc,
+                                    const char*                     i_arch ) {
+  /* add instruction set mismatch check to code, header */
+  libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
-#endif /* GENERATOR_COMPACT_TRSM_AVX_AVX512_H */
+  /* generate kernel */
+  if ( (strcmp(i_arch, "skx") == 0) ||
+       (strcmp(i_arch, "knm") == 0) ||
+       (strcmp(i_arch, "knl") == 0) ||
+       (strcmp(i_arch, "hsw") == 0) ||
+       (strcmp(i_arch, "snb") == 0)    ) {
+    libxsmm_generator_packed_trsm_avx_avx512_kernel( io_generated_code, i_packed_trsm_desc, i_arch );
+  } else {
+    /* TODO fix this error */
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
+    return;
+  }
+
+  /* add instruction set mismatch check to code, footer */
+  libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
+}
 

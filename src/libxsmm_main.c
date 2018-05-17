@@ -1412,7 +1412,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       assert(0 != request->descriptor.trsm);
       tsize = (unsigned int)request->descriptor.trsm->typesize;
       if (4 == tsize || 8 == tsize) {
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_compact_trsm_kernel, &generated_code, request->descriptor.trsm, target_arch);
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_trsm_kernel, &generated_code, request->descriptor.trsm, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -1557,22 +1557,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
           INTERNAL_FIND_CODE_LOCK(lock, i, diff, flux_entry.pmm); /* lock the registry entry */
           if (0 == internal_registry[i].ptr_const) { /* double-check registry after acquiring the lock */
             libxsmm_build_request request; /* setup the code build request */
+            assert(descriptor->iflags < LIBXSMM_KERNEL_KIND_INVALID);
+            request.kind = (libxsmm_build_kind)descriptor->iflags;
             request.descriptor.gemm = descriptor;
-            switch (descriptor->iflags) {
-              case LIBXSMM_KERNEL_KIND_MCOPY: {
-                request.kind = LIBXSMM_BUILD_KIND_MCOPY;
-              } break;
-              case LIBXSMM_KERNEL_KIND_TRANS: {
-                request.kind = LIBXSMM_BUILD_KIND_TRANS;
-              } break;
-              case LIBXSMM_KERNEL_KIND_TRSM: {
-                request.kind = LIBXSMM_BUILD_KIND_TRSM;
-              } break;
-              default: {
-                assert(LIBXSMM_KERNEL_KIND_MATMUL != descriptor->iflags);
-                request.kind = LIBXSMM_BUILD_KIND_GEMM;
-              }
-            }
             if (EXIT_SUCCESS == libxsmm_build(&request, i, &flux_entry) && 0 != flux_entry.ptr_const) {
               internal_registry_keys[i].xgemm = *descriptor;
 # if (0 < INTERNAL_REGLOCK_MAXN)
@@ -1950,7 +1937,7 @@ LIBXSMM_API libxsmm_wsmmfunction libxsmm_wsmmdispatch(libxsmm_blasint m, libxsmm
 LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
-LIBXSMM_API libxsmm_xmcopyfunction libxsmm_xmcopydispatch(const libxsmm_mcopy_descriptor* descriptor)
+LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_descriptor* descriptor)
 {
   libxsmm_xmcopyfunction result;
   if (0 != descriptor) {
@@ -1972,7 +1959,7 @@ LIBXSMM_API libxsmm_xmcopyfunction libxsmm_xmcopydispatch(const libxsmm_mcopy_de
 }
 
 
-LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_trans_descriptor* descriptor)
+LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_descriptor* descriptor)
 {
   libxsmm_xtransfunction result;
   if (0 != descriptor
@@ -1993,38 +1980,22 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_xtransdispatch(const libxsmm_trans_de
   return result;
 }
 
-LIBXSMM_API libxsmm_xtrsmfunction libxsmm_dispatch_trsm(libxsmm_blasint m, libxsmm_blasint n,
-  libxsmm_blasint lda, libxsmm_blasint ldb, unsigned int typesize, const void* alpha,
-  char transa, char diag, char side, char uplo, int layout)
+
+LIBXSMM_API libxsmm_xtrsmfunction libxsmm_dispatch_trsm(const libxsmm_trsm_descriptor* descriptor)
 {
-  libxsmm_code_pointer result = { 0 };
-  libxsmm_kernel_info query;
-  LIBXSMM_INIT
-  memset(&query, 0, sizeof(query)); /* avoid warning "maybe used uninitialized" */
-  query.trsm.typesize = (unsigned char)typesize;
-  query.trsm.lda = (unsigned char)lda;
-  query.trsm.ldb = (unsigned char)ldb;
-  query.trsm.m = (unsigned char)m;
-  query.trsm.n = (unsigned char)n;
-  query.trsm.transa = transa;
-  query.trsm.diag = diag;
-  query.trsm.side = side;
-  query.trsm.uplo = uplo;
-  query.trsm.layout = (unsigned char)layout;
-  query.xgemm.iflags = LIBXSMM_KERNEL_KIND_TRSM;
-  switch (typesize) {
-    case 4: {
-      query.trsm.alpha.s = (0 != alpha ? (*(const float*)alpha) : ((float)LIBXSMM_ALPHA));
-      result = internal_find_code(&query.xgemm);
-    } break;
-    case 8: {
-      query.trsm.alpha.d = (0 != alpha ? (*(const double*)alpha) : ((double)LIBXSMM_ALPHA));
-      result = internal_find_code(&query.xgemm);
-    } break;
-    default: /* TODO: generate warning */
-      ;
+  libxsmm_xtrsmfunction result;
+  if (0 != descriptor) {
+    libxsmm_kernel_info query;
+    LIBXSMM_INIT
+    memset(&query, 0, sizeof(query)); /* avoid warning "maybe used uninitialized" */
+    query.trsm = *descriptor;
+    query.xgemm.iflags = LIBXSMM_KERNEL_KIND_TRSM;
+    result = internal_find_code(&query.xgemm).xtrsm;
   }
-  return result.xtrsm;
+  else {
+    result = 0;
+  }
+  return result;
 }
 
 

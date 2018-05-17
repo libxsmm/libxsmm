@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
   }
 
   /* test dispatch call */
-  skernel = libxsmm_xmcopydispatch(desc);
+  skernel = libxsmm_dispatch_mcopy(desc);
 
   if (skernel == 0) {
     printf("JIT error -> exit!!!!\n");

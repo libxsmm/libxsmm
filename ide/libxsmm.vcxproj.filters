@@ -225,16 +225,17 @@
     <ClInclude Include="..\src\template\libxsmm_config.h">
       <Filter>src\template</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_compact_trsm_avx_avx512.h">
+    <ClInclude Include="..\src\packed_trsm_dmacros.h" />
+    <ClInclude Include="..\src\generator_packed_trsm_avx_avx512.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_compact_xct_avx2_lln.h">
+    <ClInclude Include="..\src\generator_packed_xct_avx2_lln.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\compact_trsm_dmacros.h">
+    <ClInclude Include="..\src\generator_packed_aux.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_compact_aux.h">
+    <ClInclude Include="..\src\generator_packed_trsm_dmacros.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -770,10 +771,10 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_fwd_custom_custom_padding.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_compact_trsm.c">
+    <ClCompile Include="..\src\generator_packed_trsm.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_compact_trsm_avx_avx512.c">
+    <ClCompile Include="..\src\generator_packed_trsm_avx_avx512.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

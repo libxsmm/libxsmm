@@ -181,9 +181,9 @@ int main(int argc, char* argv[])
 
   /* test dispatch call */
   desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), m, n, ld_out);
-  skernel.f = libxsmm_xtransdispatch(desc);
+  skernel.f = libxsmm_dispatch_trans(desc);
   desc = libxsmm_trans_descriptor_init(&blob, sizeof(double), m, n, ld_out);
-  dkernel.f = libxsmm_xtransdispatch(desc);
+  dkernel.f = libxsmm_dispatch_trans(desc);
 
   printf("address of F32 kernel: %p\n", skernel.p);
   printf("address of F64 kernel: %p\n", dkernel.p);

@@ -290,3 +290,36 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
   return result.ptr;
 }
 
+
+LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descriptor_blob* blob,
+  unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, libxsmm_blasint ldb,
+  const void* alpha, char transa, char diag, char side, char uplo, int layout)
+{
+  union {
+    libxsmm_trsm_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
+  result.blob = blob;
+  result.ptr->typesize = (unsigned char)typesize;
+  result.ptr->lda = (unsigned char)lda;
+  result.ptr->ldb = (unsigned char)ldb;
+  result.ptr->m = (unsigned char)m;
+  result.ptr->n = (unsigned char)n;
+  result.ptr->transa = transa;
+  result.ptr->diag = diag;
+  result.ptr->side = side;
+  result.ptr->uplo = uplo;
+  result.ptr->layout = (unsigned char)layout;
+  switch (typesize) {
+  case 4: {
+    result.ptr->alpha.s = (0 != alpha ? (*(const float*)alpha) : ((float)LIBXSMM_ALPHA));
+  } break;
+  case 8: {
+    result.ptr->alpha.d = (0 != alpha ? (*(const double*)alpha) : ((double)LIBXSMM_ALPHA));
+  } break;
+  default: /* TODO: generate warning */
+    ;
+  }
+  return result.ptr;
+}
+

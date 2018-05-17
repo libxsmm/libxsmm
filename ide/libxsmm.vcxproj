@@ -48,11 +48,12 @@
     <ClInclude Include="..\include\libxsmm_sync.h" />
     <ClInclude Include="..\include\libxsmm_timer.h" />
     <ClInclude Include="..\include\libxsmm_typedefs.h" />
-    <ClInclude Include="..\src\compact_trsm_dmacros.h" />
+    <ClInclude Include="..\src\generator_packed_aux.h" />
+    <ClInclude Include="..\src\generator_packed_trsm_dmacros.h" />
+    <ClInclude Include="..\src\generator_packed_xct_avx2_lln.h" />
+    <ClInclude Include="..\src\packed_trsm_dmacros.h" />
     <ClInclude Include="..\src\generator_common.h" />
-    <ClInclude Include="..\src\generator_compact_aux.h" />
-    <ClInclude Include="..\src\generator_compact_trsm_avx_avx512.h" />
-    <ClInclude Include="..\src\generator_compact_xct_avx2_lln.h" />
+    <ClInclude Include="..\src\generator_packed_trsm_avx_avx512.h" />
     <ClInclude Include="..\src\generator_convolution_common.h" />
     <ClInclude Include="..\src\generator_convolution_forward_avx512.h" />
     <ClInclude Include="..\src\generator_convolution_weight_update_avx512.h" />
@@ -104,8 +105,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\generator_common.c" />
-    <ClCompile Include="..\src\generator_compact_trsm.c" />
-    <ClCompile Include="..\src\generator_compact_trsm_avx_avx512.c" />
+    <ClCompile Include="..\src\generator_packed_trsm.c" />
+    <ClCompile Include="..\src\generator_packed_trsm_avx_avx512.c" />
     <ClCompile Include="..\src\generator_convolution.c" />
     <ClCompile Include="..\src\generator_convolution_common.c" />
     <ClCompile Include="..\src\generator_convolution_forward_avx512.c" />
