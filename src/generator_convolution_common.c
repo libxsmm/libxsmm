@@ -309,10 +309,122 @@ void libxsmm_generator_convolution_footer_ofm_loop( libxsmm_generated_code*     
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_convolution_forward_load_output_bf16( libxsmm_generated_code*                           io_generated_code,
+    const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+    const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+    const libxsmm_convolution_forward_descriptor*     i_conv_desc ) {
+  unsigned int l_i, l_j, reg_X;
+  unsigned int load_offset;
+
+  /* start register of accumulator */
+  const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofh_rb * i_conv_desc->ofw_rb);
+  if (i_conv_desc->use_nts) {
+    for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
+      for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
+        /* Just zero out the accumulators */
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+            i_conv_kernel_config->instruction_set,
+            i_conv_kernel_config->vxor_instruction,
+            i_conv_kernel_config->vector_name,
+            l_vec_reg_acc_start + l_j + (i_conv_desc->ofw_rb * l_i),
+            l_vec_reg_acc_start + l_j + (i_conv_desc->ofw_rb * l_i),
+            l_vec_reg_acc_start + l_j + (i_conv_desc->ofw_rb * l_i) );
+      }
+    }
+  } else {
+
+    libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
+
+    /* Scale factor offset in rsp */
+    unsigned int rsp_offset = 48;
+    if (i_conv_desc->compute_batch_stats == 1) {
+      rsp_offset = 64;
+    }
+    if (i_conv_desc->perform_relu_in_kernel == 1) {
+      rsp_offset = 56;
+    }
+
+    /* Load  address of "scratch" -- scratch vals is always next to max_vals in RSP, thus +16 in RSP offset */
+    libxsmm_x86_instruction_alu_mem( io_generated_code,
+        i_conv_kernel_config->alu_mov_instruction,
+        i_gp_reg_mapping->gp_reg_help_5,
+        LIBXSMM_X86_GP_REG_UNDEF, 0,
+        rsp_offset+16,
+        i_gp_reg_mapping->gp_reg_output,
+        0 );
+
+    for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
+      for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
+        reg_X =  l_vec_reg_acc_start + (l_i * i_conv_desc->ofw_rb) + l_j;
+        load_offset = (l_i * i_conv_desc->ofw_rb + l_j) * i_conv_kernel_config->vector_length_out * 4;
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_conv_kernel_config->instruction_set,
+            i_conv_kernel_config->vmove_instruction,
+            i_gp_reg_mapping->gp_reg_output,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            load_offset,
+            i_conv_kernel_config->vector_name,
+            reg_X, 0, 0 );
+      }
+    }
+  }
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_code*                           io_generated_code,
+    const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+    const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+    const libxsmm_convolution_forward_descriptor*     i_conv_desc ) {
+
+  unsigned int l_i, l_j;
+  unsigned int reg_X;
+  const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofh_rb * i_conv_desc->ofw_rb);
+  unsigned int l_intr_store = i_conv_kernel_config->vmove_instruction;
+  unsigned int datatype_output_size = (i_conv_desc->use_nts) ? 2 : 4;
+  unsigned int lead_dim_w = (i_conv_desc->use_nts) ? i_conv_desc->ofw_padded : i_conv_desc->ofw_rb;
+  unsigned int store_offset;
+
+  for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
+    for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
+      reg_X =  l_vec_reg_acc_start + (l_i * i_conv_desc->ofw_rb) + l_j;
+      store_offset = ((l_i * i_conv_desc->stride_h_store) * lead_dim_w + l_j * i_conv_desc->stride_w_store) * i_conv_kernel_config->vector_length_out * datatype_output_size;
+      if (i_conv_desc->use_nts) {
+        libxsmm_x86_instruction_vec_compute_convert( io_generated_code,
+            i_conv_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VPMOVDW,
+            i_conv_kernel_config->vector_name,
+            reg_X,
+            0,
+            LIBXSMM_X86_VEC_REG_UNDEF);
+
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_conv_kernel_config->instruction_set,
+            l_intr_store,
+            i_gp_reg_mapping->gp_reg_output,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            store_offset,
+            'y',
+            0, 0, 1 );
+      } else {
+        libxsmm_x86_instruction_vec_move( io_generated_code,
+            i_conv_kernel_config->instruction_set,
+            l_intr_store,
+            i_gp_reg_mapping->gp_reg_output,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            store_offset,
+            i_conv_kernel_config->vector_name,
+            reg_X, 0, 1 );
+      }
+    }
+  }
+}
+
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code*                           io_generated_code,
-                                                        const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
-                                                        const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
-                                                        const libxsmm_convolution_forward_descriptor*     i_conv_desc ) {
+    const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+    const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+    const libxsmm_convolution_forward_descriptor*     i_conv_desc ) {
   /* determine the number of registers needed for an ofm block */
   const unsigned int l_reg_per_block = i_conv_desc->ofm_block / i_conv_kernel_config->vector_length_out;
   /* start register of accumulator */
@@ -362,39 +474,39 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
     for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
       for ( l_i = l_accs; l_i > 1; l_i-- ) {
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                 i_conv_kernel_config->instruction_set,
-                                                 i_conv_kernel_config->vxor_instruction,
-                                                 i_conv_kernel_config->vector_name,
-                                                 i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*l_i) + l_j,
-                                                 i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*l_i) + l_j,
-                                                 i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*l_i) + l_j );
+            i_conv_kernel_config->instruction_set,
+            i_conv_kernel_config->vxor_instruction,
+            i_conv_kernel_config->vector_name,
+            i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*l_i) + l_j,
+            i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*l_i) + l_j,
+            i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofw_rb*l_i) + l_j );
       }
       if ( i_conv_desc->use_nts == 0 ) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
-                                          i_conv_kernel_config->instruction_set,
-                                          i_conv_kernel_config->vmove_instruction,
-                                          i_gp_reg_mapping->gp_reg_output,
-                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          l_j *  i_conv_desc->stride_w_store * l_lead_dim * i_conv_kernel_config->datatype_size_out,
-                                          i_conv_kernel_config->vector_name,
-                                          i_conv_kernel_config->vector_reg_count - i_conv_desc->ofw_rb + l_j , 0, 0 );
+            i_conv_kernel_config->instruction_set,
+            i_conv_kernel_config->vmove_instruction,
+            i_gp_reg_mapping->gp_reg_output,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            l_j *  i_conv_desc->stride_w_store * l_lead_dim * i_conv_kernel_config->datatype_size_out,
+            i_conv_kernel_config->vector_name,
+            i_conv_kernel_config->vector_reg_count - i_conv_desc->ofw_rb + l_j , 0, 0 );
 #if 1
         if ( (i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 ) {
-           libxsmm_x86_instruction_prefetch( io_generated_code,
-                                             LIBXSMM_X86_INSTR_PREFETCHT0 /*i_conv_kernel_config->prefetch_instruction*/,
-                                             i_gp_reg_mapping->gp_reg_output_pf,
-                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                             l_j * l_lead_dim * i_conv_kernel_config->datatype_size_out );
+          libxsmm_x86_instruction_prefetch( io_generated_code,
+              LIBXSMM_X86_INSTR_PREFETCHT0 /*i_conv_kernel_config->prefetch_instruction*/,
+              i_gp_reg_mapping->gp_reg_output_pf,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              l_j * l_lead_dim * i_conv_kernel_config->datatype_size_out );
         }
 #endif
       } else {
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                 i_conv_kernel_config->instruction_set,
-                                                 i_conv_kernel_config->vxor_instruction,
-                                                 i_conv_kernel_config->vector_name,
-                                                 i_conv_kernel_config->vector_reg_count - i_conv_desc->ofw_rb + l_j,
-                                                 i_conv_kernel_config->vector_reg_count - i_conv_desc->ofw_rb + l_j,
-                                                 i_conv_kernel_config->vector_reg_count - i_conv_desc->ofw_rb + l_j );
+            i_conv_kernel_config->instruction_set,
+            i_conv_kernel_config->vxor_instruction,
+            i_conv_kernel_config->vector_name,
+            i_conv_kernel_config->vector_reg_count - i_conv_desc->ofw_rb + l_j,
+            i_conv_kernel_config->vector_reg_count - i_conv_desc->ofw_rb + l_j,
+            i_conv_kernel_config->vector_reg_count - i_conv_desc->ofw_rb + l_j );
       }
     }
   } else {
@@ -405,34 +517,34 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
 
           if ((i_conv_desc->use_nts == 0) && (use_lp_kernel == 0 || (i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32))) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
-                                              i_conv_kernel_config->instruction_set,
-                                              i_conv_kernel_config->vmove_instruction,
-                                              i_gp_reg_mapping->gp_reg_output,
-                                              LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                              ( l_i * i_conv_desc->ofw_padded * i_conv_desc->stride_h_store * l_lead_dim * i_conv_kernel_config->datatype_size_out) +
-                                              ( l_j * l_lead_dim * i_conv_desc->stride_w_store * i_conv_kernel_config->datatype_size_out ) +
-                                              ( l_k * i_conv_kernel_config->vector_length_out * i_conv_kernel_config->datatype_size_out ),
-                                              i_conv_kernel_config->vector_name,
-                                              l_vec_reg_acc_start + l_k + (l_j * l_reg_per_block) + (i_conv_desc->ofw_rb * l_reg_per_block * l_i), 0, 0 );
+                i_conv_kernel_config->instruction_set,
+                i_conv_kernel_config->vmove_instruction,
+                i_gp_reg_mapping->gp_reg_output,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                ( l_i * i_conv_desc->ofw_padded * i_conv_desc->stride_h_store * l_lead_dim * i_conv_kernel_config->datatype_size_out) +
+                ( l_j * l_lead_dim * i_conv_desc->stride_w_store * i_conv_kernel_config->datatype_size_out ) +
+                ( l_k * i_conv_kernel_config->vector_length_out * i_conv_kernel_config->datatype_size_out ),
+                i_conv_kernel_config->vector_name,
+                l_vec_reg_acc_start + l_k + (l_j * l_reg_per_block) + (i_conv_desc->ofw_rb * l_reg_per_block * l_i), 0, 0 );
 #if 0
             if ( (i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1) == LIBXSMM_CONVOLUTION_PREFETCH_OUTPUT_L1 ) {
               libxsmm_x86_instruction_prefetch( io_generated_code,
-                                                LIBXSMM_X86_INSTR_PREFETCHT1 /*i_conv_kernel_config->prefetch_instruction*/,
-                                                i_gp_reg_mapping->gp_reg_output_pf,
-                                                LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                                ( l_i * i_conv_desc->ofw_padded *  i_conv_desc->stride_h_store * l_lead_dim * i_conv_kernel_config->datatype_size_out) +
-                                                ( l_j * l_lead_dim * i_conv_desc->stride_w_store *  i_conv_kernel_config->datatype_size_out ) +
-                                                ( l_k * i_conv_kernel_config->vector_length_out * i_conv_kernel_config->datatype_size_out ) );
+                  LIBXSMM_X86_INSTR_PREFETCHT1 /*i_conv_kernel_config->prefetch_instruction*/,
+                  i_gp_reg_mapping->gp_reg_output_pf,
+                  LIBXSMM_X86_GP_REG_UNDEF, 0,
+                  ( l_i * i_conv_desc->ofw_padded *  i_conv_desc->stride_h_store * l_lead_dim * i_conv_kernel_config->datatype_size_out) +
+                  ( l_j * l_lead_dim * i_conv_desc->stride_w_store *  i_conv_kernel_config->datatype_size_out ) +
+                  ( l_k * i_conv_kernel_config->vector_length_out * i_conv_kernel_config->datatype_size_out ) );
             }
 #endif
           } else {
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                                                     i_conv_kernel_config->instruction_set,
-                                                     i_conv_kernel_config->vxor_instruction,
-                                                     i_conv_kernel_config->vector_name,
-                                                     l_vec_reg_acc_start + l_k + (l_j * l_reg_per_block) + (i_conv_desc->ofw_rb * l_reg_per_block * l_i),
-                                                     l_vec_reg_acc_start + l_k + (l_j * l_reg_per_block) + (i_conv_desc->ofw_rb * l_reg_per_block * l_i),
-                                                     l_vec_reg_acc_start + l_k + (l_j * l_reg_per_block) + (i_conv_desc->ofw_rb * l_reg_per_block * l_i) );
+                i_conv_kernel_config->instruction_set,
+                i_conv_kernel_config->vxor_instruction,
+                i_conv_kernel_config->vector_name,
+                l_vec_reg_acc_start + l_k + (l_j * l_reg_per_block) + (i_conv_desc->ofw_rb * l_reg_per_block * l_i),
+                l_vec_reg_acc_start + l_k + (l_j * l_reg_per_block) + (i_conv_desc->ofw_rb * l_reg_per_block * l_i),
+                l_vec_reg_acc_start + l_k + (l_j * l_reg_per_block) + (i_conv_desc->ofw_rb * l_reg_per_block * l_i) );
           }
         }
       }
@@ -442,9 +554,9 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*                           io_generated_code,
-                                                         const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
-                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
-                                                         const libxsmm_convolution_forward_descriptor*     i_conv_desc ) {
+    const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+    const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+    const libxsmm_convolution_forward_descriptor*     i_conv_desc ) {
   /* determine the number of registers needed for an ofm block */
   const unsigned int l_reg_per_block = i_conv_desc->ofm_block / i_conv_kernel_config->vector_length_out;
   /* start register of accumulator */
@@ -581,14 +693,14 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
       }
     }
 
-      if ((i_conv_desc->use_nts == 1) && (i_conv_desc->stride_w_store != 1 || i_conv_desc->stride_h_store != 1)) {
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+    if ((i_conv_desc->use_nts == 1) && (i_conv_desc->stride_w_store != 1 || i_conv_desc->stride_h_store != 1)) {
+      libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
           i_conv_kernel_config->instruction_set,
           i_conv_kernel_config->vxor_instruction,
           i_conv_kernel_config->vector_name, 0, 0, 0);
-      }
+    }
 
-     for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
+    for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
       libxsmm_x86_instruction_vec_move( io_generated_code,
           i_conv_kernel_config->instruction_set,
           l_intr_store,
@@ -614,21 +726,21 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
     }
 
     if ( i_conv_desc->use_nts == 1 && i_conv_desc->stride_h_store != 1) {
-        /* Zero out the skipped "H" rows of pixels  */
-        for (i = 0; i < 1; i++) {
-          for (index_zero = 1; index_zero < (int)i_conv_desc->stride_h_store; ++index_zero) {
-            for (j = 0; j < i_conv_desc->ofw_rb * i_conv_desc->stride_w_store; ++j) {
-              libxsmm_x86_instruction_vec_move( io_generated_code,
-                  i_conv_kernel_config->instruction_set,
-                  l_intr_store,
-                  i_gp_reg_mapping->gp_reg_output,
-                  LIBXSMM_X86_GP_REG_UNDEF, 0,
-                  ((i * i_conv_desc->stride_h_store + index_zero) * i_conv_desc->ofw_padded + j) * i_conv_kernel_config->vector_length_out * i_conv_kernel_config->datatype_size_out,
-                  i_conv_kernel_config->vector_name,
-                  0 , 0, 1 );
-            }
+      /* Zero out the skipped "H" rows of pixels  */
+      for (i = 0; i < 1; i++) {
+        for (index_zero = 1; index_zero < (int)i_conv_desc->stride_h_store; ++index_zero) {
+          for (j = 0; j < i_conv_desc->ofw_rb * i_conv_desc->stride_w_store; ++j) {
+            libxsmm_x86_instruction_vec_move( io_generated_code,
+                i_conv_kernel_config->instruction_set,
+                l_intr_store,
+                i_gp_reg_mapping->gp_reg_output,
+                LIBXSMM_X86_GP_REG_UNDEF, 0,
+                ((i * i_conv_desc->stride_h_store + index_zero) * i_conv_desc->ofw_padded + j) * i_conv_kernel_config->vector_length_out * i_conv_kernel_config->datatype_size_out,
+                i_conv_kernel_config->vector_name,
+                0 , 0, 1 );
           }
         }
+      }
     }
 
     if (i_conv_desc->perform_relu_in_kernel == 1) {

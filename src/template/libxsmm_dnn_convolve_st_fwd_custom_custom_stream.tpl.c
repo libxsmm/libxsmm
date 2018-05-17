@@ -45,6 +45,7 @@ const element_input_type *input_base, *input_ptr;
 const element_filter_type *weight_base;
 element_input_type *input_zero;
 element_output_type *output_base;
+
 element_input_type *copy_ptr, *prefetch_ptr;
 element_output_type *out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->ofmblock);
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
@@ -123,12 +124,24 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   max_abs = _mm512_setzero_ps();
   _mm512_store_ps(max_vals, max_abs);
 #else
-/* won't happen as this code only runs on AVX512 platforms */
+  /* won't happen as this code only runs on AVX512 platforms */
 #endif
 }
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
+
+int accumulators_scratch[handle->ofmblock * handle->ofw * handle->ofh];
+if (handle->use_accumulation_scratch) {
+  int *scratch_ptr = accumulators_scratch;
+  __m512i zero_reg = _mm512_setzero_epi32();
+  for ( oj = 0; oj < handle->ofh; oj++ ) {
+    for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+      _mm512_store_si512(scratch_ptr+oi, zero_reg);
+    }
+    scratch_ptr += handle->ofw*handle->ofmblock;
+  }
+}
 
 i = 0;
 if (n_segments) {
@@ -170,6 +183,26 @@ if (n_segments) {
             }
           }
 
+          if (instr == OFM_LOOP_CLOSE) {
+            /* Copy accumulators scratch to destination output and zero scratch */
+            if (handle->use_accumulation_scratch) {
+              ofm1 = code_stream[pc].aux_index;
+              element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+              int *scratch_ptr = accumulators_scratch;
+              __m512i zero_reg = _mm512_setzero_epi32();
+              for ( oj = 0; oj < handle->ofh; oj++ ) {
+                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                  __m512i tmp = _mm512_loadu_si512(scratch_ptr+oi);
+                  __m256i cvt_tmp =  _mm512_cvtepi32_epi16(tmp);
+                  _mm512_storeu_si512(scratch_ptr+oi, zero_reg);
+                  _mm256_storeu_si256 ((__m256i*) (output_dst+oi), cvt_tmp);
+                }
+                scratch_ptr += handle->ofw*handle->ofmblock;
+                output_dst += handle->ofwp*handle->ofmblock;
+              }
+            }
+          }
+
           /* Run the stream of convolutions for this segment */
           for (conv_i = 0; conv_i < n_convs; conv_i++) {
             const int vi = variant[pool_index]; /* avoid warning about char used as array index */
@@ -180,7 +213,7 @@ if (n_segments) {
             pw = stream[i+4];
             po = stream[i+5];
             offset_bn = bn_stream[bn_i];
-            kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
+            kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals, accumulators_scratch + offset_o);
             ++pool_index;
             i += 3;
             ++bn_i;
@@ -209,6 +242,26 @@ if (n_segments) {
             }
           }
 
+          if (instr == OFM_LOOP_CLOSE) {
+            /* Copy accumulators scratch to destination output and zero scratch */
+            if (handle->use_accumulation_scratch) {
+              ofm1 = code_stream[pc].aux_index;
+              element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+              int *scratch_ptr = accumulators_scratch;
+              __m512i zero_reg = _mm512_setzero_epi32();
+              for ( oj = 0; oj < handle->ofh; oj++ ) {
+                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                  __m512i tmp = _mm512_loadu_si512(scratch_ptr+oi);
+                  __m256i cvt_tmp =  _mm512_cvtepi32_epi16(tmp);
+                  _mm512_storeu_si512(scratch_ptr+oi, zero_reg);
+                  _mm256_storeu_si256 ((__m256i*) (output_dst+oi), cvt_tmp);
+                }
+                scratch_ptr += handle->ofw*handle->ofmblock;
+                output_dst += handle->ofwp*handle->ofmblock;
+              }
+            }
+          }
+
           /* Run the stream of convolutions for this segment */
           for (conv_i = 0; conv_i < n_convs; conv_i++) {
             offset_i = stream[i];
@@ -218,7 +271,7 @@ if (n_segments) {
             pw = stream[i+4];
             po = stream[i+5];
             offset_bn = bn_stream[bn_i];
-            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals);
+            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, bn_sum_base + offset_bn, bn_sum_base2 + offset_bn, &scale_factor, max_vals, accumulators_scratch + offset_o);
             i += 3;
             ++bn_i;
           }
@@ -250,6 +303,24 @@ if (n_segments) {
           }
 
           if (instr == OFM_LOOP_CLOSE) {
+            /* Copy accumulators scratch to destination output and zero scratch */
+            if (handle->use_accumulation_scratch) {
+              ofm1 = code_stream[pc].aux_index;
+              element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+              int *scratch_ptr = accumulators_scratch;
+              __m512i zero_reg = _mm512_setzero_epi32();
+              for ( oj = 0; oj < handle->ofh; oj++ ) {
+                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                  __m512i tmp = _mm512_loadu_si512(scratch_ptr+oi);
+                  __m256i cvt_tmp =  _mm512_cvtepi32_epi16(tmp);
+                  _mm512_storeu_si512(scratch_ptr+oi, zero_reg);
+                  _mm256_storeu_si256 ((__m256i*) (output_dst+oi), cvt_tmp);
+                }
+                scratch_ptr += handle->ofw*handle->ofmblock;
+                output_dst += handle->ofwp*handle->ofmblock;
+              }
+            }
+
             /* Compute batch norm statistics... */
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
@@ -337,7 +408,7 @@ if (n_segments) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+            kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals, accumulators_scratch + offset_o);
             ++pool_index;
             i += 3;
           }
@@ -366,6 +437,25 @@ if (n_segments) {
           }
 
           if ( instr == OFM_LOOP_CLOSE ) {
+            /* Copy accumulators scratch to destination output and zero scratch */
+            if (handle->use_accumulation_scratch) {
+              ofm1 = code_stream[pc].aux_index;
+              element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+              int *scratch_ptr = accumulators_scratch;
+              __m512i zero_reg = _mm512_setzero_epi32();
+              for ( oj = 0; oj < handle->ofh; oj++ ) {
+                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                  __m512i tmp = _mm512_loadu_si512(scratch_ptr+oi);
+                  __m256i cvt_tmp =  _mm512_cvtepi32_epi16(tmp);
+                  _mm512_storeu_si512(scratch_ptr+oi, zero_reg);
+                  _mm256_storeu_si256 ((__m256i*) (output_dst+oi), cvt_tmp);
+                }
+                scratch_ptr += handle->ofw*handle->ofmblock;
+                output_dst += handle->ofwp*handle->ofmblock;
+              }
+            }
+
+
             /* Compute batch norm statistics... */
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
@@ -452,7 +542,7 @@ if (n_segments) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals, accumulators_scratch + offset_o);
             i += 3;
           }
         }

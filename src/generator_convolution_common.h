@@ -140,6 +140,18 @@ void libxsmm_generator_convolution_footer_ifm_loop( libxsmm_generated_code*     
                                                     const unsigned int                        i_trip_count );
 
 LIBXSMM_API_INTERN
+void libxsmm_generator_convolution_forward_load_output_bf16( libxsmm_generated_code*                           io_generated_code,
+                                                        const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+                                                        const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+                                                        const libxsmm_convolution_forward_descriptor*     i_conv_desc );
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_code*                           io_generated_code,
+                                                         const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+                                                         const libxsmm_convolution_forward_descriptor*     i_conv_desc );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code*                           io_generated_code,
                                                         const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
                                                         const libxsmm_convolution_kernel_config*          i_conv_kernel_config,

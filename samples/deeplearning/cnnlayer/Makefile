@@ -55,7 +55,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/layer_example_f32 $(OUTDIR)/layer_example_i16i32 $(OUTDIR)/layer_example_i16f32 $(OUTDIR)/layer_example_i8i32 $(OUTDIR)/layer_example_qi16f32
+XFILES := $(OUTDIR)/layer_example_f32 $(OUTDIR)/layer_example_i16i32 $(OUTDIR)/layer_example_bf16 $(OUTDIR)/layer_example_i16f32 $(OUTDIR)/layer_example_i8i32 $(OUTDIR)/layer_example_qi16f32
 
 .PHONY: all
 all: $(XFILES)
@@ -68,6 +68,9 @@ $(OUTDIR)/layer_example_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_f32-c.o $(L
 
 $(OUTDIR)/layer_example_i16i32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i16i32-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/layer_example_i16i32-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/layer_example_bf16: $(OUTDIR)/.make $(BLDDIR)/layer_example_bf16-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/layer_example_bf16-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/layer_example_i16f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_i16f32-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/layer_example_i16f32-c.o \

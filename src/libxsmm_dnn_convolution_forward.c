@@ -44,6 +44,7 @@
 
 /* @TODO: needs target decoration, only on AVX512F (do we need to distinguish between SKX and KNx?) */
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
@@ -57,6 +58,24 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_f32_f32(libxsmm_dnn_
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
+  typedef libxsmm_sconvfunction libxsmm_convfunction;
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
+
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
+  typedef libxsmm_bfloat16 element_input_type;
+  typedef libxsmm_bfloat16 element_output_type;
+  typedef libxsmm_bfloat16 element_filter_type;
   typedef libxsmm_sconvfunction libxsmm_convfunction;
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c"
 #else /* should not happen */
@@ -163,6 +182,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(l
   else {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_convolve_st_fwd_custom_custom_f32_f32( handle, start_thread, tid);
+    } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
+      status = libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16( handle, start_thread, tid);  
     } else if (handle->datatype_in ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
       status = libxsmm_dnn_convolve_st_fwd_custom_custom_i16_i32( handle, start_thread, tid);
     } else if (handle->datatype_in ==  LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {

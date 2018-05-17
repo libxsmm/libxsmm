@@ -339,6 +339,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int blocksifm_blocking;
   int blocksofm_blocking;
   int blocksimg_blocking;
+  int use_accumulation_scratch;
   int use_nts_fwd;
   int use_nts_bwd;
   int use_nts_upd;

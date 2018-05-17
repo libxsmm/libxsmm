@@ -227,11 +227,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_feature_map_blocks( libxs
     handle->ofmblock_lp = handle->ofmblock / handle->fm_lp_block;
   } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
     handle->ifmblock = (handle->desc.C >=16) ? 8 : handle->desc.C/2;
-    handle->ofmblock = (handle->desc.K >=16) ? 8 : handle->desc.K/2;
+    handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K/2;
     handle->fm_lp_block = 2;
     handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
-    handle->ofmblock_lp = handle->ofmblock * handle->fm_lp_block;
-    *noarch = 1;
+    handle->ofmblock_lp = handle->ofmblock / handle->fm_lp_block;
   } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
     handle->ifmblock = (handle->desc.C >=16) ? 8 : (handle->desc.C/2);
     handle->ofmblock = (handle->desc.K >=16) ? 16 : (handle->desc.K/2);
@@ -258,10 +257,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_feature_map_blocks( libxs
   /* Let's calculate how many blocks we need for the feature maps */
   if (handle->use_lp_kernel == 1) {
     if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
-      handle->blocksifm = handle->desc.C / (handle->ifmblock * handle->fm_lp_block);
-      handle->blocksofm = handle->desc.K / (handle->ofmblock * handle->fm_lp_block);
-      handle->blocksifm_lp = handle->blocksifm;
-      handle->blocksofm_lp = handle->blocksofm;
+      handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
+      handle->blocksofm = handle->desc.K / handle->ofmblock;
+      handle->blocksifm_lp = handle->desc.C / handle->ifmblock_hp;
+      handle->blocksofm_lp = handle->desc.K / handle->ofmblock;
     } else {
       handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
       handle->blocksofm = handle->desc.K / handle->ofmblock;
@@ -497,7 +496,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
   }
 
   /* Restrict acc chain for overflow handling only if combo is int16/int32 */
-  if (handle->use_lp_kernel == 1) {
+  if (handle->use_lp_kernel == 1 && (handle->datatype_in != LIBXSMM_DNN_DATATYPE_BF16) ) {
     if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
       if (handle->blocksifm_blocking * handle->ifmblock * handle->fm_lp_block > 256) {
         handle->blocksifm_blocking = 16;
@@ -509,7 +508,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
   }
 
   /* When we chose overwrite and we loop over all ifms, then let's use streaming stores */
-  if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->desc.C == handle->blocksifm_blocking*handle->ifmblock*handle->fm_lp_block) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 || handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) ) {
+  if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->desc.C == handle->blocksifm_blocking*handle->ifmblock*handle->fm_lp_block) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16 || handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 || handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) ) {
     handle->use_nts_fwd = 1;
   } else {
     handle->use_nts_fwd = 0;
@@ -548,8 +547,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     const size_t fwdbwd_scratch_size_b = handle->desc.threads * handle->desc.K * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_in);
     handle->fwdbwd_scratch_size =  LIBXSMM_MAX(fwdbwd_scratch_size_a, fwdbwd_scratch_size_b);
     handle->minibatch_scratch_size = libxsmm_dnn_typesize(handle->datatype_out) * LIBXSMM_MAX(
-      handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w+8),
-      handle->desc.N * handle->blocksofm_lp * handle->ofmblock * handle->fm_lp_block * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w));
+        handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->fm_lp_block * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w+8),
+        handle->desc.N * handle->blocksofm_lp * handle->ofmblock * handle->fm_lp_block * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w));
     handle->max_scratch5_size = (handle->minibatch_scratch_size > handle->fwdbwd_scratch_size) ? handle->minibatch_scratch_size : handle->fwdbwd_scratch_size;
     handle->padding_flag = 1;
     handle->scratch5 = 0;
@@ -965,10 +964,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
           } else {
             fwd_equivalent_descriptor.ofh_rb = hrb1;
             fwd_equivalent_descriptor.ofw_rb = wrb1;
-            handle->code_bwd[0].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
+            //handle->code_bwd[0].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
             fwd_equivalent_descriptor.ofh_rb = hrb2;
             fwd_equivalent_descriptor.ofw_rb = wrb2;
-            handle->code_bwd[1].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
+            //handle->code_bwd[1].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
             handle->bwd_ofh_rb = hrb1;
             handle->bwd_ofw_rb = wrb1;
             fwd_equivalent_descriptor.ofh_rb = hrb1;
