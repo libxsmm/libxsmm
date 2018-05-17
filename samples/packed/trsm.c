@@ -180,6 +180,8 @@ void scopy_from_temp ( int layout, float *A, int lda, int m, int n, float *Atemp
     }
 }
 
+#if !defined(USE_MKL_FOR_REFERENCE) && !defined(LIBXSMM_NOFORTRAN)
+
 /* Reference code for compact dtrsm. Note that this just copies data into
    a buffer from the compact storage and calls the regular dtrsm code. This
    is very naive reference code just used for testing purposes */
@@ -225,6 +227,8 @@ if (++ntimes < 15 ) printf("Doing a dtrsm at place i=%d j=%d num=%d Ap[%d]=%g Bp
        }
     }
 }
+
+#endif /*!defined(USE_MKL_FOR_REFERENCE) && !defined(LIBXSMM_NOFORTRAN)*/
 
 /* Reference code for compact strsm. Note that this just copies data into
    a buffer from the compact storage and calls the regular strsm code. This
@@ -732,7 +736,9 @@ int main(int argc, char* argv[])
   l_start = libxsmm_timer_tick();
 #endif
 
-#ifndef USE_MKL_FOR_REFERENCE
+#ifdef USE_MKL_FOR_REFERENCE
+  mkl_dtrsm_compact ( CLAYOUT, SIDE, UPLO, TRANSA, DIAG, m, n, dalpha, da, lda, dc, ldb, CMP_FORMAT, nmatd );
+#elif !defined(LIBXSMM_NOFORTRAN)
   if ( (layout == 101) && (nmatd!=VLEND) )
   {
      unsigned int lay = 102, m1 = n, n1 = m;
@@ -743,8 +749,6 @@ int main(int argc, char* argv[])
   } else {
      compact_dtrsm_ ( &layout, &side, &uplo, &trans, &diag, &m, &n, &dalpha, da, &lda, dc, &ldb, &nmatd, &VLEND );
   }
-#else
-  mkl_dtrsm_compact ( CLAYOUT, SIDE, UPLO, TRANSA, DIAG, m, n, dalpha, da, lda, dc, ldb, CMP_FORMAT, nmatd );
 #endif
 
 #ifdef MKL_TIMER

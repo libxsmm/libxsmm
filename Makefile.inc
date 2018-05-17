@@ -349,6 +349,9 @@ endif
 ifeq (0,$(FORTRAN))
   FC = $(NULL)
 endif
+ifeq (,$(strip $(FC)))
+  DFLAGS += -DLIBXSMM_NOFORTRAN
+endif
 
 CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
 CXX_VERSION_MAJOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f1)
