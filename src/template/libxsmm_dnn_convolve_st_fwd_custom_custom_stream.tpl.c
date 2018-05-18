@@ -34,6 +34,12 @@
 #define CONVOLUTION_KERNEL 3
 #define IFM_LOOP_CLOSE_S 4
 
+#if (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH)
+# define LIBXSMM_INTRINSICS_MM512_PERMUTEXVAR_EPI16 _mm512_permutexvar_epi16
+#else
+# define LIBXSMM_INTRINSICS_MM512_PERMUTEXVAR_EPI16 LIBXSMM_INTRINSICS_MM512F_PERMUTEXVAR_EPI16
+#endif
+
 
 int BLOCKSIFM = handle->blocksifm_lp;
 int BLOCKSOFM = handle->blocksofm;
@@ -679,6 +685,7 @@ if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
+#undef LIBXSMM_INTRINSICS_MM512_PERMUTEXVAR_EPI16
 #undef IMG_LOOP_INIT
 #undef OFM_LOOP_INIT
 #undef OFM_LOOP_CLOSE
