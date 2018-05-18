@@ -27,7 +27,7 @@
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke, Rajkishore Barik (Intel Corp.)
- ******************************************************************************/
+******************************************************************************/
 #include <libxsmm.h>
 #include <libxsmm_sync.h>
 #include "libxsmm_main.h"

@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Rajkishore Barik,
  ** Ankush Mandal, Evangelos Georganas (Intel Corp.)
- ******************************************************************************/
+******************************************************************************/
 #include "libxsmm_dnn_handle.h"
 #include "libxsmm_main.h"
 #include <libxsmm.h>
