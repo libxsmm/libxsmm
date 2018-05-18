@@ -1,33 +1,33 @@
 /******************************************************************************
- ** Copyright (c) 2016-2018, Intel Corporation                                **
- ** All rights reserved.                                                      **
- **                                                                           **
- ** Redistribution and use in source and binary forms, with or without        **
- ** modification, are permitted provided that the following conditions        **
- ** are met:                                                                  **
- ** 1. Redistributions of source code must retain the above copyright         **
- **    notice, this list of conditions and the following disclaimer.          **
- ** 2. Redistributions in binary form must reproduce the above copyright      **
- **    notice, this list of conditions and the following disclaimer in the    **
- **    documentation and/or other materials provided with the distribution.   **
- ** 3. Neither the name of the copyright holder nor the names of its          **
- **    contributors may be used to endorse or promote products derived        **
- **    from this software without specific prior written permission.          **
- **                                                                           **
- ** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
- ** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
- ** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
- ** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
- ** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
- ** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
- ** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
- ** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
- ** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
- ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
- ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
- ******************************************************************************/
+** Copyright (c) 2018, Intel Corporation                                     **
+** All rights reserved.                                                      **
+**                                                                           **
+** Redistribution and use in source and binary forms, with or without        **
+** modification, are permitted provided that the following conditions        **
+** are met:                                                                  **
+** 1. Redistributions of source code must retain the above copyright         **
+**    notice, this list of conditions and the following disclaimer.          **
+** 2. Redistributions in binary form must reproduce the above copyright      **
+**    notice, this list of conditions and the following disclaimer in the    **
+**    documentation and/or other materials provided with the distribution.   **
+** 3. Neither the name of the copyright holder nor the names of its          **
+**    contributors may be used to endorse or promote products derived        **
+**    from this software without specific prior written permission.          **
+**                                                                           **
+** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
+** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
+** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
+** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
+** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
+** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
+** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
+** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
+** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
+** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
+** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
+******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
- ******************************************************************************/
+******************************************************************************/
 #define IMG_LOOP_INIT 0
 #define OFM_LOOP_INIT 1
 #define OFM_LOOP_CLOSE 2
@@ -72,7 +72,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int myOfmId;
   int nOfmBlocks;
   int n_code_segments;
-  int mark_ofm_init, mark_ofm_close, mark_img_init, mark_ifm_close;
+  int mark_ofm_init, mark_ofm_close, mark_img_init, mark_ifm_close = 0;
   int *tmp_expanded_stream, tmp_stream_index;
   segment_t *encoded_code_segments = NULL;
   int expanded_size;
