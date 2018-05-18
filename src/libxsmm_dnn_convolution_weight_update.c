@@ -50,7 +50,6 @@ LIBXSMM_API_INTERN void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*transposer)(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS);
 LIBXSMM_API_INTERN transposer get_transposer(int M, int N, int ldD, int ldS);
 
-/* @TODO: needs target decoration, only on AVX512F (some functions called inside need to distinguish between SKX and KNx) */
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
