@@ -146,11 +146,11 @@ LIBXSMM_API_INLINE void internal_spmdm_allocate_csr_a(libxsmm_spmdm_handle* hand
 
 LIBXSMM_API_INLINE void internal_spmdm_allocate_scratch(libxsmm_spmdm_handle* handle, int max_threads)
 {
+  void *const pv = &handle->base_ptr_scratch_B_scratch_C;
   size_t sz_memory_for_scratch_per_thread = ((handle->bm)*(handle->bn)*sizeof(float) + (handle->bk)*(handle->bn)*sizeof(float)), sz_total_memory;
   sz_memory_for_scratch_per_thread = LIBXSMM_UP2(sz_memory_for_scratch_per_thread, 4096);
   sz_total_memory = sz_memory_for_scratch_per_thread * max_threads;
   handle->base_ptr_scratch_B_scratch_C = 0;
-  void *const pv = &handle->base_ptr_scratch_B_scratch_C;
 
   /* use low-level scratch memory allocation since life-time of this buffer is unknown */
   if (EXIT_SUCCESS == libxsmm_xmalloc((void**)pv, sz_total_memory, 2097152,

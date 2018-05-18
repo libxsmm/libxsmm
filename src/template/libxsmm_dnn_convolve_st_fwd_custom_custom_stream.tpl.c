@@ -84,7 +84,10 @@ element_output_type *bn_sum_base2;
 double *bn_sum_base;
 double *bn_sum_base2;
 #endif
+float accumulators_scratch[handle->ofmblock * handle->ofw * handle->ofh];
+unsigned short idx[32];
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
+__m512i vidx;
 __m512 max_abs;
 #else /* won't happen as this code only runs on AVX512 platforms */
   LIBXSMM_ASSERT(0);
@@ -132,9 +135,6 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-float accumulators_scratch[handle->ofmblock * handle->ofw * handle->ofh];
-unsigned short idx[32];
-__m512i vidx;
 if (handle->use_accumulation_scratch) {
   float *scratch_ptr = accumulators_scratch;
   __m512 zero_reg = _mm512_setzero_ps();
@@ -197,8 +197,7 @@ if (n_segments) {
           if (instr == OFM_LOOP_CLOSE) {
             /* Copy accumulators scratch to destination output and zero scratch */
             if (handle->use_accumulation_scratch) {
-              ofm1 = code_stream[pc].aux_index;
-              element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+              element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               float *scratch_ptr = accumulators_scratch;
               __m512 zero_reg = _mm512_setzero_ps();
               for ( oj = 0; oj < handle->ofh; oj++ ) {
@@ -256,8 +255,7 @@ if (n_segments) {
           if (instr == OFM_LOOP_CLOSE) {
             /* Copy accumulators scratch to destination output and zero scratch */
             if (handle->use_accumulation_scratch) {
-              ofm1 = code_stream[pc].aux_index;
-              element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+              element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               float *scratch_ptr = accumulators_scratch;
               __m512 zero_reg = _mm512_setzero_ps();
               for ( oj = 0; oj < handle->ofh; oj++ ) {
@@ -316,8 +314,7 @@ if (n_segments) {
           if (instr == OFM_LOOP_CLOSE) {
             /* Copy accumulators scratch to destination output and zero scratch */
             if (handle->use_accumulation_scratch) {
-              ofm1 = code_stream[pc].aux_index;
-              element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+              element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               float *scratch_ptr = accumulators_scratch;
               __m512 zero_reg = _mm512_setzero_ps();
               for ( oj = 0; oj < handle->ofh; oj++ ) {
@@ -337,9 +334,8 @@ if (n_segments) {
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 #ifndef FP64_BN_STATS
-              ofm1 =  code_stream[pc].aux_index;
               LIBXSMM_VLA_DECL(4, element_output_type, stats, (element_output_type*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
-              element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+              element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               __m512 bsum  = _mm512_setzero_ps();
               __m512 bsum2 = _mm512_setzero_ps();
@@ -353,9 +349,9 @@ if (n_segments) {
                 red += handle->ofwp*handle->ofmblock;
               }
 
-              _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
+              _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, code_stream[pc].aux_index/*ofm1*/, img, 0,
                     BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
-              _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
+              _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, code_stream[pc].aux_index/*ofm1*/, img, 0,
                     BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2 );
 #else
               ofm1 =  code_stream[pc].aux_index;
@@ -451,8 +447,7 @@ if (n_segments) {
           if ( instr == OFM_LOOP_CLOSE ) {
             /* Copy accumulators scratch to destination output and zero scratch */
             if (handle->use_accumulation_scratch) {
-              ofm1 = code_stream[pc].aux_index;
-              element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
+              element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               float *scratch_ptr = accumulators_scratch;
               __m512 zero_reg = _mm512_setzero_ps();
               for ( oj = 0; oj < handle->ofh; oj++ ) {
@@ -471,9 +466,8 @@ if (n_segments) {
             if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 #ifndef FP64_BN_STATS
-              ofm1 =  code_stream[pc].aux_index;
               LIBXSMM_VLA_DECL(4, element_output_type, stats, (element_output_type*)handle->batch_stats->data,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
-              element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
+              element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               __m512 bsum  = _mm512_setzero_ps();
               __m512 bsum2 = _mm512_setzero_ps();
@@ -487,9 +481,9 @@ if (n_segments) {
                 red += handle->ofwp*handle->ofmblock;
               }
 
-              _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
+              _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, code_stream[pc].aux_index/*ofm1*/, img, 0,
                     BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
-              _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
+              _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, code_stream[pc].aux_index/*ofm1*/, img, 0,
                     BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2 );
 #else
               ofm1 =  code_stream[pc].aux_index;

@@ -332,10 +332,10 @@ void libxsmm_generator_convolution_forward_load_output_bf16( libxsmm_generated_c
       }
     }
   } else {
-    libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
-
     /* Scale factor offset in rsp */
     unsigned int rsp_offset = 48;
+
+    libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
     if (i_conv_desc->compute_batch_stats == 1) {
       rsp_offset = 64;
     }

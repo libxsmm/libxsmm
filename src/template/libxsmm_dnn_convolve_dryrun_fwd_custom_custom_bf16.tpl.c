@@ -84,6 +84,8 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int *compute_indices, *bn_indices = 0;
   char *kernel_variant;
 
+  const int use_accumulation_scratch = (BLOCKSIFM_BLOCKING == BLOCKSIFM) ? 0 : 1 ;
+  
   if (handle->padding_flag == 1) {
     padded_h = handle->ifhp + 2 * handle->desc.pad_h;
     padded_w = handle->ifwp + 2 * handle->desc.pad_w;
@@ -104,7 +106,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   mark_ofm_init = 0; /* ((((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_fwd == 0) ) || ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) ? 1 : 0;*/
   /*mark_ofm_close = (((((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 0) ) ||
     ((((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0) ) ) ? 1 : 0;*/
-  int use_accumulation_scratch = (BLOCKSIFM_BLOCKING == BLOCKSIFM) ? 0 : 1 ;
   handle->use_accumulation_scratch = use_accumulation_scratch;
   mark_ofm_close = use_accumulation_scratch;
   mark_img_init = ( (handle->padding_flag == 1) || (mark_ofm_close == 1) || (mark_ifm_close == 1) ) ? 1 : 0;

@@ -55,6 +55,7 @@ void libxsmm_generator_packed_trsm_avx_avx512_kernel( libxsmm_generated_code*   
                                                        const libxsmm_trsm_descriptor* i_packed_trsm_desc,
                                                        const char*                    i_arch )
 {
+  unsigned char *const buf = (unsigned char *) io_code->generated_code;
   libxsmm_loop_label_tracker l_loop_label_tracker /*= { 0 }*/;
   /* avx512 just represents whether we want to use zmm registers or not     *
    *      A value of 0 says not, a value of 1 targets AVX512_CORE, a value  *
@@ -117,7 +118,6 @@ void libxsmm_generator_packed_trsm_avx_avx512_kernel( libxsmm_generated_code*   
 
   if ( io_code->code_type > 1 )
   {
-     /*unsigned char *buf = (unsigned char *) io_code->generated_code;*/
      unsigned int i = io_code->code_size;
      unsigned int m = i_packed_trsm_desc->m;
      unsigned int n = i_packed_trsm_desc->n;
@@ -188,7 +188,6 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
            }
         }
         i = io_code->code_size;
-        unsigned char *buf = (unsigned char *) io_code->generated_code;
         buf[i++] = 0xc3; /* retq */
         io_code->code_size = i;
         return ;
@@ -899,11 +898,10 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
      } /* side */
   }
 
-  int i = io_code->code_size;
-  unsigned char *buf = (unsigned char *) io_code->generated_code;
-  buf[i++] = 0xc3; /* retq */
-  io_code->code_size = i;
-
+  { int i = io_code->code_size;
+    buf[i++] = 0xc3; /* retq */
+    io_code->code_size = i;
+  }
   /*  close asm: note that we really didn't need to push everything */
 /*
   libxsmm_x86_instruction_close_stream_transpose( io_code, i_arch );
