@@ -85,8 +85,8 @@ double *bn_sum_base2;
 #endif
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs;
-#else
-/* won't happen as this code only runs on AVX512 platforms */
+#else /* won't happen as this code only runs on AVX512 platforms */
+  LIBXSMM_ASSERT(0);
 #endif
 
 kernel_pool[0] = kernel;
@@ -123,8 +123,8 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   max_abs = _mm512_setzero_ps();
   _mm512_store_ps(max_vals, max_abs);
-#else
-  /* won't happen as this code only runs on AVX512 platforms */
+#else /* won't happen as this code only runs on AVX512 platforms */
+  LIBXSMM_ASSERT(0);
 #endif
 }
 
@@ -387,8 +387,8 @@ if (n_segments) {
                       BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
               }
 #endif
-#else
-              /* won't happen as this code only runs on AVX512 platforms */
+#else /* won't happen as this code only runs on AVX512 platforms */
+              LIBXSMM_ASSERT(0);
 #endif
             }
 
@@ -521,8 +521,8 @@ if (n_segments) {
                       BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
               }
 #endif
-#else
-              /* won't happen as this code only runs on AVX512 platforms */
+#else /* won't happen as this code only runs on AVX512 platforms */
+              LIBXSMM_ASSERT(0);
 #endif
             }
 
@@ -533,8 +533,8 @@ if (n_segments) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                   max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+oi)));
-#else
-                  /* won't happen as this code only runs on AVX512 platforms */
+#else /* won't happen as this code only runs on AVX512 platforms */
+                  LIBXSMM_ASSERT(0);
 #endif
                 }
                 cur_vec += handle->ofwp*handle->ofmblock;
@@ -675,8 +675,8 @@ if (n_segments) {
 if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_lp_kernel == 1) && (handle->compute_max_in_kernel_fwd == 0) ) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   _mm512_store_ps(max_vals, max_abs);
-#else
-  /* won't happen as this code only runs on AVX512 platforms */
+#else /* won't happen as this code only runs on AVX512 platforms */
+  LIBXSMM_ASSERT(0);
 #endif
 }
 

@@ -62,7 +62,7 @@
 }
 # undef TRANSPOSE_W_FULL_PAIR
 # undef TRANSPOSE_W_HALF_PAIR
-#else
-/* won't happen as this code only runs on AVX512 platforms */
+#else /* won't happen as this code only runs on AVX512 platforms */
+  LIBXSMM_ASSERT(0);
 #endif
 

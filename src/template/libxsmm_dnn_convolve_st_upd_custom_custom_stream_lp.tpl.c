@@ -83,8 +83,8 @@ LIBXSMM_ALIGNED(float vnni_scratch[32], 64);
 LIBXSMM_ALIGNED(float *max_vals, 64);
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs = _mm512_setzero_ps();
-#else
-/* won't happen as this code only runs on AVX512 platforms */
+#else /* won't happen as this code only runs on AVX512 platforms */
+  LIBXSMM_ASSERT(0);
 #endif
 
 /* lazy barrier init */
