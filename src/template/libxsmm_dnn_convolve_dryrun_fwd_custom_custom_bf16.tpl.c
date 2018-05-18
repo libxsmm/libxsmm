@@ -233,7 +233,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
         /*for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) { */
         for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {           
+          for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
             for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
               for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
                 for (ifmb = 0; ifmb < BLOCKSIFM; ifmb += handle->block_fwd_ifm) {
@@ -266,7 +266,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     if (use_accumulation_scratch) {
                       compute_indices[local_entries+2] = ( ( (oj_use) * handle->ofw)  +  oi_use) *  handle->ofmblock;
                     } else {
-                      compute_indices[local_entries+2] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  handle->ofhp )  +  oj_use) * handle->ofwp)  +  oi_use) *  handle->ofmblock;                 
+                      compute_indices[local_entries+2] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  handle->ofhp )  +  oj_use) * handle->ofwp)  +  oi_use) *  handle->ofmblock;
                     }
 
                     /* Initialize kernel variant with the one that prefetches everything */
@@ -445,7 +445,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
           for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
             /*for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) { */
             for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-              for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {           
+              for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
                 for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
                   for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
                     for (ifmb = 0; ifmb < BLOCKSIFM; ifmb += handle->block_fwd_ifm) {

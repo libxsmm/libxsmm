@@ -1045,7 +1045,7 @@ LIBXSMM_API_INLINE const char* internal_get_typename(int datatype)
     case LIBXSMM_DATATYPE_F32: return "f32";
     case LIBXSMM_DATATYPE_I32: return "i32";
     case LIBXSMM_DATATYPE_I16: return "i16";
-    case LIBXSMM_DATATYPE_BF16: return "bf16";                             
+    case LIBXSMM_DATATYPE_BF16: return "bf16";
     case LIBXSMM_DATATYPE_I8:  return "i8";
   }
   if ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {

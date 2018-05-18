@@ -48,7 +48,7 @@ void truncate_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
   /* truncate buffer to bfp16 */
   for ( i = 0; i < len; ++i ) {
     union libxsmm_bfloat16_hp t;
-    
+
     t.f = in[i];
     t.i[0] = 0;
     out[i] = t.f;
@@ -460,7 +460,7 @@ int main(int argc, char* argv[])
   truncate_mask_fp32_bfp16( naive_filter, naive_filter, nIfm*nOfm*kh*kw );
   libxsmm_truncate_convert_f32_bf16( naive_input, naive_input_bf16, nImg*nIfm*ifhp*ifwp );
   libxsmm_truncate_convert_f32_bf16( naive_output, naive_output_bf16, nImg*nOfm*ofhp*ofwp );
-  libxsmm_truncate_convert_f32_bf16( naive_filter, naive_filter_bf16, nIfm*nOfm*kh*kw ); 
+  libxsmm_truncate_convert_f32_bf16( naive_filter, naive_filter_bf16, nIfm*nOfm*kh*kw );
 
   if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");

@@ -140,7 +140,7 @@ if (handle->use_accumulation_scratch) {
   }
   for ( i = 16; i < 32; ++i ) {
     idx[i] = (i-16)*2;
-  } 
+  }
   vidx = _mm512_loadu_si512( (const void*)idx );  float *scratch_ptr = accumulators_scratch;
   __m512 zero_reg = _mm512_setzero_ps();
   for ( oj = 0; oj < handle->ofh; oj++ ) {
@@ -201,9 +201,9 @@ if (n_segments) {
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                   __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                  __m256i vbfp16 = _mm512_castsi512_si256( _mm512_permutexvar_epi16( vidx, _mm512_castps_si512( tmp ) ) ); 
+                  __m256i vbfp16 = _mm512_castsi512_si256( _mm512_permutexvar_epi16( vidx, _mm512_castps_si512( tmp ) ) );
                   _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
-                  _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );                
+                  _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
                 }
                 scratch_ptr += handle->ofw*handle->ofmblock;
                 output_dst += handle->ofwp*handle->ofmblock;
@@ -260,9 +260,9 @@ if (n_segments) {
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                   __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                  __m256i vbfp16 = _mm512_castsi512_si256( _mm512_permutexvar_epi16( vidx, _mm512_castps_si512( tmp ) ) ); 
+                  __m256i vbfp16 = _mm512_castsi512_si256( _mm512_permutexvar_epi16( vidx, _mm512_castps_si512( tmp ) ) );
                   _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
-                  _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );                
+                  _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
                 }
                 scratch_ptr += handle->ofw*handle->ofmblock;
                 output_dst += handle->ofwp*handle->ofmblock;
@@ -320,9 +320,9 @@ if (n_segments) {
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                   __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                  __m256i vbfp16 = _mm512_castsi512_si256( _mm512_permutexvar_epi16( vidx, _mm512_castps_si512( tmp ) ) ); 
+                  __m256i vbfp16 = _mm512_castsi512_si256( _mm512_permutexvar_epi16( vidx, _mm512_castps_si512( tmp ) ) );
                   _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
-                  _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );                
+                  _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
                 }
                 scratch_ptr += handle->ofw*handle->ofmblock;
                 output_dst += handle->ofwp*handle->ofmblock;
@@ -455,9 +455,9 @@ if (n_segments) {
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                   __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                  __m256i vbfp16 = _mm512_castsi512_si256( _mm512_permutexvar_epi16( vidx, _mm512_castps_si512( tmp ) ) ); 
+                  __m256i vbfp16 = _mm512_castsi512_si256( _mm512_permutexvar_epi16( vidx, _mm512_castps_si512( tmp ) ) );
                   _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
-                  _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );                
+                  _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
                 }
                 scratch_ptr += handle->ofw*handle->ofmblock;
                 output_dst += handle->ofwp*handle->ofmblock;

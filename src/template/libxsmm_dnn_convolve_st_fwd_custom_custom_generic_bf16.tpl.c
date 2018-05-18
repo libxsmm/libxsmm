@@ -55,7 +55,7 @@ element_filter_type *const input_scratch_padding = input_scratch_padding_array;
 #endif
 for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
 
-{ 
+{
   float tmpin[padded_w*padded_h*handle->ifmblock*handle->fm_lp_block];
   float tmpout[handle->ofhp*handle->ofwp*handle->ofmblock*handle->fm_lp_block];
   float tmpwt[handle->ofmblock*handle->fm_lp_block*handle->ifmblock*handle->fm_lp_block*handle->desc.R*handle->desc.S];
@@ -83,12 +83,12 @@ for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_
       for (kj = 0; kj < handle->desc.R; ++kj) {
         for (ki = 0; ki< handle->desc.S; ++ki) {
           for( ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2 ) {
-            for( ofm2 = 0; ofm2 < handle->ifmblock*handle->fm_lp_block; ++ofm2 ) { 
+            for( ofm2 = 0; ofm2 < handle->ifmblock*handle->fm_lp_block; ++ofm2 ) {
               for ( lp = 0; lp < handle->fm_lp_block; ++lp ) {
                 union libxsmm_bfloat16_hp trans;
                 trans.i[0] = 0;
                 trans.i[1] = LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm1, kj, ki, ifm2, ofm2, lp, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock*handle->fm_lp_block, handle->fm_lp_block);
-                
+
                 LIBXSMM_VLA_ACCESS(4, weight_hp, kj, ki, (ifm2*handle->fm_lp_block)+lp, ofm2, handle->desc.S, handle->ifmblock*handle->fm_lp_block, handle->ofmblock*handle->fm_lp_block) = trans.f;
               }
             }
@@ -144,8 +144,8 @@ for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_
       }
     }
     /* copy outputs from FP32 into BFP16 */
-    libxsmm_truncate_convert_f32_bf16( tmpout, 
-       &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock*handle->fm_lp_block), 
+    libxsmm_truncate_convert_f32_bf16( tmpout,
+       &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock*handle->fm_lp_block),
        handle->ofhp*handle->ofwp*handle->ofmblock*handle->fm_lp_block );
   }
 }

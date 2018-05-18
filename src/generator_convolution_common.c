@@ -419,7 +419,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
             i_conv_kernel_config->vector_name,
             reg_X,
             3,
-            0 );  
+            0 );
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_conv_kernel_config->instruction_set,

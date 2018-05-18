@@ -1227,7 +1227,7 @@ LIBXSMM_API unsigned char libxsmm_dnn_get_qtensor_scf(const libxsmm_dnn_tensor* 
     *status = LIBXSMM_DNN_ERR_INVALID_TENSOR;
   }
 
-  return 0;     
+  return 0;
 }
 
 
@@ -2985,7 +2985,7 @@ LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bflo
 
     t.f = in[i];
     out[i] = t.i[1];
-  } 
+  }
 }
 
 
@@ -2998,7 +2998,7 @@ LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out
 
     t.i[1] = in[i];
     t.i[0] = 0;
-    out[i] = t.f;    
+    out[i] = t.f;
   }
 }
 
