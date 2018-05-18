@@ -34,13 +34,6 @@
 #define CONVOLUTION_KERNEL 3
 #define IFM_LOOP_CLOSE_S 4
 
-#if (LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH)
-# define LIBXSMM_INTRINSICS_MM512_PERMUTEXVAR_EPI16 _mm512_permutexvar_epi16
-#else
-# define LIBXSMM_INTRINSICS_MM512_PERMUTEXVAR_EPI16 LIBXSMM_INTRINSICS_MM512F_PERMUTEXVAR_EPI16
-#endif
-
-
 int BLOCKSIFM = handle->blocksifm_lp;
 int BLOCKSOFM = handle->blocksofm;
 
@@ -93,7 +86,6 @@ double *bn_sum_base2;
 float accumulators_scratch[handle->ofmblock * handle->ofw * handle->ofh];
 unsigned short idx[32];
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-__m512i vidx;
 __m512 max_abs;
 #else /* won't happen as this code only runs on AVX512 platforms */
   LIBXSMM_ASSERT(0);
@@ -144,14 +136,6 @@ libxsmm_barrier_init(handle->barrier, ltid);
 if (handle->use_accumulation_scratch) {
   float *scratch_ptr = accumulators_scratch;
   __m512 zero_reg = _mm512_setzero_ps();
-
-  for ( i = 0; i < 16; ++i ) {
-    idx[i] = (i*2)+1;
-  }
-  for ( i = 16; i < 32; ++i ) {
-    idx[i] = (i-16)*2;
-  }
-  vidx = _mm512_loadu_si512( (const void*)idx );
   for ( oj = 0; oj < handle->ofh; oj++ ) {
     for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
       _mm512_store_ps(scratch_ptr+oi, zero_reg);
@@ -209,7 +193,7 @@ if (n_segments) {
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                   __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                  __m256i vbfp16 = _mm512_castsi512_si256( LIBXSMM_INTRINSICS_MM512_PERMUTEXVAR_EPI16( vidx, _mm512_castps_si512( tmp ) ) );
+                  __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
                   _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
                   _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
                 }
@@ -267,7 +251,7 @@ if (n_segments) {
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                   __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                  __m256i vbfp16 = _mm512_castsi512_si256( LIBXSMM_INTRINSICS_MM512_PERMUTEXVAR_EPI16( vidx, _mm512_castps_si512( tmp ) ) );
+                  __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
                   _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
                   _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
                 }
@@ -326,7 +310,7 @@ if (n_segments) {
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                   __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                  __m256i vbfp16 = _mm512_castsi512_si256( LIBXSMM_INTRINSICS_MM512_PERMUTEXVAR_EPI16( vidx, _mm512_castps_si512( tmp ) ) );
+                  __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
                   _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
                   _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
                 }
@@ -459,7 +443,7 @@ if (n_segments) {
               for ( oj = 0; oj < handle->ofh; oj++ ) {
                 for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                   __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                  __m256i vbfp16 = _mm512_castsi512_si256( LIBXSMM_INTRINSICS_MM512_PERMUTEXVAR_EPI16( vidx, _mm512_castps_si512( tmp ) ) );
+                  __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
                   _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
                   _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
                 }
@@ -685,7 +669,6 @@ if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-#undef LIBXSMM_INTRINSICS_MM512_PERMUTEXVAR_EPI16
 #undef IMG_LOOP_INIT
 #undef OFM_LOOP_INIT
 #undef OFM_LOOP_CLOSE
