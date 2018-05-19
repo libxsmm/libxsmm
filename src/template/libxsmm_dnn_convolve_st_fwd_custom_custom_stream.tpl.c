@@ -84,7 +84,6 @@ double *bn_sum_base;
 double *bn_sum_base2;
 #endif
 float accumulators_scratch[handle->ofmblock * handle->ofw * handle->ofh];
-unsigned short idx[32];
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs;
 #else /* won't happen as this code only runs on AVX512 platforms */

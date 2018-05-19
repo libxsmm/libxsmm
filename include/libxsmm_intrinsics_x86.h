@@ -521,15 +521,5 @@ LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) 
 # define LIBXSMM_INTRINSICS_AVX512_ICL
 #endif
 
-#if defined(LIBXSMM_INTRINSICS_AVX512)
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
-__m512i LIBXSMM_INTRINSICS_MM512F_PERMUTEXVAR_EPI16(__m512i index, __m512i source) {
-  LIBXSMM_ALIGNED(short dst[32], 64); LIBXSMM_ALIGNED(short src[32], 64); LIBXSMM_ALIGNED(short idx[32], 64); int i;
-  _mm512_store_si512(idx, index); _mm512_store_si512(src, source);
-  LIBXSMM_PRAGMA_SIMD for (i = 0; i < 32; ++i) dst[i] = src[idx[i]/*&0x1F*/];
-  return _mm512_load_si512(dst);
-}
-#endif
-
 #endif /*LIBXSMM_INTRINSICS_X86_H*/
 

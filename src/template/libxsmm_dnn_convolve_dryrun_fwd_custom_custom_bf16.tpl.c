@@ -85,7 +85,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   char *kernel_variant;
 
   const int use_accumulation_scratch = (BLOCKSIFM_BLOCKING == BLOCKSIFM) ? 0 : 1 ;
-  
+
   if (handle->padding_flag == 1) {
     padded_h = handle->ifhp + 2 * handle->desc.pad_h;
     padded_w = handle->ifwp + 2 * handle->desc.pad_w;
