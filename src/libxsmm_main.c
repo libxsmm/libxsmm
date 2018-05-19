@@ -860,6 +860,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
+    case LIBXSMM_X86_AVX512_ICL:
     case LIBXSMM_X86_AVX512_CORE:
     case LIBXSMM_X86_AVX512_KNM:
     case LIBXSMM_X86_AVX512_MIC:
