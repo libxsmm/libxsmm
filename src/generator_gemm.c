@@ -119,6 +119,19 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     }
     l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/2;
     l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/2;
+  } else if ( (strcmp(i_arch, "cpx") == 0) && LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+    l_vector_length = 8;
+  } else if ( (strcmp(i_arch, "cpx") == 0) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+    l_vector_length = 16;
+  } else if ( (strcmp(i_arch, "cpx") == 0) && LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+    l_vector_length = 16;
+    /* some checks as we cannot mask everything */
+    if ( (l_xgemm_desc_mod.k % 2 != 0) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH_PREC );
+      return;
+    }
+    l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/2;
+    l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/2;
   } else if ( (strcmp(i_arch, "noarch") == 0) ) {
     /* Nothing to do */
   } else {
@@ -163,6 +176,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_gemm_imci_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( (strcmp(i_arch, "skx") == 0) ||
+              (strcmp(i_arch, "cpx") == 0) ||
               (strcmp(i_arch, "icl") == 0) ) {
     /* call actual kernel generation with revised parameters */
     if ( (LIBXSMM_GEMM_PRECISION_I16 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&

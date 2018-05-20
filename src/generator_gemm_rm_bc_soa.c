@@ -49,6 +49,8 @@ LIBXSMM_API void libxsmm_generator_gemm_rm_bc_soa( libxsmm_generated_code*      
   if ( strcmp(i_arch, "knl") == 0 ||
        strcmp(i_arch, "knm") == 0 ||
        strcmp(i_arch, "skx") == 0 ||
+       strcmp(i_arch, "icl") == 0 ||
+       strcmp(i_arch, "cpx") == 0 ||
        strcmp(i_arch, "hsw") == 0 ||
        strcmp(i_arch, "snb") == 0 ) {
     libxsmm_generator_gemm_rm_bc_soa_avx256_512( io_generated_code,
@@ -88,6 +90,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_bc_soa_avx256_512( libxsmm_gen
     if ( strcmp(i_arch, "knl") == 0 ||
          strcmp(i_arch, "knm") == 0 ||
          strcmp(i_arch, "icl") == 0 ||
+         strcmp(i_arch, "cpx") == 0 ||
          strcmp(i_arch, "skx") == 0 ) {
       l_soa_width = 8;
       l_max_reg_block = 28;
@@ -101,6 +104,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_bc_soa_avx256_512( libxsmm_gen
     if ( strcmp(i_arch, "knl") == 0 ||
          strcmp(i_arch, "knm") == 0 ||
          strcmp(i_arch, "icl") == 0 ||
+         strcmp(i_arch, "cpx") == 0 ||
          strcmp(i_arch, "skx") == 0 ) {
       l_soa_width = 16;
       l_max_reg_block = 28;
@@ -286,6 +290,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_bc_soa_avx256_512_kloop( libxs
     if ( strcmp(i_arch, "knl") == 0 ||
          strcmp(i_arch, "knm") == 0 ||
          strcmp(i_arch, "icl") == 0 ||
+         strcmp(i_arch, "cpx") == 0 ||
          strcmp(i_arch, "skx") == 0 ) {
       libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                i_micro_kernel_config->instruction_set,

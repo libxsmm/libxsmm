@@ -264,6 +264,9 @@
 #       if (LIBXSMM_X86_AVX512_ICL > (LIBXSMM_STATIC_TARGET_ARCH))
 #         undef __AVX512VNNI__
 #       endif
+#       if (LIBXSMM_X86_AVX512_CPX > (LIBXSMM_STATIC_TARGET_ARCH))
+#         undef __AVX512VNNI__
+#       endif
 #     endif /*defined(LIBXSMM_INTRINSICS_INCLUDE)*/
 #   endif /* GCC/legacy incl. Clang */
 #   if !defined(LIBXSMM_MAX_STATIC_TARGET_ARCH)
@@ -318,6 +321,11 @@
 #         define LIBXSMM_ATTRIBUTE_TARGET_1022 target("avx2,fma,avx512f,avx512cd,avx512dq,avx512bw,avx512vl,avx512vnni")
 #       else /* LIBXSMM_X86_AVX512_CORE */
 #         define LIBXSMM_ATTRIBUTE_TARGET_1022 LIBXSMM_ATTRIBUTE_TARGET_1020
+#       endif
+#       if (LIBXSMM_X86_AVX512_CPX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+#         define LIBXSMM_ATTRIBUTE_TARGET_1023 target("avx2,fma,avx512f,avx512cd,avx512dq,avx512bw,avx512vl,avx512vnni")
+#       else /* LIBXSMM_X86_AVX512_CORE */
+#         define LIBXSMM_ATTRIBUTE_TARGET_1023 LIBXSMM_ATTRIBUTE_TARGET_1020
 #       endif
 #     else
 #       define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
@@ -520,6 +528,12 @@ LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) 
     !defined(LIBXSMM_INTRINSICS_STATIC) && (LIBXSMM_X86_AVX512_ICL <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
 # define LIBXSMM_INTRINSICS_AVX512_ICL
 #endif
+/** LIBXSMM_INTRINSICS_AVX512_CPX is defined only if the compiler is able to generate this code without special flags. */
+#if !defined(LIBXSMM_INTRINSICS_AVX512_CPX) && !defined(LIBXSMM_INTRINSICS_NONE) && defined(LIBXSMM_INTRINSICS_AVX512_CORE) && \
+    !defined(LIBXSMM_INTRINSICS_STATIC) && (LIBXSMM_X86_AVX512_CPX <= LIBXSMM_MAX_STATIC_TARGET_ARCH)
+# define LIBXSMM_INTRINSICS_AVX512_CPX
+#endif
+
 
 #endif /*LIBXSMM_INTRINSICS_X86_H*/
 

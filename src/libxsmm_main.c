@@ -229,6 +229,9 @@ LIBXSMM_API_INLINE const char* internal_get_target_arch(int id)
 {
   const char* target_arch = 0;
   switch (id) {
+    case LIBXSMM_X86_AVX512_CPX: {
+      target_arch = "cpx";
+    } break;
     case LIBXSMM_X86_AVX512_ICL: {
       target_arch = "icl";
     } break;
@@ -860,6 +863,8 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
+    case LIBXSMM_X86_AVX512_CPX:
+    case LIBXSMM_X86_AVX512_ICL:
     case LIBXSMM_X86_AVX512_CORE:
     case LIBXSMM_X86_AVX512_KNM:
     case LIBXSMM_X86_AVX512_MIC:
@@ -920,6 +925,9 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (0 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
+    else if (0 == strcmp("cpx", arch)) {
+      target_archid = LIBXSMM_X86_AVX512_CPX;
+    }
     else if (0 == strcmp("icl", arch) || 0 == strcmp("icx", arch)) {
       target_archid = LIBXSMM_X86_AVX512_ICL;
     }
@@ -960,7 +968,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     }
   }
 
-  if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid || LIBXSMM_X86_AVX512_ICL < target_archid) {
+  if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid || LIBXSMM_X86_AVX512_CPX < target_archid) {
     target_archid = libxsmm_cpuid();
   }
   else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */

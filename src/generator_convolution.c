@@ -59,6 +59,7 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
     if ( (strcmp(i_arch, "knl") == 0) ||
          (strcmp(i_arch, "knm") == 0) ||
          (strcmp(i_arch, "skx") == 0) ||
+         (strcmp(i_arch, "cpx") == 0) ||
          (strcmp(i_arch, "icl") == 0) ) {
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
     } else {
@@ -68,6 +69,7 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
   } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 ) {
     if ( (strcmp(i_arch, "skx") == 0) ||
          (strcmp(i_arch, "icl") == 0) ||
+         (strcmp(i_arch, "cpx") == 0) ||
          (strcmp(i_arch, "knm") == 0) ) {
       /* call actual kernel generation with revised parameters */
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
@@ -77,6 +79,7 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
     }
   } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_BF16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_BF16 ) {
     if ( (strcmp(i_arch, "skx") == 0) ||
+         (strcmp(i_arch, "cpx") == 0) ||
          (strcmp(i_arch, "icl") == 0)) {
       /* call actual kernel generation with revised parameters */
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
@@ -87,6 +90,7 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
   } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     if ( (strcmp(i_arch, "skx") == 0) ||
          (strcmp(i_arch, "icl") == 0) ||
+         (strcmp(i_arch, "cpx") == 0) ||
          (strcmp(i_arch, "knm") == 0)   ) {
       /* call actual kernel generation with revised parameters */
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
@@ -97,6 +101,7 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
   } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32
                      && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0) ) {
     if ( (strcmp(i_arch, "skx") == 0) ||
+         (strcmp(i_arch, "cpx") == 0) ||
          (strcmp(i_arch, "icl") == 0)   ) {
       libxsmm_generator_convolution_forward_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
     } else {
@@ -127,6 +132,7 @@ void libxsmm_generator_convolution_weight_update_kernel( libxsmm_generated_code*
     if ( (strcmp(i_arch, "knl") == 0) ||
          (strcmp(i_arch, "knm") == 0) ||
          (strcmp(i_arch, "skx") == 0) ||
+         (strcmp(i_arch, "cpx") == 0) ||
          (strcmp(i_arch, "icl") == 0)   ) {
       libxsmm_generator_convolution_weight_update_avx512_kernel( io_generated_code, i_conv_desc, i_arch );
     } else {

@@ -104,6 +104,8 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
     l_micro_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE;
   } else if ( strcmp( i_arch, "icl" ) == 0 ) {
     l_micro_kernel_config.instruction_set = LIBXSMM_X86_AVX512_ICL;
+  } else if ( strcmp( i_arch, "cpx" ) == 0 ) {
+    l_micro_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CPX;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;

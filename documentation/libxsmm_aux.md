@@ -26,6 +26,7 @@ Available code paths (IDs and corresponding strings):
 * LIBXSMM_X86_AVX512_KNM: "**knm**"
 * LIBXSMM_X86_AVX512_CORE: "**skx**", "skl"
 * LIBXSMM_X86_AVX512_ICL: "**icl**"
+* LIBXSMM_X86_AVX512_CPX: "**cpx**"
 
 The **bold** names are returned by `libxsmm_get_target_arch` whereas `libxsmm_set_target_arch` accepts all of the above strings (similar to the environment variable LIBXSMM_TARGET).
 

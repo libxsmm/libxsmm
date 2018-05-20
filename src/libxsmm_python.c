@@ -155,6 +155,7 @@ PyMODINIT_FUNC initlibxsmm(void)
   PyModule_AddIntConstant(pymod, "X86_AVX512_KNM", LIBXSMM_X86_AVX512_KNM);
   PyModule_AddIntConstant(pymod, "X86_AVX512_CORE", LIBXSMM_X86_AVX512_CORE);
   PyModule_AddIntConstant(pymod, "X86_AVX512_ICL", LIBXSMM_X86_AVX512_ICL);
+  PyModule_AddIntConstant(pymod, "X86_AVX512_CPX", LIBXSMM_X86_AVX512_CPX);
   libxsmm_init(); /* initialize LIBXSMM */
 }
 

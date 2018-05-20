@@ -97,6 +97,8 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE;
   } else if ( strcmp( i_arch, "icl" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_ICL;
+  } else if ( strcmp( i_arch, "cpx" ) == 0 ) {
+    l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CPX;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
     return;

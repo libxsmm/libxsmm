@@ -78,7 +78,8 @@ void libxsmm_generator_gemm_imci_avx512_kernel_initialize_mask( libxsmm_generate
   } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
               i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM  ||
               i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ||
-              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL     ) {
+              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL  || 
+              i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX  ) {
     libxsmm_x86_instruction_mask_move( io_generated_code,
                                    LIBXSMM_X86_INSTR_KMOVW,
                                    i_gp_reg_mapping->gp_reg_help_5,
@@ -117,6 +118,10 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
     l_generator_load = libxsmm_generator_gemm_load_C;
     l_generator_store = libxsmm_generator_gemm_store_C;
   } else if ( (strcmp(i_arch, "icl") == 0) ) {
+    l_generator_microkernel_kloop = libxsmm_generator_gemm_avx512_kernel_kloop;
+    l_generator_load = libxsmm_generator_gemm_load_C;
+    l_generator_store = libxsmm_generator_gemm_store_C;
+  } else if ( (strcmp(i_arch, "cpx") == 0) ) {
     l_generator_microkernel_kloop = libxsmm_generator_gemm_avx512_kernel_kloop;
     l_generator_load = libxsmm_generator_gemm_load_C;
     l_generator_store = libxsmm_generator_gemm_store_C;
