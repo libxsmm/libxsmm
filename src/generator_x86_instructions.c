@@ -1938,6 +1938,15 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
                l_fpadj2 = -1;
           else l_fpadj2 = -0x81;
           break;
+       case LIBXSMM_X86_INSTR_VDPBF16PS:
+          if ( l_broadcast == 1 ) l_sizereg = 4;
+          if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
+               l_fpadj2 = -1;
+          else l_fpadj2 = -0x81;
+          l_fpadj2 += 0x82;
+          l_fpadj = -7;
+          l_second += 1;
+          break;
        case LIBXSMM_X86_INSTR_VADDPS:
           if ( l_broadcast == 1 ) l_sizereg = 4;
           if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
