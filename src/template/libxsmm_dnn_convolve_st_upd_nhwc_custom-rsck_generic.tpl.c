@@ -44,7 +44,7 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int scratch7_size = padded_h * padded_w * handle->ifmblock;
-#if 0 /* TODO: no VLAs */
+#if defined(LIBXSMM_SCRATCH7)
 element_input_type *const input_scratch = (element_input_type*)(((char*)handle->scratch7) + ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_input_type), LIBXSMM_CACHELINE));
 #else
 element_input_type input_scratch_array[scratch7_size];
@@ -54,14 +54,14 @@ element_input_type *const input_scratch = input_scratch_array;
 /* transpose via stack allocated buffers for output and weights to control stride-GEMM issue
    idea: we transpose grad_output and transpose filters when done */
 const int scratch8_size = handle->ofhp * handle->ofwp * handle->ofmblock;
-#if 0 /* TODO: no VLAs */
+#if defined(LIBXSMM_SCRATCH8)
 element_output_type *const output_scratch = (element_output_type*)(((char*)handle->scratch8) + ltid * LIBXSMM_UP2(scratch8_size * sizeof(element_output_type), LIBXSMM_CACHELINE));
 #else
 element_output_type output_scratch_array[scratch8_size];
 element_output_type *const output_scratch = output_scratch_array;
 #endif
 const int scratch9_size = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
-#if 0 /* TODO: no VLAs */
+#if defined(LIBXSMM_SCRATCH9)
 element_filter_type *const filter_scratch = (element_filter_type*)(((char*)handle->scratch9) + ltid * LIBXSMM_UP2(scratch9_size * sizeof(element_filter_type), LIBXSMM_CACHELINE));
 #else
 element_filter_type filter_scratch_array[scratch9_size];
