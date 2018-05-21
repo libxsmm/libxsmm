@@ -53,6 +53,7 @@ element_input_type *const input_scratch_padding = (element_input_type*)(((char*)
 element_input_type input_scratch_padding_array[scratch7_size];
 element_input_type *const input_scratch_padding = input_scratch_padding_array;
 #endif
+LIBXSMM_ASSERT(scratch7_size * sizeof(element_input_type) * handle->desc.threads <= handle->scratch7_size);
 for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
 
 { /* open new scope for additional variable declarations (C89) */

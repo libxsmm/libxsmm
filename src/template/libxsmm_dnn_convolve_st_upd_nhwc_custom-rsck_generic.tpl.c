@@ -83,6 +83,10 @@ LIBXSMM_VLA_DECL(3, element_input_type, input_padded, input_scratch, padded_w, h
 LIBXSMM_VLA_DECL(3, element_output_type, output_trans, output_scratch, handle->ofmblock, handle->ofwp);
 LIBXSMM_VLA_DECL(4, element_filter_type, weight_local, filter_scratch, handle->desc.S, handle->ofmblock, handle->ifmblock);
 
+LIBXSMM_ASSERT(scratch7_size * sizeof(element_input_type)  * handle->desc.threads <= handle->scratch7_size);
+LIBXSMM_ASSERT(scratch8_size * sizeof(element_output_type) * handle->desc.threads <= handle->scratch8_size);
+LIBXSMM_ASSERT(scratch9_size * sizeof(element_filter_type) * handle->desc.threads <= handle->scratch9_size);
+
 /* zeroing local scratch after declarations (not mixing declarations and code) */
 for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch[ii] = (element_input_type)0; }
 for ( oi = 0; oi < scratch8_size; ++oi ) { output_scratch[oi] = (element_output_type)0; }

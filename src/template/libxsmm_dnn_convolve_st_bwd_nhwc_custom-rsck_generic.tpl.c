@@ -75,6 +75,7 @@ element_input_type *const del_input_scratch_padding = (element_input_type*)(((ch
 element_input_type del_input_scratch_padding_array[scratch7_size];
 element_input_type *const del_input_scratch_padding = del_input_scratch_padding_array;
 #endif
+LIBXSMM_ASSERT(scratch7_size * sizeof(element_input_type) * handle->desc.threads <= handle->scratch7_size);
 for ( ii = 0; ii < scratch7_size; ++ii ) { del_input_scratch_padding[ii] = (element_input_type)0; }
 
 /* transpose filters, if requested */
