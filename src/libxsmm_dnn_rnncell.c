@@ -32,6 +32,15 @@
 #include <libxsmm.h>
 #include "libxsmm_main.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <string.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
+
 LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_desc rnncell_desc, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_rnncell* handle = 0;
   *status = LIBXSMM_DNN_SUCCESS;
@@ -150,7 +159,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
       }
     } else {
       *status = LIBXSMM_DNN_ERR_CREATE_LAYOUT;
-    } 
+    }
   } else {
     *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
   }

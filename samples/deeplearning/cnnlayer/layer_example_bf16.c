@@ -30,6 +30,8 @@
  * Ankush Mandal (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include <libxsmm_intrinsics_x86.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -82,7 +84,7 @@ void rnaz_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
     out[i] = *((float*)&int_round);
 
     memcpy( &(out[i]), &int_round, 4 );
-  } 
+  }
 }
 
 /* it's fine to alias in and out */
@@ -109,9 +111,9 @@ void rne_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
 
     /* chop bits to create BFP16 in FP32 */
     int_round = int_round & 0xffff0000;
-    
+
     out[i] = *((float*)&int_round);
-  } 
+  }
 }
 
 typedef struct {
@@ -473,9 +475,11 @@ int main(int argc, char* argv[])
   naive_param.stride_h = stride_h;
   naive_param.stride_w = stride_w;
 
+#if defined(__SSE3__)
   _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
   _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
   _MM_SET_ROUNDING_MODE(_MM_ROUND_NEAREST);
+#endif
 
   /* print some summary */
   printf("##########################################\n");

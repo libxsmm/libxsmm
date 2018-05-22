@@ -3015,7 +3015,7 @@ LIBXSMM_API void libxsmm_rnaz_convert_fp32_bfp16(const float* in, libxsmm_bfloat
     int_round = int_round >> 16;
 
     out[i] = (libxsmm_bfloat16)int_round;
-  } 
+  }
 }
 
 
@@ -3044,7 +3044,7 @@ LIBXSMM_API void rne_convert_fp32_bfp16(const float* in, libxsmm_bfloat16* out, 
     int_round = int_round >> 16;
 
     out[i] = (unsigned short)int_round;
-  } 
+  }
 }
 
 

@@ -822,15 +822,15 @@ else # GCC assumed
                  -Wno-overlength-strings -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wcharacter-truncation -Wline-truncation \
-                 -Wconversion -Wconversion-extra \
-                 -Wimplicit-interface -Wimplicit-procedure \
-                 -Wintrinsics-std -Wreal-q-constant
+                 -Wconversion -Wintrinsics-std \
+                 -Wimplicit-interface -Wimplicit-procedure
     ifneq (0,$(shell echo "$$((40500<=$(FC_VERSION)))"))
       CPEDANTIC += -Wshadow
     endif
     ifneq (0,$(shell echo "$$((50000<=$(FC_VERSION)))"))
       FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
-                   -Wrealloc-lhs -Wrealloc-lhs-all
+                   -Wrealloc-lhs -Wrealloc-lhs-all \
+                   -Wreal-q-constant -Wconversion-extra
     endif
     ifeq (0,$(MINGW))
       CPEDANTIC += -Wformat=2
