@@ -391,7 +391,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
     mask_array[i] = (i-16)*2;
   }
 
-  if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE || 
+  if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ||
        i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL    ) {
     libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
         (const unsigned char*) mask_array,
@@ -432,7 +432,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
               0,
               LIBXSMM_X86_VEC_REG_UNDEF);
         }
-        
+
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_conv_kernel_config->instruction_set,
             l_intr_store,
