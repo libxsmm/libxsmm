@@ -838,6 +838,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                 0,
                 reg_X,
                 reg_X,
+                LIBXSMM_X86_IMM_UNDEF,
                 1);
 
             /* STORE */
@@ -1414,6 +1415,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                   0,
                   reg_X,
                   reg_X,
+                  LIBXSMM_X86_IMM_UNDEF,
                   1);
 
               /* STORE */
@@ -1999,6 +2001,7 @@ void libxsmm_generator_convolution_forward_store_output( libxsmm_generated_code*
                 0,
                 reg_X,
                 reg_X,
+                LIBXSMM_X86_IMM_UNDEF,
                 1);
 
             /* STORE */

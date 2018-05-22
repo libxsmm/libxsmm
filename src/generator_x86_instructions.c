@@ -1574,13 +1574,14 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_instruction_set,
-                                              const unsigned int      i_vec_instr,
-                                              const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_number_0,
-                                              const unsigned int      i_vec_reg_number_1,
-                                              const unsigned int      i_vec_reg_number_2,
-                                              const unsigned int      i_mask_reg_number )
+                                                   const unsigned int      i_instruction_set,
+                                                   const unsigned int      i_vec_instr,
+                                                   const char              i_vector_name,
+                                                   const unsigned int      i_vec_reg_number_0,
+                                                   const unsigned int      i_vec_reg_number_1,
+                                                   const unsigned int      i_vec_reg_number_2,
+                                                   const unsigned int      i_immediate,
+                                                   const unsigned int      i_mask_reg_number )
 {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
@@ -2501,18 +2502,18 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_instruction_set,
-                                              const unsigned int      i_vec_instr,
-                                              const unsigned int      i_use_broadcast,
-                                              const unsigned int      i_gp_reg_base,
-                                              const unsigned int      i_gp_reg_idx,
-                                              const unsigned int      i_scale,
-                                              const int               i_displacement,
-                                              const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_number_0,
-                                              const unsigned int      i_vec_reg_number_1,
-                                              const unsigned int      i_shuffle_operand,
-                                              const unsigned int      i_mask_reg_number )
+                                                    const unsigned int      i_instruction_set,
+                                                    const unsigned int      i_vec_instr,
+                                                    const unsigned int      i_use_broadcast,
+                                                    const unsigned int      i_gp_reg_base,
+                                                    const unsigned int      i_gp_reg_idx,
+                                                    const unsigned int      i_scale,
+                                                    const int               i_displacement,
+                                                    const char              i_vector_name,
+                                                    const unsigned int      i_vec_reg_number_0,
+                                                    const unsigned int      i_vec_reg_number_1,
+                                                    const unsigned int      i_immediate,
+                                                    const unsigned int      i_mask_reg_number )
 {
   /* @TODO add checks in debug mode */
   if ( (i_instruction_set != LIBXSMM_X86_IMCI)        &&
@@ -2634,7 +2635,7 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
         l_forced_offset = 1;
     }
     i += internal_x86_instructions_add_offset( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
-    buf[i++] = (unsigned char)(i_shuffle_operand);
+    buf[i++] = (unsigned char)(i_immediate);
 
     io_generated_code->code_size = i;
     /* *loc = i; */
