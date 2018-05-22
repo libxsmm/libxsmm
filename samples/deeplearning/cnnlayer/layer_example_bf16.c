@@ -415,6 +415,10 @@ int main(int argc, char* argv[])
   naive_param.stride_h = stride_h;
   naive_param.stride_w = stride_w;
 
+  _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+  _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+  _MM_SET_ROUNDING_MODE(_MM_ROUND_NEAREST);
+
   /* print some summary */
   printf("##########################################\n");
   printf("#    Setting Up Common    #\n");
