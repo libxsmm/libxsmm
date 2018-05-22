@@ -82,7 +82,7 @@ void rnaz_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
     out[i] = *((float*)&int_round);
 
     memcpy( &(out[i]), &int_round, 4 );
-  } 
+  }
 }
 
 /* it's fine to alias in and out */
@@ -109,9 +109,9 @@ void rne_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
 
     /* chop bits to create BFP16 in FP32 */
     int_round = int_round & 0xffff0000;
-    
+
     out[i] = *((float*)&int_round);
-  } 
+  }
 }
 
 typedef struct {
