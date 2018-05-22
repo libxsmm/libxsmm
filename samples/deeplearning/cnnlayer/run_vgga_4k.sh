@@ -91,7 +91,11 @@ EXE="${NUMACTL} ./layer_example_${TYPE}"
 
 # arguments: iters ifw ifh nImg nIfm nOfm kw kh padw padh stride type format padmode
 #
-${EXE} ${ITERS} 3840 2160 ${MB}   3  64 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee    ${LOGFILE}  && \
+if [ "${BIN}" != "f32" ]; then
+  true
+else
+${EXE} ${ITERS} 3840 2160 ${MB}   3  64 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee    ${LOGFILE}
+fi && \
 ${EXE} ${ITERS} 3840 2160 ${MB}  64  64 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
 ${EXE} ${ITERS} 1920 1080 ${MB}  64 128 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
 ${EXE} ${ITERS} 1920 1080 ${MB} 128 128 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
