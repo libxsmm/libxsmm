@@ -80,6 +80,7 @@ typedef unsigned int libxsmm_dnn_err_t;
 #define LIBXSMM_DNN_ERR_UNKNOWN_BIAS_TYPE          100024
 #define LIBXSMM_DNN_ERR_MISMATCH_BIAS              100025
 #define LIBXSMM_DNN_ERR_INVALID_HANDLE_BIAS        100026
+#define LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL       100027
 
 /** Kinds of supported compute flavor operations. */
 typedef enum libxsmm_dnn_compute_kind {
