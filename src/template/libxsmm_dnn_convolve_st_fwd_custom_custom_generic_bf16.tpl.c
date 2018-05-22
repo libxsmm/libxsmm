@@ -46,19 +46,17 @@ element_output_type* out = ((element_output_type*)handle->reg_output->data) + (h
 /* padding via stack allocated buffers */
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
-const int scratch7_size = padded_h * padded_w * handle->ifmblock*handle->fm_lp_block;
-#if 0 /* TODO: no VLAs */
-element_input_type *const input_scratch_padding = (element_input_type*)(((char*)handle->scratch7) + ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_input_type), LIBXSMM_CACHELINE));
-#else
+const int scratch7_size = padded_h * padded_w * handle->ifmblock * handle->fm_lp_block;
 element_filter_type input_scratch_padding_array[scratch7_size];
 element_filter_type *const input_scratch_padding = input_scratch_padding_array;
-#endif
 for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
 
 {
-  float tmpin[padded_w*padded_h*handle->ifmblock*handle->fm_lp_block];
-  float tmpout[handle->ofhp*handle->ofwp*handle->ofmblock*handle->fm_lp_block];
-  float tmpwt[handle->ofmblock*handle->fm_lp_block*handle->ifmblock*handle->fm_lp_block*handle->desc.R*handle->desc.S];
+  const int scratch8_size = handle->ofhp * handle->ofwp * handle->ofmblock * handle->fm_lp_block;
+  const int scratch9_size = handle->ofmblock * handle->fm_lp_block * handle->ifmblock * handle->fm_lp_block * handle->desc.R * handle->desc.S;
+  float tmpin[scratch7_size];
+  float tmpout[scratch8_size];
+  float tmpwt[scratch9_size];
   /* open new scope for additional variable declarations (C89) */
   LIBXSMM_VLA_DECL(3, float, output_hp, tmpout, handle->ofwp, handle->ofmblock*handle->fm_lp_block);
   LIBXSMM_VLA_DECL(3, float, input_hp, tmpin, padded_w, handle->ifmblock*handle->fm_lp_block);
@@ -74,7 +72,7 @@ for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_
     ofm1 = imgofm1 % handle->blocksofm;
 
     /* set output to zero */
-    for ( ofm2 = 0 ; ofm2 < handle->ofhp*handle->ofwp*handle->ofmblock*handle->fm_lp_block; ++ofm2 ) {
+    for ( ofm2 = 0 ; ofm2 < scratch8_size; ++ofm2 ) {
       tmpout[ofm2] = 0.0f;
     }
 
@@ -145,8 +143,8 @@ for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_
     }
     /* copy outputs from FP32 into BFP16 */
     libxsmm_truncate_convert_f32_bf16( tmpout,
-       &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock*handle->fm_lp_block),
-       handle->ofhp*handle->ofwp*handle->ofmblock*handle->fm_lp_block );
+      &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock*handle->fm_lp_block),
+      scratch8_size);
   }
 }
 

@@ -3,9 +3,9 @@ script:
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
       echo; echo "**** TENSOR FORMAT: ${FORMAT} ****";
-      for GROUP in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
-        MB=$(echo ${GROUP} | cut -d_ -f1);
-        OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+        MB=$(echo ${MB_NT} | cut -d_ -f1);
+        OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
           echo; echo "**** PADDING MODE: ${PAD} ****";
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
@@ -19,9 +19,9 @@ script:
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
       echo; echo "**** TENSOR FORMAT: ${FORMAT} ****";
-      for GROUP in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
-        MB=$(echo ${GROUP} | cut -d_ -f1);
-        OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+        MB=$(echo ${MB_NT} | cut -d_ -f1);
+        OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
           echo; echo "**** PADDING MODE: ${PAD} ****";
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
@@ -35,9 +35,9 @@ script:
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
       echo; echo "**** TENSOR FORMAT: ${FORMAT} ****";
-      for GROUP in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
-        MB=$(echo ${GROUP} | cut -d_ -f1);
-        OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+        MB=$(echo ${MB_NT} | cut -d_ -f1);
+        OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
           echo; echo "**** PADDING MODE: ${PAD} ****";
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
@@ -51,9 +51,9 @@ script:
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
       echo; echo "**** TENSOR FORMAT: ${FORMAT} ****";
-      for GROUP in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
-        MB=$(echo ${GROUP} | cut -d_ -f1);
-        OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+        MB=$(echo ${MB_NT} | cut -d_ -f1);
+        OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
           echo; echo "**** PADDING MODE: ${PAD} ****";
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
@@ -67,9 +67,9 @@ script:
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
       echo; echo "**** TENSOR FORMAT: ${FORMAT} ****";
-      for GROUP in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
-        MB=$(echo ${GROUP} | cut -d_ -f1);
-        OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+        MB=$(echo ${MB_NT} | cut -d_ -f1);
+        OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
           echo; echo "**** PADDING MODE: ${PAD} ****";
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
@@ -83,9 +83,9 @@ script:
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
       echo; echo "**** TENSOR FORMAT: ${FORMAT} ****";
-      for GROUP in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
-        MB=$(echo ${GROUP} | cut -d_ -f1);
-        OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+        MB=$(echo ${MB_NT} | cut -d_ -f1);
+        OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
           echo; echo "**** PADDING MODE: ${PAD} ****";
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
@@ -99,9 +99,9 @@ script:
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
       echo; echo "**** TENSOR FORMAT: ${FORMAT} ****";
-      for GROUP in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
-        MB=$(echo ${GROUP} | cut -d_ -f1);
-        OMP_NUM_THREADS=$(echo ${GROUP} | cut -d_ -f2);
+      for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+        MB=$(echo ${MB_NT} | cut -d_ -f1);
+        OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
           echo; echo "**** PADDING MODE: ${PAD} ****";
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
@@ -134,3 +134,9 @@ script:
       ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 U L ${PAD};
     done)
 
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+   (for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
+      MB=$(echo ${MB_NT} | cut -d_ -f1);
+      OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
+      ./layer_example_f32 1 299 299 ${MB} 3 32 3 3 0 0 2 U T 1;
+    done)

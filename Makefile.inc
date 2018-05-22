@@ -758,8 +758,8 @@ ifneq (0,$(INTEL))
       CFLAGS := -g $(CFLAGS)
       FCFLAGS := -g -traceback $(FCFLAGS)
     else
-      CXXFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CXXFLAGS)
-      CFLAGS := -g3 -gdwarf-2 -debug inline-debug-info $(CFLAGS)
+      CXXFLAGS := -g3 -debug inline-debug-info $(CXXFLAGS)
+      CFLAGS := -g3 -debug inline-debug-info $(CFLAGS)
       FCFLAGS := -g -traceback $(FCFLAGS)
     endif
   endif
@@ -941,8 +941,8 @@ else # GCC assumed
       LDFLAGS := -g $(LDFLAGS) -fsanitize=thread -ltsan -fno-omit-frame-pointer
       #ELDFLAGS := -pie
     else
-      CXXFLAGS := -g3 -gdwarf-2 $(CXXFLAGS)
-      CFLAGS := -g3 -gdwarf-2 $(CFLAGS)
+      CXXFLAGS := -g3 $(CXXFLAGS)
+      CFLAGS := -g3 $(CFLAGS)
       FCFLAGS := -g $(FCFLAGS)
     endif
   endif
