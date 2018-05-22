@@ -322,6 +322,8 @@ LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, in
 /** some BF16<->FP32 conversion functions
     @TODO we need to find a final place for those */
 LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bfloat16* out, const unsigned int length);
+LIBXSMM_API void rnaz_convert_fp32_bfp16(const float* in, libxsmm_bfloat16* out, const unsigned int len);
+LIBXSMM_API void rne_convert_fp32_bfp16(const float* in, libxsmm_bfloat16* out, const unsigned int len);
 LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out, unsigned int length);
 
 #endif /*LIBXSMM_DNN_H*/

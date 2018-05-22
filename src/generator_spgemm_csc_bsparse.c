@@ -150,6 +150,7 @@ void libxsmm_generator_spgemm_csc_bsparse( libxsmm_generated_code*         io_ge
     }
   } else if ( ( strcmp( i_arch, "knc" ) == 0 ) ||
               ( strcmp( i_arch, "knl" ) == 0 ) ||
+              ( strcmp( i_arch, "icl" ) == 0 ) ||
               ( strcmp( i_arch, "skx" ) == 0 ) ) {
     if ( (i_xgemm_desc->m > 1)          &&
          ((LIBXSMM_GEMM_FLAG_ALIGN_A & i_xgemm_desc->flags) != 0) &&

@@ -2990,6 +2990,63 @@ LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bflo
 }
 
 
+LIBXSMM_API void libxsmm_rnaz_convert_fp32_bfp16(const float* in, libxsmm_bfloat16* out, unsigned int len) {
+  unsigned int i = 0;
+
+  /* truncate buffer to bfp16 */
+  for ( i = 0; i < len; ++i ) {
+    unsigned int int_round = 0;
+    unsigned int do_round = 1;
+
+    int_round = *((unsigned int*)&(in[i]));
+
+    /* we don't round NaN and inf */
+    if ( (int_round & 0x7f800000) == 0x7f800000 ) {
+      do_round = 0;
+    }
+
+    /* perform round nearest tie away from zero */
+    if ( do_round != 0 ) {
+      int_round = int_round + 0x00008000;
+    }
+
+    /* create the bfp16 value by shifting out the lower 16bits */
+    int_round = int_round >> 16;
+
+    out[i] = (libxsmm_bfloat16)int_round;
+  } 
+}
+
+
+LIBXSMM_API void rne_convert_fp32_bfp16(const float* in, libxsmm_bfloat16* out, const unsigned int len) {
+  unsigned int i = 0;
+
+  /* truncate buffer to bfp16 */
+  for ( i = 0; i < len; ++i ) {
+    unsigned int int_round = 0;
+    unsigned int do_round = 1;
+
+    int_round = *((unsigned int*)&(in[i]));
+
+    /* we don't round NaN and inf */
+    if ( (int_round & 0x7f800000) == 0x7f800000 ) {
+      do_round = 0;
+    }
+
+    /* perform round nearest tie even */
+    if ( do_round != 0 ) {
+      unsigned int fixup = (int_round >> 16) & 1;
+      int_round = int_round + 0x00007fff + fixup;
+    }
+
+    /* create the bfp16 value by shifting out the lower 16bits */
+    int_round = int_round >> 16;
+
+    out[i] = (unsigned short)int_round;
+  } 
+}
+
+
 LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out, unsigned int length) {
   unsigned int i = 0;
 
