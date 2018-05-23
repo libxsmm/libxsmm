@@ -791,7 +791,7 @@ LIBXSMM_API_INLINE void matrix_transpose(libxsmm_blasint rows, libxsmm_blasint c
   LIBXSMM_VLA_DECL(2, FTYPE, src2D, src, cols);
   LIBXSMM_VLA_DECL(2, FTYPE, dst2D, dst, rows);
 #if defined(_OPENMP)
-# pragma omp parallel for private(i, j, rows, cols) collapse(2)
+# pragma omp parallel for private(i, j) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (i = 0; i < rows; i++) {
     for (j = 0; j < cols; j++) {
