@@ -1603,6 +1603,10 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
     int l_vecgrp2 = i_vec_reg_number_2 / 8;
     int l_oddgrp2 = ((l_vecgrp2 % 2)==1);
     int l_2or3grp2 = (l_vecgrp2>=2);
+    int l_second = 0;
+    int l_third = 0;
+    int l_fourth = 0;
+    int l_fifth = 0;
 
     if ( l_maxsize - i < 20 )
     {
@@ -1610,13 +1614,69 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
        return;
     }
 
+    switch ( i_vector_name ) {
+       case 'x':
+       case 'y':
+          fprintf(stderr, "libxsmm_instruction_vec_compute_reg_mask: the highest register should be zmm: use that\n");
+          exit(-1);
+          break;
+       case 'z':
+          break;
+       default:
+          fprintf(stderr, "libxsmm_instruction_vec_compute_reg_mask: Unknown sort of fp registers\n");
+          exit(-1);
+    }
+
     switch ( i_vec_instr ) {
        case LIBXSMM_X86_INSTR_VBLENDMPS:
-          if ( i_vector_name != 'z' && i_vector_name != 'Z' )
+          if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
           {
-              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask and vblendmps only works for zmm\n");
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%d != %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
               exit(-1);
           }
+          l_second = 0x1;
+          l_fourth = i_mask_reg_number;
+          break;
+       case LIBXSMM_X86_INSTR_VPCMPD:
+          l_second = 0x2;
+          l_fifth = -0x46;
+          l_oddgrp2 = 0;
+          l_2or3grp2 = 0;
+          l_vecval2 = i_mask_reg_number;
+          break;
+       case LIBXSMM_X86_INSTR_VCMPPS:
+          l_third = -1;
+          l_fifth = 0x5d;
+          l_oddgrp2 = 0;
+          l_2or3grp2 = 0;
+          l_vecval2 = i_mask_reg_number;
+          break;
+       case LIBXSMM_X86_INSTR_VPADDD:
+          if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
+          {
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%d != %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+              exit(-1);
+          }
+          l_fifth = 0x99;
+          l_fourth = i_mask_reg_number;
+          break;
+       case LIBXSMM_X86_INSTR_VPANDD:
+          if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
+          {
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%d != %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+              exit(-1);
+          }
+          l_fifth = 0x76;
+          l_fourth = i_mask_reg_number;
+          break;
+       case LIBXSMM_X86_INSTR_VPSUBD:
+          if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
+          {
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%d != %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+              exit(-1);
+          }
+          l_fifth = 0x95;
+          l_fourth = i_mask_reg_number;
           break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_reg_mask: Unknown instruction type: %u\n", i_vec_instr);
@@ -1624,11 +1684,15 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
     }
 
     buf[i++] = (unsigned char)(0x62);
-    buf[i++] = (unsigned char)(0xf2 - l_oddgrp0 * 0x20 - l_oddgrp2 * 0x80 - l_2or3grp0 * 0x40 - l_2or3grp2 * 0x10);
-    buf[i++] = (unsigned char)(0x7d - l_oddgrp1 * 0x40 - l_vecval1*8);
-    buf[i++] = (unsigned char)(0x48 - l_2or3grp1 * 0x08 + i_mask_reg_number);
-    buf[i++] = (unsigned char)(0x65);
+    buf[i++] = (unsigned char)(0xf1 + l_second - l_oddgrp0 * 0x20 - l_oddgrp2 * 0x80 - l_2or3grp0 * 0x40 - l_2or3grp2 * 0x10);
+    buf[i++] = (unsigned char)(0x7d + l_third - l_oddgrp1 * 0x40 - l_vecval1*8);
+    buf[i++] = (unsigned char)(0x48 - l_2or3grp1 * 0x08 + l_fourth );
+    buf[i++] = (unsigned char)(0x65 + l_fifth);
     buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval2*8);
+
+    if ( i_immediate != LIBXSMM_X86_IMM_UNDEF ) {
+       buf[i++] = (unsigned char)(i_immediate);
+    }
 
     io_generated_code->code_size = i;
     /* *loc = i; */
