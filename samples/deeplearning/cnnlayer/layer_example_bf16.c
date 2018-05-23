@@ -82,8 +82,6 @@ void rnaz_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
     int_round = int_round & 0xffff0000;
 
     out[i] = *((float*)&int_round);
-
-    memcpy( &(out[i]), &int_round, 4 );
   }
 }
 
