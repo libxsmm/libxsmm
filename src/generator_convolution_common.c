@@ -385,10 +385,10 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
   unsigned short  mask_array[32];
 
   for ( i = 0; i < 16; ++i ) {
-    mask_array[i] = (i*2)+1;
+    mask_array[i] = (unsigned short)((i*2)+1);
   }
   for ( i = 16; i < 32; ++i ) {
-    mask_array[i] = (i-16)*2;
+    mask_array[i] = (unsigned short)((i-16)*2);
   }
 
   if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ||
