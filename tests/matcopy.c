@@ -128,7 +128,9 @@ int main(void)
       }
     }
 #endif
-    nerrors = LIBXSMM_MAX(nerrors, testerrors);
+    if (nerrors < testerrors) {
+      nerrors = testerrors;
+    }
   }
 
   libxsmm_free(a);

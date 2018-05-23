@@ -80,7 +80,9 @@ int main(void)
         }
       }
     }
-    nerrors = LIBXSMM_MAX(nerrors, testerrors);
+    if (nerrors < testerrors) {
+      nerrors = testerrors;
+    }
   }
 
   if (0 == nerrors) { /* previous results are correct and may be used to validate other tests */
@@ -103,7 +105,9 @@ int main(void)
             }
           }
         }
-        nerrors = LIBXSMM_MAX(nerrors, testerrors);
+        if (nerrors < testerrors) {
+          nerrors = testerrors;
+        }
       }
       else { /* negative tests */
         nerrors = LIBXSMM_MAX(EXIT_SUCCESS != libxsmm_otrans(
