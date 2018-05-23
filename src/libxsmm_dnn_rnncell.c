@@ -30,6 +30,7 @@
 ******************************************************************************/
 
 #include <libxsmm.h>
+#include <math.h>
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -38,6 +39,13 @@
 #include <string.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
+#endif
+
+#if defined(LSTM_TIMING)
+#include <stdio.h>
+double Gbl_t_input_total = 0., Gbl_t_recur_total = 0., Gbl_t_eltwise_total = 0., Gbl_t_nonlin_total = 0.;
+unsigned long long Gbl_t_input = 0, Gbl_t_recur = 0, Gbl_t_eltwise = 0, Gbl_t_nonlin = 0;
+double Gbl_duration_input = 0., Gbl_duration_recur = 0., Gbl_duration_eltwise = 0., Gbl_duration_nonlin = 0.;
 #endif
 
 
@@ -648,7 +656,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_tensor(libxsmm_dnn_rnn
 }
 
 
-#define ITYPE float
+# define ITYPE float
 void matinit(int seed, ITYPE * dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
@@ -703,7 +711,7 @@ void matrix_sigmoid(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 # pragma omp parallel for private(i, size)
 #endif
   for (i = 0; i < size; i++) {
-    exp_value = (ITYPE)exp( -src[i]);
+    exp_value = (ITYPE)exp((double) -src[i]);
     dst[i] = 1 / (1 + exp_value);
   }
 }
@@ -716,7 +724,7 @@ void matrix_tanh(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 # pragma omp parallel for private(i, size)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = tanh(src[i]);
+    dst[i] = (ITYPE)tanh((double)src[i]);
   }
 }
 
@@ -742,7 +750,7 @@ void matrix_sigmoid_inverse(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 # pragma omp parallel for private(i, size)
 #endif
   for (i = 0; i < size; i++) {
-    exp_value = (ITYPE)exp( -src[i]);
+    exp_value = (ITYPE)exp((double) -src[i]);
     sig_exp = 1 / (1 + exp_value);
     dst[i] = (1 - sig_exp)*sig_exp;
   }
@@ -752,13 +760,13 @@ void matrix_sigmoid_inverse(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 void matrix_tanh_inverse(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 {
   libxsmm_blasint i;
-  ITYPE sech_value;
+  ITYPE tanh_value;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i, size)
 #endif
   for (i = 0; i < size; i++) {
-    sech_value = sech(src[i]);
-    dst[i] = sech_value * sech_value;
+    tanh_value = (ITYPE)tanh((double)src[i]);
+    dst[i] = 1 - (tanh_value * tanh_value);
   }
 }
 
@@ -873,16 +881,15 @@ void recursive_step(libxsmm_bgemm_handle* handle, ITYPE* u, ITYPE* h, ITYPE* op1
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  const char transa = 'N', transb = 'N'; /* no transposes */
-  const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   libxsmm_blasint m = rnn->m;
   libxsmm_blasint n = rnn->n;
   libxsmm_blasint k = rnn->k;
   libxsmm_blasint t = rnn->t;
+#if defined(LSTM_TIMING)
   const double gflops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * t * 1E-9;
+#endif
   int reuse = 1;
   /* The following code should be in template */
-  const ITYPE alpha = 1, beta = 1;
   ITYPE *w = (ITYPE*)rnn->w;
   ITYPE *xt = (ITYPE*)rnn->xt;
   ITYPE *u = (ITYPE*)rnn->u;
@@ -897,9 +904,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
   LIBXSMM_VLA_DECL(2, ITYPE, z1, z1t, m * n);
   LIBXSMM_VLA_DECL(2, ITYPE, hnr, h, m * n);
   LIBXSMM_VLA_DECL(2, ITYPE, znr, z, m * n);
+#if defined(LSTM_TIMING)
   unsigned long long start;
   double duration;
-#if defined(LSTM_TIMING)
   Gbl_t_input_total = 0.; Gbl_t_recur_total = 0.; Gbl_t_eltwise_total = 0.; Gbl_t_nonlin_total = 0.;
   Gbl_t_input = 0; Gbl_t_recur = 0; Gbl_t_eltwise = 0; Gbl_t_nonlin = 0;
   Gbl_duration_input = 0.; Gbl_duration_recur = 0.; Gbl_duration_eltwise = 0.; Gbl_duration_nonlin = 0.;
@@ -907,15 +914,15 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
 
   int s;
   int i;
-  libxsmm_blasint nt = n*t;
+#if defined(LSTM_TIMING)
   start = libxsmm_timer_tick();
+#endif
   /* for (s = 0; s < nrepeat; ++s) { */
 #if defined(LSTM_TIMING)
     Gbl_t_input = libxsmm_timer_tick();
 #endif
     /* The following loop may be absorbed into libxsmm_lstm_omp */
     libxsmm_bgemm(handlett, w, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, z1, 0, 0, m * n), tid, rnn->nThreads);
-    /*LIBXSMM_XBLAS_SYMBOL(ITYPE)(&transa, &transb, &m, &nt, &k, &alpha, w, m, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), k, &beta, z1, m);*/
 #if defined(LSTM_TIMING)
     Gbl_duration_input = libxsmm_timer_duration(Gbl_t_input, libxsmm_timer_tick());
     Gbl_t_input_total += Gbl_duration_input;
@@ -934,11 +941,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
         &LIBXSMM_VLA_ACCESS(2, znr, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, znr, t-1, 0, m * n), 0, m * n, tid, rnn->nThreads); /*nop*/
     }
   /* } */
+#if defined(LSTM_TIMING)
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
   if (0 < duration) {
-    /* fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration); */
+    fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops / duration); /* *nrepeat */
   }
-#if defined(LSTM_TIMING)
   double t_total = Gbl_t_input_total + Gbl_t_recur_total + Gbl_t_eltwise_total + Gbl_t_nonlin_total;
   fprintf(stdout, "Percentage of time spent in input matrix multiplication: %lf\n", Gbl_t_input_total*100.0/t_total);
   fprintf(stdout, "Percentage of time spent in recurrence matrix multiplication: %lf\n", Gbl_t_recur_total*100.0/t_total);
@@ -949,15 +956,14 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_all(libxsmm_dnn_rnncell* rnn, int start_thread, int tid, int pass)
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell* rnn, int start_thread, int tid, int pass)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  const char transa = 'N', transb = 'N'; /* no transposes */
-  const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   libxsmm_blasint m = rnn->m;
   libxsmm_blasint n = rnn->n;
   libxsmm_blasint k = rnn->k;
   libxsmm_blasint t = rnn->t;
+#ifdef LSTM_TIMING
   const double tflops = 12; /* transcendental flops */
   double gflops = m * m; /* U^T */
   gflops += (2.0 * m * n * m); /* U^T * delta */
@@ -985,7 +991,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_all(libxsmm_dnn_rnncel
     gflops += tempflops;
   }
   gflops *= 1E-9; /* to convert flops to Gflops */
-  const ITYPE alpha = 1, beta = 1;
+#endif
   ITYPE *djdht = (ITYPE*)rnn->djdht;
   ITYPE *zt = (ITYPE*)rnn->z;
   ITYPE *deltat = (ITYPE*)rnn->deltat;
@@ -1011,17 +1017,20 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_all(libxsmm_dnn_rnncel
   libxsmm_bgemm_handle *handledh = rnn->handleuh;
   libxsmm_bgemm_handle *handledx = rnn->handlett;
   libxsmm_bgemm_handle *handlewd = rnn->handlewd;
-  LIBXSMM_VLA_DECL(2, ITYPE, djdh, djdh, m * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, djdh, djdht, m * n);
   LIBXSMM_VLA_DECL(2, ITYPE, z, zt, m * n);
   LIBXSMM_VLA_DECL(2, ITYPE, delta, deltat, m * n);
   LIBXSMM_VLA_DECL(2, ITYPE, x, xt, k * n);
   LIBXSMM_VLA_DECL(2, ITYPE, h, ht, m * n);
   LIBXSMM_VLA_DECL(2, ITYPE, djdx, djdxt, k * n);
-  unsigned long long start;
-  double duration;
+  
   int s;
   int i;
+#ifdef LSTM_TIMING
+  unsigned long long start;
+  double duration;
   start = libxsmm_timer_tick();
+#endif
   /* for (s = 0; s < nrepeat; ++s) { */
     LIBXSMM_MATINIT(ITYPE, 0, &LIBXSMM_VLA_ACCESS(2, delta, t-1, 0, m * n), m, n, m, 0.0);
     /* matrix_transpose(m, m, u, uTp); - already taken care of in init */
@@ -1052,10 +1061,12 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_all(libxsmm_dnn_rnncel
       }
     }
   /* } */
+#ifdef LSTM_TIMING
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
   if (0 < duration) {
-    /* fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration); */
+    fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops / duration); /* *nrepeat */
   }
+#endif
 
   return status;
 }
@@ -1071,13 +1082,13 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_st(libxsmm_dnn_rnncell
                                            status = libxsmm_dnn_rnncell_fwd(handle, start_thread, tid);
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
-                                           status = libxsmm_dnn_rnncell_all(handle, start_thread, tid, 1);
+                                           status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 1);
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
-                                           status = libxsmm_dnn_rnncell_all(handle, start_thread, tid, 2);
+                                           status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 2);
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           status = libxsmm_dnn_rnncell_all(handle, start_thread, tid, 3);
+                                           status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 3);
                                          } break;
     
       default: {
