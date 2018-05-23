@@ -147,7 +147,7 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
                                               const unsigned int      i_shuffle_operand );
 
 /**
- * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 3 vector registers and masking 
+ * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 3 vector registers and masking
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_instruction_set requested instruction set to encode
@@ -157,7 +157,7 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
  * @param i_vec_reg_number_1 the second vector register number (zmm: 0-31)
  * @param i_vec_reg_number_3 the second vector register number (zmm: 0-31)
  * @param i_immediate immediate just as the compare value for a compate intructions
- * @param i_mask_reg_number the mask register to read/write 
+ * @param i_mask_reg_number the mask register to read/write
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_generated_code,

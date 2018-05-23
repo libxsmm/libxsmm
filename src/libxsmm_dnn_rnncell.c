@@ -179,7 +179,7 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncel
   size_t size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
   size_t sizeof_datatype = sizeof(float);
-  
+
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -398,7 +398,7 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_internalstate_size(const libxsmm_dnn_
   size_t size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
   size_t sizeof_datatype = sizeof(float);
-  
+
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -1026,7 +1026,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
   LIBXSMM_VLA_DECL(2, FTYPE, x, xt, k * n);
   LIBXSMM_VLA_DECL(2, FTYPE, h, ht, m * n);
   LIBXSMM_VLA_DECL(2, FTYPE, djdx, djdxt, k * n);
-  
+
   /* int s; */
   int i;
 #ifdef LSTM_TIMING
@@ -1093,7 +1093,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_st(libxsmm_dnn_rnncell
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
                                            status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 3);
                                          } break;
-    
+
       default: {
                   status = LIBXSMM_DNN_ERR_INVALID_KIND;
                }
