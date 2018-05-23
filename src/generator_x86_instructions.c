@@ -1583,6 +1583,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
                                                    const unsigned int      i_immediate,
                                                    const unsigned int      i_mask_reg_number )
 {
+  LIBXSMM_UNUSED(i_immediate/*TODO*/);
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;

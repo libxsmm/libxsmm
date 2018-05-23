@@ -176,9 +176,9 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
 
 
 LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncell* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status) {
+  size_t sizeof_datatype = sizeof(float);
   size_t size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
-  size_t sizeof_datatype = sizeof(float);
 
   if (0 != handle) {
     switch (kind) {
@@ -395,9 +395,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_scratch(libxsmm_dnn_rn
 
 
 LIBXSMM_API size_t libxsmm_dnn_rnncell_get_internalstate_size(const libxsmm_dnn_rnncell* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status) {
+  size_t sizeof_datatype = sizeof(float);
   size_t size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
-  size_t sizeof_datatype = sizeof(float);
 
   if (0 != handle) {
     switch (kind) {
@@ -648,7 +648,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_tensor(libxsmm_dnn_rnn
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (handle != 0) {
-    /* Need to populate this code */
+    LIBXSMM_UNUSED(type/* Need to populate this code */);
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE_TENSOR;
   }
@@ -881,7 +881,6 @@ void recursive_step(libxsmm_bgemm_handle* handle, FTYPE* u, FTYPE* h, FTYPE* op1
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, int start_thread, int tid)
 {
-  LIBXSMM_UNUSED(start_thread);
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   libxsmm_blasint m = rnn->m;
   libxsmm_blasint n = rnn->n;
@@ -913,9 +912,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
   Gbl_t_input = 0; Gbl_t_recur = 0; Gbl_t_eltwise = 0; Gbl_t_nonlin = 0;
   Gbl_duration_input = 0.; Gbl_duration_recur = 0.; Gbl_duration_eltwise = 0.; Gbl_duration_nonlin = 0.;
 #endif
-
   /* int s; */
   int i;
+
+  LIBXSMM_UNUSED(start_thread/* Need to populate this code */);
 #if defined(LSTM_TIMING)
   start = libxsmm_timer_tick();
 #endif
@@ -960,7 +960,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell* rnn, int start_thread, int tid, int pass)
 {
-  LIBXSMM_UNUSED(start_thread);
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   libxsmm_blasint m = rnn->m;
   libxsmm_blasint n = rnn->n;
@@ -1034,6 +1033,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
   double duration;
   start = libxsmm_timer_tick();
 #endif
+
+  LIBXSMM_UNUSED(start_thread/* Need to populate this code */);
   /* for (s = 0; s < nrepeat; ++s) { */
     LIBXSMM_MATINIT(FTYPE, 0, &LIBXSMM_VLA_ACCESS(2, delta, t-1, 0, m * n), m, n, m, 0.0);
     /* matrix_transpose(m, m, u, uTp); - already taken care of in init */
