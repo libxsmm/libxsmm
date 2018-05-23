@@ -601,7 +601,14 @@
 #endif
 #if !defined(LIBXSMM_ASSERT)
 # include <assert.h>
-# define LIBXSMM_ASSERT(EXPR) assert(EXPR)
+# if defined(NDEBUG)
+#   define LIBXSMM_ASSERT(EXPR) LIBXSMM_ASSUME(EXPR)
+# else
+#   define LIBXSMM_ASSERT(EXPR) assert(EXPR)
+# endif
+#endif
+#if !defined(LIBXSMM_ASSERT_MSG)
+# define LIBXSMM_ASSERT_MSG(EXPR, MSG) LIBXSMM_ASSERT((EXPR) && (0 != *(MSG)))
 #endif
 #if !defined(LIBXSMM_EXPECT)
 # if defined(NDEBUG)

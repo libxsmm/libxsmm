@@ -212,7 +212,7 @@ LIBXSMM_API_INTERN unsigned char libxsmm_gemm_typesize(libxsmm_gemm_precision pr
 LIBXSMM_API_INLINE libxsmm_gemm_prefetch_type internal_get_gemm_prefetch(int prefetch)
 {
   const int result = (0 > prefetch ? ((int)libxsmm_gemm_auto_prefetch_default) : prefetch);
-  LIBXSMM_ASSERT(0 <= result); /* LIBXSMM_PREFETCH_AUTO is translated */
+  LIBXSMM_ASSERT_MSG(0 <= result, "LIBXSMM_PREFETCH_AUTO is not translated!");
   return (libxsmm_gemm_prefetch_type)result;
 }
 

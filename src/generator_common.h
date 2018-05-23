@@ -59,6 +59,9 @@
 #define LIBXSMM_X86_MASK_REG_UNDEF         255
 #define LIBXSMM_X86_IMCI_AVX512_MASK         1  /* this specifies k1 */
 
+/* special value for undefined immediate */
+#define LIBXSMM_X86_IMM_UNDEF             1024
+
 /* special instruction */
 #define LIBXSMM_X86_INSTR_UNDEF           9999
 
@@ -207,6 +210,7 @@
 #define LIBXSMM_X86_INSTR_VPMOVDW        20073
 #define LIBXSMM_X86_INSTR_VPSRAD         20074
 #define LIBXSMM_X86_INSTR_VPSLLD         20075
+#define LIBXSMM_X86_INSTR_VPCMPD         20076
 
 /* AVX512, QUAD MADD, QUAD VNNI and VNNI */
 #define LIBXSMM_X86_INSTR_V4FMADDPS      26000
