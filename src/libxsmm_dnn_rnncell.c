@@ -656,8 +656,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_tensor(libxsmm_dnn_rnn
 }
 
 
-# define ITYPE float
-void matinit(int seed, ITYPE * dst,
+# define FTYPE float
+void matinit(int seed, FTYPE * dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
@@ -669,17 +669,17 @@ void matinit(int seed, ITYPE * dst,
     libxsmm_blasint j = 0;
     for (; j < nrows; ++j) {
       const libxsmm_blasint k = i * ld + j;
-      dst[k] = (ITYPE)(seed1 / (k + 1));
+      dst[k] = (FTYPE)(seed1 / (k + 1));
     }
     for (; j < ld; ++j) {
       const libxsmm_blasint k = i * ld + j;
-      dst[k] = (ITYPE)seed;
+      dst[k] = (FTYPE)seed;
     }
   }
 }
 
 
-void matrix_add(libxsmm_blasint size, ITYPE *a, ITYPE *b, ITYPE *c)
+void matrix_add(libxsmm_blasint size, FTYPE *a, FTYPE *b, FTYPE *c)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -691,7 +691,7 @@ void matrix_add(libxsmm_blasint size, ITYPE *a, ITYPE *b, ITYPE *c)
 }
 
 
-void matrix_eltwise_mult(libxsmm_blasint size, ITYPE *a, ITYPE *b, ITYPE *c)
+void matrix_eltwise_mult(libxsmm_blasint size, FTYPE *a, FTYPE *b, FTYPE *c)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -703,33 +703,33 @@ void matrix_eltwise_mult(libxsmm_blasint size, ITYPE *a, ITYPE *b, ITYPE *c)
 }
 
 
-void matrix_sigmoid(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
+void matrix_sigmoid(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
 {
   libxsmm_blasint i;
-  ITYPE exp_value;
+  FTYPE exp_value;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i, size)
 #endif
   for (i = 0; i < size; i++) {
-    exp_value = (ITYPE)exp((double) -src[i]);
+    exp_value = (FTYPE)exp((double) -src[i]);
     dst[i] = 1 / (1 + exp_value);
   }
 }
 
 
-void matrix_tanh(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
+void matrix_tanh(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i, size)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = (ITYPE)tanh((double)src[i]);
+    dst[i] = (FTYPE)tanh((double)src[i]);
   }
 }
 
 
-void matrix_relu(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
+void matrix_relu(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -741,37 +741,37 @@ void matrix_relu(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 }
 
 
-void matrix_sigmoid_inverse(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
+void matrix_sigmoid_inverse(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
 {
   libxsmm_blasint i;
-  ITYPE exp_value;
-  ITYPE sig_exp;
+  FTYPE exp_value;
+  FTYPE sig_exp;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i, size)
 #endif
   for (i = 0; i < size; i++) {
-    exp_value = (ITYPE)exp((double) -src[i]);
+    exp_value = (FTYPE)exp((double) -src[i]);
     sig_exp = 1 / (1 + exp_value);
     dst[i] = (1 - sig_exp)*sig_exp;
   }
 }
 
 
-void matrix_tanh_inverse(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
+void matrix_tanh_inverse(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
 {
   libxsmm_blasint i;
-  ITYPE tanh_value;
+  FTYPE tanh_value;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i, size)
 #endif
   for (i = 0; i < size; i++) {
-    tanh_value = (ITYPE)tanh((double)src[i]);
+    tanh_value = (FTYPE)tanh((double)src[i]);
     dst[i] = 1 - (tanh_value * tanh_value);
   }
 }
 
 
-void matrix_relu_inverse(libxsmm_blasint size, ITYPE *src, ITYPE *dst, ITYPE *input)
+void matrix_relu_inverse(libxsmm_blasint size, FTYPE *src, FTYPE *dst, FTYPE *input)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -783,11 +783,11 @@ void matrix_relu_inverse(libxsmm_blasint size, ITYPE *src, ITYPE *dst, ITYPE *in
 }
 
 
-void matrix_transpose(libxsmm_blasint rows, libxsmm_blasint cols, ITYPE *src, ITYPE *dst)
+void matrix_transpose(libxsmm_blasint rows, libxsmm_blasint cols, FTYPE *src, FTYPE *dst)
 {
   libxsmm_blasint i, j;
-  LIBXSMM_VLA_DECL(2, ITYPE, src2D, src, cols);
-  LIBXSMM_VLA_DECL(2, ITYPE, dst2D, dst, rows);
+  LIBXSMM_VLA_DECL(2, FTYPE, src2D, src, cols);
+  LIBXSMM_VLA_DECL(2, FTYPE, dst2D, dst, rows);
 #if defined(_OPENMP)
 # pragma omp parallel for private(i, j, rows, cols) collapse(2)
 #endif
@@ -799,7 +799,7 @@ void matrix_transpose(libxsmm_blasint rows, libxsmm_blasint cols, ITYPE *src, IT
 }
 
 
-void matrix_copy(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
+void matrix_copy(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -811,7 +811,7 @@ void matrix_copy(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 }
 
 
-void matrix_complement(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
+void matrix_complement(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -823,7 +823,7 @@ void matrix_complement(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 }
 
 
-void matrix_complement_square(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
+void matrix_complement_square(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -835,8 +835,8 @@ void matrix_complement_square(libxsmm_blasint size, ITYPE *src, ITYPE *dst)
 }
 
 
-void recursive_step(libxsmm_bgemm_handle* handle, ITYPE* u, ITYPE* h, ITYPE* op1, ITYPE *op2,
-  ITYPE *temp, ITYPE *dst, int act, libxsmm_blasint size, int tid, int nthreads)
+void recursive_step(libxsmm_bgemm_handle* handle, FTYPE* u, FTYPE* h, FTYPE* op1, FTYPE *op2,
+  FTYPE *temp, FTYPE *dst, int act, libxsmm_blasint size, int tid, int nthreads)
 {
 #if defined(LSTM_TIMING)
   Gbl_t_recur = libxsmm_timer_tick();
@@ -890,20 +890,20 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
 #endif
   int reuse = 1;
   /* The following code should be in template */
-  ITYPE *w = (ITYPE*)rnn->w;
-  ITYPE *xt = (ITYPE*)rnn->xt;
-  ITYPE *u = (ITYPE*)rnn->u;
-  ITYPE *h = (ITYPE*)rnn->h;
-  ITYPE *z1t = (ITYPE*)rnn->z1t;
-  ITYPE *z2 = (ITYPE*)rnn->z2;
-  ITYPE *z = (ITYPE*)rnn->z;
+  FTYPE *w = (FTYPE*)rnn->w;
+  FTYPE *xt = (FTYPE*)rnn->xt;
+  FTYPE *u = (FTYPE*)rnn->u;
+  FTYPE *h = (FTYPE*)rnn->h;
+  FTYPE *z1t = (FTYPE*)rnn->z1t;
+  FTYPE *z2 = (FTYPE*)rnn->z2;
+  FTYPE *z = (FTYPE*)rnn->z;
   libxsmm_bgemm_handle *handlewx = rnn->handlewx;
   libxsmm_bgemm_handle *handleuh = rnn->handleuh;
   libxsmm_bgemm_handle *handlett = rnn->handlett;
-  LIBXSMM_VLA_DECL(2, ITYPE, x, xt, k * n);
-  LIBXSMM_VLA_DECL(2, ITYPE, z1, z1t, m * n);
-  LIBXSMM_VLA_DECL(2, ITYPE, hnr, h, m * n);
-  LIBXSMM_VLA_DECL(2, ITYPE, znr, z, m * n);
+  LIBXSMM_VLA_DECL(2, FTYPE, x, xt, k * n);
+  LIBXSMM_VLA_DECL(2, FTYPE, z1, z1t, m * n);
+  LIBXSMM_VLA_DECL(2, FTYPE, hnr, h, m * n);
+  LIBXSMM_VLA_DECL(2, FTYPE, znr, z, m * n);
 #if defined(LSTM_TIMING)
   unsigned long long start;
   double duration;
@@ -912,7 +912,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
   Gbl_duration_input = 0.; Gbl_duration_recur = 0.; Gbl_duration_eltwise = 0.; Gbl_duration_nonlin = 0.;
 #endif
 
-  int s;
+  /* int s; */
   int i;
 #if defined(LSTM_TIMING)
   start = libxsmm_timer_tick();
@@ -992,39 +992,39 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
   }
   gflops *= 1E-9; /* to convert flops to Gflops */
 #endif
-  ITYPE *djdht = (ITYPE*)rnn->djdht;
-  ITYPE *zt = (ITYPE*)rnn->z;
-  ITYPE *deltat = (ITYPE*)rnn->deltat;
-  ITYPE *u = (ITYPE*)rnn->u;
-  ITYPE *xt = (ITYPE*)rnn->xt;
-  ITYPE *ht = (ITYPE*)rnn->h;
-  ITYPE *w = (ITYPE*)rnn->w;
-  ITYPE *djdu = (ITYPE*)rnn->djdu;
-  ITYPE *djdw = (ITYPE*)rnn->djdw;
-  ITYPE *djdxt = (ITYPE*)rnn->djdxt;
-  ITYPE* zi = (ITYPE*)rnn->z1t;
-  ITYPE* di1 = (ITYPE*)rnn->di1;
-  ITYPE* di2 = (ITYPE*)rnn->di2;
-  ITYPE* dj1 = (ITYPE*)rnn->dj1;
-  ITYPE* dw1 = (ITYPE*)rnn->dw1;
+  FTYPE *djdht = (FTYPE*)rnn->djdht;
+  FTYPE *zt = (FTYPE*)rnn->z;
+  FTYPE *deltat = (FTYPE*)rnn->deltat;
+  FTYPE *u = (FTYPE*)rnn->u;
+  FTYPE *xt = (FTYPE*)rnn->xt;
+  FTYPE *ht = (FTYPE*)rnn->h;
+  FTYPE *w = (FTYPE*)rnn->w;
+  FTYPE *djdu = (FTYPE*)rnn->djdu;
+  FTYPE *djdw = (FTYPE*)rnn->djdw;
+  FTYPE *djdxt = (FTYPE*)rnn->djdxt;
+  FTYPE* zi = (FTYPE*)rnn->z1t;
+  FTYPE* di1 = (FTYPE*)rnn->di1;
+  FTYPE* di2 = (FTYPE*)rnn->di2;
+  FTYPE* dj1 = (FTYPE*)rnn->dj1;
+  FTYPE* dw1 = (FTYPE*)rnn->dw1;
   /*
-  ITYPE* uTp = (ITYPE*)rnn->uTp;
-  ITYPE* wTp = (ITYPE*)rnn->wTp;
-  ITYPE* hTp = (ITYPE*)rnn->hTp;
-  ITYPE* xTp = (ITYPE*)rnn->xTp;
+  FTYPE* uTp = (FTYPE*)rnn->uTp;
+  FTYPE* wTp = (FTYPE*)rnn->wTp;
+  FTYPE* hTp = (FTYPE*)rnn->hTp;
+  FTYPE* xTp = (FTYPE*)rnn->xTp;
   */
   libxsmm_bgemm_handle *handleud = rnn->handlewx;
   libxsmm_bgemm_handle *handledh = rnn->handleuh;
   libxsmm_bgemm_handle *handledx = rnn->handlett;
   libxsmm_bgemm_handle *handlewd = rnn->handlewd;
-  LIBXSMM_VLA_DECL(2, ITYPE, djdh, djdht, m * n);
-  LIBXSMM_VLA_DECL(2, ITYPE, z, zt, m * n);
-  LIBXSMM_VLA_DECL(2, ITYPE, delta, deltat, m * n);
-  LIBXSMM_VLA_DECL(2, ITYPE, x, xt, k * n);
-  LIBXSMM_VLA_DECL(2, ITYPE, h, ht, m * n);
-  LIBXSMM_VLA_DECL(2, ITYPE, djdx, djdxt, k * n);
+  LIBXSMM_VLA_DECL(2, FTYPE, djdh, djdht, m * n);
+  LIBXSMM_VLA_DECL(2, FTYPE, z, zt, m * n);
+  LIBXSMM_VLA_DECL(2, FTYPE, delta, deltat, m * n);
+  LIBXSMM_VLA_DECL(2, FTYPE, x, xt, k * n);
+  LIBXSMM_VLA_DECL(2, FTYPE, h, ht, m * n);
+  LIBXSMM_VLA_DECL(2, FTYPE, djdx, djdxt, k * n);
   
-  int s;
+  /* int s; */
   int i;
 #ifdef LSTM_TIMING
   unsigned long long start;
@@ -1032,7 +1032,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
   start = libxsmm_timer_tick();
 #endif
   /* for (s = 0; s < nrepeat; ++s) { */
-    LIBXSMM_MATINIT(ITYPE, 0, &LIBXSMM_VLA_ACCESS(2, delta, t-1, 0, m * n), m, n, m, 0.0);
+    LIBXSMM_MATINIT(FTYPE, 0, &LIBXSMM_VLA_ACCESS(2, delta, t-1, 0, m * n), m, n, m, 0.0);
     /* matrix_transpose(m, m, u, uTp); - already taken care of in init */
     for (i = t-2; i >= 0; --i) {
       matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, z, i+1, 0, m * n), zi);
