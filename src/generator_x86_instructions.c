@@ -2611,10 +2611,19 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
     int l_vecgrp0 = i_vec_reg_number_0 / 8;
     int l_oddgrp0 = ((l_vecgrp0 % 2)==1);
     int l_2or3grp0 = (l_vecgrp0>=2);
+    int l_vecval1 = i_vec_reg_number_1 % 8;
+    int l_vecgrp1 = i_vec_reg_number_1 / 8;
+    int l_oddgrp1 = ((l_vecgrp1 % 2)==1);
+    int l_2or3grp1 = (l_vecgrp1>=2);
     int l_scaleadj = 0;
     int l_place = i;
     int l_sizereg = 64;
     int l_forced_offset = 0;
+    int l_second = 0;
+    int l_third = 0;
+    int l_fourth = 0;
+    int l_fifth = 0;
+    int l_sixth = 0;
 
     if ( l_maxsize - i < 20 )
     {
@@ -2651,6 +2660,34 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
        case LIBXSMM_X86_INSTR_VCMPPS:
           l_place = i + 5;
           l_sizereg = 64;
+          l_fifth = 0xA3;
+          l_sixth = i_mask_reg_number*8;
+          l_vecval1 = 0;
+          l_vecgrp1 = 0;
+          l_oddgrp1 = 0;
+          l_2or3grp1 = 0;
+          break;
+       case LIBXSMM_X86_INSTR_VPCMPD:
+          l_place = i + 5;
+          l_sizereg = 64;
+          l_second = 2;
+          l_third = 1;
+          l_sixth = i_mask_reg_number*8;
+          l_vecval1 = 0;
+          l_vecgrp1 = 0;
+          l_oddgrp1 = 0;
+          l_2or3grp1 = 0;
+          break;
+       case LIBXSMM_X86_INSTR_VPADDD:
+          if ( i_immediate != LIBXSMM_X86_IMM_UNDEF ) {
+             fprintf(stderr,"libxsmm_instruction_vec_compute_mem_mask: vpaddd should not use an immediate. You passed %d not %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+             exit(-1);
+          }
+          l_place = i + 5;
+          l_sizereg = 64;
+          l_third = 1;
+          l_fourth = i_mask_reg_number;
+          l_fifth = 0xDF;
           break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_mem_mask: Unknown instruction type: %u\n", i_vec_instr);
@@ -2683,21 +2720,22 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
     if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
     {
         buf[i++] = (unsigned char)(0x62);
-        buf[i++] = (unsigned char)(0xf1 - l_gp8 * 0x20);
-        buf[i++] = (unsigned char)(0x7c - l_oddgrp0 * 0x40 - l_vecval0*8);
-        buf[i++] = (unsigned char)(0x48 - l_2or3grp0 * 0x08);
-        buf[i++] = (unsigned char)(0xc2);
-        buf[i++] = (unsigned char)(0x00 + l_regbas0 + i_mask_reg_number*8);
+        buf[i++] = (unsigned char)(0xf1 + l_second - l_gp8 * 0x20 - l_oddgrp1 * 0x80 - l_2or3grp1 * 0x10 );
+        buf[i++] = (unsigned char)(0x7c + l_third - l_oddgrp0 * 0x40 - l_vecval0*8);
+        buf[i++] = (unsigned char)(0x48 + l_fourth - l_2or3grp0 * 0x08);
+        buf[i++] = (unsigned char)(0x1F + l_fifth);
+        buf[i++] = (unsigned char)(0x00 + l_sixth + l_regbas0 + l_vecval1*8 );
         if ( l_regbas0 == 4 ) buf[i++]=(unsigned char)(0x24);
     } else {
         buf[i++] = (unsigned char)(0x62);
-        buf[i++] = (unsigned char)(0xf1 - l_gp8 * 0x20 - l_ix8 * 0x40);
-        buf[i++] = (unsigned char)(0x7c - l_oddgrp0 * 0x40 - l_vecval0*8);
-        buf[i++] = (unsigned char)(0x48 - l_2or3grp0 * 0x08);
-        buf[i++] = (unsigned char)(0xc2);
-        buf[i++] = (unsigned char)(0x04 + i_mask_reg_number*8);
+        buf[i++] = (unsigned char)(0xf1 + l_second - l_gp8 * 0x20 - l_ix8 * 0x40 - l_oddgrp1*0x80 - l_2or3grp1 * 0x10);
+        buf[i++] = (unsigned char)(0x7c + l_third - l_oddgrp0 * 0x40 - l_vecval0*8);
+        buf[i++] = (unsigned char)(0x48 + l_fourth - l_2or3grp0 * 0x08);
+        buf[i++] = (unsigned char)(0x1F + l_fifth);
+        buf[i++] = (unsigned char)(0x04 + l_sixth + l_vecval1*8 );
         buf[i++] = (unsigned char)(0x00 + l_scaleadj + l_regbas0 + l_regidx*8);
     }
+
     if ( (l_regbas0 == 5) && (i_displacement==0) )
     {
        /* Registers like rbp/r13 when you have a displacement of 0, we need
@@ -2705,7 +2743,10 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
         l_forced_offset = 1;
     }
     i += internal_x86_instructions_add_offset( l_place, i, i_displacement, l_forced_offset, l_sizereg, buf );
-    buf[i++] = (unsigned char)(i_immediate);
+    if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
+    {
+       buf[i++] = (unsigned char)(i_immediate);
+    }
 
     io_generated_code->code_size = i;
     /* *loc = i; */
