@@ -70,11 +70,11 @@
 
 int main(void)
 {
-  const libxsmm_blasint m[]   = { 1, 1, 1, 1, 2, 3, 6, 6, 6, 6, 16, 63,  16,  16, 2507 };
-  const libxsmm_blasint n[]   = { 1, 6, 7, 7, 2, 3, 1, 1, 1, 1, 16, 31, 500, 500, 1975 };
-  const libxsmm_blasint ldi[] = { 1, 1, 2, 2, 2, 3, 6, 8, 6, 7, 16, 63,  16, 512, 3000 };
-  const libxsmm_blasint ldo[] = { 1, 1, 1, 8, 2, 3, 6, 6, 8, 8, 16, 64, 512,  16, 3072 };
-  const int prefetch[]        = { 1, 0, 1, 1, 0, 1, 0, 0, 0, 1,  0,  1,   0,   1,    1 };
+  const libxsmm_blasint m[]   = { 1, 1, 1, 1, 2, 3, 6, 6, 6, 6,   8, 16, 63,  16,  16, 2507 };
+  const libxsmm_blasint n[]   = { 1, 6, 7, 7, 2, 3, 1, 1, 1, 1, 250, 16, 31, 500, 500, 1975 };
+  const libxsmm_blasint ldi[] = { 1, 1, 2, 2, 2, 3, 6, 8, 6, 7, 512, 16, 63,  16, 512, 3000 };
+  const libxsmm_blasint ldo[] = { 1, 1, 1, 8, 2, 3, 6, 6, 8, 8,  16, 16, 64, 512,  16, 3072 };
+  const int prefetch[]        = { 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,   0,  1,  0,   1,   0,    1 };
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint max_size_a = 0, max_size_b = 0;
   unsigned int nerrors = 0;

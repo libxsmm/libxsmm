@@ -124,17 +124,10 @@ LIBXSMM_API int libxsmm_matcopy_thread(void* out, const void* in, unsigned int t
       const unsigned int size = tm * tn, size2 = LIBXSMM_SQRT2(size);
       const unsigned int indx = LIBXSMM_MIN(size2 >> 10, 7);
       const unsigned int tidx = (4 < typesize ? 0 : 1);
-      const libxsmm_mcopy_descriptor* desc;
-      libxsmm_descriptor_blob blob;
       int mtasks;
       tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tidx][0/*M*/][indx]);
       tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tidx][1/*N*/][indx]);
-      /* libxsmm_trans_jit: JIT'ted matrix-copy permitted? */
-      desc = (0 != (1 & libxsmm_trans_jit) ? libxsmm_mcopy_descriptor_init(&blob,
-        typesize, tm, tn, uldo, uldi, 0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE,
-        iprefetch, NULL/*default unroll*/) : 0);
       mtasks = ((1 < nthreads) ? ((int)((m + tm - 1) / tm)) : 1);
-      xmatcopy = libxsmm_dispatch_mcopy(desc);
       if (1 < mtasks && nthreads <= mtasks) { /* only parallelized over M */
         const int mc = (mtasks + nthreads - 1) / nthreads * tm;
         m0 = tid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
@@ -145,6 +138,16 @@ LIBXSMM_API int libxsmm_matcopy_thread(void* out, const void* in, unsigned int t
         const libxsmm_blasint mc = tm;
         m0 = mtid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
         n0 = ntid * nc; n1 = LIBXSMM_MIN(n0 + nc, n);
+      }
+      if (0 != (1 & libxsmm_trans_jit) /* libxsmm_trans_jit: JIT'ted matrix-copy permitted? */
+        /* avoid code-dispatch if task does not need the kernel for inner tiles */
+        && tm + m0 <= (unsigned int)(m1 - m0) && tn <= (unsigned int)(n1 - n0))
+      {
+        libxsmm_descriptor_blob blob;
+        const libxsmm_mcopy_descriptor *const desc = libxsmm_mcopy_descriptor_init(&blob,
+          typesize, tm, tn, uldo, uldi, 0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE,
+          iprefetch, NULL/*default unroll*/);
+        xmatcopy = libxsmm_dispatch_mcopy(desc);
       }
       if (0 != prefetch && 0 != *prefetch) { /* prefetch */
         LIBXSMM_XCOPY(

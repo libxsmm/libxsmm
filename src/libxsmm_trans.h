@@ -43,18 +43,18 @@
 
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
-  const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
-  TYPE *const DST = (TYPE*)(((const char*)(OUT)) + (TYPESIZE) * ((INDEX_J) * (LDO) + (INDEX_I)))
+  const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
+              TYPE *const DST = (TYPE*)(((const char*)(OUT)) + (TYPESIZE) * ((INDEX_J) * (LDO) + (INDEX_I)))
 /* call JIT-kernel (matrix-copy) */
 #define LIBXSMM_MCOPY_CALL_NOPF(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) (KERNEL)(SRC, LDI, DST, LDO)
 /* call JIT-kernel (matrix-copy with prefetch) */
-#define LIBXSMM_MCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) (KERNEL)(SRC, LDI, DST, LDO, \
+#define LIBXSMM_MCOPY_CALL(PRFT_KERNEL, TYPESIZE, SRC, LDI, DST, LDO) (PRFT_KERNEL)(SRC, LDI, DST, LDO, \
   ((const char*)(SRC)) + (TYPESIZE) * (*(LDI))) /* prefetch next line*/
 
 /* kernel uses consecutive stores and strided loads (transpose) */
 #define LIBXSMM_TCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
-  const TYPE *const SRC = (const TYPE*)(((const char*)(IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
-  TYPE *const DST = (TYPE*)(((const char*)(OUT)) + (TYPESIZE) * ((INDEX_I) * (LDO) + (INDEX_J)))
+  const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
+              TYPE *const DST = (TYPE*)(((const char*)(OUT)) + (TYPESIZE) * ((INDEX_I) * (LDO) + (INDEX_J)))
 /* call JIT-kernel (transpose) */
 #define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) (KERNEL)(SRC, LDI, DST, LDO)
 
@@ -119,6 +119,12 @@
   } \
 }
 
+#if 1
+# define LIBXSMM_XCOPY_PRECOND(COND)
+#else
+# define LIBXSMM_XCOPY_PRECOND(COND) COND
+#endif
+
 #define LIBXSMM_XCOPY(PARALLEL, LOOP_START, KERNEL_START, SYNC, \
   XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1) { \
   PARALLEL \
@@ -149,23 +155,29 @@
         } \
       } \
     } \
-    LOOP_START(1/*COLLAPSE*/) \
-    for (libxsmm_xcopy_i_ = M0; libxsmm_xcopy_i_ < (libxsmm_blasint)((M1) - (TILE_M) + 1); libxsmm_xcopy_i_ += TILE_M) { \
-      KERNEL_START(firstprivate(libxsmm_xcopy_i_) untied) \
-      LIBXSMM_XCOPY_NONJIT(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
-        libxsmm_xcopy_i_, libxsmm_xcopy_i_ + (TILE_M), \
-        libxsmm_xcopy_j_, N1); \
+    LIBXSMM_XCOPY_PRECOND(if (libxsmm_xcopy_j_ < (N1))) { \
+      LOOP_START(1/*COLLAPSE*/) \
+      for (libxsmm_xcopy_i_ = M0; libxsmm_xcopy_i_ < (libxsmm_blasint)((M1) - (TILE_M) + 1); libxsmm_xcopy_i_ += TILE_M) { \
+        KERNEL_START(firstprivate(libxsmm_xcopy_i_) untied) \
+        LIBXSMM_XCOPY_NONJIT(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
+          libxsmm_xcopy_i_, libxsmm_xcopy_i_ + (TILE_M), \
+          libxsmm_xcopy_j_, N1); \
+      } \
     } \
-    LOOP_START(1/*COLLAPSE*/) \
-    for (libxsmm_xcopy_j_ = N0; libxsmm_xcopy_j_ < (libxsmm_blasint)((N1) - (TILE_N) + 1); libxsmm_xcopy_j_ += TILE_N) { \
-      KERNEL_START(firstprivate(libxsmm_xcopy_j_) untied) \
+    LIBXSMM_XCOPY_PRECOND(if (libxsmm_xcopy_i_ < (M1))) { \
+      LOOP_START(1/*COLLAPSE*/) \
+      for (libxsmm_xcopy_j_ = N0; libxsmm_xcopy_j_ < (libxsmm_blasint)((N1) - (TILE_N)); libxsmm_xcopy_j_ += TILE_N) { \
+        KERNEL_START(firstprivate(libxsmm_xcopy_j_) untied) \
+        LIBXSMM_XCOPY_NONJIT(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
+          libxsmm_xcopy_i_, M1, \
+          libxsmm_xcopy_j_, libxsmm_xcopy_j_ + (TILE_N)); \
+      } \
+    } \
+    LIBXSMM_XCOPY_PRECOND(if (libxsmm_xcopy_i_ < (M1) && libxsmm_xcopy_j_ < (N1))) { \
       LIBXSMM_XCOPY_NONJIT(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
         libxsmm_xcopy_i_, M1, \
-        libxsmm_xcopy_j_, libxsmm_xcopy_j_ + (TILE_N)); \
+        libxsmm_xcopy_j_, N1); \
     } \
-    LIBXSMM_XCOPY_NONJIT(XKERNEL, OUT, IN, TYPESIZE, LDI, LDO, \
-      libxsmm_xcopy_i_, M1, \
-      libxsmm_xcopy_j_, N1); \
     SYNC \
   } \
 }
