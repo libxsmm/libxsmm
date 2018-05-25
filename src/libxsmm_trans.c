@@ -70,11 +70,9 @@ LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
       { { 5, 8,  8,   9,  20,  17,  20,  25 }, { 25,  60,  78,  58, 52, 56, 36,  31 } } }  /* SP */
   };
   { /* check if JIT-code generation is permitted */
-#if !defined(__clang__) || defined(__INTEL_COMPILER) /* TODO: investigate Clang specific issue */
     const char *const env_jit = getenv("LIBXSMM_TRANS_JIT");
     /* determine if JIT-kernels are used (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
     libxsmm_trans_jit = ((0 == env_jit || 0 == *env_jit) ? (LIBXSMM_TRANS_JIT) : atoi(env_jit));
-#endif
   }
   { /* load/adjust tile sizes */
     const char *const env_m = getenv("LIBXSMM_TRANS_M"), *const env_n = getenv("LIBXSMM_TRANS_N");
@@ -141,7 +139,9 @@ LIBXSMM_API int libxsmm_matcopy_thread(void* out, const void* in, unsigned int t
       }
       if (0 != (1 & libxsmm_trans_jit) /* libxsmm_trans_jit: JIT'ted matrix-copy permitted? */
         /* avoid code-dispatch if task does not need the kernel for inner tiles */
-        && tm + m0 <= (unsigned int)(m1 - m0) && tn <= (unsigned int)(n1 - n0))
+        && tm + m0 <= (unsigned int)(m1 - m0) && tn <= (unsigned int)(n1 - n0)
+        /* TODO: investigate issue with Byte-element copy/MT on pre-AVX512 */
+        && (1 < typesize || LIBXSMM_X86_AVX2 < libxsmm_target_archid))
       {
         libxsmm_descriptor_blob blob;
         const libxsmm_mcopy_descriptor *const desc = libxsmm_mcopy_descriptor_init(&blob,
