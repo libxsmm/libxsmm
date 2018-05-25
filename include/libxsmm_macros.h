@@ -608,7 +608,7 @@
 # endif
 #endif
 #if !defined(LIBXSMM_ASSERT_MSG)
-# define LIBXSMM_ASSERT_MSG(EXPR, MSG) LIBXSMM_ASSERT((EXPR) && (0 != *(MSG)))
+# define LIBXSMM_ASSERT_MSG(EXPR, MSG) assert((EXPR) && (0 != *(MSG)))
 #endif
 #if !defined(LIBXSMM_EXPECT)
 # if defined(NDEBUG)
