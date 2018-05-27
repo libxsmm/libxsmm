@@ -1853,6 +1853,8 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     result = internal_find_code(descriptor).xgemm;
 #if defined(_DEBUG)
     if (0 != libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.xmm) {
+      size_t code_size;
+      libxsmm_get_mmkernel_info(result, NULL/*info*/, &code_size);
       LIBXSMM_FLOCK(stdout);
       fprintf(stdout, "LIBXSMM: ");
       LIBXSMM_GEMM_PRINT2(stdout,
@@ -1860,7 +1862,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
         descriptor->flags, descriptor->m, descriptor->n, descriptor->k,
         descriptor->alpha, 0/*a*/, descriptor->lda, 0/*b*/, descriptor->ldb,
         descriptor->beta, 0/*c*/, descriptor->ldc);
-      fprintf(stdout, " = %p\n", result.xmm);
+      fprintf(stdout, " = %p+%u\n", result.xmm, (unsigned int)code_size);
       LIBXSMM_FUNLOCK(stdout);
     }
 #endif
@@ -2229,6 +2231,8 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
       *fn = result.ival;
 #if defined(_DEBUG)
       if (0 != libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.pmm) {
+        size_t code_size;
+        libxsmm_get_mmkernel_info(result.xgemm, NULL/*info*/, &code_size);
         LIBXSMM_FLOCK(stdout);
         fprintf(stdout, "LIBXSMM: ");
         LIBXSMM_GEMM_PRINT2(stdout,
@@ -2236,7 +2240,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
           descriptor->flags, descriptor->m, descriptor->n, descriptor->k,
           descriptor->alpha, 0/*a*/, descriptor->lda, 0/*b*/, descriptor->ldb,
           descriptor->beta, 0/*c*/, descriptor->ldc);
-        fprintf(stdout, " = %p\n", result.pmm);
+        fprintf(stdout, " = %p+%u\n", result.pmm, (unsigned int)code_size);
         LIBXSMM_FUNLOCK(stdout);
       }
 #endif
