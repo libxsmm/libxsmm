@@ -1456,7 +1456,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       }
     }
     else {
-      result = EXIT_FAILURE;
+      result = generated_code.last_error;
     }
 # if !defined(NDEBUG)
     free(generated_code.generated_code); /* free temporary/initial code buffer */
